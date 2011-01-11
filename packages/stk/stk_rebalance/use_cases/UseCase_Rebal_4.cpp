@@ -54,7 +54,7 @@ class GreedySideset : public Partition {
     ~MeshInfo() {}
   };  
   explicit GreedySideset(ParallelMachine pm,
-                         stk::mesh::PartVector & surfaces,
+                         const stk::mesh::PartVector & surfaces,
                          mesh::BulkData   & bulk_data);
   virtual ~GreedySideset();
   virtual void reset_dest_proc_data();
@@ -70,12 +70,12 @@ class GreedySideset : public Partition {
   void set_destination_proc(const unsigned moid, const unsigned proc );
   MeshInfo  mesh_information_;
   unsigned  total_number_entities_;
-  stk::mesh::PartVector & surfaces_;
+  const stk::mesh::PartVector & surfaces_;
   mesh::BulkData   & bulk_data_;
 };
 
 GreedySideset::GreedySideset(ParallelMachine pm, 
-                             stk::mesh::PartVector & surfaces,
+                             const stk::mesh::PartVector & surfaces,
                              mesh::BulkData   & bulk_data) : 
   stk::rebalance::Partition(pm),
   mesh_information_(),
@@ -90,6 +90,7 @@ void GreedySideset::reset_dest_proc_data() {
 void GreedySideset::set_mesh_info ( const std::vector<mesh::Entity *> &mesh_entities,
                                     const VectorField   * nodal_coord_ref,
                                     const ScalarField   * elem_weight_ref){
+std::cout<<__FILE__<<":"<<__LINE__ <<" number of elements: set_mesh_info:mesh_entities.size():"<< mesh_entities.size()<<std::endl;
   MeshInfo mesh_info;
 
   /* Keep track of the total number of elements. */
@@ -163,6 +164,7 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
   const unsigned p_rank = bulk_data_.parallel_rank();
   size_t local_changes = 0;
   const unsigned nSide = sides.size();
+std::cout<<__FILE__<<":"<<__LINE__<<" number of unowned sides:"<<nSide<<std::endl;
   for(unsigned iSide = 0; iSide < nSide; ++iSide)
   {
     const mesh::Entity & side = *sides[iSide];
@@ -175,6 +177,7 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
       unsigned moid;
       const bool mesh_object_found = find_mesh_entity(&elem, moid);
       if (mesh_object_found) {
+std::cout<<__FILE__<<":"<<__LINE__ <<" found element with shared side to rebalance id:"<<elem.identifier()<<std::endl;
         const unsigned elemProc = elem.owner_rank();
         ThrowRequire(elemProc==p_rank);
         // Sanity check:
@@ -218,8 +221,6 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   stk::mesh::put_field(weight_field , element_rank , meta_data.universal_part() );
 
   meta_data.commit();
-
-  //const unsigned p_size = bulk_data.parallel_size();
   const unsigned p_rank = bulk_data.parallel_rank();
 
   bulk_data.modification_begin();
@@ -270,6 +271,29 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   stk::mesh::PartVector add_parts;
   stk::mesh::create_adjacent_entities(bulk_data, add_parts);
 
+  bulk_data.modification_begin();
+
+  const stk::mesh::PartVector surfaces(1, &side_part);
+  {
+    const stk::mesh::PartVector empty_remove_parts;
+    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
+    const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem); 
+    stk::mesh::Selector selector(bulk_data.mesh_meta_data().locally_owned_part());
+    mesh::EntityVector sides;
+    mesh::get_selected_entities(selector, bulk_data.buckets(side_rank), sides);
+
+    const unsigned nSide = sides.size();
+    for(unsigned iSide = 0; iSide < nSide; ++iSide)
+    {
+      mesh::Entity & side = *sides[iSide];
+      if (side.identifier()==7) {
+        bulk_data.change_entity_parts(side, surfaces, empty_remove_parts);
+std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should be between two elements owned by two different processors id:"<<side.identifier()<<std::endl;
+      } 
+    }
+  }
+  bulk_data.modification_end();
+   
   // Force a rebalance by using imbalance_threshold < 1.0
   double imbalance_threshold = 0.5;
   bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
@@ -291,7 +315,6 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
      << "imbalance_threshold after rebalance = " << imbalance_threshold <<", "<<do_rebal << std::endl;
 
   {
-    stk::mesh::PartVector surfaces(1, &side_part);
     stk::rebalance::use_cases::GreedySideset greedy_sideset(comm, surfaces, bulk_data);
     stk::mesh::Selector selector(meta_data.locally_owned_part());  
     stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, greedy_sideset);
