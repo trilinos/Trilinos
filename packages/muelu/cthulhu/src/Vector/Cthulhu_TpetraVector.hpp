@@ -236,12 +236,12 @@ namespace Cthulhu {
       TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "TODO");
 
       typedef TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TTpetraVector;      
-      CTHULHU_DYNAMIC_CAST(const TTpetraVector, source, tSource, "Cthulhu::TpetraVector::doImport only accept Cthulhu::TpetraVector as input arguments.");
+      //      CTHULHU_DYNAMIC_CAST(const TTpetraVector, source, tSource, "Cthulhu::TpetraVector::doImport only accept Cthulhu::TpetraVector as input arguments.");
 
       typedef TpetraImport<LocalOrdinal, GlobalOrdinal, Node> TTpetraImport;
-      CTHULHU_DYNAMIC_CAST(const TTpetraImport, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+      // CTHULHU_DYNAMIC_CAST(const TTpetraImport, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
 
-      Tpetra::CombineMode tCM;
+      // Tpetra::CombineMode tCM;
       // TODO check if I undrstand that correctly...
 //       if (CM == Cthulhu::ADD)
 //         tCM = Tpetra::;
