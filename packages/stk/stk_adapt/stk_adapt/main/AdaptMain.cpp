@@ -14,7 +14,10 @@
 #include <sstream>
 #include <cmath>
 #include <utility>
+
+#if defined( STK_HAS_MPI )
 #include <mpi.h>
+#endif
 
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
@@ -244,7 +247,9 @@ namespace stk {
         //try {
         
         EXCEPTWATCH;
+#if defined( STK_HAS_MPI )
         MPI_Barrier( MPI_COMM_WORLD );
+#endif
 
         if (doLoadBal)
           {

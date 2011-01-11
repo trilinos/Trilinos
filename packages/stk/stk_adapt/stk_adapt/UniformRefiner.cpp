@@ -1,9 +1,11 @@
 #include <exception>
-#include <mpi.h>
 #include <fstream>
-
 #include <set>
 #include <typeinfo>
+
+#if defined( STK_HAS_MPI )
+#include <mpi.h>
+#endif
 
 #include <stk_adapt/UniformRefiner.hpp>
 

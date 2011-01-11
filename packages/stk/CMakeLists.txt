@@ -49,7 +49,10 @@ IF( STK_ENABLE_ThreadPool )
   ADD_SUBDIRECTORY(stk_search)
 ENDIF()
 
-# ADD_SUBDIRECTORY(stk_expreval)
+IF( STK_ENABLE_Intrepid AND STK_ENABLE_Trios )
+  ADD_SUBDIRECTORY(stk_percept)
+  ADD_SUBDIRECTORY(stk_adapt)
+ENDIF()
 
 #
 # D) Do standard postprocessing

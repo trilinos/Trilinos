@@ -7,7 +7,6 @@
 #include <set>
 #include <string>
 #include <vector>
-#include <mpi.h>
 
 
 #include "Shards_Array.hpp"

@@ -13,7 +13,9 @@
 #include <stdio.h>
 #include <stdlib.h>      
 
+#if defined( STK_HAS_MPI )
 #include <mpi.h>
+#endif
 
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>

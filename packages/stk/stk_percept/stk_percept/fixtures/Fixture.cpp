@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "UnitTestFixture.hpp"
+#include "Fixture.hpp"
 
 namespace stk { 
   namespace percept { 
