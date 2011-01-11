@@ -37,6 +37,7 @@
 using namespace std;
 using namespace MueLu;
 using Teuchos::ArrayView;
+using Teuchos::ArrayRCP;
 typedef ArrayView<const int>::const_iterator iter;
 
 int MueLu_PrintLevel();
@@ -68,11 +69,11 @@ int MueLu_PrintLevel();
                                   /* which we are contemplated adding another*/
                                   /* vertex.  Should be between 0 and 1.     */
 
-int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, const Graph<int,int> graph,
-                         Teuchos::ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal);
+int MueLu_RootCandidates(int nVertices, ArrayView<const int> & vertex2AggId, const Graph<int,int> graph,
+                         ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal);
 
 int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
-                          RCP<Cthulhu::Vector<double> > & weights_, const AggAlgorithm2Comm & myWidget);
+                          RCP<Cthulhu::Vector<double> > & distWeights, const AggAlgorithm2Comm & myWidget);
 
 // Take a partially aggregated graph and complete the aggregation. This is
 // typically needed to take care of vertices that are left over after
@@ -245,114 +246,126 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
   AggAlgorithm2Comm myWidget(uniqueMap, nonUniqueMap);
 
-  // Pull stuff out of vectors
-
-  Teuchos::ArrayRCP<int>  vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-  Teuchos::ArrayRCP<int>   procWinner  = aggregates.GetProcWinner()->getDataNonConst(0);
-
-  RCP<Cthulhu::Vector<double> > weights_ = Cthulhu::VectorFactory<double>::Build(nonUniqueMap); //TODO
-  Teuchos::ArrayRCP<double> weights = weights_->getDataNonConst(0); //TODO
+  RCP<Cthulhu::Vector<double> > distWeights = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
 
   // Aggregated vertices not "definitively" assigned to processors are
   // arbitrated by MueLu_ArbitrateAndCommunicate(). There is some
   // additional logic to prevent losing root nodes in arbitration.
-  
-  weights_->putScalar(0.);
-  for (size_t i=0;i<nonUniqueMap->getNodeNumElements();i++) {
-    if (procWinner[i] == MUELU_UNASSIGNED) {
-      if (vertex2AggId[i] != MUELU_UNAGGREGATED) {
-        weights[i] = 1.;
-        if (aggregates.IsRoot(i)) weights[i] = 2.;
-      }
-    }
-  }
-
-  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
-  weights_->putScalar(0.); //All tentatively assigned vertices are now definitive
-
-  // Tentatively assign any vertex (ghost or local) which neighbors a root
-  // to the aggregate associated with the root.
-
-  for (int i = 0; i < nVertices; i++) { 
-    if ( aggregates.IsRoot(i) && (procWinner[i] == myPid) ) {
-
-      // neighOfINode is the neighbor node list of node 'i'.
-      ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
-      
-      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-        int colj = *it;
-        if (vertex2AggId[colj] == MUELU_UNAGGREGATED) {
-          weights[colj]= 1.;
-          vertex2AggId[colj] = vertex2AggId[i];
+  {
+    ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+    ArrayRCP<const int> procWinner   = aggregates.GetProcWinner()->getData(0);
+    ArrayRCP<double>    weights      = distWeights->getDataNonConst(0);
+    
+    distWeights->putScalar(0.);
+    for (size_t i=0;i<nonUniqueMap->getNodeNumElements();i++) {
+      if (procWinner[i] == MUELU_UNASSIGNED) {
+        if (vertex2AggId[i] != MUELU_UNAGGREGATED) {
+          weights[i] = 1.;
+          if (aggregates.IsRoot(i)) weights[i] = 2.;
         }
       }
     }
+    
+    // views on distributed vectors are freed here.
   }
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
-  weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
+  myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+  distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
+
+  // Tentatively assign any vertex (ghost or local) which neighbors a root
+  // to the aggregate associated with the root.
+  {
+    ArrayRCP<int>       vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    ArrayRCP<const int> procWinner   = aggregates.GetProcWinner()->getData(0);
+    ArrayRCP<double>    weights      = distWeights->getDataNonConst(0);
+
+    for (int i = 0; i < nVertices; i++) { 
+      if ( aggregates.IsRoot(i) && (procWinner[i] == myPid) ) {
+        
+        // neighOfINode is the neighbor node list of node 'i'.
+        ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+        
+        for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          int colj = *it;
+          if (vertex2AggId[colj] == MUELU_UNAGGREGATED) {
+            weights[colj]= 1.;
+            vertex2AggId[colj] = vertex2AggId[i];
+          }
+        }
+      }
+    }
+
+    // views on distributed vectors are freed here.
+  }
+
+  myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+  distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // Record the number of aggregated vertices
   int total_phase_one_aggregated = 0;
   {
+    ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+      
     int phase_one_aggregated = 0;
     for (int i = 0; i < nVertices; i++) {
       if (vertex2AggId[i] != MUELU_UNAGGREGATED)
         phase_one_aggregated++;
     }
-
+    
     sumAll(graph.GetComm(), phase_one_aggregated, total_phase_one_aggregated);
-  
-  }
-  
-  int total_nVertices = 0;
-  sumAll(graph.GetComm(), nVertices, total_nVertices);
 
-  /* Among unaggregated points, see if we can make a reasonable size    */
-  /* aggregate out of it. We do this by looking at neighbors and seeing */
-  /* how many are unaggregated and on my processor. Loosely,            */
-  /* base the number of new aggregates created on the percentage of     */
-  /* unaggregated nodes.                                                */
+    int total_nVertices = 0;
+    sumAll(graph.GetComm(), nVertices, total_nVertices);
+    
+    /* Among unaggregated points, see if we can make a reasonable size    */
+    /* aggregate out of it. We do this by looking at neighbors and seeing */
+    /* how many are unaggregated and on my processor. Loosely,            */
+    /* base the number of new aggregates created on the percentage of     */
+    /* unaggregated nodes.                                                */
 
-  double factor = 1.;
-  factor = ((double) total_phase_one_aggregated)/((double)(total_nVertices + 1));
-  factor = pow(factor, aggOptions.GetPhase3AggCreation());
+    ArrayRCP<double>    weights      = distWeights->getDataNonConst(0);
 
-  for (int i = 0; i < nVertices; i++) {
-    if (vertex2AggId[i] == MUELU_UNAGGREGATED) 
-      {
-
-        // neighOfINode is the neighbor node list of node 'iNode'.
-        ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
-        int rowi_N = neighOfINode.size();
-
-        int nonaggd_neighbors = 0;
-        for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-          int colj = *it;
-          if (vertex2AggId[colj] == MUELU_UNAGGREGATED && colj < nVertices)
-            nonaggd_neighbors++;
-        }
-        if (  (nonaggd_neighbors > minNodesPerAggregate) &&
-              (((double) nonaggd_neighbors)/((double) rowi_N) > factor))
-          {
-            vertex2AggId[i] = (nAggregates)++;
-            for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-              int colj = *it;
-              if (vertex2AggId[colj]==MUELU_UNAGGREGATED) {
-                vertex2AggId[colj] = vertex2AggId[i];
-                if (colj < nVertices) weights[colj] = 2.;
-                else                  weights[colj] = 1.;
-              }
-            }
-            aggregates.SetIsRoot(i);
-            weights[i] = 2.;
+    double factor = 1.;
+    factor = ((double) total_phase_one_aggregated)/((double)(total_nVertices + 1));
+    factor = pow(factor, aggOptions.GetPhase3AggCreation());
+    
+    for (int i = 0; i < nVertices; i++) {
+      if (vertex2AggId[i] == MUELU_UNAGGREGATED) 
+        {
+          
+          // neighOfINode is the neighbor node list of node 'iNode'.
+          ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+          int rowi_N = neighOfINode.size();
+          
+          int nonaggd_neighbors = 0;
+          for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+            int colj = *it;
+            if (vertex2AggId[colj] == MUELU_UNAGGREGATED && colj < nVertices)
+              nonaggd_neighbors++;
           }
-      }
-  } /*for (i = 0; i < nVertices; i++)*/
-  
-  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
-  weights_->putScalar(0.);//All tentatively assigned vertices are now definitive
+          if (  (nonaggd_neighbors > minNodesPerAggregate) &&
+                (((double) nonaggd_neighbors)/((double) rowi_N) > factor))
+            {
+              vertex2AggId[i] = (nAggregates)++;
+              for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+                int colj = *it;
+                if (vertex2AggId[colj]==MUELU_UNAGGREGATED) {
+                  vertex2AggId[colj] = vertex2AggId[i];
+                  if (colj < nVertices) weights[colj] = 2.;
+                  else                  weights[colj] = 1.;
+                }
+              }
+              aggregates.SetIsRoot(i);
+              weights[i] = 2.;
+            }
+        }
+    } // for (i = 0; i < nVertices; i++)
 
+    // views on distributed vectors are freed here.
+  }
+
+  myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+  distWeights->putScalar(0.);//All tentatively assigned vertices are now definitive
 
   if ( printFlag < MueLu_PrintLevel()) {
     int Nphase1_agg = nAggregates;
@@ -361,9 +374,8 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     sumAll(graph.GetComm(), Nphase1_agg, total_aggs);
 
     if (myPid == 0) {
-      printf("Aggregation(%s) : Phase 1 - nodes aggregated = %d \n",label.c_str(),
-             total_phase_one_aggregated);
-      printf("Aggregation(%s) : Phase 1 - total aggregates = %d\n",label.c_str(), total_aggs);
+      printf("Aggregation(%s) : Phase 1 - nodes aggregated = %d \n",label.c_str(), total_phase_one_aggregated);
+      printf("Aggregation(%s) : Phase 1 - total aggregates = %d\n", label.c_str(), total_aggs);
     }
     int i = nAggregates - Nphase1_agg;
 
@@ -380,7 +392,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   RCP<Cthulhu::Vector<double> > temp_ = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
 
   RCP<Cthulhu::Vector<double> > tempOutput_ = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
-  Teuchos::ArrayRCP<double> tempOutput = tempOutput_->getDataNonConst(0);
+  ArrayRCP<double> tempOutput = tempOutput_->getDataNonConst(0);
 
   temp_->putScalar(1.);  
   tempOutput_->putScalar(0.); 
@@ -424,79 +436,84 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 //    temp_->SetSeed( (unsigned int) util.RandomInt() );
     temp_->randomize(); 
 
-    Teuchos::ArrayRCP<double> temp = temp_->getDataNonConst(0);
+    ArrayRCP<double> temp = temp_->getDataNonConst(0);
 
     // build a list of candidate root nodes (vertices not adjacent
     // to aggregated vertices)
 
     int nCandidates = 0, nCandidatesGlobal;
 
-    Teuchos::ArrayRCP<int> candidates = Teuchos::arcp<int>(nVertices+1);
+    ArrayRCP<int> candidates = Teuchos::arcp<int>(nVertices+1);
 
     double priorThreshold = 0.;
     for (int kkk = 0 ; kkk < MUELU_PHASE4BUCKETS; kkk++) {
-      MueLu_RootCandidates(nVertices, vertex2AggId, graph,
-                           candidates, nCandidates, nCandidatesGlobal);
 
+      {
+        ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+        ArrayView<const int> vertex2AggIdView = vertex2AggId();
+        MueLu_RootCandidates(nVertices, vertex2AggIdView, graph,
+                             candidates, nCandidates, nCandidatesGlobal);
+        // views on distributed vectors are freed here.
+      }
 
       double nTargetNewGuys =  nAggregatesTarget - nAggregatesGlobal;
-      double threshold      =  priorThreshold + (1. - priorThreshold)*
-        nTargetNewGuys/(nCandidatesGlobal + .001);
+      double threshold      =  priorThreshold + (1. - priorThreshold)*nTargetNewGuys/(nCandidatesGlobal + .001);
    
-
       threshold = (threshold*(kkk+1.))/((double) MUELU_PHASE4BUCKETS);
       priorThreshold = threshold;
 
-      for (int k = 0; k < nCandidates ; k++ ) { 
-        int i = candidates[k];                  
-        if ((vertex2AggId[i] == MUELU_UNAGGREGATED) && 
-            (fabs(temp[i])  < threshold)) {
-          // Note: priorThreshold <= fabs(temp[i]) <= 1
+      {
+        ArrayRCP<int>    vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+        ArrayRCP<double> weights      = distWeights->getDataNonConst(0);
 
-          // neighOfINode is the neighbor node list of node 'iNode'.
-          ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+        for (int k = 0; k < nCandidates ; k++ ) { 
+          int i = candidates[k];                  
+          if ((vertex2AggId[i] == MUELU_UNAGGREGATED) && (fabs(temp[i])  < threshold)) {
+            // Note: priorThreshold <= fabs(temp[i]) <= 1
 
-          if (neighOfINode.size() > minNodesPerAggregate) { //TODO: check if this test is exactly was we want to do
-            int count = 0;
-            for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-              int Adjacent    = *it;
-              // This might not be true if someone close to i
-              // is chosen as a root via fabs(temp[]) < Threshold
-              if (vertex2AggId[Adjacent] == MUELU_UNAGGREGATED){
-                count++;
-                vertex2AggId[Adjacent] = nAggregates;
-                weights[Adjacent] = 1.;
-              }
-            }
-            if (count >= minNodesPerAggregate) {
-              vertex2AggId[i] = nAggregates++;
-              weights[i] = 2.;
-              aggregates.SetIsRoot(i);
-            }
-            else { // undo things
+            // neighOfINode is the neighbor node list of node 'iNode'.
+            ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+
+            if (neighOfINode.size() > minNodesPerAggregate) { //TODO: check if this test is exactly was we want to do
+              int count = 0;
               for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                 int Adjacent    = *it;
-                if (vertex2AggId[Adjacent] == nAggregates){
-                  vertex2AggId[Adjacent] = MUELU_UNAGGREGATED;
-                  weights[Adjacent] = 0.;
+                // This might not be true if someone close to i
+                // is chosen as a root via fabs(temp[]) < Threshold
+                if (vertex2AggId[Adjacent] == MUELU_UNAGGREGATED){
+                  count++;
+                  vertex2AggId[Adjacent] = nAggregates;
+                  weights[Adjacent] = 1.;
+                }
+              }
+              if (count >= minNodesPerAggregate) {
+                vertex2AggId[i] = nAggregates++;
+                weights[i] = 2.;
+                aggregates.SetIsRoot(i);
+              }
+              else { // undo things
+                for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+                  int Adjacent    = *it;
+                  if (vertex2AggId[Adjacent] == nAggregates){
+                    vertex2AggId[Adjacent] = MUELU_UNAGGREGATED;
+                    weights[Adjacent] = 0.;
+                  }
                 }
               }
             }
-
           }
         }
+        // views on distributed vectors are freed here.
       }
-
-      myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
-      weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
+      myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+      distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
       sumAll(graph.GetComm(), nAggregates, nAggregatesGlobal);
 
       // check that there are no aggregates sizes below minNodesPerAggregate
      
       aggregates.SetNumAggregates(nAggregates);
 
-      MueLu_RemoveSmallAggs(aggregates, minNodesPerAggregate, 
-			    weights_, myWidget);
+      MueLu_RemoveSmallAggs(aggregates, minNodesPerAggregate, distWeights, myWidget);
       
       nAggregates = aggregates.GetNumAggregates();
     }   // one possibility
@@ -507,9 +524,9 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   // ghost vertices. Further, the transpose is only a local transpose. 
   // Nonzero edges which exist on other processors are not represented.
 
-  Teuchos::ArrayRCP<int> Mark = Teuchos::arcp<int>(exp_nRows+1);
-  Teuchos::ArrayRCP<int> agg_incremented = Teuchos::arcp<int>(nAggregates+1);
-  Teuchos::ArrayRCP<int> SumOfMarks = Teuchos::arcp<int>(nAggregates+1);
+  ArrayRCP<int> Mark = Teuchos::arcp<int>(exp_nRows+1);
+  ArrayRCP<int> agg_incremented = Teuchos::arcp<int>(nAggregates+1);
+  ArrayRCP<int> SumOfMarks = Teuchos::arcp<int>(nAggregates+1);
 
   for (int i = 0; i < exp_nRows; i++)   Mark[i] = MUELU_DISTONE_VERTEX_WEIGHT;
   for (int i = 0; i < nAggregates; i++) agg_incremented[i] = 0;
@@ -517,62 +534,72 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
   // Grab the transpose matrix graph for unaggregated ghost vertices.
   //     a) count the number of nonzeros per row in the transpose
-
+  vector<int> cols; //TODO: vector
   vector<int> RowPtr(exp_nRows+1-nVertices);
-  for (int i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
-  for (int i = 0; i < nVertices;  i++) {
+  {
+    ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
 
-    // neighOfINode is the neighbor node list of node 'iNode'.
-    ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+    for (int i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
+    for (int i = 0; i < nVertices;  i++) {
 
-    for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-      int j = *it;
-      if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
-        RowPtr[j-nVertices]++;
+      // neighOfINode is the neighbor node list of node 'iNode'.
+      ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+
+      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+        int j = *it;
+        if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
+          RowPtr[j-nVertices]++;
+        }
       }
     }
-  }
 
-  //     b) Convert RowPtr[i] to point to 1st first nnz spot in row i.
+    //     b) Convert RowPtr[i] to point to 1st first nnz spot in row i.
 
-  int iSum = 0, iTemp;
-  for (int i = nVertices; i < exp_nRows ;  i++) {
-    iTemp = RowPtr[i-nVertices];
-    RowPtr[i-nVertices] = iSum;
-    iSum += iTemp;
-  }
-  RowPtr[exp_nRows-nVertices] = iSum;
-  vector<int> cols(iSum+1);
+    int iSum = 0, iTemp;
+    for (int i = nVertices; i < exp_nRows ;  i++) {
+      iTemp = RowPtr[i-nVertices];
+      RowPtr[i-nVertices] = iSum;
+      iSum += iTemp;
+    }
+    RowPtr[exp_nRows-nVertices] = iSum;
+    vector<int> cols(iSum+1);
    
-  //     c) Traverse matrix and insert entries in proper location.
-  for (int i = 0; i < nVertices;  i++) {
+    //     c) Traverse matrix and insert entries in proper location.
+    for (int i = 0; i < nVertices;  i++) {
 
-    // neighOfINode is the neighbor node list of node 'iNode'.
-    ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+      // neighOfINode is the neighbor node list of node 'iNode'.
+      ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
     
-    for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-      int j = *it;
-      if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
-        cols[RowPtr[j-nVertices]++] = i;
+      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+        int j = *it;
+        if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
+          cols[RowPtr[j-nVertices]++] = i;
+        }
       }
     }
+
+    //     d) RowPtr[i] points to beginning of row i+1 so shift by one location.
+    for (int i = exp_nRows; i > nVertices;  i--)
+      RowPtr[i-nVertices] = RowPtr[i-1-nVertices];
+    RowPtr[0] = 0;
+    
+    // views on distributed vectors are freed here.
   }
 
-  //     d) RowPtr[i] points to beginning of row i+1 so shift by one location.
-  for (int i = exp_nRows; i > nVertices;  i--)
-    RowPtr[i-nVertices] = RowPtr[i-1-nVertices];
-  RowPtr[0] = 0;
-  
   int bestScoreCutoff;
   int thresholds[10] = {300,200,100,50,25,13,7,4,2,0};
 
   // Stick unaggregated vertices into existing aggregates as described above. 
- 
   bool cannotLoseAllFriends; // Used to address possible loss of vertices in 
   // arbitration of shared nodes discussed above.
   for (int kk = 0; kk < 10; kk += 2) {
     bestScoreCutoff = thresholds[kk];
     for (int i = 0; i < exp_nRows; i++) {
+
+      ArrayRCP<int> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
+      ArrayRCP<const int> procWinner = aggregates.GetProcWinner()->getData(0);
+      ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
+
       if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
 
         // neighOfINode is the neighbor node list of node 'iNode'.
@@ -662,10 +689,12 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
           Mark[i] = (int) ceil(   ((double) BestMark)/2.);
         }
       }
+
+      // views on distributed vectors are freed here.
     }
 
-    myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
-    weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
+    myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+    distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
   }
 
   // Phase 6: Aggregate remain unaggregated vertices and try at all costs
@@ -676,56 +705,65 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   //          a direct connection to a local vertex in any of these
   //          aggregates.
 
-  int count = 0;
   int Nleftover = 0, Nsingle = 0;
-  for (int i = 0; i < nVertices; i++) { 
-    if ((vertex2AggId[i] == MUELU_UNAGGREGATED) ) {
-      Nleftover++;
+  {
 
-      // neighOfINode is the neighbor node list of node 'iNode'.
-      ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+    ArrayRCP<int> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
+    ArrayRCP<const int> procWinner = aggregates.GetProcWinner()->getData(0);
 
-      // We don't want too small of an aggregate. So lets see if there is an
-      // unaggregated neighbor that we can also put with this vertex
+    int count = 0;
+    for (int i = 0; i < nVertices; i++) { 
+      if ((vertex2AggId[i] == MUELU_UNAGGREGATED) ) {
+        Nleftover++;
 
-      vertex2AggId[i] = nAggregates;
-      weights[i] = 1.;
-      if (count == 0) aggregates.SetIsRoot(i);
-      count++;
-      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-        int j = *it;
-        if ((j != i)&&(vertex2AggId[j] == MUELU_UNAGGREGATED)&&
-            (j < nVertices)) {
-          vertex2AggId[j] = nAggregates;
-          weights[j] = 1.;
-          count++;
+        // neighOfINode is the neighbor node list of node 'iNode'.
+        ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+
+        // We don't want too small of an aggregate. So lets see if there is an
+        // unaggregated neighbor that we can also put with this vertex
+
+        vertex2AggId[i] = nAggregates;
+        weights[i] = 1.;
+        if (count == 0) aggregates.SetIsRoot(i);
+        count++;
+        for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          int j = *it;
+          if ((j != i)&&(vertex2AggId[j] == MUELU_UNAGGREGATED)&&
+              (j < nVertices)) {
+            vertex2AggId[j] = nAggregates;
+            weights[j] = 1.;
+            count++;
+          }
         }
-      }
-      if ( count >= minNodesPerAggregate) {
-        nAggregates++; 
-        count = 0;
-      }
-    }
-  }
-  // We have something which is under minNodesPerAggregate when 
-  if (count != 0) {
-    // Can stick small aggregate with 0th aggregate?
-    if (nAggregates > 0) {
-      for (int i = 0; i < nVertices; i++) {
-        if ((vertex2AggId[i] == nAggregates) && (procWinner[i] == myPid)){
-          vertex2AggId[i] = 0;
-          aggregates.SetIsRoot(i,false);
+        if ( count >= minNodesPerAggregate) {
+          nAggregates++; 
+          count = 0;
         }
       }
     }
-    else {
-      Nsingle++;
-      nAggregates++;
+
+    // We have something which is under minNodesPerAggregate when 
+    if (count != 0) {
+      // Can stick small aggregate with 0th aggregate?
+      if (nAggregates > 0) {
+        for (int i = 0; i < nVertices; i++) {
+          if ((vertex2AggId[i] == nAggregates) && (procWinner[i] == myPid)){
+            vertex2AggId[i] = 0;
+            aggregates.SetIsRoot(i,false);
+          }
+        }
+      }
+      else {
+        Nsingle++;
+        nAggregates++;
+      }
     }
+
+    // views on distributed vectors are freed here.
   }
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, false);
-
+  myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, false);
 
   if (printFlag < MueLu_PrintLevel()) {
     { int total_Nsingle=0;   sumAll(graph.GetComm(), Nsingle, total_Nsingle);     Nsingle = total_Nsingle; }
@@ -745,10 +783,8 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
 // build a list of candidate root nodes (vertices not adjacent to already
 // aggregated vertices)
-int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, const Graph<int,int> graph,
-                         Teuchos::ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal) {
-
-  //TODO: interface : ArrayRCP useless ?
+int MueLu_RootCandidates(int nVertices, ArrayView<const int> & vertex2AggId, const Graph<int,int> graph,
+                         ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal) {
 
   nCandidates = 0;
  
@@ -774,14 +810,14 @@ int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, con
 }
 
 // Compute sizes of all the aggregates.
-int MueLu_ComputeAggSizes(Aggregates<int,int> & aggregates, Teuchos::ArrayRCP<int> & aggSizes)
+int MueLu_ComputeAggSizes(Aggregates<int,int> & aggregates, ArrayRCP<int> & aggSizes)
 {
   int myPid = aggregates.GetMap()->getComm()->getRank();
 
   int nAggregates = aggregates.GetNumAggregates();
 
-  Teuchos::ArrayRCP<int> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-  Teuchos::ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+  ArrayRCP<int> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+  ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
   int size = procWinner.size();
 
   for (int i = 0; i < nAggregates; i++) aggSizes[i] = 0;
@@ -793,19 +829,19 @@ int MueLu_ComputeAggSizes(Aggregates<int,int> & aggregates, Teuchos::ArrayRCP<in
 }
 
 int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
-                          RCP<Cthulhu::Vector<double> > & weights_, const AggAlgorithm2Comm & myWidget)
+                          RCP<Cthulhu::Vector<double> > & distWeights, const AggAlgorithm2Comm & myWidget)
 {
   int myPid = aggregates.GetMap()->getComm()->getRank();
   
   int nAggregates = aggregates.GetNumAggregates();
 
-  Teuchos::ArrayRCP<int> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-  Teuchos::ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+  ArrayRCP<int> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+  ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
   int size = procWinner.size();
 
-  Teuchos::ArrayRCP<int> AggInfo = Teuchos::arcp<int>(nAggregates+1);
+  ArrayRCP<int> AggInfo = Teuchos::arcp<int>(nAggregates+1);
 
-  Teuchos::ArrayRCP<double> weights = weights_->getDataNonConst(0);
+  ArrayRCP<double> weights = distWeights->getDataNonConst(0);
 
   MueLu_ComputeAggSizes(aggregates, AggInfo);
 
@@ -832,8 +868,8 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
   }
   nAggregates = NewNAggs;
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
-  weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
+  myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+  distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // procWinner is not set correctly for aggregates which have 
   // been eliminated

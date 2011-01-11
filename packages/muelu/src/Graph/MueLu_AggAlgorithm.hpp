@@ -132,7 +132,6 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
   Teuchos::ArrayRCP<int> randomVector;
   MueLu_Node       *nodeHead=NULL, *nodeTail=NULL, *newNode=NULL;
   MueLu_SuperNode  *aggHead=NULL, *aggCurrent=NULL, *supernode=NULL;
-  Teuchos::ArrayRCP<int> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0); // output only: contents ignored
   /**/
 
   if ( ordering == 1 )       /* random ordering */
@@ -151,171 +150,179 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
     }
 
   /* main loop */
-  int iNode  = 0;
-  int iNode2 = 0;
-  while (iNode2 < nRows)
-    {
-      /*------------------------------------------------------ */
-      /* pick the next node to aggregate                       */
-      /*------------------------------------------------------ */
+  {
+    int iNode  = 0;
+    int iNode2 = 0;
+    
+    Teuchos::ArrayRCP<int> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0); // output only: contents ignored
+    
+    while (iNode2 < nRows)
+      {
+        /*------------------------------------------------------ */
+        /* pick the next node to aggregate                       */
+        /*------------------------------------------------------ */
 
-      if      ( ordering == 0 ) iNode = iNode2++;
-      else if ( ordering == 1 ) iNode = randomVector[iNode2++];
-      else if ( ordering == 2 ) 
-        {
-          if ( nodeHead == NULL ) 
-            {
-              for ( int jNode = 0; jNode < nRows; ++jNode ) 
-                {
-                  if ( aggStat[jNode] == READY )
-                    { 
-                      newNode = new MueLu_Node;
-                      newNode->nodeId = jNode;
-                      nodeHead = newNode;
-                      nodeTail = newNode;
-                      newNode->next = NULL;
-                      break;
-                    }
-                }
-            }
-          if ( nodeHead == NULL ) break;
-          newNode = nodeHead;
-          iNode = newNode->nodeId;
-          nodeHead = newNode->next;
-          delete newNode;
-        }
-
-      /*------------------------------------------------------ */
-      /* consider further only if the node is in READY mode    */
-      /*------------------------------------------------------ */
-
-      if ( aggStat[iNode] == READY ) 
-        {
-          // neighOfINode is the neighbor node list of node 'iNode'.
-          ArrayView<const int> neighOfINode = graph.getNeighborVertices(iNode);
-          int length = neighOfINode.size();
-          
-          supernode = new MueLu_SuperNode;
-          try {
-            supernode->list = Teuchos::arcp<int>(length+1);
-          } catch (std::bad_alloc&) {
-            printf("Error:couldn't allocate memory for supernode! %d\n", length);
-            exit(1);
-          }
-
-          supernode->maxLength = length;
-          supernode->length = 1;
-          supernode->list[0] = iNode;
-          
-          int selectFlag = 1;
+        if      ( ordering == 0 ) iNode = iNode2++;
+        else if ( ordering == 1 ) iNode = randomVector[iNode2++];
+        else if ( ordering == 2 ) 
           {
-            /*--------------------------------------------------- */
-            /* count the no. of neighbors having been aggregated  */
-            /*--------------------------------------------------- */
-            
-            int count = 0;
-            for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+            if ( nodeHead == NULL ) 
               {
-                int index = *it;
-                if ( index < nRows ) 
+                for ( int jNode = 0; jNode < nRows; ++jNode ) 
                   {
-                    if ( aggStat[index] == READY || 
-                         aggStat[index] == NOTSEL ) 
-                      supernode->list[supernode->length++] = index;
-                    else count++;
-                    
+                    if ( aggStat[jNode] == READY )
+                      { 
+                        newNode = new MueLu_Node;
+                        newNode->nodeId = jNode;
+                        nodeHead = newNode;
+                        nodeTail = newNode;
+                        newNode->next = NULL;
+                        break;
+                      }
                   }
               }
-            
-            /*--------------------------------------------------- */
-            /* if there are too many neighbors aggregated or the  */
-            /* number of nodes in the new aggregate is too few,   */
-            /* don't do this one                                  */
-            /*--------------------------------------------------- */
-            
-            if ( count > aggOptions.GetMaxNeighAlreadySelected() ) selectFlag = 0;
+            if ( nodeHead == NULL ) break;
+            newNode = nodeHead;
+            iNode = newNode->nodeId;
+            nodeHead = newNode->next;
+            delete newNode;
           }
 
-          // Note: the supernode length is actually 1 more than the 
-          //       number of nodes in the candidate aggregate. The 
-          //       root is counted twice. I'm not sure if this is 
-          //       a bug or a feature ... so I'll leave it and change
-          //       < to <= in the if just below.
+        /*------------------------------------------------------ */
+        /* consider further only if the node is in READY mode    */
+        /*------------------------------------------------------ */
 
-          if (selectFlag != 1 || 
-              supernode->length <= aggOptions.GetMinNodesPerAggregate()) 
-            {
-              aggStat[iNode] = NOTSEL;
-              delete supernode;
-              if ( ordering == 2 ) /* if graph ordering */
-                {
-                  for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
-                    {
-                      int index = *it;
-                      if ( aggStat[index] == READY )
-                        { 
-                          newNode = new MueLu_Node;
-                          newNode->nodeId = index;
-                          newNode->next = NULL;
-                          if ( nodeHead == NULL )
-                            {
-                              nodeHead = newNode;
-                              nodeTail = newNode;
-                            } else {
-                            nodeTail->next = newNode;
-                            nodeTail = newNode;
-                          }
-                        } 
-                    } 
-                } 
-            } 
-          else 
-            {
-              aggregates->SetIsRoot(iNode);
-              for ( int j = 0; j < supernode->length; ++j ) 
-                {
-                  int jNode = supernode->list[j];
-                  aggStat[jNode] = SELECTED;
-                  vertex2AggId[jNode] = nAggregates;
-                  if ( ordering == 2 ) /* if graph ordering */
-                    {
-                      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
-                        {
-                          int index = *it;
-                          if ( aggStat[index] == READY )
-                            { 
-                              newNode = new MueLu_Node;
-                              newNode->nodeId = index;
-                              newNode->next = NULL;
-                              if ( nodeHead == NULL )
-                                {
-                                  nodeHead = newNode;
-                                  nodeTail = newNode;
-                                } else {
-                                nodeTail->next = newNode;
-                                nodeTail = newNode;
-                              }
-                            }
-                        } 
-                    } 
-                }
-              supernode->next = NULL;
-              supernode->index = nAggregates;
-              if ( nAggregates == 0 ) 
-                {
-                  aggHead = supernode;
-                  aggCurrent = supernode;
-                } 
-              else 
-                {
-                  aggCurrent->next = supernode;
-                  aggCurrent = supernode;
-                } 
-              nAggregates++;
-              // unused aggCntArray[nAggregates] = supernode->length;
+        if ( aggStat[iNode] == READY ) 
+          {
+            // neighOfINode is the neighbor node list of node 'iNode'.
+            ArrayView<const int> neighOfINode = graph.getNeighborVertices(iNode);
+            int length = neighOfINode.size();
+          
+            supernode = new MueLu_SuperNode;
+            try {
+              supernode->list = Teuchos::arcp<int>(length+1);
+            } catch (std::bad_alloc&) {
+              printf("Error:couldn't allocate memory for supernode! %d\n", length);
+              exit(1);
             }
-        }
-    }
+
+            supernode->maxLength = length;
+            supernode->length = 1;
+            supernode->list[0] = iNode;
+          
+            int selectFlag = 1;
+            {
+              /*--------------------------------------------------- */
+              /* count the no. of neighbors having been aggregated  */
+              /*--------------------------------------------------- */
+            
+              int count = 0;
+              for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+                {
+                  int index = *it;
+                  if ( index < nRows ) 
+                    {
+                      if ( aggStat[index] == READY || 
+                           aggStat[index] == NOTSEL ) 
+                        supernode->list[supernode->length++] = index;
+                      else count++;
+                    
+                    }
+                }
+            
+              /*--------------------------------------------------- */
+              /* if there are too many neighbors aggregated or the  */
+              /* number of nodes in the new aggregate is too few,   */
+              /* don't do this one                                  */
+              /*--------------------------------------------------- */
+            
+              if ( count > aggOptions.GetMaxNeighAlreadySelected() ) selectFlag = 0;
+            }
+
+            // Note: the supernode length is actually 1 more than the 
+            //       number of nodes in the candidate aggregate. The 
+            //       root is counted twice. I'm not sure if this is 
+            //       a bug or a feature ... so I'll leave it and change
+            //       < to <= in the if just below.
+
+            if (selectFlag != 1 || 
+                supernode->length <= aggOptions.GetMinNodesPerAggregate()) 
+              {
+                aggStat[iNode] = NOTSEL;
+                delete supernode;
+                if ( ordering == 2 ) /* if graph ordering */
+                  {
+                    for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+                      {
+                        int index = *it;
+                        if ( aggStat[index] == READY )
+                          { 
+                            newNode = new MueLu_Node;
+                            newNode->nodeId = index;
+                            newNode->next = NULL;
+                            if ( nodeHead == NULL )
+                              {
+                                nodeHead = newNode;
+                                nodeTail = newNode;
+                              } else {
+                              nodeTail->next = newNode;
+                              nodeTail = newNode;
+                            }
+                          } 
+                      } 
+                  } 
+              } 
+            else 
+              {
+                aggregates->SetIsRoot(iNode);
+                for ( int j = 0; j < supernode->length; ++j ) 
+                  {
+                    int jNode = supernode->list[j];
+                    aggStat[jNode] = SELECTED;
+                    vertex2AggId[jNode] = nAggregates;
+                    if ( ordering == 2 ) /* if graph ordering */
+                      {
+                        for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+                          {
+                            int index = *it;
+                            if ( aggStat[index] == READY )
+                              { 
+                                newNode = new MueLu_Node;
+                                newNode->nodeId = index;
+                                newNode->next = NULL;
+                                if ( nodeHead == NULL )
+                                  {
+                                    nodeHead = newNode;
+                                    nodeTail = newNode;
+                                  } else {
+                                  nodeTail->next = newNode;
+                                  nodeTail = newNode;
+                                }
+                              }
+                          } 
+                      } 
+                  }
+                supernode->next = NULL;
+                supernode->index = nAggregates;
+                if ( nAggregates == 0 ) 
+                  {
+                    aggHead = supernode;
+                    aggCurrent = supernode;
+                  } 
+                else 
+                  {
+                    aggCurrent->next = supernode;
+                    aggCurrent = supernode;
+                  } 
+                nAggregates++;
+                // unused aggCntArray[nAggregates] = supernode->length;
+              }
+          }
+      } // end of 'for'
+
+    // views on distributed vectors are freed here.
+
+  } // end of 'main loop'
 
   if ( ordering == 2 ) 
     {
@@ -327,7 +334,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
         }
     }
   
-  /* Update aggregate object */
+  /* Update aggregate object */  
   aggregates->SetNumAggregates(nAggregates);
 
   /* Verbose */
