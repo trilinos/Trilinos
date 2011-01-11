@@ -44,6 +44,8 @@ ENDIF()
 # Optional Rythmos Dependency
 IF (Piro_ENABLE_Rythmos) 
   APPEND_SET(HEADERS epetra/Piro_Epetra_RythmosSolver.hpp
+                     thyra/Piro_Thyra_RythmosSolver.hpp
+                     thyra/Piro_Thyra_RythmosSolver_Def.hpp
                      epetra/Piro_Epetra_InvertMassMatrixDecorator.hpp) 
   APPEND_SET(SOURCES epetra/Piro_Epetra_RythmosSolver.cpp
                      epetra/Piro_Epetra_InvertMassMatrixDecorator.cpp)
