@@ -811,7 +811,7 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
 
   for (int k = 0; k < numResponseFunctions; ++k ) {
       
-    OSTab tab(out);
+    OSTab os_tab(out);
       
     const Scalar t = responseTimes_[k];
       
