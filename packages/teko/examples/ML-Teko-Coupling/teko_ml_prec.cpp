@@ -20,6 +20,8 @@
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
+#include "Teko_EpetraInverseOpWrapper.hpp"
 
 // Aztec includes
 #include "AztecOO.h"
@@ -53,6 +55,47 @@ int main(int argc,char * argv[])
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(*invLibPL);
    RCP<Teko::InverseFactory> inverse = invLib->getInverseFactory("ML-Teko");
    Teko::LinearOp invA = Teko::buildInverse(*inverse,A);
+   std::cout << "INV(A) = " << Teuchos::describe(*invA) << std::endl;
+ 
+   // build epetra operators
+   /////////////////////////////////////
+ 
+   Teuchos::RCP<Epetra_Operator> eA = Teuchos::rcp(new Teko::Epetra::EpetraOperatorWrapper(A));
+   Teuchos::RCP<Epetra_Operator> eInvA = Teuchos::rcp(new Teko::Epetra::EpetraInverseOpWrapper(invA));
+
+   RCP<Epetra_Vector> x = rcp(new Epetra_Vector(eA->OperatorDomainMap()));
+   RCP<Epetra_Vector> b = rcp(new Epetra_Vector(eA->OperatorRangeMap()));
+   RCP<Epetra_Vector> r = rcp(new Epetra_Vector(eA->OperatorRangeMap()));
+
+   // form a resonable right hand side
+   x->Random();
+   b->PutScalar(0.0);
+   eA->Apply(*x,*b);
+   x->PutScalar(0.0);
+   r->PutScalar(0.0);
+ 
+   // Build and solve the linear system
+   /////////////////////////////////////////////////////////
+
+   // Setup the linear solve: notice A is used directly 
+   Epetra_LinearProblem problem(&*eA,&*x,&*b); /*@ \label{lned:aztec-solve} @*/
+
+   // build the solver
+   AztecOO solver(problem);
+   solver.SetAztecOption(AZ_solver,AZ_gmres);
+   solver.SetAztecOption(AZ_precond,AZ_none);
+   solver.SetAztecOption(AZ_kspace,1000);
+   solver.SetAztecOption(AZ_output,1);
+   solver.SetPrecOperator(&*eInvA);
+
+   // solve the linear system
+   solver.Iterate(1000,1e-5);
+
+   eA->Apply(*x,*r);
+   r->Update(1.0,*b,-1.0);
+   double norm;
+   r->Norm2(&norm);
+   std::cout << "norm = " << norm << std::endl;
 
    return 0;
 }

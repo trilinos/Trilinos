@@ -57,6 +57,9 @@ public:
     EpetraInverseOpWrapper(const RCP<const MappingStrategy> & forwardMaps) 
        : EpetraOperatorWrapper(forwardMaps) {}
 
+    EpetraInverseOpWrapper(const RCP<const Thyra::LinearOpBase<double> > & thyraOp)
+       : EpetraOperatorWrapper(thyraOp) {}
+
     /** */
     virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 

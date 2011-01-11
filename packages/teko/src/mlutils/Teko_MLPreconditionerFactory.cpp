@@ -1,5 +1,7 @@
 #include "Teko_MLPreconditionerFactory.hpp"
 
+#include "Teko_MLLinearOp.hpp"
+
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra_utils.h"
@@ -85,7 +87,8 @@ LinearOp MLPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & 
    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> mlPrecOp = 
          mlState.constructMLPreconditioner(mainParams_,coarseningParams_);
 
-   return Thyra::epetraLinearOp(mlPrecOp);
+   // return Thyra::epetraLinearOp(mlPrecOp);
+   return Teuchos::rcp(new MLLinearOp(mlPrecOp));
 }
 
 Teuchos::RCP<PreconditionerState> MLPreconditionerFactory::buildPreconditionerState() const
@@ -132,7 +135,6 @@ void MLPreconditionerFactory::fillMLPreconditionerState(const BlockedLinearOp & 
 
          // add it to the block
          ML_Operator_BlkMatInsert(mlBlkMat, tmp, r,c);
-
       }
    }
    ML_Operator_BlkMatFinalize(mlBlkMat);

@@ -76,6 +76,7 @@ public:
      *        from a parameter list.
      */
    void initializeFromParameterList(const Teuchos::ParameterList & settings);
+
 protected:
    
    /** \brief Fills an ML preconditioner state object
