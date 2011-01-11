@@ -70,6 +70,62 @@ void filter_superimposed_entities(const Entity & entity, EntityVector & entities
   }
 }
 
+/** \brief  Get the entities adjacent to the input entity.
+ *
+ *  The adjacent entities are of the same rank as the input entity.
+ *  Adjacency is defined by the input entity sharing a common
+ *  sub-cell with the adjacent entities.
+ *
+ *  subcell_rank defines the rank of the (potentially) common subcell
+ *  subcell_identifier defined the local id of the common subcell
+ *  adjacent_entities is an output parameter that contains pairs that
+ *     have the adjacent entity and the local id of the common subcell
+ *     with respect to the adjacent entity.
+ */
+void get_adjacent_entities( const Entity & entity ,
+                            EntityRank subcell_rank ,
+                            unsigned subcell_identifier ,
+                            std::vector< EntitySideComponent> & adjacent_entities)
+{
+  adjacent_entities.clear();
+
+  // Get nodes that make up the subcell we're looking at
+  EntityVector subcell_nodes;
+  const CellTopologyData * subcell_topology = get_subcell_nodes(entity,
+                                                                subcell_rank,
+                                                                subcell_identifier,
+                                                                subcell_nodes);
+
+
+  // Given the nodes related to the subcell, find all entities
+  // with the same rank that have a relation to all of these nodes
+  EntityVector potentially_adjacent_entities;
+
+  get_entities_through_relations(subcell_nodes,
+                                 entity.entity_rank(),
+                                 potentially_adjacent_entities);
+
+  // We don't want to include entities that are superimposed with
+  // the input entity
+  filter_superimposed_entities(entity, potentially_adjacent_entities);
+
+  // Add the local ids, from the POV of the adj entitiy, to the return value.
+  // Reverse the nodes so that the adjacent entity has them in the positive
+  // orientation
+  std::reverse(subcell_nodes.begin(),subcell_nodes.end());
+
+  for (EntityVector::const_iterator eitr = potentially_adjacent_entities.begin();
+       eitr != potentially_adjacent_entities.end(); ++eitr) {
+    int local_subcell_num = get_entity_subcell_id(**eitr,
+                                                  subcell_rank,
+                                                  subcell_topology,
+                                                  subcell_nodes);
+    if ( local_subcell_num != -1) {
+      adjacent_entities.push_back(EntitySideComponent(*eitr, local_subcell_num));
+    }
+  }
+}
+
 } // unnamed namespace
 
 void boundary_analysis(const BulkData& bulk_data,
@@ -160,54 +216,6 @@ void boundary_analysis(const BulkData& bulk_data,
   }
 }
 
-void get_adjacent_entities( const Entity & entity ,
-                            EntityRank subcell_rank ,
-                            unsigned subcell_identifier ,
-                            std::vector< EntitySideComponent> & adjacent_entities,
-                            bool use_reverse_polarity,
-                            EntityRank adjacent_entities_rank)
-{
-  adjacent_entities.clear();
-
-  // Get nodes that make up the subcell we're looking at
-  EntityVector subcell_nodes;
-  const CellTopologyData * subcell_topology = get_subcell_nodes(entity,
-                                                                subcell_rank,
-                                                                subcell_identifier,
-                                                                subcell_nodes,
-                                                                use_reverse_polarity);
-
-  // Given the nodes related to the subcell, find all entities
-  // with the same rank that have a relation to all of these nodes
-  EntityVector potentially_adjacent_entities;
-  EntityRank entity_rank_to_get = adjacent_entities_rank == fem::INVALID_RANK ?
-                                  entity.entity_rank() :
-                                  adjacent_entities_rank;
-  get_entities_through_relations(subcell_nodes,
-                                 entity_rank_to_get,
-                                 potentially_adjacent_entities);
-
-  // FIXME: The handling of superimposed entities should not happen here.
-  // The skinning algorithm needs to be changed to handle superimposition.
-  // Once that is done, remove the call immediately below.
-
-  // We don't want to include entities that are superimposed with
-  // the input entity
-  filter_superimposed_entities(entity, potentially_adjacent_entities);
-
-  // Add the local ids, from the POV of the adj entitiy, to the return value.
-  // This is where the order of the subcell nodes becomes relevant
-  for (EntityVector::const_iterator eitr = potentially_adjacent_entities.begin();
-       eitr != potentially_adjacent_entities.end(); ++eitr) {
-    int local_subcell_num = get_entity_subcell_id(**eitr,
-                                                  subcell_rank,
-                                                  subcell_topology,
-                                                  subcell_nodes);
-    if ( local_subcell_num != -1) {
-      adjacent_entities.push_back(EntitySideComponent(*eitr, local_subcell_num));
-    }
-  }
-}
 
 }
 }

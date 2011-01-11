@@ -174,8 +174,7 @@ void add_owned_sides_to_map(
             inside_entity,
             element_rank - 1, // subcell rank
             side_ordinal,     // subcell identifier
-            side_key.second,  // subcell nodes
-            false             // use reverse polarity
+            side_key.second  // subcell nodes
             );
         ensure_consistent_order(side_key.second);
 
@@ -223,8 +222,7 @@ void add_non_owned_sides_to_map(
             inside_entity,
             element_rank - 1, // subcell rank
             side_ordinal,     // subcell identifier
-            side_key.second,  // subcell nodes
-            false             // use reverse polarity
+            side_key.second  // subcell nodes
             );
         ensure_consistent_order(side_key.second);
 
@@ -335,10 +333,6 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
   //set to aid comm packing
   std::set<SideCommHelper> side_comm_helper_set;
 
-  PartVector add_parts ;
-  if (skin_part) {
-    add_parts.push_back(skin_part);
-  }
 
   size_t current_side = 0;
   for ( BoundaryMap::iterator map_itr = side_map.begin();
@@ -363,7 +357,15 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
       Entity & side = *(requested_sides[current_side]);
       EntityId side_id = side.identifier();
 
-      //add the side to the skin part
+
+      PartVector add_parts ;
+      {
+        Part * topo_part = & fem::get_part(mesh.mesh_meta_data(), side_key.first);
+        add_parts.push_back( topo_part);
+        if (skin_part) {
+          add_parts.push_back(skin_part);
+        }
+      }
       mesh.change_entity_parts(side, add_parts);
 
 
@@ -377,8 +379,8 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
 
       //declare the elem->side relations
       for (SideVector::iterator side_itr = side_vector.begin();
-           side_itr != side_vector.end();
-           ++side_itr)
+          side_itr != side_vector.end();
+          ++side_itr)
       {
         Entity & elem = *(side_itr->entity);
         //only declare relations for owned elements
@@ -433,6 +435,14 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
       //get the SideVector for the corresponding side_key
       SideVector & side_vector = side_map[side_key];
 
+      PartVector add_parts ;
+      {
+        Part * topo_part = & fem::get_part(mesh.mesh_meta_data(), side_key.first);
+        add_parts.push_back( topo_part);
+        if (skin_part) {
+          add_parts.push_back(skin_part);
+        }
+      }
       Entity & side = mesh.declare_entity(element_rank-1,generated_side_id,add_parts);
 
       //declare the side->node relations

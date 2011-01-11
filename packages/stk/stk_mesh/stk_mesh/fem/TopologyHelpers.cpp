@@ -271,8 +271,7 @@ int get_entity_subcell_id( const Entity & entity ,
 const CellTopologyData * get_subcell_nodes(const Entity & entity ,
                                            EntityRank subcell_rank ,
                                            unsigned subcell_identifier ,
-                                           EntityVector & subcell_nodes,
-                                           bool use_reverse_polarity)
+                                           EntityVector & subcell_nodes)
 {
   subcell_nodes.clear();
 
@@ -309,21 +308,13 @@ const CellTopologyData * get_subcell_nodes(const Entity & entity ,
 
   subcell_nodes.reserve(num_nodes_in_subcell);
 
-  // push the nodes onto the subcell_nodes vector in the correct
-  // order for the desired polarity
-  if (use_reverse_polarity) {
-    for (int i = num_nodes_in_subcell - 1; i >= 0; --i) {
-      subcell_nodes.push_back( node_relations[subcell_node_local_ids[i]].entity() );
-    }
-  }
-  else {
-    for (int i = 0; i < num_nodes_in_subcell; ++i ) {
-      subcell_nodes.push_back( node_relations[subcell_node_local_ids[i]].entity() );
-    }
+  for (int i = 0; i < num_nodes_in_subcell; ++i ) {
+    subcell_nodes.push_back( node_relations[subcell_node_local_ids[i]].entity() );
   }
 
   return subcell_topology;
 }
+
 
 }// namespace mesh
 }// namespace stk
