@@ -8,10 +8,23 @@
 
 //each element is a unit cube
 template< typename Scalar , class DeviceMap >
-KOKKOS_DEVICE_FUNCTION
-void kernel_hex_simple_fill(
-  const Kokkos::MDArrayView<Scalar,DeviceMap> & coords, int ielem)
-{
+struct HexSimpleFill {
+  typedef          DeviceMap              device_map_type ;
+  typedef typename DeviceMap::device_type device_type ;
+  typedef typename DeviceMap::size_type   size_type ;
+
+  Kokkos::MDArrayView<Scalar,DeviceMap> coords ;
+
+  HexSimpleFill(
+    const Kokkos::MDArrayView<Scalar,DeviceMap> & arg_coords )
+    : coords( arg_coords ) {}
+
+  KOKKOS_DEVICE_AND_HOST_FUNCTION
+  size_type work_count() const { return coords.dimension(2); }
+
+  KOKKOS_DEVICE_FUNCTION
+  void operator()( size_type ielem ) const
+  {
     coords(0,0,ielem) = 0.;
     coords(1,0,ielem) = 0.;
     coords(2,0,ielem) = 0.;
@@ -44,18 +57,31 @@ void kernel_hex_simple_fill(
     coords(0,7,ielem) = 0.;
     coords(1,7,ielem) = 1.;
     coords(2,7,ielem) = 1.;
-}
-
+  }
+};
 
 template< typename Scalar , class DeviceMap >
-KOKKOS_DEVICE_FUNCTION
-void kernel_hex_grad(
-  const Kokkos::MDArrayView<Scalar,DeviceMap> & coords, // (Space,Node,ParallelWork)
-  const Kokkos::MDArrayView<Scalar,DeviceMap> & grad_op,// (Space,Node,ParallelWork)
-  int ielem)
-{
-  // Repeated re-use of nodal coordinates,
-  // copy them into local storage.
+struct HexGrad {
+  typedef          DeviceMap              device_map_type ;
+  typedef typename DeviceMap::device_type device_type ;
+  typedef typename DeviceMap::size_type   size_type ;
+
+  Kokkos::MDArrayView<Scalar,DeviceMap> coords ; // (Space,Node,ParallelWork)
+  Kokkos::MDArrayView<Scalar,DeviceMap> grad_op ;// (Space,Node,ParallelWork)
+
+  HexGrad(
+    const Kokkos::MDArrayView<Scalar,DeviceMap> & arg_coords,
+    const Kokkos::MDArrayView<Scalar,DeviceMap> & arg_grad_op )
+    : coords( arg_coords ) , grad_op( arg_grad_op ) {}
+
+  KOKKOS_DEVICE_AND_HOST_FUNCTION
+  size_type work_count() const { return coords.dimension(2); }
+
+  KOKKOS_DEVICE_FUNCTION
+  void operator()( size_type ielem ) const
+  {
+    // Repeated re-use of nodal coordinates,
+    // copy them into local storage.
 
     Scalar x[8],y[8],z[8];
 
@@ -186,6 +212,37 @@ void kernel_hex_grad(
     grad_op(2,5,ielem) = (x[6] *  t5) - (x[4] *  t3)  - (x[7] * R75) + (x[1] *  t6) - (x[0] * R52) + (x[2] * R72);
     grad_op(2,6,ielem) = (x[7] *  t1) - (x[5] *  t5)  - (x[4] * R86) + (x[2] *  t4) - (x[1] * R63) + (x[3] * R83);
     grad_op(2,7,ielem) = (x[4] *  t2) - (x[6] *  t1)  + (x[5] * R75) - (x[3] *  t6) - (x[2] * R74) + (x[0] * R54);
+  }
 
+};
+
+
+
+template< typename Scalar , class DeviceMap >
+void test_hex_grad()
+{
+  const int parallel_work_length = 1000000 ;
+
+  DeviceMap map( parallel_work_length );
+  DeviceMap map_2( parallel_work_length * 2 );
+
+  Kokkos::MDArrayView< Scalar , DeviceMap > coord , grad ;
+
+  // Create arrays mapped onto host device
+  coord = map.template create_labeled_mdarray<Scalar>( 3 , 8 , "coord" );
+  grad  = map.template create_labeled_mdarray<Scalar>( 3 , 8 , "grad" );
+
+  // Create additional views and then destroy them for testing
+  {
+    Kokkos::MDArrayView< Scalar , DeviceMap > tmp1 = coord ;
+    Kokkos::MDArrayView< Scalar , DeviceMap > tmp2 = tmp1 ;
+  }
+
+  // Execute the parallel kernels on the arrays:
+
+  Kokkos::parallel_for( HexSimpleFill<Scalar,DeviceMap>( coord ) );
+  Kokkos::parallel_for( HexGrad<Scalar,DeviceMap>( coord , grad ) );
 }
+
+
 
