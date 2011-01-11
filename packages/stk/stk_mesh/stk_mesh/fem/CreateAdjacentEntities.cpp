@@ -328,9 +328,9 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
 
 
                 //declare the node relations for this subcell
-                for (size_t i = 0; i<subcell_nodes.size(); ++i) {
-                  Entity & node = *subcell_nodes[i];
-                  mesh.declare_relation( subcell, node, i);
+                for (size_t n = 0; n<subcell_nodes.size(); ++n) {
+                  Entity & node = *subcell_nodes[n];
+                  mesh.declare_relation( subcell, node, n);
                 }
 
                 mesh.declare_relation( elem, subcell, subcell_id);
