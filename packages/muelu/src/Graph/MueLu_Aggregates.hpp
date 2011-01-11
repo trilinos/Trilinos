@@ -53,6 +53,8 @@ namespace MueLu {
      inline bool IsRoot(int i)                          { return isRoot_[i];              }
      inline void SetIsRoot(int vertex, bool value=true) { isRoot_[vertex] = value; }
      
+     inline const RCP<const Cthulhu::Map<int,int> > GetMap() { return GetVertex2AggId()->getMap(); }
+
    private:
     int   nAggregates_;             /* Number of aggregates on this processor  */
     

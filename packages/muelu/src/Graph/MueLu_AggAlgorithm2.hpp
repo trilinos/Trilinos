@@ -240,18 +240,15 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
   int minNodesPerAggregate = aggOptions.GetMinNodesPerAggregate();
 
-  const RCP<const Cthulhu::Map<int,int> > nonUniqueMap = aggregates.GetVertex2AggId()->getMap();
+  const RCP<const Cthulhu::Map<int,int> > nonUniqueMap = aggregates.GetMap();
   const RCP<const Cthulhu::Map<int,int> > uniqueMap = graph.GetDomainMap();
 
   AggAlgorithm2Comm myWidget(uniqueMap, nonUniqueMap);
 
   // Pull stuff out of vectors
 
-  RCP<Cthulhu::Vector<int> > Vtx2AggId = aggregates.GetVertex2AggId();
   Teuchos::ArrayRCP<int>  vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-
-  RCP<Cthulhu::Vector<int> > procWinner_ = aggregates.GetProcWinner();
-  Teuchos::ArrayRCP<int>     procWinner  = procWinner_->getDataNonConst(0);
+  Teuchos::ArrayRCP<int>   procWinner  = aggregates.GetProcWinner()->getDataNonConst(0);
 
   RCP<Cthulhu::Vector<double> > weights_ = Cthulhu::VectorFactory<double>::Build(nonUniqueMap); //TODO
   Teuchos::ArrayRCP<double> weights = weights_->getDataNonConst(0); //TODO
@@ -270,7 +267,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     }
   }
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, &*Vtx2AggId, true);
+  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
   weights_->putScalar(0.); //All tentatively assigned vertices are now definitive
 
   // Tentatively assign any vertex (ghost or local) which neighbors a root
@@ -292,7 +289,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     }
   }
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, &*Vtx2AggId, true);
+  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
   weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // Record the number of aggregated vertices
@@ -353,7 +350,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       }
   } /*for (i = 0; i < nVertices; i++)*/
   
-  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, true);
+  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
   weights_->putScalar(0.);//All tentatively assigned vertices are now definitive
 
 
@@ -490,7 +487,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
         }
       }
 
-      myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, true);
+      myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
       weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
       sumAll(graph.GetComm(), nAggregates, nAggregatesGlobal);
 
@@ -667,7 +664,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       }
     }
 
-    myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, true);
+    myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
     weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
   }
 
@@ -727,7 +724,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     }
   }
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, false);
+  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, false);
 
 
   if (printFlag < MueLu_PrintLevel()) {
@@ -779,17 +776,16 @@ int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, con
 // Compute sizes of all the aggregates.
 int MueLu_ComputeAggSizes(Aggregates<int,int> & aggregates, Teuchos::ArrayRCP<int> & aggSizes)
 {
+  int myPid = aggregates.GetMap()->getComm()->getRank();
+
   int nAggregates = aggregates.GetNumAggregates();
 
-  RCP<Cthulhu::Vector<int> > procWinner_ = aggregates.GetProcWinner();
-  Teuchos::ArrayRCP<int>     procWinner  = procWinner_->getDataNonConst(0);
-  int N = procWinner_->getMap()->getNodeNumElements();
-  int myPid = procWinner_->getMap()->getComm()->getRank();
-
+  Teuchos::ArrayRCP<int> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
   Teuchos::ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+  int size = procWinner.size();
 
   for (int i = 0; i < nAggregates; i++) aggSizes[i] = 0;
-  for (int k = 0; k < N; k++ ) {
+  for (int k = 0; k < size; k++ ) {
     if (procWinner[k] == myPid) aggSizes[vertex2AggId[k]]++;
   }
 
@@ -799,17 +795,15 @@ int MueLu_ComputeAggSizes(Aggregates<int,int> & aggregates, Teuchos::ArrayRCP<in
 int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
                           RCP<Cthulhu::Vector<double> > & weights_, const AggAlgorithm2Comm & myWidget)
 {
+  int myPid = aggregates.GetMap()->getComm()->getRank();
+  
   int nAggregates = aggregates.GetNumAggregates();
 
+  Teuchos::ArrayRCP<int> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+  Teuchos::ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+  int size = procWinner.size();
+
   Teuchos::ArrayRCP<int> AggInfo = Teuchos::arcp<int>(nAggregates+1);
-
-  RCP<Cthulhu::Vector<int> > procWinner_ = aggregates.GetProcWinner();
-  Teuchos::ArrayRCP<int>     procWinner  = procWinner_->getDataNonConst(0);
-  int N = procWinner_->getMap()->getNodeNumElements();
-  int myPid = procWinner_->getMap()->getComm()->getRank();
-
-  RCP<Cthulhu::Vector<int> > Vtx2AggId = aggregates.GetVertex2AggId();
-  Teuchos::ArrayRCP<int>  vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
 
   Teuchos::ArrayRCP<double> weights = weights_->getDataNonConst(0);
 
@@ -826,7 +820,7 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
     else AggInfo[i] = NewNAggs++;
   }
 
-  for (int k = 0; k < N; k++ ) {
+  for (int k = 0; k < size; k++ ) {
     if (procWinner[k] == myPid) {
       if (vertex2AggId[k] !=  MUELU_UNAGGREGATED) {
         vertex2AggId[k] = AggInfo[vertex2AggId[k]];
@@ -838,13 +832,12 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
   }
   nAggregates = NewNAggs;
 
-  
-  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, true);
+  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, aggregates, true);
   weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // procWinner is not set correctly for aggregates which have 
   // been eliminated
-  for (int i = 0; i < N; i++) {
+  for (int i = 0; i < size; i++) {
     if (vertex2AggId[i] == MUELU_UNAGGREGATED) 
       procWinner[i] = MUELU_UNASSIGNED;
   }

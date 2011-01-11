@@ -213,6 +213,11 @@ public:
     return 0; //TODO
   }
 
+  inline int MueLu_ArbitrateAndCommunicate(Cthulhu::Vector<double> &weights, Aggregates<int,int> &aggregates, const bool perturb) const
+  {
+    return MueLu_ArbitrateAndCommunicate(weights, *aggregates.GetProcWinner(), &*aggregates.GetVertex2AggId(), perturb);
+  }
+
   // Redistribute data in source to dest where both source and dest might have 
   // multiple copies of the same global id across many processors. The source
   // may not have the same value for all of these multiple copies, but on 
