@@ -10,22 +10,35 @@ namespace stk {
     using namespace std;
     using namespace mesh;
 
-#if 0
-    class DoElementColor : public ElementOp
-    {
-    public:
-      virtual bool operator()(const Entity& element, FieldBase *field,  const mesh::BulkData& bulkData)
-      {
-        
-      }
-      virtual void init_elementOp(){}
-      virtual void fini_elementOp(){}
-    };
-#endif
-
-
-
     template<typename STD_Set, typename Key > bool contains(STD_Set& set, Key key) { return set.find(key) != set.end(); }
+
+    Colorer::Colorer(std::vector< ColorerSetType >& element_colors, std::vector<EntityRank> ranks ) : m_element_colors(element_colors), m_entityRanks()
+      {
+        //EntityRank ranks[2] = {Face, Element};
+        if (ranks.size())
+          {
+            m_entityRanks = ranks;
+          }
+        else
+          {
+            m_entityRanks.push_back(mesh::Face);
+            m_entityRanks.push_back(mesh::Element);
+          }
+      }
+
+    Colorer::Colorer(std::vector<EntityRank> ranks ) : m_element_colors(m_element_colors_internal), m_entityRanks()
+    {
+      //EntityRank ranks[2] = {Face, Element};
+      if (ranks.size())
+        {
+          m_entityRanks = ranks;
+        }
+      else
+        {
+          m_entityRanks.push_back(mesh::Face);
+          m_entityRanks.push_back(mesh::Element);
+        }
+    }
 
     std::vector< ColorerSetType >& Colorer::
     getElementColors() { return m_element_colors; }
@@ -53,52 +66,61 @@ namespace stk {
                   //if (select_owned(**k))  // this is where we do part selection
                   {
                     Bucket & bucket = **k ;
-                    const unsigned num_elements_in_bucket = bucket.size();
-                    nelem += num_elements_in_bucket;
 
-                    if (0)
+                    bool doThisBucket = true;
+                    if (1)
                       {
                         const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
                         shards::CellTopology topo(bucket_cell_topo_data);
-                        std::cout << "topo name= " << topo.getName() << std::endl;
-                      }
-                
-                    for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
-                      {
-                        Entity& element = bucket[iElement];
-                        if (contains(all_elements, element.identifier()))
-                          continue;
-
-                        const PairIterRelation elem_nodes = element.relations( mesh::Node );  //! check for reference
-                        unsigned num_node = elem_nodes.size(); 
-                        bool none_in_this_color = true;
-                        for (unsigned inode=0; inode < num_node; inode++)
+                        //std::cout << "tmp bucket topo name= " << topo.getName() << " key= " << topo.getKey() << std::endl;
+                        if (elementType && (topo.getKey() != *elementType))
                           {
-                            Entity & node = *elem_nodes[ inode ].entity();
-
-                            if (contains(node_colors[icolor], node.identifier()))
-                              {
-                                none_in_this_color = false;
-                                break;
-                              }
+                            doThisBucket = false;
                           }
-                        if (none_in_this_color)
+                      }
+
+                    if (doThisBucket)
+                      {
+                        const unsigned num_elements_in_bucket = bucket.size();
+                        nelem += num_elements_in_bucket;
+                
+                        for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                           {
-                            ++num_colored_this_pass;
-                            if (element_color_field)
-                              {
-                                double *fdata = stk::mesh::field_data( *static_cast<const percept::ScalarFieldType *>(element_color_field) , element );
-                                fdata[0] = double(icolor);
-                              }
-                            m_element_colors[icolor].insert(element.identifier());
-                            all_elements.insert(element.identifier());
+                            Entity& element = bucket[iElement];
+                            if (contains(all_elements, element.identifier()))
+                              continue;
+
+                            const PairIterRelation elem_nodes = element.relations( mesh::Node );  //! check for reference
+                            unsigned num_node = elem_nodes.size(); 
+                            bool none_in_this_color = true;
                             for (unsigned inode=0; inode < num_node; inode++)
                               {
                                 Entity & node = *elem_nodes[ inode ].entity();
-                                node_colors[icolor].insert(node.identifier());
+
+                                if (contains(node_colors[icolor], node.identifier()))
+                                  {
+                                    none_in_this_color = false;
+                                    break;
+                                  }
                               }
-                          }
-                      }  // elements in bucket
+                            if (none_in_this_color)
+                              {
+                                ++num_colored_this_pass;
+                                if (element_color_field)
+                                  {
+                                    double *fdata = stk::mesh::field_data( *static_cast<const percept::ScalarFieldType *>(element_color_field) , element );
+                                    fdata[0] = double(icolor);
+                                  }
+                                m_element_colors[icolor].insert(element.identifier());
+                                all_elements.insert(element.identifier());
+                                for (unsigned inode=0; inode < num_node; inode++)
+                                  {
+                                    Entity & node = *elem_nodes[ inode ].entity();
+                                    node_colors[icolor].insert(node.identifier());
+                                  }
+                              }
+                          }  // elements in bucket
+                      } // doThisBucket
                   } // selection
                 } // buckets
               if (0 == num_colored_this_pass)

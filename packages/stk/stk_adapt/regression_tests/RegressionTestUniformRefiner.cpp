@@ -41,6 +41,7 @@
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
 #include <stk_percept/fixtures/Fixture.hpp>
+#include <stk_percept/fixtures/HeterogeneousFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
 #include <stk_percept/fixtures/WedgeFixture.hpp>
 
@@ -1792,22 +1793,23 @@ namespace stk
           {
             // create the mesh
             {
-              stk::mesh::use_cases::UseCase_3_Mesh mesh(MPI_COMM_WORLD, false);
+              //stk::mesh::use_cases::UseCase_3_Mesh mesh(MPI_COMM_WORLD, false);
+              stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
               stk::io::put_io_part_attribute(  mesh.m_block_hex );
               stk::io::put_io_part_attribute(  mesh.m_block_wedge );
               stk::io::put_io_part_attribute(  mesh.m_block_tet );
               ///
+#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
               stk::io::put_io_part_attribute(  mesh.m_block_pyramid );
               stk::io::put_io_part_attribute(  mesh.m_block_quad_shell );
               stk::io::put_io_part_attribute(  mesh.m_block_tri_shell );
+#endif
               ///
               mesh.m_metaData.commit();
 
               mesh.populate();
               //std::cout << "tmp here 1 " << &mesh.m_metaData << " " << &mesh.m_bulkData << std::endl;
-              bool local_status = true ;
-
-              local_status = stk::mesh::use_cases::verifyMesh(mesh);
+              //bool local_status =  stk::mesh::use_cases::verifyMesh(mesh);
 
               bool isCommitted = true;
               percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);

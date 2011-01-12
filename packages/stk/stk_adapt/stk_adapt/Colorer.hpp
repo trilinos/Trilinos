@@ -59,25 +59,15 @@ namespace stk {
     public:
 
 
-      Colorer(std::vector<EntityRank> ranks = std::vector<EntityRank>()) : m_entityRanks()
-      {
-        //EntityRank ranks[2] = {Face, Element};
-        if (ranks.size())
-          {
-            m_entityRanks = ranks;
-          }
-        else
-          {
-            m_entityRanks.push_back(mesh::Face);
-            m_entityRanks.push_back(mesh::Element);
-          }
-      }
+      Colorer(std::vector< ColorerSetType >& element_colors, std::vector<EntityRank> ranks = std::vector<EntityRank>());
+      Colorer(std::vector<EntityRank> ranks = std::vector<EntityRank>());
       void color(percept::PerceptMesh& eMesh, unsigned *elementType = 0, FieldBase *element_color_field=0);
 
       std::vector< ColorerSetType >& getElementColors();
 
     private:
-      std::vector< ColorerSetType > m_element_colors;
+      std::vector< ColorerSetType >& m_element_colors;
+      std::vector< ColorerSetType > m_element_colors_internal;
       std::vector<EntityRank> m_entityRanks;
     };
 
