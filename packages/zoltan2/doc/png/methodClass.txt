@@ -1,0 +1,51 @@
+'plantUML input file
+'Class inheritance diagram for Zoltan methods
+'
+
+@startuml
+
+note  "A Method object is an instance of a problem\nsolution.  It contains the code to solve the\nproblem, return the solution, and\nevaluate the quality of the solution" as N
+
+
+class Method{
+bool have_solution
+ObjectID ids
+vector<string> problem_parameters
+virtual int solve()
+virtual int evaluate()
+virtual void set_debug_level()
+virtual void do_timing()
+}
+
+class AbstractMethod{
+int *solution
+void get_part_list()
+void get_export_list()
+void get_import_list()
+}
+
+class GeometricMethod{
+int *solution
+BSP_tree *tree
+void get_box()
+void get_tree()
+void get_part_list()
+void get_export_list()
+void get_import_list()
+}
+
+class NetworkMethod{
+int *solution
+void get_part_list()
+void get_color_list()
+void get_order_list()
+void get_export_list()
+void get_import_list()
+}
+
+Method <|-- AbstractMethod
+Method <|-- GeometricMethod
+Method <|-- NetworkMethod
+
+@enduml
+
