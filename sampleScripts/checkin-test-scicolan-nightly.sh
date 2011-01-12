@@ -20,6 +20,9 @@ echo "
 -D TPL_ENABLE_Boost:BOOL=ON
 -D Boost_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/boost
 -D Boost_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/boost/1.38.0/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared
+-D TPL_ENABLE_gtest:BOOL=ON
+-D gtest_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/gtest/include
+-D gtest_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/gtest/1.5.0/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared/
 -D TPL_ENABLE_Netcdf:BOOL=ON
 -D TPL_Netcdf_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/netcdf/src/libsrc
 -D Netcdf_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/netcdf/4.0-snl3/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared
