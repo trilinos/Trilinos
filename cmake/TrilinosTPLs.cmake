@@ -101,6 +101,7 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   CASK            ""    EX
   SPARSKIT        ""    SS
   QT              ""    SS
+  gtest           ""    EX
   )
 
 # NOTES:

@@ -54,24 +54,6 @@ void boundary_analysis(const BulkData & bulk_data,
                        EntitySideVector& boundary);
 
 
-/** \brief  Get the entities adjacent to the input entity.
- *
- *  The adjacent entities are of the same rank as the input entity.
- *  Adjacency is defined by the input entity sharing a common
- *  sub-cell with the adjacent entities.
- *
- *  subcell_rank defines the rank of the (potentially) common subcell
- *  subcell_identifier defined the local id of the common subcell
- *  adjacent_entities is an output parameter that contains pairs that
- *     have the adjacent entity and the local id of the common subcell
- *     with respect to the adjacent entity.
- */
-void get_adjacent_entities( const Entity & entity ,
-                            EntityRank subcell_rank ,
-                            unsigned subcell_identifier ,
-                            std::vector< EntitySideComponent > & adjacent_entities,
-                            bool use_reverse_polarity = true,
-                            EntityRank adjacent_entities_rank = fem::INVALID_RANK);
 }
 }
 #endif

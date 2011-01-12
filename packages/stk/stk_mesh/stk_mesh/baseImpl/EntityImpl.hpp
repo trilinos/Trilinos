@@ -9,14 +9,9 @@
 #ifndef stk_mesh_EntityImpl_hpp
 #define stk_mesh_EntityImpl_hpp
 
-//#include <utility>
-
-#include <stk_mesh/base/Types.hpp>
-
-//#include <stk_util/util/NamedPair.hpp>
 #include <stk_util/util/PairIter.hpp>
+
 #include <stk_mesh/base/Types.hpp>
-//#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Relation.hpp>
 
 #include <cassert>
@@ -132,7 +127,6 @@ public:
   size_t                  m_sync_count ; ///< Last membership change
   EntityModificationLog   m_mod_log ;
 
-private:
   EntityImpl();
   EntityImpl( const EntityImpl & ); ///< Copy constructor not allowed
   EntityImpl & operator = ( const EntityImpl & ); ///< Assignment operator not allowed

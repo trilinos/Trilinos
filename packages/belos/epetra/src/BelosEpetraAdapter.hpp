@@ -428,27 +428,58 @@ namespace Belos {
 	      const Teuchos::Range1D& index, 
 	      Epetra_MultiVector& mv)
     { 
-      const int numVecs = index.size(); // Number of columns of mv to extract
-      int info = 0;
+      const int numColsA = A.NumVectors();
+      const int numColsMv = mv.NumVectors();
+      // 'index' indexes into mv; it's the index set of the target.
+      const bool validIndex = index.lbound() >= 0 && index.ubound() < numColsMv;
+      // We can't take more columns out of A than A has.
+      const bool validSource = index.size() <= numColsA;
 
-      // Temporary view of the columns of mv to extract
-      Epetra_MultiVector mv_view (View, mv, index.lbound(), numVecs);
+      if (! validIndex || ! validSource)
+	{
+	  std::ostringstream os;
+	  os <<	"Belos::MultiVecTraits<double, Epetra_MultiVector>::SetBlock"
+	    "(A, index=[" << index.lbound() << ", " << index.ubound() << "], "
+	    "mv): ";
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Range lower bound must be nonnegative.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+			     os.str() << "Range upper bound must be less than "
+			     "the number of columns " << numColsA << " in the "
+			     "'mv' output argument.");
+	  TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+			     os.str() << "Range must have no more elements than"
+			     " the number of columns " << numColsA << " in the "
+			     "'A' input argument.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	}
 
-      // If A has numVecs columns, a simple Update call suffices.
-      // Otherwise, we need to make a view of the corresponding
-      // columns of A, and update via the view.
-      if (A.NumVectors() == numVecs)
-        info = mv_view.Update (1.0, A, 0.0, A, 0.0);
-      else {
-        const Epetra_MultiVector A_view (View, A, index.lbound(), numVecs);
-        info = mv_view.Update (1.0, A_view, 0.0, A_view, 0.0);
-      }
-      TEST_FOR_EXCEPTION(info != 0, EpetraMultiVecFailure, 
-			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
-			 "SetBlock(): call to Epetra_MultiVector::Update() "
-			 "returned a nonzero flag INFO = " << info << ", for "
-			 "the specified inclusive column range [" 
-			 << index.lbound() << ", " << index.ubound() << "].");
+      // View of the relevant column(s) of the target multivector mv.
+      // We avoid view creation overhead by only creating a view if
+      // the index range is different than [0, (# columns in mv) - 1].
+      Teuchos::RCP<Epetra_MultiVector> mv_view;
+      if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
+	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
+      else
+	mv_view = CloneViewNonConst (mv, index);
+
+      // View of the relevant column(s) of the source multivector A.
+      // If A has fewer columns than mv_view, then create a view of
+      // the first index.size() columns of A.
+      Teuchos::RCP<const Epetra_MultiVector> A_view;
+      if (index.size() == numColsA)
+	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
+      else
+	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
+
+      // Assignment calls Epetra_MultiVector::Assign(), which deeply
+      // copies the data directly, ignoring the underlying
+      // Epetra_Map(s).  If A and mv don't have the same data
+      // distribution (Epetra_Map), this may result in incorrect or
+      // undefined behavior.  Epetra_MultiVector::Update() also
+      // ignores the Epetra_Maps, so we might as well just use the
+      // (perhaps slightly cheaper) Assign() method via operator=().
+      *mv_view = *A_view; 
     }
 
 

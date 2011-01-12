@@ -85,8 +85,8 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Teko                  teko                           SS
   RBGen                 rbgen                          PS
   TriKota               TriKota                        SS
-  STK                   stk                            SS # Depends on boost
   Intrepid              intrepid                       PS
+  STK                   stk                            SS # Depends on boost
   Phalanx               phalanx                        SS
   Phdmesh               phdmesh                        EX # to be replaced by STK
   NOX                   nox                            PS

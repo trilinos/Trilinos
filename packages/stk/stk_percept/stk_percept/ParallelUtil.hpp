@@ -5,7 +5,9 @@
 
 #include <stk_percept/Util.hpp>
 
+#if defined( STK_HAS_MPI )
 #include <mpi.h>
+#endif
 
 
 namespace stk { 

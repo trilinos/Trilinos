@@ -235,17 +235,18 @@ namespace Belos {
     static void SetBlock( const MV& A, const std::vector<int>& index, MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
-    /// \brief Deep copy of specified columns of A into mv
+    /// \brief Deep copy of A into specified columns of mv
     ///
-    /// Copy (deep copy) the columns of \c A (specified by the given
-    /// inclusive range of indices \c index) into the corresponding
-    /// columns of \c mv.
+    /// (Deeply) copy the first <tt>index.size()</tt> columns of \c A
+    /// into the columns of \c mv specified by the given index range.
     ///
-    /// Postcondition: <tt>mv[index[j]] = A[j]</tt> for all j in index.
+    /// Postcondition: <tt>mv[i] = A[i - index.lbound()]</tt>
+    /// for all <tt>i</tt> in <tt>[index.lbound(), index.ubound()]</tt>
     ///
-    /// \param A [in] Multivector from which to copy
-    /// \param index [in] Inclusive index range of columns of A and mv
-    /// \param mv [out] Multivector into which to copy
+    /// \param A [in] Source multivector
+    /// \param index [in] Inclusive index range of columns of mv;
+    ///   index set of the target
+    /// \param mv [out] Target multivector
     static void SetBlock( const MV& A, const Teuchos::Range1D& index, MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 

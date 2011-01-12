@@ -1,9 +1,11 @@
 #include <exception>
-#include <mpi.h>
 #include <fstream>
-
 #include <set>
 #include <typeinfo>
+
+#if defined( STK_HAS_MPI )
+#include <mpi.h>
+#endif
 
 #include <stk_adapt/UniformRefiner.hpp>
 
@@ -23,7 +25,6 @@ namespace stk {
 
     UniformRefiner::UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, FieldBase *proc_rank_field) : 
       m_eMesh(eMesh), m_breakPattern(), 
-      //m_nodeRegistry(eMesh), 
       m_nodeRegistry(0), 
       m_proc_rank_field(proc_rank_field), m_doRemove(true), m_ranks(), m_ignoreSideSets(false)
     {
@@ -254,36 +255,61 @@ namespace stk {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       unsigned num_elem_not_ghost_0 = 0; 
 
-      {  // start irank == 0 code
-        unsigned irank = 0;
-      
-        unsigned elementType = m_breakPattern[irank]->getFromType();
-        if (0)
-          std::cout << "tmp irank==0 code UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] << " elementType= " << elementType << std::endl;
+      vector< vector< ColorerSetType > > elementColorsByType = vector < vector< ColorerSetType > > (ranks.size());
 
-        std::vector<EntityRank> ranks_one(1, ranks[irank]);
+      {
+          for (unsigned irank = 0; irank < ranks.size(); irank++)
+            {
+              if (ranks[irank] == ranks[0])
+                {
+                  EXCEPTWATCH;
+                  unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
+                  if (TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
+                                                   << " elementType= " << elementType << std::endl;
 
-        // this gives a list of colored elements for all elements of this rank (e.g., hex, tet, wedge... for a heterogeneous mesh)
-        Colorer meshColorer(ranks_one);
+                  std::vector<EntityRank> ranks_one(1, ranks[irank]);
 
-        /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)... ");
-        meshColorer.color(m_eMesh);
-        /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)...done ");
-        vector< ColorerSetType >& elementColors = meshColorer.getElementColors();
+                  // this gives a list of colored elements for this element type only
+                  Colorer meshColorerThisTypeOnly(ranks_one);
+                  /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)... ");
+                  //meshColorer.color(m_eMesh, elementType);
+                  meshColorerThisTypeOnly.color(m_eMesh, &elementType);
+                  /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)...done ");
 
-        // loop over elements, build faces, edges in threaded mode (guaranteed no mem conflicts)
-        // (note: invoke UniformRefinerPattern: what entities are needed)
-        vector<NeededEntityType> needed_entity_ranks;
-        m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
+                  vector< ColorerSetType >& elementColors = meshColorerThisTypeOnly.getElementColors();
 
-        {
+                  elementColorsByType[irank] = elementColors;  // avoid this copy by passing this into the colorer - FIXME
+                }
+            }
+      }
+
+      {   // start top-level ranks
+
+
+        {  // node registration step
           EXCEPTWATCH;
           m_nodeRegistry->initialize();
 
-          // register non-ghosted elements needs for new nodes, parallel create new nodes
           /**/                                                TRACE_PRINT("UniformRefiner: beginRegistration (top-level rank)... ");
+
+          // register non-ghosted elements needs for new nodes, parallel create new nodes
           m_nodeRegistry->beginRegistration();
-          num_elem_not_ghost_0 = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks);
+      
+          for (unsigned irank = 0; irank < ranks.size(); irank++)
+            {
+              if (ranks[irank] == ranks[0])
+                {
+                  EXCEPTWATCH;
+
+                  vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+
+                  vector<NeededEntityType> needed_entity_ranks;
+                  m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
+
+                  num_elem_not_ghost_0 = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks);
+                }
+            }
+
           m_nodeRegistry->endRegistration();
           /**/                                                TRACE_PRINT("UniformRefiner: endRegistration (top-level rank)... ");
         }
@@ -295,7 +321,21 @@ namespace stk {
 
           // now register ghosted elements needs for new nodes (this does a pack operation)
           m_nodeRegistry->beginCheckForRemote();
-          unsigned num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, needed_entity_ranks);
+          unsigned num_elem = 0;
+          for (unsigned irank = 0; irank < ranks.size(); irank++)
+            {
+              if (ranks[irank] == ranks[0])
+                {
+                  EXCEPTWATCH;
+
+                  vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+
+                  vector<NeededEntityType> needed_entity_ranks;
+                  m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
+
+                  num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, needed_entity_ranks);
+                }
+            }
           m_nodeRegistry->endCheckForRemote();
           /**/                                                TRACE_PRINT("UniformRefiner: endCheckForRemote (top-level rank)... ");
 
@@ -311,7 +351,6 @@ namespace stk {
                         <<"] ========================================================================================================================" << std::endl;
             }
 
-          /*TIME_IT*/;
         }
 
         {
@@ -321,7 +360,22 @@ namespace stk {
 
           /**/                                                TRACE_PRINT("UniformRefiner: beginGetFromRemote (top-level rank)... ");
           m_nodeRegistry->beginGetFromRemote();
-          unsigned num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, needed_entity_ranks);
+          unsigned num_elem = 0;
+          for (unsigned irank = 0; irank < ranks.size(); irank++)
+            {
+              if (ranks[irank] == ranks[0])
+                {
+                  EXCEPTWATCH;
+
+                  vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+
+                  vector<NeededEntityType> needed_entity_ranks;
+                  m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
+
+                  num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, needed_entity_ranks);
+                }
+            }
+
           m_nodeRegistry->endGetFromRemote();
           /**/                                                TRACE_PRINT("UniformRefiner: endGetFromRemote (top-level rank)... ");
 
@@ -350,16 +404,15 @@ namespace stk {
         {
           EXCEPTWATCH;
 
-          unsigned elementType = m_breakPattern[irank]->getFromType();
+          unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
           if (TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] << " elementType= " << elementType << std::endl;
 
           std::vector<EntityRank> ranks_one(1, ranks[irank]);
 
           // this gives a list of colored elements for this element type only
           Colorer meshColorerThisTypeOnly(ranks_one);
-          //meshColorer.color(m_eMesh, elementType);
           /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (specific element type)... ");
-          meshColorerThisTypeOnly.color(m_eMesh);
+          meshColorerThisTypeOnly.color(m_eMesh, &elementType);
           /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (specific element type)...done ");
 
           vector< ColorerSetType >& elementColors = meshColorerThisTypeOnly.getElementColors();

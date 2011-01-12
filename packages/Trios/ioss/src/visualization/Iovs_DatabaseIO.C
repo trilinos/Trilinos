@@ -21,11 +21,6 @@
 #include <iterator>
 #include <time.h>
 
-#ifndef IOSS_STANDALONE
-#include <stk_util/environment/RuntimeWarning.hpp>
-#include <stk_util/environment/ProductRegistry.hpp>
-#endif
-
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
 #include <Ioss_ParallelUtils.h>

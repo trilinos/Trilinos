@@ -184,9 +184,10 @@ const CellTopologyData * get_subcell_nodes(
     const Entity     & entity ,
     EntityRank         subcell_rank ,
     unsigned           subcell_identifier ,
-    EntityVector     & subcell_nodes,
-    bool               use_reverse_polarity = true
+    EntityVector     & subcell_nodes
     );
+
+
 
 /** \} */
 

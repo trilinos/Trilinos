@@ -119,7 +119,7 @@ namespace stk {
       // deprecated
       virtual void doBreak()=0;
 
-      virtual unsigned getFromType()=0;
+      virtual unsigned getFromTypeKey()=0;
 
       EntityRank getPrimaryEntityRank() { return m_primaryEntityRank; }
       /// must be provided by derived classes
@@ -246,7 +246,7 @@ namespace stk {
         };
 
       // return the type of element this pattern can refine
-      virtual unsigned getFromType() { return fromTopoKey; }
+      virtual unsigned getFromTypeKey() { return fromTopoKey; }
 
       // draw
       /// draw a picture of the element's topology and its refinement pattern (using the "dot" program from AT&T's graphviz program)
@@ -977,8 +977,8 @@ namespace stk {
                 unsigned ordinal_of_node_on_subcell = ref_topo_x[childNodeIdx].ordinal_of_node_on_subcell;
                 unsigned num_nodes_on_subcell       = ref_topo_x[childNodeIdx].num_nodes_on_subcell;
 
-                // bool usePerm = true;  FIXME FIXME FIXME
-                bool usePerm = false;
+                bool usePerm = true;  //FIXME FIXME FIXME
+                //bool usePerm = false;
                 const unsigned * perm_array = 0;
                 if (usePerm)
                   {
@@ -2063,6 +2063,7 @@ namespace stk {
 #include "UniformRefinerPattern_Tri3_Tri3_4_sierra.hpp"
 #include "UniformRefinerPattern_ShellTri3_ShellTri3_4_sierra.hpp"
 #include "UniformRefinerPattern_ShellQuad4_ShellQuad4_4_sierra.hpp"
+
 #include "UniformRefinerPattern_Tet4_Tet4_8_sierra.hpp"
 #include "UniformRefinerPattern_Hex8_Hex8_8_sierra.hpp"
 #include "UniformRefinerPattern_Wedge6_Wedge6_8_sierra.hpp"
@@ -2105,6 +2106,7 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      4, SierraPort >            Tri3_Tri3_4;
     typedef  UniformRefinerPattern<shards::ShellTriangle<3>, shards::ShellTriangle<3>, 4, SierraPort >            ShellTri3_ShellTri3_4;
     typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<4>, 4, SierraPort >  ShellQuad4_ShellQuad4_4;
+
     typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort >            Tet4_Tet4_8;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,    8, SierraPort >            Hex8_Hex8_8;
     typedef  UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort >            Wedge6_Wedge6_8;

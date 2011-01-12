@@ -41,6 +41,7 @@
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
 #include <stk_percept/fixtures/Fixture.hpp>
+#include <stk_percept/fixtures/HeterogeneousFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
 #include <stk_percept/fixtures/WedgeFixture.hpp>
 
@@ -1792,27 +1793,29 @@ namespace stk
           {
             // create the mesh
             {
-              stk::mesh::use_cases::UseCase_3_Mesh mesh(MPI_COMM_WORLD, false);
+              //stk::mesh::use_cases::UseCase_3_Mesh mesh(MPI_COMM_WORLD, false);
+              stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
               stk::io::put_io_part_attribute(  mesh.m_block_hex );
               stk::io::put_io_part_attribute(  mesh.m_block_wedge );
               stk::io::put_io_part_attribute(  mesh.m_block_tet );
+              ///
+#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
               stk::io::put_io_part_attribute(  mesh.m_block_pyramid );
               stk::io::put_io_part_attribute(  mesh.m_block_quad_shell );
               stk::io::put_io_part_attribute(  mesh.m_block_tri_shell );
+#endif
+              ///
               mesh.m_metaData.commit();
 
               mesh.populate();
               //std::cout << "tmp here 1 " << &mesh.m_metaData << " " << &mesh.m_bulkData << std::endl;
-              bool local_status = true ;
-
-              local_status = stk::mesh::use_cases::verifyMesh(mesh);
-              //std::cout << "tmp here 1.00 " << local_status << std::endl;
+              //bool local_status =  stk::mesh::use_cases::verifyMesh(mesh);
 
               bool isCommitted = true;
               percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              //std::cout << "tmp here 1 " << std::endl;
+
               em1.printInfo("heterogeneous", 1);
-              //em1.saveAs("./output_files/heterogeneous.e");
+
               em1.saveAs("./input_files/heterogeneous_0.e");
             }
             
@@ -1821,6 +1824,7 @@ namespace stk
             {
                 percept::PerceptMesh eMesh1;
                 eMesh1.open("./input_files/heterogeneous_0.e");
+
                 UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_pattern(eMesh1);
                 //HeterogeneousUniformRefinerPattern break_pattern(eMesh1);
                 int scalarDimension = 0; // a scalar
