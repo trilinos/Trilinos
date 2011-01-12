@@ -510,8 +510,8 @@
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
     <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS value="gtest"/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="gtest"/>
     <EmailAddresses>
       <Checkin address="stk-checkins@software.sandia.gov"/>
       <Regression address="stk-regression@software.sandia.gov"/>
