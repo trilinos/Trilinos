@@ -22,51 +22,38 @@ extern "C" {
 
 
 /*****************************************************************************/
-/* Returns the "next" closest prime number after (or equal to) stopafter */
+/* Returns a prime number larger than (or equal to) stopafter,
+   hopefully close to stopafter. If stopafter is larger than
+   2147483647. 2147483647 will be returned.
+ */
+
+#define MAX_PRIME 177
+    
 int Zoltan_GenPrime(int stopafter, int *prime_num)
 {
-    int nap, cont=1;
-    int num, c, i;
-    int *prime;
+    const static int primes[MAX_PRIME]={2,3,5,7,11,13,17,19,23,29,37,41,47,53,59,67,79,89,101,113,127,149,167,191,211,233,257,283,313,347,383,431,479,541,599,659,727,809,907,1009,1117,1229,1361,1499,1657,1823,2011,2213,2437,2683,2953,3251,3581,3943,4339,4783,5273,5801,6389,7039,7753,8537,9391,10331,11369,12511,13763,15149,16673,18341,20177,22229,24469,26921,29629,32603,35869,39461,43411,47777,52561,57829,63617,69991,76991,84691,93169,102497,112757,124067,136481,150131,165161,181693,199873,219871,241861,266051,292661,321947,354143,389561,428531,471389,518533,570389,627433,690187,759223,835207,918733,1010617,1111687,1222889,1345207,1479733,1627723,1790501,1969567,2166529,2383219,2621551,2883733,3172123,3489347,3838283,4222117,4644329,5108767,5619667,6181639,6799811,7479803,8227787,9050599,9955697,10951273,12046403,13251047,14576161,16033799,17637203,19400929,21341053,23475161,25822679,28404989,31245491,34370053,37807061,41587807,45746593,50321261,55353391,60888739,66977621,73675391,81042947,89147249,98061979,107868203,118655027,130520531,671088667,738197549,812017309,893219059,982540981,1080795091,1188874601,1307762069,1438538293,1582392127,1740631423,1914694651,2106164131,2147483647};
 
-    prime = (int *) ZOLTAN_MALLOC(((stopafter/2) + 7) * sizeof(int));
-    if (!prime)
-        return ZOLTAN_MEMERR;
-    
-    prime[0] = 2; prime[1] = 3;
-    c = 2; /* initial primes */
-    
-    /* only have to check odd numbers */
-    for (num=5; cont; num = num + 2) {
-        nap = 0;  /* set not-a-prime false */        
-        /* cycle through list of known primes */
-        for (i=0; i < c; i++) { 
-            /* check if a previous prime divides evenly */
-            /* if so the number is not a prime */
-            if ((num % prime[i]) == 0) {
-                nap = 1;
-                break;
-            }            
-            /* stop if prime squared is bigger than the number */
-            if ((prime[i] * prime[i]) > num)
-                break;
-        }        
-        /* if not-a-prime, then we found a prime */
-        if (nap != 1) {
-           /* add prime to list of known primes */
-            prime[c] = num;
-            c++;
-            if (num >= stopafter)
-                cont = 0;
-        }
+    int uplimit=MAX_PRIME-1;
+    int botlimit=0;
+    int j;
+    int result=primes[uplimit];
+    while(1) {
+        if (uplimit-botlimit < 5) {
+            for (j = botlimit; primes[j]<= stopafter && j <= uplimit; j++);
+            result = (j==MAX_PRIME) ? j-1 : j;
+	    break;
+	}
+	if (primes[botlimit + (uplimit - botlimit) / 2] < stopafter)
+	    botlimit = botlimit + (uplimit-botlimit) / 2;
+	else
+            uplimit = uplimit - (uplimit-botlimit) / 2;
     }
-    *prime_num = prime[c-1];
-
-    ZOLTAN_FREE(&prime);
+    *prime_num = primes[result];
     return ZOLTAN_OK;
 }
 
-
+#undef MAX_PRIME
+    
 
 int Zoltan_G2LHash_Create(G2LHash *hash, int maxsize, ZOLTAN_GNO_TYPE base, int nlvtx)
 {

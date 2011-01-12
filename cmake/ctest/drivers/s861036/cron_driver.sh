@@ -21,7 +21,6 @@ export CTEST_TEST_TIMEOUT="1800"
 export TDD_GIT_EXE=/usr/local/bin/git
 export TDD_PARALLEL_LEVEL=1
 export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
-export TDD_CTEST_TEST_TYPE=Experimental
 export COMPILER_VERSION="GCC-4.1.2"
 export Trilinos_PACKAGES=Zoltan
 

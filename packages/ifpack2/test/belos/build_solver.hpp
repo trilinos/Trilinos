@@ -4,7 +4,10 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
+// BlockCG does not work right now with QD since POTRF is not templated in Teuchos LAPACK
+#ifndef USING_QD
 #include "BelosBlockCGSolMgr.hpp"
+#endif
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosTFQMRSolMgr.hpp"
@@ -29,9 +32,12 @@ build_solver(Teuchos::ParameterList& test_params,
   if (solver_type == "PseudoBlockCG") {
     solver = Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }
+// BlockCG does not work right now with QD since POTRF is not templated in Teuchos LAPACK
+#ifndef USING_QD
   else if (solver_type == "BlockCG") {
     solver = Teuchos::rcp(new Belos::BlockCGSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }
+#endif
   else if (solver_type == "PseudoBlockGmres") {
     solver = Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }

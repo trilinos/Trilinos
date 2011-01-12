@@ -57,6 +57,7 @@ APPEND_SET(HEADERS
   BelosPseudoBlockCGIter.hpp
   BelosPseudoBlockCGSolMgr.hpp
   BelosMinresIter.hpp
+  BelosMinresIteration.hpp
   BelosMinresSolMgr.hpp
   BelosPseudoBlockGmresIter.hpp
   BelosPseudoBlockGmresSolMgr.hpp

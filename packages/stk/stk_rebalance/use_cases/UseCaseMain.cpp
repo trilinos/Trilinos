@@ -9,7 +9,9 @@
 #include <iostream>
 
 #include <use_cases/UseCase_Rebal_1.hpp>
-#include <use_cases/UseCase_Rebal_8.hpp>
+#include <use_cases/UseCase_Rebal_2.hpp>
+#include <use_cases/UseCase_Rebal_3.hpp>
+#include <use_cases/UseCase_Rebal_4.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_rebalance/Rebalance.hpp>
@@ -31,23 +33,33 @@ int main ( int argc, char * argv[] )
   //  stk::parallel_machine_size( parallel_machine ) <= 1 ;
 
   bool status = true;
-
-  //if ( single_process ) {
   {
     std::cout << "Use Case 1, unequal element weights ... ";
     bool local_status = stk::rebalance::use_cases::test_unequal_weights(parallel_machine);
     printStatus(local_status);
     status = status && local_status;
   }
-  //}
-
   {
-    std::cout << "Use Case 8, contact surfaces ... ";
-    bool local_status = stk::rebalance::use_cases::test_contact_surfaces(parallel_machine);
+    std::cout << "Use Case 2, heavy entities ... ";
+    bool local_status = stk::rebalance::use_cases::test_heavy_nodes(parallel_machine);
     printStatus(local_status);
     status = status && local_status;
   }
 
+  {
+    std::cout << "Use Case 3, contact surfaces ... ";
+    bool local_status = stk::rebalance::use_cases::test_contact_surfaces(parallel_machine);
+    printStatus(local_status);
+    status = status && local_status;
+  }
+#if 0
+  {
+    std::cout << "Use Case 4, greedy sideset ... ";
+    bool local_status = stk::rebalance::use_cases::test_greedy_sideset(parallel_machine);
+    printStatus(local_status);
+    status = status && local_status;
+  }
+#endif
   int return_code = -1;
   if (status) {
     return_code = 0;

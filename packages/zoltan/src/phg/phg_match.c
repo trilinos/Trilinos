@@ -16,10 +16,11 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include <stdlib.h>
 #include "phg.h"
 #include "g2l_hash.h"
-#include "zz_const.h"
+#include "zz_util_const.h"
 
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;         /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_agg_ipm;     /* agglomerative IPM */
@@ -221,6 +222,7 @@ static int Zoltan_PHG_compute_esize(
 )
 {
     int  i;
+    MPI_Datatype zoltan_gno_mpi_type;
     ZOLTAN_GNO_TYPE *lsize = NULL;
     static char *yo = "Zoltan_PHG_compute_esize";
     int ierr = ZOLTAN_OK;
@@ -233,7 +235,9 @@ static int Zoltan_PHG_compute_esize(
 
       for (i=0; i<hg->nEdge; ++i)
           lsize[i] = (ZOLTAN_GNO_TYPE)(hg->hindex[i+1] - hg->hindex[i]);
-      MPI_Allreduce(lsize, hg->esize, hg->nEdge, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, hg->comm->row_comm);
+
+      zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+      MPI_Allreduce(lsize, hg->esize, hg->nEdge, zoltan_gno_mpi_type, MPI_SUM, hg->comm->row_comm);
       
 End:
       ZOLTAN_FREE(&lsize);
@@ -418,6 +422,7 @@ static int pmatching_local_ipm(
     int limit=hg->nVtx, err=ZOLTAN_OK;
     PHGComm *hgc=hg->comm;
     int root_matchcnt, root_rank;
+    MPI_Datatype zoltan_gno_mpi_type;
 
     /* UVC: In order to simplify adding/testing old sequential matching codes easy
        I'm keeping the interface same; just move your favorite matching code to this file
@@ -435,7 +440,9 @@ static int pmatching_local_ipm(
     Zoltan_PHG_Find_Root(hg->nVtx-limit, hgc->myProc_y, hgc->col_comm,
                          &root_matchcnt, &root_rank);
     
-    MPI_Bcast(match, hg->nVtx, ZOLTAN_GNO_MPI_TYPE, root_rank, hgc->col_comm);
+    zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+
+    MPI_Bcast(match, hg->nVtx, zoltan_gno_mpi_type, root_rank, hgc->col_comm);
     
     return err;
 }
@@ -644,6 +651,7 @@ static int pmatching_ipm (ZZ *zz,
   int total_nCandidates;      /* Sum of nCandidates across row. */
   int candidate_index = 0, first_candidate_index = 0;
   int nTotal;
+  MPI_Datatype zoltan_gno_mpi_type;
 
   ZOLTAN_GNO_TYPE candidate_gno = 0;             /* gno of current candidate */
 
@@ -666,6 +674,7 @@ static int pmatching_ipm (ZZ *zz,
   int *intptr=NULL;
   float *floatptr=NULL;
   int gno_size, int_size, float_size;
+
 
   /* TODO64 These seven variables are ints, but it seems likely that if the global
    * number of vertices or edges requires a 64 bit integer, that these counts, sizes,
@@ -694,6 +703,7 @@ static int pmatching_ipm (ZZ *zz,
    
   ZOLTAN_TRACE_ENTER (zz, yo);
   MACRO_TIMER_START (0, "matching setup", 0);
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
   Zoltan_Srand_Sync (Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
      
   /* set a flag if user wants a column matching or a full matching */
@@ -745,9 +755,8 @@ static int pmatching_ipm (ZZ *zz,
         MEMORY_ERROR;
 
   if (!cFLAG && total_nCandidates && (hgc->myProc_y == 0)) {  /* Master row */
-    i = total_nCandidates * sizeof(Triplet);  
-    if (!(master_data = (Triplet*) ZOLTAN_MALLOC(i))
-     || !(global_best = (Triplet*) ZOLTAN_MALLOC(i)))
+    if (!(master_data=(Triplet*)ZOLTAN_CALLOC(total_nCandidates,sizeof(Triplet)))
+     || !(global_best=(Triplet*)ZOLTAN_CALLOC(total_nCandidates,sizeof(Triplet))))
         MEMORY_ERROR;
     for (i = 0; i < total_nCandidates; i++) {
       master_data[i].candidate = -1;
@@ -1225,7 +1234,7 @@ static int pmatching_ipm (ZZ *zz,
     }            /* DONE: kstart < max_nTotal loop */
 
     if (cFLAG)  {
-      MPI_Bcast (match, hg->nVtx, ZOLTAN_GNO_MPI_TYPE, 0, hgc->col_comm);          
+      MPI_Bcast (match, hg->nVtx, zoltan_gno_mpi_type, 0, hgc->col_comm);          
       continue;      /* skip phases 3 and 4, continue rounds */ 
     }    
 
@@ -1273,7 +1282,7 @@ static int pmatching_ipm (ZZ *zz,
     } /* End (hgc->myProc_y == 0) */
 
     /* broadcast match array to the entire column */
-    MPI_Bcast (match, hg->nVtx, ZOLTAN_GNO_MPI_TYPE, 0, hgc->col_comm);
+    MPI_Bcast (match, hg->nVtx, zoltan_gno_mpi_type, 0, hgc->col_comm);
     MACRO_TIMER_STOP (4);                       /* end of phase 3 */
   }                                             /* DONE: loop over rounds */
 
@@ -1333,7 +1342,7 @@ static int pmatching_ipm (ZZ *zz,
 
     gno = (ZOLTAN_GNO_TYPE *)recvbuf;
 
-    MPI_Allgatherv (cmatch, hg->nVtx, ZOLTAN_GNO_MPI_TYPE, recvbuf, size, dest, ZOLTAN_GNO_MPI_TYPE,
+    MPI_Allgatherv (cmatch, hg->nVtx, zoltan_gno_mpi_type, recvbuf, size, dest, zoltan_gno_mpi_type,
      hgc->row_comm);
 
     if (nSend < msgsize){
@@ -1467,7 +1476,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   MPI_Datatype phasethreetype;
   int VtxDim = (hg->VtxWeightDim>0) ? hg->VtxWeightDim : 1;
   int pref = 0;
-  int replycnt, len, header_size;
+  int replycnt, header_size;
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   char *yo = "pmatching_agg_ipm";
   KVHash hash;
@@ -1559,9 +1568,8 @@ static int pmatching_agg_ipm (ZZ *zz,
       MEMORY_ERROR;
 
   if (hgc->myProc_y==0 && total_nCandidates ) {  
-    len = total_nCandidates * sizeof(Triplet);  
-    if (!(master_data = (Triplet*) ZOLTAN_MALLOC(len))
-        || !(global_best = (Triplet*) ZOLTAN_MALLOC(len)))
+    if (!(master_data=(Triplet*)ZOLTAN_CALLOC(total_nCandidates,sizeof(Triplet)))
+     || !(global_best=(Triplet*)ZOLTAN_CALLOC(total_nCandidates,sizeof(Triplet))))
       MEMORY_ERROR;
     for (i = 0; i < total_nCandidates; i++) {
       master_data[i].candidate = -1;
@@ -2219,6 +2227,7 @@ static int pmatching_agg_ipm (ZZ *zz,
     MPI_Bcast (sendbuf, recsize, MPI_CHAR, 0, hgc->col_comm);
 
     if (hgc->myProc_y !=0) { /* master row already done this */
+      int lno, lheadno, partner, pref;
       for (s = sendbuf; s < sendbuf + recsize; ) {
 
         gnoptr = (ZOLTAN_GNO_TYPE *)s;
@@ -2226,9 +2235,10 @@ static int pmatching_agg_ipm (ZZ *zz,
         floatptr = (float *)(intptr + header_size);
         s = (char *)(floatptr + VtxDim);
 
-        int lno     = *intptr++;
-        int lheadno = *intptr++;
-        int partner = *gnoptr, pref = 0;
+        lno     = *intptr++;
+        lheadno = *intptr++;
+        partner = *gnoptr;
+        pref = 0;
         
         if (hgp->UsePrefPart)
             pref = *intptr++;

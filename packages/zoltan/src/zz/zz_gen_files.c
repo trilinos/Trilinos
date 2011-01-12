@@ -94,12 +94,16 @@ int gen_geom, int gen_graph, int gen_hg)
   ZOLTAN_GNO_TYPE glob_nvtxs, glob_pins, glob_ewgts;
   ZOLTAN_GNO_TYPE gno_val;
 
+  MPI_Datatype zoltan_gno_mpi_type;
+
   float *float_vwgt, *ewgts, *eWgts, *wptr;
   double *xyz;
 
   char *yo = "Zoltan_Generate_Files";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
@@ -140,7 +144,7 @@ int gen_geom, int gen_graph, int gen_hg)
   else{
     /* Compute global number of vertices. */
     gno_val = (ZOLTAN_GNO_TYPE)num_obj;
-    MPI_Allreduce(&gno_val, &glob_nvtxs, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);  
+    MPI_Allreduce(&gno_val, &glob_nvtxs, 1, zoltan_gno_mpi_type, MPI_SUM, zz->Communicator);  
   }
 
   /* Local number of edges. */
@@ -151,7 +155,7 @@ int gen_geom, int gen_graph, int gen_hg)
 
   /* Compute global number of edges. */
   gno_val = (ZOLTAN_GNO_TYPE)num_edges;
-  MPI_Reduce(&gno_val, &glob_edges, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, zz->Communicator);  
+  MPI_Reduce(&gno_val, &glob_edges, 1, zoltan_gno_mpi_type, MPI_SUM, 0, zz->Communicator);  
   /* Assume no self-edges! */
   glob_edges /= 2;
 
@@ -192,14 +196,14 @@ int gen_geom, int gen_graph, int gen_hg)
       /* Get the global number of pins for process 0. 
        */
       gno_val = (ZOLTAN_GNO_TYPE)numPins;
-      MPI_Reduce(&gno_val, &glob_pins, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, zz->Communicator);
+      MPI_Reduce(&gno_val, &glob_pins, 1, zoltan_gno_mpi_type, MPI_SUM, 0, zz->Communicator);
 
       /* Get the global number of edges that weights were
        * provided for.  More than one process may supply
        * weights for a given edge.
        */
       gno_val = (ZOLTAN_GNO_TYPE)nEwgts;
-      MPI_Reduce(&nEwgts, &glob_ewgts, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, zz->Communicator);
+      MPI_Reduce(&nEwgts, &glob_ewgts, 1, zoltan_gno_mpi_type, MPI_SUM, 0, zz->Communicator);
 
       /* We assume the Edge IDs and Vertex IDs are integers and
        * are contiguous.  Figure out what the lowest ID is.
@@ -328,7 +332,7 @@ int gen_geom, int gen_graph, int gen_hg)
     /* If proc 0, write first line. */
     if (zz->Proc == 0){
       fprintf(fp, "%% First line: #vertices #edges weight_flag\n");
-      fprintf(fp, "%zd %zd %1d%1d%1d", glob_nvtxs, glob_edges, 
+      fprintf(fp, ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC " %1d%1d%1d", glob_nvtxs, glob_edges, 
         print_vtx_num, (zz->Obj_Weight_Dim>0), (zz->Edge_Weight_Dim>0));
       if (zz->Obj_Weight_Dim>1 || zz->Edge_Weight_Dim>1)
         fprintf(fp, " %d %d", zz->Obj_Weight_Dim, zz->Edge_Weight_Dim);
@@ -340,7 +344,7 @@ int gen_geom, int gen_graph, int gen_hg)
     for (i=0; i<num_obj; i++){
       /* Print vertex number at beginning of line? */
       if (print_vtx_num){
-        fprintf(fp, "%zd ", vtxdist[zz->Proc]+base_index+i);
+        fprintf(fp, ZOLTAN_GNO_SPEC " ", vtxdist[zz->Proc]+base_index+i);
       }
       /* First print object (vertex) weight, if any. */
       for (k=0; k<zz->Obj_Weight_Dim; k++)
@@ -348,7 +352,7 @@ int gen_geom, int gen_graph, int gen_hg)
       if (gen_graph){
         /* If graph, then print neighbor list */
         for (j=xadj[i]; j<xadj[i+1]; j++){
-          fprintf(fp, "%zd ", adjncy[j]+base_index);
+          fprintf(fp, ZOLTAN_GNO_SPEC " ", adjncy[j]+base_index);
           /* Also print edge weight, if any. */
           for (k=0; k<zz->Edge_Weight_Dim; k++)
             fprintf(fp, "%f ", ewgts[j*(zz->Edge_Weight_Dim)+k]);
@@ -409,7 +413,8 @@ int gen_geom, int gen_graph, int gen_hg)
       fprintf(fp, 
         "%%#rows #columns #pins #procs dim-vertex-weights "
         "#edge-weight-entries dim-edge-weights\n%%\n");
-      fprintf(fp, "%zd %zd %zd %d %d %zd %d\n", 
+      fprintf(fp, ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC 
+                  " %d %d " ZOLTAN_GNO_SPEC " %d\n", 
         glob_hedges, glob_nvtxs, glob_pins, 
         zz->Num_Proc,
         zz->Obj_Weight_Dim, glob_ewgts, zz->Edge_Weight_Dim);
@@ -645,6 +650,9 @@ ZOLTAN_GNO_TYPE idbufSize = 0;
 int gidTag = 0x1000;  /* any reason tags should not be these values? */
 int sizeTag = 0x1001;
 MPI_Status stat;
+MPI_Datatype zoltan_gno_mpi_type;
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   merged_egids = idbuf = NULL;
 
@@ -663,7 +671,7 @@ MPI_Status stat;
 
   nEdges = (ZOLTAN_GNO_TYPE)numEdges;
 
-  MPI_Allreduce(&nEdges, &maxEdges, 1, ZOLTAN_GNO_MPI_TYPE, MPI_MAX, zz->Communicator);  
+  MPI_Allreduce(&nEdges, &maxEdges, 1, zoltan_gno_mpi_type, MPI_MAX, zz->Communicator);  
 
   if (maxEdges == 0){
     return 0;
@@ -700,14 +708,14 @@ MPI_Status stat;
 
     if (proc < nprocs){
       if (proc < myrank){
-        MPI_Send(&size_merged, 1, ZOLTAN_GNO_MPI_TYPE, proc, sizeTag, zz->Communicator);
+        MPI_Send(&size_merged, 1, zoltan_gno_mpi_type, proc, sizeTag, zz->Communicator);
         if (size_merged > 0){
           MPI_Send(merged_egids, size_merged * lenGID, ZOLTAN_ID_MPI_TYPE, proc, gidTag, zz->Communicator);
         }
       }
  
       else{
-        MPI_Recv(&numIds, 1, ZOLTAN_GNO_MPI_TYPE, proc, sizeTag, zz->Communicator, &stat);
+        MPI_Recv(&numIds, 1, zoltan_gno_mpi_type, proc, sizeTag, zz->Communicator, &stat);
 
         if (numIds > 0){
 
@@ -749,7 +757,7 @@ MPI_Status stat;
     allEdges = size_merged;
   }
 
-  MPI_Bcast(&allEdges, 1, ZOLTAN_GNO_MPI_TYPE, 0, zz->Communicator);
+  MPI_Bcast(&allEdges, 1, zoltan_gno_mpi_type, 0, zz->Communicator);
 
   return allEdges;
 }

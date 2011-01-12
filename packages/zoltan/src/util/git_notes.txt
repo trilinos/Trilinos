@@ -55,6 +55,10 @@ Commands:
    Shows only the work the current topic branch has introduced since 
    its common ancestor with master.
 
+-  git diff origin..master
+   See all changes between what is committed in my repository vs what is in
+   the repository on software.sandia.gov.  (master branch for both).
+
 -  git commit
    Commits all staged files
 

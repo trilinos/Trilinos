@@ -103,10 +103,7 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
     m_properties( ),
     m_entity_rank_names( entity_rank_names )
 {
-  if ( entity_rank_names.empty() ) {
-    std::string msg( "stk::mesh::MetaData constructor FAILED: no entity types" );
-    throw std::runtime_error( msg );
-  }
+  ThrowErrorMsgIf( entity_rank_names.empty(), "entity ranks empty" );
 
   // Declare the predefined parts
 
@@ -138,23 +135,16 @@ MetaData::MetaData()
 
 void MetaData::set_entity_rank_names(const std::vector<std::string> &entity_rank_names) 
 {
-  if ( entity_rank_names.empty() ) {
-    std::string msg( "stk::mesh::MetaData constructor FAILED: no entity types" );
-    throw std::runtime_error( msg );
-  }
+  ThrowErrorMsgIf( entity_rank_names.empty(), "entity ranks empty" );
 
   m_entity_rank_names = entity_rank_names;
 }
 
 const std::string& MetaData::entity_rank_name( EntityRank entity_rank ) const
 {
-  if (entity_rank >= m_entity_rank_names.size()) {
-    std::ostringstream msg;
-    msg << "Error in MetaData::entity_rank_name: entity-type (" << entity_rank
-        << ") out of range. Must be in range [0 .. " << m_entity_rank_names.size()
-        << ").";
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( entity_rank >= m_entity_rank_names.size(),
+      "entity-rank " << entity_rank <<
+      " out of range. Must be in range 0.." << m_entity_rank_names.size());
 
   return m_entity_rank_names[entity_rank];
 }
@@ -180,17 +170,9 @@ Part * MetaData::get_part( const std::string & p_name ,
 
   Part * const p = find( all_parts , p_name );
 
-  if ( required_by && NULL == p ) { // ERROR
-    static const char method[] = "stk::mesh::MetaData::get_part" ;
-    std::string msg ;
-    msg.append( method )
-       .append( "( " )
-       .append( p_name )
-       .append( " , " )
-       .append( required_by )
-       .append( " ) FAILED to find part" );
-    throw std::runtime_error( msg );
-  }
+  ThrowErrorMsgIf( required_by && NULL == p,
+                   "Failed to find part with name " << p_name <<
+                   " for method " << required_by );
 
   return p ;
 }
@@ -247,28 +229,16 @@ void MetaData::declare_part_relation(
   relation_stencil_ptr stencil ,
   Part & target_part )
 {
-  static const char method[] = "stk::mesh::MetaData::declare_part_relation" ;
-
   require_not_committed();
   require_not_relation_target( &root_part );
 
-  if (!stencil) {
-    std::string msg ;
-    msg.append( method );
-    msg.append( "stencil function pointer cannott be NULL" );
-    throw std::runtime_error( msg );
-  }
+  ThrowErrorMsgIf( !stencil, "stencil function pointer cannot be NULL" );
 
-  if ( 0 != target_part.subsets().size() ||
-       0 != target_part.intersection_of().size() ||
-       1 != target_part.supersets().size() ) {
-    std::string msg ;
-    msg.append( method );
-    msg.append( ": FAILED Requirement that target Part[" );
-    msg.append( target_part.name() );
-    msg.append( "] is not a superset or subset" );
-    throw std::runtime_error( msg );
-  }
+  ThrowErrorMsgIf( 0 != target_part.subsets().size() ||
+                   0 != target_part.intersection_of().size() ||
+                   1 != target_part.supersets().size(),
+                   "target Part[" << target_part.name() <<
+                   "] cannot be a superset or subset" );
 
   PartRelation tmp ;
   tmp.m_root = & root_part ;

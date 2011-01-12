@@ -101,12 +101,14 @@ APPEND_SET(NOINSTALLHEADERS
   coloring/coloring_const.h
   coloring/coloring.h
   coloring/g2l_hash.h
+  coloring/bucket.h
   )
 
 APPEND_SET(SOURCES
   coloring/coloring.c
   coloring/color_test.c
   coloring/g2l_hash.c
+  coloring/bucket.c
   )
 
 #

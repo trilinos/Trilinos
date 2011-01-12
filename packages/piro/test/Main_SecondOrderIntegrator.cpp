@@ -35,6 +35,7 @@
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 #include "Piro_ConfigDefs.hpp"
@@ -46,15 +47,13 @@
 int main(int argc, char *argv[]) {
 
   int status=0; // 0 = pass, failures are incremented
-  bool success=true;
   int overall_status=0; // 0 = pass, failures are incremented over multiple tests
+  bool success=true;
 
-  // Initialize MPI and timer
-  int Proc=0;
+  // Initialize MPI 
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  int Proc=mpiSession.getRank();
 #ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  double total_time = -MPI_Wtime();
-  (void) MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
   MPI_Comm appComm = MPI_COMM_WORLD;
 #else
   int appComm=0;
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
 
   using Teuchos::RCP;
   using Teuchos::rcp;
-  string inputFile="input_Solve_VV.xml"; 
+  std::string inputFile="input_Solve_VV.xml"; 
 
     if (Proc==0)
      cout << "===================================================\n"
@@ -135,13 +134,6 @@ int main(int argc, char *argv[]) {
 
     overall_status += status;
 
-#ifdef HAVE_MPI
-  total_time +=  MPI_Wtime();
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (Proc==0) cout << "\n\nTOTAL TIME     " 
-                    << total_time << endl;
-  MPI_Finalize() ;
-#endif
 
   if (Proc==0) {
     if (overall_status==0) cout << "\nTEST PASSED\n" << endl;

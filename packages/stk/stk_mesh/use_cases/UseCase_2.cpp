@@ -410,10 +410,11 @@ bool gather_field_data( unsigned expected_num_rel, const field_type & field ,
     // Iterate over field data for each related entity and copy data
     // into src for one entity at a time
     T * const dst_end = dst + SpatialDim * expected_num_rel ;
-    for ( const T * src ;
-          ( dst < dst_end ) &&
-          ( src = field_data( field , * rel->entity() ) ) ;
-          ++rel , dst += SpatialDim ) {
+    for ( ; dst < dst_end ; ++rel , dst += SpatialDim ) {
+      const T* src = field_data( field , * rel->entity() );
+      if (!src) {
+        break;
+      }
       stk::Copy<SpatialDim>( dst , src );
     }
     result = dst == dst_end ;

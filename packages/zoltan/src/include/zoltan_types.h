@@ -16,9 +16,7 @@
 
 #include <mpi.h>
 #include <unistd.h>
-/* to get PRIdMAX, etc */
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
+#include <limits.h>
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -49,90 +47,80 @@ extern "C" {
  *
  * It's decimal type specifier is "z":    printf("%zd\n",globalNum);
  *
- * The MPI_Datatype for ssize_t is ZOLTAN_GNO_MPI_TYPE.
+ * The MPI_Datatype for ssize_t is returned by Zoltan_mpi_gno_type().
  *
  * We don't assume a pointer is the same size as any size of int.  If we want to store
  * a pointer in an int we use types intptr_t or uintptr_t.
  */
+
+#undef HAVE_LONG_LONG_INT
+
+#ifdef ULLONG_MAX
+#define HAVE_LONG_LONG_INT
+#endif
 
 #undef ZOLTAN_ID_MPI_TYPE
 #undef ZOLTAN_ID_SPEC
 #undef ZOLTAN_ID_CONSTANT
 
 /* 
- * Autoconf build: --with-id-type={name} (sets HAVE_ZOLTAN_ID_TYPE_{name})  
- *                 or add CPPFLAGS=-DZOLTAN_ID_TYPE_LONG to configure line
+ * Autoconf build: --with-id-type={uint, ulong, ullong}
  *
- * CMake build:    -D CMAKE_CPP_FLAGS:STRING="-DZOLTAN_ID_TYPE_LONG"
+ * CMake build:    -D Zoltan_ENABLE_UINT_IDS:Bool=ON
+ *                 -D Zoltan_ENABLE_ULONG_IDS:Bool=ON
+ *                 -D Zoltan_ENABLE_ULLONG_IDS:Bool=ON
  *
- * If not specified, we'll use long.
  */
 
-#ifndef ZOLTAN_ID_TYPE_UINT
-#ifndef ZOLTAN_ID_TYPE_INT
-#ifndef ZOLTAN_ID_TYPE_LONG
-#ifndef ZOLTAN_ID_TYPE_LONG_LONG
+#ifndef UNSIGNED_INT_GLOBAL_IDS
+#ifndef UNSIGNED_LONG_GLOBAL_IDS
+#ifndef UNSIGNED_LONG_LONG_GLOBAL_IDS
 
-#if HAVE_ZOLTAN_ID_TYPE_LONG
-#define ZOLTAN_ID_TYPE_LONG
-#endif
-
-#if HAVE_ZOLTAN_ID_TYPE_LONG_LONG
-#define ZOLTAN_ID_TYPE_LONG_LONG
-#endif
-
-#if HAVE_ZOLTAN_ID_TYPE_UINT
-#define ZOLTAN_ID_TYPE_UINT
-#endif
-
-#if HAVE_ZOLTAN_ID_TYPE_INT
-#define ZOLTAN_ID_TYPE_INT
-#endif
+#define UNSIGNED_INT_GLOBAL_IDS
 
 #endif
 #endif
 #endif
+
+#ifdef UNSIGNED_LONG_LONG_GLOBAL_IDS
+
+#ifndef HAVE_LONG_LONG_INT
+
+#undef UNSIGNED_LONG_LONG_GLOBAL_IDS
+#define UNSIGNED_LONG_GLOBAL_IDS
+#warning Global ID type "unsigned long long int" was requested at configure time.
+#warning The compiler does not fully support this data type.
+#warning Instead ZOLTAN_ID_TYPE will be "unsigned long".
+
 #endif
 
-/* 
- * The ZOLTAN_ID_TYPE can be any an integral type greater in size or equal to an int.
- *  (There is code in Zoltan that assumes the global ID is at least as large as an int.)
- */
+#endif
 
-#ifdef ZOLTAN_ID_TYPE_LONG
+#ifdef UNSIGNED_LONG_GLOBAL_IDS
 
-typedef long ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_LONG
-#define zoltan_mpi_id_datatype_name "MPI_LONG"
-#define zoltan_id_datatype_name "long"
-#define ZOLTAN_ID_SPEC  "%ld"
+typedef unsigned long ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED_LONG
+#define zoltan_mpi_id_datatype_name "MPI_UNSIGNED_LONG"
+#define zoltan_id_datatype_name "unsigned long"
+#define ZOLTAN_ID_SPEC  "%lu"
 #define ZOLTAN_ID_CONSTANT(z)  z ## L
+#define ZOLTAN_ID_INVALID  ULONG_MAX
 
 #endif
 
-#ifdef ZOLTAN_ID_TYPE_LONG_LONG
+#ifdef UNSIGNED_LONG_LONG_GLOBAL_IDS
 
-typedef long long ZOLTAN_ID_TYPE;
+typedef unsigned long long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_LONG_LONG_INT
-#define zoltan_mpi_id_datatype_name "MPI_LONG"
-#define zoltan_id_datatype_name "long long"
-#define ZOLTAN_ID_SPEC  "%Ld"
+#define zoltan_mpi_id_datatype_name "MPI_LONG_LONG_INT"
+#define zoltan_id_datatype_name "unsigned long long"
+#define ZOLTAN_ID_SPEC  "%Lu"
 #define ZOLTAN_ID_CONSTANT(z)  z ## LL
+#define ZOLTAN_ID_INVALID  ULLONG_MAX
 
 #endif
 
-#ifdef ZOLTAN_ID_TYPE_INT
-
-typedef int ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_INT
-#define zoltan_mpi_id_datatype_name "MPI_INT"
-#define zoltan_id_datatype_name "int"
-#define ZOLTAN_ID_SPEC  "%d"
-#define ZOLTAN_ID_CONSTANT(z)  z
-
-#endif
-
-#ifndef ZOLTAN_ID_MPI_TYPE
+#ifdef UNSIGNED_INT_GLOBAL_IDS
 
 typedef unsigned int ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED
@@ -140,23 +128,24 @@ typedef unsigned int ZOLTAN_ID_TYPE;
 #define zoltan_id_datatype_name "unsigned int"
 #define ZOLTAN_ID_SPEC  "%u"
 #define ZOLTAN_ID_CONSTANT(z)  z
+#define ZOLTAN_ID_INVALID  UINT_MAX
 
 #endif
 
 typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 
 /* 
- * The MPI_Datatype for size_t and ssize_t are figured out at runtime in Zoltan_set_mpi_types.
+ * The MPI_Datatype for ZOLTAN_GNO_TYPE is returned by Zoltan_mpi_gno_type().
  */
-
-extern MPI_Datatype          zoltan_mpi_gno_datatype;
-extern char zoltan_mpi_gno_datatype_name[];
-
-#define ZOLTAN_GNO_MPI_TYPE  zoltan_mpi_gno_datatype
 
 #define ZOLTAN_GNO_TYPE      ssize_t
 
-#define ZOLTAN_GNO_SPECIFIER   "zd"
+/*
+* 12/21/10: Trilinos compiles with warnings about c99 features (%zd).  
+*           So we use %ld to for a ZOLTAN_GNO_TYPE.
+*/
+
+#define ZOLTAN_GNO_SPEC   "%ld"
 
 /*****************************************************************************/
 /*

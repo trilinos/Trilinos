@@ -11,6 +11,9 @@
 #include <stdexcept>
 
 #include <stk_util/util/StaticAssert.hpp>
+
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_mesh/base/EntityKey.hpp>
 
 namespace stk {
@@ -23,18 +26,11 @@ EntityKey::EntityKey( EntityRank entity_rank ,
   enum { OK = StaticAssert< sizeof(EntityKey) ==
                             sizeof(EntityKey::raw_key_type) >::OK };
 
-  if ( rank() != entity_rank || id() != entity_id ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::EntityKey::EntityKey( "
-        << entity_rank << " , " << entity_id << " ) FAILED" ;
-    if ( rank() != entity_rank ) {
-      msg << " : RANK OUT OF RANGE" ;
-    }
-    if ( id() != entity_id ) {
-      msg << " : ID OUT OF RANGE" ;
-    }
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( rank() != entity_rank,
+                   "entity_rank " << entity_rank << " out of range");
+
+  ThrowErrorMsgIf( id() != entity_id,
+                   "entity_id " << entity_id << " out of range");
 }
 
 

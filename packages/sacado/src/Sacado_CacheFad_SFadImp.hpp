@@ -55,7 +55,7 @@
 
 template <typename T, int Num> 
 inline Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >::
-Expr(const int sz, const T & x) : val_(x)
+Expr(const int sz, const T & x) : val_(x), update_val_(true)
 {
 #ifdef SACADO_DEBUG
   if (sz != Num)
@@ -67,7 +67,7 @@ Expr(const int sz, const T & x) : val_(x)
 
 template <typename T, int Num> 
 inline Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >::
-Expr(const int sz, const int i, const T & x) : val_(x) 
+Expr(const int sz, const int i, const T & x) : val_(x), update_val_(true)
 {
 #ifdef SACADO_DEBUG
   if (sz != Num)
@@ -82,7 +82,8 @@ Expr(const int sz, const int i, const T & x) : val_(x)
 
 template <typename T, int Num> 
 inline Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >::
-Expr(const Expr< Sacado::CacheFad::SFadExprTag<T,Num> >& x) : val_(x.val())
+Expr(const Expr< Sacado::CacheFad::SFadExprTag<T,Num> >& x) : 
+  val_(x.val()), update_val_(x.update_val_)
 { 
   for (int i=0; i<Num; i++)
     dx_[i] = x.dx_[i];
@@ -91,12 +92,17 @@ Expr(const Expr< Sacado::CacheFad::SFadExprTag<T,Num> >& x) : val_(x.val())
 template <typename T, int Num> 
 template <typename S> 
 inline Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >::
-Expr(const Expr<S>& x) : val_(x.val())
+Expr(const Expr<S>& x) : update_val_(x.updateValue())
 {
 #ifdef SACADO_DEBUG
   if (x.size() != Num)
     throw "CacheFad::SFad() Error:  Attempt to assign with incompatible sizes";
 #endif
+
+  x.cache();
+
+  if (update_val_)
+    this->val() = x.val();
 
   for(int i=0; i<Num; ++i) 
     dx_[i] = x.fastAccessDx(i);
@@ -150,6 +156,8 @@ operator=(const Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >& 
   // Copy dx_
   for (int i=0; i<Num; i++)
     dx_[i] = x.dx_[i];
+
+  update_val_ = x.update_val_;
   
   return *this;
 }
@@ -165,13 +173,14 @@ operator=(const Expr<S>& x)
     throw "CacheFad::operator=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-  // Compute value
-  T xval = x.val();
+  x.cache();
 
   for(int i=0; i<Num; ++i)
     dx_[i] = x.fastAccessDx(i);
   
-  val_ = xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ = x.val();
   
   return *this;
 }
@@ -181,7 +190,8 @@ inline  Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >&
 Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >::
 operator += (const T& v)
 {
-  val_ += v;
+  if (update_val_)
+    val_ += v;
 
   return *this;
 }
@@ -191,7 +201,8 @@ inline Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >&
 Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >::
 operator -= (const T& v)
 {
-  val_ -= v;
+  if (update_val_)
+    val_ -= v;
 
   return *this;
 }
@@ -201,7 +212,8 @@ inline Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >&
 Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >::
 operator *= (const T& v)
 {
-  val_ *= v;
+  if (update_val_)
+    val_ *= v;
 
   for (int i=0; i<Num; ++i)
     dx_[i] *= v;
@@ -214,7 +226,8 @@ inline Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >&
 Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >::
 operator /= (const T& v)
 {
-  val_ /= v;
+  if (update_val_)
+    val_ /= v;
 
   for (int i=0; i<Num; ++i)
     dx_[i] /= v;
@@ -233,13 +246,14 @@ operator += (const Sacado::CacheFad::Expr<S>& x)
     throw "CacheFad::operator+=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-  // Compute value
-  T xval = x.val();
+  x.cache();
 
   for (int i=0; i<Num; ++i)
     dx_[i] += x.fastAccessDx(i);
  
-  val_ += xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ += x.val();
 
   return *this;
 }
@@ -255,13 +269,14 @@ operator -= (const Sacado::CacheFad::Expr<S>& x)
     throw "CacheFad::operator-=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-  // Compute value
-  T xval = x.val();
+  x.cache();
 
   for(int i=0; i<Num; ++i)
     dx_[i] -= x.fastAccessDx(i);
 
-  val_ -= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ -= x.val();
 
   return *this;
 }
@@ -272,6 +287,8 @@ inline Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >&
 Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >::
 operator *= (const Sacado::CacheFad::Expr<S>& x)
 {
+  x.cache();
+
   T xval = x.val();
 
 #ifdef SACADO_DEBUG
@@ -282,7 +299,9 @@ operator *= (const Sacado::CacheFad::Expr<S>& x)
   for(int i=0; i<Num; ++i)
     dx_[i] = val_ * x.fastAccessDx(i) + dx_[i] * xval;
  
-  val_ *= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ *= xval;
 
   return *this;
 }
@@ -293,6 +312,8 @@ inline Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >&
 Sacado::CacheFad::Expr< Sacado::CacheFad::SFadExprTag<T,Num> >::
 operator /= (const Sacado::CacheFad::Expr<S>& x)
 {
+  x.cache();
+
   T xval = x.val();
 
 #ifdef SACADO_DEBUG
@@ -303,7 +324,9 @@ operator /= (const Sacado::CacheFad::Expr<S>& x)
   for(int i=0; i<Num; ++i)
     dx_[i] = ( dx_[i]*xval - val_*x.fastAccessDx(i) )/ (xval*xval);
 
-  val_ /= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ /= xval;
 
   return *this;
 }

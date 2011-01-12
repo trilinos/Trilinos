@@ -63,10 +63,7 @@ Ghosting & BulkData::create_ghosting( const std::string & name )
 
     all_reduce( parallel() , ReduceMax<1>( & error ) );
 
-    if ( error ) {
-      std::string msg("stk::mesh::BulkData::create_ghosting ERROR: Parallel name inconsistency");
-      throw std::runtime_error( msg );
-    }
+    ThrowErrorMsgIf( error, "Parallel name inconsistency");
   }
 
   Ghosting * const g =
@@ -146,8 +143,6 @@ void BulkData::change_ghosting(
   const std::vector<EntityProc> & add_send ,
   const std::vector<Entity*> & remove_receive )
 {
-  static const char method[] = "stk::mesh::BulkData::change_ghosting" ;
-
   //----------------------------------------
   // Verify inputs:
 
@@ -179,7 +174,7 @@ void BulkData::change_ghosting(
 
   if ( 0 == ok ) {
     std::ostringstream msg ;
-    msg << method << "( " << ghosts.name() << " ) ERROR" ;
+    msg << "For ghosts " << ghosts.name() << ", " ;
     if ( ! ok_mesh )  { msg << " : Mesh does not own this ghosting" ; }
     if ( ! ok_ghost ) { msg << " : Cannot modify this ghosting" ; }
     if ( ! ok_add ) {
@@ -187,8 +182,7 @@ void BulkData::change_ghosting(
       for ( std::vector<EntityProc>::const_iterator
             i = add_send.begin() ; i != add_send.end() ; ++i ) {
         if ( i->first->owner_rank() != parallel_rank() ) {
-          msg << " " ;
-          print_entity_key( msg , mesh_meta_data() , i->first->key() );
+          msg << " " << print_entity_key( i->first );
         }
       }
       msg << " }" ;
@@ -198,12 +192,12 @@ void BulkData::change_ghosting(
       for ( std::vector<Entity*>::const_iterator
             i = remove_receive.begin() ; i != remove_receive.end() ; ++i ) {
         if ( ! in_receive_ghost( ghosts , **i ) ) {
-          msg << " " ;
-          print_entity_key( msg , mesh_meta_data() , (*i)->key() );
+          msg << " " << print_entity_key( *i );
         }
       }
     }
-    throw std::runtime_error( msg.str() );
+
+    ThrowErrorMsg( msg.str() );
   }
   //----------------------------------------
   // Change the ghosting:
@@ -457,7 +451,7 @@ void BulkData::internal_change_ghosting(
 
     all_reduce( m_parallel_machine , ReduceSum<1>( & error_count ) );
 
-    if ( error_count ) { throw std::runtime_error( error_msg.str() ); }
+    ThrowErrorMsgIf( error_count, error_msg.str() );
 
     if ( entity_comm_size < m_entity_comm.size() ) {
       // Added new ghosting entities to the list,

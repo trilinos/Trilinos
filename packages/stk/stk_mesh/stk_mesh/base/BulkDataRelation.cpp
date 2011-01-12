@@ -63,7 +63,7 @@ namespace {
 
 // TODO: Change function below to official require method
 
-void assert_valid_relation( const char method[] ,
+void assert_valid_relation( const char action[] ,
                             const BulkData & mesh ,
                             const Entity   & e_from ,
                             const Entity   & e_to )
@@ -77,27 +77,19 @@ void assert_valid_relation( const char method[] ,
   if ( error_mesh_from || error_mesh_to || error_type ||
        error_nil_from || error_nil_to ) {
     std::ostringstream msg ;
-    msg << method << "( from " ;
-    print_entity_key( msg , mesh.mesh_meta_data(), e_from.key() );
-    if ( error_mesh_from ) {
-      msg << " NOT MEMBER OF THIS MESH" ;
-    }
-    if ( error_nil_from ) {
-      msg << " WAS DESTROYED" ;
-    }
-    msg << " , to " ;
-    print_entity_key( msg , mesh.mesh_meta_data(), e_to.key() );
-    if ( error_mesh_to ) {
-      msg << " NOT MEMBER OF THIS MESH" ;
-    }
-    if ( error_nil_to ) {
-      msg << " WAS DESTROYED" ;
-    }
-    msg << " ) FAILED" ;
-    if ( error_type ) {
-      msg << " A relation must be from higher to lower ranking entity" ;
-    }
-    throw std::runtime_error( msg.str() );
+
+    msg << "Could not " << action << " relation from entity "
+        << print_entity_key(e_from) << " to entity "
+        << print_entity_key(e_to) << "\n";
+
+    ThrowErrorMsgIf( error_mesh_from || error_mesh_to,
+                     msg.str() << (error_mesh_from ? "e_from" : "e_to" ) <<
+                     " not member of this mesh");
+    ThrowErrorMsgIf( error_nil_from  || error_nil_to,
+                     msg.str() << (error_mesh_from ? "e_from" : "e_to" ) <<
+                     " was destroyed");
+    ThrowErrorMsgIf( error_type, msg.str() <<
+                     "A relation must be from higher to lower ranking entity");
   }
 }
 
@@ -140,11 +132,9 @@ void BulkData::declare_relation( Entity & e_from ,
                                  Entity & e_to ,
                                  const unsigned local_id )
 {
-  static const char method[] = "stk::mesh::BulkData::declare_relation" ;
-
   require_ok_to_modify();
 
-  assert_valid_relation( method , *this , e_from , e_to );
+  assert_valid_relation( "declare" , *this , e_from , e_to );
 
   m_entity_repo.declare_relation( e_from, e_to, local_id, m_sync_count);
 
@@ -167,20 +157,21 @@ void BulkData::declare_relation( Entity & entity ,
 {
   require_ok_to_modify();
 
-  const unsigned etype = entity.entity_rank();
+  const unsigned erank = entity.entity_rank();
 
   std::vector<Relation>::const_iterator i ;
   for ( i = rel.begin() ; i != rel.end() ; ++i ) {
     Entity & e = * i->entity();
     const unsigned n = i->identifier();
-    if ( e.entity_rank() < etype ) {
+    if ( e.entity_rank() < erank ) {
       declare_relation( entity , e , n );
     }
-    else if ( etype < e.entity_rank() ) {
+    else if ( erank < e.entity_rank() ) {
       declare_relation( e , entity , n );
     }
     else {
-      throw std::runtime_error( std::string("stk::mesh::BulkData::declare_relation FAILED: given entities of the same entity type") );
+      ThrowErrorMsg("Given entities of the same entity rank. entity is " <<
+                    print_entity_key(entity));
     }
   }
 }
@@ -189,12 +180,9 @@ void BulkData::declare_relation( Entity & entity ,
 
 void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
 {
-  static const char method[]= "stk::mesh::BulkData::destroy_relation" ;
-
   require_ok_to_modify();
 
-  assert_valid_relation( method , *this , e_from , e_to );
-
+  assert_valid_relation( "destroy" , *this , e_from , e_to );
 
   //------------------------------
   // When removing a relationship may need to

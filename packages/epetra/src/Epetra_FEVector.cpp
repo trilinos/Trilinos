@@ -52,10 +52,10 @@
 #include <Epetra_SerialDenseVector.h>
 
 //----------------------------------------------------------------------------
-Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& Map,
+Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& map,
                                  int numVectors,
 				 bool ignoreNonLocalEntries)
-  : Epetra_MultiVector(Map, numVectors),
+  : Epetra_MultiVector(map, numVectors),
     myFirstID_(0),
     myNumIDs_(0),
     nonlocalIDs_(NULL),
@@ -70,8 +70,8 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& Map,
     nonlocalVector_(NULL),
     ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
-  myFirstID_ = Map.MinMyGID();
-  myNumIDs_ = Map.NumMyElements();
+  myFirstID_ = map.MinMyGID();
+  myNumIDs_ = map.NumMyElements();
   nonlocalCoefs_ = new double*[numVectors];
   for(int i=0; i<numVectors; ++i) nonlocalCoefs_[i] = NULL;
 }

@@ -55,7 +55,6 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityKey)
   EntityKey key_order_1_12 = EntityKey( 1 , 12 );
   EntityKey key_order_2_10 = EntityKey( 2 , 10 );
 
-
   STKUNIT_ASSERT( ! entity_key_valid(  key_bad_zero ) );
   STKUNIT_ASSERT(   entity_key_valid(  key_good_0_1 ) );
   STKUNIT_ASSERT(   entity_key_valid(  key_good_1_1 ) );

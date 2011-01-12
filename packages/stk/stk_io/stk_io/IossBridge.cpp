@@ -1029,7 +1029,7 @@ namespace stk {
 	  // in a surface...)
 	  const stk::mesh::PartVector &supersets = part.supersets();
 	  for (size_t i=0; i < supersets.size(); i++) {
-	    if (supersets[i]->primary_entity_rank() == fa_rank) {
+	    if (is_part_io_part(*supersets[i]) && supersets[i]->primary_entity_rank() == fa_rank) {
 	      create_faceset = false;
 	      break;
 	    }	      
@@ -1057,7 +1057,7 @@ namespace stk {
 	  // in a surface...)
 	  const stk::mesh::PartVector &supersets = part.supersets();
 	  for (size_t i=0; i < supersets.size(); i++) {
-	    if (supersets[i]->primary_entity_rank() == edge_rank) {
+	    if (is_part_io_part(*supersets[i]) && supersets[i]->primary_entity_rank() == edge_rank) {
 	      create_edgeset = false;
 	      break;
 	    }	      

@@ -82,6 +82,8 @@ namespace Sacado {							\
       template <int Arg>						\
       bool isActive() const { return expr.template isActive<Arg>(); }	\
 									\
+      bool updateValue() const { return expr.updateValue(); }		\
+									\
       value_type val() const {						\
 	return VALUE;							\
       }									\
@@ -238,6 +240,10 @@ namespace Sacado {							\
 	  return expr1.template isActive<Arg>();			\
 	else								\
 	  return expr2.template isActive<Arg-num_args1>();		\
+      }									\
+									\
+      bool updateValue() const {					\
+	return expr1.updateValue() && expr2.updateValue();		\
       }									\
 									\
       value_type val() const {						\

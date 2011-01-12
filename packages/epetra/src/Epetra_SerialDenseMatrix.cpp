@@ -283,14 +283,14 @@ bool Epetra_SerialDenseMatrix::operator==(const Epetra_SerialDenseMatrix& rhs) c
 {
   if (M_ != rhs.M_ || N_ != rhs.N_) return(false);
 
-  const double* A = A_;
+  const double* A_tmp = A_;
   const double* rhsA = rhs.A_;
 
   for(int j=0; j<N_; ++j) {
     int offset = j*LDA_;
     int rhsOffset = j*rhs.LDA_;
     for(int i=0; i<M_; ++i) {
-      if (std::abs(A[offset+i] - rhsA[rhsOffset+i]) > Epetra_MinDouble) {
+      if (std::abs(A_tmp[offset+i] - rhsA[rhsOffset+i]) > Epetra_MinDouble) {
 	return(false);
       }
     }
@@ -418,7 +418,7 @@ int Epetra_SerialDenseMatrix::Scale(double ScalarA) {
 }
 //=========================================================================
 int Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double ScalarAB, 
-					const Epetra_SerialDenseMatrix& A, 
+					const Epetra_SerialDenseMatrix& A_in, 
 					const Epetra_SerialDenseMatrix& B,
 					double ScalarThis ) {
   // Check for compatible dimensions
@@ -426,8 +426,8 @@ int Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double ScalarA
   if (TransA!='T' && TransA!='N') EPETRA_CHK_ERR(-2); // Return error
   if (TransB!='T' && TransB!='N') EPETRA_CHK_ERR(-3);
   
-  int A_nrows = (TransA=='T') ? A.N() : A.M();
-  int A_ncols = (TransA=='T') ? A.M() : A.N();
+  int A_nrows = (TransA=='T') ? A_in.N() : A_in.M();
+  int A_ncols = (TransA=='T') ? A_in.M() : A_in.N();
   int B_nrows = (TransB=='T') ? B.N() : B.M();
   int B_ncols = (TransB=='T') ? B.M() : B.N();
   
@@ -437,7 +437,7 @@ int Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double ScalarA
 
     
   // Call GEMM function
-  GEMM(TransA, TransB, M_, N_, A_ncols, ScalarAB, A.A(), A.LDA(), 
+  GEMM(TransA, TransB, M_, N_, A_ncols, ScalarAB, A_in.A(), A_in.LDA(), 
        B.A(), B.LDA(), ScalarThis, A_, LDA_);
   long int nflops = 2*M_;
   nflops *= N_;
@@ -486,31 +486,31 @@ int  Epetra_SerialDenseMatrix::Multiply (bool transA,
 
 //=========================================================================
 int  Epetra_SerialDenseMatrix::Multiply (char SideA, double ScalarAB, 
-				      const Epetra_SerialSymDenseMatrix& A, 
+				      const Epetra_SerialSymDenseMatrix& A_in, 
 				      const Epetra_SerialDenseMatrix& B,
 				      double ScalarThis ) {
   // Check for compatible dimensions
   
   if (SideA=='R') {
     if (M_ != B.M() || 
-	N_ != A.N() ||
-	B.N() != A.M() ) EPETRA_CHK_ERR(-1); // Return error
+	N_ != A_in.N() ||
+	B.N() != A_in.M() ) EPETRA_CHK_ERR(-1); // Return error
   }
   else if (SideA=='L') {
-    if (M_ != A.M() || 
+    if (M_ != A_in.M() || 
 	N_ != B.N() ||
-	A.N() != B.M() ) EPETRA_CHK_ERR(-1); // Return error
+	A_in.N() != B.M() ) EPETRA_CHK_ERR(-1); // Return error
   }
   else {
     EPETRA_CHK_ERR(-2); // Return error, incorrect value for SideA
   }
   
   // Call SYMM function
-  SYMM(SideA, A.UPLO(), M_, N_, ScalarAB, A.A(), A.LDA(), 
+  SYMM(SideA, A_in.UPLO(), M_, N_, ScalarAB, A_in.A(), A_in.LDA(), 
        B.A(), B.LDA(), ScalarThis, A_, LDA_);
   long int nflops = 2*M_;
   nflops *= N_;
-  nflops *= A.N();
+  nflops *= A_in.N();
   if (ScalarAB != 1.0) nflops += M_*N_;
   if (ScalarThis != 0.0) nflops += M_*N_;
   UpdateFlops((double)nflops);

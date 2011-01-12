@@ -178,8 +178,6 @@ void BucketImpl::zero_fields( unsigned i_dst )
 
 void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src )
 {
-  static const char method[] = "stk::mesh::impl::BucketImpl::replace_fields" ;
-
   const std::vector<FieldBase*> & field_set =
     m_mesh.mesh_meta_data().get_fields();
 
@@ -193,17 +191,11 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
 
     if ( i->m_size ) {
       if ( j->m_size ) {
-        if ( i->m_size == j->m_size ) {
-          memory_copy( d + i->m_base + i->m_size * i_dst ,
-                       s + j->m_base + j->m_size * i_src , i->m_size );
-        }
-        else {
-          std::ostringstream msg ;
-          msg << method ;
-          msg << " FAILED WITH INCOMPATIBLE FIELD SIZES\n" ;
-          msg << "   " << i->m_size << " != " << j->m_size << "\n";
-          throw std::runtime_error( msg.str() );
-        }
+        ThrowErrorMsgIf( i->m_size != j->m_size,
+            "Incompatible field sizes: " << i->m_size << " != " << j->m_size );
+
+        memory_copy( d + i->m_base + i->m_size * i_dst ,
+                     s + j->m_base + j->m_size * i_src , i->m_size );
       }
       else {
         memory_zero( d + i->m_base + i->m_size * i_dst , i->m_size );
@@ -211,8 +203,6 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
     }
   }
 }
-
-
 
 } // namespace impl
 } // namespace mesh

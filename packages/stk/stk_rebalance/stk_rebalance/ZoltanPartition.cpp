@@ -617,12 +617,6 @@ void Zoltan::init_default_parameters()
   fill_default_values(m_default_parameters_);
 }
 
-//bool Zoltan::confirm( const std::string &param_set)
-//{
-//  Parameters *domain_parameters = &m_default_parameters_;
-//  return ( (domain_parameters)? 1 : 0 ) ;
-//}
-
 
 static Parameters *Name_Conversion =NULL;
 static Parameters *Value_Conversion=NULL;

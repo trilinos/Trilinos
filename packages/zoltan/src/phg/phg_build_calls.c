@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include <math.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
@@ -91,6 +92,7 @@ float weight_val;
 intptr_t index, iptr;   /* integers the same size as a pointer */
 ZOLTAN_GNO_TYPE gnos[2];
 ZOLTAN_GNO_TYPE tmpgno;
+MPI_Datatype zoltan_gno_mpi_type;
 
 int gno_size_for_dd;
 
@@ -105,6 +107,8 @@ zoltan_temp_vertices myHshVtxs;
 phg_GID_lookup       *lookup_myObjs = NULL;
 phg_GID_lookup       *lookup_myHshEdges = NULL;
 phg_GID_lookup       *lookup_myHshVtxs = NULL;
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   /* Use the graph or hypergraph query functions to build the hypergraph.
    *
@@ -397,7 +401,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     if (hgp->keep_tree) {
       ZOLTAN_GNO_TYPE offset;
       ZOLTAN_GNO_TYPE *egno = NULL;
-      MPI_Scan(&zhg->nHedges, &offset, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);
+      MPI_Scan(&zhg->nHedges, &offset, 1, zoltan_gno_mpi_type, MPI_SUM, zz->Communicator);
       offset -= zhg->nHedges;
 #ifdef CEDRIC_PRINT
       for (j=0; j < zhg->nHedges; j++){
@@ -1197,7 +1201,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
   /******************************************************************************/
 
   tmpgno = (ZOLTAN_GNO_TYPE)zhg->nPins;
-  rc = MPI_Allreduce(&tmpgno, &zhg->globalPins, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, comm);
+  rc = MPI_Allreduce(&tmpgno, &zhg->globalPins, 1, zoltan_gno_mpi_type, MPI_SUM, comm);
   CHECK_FOR_MPI_ERROR(rc);
 
   /***********************************************************************/
@@ -1329,8 +1333,11 @@ int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, ZOLTAN_GNO_TYPE *gnos, int len, in
   ZOLTAN_GNO_TYPE tmp;
   int i, rc;
   MPI_Comm comm = zz->Communicator;
+  MPI_Datatype zoltan_gno_mpi_type;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   /* The application uses global IDs which are unique but arbitrary.  Zoltan_PHG will
    * use global numbers which are consecutive integers beginning with zero.  Convert
@@ -1353,10 +1360,10 @@ int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, ZOLTAN_GNO_TYPE *gnos, int len, in
       mycnt[gnos[i]]++;
     }
     /* Compute prefix of mycnt */
-    rc = MPI_Scan(mycnt, gcnt, nProc, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, comm);
+    rc = MPI_Scan(mycnt, gcnt, nProc, zoltan_gno_mpi_type, MPI_SUM, comm);
     CHECK_FOR_MPI_ERROR(rc);
 
-    rc = MPI_Allreduce(mycnt, gtotal, nProc, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, comm);
+    rc = MPI_Allreduce(mycnt, gtotal, nProc, zoltan_gno_mpi_type, MPI_SUM, comm);
     CHECK_FOR_MPI_ERROR(rc);
 
     /* Compute first gno for vertices going to each target bin */
@@ -1384,12 +1391,12 @@ int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, ZOLTAN_GNO_TYPE *gnos, int len, in
     /* Scan to compute partial sums of the number of objs */
 
     tmp = (ZOLTAN_GNO_TYPE)len;
-    rc = MPI_Scan(&tmp, gtotal, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, comm);
+    rc = MPI_Scan(&tmp, gtotal, 1, zoltan_gno_mpi_type, MPI_SUM, comm);
     CHECK_FOR_MPI_ERROR(rc);
 
     /* Gather data from all procs */
 
-    rc = MPI_Allgather (&(gtotal[0]), 1, ZOLTAN_GNO_MPI_TYPE, &(gtotal[1]), 1, ZOLTAN_GNO_MPI_TYPE, comm);
+    rc = MPI_Allgather (&(gtotal[0]), 1, zoltan_gno_mpi_type, &(gtotal[1]), 1, zoltan_gno_mpi_type, comm);
     CHECK_FOR_MPI_ERROR(rc);
     gtotal[0] = 0;
     *numGlobalObjects = gtotal[nProc];

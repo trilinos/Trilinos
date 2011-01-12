@@ -69,11 +69,11 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
 
   wgt = zhg->objWeight;
 
-  printf("(%d) %d INPUT VERTICES (out of %zd) : gno (gid/lid) (weights) nhedges fixed inpart outpart objSize)\n",p, zhg->nObj, zhg->globalObj);
+  printf("(%d) %d INPUT VERTICES (out of " ZOLTAN_GNO_SPEC ") : gno (gid/lid) (weights) nhedges fixed inpart outpart objSize)\n",p, zhg->nObj, zhg->globalObj);
 
   for (i=0; i<zhg->nObj; i++){
 
-    printf("  %zd (",zhg->objGNO[i]);
+    printf("  " ZOLTAN_GNO_SPEC " (",zhg->objGNO[i]);
 
     if (zhg->objGID)
       printf(ZOLTAN_ID_SPEC "/",zhg->objGID[i]);
@@ -123,12 +123,12 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
   pin = zhg->pinGNO;
   owner = zhg->Pin_Procs;
    
-  printf("(%d) %d INPUT or REMOVED EDGES (out of %zd), %d pins: gno size (weights) (pinGNO/pinProc)\n",
+  printf("(%d) %d INPUT or REMOVED EDGES (out of " ZOLTAN_GNO_SPEC "), %d pins: gno size (weights) (pinGNO/pinProc)\n",
                   p, zhg->nHedges, zhg->globalHedges, zhg->nPins);
 
   for (i=0; i < zhg->nHedges; i++){
 
-    printf("  %zd %d (", zhg->edgeGNO[i], zhg->Esize[i]);
+    printf("  " ZOLTAN_GNO_SPEC " %d (", zhg->edgeGNO[i], zhg->Esize[i]);
 
     if (wgt){
       for (j=0; j < ewdim; j++){
@@ -139,7 +139,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
     printf(") (");
 
     for (j=0; j < zhg->Esize[i]; j++){
-      printf("%zd/%d", *pin++, *owner++);
+      printf("" ZOLTAN_GNO_SPEC "/%d", *pin++, *owner++);
       if (j < zhg->Esize[i] - 1) printf(" ");
     }
 
@@ -157,7 +157,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
   for (i=0; i<hg->nEdge; i++){
     npins = hg->hindex[i+1] - hg->hindex[i];
 
-    printf(" edge %zd: ",EDGE_LNO_TO_GNO(hg, i));
+    printf(" edge " ZOLTAN_GNO_SPEC ": ",EDGE_LNO_TO_GNO(hg, i));
     for (j=0; j<ewdim; j++){
       printf(" %f",*wgt++);
     }
@@ -174,7 +174,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
   sum = 0;
 
   for (i=0; i<hg->nVtx; i++){
-    printf("  %d  %zd: ", i, VTX_LNO_TO_GNO(hg, i));
+    printf("  %d  " ZOLTAN_GNO_SPEC ": ", i, VTX_LNO_TO_GNO(hg, i));
     for (j=0; j<vwdim; j++){
       if (j==sumWeight) sum += *vwgt;
       printf("%f ", *vwgt++);

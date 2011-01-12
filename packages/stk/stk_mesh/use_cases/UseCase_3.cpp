@@ -129,36 +129,36 @@ static const double node_coord_data[ node_count ][ SpatialDim ] = {
   { 1 , 1 , -2 } };
 
 // Hard coded hex node ids for all the hex nodes in the entire mesh
-static const EntityId hex_node_ids[3][ Hex8::node_count ] = {
+static const EntityId hex_node_ids[number_hex][ Hex8::node_count ] = {
   { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
   { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
   { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
 
 // Hard coded wedge node ids for all the wedge nodes in the entire mesh
-static const EntityId wedge_node_ids[3][ Wedge6::node_count ] = {
+static const EntityId wedge_node_ids[number_wedge][ Wedge6::node_count ] = {
   { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
   { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
   { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
 // Hard coded tetra node ids for all the tetra nodes in the entire mesh
-static const EntityId tetra_node_ids[3][ Tet4::node_count ] = {
+static const EntityId tetra_node_ids[number_tetra][ Tet4::node_count ] = {
   { 15 , 19 , 16 , 21 } ,
   { 19 , 20 , 16 , 21 } ,
   { 16 , 20 , 17 , 21 } };
 
 // Hard coded pyramid node ids for all the pyramid nodes in the entire mesh
-static const EntityId pyramid_node_ids[2][ Pyramid4::node_count ] = {
+static const EntityId pyramid_node_ids[number_pyramid][ Pyramid4::node_count ] = {
   { 11 , 15 , 16 , 12 , 21 } ,
   { 12 , 16 , 17 , 13 , 21 } };
 
 // Hard coded shell quad node ids for all the shell quad nodes in the entire mesh
-static const EntityId shell_quad_node_ids[3][ ShellQuad4::node_count ]={
+static const EntityId shell_quad_node_ids[number_shell_quad][ ShellQuad4::node_count ]={
   { 9 , 6 , 16 , 19 } ,
   { 6 , 7 , 17 , 16 } ,
   { 7 , 8 , 18 , 17 } };
 
 // Hard coded shell tri node ids for all the shell tri nodes in the entire mesh
-static const EntityId shell_tri_node_ids[3][ ShellTriangle3::node_count ] ={
+static const EntityId shell_tri_node_ids[number_shell_tri][ ShellTriangle3::node_count ] ={
   { 19 , 16 , 21 } ,
   { 16 , 17 , 21 } ,
   { 17 , 13 , 21 } };
@@ -214,6 +214,7 @@ void UseCase_3_Mesh::populate()
   // No parallel stuff for now
 }
 
+// Verify mesh for 6 different parts
 bool verifyMesh( const UseCase_3_Mesh & mesh )
 {
   bool result = true;
@@ -225,73 +226,31 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
 
   std::vector<Bucket *> element_buckets = bulkData.buckets( mesh.m_elem_rank );
 
-  // Verify entities in each part are set up correcty:
+  // Create a pair containing Part and matching node_count
+  typedef std::pair<Part*, unsigned> PartNodeCountPair;
+  std::vector<PartNodeCountPair> part_and_node_counts;
+  part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_hex, Hex8::node_count));
+  part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_wedge, Wedge6::node_count));
+  part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_tet, Tet4::node_count));
+  part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_pyramid, Pyramid4::node_count));
+  part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_quad_shell, ShellQuad4::node_count));
+  part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_tri_shell, ShellTriangle3::node_count));
 
-  // hex_block:
-  Part & hex_block = mesh.m_block_hex ;
-  result = result &&
-    verify_elem_node_coord_by_part(
-      hex_block,
-      element_buckets,
-      elem_node_coord,
-      node_coord,
-      Hex8::node_count
+  // Verify that entities in each part are set up correctly.
+  // Use a PartVector iterator for parts_to_check and call
+  // verify_elem_node_coord_by_part in UseCase_Common.cpp for
+  // each part in turn.
+  for( std::vector<PartNodeCountPair>::const_iterator  i = part_and_node_counts.begin() ; i != part_and_node_counts.end() ; ++i )
+    {
+      result = result &&
+        verify_elem_node_coord_by_part(
+          *(i->first),
+          element_buckets,
+          elem_node_coord,
+          node_coord,
+          i->second
       );
-
-  // wedge_block:
-  Part & wedge_block = mesh.m_block_wedge ;
-  result = result &&
-    verify_elem_node_coord_by_part(
-      wedge_block,
-      element_buckets,
-      elem_node_coord,
-      node_coord,
-      Wedge6::node_count
-      );
-
-  // tetra_block
-  Part & tetra_block = mesh.m_block_tet ;
-  result = result &&
-    verify_elem_node_coord_by_part(
-      tetra_block,
-      element_buckets,
-      elem_node_coord,
-      node_coord,
-      Tet4::node_count
-      );
-
-  // pyramid_block
-  Part & pyramid_block = mesh.m_block_pyramid ;
-  result = result &&
-    verify_elem_node_coord_by_part(
-      pyramid_block,
-      element_buckets,
-      elem_node_coord,
-      node_coord,
-      Pyramid4::node_count
-      );
-
-  // quad_shell_block
-  Part & quad_shell_block = mesh.m_block_quad_shell ;
-  result = result &&
-    verify_elem_node_coord_by_part(
-      quad_shell_block,
-      element_buckets,
-      elem_node_coord,
-      node_coord,
-      ShellQuad4::node_count
-      );
-
-  // tri_shell_block
-  Part & tri_shell_block = mesh.m_block_tri_shell ;
-  result = result &&
-    verify_elem_node_coord_by_part(
-      tri_shell_block,
-      element_buckets,
-      elem_node_coord,
-      node_coord,
-      ShellTriangle3::node_count
-      );
+    }
 
   // Check that all the nodes were allocated.
   for ( unsigned i = 0 ; i < node_count ; ++i ) {

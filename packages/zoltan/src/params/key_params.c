@@ -19,7 +19,7 @@ extern "C" {
 
 
 #include <stdio.h>
-#include "zz_const.h"
+#include "zz_util_const.h"
 #include "key_params.h"
 #include "params_const.h"
 #include "timer_const.h"
@@ -401,10 +401,10 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
          Zoltan_Seed(), Zoltan_Seed());
   printf("ZOLTAN Parameter %s = %s\n", Key_params[21].name, 
          zz->LB.Approach);
-  printf("Size of ZOLTAN_ID_TYPE: %zd, sizeof ZOLTAN_GNO_TYPE: %zd\n",
+  printf("Size of ZOLTAN_ID_TYPE: %ld, sizeof ZOLTAN_GNO_TYPE: %ld\n",
          sizeof(ZOLTAN_ID_TYPE),sizeof(ZOLTAN_GNO_TYPE));
   printf("MPI_Datatype for ZOLTAN_ID_TYPE: %s\n", zoltan_mpi_id_datatype_name);
-  printf("MPI_Datatype for ZOLTAN_GNO_TYPE: %s\n", zoltan_mpi_gno_datatype_name);
+  printf("MPI_Datatype for ZOLTAN_GNO_TYPE: %s\n", Zoltan_mpi_gno_name());
 }
 
 #ifdef __cplusplus

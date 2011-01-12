@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
-#include "zz_util_const.h"  /* included for Zoltan_get_global_id_type() */
-
 
 /* Name of file containing graph to be partitioned */
 
@@ -62,7 +60,6 @@ int main(int argc, char *argv[])
   int *parts;
   FILE *fp;
   GRAPH_DATA myGraph;
-  char *datatype_name;
 
   /******************************************************************
   ** Initialize MPI and Zoltan
@@ -79,22 +76,6 @@ int main(int argc, char *argv[])
     MPI_Finalize();
     exit(0);
   }
-
-  /******************************************************************
-  ** Check that this example and the Zoltan library are both
-  ** built with the same ZOLTAN_ID_TYPE definition.
-  ******************************************************************/
-
-  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
-    if (myRank == 0){
-      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
-                 datatype_name, zoltan_id_datatype_name);
-
-    }
-    MPI_Finalize();
-    exit(0);
-  }
-  
 
   /******************************************************************
   ** Read graph from input file and distribute it 
@@ -133,7 +114,13 @@ int main(int argc, char *argv[])
      Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
      Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
      Zoltan_Set_Param(zz,"LB_METHOD","GRAPH");
+#ifdef HAVE_PARMETIS
      Zoltan_Set_Param(zz,"GRAPH_PACKAGE","PARMETIS");
+#else
+  #ifdef HAVE_SCOTCH
+     Zoltan_Set_Param(zz,"GRAPH_PACKAGE","SCOTCH");
+  #endif
+#endif
      Zoltan_Set_Param(zz,"EDGE_WEIGHT_DIM","1");
      Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
      Zoltan_Set_Param(zz,"LB_APPROACH","REPARTITION");

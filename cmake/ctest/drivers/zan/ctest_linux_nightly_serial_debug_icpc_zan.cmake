@@ -9,12 +9,12 @@ SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME SERIAL_DEBUG_ICPC)
 #SET(CTEST_TEST_TYPE Experimental)
+#SET(CTEST_TEST_TIMEOUT 900)
 
 #SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx Rythmos)
 SET(EXTRA_EXCLUDE_PACKAGES Didasko Sundance Piro Rythmos TrilinosCouplings NOX STK Pamgen Thyra Tpetra Zoltan Stokhos FEApp)
 
 SET( EXTRA_CONFIGURE_OPTIONS
-  "-DDART_TESTING_TIMEOUT:STRING=120"
   "-DTrilinos_ENABLE_Fortran:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   )

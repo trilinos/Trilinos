@@ -21,11 +21,6 @@
 #include <iterator>
 #include <time.h>
 
-#ifndef IOSS_STANDALONE
-#include <stk_util/environment/RuntimeWarning.hpp>
-#include <stk_util/environment/ProductRegistry.hpp>
-#endif
-
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
 #include <Ioss_ParallelUtils.h>
@@ -49,18 +44,22 @@ namespace Iovs {
     // assume true until proven false
     sequentialNG2L = true;
     sequentialEG2L = true;
+#if !defined(NO_PARAVIEWIMESH_SUPPORT)
     int err; 
     iMesh_newMesh (filename.c_str(), &mesh_instance, &err, 1);
     iMesh_getRootSet (mesh_instance, &rootset, &err);
+#endif
   }
 
   DatabaseIO::~DatabaseIO() 
   {
+#if !defined(NO_PARAVIEWIMESH_SUPPORT)
     try {
       int err;
       iMesh_dtor (mesh_instance, &err);
     } catch (...) {
     }
+#endif
   }
 
   bool DatabaseIO::begin(Ioss::State state)
@@ -99,8 +98,10 @@ namespace Iovs {
   {
     Ioss::SerializeIO   serializeIO__(this);
 
+#if !defined(NO_PARAVIEWIMESH_SUPPORT)
     int err;
     iMesh_setTimeData (mesh_instance, state, time, 0.0, &err);
+#endif
 
     // Zero global variable array...
     // std::fill(globalValues.begin(), globalValues.end(), 0.0);
@@ -111,9 +112,12 @@ namespace Iovs {
   {
     Ioss::SerializeIO   serializeIO__(this);
 
+#if !defined(NO_PARAVIEWIMESH_SUPPORT)
     // TODO, most likely global fields can be immediate, not delayed like ex
     int err;
     iMesh_save (mesh_instance, rootset, "", "", &err, 0, 0);
+#endif
+
     return true;
   }
 
@@ -243,9 +247,9 @@ namespace Iovs {
     {
       Ioss::SerializeIO serializeIO__(this);
 
-      Ioss::Field::RoleType role = field.get_role();
       size_t num_to_get = field.verify(data_size);
-
+#if !defined(NO_PARAVIEWIMESH_SUPPORT)
+      Ioss::Field::RoleType role = field.get_role();
       if ((role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) &&
           num_to_get == 1) {
         int ierr = 0;
@@ -275,6 +279,7 @@ namespace Iovs {
                << "This is probably an internal error; please notify gdsjaar@sandia.gov";
         IOSS_ERROR(errmsg);
       }
+#endif
       return num_to_get;
     }
   }
@@ -287,6 +292,7 @@ namespace Iovs {
       Ioss::SerializeIO serializeIO__(this);
 
       size_t num_to_get = field.verify(data_size);
+#if !defined(NO_PARAVIEWIMESH_SUPPORT)
       if (num_to_get > 0) {
         int ierr = 0;
 
@@ -390,6 +396,7 @@ namespace Iovs {
           // write_global_field(EX_NODAL, field, nb, data);
         }
       }
+#endif
       return num_to_get;
     }
   }
@@ -402,7 +409,7 @@ namespace Iovs {
       Ioss::SerializeIO serializeIO__(this);
 
       size_t num_to_get = field.verify(data_size);
-
+#if !defined(NO_PARAVIEWIMESH_SUPPORT)
       if (num_to_get > 0) {
         int ierr = 0;
 
@@ -620,6 +627,7 @@ namespace Iovs {
           // write_global_field(EX_ELEM_BLOCK, field, eb, data);
         }
       }
+#endif
       return num_to_get;
     }
   }

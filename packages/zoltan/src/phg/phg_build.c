@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include "phg.h"
 #include "phg_verbose.h"
 #include "zz_const.h"
@@ -1667,6 +1668,9 @@ ZOLTAN_GNO_TYPE *keepPinGNO = NULL, *keepEdgeGNO = NULL, *goPinGNO = NULL, *goEd
 int *procPtr;
 float *wgtPtr;
 ZOLTAN_GNO_TYPE localval[2], globalval[2];
+MPI_Datatype zoltan_gno_mpi_type;
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   /* Remove dense edges and zero-sized edges from input list */
 
@@ -1689,7 +1693,8 @@ ZOLTAN_GNO_TYPE localval[2], globalval[2];
   localval[0] = nremove;
   localval[1] = nremove_size;
 
-  MPI_Allreduce(localval, globalval, 2, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(localval, globalval, 2, zoltan_gno_mpi_type, MPI_SUM, zz->Communicator);
+
 
   global_nremove = globalval[0];
   global_nremove_pins = globalval[1];
@@ -1698,7 +1703,7 @@ ZOLTAN_GNO_TYPE localval[2], globalval[2];
 
   if ((zhg->globalHedges > zz->Num_Proc) && (numGlobalEdges < zz->Num_Proc)){
     if (zz->Proc == 0) fprintf(stderr,
-     "\nWARNING: PHG_EDGE_SIZE_THRESHOLD is low (%f), resulting in only %zd edges\n remaining.",
+     "\nWARNING: PHG_EDGE_SIZE_THRESHOLD is low (%f), resulting in only " ZOLTAN_GNO_SPEC " edges\n remaining.",
         esize_threshold, numGlobalEdges);
   }
 

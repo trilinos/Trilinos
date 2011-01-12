@@ -963,6 +963,12 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
 int ML_Epetra::ML_Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, Epetra_CrsMatrix *&Result,bool verbose){
   ML_Comm* comm;
   ML_Comm_Create(&comm);
+#ifdef ML_MPI
+  // Use the same communicator as A if we're using MPI.
+  const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&A.Comm());
+  if(Mcomm) ML_Comm_Set_UsrComm(comm,Mcomm->GetMpiComm());
+#endif
+
   ML_Operator *R_       = ML_Operator_Create(comm);
   ML_Operator *A_       = ML_Operator_Create(comm);
   ML_Operator *P_       = ML_Operator_Create(comm);
@@ -1633,6 +1639,12 @@ Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *B
 
   temp = global_comm;
   ML_Comm_Create(&comm);
+#ifdef ML_MPI
+  // Use the same communicator as A if we're using MPI.
+  const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&B_crs->Comm());
+  if(Mcomm) ML_Comm_Set_UsrComm(comm,Mcomm->GetMpiComm());
+#endif
+
   ML_Operator *B_ml, *Bt_ml, *BBt_ml;
   B_ml  = ML_Operator_Create(comm);
   Bt_ml = ML_Operator_Create(comm);
@@ -1663,6 +1675,11 @@ Epetra_CrsMatrix *Epetra_MatrixAdd(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *Bt
 
   temp = global_comm;
   ML_Comm_Create(&comm);
+#ifdef ML_MPI
+  // Use the same communicator as A if we're using MPI.
+  const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&B_crs->Comm());
+  if(Mcomm) ML_Comm_Set_UsrComm(comm,Mcomm->GetMpiComm());
+#endif
   ML_Operator *B_ml, *Bt_ml, *BBt_ml;
   B_ml  = ML_Operator_Create(comm);
   Bt_ml = ML_Operator_Create(comm);

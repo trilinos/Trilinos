@@ -15,7 +15,8 @@ namespace Thyra {
     SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
     SOLVER_TYPE_BLOCK_CG,
     SOLVER_TYPE_PSEUDO_BLOCK_CG,
-    SOLVER_TYPE_GCRODR
+    SOLVER_TYPE_GCRODR,
+    SOLVER_TYPE_MINRES
   };
 
   inline std::istream& operator>>(
@@ -66,6 +67,8 @@ public:
   static const std::string  PseudoBlockCG_name;
   /** \brief . */
   static const std::string  GCRODR_name;
+  /** \brief . */
+  static const std::string  MINRES_name;
   /** \brief . */
   static const std::string  ConvergenceTestFrequency_name;
 

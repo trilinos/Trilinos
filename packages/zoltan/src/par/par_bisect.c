@@ -20,7 +20,7 @@ extern "C" {
 #include <stdlib.h>
 #include <float.h>
 #include "zoltan_types.h"
-#include "zz_const.h"
+#include "zz_util_const.h"
 #include "shared.h"
 #include "par_bisect_const.h"
 #include "par_median_const.h"
@@ -298,7 +298,13 @@ int Zoltan_RB_find_bisector(
     /* Describe struct bisector to MPI. Add MPI_UB at the end just to be safe. */
     int lengths[5] = {2,2,3,4*MAX_BISECT_WGTS,1};
     MPI_Aint ind[5], offset;
-    MPI_Datatype types[5] = {MPI_DOUBLE, ZOLTAN_GNO_MPI_TYPE, MPI_INT, MPI_DOUBLE, MPI_UB};
+    MPI_Datatype types[5];
+
+    types[0] = types[3] = MPI_DOUBLE;
+    types[1] = Zoltan_mpi_gno_type();
+    types[2] = MPI_INT;
+    types[4] = MPI_UB;
+
     MPI_Address(med, &offset);
     ind[0] = 0;
     MPI_Address(&(med->countlo), &(ind[1])); 

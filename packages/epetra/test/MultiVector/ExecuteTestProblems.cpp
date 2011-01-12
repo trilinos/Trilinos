@@ -98,42 +98,45 @@
     Epetra_MultiVector C1(View, Map2d, Cpp, NumVectors);
 
     for (int strided = 0; strided<2; strided++) {
-      int ierr;
+   
     // Loop through all trans cases using a variety of values for alpha and beta
     for (i=0; i<4; i++)  {
-	ierr = 0;
 	char transa = 'N'; if (i>1) transa = 'T';
 	char transb = 'N'; if (i%2!=0) transb = 'T';
 	double alpha = (double) i+1;
 	double beta  = (double) (i/2);
 	EPETRA_TEST_ERR(C.Random(),ierr);  // Fill C with random numbers
-	ierr += BuildMatrixTests(C,transa, transb, alpha, A, B, beta, C_GEMM );
-	if (strided)
-	  {
-	    Ap = &A; Bp = &B; Cp = &C;
-	  }
-	else
-	  {
-	    A.ExtractCopy(App); Ap = &A1;
-	    B.ExtractCopy(Bpp); Bp = &B1;
-	    C.ExtractCopy(Cpp); Cp = &C1;
-	  }
+	int localierr = BuildMatrixTests(C,transa, transb, alpha, A, B, beta, C_GEMM );
+	if (localierr!=-2) { // -2 means the shapes didn't match and we skip the tests
+	  if (strided)
+	    {
+	      Ap = &A; Bp = &B; Cp = &C;
+	    }
+	  else
+	    {
+	      A.ExtractCopy(App); Ap = &A1;
+	      B.ExtractCopy(Bpp); Bp = &B1;
+	      C.ExtractCopy(Cpp); Cp = &C1;
+	    }
 	  
-	ierr += Cp->Multiply(transa, transb, alpha, *Ap, *Bp, beta);
-	ierr += Cp->Update(-1.0, C_GEMM, 1.0);
-	ierr += Cp->Norm2(residual);
-
-	if (verbose && ierr==0)
-	  {
-	    cout << "XXXXX Replicated Local MultiVector GEMM tests";
-	    if (strided)
-	    cout << " (Strided Multivectors)" << endl;
-	    else
-	    cout << " (Non-Strided Multivectors)" << endl;
-	    cout << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
-		 <<", transb = " << transb;
+	  localierr = Cp->Multiply(transa, transb, alpha, *Ap, *Bp, beta);
+	  if (localierr!=-2) { // -2 means the shapes didn't match and we skip the tests
+	    ierr += Cp->Update(-1.0, C_GEMM, 1.0);
+	    ierr += Cp->Norm2(residual);
+	    
+	    if (verbose)
+	      {
+		cout << "XXXXX Replicated Local MultiVector GEMM tests";
+		if (strided)
+		  cout << " (Strided Multivectors)" << endl;
+		else
+		  cout << " (Non-Strided Multivectors)" << endl;
+		cout << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
+		     <<", transb = " << transb;
+	      }
+	    if (BadResidual(verbose,residual, NumVectors)) return(-1);
 	  }
-	if (ierr==0 && BadResidual(verbose,residual, NumVectors)) return(-1);
+	}
       }
 
       }
@@ -166,18 +169,19 @@
     double beta  = 1.0;
     EPETRA_TEST_ERR(C.Random(),ierr);  // Fill C with random numbers
     ierr += BuildMatrixTests(C, transa, transb, alpha, A, B, beta, C_GEMM );
-    ierr += C.Multiply(transa, transb, alpha, A, B, beta);
-    ierr += C.Update(-1.0, C_GEMM, 1.0);
-    ierr += C.Norm2(residual);
+    int localierr = C.Multiply(transa, transb, alpha, A, B, beta);
+    if (localierr!=-2) { // -2 means the shapes didn't match
+      ierr += C.Update(-1.0, C_GEMM, 1.0);
+      ierr += C.Norm2(residual);
 
-    if (verbose && ierr==0)
-      {
-	cout << "XXXXX Generalized 2D dot product via GEMM call     " << endl;
-	cout << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
-	     <<", transb = " << transb;
-      }
-    if (BadResidual(verbose,residual, NumVectors)) return(-1);
-    
+      if (verbose)
+	{
+	  cout << "XXXXX Generalized 2D dot product via GEMM call     " << endl;
+	  cout << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
+	       <<", transb = " << transb;
+	}
+      if (BadResidual(verbose,residual, NumVectors)) return(-1);
+    }
     
   }      
     // ====================================
@@ -509,13 +513,13 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   int locerr = err;
   Comm.MinAll(&locerr, &err, 1);
 
-  if (verbose)
+  if (verbose) {
     if (err==0) {
       cout << "\t Checked OK" << endl;
     } else {
       cout << "\t Checked Failed" << endl;
     }
-
+  }
   err = 0;
   if (verbose) cout << "XXXXX Testing random_A (Test3) ";
 
@@ -550,12 +554,13 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   EPETRA_TEST_ERR(1-allrandvals, err); // If allrandvals is anything but 1, this will cause an error 
   locerr = err;
   Comm.MinAll(&locerr, &err, 1);
-  if (verbose)
+  if (verbose) {
     if (err==0) {
       cout << "\t Checked OK" << endl;
     } else {
       cout << "\t Checked Failed" << endl;
     }
+  }
 
   // Delete everything
   

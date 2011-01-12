@@ -11,17 +11,125 @@
 #include <algorithm>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
+#include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 
 namespace stk {
 namespace mesh {
 
+namespace {
+
+void filter_superimposed_entities(const Entity & entity, EntityVector & entities)
+{
+  // Get the node entities for the nodes that make up the entity, we'll
+  // use this to check for superimposed entities
+  PairIterRelation irel = entity.relations(fem::NODE_RANK);
+  EntityVector entity_nodes;
+  entity_nodes.reserve(irel.size());
+  for ( ; !irel.empty(); ++irel ) {
+    entity_nodes.push_back(irel->entity());
+  }
+  std::sort(entity_nodes.begin(), entity_nodes.end());
+
+  // Make sure to remove the all superimposed entities from the list
+  unsigned num_nodes_in_orig_entity = entity_nodes.size();
+  EntityVector current_nodes;
+  current_nodes.resize(num_nodes_in_orig_entity);
+  EntityVector::iterator itr = entities.begin();
+  while ( itr != entities.end() ) {
+    Entity * current_entity = *itr;
+    PairIterRelation relations = current_entity->relations(fem::NODE_RANK);
+
+    if (current_entity == &entity) {
+      // Superimposed with self by definition
+      itr = entities.erase(itr);
+    }
+    else if (relations.size() != num_nodes_in_orig_entity) {
+      // current_entity has a different number of nodes than entity, they
+      // cannot be superimposed
+      ++itr;
+    }
+    else {
+      for (unsigned i = 0; relations.first != relations.second;
+           ++relations.first, ++i ) {
+        current_nodes[i] = relations.first->entity();
+      }
+      std::sort(current_nodes.begin(), current_nodes.end());
+
+      bool entities_are_superimposed = entity_nodes == current_nodes;
+      if (entities_are_superimposed) {
+        itr = entities.erase(itr);
+      }
+      else {
+        ++itr;
+      }
+    }
+  }
+}
+
+/** \brief  Get the entities adjacent to the input entity.
+ *
+ *  The adjacent entities are of the same rank as the input entity.
+ *  Adjacency is defined by the input entity sharing a common
+ *  sub-cell with the adjacent entities.
+ *
+ *  subcell_rank defines the rank of the (potentially) common subcell
+ *  subcell_identifier defined the local id of the common subcell
+ *  adjacent_entities is an output parameter that contains pairs that
+ *     have the adjacent entity and the local id of the common subcell
+ *     with respect to the adjacent entity.
+ */
+void get_adjacent_entities( const Entity & entity ,
+                            EntityRank subcell_rank ,
+                            unsigned subcell_identifier ,
+                            std::vector< EntitySideComponent> & adjacent_entities)
+{
+  adjacent_entities.clear();
+
+  // Get nodes that make up the subcell we're looking at
+  EntityVector subcell_nodes;
+  const CellTopologyData * subcell_topology = get_subcell_nodes(entity,
+                                                                subcell_rank,
+                                                                subcell_identifier,
+                                                                subcell_nodes);
+
+
+  // Given the nodes related to the subcell, find all entities
+  // with the same rank that have a relation to all of these nodes
+  EntityVector potentially_adjacent_entities;
+
+  get_entities_through_relations(subcell_nodes,
+                                 entity.entity_rank(),
+                                 potentially_adjacent_entities);
+
+  // We don't want to include entities that are superimposed with
+  // the input entity
+  filter_superimposed_entities(entity, potentially_adjacent_entities);
+
+  // Add the local ids, from the POV of the adj entitiy, to the return value.
+  // Reverse the nodes so that the adjacent entity has them in the positive
+  // orientation
+  std::reverse(subcell_nodes.begin(),subcell_nodes.end());
+
+  for (EntityVector::const_iterator eitr = potentially_adjacent_entities.begin();
+       eitr != potentially_adjacent_entities.end(); ++eitr) {
+    int local_subcell_num = get_entity_subcell_id(**eitr,
+                                                  subcell_rank,
+                                                  subcell_topology,
+                                                  subcell_nodes);
+    if ( local_subcell_num != -1) {
+      adjacent_entities.push_back(EntitySideComponent(*eitr, local_subcell_num));
+    }
+  }
+}
+
+} // unnamed namespace
+
 void boundary_analysis(const BulkData& bulk_data,
-                       const std::vector< Entity *> & entities_closure,
+                       const EntityVector & entities_closure,
                        EntityRank closure_rank,
                        EntitySideVector& boundary)
 {
@@ -30,7 +138,7 @@ void boundary_analysis(const BulkData& bulk_data,
 
   // find an iterator that points to the last item in the closure that is of a
   // lower-order than the closure_rank
-  std::vector<Entity*>::const_iterator itr =
+  EntityVector::const_iterator itr =
     std::lower_bound(entities_closure.begin(),
                      entities_closure.end(),
                      EntityKey(closure_rank, 0),
@@ -108,130 +216,6 @@ void boundary_analysis(const BulkData& bulk_data,
   }
 }
 
-void get_adjacent_entities( const Entity & entity ,
-                            unsigned subcell_rank ,
-                            unsigned subcell_identifier ,
-                            std::vector< EntitySideComponent> & adjacent_entities )
-{
-  adjacent_entities.clear();
-
-  // get cell topology
-  const CellTopologyData* celltopology = fem::get_cell_topology(entity).getCellTopologyData();
-  if (celltopology == NULL) {
-    return;
-  }
-
-  // valid ranks fall within the dimension of the cell topology
-  bool bad_rank = subcell_rank >= celltopology->dimension;
-
-  // local id should be < number of entities of the desired type
-  // (if you have 4 edges, their ids should be 0-3)
-  bool bad_id = false;
-  if (!bad_rank) {
-    bad_id = subcell_identifier >= celltopology->subcell_count[subcell_rank];
-  }
-
-  if (bad_rank || bad_id) {
-    std::ostringstream msg;
-    //parallel consisent throw
-    if (bad_rank) {
-      msg << "get_adjacent_entities( const Entity& entity, unsigned subcell_rank, ... ) subcell_rank is >= celltopology dimension\n";
-    }
-    else if (bad_id) {
-      msg << "get_adjacent_entities( const Entity& entity, unsigned subcell_rank, unsigned subcell_identifier, ... ) subcell_identifier is >= subcell count\n";
-    }
-
-    throw std::runtime_error(msg.str());
-  }
-
-  // For the potentially common subcell, get it's nodes and num_nodes
-  const unsigned* side_node_local_ids =
-    celltopology->subcell[subcell_rank][subcell_identifier].node;
-
-  const CellTopologyData * side_topology =
-    celltopology->subcell[subcell_rank][subcell_identifier].topology;
-  int num_nodes_in_side = side_topology->node_count;
-
-  // Get all the nodal relationships for this entity. We are guaranteed
-  // that, if we make it this far, the entity is guaranteed to have
-  // some relationship to nodes (we know it is a higher-order entity
-  // than Node).
-
-  // Get the node entities for the nodes that make up the side. We put these
-  // in in reverse order so that it has the correct orientation with respect
-  // the potential adjacent entities we are evaluating. The relations are
-  // right-hand-rule ordered for the owning entity, but we need something
-  // that's compatible w/ the adjacent entities.
-  std::vector<Entity*> side_node_entities;
-  side_node_entities.reserve(num_nodes_in_side);
-  PairIterRelation irel = entity.relations(fem::NODE_RANK);
-  for (int itr = num_nodes_in_side; itr > 0; ) {
-    --itr;
-    side_node_entities.push_back(irel[side_node_local_ids[itr]].entity());
-  }
-
-  // Get the node entities for the nodes that make up the entity
-  std::vector<Entity*> entity_nodes;
-  entity_nodes.reserve(irel.size());
-  for ( ; !irel.empty(); ++irel ) {
-    entity_nodes.push_back(irel->entity());
-  }
-  std::sort(entity_nodes.begin(), entity_nodes.end());
-
-  // Given the nodes related to the side, find all entities
-  // with the same rank that have a relation to all of these nodes
-  std::vector<Entity*> elements;
-  elements.reserve(8); //big enough that resizing should be rare
-  get_entities_through_relations(side_node_entities,
-                                 entity.entity_rank(),
-                                 elements);
-
-  // Make sure to remove the all superimposed entities from the list
-  unsigned num_nodes_in_orig_entity = entity_nodes.size();
-  std::vector<Entity*> current_nodes;
-  current_nodes.resize(num_nodes_in_orig_entity);
-  std::vector<Entity*>::iterator itr = elements.begin();
-  while ( itr != elements.end() ) {
-    Entity * current_entity = *itr;
-    PairIterRelation relations = current_entity->relations(fem::NODE_RANK);
-
-    if (current_entity == &entity) {
-      // We do not want to be adjacent to ourself
-      itr = elements.erase(itr);
-    }
-    else if (relations.size() != num_nodes_in_orig_entity) {
-      // current_entity has a different number of nodes than entity, they
-      // cannot be superimposed
-      ++itr;
-    }
-    else {
-      for (unsigned i = 0; relations.first != relations.second;
-           ++relations.first, ++i ) {
-        current_nodes[i] = relations.first->entity();
-      }
-      std::sort(current_nodes.begin(), current_nodes.end());
-
-      bool entities_are_superimposed = entity_nodes == current_nodes;
-      if (entities_are_superimposed) {
-        itr = elements.erase(itr);
-      }
-      else {
-        ++itr;
-      }
-    }
-  }
-
-  // Add the local ids, from the POV of the adj entitiy, to the return value
-  for (std::vector<Entity*>::const_iterator eitr = elements.begin();
-       eitr != elements.end(); ++eitr) {
-    int local_side_num = element_local_side_id(**eitr,
-                                               side_topology,
-                                               side_node_entities);
-    if ( local_side_num != -1) {
-      adjacent_entities.push_back(EntitySideComponent(*eitr, local_side_num));
-    }
-  }
-}
 
 }
 }

@@ -156,8 +156,6 @@ protected:
   /** \brief  CTOR for pointer type */
   DataTraits( const std::type_info & arg_type , const DataTraits & );
 
-  void throw_not_supported( const char * method ) const ;
-
   virtual ~DataTraits();
 private:
   DataTraits();

@@ -142,53 +142,54 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
   STKUNIT_ASSERT_THROW( stk::mesh::fem::get_cell_topology( elem ).getCellTopologyData(), std::runtime_error );
 }
 
-STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_trivial )
-{
-  // Element, elem2, has NULL topology
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-
-  if ( 1 == fix.bulk.parallel_size() ) {
-
-    fix.bulk.modification_begin();
-    Entity & elem2  = fix.create_entity( fix.element_rank, fix.generic_element_part );
-    fix.bulk.modification_end();
-
-    std::vector<EntitySideComponent> adjacent_entities;
-    const EntityRank subcell_rank = fix.element_rank;
-    const EntityId subcell_identifier = 1;
-    get_adjacent_entities( elem2 , subcell_rank, subcell_identifier, adjacent_entities);
-    STKUNIT_ASSERT_TRUE( true );
-  }
-}
-
-STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_invalid )
-{
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-  fix.bulk.modification_begin();
-  Entity & elem3  = fix.create_entity( fix.element_rank , fix.generic_element_part );
-
-  PartVector add_parts;
-  add_parts.push_back( & fix.element_tet_part );
-  fix.bulk.change_entity_parts ( elem3 , add_parts );
-  fix.bulk.modification_end();
-  std::vector<EntitySideComponent> adjacent_entities2;
-  {
-    const EntityRank invalid_subcell_rank = 4;
-    const EntityId valid_subcell_identifier = 0;
-    STKUNIT_ASSERT_THROW(
-        get_adjacent_entities( elem3 , invalid_subcell_rank, valid_subcell_identifier, adjacent_entities2),
-        std::runtime_error
-        );
-  }
-  {
-    const EntityRank valid_subcell_rank = 1;
-    const EntityId invalid_subcell_identifier = 8;
-    STKUNIT_ASSERT_THROW(
-      get_adjacent_entities( elem3 , valid_subcell_rank, invalid_subcell_identifier, adjacent_entities2),
-      std::runtime_error
-      );
-  }
-}
+// No longer in the public API
+// STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_trivial )
+// {
+//   // Element, elem2, has NULL topology
+//   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
+//
+//   if ( 1 == fix.bulk.parallel_size() ) {
+//
+//     fix.bulk.modification_begin();
+//     Entity & elem2  = fix.create_entity( fix.element_rank, fix.generic_element_part );
+//     fix.bulk.modification_end();
+//
+//     std::vector<EntitySideComponent> adjacent_entities;
+//     const EntityRank subcell_rank = fix.element_rank;
+//     const EntityId subcell_identifier = 1;
+//     get_adjacent_entities( elem2 , subcell_rank, subcell_identifier, adjacent_entities);
+//     STKUNIT_ASSERT_TRUE( true );
+//   }
+// }
+//
+// STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_invalid )
+// {
+//   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
+//   fix.bulk.modification_begin();
+//   Entity & elem3  = fix.create_entity( fix.element_rank , fix.generic_element_part );
+//
+//   PartVector add_parts;
+//   add_parts.push_back( & fix.element_tet_part );
+//   fix.bulk.change_entity_parts ( elem3 , add_parts );
+//   fix.bulk.modification_end();
+//   std::vector<EntitySideComponent> adjacent_entities2;
+//   {
+//     const EntityRank invalid_subcell_rank = 4;
+//     const EntityId valid_subcell_identifier = 0;
+//     STKUNIT_ASSERT_THROW(
+//         get_adjacent_entities( elem3 , invalid_subcell_rank, valid_subcell_identifier, adjacent_entities2),
+//         std::invalid_argument
+//         );
+//   }
+//   {
+//     const EntityRank valid_subcell_rank = 1;
+//     const EntityId invalid_subcell_identifier = 8;
+//     STKUNIT_ASSERT_THROW(
+//       get_adjacent_entities( elem3 , valid_subcell_rank, invalid_subcell_identifier, adjacent_entities2),
+//       std::invalid_argument
+//       );
+//   }
+// }
 
 STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology )
 {

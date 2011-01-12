@@ -1,0 +1,692 @@
+/*------------------------------------------------------------------------*/
+/*                 Copyright 2010 Sandia Corporation.                     */
+/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
+/*  license for use of this work by or on behalf of the U.S. Government.  */
+/*  Export of this program may require a license from the                 */
+/*  United States Government.                                             */
+/*------------------------------------------------------------------------*/
+
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+
+#include <stdio.h>
+#include <stdlib.h>      
+
+#if defined( STK_HAS_MPI )
+#include <mpi.h>
+#endif
+
+#include <stk_util/diag/Writer.hpp>
+#include <stk_util/diag/PrintTimer.hpp>
+#include <stk_util/util/Bootstrap.hpp>
+#include <stk_util/util/IndentStreambuf.hpp>
+
+#include <stk_percept/RunEnvironment.hpp>
+#include <stk_percept/Util.hpp>
+
+
+/// copied and edited from stk_util/use_cases/UseCaseEnvironment 
+
+namespace {
+
+  namespace boptl = boost::program_options;
+
+
+  // Parse command line bit masks and produce -h documentation. (Probably moved to Util at some point)
+  typedef unsigned long OptionMask;
+
+  struct OptionMaskName
+  {
+    OptionMaskName()
+      : m_name(""),
+        m_mask(0),
+        m_description("")
+    {}
+
+    OptionMaskName(const std::string &name, const OptionMask &mask, const std::string &description = "No description available")
+      : m_name(name),
+        m_mask(mask),
+        m_description(description)
+    {}
+
+    virtual ~OptionMaskName()
+    {}
+
+    std::string		m_name;
+    OptionMask		m_mask;
+    std::string		m_description;
+  };
+
+
+  class OptionMaskNameMap: public std::map<std::string, OptionMaskName>
+  {
+  public:
+    void mask(const std::string &name, const OptionMask mask, const std::string &description) {
+      iterator it = find(name);
+      if (it == end())
+        insert(std::make_pair(name, OptionMaskName(name, mask, description)));
+      else {
+        (*it).second.m_mask = mask;
+        (*it).second.m_description = description;
+      }
+    }
+  };
+
+  class OptionMaskParser
+  {
+  public:
+    typedef OptionMask Mask;		///< Mask for this option
+
+  public:
+    /**
+     * Creates a new <b>OptionMaskParser</b> instance.
+     *
+     */
+    OptionMaskParser(const std::string &description)
+      : m_optionMaskNameMap(),
+        m_description(description),
+        m_optionMask(0),
+        m_status(true)
+    {}
+
+    virtual ~OptionMaskParser()
+    {}
+
+    Mask parse(const char *mask) const;
+
+    virtual void parseArg(const std::string &name) const;
+
+    std::string describe() const {
+      std::ostringstream strout;
+      strout << m_description << std::endl;
+      for (OptionMaskNameMap::const_iterator it = m_optionMaskNameMap.begin(); it != m_optionMaskNameMap.end(); ++it)
+        strout << "  " << (*it).first << std::setw(14 - (*it).first.size()) << " " << (*it).second.m_description << std::endl;
+      return strout.str();
+    }
+
+    void mask(const std::string &name, const Mask mask, const std::string &description) {
+      m_optionMaskNameMap.mask(name, mask, description);
+    }
+
+  protected:
+    OptionMaskNameMap		m_optionMaskNameMap;	///< Mask name vector
+    std::string                   m_description;          ///< Help description
+    mutable OptionMask		m_optionMask;		///< Most recently parsed mask
+    mutable bool			m_status;		///< Result of most recent parse
+  };
+
+
+  OptionMaskParser::Mask
+  OptionMaskParser::parse(
+                          const char *          mask) const
+  {
+    if (mask) {
+      const std::string mask_string(mask);
+
+      m_status = true;
+
+      std::string::const_iterator it0 = mask_string.begin();
+      std::string::const_iterator it1;
+      std::string::const_iterator it2;
+      std::string::const_iterator it3;
+      do {
+        // Trim preceeding spaces
+        while (it0 != mask_string.end() && *it0 == ' ')
+          it0++;
+
+        if (it0 == mask_string.end())
+          break;
+
+        for (it1 = it0; it1 != mask_string.end(); ++it1) {
+          if (*it1 == '(' || *it1 == ':' || *it1 == ',')
+            break;
+        }
+
+        // Trim trailing spaces
+        it2 = it1;
+        while (it2 != it0 && *(it2 - 1) == ' ')
+          --it2;
+
+        std::string name(it0, it2);
+
+        // Get argument list
+        if (*it1 == '(') {
+          it2 = it1 + 1;
+
+          // Trim preceeding spaces
+          while (it2 != mask_string.end() && *it2 == ' ')
+            ++it2;
+
+          int paren_count = 0;
+
+          for (; it1 != mask_string.end(); ++it1) {
+            if (*it1 == '(')
+              ++paren_count;
+            else if (*it1 == ')') {
+              --paren_count;
+              if (paren_count == 0)
+                break;
+            }
+          }
+          it3 = it1;
+
+          // Trim trailing spaces
+          while (it3 != it2 && *(it3 - 1) == ' ')
+            --it3;
+
+          // Find next argument start
+          for (; it1 != mask_string.end(); ++it1)
+            if (*it1 == ':' || *it1 == ',')
+              break;
+        }
+        else
+          it2 = it3 = it1;
+
+        const std::string arg(it2, it3);
+
+        parseArg(name);
+
+        it0 = it1 + 1;
+      } while (it1 != mask_string.end());
+    }
+
+    return m_optionMask;
+  }
+
+
+  void
+  OptionMaskParser::parseArg(
+                             const std::string &	name) const
+  {
+    OptionMaskNameMap::const_iterator mask_entry = m_optionMaskNameMap.find(name);
+
+    if (mask_entry != m_optionMaskNameMap.end()) m_optionMask |= (*mask_entry).second.m_mask;
+    else {
+      Mask	mask_hex = 0;
+      std::istringstream mask_hex_stream(name.c_str());
+      if (mask_hex_stream >> std::resetiosflags(std::ios::basefield) >> mask_hex)
+        m_optionMask |= mask_hex;
+      else
+        m_status = false;
+    }
+  }
+
+  // Build output logging description for binding output streams
+  std::string
+  build_log_description(
+                        const boptl::variables_map &   vm,
+                        const std::string &           working_directory,
+                        int                           parallel_rank,
+                        int                           parallel_size)
+  {
+    std::ostringstream output_description;
+
+    // On processor 0:
+    //   [outfile=path] [poutfile=path.n.r] [doutfile=path.n.r] out>{-|cout|cerr|outfile}+pout pout>{null|poutfile} dout>{out|doutfile}
+
+    // On processor 1..n:
+    //   [poutfile=path.n.r] [doutfile=path.n.r] out>pout pout>{null|poutfile} dout>{out|doutfile}
+
+    std::string out_path = "-";
+    if (vm.count("output-log"))
+      out_path = vm["output-log"].as<std::string>();
+    if (out_path == "-")
+      out_path = "cout";
+
+    std::string out_ostream;
+
+    if (!stk::get_log_ostream(out_path))
+      if (out_path.size() && out_path[0] != '/')
+        out_path = working_directory + out_path;
+
+    if (parallel_rank == 0) {
+      if (!stk::get_log_ostream(out_path)) {
+        output_description << "outfile=\"" << out_path << "\"";
+        out_ostream = "outfile";
+      }
+      else
+        out_ostream = out_path;
+    }
+    else
+      out_ostream = "null";
+
+    std::string pout_ostream = "null";
+    if (vm.count("pout")) {
+      std::string pout_path = vm["pout"].as<std::string>();
+      if (pout_path == "-") {
+        std::ostringstream s;
+
+        if (stk::get_log_ostream(out_path))
+          s << working_directory << "sierra.log." << parallel_size << "." << parallel_rank;
+        else
+          s << out_path << "." << parallel_size << "." << parallel_rank;
+        pout_path = s.str();
+      }
+      else if (pout_path.find("/") == std::string::npos && !stk::get_log_ostream(pout_path)) {
+        std::ostringstream s;
+
+        s << working_directory << pout_path << "." << parallel_size << "." << parallel_rank;
+        pout_path = s.str();
+      }
+
+      if (!stk::get_log_ostream(pout_path)) {
+        output_description << " poutfile=\"" << pout_path << "\"";
+        pout_ostream = "poutfile";
+      }
+      else
+        pout_ostream = pout_path;
+    }
+
+    std::string dout_ostream;
+    if (vm.count("dout")) {
+      std::string dout_path = vm["dout"].as<std::string>();
+      if (!dout_path.empty() && stk::is_registered_ostream(dout_path))
+        dout_ostream = dout_path;
+      else {
+        std::ostringstream s;
+        if (dout_path.size() && dout_path[0] != '/')
+          s << working_directory << dout_path << "." << parallel_size << "." << parallel_rank;
+        else
+          s << dout_path << parallel_size << "." << parallel_rank;
+        dout_path = s.str();
+        output_description << " doutfile=\"" << dout_path << "\"";
+        dout_ostream = "doutfile";
+      }
+    }
+    else
+      dout_ostream = "out";
+
+    if (parallel_rank == 0)
+      output_description << " out>" << out_ostream << "+pout";
+    else
+      output_description << " out>pout";
+
+    output_description << " pout>" << pout_ostream << " dout>" << dout_ostream;
+
+    return output_description.str();
+  }
+
+  OptionMaskParser dw_option_mask("stk_percept diagnostic writer");
+  OptionMaskParser timer_option_mask("stk_percept timers");
+
+  void
+  bootstrap()
+  {
+    /// \todo REFACTOR  Put these program_options in a function
+    ///                 that can be called without the bootstrapping.
+    //! dw_option_mask.mask("search", stk::percept::LOG_SEARCH, "log search diagnostics");
+    //! dw_option_mask.mask("transfer", stk::percept::LOG_TRANSFER, "log transfer diagnostics");
+    //! dw_option_mask.mask("timer", stk::percept::LOG_TIMER, "log timer diagnostics");
+    dw_option_mask.mask("all", stk::percept::LOG_ALWAYS, "log all");
+
+    timer_option_mask.mask("mesh", stk::percept::TIMER_MESH, "mesh operations timers");
+    //! timer_option_mask.mask("meshio", stk::percept::TIMER_MESH_IO, "mesh I/O timers");
+    //! timer_option_mask.mask("transfer", stk::percept::TIMER_TRANSFER, "transfer timers");
+    //! timer_option_mask.mask("search", stk::percept::TIMER_SEARCH, "search timers");
+
+    boost::program_options::options_description desc("Run environment options", 132);
+    desc.add_options()
+      ("help,h", "produce help message")
+      ("directory,d", boost::program_options::value<std::string>(), "working directory")
+      ("output-log,o", boost::program_options::value<std::string>(), "output log path")
+      ("pout", boost::program_options::value<std::string>()->implicit_value("-"), "per-processor log file path")
+      ("dout", boost::program_options::value<std::string>()->implicit_value("out"), "diagnostic output stream one of: 'cout', 'cerr', 'out' or a file path")
+      ("dw", boost::program_options::value<std::string>(), dw_option_mask.describe().c_str())
+      ("timer", boost::program_options::value<std::string>(), timer_option_mask.describe().c_str())
+      ("runtest,r", boost::program_options::value<std::string>(), "runtest pid file");
+      //("exit", "do nothing and then exit");
+
+    stk::get_options_description().add(desc);
+  }
+
+  stk::Bootstrap x(bootstrap);
+
+} // namespace <empty>
+
+namespace stk {
+  namespace percept {
+
+    // Output streams
+    std::ostream &
+    out() {
+      static std::ostream s_out(std::cout.rdbuf());
+
+      return s_out;
+    }
+
+
+    std::ostream &
+    pout() {
+      static std::ostream s_pout(std::cout.rdbuf());
+
+      return s_pout;
+    }
+
+
+    std::ostream &
+    dout() {
+      static std::ostream s_dout(std::cout.rdbuf());
+
+      return s_dout;
+    }
+
+
+    std::ostream &
+    tout() {
+      static std::ostream s_tout(std::cout.rdbuf());
+
+      return s_tout;
+    }
+
+
+    std::ostream &
+    dwout() {
+      static stk::indent_streambuf s_dwoutStreambuf(std::cout.rdbuf());
+      static std::ostream s_dwout(&s_dwoutStreambuf);
+
+      return s_dwout;
+    }
+
+
+    // Diagnostic writer
+    stk::diag::Writer &
+    dw()
+    {
+      static stk::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
+
+      return s_diagWriter;
+    }
+
+
+    // Message reporting
+    std::ostream &
+    operator<<(
+               std::ostream &	os,
+               message_type           type)
+    {
+      switch (type & stk::MSG_TYPE_MASK) {
+      case MSG_WARNING:
+        os << "Warning";
+        break;
+      case MSG_FATAL:
+        os << "Fatal error";
+        break;
+      case MSG_INFORMATION:
+        os << "Information";
+        break;
+      case MSG_EXCEPTION:
+        os << "Exception";
+        break;
+      case MSG_PARALLEL_EXCEPTION:
+        os << "Parallel exception";
+        break;
+      }
+      return os;
+    }
+
+
+    void
+    report_handler(
+                   const char *		message,
+                   int                   type)
+    {
+      if (type & stk::MSG_DEFERRED)
+        pout() << "Deferred " << (message_type) type << ": " << message << std::endl;
+
+      else
+        out() << (message_type) type << ": " << message << std::endl;
+    }
+
+
+    // Timers
+    stk::diag::TimerSet &
+    timerSet()
+    {
+      static stk::diag::TimerSet s_timerSet(TIMER_ALL);
+
+      return s_timerSet;
+    }
+
+
+    stk::diag::Timer &timer() {
+      static stk::diag::Timer s_timer = stk::diag::createRootTimer("root timer", timerSet());
+
+      return s_timer;
+    }
+
+
+    RunEnvironment::RunEnvironment(
+                                           int *         argc,
+                                           char ***      argv)
+      : m_comm(stk::parallel_machine_init(argc, argv)),
+        m_need_to_finalize(true)
+    {
+      initialize(argc, argv);
+    }
+
+    RunEnvironment::RunEnvironment(
+                                           int *         argc,
+                                           char ***      argv,
+                                           stk::ParallelMachine comm)
+      : m_comm(comm),
+        m_need_to_finalize(false)
+    {
+      initialize(argc, argv);
+    }
+
+    void RunEnvironment::initialize(int* argc, char*** argv)
+    {
+      stk::register_log_ostream(std::cout, "cout");
+      stk::register_log_ostream(std::cerr, "cerr");
+
+      stk::register_ostream(out(), "out");
+      stk::register_ostream(pout(), "pout");
+      stk::register_ostream(dout(), "dout");
+      stk::register_ostream(tout(), "tout");
+
+      static_cast<stk::indent_streambuf *>(dwout().rdbuf())->redirect(dout().rdbuf());
+
+      stk::set_report_handler(report_handler);
+
+      stk::Bootstrap::bootstrap();
+
+      for (int i = 0; i < *argc; ++i) {
+        const std::string s((*argv)[i]);
+        if ( s == "-h" || s == "-help" || s == "--help") {
+          std::cout << "Usage: " << (*argv)[0] << " [options...]" << std::endl;
+          std::cout << stk::get_options_description() << std::endl;
+          std::exit(0);
+          return; // So application can handle app-specific options.
+        }
+      }
+
+      // Broadcast argc and argv to all processors.
+      int parallel_rank = stk::parallel_machine_rank(m_comm);
+      int parallel_size = stk::parallel_machine_size(m_comm);
+
+      Util::setRank(parallel_rank);
+      stk::BroadcastArg b_arg(m_comm, *argc, *argv);
+
+      // Parse broadcast arguments
+      boptl::variables_map &vm = stk::get_variables_map();
+      unsigned failed = 0;
+      try {
+        boptl::store(boptl::parse_command_line(b_arg.m_argc, b_arg.m_argv, stk::get_options_description()), vm);
+        boptl::notify(vm);
+      }
+      catch (std::exception &x) {
+        if (!parallel_rank) std::cout << "argument list exception = " << x.what() << std::endl;
+        failed = 1;
+      }
+      stk::all_reduce( m_comm, stk::ReduceSum<1>( &failed ) );
+
+      if (failed)
+        {
+          if ( !parallel_rank)
+            {
+              for (int ii=0; ii < *argc; ii++)
+                {
+                  std::cout << "arg[" << ii  << "] = " << (*argv)[ii] << std::endl;
+                }
+              printHelp();
+            }
+          MPI_Barrier( m_comm );
+          //stk::RuntimeDoomedSymmetric() << "parse_command_line";
+          exit(1);
+        }
+
+      // Parse diagnostic messages to display
+      if (vm.count("dw"))
+        dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
+
+      // Parse timer metrics and classes to display
+      stk::diag::setEnabledTimerMetricsMask(stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME);
+      if (vm.count("timer"))
+        timerSet().setEnabledTimerMask(timer_option_mask.parse(vm["timer"].as<std::string>().c_str()));
+
+      // Set working directory
+      m_workingDirectory = "./";
+      if (vm.count("directory"))
+        m_workingDirectory = vm["directory"].as<std::string>();
+      if (m_workingDirectory.length() && m_workingDirectory[m_workingDirectory.length() - 1] != '/')
+        m_workingDirectory += "/";
+
+      //std::cout << "m_workingDirectory= " << m_workingDirectory << std::endl;
+
+      std::string output_description = build_log_description(vm, m_workingDirectory, parallel_rank, parallel_size);
+
+      stk::bind_output_streams(output_description);
+
+      dout() << "Output log binding: " << output_description << std::endl;
+
+      // Start stk_percept root timer
+      timer().start();
+    }
+
+    RunEnvironment::~RunEnvironment()
+    {
+      stk::report_deferred_messages(m_comm);
+
+      // Stop stk_percept root timer
+      timer().stop();
+
+      stk::diag::printTimersTable(out(), timer(), stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, m_comm);
+
+      stk::diag::deleteRootTimer(timer());
+
+      static_cast<stk::indent_streambuf *>(dwout().rdbuf())->redirect(std::cout.rdbuf());
+
+      stk::unregister_ostream(tout());
+      stk::unregister_ostream(dout());
+      stk::unregister_ostream(pout());
+      stk::unregister_ostream(out());
+
+      stk::unregister_log_ostream(std::cerr);
+      stk::unregister_log_ostream(std::cout);
+
+      if (m_need_to_finalize) {
+        stk::parallel_machine_finalize();
+      }
+    }
+
+    void RunEnvironment::printHelp()
+    {
+      std::cout << "Usage: stk_percept_mesh_mod  [options...]" << std::endl;
+      std::cout << stk::get_options_description() << std::endl;
+    }
+
+    // broken - do not use - for reference purposes only
+    void RunEnvironment::
+    doSierraLoadBalance(stk::ParallelMachine comm, std::string meshFileName)
+    {
+      unsigned p_size = stk::parallel_machine_size(comm);
+      unsigned p_rank = stk::parallel_machine_rank(comm);
+      if (!p_rank)
+        {
+          FILE *fpipe;
+          std::string tmp_file = "stk_percept_tmp_loadbal.i";
+          std::string command="sierra -i "+tmp_file;
+          command += " -j "+toString(p_size);
+          command += +" stk_percept_verifier_mesh -O\"--exit\"";
+          //const char *command="sierra -i stk_percept_tmp_loadbal.i";
+          char line[256];
+
+          std::ofstream fout((std::string("./"+tmp_file)).c_str());
+          fout << "Begin Sierra Percept\n"
+               << "  Title None\n"
+               << "  Begin Finite Element Model 3d_model\n"
+               << "     Database Name = " << meshFileName << "\n"
+               << "  End\n"
+               << "End\n" << std::endl;
+          fout.close();
+
+          std::cout << "command= " << command << std::endl;
+          if ( !(fpipe = (FILE*)popen(command.c_str(),"r")) )
+            {  // If fpipe is NULL
+              perror("Problems with pipe");
+              exit(1);
+            }
+	 
+          while ( fgets( line, sizeof line, fpipe))
+            {
+              //printf("%s", line);
+              std::cout << line << std::endl;
+            }
+          pclose(fpipe);
+        }
+      MPI_Barrier( comm );
+    }
+
+    static void runCommand(std::string command)
+    {
+      char line[256];
+
+      FILE *fpipe;
+      if ( !(fpipe = (FILE*)popen(command.c_str(),"r")) )
+        {  // If fpipe is NULL
+          perror("Problems with pipe");
+          exit(1);
+        }
+	 
+      while ( fgets( line, sizeof line, fpipe))
+        {
+          //printf("%s", line);
+          std::cout << line; // << std::endl;
+        }
+      pclose(fpipe);
+    }
+
+    void RunEnvironment::
+    doLoadBalance(stk::ParallelMachine comm, std::string meshFileName)
+    {
+
+      unsigned p_size = stk::parallel_machine_size(comm);
+      unsigned p_rank = stk::parallel_machine_rank(comm);
+      if (1 && !p_rank)
+        {
+
+          std::string fullmesh = meshFileName;
+          size_t found = fullmesh.find_last_of("/");
+          fullmesh = fullmesh.substr(0,found);
+          if(fullmesh == ".") fullmesh = "./";
+          std::string base_name = meshFileName.substr(0, meshFileName.length()-2);
+
+          std::string extension = meshFileName.substr(meshFileName.length()-1, meshFileName.length());
+
+          std::cout << "tmp: extension= " << extension << " fullmesh= " << fullmesh << " base_name= " << base_name << std::endl;
+
+          std::string command="loadbal -No_subdirectory -suffix_mesh " + extension+" -suffix_spread "+extension+" -p "+toString(p_size)+ " ";
+          command += "-R " +fullmesh+" " + base_name;
+
+          std::cout << "RunEnvironment::doLoadBalance: command= " << command << std::endl;
+          runCommand(command);
+          command = "./"+meshFileName.substr(0, meshFileName.length()-2)+".spd";
+          std::cout << "RunEnvironment::doLoadBalance: command= " << command << std::endl;
+          runCommand(command);
+        }
+
+      MPI_Barrier( comm );
+    }
+  } // namespace percept
+} // namespace stk

@@ -114,6 +114,20 @@ namespace Belos {
       return cc;
     }
 
+    static Teuchos::RCP<TMVB> 
+    CloneCopy (const TMVB& mv, const Teuchos::Range1D& index)
+    { 
+      const int numVecs = index.size();      
+      // Create the new multivector
+      Teuchos::RCP<TMVB> cc = Thyra::createMembers (mv.range(), numVecs);
+      // Create a view to the relevant part of the source multivector
+      Teuchos::RCP<const TMVB> view = mv.subView (index);
+      // Copy the data from the view to the new multivector.
+      // &*cc converts cc from an RCP to a Ptr.
+      Thyra::assign (&*cc, *view);
+      return cc;
+    }
+
     /*! \brief Creates a new MultiVectorBase that shares the selected contents of \c mv (shallow copy).
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
@@ -154,6 +168,18 @@ namespace Belos {
       return cc;
     }
 
+    static Teuchos::RCP<TMVB> 
+    CloneViewNonConst (TMVB& mv, const Teuchos::Range1D& index)
+    {
+      // We let Thyra be responsible for checking that the index range
+      // is nonempty.
+      //
+      // Create and return a contiguous view to the relevant part of
+      // the source multivector.
+      return mv.subView (index);
+    }
+
+
     /*! \brief Creates a new const MultiVectorBase that shares the selected contents of \c mv (shallow copy).
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
@@ -192,6 +218,17 @@ namespace Belos {
         cc = mv.subView(index);
       }
       return cc;
+    }
+
+    static Teuchos::RCP<const TMVB> 
+    CloneView (const TMVB& mv, const Teuchos::Range1D& index)
+    {
+      // We let Thyra be responsible for checking that the index range
+      // is nonempty.
+      //
+      // Create and return a contiguous view to the relevant part of
+      // the source multivector.
+      return mv.subView (index);
     }
 
     //@}
@@ -335,6 +372,58 @@ namespace Belos {
       Teuchos::RCP< TMVB > reldest = mv.subView(index);
       // copy the data to the destination multivector subview
       Thyra::assign(&*reldest, *relsource);
+    }
+
+    static void 
+    SetBlock (const TMVB& A, const Teuchos::Range1D& index, TMVB& mv)
+    { 
+      const int numColsA = A.domain()->dim();
+      const int numColsMv = mv.domain()->dim();
+      // 'index' indexes into mv; it's the index set of the target.
+      const bool validIndex = index.lbound() >= 0 && index.ubound() < numColsMv;
+      // We can't take more columns out of A than A has.
+      const bool validSource = index.size() <= numColsA;
+
+      if (! validIndex || ! validSource)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<Scalar, Thyra::MultiVectorBase<Scalar> "
+	    ">::SetBlock(A, [" << index.lbound() << ", " << index.ubound() 
+	     << "], mv): ";
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Range lower bound must be nonnegative.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+			     os.str() << "Range upper bound must be less than "
+			     "the number of columns " << numColsA << " in the "
+			     "'mv' output argument.");
+	  TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+			     os.str() << "Range must have no more elements than"
+			     " the number of columns " << numColsA << " in the "
+			     "'A' input argument.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	}
+
+      // View of the relevant column(s) of the target multivector mv.
+      // We avoid view creation overhead by only creating a view if
+      // the index range is different than [0, (# columns in mv) - 1].
+      Teuchos::RCP<TMVB> mv_view;
+      if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
+	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
+      else
+	mv_view = mv.subView (index);
+
+      // View of the relevant column(s) of the source multivector A.
+      // If A has fewer columns than mv_view, then create a view of
+      // the first index.size() columns of A.
+      Teuchos::RCP<const TMVB> A_view;
+      if (index.size() == numColsA)
+	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
+      else
+	A_view = A.subView (Teuchos::Range1D(0, index.size()-1));
+
+      // Copy the data to the destination multivector.  "&*" is a
+      // typical Thyra idiom for turning an RCP into a raw pointer.
+      Thyra::assign (&*mv_view, *A_view);
     }
 
     /*! \brief Replace the vectors in \c mv with random vectors.

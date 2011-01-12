@@ -17,7 +17,7 @@ extern "C" {
 
 
 #include "phg_distrib.h"
-#include "zz_const.h"
+#include "zz_util_const.h"
 
     /*
 #define _DEBUG1
@@ -95,6 +95,9 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     ZOLTAN_GNO_TYPE *vno=NULL, *nno=NULL, *dist_x=NULL, *dist_y=NULL,
         *vsn=NULL, *nsn=NULL, *pins=NULL;
     ZOLTAN_COMM_OBJ *plan;    
+    MPI_Datatype zoltan_gno_mpi_type;
+
+    zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
     
     Zoltan_HG_HGraph_Init (nhg);
     nhg->comm = ncomm;
@@ -128,17 +131,17 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     
 
     /* compute prefix sum to find new vertex start numbers; for each processor */
-    MPI_Scan(dist_x, vsn, ncomm->nProc_x, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, ocomm->row_comm);
+    MPI_Scan(dist_x, vsn, ncomm->nProc_x, zoltan_gno_mpi_type, MPI_SUM, ocomm->row_comm);
     /* All reduce to compute how many each processor will have */ 
-    MPI_Allreduce(dist_x, &(nhg->dist_x[1]), ncomm->nProc_x, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 
+    MPI_Allreduce(dist_x, &(nhg->dist_x[1]), ncomm->nProc_x, zoltan_gno_mpi_type, MPI_SUM, 
                   ocomm->row_comm);
     nhg->dist_x[0] = 0;    
     for (i=1; i<=ncomm->nProc_x; ++i) 
         nhg->dist_x[i] += nhg->dist_x[i-1];
     
-    MPI_Scan(dist_y, nsn, ncomm->nProc_y, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, ocomm->col_comm);
+    MPI_Scan(dist_y, nsn, ncomm->nProc_y, zoltan_gno_mpi_type, MPI_SUM, ocomm->col_comm);
 
-    MPI_Allreduce(dist_y, &(nhg->dist_y[1]), ncomm->nProc_y, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, ocomm->col_comm);
+    MPI_Allreduce(dist_y, &(nhg->dist_y[1]), ncomm->nProc_y, zoltan_gno_mpi_type, MPI_SUM, ocomm->col_comm);
     nhg->dist_y[0] = 0;
     for (i=1; i<=ncomm->nProc_y; ++i)
         nhg->dist_y[i] += nhg->dist_y[i-1];

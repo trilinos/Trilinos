@@ -139,26 +139,20 @@ Selector & Selector::operator |= ( const Selector & B )
 
 void Selector::verify_compatible( const Selector & B ) const
 {
-  if (B.m_mesh_meta_data != m_mesh_meta_data) {
-    std::ostringstream msg;
-    msg << "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data << std::endl;
-    msg << "Selector = " << B << " has mesh meta data pointer = " << B.m_mesh_meta_data << std::endl;
-    msg << "These selectors contain incompatible mesh meta data pointers!";
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( B.m_mesh_meta_data != m_mesh_meta_data,
+      "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data <<
+      "\nSelector = " << B << " has mesh meta data pointer = " << B.m_mesh_meta_data <<
+      "\nThese selectors contain incompatible mesh meta data pointers!" );
 }
 
 
 void Selector::verify_compatible( const Bucket & B ) const
 {
   const MetaData * B_mesh_meta_data = &B.mesh().mesh_meta_data();
-  if (B_mesh_meta_data != m_mesh_meta_data) {
-    std::ostringstream msg;
-    msg << "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data << std::endl;
-    msg << "Bucket has mesh meta data pointer = " << B_mesh_meta_data << std::endl;
-    msg << "This selector is incompatible with this bucket!";
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( B_mesh_meta_data != m_mesh_meta_data,
+      "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data <<
+      "\nBucket has mesh meta data pointer = " << B_mesh_meta_data <<
+      "\nThis selector is incompatible with this bucket!" );
 }
 
 

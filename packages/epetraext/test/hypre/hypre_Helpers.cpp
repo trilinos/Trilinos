@@ -34,7 +34,7 @@
 #include <fstream>
 
 #include <math.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <time.h>
 #include <vector>
 #include <map>

@@ -103,18 +103,21 @@ int Zoltan_Preprocess_Graph(
   ZG *graph = &(gr->graph);
   int i, j, local;
   int *input_part = NULL;
-  long long *sum, nobj;
+  ZOLTAN_GNO_TYPE *sum, nobj;
+  MPI_Datatype zoltan_gno_mpi_type;
 
   char add_obj_weight[MAX_PARAM_STRING_LEN+1];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+
   if (zz->Debug_Level > 0 && zz->Debug_Proc == zz->Proc){
-    printf("Third party library index type is %zd-byte integer\n",sizeof(indextype));
+    printf("Third party library index type is %ld-byte integer\n",sizeof(indextype));
 #ifdef TPL_INTEGRAL_WEIGHT
-    printf("Third party library weight type is %zd-byte integer\n",sizeof(weighttype));
+    printf("Third party library weight type is %ld-byte integer\n",sizeof(weighttype));
 #else
-    printf("Third party library weight type is %zd-byte floating point value\n",sizeof(weighttype));
+    printf("Third party library weight type is %ld-byte floating point value\n",sizeof(weighttype));
 #endif    
 
 #if __parmetis__ + __metis__ + __ptscotch__ + __scotch__ > 1
@@ -340,9 +343,9 @@ int Zoltan_Preprocess_Graph(
 
     gr->vtxdist[0] = 0;
 
-    sum = (long long *)ZOLTAN_MALLOC(sizeof(long long) * zz->Num_Proc);
-    nobj = (long long )gr->num_obj;
-    MPI_Allgather(&nobj, 1, MPI_LONG_LONG_INT, sum, 1, MPI_LONG_LONG_INT, zz->Communicator);
+    sum = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * zz->Num_Proc);
+    nobj = (ZOLTAN_GNO_TYPE )gr->num_obj;
+    MPI_Allgather(&nobj, 1, zoltan_gno_mpi_type, sum, 1, zoltan_gno_mpi_type, zz->Communicator);
 
     for (i=1 ; i <= zz->Num_Proc ; ++i) {
       gr->vtxdist[i] = (gr->vtxdist[i-1] + (indextype)sum[i-1]);

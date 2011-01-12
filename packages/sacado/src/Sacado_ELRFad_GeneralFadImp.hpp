@@ -98,7 +98,8 @@
 template <typename T, typename Storage> 
 template <typename S> 
 inline Sacado::ELRFad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
-  Storage(T(0.))
+  Storage(T(0.)),
+  update_val_(x.updateValue())
 {
   int sz = x.size();
 
@@ -129,7 +130,8 @@ inline Sacado::ELRFad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
   }
   
   // Compute value
-  this->val() = x.val();
+  if (update_val_)
+    this->val() = x.val();
 }
 
 template <typename T, typename Storage> 
@@ -165,6 +167,7 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator=(
 {
   // Copy value & dx_
   Storage::operator=(x);
+  update_val_ = x.update_val_;
   
   return *this;
 }
@@ -203,7 +206,9 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator=(const Expr<S>& x)
   }
   
   // Compute value
-  this->val() = x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() = x.val();
   
   return *this;
 }
@@ -212,7 +217,8 @@ template <typename T, typename Storage>
 inline  Sacado::ELRFad::GeneralFad<T,Storage>& 
 Sacado::ELRFad::GeneralFad<T,Storage>::operator += (const T& v)
 {
-  this->val() += v;
+  if (update_val_)
+    this->val() += v;
 
   return *this;
 }
@@ -221,7 +227,8 @@ template <typename T, typename Storage>
 inline Sacado::ELRFad::GeneralFad<T,Storage>& 
 Sacado::ELRFad::GeneralFad<T,Storage>::operator -= (const T& v)
 {
-  this->val() -= v;
+  if (update_val_)
+    this->val() -= v;
 
   return *this;
 }
@@ -232,7 +239,8 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator *= (const T& v)
 {
   int sz = this->size();
 
-  this->val() *= v;
+  if (update_val_)
+    this->val() *= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) *= v;
 
@@ -245,7 +253,8 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator /= (const T& v)
 {
   int sz = this->size();
 
-  this->val() /= v;
+  if (update_val_)
+    this->val() /= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) /= v;
 
@@ -257,7 +266,8 @@ inline  Sacado::ELRFad::GeneralFad<T,Storage>&
 Sacado::ELRFad::GeneralFad<T,Storage>::
 operator += (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  this->val() += v;
+  if (update_val_)
+    this->val() += v;
 
   return *this;
 }
@@ -267,7 +277,8 @@ inline Sacado::ELRFad::GeneralFad<T,Storage>&
 Sacado::ELRFad::GeneralFad<T,Storage>::
 operator -= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  this->val() -= v;
+  if (update_val_)
+    this->val() -= v;
 
   return *this;
 }
@@ -279,7 +290,8 @@ operator *= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
   int sz = this->size();
 
-  this->val() *= v;
+  if (update_val_)
+    this->val() *= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) *= v;
 
@@ -293,7 +305,8 @@ operator /= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
   int sz = this->size();
 
-  this->val() /= v;
+  if (update_val_)
+    this->val() /= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) /= v;
 
@@ -360,7 +373,9 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator += (
   }
   
   // Compute value
-  this->val() += x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() += x.val();
 
   return *this;
 }
@@ -424,7 +439,9 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator -= (
 
   }
 
-  this->val() -= x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() -= x.val();
 
   return *this;
 }
@@ -498,7 +515,9 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator *= (
 
   }
 
-  this->val() *= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() *= xval;
 
   return *this;
 }
@@ -574,7 +593,9 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator /= (
 
   }
 
-  this->val() /= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() /= xval;
 
   return *this;
 }

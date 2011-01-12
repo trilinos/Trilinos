@@ -20,7 +20,7 @@ extern "C" {
 #include "phg.h"
 #include "phg_tree.h"
 #include "phg_distrib.h"
-#include "zz_const.h"
+#include "zz_util_const.h"
 
 /*
 #define _DEBUG1
@@ -586,6 +586,9 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
   char *yo = "split_hypergraph";
   double pw[2], tpw[2];
   ZOLTAN_GNO_TYPE tmp_gno;
+  MPI_Datatype zoltan_gno_mpi_type;
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   pw[0] = pw[1] = 0; /* 0 is the part being splitted, 1 is the other part(s) */
   Zoltan_HG_HGraph_Init (nhg);
@@ -696,14 +699,14 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
 
   tmp_gno = (ZOLTAN_GNO_TYPE)nhg->nVtx;
 
-  MPI_Scan(&tmp_gno, nhg->dist_x, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, hgc->row_comm);
-  MPI_Allgather(nhg->dist_x, 1, ZOLTAN_GNO_MPI_TYPE, &(nhg->dist_x[1]), 1, ZOLTAN_GNO_MPI_TYPE, hgc->row_comm);
+  MPI_Scan(&tmp_gno, nhg->dist_x, 1, zoltan_gno_mpi_type, MPI_SUM, hgc->row_comm);
+  MPI_Allgather(nhg->dist_x, 1, zoltan_gno_mpi_type, &(nhg->dist_x[1]), 1, zoltan_gno_mpi_type, hgc->row_comm);
   nhg->dist_x[0] = 0;
   
   tmp_gno = (ZOLTAN_GNO_TYPE)nhg->nEdge;
 
-  MPI_Scan(&tmp_gno, nhg->dist_y, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, hgc->col_comm);
-  MPI_Allgather(nhg->dist_y, 1, ZOLTAN_GNO_MPI_TYPE, &(nhg->dist_y[1]), 1, ZOLTAN_GNO_MPI_TYPE, hgc->col_comm);
+  MPI_Scan(&tmp_gno, nhg->dist_y, 1, zoltan_gno_mpi_type, MPI_SUM, hgc->col_comm);
+  MPI_Allgather(nhg->dist_y, 1, zoltan_gno_mpi_type, &(nhg->dist_y[1]), 1, zoltan_gno_mpi_type, hgc->col_comm);
   nhg->dist_y[0] = 0;
     
   ierr = Zoltan_HG_Create_Mirror (zz, nhg);

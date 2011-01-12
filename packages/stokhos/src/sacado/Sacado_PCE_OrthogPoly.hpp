@@ -306,6 +306,9 @@ namespace Sacado {
       //! Expansion class
       Teuchos::RCP<expansion_type> expansion_;
 
+      //! Static constant expansion class for constants
+      static Teuchos::RCP<expansion_type> const_expansion_;
+
       Sacado::Handle< Stokhos::OrthogPolyApprox<int,value_type,Storage> > th;
 
     }; // class Hermite

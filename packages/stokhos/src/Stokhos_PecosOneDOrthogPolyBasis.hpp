@@ -92,6 +92,10 @@ namespace Stokhos {
     virtual Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > 
     computeTripleProductTensor() const;
 
+     virtual 
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    computeSparseTripleProductTensor(ordinal_type order) const;
+
     //! Compute derivative double product tensor
     /*!
      * The \f$(i,j)\f$ entry of the tensor \f$B_{ij}\f$ is given by

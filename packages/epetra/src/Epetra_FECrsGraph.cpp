@@ -56,11 +56,11 @@
 
 //-------------------------------------------------------------------------------
 Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
-				     const Epetra_BlockMap& RowMap,
-				     int* NumIndicesPerRow,
+				     const Epetra_BlockMap& rowMap,
+				     int* numIndicesPerRow,
 				     bool ignoreNonLocalEntries,
-             bool buildNonlocalGraph)
-  : Epetra_CrsGraph(CV, RowMap, NumIndicesPerRow),
+				     bool buildNonlocalGraph)
+  : Epetra_CrsGraph(CV, rowMap, numIndicesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
@@ -71,55 +71,55 @@ Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
 
 //-------------------------------------------------------------------------------
 Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
-				     const Epetra_BlockMap& RowMap,
-				     int NumIndicesPerRow,
+				     const Epetra_BlockMap& rowMap,
+				     int numIndicesPerRow,
 				     bool ignoreNonLocalEntries,
              bool buildNonlocalGraph)
-  : Epetra_CrsGraph(CV, RowMap, NumIndicesPerRow),
+  : Epetra_CrsGraph(CV, rowMap, numIndicesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     nonlocalGraph_ (NULL),
     buildNonlocalGraph_ (buildNonlocalGraph)
 {
-  myFirstRow_ = RowMap.MinMyGID();
-  myNumRows_ = RowMap.NumMyElements();
+  myFirstRow_ = rowMap.MinMyGID();
+  myNumRows_ = rowMap.NumMyElements();
 }
 
 //-------------------------------------------------------------------------------
 Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
-				     const Epetra_BlockMap& RowMap,
-				     const Epetra_BlockMap& ColMap,
-				     int* NumIndicesPerRow,
+				     const Epetra_BlockMap& rowMap,
+				     const Epetra_BlockMap& colMap,
+				     int* numIndicesPerRow,
 				     bool ignoreNonLocalEntries,
              bool buildNonlocalGraph)
-  : Epetra_CrsGraph(CV, RowMap, ColMap, NumIndicesPerRow),
+  : Epetra_CrsGraph(CV, rowMap, colMap, numIndicesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     nonlocalGraph_ (NULL),
     buildNonlocalGraph_ (buildNonlocalGraph)
 {
-  myFirstRow_ = RowMap.MinMyGID();
-  myNumRows_ = RowMap.NumMyElements();
+  myFirstRow_ = rowMap.MinMyGID();
+  myNumRows_ = rowMap.NumMyElements();
 }
 
 //-------------------------------------------------------------------------------
 Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
-				     const Epetra_BlockMap& RowMap,
-				     const Epetra_BlockMap& ColMap,
-				     int NumIndicesPerRow,
+				     const Epetra_BlockMap& rowMap,
+				     const Epetra_BlockMap& colMap,
+				     int numIndicesPerRow,
 				     bool ignoreNonLocalEntries,
              bool buildNonlocalGraph)
-  : Epetra_CrsGraph(CV, RowMap, ColMap, NumIndicesPerRow),
+  : Epetra_CrsGraph(CV, rowMap, colMap, numIndicesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     nonlocalGraph_ (NULL),
     buildNonlocalGraph_ (buildNonlocalGraph)
 {
-  myFirstRow_ = RowMap.MinMyGID();
-  myNumRows_ = RowMap.NumMyElements();
+  myFirstRow_ = rowMap.MinMyGID();
+  myNumRows_ = rowMap.NumMyElements();
 }
 
 //-------------------------------------------------------------------------------

@@ -34,6 +34,7 @@
 #include <ostream>
 #include <string>
 #include "Stokhos_Dense3Tensor.hpp"
+#include "Stokhos_Sparse3Tensor.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
@@ -102,6 +103,10 @@ namespace Stokhos {
     virtual 
     Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > 
     computeTripleProductTensor() const = 0;
+
+    virtual 
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    computeSparseTripleProductTensor(ordinal_type order) const = 0;
 
     //! Compute derivative double product tensor
     /*!

@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
-#include "zz_util_const.h"  /* included for Zoltan_get_global_id_type() */
 
 /* Name of file containing objects to be partitioned */
 
@@ -46,7 +45,6 @@ int main(int argc, char *argv[])
   ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids; 
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   int *parts = NULL;
-  char *datatype_name;
 
   FILE *fp;
   OBJECT_DATA myData;
@@ -67,21 +65,6 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  /******************************************************************
-  ** Check that this example and the Zoltan library are both
-  ** built with the same ZOLTAN_ID_TYPE definition.
-  ******************************************************************/
-
-  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
-    if (myRank == 0){
-      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
-                 datatype_name, zoltan_id_datatype_name);
-
-    }
-    MPI_Finalize();
-    exit(0);
-  }
-  
   /******************************************************************
   ** Read objects from input file and distribute them unevenly
   ******************************************************************/

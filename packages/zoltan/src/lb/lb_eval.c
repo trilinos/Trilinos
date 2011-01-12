@@ -17,6 +17,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
 #include "phg.h"

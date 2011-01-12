@@ -505,7 +505,7 @@ char *yo = "Zoltan_HG_Print";
   /* Print Vertex Info */
   fprintf(fp, "%s Vertices:  (edges)\n", str);
   for (i = 0; i < hg->nVtx; i++) {
-    fprintf(fp, "%d (%zd) in part %d:  ", 
+    fprintf(fp, "%d (" ZOLTAN_GNO_SPEC ") in part %d:  ", 
             i, VTX_LNO_TO_GNO(hg, i), (parts ? parts[i] : -1));
     fprintf(fp, "(");
     for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)
@@ -517,7 +517,7 @@ char *yo = "Zoltan_HG_Print";
     for (j = 0; j < num_vwgt; j++) sum[j] = 0;
     fprintf(fp, "%s Vertices: [weights])\n", str);
     for (i = 0; i < hg->nVtx; i++) {
-      fprintf(fp, "%d (%zd):  [", i, VTX_LNO_TO_GNO(hg, i));
+      fprintf(fp, "%d (" ZOLTAN_GNO_SPEC "):  [", i, VTX_LNO_TO_GNO(hg, i));
       for (j = 0; j < num_vwgt; j++) {
         fprintf(fp, "%f ", hg->vwgt[i*num_vwgt + j]);
         sum[j] += hg->vwgt[i*num_vwgt + j];
@@ -532,7 +532,7 @@ char *yo = "Zoltan_HG_Print";
   /* Print Hyperedge Info */
   fprintf(fp, "%s Hyperedges:  (vertices)\n", str);
   for (i = 0; i < hg->nEdge; i++) {
-    fprintf(fp, "%d (%zd):  ", i, EDGE_LNO_TO_GNO(hg, i));
+    fprintf(fp, "%d (" ZOLTAN_GNO_SPEC "):  ", i, EDGE_LNO_TO_GNO(hg, i));
     fprintf(fp, "(");
     for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
       fprintf(fp, "%d ", hg->hvertex[j]);
@@ -543,7 +543,7 @@ char *yo = "Zoltan_HG_Print";
     for (j = 0; j < num_ewgt; j++) sum[j] = 0;
     fprintf(fp, "%s Hyperedge Weights:  [weights]\n", str);
     for (i = 0; i < hg->nEdge; i++) {
-      fprintf(fp, "%d (%zd):  ", i, EDGE_LNO_TO_GNO(hg, i));
+      fprintf(fp, "%d (" ZOLTAN_GNO_SPEC "):  ", i, EDGE_LNO_TO_GNO(hg, i));
       fprintf(fp, "[");
       for (j = 0; j < num_ewgt; j++) {
         fprintf(fp, "%f ", hg->ewgt[i*num_ewgt + j]);

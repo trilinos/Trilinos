@@ -36,6 +36,8 @@
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #include "Piro_ConfigDefs.hpp"
 
@@ -47,7 +49,7 @@
 #include "Piro_Epetra_RythmosSolver.hpp"
 #endif
 
-#include "Piro_Thyra_PerformAnalysis.hpp"
+#include "Piro_PerformAnalysis.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 
 
@@ -55,13 +57,12 @@ int main(int argc, char *argv[]) {
 
   int status=0; // 0 = pass, failures are incremented
   int overall_status=0; // 0 = pass, failures are incremented over multiple tests
+  bool success=true;
 
-  // Initialize MPI and timer
-  int Proc=0;
+  // Initialize MPI 
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  int Proc=mpiSession.getRank();
 #ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  double total_time = -MPI_Wtime();
-  (void) MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
   MPI_Comm appComm = MPI_COMM_WORLD;
 #else
   int appComm=0;
@@ -70,7 +71,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  char* inputFile;
+  std::string inputFile;
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
 
@@ -136,10 +137,10 @@ int main(int argc, char *argv[]) {
       Thyra::EpetraModelEvaluator piroThyra;
       piroThyra.initialize(piro, Teuchos::null);
 
-      RCP< ::Thyra::VectorBase<double> > p;
+      RCP< Thyra::VectorBase<double> > p;
 
       // Now call the analysis routine
-      status = Piro::Thyra::PerformAnalysis(piroThyra, analysisParams, p);
+      status = Piro::PerformAnalysis(piroThyra, analysisParams, p);
 
       if (p != Teuchos::null) {
         // Can post-process results here
@@ -148,33 +149,11 @@ int main(int argc, char *argv[]) {
       }
 
     }
-
-    catch (std::exception& e) {
-      cout << e.what() << endl;
-      status = 10;
-    }
-    catch (string& s) {
-      cout << s << endl;
-      status = 20;
-    }
-    catch (char *s) {
-      cout << s << endl;
-      status = 30;
-    } catch (...) {
-      cout << "Caught unknown exception!" << endl;
-      status = 40;
-    }
+    TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
+    if (!success) status+=1000;
 
     overall_status += status;
   }  // End loop over tests
-
-#ifdef HAVE_MPI
-  total_time +=  MPI_Wtime();
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (Proc==0) cout << "\n\nTOTAL TIME     " 
-                    << total_time << endl;
-  MPI_Finalize() ;
-#endif
 
   if (Proc==0) {
     if (overall_status==0) 

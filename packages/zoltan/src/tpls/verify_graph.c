@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 
-#include "zz_const.h"
+#include "zz_util_const.h"
 #include "third_library_const.h"
 #include "third_library_tools.h"
 #include "graph_util.h"
@@ -74,7 +74,8 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   ZOLTAN_COMM_OBJ *comm_plan;
   static char *yo = "Zoltan_Verify_Graph";
   char msg[256];
-  int num_obj, nrecv;
+  ZOLTAN_GNO_TYPE num_obj;
+  int nrecv;
   indextype *ptr, *ptr1, *ptr2;
   indextype global_i, global_j;
   indextype *sendgno=NULL, *recvgno=NULL, *adjncy_sort=NULL;
@@ -82,9 +83,10 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   ZOLTAN_GNO_TYPE num_duplicates, num_singletons;
   ZOLTAN_GNO_TYPE num_selfs, nedges, global_sum, num_zeros;
   ZOLTAN_GNO_TYPE i, j, ii, k;
-
+  MPI_Datatype zoltan_gno_mpi_type;
 
   ierr = ZOLTAN_OK;
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   /* Make sure all procs have same value of check_graph. */
   MPI_Allreduce(&check_graph, &i, 1, MPI_INT, MPI_MAX, comm);
@@ -98,8 +100,8 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   MPI_Comm_rank(comm, &proc);
 
   /* Check number of vertices (objects) */
-  num_obj = (int)(vtxdist[proc+1] - vtxdist[proc]);
-  MPI_Reduce(&num_obj, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+  num_obj = (ZOLTAN_GNO_TYPE)(vtxdist[proc+1] - vtxdist[proc]);
+  MPI_Reduce(&num_obj, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
     if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
     if (output_level>0)
@@ -113,7 +115,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
        sum = 0;
        for (k=0; k<vwgt_dim; k++){
          if (vwgt[i*vwgt_dim+k] < 0) {
-            sprintf(msg, "Negative object weight of " TPL_WGT_SPEC " for object %zd.", 
+            sprintf(msg, "Negative object weight of " TPL_WGT_SPEC " for object " ZOLTAN_GNO_SPEC ".", 
                     vwgt[i*vwgt_dim+k], i);
             ZOLTAN_PRINT_ERROR(proc, yo, msg);
             ierr = ZOLTAN_FATAL;
@@ -123,17 +125,17 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
        if (sum == 0){
           num_zeros++;
           if (output_level>1) {
-            sprintf(msg, "Zero vertex (object) weights for object %zd.", i);
+            sprintf(msg, "Zero vertex (object) weights for object " ZOLTAN_GNO_SPEC ".", i);
             ZOLTAN_PRINT_WARN(proc, yo, msg);
           }
           if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
        }
     }
-    MPI_Reduce(&num_zeros, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+    MPI_Reduce(&num_zeros, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
     if ((proc==0) && (global_sum>0)){
       if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       if (output_level>0){
-        sprintf(msg, "%zd objects have zero weights.", global_sum);
+        sprintf(msg,  ZOLTAN_GNO_SPEC " objects have zero weights.", global_sum);
         ZOLTAN_PRINT_WARN(proc, yo, msg);
       }
     }
@@ -141,7 +143,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
 
   /* Check number of edges */
   nedges = (ZOLTAN_GNO_TYPE)xadj[num_obj];
-  MPI_Reduce(&nedges, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+  MPI_Reduce(&nedges, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
     if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
     if (output_level>0)
@@ -155,7 +157,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       sum = 0;
       for (k=0; k<ewgt_dim; k++){
         if (adjwgt[j*ewgt_dim+k] < 0) {
-          sprintf(msg, "Negative edge weight of " TPL_WGT_SPEC " in edge %zd.", 
+          sprintf(msg, "Negative edge weight of " TPL_WGT_SPEC " in edge " ZOLTAN_GNO_SPEC ".", 
                   adjwgt[j*ewgt_dim+k], j);
           ZOLTAN_PRINT_ERROR(proc, yo, msg);
           ierr = ZOLTAN_FATAL;
@@ -165,18 +167,18 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       if (sum == 0){
         num_zeros++;
         if (output_level>1) {
-          sprintf(msg, "Zero edge (communication) weights for edge %zd.", j);
+          sprintf(msg, "Zero edge (communication) weights for edge " ZOLTAN_GNO_SPEC ".", j);
           ZOLTAN_PRINT_WARN(proc, yo, msg);
         }
         if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       }
     }
 
-    MPI_Reduce(&num_zeros, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+    MPI_Reduce(&num_zeros, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
     if ((proc==0) && (global_sum>0)){
       if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       if (output_level>0){
-        sprintf(msg, "%zd edges have zero weights.", global_sum);
+        sprintf(msg,  ZOLTAN_GNO_SPEC " edges have zero weights.", global_sum);
         ZOLTAN_PRINT_WARN(proc, yo, msg);
       }
     }
@@ -221,10 +223,12 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       for (i=0; i<num_obj; i++) 
         Zoltan_quicksort_list_inc_long((long *)adjncy_sort, perm, (int)xadj[i], (int)xadj[i+1]-1);
     }
+#ifdef HAVE_LONG_LONG_INT
     else if (sizeof(indextype) == sizeof(long long)){
       for (i=0; i<num_obj; i++) 
         Zoltan_quicksort_list_inc_long_long((long long *)adjncy_sort, perm, (int)xadj[i], (int)xadj[i+1]-1);
     }
+#endif
     else{
       ZOLTAN_PRINT_ERROR(proc, yo, "Error in third party library data type support.");
       ierr = ZOLTAN_MEMERR;
@@ -328,27 +332,27 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   }
 
   /* Sum up warnings so far. */
-  MPI_Reduce(&num_selfs, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_selfs, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum>0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0){
-      sprintf(msg, "%zd self-edges in graph.", global_sum);
+      sprintf(msg,  ZOLTAN_GNO_SPEC " self-edges in graph.", global_sum);
       ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }
-  MPI_Reduce(&num_duplicates, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_duplicates, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum>0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0){
-      sprintf(msg, "%zd duplicate edges in graph.", global_sum);
+      sprintf(msg,  ZOLTAN_GNO_SPEC " duplicate edges in graph.", global_sum);
       ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }
-  MPI_Reduce(&num_singletons, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_singletons, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum>0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0){
-      sprintf(msg, "%zd vertices in the graph are singletons (have no edges).", global_sum);
+      sprintf(msg,  ZOLTAN_GNO_SPEC " vertices in the graph are singletons (have no edges).", global_sum);
       ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }

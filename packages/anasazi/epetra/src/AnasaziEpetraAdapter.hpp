@@ -706,6 +706,32 @@ namespace Anasazi {
       return Teuchos::rcp( new Epetra_MultiVector(::Copy, mv, &tmp_index[0], index.size()) ); 
     }
 
+    static Teuchos::RCP<Epetra_MultiVector> 
+    CloneCopy (const Epetra_MultiVector& mv, const Teuchos::Range1D& index)
+    { 
+#ifdef TEUCHOS_DEBUG
+      const bool validRange = index.size() > 0 && 
+	index.lbound() >= 0 && 
+	index.ubound() < mv.NumVectors();
+      if (! validRange)
+	{
+	  std::ostringstream os;
+	  os <<	"Anasazi::MultiVecTraits<double,Epetra_MultiVector>::Clone(mv,"
+	    "index=[" << index.lbound() << ", " << index.ubound() << "]): ";
+	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonempty.");
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonnegative.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
+			     std::invalid_argument,
+			     os.str() << "Column index range must not exceed "
+			     "number of vectors " << mv.NumVectors() << " in "
+			     "the input multivector.");
+	}
+#endif // TEUCHOS_DEBUG
+      return Teuchos::rcp (new Epetra_MultiVector(Copy, mv, index.lbound(), index.size()));
+    }
+
     /*! \brief Creates a new Epetra_MultiVector that shares the selected contents of \c mv (shallow copy).
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
@@ -725,6 +751,33 @@ namespace Anasazi {
       return Teuchos::rcp( new Epetra_MultiVector(::View, mv, &tmp_index[0], index.size()) ); 
     }
 
+    static Teuchos::RCP<Epetra_MultiVector> 
+    CloneViewNonConst (Epetra_MultiVector& mv, const Teuchos::Range1D& index)
+    { 
+#ifdef TEUCHOS_DEBUG
+      const bool validRange = index.size() > 0 && 
+	index.lbound() >= 0 && 
+	index.ubound() < mv.NumVectors();
+      if (! validRange)
+	{
+	  std::ostringstream os;
+	  os <<	"Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneView"
+	    "NonConst(mv,index=[" << index.lbound() << ", " << index.ubound() 
+	     << "]): ";
+	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonempty.");
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonnegative.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
+			     std::invalid_argument,
+			     os.str() << "Column index range must not exceed "
+			     "number of vectors " << mv.NumVectors() << " in "
+			     "the input multivector.");
+	}
+#endif // TEUCHOS_DEBUG
+      return Teuchos::rcp (new Epetra_MultiVector(View, mv, index.lbound(), index.size()));
+    }
+
     /*! \brief Creates a new const Epetra_MultiVector that shares the selected contents of \c mv (shallow copy).
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
@@ -742,6 +795,33 @@ namespace Anasazi {
 #endif
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(::View, mv, &tmp_index[0], index.size()) ); 
+    }
+
+    static Teuchos::RCP<Epetra_MultiVector> 
+    CloneView (const Epetra_MultiVector& mv, const Teuchos::Range1D& index)
+    { 
+#ifdef TEUCHOS_DEBUG
+      const bool validRange = index.size() > 0 && 
+	index.lbound() >= 0 && 
+	index.ubound() < mv.NumVectors();
+      if (! validRange)
+	{
+	  std::ostringstream os;
+	  os <<	"Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneView"
+	    "(mv,index=[" << index.lbound() << ", " << index.ubound() 
+	     << "]): ";
+	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonempty.");
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonnegative.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
+			     std::invalid_argument,
+			     os.str() << "Column index range must not exceed "
+			     "number of vectors " << mv.NumVectors() << " in "
+			     "the input multivector.");
+	}
+#endif // TEUCHOS_DEBUG
+      return Teuchos::rcp (new Epetra_MultiVector(View, mv, index.lbound(), index.size()));
     }
 
     //@}
@@ -893,6 +973,65 @@ namespace Anasazi {
           "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::SetBlock(A,index,mv): index must be the same size as A");
       Teuchos::RCP<Epetra_MultiVector> mv_sub = CloneViewNonConst(mv,index);
       *mv_sub = A;
+    }
+
+    static void 
+    SetBlock (const Epetra_MultiVector& A, 
+	      const Teuchos::Range1D& index, 
+	      Epetra_MultiVector& mv)
+    { 
+      const int numColsA = A.NumVectors();
+      const int numColsMv = mv.NumVectors();
+      // 'index' indexes into mv; it's the index set of the target.
+      const bool validIndex = index.lbound() >= 0 && index.ubound() < numColsMv;
+      // We can't take more columns out of A than A has.
+      const bool validSource = index.size() <= numColsA;
+
+      if (! validIndex || ! validSource)
+	{
+	  std::ostringstream os;
+	  os <<	"Anasazi::MultiVecTraits<double, Epetra_MultiVector>::SetBlock"
+	    "(A, index=[" << index.lbound() << ", " << index.ubound() << "], "
+	    "mv): ";
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Range lower bound must be nonnegative.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+			     os.str() << "Range upper bound must be less than "
+			     "the number of columns " << numColsA << " in the "
+			     "'mv' output argument.");
+	  TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+			     os.str() << "Range must have no more elements than"
+			     " the number of columns " << numColsA << " in the "
+			     "'A' input argument.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	}
+
+      // View of the relevant column(s) of the target multivector mv.
+      // We avoid view creation overhead by only creating a view if
+      // the index range is different than [0, (# columns in mv) - 1].
+      Teuchos::RCP<Epetra_MultiVector> mv_view;
+      if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
+	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
+      else
+	mv_view = CloneViewNonConst (mv, index);
+
+      // View of the relevant column(s) of the source multivector A.
+      // If A has fewer columns than mv_view, then create a view of
+      // the first index.size() columns of A.
+      Teuchos::RCP<const Epetra_MultiVector> A_view;
+      if (index.size() == numColsA)
+	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
+      else
+	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
+
+      // Assignment calls Epetra_MultiVector::Assign(), which deeply
+      // copies the data directly, ignoring the underlying
+      // Epetra_Map(s).  If A and mv don't have the same data
+      // distribution (Epetra_Map), this may result in incorrect or
+      // undefined behavior.  Epetra_MultiVector::Update() also
+      // ignores the Epetra_Maps, so we might as well just use the
+      // (perhaps slightly cheaper) Assign() method via operator=().
+      *mv_view = *A_view; 
     }
 
     /*! \brief Scale each element of the vectors in \c mv with \c alpha.

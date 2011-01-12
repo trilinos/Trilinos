@@ -12,6 +12,7 @@
  ****************************************************************************/
 
 
+#include <stdint.h>
 #include "dr_const.h"
 #include "dr_input_const.h"
 #include "dr_err_const.h"

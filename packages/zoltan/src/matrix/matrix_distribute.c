@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include <math.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
@@ -193,8 +194,11 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   ZOLTAN_GNO_TYPE *pinGNO = NULL;
   ZOLTAN_GNO_TYPE tmp_gno;
   void *partdata = NULL;
+  MPI_Datatype zoltan_gno_mpi_type;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   memcpy(&outmat->mtx, &inmat, sizeof(Zoltan_matrix));
   if(copy) {
@@ -340,7 +344,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   /* FIXME: Work only in 1D */
   tmp_gno = (ZOLTAN_GNO_TYPE)outmat->mtx.nY;
-  MPI_Allgather(&tmp_gno, 1, ZOLTAN_GNO_MPI_TYPE, outmat->dist_y+1, 1, ZOLTAN_GNO_MPI_TYPE, communicator);
+  MPI_Allgather(&tmp_gno, 1, zoltan_gno_mpi_type, outmat->dist_y+1, 1, zoltan_gno_mpi_type, communicator);
   for (i = 1 ; i <= nProc_y ; i ++) {
     outmat->dist_y[i] += outmat->dist_y[i-1];
   }

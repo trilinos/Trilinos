@@ -48,13 +48,13 @@
 namespace epetra_test {
 
 matrix_data::matrix_data(int num_rows,
-                         int* rowlengths,
-                         int blocksize)
+                         int* rowlengths_in,
+                         int blocksize_in)
  : numrows_(num_rows),
    numcols_(0),
    rows_(0),
    rowlengths_(0),
-   blocksize_(blocksize),
+   blocksize_(blocksize_in),
    colindices_(0),
    coefs_(0)
 {
@@ -63,10 +63,10 @@ matrix_data::matrix_data(int num_rows,
     rowlengths_ = new int[numrows_];
     colindices_ = new int*[numrows_];
     coefs_ = new double*[numrows_];
-    int dim = blocksize*blocksize;
+    int dim = blocksize_in*blocksize_in;
     for(int i=0; i<numrows_; ++i) {
       rows_[i] = i;
-      rowlengths_[i] = rowlengths[i];
+      rowlengths_[i] = rowlengths_in[i];
       colindices_[i] = new int[rowlengths_[i]];
       coefs_[i] = new double[rowlengths_[i]*dim];
 
@@ -81,12 +81,12 @@ matrix_data::matrix_data(int num_rows,
 matrix_data::matrix_data(int num_rows,
                          int num_cols,
                          int num_off_diagonals,
-                         int blocksize)
+                         int blocksize_in)
  : numrows_(num_rows),
    numcols_(num_cols),
    rows_(0),
    rowlengths_(0),
-   blocksize_(blocksize),
+   blocksize_(blocksize_in),
    colindices_(0),
    coefs_(0)
 {
@@ -112,7 +112,7 @@ matrix_data::matrix_data(int num_rows,
         }
       }
       colindices_[i] = new int[rowlengths_[i]];
-      int dim = blocksize*blocksize;
+      int dim = blocksize_in*blocksize_in;
       coefs_[i] = new double[rowlengths_[i]*dim];
 
       int first_col = i - max_row_length/2;

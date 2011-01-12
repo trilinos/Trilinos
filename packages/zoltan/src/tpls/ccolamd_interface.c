@@ -90,8 +90,12 @@ int Zoltan_CColAMD(
   Zoltan_matrix_2d mtx;
   int i;
   ZOLTAN_GNO_TYPE offset = 0, tmpgno;
+  MPI_Datatype zoltan_gno_mpi_type;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+
   memset (&opt, 0, sizeof(Zoltan_matrix_options));
   opt.speed = MATRIX_NO_REDIST;
 
@@ -220,7 +224,7 @@ int Zoltan_CColAMD(
 
   /* Compute offset in the global graph */
   tmpgno = (ZOLTAN_GNO_TYPE)n_col;
-  MPI_Scan(&tmpgno, &offset, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);
+  MPI_Scan(&tmpgno, &offset, 1, zoltan_gno_mpi_type, MPI_SUM, zz->Communicator);
   offset -= n_col;
   /* Compute direct permutation */
 

@@ -56,11 +56,15 @@
 template <typename T, typename Storage> 
 template <typename S> 
 inline Sacado::CacheFad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
-  Storage(T(0.))
+  Storage(T(0.)),
+  update_val_(x.updateValue())
 {
+  x.cache();
+
   int sz = x.size();
 
-  T xval = x.val(); 
+  if (update_val_)
+    this->val() = x.val();
 
   if (sz != this->size()) 
     this->resize(sz);
@@ -73,8 +77,6 @@ inline Sacado::CacheFad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
       for(int i=0; i<sz; ++i) 
 	this->fastAccessDx(i) = x.dx(i);
   }
-
-  this->val() = xval;
 }
 
 
@@ -111,6 +113,7 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator=(
 {
   // Copy val_ and dx_
   Storage::operator=(x);
+  update_val_ = x.update_val_;
   
   return *this;
 }
@@ -120,9 +123,9 @@ template <typename S>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator=(const Expr<S>& x) 
 {
+  x.cache();
+  
   int sz = x.size();
-
-  T xval = x.val();
 
   if (sz != this->size()) 
     this->resize(sz);
@@ -136,7 +139,9 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator=(const Expr<S>& x)
 	this->fastAccessDx(i) = x.dx(i);
   }
   
-  this->val() = xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() = x.val();
   
   return *this;
 }
@@ -145,7 +150,8 @@ template <typename T, typename Storage>
 inline  Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator += (const T& v)
 {
-  this->val() += v;
+  if (update_val_)
+    this->val() += v;
 
   return *this;
 }
@@ -154,7 +160,8 @@ template <typename T, typename Storage>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator -= (const T& v)
 {
-  this->val() -= v;
+  if (update_val_)
+    this->val() -= v;
 
   return *this;
 }
@@ -165,7 +172,8 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator *= (const T& v)
 {
   int sz = this->size();
 
-  this->val() *= v;
+  if (update_val_)
+    this->val() *= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) *= v;
 
@@ -178,7 +186,8 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator /= (const T& v)
 {
   int sz = this->size();
 
-  this->val() /= v;
+  if (update_val_)
+    this->val() /= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) /= v;
 
@@ -190,7 +199,8 @@ inline  Sacado::CacheFad::GeneralFad<T,Storage>&
 Sacado::CacheFad::GeneralFad<T,Storage>::
 operator += (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  this->val() += v;
+  if (update_val_)
+    this->val() += v;
 
   return *this;
 }
@@ -200,7 +210,8 @@ inline Sacado::CacheFad::GeneralFad<T,Storage>&
 Sacado::CacheFad::GeneralFad<T,Storage>::
 operator -= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  this->val() -= v;
+  if (update_val_)
+    this->val() -= v;
 
   return *this;
 }
@@ -212,7 +223,8 @@ operator *= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
   int sz = this->size();
 
-  this->val() *= v;
+  if (update_val_)
+    this->val() *= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) *= v;
 
@@ -226,7 +238,8 @@ operator /= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
   int sz = this->size();
 
-  this->val() /= v;
+  if (update_val_)
+    this->val() /= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) /= v;
 
@@ -238,14 +251,14 @@ template <typename S>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator += (const Sacado::CacheFad::Expr<S>& x)
 {
+  x.cache();
+
   int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
-
-  T xval = x.val();
 
   if (xsz) {
     if (sz) {
@@ -267,7 +280,9 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator += (const Sacado::CacheFad::Ex
     }
   }
 
-  this->val() += xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() += x.val();
 
   return *this;
 }
@@ -277,14 +292,14 @@ template <typename S>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator -= (const Sacado::CacheFad::Expr<S>& x)
 {
+  x.cache();
+  
   int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
-
-  T xval = x.val();
 
   if (xsz) {
     if (sz) {
@@ -305,8 +320,10 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator -= (const Sacado::CacheFad::Ex
 	  this->fastAccessDx(i) = -x.dx(i);
     }
   }
-
-  this->val() -= xval;
+  
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() -= x.val();
 
 
   return *this;
@@ -317,7 +334,10 @@ template <typename S>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator *= (const Sacado::CacheFad::Expr<S>& x)
 {
+  x.cache();
+
   int xsz = x.size(), sz = this->size();
+  update_val_ = x.updateValue();
   T xval = x.val();
 
 #ifdef SACADO_DEBUG
@@ -351,7 +371,8 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator *= (const Sacado::CacheFad::Ex
     }
   }
 
-  this->val() *= xval;
+  if (update_val_)
+    this->val() *= xval;
 
   return *this;
 }
@@ -361,7 +382,10 @@ template <typename S>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator /= (const Sacado::CacheFad::Expr<S>& x)
 {
+  x.cache();
+
   int xsz = x.size(), sz = this->size();
+  update_val_ = x.updateValue();
   T xval = x.val();
 
 #ifdef SACADO_DEBUG
@@ -395,7 +419,8 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator /= (const Sacado::CacheFad::Ex
     }
   }
 
-  this->val() /= xval;
+  if (update_val_)
+    this->val() /= xval;
 
   return *this;
 }

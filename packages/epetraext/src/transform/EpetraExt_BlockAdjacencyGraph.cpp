@@ -34,7 +34,7 @@
 #include <Epetra_Comm.h>
 
 #include <math.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 namespace EpetraExt {
 

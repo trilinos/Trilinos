@@ -430,7 +430,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   }
   const int newBlockSize = TEUCHOS_MIN(currBlockSize,numEquations/2);
   if (nonnull(out)
-    && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE)
+    && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW)
     && newBlockSize != currBlockSize)
   {
     *out << "\nAdjusted block size = " << newBlockSize << "\n";
@@ -448,7 +448,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     tmpPL->set("Num Blocks",Krylov_length);
   
     if (newBlockSize != currBlockSize) {
-      if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+      if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
         *out
           << "\nAdjusted max number of Krylov basis blocks = " << Krylov_length << "\n";
     }
@@ -462,7 +462,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   {
     RCP<std::ostream>
       outUsed =
-      ( static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE)
+      ( static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW)
         ? out
         : rcp(new FancyOStream(rcp(new Teuchos::oblackholestream())))
         );
@@ -512,13 +512,15 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     <<"\" returned a solve status of \""<< toString(solveStatus.solveStatus) << "\""
     << " in " << iterativeSolver_->getNumIters() << " iterations"
     << " with total CPU time of " << totalTimer.totalElapsedTime() << " sec" ;
-  if (out.get() && static_cast<int>(verbLevel) >=static_cast<int>(Teuchos::VERB_LOW))
+  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
     *out << "\n" << ossmessage.str() << "\n";
 
   solveStatus.message = ossmessage.str();
 
-  if (out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nTotal solve time in Belos = "<<totalTimer.totalElapsedTime()<<" sec\n";
+//  This information is in the previous line, which is printed anytime the verbosity
+//  is not set to Teuchos::VERB_NONE, so I'm commenting this out for now.
+//  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+//    *out << "\nTotal solve time in Belos = "<<totalTimer.totalElapsedTime()<<" sec\n";
 
   return solveStatus;
 

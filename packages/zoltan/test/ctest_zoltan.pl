@@ -116,6 +116,7 @@ if ($package eq "Zoltan") {
                     zdrive.inp.oct*
                     zdrive.inp.phg* 
                     zdrive.inp.block*
+                    zdrive.inp.color*
                     zdrive.inp.cyclic*
                     zdrive.inp.random* 
                     zdrive.inp.graph-repartit*

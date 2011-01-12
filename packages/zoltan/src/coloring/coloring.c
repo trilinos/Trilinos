@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-#include <limits.h>
+#include <assert.h>
 #include <ctype.h>
 #include "zoltan_mem.h"
 #include "zz_const.h"
@@ -28,6 +28,7 @@ extern "C" {
 #include "graph.h"
 #include "all_allo_const.h"
 #include "zz_rand.h"
+#include "bucket.h"
 
 /* when sending new colored vertices to processors,
    sent only the "relevant" ones; i.e., send the color info if the processors has
@@ -56,15 +57,15 @@ static int InternalColoring(ZZ *zz, char coloring_problem, int *nColor,
 #ifdef RELEVANT_COLORS
 static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj,
 			       int *isbound, int ss, int *nColor, int *color,
-			       int **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
+			       ZOLTAN_GNO_TYPE **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
 			       char coloring_method, char comm_pattern, int *rreqfrom,
 			       int *replies, MPI_Request *sreqs, MPI_Request *rreqs,
 			       MPI_Status *stats,
-			       int *xadjproc, int *adjproc, int **persSbuf, int *Ssize, int plstcnt, int *plst);
+			       int *xadjproc, int *adjproc, ZOLTAN_GNO_TYPE **persSbuf, int *Ssize, int plstcnt, int *plst);
 #else
 static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj,
 			       int *isbound, int ss, int *nColor, int *color,
-			       int **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
+			       ZOLTAN_GNO_TYPE **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
 			       char coloring_method, char comm_pattern, int *rreqfrom,
 			       int *replies, MPI_Request *sreqs, MPI_Request *rreqs,
 			       MPI_Status *stats);
@@ -130,13 +131,6 @@ static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *a
 /*****************************************************************************/
 /* Interface routine for Graph Coloring */
 
-/* TODO64: Zoltan_Color has not been modified to work with the Zoltan_ZG_Export interface
- * and with the ZOLTAN_GNO_TYPE data type.  Some difficulties: It looks like the hash
- * table length is equal to the number of vertices in the graph.  It looks like the
- * adjncy value (a neighbor global number) is an index into the xadj array (which is
- * usually indexing in to the adjncy array of global numbers).  So this code needs
- * to be looked at much more carefully before it can be changed to use ZOLTAN_GNO_TYPEs.
- */
 
 int Zoltan_Color(
     ZZ *zz,                   /* Zoltan structure */
@@ -159,16 +153,16 @@ int Zoltan_Color(
 			   information exchange */
   char comm_pattern;    /* (A) asynchronous (S) synchronous supersteps*/
   char coloring_order;     /* (I) interior vertices first
-			   (B) boundary vertices first (U) interleaved */
+			   (B) boundary vertices first (U) interleaved = (N) natural,
+                           (L) largest degree first, (S) smallest degree last */
   char coloring_method;    /* Coloring method. (F) First fit */
 
-
-  static char *yo = "color_fn";
+  static char *yo = "Zoltan_Color";
   ZOLTAN_GNO_TYPE *vtxdist=NULL, *adjncy=NULL;
   int *itmp, *xadj=NULL;
   int *adjproc=NULL;
   int nvtx;                         /* number of local vertices */
-  ZOLTAN_GNO_TYPE gvtx;                         /* number of global vertices */
+  ZOLTAN_GNO_TYPE gvtx;             /* number of global vertices */
 
   int *color=NULL;                  /* array to store colors of local and D1
 				       neighbor vertices */
@@ -181,8 +175,9 @@ int Zoltan_Color(
   ZOLTAN_ID_PTR my_global_ids= NULL;  /* gids local to this proc */
   struct Zoltan_DD_Struct *dd_color;  /* DDirectory for colors */
 
+
 #ifdef _DEBUG_TIMES  
-  double times[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
+  double times[6]={0.,0.,0.,0.,0.,0.}, rtimes[6]; /* Used for timing measurements */
   double gtimes[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
   char *timenames[6]= {"", "setup", "graph build", "renumber", "color", "clean up"};
 #endif
@@ -197,10 +192,6 @@ int Zoltan_Color(
   times[0] = Zoltan_Time(zz->Timer);
 #endif
 
-  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)) {    /* TODO64 */
-    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "\nZoltan_Color can not handle ints of more than one size");
-  }
-  
   /* PARAMETER SETTINGS */
 
   Zoltan_Bind_Param(Color_params, "COLORING_PROBLEM", (void *) &coloring_problemStr);
@@ -244,7 +235,7 @@ int Zoltan_Color(
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Asynchronous communication pattern is not implemented for distance-2 coloring and its variants. Using synchronous communication (S).");
       comm_pattern = 'S';
   }
-  if (coloring_order != 'I' && coloring_order != 'B' && coloring_order != 'U') {
+  if (coloring_order != 'I' && coloring_order != 'B' && coloring_order != 'U' && coloring_order != 'N' && coloring_order != 'L' && coloring_order != 'S') {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring order. Using internal first coloring order (I).");
       coloring_order = 'I';
   }
@@ -267,7 +258,6 @@ int Zoltan_Color(
   zz->Num_GID = gcomm[0];
   zz->Num_LID = gcomm[1];
 
-
   if (num_gid_entries != zz->Num_GID)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "num_gid_entries is not consistent with the queries.");
 
@@ -275,7 +265,6 @@ int Zoltan_Color(
      communicator. */
   if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz))
       return ZOLTAN_OK;
-
 
   /* BUILD THE GRAPH */
   /* TODO: Allow req_objs==NULL as special case for local vertices. */
@@ -307,9 +296,12 @@ int Zoltan_Color(
   if (Zoltan_G2LHash_Create(&hash, i, vtxdist[zz->Proc], nvtx)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
 
-  /* Add ids of the d1 neighbors into the hash table*/
+  /* Add global ids of the d1 neighbors into the hash table,
+   *    create a "local ID" for each neighbor if it's not mine */
 
-  if (sizeof(ZOLTAN_GNO_TYPE) == sizeof(int)){
+  if (sizeof(ZOLTAN_GNO_TYPE) ==          /* size of global id */
+      sizeof(int)){                       /* size of local id */
+
     for (i=0; i<xadj[nvtx]; ++i)
         adjncy[i] = (ZOLTAN_GNO_TYPE)Zoltan_G2LHash_Insert(&hash, adjncy[i]);
   }
@@ -359,15 +351,7 @@ int Zoltan_Color(
      int nobj=0;
 
      Zoltan_Get_Obj_List(zz, &nobj, &my_global_ids, &my_lids, 0, &wgts, &parts);
-     /*
-     if (zz->Get_Obj_List != NULL){
-       my_global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, nvtx); 
-       zz->Get_Obj_List(zz->Get_Obj_List_Data,
-                            zz->Num_GID, 0,
-                            my_global_ids, NULL,
-                            0, NULL, &ierr);
-     }
-     */
+     
      ZOLTAN_FREE(&my_lids); 
      ZOLTAN_FREE(&wgts); 
      ZOLTAN_FREE(&parts); 
@@ -397,12 +381,15 @@ int Zoltan_Color(
 #ifdef _DEBUG_TIMES    
   MPI_Barrier(zz->Communicator);
   times[5] = Zoltan_Time(zz->Timer);
-  MPI_Reduce(times, gtimes, 6, MPI_DOUBLE, MPI_MAX, 0, zz->Communicator);
+  rtimes[0] = times[5]-times[0];
+  for (i=1; i<6; ++i) 
+      rtimes[i] = times[i]-times[i-1]; 
+  MPI_Reduce(rtimes, gtimes, 6, MPI_DOUBLE, MPI_MAX, 0, zz->Communicator);
   if (!zz->Proc) {
       int i;
       for (i=1; i<6; ++i)
-          printf("Zoltan_Color %-13s in Proc-0: %8.2lf  Max: %8.2lf\n", timenames[i], times[i]-times[i-1], gtimes[i]-gtimes[i-1]);
-      printf("Zoltan_Color Total Time in Proc-0: %.2lf    Max: %.2lf\n", times[5]-times[0], gtimes[5]-times[0]);
+          printf("Zoltan_Color %-13s in Proc-0: %8.2lf  Max: %8.2lf\n", timenames[i], times[i]-times[i-1], gtimes[i]);
+      printf("Zoltan_Color %-13s in Proc-0: %8.2lf  Max: %8.2lf\n", "Total Time", times[5]-times[0], gtimes[0]);
   }
 #endif
  End:
@@ -415,14 +402,99 @@ int Zoltan_Color(
   return ierr;
 }
 
+
+/* fills the visit array with the n first vertices of xadj using the
+   Largest Degree First ordering. The algorithm used to compute this
+   ordering is a stable count sort. */
+static void LargestDegreeFirstOrdering(
+    ZZ  *zz, 
+    int *visit, /*Out*/
+    int *xadj,
+    int n,
+    int max_degree) 
+{	
+    static char* yo = "LargestDegreeFirstOrdering";
+    int ierr = ZOLTAN_OK;
+    int i;
+    int *cnt;
+    
+    cnt = (int*) ZOLTAN_MALLOC (sizeof(int)*(max_degree+1));
+    if (!cnt)
+        MEMORY_ERROR;
+    
+    memset(cnt, 0, sizeof(int)*(max_degree+1));
+    for (i=0; i<n; ++i) {
+        int degree_of_i = xadj[i+1]-xadj[i];
+        ++cnt[degree_of_i];
+    }
+    /* now, cnt[i] is the number of vertice which degree is i*/
+
+    /* this loop performs a prefix sum array computation on cnt*/
+    for (i=1; i<max_degree+1; ++i) 
+        cnt[i] = cnt[i] + cnt[i-1];
+
+  
+    /* cnt[x]-1 is the index of the next node of degree x*/
+    for (i=0; i<n; ++i) {
+        int degree_of_i = xadj[i+1]-xadj[i];
+        cnt[degree_of_i]--;
+        visit[n - 1 - cnt[degree_of_i]] = i;
+    }
+    
+End:
+    ZOLTAN_FREE(&cnt);
+}
+
+
+static void SmallestDegreeLastOrdering(
+    ZZ  *zz, 
+    int *visit, /*Out*/
+    int *xadj,
+    int *adj,
+    int n,
+    int max_degree) 
+{	
+  static char* yo = "SmallestDegreeLastOrdering";
+  int ierr = ZOLTAN_OK;
+  int i;
+  Bucket bs;
+  
+  bs = Zoltan_Bucket_Initialize(max_degree+1,n);
+  if (bs.buckets == NULL) 
+      MEMORY_ERROR;
+
+  for (i=0; i<n; i++) {
+      int degree_of_i = xadj[i+1] - xadj[i];
+      Zoltan_Bucket_Insert(&bs, i, degree_of_i);
+  }
+
+  for (i=0; i<n; i++) {
+      int u = Zoltan_Bucket_PopMin(&bs);
+      int j;
+      
+      visit[n - 1 - i] = u;
+      for (j = xadj[u]; j < xadj[u+1]; ++j) { /* decrease the degree of the neighboors*/
+	  if (adj[j] < n)  /* Otherwise it is not a local vertex */
+              Zoltan_Bucket_DecVal(&bs, adj[j]);
+      }    
+  }
+End:
+  Zoltan_Bucket_Free(&bs);		
+}
+
+
+
+
 /*****************************************************************************/
 /* Distance-1 coloring. No two adjacent vertices get the same color. */
 
 static int D1coloring(
     ZZ *zz,
     char coloring_problem,/* Coloring problem. '1' in this case */
-    char coloring_order,  /* (I) interior vertices first
-			  (B) boundary vertices first (U) interleaved */
+    char coloring_order,  /* (I) interior vertices first (B) boundary
+			  vertices first (U) interleaved, (N) Natural
+			  Ordering, (L) Largest Degree First, (S)
+			  Smallest Degree Last (dynamic) */
     char coloring_method, /* Coloring method. (F) First fit
 			  (S) staggered first fit (L) load balancing */
     char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
@@ -470,7 +542,7 @@ static int D1coloring(
     MPI_Request *rreqs = NULL;
     MPI_Request *sreqs = NULL;
     int *rreqfrom = NULL;
-    int **newcolored = NULL;     /* Array used for communicating boundary vertex
+    ZOLTAN_GNO_TYPE **newcolored = NULL;     /* Array used for communicating boundary vertex
 				    colors at the end of supersteps. Global number
 				    of the vertex - color of vertex pairs are filled
 				    in this array */
@@ -480,7 +552,7 @@ static int D1coloring(
 #ifdef RELEVANT_COLORS
     int j, k;
     int *pmark=NULL;
-    int **persSbuf=NULL; /* personalized send buffers */
+    ZOLTAN_GNO_TYPE **persSbuf=NULL; /* personalized send buffers */
     int *Ssize=NULL; /* send buffer sizes */
     int *relproc=NULL;
     int *xrelproc=NULL;
@@ -504,9 +576,9 @@ static int D1coloring(
     printf("Before reordering: nvtx:%d lastlno=%d Proc:%d\n", nvtx, lastlno, zz->Proc);
     for (i=0; i < nvtx; i++) {
 	int j;
-	printf("%d [%d] :: ", Zoltan_G2LHash_L2G(hash, i), i);
+	printf(ZOLTAN_GNO_SPEC " [%d] :: ", Zoltan_G2LHash_L2G(hash, i), i);
 	for (j=xadj[i]; j < xadj[i+1]; j++) {
-	    printf("%d [%d] (%d) ",   Zoltan_G2LHash_L2G(hash, adj[j]), adj[j], adjproc[j]);
+	    printf(ZOLTAN_GNO_SPEC " [%d] (%d) ",   Zoltan_G2LHash_L2G(hash, adj[j]), adj[j], adjproc[j]);
 	}
 	printf("\n");
     }
@@ -521,9 +593,9 @@ static int D1coloring(
     printf("After reordering: nvtx:%d lastlno=%d Proc:%d\n", nvtx, lastlno, zz->Proc);
     for (i=0; i < nvtx; i++) {
 	int j;
-	printf("%d [%d] :: ", Zoltan_G2LHash_L2G(hash, i), i);
+	printf((ZOLTAN_GNO_SPEC " [%d] :: ", Zoltan_G2LHash_L2G(hash, i), i);
 	for (j=xadj[i]; j < xadj[i+1]; j++) {
-	    printf("%d [%d] (%d) ",   Zoltan_G2LHash_L2G(hash, adj[j]), adj[j], adjproc[j]);
+	    printf((ZOLTAN_GNO_SPEC " [%d] (%d) ",   Zoltan_G2LHash_L2G(hash, adj[j]), adj[j], adjproc[j]);
 	}
 	printf("\n");
     }
@@ -546,21 +618,21 @@ static int D1coloring(
     rreqs = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Request));
     sreqs = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Request));
     rreqfrom = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
-    newcolored = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    newcolored = (ZOLTAN_GNO_TYPE **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(ZOLTAN_GNO_TYPE *));
     if (!mark || !conflicts || !replies || !stats || !rreqs || !sreqs || !rreqfrom || !newcolored)
 	MEMORY_ERROR;
     for (i=0; i<zz->Num_Proc; ++i) {
-	newcolored[i] = (int *) ZOLTAN_MALLOC(2 * ss * sizeof(int));
+	newcolored[i] = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(2 * ss * sizeof(ZOLTAN_GNO_TYPE));
 	if (!newcolored[i])
 	    MEMORY_ERROR;
-	memset(newcolored[i], 0, 2 * ss * sizeof(int));
+	memset(newcolored[i], 0, 2 * ss * sizeof(ZOLTAN_GNO_TYPE));
     }
 #ifdef RELEVANT_COLORS
-    persSbuf = (int **) ZOLTAN_MALLOC(sizeof(int *) * zz->Num_Proc);
+    persSbuf = (ZOLTAN_GNO_TYPE **) ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE *) * zz->Num_Proc);
     Ssize = (int *) ZOLTAN_MALLOC(sizeof(int) * zz->Num_Proc);
     plst = (int *) ZOLTAN_MALLOC(sizeof(int) * zz->Num_Proc);
     for (i=0; i<zz->Num_Proc; i++)
-	persSbuf[i] = (int *) ZOLTAN_MALLOC(sizeof(int) * 2*ss);
+	persSbuf[i] = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * 2*ss);
 #endif
 
     /* Generate random numbers associated with global numbers of the vertices */
@@ -569,8 +641,11 @@ static int D1coloring(
     rand_key = (int *) ZOLTAN_MALLOC(sizeof(int) * lastlno);
     if (!rand_key)
 	MEMORY_ERROR;
-    for(i=0; i<lastlno; i++) {
-	Zoltan_Srand(Zoltan_G2LHash_L2G(hash, i), NULL);
+    for (i=0; i<lastlno; i++) {
+
+	/* TODO64 OK if 8byte int is cast as 4byte int here? */
+	Zoltan_Srand((unsigned int)Zoltan_G2LHash_L2G(hash, i), NULL);
+
 	rand_key[i] = (int) (((double)Zoltan_Rand(NULL)/(double) ZOLTAN_RAND_MAX)*100000000);
     }
 
@@ -580,10 +655,22 @@ static int D1coloring(
 	times[2] = Zoltan_Time(zz->Timer);
     }
     visitIntern = visit + nbound; /* Start of internal vertex visit order. Used with I and B options below */
-    if (coloring_order == 'U') {
+    if (coloring_order == 'U' || coloring_order == 'N' || coloring_order == 'L' || coloring_order == 'S') {
 	nConflict = nvtx;
-	for (i=0; i<nvtx; i++)
-	    visit[i] = i;
+
+	/* change the order of the vertices */
+	/*The ReorderGraph function also set the visit array. But I believe it is only useful for 'B' and 'I' */
+	if (coloring_order == 'N' || coloring_order == 'U') /*natural order*/
+	  {
+	    for (i=0; i<nvtx; i++)
+	      visit[i] = i;
+	  }
+	else if (coloring_order == 'L') /*largest first*/
+	    LargestDegreeFirstOrdering(zz, visit, xadj, nvtx, lmaxdeg);
+	else if (coloring_order == 'S') /*smallest last*/
+	    SmallestDegreeLastOrdering(zz, visit, xadj, adj, nvtx, lmaxdeg);
+
+
 	if (zz->Num_Proc==1)
 	    InternalColoring(zz, coloring_problem, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxdeg, coloring_method);
     }
@@ -593,6 +680,7 @@ static int D1coloring(
     }
     else if (coloring_order == 'B')
 	nConflict = nbound;
+
 
     if (get_times) times[3] = Zoltan_Time(zz->Timer);
 
@@ -701,7 +789,7 @@ static int D1coloring(
 #if 0
     printf("[%d] vtx(gno)->color: ", zz->Proc);
     for (i=0; i<nvtx; i++)
-	printf("%d(%d)->%d ", i, Zoltan_G2LHash_L2G(hash, i), color[i]);
+	printf("%d(" ZOLTAN_GNO_SPEC ")->%d ", i, Zoltan_G2LHash_L2G(hash, i), color[i]);
     printf("\n");
 #endif
 
@@ -870,11 +958,11 @@ static int D2coloring(
 #if 0
     printf("After reordering: nvtx:%d lastlno=%d Proc:%d\n", nvtx, lastlno, zz->Proc);
     for (i=0; i < nvtx; i++) {
-	printf("%d (%d) :: ", Zoltan_G2LHash_L2G(hash, i), i);
+	printf((ZOLTAN_GNO_SPEC " (%d) :: ", Zoltan_G2LHash_L2G(hash, i), i);
 	for (j=xadj[i]; j < xadj[i+1]; j++) {
 	    if (j == xbadj[i])
 		printf(" | ");
-	    printf("%d (%d) ", Zoltan_G2LHash_L2G(hash, adj[j]), adj[j]);
+	    printf((ZOLTAN_GNO_SPEC " (%d) ", Zoltan_G2LHash_L2G(hash, adj[j]), adj[j]);
 	}
 	printf("\n");
     }
@@ -1044,8 +1132,9 @@ static int D2coloring(
     rand_key = (int *) ZOLTAN_MALLOC(sizeof(int) * lastlno);
     if (lastlno && !rand_key)
 	MEMORY_ERROR;
-    for(i=0; i<lastlno; i++) {
-	Zoltan_Srand(Zoltan_G2LHash_L2G(hash, i), NULL);
+    for (i=0; i<lastlno; i++) {
+	/* TODO64 OK if 8byte int is cast as 4byte int here? */
+	Zoltan_Srand((unsigned int)Zoltan_G2LHash_L2G(hash, i), NULL);
 	rand_key[i] = (int) (((double)Zoltan_Rand(NULL)/(double)ZOLTAN_RAND_MAX)*1000000);
     }
 
@@ -1124,7 +1213,7 @@ static int D2coloring(
 #if 0
     printf("[%d] vtx(gno)->color: ", zz->Proc);
     for (i=0; i<nvtx; i++)
-	printf("%d(%d)->%d ", i, Zoltan_G2LHash_L2G(hash, i), color[i]);
+	printf("%d(" ZOLTAN_GNO_SPEC ")->%d ", i, Zoltan_G2LHash_L2G(hash, i), color[i]);
     printf("\n");
 #endif
 
@@ -1355,11 +1444,11 @@ static int InternalColoring(
 #ifdef RELEVANT_COLORS
 static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj,
 			       int *isbound, int ss, int *nColor, int *color,
-			       int **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
+			       ZOLTAN_GNO_TYPE **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
 			       char coloring_method, char comm_pattern, int *rreqfrom,
 			       int *replies, MPI_Request *sreqs, MPI_Request *rreqs,
 			       MPI_Status *stats,
-			       int *xrelproc, int *relproc, int **persSbuf, int *Ssize, int plstcnt, int *plst)
+			       int *xrelproc, int *relproc, ZOLTAN_GNO_TYPE **persSbuf, int *Ssize, int plstcnt, int *plst)
 #else
 static int D1ParallelColoring (
     ZZ *zz,
@@ -1375,7 +1464,7 @@ static int D1ParallelColoring (
     int *nColor,      /* Number of colors */
     int *color,       /* return array to store colors of local and D1
 			 neighbor vertices */
-    int **newcolored, /* Array used for communicating boundary vertex
+    ZOLTAN_GNO_TYPE **newcolored, /* Array used for communicating boundary vertex
 			 colors at the end of supersteps. Global number
 			 of the vertex - color of vertex pairs are filled
 			 in this array */
@@ -1396,9 +1485,13 @@ static int D1ParallelColoring (
 {
     static char *yo="D1ParallelColoring";
     int colortag=1001, i, j, p, q, l;
-    int *colored, n=0;
+    int n=0;
     int rreqcnt=0, sreqcnt=0, repcount;
     int ierr;
+    MPI_Datatype gno_mpi_type;
+    ZOLTAN_GNO_TYPE *colored=NULL;
+
+    gno_mpi_type = Zoltan_mpi_gno_type();
 
 #ifdef RELEVANT_COLORS
     memset(Ssize, 0, sizeof(int) * zz->Num_Proc);
@@ -1411,7 +1504,7 @@ static int D1ParallelColoring (
     for (rreqcnt = i = 0; i < plstcnt; ++i) {
 	p = plst[i];
 	rreqfrom[rreqcnt] = p;
-	if (MPI_Irecv(newcolored[p], 2*ss, MPI_INT, p, colortag, zz->Communicator, &rreqs[rreqcnt]))
+	if (MPI_Irecv(newcolored[p], 2*ss, gno_mpi_type, p, colortag, zz->Communicator, &rreqs[rreqcnt]))
 	    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "MPI_Irecv failed.");
 	++rreqcnt;
     }
@@ -1419,7 +1512,7 @@ static int D1ParallelColoring (
     for (rreqcnt = p = 0; p < zz->Num_Proc; ++p)
 	if (p != zz->Proc) {
 	    rreqfrom[rreqcnt] = p;
-	    if (MPI_Irecv(newcolored[p], 2*ss, MPI_INT, p, colortag, zz->Communicator, &rreqs[rreqcnt]))
+	    if (MPI_Irecv(newcolored[p], 2*ss, gno_mpi_type, p, colortag, zz->Communicator, &rreqs[rreqcnt]))
 		ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "MPI_Irecv failed.");
 	    ++rreqcnt;
 	}
@@ -1427,7 +1520,8 @@ static int D1ParallelColoring (
 
     /* Coloring */
     for (i=0; i<nvtx; ++i) {
-	int u = visit[i], gu;
+	int u = visit[i];
+        ZOLTAN_GNO_TYPE gu;
 	for (j=xadj[u]; j<xadj[u+1]; ++j) {
 	    int gv = adj[j], c;
 	    if ((c = color[gv]) != 0) {
@@ -1446,13 +1540,13 @@ static int D1ParallelColoring (
 	for (j=xrelproc[isbound[u]-1]; j<xrelproc[isbound[u]]; ++j) {
 	    int ap = relproc[j];
 	    persSbuf[ap][Ssize[ap]++] = gu;
-	    persSbuf[ap][Ssize[ap]++] = color[u];
+	    persSbuf[ap][Ssize[ap]++] = (ZOLTAN_GNO_TYPE)color[u];
 	}
 	n += 2;
 #else
 
 	colored[n++] = gu;
-	colored[n++] = color[u];
+	colored[n++] = (ZOLTAN_GNO_TYPE)color[u];
 #endif
 
 	/* If superstep is finished, communicate */
@@ -1465,14 +1559,14 @@ static int D1ParallelColoring (
                         persSbuf[p][Ssize[p]++] = -2;
                         persSbuf[p][Ssize[p]++] = -2;
                     }
-                    MPI_Isend(persSbuf[p], Ssize[p], MPI_INT, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
+                    MPI_Isend(persSbuf[p], Ssize[p], gno_mpi_type, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
                     Ssize[p] = 0;
                     }
 	    }
 #else
 	    for (sreqcnt = p = 0; p < zz->Num_Proc; ++p)
 		if (p != zz->Proc) {
-		    MPI_Isend(colored, 2*ss, MPI_INT, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
+		    MPI_Isend(colored, 2*ss, gno_mpi_type, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
 		    ++sreqcnt;
 		}
 #endif
@@ -1486,7 +1580,7 @@ static int D1ParallelColoring (
 		MPI_Waitsome(rreqcnt, rreqs, &repcount, replies, stats);
 
 	    for (l = repcount-1; l >= 0; --l) {
-		int v=0;
+		ZOLTAN_GNO_TYPE v=0;
 
 		if (comm_pattern == 'S')
 		    q = l;
@@ -1501,14 +1595,14 @@ static int D1ParallelColoring (
 		    if (v < 0)
 			break;
 		    if ((hv = Zoltan_G2LHash_G2L(hash, v)) != -1) {
-			c = newcolored[p][j++];
+			c = (int)newcolored[p][j++];
 			color[hv] = c;
 		    } else
 			++j;
 		}
 		/* If p hasn't finished coloring, issue new color request */
 		if (v!=-1) {
-		    if (MPI_Irecv(newcolored[p], 2*ss, MPI_INT, p, colortag, zz->Communicator, &rreqs[q]))
+		    if (MPI_Irecv(newcolored[p], 2*ss, gno_mpi_type, p, colortag, zz->Communicator, &rreqs[q]))
 			ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "MPI_Irecv failed.");
 		}
 		else {
@@ -1537,12 +1631,12 @@ static int D1ParallelColoring (
 #ifdef RELEVANT_COLORS
     for (sreqcnt = j = 0; j<plstcnt; ++j) {
 	p = plst[j];
-	MPI_Isend(persSbuf[p], Ssize[p], MPI_INT, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
+	MPI_Isend(persSbuf[p], Ssize[p], gno_mpi_type, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
     }
 #else
     for (sreqcnt = p = 0; p < zz->Num_Proc; ++p)
 	if (p != zz->Proc) {
-	    MPI_Isend(colored, 2*ss, MPI_INT, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
+	    MPI_Isend(colored, 2*ss, gno_mpi_type, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
 	    ++sreqcnt;
 	}
 #endif
@@ -1557,7 +1651,7 @@ static int D1ParallelColoring (
 	    MPI_Waitsome(rreqcnt, rreqs, &repcount, replies, stats); /* wait some results */
 
 	for (l=repcount-1; l>=0; --l) {
-	    int v=0;
+	    ZOLTAN_GNO_TYPE v=0;
 	    if (comm_pattern == 'S') /* wait all results if sync communication*/
 		q = l;
 	    else
@@ -1571,7 +1665,7 @@ static int D1ParallelColoring (
 		if (v < 0)
 		    break;
 		if ((hv = Zoltan_G2LHash_G2L(hash, v)) != -1) {
-		    c = newcolored[p][j++];
+		    c = (int)newcolored[p][j++];
 		    color[hv] = c;
 		} else
 		    ++j;
@@ -1579,7 +1673,7 @@ static int D1ParallelColoring (
 
 	    /* If p hasn't finished coloring, issue new color request */
 	    if (v!=-1) {
-		if (MPI_Irecv(newcolored[p], 2*ss, MPI_INT, p, colortag, zz->Communicator, &rreqs[q]))
+		if (MPI_Irecv(newcolored[p], 2*ss, gno_mpi_type, p, colortag, zz->Communicator, &rreqs[q]))
 		    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "MPI_Irecv failed.");
 	    }
 	    else {

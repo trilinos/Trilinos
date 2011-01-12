@@ -92,6 +92,9 @@ namespace Sacado {
       //! Return if operation has fast access
       bool hasFastAccess() const { return 1; }
 
+      //! Cache values
+      void cache() const {}
+
       //! Return value of operation
       value_type val() const { return constant_; }
 

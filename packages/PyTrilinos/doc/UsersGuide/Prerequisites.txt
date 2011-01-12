@@ -1,0 +1,16 @@
+Prereqresites
+-------------
+
+To build and execute PyTrilinos, you must have `python
+<http://www.python.org>`_ installed.  PyTrilinos is not yet ported to
+python 3, so you need python 2.X, where X is 5 or greater.
+
+In addition, you need to have `numpy <http://numpy.scipy.org>`_
+installed relative to the same python installation.  NumPy is
+numerical python, a python module for handling homogenous, contiguous
+arrays of data.  Currently, version 1.0 or greater is required.
+
+Finally, you need `SWIG <http://www.swig.org>`_, the Simple Wrapper
+Interface Generator, a tool that reads C/C++ code and automatically
+generates python wrapper code.  This is the workhorse for building
+PyTrilinos code.  Version 2.0 or greater is required.

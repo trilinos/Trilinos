@@ -138,6 +138,8 @@ void ParallelReduceField< ReduceOp , Type ,  Tag1,  Tag2,  Tag3 ,
     Type * const ptr_beg = array.contiguous_data();
     Type * const ptr_end = ptr_beg + array.size();
 
+    if (ptr_beg == NULL || ptr_end == NULL) continue;
+
     for ( PairIterEntityComm
           ec = entity.comm() ; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
 

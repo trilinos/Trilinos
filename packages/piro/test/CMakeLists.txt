@@ -14,7 +14,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Main_EvalModel.cpp
   MockModelEval_A.cpp
   MockModelEval_A.hpp
-  COMM serial mpi
   NUM_MPI_PROCS 1-4
   ARGS -v
   PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -22,14 +21,24 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 IF (Piro_ENABLE_NOX) 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    Solver
+    EpetraSolver
     SOURCES 
-    Main_Solver.cpp
+    Main_EpetraSolver.cpp
     MockModelEval_A.cpp
     MockModelEval_A.hpp
     SaveEigenData_Epetra.cpp
     SaveEigenData_Epetra.hpp
-    COMM serial mpi
+    NUM_MPI_PROCS 1-4
+    ARGS -v
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+  )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    ThyraSolver
+    SOURCES 
+    Main_ThyraSolver.cpp
+    MockModelEval_A.cpp
+    MockModelEval_A.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -42,7 +51,6 @@ IF (Piro_ENABLE_NOX)
     MockModelEval_A.cpp
     MockModelEval_A.hpp
     ObserveSolution_Epetra.hpp
-    COMM serial mpi
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -55,7 +63,6 @@ IF (Piro_ENABLE_NOX)
     MockModelEval_B.cpp
     MockModelEval_B.hpp
     ObserveSolution_Epetra.hpp
-    COMM serial mpi
     NUM_MPI_PROCS 1
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -71,7 +78,7 @@ IF (Piro_ENABLE_NOX)
           input_Solve_RythmosMatrixFree_Fails.xml
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
-    EXEDEPS Solver AnalysisDriver
+    EXEDEPS EpetraSolver ThyraSolver AnalysisDriver
   )
 
 ENDIF()

@@ -62,7 +62,7 @@ TESTS=stressTestPHG  stressTestRCB  stressTestRIB stressTestGRAPH
 
 all:   $(TESTS)
 
-%: %.c stress_const.h
+%: %.c 
 	$(CC) $(CFLAGS) $(TPL_LIB_DIR)  \
         -I$(BLD)/include $(TPL_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
         -o $@ $< $(BLD)/libzoltan.a $(TPL_LIBS) -lm

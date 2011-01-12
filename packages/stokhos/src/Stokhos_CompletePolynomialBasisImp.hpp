@@ -34,12 +34,14 @@ Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 CompletePolynomialBasis(
 	const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases_,
 	const value_type& sparse_tol_,
+	bool use_old_cijk_alg_,
 	const Teuchos::RCP< Teuchos::Array<value_type> >& deriv_coeffs_) :
   p(0),
   d(0),
   sz(0),
   bases(bases_),
   sparse_tol(sparse_tol_),
+  use_old_cijk_alg(use_old_cijk_alg_),
   deriv_coeffs(deriv_coeffs_),
   norms(),
   terms()
@@ -138,7 +140,17 @@ computeTripleProductTensor(ordinal_type order) const
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Total Triple-Product Tensor Fill Time");
 #endif
+  if (use_old_cijk_alg)
+    return computeTripleProductTensorOld(order);
+  else
+    return computeTripleProductTensorNew(order);
+}
 
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+computeTripleProductTensorOld(ordinal_type order) const
+{
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
     Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>);
@@ -161,7 +173,169 @@ computeTripleProductTensor(ordinal_type order) const
   }
 
   return Cijk;
-  
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+computeTripleProductTensorNew(ordinal_type order) const
+{
+  // The algorithm for computing Cijk = < \Psi_i \Psi_j \Psi_k > here works
+  // by factoring 
+  // < \Psi_i \Psi_j \Psi_k > = 
+  //    < \psi^1_{i_1}\psi^1_{j_1}\psi^1_{k_1} >_1 x ... x
+  //    < \psi^d_{i_d}\psi^d_{j_d}\psi^d_{k_d} >_d
+  // We compute the sparse triple product < \psi^l_i\psi^l_j\psi^l_k >_l
+  // for each dimension l, and then compute all non-zero products of these
+  // terms.  The complexity arises from iterating through all possible
+  // combinations, throwing out terms that aren't in the basis and are beyond
+  // the k-order limit provided
+  Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
+    Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>);
+
+  // Map the specified order limit to a limit on each dimension
+  // Subtract 1 to get the term for the last order we want to include,
+  // add up the orders for each term to get the total order, then add 1
+  Teuchos::Array<ordinal_type> term = getTerm(order-1);
+  ordinal_type k_lim = 0;
+  for (ordinal_type i=0; i<d; i++)
+    k_lim = k_lim + term[i];
+  k_lim++;
+
+  // Create 1-D triple products
+  Teuchos::Array< Teuchos::RCP<Sparse3Tensor<ordinal_type,value_type> > > Cijk_1d(d);
+  for (ordinal_type i=0; i<d; i++) {
+    Cijk_1d[i] = bases[i]->computeSparseTripleProductTensor(k_lim);
+  }
+
+  // Create i, j, k iterators for each dimension
+  // Note:  we have to supply an initializer in the arrays of iterators to 
+  // avoid checked-stl errors about singular iterators
+  typedef Sparse3Tensor<ordinal_type,value_type> Cijk_type;
+  typedef typename Cijk_type::k_iterator k_iterator;
+  typedef typename Cijk_type::kj_iterator kj_iterator;
+  typedef typename Cijk_type::kji_iterator kji_iterator;
+  Teuchos::Array<k_iterator> k_iterators(d, Cijk_1d[0]->k_begin());
+  Teuchos::Array<kj_iterator > j_iterators(d, Cijk_1d[0]->j_begin(k_iterators[0]));
+  Teuchos::Array<kji_iterator > i_iterators(d, Cijk_1d[0]->i_begin(j_iterators[0]));
+  Teuchos::Array<ordinal_type> terms_i(d), terms_j(d), terms_k(d);
+  ordinal_type sum_i = 0;
+  ordinal_type sum_j = 0;
+  ordinal_type sum_k = 0;
+  for (ordinal_type dim=0; dim<d; dim++) {
+    k_iterators[dim] = Cijk_1d[dim]->k_begin();
+    j_iterators[dim] = Cijk_1d[dim]->j_begin(k_iterators[dim]);
+    i_iterators[dim] = Cijk_1d[dim]->i_begin(j_iterators[dim]);
+    terms_i[dim] = index(i_iterators[dim]);
+    terms_j[dim] = index(j_iterators[dim]);
+    terms_k[dim] = index(k_iterators[dim]);
+    sum_i += terms_i[dim];
+    sum_j += terms_j[dim];
+    sum_k += terms_k[dim];
+  }
+
+  ordinal_type I = 0;
+  ordinal_type J = 0;
+  ordinal_type K = 0;
+  bool inc_i = true;
+  bool inc_j = true;
+  bool inc_k = true;
+  bool stop = false;
+  ordinal_type cnt = 0;
+  while (!stop) {
+
+    // Add term if it is in the basis
+    if (sum_i <= p && sum_j <= p && sum_k <= p) {
+      if (inc_k)
+	K = compute_index(terms_k);
+      if (K < order) {
+	if (inc_i)
+	  I = compute_index(terms_i);
+	if (inc_j)
+	  J = compute_index(terms_j);
+	value_type c = value_type(1.0);
+	for (ordinal_type dim=0; dim<d; dim++)
+	  c *= value(i_iterators[dim]);
+	if (std::abs(c/norms[I]) > sparse_tol)
+	  Cijk->add_term(I,J,K,c);
+      }
+    }
+    
+    // Increment iterators to the next valid term
+    ordinal_type cdim = 0;
+    bool inc = true;
+    inc_i = false;
+    inc_j = false; 
+    inc_k = false;
+    while (inc && cdim < d) {
+      ordinal_type cur_dim = cdim;
+      ++i_iterators[cdim];
+      inc_i = true;
+      if (i_iterators[cdim] != Cijk_1d[cdim]->i_end(j_iterators[cdim])) {
+	terms_i[cdim] = index(i_iterators[cdim]);
+	sum_i = 0;
+	for (int dim=0; dim<d; dim++)
+	  sum_i += terms_i[dim];
+      }
+      if (i_iterators[cdim] == Cijk_1d[cdim]->i_end(j_iterators[cdim]) ||
+	sum_i > p) {
+	++j_iterators[cdim];
+	inc_j = true;
+	if (j_iterators[cdim] != Cijk_1d[cdim]->j_end(k_iterators[cdim])) {
+	  terms_j[cdim] = index(j_iterators[cdim]);
+	  sum_j = 0;
+	  for (int dim=0; dim<d; dim++)
+	    sum_j += terms_j[dim];
+	}
+	if (j_iterators[cdim] == Cijk_1d[cdim]->j_end(k_iterators[cdim]) ||
+	  sum_j > p) {
+	  ++k_iterators[cdim];
+	  inc_k = true;
+	  if (k_iterators[cdim] != Cijk_1d[cdim]->k_end()) {
+	    terms_k[cdim] = index(k_iterators[cdim]);
+	    sum_k = 0;
+	    for (int dim=0; dim<d; dim++)
+	      sum_k += terms_k[dim];
+	  }
+	  if (k_iterators[cdim] == Cijk_1d[cdim]->k_end() || sum_k > p) {
+	    k_iterators[cdim] = Cijk_1d[cdim]->k_begin();
+	    ++cdim;
+	    terms_k[cur_dim] = index(k_iterators[cur_dim]);
+	    sum_k = 0;
+	    for (int dim=0; dim<d; dim++)
+	      sum_k += terms_k[dim];
+	  }
+	  else
+	    inc = false;
+	  j_iterators[cur_dim] = 
+	    Cijk_1d[cur_dim]->j_begin(k_iterators[cur_dim]);
+	  terms_j[cur_dim] = index(j_iterators[cur_dim]);
+	  sum_j = 0;
+	  for (int dim=0; dim<d; dim++)
+	    sum_j += terms_j[dim];
+	}
+	else
+	  inc = false;
+	i_iterators[cur_dim] = Cijk_1d[cur_dim]->i_begin(j_iterators[cur_dim]);
+	terms_i[cur_dim] = index(i_iterators[cur_dim]);
+	sum_i = 0;
+	for (int dim=0; dim<d; dim++)
+	  sum_i += terms_i[dim];
+      }
+      else
+	inc = false;
+
+      if (sum_i > p || sum_j > p || sum_k > p)
+	inc = true;
+    }
+
+    if (cdim == d)
+      stop = true;
+
+    cnt++;
+  }
+
+  return Cijk;
 }
 
 template <typename ordinal_type, typename value_type>

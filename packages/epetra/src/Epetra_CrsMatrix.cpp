@@ -70,11 +70,11 @@ bool Epetra_CrsMatrixTraceDumpMultiply = false;
 #endif
 
 //==============================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const int* NumEntriesPerRow, bool StaticProfile) 
-  : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& rowMap, const int* NumEntriesPerRow, bool StaticProfile) 
+  : Epetra_DistObject(rowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(CV, RowMap, NumEntriesPerRow, StaticProfile),
+    Graph_(CV, rowMap, NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
     UseTranspose_(false),
@@ -87,7 +87,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NormInf_(0.0),
     NormOne_(0.0),
     NormFrob_(0.0),
-    NumMyRows_(RowMap.NumMyPoints()),
+    NumMyRows_(rowMap.NumMyPoints()),
     ImportVector_(0),
     ExportVector_(0),
     CV_(CV),
@@ -98,11 +98,11 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
 }
 
 //==============================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int NumEntriesPerRow, bool StaticProfile) 
-  : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& rowMap, int NumEntriesPerRow, bool StaticProfile) 
+  : Epetra_DistObject(rowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(CV, RowMap, NumEntriesPerRow, StaticProfile),
+    Graph_(CV, rowMap, NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
     UseTranspose_(false),
@@ -115,7 +115,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NormInf_(0.0),
     NormOne_(0.0),
     NormFrob_(0.0),
-    NumMyRows_(RowMap.NumMyPoints()),
+    NumMyRows_(rowMap.NumMyPoints()),
     ImportVector_(0),
     ExportVector_(0),
     CV_(CV),
@@ -125,12 +125,12 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
   Allocate();
 }
 //==============================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, 
-				   const Epetra_Map& ColMap, const int* NumEntriesPerRow, bool StaticProfile) 
-  : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& rowMap, 
+				   const Epetra_Map& colMap, const int* NumEntriesPerRow, bool StaticProfile) 
+  : Epetra_DistObject(rowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(CV, RowMap, ColMap, NumEntriesPerRow, StaticProfile),
+    Graph_(CV, rowMap, colMap, NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
     UseTranspose_(false),
@@ -143,7 +143,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NormInf_(0.0),
     NormOne_(0.0),
     NormFrob_(0.0),
-    NumMyRows_(RowMap.NumMyPoints()),
+    NumMyRows_(rowMap.NumMyPoints()),
     ImportVector_(0),
     ExportVector_(0),
     CV_(CV),
@@ -154,12 +154,12 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
 }
 
 //==============================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, 
-				   const Epetra_Map& ColMap, int NumEntriesPerRow, bool StaticProfile) 
-  : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& rowMap, 
+				   const Epetra_Map& colMap, int NumEntriesPerRow, bool StaticProfile) 
+  : Epetra_DistObject(rowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(CV, RowMap, ColMap,  NumEntriesPerRow, StaticProfile),
+    Graph_(CV, rowMap, colMap,  NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
     UseTranspose_(false),
@@ -172,7 +172,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NormInf_(0.0),
     NormOne_(0.0),
     NormFrob_(0.0),
-    NumMyRows_(RowMap.NumMyPoints()),
+    NumMyRows_(rowMap.NumMyPoints()),
     ImportVector_(0),
     ExportVector_(0),
     CV_(CV),
@@ -182,11 +182,11 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
   Allocate();
 }
 //==============================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& Graph) 
-  : Epetra_DistObject(Graph.Map(), "Epetra::CrsMatrix"),
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& graph) 
+  : Epetra_DistObject(graph.Map(), "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(Graph),
+    Graph_(graph),
     Allocated_(false),
     StaticGraph_(true),
     UseTranspose_(false),
@@ -199,13 +199,13 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& 
     NormInf_(0.0),
     NormOne_(0.0),
     NormFrob_(0.0),
-    NumMyRows_(Graph.NumMyRows()),
+    NumMyRows_(graph.NumMyRows()),
     ImportVector_(0),
     ExportVector_(0),
     CV_(CV),
     squareFillCompleteCalled_(false)
 {
-  constructedWithFilledGraph_ = Graph.Filled();
+  constructedWithFilledGraph_ = graph.Filled();
   InitializeDefaults();
   Allocate();
 }
@@ -270,10 +270,10 @@ Epetra_CrsMatrix& Epetra_CrsMatrix::operator=(const Epetra_CrsMatrix& src)
   StorageOptimized_ = src.StorageOptimized_;
   if (src.StorageOptimized()) { // Special copy for case where storage is optimized
 
-    int NumMyNonzeros = Graph().NumMyEntries();
-    if (NumMyNonzeros>0) All_Values_ = new double[NumMyNonzeros];
+    int numMyNonzeros = Graph().NumMyEntries();
+    if (numMyNonzeros>0) All_Values_ = new double[numMyNonzeros];
     double * srcValues = src.All_Values();
-    for (int i=0; i<NumMyNonzeros; ++i) All_Values_[i] = srcValues[i];
+    for (int i=0; i<numMyNonzeros; ++i) All_Values_[i] = srcValues[i];
     Allocated_ = true;
 #ifdef Epetra_ENABLE_CASK
     if( matrixFillCompleteCalled_  ) {
@@ -326,17 +326,17 @@ int Epetra_CrsMatrix::Allocate() {
   // Allocate and initialize entries if we are copying data
   if (CV_==Copy) {
     if (Graph().StaticProfile() || Graph().StorageOptimized()) {
-      int NumMyNonzeros = Graph().NumMyEntries();
-      if (NumMyNonzeros>0) All_Values_ = new double[NumMyNonzeros];
+      int numMyNonzeros = Graph().NumMyEntries();
+      if (numMyNonzeros>0) All_Values_ = new double[numMyNonzeros];
     }
-    double * All_Values = All_Values_;
+    double * all_values = All_Values_;
     for (i=0; i<NumMyRows_; i++) {
       int NumAllocatedEntries = Graph().NumAllocatedMyIndices(i);
 
       if (NumAllocatedEntries > 0) {
         if (Graph().StaticProfile() || Graph().StorageOptimized()) {
-          Values_[i] = All_Values;
-          All_Values += NumAllocatedEntries;
+          Values_[i] = all_values;
+          all_values += NumAllocatedEntries;
         }
         else {
           Values_[i] = new double[NumAllocatedEntries];
@@ -481,7 +481,7 @@ int Epetra_CrsMatrix::Scale(double ScalarConstant)
 
 //==========================================================================
 int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
-					 const double* Values,
+					 const double* values,
 					 const int* Indices)
 {
   if(IndicesAreLocal()) 
@@ -491,14 +491,14 @@ int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
   Graph_.SetIndicesAreGlobal(true);
   Row = Graph_.LRID(Row); // Find local row number for this global row index
 
-  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
+  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, values, Indices) );
 
   return(0);
 }
 
 //==========================================================================
 int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
-					 double* Values,
+					 double* values,
 					 int* Indices)
 {
   if(IndicesAreLocal()) 
@@ -508,14 +508,14 @@ int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
   Graph_.SetIndicesAreGlobal(true);
   Row = Graph_.LRID(Row); // Find local row number for this global row index
 
-  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
+  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, values, Indices) );
 
   return(0);
 }
 
 //==========================================================================
 int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
-				     const double* Values,
+				     const double* values,
 				     const int* Indices)
 {
   if(IndicesAreGlobal()) 
@@ -524,7 +524,7 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
     EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and new
   Graph_.SetIndicesAreLocal(true);
 
-  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
+  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, values, Indices) );
 
   return(0);
 
@@ -532,7 +532,7 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
 
 //==========================================================================
 int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
-				     double* Values,
+				     double* values,
 				     int* Indices)
 {
   if(IndicesAreGlobal()) 
@@ -541,7 +541,7 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
     EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and new
   Graph_.SetIndicesAreLocal(true);
 
-  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
+  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, values, Indices) );
 
   return(0);
 
@@ -549,7 +549,7 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
 
 //==========================================================================
 int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
-				   const double* Values,
+				   const double* values,
 				   const int* Indices)
 {
   if(CV_ == View){
@@ -558,16 +558,16 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
   }
   else{
     //to avoid code duplication I am using a cheap tactic of removing the constness of
-    //Values and Indices. Since this is only called in copy mode the passed in variables
+    //values and Indices. Since this is only called in copy mode the passed in variables
     //will not be modified.
-    return(InsertValues(Row, NumEntries, const_cast<double*>(Values), const_cast<int*>(Indices)));
+    return(InsertValues(Row, NumEntries, const_cast<double*>(values), const_cast<int*>(Indices)));
   }
   return 0;
 }
 
 //==========================================================================
 int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
-				   double* Values,
+				   double* values,
 				   int* Indices)
 {
   int j;
@@ -598,7 +598,7 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 
     if(Values_[Row] != 0) 
       ierr = 2; // This row has been defined already.  Issue warning.
-    Values_[Row] = Values;
+    Values_[Row] = values;
   }
   else {    
     if(StaticGraph()) 
@@ -607,18 +607,18 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
     int tmpNumEntries = NumEntries;
 
     if(Graph_.HaveColMap()) { //must insert only valid indices, values
-      const double* tmpValues = Values;
-      Values = new double[NumEntries];
+      const double* tmpValues = values;
+      values = new double[NumEntries];
       int loc = 0;
       if(IndicesAreLocal()) {
         for(int i = 0; i < NumEntries; ++i)
           if(Graph_.ColMap().MyLID(Indices[i])) 
-            Values[loc++] = tmpValues[i];
+            values[loc++] = tmpValues[i];
       }
       else {
         for(int i = 0; i < NumEntries; ++i)
           if(Graph_.ColMap().MyGID(Indices[i])) 
-            Values[loc++] = tmpValues[i];
+            values[loc++] = tmpValues[i];
       }
       if(NumEntries != loc) 
         ierr = 2; //Some columns excluded
@@ -648,12 +648,12 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
     }
 
     for(j = start; j < stop; j++) 
-      Values_[Row][j] = Values[j-start];
+      Values_[Row][j] = values[j-start];
 
 
     NumEntries = tmpNumEntries;
     if(Graph_.HaveColMap()) 
-      delete[] Values;
+      delete[] values;
   }
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
@@ -670,10 +670,10 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 
 //==========================================================================
 int Epetra_CrsMatrix::InsertOffsetValues(int Row, int NumEntries,
-					 double* Values,
+					 double* values,
 					 int* Indices)
 {
-  return ReplaceOffsetValues(Row, NumEntries, Values, Indices);
+  return ReplaceOffsetValues(Row, NumEntries, values, Indices);
 }
 
 //==========================================================================
@@ -973,8 +973,8 @@ int Epetra_CrsMatrix::TransformToLocal() {
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::TransformToLocal(const Epetra_Map* DomainMap, const Epetra_Map* RangeMap) {
-  EPETRA_CHK_ERR(FillComplete(*DomainMap, *RangeMap));
+int Epetra_CrsMatrix::TransformToLocal(const Epetra_Map* domainMap, const Epetra_Map* rangeMap) {
+  EPETRA_CHK_ERR(FillComplete(*domainMap, *rangeMap));
   return(0);
 }
 
@@ -1061,7 +1061,6 @@ int Epetra_CrsMatrix::MergeRedundantEntries() {
 //==========================================================================
 int Epetra_CrsMatrix::OptimizeStorage() {
 
-  int i, j;
 
   if (StorageOptimized()) 
     return(0); // Have we been here before?
@@ -1072,7 +1071,7 @@ int Epetra_CrsMatrix::OptimizeStorage() {
   if (ierr!=0) EPETRA_CHK_ERR(ierr);  // In order for OptimizeStorage to make sense for the matrix, it must work on the graph.
 
   bool Contiguous = true; // Assume contiguous is true
-  for (i=1; i<NumMyRows_; i++){
+  for (int i=1; i<NumMyRows_; i++){
     int NumEntries = Graph().NumMyIndices(i-1);
 		
     // check if end of beginning of current row starts immediately after end of previous row.
@@ -1090,48 +1089,44 @@ int Epetra_CrsMatrix::OptimizeStorage() {
     EPETRA_CHK_ERR(-1);  // This is user data, it's not contiguous and we can't make it so.
 
   
-  if(!Contiguous) { // Must pack indices if not already contiguous
+  if(!Contiguous) { // Must pack indices if not already contiguous.  Pack values into All_values_
     
-    // Compute Number of Nonzero entries (Done in FillComplete, but we may not have been there yet.)
-    int NumMyNonzeros = Graph_.NumMyNonzeros();
+    if (All_Values_==0) {
+      // Compute Number of Nonzero entries (Done in FillComplete, but we may not have been there yet.)
+      int numMyNonzeros = Graph_.NumMyNonzeros();
     
     // Allocate one big array for all values
-    if (All_Values_ == 0) { // If All_Values_ is not already allocated (otherwise just pack data)
-      All_Values_ = new double[NumMyNonzeros];
-      if(All_Values_ == 0) 
-	throw ReportError("Error with All_Values_ allocation.", -99);
-    }
-    
-    // Pack values into All_Values_
-    
+      All_Values_ = new double[numMyNonzeros];
+      if(All_Values_ == 0) throw ReportError("Error with All_Values_ allocation.", -99);
 
-
-    if (!(Graph().StaticProfile())) {
       const int *const  IndexOffset = Graph().IndexOffset();
-#ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+      const int numMyRows = NumMyRows_;
+      double ** Values_s = Values_;
+      double * All_Values_s = All_Values_;
+#ifdef EPETRA_HAVE_OMP
+#pragma omp parallel for default(none) shared(Values_s,All_Values_s)
 #endif
-      for (i=0; i<NumMyRows_; i++) {
+      for (int i=0; i<numMyRows; i++) {
         int NumEntries = Graph().NumMyIndices(i);
         int curOffset = IndexOffset[i];
-        double * Values = Values_[i];
-        double * newValues = All_Values_+curOffset;
-        for (j=0; j<NumEntries; j++) newValues[j] = Values[j];
+        double * values = Values_s[i];
+        double * newValues = All_Values_s+curOffset;
+	for (int j=0; j<NumEntries; j++) newValues[j] = values[j];
       }
 
-      for (i=0;i<NumMyRows_; ++i) {
-        delete [] Values_[i]; 
+      for (int i=0;i<NumMyRows_; ++i) {
+         if (Values_[i]!=0) delete [] Values_[i]; 
       }
 
       delete [] Values_alloc_lengths_; Values_alloc_lengths_ = 0;
     }
     else { // Static Profile, so just pack into existing storage (can't be threaded)
       double * tmp = All_Values_;
-      for (i=0; i<NumMyRows_; i++) {
+      for (int i=0; i<NumMyRows_; i++) {
         int NumEntries = Graph().NumMyIndices(i);
-        double * Values = Values_[i];
-        if (tmp!=Values) // Copy values if not pointing to same location
-          for (j=0; j<NumEntries; j++) tmp[j] = Values[j];
+        double * values = Values_[i];
+        if (tmp!=values) // Copy values if not pointing to same location
+          for (int j=0; j<NumEntries; j++) tmp[j] = values[j];
         tmp += NumEntries;
       }
     }
@@ -1163,7 +1158,7 @@ int Epetra_CrsMatrix::OptimizeStorage() {
   return(0);
 }
 //==========================================================================
-int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * Values,
+int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * values,
 					   int * Indices) const 
 {
 
@@ -1171,11 +1166,11 @@ int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries
   if (ierr) 
     EPETRA_CHK_ERR(ierr);
 
-  EPETRA_CHK_ERR(ExtractGlobalRowCopy(Row, Length, NumEntries, Values));
+  EPETRA_CHK_ERR(ExtractGlobalRowCopy(Row, Length, NumEntries, values));
   return(0);
 }
 //==========================================================================
-int Epetra_CrsMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, double * Values,
+int Epetra_CrsMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, double * values,
 				       int * Indices) const 
 {
 
@@ -1183,7 +1178,7 @@ int Epetra_CrsMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, do
   if (ierr) 
     EPETRA_CHK_ERR(ierr);
 
-  EPETRA_CHK_ERR(ExtractMyRowCopy(Row, Length, NumEntries, Values));
+  EPETRA_CHK_ERR(ExtractMyRowCopy(Row, Length, NumEntries, values));
   return(0);
 }
 //==========================================================================
@@ -1196,12 +1191,12 @@ int Epetra_CrsMatrix::NumMyRowEntries(int Row, int & NumEntries) const
   return(0);
 }
 //==========================================================================
-int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * Values) const 
+int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * values) const 
 {
 
   int Row0 = Graph_.RowMap().LID(Row); // Normalize row range
 
-  EPETRA_CHK_ERR(ExtractMyRowCopy(Row0, Length, NumEntries, Values));
+  EPETRA_CHK_ERR(ExtractMyRowCopy(Row0, Length, NumEntries, values));
   return(0);
 }
 
@@ -1286,33 +1281,33 @@ int Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
   return(0);
 }
 //==========================================================================
-int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& Values, int *& Indices) const 
+int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& values, int *& Indices) const 
 {
 
   int ierr = Graph_.ExtractGlobalRowView(Row, NumEntries, Indices);
   if (ierr) 
     EPETRA_CHK_ERR(ierr);
 
-  EPETRA_CHK_ERR(ExtractGlobalRowView(Row, NumEntries, Values));
+  EPETRA_CHK_ERR(ExtractGlobalRowView(Row, NumEntries, values));
   return(0);
 }
 //==========================================================================
-int Epetra_CrsMatrix::ExtractMyRowView(int Row, int & NumEntries, double *& Values, int *& Indices) const 
+int Epetra_CrsMatrix::ExtractMyRowView(int Row, int & NumEntries, double *& values, int *& Indices) const 
 {
   int ierr = Graph_.ExtractMyRowView(Row, NumEntries, Indices);
   if (ierr) 
     EPETRA_CHK_ERR(ierr);
 
-  EPETRA_CHK_ERR(ExtractMyRowView(Row, NumEntries, Values));
+  EPETRA_CHK_ERR(ExtractMyRowView(Row, NumEntries, values));
   return(0);
 }
 //==========================================================================
-int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& Values) const 
+int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& values) const 
 {
 
   int Row0 = Graph_.RowMap().LID(Row); // Normalize row range
 
-  EPETRA_CHK_ERR(ExtractMyRowView(Row0, NumEntries, Values));
+  EPETRA_CHK_ERR(ExtractMyRowView(Row0, NumEntries, values));
   return(0);
 }
 
@@ -1901,13 +1896,13 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
   int i, ierr;
   
   int Row, NumEntries;
-  int MaxNumEntries = A.MaxNumEntries();
+  int maxNumEntries = A.MaxNumEntries();
   int * Indices = 0;
-  double * Values = 0;
+  double * values = 0;
 
-  if (MaxNumEntries>0 && A.IndicesAreLocal() ) { //Need Temp Space
-    Indices = new int[MaxNumEntries];
-    Values = new double[MaxNumEntries];
+  if (maxNumEntries>0 && A.IndicesAreLocal() ) { //Need Temp Space
+    Indices = new int[maxNumEntries];
+    values = new double[maxNumEntries];
   }
   
   // Do copy first
@@ -1917,16 +1912,16 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
         if(Indexor) {
           for (i=0; i<NumSameIDs; i++) {
 	    Row = GRID(i);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
-            ierr = ReplaceOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, maxNumEntries, NumEntries, values, Indices)); // Set pointers
+            ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
         else {
           for (i=0; i<NumSameIDs; i++) {
 	    Row = GRID(i);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
-            ierr = ReplaceGlobalValues(Row, NumEntries, Values, Indices);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, maxNumEntries, NumEntries, values, Indices)); // Set pointers
+            ierr = ReplaceGlobalValues(Row, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -1935,16 +1930,16 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
         if(Indexor) {
           for (i=0; i<NumSameIDs; i++) {
 	    Row = GRID(i);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
-            ierr = InsertOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, maxNumEntries, NumEntries, values, Indices)); // Set pointers
+            ierr = InsertOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
         else {
           for (i=0; i<NumSameIDs; i++) {
 	    Row = GRID(i);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
-            ierr = InsertGlobalValues(Row, NumEntries, Values, Indices);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, maxNumEntries, NumEntries, values, Indices)); // Set pointers
+            ierr = InsertGlobalValues(Row, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -1955,16 +1950,16 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
         if(Indexor) {
           for (i=0; i<NumSameIDs; i++) {
 	    Row = GRID(i);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)); // Set pointers
-            ierr = ReplaceOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, values, Indices)); // Set pointers
+            ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
         else {
           for (i=0; i<NumSameIDs; i++) {
 	    Row = GRID(i);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)); // Set pointers
-            ierr = ReplaceGlobalValues(Row, NumEntries, Values, Indices);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, values, Indices)); // Set pointers
+            ierr = ReplaceGlobalValues(Row, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -1973,16 +1968,16 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
         if(Indexor) {
           for (i=0; i<NumSameIDs; i++) {
 	    Row = GRID(i);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)); // Set pointers
-            ierr = InsertOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, values, Indices)); // Set pointers
+            ierr = InsertOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
         else {
           for (i=0; i<NumSameIDs; i++) {
 	    Row = GRID(i);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)); // Set pointers
-            ierr = InsertGlobalValues(Row, NumEntries, Values, Indices);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, values, Indices)); // Set pointers
+            ierr = InsertGlobalValues(Row, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -1999,8 +1994,8 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumPermuteIDs; i++) {
 	    FromRow = A.GRID(PermuteFromLIDs[i]);
 	    ToRow = GRID(PermuteToLIDs[i]);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
-	    ierr = ReplaceOffsetValues(ToRow, NumEntries, Values, Indexor->PermuteOffsets()[i]);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices)); // Set pointers
+	    ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2008,8 +2003,8 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumPermuteIDs; i++) {
 	    FromRow = A.GRID(PermuteFromLIDs[i]);
 	    ToRow = GRID(PermuteToLIDs[i]);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
-	    ierr = ReplaceGlobalValues(ToRow, NumEntries, Values, Indices);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices)); // Set pointers
+	    ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2019,8 +2014,8 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumPermuteIDs; i++) {
 	    FromRow = A.GRID(PermuteFromLIDs[i]);
 	    ToRow = GRID(PermuteToLIDs[i]);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
-	    ierr = InsertOffsetValues(ToRow, NumEntries, Values, Indexor->PermuteOffsets()[i]);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices)); // Set pointers
+	    ierr = InsertOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
 	    if (ierr<0) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2028,8 +2023,8 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumPermuteIDs; i++) {
 	    FromRow = A.GRID(PermuteFromLIDs[i]);
 	    ToRow = GRID(PermuteToLIDs[i]);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
-	    ierr = InsertGlobalValues(ToRow, NumEntries, Values, Indices);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices)); // Set pointers
+	    ierr = InsertGlobalValues(ToRow, NumEntries, values, Indices);
 	    if (ierr<0) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2041,8 +2036,8 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumPermuteIDs; i++) {
 	    FromRow = A.GRID(PermuteFromLIDs[i]);
 	    ToRow = GRID(PermuteToLIDs[i]);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, Values, Indices)); // Set pointers
-	    ierr = ReplaceOffsetValues(ToRow, NumEntries, Values, Indexor->PermuteOffsets()[i]);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, values, Indices)); // Set pointers
+	    ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
 	    if (ierr<0) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2050,8 +2045,8 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumPermuteIDs; i++) {
 	    FromRow = A.GRID(PermuteFromLIDs[i]);
 	    ToRow = GRID(PermuteToLIDs[i]);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, Values, Indices)); // Set pointers
-	    ierr = ReplaceGlobalValues(ToRow, NumEntries, Values, Indices);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, values, Indices)); // Set pointers
+	    ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
 	    if (ierr<0) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2061,8 +2056,8 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumPermuteIDs; i++) {
 	    FromRow = A.GRID(PermuteFromLIDs[i]);
 	    ToRow = GRID(PermuteToLIDs[i]);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, Values, Indices)); // Set pointers
-	    ierr = InsertOffsetValues(ToRow, NumEntries, Values, Indexor->PermuteOffsets()[i]);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, values, Indices)); // Set pointers
+	    ierr = InsertOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
 	    if (ierr<0) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2070,8 +2065,8 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumPermuteIDs; i++) {
 	    FromRow = A.GRID(PermuteFromLIDs[i]);
 	    ToRow = GRID(PermuteToLIDs[i]);
-	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, Values, Indices)); // Set pointers
-	    ierr = InsertGlobalValues(ToRow, NumEntries, Values, Indices);
+	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, values, Indices)); // Set pointers
+	    ierr = InsertGlobalValues(ToRow, NumEntries, values, Indices);
 	    if (ierr<0) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2079,8 +2074,8 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
     }
   }
 
-  if (MaxNumEntries>0 && A.IndicesAreLocal() ) { // Delete Temp Space
-    delete [] Values;
+  if (maxNumEntries>0 && A.IndicesAreLocal() ) { // Delete Temp Space
+    delete [] values;
     delete [] Indices;
   }
 	
@@ -2099,17 +2094,17 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
   
   int Row, NumEntries;
   int FromRow, ToRow;
-  int MaxNumEntries = A.MaxNumEntries();
+  int maxNumEntries = A.MaxNumEntries();
   int * Indices = 0;
-  double * Values = 0;
+  double * values = 0;
 
-  if (MaxNumEntries>0) {
-    Indices = new int[MaxNumEntries];
-    Values = new double[MaxNumEntries]; // Must extract values even though we discard them
+  if (maxNumEntries>0) {
+    Indices = new int[maxNumEntries];
+    values = new double[maxNumEntries]; // Must extract values even though we discard them
   }
   
-  const Epetra_Map & RowMap = A.RowMatrixRowMap();
-  const Epetra_Map & ColMap = A.RowMatrixColMap();
+  const Epetra_Map & rowMap = A.RowMatrixRowMap();
+  const Epetra_Map & colMap = A.RowMatrixColMap();
 
   // Do copy first
   if (NumSameIDs>0) {
@@ -2117,21 +2112,21 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
       if( Indexor ) {
         for (i=0; i<NumSameIDs; i++) {
           Row = GRID(i);
-          int AlocalRow = RowMap.LID(Row);
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, MaxNumEntries, NumEntries, Values, Indices));
-	  ierr = ReplaceOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]);
+          int AlocalRow = rowMap.LID(Row);
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, maxNumEntries, NumEntries, values, Indices));
+	  ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
       else {
         for (i=0; i<NumSameIDs; i++) {
           Row = GRID(i);
-          int AlocalRow = RowMap.LID(Row);
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, MaxNumEntries, NumEntries, Values, Indices));
+          int AlocalRow = rowMap.LID(Row);
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, maxNumEntries, NumEntries, values, Indices));
           for(j=0; j<NumEntries; ++j) {
-            Indices[j] = LCID(ColMap.GID(Indices[j]));
+            Indices[j] = LCID(colMap.GID(Indices[j]));
           }
-	  ierr = ReplaceMyValues(i, NumEntries, Values, Indices);
+	  ierr = ReplaceMyValues(i, NumEntries, values, Indices);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
@@ -2139,18 +2134,18 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
     else {
       if( Indexor ) {
         for (i=0; i<NumSameIDs; i++) {
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, MaxNumEntries, NumEntries, Values, Indices));
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, maxNumEntries, NumEntries, values, Indices));
           Row = GRID(i);
-	  ierr = InsertOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]); 
+	  ierr = InsertOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]); 
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
       else {
         for (i=0; i<NumSameIDs; i++) {
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, MaxNumEntries, NumEntries, Values, Indices));
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, maxNumEntries, NumEntries, values, Indices));
           Row = GRID(i);
-          for( j=0; j<NumEntries; ++j ) Indices[j] = ColMap.GID(Indices[j]); //convert to GIDs
-	  ierr = InsertGlobalValues(Row, NumEntries, Values, Indices); 
+          for( j=0; j<NumEntries; ++j ) Indices[j] = colMap.GID(Indices[j]); //convert to GIDs
+	  ierr = InsertGlobalValues(Row, NumEntries, values, Indices); 
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
@@ -2163,21 +2158,21 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
       if( Indexor ) {
         for (i=0; i<NumPermuteIDs; i++) {
           FromRow = PermuteFromLIDs[i];
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices));
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices));
           ToRow = GRID(PermuteToLIDs[i]);
-	  ierr = ReplaceOffsetValues(ToRow, NumEntries, Values, Indexor->PermuteOffsets()[i]);
+	  ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
       else {
         for (i=0; i<NumPermuteIDs; i++) {
           FromRow = PermuteFromLIDs[i];
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices));
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices));
           ToRow = GRID(PermuteToLIDs[i]);
           for(j=0; j<NumEntries; ++j) {
-            Indices[j] = LCID(ColMap.GID(Indices[j]));
+            Indices[j] = LCID(colMap.GID(Indices[j]));
           }
-	  ierr = ReplaceGlobalValues(ToRow, NumEntries, Values, Indices);
+	  ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
@@ -2186,27 +2181,27 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
       if( Indexor ) {
         for (i=0; i<NumPermuteIDs; i++) {
           FromRow = PermuteFromLIDs[i];
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices));
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices));
           ToRow = GRID(PermuteToLIDs[i]);
-	  ierr = InsertOffsetValues(ToRow, NumEntries, Values, Indexor->PermuteOffsets()[i]); 
+	  ierr = InsertOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]); 
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
       else {
         for (i=0; i<NumPermuteIDs; i++) {
           FromRow = PermuteFromLIDs[i];
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices));
-	  for (j=0; j<NumEntries; j++) Indices[j] = ColMap.GID(Indices[j]); // convert to GIDs
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices));
+	  for (j=0; j<NumEntries; j++) Indices[j] = colMap.GID(Indices[j]); // convert to GIDs
           ToRow = GRID(PermuteToLIDs[i]);
-	  ierr = InsertGlobalValues(ToRow, NumEntries, Values, Indices); 
+	  ierr = InsertGlobalValues(ToRow, NumEntries, values, Indices); 
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
     }
   }	
 
-  if (MaxNumEntries>0) {
-    delete [] Values;
+  if (maxNumEntries>0) {
+    delete [] values;
     delete [] Indices;
   }
   
@@ -2259,7 +2254,7 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
  
   int NumEntries;
   int * Indices;
-  double * Values;
+  double * values;
   int FromRow; 
   double * valptr, * dintptr; 
   int * intptr;                         
@@ -2269,23 +2264,23 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
   // next int:  NumEntries, Number of indices in row.
   // next NumEntries: The actual indices for the row.
  
-  const Epetra_Map & RowMap = A.RowMatrixRowMap();
-  const Epetra_Map & ColMap = A.RowMatrixColMap();
+  const Epetra_Map & rowMap = A.RowMatrixRowMap();
+  const Epetra_Map & colMap = A.RowMatrixColMap();
  
   if( NumExportIDs > 0 )
   {
-    int MaxNumEntries = A.MaxNumEntries();
+    int maxNumEntries = A.MaxNumEntries();
     dintptr = (double *) Exports;
     valptr = dintptr + IntSizes[0];
     intptr = (int *) dintptr;
     for (int i=0; i<NumExportIDs; i++)
     {
-      FromRow = RowMap.GID(ExportLIDs[i]);
+      FromRow = rowMap.GID(ExportLIDs[i]);
       intptr[0] = FromRow;
-      Values = valptr;
+      values = valptr;
       Indices = intptr + 2;
-      EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], MaxNumEntries, NumEntries, Values, Indices));
-      for (int j=0; j<NumEntries; j++) Indices[j] = ColMap.GID(Indices[j]); // convert to GIDs
+      EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumEntries, NumEntries, values, Indices));
+      for (int j=0; j<NumEntries; j++) Indices[j] = colMap.GID(Indices[j]); // convert to GIDs
       intptr[1] = NumEntries; // Load second slot of segment
       if( i < (NumExportIDs-1) )
       {
@@ -2328,7 +2323,7 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 
   int NumEntries;
   int * Indices;
-  double * Values;
+  double * values;
   int ToRow;
   int i, ierr;
   int IntSize;
@@ -2351,36 +2346,36 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   {
     ToRow = GRID(ImportLIDs[i]);
     assert((intptr[0])==ToRow); // Sanity check
-    Values = valptr;
+    values = valptr;
     Indices = intptr + 2;
  
     if (CombineMode==Add) {
       if (StaticGraph() || IndicesAreLocal()) {
         if( Indexor )
-          ierr = SumIntoOffsetValues(ToRow, NumEntries, Values, Indexor->RemoteOffsets()[i]);
+          ierr = SumIntoOffsetValues(ToRow, NumEntries, values, Indexor->RemoteOffsets()[i]);
         else
-          ierr = SumIntoGlobalValues(ToRow, NumEntries, Values, Indices);
+          ierr = SumIntoGlobalValues(ToRow, NumEntries, values, Indices);
       }
       else {
         if( Indexor )
-          ierr = InsertOffsetValues(ToRow, NumEntries, Values, Indexor->RemoteOffsets()[i]);
+          ierr = InsertOffsetValues(ToRow, NumEntries, values, Indexor->RemoteOffsets()[i]);
         else
-          ierr = InsertGlobalValues(ToRow, NumEntries, Values, Indices);
+          ierr = InsertGlobalValues(ToRow, NumEntries, values, Indices);
       }
       if (ierr<0) EPETRA_CHK_ERR(ierr);
     }
     else if (CombineMode==Insert) {
       if (StaticGraph() || IndicesAreLocal()) {
         if( Indexor )
-          ierr = ReplaceOffsetValues(ToRow, NumEntries, Values, Indexor->RemoteOffsets()[i]);
+          ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->RemoteOffsets()[i]);
         else
-          ierr = ReplaceGlobalValues(ToRow, NumEntries, Values, Indices);
+          ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
       }
       else {
         if( Indexor )
-          ierr = InsertOffsetValues(ToRow, NumEntries, Values, Indexor->RemoteOffsets()[i]);
+          ierr = InsertOffsetValues(ToRow, NumEntries, values, Indexor->RemoteOffsets()[i]);
         else
-          ierr = InsertGlobalValues(ToRow, NumEntries, Values, Indices);
+          ierr = InsertGlobalValues(ToRow, NumEntries, values, Indices);
       }
       if (ierr<0) EPETRA_CHK_ERR(ierr);
     }
@@ -2445,7 +2440,7 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
       int NumMyRows1 = NumMyRows();
       int MaxNumIndices = MaxNumEntries();
       int * Indices  = new int[MaxNumIndices];
-      double * Values  = new double[MaxNumIndices];
+      double * values  = new double[MaxNumIndices];
       int NumIndices;
       int i, j;
 			
@@ -2462,7 +2457,7 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
       }
       for (i=0; i<NumMyRows1; i++) {
 	int Row = GRID(i); // Get global row number
-	ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Values, Indices);
+	ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, values, Indices);
 				
 	for (j = 0; j < NumIndices ; j++) {   
 	  os.width(8);
@@ -2472,13 +2467,13 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
 	  os.width(10);
 	  os <<  Indices[j]; os << "    ";
 	  os.width(20);
-	  os <<  Values[j]; os << "    ";
+	  os <<  values[j]; os << "    ";
 	  os << endl;
 	}
       }
 			
       delete [] Indices;
-      delete [] Values;
+      delete [] values;
       
       os << flush;
       
@@ -2783,41 +2778,41 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
   
 if (StorageOptimized() && Graph().StorageOptimized()) {
 
-  double * Values = All_Values();
+  double * values = All_Values();
   int * Indices = Graph().All_Indices();
   int * IndexOffset = Graph().IndexOffset();
-
-#ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
-     for (unsigned int row=0; row<NumMyRows_; ++row)
+#ifdef EPETRA_HAVE_OMP
+  const int numMyRows = NumMyRows_;
+#pragma omp parallel for default(none) shared(IndexOffset,values,Indices,y,x)
+     for (int row=0; row<numMyRows; ++row)
         {
  	  const int curOffset = IndexOffset[row];
-          const double *val_ptr    = Values+curOffset;
+          const double *val_ptr    = values+curOffset;
           const int    *colnum_ptr = Indices+curOffset;
  	  double s = 0.;
- 	  const double *const val_end_of_row = &Values[IndexOffset[row+1]];
+ 	  const double *const val_end_of_row = &values[IndexOffset[row+1]];
  	  while (val_ptr != val_end_of_row)
  	    s += *val_ptr++ * x[*colnum_ptr++];
  	  y[row] = s;
 	}
 #else
 #ifndef Epetra_ENABLE_CASK
-       const double *val_ptr    = Values;
+       const double *val_ptr    = values;
        const int    *colnum_ptr = Indices;
        double       * dst_ptr = y;
        for (int row=0; row<NumMyRows_; ++row)
  	{
  	  double s = 0.;
- 	  const double *const val_end_of_row = &Values[IndexOffset[row+1]];
+ 	  const double *const val_end_of_row = &values[IndexOffset[row+1]];
  	  while (val_ptr != val_end_of_row)
  	    s += *val_ptr++ * x[*colnum_ptr++];
  	  *dst_ptr++ = s;
  	}
 #else
        cask_csr_dax_new(NumMyRows_, IndexOffset, Indices,
-                        Values, x, y, cask);
+                        values, x, y, cask);
 #endif // Epetra_ENABLE_CASK
-#endif // Epetra_HAVE_OMP
+#endif // EPETRA_HAVE_OMP
 
     return;
   }
@@ -2827,12 +2822,13 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
     int* NumEntriesPerRow = Graph().NumIndicesPerRow();
     int** Indices = Graph().Indices();
     double** srcValues = Values();
-    
+        const int numMyRows = NumMyRows_;
+
     // Do actual computation
-#ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+#ifdef EPETRA_HAVE_OMP
+#pragma omp parallel for default(none) shared(NumEntriesPerRow,Indices,srcValues,y,x)
 #endif
-    for(int i = 0; i < NumMyRows_; i++) {
+    for(int i = 0; i < numMyRows; i++) {
       int     NumEntries = NumEntriesPerRow[i];
       int*    RowIndices = Indices[i];
       double* RowValues  = srcValues[i];
@@ -2846,12 +2842,13 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
   } 
   else { // Case where StorageOptimized is incompatible:  Use general accessors.
 
-    
+    const int numMyRows = NumMyRows_;
+
     // Do actual computation
-#ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+#ifdef EPETRA_HAVE_OMP
+#pragma omp parallel for default(none) shared(x,y)
 #endif
-    for(int i = 0; i < NumMyRows_; i++) {
+    for(int i = 0; i < numMyRows; i++) {
       int     NumEntries = NumMyEntries(i);
       int*    RowIndices = Graph().Indices(i);
       double* RowValues  = Values(i);
@@ -2871,14 +2868,14 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
   int NumCols = NumMyCols();
 #if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
   if (StorageOptimized() && Graph().StorageOptimized()) {
-    double * Values = All_Values_;
+    double * values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
 #ifndef Epetra_ENABLE_CASK
    int ione = 1;
-   EPETRA_DCRSMV_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, x, y);
+   EPETRA_DCRSMV_F77(&ione, &NumMyRows_, &NumCols, values, Indices, IndexOffset, x, y);
 #else
-   cask_csr_datx( NumMyRows_, NumCols, IndexOffset,  Indices,  Values,x ,y );
+   cask_csr_datx( NumMyRows_, NumCols, IndexOffset,  Indices,  values,x ,y );
 #endif
 
     return;
@@ -2888,7 +2885,7 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
     y[i] = 0.0; // Initialize y for transpose multiply
 
   if (StorageOptimized() && Graph().StorageOptimized()) {
-    double * Values = All_Values_;
+    double * values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
     for(int i = 0; i < NumMyRows_; ++i) {
@@ -2896,7 +2893,7 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
       int NumEntries = *IndexOffset - prevOffset;
       double xi = x[i];
       for(int j = 0; j < NumEntries; j++) 
-	y[*Indices++] += *Values++ * xi;
+	y[*Indices++] += *values++ * xi;
     }
   }
   else if (!StorageOptimized() && !Graph().StorageOptimized()) {
@@ -2933,31 +2930,32 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
 
 #if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
   if (StorageOptimized() && Graph().StorageOptimized()) {
-    double * Values = All_Values_;
+    double * values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
 
     if (LDX!=0 && LDY!=0) {
 #ifndef Epetra_ENABLE_CASK
     int izero = 0;
-    EPETRA_DCRSMM_F77(&izero, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
+    EPETRA_DCRSMM_F77(&izero, &NumMyRows_, &NumMyRows_, values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
 #else
     cask_csr_dgesmm_new(0, 1.0, NumMyRows_, NumMyRows_,  NumVectors,
-                    IndexOffset, Indices, Values, *X, LDX, 0.0,  *Y, LDY,cask);
+                    IndexOffset, Indices, values, *X, LDX, 0.0,  *Y, LDY,cask);
 #endif
     return;
     }
 
     double ** const xp = X;
     double ** const yp = Y;
-#ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+    const int numMyRows = NumMyRows_;
+#ifdef EPETRA_HAVE_OMP
+#pragma omp parallel for default(none) shared(IndexOffset,Indices,values,NumVectors)
 #endif
-    for (int i=0; i < NumMyRows_; i++) {
+    for (int i=0; i < numMyRows; i++) {
       int prevOffset = IndexOffset[i];
       int NumEntries = IndexOffset[i+1] - prevOffset;
       int *    RowIndices = Indices+prevOffset;
-      double * RowValues  = Values+prevOffset;
+      double * RowValues  = values+prevOffset;
       for (int k=0; k<NumVectors; k++) {
 	double sum = 0.0;
 	const double * const x = xp[k];
@@ -2977,11 +2975,12 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
     double** srcValues = Values();
     double ** const xp = X;
     double ** const yp = Y;
+    const int numMyRows = NumMyRows_;
 
-#ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+#ifdef EPETRA_HAVE_OMP
+#pragma omp parallel for default(none) shared(NumEntriesPerRow,Indices,srcValues,NumVectors)
 #endif
-    for (int i=0; i < NumMyRows_; i++) {
+    for (int i=0; i < numMyRows; i++) {
       int      NumEntries = NumEntriesPerRow[i];
       int *    RowIndices = Indices[i];
       double * RowValues  = srcValues[i];
@@ -2996,18 +2995,21 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
   }
   else {
 
-#ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+    double ** const xp = X;
+    double ** const yp = Y;
+    const int numMyRows = NumMyRows_;
+#ifdef EPETRA_HAVE_OMP
+#pragma omp parallel for default(none) shared(NumVectors)
 #endif
-    for (int i=0; i < NumMyRows_; i++) {
+    for (int i=0; i < numMyRows; i++) {
       int     NumEntries = NumMyEntries(i);
       int*    RowIndices = Graph().Indices(i);
       double* RowValues  = Values(i);
       for (int k=0; k<NumVectors; k++) {
 	double sum = 0.0;
-	double * x = X[k];
+	double * x = xp[k];
 	for (int j=0; j < NumEntries; j++) sum += RowValues[j] * x[RowIndices[j]];
-	Y[k][i] = sum;
+	yp[k][i] = sum;
       }
     }
   }
@@ -3020,16 +3022,16 @@ void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, in
 #if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
   if (StorageOptimized() && Graph().StorageOptimized()) {
     if (LDX!=0 && LDY!=0) {
-      double * Values = All_Values_;
+      double * values = All_Values_;
       int * Indices = Graph().All_Indices();
       int * IndexOffset = Graph().IndexOffset();
 
 #ifndef Epetra_ENABLE_CASK
       int ione = 1;
-      EPETRA_DCRSMM_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
+      EPETRA_DCRSMM_F77(&ione, &NumMyRows_, &NumCols, values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
 #else
       cask_csr_dgesmm_new(1, 1.0, NumMyRows_, NumCols,  NumVectors,
-                          IndexOffset, Indices, Values, *X, LDX, 0.0,
+                          IndexOffset, Indices, values, *X, LDX, 0.0,
                           *Y, LDY, cask);
 #endif
       return;
@@ -3041,14 +3043,14 @@ void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, in
       Y[k][i] = 0.0; // Initialize y for transpose multiply
   
   if (StorageOptimized() && Graph().StorageOptimized()) {
-    double * Values = All_Values_;
+    double * values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
     for (int i=0; i < NumMyRows_; i++) {
       int prevOffset = *IndexOffset++;
       int NumEntries = *IndexOffset - prevOffset;
       int *    RowIndices = Indices+prevOffset;
-      double * RowValues  = Values+prevOffset;
+      double * RowValues  = values+prevOffset;
       
       for (int k=0; k<NumVectors; k++) {
 	double * y = Y[k];
@@ -3100,7 +3102,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 
 #if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
   if (StorageOptimized() && Graph().StorageOptimized() && ((UnitDiagonal && NoDiagonal())|| (!UnitDiagonal && !NoDiagonal()))) {
-    double * Values = All_Values();
+    double * values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
 
@@ -3111,10 +3113,10 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
     int xysame = (xp==yp) ? 1:0;
 
 #ifndef Epetra_ENABLE_CASK
-    EPETRA_DCRSSV_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, xp, yp, &xysame);
+    EPETRA_DCRSSV_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, values, Indices, IndexOffset, xp, yp, &xysame);
 #else
     cask_csr_dtrsv_new( iupper, itrans, udiag, nodiag, 0, xysame, NumMyRows_,
-                    NumMyRows_, IndexOffset, Indices, Values, xp, yp, cask);
+                    NumMyRows_, IndexOffset, Indices, values, xp, yp, cask);
 #endif
     return;
   }
@@ -3221,7 +3223,7 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
   double diag = 0.0;
 
   if (StorageOptimized() && Graph().StorageOptimized()) {
-    double * Values = All_Values();
+    double * values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
 #if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
@@ -3233,11 +3235,11 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
       int xysame = (Xp==Yp) ? 1:0;
 
 #ifndef Epetra_ENABLE_CASK
-      EPETRA_DCRSSM_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, 
+      EPETRA_DCRSSM_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, values, Indices, IndexOffset, 
 			 *Xp, &LDX, *Yp, &LDY, &xysame, &NumVectors);
 #else
       cask_csr_dtrsm( iupper, itrans, udiag, nodiag, 0, xysame,  NumMyRows_, 
-                      NumMyRows_, NumVectors, IndexOffset, Indices, Values, 
+                      NumMyRows_, NumVectors, IndexOffset, Indices, values, 
                       *Xp, LDX, *Yp, LDY);
 #endif
       return;
@@ -3252,7 +3254,7 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 	  int Offset = IndexOffset[i];
 	  int      NumEntries = IndexOffset[i+1]-Offset;
 	  int *    RowIndices = Indices+Offset;
-	  double * RowValues  = Values+Offset;
+	  double * RowValues  = values+Offset;
 	  if(!UnitDiagonal) 
 	    diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
 	  for(k = 0; k < NumVectors; k++) {
@@ -3275,7 +3277,7 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 	  int Offset = IndexOffset[i];
 	  int      NumEntries = IndexOffset[i+1]-Offset - j0;
 	  int *    RowIndices = Indices+Offset;
-	  double * RowValues  = Values+Offset;
+	  double * RowValues  = values+Offset;
 	  if(!UnitDiagonal)
 	    diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
 	  for(k = 0; k < NumVectors; k++) {
@@ -3308,7 +3310,7 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 	  int Offset = IndexOffset[i];
 	  int      NumEntries = IndexOffset[i+1]-Offset;
 	  int *    RowIndices = Indices+Offset;
-	  double * RowValues  = Values+Offset;
+	  double * RowValues  = values+Offset;
 	  if(!UnitDiagonal) 
 	    diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
 	  for(k = 0; k < NumVectors; k++) {
@@ -3328,7 +3330,7 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 	  int Offset = IndexOffset[i];
 	  int      NumEntries = IndexOffset[i+1]-Offset - j0;
 	  int *    RowIndices = Indices+Offset;
-	  double * RowValues  = Values+Offset;
+	  double * RowValues  = values+Offset;
 	  if(!UnitDiagonal) 
 	    diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
 	  for(k = 0; k < NumVectors; k++) {

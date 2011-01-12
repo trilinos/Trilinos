@@ -154,17 +154,14 @@ bool EntityImpl::marked_for_destruction() const {
   // The original implementation of this method checked bucket capacity. In
   // order to ensure that the addition of EntityLogDeleted does not change
   // behavior, we put error check here.
-  if ( (bucket().capacity() == 0) != (m_mod_log == EntityLogDeleted) ) {
-    std::ostringstream msg;
-    msg << "Inconsistent destruction state; "
-        << "destroyed entities should be in the nil bucket and vice versa.\n"
-        << "Problem is with entity: "
-        << print_entity_key( msg, bucket().mesh().mesh_meta_data(), key() )
-        << "\n"
-        << "Was in nil bucket: " << (bucket().capacity() == 0) << ", "
-        << "was in destroyed state: " << (m_mod_log == EntityLogDeleted);
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf((bucket().capacity() == 0) != (m_mod_log == EntityLogDeleted),
+      "Inconsistent destruction state; " <<
+      "destroyed entities should be in the nil bucket and vice versa.\n" <<
+      "Problem is with entity: " <<
+      print_entity_key( bucket().mesh().mesh_meta_data(), key() ) <<
+      "\nWas in nil bucket: " << (bucket().capacity() == 0) << ", " <<
+      "was in destroyed state: " << (m_mod_log == EntityLogDeleted) );
+
   return m_mod_log == EntityLogDeleted;
 }
 
@@ -179,12 +176,10 @@ bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
 
 void EntityImpl::log_resurrect()
 {
-  if ( EntityLogDeleted != m_mod_log ) {
-    std::ostringstream msg;
-    msg << "Trying to resurrect non-deleted entity: "
-        << print_entity_key( msg, bucket().mesh().mesh_meta_data(), key() );
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( EntityLogDeleted != m_mod_log,
+      "Trying to resurrect non-deleted entity: " <<
+      print_entity_key( bucket().mesh().mesh_meta_data(), key() ) );
+
   m_mod_log = EntityLogModified;
   m_bucket = NULL;
 }
@@ -242,8 +237,6 @@ bool EntityImpl::declare_relation( Entity & e_to,
 {
   const MetaData & meta_data = bucket().mesh().mesh_meta_data();
 
-  static const char method[] = "stk::mesh::impl::EntityImpl::declare_relation";
-
   const Relation new_relation( e_to , local_id );
 
   const std::vector<Relation>::iterator fe = m_relation.end();
@@ -286,19 +279,13 @@ bool EntityImpl::declare_relation( Entity & e_to,
     }
     ++fi;
   }
-  if ( found_degenerate_relation && !is_converse )
-  {
-    std::ostringstream msg ;
-    msg << method << "( from " ;
-    print_entity_key( msg , meta_data, key() );
-    msg << " , to " ;
-    print_entity_key( msg , meta_data, e_to.key() );
-    msg << " , id " << local_id ;
-    msg << " ) FAILED ";
-    msg << " Relation already exists to " ;
-    print_entity_key( msg , meta_data, degenerate_key );
-    throw std::runtime_error( msg.str() );
-  }
+
+  ThrowErrorMsgIf( found_degenerate_relation && !is_converse,
+                   "Could not declare relation from " <<
+                   print_entity_key( meta_data, key() ) << " to " <<
+                   print_entity_key( meta_data, e_to.key() ) << ", with id " <<
+                   local_id << ". Relation already exists to " <<
+                   print_entity_key( meta_data, degenerate_key ));
 
   // If the relation is not degenerate, we add it
 

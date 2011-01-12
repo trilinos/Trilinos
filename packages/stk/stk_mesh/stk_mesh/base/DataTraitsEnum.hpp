@@ -6,9 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stk_mesh/base/DataTraits.hpp>
- 
+
+#include <stk_util/environment/ReportHandler.hpp>
+
 //----------------------------------------------------------------------
 
 namespace stk {
@@ -109,16 +110,16 @@ public:
   }
 
   void sum( void * , const void * , std::size_t ) const
-  { throw_not_supported( "sum" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void bit_and( void * , const void * , std::size_t ) const
-  { throw_not_supported( "sum" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void bit_or( void * , const void * , std::size_t ) const
-  { throw_not_supported( "sum" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void bit_xor( void * , const void * , std::size_t ) const
-  { throw_not_supported( "sum" ); }
+  { ThrowErrorMsg( "not supported" ); }
 };
 
 }

@@ -14,7 +14,10 @@
 
 #include <sstream>
 #include <stdexcept>
+
 #include <stk_util/util/string_case_compare.hpp>
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
 namespace stk {
@@ -34,13 +37,8 @@ unsigned get_index( const char * const func ,
 
   for ( ; index < size && not_equal_case(select,names[index]) ; ++index );
 
-  if ( index == size ) {
-    std::ostringstream msg ;
-    msg << func ;
-    msg << " ERROR size = " << size ;
-    msg << " label = " << select ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( index == size,
+                   func << ", size = " << size << " label = " << select );
   return index ;
 }
 
@@ -50,13 +48,8 @@ const char * get_string( const char * const func ,
                          const unsigned size ,
                          const unsigned index )
 {
-  if ( size < number_names || size <= index ) {
-    std::ostringstream msg ;
-    msg << func ;
-    msg << " ERROR size = " << size ;
-    msg << " index = " << index ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( size < number_names || size <= index,
+                   func << ", size = " << size << " index = " << index );
 
   return names[index];
 }

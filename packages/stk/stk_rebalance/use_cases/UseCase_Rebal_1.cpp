@@ -14,7 +14,6 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/fem/DefaultFEM.hpp>
-#include <stk_mesh/fixtures/HexFixture.hpp>
 
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
@@ -68,7 +67,6 @@ bool test_unequal_weights( stk::ParallelMachine pm )
   // Assign weights so that a perfect rebalance is possible so long as the rebalancer can figure out
   // to put p_rank+1 elements on proc = p_rank based on these weights.
   unsigned nslabs = 0;
-  double total_weight = 0.0;
   if( 0 == p_rank ) {
     for ( unsigned l = 1 ; l <= p_size ; ++l ) {
       for ( unsigned k = 0 ; k < nz ; ++k ) {
@@ -78,19 +76,12 @@ bool test_unequal_weights( stk::ParallelMachine pm )
             stk::mesh::Entity * elem = bulk.get_entity(element_rank, elem_id);
             double * const e_weight = stk::mesh::field_data( weight_field , *elem );
             *e_weight = double(ngx) / double(l);
-            //std::cerr << "(proc " << p_rank << ") : assigning weight = " << *e_weight << " to (nx, ny, nz) = (" << i+nslabs << ", " << j << ", " << k << ") = elem_id " << elem_id << std::endl;
-            total_weight += *e_weight;
           }
         }
       }
       nslabs += l;
     }
   }
-
-  MPI_Barrier( pm );
-
-  stk::all_reduce(pm, ReduceMax<1>(&total_weight)& ReduceSum<1>(&total_weight));
-  //std::cerr << "(proc " << p_rank << ") : has total_weight = " << total_weight << std::endl;
 
   bulk.modification_end();
 
@@ -116,20 +107,6 @@ bool test_unequal_weights( stk::ParallelMachine pm )
 
   stk::mesh::Selector owned_selector = meta.locally_owned_part();
   size_t num_local_elems = stk::mesh::count_selected_entities(owned_selector, bulk.buckets(element_rank));
-
-  //std::cerr << "(proc " << p_rank << ") : has " << num_local_elems << " local elems after rebalance." << std::endl;
-  //stk::mesh::EntityVector local_elems;
-  //stk::mesh::get_selected_entities(owned_selector, bulk.buckets(element_rank), local_elems);
-  //double weight_sum = 0.0;
-  //for( size_t ie = 0; ie < local_elems.size(); ++ie )
-  //{
-  //  stk::mesh::Entity * elem = local_elems[ie];
-  //  double * const e_weight = stk::mesh::field_data( weight_field , *elem );
-  //  //std::cerr << "(proc " << p_rank << ") : elem " << elem->identifier() << " has weight = " << *e_weight << std::endl;
-  //  weight_sum += *e_weight;
-  //}
-  //double imbalance = weight_sum / total_weight * (double)p_size;
-  //std::cerr << "(proc " << p_rank << ") : has imbalance = " << imbalance << std::endl;
 
   // Check that we satisfy our threshhold
   bool result = true;

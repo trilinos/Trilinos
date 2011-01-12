@@ -70,6 +70,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
 
   m_bulk_data.modification_begin();
 
+  // First of all work out the node ids and declare element elem
   if ( p_rank == 0 ) {
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
@@ -333,8 +334,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
     if ( p_rank==0 or p_rank==1 )
     {
-      if ( not stk::mesh::in_shared( *n10 ) )
-        throw std::runtime_error( "NODE[10] not shared" );
+      ThrowErrorMsgIf( !stk::mesh::in_shared( *n10 ), "NODE[10] not shared" );
     }
 
     bulk_data.modification_begin();
@@ -345,18 +345,15 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
       stk::mesh::Entity * c1 = bulk_data.get_entity( constraint_rank, 1 );
 
-      if ( not bulk_data.destroy_entity( c1 ) )
-      {
-        throw std::runtime_error( "failed to destroy constraint" );
-      }
+      ThrowErrorMsgIf( !bulk_data.destroy_entity( c1 ),
+                       "failed to destroy constraint" );
     }
 
     bulk_data.modification_end();
 
     if ( p_rank==0 or p_rank==1 )
     {
-      if ( stk::mesh::in_shared( *n10 ) )
-        throw std::runtime_error( "NODE[10] shared" );
+      ThrowErrorMsgIf( stk::mesh::in_shared( *n10 ), "NODE[10] shared" );
     }
   }
 

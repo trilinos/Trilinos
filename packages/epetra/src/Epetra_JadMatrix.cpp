@@ -118,16 +118,16 @@ int Epetra_JadMatrix::UpdateValues(const Epetra_RowMatrix & Matrix, bool CheckSt
 void Epetra_JadMatrix::Allocate(const Epetra_RowMatrix & Matrix) {
 
   // Allocate IndexOffset storage
-  int NumMyRows = Matrix.NumMyRows();
-  int NumMyNonzeros = Matrix.NumMyNonzeros();
+  int numMyRows = Matrix.NumMyRows();
+  int numMyNonzeros = Matrix.NumMyNonzeros();
 
   IndexOffset_.Resize(NumJaggedDiagonals_+1);
 
   // Next compute permutation of rows
-  RowPerm_.Resize(NumMyRows);
-  InvRowPerm_.Resize(NumMyRows);
-  Profile_.Resize(NumMyRows);
-  for (int i=0; i<NumMyRows; i++) {
+  RowPerm_.Resize(numMyRows);
+  InvRowPerm_.Resize(numMyRows);
+  Profile_.Resize(numMyRows);
+  for (int i=0; i<numMyRows; i++) {
     int NumEntries;
     Matrix.NumMyRowEntries(i, NumEntries);
     Profile_[i] = NumEntries;
@@ -136,17 +136,17 @@ void Epetra_JadMatrix::Allocate(const Epetra_RowMatrix & Matrix) {
 
   Epetra_Util sorter;
   int * RowPerm = RowPerm_.Values();
-  sorter.Sort(false, NumMyRows, Profile_.Values(), 0, 0, 1, &RowPerm);
+  sorter.Sort(false, numMyRows, Profile_.Values(), 0, 0, 1, &RowPerm);
   //cout << "Profile = " << Profile_ << endl;
   //cout << "RowPerm = " << RowPerm_ << endl;
-  for (int i=0; i<NumMyRows; i++) InvRowPerm_[RowPerm[i]] = i; // Compute inverse row permutation
+  for (int i=0; i<numMyRows; i++) InvRowPerm_[RowPerm[i]] = i; // Compute inverse row permutation
   //cout << "InvRowPerm = " << InvRowPerm_ << endl;
 
   // Now build IndexOffsets:  These contain the lengths of the jagged diagonals
 
   for (int i=0; i<NumJaggedDiagonals_; i++) IndexOffset_[i] = 0;
 
-  int curOffset = NumMyRows;
+  int curOffset = numMyRows;
   int * curIndex = IndexOffset_.Values(); // point to first index (will be incremented immediately below)
   for (int i=1; i<NumJaggedDiagonals_+1; i++) {
     curIndex++;
@@ -156,8 +156,8 @@ void Epetra_JadMatrix::Allocate(const Epetra_RowMatrix & Matrix) {
     }
   }
 
-  Values_.Resize(NumMyNonzeros);
-  Indices_.Resize(NumMyNonzeros);
+  Values_.Resize(numMyNonzeros);
+  Indices_.Resize(numMyNonzeros);
 
   int NumEntries;
   int * Indices = 0;
@@ -167,7 +167,7 @@ void Epetra_JadMatrix::Allocate(const Epetra_RowMatrix & Matrix) {
 
     const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Matrix);
 
-    for (int i1=0; i1<NumMyRows; i1++) {
+    for (int i1=0; i1<numMyRows; i1++) {
 
       A.ExtractMyRowView(i1, NumEntries, Values, Indices); // Get the current row
       int i = InvRowPerm_[i1]; // Determine permuted row location
@@ -184,7 +184,7 @@ void Epetra_JadMatrix::Allocate(const Epetra_RowMatrix & Matrix) {
   Epetra_IntSerialDenseVector curIndices(NumJaggedDiagonals_);
   Indices = curIndices.Values();
   Values = curValues.Values();
-    for (int i1=0; i1<NumMyRows; i1++) {
+    for (int i1=0; i1<numMyRows; i1++) {
       Matrix.ExtractMyRowCopy(i1, NumJaggedDiagonals_, NumEntries, Values, Indices); // Get  current row based on the permutation
       int i = InvRowPerm_[i1]; // Determine permuted row location
       for (int j=0; j< NumEntries; j++) {

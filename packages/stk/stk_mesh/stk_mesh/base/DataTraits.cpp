@@ -9,6 +9,9 @@
 
 #include <cstddef>
 #include <stdexcept>
+
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_mesh/base/DataTraits.hpp>
 #include <stk_mesh/base/DataTraitsEnum.hpp>
 #include <stk_mesh/base/DataTraitsClass.hpp>
@@ -76,17 +79,6 @@ DataTraits::DataTraits( const std::type_info & arg_type ,
   name.assign( arg_traits.name ).append("*");
 }
 
-void DataTraits::throw_not_supported( const char * method ) const
-{
-  std::string msg ;
-  msg.append( "stk::mesh::DataTraits::" );
-  msg.append( method );
-  msg.append( "( " );
-  msg.append( name );
-  msg.append( " ) NOT SUPPORTED" );
-  throw std::runtime_error( msg );
-}
-
 //----------------------------------------------------------------------
 
 namespace {
@@ -99,40 +91,40 @@ public:
     { is_void = true ; }
 
   void construct( void * , std::size_t ) const
-  { throw_not_supported( "construct" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void destroy( void * , std::size_t ) const
-  { throw_not_supported( "destroy" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void pack( CommBuffer & , const void * , std::size_t ) const
-  { throw_not_supported( "pack" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void unpack( CommBuffer & , void * , std::size_t ) const
-  { throw_not_supported( "unpack" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void print( std::ostream & , const void * , std::size_t ) const
-  { throw_not_supported( "print" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void copy( void * , const void * , std::size_t ) const
-  { throw_not_supported( "copy" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void sum( void * , const void * , std::size_t ) const
-  { throw_not_supported( "sum" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void max( void * , const void * , std::size_t ) const
-  { throw_not_supported( "max" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void min( void * , const void * , std::size_t ) const
-  { throw_not_supported( "min" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_and( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_or( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_xor( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
 };
 
 }
@@ -247,13 +239,13 @@ public:
   }
 
   virtual void bit_and( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_or( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_xor( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
 };
 
 template< typename T >
@@ -381,31 +373,31 @@ public:
   }
 
   void pack( CommBuffer & , const void * , std::size_t ) const
-  { throw_not_supported( "pack" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void unpack( CommBuffer & , void * , std::size_t ) const
-  { throw_not_supported( "unpack" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void print( std::ostream & , const void * , std::size_t ) const
-  { throw_not_supported( "print" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void sum( void * , const void * , std::size_t ) const
-  { throw_not_supported( "sum" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void max( void * , const void * , std::size_t ) const
-  { throw_not_supported( "max" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void min( void * , const void * , std::size_t ) const
-  { throw_not_supported( "min" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_and( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_or( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_xor( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
 };
 
 }

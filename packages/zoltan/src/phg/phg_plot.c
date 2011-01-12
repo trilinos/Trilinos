@@ -48,7 +48,7 @@ ZOLTAN_GNO_TYPE egno, vgno;
     egno = EDGE_LNO_TO_GNO(phg, i);
     for (j = phg->hindex[i]; j < phg->hindex[i+1]; j++) {
       vgno = VTX_LNO_TO_GNO(phg, phg->hvertex[j]);
-      fprintf(fp, "%zd  %zd\n", vgno, -egno);
+      fprintf(fp, ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC "\n", vgno, -egno);
     }
   }
   fclose(fp);
@@ -81,7 +81,7 @@ ZOLTAN_GNO_TYPE egno, vgno;
     vgno = VTX_LNO_TO_GNO(phg, i);
     for (j = phg->vindex[i]; j < phg->vindex[i+1]; j++) {
       egno = EDGE_LNO_TO_GNO(phg, phg->vedge[j]);
-      fprintf(fp, "%zd  %zd\n", vgno, -egno);
+      fprintf(fp, ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC "\n", vgno, -egno);
     }
   }
   fclose(fp);

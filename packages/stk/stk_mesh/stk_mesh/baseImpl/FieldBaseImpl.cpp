@@ -117,8 +117,17 @@ void print_restriction( std::ostream & os ,
   os << " }" ;
 }
 
+std::string print_restriction( unsigned type ,
+                               const Part & part ,
+                               unsigned rank ,
+                               const FieldRestriction::size_type * stride )
+{
+  std::ostringstream oss;
+  print_restriction(oss, type, part, rank, stride);
+  return oss.str();
 }
 
+}
 
 // Setting the dimension for one field sets the dimension
 // for the corresponding fields of the FieldState array.
@@ -127,7 +136,7 @@ void print_restriction( std::ostream & os ,
 
 void FieldBaseImpl::insert_restriction(
   const char     * arg_method ,
-  EntityRank         arg_entity_rank ,
+  EntityRank       arg_entity_rank ,
   const Part     & arg_part ,
   const unsigned * arg_stride )
 {
@@ -150,13 +159,12 @@ void FieldBaseImpl::insert_restriction(
     }
 
     for ( i = 1 ; i < m_rank ; ++i ) {
-      if ( 0 == tmp.stride[i] || 0 != tmp.stride[i] % tmp.stride[i-1] ) {
-        std::ostringstream msg ;
-        msg << arg_method << " FAILED for " << *this ;
-        msg << " WITH BAD STRIDE " ;
-        print_restriction( msg, arg_entity_rank, arg_part, m_rank, tmp.stride);
-        throw std::runtime_error( msg.str() );
-      }
+      const bool bad_stride = 0 == tmp.stride[i] ||
+                              0 != tmp.stride[i] % tmp.stride[i-1];
+      ThrowErrorMsgIf( bad_stride,
+          arg_method << " FAILED for " << *this <<
+          " WITH BAD STRIDE " <<
+          print_restriction( arg_entity_rank, arg_part, m_rank, tmp.stride));;
     }
   }
 
@@ -170,13 +178,12 @@ void FieldBaseImpl::insert_restriction(
     if ( i == j || i->key != tmp.key ) {
       rMap.insert( i , tmp );
     }
-    else if ( Compare<MaximumFieldDimension>::not_equal(i->stride,tmp.stride) ){
-      std::ostringstream msg ;
-      msg << arg_method << " FAILED for " << *this << " " ;
-      print_restriction( msg, arg_entity_rank, arg_part, m_rank, i->stride );
-      msg << " WITH INCOMPATIBLE REDECLARATION " ;
-      print_restriction( msg, arg_entity_rank, arg_part, m_rank, tmp.stride );
-      throw std::runtime_error( msg.str() );
+    else {
+      ThrowErrorMsgIf( Compare<MaximumFieldDimension>::not_equal(i->stride,tmp.stride),
+          arg_method << " FAILED for " << *this << " " <<
+          print_restriction( arg_entity_rank, arg_part, m_rank, i->stride ) <<
+          " WITH INCOMPATIBLE REDECLARATION " <<
+          print_restriction( arg_entity_rank, arg_part, m_rank, tmp.stride ));
     }
   }
 }
@@ -206,18 +213,11 @@ void FieldBaseImpl::verify_and_clean_restrictions(
                              contain( partI.supersets() , partJ );
 
             if ( found_subset || found_superset ) {
-              if ( Compare< MaximumFieldDimension >::not_equal( i->stride ,
-                                                                j->stride ) ) {
-                std::ostringstream msg ;
-                msg << arg_method << "[" ;
-                msg << *this ;
-                msg << "] FAILED: " ;
-                print_restriction( msg, typeI, partI, m_rank, i->stride );
-                if ( found_subset ) { msg << " INCOMPATIBLE SUBSET " ; }
-                else                { msg << " INCOMPATIBLE SUPERSET " ; }
-                print_restriction( msg, typeJ, partJ, m_rank, j->stride );
-                throw std::runtime_error( msg.str() );
-              }
+              ThrowErrorMsgIf( Compare< MaximumFieldDimension >::not_equal( i->stride , j->stride ), 
+                  arg_method << "[" << *this << "] FAILED: " <<
+                  print_restriction( typeI, partI, m_rank, i->stride ) <<
+                  ( found_subset ? " INCOMPATIBLE SUBSET " : " INCOMPATIBLE SUPERSET ") <<
+                  print_restriction( typeJ, partJ, m_rank, j->stride ));
             }
 
             if ( found_subset ) { j->key = invalid_key; }

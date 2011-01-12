@@ -29,6 +29,8 @@ class LinearSystem : public LinearSystemInterface {
   /** Destructor */
   virtual ~LinearSystem();
 
+  void set_parameters(Teuchos::ParameterList& paramlist);
+
   /** This is a collective call -- will hang if only a subset of processors
    * call it.
    * Internally calls fei::MatrixGraph::initComplete() and
@@ -57,6 +59,8 @@ class LinearSystem : public LinearSystemInterface {
   /** Return DOF-mapping object */
   DofMapper& get_DofMapper();
 
+  void reset_to_zero();
+
   /** Return fei::MatrixGraph object */
   const fei::SharedPtr<fei::MatrixGraph> get_fei_MatrixGraph() const;
 
@@ -68,6 +72,8 @@ class LinearSystem : public LinearSystemInterface {
 
   /** Return fei::LinearSystem object */
   fei::SharedPtr<fei::LinearSystem> get_fei_LinearSystem();
+
+  void write_files(const std::string& base_name) const;
 
 /** Solve the linear system
  *
@@ -94,6 +100,7 @@ class LinearSystem : public LinearSystemInterface {
   fei::SharedPtr<fei::MatrixGraph> m_fei_mgraph;
 
   fei::SharedPtr<fei::LinearSystem> m_fei_linearsystem;
+  fei::ParameterSet m_param_set;
 };//class LinearSystem
 
 }//namespace linsys

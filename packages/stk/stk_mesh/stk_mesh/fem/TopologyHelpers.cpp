@@ -20,6 +20,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
+
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
@@ -37,7 +38,6 @@ void verify_declare_element_side(
     const unsigned local_side_id
     )
 {
-  static const char method[] = "stk::mesh::declare_element_side" ;
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -48,39 +48,17 @@ void verify_declare_element_side(
     ( elem_top && local_side_id < elem_top->side_count )
     ? elem_top->side[ local_side_id ].topology : NULL ;
 
-  bool different_bulk_data =  &mesh != & (elem.bucket().mesh());
+  ThrowErrorMsgIf( &mesh != & (elem.bucket().mesh()),
+    "For elem " << print_entity_key(elem) <<
+    ", Bulkdata for 'elem' and mesh are different");
 
-  bool no_elem_top = (side_top == NULL);
+  ThrowErrorMsgIf( elem_top && local_side_id >= elem_top->side_count,
+    "For elem " << print_entity_key(elem) << ", local_side_id " << local_side_id << ", " <<
+    "local_side_id exceeds " << elem_top->name << ".side_count = " << elem_top->side_count );
 
-  bool bad_side_id = false;
-  if( elem_top && local_side_id >= elem_top->side_count){
-      bad_side_id = true;
-  }
-
-
-  if ( different_bulk_data || no_elem_top || bad_side_id ) {
-     std::ostringstream msg ;
-     msg << method << "( ";
-     print_entity_key( msg , mesh.mesh_meta_data() , elem.key() );
-     msg << " , "
-         << local_side_id
-         << " ) FAILED" ;
-     if ( different_bulk_data ) {
-       msg << " Bulkdata for 'elem' and 'side' are different" ;
-     } else if (no_elem_top && !bad_side_id ){
-       msg << " No element topology found" ;
-
-     } else if ( no_elem_top && bad_side_id ){
-       msg << " No element topology found and " ;
-       msg << " cell side id ";
-       msg << local_side_id ;
-       msg << " exceeds " ;
-       msg << elem_top->name ;
-       msg << ".side_count = " ;
-       msg << elem_top->side_count ;
-     }
-     throw std::runtime_error( msg.str() );
-   }
+  ThrowErrorMsgIf( side_top == NULL,
+    "For elem " << print_entity_key(elem) << ", local_side_id " << local_side_id << ", " <<
+    "No element topology found");
 }
 
 }
@@ -93,8 +71,6 @@ Entity & declare_element_side(
   const unsigned local_side_id ,
   Part * part )
 {
-  static const char method[] = "stk::mesh::declare_element_side" ;
-
   BulkData & mesh = side.bucket().mesh();
 
   verify_declare_element_side(mesh, elem, local_side_id);
@@ -105,23 +81,14 @@ Entity & declare_element_side(
   const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
-  if (elem_top == NULL) {
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( Element[" << elem.identifier() << "] has no defined topology" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( elem_top == NULL,
+      "Element[" << elem.identifier() << "] has no defined topology" );
 
   const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
 
-  if (side_top == NULL) {
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( Element[" << elem.identifier() << "]" ;
-    msg << " , local_side_id = " << local_side_id << " ) FAILED: " ;
-    msg << " Side has no defined topology" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( side_top == NULL,
+      "Element[" << elem.identifier() << "], local_side_id = " <<
+      local_side_id << ", side has no defined topology" );
 
   const unsigned * const side_node_map = elem_top->side[ local_side_id ].node ;
 
@@ -152,7 +119,6 @@ Entity & declare_element_side(
   const unsigned local_side_id ,
   Part * part )
 {
-  static const char method[] = "stk::mesh::declare_element_side" ;
   verify_declare_element_side(mesh, elem, local_side_id);
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -161,24 +127,14 @@ Entity & declare_element_side(
   const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
-  if (elem_top == NULL) {
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( Element[" << elem.identifier() << "] has no defined topology" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( elem_top == NULL,
+      "Element[" << elem.identifier() << "] has no defined topology");
 
   const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
 
-  if (side_top == NULL) {
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( Element[" << elem.identifier() << "]" ;
-    msg << " , local_side_id = " << local_side_id << " ) FAILED: " ;
-    msg << " Side has no defined topology" ;
-    throw std::runtime_error( msg.str() );
-  }
-
+  ThrowErrorMsgIf( side_top == NULL,
+      "Element[" << elem.identifier() << "], local_side_id = " <<
+      local_side_id << ", side has no defined topology" );
 
   PartVector empty_parts ;
 
@@ -191,8 +147,6 @@ Entity & declare_element_side(
 bool element_side_polarity( const Entity & elem ,
                             const Entity & side , int local_side_id )
 {
-  static const char method[] = "stk::mesh::element_side_polarity" ;
-
   // 09/14/10:  TODO:  tscoffe:  Will this work in 1D?
   // 09/14/10:  TODO:  tscoffe:  We need an exception here if we don't get a TopologicalMetaData off of MetaData or we need to take one on input.
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -208,24 +162,14 @@ bool element_side_polarity( const Entity & elem ,
                                 is_side ? elem_top->side_count
                                         : elem_top->edge_count );
 
-  if ( NULL == elem_top ||
-       local_side_id < 0 ||
-       static_cast<int>(side_count) <= local_side_id ) {
-    const MetaData & meta_data = elem.bucket().mesh().mesh_meta_data();
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( Element[" << elem.identifier() << "]" ;
-    msg << " , " << meta_data.entity_rank_names()[ side.entity_rank() ];
-    msg << "[" << side.identifier() << "]" ;
-    msg << " , local_side_id = " << local_side_id << " ) FAILED: " ;
-    if ( NULL == elem_top ) {
-      msg << " Element has no defined topology" ;
-    }
-    else {
-      msg << " Unsupported local_side_id" ;
-    }
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( elem_top == NULL,
+                   "For Element[" << elem.identifier() << "], element has no defined topology");
+
+  ThrowErrorMsgIf( local_side_id < 0 || static_cast<int>(side_count) <= local_side_id,
+    "For Element[" << elem.identifier() << "], " <<
+    "side: " << print_entity_key(side) << ", " <<
+    "local_side_id = " << local_side_id <<
+    " ; unsupported local_side_id");
 
   const CellTopologyData * const side_top =
     is_side ? elem_top->side[ local_side_id ].topology
@@ -245,67 +189,66 @@ bool element_side_polarity( const Entity & elem ,
   return good ;
 }
 
+//----------------------------------------------------------------------
 
-int element_local_side_id( const Entity & elem ,
-                           const CellTopologyData * side_topology,
-                           const std::vector<Entity*>& side_nodes )
+int get_entity_subcell_id( const Entity & entity ,
+                           const EntityRank subcell_rank,
+                           const CellTopologyData * subcell_topology,
+                           const std::vector<Entity*>& subcell_nodes )
 {
   const int INVALID_SIDE = -1;
 
-  unsigned num_nodes = side_topology->node_count;
+  unsigned num_nodes = subcell_topology->node_count;
 
-  if (num_nodes != side_nodes.size()) {
+  if (num_nodes != subcell_nodes.size()) {
     return INVALID_SIDE;
   }
 
   // get topology of elem
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData* elem_topology = get_cell_topology(elem);
+  const CellTopologyData* entity_topology = get_cell_topology(entity);
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData* elem_topology = fem::get_cell_topology(elem).getCellTopologyData();
+  const CellTopologyData* entity_topology = fem::get_cell_topology(entity).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  if (elem_topology == NULL) {
+  if (entity_topology == NULL) {
     return INVALID_SIDE;
   }
 
-  // get nodal relations for elem
-  PairIterRelation relations = elem.relations(fem::NODE_RANK);
+  // get nodal relations for entity
+  PairIterRelation relations = entity.relations(fem::NODE_RANK);
 
-  const unsigned subcell_rank = elem_topology->dimension - 1;
+  const int num_permutations = subcell_topology->permutation_count;
 
-  const int num_permutations = side_topology->permutation_count;
+  // Iterate over the subcells of entity...
+  for (unsigned local_subcell_ordinal = 0;
+      local_subcell_ordinal < entity_topology->subcell_count[subcell_rank];
+      ++local_subcell_ordinal) {
 
+    // get topological data for this subcell
+    const CellTopologyData* curr_subcell_topology =
+      entity_topology->subcell[subcell_rank][local_subcell_ordinal].topology;
 
-  // Iterate over the subcells of elem...
-  for (unsigned local_side_ordinal = 0;
-       local_side_ordinal < elem_topology->subcell_count[subcell_rank];
-       ++local_side_ordinal) {
+    // If topologies are not the same, there is no way the subcells are the same
+    if (subcell_topology == curr_subcell_topology) {
 
-    // get topological data for this side
-    const CellTopologyData* curr_side_topology =
-      elem_topology->subcell[subcell_rank][local_side_ordinal].topology;
+      const unsigned* const subcell_node_map = entity_topology->subcell[subcell_rank][local_subcell_ordinal].node;
 
-    // If topologies are not the same, there is no way the sides are the same
-    if (side_topology == curr_side_topology) {
-
-      const unsigned* const side_node_map = elem_topology->side[local_side_ordinal].node;
-
-      // Taking all positive permutations into account, check if this side
-      // has the same nodes as the side_nodes argument. Note that this
+      // Taking all positive permutations into account, check if this subcell
+      // has the same nodes as the subcell_nodes argument. Note that this
       // implementation preserves the node-order so that we can take
       // entity-orientation into account.
       for (int p = 0; p < num_permutations; ++p) {
 
-        if (curr_side_topology->permutation[p].polarity ==
+        if (curr_subcell_topology->permutation[p].polarity ==
             CELL_PERMUTATION_POLARITY_POSITIVE) {
 
           const unsigned * const perm_node =
-            curr_side_topology->permutation[p].node ;
+            curr_subcell_topology->permutation[p].node ;
 
           bool all_match = true;
           for (unsigned j = 0 ; j < num_nodes; ++j ) {
-            if (side_nodes[j] !=
-                relations[side_node_map[perm_node[j]]].entity()) {
+            if (subcell_nodes[j] !=
+                relations[subcell_node_map[perm_node[j]]].entity()) {
               all_match = false;
               break;
             }
@@ -313,7 +256,7 @@ int element_local_side_id( const Entity & elem ,
 
           // all nodes were the same, we have a match
           if ( all_match ) {
-            return local_side_ordinal ;
+            return local_subcell_ordinal ;
           }
         }
       }
@@ -325,67 +268,53 @@ int element_local_side_id( const Entity & elem ,
 
 //----------------------------------------------------------------------
 
-const CellTopologyData * get_elem_side_nodes( const Entity & elem,
-                          RelationIdentifier side_ordinal,
-                          EntityVector & side_nodes
-                        )
+const CellTopologyData * get_subcell_nodes(const Entity & entity ,
+                                           EntityRank subcell_rank ,
+                                           unsigned subcell_identifier ,
+                                           EntityVector & subcell_nodes)
 {
-  side_nodes.clear();
+  subcell_nodes.clear();
 
-  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
-  if (elem_top == NULL) {
-    return NULL;
-  }
+  // get cell topology
+  const CellTopologyData* celltopology = fem::get_cell_topology(entity).getCellTopologyData();
 
-  const CellTopologyData * const side_top = elem_top->side[ side_ordinal ].topology;
-  if (side_top == NULL) {
-    return NULL;
-  }
-
-  const unsigned * const side_node_map = elem_top->side[ side_ordinal ].node ;
-
-  PairIterRelation relations = elem.relations( fem::NODE_RANK );
-
-  // Find positive polarity permutation that starts with lowest entity id:
-  const int num_permutations = side_top->permutation_count;
-  int lowest_entity_id_permutation = 0;
-  for (int p = 0; p < num_permutations; ++p) {
-
-    if (side_top->permutation[p].polarity ==
-        CELL_PERMUTATION_POLARITY_POSITIVE) {
-
-      const unsigned * const pot_lowest_perm_node =
-        side_top->permutation[p].node ;
-
-      const unsigned * const curr_lowest_perm_node =
-        side_top->permutation[lowest_entity_id_permutation].node;
-
-      unsigned first_node_index = 0;
-
-      unsigned current_lowest_entity_id =
-        relations[side_node_map[curr_lowest_perm_node[first_node_index]]].entity()->identifier();
-
-      unsigned potential_lowest_entity_id =
-        relations[side_node_map[pot_lowest_perm_node[first_node_index]]].entity()->identifier();
-
-      if ( potential_lowest_entity_id < current_lowest_entity_id ) {
-        lowest_entity_id_permutation = p;
-      }
+  //error checking
+  {
+    //no celltopology defined
+    if (celltopology == NULL) {
+      return NULL;
     }
+
+    // valid ranks fall within the dimension of the cell topology
+    const bool bad_rank = subcell_rank >= celltopology->dimension;
+    ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension\n");
+
+    // subcell_identifier must be less than the subcell count
+    const bool bad_id = subcell_identifier >= celltopology->subcell_count[subcell_rank];
+    ThrowInvalidArgMsgIf( bad_id,   "subcell_id is >= subcell_count\n");
   }
 
-  const unsigned * const perm_node =
-    side_top->permutation[lowest_entity_id_permutation].node;
+  // Get the cell topology of the subcell
+  const CellTopologyData * subcell_topology =
+    celltopology->subcell[subcell_rank][subcell_identifier].topology;
 
-  side_nodes.reserve(side_top->node_count);
-  for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
-    Entity * node = relations[side_node_map[perm_node[i]]].entity();
-    side_nodes.push_back(node);
+  const int num_nodes_in_subcell = subcell_topology->node_count;
+
+  // For the subcell, get it's local nodes ids
+  const unsigned* subcell_node_local_ids =
+    celltopology->subcell[subcell_rank][subcell_identifier].node;
+
+  PairIterRelation node_relations = entity.relations(fem::NODE_RANK);
+
+  subcell_nodes.reserve(num_nodes_in_subcell);
+
+  for (int i = 0; i < num_nodes_in_subcell; ++i ) {
+    subcell_nodes.push_back( node_relations[subcell_node_local_ids[i]].entity() );
   }
 
-  return side_top;
-
+  return subcell_topology;
 }
+
+
 }// namespace mesh
 }// namespace stk
-
