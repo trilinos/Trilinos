@@ -16,30 +16,20 @@
 /*!
     \file Zoltan2_Objective.hpp
     \brief The Objective base class and derived classes.
+*/
+
+namespace Z2
+{
+
+/*! Z2::Objective
+    \brief Objective is the base class for the problem descriptions.
 
   The Objective is the problem that Zoltan2 has to solve.  It has an
-  ObjectSource which is a graph, matrix, or geometry.  It may have
+  InputAdapter which is a graph, matrix, or geometry.  It may have
   vertex and/or edge weights.  It may have constraints such as
   fixed vertices.  (TODO: Should we create a Constraints class to
   represent constraints like this?)  It could also have a Result to
   refine rather than starting from scratch.
-
-  A PartitioningObjective specifies number of parts and part sizes.
-  A ColoringObjective specifies (TODO).
-  An OrderingObjective specifies (TODO).
-  A FineGrainMatrixObjective specifies (TODO).
-*/
-
-namespace Zoltan2
-{
-
-class ObjectSource;
-class Result;
-
-/*! Zoltan2::Objective
-    \brief Objective is the base class for the problem descriptions.
-
-  Detailed description of Objective.
 */
 
 template<typename Scalar, typename LNO , typename GNO, typename AppGID>
@@ -47,9 +37,7 @@ template<typename Scalar, typename LNO , typename GNO, typename AppGID>
 
 private:
 
-  // TODO some of these are RCPs to objects created elsewhere
-
-  ObjectSource object;         /*!< The objects to be partitioned, colored, etc. */
+  InputAdapter object;         /*!< The objects to be partitioned, colored, etc. */
   Result in_result;            /*!< An optional starting solution. */
   vector<Scalar> objWeights;   /*!< Optional weighting of objects. */
   vector<Scalar> edgeWeights;  /*!< Optional weighting of edges. */
@@ -77,7 +65,6 @@ public:
   Objective &operator=(const Objective &o){
   }
 
-  // TODO virtual set/get problem components
 };
 
 /*! Zoltan2::PartitioningObjective
