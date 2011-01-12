@@ -110,8 +110,10 @@ Teko::ModifiableLinearOp readOp(Epetra_Comm & Comm,const std::string & fileName)
    if(finfo==0) {
       output = Thyra::nonconstEpetraLinearOp(Teuchos::rcp(crsMat));
    }
-   else
+   else {
+      delete crsMat;
       TEUCHOS_ASSERT(false);
+   }
 
    return output;
 }

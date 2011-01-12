@@ -61,8 +61,6 @@ MLPreconditionerState::constructMLPreconditioner(const Teuchos::ParameterList & 
    for(std::size_t i=0;i<coarseningParams.size();i++)
       cpls[i] = *coarseningParams[i];
  
-   std::cout << "diagops.size() = " << diagonalOps_.size() << std::endl;
-   std::cout << "cps.size() = " << cpls.size() << std::endl;
    mlPreconditioner_ = rcp(new ML_Epetra::MultiLevelPreconditioner(&*mlOp_, mainList, &diagonalOps_[0], &cpls[0], diagonalOps_.size()));
 
    return mlPreconditioner_;

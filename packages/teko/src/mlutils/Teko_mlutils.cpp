@@ -147,6 +147,13 @@ Teuchos::RCP<Teko::InverseFactory> ML_Gen_Init_Teko_Prec(const std::string smoot
 }
 
 extern "C" 
+void ML_Destroy_Smoother_Teko(void * data) 
+{
+   Teko::mlutils::SmootherData * sData = (Teko::mlutils::SmootherData*) data;
+   delete sData;
+}
+
+extern "C" 
 int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes,const Teuchos::RCP<const Teuchos::ParameterList> & tekoPL,
                          const Teuchos::RCP<const Teko::InverseLibrary> & invLib_in,const std::string & inverse, bool isBlocked)
 {
@@ -192,7 +199,10 @@ int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes,const Te
    // get an epetra operator wrapper
    data->smootherOperator = Teuchos::rcp(new Teko::Epetra::EpetraOperatorWrapper(smootherOp));
 
-   return ML_Set_Smoother(ml,level, pre_or_post, (void*) data, Teko::mlutils::smoother, NULL);
+   int ret_val = ML_Set_Smoother(ml,level, pre_or_post, (void*) data, Teko::mlutils::smoother, NULL);
+   ml->post_smoother[level].data_destroy = ML_Destroy_Smoother_Teko;
+ 
+   return ret_val;
 } 
 
 }
