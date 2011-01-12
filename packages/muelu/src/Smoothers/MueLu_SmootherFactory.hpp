@@ -178,7 +178,7 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
     }
 
     //! Get smoother prototypes.
-    void GetSmootherPrototypes(RCP<SmootherPrototype> preProto, RCP<SmootherPrototype> postProto)
+    void GetSmootherPrototypes(RCP<SmootherPrototype> &preProto, RCP<SmootherPrototype> &postProto)
     {
       preProto = PreSmootherPrototype_;
       postProto = PostSmootherPrototype_;
