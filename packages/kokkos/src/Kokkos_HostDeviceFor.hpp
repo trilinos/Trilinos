@@ -47,28 +47,36 @@ namespace Kokkos {
 
 class HostDevice ;
 
-template< class FunctorType , class DeviceType > class ParallelFor ;
+template< class FunctorType , class DeviceType > struct ParallelFor ;
 
 template< class FunctorType >
-void run_functor_on_tpi( TPI_Work * work )
-{
-  const FunctorType & functor = *((const FunctorType *) work->info );
+struct ParallelFor< FunctorType , HostDevice > {
 
-  const int work_count = functor.work_count();
-  const int work_inc   = ( work_count + work->count - 1 ) / work->count ;
-  const int work_begin = work_inc * work->rank ;
-  const int work_end   = std::max( work_begin + work_inc , work_count );
+  static void run_functor_on_tpi( TPI_Work * work )
+  {
+    const FunctorType & functor = *((const FunctorType *) work->info );
 
-  for ( int iwork = work_begin ; iwork < work_end ; ++iwork ) {
-    functor( iwork );
+    const int work_count = functor.work_count();
+    const int work_inc   = ( work_count + work->count - 1 ) / work->count ;
+    const int work_begin = work_inc * work->rank ;
+    const int work_end   = std::max( work_begin + work_inc , work_count );
+
+    for ( int iwork = work_begin ; iwork < work_end ; ++iwork ) {
+      functor( iwork );
+    }
   }
-}
+
+  static void run( const FunctorType & functor )
+  {
+    TPI_Run_threads( & run_functor_on_tpi , & functor , 0 );
+  }
+};
 
 template< class FunctorType >
 inline
 void parallel_for( const FunctorType & functor )
 {
-  TPI_Run_threads( & run_functor_on_tpi<FunctorType> , & functor , 0 );
+  ParallelFor< FunctorType , typename FunctorType::device_type >::run( functor );
 };
 
 }

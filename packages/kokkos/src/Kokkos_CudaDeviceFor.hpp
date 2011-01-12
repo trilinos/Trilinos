@@ -44,9 +44,11 @@ namespace Kokkos {
 
 class CudaDevice ;
 
+template< class FunctorType , class DeviceType > struct ParallelFor ;
+
 template< class FunctorType >
 __global__
-void run_functor_on_cuda( const FunctorType functor )
+static void run_functor_on_cuda( const FunctorType functor )
 {
   const unsigned int work_count  = functor.work_count();
   const unsigned int work_stride = blockDim.x * gridDim.x ;
@@ -57,16 +59,27 @@ void run_functor_on_cuda( const FunctorType functor )
   }
 }
 
+// Partial specialization requires a class:
+
+template< class FunctorType >
+struct ParallelFor< FunctorType , CudaDevice > {
+
+  static void run( const FunctorType & functor )
+  {
+    unsigned int threadCount = 256 ;
+    unsigned int blockCount  = ( functor.work_count() + threadCount - 1 ) / threadCount ;
+
+    run_functor_on_cuda<<< blockCount , threadCount >>>( functor );
+
+    cudaThreadSynchronize();
+  }
+};
+
 template< class FunctorType >
 inline
 void parallel_for( const FunctorType & functor )
 {
-  unsigned int threadCount = 256 ;
-  unsigned int blockCount  = ( functor.work_count() + threadCount - 1 ) / threadCount ;
-
-  run_functor_on_cuda<<< blockCount , threadCount >>>( functor );
-
-  cudaThreadSynchronize();
+  ParallelFor< FunctorType , typename FunctorType::device_type >::run( functor );
 }
 
 }
