@@ -65,6 +65,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_BasisFactory.hpp
   Stokhos_BasisFactoryImp.hpp
+  Stokhos_SparseArray.hpp
   Stokhos_Sparse3Tensor.hpp
   Stokhos_Sparse3TensorImp.hpp
   Stokhos_Dense3Tensor.hpp

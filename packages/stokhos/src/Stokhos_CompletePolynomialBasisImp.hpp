@@ -172,6 +172,8 @@ computeTripleProductTensorOld(ordinal_type order) const
     }
   }
 
+  Cijk->fillComplete();
+
   return Cijk;
 }
 
@@ -334,6 +336,8 @@ computeTripleProductTensorNew(ordinal_type order) const
 
     cnt++;
   }
+
+  Cijk->fillComplete();
 
   return Cijk;
 }

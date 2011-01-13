@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -140,6 +138,7 @@ namespace Sparse3TensorUnitTest {
 	}
       }
     }
+    Cijk_quad->fillComplete();
 
     // Check number of nonzeros
     int nnz = setup.Cijk->num_entries();
@@ -179,7 +178,32 @@ namespace Sparse3TensorUnitTest {
       }
     }
   }
-  
+
+  TEUCHOS_UNIT_TEST( Stokhos_Sparse3Tensor, GetValue ) {
+    success = true;
+    bool s;
+    double c, c_true;
+
+    // Check getValue() for a few different indices
+
+    c = setup.Cijk->getValue(0, 0, 0);
+    c_true = 1.0;
+    s = Stokhos::compareValues(c, "c", c_true, "c_true", setup.rtol, setup.atol,
+			       out);
+    success = success && s;
+
+    c = setup.Cijk->getValue(9, 25, 4);
+    c_true = 0.04;
+    s = Stokhos::compareValues(c, "c", c_true, "c_true", setup.rtol, setup.atol,
+			       out);
+    success = success && s;
+
+    c = setup.Cijk->getValue(8, 25, 4);
+    c_true = 0.0;
+    s = Stokhos::compareValues(c, "c", c_true, "c_true", setup.rtol, setup.atol,
+			       out);
+    success = success && s;
+  }
 
 }
 
