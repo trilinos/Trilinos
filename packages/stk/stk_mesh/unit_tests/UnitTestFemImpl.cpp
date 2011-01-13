@@ -29,14 +29,11 @@ namespace {
  */
 class TestFixture {
 public:
-  typedef stk::mesh::MetaData           BaseMetaData ;
-  typedef stk::mesh::DefaultFEM         TopoMetaData ;
-
-  BaseMetaData m_meta_data ;
-  TopoMetaData m_fem ;
+  stk::mesh::MetaData m_meta_data ;
+  stk::mesh::DefaultFEM m_fem ;
 
   TestFixture(unsigned spatial_dimension)
-    : m_meta_data(stk::mesh::fem::entity_rank_names(spatial_dimension)),
+    : m_meta_data(),
       m_fem(m_meta_data, spatial_dimension)
   {}
 

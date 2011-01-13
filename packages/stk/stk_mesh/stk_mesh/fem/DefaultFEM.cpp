@@ -40,6 +40,10 @@ DefaultFEM::DefaultFEM(
     m_cellTopologyPartEntityRankMap(),
     m_partCellTopologyVector()
 {
+  if (m_metaData.entity_rank_names().empty()) {
+    m_metaData.set_entity_rank_names(fem::entity_rank_names(spatial_dimension));
+  }
+
   set_fem_interface(meta_data, this);
 
   initialize(spatial_dimension);
