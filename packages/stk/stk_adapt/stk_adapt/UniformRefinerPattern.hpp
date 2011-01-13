@@ -1941,6 +1941,7 @@ namespace stk {
                 if (part->name()[0] == '{')
                   continue;
 
+
                 bool doThisPart = (block_names.size() == 0);
                 for (unsigned ib = 0; ib < block_names.size(); ib++)
                   {
@@ -1976,10 +1977,14 @@ namespace stk {
                             stk::io::put_io_part_attribute(*block_to);
                           }
 
-                        //std::cout << "setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
+                        if (0) std::cout << "tmp setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
 
-                        m_fromParts.push_back(part);
-                        m_toParts.push_back(block_to);
+                        if (!(part->name() == m_oldElementsPartName+toString(m_primaryEntityRank)))
+                          {
+                            if (0) std::cout << "tmp setNeededParts:: fromPart = " << part->name() << " toPart = " << block_to->name() << std::endl;
+                            m_fromParts.push_back(part);
+                            m_toParts.push_back(block_to);
+                          }
                       }
                       break;
                     }
@@ -2006,8 +2011,8 @@ namespace stk {
 
       void change_entity_parts(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement)
       {
-        std::vector<stk::mesh::Part*> add_parts(1);
-        std::vector<stk::mesh::Part*> remove_parts;
+        static std::vector<stk::mesh::Part*> add_parts(1);
+        static std::vector<stk::mesh::Part*> remove_parts;
 
         bool found = false;
         for (unsigned i_part = 0; i_part < m_fromParts.size(); i_part++)

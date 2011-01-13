@@ -37,8 +37,8 @@ namespace stk {
 
         m_bp.resize(3);
         m_bp[0] = new UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,    8, SierraPort > (eMesh, block_names);
-        m_bp[1] = new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort > (eMesh, block_names);
-        m_bp[2] = new UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort > (eMesh, block_names);
+        m_bp[1] = new UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort > (eMesh, block_names);
+        m_bp[2] = new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort > (eMesh, block_names);
 
 #if FACE_BREAKER_HETERO_3D
         

@@ -99,7 +99,7 @@ namespace stk {
       removeOldElements(EntityRank rank, UniformRefinerPatternBase* breakPattern );
 
       void 
-      addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern);
+      addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);
 
       void 
       renameNewParts(EntityRank rank, UniformRefinerPatternBase* breakPattern);
