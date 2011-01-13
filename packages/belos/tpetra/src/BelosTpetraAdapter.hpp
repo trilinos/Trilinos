@@ -57,10 +57,10 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_DefaultSerialComm.hpp>
 
-#include "BelosConfigDefs.hpp"
-#include "BelosTypes.hpp"
-#include "BelosMultiVecTraits.hpp"
-#include "BelosOperatorTraits.hpp"
+#include <BelosConfigDefs.hpp>
+#include <BelosTypes.hpp>
+#include <BelosMultiVecTraits.hpp>
+#include <BelosOperatorTraits.hpp>
 #include <Kokkos_NodeAPIConfigDefs.hpp>
 
 #ifdef HAVE_BELOS_TSQR
@@ -102,7 +102,7 @@ namespace Belos {
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     { 
       KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
-      TEST_FOR_EXCEPTION(index.size() == 0,std::runtime_error,
+      TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneCopy(mv,index): numvecs must be greater than zero.");
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::runtime_error,

@@ -42,14 +42,21 @@
 #ifndef BELOS_MULTI_VEC_TRAITS_HPP
 #define BELOS_MULTI_VEC_TRAITS_HPP
 
-/*! \file BelosMultiVecTraits.hpp
-    \brief Virtual base class which defines basic traits for the multivector type
-*/
+/// \file BelosMultiVecTraits.hpp
+/// \brief Declaration of basic traits for the multivector type
+///
+/// Belos::MultiVecTraits declares basic traits for the multivector
+/// type MV used in Belos's orthogonalizations and solvers.  A
+/// specialization of MultiVecTraits that defines all the traits must
+/// be made for each specific multivector type.  Here, we only provide
+/// default definitions that fail at compile time if no specialization
+/// of MultiVecTraits exists for the given combination of scalar type
+/// (ScalarType) and multivector type (MV).
 
+#include "BelosTypes.hpp"
 #include "Teuchos_Range1D.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "BelosTypes.hpp"
 
 namespace Belos {
 
@@ -173,6 +180,22 @@ namespace Belos {
     ///
     /// Knowing whether \c mv has constant stride is useful for
     /// certain orthogonalization methods, for example.
+    ///
+    /// \note (mfh 13 Jan 2011) This is really a hack for TSQR, which
+    /// currently can only process multivectors with constant stride.
+    /// Fixing this can be done in a few different ways:
+    /// - Copy the entire multivector into a constant-stride
+    ///   multivector (performance penalty for copying in and out,
+    ///   storage penalty of one multivector, but easy to implement)
+    /// - Copying "cache blocks" in and out of constant-stride storage
+    ///   (some performance penalty, storage penalty << one
+    ///   multivector, requires a new variant of TSQR::SequentialTsqr
+    ///   and perhaps a restructuring of the TSQR has-a hierarchy)
+    /// - Writing an implementation / back-end of TSQR::Combine that
+    ///   can handle cache blocks not of constant stride.  Like the
+    ///   above, a bit more work, but without the copy in/out 
+    ///   performance penalty for cache blocks, and doesn't require
+    ///   an extra cache block's worth of storage.
     static bool HasConstantStride( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return false; }
 

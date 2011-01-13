@@ -29,11 +29,17 @@
 #ifndef ANASAZI_MULTI_VEC_TRAITS_HPP
 #define ANASAZI_MULTI_VEC_TRAITS_HPP
 
-/*! \file AnasaziMultiVecTraits.hpp
-    \brief Virtual base class which defines basic traits for the multivector type
-*/
+/// \file AnasaziMultiVecTraits.hpp
+/// \brief Declaration of basic traits for the multivector type
+///
+/// Anasazi::MultiVecTraits declares basic traits for the multivector
+/// type MV used in Anasazi's orthogonalizations and solvers.  A
+/// specialization of MultiVecTraits that defines all the traits must
+/// be made for each specific multivector type.  Here, we only provide
+/// default definitions that fail at compile time if no specialization
+/// of MultiVecTraits exists for the given combination of scalar type
+/// (ScalarType) and multivector type (MV).
 
-#include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "Teuchos_Range1D.hpp"
 #include "Teuchos_RCP.hpp"

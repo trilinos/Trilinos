@@ -359,6 +359,7 @@ namespace Anasazi {
     raiseReorthogFault (const std::vector<MagnitudeType>& normsAfterFirstPass,
 			const std::vector<MagnitudeType>& normsAfterSecondPass,
 			const std::vector<int>& faultIndices);
+
     /// Try to return a boolean parameter with the given key.  If no
     /// parameter with that key exists, return the value of the
     /// corresponding default parameter (using getDefaultParameters(),
@@ -717,8 +718,8 @@ namespace Anasazi {
 	  std::vector<int> nullSpaceIndices (nullSpaceNumCols);
 	  for (int j = 0; j < nullSpaceNumCols; ++j)
 	    nullSpaceIndices[j] = j + rank;
-	  
-	  RCP< MV > Q_null = MVT::CloneViewNonConst (*Q_view, nullSpaceIndices);
+
+	  RCP<MV> Q_null = MVT::CloneViewNonConst (*Q_view, nullSpaceIndices);
 	  MVT::MvRandom (*Q_null); // Fill Q_null with random data
 
 	  // Project the random data against the column space basis of
@@ -728,8 +729,8 @@ namespace Anasazi {
 	  // already orthogonalized the column space basis of X nearly
 	  // to machine precision via a QR factorization (TSQR) with
 	  // accuracy comparable to Householder QR.
-	  RCP< const MV > Q_col;
-	  RCP< MV > X_col;
+	  RCP<const MV> Q_col;
+	  RCP<MV> X_col;
 	  {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 	    Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
@@ -999,7 +1000,7 @@ namespace Anasazi {
     // NOTE (mfh 11 Jan 2011) We only increase the number of columsn
     // in Q_, never decrease.  This is OK for typical uses of TSQR,
     // but you might prefer different behavior in some cases.
-    if (Teuchos::is_null(Q_) || numCols < MVT::GetNumberVecs(*Q_) ||
+    if (Q_.is_null() || numCols > MVT::GetNumberVecs(*Q_) ||
 	MVT::GetVecLength(X) != MVT::GetVecLength(*Q_))
       Q_ = MVT::Clone (X, numCols);
 
@@ -1756,7 +1757,7 @@ namespace Anasazi {
     params->set ("reorthogonalizeBlocks", defaultReorthogonalizeBlocks,
 		 "Whether to do block reorthogonalization.");
     // This parameter corresponds to the "blk_tol_" parameter in
-    // DGKSOrthoManager.  We choose the same default value.
+    // Belos' DGKSOrthoManager.  We choose the same default value.
     const MagnitudeType defaultBlockReorthogThreshold = 
       MagnitudeType(10) * SCTM::squareroot (SCTM::eps());
     params->set ("blockReorthogThreshold", defaultBlockReorthogThreshold, 
@@ -1764,7 +1765,7 @@ namespace Anasazi {
 		 "any column within a block decreases by this much or "
 		 "more after orthogonalization, we reorthogonalize.");
     // This parameter corresponds to the "sing_tol_" parameter in
-    // DGKSOrthoManager.  We choose the same default value.
+    // Belos' DGKSOrthoManager.  We choose the same default value.
     const MagnitudeType defaultRelativeRankTolerance = 
       MagnitudeType(10) * SCTM::eps();
     // If the relative rank tolerance is zero, then we will always
@@ -1786,15 +1787,3 @@ namespace Anasazi {
 } // namespace Anasazi
 
 #endif // __AnasaziTsqrOrthoManagerImpl_hpp
-
-
-
-
-
-
-
-
-
-
-
-

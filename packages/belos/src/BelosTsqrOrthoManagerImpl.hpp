@@ -342,7 +342,7 @@ namespace Belos {
 
     //! Configuration parameters
     Teuchos::RCP<const Teuchos::ParameterList> params_;
-    //! Label for timers
+    //! Label for timers (if timers are used)
     std::string label_;
     //! Interface to TSQR implementation
     tsqr_adaptor_ptr tsqrAdaptor_;
@@ -754,8 +754,8 @@ namespace Belos {
 	  std::vector<int> nullSpaceIndices (nullSpaceNumCols);
 	  for (int j = 0; j < nullSpaceNumCols; ++j)
 	    nullSpaceIndices[j] = j + rank;
-	  
-	  RCP< MV > Q_null = MVT::CloneViewNonConst (*Q_view, nullSpaceIndices);
+
+	  RCP<MV> Q_null = MVT::CloneViewNonConst (*Q_view, nullSpaceIndices);
 	  MVT::MvRandom (*Q_null); // Fill Q_null with random data
 
 	  // Project the random data against the column space basis of
@@ -765,8 +765,8 @@ namespace Belos {
 	  // already orthogonalized the column space basis of X nearly
 	  // to machine precision via a QR factorization (TSQR) with
 	  // accuracy comparable to Householder QR.
-	  RCP< const MV > Q_col;
-	  RCP< MV > X_col;
+	  RCP<const MV> Q_col;
+	  RCP<MV> X_col;
 	  {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 	    Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
@@ -852,7 +852,6 @@ namespace Belos {
 
       return rank;
     }
-
   };
 
 
@@ -860,7 +859,7 @@ namespace Belos {
   TsqrOrthoManagerImpl<ScalarType, MV>::
   TsqrOrthoManagerImpl (const Teuchos::RCP<const Teuchos::ParameterList>& params,
 			const std::string& label) :
-    params_ (params),
+    params_ (params.is_null() ? getDefaultParameters() : params),
     label_ (label),
     tsqrAdaptor_ (Teuchos::null),   // Initialized on demand
     Q_ (Teuchos::null),             // Scratch space for normalize()
@@ -1037,7 +1036,7 @@ namespace Belos {
     // NOTE (mfh 11 Jan 2011) We only increase the number of columsn
     // in Q_, never decrease.  This is OK for typical uses of TSQR,
     // but you might prefer different behavior in some cases.
-    if (Teuchos::is_null(Q_) || numCols < MVT::GetNumberVecs(*Q_) ||
+    if (Q_.is_null() || numCols > MVT::GetNumberVecs(*Q_) ||
 	MVT::GetVecLength(X) != MVT::GetVecLength(*Q_))
       Q_ = MVT::Clone (X, numCols);
 

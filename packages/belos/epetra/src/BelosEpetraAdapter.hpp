@@ -260,61 +260,296 @@ namespace Belos {
   class MultiVecTraits<double, Epetra_MultiVector>
   {
   public:
-    ///
-    static Teuchos::RCP<Epetra_MultiVector> Clone( const Epetra_MultiVector& mv, const int numvecs )
-    { return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs, false) ); }
-    ///
-    static Teuchos::RCP<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv )
-    { return Teuchos::rcp( new Epetra_MultiVector( mv ) ); }
-    ///
-    static Teuchos::RCP<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, const std::vector<int>& index )
+
+    static Teuchos::RCP<Epetra_MultiVector> 
+    Clone (const Epetra_MultiVector& mv, const int numVecs)
     { 
-      std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
-      return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, &tmp_index[0], index.size()) ); 
+      const bool validNumVecs = (numVecs > 0 && numVecs <= GetNumberVecs(mv));
+      TEST_FOR_EXCEPTION(! validNumVecs, std::invalid_argument,
+			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+			 "Clone(mv, numVecs = " << numVecs << "): numVecs must"
+			 " be positive and no greater than the number of vecto"
+			 "rs " << GetNumberVecs(mv) << " in mv.");
+      // FIXME (mfh 13 Jan 2011) Anasazi currently lets Epetra fill in
+      // the entries of the returned multivector with zeros, but Belos
+      // does not.  We retain this different behavior for now, but the
+      // two versions will need to be reconciled.
+      return Teuchos::rcp (new Epetra_MultiVector (mv.Map(), numVecs, false)); 
+    }
+
+    static Teuchos::RCP<Epetra_MultiVector> 
+    CloneCopy (const Epetra_MultiVector& mv)
+    { 
+      return Teuchos::rcp (new Epetra_MultiVector (mv)); 
+    }
+
+    static Teuchos::RCP<Epetra_MultiVector> 
+    CloneCopy (const Epetra_MultiVector& mv, const std::vector<int>& index)
+    { 
+      const int inNumVecs = GetNumberVecs (mv);
+      const int outNumVecs = index.size();
+
+      // Simple, inexpensive tests of the index vector.
+      TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+			 "CloneCopy(mv, index = {}): At least one vector must be"
+			 " cloned from mv.");
+      if (outNumVecs > inNumVecs)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+	    "CloneCopy(mv, index = {";
+	  for (int k = 0; k < outNumVecs - 1; ++k)
+	    os << index[k] << ", ";
+	  os << index[outNumVecs-1] << "}): There are " << outNumVecs 
+	     << " indices to copy, but only " << inNumVecs << " columns of mv.";
+	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	}
+#ifdef TEUCHOS_DEBUG
+      // In debug mode, we perform more expensive tests of the index
+      // vector, to ensure all the elements are in range.
+      // Dereferencing the iterator is valid because index has length
+      // > 0.
+      const int minIndex = *std::min_element (index.begin(), index.end());
+      const int maxIndex = *std::max_element (index.begin(), index.end());
+
+      if (minIndex < 0)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+	    "CloneCopy(mv, index = {";
+	  for (int k = 0; k < outNumVecs - 1; ++k)
+	    os << index[k] << ", ";
+	  os << index[outNumVecs-1] << "}): Indices must be nonnegative, but "
+	    "the smallest index " << minIndex << " is negative.";
+	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	}
+      if (maxIndex >= inNumVecs)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+	    "CloneCopy(mv, index = {";
+	  for (int k = 0; k < outNumVecs - 1; ++k)
+	    os << index[k] << ", ";
+	  os << index[outNumVecs-1] << "}): Indices must be strictly less than "
+	    "the number of vectors " << inNumVecs << " in mv; the largest index " 
+	     << maxIndex << " is out of bounds.";
+	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	}
+#endif // TEUCHOS_DEBUG
+      // Cast to nonconst, because Epetra_MultiVector's constructor
+      // wants a nonconst int array argument.  It doesn't actually
+      // change the entries of the array.
+      std::vector<int>& tmpind = const_cast< std::vector<int>& > (index);
+      return Teuchos::rcp (new Epetra_MultiVector (Copy, mv, &tmpind[0], index.size())); 
+      // return Teuchos::rcp (new Epetra_MultiVector (::Copy, mv, &tmpind[0], index.size())); 
     }
 
     static Teuchos::RCP<Epetra_MultiVector> 
     CloneCopy (const Epetra_MultiVector& mv, const Teuchos::Range1D& index)
     { 
-      return Teuchos::rcp (new Epetra_MultiVector(Copy, mv, index.lbound(), index.size()));
+      const int inNumVecs = GetNumberVecs (mv);
+      const int outNumVecs = index.size();
+      const bool validRange = outNumVecs > 0 && index.lbound() >= 0 && 
+	index.ubound() < inNumVecs;
+      if (! validRange)
+	{
+	  std::ostringstream os;
+	  os <<	"Belos::MultiVecTraits<double,Epetra_MultiVector>::Clone(mv,"
+	    "index=[" << index.lbound() << ", " << index.ubound() << "]): ";
+	  TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonempty.");
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonnegative.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= inNumVecs, std::invalid_argument,
+			     os.str() << "Column index range must not exceed "
+			     "number of vectors " << inNumVecs << " in the "
+			     "input multivector.");
+	}
+      return Teuchos::rcp (new Epetra_MultiVector (Copy, mv, index.lbound(), index.size()));
     }
 
-    ///
-    static Teuchos::RCP<Epetra_MultiVector> CloneViewNonConst( Epetra_MultiVector& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Epetra_MultiVector> 
+    CloneViewNonConst (Epetra_MultiVector& mv, const std::vector<int>& index)
     { 
-      std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
-      return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
+      const int inNumVecs = GetNumberVecs (mv);
+      const int outNumVecs = index.size();
+
+      // Simple, inexpensive tests of the index vector.
+      TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+			 "CloneViewNonConst(mv, index = {}): The output view "
+			 "must have at least one column.");
+      if (outNumVecs > inNumVecs)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+	    "CloneViewNonConst(mv, index = {";
+	  for (int k = 0; k < outNumVecs - 1; ++k)
+	    os << index[k] << ", ";
+	  os << index[outNumVecs-1] << "}): There are " << outNumVecs 
+	     << " indices to view, but only " << inNumVecs << " columns of mv.";
+	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	}
+#ifdef TEUCHOS_DEBUG
+      // In debug mode, we perform more expensive tests of the index
+      // vector, to ensure all the elements are in range.
+      // Dereferencing the iterator is valid because index has length
+      // > 0.
+      const int minIndex = *std::min_element (index.begin(), index.end());
+      const int maxIndex = *std::max_element (index.begin(), index.end());
+
+      if (minIndex < 0)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+	    "CloneViewNonConst(mv, index = {";
+	  for (int k = 0; k < outNumVecs - 1; ++k)
+	    os << index[k] << ", ";
+	  os << index[outNumVecs-1] << "}): Indices must be nonnegative, but "
+	    "the smallest index " << minIndex << " is negative.";
+	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	}
+      if (maxIndex >= inNumVecs)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+	    "CloneViewNonConst(mv, index = {";
+	  for (int k = 0; k < outNumVecs - 1; ++k)
+	    os << index[k] << ", ";
+	  os << index[outNumVecs-1] << "}): Indices must be strictly less than "
+	    "the number of vectors " << inNumVecs << " in mv; the largest index " 
+	     << maxIndex << " is out of bounds.";
+	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	}
+#endif // TEUCHOS_DEBUG
+      // Cast to nonconst, because Epetra_MultiVector's constructor
+      // wants a nonconst int array argument.  It doesn't actually
+      // change the entries of the array.
+      std::vector<int>& tmpind = const_cast< std::vector<int>& > (index);
+      return Teuchos::rcp (new Epetra_MultiVector (View, mv, &tmpind[0], index.size()));
     }
 
     static Teuchos::RCP<Epetra_MultiVector> 
     CloneViewNonConst (Epetra_MultiVector& mv, const Teuchos::Range1D& index)
     { 
-      return Teuchos::rcp (new Epetra_MultiVector(View, mv, index.lbound(), index.size()));
+      const bool validRange = index.size() > 0 && 
+	index.lbound() >= 0 && 
+	index.ubound() < mv.NumVectors();
+      if (! validRange)
+	{
+	  std::ostringstream os;
+	  os <<	"Belos::MultiVecTraits<double,Epetra_MultiVector>::CloneView"
+	    "NonConst(mv,index=[" << index.lbound() << ", " << index.ubound() 
+	     << "]): ";
+	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonempty.");
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonnegative.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
+			     std::invalid_argument,
+			     os.str() << "Column index range must not exceed "
+			     "number of vectors " << mv.NumVectors() << " in "
+			     "the input multivector.");
+	}
+      return Teuchos::rcp (new Epetra_MultiVector (View, mv, index.lbound(), index.size()));
     }
 
-    ///
-    static Teuchos::RCP<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const Epetra_MultiVector> 
+    CloneView (const Epetra_MultiVector& mv, const std::vector<int>& index)
     { 
-      std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
-      return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
+      const int inNumVecs = GetNumberVecs (mv);
+      const int outNumVecs = index.size();
+
+      // Simple, inexpensive tests of the index vector.
+      TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+			 "CloneView(mv, index = {}): The output view "
+			 "must have at least one column.");
+      if (outNumVecs > inNumVecs)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+	    "CloneView(mv, index = {";
+	  for (int k = 0; k < outNumVecs - 1; ++k)
+	    os << index[k] << ", ";
+	  os << index[outNumVecs-1] << "}): There are " << outNumVecs 
+	     << " indices to view, but only " << inNumVecs << " columns of mv.";
+	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	}
+#ifdef TEUCHOS_DEBUG
+      // In debug mode, we perform more expensive tests of the index
+      // vector, to ensure all the elements are in range.
+      // Dereferencing the iterator is valid because index has length
+      // > 0.
+      const int minIndex = *std::min_element (index.begin(), index.end());
+      const int maxIndex = *std::max_element (index.begin(), index.end());
+
+      if (minIndex < 0)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+	    "CloneView(mv, index = {";
+	  for (int k = 0; k < outNumVecs - 1; ++k)
+	    os << index[k] << ", ";
+	  os << index[outNumVecs-1] << "}): Indices must be nonnegative, but "
+	    "the smallest index " << minIndex << " is negative.";
+	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	}
+      if (maxIndex >= inNumVecs)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+	    "CloneView(mv, index = {";
+	  for (int k = 0; k < outNumVecs - 1; ++k)
+	    os << index[k] << ", ";
+	  os << index[outNumVecs-1] << "}): Indices must be strictly less than "
+	    "the number of vectors " << inNumVecs << " in mv; the largest index " 
+	     << maxIndex << " is out of bounds.";
+	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	}
+#endif // TEUCHOS_DEBUG
+      // Cast to nonconst, because Epetra_MultiVector's constructor
+      // wants a nonconst int array argument.  It doesn't actually
+      // change the entries of the array.
+      std::vector<int>& tmpind = const_cast< std::vector<int>& > (index);
+      return Teuchos::rcp (new Epetra_MultiVector (View, mv, &tmpind[0], index.size()));
     }
 
     static Teuchos::RCP<Epetra_MultiVector> 
     CloneView (const Epetra_MultiVector& mv, const Teuchos::Range1D& index)
     { 
+      const bool validRange = index.size() > 0 && 
+	index.lbound() >= 0 && 
+	index.ubound() < mv.NumVectors();
+      if (! validRange)
+	{
+	  std::ostringstream os;
+	  os <<	"Belos::MultiVecTraits<double,Epetra_MultiVector>::CloneView"
+	    "(mv,index=[" << index.lbound() << ", " << index.ubound() 
+	     << "]): ";
+	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonempty.");
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Column index range must be nonnegative.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
+			     std::invalid_argument,
+			     os.str() << "Column index range must not exceed "
+			     "number of vectors " << mv.NumVectors() << " in "
+			     "the input multivector.");
+	}
       return Teuchos::rcp (new Epetra_MultiVector(View, mv, index.lbound(), index.size()));
     }
 
-    ///
     static int GetVecLength( const Epetra_MultiVector& mv )
     { return mv.GlobalLength(); }
-    ///
+
     static int GetNumberVecs( const Epetra_MultiVector& mv )
     { return mv.NumVectors(); }
-    ///
+
     static bool HasConstantStride( const Epetra_MultiVector& mv )
     { return mv.ConstantStride(); }
-    ///
+
     static void MvTimesMatAddMv( const double alpha, const Epetra_MultiVector& A, 
 				 const Teuchos::SerialDenseMatrix<int,double>& B, 
 				 const double beta, Epetra_MultiVector& mv )
@@ -326,7 +561,7 @@ namespace Belos {
       TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv call to Multiply() returned a nonzero value.");
     }
-    ///
+
     static void MvAddMv( const double alpha, const Epetra_MultiVector& A, const double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
     { 
       int info = mv.Update( alpha, A, beta, B, 0.0 );
@@ -334,8 +569,6 @@ namespace Belos {
 			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvAddMv call to Update() returned a nonzero value.");
     }
 
-    /*! \brief Scale each element of the vectors in \c mv with \c alpha.
-     */
     static void MvScale ( Epetra_MultiVector& mv, const double alpha )
     { int ret = mv.Scale( alpha );
       TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
@@ -401,26 +634,56 @@ namespace Belos {
 			   "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvNorm call to Norm() returned a nonzero value.");
       }
     }
-    ///
-    static void SetBlock( const Epetra_MultiVector& A, const std::vector<int>& index, Epetra_MultiVector& mv )
+
+    static void 
+    SetBlock (const Epetra_MultiVector& A, 
+	      const std::vector<int>& index, 
+	      Epetra_MultiVector& mv)
     { 
-      // Extract the "numvecs" columns of mv indicated by the index std::vector.
-      int numvecs = index.size(), info = 0;
-      std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
-      Epetra_MultiVector temp_vec(View, mv, &tmp_index[0], numvecs);
-      
-      if ( A.NumVectors() != numvecs ) {
-        std::vector<int> index2( numvecs );
-        for(int i=0; i<numvecs; i++)
-	  index2[i] = i;
-        Epetra_MultiVector A_vec(View, A, &index2[0], numvecs);      
-        info = temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 );
-      }
-      else {
-        info = temp_vec.Update( 1.0, A, 0.0, A, 0.0 );
-      }
-      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
-			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::SetBlock call to Update() returned a nonzero value.");
+      const int inNumVecs = GetNumberVecs (A);
+      const int outNumVecs = index.size();
+
+      // FIXME (mfh 13 Jan 2011) Belos allows A to have more columns
+      // than index.size(), in which case we just take the first
+      // index.size() columns of A.  Anasazi requires that A have the
+      // same number of columns as index.size().  Changing Anasazi's
+      // behavior should not break existing Anasazi solvers, but the
+      // tests need to be done.
+      if (inNumVecs < outNumVecs)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+	    "SetBlock(A, mv, index = {";
+	  if (outNumVecs > 0)
+	    {
+	      for (int k = 0; k < outNumVecs - 1; ++k)
+		os << index[k] << ", ";
+	      os << index[outNumVecs-1];
+	    }
+	  os << "}): A has only " << inNumVecs << " columns, but there are "
+	     << outNumVecs << " indices in the index vector.";
+	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	}
+      // Make a view of the columns of mv indicated by the index std::vector.
+      Teuchos::RCP<Epetra_MultiVector> mv_view = CloneViewNonConst (mv, index);
+
+      // View of columns [0, outNumVecs-1] of the source multivector A.
+      // If A has fewer columns than mv_view, then create a view of
+      // the first outNumVecs columns of A.
+      Teuchos::RCP<const Epetra_MultiVector> A_view;
+      if (outNumVecs == inNumVecs)
+	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
+      else
+	A_view = CloneView (A, Teuchos::Range1D(0, outNumVecs - 1));
+
+      // Assignment calls Epetra_MultiVector::Assign(), which deeply
+      // copies the data directly, ignoring the underlying
+      // Epetra_Map(s).  If A and mv don't have the same data
+      // distribution (Epetra_Map), this may result in incorrect or
+      // undefined behavior.  Epetra_MultiVector::Update() also
+      // ignores the Epetra_Maps, so we might as well just use the
+      // (perhaps slightly cheaper) Assign() method via operator=().
+      *mv_view = *A_view;
     }
 
     static void 
@@ -454,18 +717,19 @@ namespace Belos {
 	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
 
-      // View of the relevant column(s) of the target multivector mv.
-      // We avoid view creation overhead by only creating a view if
-      // the index range is different than [0, (# columns in mv) - 1].
+      // View of columns [index.lbound(), index.ubound()] of the
+      // target multivector mv.  We avoid view creation overhead by
+      // only creating a view if the index range is different than [0,
+      // (# columns in mv) - 1].
       Teuchos::RCP<Epetra_MultiVector> mv_view;
       if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
 	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
       else
 	mv_view = CloneViewNonConst (mv, index);
 
-      // View of the relevant column(s) of the source multivector A.
-      // If A has fewer columns than mv_view, then create a view of
-      // the first index.size() columns of A.
+      // View of columns [0, index.size()-1] of the source multivector
+      // A.  If A has fewer columns than mv_view, then create a view
+      // of the first index.size() columns of A.
       Teuchos::RCP<const Epetra_MultiVector> A_view;
       if (index.size() == numColsA)
 	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
@@ -486,8 +750,8 @@ namespace Belos {
     Assign (const Epetra_MultiVector& A, 
 	    Epetra_MultiVector& mv)
     { 
-      const int numColsA = A.NumVectors();
-      const int numColsMv = mv.NumVectors();
+      const int numColsA = GetNumberVecs (A);
+      const int numColsMv = GetNumberVecs (mv);
       if (numColsA > numColsMv)
 	{
 	  std::ostringstream os;
@@ -499,6 +763,13 @@ namespace Belos {
 			     "'mv' has only " << numColsMv << " columns.");
 	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
+      // View of the first [0, numColsA-1] columns of mv.
+      Teuchos::RCP<Epetra_MultiVector> mv_view;
+      if (numColsMv == numColsA)
+	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
+      else // numColsMv > numColsA
+	mv_view = CloneView (mv, Teuchos::Range1D(0, numColsA - 1));
+      
       // Assignment calls Epetra_MultiVector::Assign(), which deeply
       // copies the data directly, ignoring the underlying
       // Epetra_Map(s).  If A and mv don't have the same data
@@ -506,22 +777,14 @@ namespace Belos {
       // undefined behavior.  Epetra_MultiVector::Update() also
       // ignores the Epetra_Maps, so we might as well just use the
       // (perhaps slightly cheaper) Assign() method via operator=().
-      if (numColsA == numColsMv)
-	mv = A;
-      else
-	{
-	  Teuchos::RCP<Epetra_MultiVector> mv_view = 
-	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
-	  *mv_view = A;
-	}
+      *mv_view = A;
     }
 
-    ///
     static void MvRandom( Epetra_MultiVector& mv )
     { TEST_FOR_EXCEPTION( mv.Random()!=0, EpetraMultiVecFailure, 
 			  "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvRandom() call to Random() returned a nonzero value.");
     }
-    ///
+
     static void MvInit( Epetra_MultiVector& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
     { TEST_FOR_EXCEPTION( mv.PutScalar(alpha)!=0, EpetraMultiVecFailure, 
 			  "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvInit() call to PutScalar() returned a nonzero value.");

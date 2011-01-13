@@ -93,7 +93,7 @@ namespace Anasazi {
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     { 
       KOKKOS_NODE_TRACE("Anasazi::MVT::CloneCopy(MV,ind)")
-      TEST_FOR_EXCEPTION(index.size() == 0,std::runtime_error,
+      TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::Clone(mv,index): numvecs must be greater than zero.");
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::runtime_error,

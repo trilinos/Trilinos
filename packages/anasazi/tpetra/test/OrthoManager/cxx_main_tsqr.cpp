@@ -496,6 +496,7 @@ main (int argc, char *argv[])
       MVT::MvRandom(*X2);
       debugOut << "done." << endl
 	       << "Calling projectAndNormalize(X2,X1)... " << endl;
+
       // The projectAndNormalize() interface also differs between 
       // Anasazi and Belos.  Anasazi's projectAndNormalize() puts 
       // the multivector and the array of multivectors first, and
