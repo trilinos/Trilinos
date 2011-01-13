@@ -255,6 +255,10 @@ namespace stk {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       unsigned num_elem_not_ghost_0 = 0; 
 
+      ///////////////////////////////////////////////////////////
+      ///// Do the mesh coloring step for each type of element
+      ///////////////////////////////////////////////////////////
+
       vector< vector< ColorerSetType > > elementColorsByType = vector < vector< ColorerSetType > > (ranks.size());
 
       {
@@ -278,13 +282,31 @@ namespace stk {
 
                   vector< ColorerSetType >& elementColors = meshColorerThisTypeOnly.getElementColors();
 
+                  if (1)
+                    {
+                      int nel = 0;
+                      for (unsigned ii = 0; ii < elementColors.size(); ii++)
+                        {
+                          nel += elementColors[ii].size();
+                        }
+                      std::cout << "tmp irank, number elements in this element type = " << irank << " " << nel << " elementType= " << elementType << std::endl;
+                    }
+
                   elementColorsByType[irank] = elementColors;  // avoid this copy by passing this into the colorer - FIXME
                 }
             }
       }
 
+      ///////////////////////////////////////////////////////////
+      /////  // start top-level ranks
+      ///////////////////////////////////////////////////////////
+
       {   // start top-level ranks
 
+
+        ///////////////////////////////////////////////////////////
+        /////  // node registration step
+        ///////////////////////////////////////////////////////////
 
         {  // node registration step
           EXCEPTWATCH;
@@ -306,7 +328,8 @@ namespace stk {
                   vector<NeededEntityType> needed_entity_ranks;
                   m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
-                  num_elem_not_ghost_0 = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks);
+                  unsigned num_elem_not_ghost_0_incr = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks);
+                  num_elem_not_ghost_0 += num_elem_not_ghost_0_incr;
                 }
             }
 
@@ -314,7 +337,11 @@ namespace stk {
           /**/                                                TRACE_PRINT("UniformRefiner: endRegistration (top-level rank)... ");
         }
 
-        {
+        ///////////////////////////////////////////////////////////
+        /////  Check for remote
+        ///////////////////////////////////////////////////////////
+
+        {   // beginCheckForRemote()
           EXCEPTWATCH;
 
           /**/                                                TRACE_PRINT("UniformRefiner: beginCheckForRemote (top-level rank)... ");
@@ -353,7 +380,11 @@ namespace stk {
 
         }
 
-        {
+        ///////////////////////////////////////////////////////////
+        /////  Get from remote
+        ///////////////////////////////////////////////////////////
+
+        { // get from remote
           EXCEPTWATCH;
           // communicate all-to-all the new node creation information which also updates the node registry so it can
           // be queried locally now for any ghost or non-ghost element
@@ -405,7 +436,9 @@ namespace stk {
           EXCEPTWATCH;
 
           unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
-          if (TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] << " elementType= " << elementType << std::endl;
+          if (1 && TRACE_STAGE_PRINT) 
+            std::cout << "tmp UniformRefiner:: irank = " << irank 
+                      << " ranks[irank] = " << ranks[irank] << " elementType= " << elementType << std::endl;
 
           std::vector<EntityRank> ranks_one(1, ranks[irank]);
 
@@ -416,6 +449,23 @@ namespace stk {
           /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (specific element type)...done ");
 
           vector< ColorerSetType >& elementColors = meshColorerThisTypeOnly.getElementColors();
+
+          if (1)
+            {
+              int nel = 0;
+              for (unsigned ii = 0; ii < elementColors.size(); ii++)
+                {
+                  nel += elementColors[ii].size();
+                  std::cout << "tmp nel[icolor= " << ii << "]= " << elementColors[ii].size() << std::endl;
+                  for (ColorerSetType::iterator it = elementColors[ii].begin(); it != elementColors[ii].end(); ++it)
+                    {
+                      EntityId elemId = *it;
+                      const Entity& element = * m_eMesh.getBulkData()->get_entity( ranks[irank], elemId);
+                      if (0)std::cout << "tmp ele= " << element << std::endl;
+                    }
+                }
+              std::cout << "tmp 0 number elements in this element type = " << nel << " elementType= " << elementType << std::endl;
+            }
 
           // loop over elements, build faces, edges in threaded mode (guaranteed no mem conflicts)
           // (note: invoke UniformRefinerPattern: what entities are needed)
@@ -436,10 +486,12 @@ namespace stk {
               unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks, count_only);
               /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... done ");
 
-
               unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
 
-              if (num_elem_not_ghost != num_elem_not_ghost_0) 
+              std::cout << "tmp num_elem_needed= " << num_elem_needed << " num_elem_not_ghost_0 = " 
+                        << num_elem_not_ghost_0 << " num_elem_not_ghost= " << num_elem_not_ghost << std::endl;
+
+              if (0 && num_elem_not_ghost != num_elem_not_ghost_0) 
                 {
                   std::cout << "num_elem_not_ghost_0 = " << num_elem_not_ghost_0 << " num_elem_not_ghost= " << num_elem_not_ghost << std::endl;
                   //exit(1);
@@ -477,7 +529,9 @@ namespace stk {
 
           /**/                                                TRACE_PRINT("UniformRefiner: connectLocal... ");
           /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL);
+
           connectLocal(ranks[irank], m_breakPattern[irank], elementColors, needed_entity_ranks, new_elements);
+
           /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL);
           /**/                                                TRACE_PRINT("UniformRefiner: connectLocal...done ");
 
@@ -517,20 +571,6 @@ namespace stk {
 
           bulkData.modification_begin();
  
-          // old way (see above)
-          if (0) 
-            {
-              /**/                                                TRACE_PRINT("UniformRefiner: remove old elements... ");
-
-              for (unsigned irank = 0; irank < ranks.size(); irank++)
-                {
-                  removeOldElements(ranks[irank], m_breakPattern[irank]);
-                  renameNewParts(ranks[irank], m_breakPattern[irank]);
-                  fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
-                }  
-              /**/                                                TRACE_PRINT("UniformRefiner: remove old elements...done ");
-            }
-
           /**/                                                TRACE_PRINT("UniformRefiner: fixElementSides ");
           fixElementSides();
           /**/                                                TRACE_PRINT("UniformRefiner: fixElementSides...done ");
@@ -601,6 +641,11 @@ namespace stk {
           TRACE_PRINT(  "UniformRefiner:connectLocal color= " + percept::toString(icolor) + " [ " +
                         percept::toString (((double)icolor)/((double)elementColors.size())*100 ) + " %] ");
           
+          if (elementColors[icolor].size() == 0)
+            {
+              continue;
+            }
+
           Entity* first_element_p = m_eMesh.getBulkData()->get_entity( rank, *(elementColors[icolor].begin()) );
 
           const CellTopologyData * const cell_topo_data = get_cell_topology(*first_element_p);

@@ -54,13 +54,12 @@ namespace stk {
       BulkData& bulkData = *eMesh.getBulkData();
       int ncolor=0;
       int nelem = 0;
-      //for (unsigned icolor = 1; icolor <= MAX_COLORS; icolor++)
       for (unsigned icolor = 0; icolor < MAX_COLORS; icolor++)
         {
+          int num_colored_this_pass = 0;
           for (unsigned irank = 0; irank < m_entityRanks.size(); irank++)
             {
               const vector<Bucket*> & buckets = bulkData.buckets( m_entityRanks[irank] );
-              int num_colored_this_pass = 0;
               for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
                 {
                   //if (select_owned(**k))  // this is where we do part selection
@@ -68,15 +67,16 @@ namespace stk {
                     Bucket & bucket = **k ;
 
                     bool doThisBucket = true;
+                    const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+                    shards::CellTopology topo(bucket_cell_topo_data);
                     if (1)
                       {
-                        const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
-                        shards::CellTopology topo(bucket_cell_topo_data);
-                        //std::cout << "tmp bucket topo name= " << topo.getName() << " key= " << topo.getKey() << std::endl;
                         if (elementType && (topo.getKey() != *elementType))
                           {
                             doThisBucket = false;
                           }
+                        //std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
+                        //          << " doThisBucket= " << doThisBucket << std::endl;
                       }
 
                     if (doThisBucket)
@@ -87,6 +87,10 @@ namespace stk {
                         for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                           {
                             Entity& element = bucket[iElement];
+                            if (0)
+                              std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
+                                        << " elementId = " << element.identifier() << " element = " << element << std::endl;
+
                             if (contains(all_elements, element.identifier()))
                               continue;
 
@@ -123,16 +127,17 @@ namespace stk {
                       } // doThisBucket
                   } // selection
                 } // buckets
-              if (0 == num_colored_this_pass)
-                {
-                  break;
-                }
               ++ncolor;
               if (ncolor == MAX_COLORS-1)
                 {
                   throw std::runtime_error("broken algorithm in mesh colorer");
                 }
             } // irank
+          if (0 == num_colored_this_pass)
+            {
+              //std::cout << "tmp break" << std::endl;
+              break;
+            }
         } // icolor
 
       //std::cout << "tmp ncolor = " << ncolor << " nelem= " << nelem << std::endl;

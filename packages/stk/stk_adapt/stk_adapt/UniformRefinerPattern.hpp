@@ -1990,6 +1990,7 @@ namespace stk {
 
         eMesh.getMetaData()->declare_part(m_oldElementsPartName+toString(m_primaryEntityRank), m_primaryEntityRank);
 
+
 #if 0
         if (m_primaryEntityRank == mesh::Element)
           {
@@ -2067,6 +2068,8 @@ namespace stk {
 #include "UniformRefinerPattern_Tet4_Tet4_8_sierra.hpp"
 #include "UniformRefinerPattern_Hex8_Hex8_8_sierra.hpp"
 #include "UniformRefinerPattern_Wedge6_Wedge6_8_sierra.hpp"
+
+#include "URP_Heterogeneous_3D.hpp"
 
 #include "UniformRefinerPattern_Line3_Line3_2_sierra.hpp"
 #include "UniformRefinerPattern_Tri6_Tri6_4_sierra.hpp"
