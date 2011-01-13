@@ -52,7 +52,7 @@ namespace stk {
       ColorerSetType all_elements; 
 
       BulkData& bulkData = *eMesh.getBulkData();
-      int ncolor=0;
+      int ncolor = 0;
       int nelem = 0;
       for (unsigned icolor = 0; icolor < MAX_COLORS; icolor++)
         {
@@ -67,15 +67,17 @@ namespace stk {
                     Bucket & bucket = **k ;
 
                     bool doThisBucket = true;
-                    if (1)
+                    const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+                    shards::CellTopology topo(bucket_cell_topo_data);
+                    if (elementType && (topo.getKey() != *elementType))
                       {
-                        const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
-                        shards::CellTopology topo(bucket_cell_topo_data);
-                        //std::cout << "tmp bucket topo name= " << topo.getName() << " key= " << topo.getKey() << std::endl;
-                        if (elementType && (topo.getKey() != *elementType))
-                          {
-                            doThisBucket = false;
-                          }
+                        doThisBucket = false;
+                      }
+
+                    if (0)
+                      {
+                        //std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
+                        //          << " doThisBucket= " << doThisBucket << std::endl;
                       }
 
                     if (doThisBucket)
@@ -86,6 +88,11 @@ namespace stk {
                         for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                           {
                             Entity& element = bucket[iElement];
+
+                            if (0)
+                              std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
+                                        << " elementId = " << element.identifier() << " element = " << element << std::endl;
+
                             if (contains(all_elements, element.identifier()))
                               continue;
 
@@ -122,16 +129,16 @@ namespace stk {
                       } // doThisBucket
                   } // selection
                 } // buckets
-              ++ncolor;
-              if (ncolor == MAX_COLORS-1)
-                {
-                  throw std::runtime_error("broken algorithm in mesh colorer");
-                }
             } // irank
           if (0 == num_colored_this_pass)
             {
               //std::cout << "tmp break" << std::endl;
               break;
+            }
+          ++ncolor;
+          if (ncolor == MAX_COLORS-1)
+            {
+              throw std::runtime_error("broken algorithm in mesh colorer");
             }
         } // icolor
 

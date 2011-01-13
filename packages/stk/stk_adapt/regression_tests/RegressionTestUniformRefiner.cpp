@@ -1829,24 +1829,19 @@ namespace stk
                 eMesh1.open("./input_files/heterogeneous_0.e");
 
                 //UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_pattern(eMesh1);
-                std::cout << "tmp 0 " << std::endl;
                 URP_Heterogeneous_3D break_pattern(eMesh1);
-                std::cout << "tmp 0.1 " << std::endl;
                 int scalarDimension = 0; // a scalar
                 FieldBase* proc_rank_field = eMesh1.addField("proc_rank", mesh::Element, scalarDimension);
                 eMesh1.commit();
-                std::cout << "tmp 0.2 " << std::endl;
 
                 //                 if (iBreak != 0)
                 //                   proc_rank_field = eMesh1.getField("proc_rank");
 
                 UniformRefiner breaker(eMesh1, break_pattern, proc_rank_field);
-                std::cout << "tmp 0.3 " << std::endl;
 
                 //breaker.setRemoveOldElements(false);
                 breaker.setIgnoreSideSets(true);
                 breaker.doBreak();
-                std::cout << "tmp 0.4 " << std::endl;
 
                 //eMesh1.printInfo("quad_fixture_1.e");
 

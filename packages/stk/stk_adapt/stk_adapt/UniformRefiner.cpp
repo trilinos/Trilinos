@@ -599,7 +599,6 @@ namespace stk {
           if (elementColors[icolor].size() == 0)
             {
               std::cout << "tmp elementColors size = 0!!!" << std::endl;
-
               continue;
             }
 
@@ -1052,7 +1051,7 @@ namespace stk {
               Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
 
-              if (1)
+              if (0)
                 {
                   std::string str;
                   PartVector pv;
