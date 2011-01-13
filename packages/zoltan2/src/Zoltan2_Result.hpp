@@ -17,14 +17,16 @@
     \brief The Result class.
 */
 
-/*! Z2
-    \brief A namespace for the objects used in interface #1
+/*! Z2_Interface2
+    \brief A namespace for the objects used in interface #2
+
+  Interface #2: The Zoltan methods are functions in the Zoltan2 namespace.
 */
 
-namespace Z2_Interface1
+namespace Z2_Interface2
 {
 
-/*! Z2_Interface1::Result
+/*! Z2_Interface2::Result
     \brief The Result object contains a solution computed by Zoltan2.
 
     The Result contains the result of partitioning, ordering or coloring
@@ -35,7 +37,7 @@ namespace Z2_Interface1
     an objective to a Zoltan2 method for further computation and improvement.
 */
 
-template<typename GNO>
+template<typename Scalar, typename GNO>
   class Result {
 
 private:
@@ -61,26 +63,29 @@ public:
   void complete() { set = true; }
 };
 
-/*! Z2_Interface1::PartitioningResult
+/*! Z2_Interface2::PartitioningResult
     \brief A solution to a partitioning problem.
 */
 
-template<typename GNO>
-  class PartitioningResult<GNO> : public Result <GNO>{
+template<typename Scalar, typename GNO>
+  class PartitioningResult<Scalar, GNO> : public Result <Scalar, GNO>{
 
 private:
   std::map<GNO, int> part_list;
+  Scalar *rcb_tree;
 
 public:
   void get_part_list(std::vector<GNO> &gnos, std::vector<int> &parts);
   void set_part_list(std::vector<GNO> &gnos, std::vector<int> &parts);
+  void get_rcb_tree(Scalar *tree);
+  void get_rcb_bounding_box(int part, Scalar *box);
 };
 
-/*! Z2_Interface1::OrderingResult
+/*! Z2_Interface2::OrderingResult
     \brief A solution to an ordering problem.
 */
 
-template<typename GNO>
+template<typename Scalar, typename GNO>
   class OrderingResult<GNO> : public Result <GNO>{
 
 private:
@@ -91,11 +96,11 @@ public:
   void set_order(std::vector<GNO> &gnos, std::vector<GNO> &order);
 };
 
-/*! Z2_Interface1::ColoringResult
+/*! Z2_Interface2::ColoringResult
     \brief A solution to a coloring problem.
 */
 
-template<typename GNO>
+template<typename Scalar, typename GNO>
   class ColoringResult<GNO> : public Result <GNO>{
 
 private:
@@ -108,6 +113,6 @@ public:
   void set_color(std::vector<GNO> &gnos, std::vector<int> &colors);
 };
 
-}  // end namespace Z2_Interface1
+}  // end namespace Z2_Interface2
 
 #endif /* _ZOLTAN2_RESULT_HPP_ */

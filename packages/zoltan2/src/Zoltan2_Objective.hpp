@@ -18,6 +18,8 @@
     \brief The Objective base class and derived classes.
 */
 
+#include <Zoltan2_InputAdapter.hpp>
+
 namespace Z2
 {
 
@@ -27,9 +29,7 @@ namespace Z2
   The Objective is the problem that Zoltan2 has to solve.  It has an
   InputAdapter which is a graph, matrix, or geometry.  It may have
   vertex and/or edge weights.  It may have constraints such as
-  fixed vertices.  (TODO: Should we create a Constraints class to
-  represent constraints like this?)  It could also have a Result to
-  refine rather than starting from scratch.
+  fixed vertices. 
 */
 
 template<typename Scalar, typename LNO , typename GNO, typename AppGID>
@@ -38,7 +38,6 @@ template<typename Scalar, typename LNO , typename GNO, typename AppGID>
 private:
 
   InputAdapter object;         /*!< The objects to be partitioned, colored, etc. */
-  Result in_result;            /*!< An optional starting solution. */
   vector<Scalar> objWeights;   /*!< Optional weighting of objects. */
   vector<Scalar> edgeWeights;  /*!< Optional weighting of edges. */
   map<GNO, int> fixedVertices; /*!< Maybe this should be in a constraints object */

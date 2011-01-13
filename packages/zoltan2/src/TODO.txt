@@ -27,3 +27,10 @@ consider inheriting from Describable class
       a mesh has occured since the result was computed.
   
 
+
+For the Objective:
+ (TODO: Should we create a Constraints class to
+  represent constraints like this?)  It could also have a Result to
+  refine rather than starting from scratch.
+
+

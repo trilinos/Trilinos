@@ -10,7 +10,7 @@ This document is a work in progress.
 
 The workflow for a Zoltan2 problem is illustrated below:
 
-\image html algorithmWorkflow.png
+\image html algorithmWorkflow.png 
 
 A Zoltan algorithm is presented with an objective, for example partitioning objects in order
 to balance a workload.  In addition, algorithm parameters 
@@ -27,22 +27,22 @@ void rcb(Objective<Scalar, LNO, GNO, AppGID> &o, Teuchos::ParameterList &p, Resu
 These diagrams were created with plantUML.  Each class is templated, but I wasn't able to show that with plantUML.
 
 \subsection zoltan2_objectid The ObjectID class
-\image html ObjectIDClass.png
+\image html ObjectIDClass.png 
 
 \subsection zoltan2_objectsource The ObjectSource class
-\image html ObjectSourceClass.png
+\image html ObjectSourceClass.png 
 
 \subsection zoltan2_objective The Objective class
-\image html ObjectiveClass.png
+\image html ObjectiveClass.png 
 
 \subsection zoltan2_result The Result class
-\image html ResultClass.png
+\image html ResultClass.png 
 
 \section zoltan2_evaluation Evaluating the quality of a Zoltan result
 
 The workflow for evaluating a result for an objective is illustrated here:
 
-\image html evaluationWorkflow.png
+\image html evaluationWorkflow.png 
 
 \code
 void evaluate(Objective<Scalar, LNO, GNO, AppGID> &o, Result<LNO, GNO> &r)
