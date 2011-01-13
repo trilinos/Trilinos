@@ -147,6 +147,7 @@ private:
       m_dimension[6]  = rhs.m_dimension[6] ;
       m_dimension[7]  = rhs.m_dimension[7] ;
 
+#ifndef __CUDA_ARCH__
       // If viewing allocated memory (exists and in a ring)
       // then insert this view into the ring of views.
       if ( NULL != rhs.m_ptr_on_device && NULL != rhs.m_next_on_host ) {
@@ -154,6 +155,7 @@ private:
         m_next_on_host = another_view.m_next_on_host ;
         another_view.m_next_on_host = this ;
       }
+#endif
     }
 
   /** \brief  Remove this view of the ring of equivalent views.
@@ -162,6 +164,7 @@ private:
   inline
   void clear_view()
     {
+#ifndef __CUDA_ARCH__
       if ( m_next_on_host == this ) {
         // This is the last view to allocated memory
         // so destroy the memory.
@@ -174,6 +177,7 @@ private:
         for ( ; this != prev->m_next_on_host ; prev = prev->m_next_on_host );
         prev->m_next_on_host = m_next_on_host ;
       }
+#endif
 
       m_next_on_host  = NULL ;
       m_ptr_on_device = NULL ;
