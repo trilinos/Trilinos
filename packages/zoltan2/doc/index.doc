@@ -8,46 +8,39 @@ This document is a work in progress.
 
 \section zoltan2_startup Overview of Zoltan2
 
-The workflow for a Zoltan2 problem is illustrated below:
-
-\image html algorithmWorkflow.png 
-
-A Zoltan algorithm is presented with an objective, for example partitioning objects in order
-to balance a workload.  In addition, algorithm parameters 
-and a candidate solution may provided.
-The algorithm calculates a solution for the objective.  The Objective and the Result correspond
-to classes in Zoltan2, and the algorithms are the Zoltan methods.
-
-\code
-void rcb(Objective<Scalar, LNO, GNO, AppGID> &o, Teuchos::ParameterList &p, Result<LNO, GNO> &r)
-\endcode
-
 \section zoltan2_classes Zoltan 2 classes
 
-These diagrams were created with plantUML.  Each class is templated, but I wasn't able to show that with plantUML.
+These diagrams were created with plantUML. 
 
-\subsection zoltan2_objectid The ObjectID class
-\image html ObjectIDClass.png 
+\subsection zoltan2_idmap The IdentifierMap class
 
-\subsection zoltan2_objectsource The ObjectSource class
-\image html ObjectSourceClass.png 
+I was calling this the ObjectID class, but we want to get away from the use of the word "object" to describe the elements being partitionex by Zoltan.  This would replace the functionality of the Zoltan_DD_* utility.
+
+\image html IdentifierMapClass.png 
+
+\subsection zoltan2_adapter The InputAdapter class
+
+I was calling this the ObjectSource class, but InputAdapter is much better.
+
+\image html InputAdapterClass.png 
 
 \subsection zoltan2_objective The Objective class
+
+As before.
+
 \image html ObjectiveClass.png 
 
+\subsection zoltan2_mapping The Mapping class
+
+The central object in the system.  It encapsulates the graph (etc) with an initial partitioning (etc.) and objective, and a mapping to a new partitioning (etc).
+
+\image html MappingClass.png 
+
 \subsection zoltan2_result The Result class
+
 \image html ResultClass.png 
 
 \section zoltan2_evaluation Evaluating the quality of a Zoltan result
-
-The workflow for evaluating a result for an objective is illustrated here:
-
-\image html evaluationWorkflow.png 
-
-\code
-void evaluate(Objective<Scalar, LNO, GNO, AppGID> &o, Result<LNO, GNO> &r)
-\endcode
-
 
 \section zoltan2_examples Zoltan 2 examples
 

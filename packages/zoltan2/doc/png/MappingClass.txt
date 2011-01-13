@@ -1,0 +1,56 @@
+'plantUML input file
+'Class diagram for Mapping
+'
+
+@startuml
+
+class Mapping{
+InputAdapter<> &input
+Teuchos::ParameterList &params
+set_parameters()
+virtual void solve()
+virtual void evaluate()
+virtual void get_mapping()
+}
+
+class ColorMapping{
+ColorObjective<>  objective;
+void solve()
+void evaluate()
+void get_mapping()
+void get_number_of_colors()
+void set_distance()
+}
+
+class PartMapping{
+PartObjective<>  objective;
+void solve()
+void evaluate()
+void get_mapping()
+void set_part_sizes()
+void set_fixed_vertices()
+}
+
+class OrderMapping{
+OrderObjective<>  objective;
+void solve()
+void evaluate()
+void get_mapping()
+void set_objective()
+}
+
+
+note top of Mapping: The Mapping represents user's\ngeometry, graph or matrix,\nand a mapping to new parts,\ncolors or ordering.
+
+
+'note right of PartMapping: The subclasses have methods\nto set the objectives for\nthat type of mapping.
+note "The subclasses have methods\nto set the objectives for\nthat type of mapping." as N
+
+Mapping <|-- ColorMapping
+Mapping <|-- OrderMapping
+Mapping <|-- PartMapping
+
+
+
+@enduml
+
