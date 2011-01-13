@@ -157,7 +157,7 @@ double compute_residual_norm2(fei::LinearSystem& fei_ls, fei::Vector& r)
   int num_doubles = 1;
   MPI_Allreduce(&local_sum, &global_sum, num_doubles, MPI_DOUBLE, MPI_SUM, comm);
 #else
-  double global_sum = 0;
+  double global_sum = local_sum;
 #endif
   return std::sqrt(global_sum);
 }
