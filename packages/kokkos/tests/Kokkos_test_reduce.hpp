@@ -122,6 +122,25 @@ public:
   }
 };
 
+// If the array rank were part of the type information then
+// utility functions such as 'fill' could have a simpler API.
+// The simpler API would shift type specifics to the templated implementation.
+
+template< typename Scalar , class DeviceMap >
+void fill( const MDArrayView< Scalar , DeviceMap > & array , const Scalar & value )
+{
+  switch( array.rank() ) {
+  case 1 :
+    Kokkos::parallel_for( MDArrayFill<Scalar,1,DeviceMap>( array , value ) );
+    break ;
+  case 2 :
+    Kokkos::parallel_for( MDArrayFill<Scalar,2,DeviceMap>( array , value ) );
+    break ;
+  default:
+    break ;
+  }
+}
+
 }
 
 //----------------------------------------------------------------------------
@@ -167,6 +186,9 @@ struct MomentumAndKineticEnergy
   }
 };
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 template< typename Scalar , class DeviceMap >
 void test_mom_ke()
 {
@@ -179,18 +201,24 @@ void test_mom_ke()
   Kokkos::MDArrayView< Scalar , DeviceMap > mass , velocity ;
   Kokkos::MDArrayView< Scalar , device_type > result ;
 
-  // Create arrays mapped onto device
+  // Create arrays mapped onto the device
   mass      = map.template create_mdarray<Scalar>();
   velocity  = map.template create_mdarray<Scalar>( 3 );
 
-  // Create result array on device
+  // Create unmapped result array directly on the device
   // { momentum , kinetic energy }
   result    = device_type::template create_mdarray<Scalar>( 4 );
 
+  // Potential alternative API for creating arrays
+  //
+  // mass.allocate( map );
+  // velocity.allocate( 3 , map );
+  // result.allocate( 4 ); // Allocated on device with no map
+
   // Execute the parallel kernels on the arrays:
 
-  Kokkos::parallel_for( Kokkos::MDArrayFill<Scalar,1,DeviceMap>( mass , 1.0 ) );
-  Kokkos::parallel_for( Kokkos::MDArrayFill<Scalar,2,DeviceMap>( velocity , 1.0 ) );
+  Kokkos::fill( mass , (Scalar) 1.0 );
+  Kokkos::fill( velocity , (Scalar) 1.0 );
 
   Kokkos::parallel_reduce( MomentumAndKineticEnergy<Scalar,DeviceMap>( velocity , mass ) , result );
 
