@@ -61,17 +61,7 @@ public:
   typedef CudaDevice   device_type ;
 
   //----------------------------------
-  // Non-parallel work arrays...
-
-  template< typename ValueType >
-  static inline
-  MDArrayView<ValueType,device_type>
-    create_labeled_mdarray( size_type n0 , size_type n1 ,
-                            size_type n2 , size_type n3 ,
-                            size_type n4 , size_type n5 ,
-                            size_type n6 , size_type n7 ,
-                            const std::string & label )
-  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,n5,n6,n7,label); }
+  // Non-parallel work arrays primarily for reductions.
 
   template< typename ValueType >
   static inline
@@ -130,15 +120,6 @@ public:
     create_labeled_mdarray( size_type n0 ,
                             const std::string & label )
   { return MDArrayView<ValueType,device_type>(n0,label); }
-
-  template< typename ValueType >
-  static inline
-  MDArrayView<ValueType,device_type>
-    create_mdarray( size_type n0 , size_type n1 ,
-                    size_type n2 , size_type n3 ,
-                    size_type n4 , size_type n5 ,
-                    size_type n6 , size_type n7 )
-  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,n5,n6,n7,std::string()); }
 
   template< typename ValueType >
   static inline
