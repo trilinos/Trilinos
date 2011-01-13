@@ -175,14 +175,14 @@ struct MomentumAndKineticEnergy
   void operator()( size_type iwork , const reduce_type & result ) const
   {
     const Scalar m = mass(iwork);
-    Scalar ke = 0 ;
+    Scalar ke = Scalar(0) ;
 
     for ( size_type i = 0 ; i < dimension ; ++i ) {
       const Scalar v = velocity(i,iwork);
       result(i) += m * v ; // Momentum
       ke += v * v ; // Energy
     }
-    result(dimension) += 0.5 * m * ke ;
+    result(dimension) += Scalar(0.5) * m * ke ;
   }
 };
 
@@ -190,45 +190,40 @@ struct MomentumAndKineticEnergy
 //----------------------------------------------------------------------------
 
 template< typename Scalar , class DeviceMap >
-void test_mom_ke()
-{
+struct TestMomKe {
+
   typedef typename DeviceMap::device_type device_type ;
 
-  const int parallel_work_length = 1000000 ;
+  enum { parallel_work_length = 1000000 };
 
-  DeviceMap map( parallel_work_length );
-
-  Kokkos::MDArrayView< Scalar , DeviceMap > mass , velocity ;
+  DeviceMap map ;
+  Kokkos::MDArrayView< Scalar , DeviceMap > mass ;
+  Kokkos::MDArrayView< Scalar , DeviceMap > velocity ;
   Kokkos::MDArrayView< Scalar , device_type > result ;
 
-  // Create arrays mapped onto the device
-  mass      = map.template create_mdarray<Scalar>();
-  velocity  = map.template create_mdarray<Scalar>( 3 );
+  TestMomKe() : map( parallel_work_length )
+  {
+    // Create arrays mapped onto the device
+    mass      = map.template create_mdarray<Scalar>();
+    velocity  = map.template create_mdarray<Scalar>( 3 );
 
-  // Create unmapped result array directly on the device
-  // { momentum , kinetic energy }
-  result    = device_type::template create_mdarray<Scalar>( 4 );
+    // Create unmapped result array directly on the device
+    // { momentum , kinetic energy }
+    result    = device_type::template create_mdarray<Scalar>( 4 );
 
-  // Potential alternative API for creating arrays
-  //
-  // mass.allocate( map );
-  // velocity.allocate( 3 , map );
-  // result.allocate( 4 ); // Allocated on device with no map
+    // Potential alternative API for creating arrays
+    //
+    // mass.allocate( map );
+    // velocity.allocate( 3 , map );
+    // result.allocate( 4 ); // Allocated on device with no map
 
-  // Execute the parallel kernels on the arrays:
+    // Execute the parallel kernels on the arrays:
 
-  Kokkos::fill( mass , (Scalar) 1.0 );
-  Kokkos::fill( velocity , (Scalar) 1.0 );
+    Kokkos::fill( mass , Scalar( 1.0 ) );
+    Kokkos::fill( velocity , Scalar( 1.0 ) );
 
-  Kokkos::parallel_reduce( MomentumAndKineticEnergy<Scalar,DeviceMap>( velocity , mass ) , result );
-
-/*
-  std::cout << " { " << result(0)
-            << " , " << result(1)
-            << " , " << result(2)
-            << " , " << result(3)
-            << " }" << std::endl ;
-*/
-}
+    Kokkos::parallel_reduce( MomentumAndKineticEnergy<Scalar,DeviceMap>( velocity , mass ) , result );
+  }
+};
 
 

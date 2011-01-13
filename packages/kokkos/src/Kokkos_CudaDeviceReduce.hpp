@@ -40,6 +40,8 @@
 #ifndef KOKKOS_CUDADEVICEREDUCE_HPP
 #define KOKKOS_CUDADEVICEREDUCE_HPP
 
+#include <Kokkos_CudaDevice.hpp>
+
 namespace Kokkos {
 
 template< class FunctorType , class DeviceType > struct ParallelReduce ;
@@ -53,8 +55,6 @@ void parallel_reduce( const FunctorType & functor ,
 }
 
 //----------------------------------------------------------------------------
-
-class CudaDevice ;
 
 template< class ReduceOperators >
 __device__
@@ -85,41 +85,12 @@ void reduce_shared_on_cuda(
   }
 }
 
-// Single block, reduce contributions
-template< class ReduceOperators >
-__global__
-void run_reduce_operator_on_cuda(
-  const typename ReduceOperators::reduce_type result ,
-  const typename ReduceOperators::reduce_type block_result )
+template< typename Scalar >
+__device__
+Scalar * get_shared_values_on_cuda()
 {
-  typedef typename ReduceOperators::reduce_type       reduce_type ;
-  typedef typename ReduceOperators::reduce_value_type reduce_value_type ;
-
-  extern __shared__ reduce_value_type shared_values[];
-
-  { // Copy block contributions into shared memory
-    const reduce_value_type * const source = block_result.pointer_on_device();
-    const unsigned n = reduce_count * blockDim.x ;
-
-    for ( int i = threadIdx.x ; i < n ; i += blockDim.x ) {
-      shared[i] = source[i] ;
-    }
-  }
-
-  reduce_type local_result ;
-
-  local_result.assign_on_device( block_result );
-  local_result.assign_on_device( shared + threadIdx.x , blockDim.x );
-
-  reduce_shared_on_cuda< ReduceOperators >( local_result );
-
-  { // Copy reduced result to output.
-    const reduce_value_type * const output = result.pointer_on_device();
-
-    for ( int i = threadIdx.x ; i < reduce_count ; i += blockDim.x )
-      output[i] = shared_values[ i * blockDim.x ] ;
-    }
-  }
+  extern __shared__ Scalar shared_values[];
+  return & shared_values[0] ;
 }
 
 template< class FunctorType >
@@ -132,7 +103,7 @@ void run_reduce_functor_on_cuda(
   typedef typename FunctorType::reduce_type       reduce_type ;
   typedef typename FunctorType::reduce_value_type reduce_value_type ;
 
-  extern reduce_value_type shared_values[];
+  reduce_value_type * const shared_values = get_shared_values_on_cuda<reduce_value_type>();
 
   reduce_type local_result ;
 
@@ -149,7 +120,7 @@ void run_reduce_functor_on_cuda(
     functor( iwork , local_result );
   }
 
-  reduce_shared_on_cuda< Functor >( local_result );
+  reduce_shared_on_cuda< FunctorType >( local_result );
 
   // Output partial sum per block: offset = blockIdx , stride = gridDim.x
   // Copy from local result: stride = blockDim.x
@@ -164,31 +135,77 @@ void run_reduce_functor_on_cuda(
   }
 }
 
-template< class FunctorType , class DeviceType >
+// Single block, reduce contributions
+template< class ReduceOperators >
+__global__
+void run_reduce_operator_on_cuda(
+  const typename ReduceOperators::reduce_type result ,
+  const typename ReduceOperators::reduce_type block_result ,
+  const unsigned int reduce_count )
+{
+  typedef typename ReduceOperators::reduce_type reduce_type ;
+  typedef typename reduce_type::value_type      reduce_value_type ;
+
+  reduce_value_type * const shared_values = get_shared_values_on_cuda<reduce_value_type>();
+
+  {
+    const reduce_value_type * const input_values = block_result.address_on_device();
+
+    const unsigned int count = reduce_count * blockDim.x ;
+
+    for ( unsigned int i = threadIdx.x ; i < count ; i += blockDim.x ) {
+      shared_values[i] = input_values[i] ;
+    }
+  }
+
+  reduce_type local_result ;
+
+  local_result.assign_on_device( block_result );
+  local_result.assign_on_device( shared_values + threadIdx.x , blockDim.x );
+
+  reduce_shared_on_cuda< ReduceOperators >( local_result );
+
+  { // Copy reduced result to output.
+    reduce_value_type * const output = result.address_on_device();
+
+    for ( int i = threadIdx.x ; i < reduce_count ; i += blockDim.x ) {
+      output[i] = shared_values[ i * blockDim.x ] ;
+    }
+  }
+}
+
+template< class FunctorType >
 struct ParallelReduce< FunctorType , CudaDevice > {
   typedef typename FunctorType::device_type       device_type ;
   typedef typename FunctorType::reduce_type       reduce_type ;
   typedef typename FunctorType::reduce_value_type reduce_value_type ;
+  typedef typename device_type::size_type         size_type ;
 
 
   static void run( const FunctorType & functor ,
                    const typename FunctorType::reduce_type & result )
   {
+    size_type reduce_count = 1 ;
+    for ( size_type i = 0 ; i < result.rank() ; ++i ) {
+      reduce_count *= result.dimension(i);
+    }
     // Size of result for shared memory
-    const unsigned int work_count   = functor.work_count();
-    const unsigned int result_count = total_count( result );
-    const unsigned int result_size  = sizeof(reduce_value_type) * reduce_count ;
-    unsigned int thread_count = reduction_thread_max( result_size );
+    const size_type work_count  = functor.work_count();
+    const size_type reduce_size = sizeof(reduce_value_type) * reduce_count ;
+    size_type thread_count = device_type::reduction_thread_max( reduce_size );
 
     if ( work_count < thread_count ) {
 
       // Small amount of work, use a single thread block
+      // Reduce thread_count below work_count so that
+      // the number of reduction terms does not exceed the
+      // partial contributions.
 
       while ( work_count < thread_count ) { thread_count >>= 1 ; }
 
-      const unsigned int shmem_size = thread_count * result_size ;
+      const size_type shmem_size = thread_count * reduce_size ;
 
-      run_reduce_functor_on_cuda<<< 1, thread_count, shmem_size >>>
+      run_reduce_functor_on_cuda<FunctorType> <<< 1, thread_count, shmem_size >>>
         ( functor , result , reduce_count );
     }
     else {
@@ -197,30 +214,54 @@ struct ParallelReduce< FunctorType , CudaDevice > {
       // requiring partial reductions from each thread block
       // with a final reduction of the partial values.
 
-      unsigned int block_count_max = device_type::block_count_max();
-      unsigned int block_count = 1 ;
+      size_type block_count_max = device_type::block_count_max();
+      size_type block_count = 1 ;
       while ( ( block_count << 1 ) <= block_count_max ) { block_count <<= 1 ; }
 
       if ( thread_count < block_count ) { block_count = thread_count ; }
 
-      const unsigned int shmem_size = thread_count * result_size ;
+      const size_type shmem_size = thread_count * reduce_size ;
 
-      reduce_value_type * const scratch_on_device = (reduce_value_type *)
-        device_type::allocate_memory( sizeof(reduce_value_type) ,
-                                      thread_count * result_count ,
-                                      std::string("reduce_scratch") );
+      reduce_type block_result ;
 
-      reduce_type block_result( scratch_on_device ,
-                                result.rank() , result.dimension() ,
-                                block_count );
+      const std::string block_result_name("reduce_scratch_array");
 
-      run_reduce_functor_on_cuda<<< block_count , thread_count , shmem_size >>>
+      switch( result.rank() ) {
+      case 1 :
+        block_result = device_type::template create_scratch_mdarray<reduce_value_type>(
+                         result.dimension(0) ,
+                         block_result_name , block_count );
+        break ;
+      case 2 :
+        block_result = device_type::template create_scratch_mdarray<reduce_value_type>(
+                         result.dimension(0) ,
+                         result.dimension(1) ,
+                         block_result_name , block_count );
+        break ;
+      case 3 :
+        block_result = device_type::template create_scratch_mdarray<reduce_value_type>(
+                         result.dimension(0) ,
+                         result.dimension(1) ,
+                         result.dimension(2) ,
+                         block_result_name , block_count );
+        break ;
+      case 4 :
+        block_result = device_type::template create_scratch_mdarray<reduce_value_type>(
+                         result.dimension(0) ,
+                         result.dimension(1) ,
+                         result.dimension(2) ,
+                         result.dimension(3) ,
+                         block_result_name , block_count );
+        break ;
+      default:
+        break ; // throw std::runtime_error(...);
+      }
+
+      run_reduce_functor_on_cuda<FunctorType> <<< block_count , thread_count , shmem_size >>>
         ( functor , block_result , reduce_count );
 
       run_reduce_operator_on_cuda<FunctorType>
-        <<< 1 , block_count , shmem_size >>>( result , block_result );
-
-      device_type::deallocate_memory( scratch_on_device );
+        <<< 1 , block_count , shmem_size >>>( result , block_result , reduce_count );
     }
 
     cudaThreadSynchronize();

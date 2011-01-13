@@ -12,7 +12,8 @@
 int main( int argc , char ** argv )
 {
   test_hex_grad< float , Kokkos::HostMap >();
-  test_mom_ke< float , Kokkos::HostMap >();
+
+  TestMomKe< float , Kokkos::HostMap > test ;
 
   return 0 ;
 }

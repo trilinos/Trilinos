@@ -121,6 +121,8 @@ public:
                             const std::string & label )
   { return MDArrayView<ValueType,device_type>(n0,label); }
 
+  //----------------------------------
+
   template< typename ValueType >
   static inline
   MDArrayView<ValueType,device_type>
@@ -173,6 +175,81 @@ public:
   { return MDArrayView<ValueType,device_type>(n0,std::string()); }
 
   //----------------------------------
+  //----------------------------------
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_scratch_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 , size_type n3 ,
+                            size_type n4 , size_type n5 ,
+                            size_type n6 ,
+                            const std::string & label ,
+                            size_type nP )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,n5,n6,label,nP); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_scratch_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 , size_type n3 ,
+                            size_type n4 , size_type n5 ,
+                            const std::string & label ,
+                            size_type nP )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,n5,label,nP); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_scratch_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 , size_type n3 ,
+                            size_type n4 ,
+                            const std::string & label ,
+                            size_type nP )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,label,nP); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_scratch_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 , size_type n3 ,
+                            const std::string & label ,
+                            size_type nP )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,label,nP); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_scratch_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 ,
+                            const std::string & label ,
+                            size_type nP )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,label,nP); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_scratch_mdarray( size_type n0 , size_type n1 ,
+                            const std::string & label ,
+                            size_type nP )
+  { return MDArrayView<ValueType,device_type>(n0,n1,label,nP); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_scratch_mdarray( size_type n0 ,
+                            const std::string & label ,
+                            size_type nP )
+  { return MDArrayView<ValueType,device_type>(n0,label,nP); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_scratch_mdarray( const std::string & label ,
+                            size_type nP )
+  { return MDArrayView<ValueType,device_type>(label,nP); }
+
+  //----------------------------------
   // Device functionality:
 
   void print_allocations( std::ostream & ) const ;
@@ -182,6 +259,16 @@ public:
                                  const std::string & label );
 
   static void deallocate_memory( void * );
+
+  /** \brief  Given the requested shared memory per thread
+   *          determine the maximum number of threads in
+   *          a block.  The number of threads is a power of two
+   *          to support the reduction operation.
+   */
+  static size_type reduction_thread_max( size_type shmemPerThread );
+
+  /** \brief  The maximum recommended number of thread blocks */
+  static size_type block_count_max();
 
 private:
 

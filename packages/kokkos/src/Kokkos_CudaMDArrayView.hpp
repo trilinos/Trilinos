@@ -232,6 +232,7 @@ public:
   inline
   ~MDArrayView() {}
 
+  inline
   void clear_view()
     { m_data.clear_view(); }
 
@@ -314,10 +315,10 @@ private:
 template< typename ValueType >
 class MDArrayView< ValueType , CudaDevice > {
 public:
-  typedef CudaDevice  device_map_type ;
-  typedef CudaDevice  device_type ;
-  typedef CudaDevice  size_type ;
-  typedef ValueType   value_type ;
+  typedef CudaDevice                     device_map_type ;
+  typedef CudaDevice                     device_type ;
+  typedef typename CudaDevice::size_type size_type ;
+  typedef ValueType                      value_type ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query rank of the array */
@@ -466,6 +467,7 @@ public:
   inline
   ~MDArrayView() {}
 
+  inline
   void clear_view()
     { m_data.clear_view(); }
 
@@ -518,49 +520,57 @@ private:
                size_type n2 , size_type n3 ,
                size_type n4 , size_type n5 ,
                size_type n6 ,
-               const std::string & label )
-    : m_data( n0, n1, n2, n3, n4, n5, n6, label )
-    { m_data.m_dimension[7] = 1 ; }
+               const std::string & label ,
+               size_type nP = 1 )
+    : m_data( n0, n1, n2, n3, n4, n5, n6, nP , label )
+    { m_data.m_rank = 7 ; }
 
   MDArrayView( size_type n0 , size_type n1 ,
                size_type n2 , size_type n3 ,
                size_type n4 , size_type n5 ,
-               const std::string & label )
-    : m_data( n0, n1, n2, n3, n4, n5, label )
-    { m_data.m_dimension[6] = 1 ; }
+               const std::string & label ,
+               size_type nP = 1 )
+    : m_data( n0, n1, n2, n3, n4, n5, nP , label )
+    { m_data.m_rank = 6 ; }
 
   MDArrayView( size_type n0 , size_type n1 ,
                size_type n2 , size_type n3 ,
                size_type n4 ,
-               const std::string & label )
-    : m_data( n0, n1, n2, n3, n4, label )
-    { m_data.m_dimension[5] = 1 ; }
+               const std::string & label ,
+               size_type nP = 1 )
+    : m_data( n0, n1, n2, n3, n4, nP , label )
+    { m_data.m_rank = 5 ; }
 
   MDArrayView( size_type n0 , size_type n1 ,
                size_type n2 , size_type n3 ,
-               const std::string & label )
-    : m_data( n0, n1, n2, n3, label )
-    { m_data.m_dimension[4] = 1 ; }
+               const std::string & label ,
+               size_type nP = 1 )
+    : m_data( n0, n1, n2, n3, nP , label )
+    { m_data.m_rank = 4 ; }
 
   MDArrayView( size_type n0 , size_type n1 ,
                size_type n2 ,
-               const std::string & label )
-    : m_data( n0, n1, n2, label )
-    { m_data.m_dimension[3] = 1 ; }
+               const std::string & label ,
+               size_type nP = 1 )
+    : m_data( n0, n1, n2, nP , label )
+    { m_data.m_rank = 3 ; }
 
   MDArrayView( size_type n0 , size_type n1 ,
-               const std::string & label )
-    : m_data( n0, n1, label )
-    { m_data.m_dimension[2] = 1 ; }
+               const std::string & label ,
+               size_type nP = 1 )
+    : m_data( n0, n1, nP , label )
+    { m_data.m_rank = 2 ; }
 
   MDArrayView( size_type n0 ,
-               const std::string & label )
-    : m_data( n0, label )
-    { m_data.m_dimension[1] = 1 ; }
+               const std::string & label ,
+               size_type nP = 1 )
+    : m_data( n0, nP , label )
+    { m_data.m_rank = 1 ; }
 
-  MDArrayView( const std::string & label )
-    : m_data( label )
-    { m_data.m_dimension[0] = 1 ; }
+  MDArrayView( const std::string & label ,
+               size_type nP = 1 )
+    : m_data( nP , label )
+    { m_data.m_rank = 0 ; }
 };
 
 //----------------------------------------------------------------------------
