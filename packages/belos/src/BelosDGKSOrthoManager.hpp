@@ -67,6 +67,112 @@
 
 namespace Belos {
 
+  /// \brief Default parameters for DGKSOrthoManager
+  ///
+  /// \warning This function is not reentrant.
+  template<class ScalarType>
+  Teuchos::RCP<const Teuchos::ParameterList> 
+  getDefaultDgksParameters()
+  {
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+    // This part makes this class method non-reentrant.
+    static Teuchos::RCP<Teuchos::ParameterList> params;
+    if (! params.is_null())
+      return params;
+
+    // Default parameter values for DGKS orthogonalization.
+    // Documentation will be embedded in the parameter list.
+    const int defaultMaxNumOrthogPasses = 2;
+    const magnitude_type one = STM::one();
+    const magnitude_type eps = STM::eps();
+    const magnitude_type squareRootTwo = STM::squareroot(one + one);
+    const magnitude_type defaultBlkTol = magnitude_type(10) * STM::squareroot(eps);
+    const magnitude_type defaultDepTol = one / squareRootTwo;
+    const magnitude_type defaultSingTol = magnitude_type(10) * eps;
+
+    params = Teuchos::parameterList();
+    params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
+		 "Maximum number of orthogonalization passes "
+		 "(includes the first).  Default is 2, since "
+		 "\"twice is enough\" for Krylov methods.");
+    params->set ("blkTol", defaultBlkTol, 
+		 "Block reorthogonalization threshhold.");
+    params->set ("depTol", defaultDepTol, 
+		 "(Non-block) reorthogonalization threshold.");
+    params->set ("singTol", defaultSingTol, 
+		 "Singular block detection threshold.");
+    return params;
+  }
+
+  /// \brief Read DGKS options from the given parameter list
+  ///
+  /// Try to read DGKS options from the given parameter list.
+  /// Silently substitute in defaults if the parameters don't exist or
+  /// have invalid values.
+  template<class ScalarType>
+  void
+  readDgksParameters (const Teuchos::RCP<const Teuchos::ParameterList>& params,
+		      int& maxNumOrthogPasses,
+		      typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& blkTol,
+		      typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& depTol,
+		      typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& singTol)
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
+    const magnitude_type zero = Teuchos::ScalarTraits<magnitude_type>::zero();
+    RCP<const ParameterList> defaultParams = getDefaultDgksParameters<ScalarType>();
+    //
+    // The _* variables ensure that this routine has no side effects
+    // until all the values have been read correctly.  As long as
+    // magnitude_type's assignment operator doesn't throw an
+    // exception, this routine therefore has the strong exception
+    // guarantee.
+    //
+    int _maxNumOrthogPasses;
+    try {
+      _maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
+      if (_maxNumOrthogPasses < 1)
+	_maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+    } catch (Teuchos::Exceptions::InvalidParameter&) {
+      _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+    }
+
+    magnitude_type _blkTol;
+    try {
+      _blkTol = params->get<magnitude_type> ("blkTol");
+      if (_blkTol < zero)
+	_blkTol = defaultParams->get<magnitude_type> ("blkTol");
+    } catch (Teuchos::Exceptions::InvalidParameter&) {
+      _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+    }
+
+    magnitude_type _depTol;
+    try {
+      _depTol = params->get<magnitude_type> ("depTol");
+      if (_depTol < zero)
+	_depTol = defaultParams->get<magnitude_type> ("depTol");
+    } catch (Teuchos::Exceptions::InvalidParameter&) {
+      _depTol = defaultParams->get<magnitude_type> ("depTol");
+    }
+
+    magnitude_type _singTol;
+    try {
+      _singTol = params->get<magnitude_type> ("singTol");
+      if (_singTol < zero)
+	_singTol = defaultParams->get<magnitude_type> ("singTol");
+    } catch (Teuchos::Exceptions::InvalidParameter&) {
+      _singTol = defaultParams->get<magnitude_type> ("singTol");
+    }
+
+    maxNumOrthogPasses = _maxNumOrthogPasses;
+    blkTol = _blkTol;
+    depTol = _depTol;
+    singTol = _singTol;
+  }
+
   template<class ScalarType, class MV, class OP>
   class DGKSOrthoManager : public MatOrthoManager<ScalarType,MV,OP> {
 

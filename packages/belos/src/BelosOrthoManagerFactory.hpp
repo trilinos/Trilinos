@@ -67,8 +67,7 @@ namespace Belos {
   template< class Scalar, class MV, class OP >
   class OrthoManagerFactory {
   private:
-    /// List of valid OrthoManager names
-    ///
+    //! List of valid OrthoManager names
     std::vector< std::string > theList_;
 
   public:
@@ -93,8 +92,7 @@ namespace Belos {
 #endif // HAVE_BELOS_TSQR
     }
 
-    /// Constructor
-    ///
+    //! Constructor
     OrthoManagerFactory () : theList_ (numOrthoManagers())
     {
       int index = 0;
@@ -116,16 +114,14 @@ namespace Belos {
     const std::vector< std::string >& 
     validNames () const { return theList_; }
 
-    /// Return whether name names a valid OrthoManager
-    ///
+    //! Whether 'name' names a valid OrthoManager
     bool
     isValidName (const std::string& name) const 
     {
       return (std::find (theList_.begin(), theList_.end(), name) != theList_.end());
     }
 
-    /// Print the list of valid OrthoManager names to the given ostream
-    ///
+    //! Print the list of valid OrthoManager names to the given ostream
     void
     printValidNames (std::ostream& out) const
     {
@@ -154,28 +150,73 @@ namespace Belos {
       return os.str();
     }
 
-    /// Name of the "default" OrthoManager (e.g., for tests).
-    ///
+    //! Name of the "default" OrthoManager (e.g., for tests).
     const std::string& defaultName () const { return theList_[0]; }
 
-    /// Instantiate and return an RCP to the specified MatOrthoManager
-    /// subclass.
+    /// Default parameters for the given orthogonalization manager
     ///
-    /// \param ortho [in] Name of MatOrthoManager to instantiate
+    /// \param name [in] Orthogonalization manager name.  Must be
+    ///   supported by this factory (i.e., validName(name)==true).
+    ///
+    /// \return Default parameters for the given orthogonalization
+    ///   manager
+    /// 
+    /// \warning This method may not be reentrant.
+    Teuchos::RCP<const Teuchos::ParameterList> 
+    getDefaultParameters (const std::string& name)
+    {
+      if (name == "DGKS") {
+	return getDefaultDgksParameters<Scalar>();
+      }
+#ifdef HAVE_BELOS_TSQR
+      else if (name == "TSQR") {
+	return TsqrMatOrthoManager<Scalar, MV, OP>::getDefaultParameters();
+      }
+#endif // HAVE_BELOS_TSQR
+      else if (name == "ICGS") {
+	return getDefaultIcgsParameters<Scalar>();
+      }
+      else if (name == "IMGS") {
+	return getDefaultImgsParameters<Scalar>();
+      }
+      else {
+	TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+			   "Invalid orthogonalization manager name \"" << name 
+			   << "\": Valid names are " << validNamesString() 
+			   << ".  For many of the test executables, the "
+			   "orthogonalization manager name often corresponds "
+			   "to the \"ortho\" command-line argument.");
+	// Placate the compiler if necessary; we should never reach
+	// this point.
+	return Teuchos::null; 
+      }
+    }
+
+    /// \brief Make specified MatOrthoManager subclass
+    ///
+    /// Instantiate and return (an RCP to) the specified
+    /// MatOrthoManager subclass.
+    ///
+    /// \param ortho [in] Name of MatOrthoManager to instantiate.
+    ///   The validNames() method returns a list of the supported
+    ///   names.
     /// \param M [in] Inner product operator.  If Teuchos::null,
     ///   orthogonalize with respect to the standard Euclidean 
     ///   inner product.
     /// \param label [in] Label for timers
-    /// \param params [in] Optional list of parameters for 
-    ///   setting up the specific MatOrthoManager subclass
+    /// \param params [in] Optional (null) list of parameters for
+    ///   setting up the specific MatOrthoManager subclass.  A default
+    ///   parameter list with embedded documentation is available for
+    ///   each MatOrthoManager subclass that this factory knows how to
+    ///   make.
     ///
-    /// \return (Smart pointer to an) MatOrthoManager instance
+    /// \return (Smart pointer to a) MatOrthoManager instance
     ///   
-    Teuchos::RCP< Belos::MatOrthoManager< Scalar, MV, OP > >
+    Teuchos::RCP< Belos::MatOrthoManager<Scalar, MV, OP> >
     makeMatOrthoManager (const std::string& ortho, 
-			 const Teuchos::RCP< const OP >& M,
+			 const Teuchos::RCP<const OP>& M,
 			 const std::string& label,
-			 const Teuchos::RCP< Teuchos::ParameterList >& params)
+			 const Teuchos::RCP<const Teuchos::ParameterList>& params)
     {
 #ifdef HAVE_BELOS_TSQR
       using Belos::TsqrMatOrthoManager;
@@ -183,32 +224,45 @@ namespace Belos {
       using Belos::ICGSOrthoManager;
       using Belos::IMGSOrthoManager;
       using Belos::DGKSOrthoManager;
-      using Teuchos::RCP;
       using Teuchos::rcp;
-
-      Teuchos::ParameterList theParams;
-      if (! Teuchos::is_null (params))
-	theParams = *params;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
       if (ortho == "DGKS") {
-	return rcp (new DGKSOrthoManager< Scalar, MV, OP >(label, M));
+	int maxNumOrthogPasses;
+	magnitude_type blkTol, depTol, singTol;
+	readDgksParameters<Scalar> (params, maxNumOrthogPasses, blkTol, depTol, singTol);
+	return rcp (new DGKSOrthoManager<Scalar, MV, OP> (label, M, maxNumOrthogPasses, 
+							  blkTol, depTol, singTol));
       }
 #ifdef HAVE_BELOS_TSQR
       else if (ortho == "TSQR") {
-	return rcp (new TsqrMatOrthoManager< Scalar, MV, OP > (theParams, label, M));
+	// mfh 12 Jan 2011: TSQR knows how to read its own parameters.
+	// I didn't want to change the other OrthoManager subclasses'
+	// public interfaces to accept a parameter list input.
+	return rcp (new TsqrMatOrthoManager<Scalar, MV, OP> (params, label, M));
       }
 #endif // HAVE_BELOS_TSQR
       else if (ortho == "ICGS") {
-	return rcp (new ICGSOrthoManager< Scalar, MV, OP >(label, M));
+	int maxNumOrthogPasses;
+	magnitude_type blkTol, singTol;
+	readIcgsParameters<Scalar> (params, maxNumOrthogPasses, blkTol, singTol);
+	return rcp (new ICGSOrthoManager<Scalar, MV, OP>(label, M, maxNumOrthogPasses, 
+							 blkTol, singTol));
       }
       else if (ortho == "IMGS") {
-	return rcp (new IMGSOrthoManager< Scalar, MV, OP >(label, M));
+	int maxNumOrthogPasses;
+	magnitude_type blkTol, singTol;
+	readImgsParameters<Scalar> (params, maxNumOrthogPasses, blkTol, singTol);
+	return rcp (new IMGSOrthoManager<Scalar, MV, OP>(label, M, maxNumOrthogPasses,
+							 blkTol, singTol));
       }
       else {
-	TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-			    "Invalid value for command-line parameter \"ortho\":"
-			    " valid values are " << validNamesString() 
-			    << "." );
+	TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+			   "Invalid orthogonalization manager name: Valid names"
+			   " are " << validNamesString() << ".  For many of "
+			   "the test executables, the orthogonalization manager"
+			   " name often corresponds to the \"ortho\" command-"
+			   "line argument.");
       }
     }
 
@@ -229,7 +283,7 @@ namespace Belos {
     makeOrthoManager (const std::string& ortho, 
 		      const Teuchos::RCP< const OP >& M,
 		      const std::string& label,
-		      const Teuchos::RCP< Teuchos::ParameterList >& params)
+		      const Teuchos::RCP<const Teuchos::ParameterList>& params)
     {
       // A MatOrthoManager is-an OrthoManager.
       return makeMatOrthoManager (ortho, M, label, params);

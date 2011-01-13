@@ -482,6 +482,39 @@ namespace Belos {
       *mv_view = *A_view; 
     }
 
+    static void 
+    Assign (const Epetra_MultiVector& A, 
+	    Epetra_MultiVector& mv)
+    { 
+      const int numColsA = A.NumVectors();
+      const int numColsMv = mv.NumVectors();
+      if (numColsA > numColsMv)
+	{
+	  std::ostringstream os;
+	  os <<	"Belos::MultiVecTraits<double, Epetra_MultiVector>::Assign"
+	    "(A, mv): ";
+	  TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
+			     os.str() << "Input multivector 'A' has " 
+			     << numColsA << " columns, but output multivector "
+			     "'mv' has only " << numColsMv << " columns.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	}
+      // Assignment calls Epetra_MultiVector::Assign(), which deeply
+      // copies the data directly, ignoring the underlying
+      // Epetra_Map(s).  If A and mv don't have the same data
+      // distribution (Epetra_Map), this may result in incorrect or
+      // undefined behavior.  Epetra_MultiVector::Update() also
+      // ignores the Epetra_Maps, so we might as well just use the
+      // (perhaps slightly cheaper) Assign() method via operator=().
+      if (numColsA == numColsMv)
+	mv = A;
+      else
+	{
+	  Teuchos::RCP<Epetra_MultiVector> mv_view = 
+	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
+	  *mv_view = A;
+	}
+    }
 
     ///
     static void MvRandom( Epetra_MultiVector& mv )

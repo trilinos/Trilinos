@@ -50,8 +50,6 @@
 // use a default orthomanager for the case where the inner product
 // matrix is nontrivial.
 #include "BelosDGKSOrthoManager.hpp" 
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_ParameterList.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,14 +61,31 @@ namespace Belos {
   ///
   /// This is the actual subclass of OrthoManager, implemented using
   /// TsqrOrthoManagerImpl (TSQR + Block Gram-Schmidt).
-  template< class ScalarType, class MV >
-  class TsqrOrthoManager : public OrthoManager< ScalarType, MV > {
+  template<class ScalarType, class MV>
+  class TsqrOrthoManager : public OrthoManager<ScalarType, MV> {
   public:
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
 
-    TsqrOrthoManager (const Teuchos::ParameterList& tsqrParams, 
+    /// \brief Get default parameters for TsqrOrthoManager
+    ///
+    /// Get a (pointer to a) default list of parameters for
+    /// configuring a TsqrOrthoManager instance.
+    ///
+    /// \note To get nondefault behavior, a good thing to do is to
+    ///   make a deep copy of the returned parameter list, and then
+    ///   modify individual entries as desired.
+    ///
+    /// \warning This method is not reentrant.  It should only be
+    ///   called by one thread at a time.
+    ///
+    static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters() {
+      return TsqrOrthoManagerImpl<ScalarType, MV>::getDefaultParameters();
+    }
+
+    //! Constructor
+    TsqrOrthoManager (const Teuchos::RCP<const Teuchos::ParameterList>& params, 
 		      const std::string& label = "Belos") :
-      impl_ (tsqrParams, label)
+      impl_ (params, label)
     {}
 
     virtual ~TsqrOrthoManager() {}
@@ -148,6 +163,7 @@ namespace Belos {
     /// OrthoManager hierarchy.
     mutable TsqrOrthoManagerImpl< ScalarType, MV > impl_;
 
+    //! Label for timers (if timers are enabled at compile time)
     std::string label_;
   };
 
@@ -158,24 +174,35 @@ namespace Belos {
   /// Subclass of MatOrthoManager.  When getOp() == null (Euclidean
   /// inner product), uses TSQR + Block Gram-Schmidt for
   /// orthogonalization.  When getOp() != null, uses DGKSOrthoManager
-  /// for orthogonalization.  Avoids communication only in the TSQR
-  /// case.  Initialization of either orthogonalization manager is
-  /// "lazy," so you don't have to pay for scratch space if you don't
-  /// use it.
+  /// (Classical Gram-Schmidt with reorthogonalization) for
+  /// orthogonalization.  Avoids communication only in the TSQR case.
+  /// Initialization of either orthogonalization manager is "lazy," so
+  /// you don't have to pay for scratch space if you don't use it.
   ///
-  template< class ScalarType, class MV, class OP >
-  class TsqrMatOrthoManager : public MatOrthoManager< ScalarType, MV, OP > {
+  template<class ScalarType, class MV, class OP>
+  class TsqrMatOrthoManager : public MatOrthoManager<ScalarType, MV, OP> {
   private:
-    // This will be used to help C++ resolve getOp().  We can't call
-    // getOp() directly, because C++ can't figure out that it belongs
-    // to the base class MatOrthoManager.  (Remember that at this
-    // point, we might not have specialized the specific base class
-    // yet; it's just a template at the moment and not a "real
-    // class.")
-    typedef MatOrthoManager< ScalarType, MV, OP > base_type;
+    /// \typedef base_type
+    ///
+    /// This will be used to help C++ resolve getOp().  We can't call
+    /// getOp() directly, because C++ can't figure out that it belongs
+    /// to the base class MatOrthoManager.  (Remember that at this
+    /// point, we might not have specialized the specific base class
+    /// yet; it's just a template at the moment and not a "real
+    /// class.")
+    typedef MatOrthoManager<ScalarType, MV, OP> base_type;
 
+    /// \typedef tsqr_type
+    /// \brief Implementation of TSQR-based orthogonalization
     typedef TsqrOrthoManagerImpl< ScalarType, MV > tsqr_type;
+
+    /// \typedef dgks_type
+    /// \brief Implementation of DGKS-based orthogonalization
     typedef DGKSOrthoManager< ScalarType, MV, OP > dgks_type;
+
+    /// \typedef MVT
+    /// \brief Traits class for the multivector type
+    typedef MultiVecTraits<ScalarType, MV> MVT;
 
   public:
     typedef Teuchos::RCP< MV >       mv_ptr;
@@ -186,6 +213,23 @@ namespace Belos {
     typedef Teuchos::Array< Teuchos::RCP< serial_matrix_type > > prev_coeffs_type;
     typedef typename Teuchos::ScalarTraits< ScalarType >::magnitudeType magnitude_type; 
 
+    /// \brief Get default parameters for TsqrMatOrthoManager
+    ///
+    /// Get a (pointer to a) default list of parameters for
+    /// configuring a TsqrMatOrthoManager instance.
+    ///
+    /// \note To get nondefault behavior, a good thing to do is to
+    ///   make a deep copy of the returned parameter list, and then
+    ///   modify individual entries as desired.
+    ///
+    /// \warning This method is not reentrant.  It should only be
+    ///   called by one thread at a time.
+    ///
+    static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters() {
+      // FIXME (mfh 11 Jan 2011) What about DGKS parameters?
+      return TsqrOrthoManagerImpl<ScalarType, MV>::getDefaultParameters();
+    }
+
     /// \brief Default constructor (sets Op to Teuchos::null)
     ///
     TsqrMatOrthoManager () :
@@ -194,32 +238,38 @@ namespace Belos {
       pDgks_ (Teuchos::null)  // Lazy initialization
     {}
 
-    /// Belos::OrthoManager wants this virtual function to be
-    /// implemented; Anasazi::OrthoManager does not.
+    /// \brief Set label for timers (if timers enabled)
+    ///
+    /// \note Belos::OrthoManager wants this virtual function to be
+    ///   implemented; Anasazi::OrthoManager does not.
     void setLabel (const std::string& label) {
       label_ = label; 
     }
+    //! Return label for timers (if timers enabled)
     const std::string& getLabel() const { return label_; }
 
     /// \brief Constructor
     ///
-    /// \param tsqrParams [in] Parameters used to initialize TSQR 
+    /// \param params [in] Parameters used to set up the
+    ///   orthogonalization.  Call the getDefaultParameters() class
+    ///   method for default parameters and their documentation.
+    ///
+    /// \param label [in] Label for timers (if timers are used) 
     ///
     /// \param Op [in] Inner product with respect to which to
     ///   orthogonalize vectors.  If Teuchos::null, use the Euclidean
     ///   inner product.
-    TsqrMatOrthoManager (const Teuchos::ParameterList& tsqrParams, 
+    TsqrMatOrthoManager (const Teuchos::RCP<const Teuchos::ParameterList>& params,
 			 const std::string& label = "Belos",
 			 Teuchos::RCP< const OP > Op = Teuchos::null) :
       MatOrthoManager< ScalarType, MV, OP >(Op),
-      tsqrParams_ (tsqrParams),
+      params_ (params),
       label_ (label),
       pTsqr_ (Teuchos::null), // Lazy initialization
       pDgks_ (Teuchos::null)  // Lazy initialization
     {}
 
-    /// \brief Destructor
-    ///
+    //! \brief Destructor
     virtual ~TsqrMatOrthoManager() {}
 
     /// \brief Return the inner product operator
@@ -253,12 +303,13 @@ namespace Belos {
 	     prev_coeffs_type C,
 	     const_prev_mvs_type Q) const
     {
-      if (getOp() == Teuchos::null)
+      if (getOp().is_null())
 	{
 	  ensureTsqrInit ();
-	  // MX is not modified by MatOrthoManager::project(), so we
-	  // don't need to use it here.
 	  pTsqr_->project (X, C, Q);
+	  if (! MX.is_null())
+	    // MX gets a copy of X; M is the identity operator.
+	    MVT::Assign (X, *MX);
 	}
       else
 	{
@@ -280,12 +331,13 @@ namespace Belos {
 	       Teuchos::RCP< MV > MX,
 	       Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > B) const
     {
-      if (getOp() == Teuchos::null)
+      if (getOp().is_null())
 	{
 	  ensureTsqrInit ();
 	  const int rank = pTsqr_->normalize (X, B);
-	  if (MX != Teuchos::null)
-	    ; // FIXME: MX should get a copy of X
+	  if (! MX.is_null())
+	    // MX gets a copy of X; M is the identity operator.
+	    MVT::Assign (X, *MX);
 	  return rank;
 	}
       else
@@ -310,12 +362,13 @@ namespace Belos {
 			 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
 			 Teuchos::Array<Teuchos::RCP<const MV> > Q ) const
     {
-      if (getOp() == Teuchos::null)
+      if (getOp().is_null())
 	{
 	  ensureTsqrInit ();
 	  const int rank = pTsqr_->projectAndNormalize (X, C, B, Q); 
-	  if (MX != Teuchos::null)
-	    ; // FIXME: MX should get a copy of X
+	  if (! MX.is_null())
+	    // MX gets a copy of X; M is the identity operator.
+	    MVT::Assign (X, *MX);
 	  return rank;
 	}
       else
@@ -329,11 +382,10 @@ namespace Belos {
     orthonormError (const MV &X,
 		    Teuchos::RCP< const MV > MX) const
     {
-      if (getOp() == Teuchos::null)
+      if (getOp().is_null())
 	{
 	  ensureTsqrInit ();
-	  // Ignore MX.
-	  return pTsqr_->orthonormError (X);
+	  return pTsqr_->orthonormError (X); // Ignore MX
 	}
       else
 	{
@@ -360,7 +412,7 @@ namespace Belos {
 		 Teuchos::RCP< const MV > MX1,
 		 const MV &X2) const
     {
-      if (getOp() == Teuchos::null)
+      if (getOp().is_null())
 	{
 	  ensureTsqrInit ();
 	  // Ignore MX1, since we don't need to write to it.
@@ -377,27 +429,26 @@ namespace Belos {
     void
     ensureTsqrInit () const
     {
-      if (pTsqr_ == Teuchos::null)
-	pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_, getLabel()));
+      if (pTsqr_.is_null())
+	pTsqr_ = Teuchos::rcp (new tsqr_type (params_, getLabel()));
     }
     void 
     ensureDgksInit () const
     {
-      if (pDgks_ == Teuchos::null)
+      // FIXME (mfh 11 Jan 2011) 
+      //
+      // DGKS has a parameter that needs to be set.
+      if (pDgks_.is_null())
 	pDgks_ = Teuchos::rcp (new dgks_type (getLabel(), getOp()));
     }
 
-    ///
-    /// Parameter list for initializing TSQR
-    Teuchos::ParameterList tsqrParams_;
-    ///
-    /// Label for Belos timers
+    //! Parameter list for initializing the orthogonalization
+    Teuchos::RCP<const Teuchos::ParameterList> params_;
+    //! Label for timers (if timers are used)
     std::string label_;
-    ///
     /// TSQR + BGS orthogonalization manager implementation, used when
     /// getOp() == null (Euclidean inner product).
     mutable Teuchos::RCP< tsqr_type > pTsqr_;
-    ///
     /// DGKS orthogonalization manager, used when getOp() != null
     /// (could be a non-Euclidean inner product, but not necessarily).
     mutable Teuchos::RCP< dgks_type > pDgks_;

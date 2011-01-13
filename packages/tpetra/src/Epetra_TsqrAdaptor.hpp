@@ -157,6 +157,20 @@ namespace Epetra {
     typedef TSQR::Tsqr< ordinal_type, scalar_type, node_tsqr_type > tsqr_type;
 
   public:
+    /// \brief Default parameters
+    ///
+    /// Return default parameters for the TSQR variant used by Epetra.
+    ///
+    /// \warning This method may not be reentrant.  It should only be
+    ///   called by one thread at a time.  We do not protect it from
+    ///   calls by more than one thread at a time.
+    static Teuchos::RCP<const Teuchos::ParameterList>
+    getDefaultParameters ()
+    {
+      // For now, only the intranode part of TSQR accepts parameters.
+      return node_tsqr_factory_type::getDefaultParameters ();
+    }
+
     /// \brief Constructor
     ///
     /// \param mv [in] Multivector object, used only to access the
@@ -166,11 +180,10 @@ namespace Epetra {
     ///   the same map and communicator.
     ///
     /// \param plist [in] List of parameters for configuring TSQR.
-    ///   The specific parameter keys that are read depend on the
-    ///   TSQR implementation.  "cacheBlockSize" (cache block size
-    ///   per core, in bytes) tends to be defined for all of the
-    ///   non-GPU implementations.  For details, check the specific
-    ///   NodeTsqrFactory implementation.
+    ///   The specific parameter keys that are read depend on the TSQR
+    ///   implementation.  For details, call getDefaultParameters(),
+    ///   examine the documentation embedded therein, and modify the
+    ///   default values as necessary.
     ///
     /// \warning The current implementation of this adaptor requires
     ///   that all Epetra_MultiVector inputs use the same communicator
@@ -178,9 +191,13 @@ namespace Epetra {
     ///   in the future -- it's not hard to fix.
     ///
     TsqrAdaptor (const MV& mv,
-		 const Teuchos::ParameterList& plist) :
+		 const Teuchos::RCP<const Teuchos::ParameterList>& plist) :
       pTsqr_ (new tsqr_type (makeNodeTsqr (plist), makeDistTsqr (mv)))
     {
+      // This particular adaptor wants an instance of the specific
+      // Kokkos Node type.  All of the Node constructors take
+      // parameters.  SerialNode doesn't currently read any of them,
+      // but we still have to pass in an empty parameter list.
       Teuchos::ParameterList emptyParams;
       pNode_ = Teuchos::rcp (new Kokkos::SerialNode (emptyParams));
     }
@@ -197,6 +214,14 @@ namespace Epetra {
       // FIXME (mfh 25 Oct 2010) Check Epetra_Comm objects in A and Q
       // to make sure they are the same communicator as the one we are
       // using in our dist_tsqr_type implementation.
+      //
+      // mfh 11 Jan 2011: Actually we should also check whether the
+      // Epetra_Map objects are compatible.  Fixing this at the TSQR
+      // implementation level likely will require reimplementing TSQR
+      // with Map awareness.  This will be troublesome if we want to
+      // maintain compatibility with both Epetra and Tpetra.
+      // Alternately, we can check for compatibility of maps at the
+      // adaptor or even the (Mat)OrthoManager levels.
       KMV A_view = getNonConstView (A);
       KMV Q_view = getNonConstView (Q);
       pTsqr_->factorExplicit (A_view, Q_view, R, false);
@@ -249,13 +274,14 @@ namespace Epetra {
     }
 
   private:
-    /// Smart pointer to the TSQR implementation object
-    ///
+    //! Smart pointer to the TSQR implementation object
     Teuchos::RCP< tsqr_type > pTsqr_;
 
-    /// Smart pointer to a Kokkos::SerialNode.  It really doesn't hold
-    /// or do anything, but we keep it around so that we don't have to
-    /// call the SerialNode constructor more than once.
+    /// \brief Smart pointer to a Kokkos::SerialNode instance
+    ///
+    /// We only use this to make Kokkos::MultiVector instances.  We
+    /// keep it around so that we don't have to call the SerialNode
+    /// constructor more than once.
     Teuchos::RCP< Kokkos::SerialNode > pNode_;
 
     /// \brief Return a nonconstant view of the input MultiVector
@@ -304,8 +330,7 @@ namespace Epetra {
       return A_kmv;
     }
 
-    /// Initialize and return internode TSQR implementation
-    ///
+    //! Initialize and return internode TSQR implementation
     static Teuchos::RCP< dist_tsqr_type > 
     makeDistTsqr (const MV& mv)
     {
@@ -320,10 +345,9 @@ namespace Epetra {
       return pDistTsqr;
     }
 
-    /// Initialize and return intranode TSQR implementation
-    ///
+    //! Initialize and return intranode TSQR implementation
     static Teuchos::RCP< node_tsqr_type >
-    makeNodeTsqr (const Teuchos::ParameterList& plist)
+    makeNodeTsqr (const Teuchos::RCP<const Teuchos::ParameterList>& plist)
     {
       return node_tsqr_factory_type::makeNodeTsqr (plist);
     }

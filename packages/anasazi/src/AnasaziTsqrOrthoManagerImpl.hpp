@@ -1,65 +1,46 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 //
-//                 Belos: Block Linear Solvers Package
-//                  Copyright 2010 Sandia Corporation
+//                 Anasazi: Block Eigensolvers Package
+//                 Copyright (2010) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ************************************************************************
-//@HEADER
+// ***********************************************************************
+// @HEADER
 
-/// \file BelosTsqrOrthoManagerImpl.hpp
-/// \brief Orthogonalization manager back end based on TSQR
-///
+/// \file AnasaziTsqrOrthoManager.hpp
+/// \brief Orthogonalization manager based on Tall Skinny QR (TSQR)
 
-#ifndef __BelosTsqrOrthoManagerImpl_hpp
-#define __BelosTsqrOrthoManagerImpl_hpp
+#ifndef __AnasaziTsqrOrthoManagerImpl_hpp
+#define __AnasaziTsqrOrthoManagerImpl_hpp
 
-#include "BelosConfigDefs.hpp" // HAVE_BELOS_TSQR
-#include "BelosMultiVecTraits.hpp"
-#include "BelosOrthoManager.hpp" // OrthoError, etc.
-
+#include "AnasaziConfigDefs.hpp"
+#include "AnasaziMultiVecTraits.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ParameterList.hpp"
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-#  include "Teuchos_TimeMonitor.hpp"
-#endif // BELOS_TEUCHOS_TIME_MONITOR
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace Belos {
+namespace Anasazi {
 
   /// \class TsqrOrthoError
   /// \brief TsqrOrthoManager(Impl) error
@@ -222,6 +203,9 @@ namespace Belos {
     ///   On output: \f$X := X - Q C\f$ where \f$C := Q^* X\f$.
     /// \param C [out] The projection coefficients \f$C := Q^* X\f$
     /// \param Q [in] The orthogonal basis against which to project
+    ///
+    /// FIXME (mfh 12 Jan 2011):
+    /// Original: project(X, Q, C = tuple(serial_matrix_ptr(null))) const
     void project (MV& X, prev_coeffs_type C, const_prev_mvs_type Q);
 
     /// \brief Orthogonalize the columns of X in place
@@ -237,6 +221,9 @@ namespace Belos {
     /// \param B [out]
     ///
     /// \return Rank of X
+    ///
+    /// FIXME (mfh 12 Jan 2011): 
+    /// Original: normalize(X, B = null)
     int normalize (MV& X, serial_matrix_ptr B);
 
     /// \brief Normalize X into Q*B, overwriting X with invalid values
@@ -269,6 +256,9 @@ namespace Belos {
     /// \param Q [in] The orthogonal basis against which to project
     ///
     /// \return Rank of X after projection
+    ///
+    /// FIXME (mfh 12 Jan 2011): 
+    /// Original: projectAndNormalize(X, Q, C = tuple(serial_matrix_ptr(null)), B = null)
     int 
     projectAndNormalize (MV &X,
 			 prev_coeffs_type C,
@@ -342,7 +332,7 @@ namespace Belos {
 
     //! Configuration parameters
     Teuchos::RCP<const Teuchos::ParameterList> params_;
-    //! Label for timers
+    //! Label for timers (if timers are used)
     std::string label_;
     //! Interface to TSQR implementation
     tsqr_adaptor_ptr tsqrAdaptor_;
@@ -364,38 +354,11 @@ namespace Belos {
     //! Relative tolerance for measuring the numerical rank of a matrix.
     MagnitudeType relativeRankTolerance_;
 
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-    //! Timer for all orthogonalization operations
-    Teuchos::RCP< Teuchos::Time > timerOrtho_;
-    //! Timer for projection operations
-    Teuchos::RCP< Teuchos::Time > timerProject_;
-    //! Timer for normalization operations
-    Teuchos::RCP< Teuchos::Time > timerNormalize_;
-
-    /// Instantiate and return a timer with an appropriate label
-    ///
-    /// \param prefix [in] Prefix for the timer label, e.g., "Belos"
-    /// \param timerName [in] Name of the timer, or what the timer
-    ///   is timing, e.g., "Projection" or "Normalization"
-    ///
-    /// \return Smart pointer to a new Teuchos::Time timer object,
-    ///   to be used via Teuchos::TimeMonitor
-    static Teuchos::RCP< Teuchos::Time >
-    makeTimer (const std::string& prefix, 
-	       const std::string& timerName)
-    {
-      const std::string timerLabel = 
-	prefix.empty() ? timerName : (prefix + ": " + timerName);
-      return Teuchos::TimeMonitor::getNewTimer (timerLabel);
-    }
-#endif // BELOS_TEUCHOS_TIME_MONITOR
-
     //! Throw a reorthgonalization fault exception
     void
     raiseReorthogFault (const std::vector<MagnitudeType>& normsAfterFirstPass,
 			const std::vector<MagnitudeType>& normsAfterSecondPass,
 			const std::vector<int>& faultIndices);
-
     /// Try to return a boolean parameter with the given key.  If no
     /// parameter with that key exists, return the value of the
     /// corresponding default parameter (using getDefaultParameters(),
@@ -562,7 +525,7 @@ namespace Belos {
 	  const int nrows_Q = MVT::GetVecLength (*Q[i]);
 	  TEST_FOR_EXCEPTION( (nrows_Q != nrows_X), 
 			      std::invalid_argument,
-			      "Belos::TsqrOrthoManagerImpl::checkProjectionDims(): "
+			      "Anasazi::TsqrOrthoManagerImpl::checkProjectionDims(): "
 			      "Size of X not consistant with size of Q" );
 	  ncols_Q_total += MVT::GetNumberVecs (*Q[i]);
 	}
@@ -852,7 +815,6 @@ namespace Belos {
 
       return rank;
     }
-
   };
 
 
@@ -860,7 +822,7 @@ namespace Belos {
   TsqrOrthoManagerImpl<ScalarType, MV>::
   TsqrOrthoManagerImpl (const Teuchos::RCP<const Teuchos::ParameterList>& params,
 			const std::string& label) :
-    params_ (params),
+    params_ (params.is_null() ? getDefaultParameters() : params),
     label_ (label),
     tsqrAdaptor_ (Teuchos::null),   // Initialized on demand
     Q_ (Teuchos::null),             // Scratch space for normalize()
@@ -1201,7 +1163,7 @@ namespace Belos {
 	// exception.
 	TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
 			   TsqrOrthoError, 
-			   "Belos::TsqrOrthoManagerImpl::projectAndNormalize()"
+			   "Anasazi::TsqrOrthoManagerImpl::projectAndNormalize()"
 			   ": After projecting and normalizing the random vect"
 			   "ors (used to replace the null space basis vectors "
 			   " from normalizing X), they have rank "
@@ -1362,7 +1324,7 @@ namespace Belos {
     if (numCols == 0)
       return 0; // Fast exit for an empty input matrix
     TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols, std::invalid_argument, 
-		       "Belos::TsqrOrthoManagerImpl::normaliz"
+		       "Anasazi::TsqrOrthoManagerImpl::normaliz"
 		       "eImplNoCopy(...): Q has " << MVT::GetNumberVecs(Q) 
 		       << " columns, which is too few, since X has " 
 		       << numCols << " columns.");
@@ -1499,7 +1461,7 @@ namespace Belos {
     // Make sure that X_out has at least as many columns as X_in.
     TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < ncols_X, 
 		       std::invalid_argument, 
-		       "Belos::TsqrOrthoManagerImpl::projectAndNormalizeNoCopy("
+		       "Anasazi::TsqrOrthoManagerImpl::projectAndNormalizeNoCopy("
 		       "...): X_out has " << MVT::GetNumberVecs(X_out) << " col"
 		       "umns, but X_in has " << ncols_X << " columns.");
 
@@ -1595,7 +1557,7 @@ namespace Belos {
 	// but instead for now we just raise an exception.
 	TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
 			   TsqrOrthoError, 
-			   "Belos::TsqrOrthoManagerImpl::projectAndNormalize"
+			   "Anasazi::TsqrOrthoManagerImpl::projectAndNormalize"
 			   "NoCopy(): After projecting and normalizing the "
 			   "random vectors (used to replace the null space "
 			   "basis vectors from normalizing X), they have rank "
@@ -1794,7 +1756,7 @@ namespace Belos {
     params->set ("reorthogonalizeBlocks", defaultReorthogonalizeBlocks,
 		 "Whether to do block reorthogonalization.");
     // This parameter corresponds to the "blk_tol_" parameter in
-    // Belos' DGKSOrthoManager.  We choose the same default value.
+    // DGKSOrthoManager.  We choose the same default value.
     const MagnitudeType defaultBlockReorthogThreshold = 
       MagnitudeType(10) * SCTM::squareroot (SCTM::eps());
     params->set ("blockReorthogThreshold", defaultBlockReorthogThreshold, 
@@ -1802,7 +1764,7 @@ namespace Belos {
 		 "any column within a block decreases by this much or "
 		 "more after orthogonalization, we reorthogonalize.");
     // This parameter corresponds to the "sing_tol_" parameter in
-    // Belos' DGKSOrthoManager.  We choose the same default value.
+    // DGKSOrthoManager.  We choose the same default value.
     const MagnitudeType defaultRelativeRankTolerance = 
       MagnitudeType(10) * SCTM::eps();
     // If the relative rank tolerance is zero, then we will always
@@ -1821,7 +1783,18 @@ namespace Belos {
     return params;
   }
 
-} // namespace Belos
+} // namespace Anasazi
 
-#endif // __BelosTsqrOrthoManagerImpl_hpp
+#endif // __AnasaziTsqrOrthoManagerImpl_hpp
+
+
+
+
+
+
+
+
+
+
+
 

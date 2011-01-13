@@ -412,6 +412,35 @@ namespace Anasazi {
       Thyra::assign (&*mv_view, *A_view);
     }
 
+    static void 
+    Assign (const TMVB& A, TMVB& mv)
+    { 
+      const int numColsA = A.domain()->dim();
+      const int numColsMv = mv.domain()->dim();
+      if (numColsA > numColsMv)
+	{
+	  std::ostringstream os;
+	  os << "Anasazi::MultiVecTraits<Scalar, Thyra::MultiVectorBase<Scalar>"
+	    " >::Assign(A, mv): ";
+	  TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
+			     os.str() << "Input multivector 'A' has " 
+			     << numColsA << " columns, but output multivector "
+			     "'mv' has only " << numColsMv << " columns.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	}
+      // Copy the data to the destination multivector.
+      if (numColsA == numColsMv)
+	Thyra::assign (&mv, A);
+      else
+	{
+	  Teuchos::RCP<TMVB> mv_view = 
+	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
+	  // "&*" is a typical Thyra idiom for turning an RCP into a
+	  // raw pointer.
+	  Thyra::assign (&*mv_view, A);
+	}
+    }
+
     /*! \brief Replace the vectors in \c mv with random vectors.
      */
     static void MvRandom(  Thyra::MultiVectorBase< ScalarType > & mv )

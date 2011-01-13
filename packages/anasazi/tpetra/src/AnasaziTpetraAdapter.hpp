@@ -170,9 +170,10 @@ namespace Anasazi {
     CloneViewNonConst (Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
 		       const Teuchos::Range1D& index)
     {
+      // FIXME (mfh 11 Jan 2011) Should check for overflowing int!
+      const int numCols = static_cast<int> (mv.getNumVectors());
       const bool validRange = index.size() > 0 && 
-	index.lbound() >= 0 && 
-	index.ubound() < mv.getNumVectors();
+	index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
 	{
 	  std::ostringstream os;
@@ -184,11 +185,10 @@ namespace Anasazi {
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Index range includes negative "
 			     "index/ices, which is not allowed.");
-	  // Range1D bounds are signed; size_t is unsigned.
-	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
-			     std::invalid_argument, 
-			     os.str() << "Index range exceeds number of vectors " 
-			     << mv.getNumVectors() << " in the input multivector.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument, 
+			     os.str() << "Index range exceeds number of "
+			     "vectors " << numCols << " in the input "
+			     "multivector.");
 	  TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     os.str() << "Should never get here!");
 	}
@@ -221,25 +221,25 @@ namespace Anasazi {
     CloneView (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
 	       const Teuchos::Range1D& index)
     {
+      // FIXME (mfh 11 Jan 2011) Should check for overflowing int!
+      const int numCols = static_cast<int> (mv.getNumVectors());
       const bool validRange = index.size() > 0 && 
-	index.lbound() >= 0 && 
-	index.ubound() < mv.getNumVectors();
+	index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
 	{
 	  std::ostringstream os;
-	  os << "Anasazi::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
-	    "CloneView(mv,index=[" << index.lbound() << ", " 
+	  os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+	    "CloneView(mv, index=[" << index.lbound() << ", " 
 	     << index.ubound() << "]): ";
 	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
 			     os.str() << "Empty index range is not allowed.");
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Index range includes negative "
 			     "index/ices, which is not allowed.");
-	  // Range1D bounds are signed; size_t is unsigned.
-	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
-			     std::invalid_argument, 
-			     os.str() << "Index range exceeds number of vectors " 
-			     << mv.getNumVectors() << " in the input multivector.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument, 
+			     os.str() << "Index range exceeds number of "
+			     "vectors " << numCols << " in the input "
+			     "multivector.");
 	  TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     os.str() << "Should never get here!");
 	}
@@ -455,6 +455,63 @@ namespace Anasazi {
       // will throw an std::runtime_error if the Maps are
       // incompatible.
       *mv_view = *A_view; 
+    }
+
+    static void
+    Assign (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, 
+	    Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+    {
+      KOKKOS_NODE_TRACE("Anasazi::MVT::Assign()")
+
+      // Range1D bounds are signed; size_t is unsigned.
+      // Assignment of Tpetra::MultiVector is a deep copy.
+
+      // Tpetra::MultiVector::getNumVectors() returns size_t.  It's
+      // fair to assume that the number of vectors won't overflow int,
+      // since the typical use case of multivectors involves few
+      // columns, but it's friendly to check just in case.
+      const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
+      const bool overflow = maxInt < A.getNumVectors() && maxInt < mv.getNumVectors();
+      if (overflow)
+	{
+	  std::ostringstream os;
+	  os <<	"Anasazi::MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, ..."
+	    "> >::Assign(A, mv): ";
+	  TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
+			     os.str() << "Number of columns in the input multi"
+			     "vector 'A' (a size_t) overflows int.");
+	  TEST_FOR_EXCEPTION(maxInt < mv.getNumVectors(), std::range_error,
+			     os.str() << "Number of columns in the output multi"
+			     "vector 'mv' (a size_t) overflows int.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	}
+      // We've already validated the static casts above.
+      const int numColsA = static_cast<int> (A.getNumVectors());
+      const int numColsMv = static_cast<int> (mv.getNumVectors());
+      if (numColsA > numColsMv)
+	{
+	  std::ostringstream os;
+	  os <<	"Anasazi::MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, ..."
+	    "> >::Assign(A, mv): ";
+	  TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
+			     os.str() << "Input multivector 'A' has " 
+			     << numColsA << " columns, but output multivector "
+			     "'mv' has only " << numColsMv << " columns.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	}
+      // Assignment of Tpetra::MultiVector objects via operator=()
+      // assumes that both arguments have compatible Maps.  If
+      // HAVE_TPETRA_DEBUG is defined at compile time, operator=()
+      // will throw an std::runtime_error if the Maps are
+      // incompatible.
+      if (numColsA == numColsMv)
+	mv = A;
+      else
+	{
+	  Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > mv_view = 
+	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
+	  *mv_view = A;
+	}
     }
 
     static void MvRandom( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )

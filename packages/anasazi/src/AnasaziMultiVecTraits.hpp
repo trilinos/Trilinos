@@ -230,6 +230,12 @@ namespace Anasazi {
     static void SetBlock( const MV& A, const Teuchos::Range1D& index, MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
+    /// \brief mv := A
+    /// 
+    /// Assign (deep copy) A into mv.
+    static void Assign( const MV& A, MV& mv )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
+
     /*! \brief Replace the vectors in \c mv with random vectors.
      */
     static void MvRandom( MV& mv )
