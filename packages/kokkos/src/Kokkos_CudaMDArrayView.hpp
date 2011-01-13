@@ -475,16 +475,16 @@ public:
   __device__
   void assign_on_device( const MDArrayView & rhs )
     {
-      m_data.m_ptr_on_device = rhs.m_ptr_on_device ;
-      m_data.m_rank          = rhs.m_rank ;
-      m_data.m_dimension[0]  = rhs.m_dimension[0] ;
-      m_data.m_dimension[1]  = rhs.m_dimension[1] ;
-      m_data.m_dimension[2]  = rhs.m_dimension[2] ;
-      m_data.m_dimension[3]  = rhs.m_dimension[3] ;
-      m_data.m_dimension[4]  = rhs.m_dimension[4] ;
-      m_data.m_dimension[5]  = rhs.m_dimension[5] ;
-      m_data.m_dimension[6]  = rhs.m_dimension[6] ;
-      m_data.m_dimension[7]  = rhs.m_dimension[7] ;
+      m_data.m_ptr_on_device = rhs.m_data.m_ptr_on_device ;
+      m_data.m_rank          = rhs.m_data.m_rank ;
+      m_data.m_dimension[0]  = rhs.m_data.m_dimension[0] ;
+      m_data.m_dimension[1]  = rhs.m_data.m_dimension[1] ;
+      m_data.m_dimension[2]  = rhs.m_data.m_dimension[2] ;
+      m_data.m_dimension[3]  = rhs.m_data.m_dimension[3] ;
+      m_data.m_dimension[4]  = rhs.m_data.m_dimension[4] ;
+      m_data.m_dimension[5]  = rhs.m_data.m_dimension[5] ;
+      m_data.m_dimension[6]  = rhs.m_data.m_dimension[6] ;
+      m_data.m_dimension[7]  = rhs.m_data.m_dimension[7] ;
     }
 
   __device__
@@ -499,7 +499,7 @@ public:
     { m_data.m_ptr_on_device = ptr_on_device ; }
 
   __device__
-  value_type * address_on_device() const { return m_ptr_on_device ; }
+  value_type * address_on_device() const { return m_data.m_ptr_on_device ; }
 
   /*------------------------------------------------------------------*/
 
