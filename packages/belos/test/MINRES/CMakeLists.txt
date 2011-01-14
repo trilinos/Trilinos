@@ -11,14 +11,14 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     INCLUDE_DIRECTORIES(../MVOPTester)
 
     PACKAGE_ADD_EXECUTABLE(
-      tfqmr_complex_hb
-      SOURCES test_tfqmr_complex_hb.cpp 
+      minres_complex_hb
+      SOURCES test_minres_complex_hb.cpp 
       )
 
-    PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestTFQMRComplexFiles
+    PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestMINRESComplexFiles
       SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/test/MVOPTester
-      SOURCE_FILES mhd1280b.cua mhd1280a.cua
-      EXEDEPS tfqmr_complex_hb
+      SOURCE_FILES mhd1280b.cua 
+      EXEDEPS minres_complex_hb
       )
 
   ENDIF(Teuchos_ENABLE_COMPLEX)
