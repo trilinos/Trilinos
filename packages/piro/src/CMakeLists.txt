@@ -22,8 +22,12 @@ SET(HEADERS ${HEADERS}
 #
 APPEND_SET(HEADERS Piro_ValidPiroParameters.hpp
                    Piro_Version.hpp
+                   Piro_Epetra_VelocityVerletSolver.hpp
+                   Piro_Epetra_InvertMassMatrixDecorator.hpp
                    Piro_ConfigDefs.hpp)
 APPEND_SET(SOURCES Piro_ValidPiroParameters.cpp
+                   Piro_Epetra_VelocityVerletSolver.cpp
+                   Piro_Epetra_InvertMassMatrixDecorator.cpp
                    Piro_Version.cpp)
 
 #
@@ -33,21 +37,17 @@ APPEND_SET(SOURCES Piro_ValidPiroParameters.cpp
 IF (Piro_ENABLE_NOX) 
   APPEND_SET(HEADERS Piro_Epetra_NOXSolver.hpp
                      Piro_Epetra_LOCASolver.hpp
-                     Piro_Epetra_VelocityVerletSolver.hpp
                      Piro_Epetra_MatrixFreeDecorator.hpp)
   APPEND_SET(SOURCES Piro_Epetra_NOXSolver.cpp
                      Piro_Epetra_LOCASolver.cpp
-                     Piro_Epetra_VelocityVerletSolver.cpp
                      Piro_Epetra_MatrixFreeDecorator.cpp)
 ENDIF()
 # Optional Rythmos Dependency
 IF (Piro_ENABLE_Rythmos) 
   APPEND_SET(HEADERS Piro_Epetra_RythmosSolver.hpp
                      Piro_RythmosSolver.hpp
-                     Piro_RythmosSolver_Def.hpp
-                     Piro_Epetra_InvertMassMatrixDecorator.hpp) 
-  APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp
-                     Piro_Epetra_InvertMassMatrixDecorator.cpp)
+                     Piro_RythmosSolver_Def.hpp) 
+  APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
 ENDIF()
 
 # Optional StochasticGalerkin capability, dependion upon Stokhos and NOX
