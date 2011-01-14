@@ -661,6 +661,12 @@ template<class Ordinal>
 int two_proc_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   bool verbose)
 {
+  typedef Tpetra::Map<int>                                       Map;
+  typedef Tpetra::CrsMatrix<double,int>                          CrsMatrix;
+  typedef typename CrsMatrix::mat_vec_type                       MatVec;
+  typedef typename CrsMatrix::node_type                          DNode;
+  typedef Tpetra::MatrixMatrix< double, int, int, DNode, MatVec> MatMat;
+
   (void)verbose;
   int thisproc = Comm->getRank();
   int numprocs = Comm->getSize();
@@ -669,62 +675,46 @@ int two_proc_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   //only run this test on 2 procs
   if (numprocs != 2) return(0);
 
-  //set up a row-std::map with 2 global elements,
-  //1 on each proc.
-  int numGlobalRows = 2;
-  Teuchos::ArrayRCP<int> myrow(1,3);
+  Teuchos::RCP< Teuchos::FancyOStream > out = Teuchos::fancyOStream(Teuchos::rcp(&std::cout,false),"",0,false,10,false,true);
+  Tpetra::MMdebug::debug_stream = out;
+  Tpetra::MMdebug::debug_level  = Teuchos::VERB_NONE;
+
+  // set up a row-std::map with 2 global elements,
+  // 1 on each proc.
+  const int numGlobalRows = 2;
+  Teuchos::ArrayRCP<int> myrow(1);
   if (thisproc == 1) myrow[0] = 7;
-  Teuchos::RCP<const Tpetra::Map<int> > rowmap = Teuchos::rcp(new Tpetra::Map<int>(numGlobalRows, myrow(), 0, Comm));
+  else               myrow[0] = 3;
+  Teuchos::RCP<const Map> rowmap = Teuchos::rcp(new Map(numGlobalRows, myrow(), 0, Comm));
 
   //set up a domain-std::map with columns 0 - 4 on proc 0,
   //and columns 5 - 9 on proc 1.
-  int numGlobalCols = 10;
-  int numMyCols = 5;
+  const int numGlobalCols = 10;
+  const int numMyCols = 5;
   Teuchos::ArrayRCP<int> mycols(numGlobalCols);
-  int i;
-  for(i=0; i<numGlobalCols; ++i) {
+  for(int i=0; i<numGlobalCols; ++i) {
     mycols[i] = i;
   }
+  Teuchos::RCP<const Map> domainmap = Teuchos::rcp(new Map(numGlobalCols, mycols(thisproc*numMyCols,numMyCols), 0, Comm));
 
-  Teuchos::RCP<const Tpetra::Map<int> > domainmap = Teuchos::rcp(new Tpetra::Map<int>(numGlobalCols, mycols(thisproc*numMyCols,numMyCols), 0, Comm));
-
-  //now create matrices A, B and C with rowmap.
-  Teuchos::RCP<Tpetra::CrsMatrix<double,int> > A = Teuchos::rcp(new Tpetra::CrsMatrix<double, int>(rowmap, numGlobalCols));
-  Teuchos::RCP<Tpetra::CrsMatrix<double,int> > B = Teuchos::rcp(new Tpetra::CrsMatrix<double, int>(rowmap, numGlobalCols));
-  Teuchos::RCP<Tpetra::CrsMatrix<double,int> > C = Teuchos::rcp(new Tpetra::CrsMatrix<double, int>(rowmap, numGlobalCols));
+  // now create matrices A, B and C with rowmap; the second argument is just the suggested allocation size
+  Teuchos::RCP<CrsMatrix> A = Teuchos::rcp(new CrsMatrix(rowmap, 1));
+  A->setObjectLabel("Factor Matrix A");
+  Teuchos::RCP<CrsMatrix> C = Teuchos::rcp(new CrsMatrix(rowmap, 1));
+  C->setObjectLabel("Product matrix C");
 
   Teuchos::ArrayRCP<double> coefs(numGlobalCols);
-  for(i=0; i<numGlobalCols; ++i) {
+  for(int i=0; i<numGlobalCols; ++i) {
     coefs[i] = 1.0*i;
   }
 
   A->insertGlobalValues(myrow[0], mycols(thisproc*numMyCols, numMyCols), coefs(thisproc*numMyCols, numMyCols));
 
-  B->insertGlobalValues(myrow[0], mycols(thisproc*numMyCols, numMyCols), coefs(thisproc*numMyCols, numMyCols));
-
   A->fillComplete(domainmap, rowmap);
-  B->fillComplete(domainmap, rowmap);
+  // A->describe(*out, Teuchos::VERB_EXTREME);
 
-  Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constA = A;
-  Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constB = B;
-  typedef Kokkos::DefaultNode::DefaultNodeType DNode;
-
-  Tpetra::MatrixMatrix<
-    double, 
-    int,
-    int,
-    DNode,
-    typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Multiply(constA, false, constB, true, C);
-
-  //std::cout << "two_proc_test, A: "<<std::endl;
-  //std::cout << A << std::endl;
-
-  //std::cout << "two_proc_test, B: "<<std::endl;
-  //std::cout << B << std::endl;
-
-  //std::cout << "two_proc_test, C: "<<std::endl;
-  //std::cout << C << std::endl;
+  MatMat::Multiply(A, false, A, true, C);
+  C->describe(*out, Teuchos::VERB_EXTREME);
 
   if (C->getGlobalNumEntries() != 4) {
     err += 1;
