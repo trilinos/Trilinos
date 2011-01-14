@@ -262,19 +262,17 @@ namespace Belos {
   public:
 
     static Teuchos::RCP<Epetra_MultiVector> 
-    Clone (const Epetra_MultiVector& mv, const int numVecs)
+    Clone (const Epetra_MultiVector& mv, const int outNumVecs)
     { 
-      const bool validNumVecs = (numVecs > 0 && numVecs <= GetNumberVecs(mv));
-      TEST_FOR_EXCEPTION(! validNumVecs, std::invalid_argument,
-			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
-			 "Clone(mv, numVecs = " << numVecs << "): numVecs must"
-			 " be positive and no greater than the number of vecto"
-			 "rs " << GetNumberVecs(mv) << " in mv.");
+      TEST_FOR_EXCEPTION(outNumVecs <= 0, std::invalid_argument,
+			 "Belos::MultiVecTraits<double, Epetra_MultiVector>::"
+			 "Clone(mv, outNumVecs = " << outNumVecs << "): "
+			 "outNumVecs must be positive.");
       // FIXME (mfh 13 Jan 2011) Anasazi currently lets Epetra fill in
       // the entries of the returned multivector with zeros, but Belos
       // does not.  We retain this different behavior for now, but the
       // two versions will need to be reconciled.
-      return Teuchos::rcp (new Epetra_MultiVector (mv.Map(), numVecs, false)); 
+      return Teuchos::rcp (new Epetra_MultiVector (mv.Map(), outNumVecs, false)); 
     }
 
     static Teuchos::RCP<Epetra_MultiVector> 
