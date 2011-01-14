@@ -219,7 +219,7 @@ template<>
 std::string XMLObject::getRequired<std::string>(const std::string& name) const;
 
 template<>
-void XMLObject::addAttribute(const std::string& name, const std::string& value);
+void XMLObject::addAttribute<const std::string&>(const std::string& name, const std::string& value);
 
 
 /** \brief Write XMLObject to \c os stream.

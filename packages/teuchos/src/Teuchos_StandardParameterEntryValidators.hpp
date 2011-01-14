@@ -625,7 +625,7 @@ public:
         throw std::runtime_error("Cannot convert enumValue: " + toString(enumValue) + " to a string");
     }
     //Should never get here. This code is here so that a warning is not generated.
-    static const std::string& emptyString("");
+    static const std::string emptyString("");
     return emptyString;
   }
 
