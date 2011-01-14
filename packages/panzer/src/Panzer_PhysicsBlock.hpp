@@ -37,6 +37,10 @@ namespace panzer {
 		 const panzer::CellData cell_data,
 		 const panzer::EquationSetFactory& factory);
 
+    PhysicsBlock(const panzer::PhysicsBlock & pb,
+                 const panzer::CellData cell_data,
+                 const panzer::EquationSetFactory& factory);
+
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm) const;
 
     void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm) const;
@@ -67,11 +71,23 @@ namespace panzer {
 
     const panzer::CellData cellData() const;
 
+    /** Build a copy of this physics block object but use the cell_data
+      * passed in by the user. This is useful for creating physics block objects
+      * that reside on the boundaries.
+      */
+    Teuchos::RCP<PhysicsBlock> copyWithCellData(const panzer::CellData cell_data,
+                                                const panzer::EquationSetFactory & factory) const;
+
   protected:
+    void initialize(const panzer::InputPhysicsBlock & ipb,
+                    const std::string & element_block_id,
+   		    const panzer::CellData cell_data,
+   		    const panzer::EquationSetFactory& factory);
 
     std::string m_physics_id;
     std::string m_element_block_id;
     panzer::CellData m_cell_data;
+    panzer::InputPhysicsBlock m_initializer;
 
     std::vector<std::string> m_dof_names;
     std::vector<StrBasisPair> m_provided_dofs;

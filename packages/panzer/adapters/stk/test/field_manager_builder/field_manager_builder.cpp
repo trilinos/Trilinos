@@ -22,8 +22,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-  void testInitialzation(const panzer_stk::STK_Interface& mesh,
-			 panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
 
   TEUCHOS_UNIT_TEST(field_manager_builder, basic)
@@ -42,7 +41,7 @@ namespace panzer {
 
     panzer::InputPhysicsBlock ipb;
     std::vector<panzer::BC> bcs;
-    testInitialzation(*mesh, ipb, bcs);
+    testInitialzation(ipb, bcs);
 
 
     const std::size_t workset_size = 20;
@@ -103,13 +102,101 @@ namespace panzer {
 
     TEST_EQUALITY(fmb_bc_fm.size(), 3);
     TEST_EQUALITY(fmb_bc_fm.size(), fmb_bc_worksets.size());
-
-    
-
   }
 
-  void testInitialzation(const panzer_stk::STK_Interface& mesh,
-			 panzer::InputPhysicsBlock& ipb,
+  TEUCHOS_UNIT_TEST(field_manager_builder, incremental_setup_interface)
+  {
+    using Teuchos::RCP;
+
+    panzer_stk::SquareQuadMeshFactory mesh_factory;
+    user_app::MyFactory eqset_factory;
+    user_app::BCFactory bc_factory;
+    const std::size_t workset_size = 20;
+
+    panzer::FieldManagerBuilder<int,int> fmb;
+
+    // setup physic blocks
+    /////////////////////////////////////////////
+    panzer::InputPhysicsBlock ipb;
+    std::vector<panzer::BC> bcs;
+    std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
+    {
+       std::map<std::string,panzer::InputPhysicsBlock> 
+             physics_id_to_input_physics_blocks;
+
+       testInitialzation(ipb, bcs);
+
+       std::map<std::string,std::string> block_ids_to_physics_ids;
+       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+       block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+    
+       physics_id_to_input_physics_blocks["test physics"] = ipb;
+
+       fmb.buildPhysicsBlocks(block_ids_to_physics_ids,
+                              physics_id_to_input_physics_blocks,
+                              2,workset_size,
+                              eqset_factory,
+                              physics_blocks);
+    }
+
+    // setup mesh
+    /////////////////////////////////////////////
+    RCP<panzer_stk::STK_Interface> mesh;
+    {
+       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Blocks",2);
+       pl->set("Y Blocks",1);
+       pl->set("X Elements",6);
+       pl->set("Y Elements",4);
+       mesh_factory.setParameterList(pl);
+       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+    }
+
+    // setup worksets
+    /////////////////////////////////////////////
+ 
+    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
+      volume_worksets = panzer_stk::buildWorksets(*mesh,ipb, workset_size);
+    
+    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
+          = panzer_stk::buildBCWorksets(*mesh,ipb,bcs);
+
+    // setup DOF manager
+    /////////////////////////////////////////////
+    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
+           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+          = fmb.buildDOFManager(conn_manager,MPI_COMM_WORLD,physics_blocks);
+
+    // setup field manager builder
+    /////////////////////////////////////////////
+    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,dofManager);
+    fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,bc_factory);
+
+    // run tests
+    /////////////////////////////////
+    const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm = 
+      fmb.getVolumeFieldManagers();
+    
+    const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& fmb_vol_worksets = 
+      fmb.getWorksets();
+    
+    TEST_EQUALITY(fmb_vol_fm.size(), 2);
+    TEST_EQUALITY(fmb_vol_fm.size(), fmb_vol_worksets.size());
+
+    const std::map<panzer::BC, 
+      std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
+      panzer::LessBC>& fmb_bc_fm = fmb.getBCFieldManagers();
+      
+    const std::map<panzer::BC,
+		   Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
+		   panzer::LessBC>& fmb_bc_worksets = fmb.getBCWorksets();
+
+    TEST_EQUALITY(fmb_bc_fm.size(), 3);
+    TEST_EQUALITY(fmb_bc_fm.size(), fmb_bc_worksets.size());
+  }
+
+  void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
     panzer::InputEquationSet ies_1;
