@@ -211,12 +211,6 @@ struct TestMomKe {
     // { momentum , kinetic energy }
     result    = device_type::template create_mdarray<Scalar>( 4 );
 
-    // Potential alternative API for creating arrays
-    //
-    // mass.allocate( map );
-    // velocity.allocate( 3 , map );
-    // result.allocate( 4 ); // Allocated on device with no map
-
     // Execute the parallel kernels on the arrays:
 
     Kokkos::fill( mass , Scalar( 1.0 ) );

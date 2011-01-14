@@ -71,8 +71,8 @@ void reduce_shared_on_cuda(
   for ( unsigned int j = blockDim.x ; j ; ) {
     j >>= 1 ;
 
-    // Wait for contributing thread
-    if ( warpSize <= j ) { __syncthreads(); }
+    // Wait for contributing thread from a different half-warp
+    if ( warpSize < j ) { __syncthreads(); }
 
     if ( threadIdx.x < j ) {
 
