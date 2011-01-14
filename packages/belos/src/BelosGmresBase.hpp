@@ -748,16 +748,16 @@ namespace Belos {
     /// in the case of nopreconditioning, and then we also let Z_ be
     /// null.
     ///
-    /// \note In the original Flexible GMRES paper, Saad and Schultz
-    /// suggested implementing FGMRES and GMRES in a single routine,
-    /// with a runtime switch to decide whether to keep the Z basis
-    /// and whether update the solution with the Q or Z basis.  This
-    /// is in fact what we do.  The differences between GMRES and
-    /// FGMRES are small enough that we can benefit from the reduced
-    /// code duplication.  We have smart algorithms people, but not
-    /// many of them (and they are very busy), so it's a more
-    /// efficient use of development effort to have less code that is
-    /// slightly more complicated.
+    /// \note In the original Flexible GMRES paper, Saad suggested
+    /// implementing FGMRES and GMRES in a single routine, with a
+    /// runtime switch to decide whether to keep the Z basis and
+    /// whether update the solution with the Q or Z basis.  This is in
+    /// fact what we do.  The differences between GMRES and FGMRES are
+    /// small enough that we can benefit from the reduced code
+    /// duplication.  We have smart algorithms people, but not many of
+    /// them (and they are very busy), so it's a more efficient use of
+    /// development effort to have less code that is slightly more
+    /// complicated.
     bool flexible_;
 
     //@}
