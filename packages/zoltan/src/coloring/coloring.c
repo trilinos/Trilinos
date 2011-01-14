@@ -866,8 +866,9 @@ static int D1coloring(
 static int D2coloring(
     ZZ *zz,
     char coloring_problem,/* Coloring problem. '2' or 'P'  in this case */
-    char coloring_order,  /* (I) interior vertices first
-			  (B) boundary vertices first (U) interleaved */
+    char coloring_order,  /* (I) interior vertices first (B) boundary vertices first 
+		             (U) interleaved (N) Natural Ordering (L) Largest First (S) Smallest Last
+ 		 	     Note that LF and SL orderings are same with the ones in distance-1 function.*/
     char coloring_method, /* Coloring method. (F) First fit
 			  (S) staggered first fit (L) load balancing */
     char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
@@ -1154,6 +1155,22 @@ static int D2coloring(
     }
     else if (coloring_order=='B')
 	nConflict = nboundvisit;
+    else if (coloring_order=='N' || coloring_order=='L' || coloring_order=='S') {
+        nConflict = nvtx;
+        if (coloring_order=='N') {
+            for (i=0; i<nvtx; i++)
+                visit[i] = i;
+        }   
+        else if (coloring_order=='L') {
+            LargestDegreeFirstOrdering(zz, visit, xadj, nvtx, lmaxdeg);
+        }
+        else if (coloring_order=='S') {            
+	    SmallestDegreeLastOrdering(zz, visit, xadj, adj, nvtx, lmaxdeg);  
+        }
+        if (zz->Num_Proc==1)
+            InternalColoring(zz, coloring_problem, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxcolor, coloring_method);
+    }
+
 /*
     else if (coloring_order == 'U') { ** not implemented **
 	nConflict = nvtx;
