@@ -1,21 +1,17 @@
-This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2007.5.18)  9 AUG 2010 09:21
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2010.10.19)  14 JAN 2011 14:53
 entering extended mode
+ restricted \write18 enabled.
  %&-line parsing enabled.
 **KurtisNusbaum
 (./KurtisNusbaum.tex
-LaTeX2e <2005/12/01>
-Babel <v3.8h> and hyphenation patterns for english, usenglishmax, dumylang, noh
-yphenation, arabic, basque, bulgarian, coptic, welsh, czech, slovak, german, ng
-erman, danish, esperanto, spanish, catalan, galician, estonian, farsi, finnish,
- french, greek, monogreek, ancientgreek, croatian, hungarian, interlingua, ibyc
-us, indonesian, icelandic, italian, latin, mongolian, dutch, norsk, polish, por
-tuguese, pinyin, romanian, russian, slovenian, uppersorbian, serbian, swedish, 
-turkish, ukenglish, ukrainian, loaded.
+LaTeX2e <2009/09/24>
+Babel <v3.8l> and hyphenation patterns for english, usenglishmax, dumylang, noh
+yphenation, loaded.
 (./csri10.cls
 Document Class: csri10 2010/05/12 CSRI 2010 Summer Report Class
 (./siamltex.cls
 Document Class: siamltex 1996/10/11 v1.2 LaTeX document class
-(/usr/local/texlive/2007/texmf-dist/tex/latex/base/leqno.clo
+(/usr/share/texmf-texlive/tex/latex/base/leqno.clo
 File: leqno.clo 1998/08/17 v1.1c Standard LaTeX option (left equation numbers)
 ) (./siam10.clo
 File: siam10.clo 1994/10/01 v1.0 SIAM LaTeX file (size option)
@@ -34,32 +30,32 @@ File: siam10.clo 1994/10/01 v1.0 SIAM LaTeX file (size option)
 \belowcaptionskip=\skip42
 \bibindent=\dimen102
 ))
-(/usr/local/texlive/2007/texmf-dist/tex/latex/amsfonts/amsfonts.sty
-Package: amsfonts 2001/10/25 v2.2f
+(/usr/share/texmf-texlive/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2009/06/22 v3.00 Basic AMSFonts support
 \@emptytoks=\toks14
 \symAMSa=\mathgroup4
 \symAMSb=\mathgroup5
 LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
-(Font)                  U/euf/m/n --> U/euf/b/n on input line 132.
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 96.
 )
-(/usr/local/texlive/2007/texmf-dist/tex/latex/amsmath/amsmath.sty
+(/usr/share/texmf-texlive/tex/latex/amsmath/amsmath.sty
 Package: amsmath 2000/07/18 v2.13 AMS math features
 \@mathmargin=\skip43
 
 For additional information on amsmath, use the `?' option.
-(/usr/local/texlive/2007/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/share/texmf-texlive/tex/latex/amsmath/amstext.sty
 Package: amstext 2000/06/29 v2.01
 
-(/usr/local/texlive/2007/texmf-dist/tex/latex/amsmath/amsgen.sty
+(/usr/share/texmf-texlive/tex/latex/amsmath/amsgen.sty
 File: amsgen.sty 1999/11/30 v2.0
 \@emptytoks=\toks15
 \ex@=\dimen103
 ))
-(/usr/local/texlive/2007/texmf-dist/tex/latex/amsmath/amsbsy.sty
+(/usr/share/texmf-texlive/tex/latex/amsmath/amsbsy.sty
 Package: amsbsy 1999/11/29 v1.2d
 \pmbraise@=\dimen104
 )
-(/usr/local/texlive/2007/texmf-dist/tex/latex/amsmath/amsopn.sty
+(/usr/share/texmf-texlive/tex/latex/amsmath/amsopn.sty
 Package: amsopn 1999/12/14 v2.01 operator names
 )
 \inf@bad=\count89
@@ -100,159 +96,194 @@ LaTeX Font Info:    Redeclaring font encoding OMS on input line 568.
 LaTeX Info: Redefining \[ on input line 2666.
 LaTeX Info: Redefining \] on input line 2667.
 )
-(/usr/local/texlive/2007/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texmf-texlive/tex/latex/graphics/graphicx.sty
 Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
 
-(/usr/local/texlive/2007/texmf-dist/tex/latex/graphics/keyval.sty
+(/usr/share/texmf-texlive/tex/latex/graphics/keyval.sty
 Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
 \KV@toks@=\toks20
 )
-(/usr/local/texlive/2007/texmf-dist/tex/latex/graphics/graphics.sty
-Package: graphics 2006/02/20 v1.0o Standard LaTeX Graphics (DPC,SPQR)
+(/usr/share/texmf-texlive/tex/latex/graphics/graphics.sty
+Package: graphics 2009/02/05 v1.0o Standard LaTeX Graphics (DPC,SPQR)
 
-(/usr/local/texlive/2007/texmf-dist/tex/latex/graphics/trig.sty
+(/usr/share/texmf-texlive/tex/latex/graphics/trig.sty
 Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
 )
-(/usr/local/texlive/2007/texmf/tex/latex/config/graphics.cfg
-File: graphics.cfg 2007/01/18 v1.5 graphics configuration of teTeX/TeXLive
+(/etc/texmf/tex/latex/config/graphics.cfg
+File: graphics.cfg 2009/08/28 v1.8 graphics configuration of TeX Live
 )
-Package graphics Info: Driver file: pdftex.def on input line 90.
+Package graphics Info: Driver file: pdftex.def on input line 91.
 
-(/usr/local/texlive/2007/texmf-dist/tex/latex/pdftex-def/pdftex.def
-File: pdftex.def 2007/01/08 v0.04d Graphics/color for pdfTeX
+(/usr/share/texmf-texlive/tex/latex/pdftex-def/pdftex.def
+File: pdftex.def 2010/03/12 v0.04p Graphics/color for pdfTeX
 \Gread@gobject=\count101
 ))
 \Gin@req@height=\dimen112
 \Gin@req@width=\dimen113
 )
-(/usr/local/texlive/2007/texmf-dist/tex/latex/subfigure/subfigure.sty
-Package: subfigure 2002/03/15 v2.1.5 subfigure package
-\subfigtopskip=\skip46
-\subfigcapskip=\skip47
-\subfigcaptopadj=\dimen114
-\subfigbottomskip=\skip48
-\subfigcapmargin=\dimen115
-\subfiglabelskip=\skip49
-\c@subfigure=\count102
-\c@lofdepth=\count103
-\c@subtable=\count104
-\c@lotdepth=\count105
 
-****************************************
-* Local config file subfigure.cfg used *
-****************************************
-(/usr/local/texlive/2007/texmf-dist/tex/latex/subfigure/subfigure.cfg)
-\subfig@top=\skip50
-\subfig@bottom=\skip51
-)
+! LaTeX Error: File `subfigure.sty' not found.
+
+Type X to quit or <RETURN> to proceed,
+or enter new name. (Default extension: sty)
+
+Enter file name: 
 (./uml.sty
 Package: uml 
- (/usr/local/texlive/2007/texmf-dist/tex/latex/pstricks/pstricks.sty
-Package: pstricks 2006/08/10 v0.32 LaTeX wrapper for `PSTricks' (RN,HV)
 
-(/usr/local/texlive/2007/texmf-dist/tex/generic/pstricks/pstricks.tex
-`PSTricks' v1.15  <2006/12/22> (tvz)
-\pst@dima=\dimen116
-\pst@dimb=\dimen117
-\pst@dimc=\dimen118
-\pst@dimd=\dimen119
-\pst@dimg=\dimen120
-\pst@dimh=\dimen121
-\pst@hbox=\box28
-\pst@boxg=\box29
-\pst@cnta=\count106
-\pst@cntb=\count107
-\pst@cntc=\count108
-\pst@cntd=\count109
-\pst@cntg=\count110
-\pst@cnth=\count111
-\pst@toks=\toks21
-(/usr/local/texlive/2007/texmf-dist/tex/generic/pstricks/pstricks.con)
-\psunit=\dimen122
-\psxunit=\dimen123
-\psyunit=\dimen124
-\pslinewidth=\dimen125
-\pst@customdefs=\toks22
-\pslinearc=\dimen126
-\everypsbox=\toks23
-\psframesep=\dimen127
-\pslabelsep=\dimen128
-\psk@shift=\dimen129
-\pst@shift=\dimen130
-\theoverlaybox=\box30
-)
-File: pstricks.tex 2006/12/22 v1.15 `PSTricks' (tvz)
 
-(/usr/local/texlive/2007/texmf-dist/tex/latex/xcolor/xcolor.sty
-Package: xcolor 2007/01/21 v2.11 LaTeX color extensions (UK)
+! LaTeX Error: File `pstricks.sty' not found.
 
-(/usr/local/texlive/2007/texmf/tex/latex/config/color.cfg
-File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
-)
-Package xcolor Info: Package option `override' ignored on input line 216.
-Package xcolor Info: Driver file: pdftex.def on input line 225.
-Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1337.
-Package xcolor Info: Model `hsb' substituted by `rgb' on input line 1341.
-Package xcolor Info: Model `RGB' extended on input line 1353.
-Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1355.
-Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1356.
-Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1357.
-Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1358.
-Package xcolor Info: Model `Gray' substituted by `gray' on input line 1359.
-Package xcolor Info: Model `wave' substituted by `hsb' on input line 1360.
-))
-(/usr/local/texlive/2007/texmf-dist/tex/latex/pstricks/pst-node.sty
-Package: pst-node 2006/01/01 package wrapper for pst-node.tex
+Type X to quit or <RETURN> to proceed,
+or enter new name. (Default extension: sty)
 
-(/usr/local/texlive/2007/texmf-dist/tex/generic/pstricks/pst-node.tex
- v97 patch 11, 2000/11/09
-\psrow=\count112
-\pscol=\count113
-\psmatrixcnt=\count114
-\psrowsep=\skip52
-\pscolsep=\skip53
-)
-File: pst-node.tex 2000/11/09 97 patch 11 `pst-node' (tvz)
-)
-(/usr/local/texlive/2007/texmf-dist/tex/latex/ltxmisc/relsize.sty
+Enter file name: 
+
+! LaTeX Error: File `pst-node.sty' not found.
+
+Type X to quit or <RETURN> to proceed,
+or enter new name. (Default extension: sty)
+
+Enter file name: 
+(/usr/share/texmf-texlive/tex/latex/ltxmisc/relsize.sty
 Package: relsize 2003/07/04 ver 3.1
 )
-\umlArmA=\skip54
-\umlArmB=\skip55
-\umlSymbolHeightDefault=\skip56
-\umlSymbolWidthDefault=\skip57
-\umlInnerWidthDefault=\skip58
-\umlInnerRadiusDefault=\skip59
-\umlNodeSep=\skip60
-\umlPlaceNodeX=\skip61
-\umlPlaceNodeY=\skip62
+(/usr/share/texmf-texlive/tex/latex/graphics/color.sty
+Package: color 2005/11/14 v1.0j Standard LaTeX Color (DPC)
+
+(/etc/texmf/tex/latex/config/color.cfg
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
 )
-(/usr/local/texlive/2007/texmf-dist/tex/latex/ltxmisc/url.sty
+Package color Info: Driver file: pdftex.def on input line 130.
+)
+! Undefined control sequence.
+l.197 \psset
+            {xunit=1em}
+? 
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.197 \psset{x
+              unit=1em}
+? 
+! Undefined control sequence.
+l.198 \psset
+            {yunit=1em}
+? 
+! Undefined control sequence.
+l.199 \psset
+            {runit=1em}
+? 
+\umlArmA=\skip46
+\umlArmB=\skip47
+\umlSymbolHeightDefault=\skip48
+\umlSymbolWidthDefault=\skip49
+\umlInnerWidthDefault=\skip50
+\umlInnerRadiusDefault=\skip51
+! Undefined control sequence.
+\umlColorsAdjust ->\newgray 
+                            {umlColor}{0}\newgray {umlLinecolor}{0}\newgray ...
+l.2580 \umlColorsAdjust
+                       
+? 
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.2580 \umlColorsAdjust
+                       
+? 
+! Undefined control sequence.
+\umlColorsAdjust ->\newgray {umlColor}{0}\newgray 
+                                                  {umlLinecolor}{0}\newgray ...
+l.2580 \umlColorsAdjust
+                       
+? 
+! Undefined control sequence.
+\umlColorsAdjust ...ray {umlLinecolor}{0}\newgray 
+                                                  {umlFillcolor}{1}\newgray ...
+l.2580 \umlColorsAdjust
+                       
+? 
+! Undefined control sequence.
+\umlColorsAdjust ...ray {umlFillcolor}{1}\newgray 
+                                                  {umlClassifierFillcolor}{0...
+l.2580 \umlColorsAdjust
+                       
+? 
+! Undefined control sequence.
+\umlColorsAdjust ...ifierFillcolor}{0.85}\newgray 
+                                                  {umlDiagramFillcolor}{0.95...
+l.2580 \umlColorsAdjust
+                       
+? 
+! Undefined control sequence.
+\umlColorsAdjust ...agramFillcolor}{0.95}\newgray 
+                                                  {umlRelationColor}{0}\umlC...
+l.2580 \umlColorsAdjust
+                       
+? 
+! Undefined control sequence.
+\umlColorsAdjust ...umlRelationColor}{0}\umlColor 
+                                                  \psset {linecolor=umlLinec...
+l.2580 \umlColorsAdjust
+                       
+? 
+! Undefined control sequence.
+\umlColorsAdjust ...tionColor}{0}\umlColor \psset 
+                                                  {linecolor=umlLinecolor, f...
+l.2580 \umlColorsAdjust
+                       
+? 
+
+Overfull \hbox (217.3796pt too wide) in paragraph at lines 2580--2582
+[]\OT1/cmr/m/n/10 umlColor0umlLinecolor0umlFillcolor1umlClassifierFillcolor0.85
+umlDiagramFillcolor0.95umlRelationColor0linecolor=umlLinecolor,|
+ []
+
+! Undefined control sequence.
+l.2603 \SpecialCoor
+                   
+? 
+\umlNodeSep=\skip52
+\umlPlaceNodeX=\skip53
+\umlPlaceNodeY=\skip54
+) (/usr/share/texmf-texlive/tex/latex/ltxmisc/url.sty
 \Urlmuskip=\muskip11
-Package: url 2005/06/27  ver 3.2  Verb mode for urls, etc.
+Package: url 2006/04/12  ver 3.3  Verb mode for urls, etc.
 )
-(/usr/local/texlive/2007/texmf-dist/tex/latex/tools/multicol.sty
-Package: multicol 2006/05/18 v1.6g multicolumn formatting (FMi)
-\c@tracingmulticols=\count115
-\mult@box=\box31
-\multicol@leftmargin=\dimen131
-\c@unbalance=\count116
-\c@collectmore=\count117
-\doublecol@number=\count118
-\multicoltolerance=\count119
-\multicolpretolerance=\count120
-\full@width=\dimen132
-\page@free=\dimen133
-\premulticols=\dimen134
-\postmulticols=\dimen135
-\multicolsep=\skip63
-\multicolbaselineskip=\skip64
-\partial@page=\box32
-\last@line=\box33
-\mult@rightbox=\box34
-\mult@grightbox=\box35
-\mult@gfirstbox=\box36
-\mult@firstbox=\box37
+(/usr/share/texmf-texlive/tex/latex/tools/multicol.sty
+Package: multicol 2008/12/05 v1.6h multicolumn formatting (FMi)
+\c@tracingmulticols=\count102
+\mult@box=\box28
+\multicol@leftmargin=\dimen114
+\c@unbalance=\count103
+\c@collectmore=\count104
+\doublecol@number=\count105
+\multicoltolerance=\count106
+\multicolpretolerance=\count107
+\full@width=\dimen115
+\page@free=\dimen116
+\premulticols=\dimen117
+\postmulticols=\dimen118
+\multicolsep=\skip55
+\multicolbaselineskip=\skip56
+\partial@page=\box29
+\last@line=\box30
+\mult@rightbox=\box31
+\mult@grightbox=\box32
+\mult@gfirstbox=\box33
+\mult@firstbox=\box34
+\@tempa=\box35
+\@tempa=\box36
+\@tempa=\box37
 \@tempa=\box38
 \@tempa=\box39
 \@tempa=\box40
@@ -267,25 +298,21 @@ Package: multicol 2006/05/18 v1.6g multicolumn formatting (FMi)
 \@tempa=\box49
 \@tempa=\box50
 \@tempa=\box51
-\@tempa=\box52
-\@tempa=\box53
-\@tempa=\box54
-\c@columnbadness=\count121
-\c@finalcolumnbadness=\count122
-\last@try=\dimen136
-\multicolovershoot=\dimen137
-\multicolundershoot=\dimen138
-\mult@nat@firstbox=\box55
-\colbreak@box=\box56
+\c@columnbadness=\count108
+\c@finalcolumnbadness=\count109
+\last@try=\dimen119
+\multicolovershoot=\dimen120
+\multicolundershoot=\dimen121
+\mult@nat@firstbox=\box52
+\colbreak@box=\box53
 )
-(/usr/local/texlive/2007/texmf-dist/tex/latex/paralist/paralist.sty
-Package: paralist 2002/03/18 v2.3b Extended list environments (BS)
-\pltopsep=\skip65
-\plpartopsep=\skip66
-\plitemsep=\skip67
-\plparsep=\skip68
-\pl@lab=\toks24
-)
+
+! LaTeX Error: File `paralist.sty' not found.
+
+Type X to quit or <RETURN> to proceed,
+or enter new name. (Default extension: sty)
+
+Enter file name: 
 (./KurtisNusbaum.aux)
 \openout1 = `KurtisNusbaum.aux'.
 
@@ -301,51 +328,106 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 39.
 LaTeX Font Info:    ... okay on input line 39.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 39.
 LaTeX Font Info:    ... okay on input line 39.
-
-(/usr/local/texlive/2007/texmf-dist/tex/context/base/supp-pdf.tex
+ (/usr/share/texmf-texlive/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count123
-\scratchdimen=\dimen139
-\scratchbox=\box57
-\nofMPsegments=\count124
-\nofMParguments=\count125
-\MPscratchCnt=\count126
-\MPscratchDim=\dimen140
-\MPnumerator=\count127
-\everyMPtoPDFconversion=\toks25
+\scratchcounter=\count110
+\scratchdimen=\dimen122
+\scratchbox=\box54
+\nofMPsegments=\count111
+\nofMParguments=\count112
+\everyMPshowfont=\toks21
+\MPscratchCnt=\count113
+\MPscratchDim=\dimen123
+\MPnumerator=\count114
+\everyMPtoPDFconversion=\toks22
 )
 LaTeX Font Info:    Try loading font information for U+msa on input line 41.
- (/usr/local/texlive/2007/texmf-dist/tex/latex/amsfonts/umsa.fd
-File: umsa.fd 2002/01/19 v2.2g AMS font definitions
+ (/usr/share/texmf-texlive/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2009/06/22 v3.00 AMS symbols A
 )
 LaTeX Font Info:    Try loading font information for U+msb on input line 41.
 
-(/usr/local/texlive/2007/texmf-dist/tex/latex/amsfonts/umsb.fd
-File: umsb.fd 2002/01/19 v2.2g AMS font definitions
-)
-(../OptikaAbstract.tex) (../OptikaDev.tex [1
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!{/usr/local/texlive/2007/texmf-var/fonts/map/pdftex/upd
-map/pdftex.map}
+(/usr/share/texmf-texlive/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2009/06/22 v3.00 AMS symbols B
+) (../OptikaAbstract.tex)
+(../OptikaIntro.tex) (../OptikaDev.tex [1{/var/lib/texmf/fonts/map/pdftex/updma
+p/pdftex.map}
 
-] <graphics/spinbox.png, id=13, 216.81pt x 41.15375pt>
-File: graphics/spinbox.png Graphic file (type png)
+]
 
-<use graphics/spinbox.png>
-<graphics/combobox.png, id=14, 216.81pt x 39.14626pt>
-File: graphics/combobox.png Graphic file (type png)
+! LaTeX Error: Environment inparaenum undefined.
 
-<use graphics/combobox.png>
-<graphics/lineedit.png, id=15, 216.81pt x 41.15375pt>
-File: graphics/lineedit.png Graphic file (type png)
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.74 		\begin{inparaenum}
+                         [(a)]
+? 
 
-<use graphics/lineedit.png> [2] [3 <./graphics/spinbox.png> <./graphics/combobo
-x.png> <./graphics/lineedit.png>]
-<graphics/treeview.png, id=28, 576.1525pt x 320.19624pt>
-File: graphics/treeview.png Graphic file (type png)
+! LaTeX Error: \begin{itemize} on input line 24 ended by \end{inparaenum}.
 
-<use graphics/treeview.png> [4 <./graphics/treeview.png>]
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.82 		\end{inparaenum}
+                       
+? 
+! Undefined control sequence.
+l.92 			\subfigure
+                  [A Spin Box]{
+? 
+
+! LaTeX Error: File `graphics/spinbox' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.94 ...cludegraphics[scale=0.5]{graphics/spinbox}
+                                                  
+? 
+! Undefined control sequence.
+l.96 			\subfigure
+                  [A Combo Box]{
+? 
+
+! LaTeX Error: File `graphics/combobox' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.98 ...ludegraphics[scale=0.5]{graphics/combobox}
+                                                  
+? 
+! Undefined control sequence.
+l.100 			\subfigure
+                   [A Line Edit]{
+? 
+
+! LaTeX Error: File `graphics/lineedit' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.102 ...udegraphics[scale=0.5]{graphics/lineedit}
+                                                  
+? 
+[2] [3]
+
+! LaTeX Error: File `graphics/treeview' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.168 ...udegraphics[scale=0.5]{graphics/treeview}
+                                                  
+? 
+[4]
 Overfull \hbox (2.06989pt too wide) in paragraph at lines 213--216
 []\OT1/cmr/m/n/10 Sometimes the de-vel-oper doesn't want to change|
  []
@@ -366,36 +448,40 @@ Overfull \hbox (14.00261pt too wide) in paragraph at lines 335--336
 []\OT1/cmr/m/n/10 returns the equiv-a-lent of per-form-ing a log-i-cal EQUALS|
  []
 
-[8]) (../OptikaNomenclature.tex [9]) (./KurtisNusbaum.bbl
+[8]) (../OptikaNomenclature.tex) (./KurtisNusbaum.bbl
 Underfull \hbox (badness 4752) in paragraph at lines 12--16
 []\OT1/cmr/m/it/8 Optika: Trili-nos/packages/optika\OT1/cmr/m/n/8 .  $\OT1/cmtt
 /m/n/8 http : / / trilinos . sandia . gov / packages / docs / r10 . 4 /
  []
 
-) [10] (./KurtisNusbaum.aux) ) 
+[9]) [10] (./KurtisNusbaum.aux)
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ ) 
 Here is how much of TeX's memory you used:
- 4339 strings out of 94073
- 52891 string characters out of 1162984
- 135497 words of memory out of 1500000
- 7564 multiletter control sequences out of 10000+50000
- 10232 words of font info for 40 fonts, out of 1200000 for 2000
- 645 hyphenation exceptions out of 8191
- 37i,9n,39p,243b,317s stack positions out of 5000i,500n,6000p,200000b,5000s
-</usr/local/texlive/2007/texmf-dist/fonts/type1/b
-luesky/cm/cmbx10.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/bluesky/cm
-/cmbx8.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/bluesky/cm/cmcsc10.p
-fb></usr/local/texlive/2007/texmf-dist/fonts/type1/bluesky/cm/cmmi10.pfb></usr/
-local/texlive/2007/texmf-dist/fonts/type1/bluesky/cm/cmr10.pfb></usr/local/texl
-ive/2007/texmf-dist/fonts/type1/bluesky/cm/cmr6.pfb></usr/local/texlive/2007/te
-xmf-dist/fonts/type1/bluesky/cm/cmr7.pfb></usr/local/texlive/2007/texmf-dist/fo
-nts/type1/bluesky/cm/cmr8.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/b
-luesky/cm/cmsy10.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/bluesky/cm
-/cmsy6.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/bluesky/cm/cmti10.pf
-b></usr/local/texlive/2007/texmf-dist/fonts/type1/bluesky/cm/cmti8.pfb></usr/lo
-cal/texlive/2007/texmf-dist/fonts/type1/bluesky/cm/cmtt8.pfb>
-Output written on KurtisNusbaum.pdf (10 pages, 169594 bytes).
+ 2416 strings out of 495061
+ 29993 string characters out of 1182620
+ 93754 words of memory out of 3000000
+ 5546 multiletter control sequences out of 15000+50000
+ 10223 words of font info for 40 fonts, out of 3000000 for 9000
+ 28 hyphenation exceptions out of 8191
+ 29i,8n,22p,243b,284s stack positions out of 5000i,500n,10000p,200000b,50000s
+</usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/sha
+re/texmf-texlive/fonts/type1/public/amsfonts/cm/cmbx8.pfb></usr/share/texmf-tex
+live/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/share/texmf-texlive/fonts
+/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-texlive/fonts/type1/publ
+ic/amsfonts/cm/cmr10.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/
+cm/cmr6.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr7.pfb><
+/usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/te
+xmf-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-texlive
+/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/share/texmf-texlive/fonts/type1
+/public/amsfonts/cm/cmti10.pfb></usr/share/texmf-texlive/fonts/type1/public/ams
+fonts/cm/cmti8.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmt
+t8.pfb>
+Output written on KurtisNusbaum.pdf (10 pages, 205825 bytes).
 PDF statistics:
- 95 PDF objects out of 1000 (max. 8388607)
- 0 named destinations out of 1000 (max. 131072)
- 21 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 87 PDF objects out of 1000 (max. 8388607)
+ 0 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
