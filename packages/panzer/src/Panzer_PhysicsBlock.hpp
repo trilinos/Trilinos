@@ -30,8 +30,6 @@ namespace panzer {
   class PhysicsBlock {
 
   public:    
-    typedef std::pair<std::string,Teuchos::RCP<panzer::Basis> > StrBasisPair;
-    
     PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
                  const std::string & element_block_id,
 		 const panzer::CellData cell_data,

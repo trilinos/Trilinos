@@ -40,16 +40,12 @@ void prepForParallelSolve(Epetra_Export & exporter,const Epetra_CrsMatrix & inJa
                                                    Epetra_CrsMatrix & outJac,Epetra_Vector & outX);
 void redistributeSolution(Epetra_Import & importer,const Epetra_Vector & inX,Epetra_Vector & outX);
 
-typedef std::pair<std::string,Teuchos::RCP<panzer::Basis> > StrBasisPair;
-struct StrBasisComp {
-   bool operator() (const StrBasisPair & lhs, const StrBasisPair & rhs) const
-   {return lhs.first<rhs.first;}
-};
-
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
 {
    using Teuchos::RCP;
+   using panzer::StrBasisPair;
+   using panzer::StrBasisComp;
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));

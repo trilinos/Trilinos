@@ -22,18 +22,6 @@
 
 //#include "EpetraExt_BlockMapOut.h"
 
-//=======================================================================
-//=======================================================================
-
-namespace panzer {
-namespace _hide {
-typedef std::pair<std::string,Teuchos::RCP<panzer::Basis> > StrBasisPair;
-struct StrBasisComp {
-   bool operator() (const StrBasisPair & lhs, const StrBasisPair & rhs) const
-   {return lhs.first<rhs.first;}
-};
-}
-}
 
 //=======================================================================
 //=======================================================================
@@ -218,8 +206,6 @@ template<typename LO, typename GO>
 void panzer::FieldManagerBuilder<LO,GO>::buildDOFManager(const Teuchos::RCP<panzer::ConnManager<LO,GO> > & conn_manager, MPI_Comm comm,
                                                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks)
 {
-   using namespace panzer::_hide;
-
    Teuchos::RCP<Teuchos::FancyOStream> pout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
    pout->setShowProcRank(true);
    pout->setOutputToRootOnly(0);
@@ -344,8 +330,6 @@ Teuchos::RCP<panzer::DOFManager<LO,GO> > panzer::FieldManagerBuilder<LO,GO>::
                               buildDOFManager(const Teuchos::RCP<panzer::ConnManager<LO,GO> > & conn_manager, MPI_Comm comm,
                                               const std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks) const
 {
-   using namespace panzer::_hide;
-
    Teuchos::RCP<Teuchos::FancyOStream> pout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
    pout->setShowProcRank(true);
    pout->setOutputToRootOnly(0);

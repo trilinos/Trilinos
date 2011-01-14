@@ -151,7 +151,7 @@ const std::vector<std::string>& panzer::PhysicsBlock::getDOFNames() const
 }
 
 // *******************************************************************
-const std::vector<panzer::PhysicsBlock::StrBasisPair>& panzer::PhysicsBlock::getProvidedDOFs() const
+const std::vector<panzer::StrBasisPair>& panzer::PhysicsBlock::getProvidedDOFs() const
 {
   return m_provided_dofs;
 }

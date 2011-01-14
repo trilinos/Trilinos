@@ -75,7 +75,14 @@ namespace panzer {
     int int_rule_degree;
   };
 
+  typedef std::pair<std::string,Teuchos::RCP<panzer::Basis> > StrBasisPair;
+
+  //! Simple binary comparison class to help with sorting
+  struct StrBasisComp {
+    bool operator() (const StrBasisPair & lhs, const StrBasisPair & rhs) const
+    {return lhs.first<rhs.first;}
+  };
+
 }
 
 #endif
-
