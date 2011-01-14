@@ -133,10 +133,16 @@ namespace Belos {
   /// \author Mark Hoemmen
   ///
   /// This class includes both state and functionality that are useful
-  /// for different implementations of GMRES.  It does not implement
-  /// the actual iterations; this is left for subclasses.
-  /// Furthermore, it does not implement features like recycling, but
-  /// it does include hooks for subclasses to add in such features.
+  /// for different implementations of GMRES (the Generalized Minimal
+  /// Residual algorithm of Saad and Schultz).  Both Flexible GMRES
+  /// (FGMRES) (Saad, "A flexible inner-outer preconditioned GMRES
+  /// algorithm", SISC, vol 14, pp. 461-469, 1993) and ordinary GMRES
+  /// (Saad and Schultz, "GMRES: A generalized minimal residual
+  /// algorithm for solving nonsymmetric linear systems", SISSC, vol
+  /// 7, pp. 856-869, 1986) are supported.  It does not implement the
+  /// actual iterations; this is left for subclasses.  Furthermore, it
+  /// does not implement features like recycling, but it does include
+  /// hooks for subclasses to add in such features.
   ///
   template<class Scalar, class MV, class OP>
   class GmresBase {
@@ -416,6 +422,22 @@ namespace Belos {
     /// \param B_Z [in] Normalization coefficients (after projection)
     ///   of candidate Z basis vector(s), or null if there is no Z
     ///   basis
+    ///
+    /// \note For Flexible GMRES, it may be desirable to compute or
+    /// update a rank-revealing decomposition of the upper square
+    /// submatrix of H_.  This is because FGMRES only promises
+    /// convergence in exact arithmetic if this submatrix is full rank
+    /// _and_ the computed residual norm is zero.  Any decomposition
+    /// of H_ should _not_ be done in place; this is because \c
+    /// updateProjectedLeastSquaresProblem() depends on H_ being
+    /// intact.  That method does not itself modify H_, so
+    /// implementations of \c updateUpperHessenbergMatrix() can also
+    /// rely on H_ being intact.
+    ///
+    /// \note For an algorithm for updating a rank-revealing
+    /// decomposition, see e.g., G. W. Stewart, "Updating a
+    /// rank-revealing ULV decomposition", SIAM J. Matrix Anal. &
+    /// Appl., Volume 14, Issue 2, pp. 494-499 (April 1993).
     virtual void 
     updateUpperHessenbergMatrix (const Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> >& C_V,
 				 const Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> >& B_V,
@@ -725,6 +747,17 @@ namespace Belos {
     /// we let Z_ be Teuchos::null.  FGMRES reduces to standard GMRES
     /// in the case of nopreconditioning, and then we also let Z_ be
     /// null.
+    ///
+    /// \note In the original Flexible GMRES paper, Saad and Schultz
+    /// suggested implementing FGMRES and GMRES in a single routine,
+    /// with a runtime switch to decide whether to keep the Z basis
+    /// and whether update the solution with the Q or Z basis.  This
+    /// is in fact what we do.  The differences between GMRES and
+    /// FGMRES are small enough that we can benefit from the reduced
+    /// code duplication.  We have smart algorithms people, but not
+    /// many of them (and they are very busy), so it's a more
+    /// efficient use of development effort to have less code that is
+    /// slightly more complicated.
     bool flexible_;
 
     //@}
