@@ -283,7 +283,7 @@ namespace stk {
             unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
             shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
 
-            if (TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
+            if (1 || TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
                                              << " elementType= " << elementType << std::endl;
 
             std::vector<EntityRank> ranks_one(1, ranks[irank]);
@@ -316,7 +316,9 @@ namespace stk {
           EXCEPTWATCH;
           m_nodeRegistry->initialize();                           /**/  TRACE_PRINT("UniformRefiner: beginRegistration (top-level rank)... ");
 
+#if NEW_FIX_ELEMENT_SIDES
           m_eMesh.adapt_parent_to_child_relations().clear();
+#endif
 
           // register non-ghosted elements needs for new nodes, parallel create new nodes
           m_nodeRegistry->beginRegistration();
@@ -524,8 +526,10 @@ namespace stk {
           bulkData.modification_begin();
 
           /***********************/                           TRACE_PRINT("UniformRefiner: fixElementSides1 ");
+#if NEW_FIX_ELEMENT_SIDES
           fixElementSides1();
           m_eMesh.adapt_parent_to_child_relations().clear();
+#endif
           /***********************/                           TRACE_PRINT("UniformRefiner: fixElementSides1...done ");
 
           for (unsigned irank = 0; irank < ranks.size(); irank++)
@@ -536,7 +540,9 @@ namespace stk {
             } 
  
           /**/                                                TRACE_PRINT("UniformRefiner: fixElementSides ");
+#if !NEW_FIX_ELEMENT_SIDES
           fixElementSides();
+#endif
           /**/                                                TRACE_PRINT("UniformRefiner: fixElementSides...done ");
 
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start ");
@@ -754,13 +760,13 @@ namespace stk {
 
       if (m_eMesh.getSpatialDim() == 3)
         {
-          //fixElementSides1(mesh::Face);
-          //checkFixElementSides(mesh::Face, mesh::Element);
+          fixElementSides(mesh::Face);
+          checkFixElementSides(mesh::Face, mesh::Element);
         }
       // FIXME
       else if (m_eMesh.getSpatialDim() == 2)
         {
-          //fixElementSides(mesh::Edge);
+          fixElementSides(mesh::Edge);
         }
     }
 
@@ -778,7 +784,7 @@ namespace stk {
       // FIXME
       else if (m_eMesh.getSpatialDim() == 2)
         {
-          fixElementSides(mesh::Edge);
+          fixElementSides1(mesh::Edge);
         }
     }
 

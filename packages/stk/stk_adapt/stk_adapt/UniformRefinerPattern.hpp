@@ -39,6 +39,9 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
+#define NEW_FIX_ELEMENT_SIDES 1
+
+
 #define TRACE_STAGE_PRINT_ON 0
 #define TRACE_STAGE_PRINT (TRACE_STAGE_PRINT_ON && (m_eMesh.getRank()==0))
 

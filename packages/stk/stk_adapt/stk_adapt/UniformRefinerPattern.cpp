@@ -56,6 +56,7 @@ namespace stk {
     void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement, 
                                                                unsigned ordinal, unsigned *numChild)
     {
+#if NEW_FIX_ELEMENT_SIDES
       VERIFY_OP(ordinal, < , getNumNewElemPerElem(), "logic error in set_parent_child_relations");
       VERIFY_OP(&old_owning_elem, != , 0, "set_parent_child_relations: old_owning_elem is null");
       VERIFY_OP(&newElement, != , 0, "set_parent_child_relations: newElement is null");
@@ -76,6 +77,7 @@ namespace stk {
           entity_vector.resize(nchild);
         }
       entity_vector[ordinal] = &newElement;
+#endif
     }
 
   }
