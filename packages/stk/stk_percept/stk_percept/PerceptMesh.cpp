@@ -1708,6 +1708,7 @@ namespace stk {
       const mesh::PairIterRelation elem_nodes = element.relations(Node);
       const mesh::PairIterRelation side_nodes = side.relations(Node);
 
+      CellTopology cell_topo_side(get_cell_topology(side));
 
       const unsigned *  inodes = 0;
       unsigned nSubDimNodes = 0;
@@ -1725,7 +1726,6 @@ namespace stk {
             inodes = face_nodes_3;
           else
             inodes = face_nodes_4;
-
         }
       // special case for edges in 2D
       else if (needed_entity_rank == Edge && needed_entity_rank == element.entity_rank())
@@ -1793,6 +1793,7 @@ namespace stk {
               for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
                 {
                   int knode = ( found_node_offset + (int)nSubDimNodes - (int)jnode) % ((int)nSubDimNodes);
+
                   if (elem_nodes[inodes[jnode]].entity()->identifier() != side_nodes[ knode ].entity()->identifier() )
                     {
                       matched = false;

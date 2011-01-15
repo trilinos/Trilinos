@@ -523,6 +523,11 @@ namespace stk {
 
           bulkData.modification_begin();
 
+          /***********************/                           TRACE_PRINT("UniformRefiner: fixElementSides1 ");
+          fixElementSides1();
+          m_eMesh.adapt_parent_to_child_relations().clear();
+          /***********************/                           TRACE_PRINT("UniformRefiner: fixElementSides1...done ");
+
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
               removeOldElements(ranks[irank], m_breakPattern[irank]);
@@ -748,13 +753,31 @@ namespace stk {
 
       if (m_eMesh.getSpatialDim() == 3)
         {
-          fixElementSides(mesh::Face);
-          checkFixElementSides(mesh::Face, mesh::Element);
+          //fixElementSides1(mesh::Face);
+          //checkFixElementSides(mesh::Face, mesh::Element);
         }
       // FIXME
       else if (m_eMesh.getSpatialDim() == 2)
         {
           fixElementSides(mesh::Edge);
+        }
+    }
+
+    void UniformRefiner::
+    fixElementSides1()
+    {
+      EXCEPTWATCH;
+      if (getIgnoreSideSets()) return;
+
+      if (m_eMesh.getSpatialDim() == 3)
+        {
+          fixElementSides1(mesh::Face);
+          //checkFixElementSides(mesh::Face, mesh::Element);
+        }
+      // FIXME
+      else if (m_eMesh.getSpatialDim() == 2)
+        {
+          //fixElementSides(mesh::Edge);
         }
     }
 
@@ -764,30 +787,113 @@ namespace stk {
 #define EXTRA_PRINT_UR_FES 0
 
     // new version 011411 srk
+    /**
+     *                                                                               
+     *        _____                                                                       
+     *       |  |  |   |                                                                
+     *       |__|__|  _|_                                                               
+     *       |  |  |   |                                                                    
+     *       |__|__|   |                                                                    
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *
+     */
+
     void UniformRefiner::
     fixElementSides1(EntityRank side_rank)
     {
       EXCEPTWATCH;
+
       SameRankRelation& parent_child = m_eMesh.adapt_parent_to_child_relations();
       SameRankRelation::iterator pc_it;
       for (pc_it = parent_child.begin(); pc_it != parent_child.end(); pc_it++)
         {
           const SameRankRelationKey& parent = pc_it->first;
           SameRankRelationValue& child_vector = pc_it->second;
+
+
+          shards::CellTopology parent_topo(stk::mesh::get_cell_topology(*parent));
+          //unsigned parent_nsides = (unsigned)parent_topo.getSideCount();
+
           for (unsigned i_child = 0; i_child < child_vector.size(); i_child++)
             {
               Entity *child = child_vector[i_child];
               //mesh::PairIterRelation child_sides = child->relations(side_rank);
+              if (!child)
+                {
+                  std::cout << "fixElementSides1: child == null, i_child= " << i_child << " nchild= " << child_vector.size() << std::endl;
+                  throw std::runtime_error("fixElementSides1: child == null");
+                }
+
+              shards::CellTopology child_topo(stk::mesh::get_cell_topology(*child));
+              unsigned child_nsides = (unsigned)child_topo.getSideCount();
 
               // if parent has any side relations, check if any of the sides' children match the parent's children's faces
               mesh::PairIterRelation parent_sides = parent->relations(side_rank);
 
-              for (unsigned i_side = 0; i_side < parent_sides.size(); i_side++)
+              mesh::PairIterRelation side_to_parent = parent->relations(mesh::Element);
+
+              for (unsigned i_parent_side = 0; i_parent_side < parent_sides.size(); i_parent_side++)
                 {
-                  Entity *side = parent_sides[i_side].entity();
-                  std::cout << *side << *child;
+                  Entity *parent_side = parent_sides[i_parent_side].entity();
+                  //unsigned local_parent_side_id = parent_sides[i_parent_side].identifier();
+
+                  SameRankRelationValue& parent_side_children = m_eMesh.adapt_parent_to_child_relations()[parent_side];
+
+                  for (unsigned i_parent_side_child = 0; i_parent_side_child < parent_side_children.size(); i_parent_side_child++)
+                    {
+                      Entity *parent_side_child = parent_side_children[i_parent_side_child];
+
+                      int permIndex = -1;
+                      int permPolarity = 1;
+
+                      // use of i_parent_side here implies that the children's sides match up with the parents, this could be untrue - 
+                      //  then will require a search through all child faces 
+                      // NOTE: have to search over child faces due to different topology cases
+                      unsigned k_child_side = 0;
+#if 0
+                      boolean sameTopology = false; // FIXME - get this from the break pattern
+                      if (sameTopology)
+                        {
+                          PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
+                        }
+#endif
+
+                      if (permIndex < 0)
+                        {
+                          // try search
+                          for (unsigned j_child_side = 0; j_child_side < child_nsides; j_child_side++)
+                            {
+                              PerceptMesh::element_side_permutation(*child, *parent_side_child, j_child_side, permIndex, permPolarity);
+
+                              if (permIndex >= 0)
+                                {
+                                  k_child_side = j_child_side;
+                                  break;
+                                }
+                            }
+                        }
+
+                      if (permIndex >= 0)
+                        {
+                          m_eMesh.getBulkData()->declare_relation(*child, *parent_side_child, k_child_side);
+                          PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
+                        }
+                      else
+                        {
+
+                        }
+                    }
                 }
-              
             }
         }
     }

@@ -536,6 +536,7 @@ namespace stk {
               if (elem != NULL) {
                 stk::mesh::Entity& side =
                   stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+
                 bulk.change_entity_parts( side, add_parts );
                 sides[is] = &side;
               } else {

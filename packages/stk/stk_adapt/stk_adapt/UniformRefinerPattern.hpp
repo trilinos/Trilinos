@@ -142,7 +142,8 @@ namespace stk {
                         Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
                         FieldBase *proc_rank_field=0)=0;
 
-      void set_parent_child_relations(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement, unsigned ordinal);
+      /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
+      void set_parent_child_relations(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement, unsigned ordinal, unsigned *numChild=0);
 
       /// optionally overridden (must be overridden if sidesets are to work properly) to provide info on which sub pattern
       /// should be used to refine side sets (and edge sets)
@@ -732,6 +733,8 @@ namespace stk {
 
             change_entity_parts(eMesh, element, newElement);
 
+            set_parent_child_relations(eMesh, element, newElement, ielem);
+
             for (int inode=0; inode < ToTopology::node_count; inode++)
               {
                 mesh::EntityId eid = elems[ielem][inode];
@@ -743,6 +746,8 @@ namespace stk {
                 mesh::Entity& node = eMesh.createOrGetNode(eid);
                 eMesh.getBulkData()->declare_relation(newElement, node, inode);
               }
+
+            //set_parent_child_relations(eMesh, element, newElement, ielem);
 
             element_pool++;
 

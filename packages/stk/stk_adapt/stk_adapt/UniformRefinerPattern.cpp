@@ -52,9 +52,13 @@ namespace stk {
       return pattern;
     }
 
-    void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement, unsigned ordinal)
+    /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
+    void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement, 
+                                                               unsigned ordinal, unsigned *numChild)
     {
       VERIFY_OP(ordinal, < , getNumNewElemPerElem(), "logic error in set_parent_child_relations");
+      VERIFY_OP(&old_owning_elem, != , 0, "set_parent_child_relations: old_owning_elem is null");
+      VERIFY_OP(&newElement, != , 0, "set_parent_child_relations: newElement is null");
 
       //eMesh.getBulkData()->declare_relation( old_owning_elem, newElement, ordinal);
       
@@ -64,7 +68,13 @@ namespace stk {
 
       PerceptEntityVector& entity_vector = eMesh.adapt_parent_to_child_relations()[&old_owning_elem];
      
-      entity_vector.reserve(getNumNewElemPerElem());
+      //entity_vector.reserve(getNumNewElemPerElem());
+      unsigned nchild = getNumNewElemPerElem();
+      if (numChild) nchild = *numChild;
+      if (entity_vector.size() != nchild)
+        {
+          entity_vector.resize(nchild);
+        }
       entity_vector[ordinal] = &newElement;
     }
 

@@ -321,6 +321,9 @@ namespace stk {
 
             change_entity_parts(eMesh, element, newElement);
 
+            unsigned nchild = new_elements.size();
+            set_parent_child_relations(eMesh, element, newElement, ielem, &nchild);
+
             {
               if (!new_elements[ielem].get<0>())
                 {

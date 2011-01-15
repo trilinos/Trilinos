@@ -104,6 +104,8 @@ namespace stk {
 
             eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
 
+            set_parent_child_relations(eMesh, element, newElement, ielem);
+
             {
               if (!elems[ielem].get<0>())
                 {

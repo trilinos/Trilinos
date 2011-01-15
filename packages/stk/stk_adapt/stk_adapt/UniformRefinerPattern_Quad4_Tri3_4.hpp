@@ -111,6 +111,7 @@ namespace stk {
 
             //std::cout << "P["<< m_eMesh.getRank() << "] urp tmp 4 "  << std::endl;
             change_entity_parts(eMesh, element, newElement);
+            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             //std::cout << "P["<< m_eMesh.getRank() << "] urp tmp 5 "  << std::endl;
 
