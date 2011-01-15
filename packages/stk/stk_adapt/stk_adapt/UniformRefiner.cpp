@@ -281,6 +281,7 @@ namespace stk {
           {
             EXCEPTWATCH;
             unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
+            shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
 
             if (TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
                                              << " elementType= " << elementType << std::endl;
@@ -290,6 +291,11 @@ namespace stk {
             // this gives a list of colored elements for this element type only
             Colorer meshColorerThisTypeOnly(elementColorsByType[irank], ranks_one);   TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)... ");
             meshColorerThisTypeOnly.color(m_eMesh, &elementType);                     TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)...done ");
+
+            if (elementColorsByType[irank].size() == 0)
+              {
+                std::cout << "WARNING: no elements found of this type: " << cell_topo.getName() << " key= " << elementType << std::endl;
+              }
 
           }
 
@@ -309,6 +315,8 @@ namespace stk {
         {  // node registration step
           EXCEPTWATCH;
           m_nodeRegistry->initialize();                           /**/  TRACE_PRINT("UniformRefiner: beginRegistration (top-level rank)... ");
+
+          m_eMesh.adapt_parent_to_child_relations().clear();
 
           // register non-ghosted elements needs for new nodes, parallel create new nodes
           m_nodeRegistry->beginRegistration();
@@ -750,9 +758,39 @@ namespace stk {
         }
     }
 
+
     /** Sets orientations and associativity of elements to sub-dimensional faces/edges after refinement.
      */
 #define EXTRA_PRINT_UR_FES 0
+
+    // new version 011411 srk
+    void UniformRefiner::
+    fixElementSides1(EntityRank side_rank)
+    {
+      EXCEPTWATCH;
+      SameRankRelation& parent_child = m_eMesh.adapt_parent_to_child_relations();
+      SameRankRelation::iterator pc_it;
+      for (pc_it = parent_child.begin(); pc_it != parent_child.end(); pc_it++)
+        {
+          const SameRankRelationKey& parent = pc_it->first;
+          SameRankRelationValue& child_vector = pc_it->second;
+          for (unsigned i_child = 0; i_child < child_vector.size(); i_child++)
+            {
+              Entity *child = child_vector[i_child];
+              //mesh::PairIterRelation child_sides = child->relations(side_rank);
+
+              // if parent has any side relations, check if any of the sides' children match the parent's children's faces
+              mesh::PairIterRelation parent_sides = parent->relations(side_rank);
+
+              for (unsigned i_side = 0; i_side < parent_sides.size(); i_side++)
+                {
+                  Entity *side = parent_sides[i_side].entity();
+                  std::cout << *side << *child;
+                }
+              
+            }
+        }
+    }
 
     void UniformRefiner::
     fixElementSides(EntityRank side_rank)
@@ -868,7 +906,9 @@ namespace stk {
                   unsigned super_element_side_ord = element_sideElem_sideOrd[i_set].get<SUPER_SIDE_ORDINAL>();
 
                   // check if this side element matches the orientation of the side from the super element
-                  int elem_side_perm = PerceptMesh::element_side_permutation(super_element, side_element, super_element_side_ord);
+                  int elem_side_perm = -1;
+                  int elem_side_perm_polarity = 1;
+                  PerceptMesh::element_side_permutation(super_element, side_element, super_element_side_ord, elem_side_perm, elem_side_perm_polarity);
                   bool side_polarity_is_good = true;
                   if (elem_side_perm >= 0)
                     {

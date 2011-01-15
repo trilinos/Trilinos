@@ -114,6 +114,9 @@ namespace stk {
       fixElementSides(EntityRank side_rank);
 
       void 
+      fixElementSides1(EntityRank side_rank);
+
+      void 
       checkFixElementSides(EntityRank side_rank, EntityRank elem_rank);
 
       void 

@@ -52,6 +52,21 @@ namespace stk {
       return pattern;
     }
 
+    void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement, unsigned ordinal)
+    {
+      VERIFY_OP(ordinal, < , getNumNewElemPerElem(), "logic error in set_parent_child_relations");
+
+      //eMesh.getBulkData()->declare_relation( old_owning_elem, newElement, ordinal);
+      
+      // is this necessary?
+      // eMesh.getBulkData()->declare_relation( newElement, old_owning_elem, 0u);
+      //static PerceptEntityVector empty_entity_vector;
+
+      PerceptEntityVector& entity_vector = eMesh.adapt_parent_to_child_relations()[&old_owning_elem];
+     
+      entity_vector.reserve(getNumNewElemPerElem());
+      entity_vector[ordinal] = &newElement;
+    }
 
   }
 }

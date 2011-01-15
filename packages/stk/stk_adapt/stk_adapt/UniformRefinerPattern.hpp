@@ -22,6 +22,7 @@
 #include <boost/multi_array.hpp>
 
 
+
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 
@@ -120,6 +121,8 @@ namespace stk {
       virtual void doBreak()=0;
 
       virtual unsigned getFromTypeKey()=0;
+      virtual const CellTopologyData * const getFromTopology()=0;
+
 
       EntityRank getPrimaryEntityRank() { return m_primaryEntityRank; }
       /// must be provided by derived classes
@@ -138,6 +141,8 @@ namespace stk {
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
                         FieldBase *proc_rank_field=0)=0;
+
+      void set_parent_child_relations(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement, unsigned ordinal);
 
       /// optionally overridden (must be overridden if sidesets are to work properly) to provide info on which sub pattern
       /// should be used to refine side sets (and edge sets)
@@ -247,6 +252,7 @@ namespace stk {
 
       // return the type of element this pattern can refine
       virtual unsigned getFromTypeKey() { return fromTopoKey; }
+      virtual const CellTopologyData * const getFromTopology() { return shards::getCellTopologyData< FromTopology >(); }
 
       // draw
       /// draw a picture of the element's topology and its refinement pattern (using the "dot" program from AT&T's graphviz program)
@@ -1083,7 +1089,7 @@ namespace stk {
 
             // CHECK
             change_entity_parts(eMesh, element, newElement);
-
+            
             for (int inode=0; inode < ToTopology::node_count; inode++)
               {
                 mesh::EntityId eid = elems[iChild][inode];
@@ -1108,6 +1114,8 @@ namespace stk {
                 interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0], eMesh.getCoordinatesField() );
                 interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0]);
               }
+
+            set_parent_child_relations(eMesh, element, newElement, iChild);
 
             element_pool++;
           }

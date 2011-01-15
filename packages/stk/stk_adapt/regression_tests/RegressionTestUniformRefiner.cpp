@@ -57,6 +57,44 @@ namespace stk
 
 #define EXTRA_PRINT 0
 
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, break_hex_shell4_hex)
+      {
+        EXCEPTWATCH;
+
+        if (1) return;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size <= 3)
+        if (p_size == 1)
+          {
+            // start_demo_break_hex_shell4_hex
+
+            percept::PerceptMesh eMesh;
+            eMesh.open("./input_files/shell-tests/hex_shell4_hex.g");
+
+            URP_Heterogeneous_3D break_pattern(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            eMesh.commit();
+
+            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+
+            //breaker.setRemoveOldElements(false);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+            eMesh.saveAs("./output_files/hex_shell4_hex_1.e");
+            eMesh.close();
+
+            // end_demo
+
+          }
+      }
 
       //======================================================================================================================
       //======================================================================================================================

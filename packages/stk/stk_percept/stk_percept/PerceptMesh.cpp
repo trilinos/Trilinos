@@ -1689,13 +1689,16 @@ namespace stk {
       }
     }
 
-    /** return the index of the nodes in @param side that is the start of the matching nodes in element.side[iSubDimOrd].nodes
-     *  If the side/element face don't match, return -1
+    /** In @param returnedIndex, return the index of the nodes in @param side that is the start of the matching nodes in element.side[iSubDimOrd].nodes
+     *  If the side/element face don't match, return -1.
+     *  If the side/element face pair match, but with opposite polarity, return -1 in returnedPolarity, else 1.
      *
      */
-    int PerceptMesh::
-    element_side_permutation(const Entity& element, const Entity& side, unsigned iSubDimOrd)
+    void PerceptMesh::
+    element_side_permutation(const Entity& element, const Entity& side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity)
     {
+      returnedPolarity = 1;
+      returnedIndex = -1;
 
       EntityRank needed_entity_rank = side.entity_rank();
 
@@ -1762,19 +1765,60 @@ namespace stk {
                 }
             }
         }
+
       if (found_node_offset >= 0)
         {
+          bool matched = true;
           for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
             {
               unsigned knode = (jnode + found_node_offset) % nSubDimNodes;
               if (elem_nodes[inodes[jnode]].entity()->identifier() != side_nodes[ knode ].entity()->identifier() )
                 {
-                  return -1;
+                  matched = false;
+                  break;
                 }
             }
-          return found_node_offset;
+
+          if (matched)
+            {
+              returnedPolarity = 1;
+              returnedIndex = found_node_offset;
+              return;
+            }
+          else
+            {
+              // try reverse ordering
+              matched = true;
+
+              for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
+                {
+                  int knode = ( found_node_offset + (int)nSubDimNodes - (int)jnode) % ((int)nSubDimNodes);
+                  if (elem_nodes[inodes[jnode]].entity()->identifier() != side_nodes[ knode ].entity()->identifier() )
+                    {
+                      matched = false;
+                      break;
+                    }
+                }
+              if (matched)
+                {
+                  returnedPolarity = -1;
+                  returnedIndex = found_node_offset;
+                  return;
+                }
+              else
+                {
+                  returnedPolarity = 1;
+                  returnedIndex = -1;
+                  return;
+                }
+            }          
         }
-      return -1;
+      else
+        {
+          returnedIndex = -1;
+          returnedPolarity = 1;
+          return;
+        }
     }
 
 
