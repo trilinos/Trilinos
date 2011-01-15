@@ -745,6 +745,7 @@ namespace stk {
     }
 
 
+    /** @deprecated */
     void UniformRefiner::
     fixElementSides()
     {
@@ -759,7 +760,7 @@ namespace stk {
       // FIXME
       else if (m_eMesh.getSpatialDim() == 2)
         {
-          fixElementSides(mesh::Edge);
+          //fixElementSides(mesh::Edge);
         }
     }
 
@@ -777,7 +778,7 @@ namespace stk {
       // FIXME
       else if (m_eMesh.getSpatialDim() == 2)
         {
-          //fixElementSides(mesh::Edge);
+          fixElementSides(mesh::Edge);
         }
     }
 
@@ -820,7 +821,6 @@ namespace stk {
           const SameRankRelationKey& parent = pc_it->first;
           SameRankRelationValue& child_vector = pc_it->second;
 
-
           shards::CellTopology parent_topo(stk::mesh::get_cell_topology(*parent));
           //unsigned parent_nsides = (unsigned)parent_topo.getSideCount();
 
@@ -858,7 +858,8 @@ namespace stk {
 
                       // use of i_parent_side here implies that the children's sides match up with the parents, this could be untrue - 
                       //  then will require a search through all child faces 
-                      // NOTE: have to search over child faces due to different topology cases
+                      // NOTE: have to search over child faces due to different topology cases - if parent & child have same topology,
+                      //   we can save a few ops here TODO FIXME
                       unsigned k_child_side = 0;
 #if 0
                       boolean sameTopology = false; // FIXME - get this from the break pattern
@@ -890,7 +891,8 @@ namespace stk {
                         }
                       else
                         {
-
+                          // error condition?
+                          //throw std::runtime_error("fixElementSides1: couldn't find a matching face");
                         }
                     }
                 }
