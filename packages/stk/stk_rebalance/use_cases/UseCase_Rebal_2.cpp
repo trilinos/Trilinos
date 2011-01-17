@@ -216,7 +216,7 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
 
   // Force a rebalance by using imbalance_threshold < 1.0
   double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, pm, imbalance_threshold);
+  bool do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, imbalance_threshold);
   // Coordinates are passed to support geometric-based load balancing algorithms
   if( do_rebal )
     stk::rebalance::rebalance(bulk, meta.universal_part(), &fixture.m_coord_field, &weight_field, zoltan_partition);
@@ -226,7 +226,7 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
   else // ... but does pretty well for 2 and 4 procs
     imbalance_threshold = 1.1;
 
-  do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, pm, imbalance_threshold);
+  do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, imbalance_threshold);
 
   if( 0 == p_rank )
     std::cerr << std::endl 

@@ -150,13 +150,13 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 
   // Force a rebalance by using imbalance_threshold < 1.0
   double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, comm, imbalance_threshold);
+  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, imbalance_threshold);
   // Coordinates are passed to support geometric-based load balancing algorithms
   if( do_rebal )
     stk::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
 
   imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, comm, imbalance_threshold);
+  do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, imbalance_threshold);
 
   // Check that we satisfy our threshhold
   STKUNIT_ASSERT( !do_rebal );

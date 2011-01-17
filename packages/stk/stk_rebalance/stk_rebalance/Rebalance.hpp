@@ -38,7 +38,6 @@ namespace rebalance {
 // comm can also be obtained from Bulk data (as parallel_machine).
 bool rebalance_needed(mesh::BulkData &    bulk_data,
                       const mesh::Field<double> * load_measure,
-                      ParallelMachine    comm,
                       double & imbalance_threshold,
                       const stk::mesh::EntityRank rank = stk::mesh::InvalidEntityRank,
                       const mesh::Selector *selector=NULL);

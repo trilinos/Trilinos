@@ -296,7 +296,7 @@ std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should b
    
   // Force a rebalance by using imbalance_threshold < 1.0
   double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
+  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold);
   // Coordinates are passed to support geometric-based load balancing algorithms
   if( do_rebal ) { 
     // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
@@ -308,7 +308,7 @@ std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should b
   }
 
   imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
+  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold);
 
   if( !p_rank )
     std::cerr << std::endl 
@@ -321,7 +321,7 @@ std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should b
   }
 
   imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
+  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold);
 
   if( !p_rank )
     std::cerr << std::endl 

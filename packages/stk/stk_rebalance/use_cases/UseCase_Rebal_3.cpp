@@ -156,7 +156,7 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
   stk::mesh::Selector selector(side_part);
   selector &=  meta_data.locally_owned_part();
   double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold, side_rank, &selector);
+  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold, side_rank, &selector);
   // Coordinates are passed to support geometric-based load balancing algorithms
   if( do_rebal ) {
     // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
@@ -167,7 +167,7 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
   }
 
   imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold, side_rank, &selector);
+  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold, side_rank, &selector);
 
   if( !p_rank )
     std::cerr << std::endl 
