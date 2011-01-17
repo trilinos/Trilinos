@@ -3,16 +3,21 @@
 '
 @startuml
 
-class IdentifierMap {
+class "IdentifierMap<LNO, GNO, AppGID>" as Map
+
+class Map{
 Tpetra::MultiVector<AppGID, LNO, GNO> gid
 Tpetra::MultiVector<int, LNO, GNO> value
 void update()
 void find()
-void gid2gno()
-void gno2lno()
-void gno2gid()
+void gidToGno()
+void gnoToLno()
+void gnoToGid()
 void etc()
 }
+
+note "The IdentifierMap manages the global\nspace of application global IDs,\nZoltan global numbers, and\nprocess local IDs.\n" as N1
+
 
 @enduml
 

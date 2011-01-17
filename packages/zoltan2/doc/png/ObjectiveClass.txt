@@ -4,23 +4,34 @@
 
 @startuml
 
+class "Objective<LNO, GNO, AppGID>" as Objective
+
 class Objective{
-ObjectSource<Scalar, LNO, GNO, AppGID> source
-ObjectID<LNO, GNO, AppGID> gid
-vector<GNO> fixed_vertices
-vector<float> part_sizes
-vector<float> vertex_weights
-virtual void get_weights() 
-virtual bool get_edge_list()
+IdentifierMap<LNO, GNO, AppGID> gid
+vector<float> vertexWeights
+vector<float> partSizes
+vector<GNO> fixedVertices
+
+virtual void setVertexWeights() 
+virtual void getVertexWeights() 
+virtual void setPartSizes() 
+virtual void getPartSizes() 
+virtual void setFixedVertices() 
+virtual void getFixedVertices() 
+virtual void minimizeNumberOfNeighbors()
+virtual void minimizeCutWeight()
+virtual void migrationBalanceTradeoff()
+
 virtual void etc()
 }
 
-note  "The Objective provides a uniform interface to \nthe problem definition for the Zoltan methods." as N
+note  "The Objective describes\nthe problem to be solved." as N1
 
-Objective <|-- PartitioningObjective
-Objective <|-- ColoringObjective
-Objective <|-- OrderingObjective
-Objective <|-- MatchingObjective
+note left of Objective: Fixed vertices are really a\nconstraint. If we have\nmany problem characteristics\nlike this, it may add clarity\nto have a Constraint class.
+
+Objective <|-- "PartitioningObjective<>"
+Objective <|-- "ColoringObjective<>"
+Objective <|-- "OrderingObjective<>"
 
 @enduml
 

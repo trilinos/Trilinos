@@ -8,31 +8,39 @@ class "InputAdapter <Scalar, LNO, GNO, AppGID>" as Adapter
 
 class Adapter {
 IdentifierMap<LNO, GNO, AppGID> ids;
-Tpetra_MultiVector<Scalar, LNO, GNO> coordinates;
 etc;
-virtual bool has_matrix()
-virtual bool has_dense_matrix()
-virtual bool has_csr_matrix()
-virtual bool has_csc_matrix()
-virtual bool has_graph()
-virtual bool has_vertex_coordinates()
-virtual int coordinate_dimension()
-virtual void more_traits()
-virtual void get_number_of_objects()
-virtual void get_global_numbers()
-virtual void get_vertex_coordinates()
-virtual void get_number_of_edges()
-virtual void more_accessors()
-virtual void update_process_owner()
-virtual void move_data()
-virtual void more_transformations()
+
+virtual bool hasMatrix()
+virtual bool hasGraph()
+virtual bool hasVertexCoordinates()
+virtual int coordinateDimension()
+virtual int hasKokkosNode()
+virtual void moreTraits()
+
+virtual void getNumberOfObjects()
+virtual void getGlobalNumbers()
+virtual void getVertexCoordinates()
+virtual void getNumberOfEdges()
+virtual void getEdges()
+virtual void getNumberOfHyperedges()
+virtual void getHyperedges()
+virtual void getKokkosNode()
+virtual void moreAccessors()
+
+virtual void preMigrate()
+virtual void createSendBuffer()
+virtual void midMigrate()
+virtual void processReceiveBuffer()
+virtual void postMigrate()
 }
 
-note "The InputAdapter is the base class for classes\nrepresenting the user objects." as N1
+note "The InputAdapter is the\nbase class for classes\nrepresenting user input." as N1
 
-Adapter <|-- Epetra_MultiVectorAdapter
-Adapter <|-- Graph_TestAdapter
-Adapter <|-- Legacy_CallbackAdapter
+note left of Adapter: For non-graph input,\nwe don't need\napplication Global Ids.
+
+Adapter <|-- "EpetraMultiVectorAdapter<>"
+Adapter <|-- "GraphTestAdapter<>"
+Adapter <|-- "LegacyCallbackAdapter<>"
 
 @enduml
 
