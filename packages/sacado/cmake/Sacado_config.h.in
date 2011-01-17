@@ -1,6 +1,9 @@
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_SACADO_COMPLEX
 
+/* Define if want to build with uninit */
+#cmakedefine HAVE_SACADO_UNINIT
+
 /* Define if ADOL-C is enabled */
 #cmakedefine HAVE_ADOLC
 

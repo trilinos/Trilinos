@@ -43,6 +43,12 @@
 #include <cmath>
 #include <math.h>
 
+#include "Sacado_ConfigDefs.h"
+
+#if defined(RAD_DEBUG_BLOCKKEEP) && !defined(HAVE_SACADO_UNINIT)
+#undef RAD_DEBUG_BLOCKKEEP
+#endif
+
 #ifndef SACADO_NO_NAMESPACE
 namespace Sacado {
 namespace Rad2d { // "2" for 2nd derivatives, "d" for "double"

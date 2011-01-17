@@ -42,6 +42,10 @@
 #include <cmath>
 #include <math.h>
 
+#if defined(RAD_DEBUG_BLOCKKEEP) && !defined(HAVE_SACADO_UNINIT)
+#undef RAD_DEBUG_BLOCKKEEP
+#endif
+
 #ifdef RAD_Const_WARN	//{ ==> RAD_AUTO_AD_Const and RAD_DEBUG
 #ifndef RAD_AUTO_AD_Const
 #define RAD_AUTO_AD_Const

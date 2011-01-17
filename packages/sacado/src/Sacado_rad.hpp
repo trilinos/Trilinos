@@ -38,6 +38,12 @@
 #include <cmath>
 #include <math.h>
 
+#include "Sacado_ConfigDefs.h"
+
+#if defined(RAD_DEBUG_BLOCKKEEP) && !defined(HAVE_SACADO_UNINIT)
+#undef RAD_DEBUG_BLOCKKEEP
+#endif
+
 namespace Sacado {
 namespace Radnt {	// nontemplated RAD
 
