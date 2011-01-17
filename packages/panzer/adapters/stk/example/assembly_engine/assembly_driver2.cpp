@@ -89,7 +89,7 @@ int main(int argc,char * argv[])
    out << "BUILD PHYSICS" << std::endl;
    panzer::InputPhysicsBlock ipb;
    std::vector<panzer::BC> bcs;
-   std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+   std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
    {
       std::map<std::string,panzer::InputPhysicsBlock> physics_id_to_input_physics_blocks;
       std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -113,9 +113,9 @@ int main(int argc,char * argv[])
    ////////////////////////////////////////////////////////////////////////
 
    {
-      std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
+      std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
       for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
-         Teuchos::RCP<const panzer::PhysicsBlock> pb = physIter->second;
+         Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
          const std::vector<StrBasisPair> & blockFields = pb->getProvidedDOFs();
 
          // insert all fields into a set
@@ -157,14 +157,9 @@ int main(int argc,char * argv[])
    const Teuchos::RCP<panzer::ConnManager<int,int> > 
      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-   std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks_vec;
-   for(std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator itr=physicsBlocks.begin();
-       itr!=physicsBlocks.end();++itr) 
-      physicsBlocks_vec.push_back(itr->second);
-
    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
-         = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks_vec,conn_manager);
+         = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
 
    // setup field manager build
    /////////////////////////////////////////////////////////////

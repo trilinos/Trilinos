@@ -121,54 +121,31 @@ namespace panzer {
       * \param[in] base_cell_dimension What is the dimension of the volume element
       * \param[in] workset_size ?
       * \param[in] eqset_factory ?
-      * \param[in,out] physicsBlock A map relating the element block Id to a particular
-      *                             physics block.
-      */
-    void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
-                            const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
-                            int base_cell_dimension, std::size_t workset_size,
-	                    const panzer::EquationSetFactory & eqset_factory,
-                            std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks) const;
-
-    /** Construct the DOFManager using this set of physics blocks. This builds the internally
-      * stored DOFManager. After the call to this we should have that getDOFManager()!=Teuchos::null
-      * and that the global IDs are fully constructed for the system.
-      */
-    Teuchos::RCP<panzer::DOFManager<LO,GO> > buildDOFManager(const Teuchos::RCP<panzer::ConnManager<LO,GO> > & conn_manager, MPI_Comm comm,
-                                                             const std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks) const;
-
-    /** Setup the volume field managers. This uses the passed in <code>dofManager</code>
-      * and sets it for permenant use.
-      */
-    void setupVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
-                                                          // element block -> vector of worksets
-                                  const std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-                                  const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager);
-
-    /** Build the BC field managers.
-      */
-    void setupBCFieldManagers(const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>& bc_worksets,
-                                                          // boundary condition -> map of (side_id,worksets)
-                              const std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-	                      const panzer::EquationSetFactory & eqset_factory,
-                              const panzer::BCStrategyFactory& bc_factory);
-
-  private:
-
-    /** Build vector of physics blocks objects
-      *
-      * \param[in] block_ids_to_physics_ids
-      * \param[in] physics_id_to_input_physics_blocks
-      * \param[in] base_cell_dimension
-      * \param[in] workset_size
-      * \param[in] eqset_factory
-      * \param[out] physicsBlocks
+      * \param[in,out] physicsBlock A vector of pointers to the physics blocks
       */
     void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
                             const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
                             int base_cell_dimension, std::size_t workset_size,
 	                    const panzer::EquationSetFactory & eqset_factory,
                             std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks) const;
+
+    /** Setup the volume field managers. This uses the passed in <code>dofManager</code>
+      * and sets it for permenant use.
+      */
+    void setupVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
+                                                          // element block -> vector of worksets
+                                  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                  const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager);
+
+    /** Build the BC field managers.
+      */
+    void setupBCFieldManagers(const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>& bc_worksets,
+                                                          // boundary condition -> map of (side_id,worksets)
+                              const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+	                      const panzer::EquationSetFactory & eqset_factory,
+                              const panzer::BCStrategyFactory& bc_factory);
+
+  private:
 
     /** Construct the DOFManager using this set of physics blocks. This builds the internally
       * stored DOFManager. After the call to this we should have that getDOFManager()!=Teuchos::null

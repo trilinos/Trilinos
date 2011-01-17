@@ -120,7 +120,7 @@ namespace panzer {
     /////////////////////////////////////////////
     panzer::InputPhysicsBlock ipb;
     std::vector<panzer::BC> bcs;
-    std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     {
        std::map<std::string,panzer::InputPhysicsBlock> 
              physics_id_to_input_physics_blocks;
@@ -167,17 +167,10 @@ namespace panzer {
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
            = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    // turn a vector into a map
-    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks_vec;
-    for(std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator itr=physics_blocks.begin();
-        itr!=physics_blocks.end();++itr) 
-       physics_blocks_vec.push_back(itr->second);
-
     Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);
     const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
-          = indexerFactory->buildUniqueGlobalIndexer(MPI_COMM_WORLD,physics_blocks_vec,conn_manager);
-          // = fmb.buildDOFManager(conn_manager,MPI_COMM_WORLD,physics_blocks);
+          = indexerFactory->buildUniqueGlobalIndexer(MPI_COMM_WORLD,physics_blocks,conn_manager);
 
     // setup field manager builder
     /////////////////////////////////////////////
