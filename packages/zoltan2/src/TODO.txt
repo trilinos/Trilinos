@@ -34,3 +34,6 @@ For the Objective:
   refine rather than starting from scratch.
 
 
+
+How will Hierarchical partitioning be performed in Zoltan2?
+
