@@ -138,6 +138,7 @@ computeSparseTripleProductTensor(ordinal_type order) const
       }
     }
   }
+  Cijk->fillComplete();
 
   return Cijk;
 }

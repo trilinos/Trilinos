@@ -187,6 +187,7 @@ buildParallelCijk() const
       }
     }
   }
+  Cijk_tmp->fillComplete();
 
   return Cijk_tmp;
 }
@@ -216,6 +217,7 @@ transformToLocal()
       }
     }
   }
+  Cijk_tmp->fillComplete();
   
   Cijk_parallel = Cijk_tmp;
 }

@@ -183,7 +183,7 @@ timesEqual(
 
     typename Cijk_type::i_iterator i_begin = Cijk->i_begin();
     typename Cijk_type::i_iterator i_end = Cijk->i_end();
-    if (pc > Cijk->num_i())
+    if (pc < Cijk->num_i())
       i_end = Cijk->find_i(pc);
     ordinal_type k_lim = p;
     ordinal_type j_lim = xp;
@@ -420,7 +420,7 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
   if (pa > 1 && pb > 1) {
     typename Cijk_type::i_iterator i_begin = Cijk->i_begin();
     typename Cijk_type::i_iterator i_end = Cijk->i_end();
-    if (pc > Cijk->num_i())
+    if (pc < Cijk->num_i())
       i_end = Cijk->find_i(pc);
     ordinal_type k_lim = pa;
     ordinal_type j_lim = pb;

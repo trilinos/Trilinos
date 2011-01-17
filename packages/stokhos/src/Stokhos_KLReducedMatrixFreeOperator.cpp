@@ -289,6 +289,7 @@ setup()
       }
     }
   }
+  sparse_kl_coeffs->fillComplete();
    
   bool save_tensor = params->get("Save Sparse 3 Tensor To File", false);
   if (save_tensor) {
