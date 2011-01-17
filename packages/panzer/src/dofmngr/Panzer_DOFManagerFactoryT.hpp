@@ -1,11 +1,11 @@
 
 namespace panzer {
 
-template <typename LO,GO>
+template <typename LO,typename GO>
 Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
 DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr)
+                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr) const
 {
    Teuchos::RCP<Teuchos::FancyOStream> pout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
    pout->setShowProcRank(true);

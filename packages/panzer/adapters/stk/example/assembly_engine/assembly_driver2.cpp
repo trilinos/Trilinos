@@ -21,6 +21,7 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
@@ -108,7 +109,7 @@ int main(int argc,char * argv[])
                              physicsBlocks);
    }
 
-   // finish build mesh, set required field variables and mesh bulk data
+   // finish building mesh, set required field variables and mesh bulk data
    ////////////////////////////////////////////////////////////////////////
 
    {
@@ -156,8 +157,14 @@ int main(int argc,char * argv[])
    const Teuchos::RCP<panzer::ConnManager<int,int> > 
      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-   RCP<panzer::DOFManager<int,int> > dofManager 
-         = fmb->buildDOFManager(conn_manager,MPI_COMM_WORLD,physicsBlocks);
+   std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks_vec;
+   for(std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator itr=physicsBlocks.begin();
+       itr!=physicsBlocks.end();++itr) 
+      physicsBlocks_vec.push_back(itr->second);
+
+   panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+   RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+         = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks_vec,conn_manager);
 
    // setup field manager build
    /////////////////////////////////////////////////////////////
@@ -227,7 +234,7 @@ int main(int argc,char * argv[])
    redistributeSolution(*importer,*epetra_x,*input.x);
 
    out << "WRITE" << std::endl;
-   write_solution_data(*dofManager,*mesh,*input.x);
+   write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*input.x);
    mesh->writeToExodus("output2.exo");
 
    return 0;

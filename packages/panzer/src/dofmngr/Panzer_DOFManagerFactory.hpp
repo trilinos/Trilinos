@@ -5,8 +5,11 @@
 
 namespace panzer {
 
-template <typename LO,GO>
-class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory {
+template <typename LO,typename GO>
+class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO,LO,GO> {
+public:
+   virtual ~DOFManagerFactory() {}
+
 
    /** Use the physics block to construct a unique global indexer object.
      * 
@@ -20,7 +23,7 @@ class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory {
    virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
    buildUniqueGlobalIndexer(MPI_Comm mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr);
+                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr) const;
 };
 
 }
