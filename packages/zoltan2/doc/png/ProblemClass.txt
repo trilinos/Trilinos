@@ -1,0 +1,77 @@
+'plantUML input file
+'Class diagram for Problem
+'
+
+@startuml
+
+note "A Zoltan Problem has\nan input, parameters\nand an objective.\nIt can compute\na solution, evaluate\nthe quality of a\nsolution, and\nreturn the solution." as N1
+
+class "Problem<Scalar, LNO, GNO, AppGID>" as Problem
+class "OrderingProblem<>" as OrderingProblem
+class "PartitioningProblem<>" as PartitioningProblem
+class "ColoringProblem<>" as ColoringProblem
+
+class Problem{
+InputAdapter &input
+Teuchos::ParameterList &params
+Objective &object
+
+virtual void setParameters()
+virtual void setInput()
+virtual void setObjective()
+
+virtual void solve()
+virtual void evaluate()
+virtual void getMapping()
+}
+
+class ColoringProblem{
+ColoringObjective  objective;
+void solve()
+void colorInput() { solve(); }
+void evaluate()
+void getMapping()
+void getColors() { getMapping(); }
+void transform()
+void schedule() {transform();}
+void getNumberOfColors()
+}
+
+class PartitioningProblem{
+PartitioningObjective  objective;
+void solve()
+void partitionInput() { solve(); }
+void evaluate()
+void getMapping()
+void getParts() { getMapping(); }
+void transform()
+void redistribute() {transform();}
+void point_assign()
+void boxAssign()
+void getRcbBox()
+void getRcbTree()
+}
+
+class OrderingProblem{
+OrderingObjective  objective;
+void solve()
+void orderInput() { solve(); }
+void evaluate()
+void getMapping()
+void getOrder() { getMapping(); }
+void transform()
+void permute() { transform(); }
+void getNumberOfBlocks()
+void getBlockBounds()
+void getBlockSize()
+void getBlockParent()
+void getNumberOfLeaves()
+void getLeaves()
+}
+
+Problem <|-- ColoringProblem
+Problem <|-- OrderingProblem 
+Problem <|-- PartitioningProblem
+
+@enduml
+
