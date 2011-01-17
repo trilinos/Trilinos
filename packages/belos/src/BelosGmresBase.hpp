@@ -133,16 +133,21 @@ namespace Belos {
   /// \author Mark Hoemmen
   ///
   /// This class includes both state and functionality that are useful
-  /// for different implementations of GMRES (the Generalized Minimal
-  /// Residual algorithm of Saad and Schultz).  Both Flexible GMRES
-  /// (FGMRES) (Saad, "A flexible inner-outer preconditioned GMRES
-  /// algorithm", SISC, vol 14, pp. 461-469, 1993) and ordinary GMRES
-  /// (Saad and Schultz, "GMRES: A generalized minimal residual
-  /// algorithm for solving nonsymmetric linear systems", SISSC, vol
-  /// 7, pp. 856-869, 1986) are supported.  It does not implement the
-  /// actual iterations; this is left for subclasses.  Furthermore, it
-  /// does not implement features like recycling, but it does include
-  /// hooks for subclasses to add in such features.
+  /// for different implementations of the Generalized Minimal
+  /// Residual (GMRES) method of Saad and Schultz, for iterative
+  /// solution of nonsymmetric nonsingular linear systems.  Both the
+  /// original GMRES algorithm (Saad and Schultz 1986) and Flexible
+  /// GMRES (FGMRES) (Saad 1993) are supported.  This class does not
+  /// implement the actual iterations; this is left for subclasses.
+  /// Furthermore, it does not implement features like recycling, but
+  /// it does include hooks for subclasses to add in such features.
+  ///
+  /// References:
+  /// - Saad and Schultz, "GMRES: A generalized minimal residual
+  ///   algorithm for solving nonsymmetric linear systems", SISSC,
+  ///   vol. 7, pp. 856-869, 1986.
+  /// - Saad, "A flexible inner-outer preconditioned GMRES algorithm",
+  ///   SISC, vol. 14, pp. 461-469, 1993.
   ///
   template<class Scalar, class MV, class OP>
   class GmresBase {
