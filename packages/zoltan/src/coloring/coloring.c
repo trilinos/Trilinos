@@ -10,8 +10,6 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
-
-
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -105,7 +103,7 @@ char *val			/* value of variable */
 
 
 #if 0
-static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *adj, int *adjproc)
+static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, ZOLTAN_GNO_TYPE *adj, int *adjproc)
 {
     int i, j;
     FILE *outf;
@@ -119,7 +117,7 @@ static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *a
     for (i=0; i<nvtx; ++i) {
 	fprintf(outf, "%d [%d] : ", base+i, i);
 	for (j=xadj[i]; j<xadj[i+1]; ++j)
-	    fprintf(outf, "%d (%d), ", adj[j], adjproc[j]);
+	    fprintf(outf, "%ld (%d), ", adj[j], adjproc[j]);
 	fprintf(outf, "\n");
     }
     fclose(outf);
@@ -289,6 +287,7 @@ int Zoltan_Color(
 #ifdef _DEBUG_TIMES
   times[2] = Zoltan_Time(zz->Timer);
 #endif
+
 
   /* CREATE THE HASH TABLE */
   /* Determine hash size and allocate hash table */
