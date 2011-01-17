@@ -335,7 +335,7 @@ namespace Teuchos
     void TREVC(const char SIDE, const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, MagnitudeType* RWORK, OrdinalType* info) const;
 
     /*! Reorders the Schur factorization of a matrix \c T via unitary similarity transformations so that the diagonal element of \c T with row index \c ifst is moved to row \c ilst. If \c ScalarType is \c float or \c double, then \c T should be in real Schur form and the operation affects the diagonal block referenced by \c ifst.
-      \note This method will ignore the WORK std::vector when ScalarType is \c std::complex<float> or \c std::complex<double>.
+      \note This method will ignore the WORK vector when ScalarType is \c std::complex<float> or \c std::complex<double>.
     */
     void TREXC(const char COMPQ, const OrdinalType n, ScalarType* T, const OrdinalType ldt, ScalarType* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, ScalarType* WORK, OrdinalType* info) const;
 
@@ -344,10 +344,10 @@ namespace Teuchos
     //! @name Rotation/Reflection generators
     //@{ 
 
-    //! Generates a plane rotation that zeros out the second component of the input std::vector.
+    //! Gnerates a plane rotation that zeros out the second component of the input vector.
     void LARTG( const ScalarType f, const ScalarType g, MagnitudeType* c, ScalarType* s, ScalarType* r ) const;
 
-    //! Generates an elementary reflector of order \c n that zeros out the last \c n-1 components of the input std::vector.
+    //! Generates an elementary reflector of order \c n that zeros out the last \c n-1 components of the input vector.
     void LARFG( const OrdinalType n, ScalarType* alpha, ScalarType* x, const OrdinalType incx, ScalarType* tau ) const;
 
     //@}
@@ -368,7 +368,7 @@ namespace Teuchos
     //! Returns a random number from a uniform or normal distribution.
     ScalarType LARND( const OrdinalType idist, OrdinalType* seed ) const;
 
-    //! Returns a std::vector of random numbers from a chosen distribution.
+    //! Returns a vector of random numbers from a chosen distribution.
     void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, ScalarType* v ) const;    
     //@}
 
