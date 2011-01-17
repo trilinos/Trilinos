@@ -2,7 +2,7 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
+#include "TpetraExt_BlockExtraction_def.hpp"
 
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)
@@ -14,8 +14,6 @@
 #if defined(HAVE_KOKKOS_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
-
-#include "TpetraExt_BlockExtraction_def.hpp"
 
 namespace Tpetra {
   namespace Ext {
