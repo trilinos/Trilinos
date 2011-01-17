@@ -13,7 +13,7 @@
 
 // ***********************************************************************
 // This is pseudocode showing the a Zoltan2 interface where the central
-// Zoltan2 object is a Mapping.  It has user input and objectives and 
+// Zoltan2 object is a Problem.  It has user input and objectives and 
 // it can compute a mapping from input objects to parts, colors or an
 // ordering.
 //
@@ -48,58 +48,60 @@ int main()
 
   Z2::Epetra_MultiVectorAdapter<float, int, int, int> input(mv);
 
-  Z2_Interface3::PartMapping<float, int, int, int> mapping(input);
+  // Objective describes the problem to be solved
 
-  // A Mapping has an Objective and we set the objective here.
+  Z2::Objective<float, int, int, int> objective(input)
 
-  mapping.partition_vertices();
-  mapping.unit_weights();
-  mapping.rectilinear_regions();        // will do RCB
-  mapping.uniform_part_sizes();
-  mapping.set_number_of_parts(num_procs);
+  objective.partitionVertices();
+  objective.unitWeights();
+  objective.rectilinearRegions();        // will do RCB
+  objective.uniformPartSizes();
+  objective.setNumberOfParts(numprocs);
 
-  // Parameters - In interface 3 it's not as important to separate objectives
-  //   from parameters.  But it may still be a good idea.
+  // Parameters - govern the behavior of the Problem, but not
+  //    really related to computing the solution.
 
   Teuchos::ParameterList params;
   params.set("Debug Level", "3");
 
-  mapping.set_parameters(params);
+  Z2::Problem<float, int, int,int>  problem(input, params, objective);
 
-  float imbalance_before = mapping.imbalance();
+  float imbalance_before = problem.imbalance();
 
-  mapping.solve();
+  problem.solve();
 
-  std::vector<int> &gids = my_gids(mv);
-  std::vector<int> rcb_parts;
+  std::map<GNO, int> rcb_mapping;
 
-  mapping.get_mapping(gids, rcb_parts);
+  problem.getMapping(rcb_mapping);
 
-  float rcb_imbalance= mapping.imbalance();
+  float rcb_imbalance= problem.imbalance();
 
   // Try RIB
 
-  mapping.unset_rectilinear_regions();
+  objective.unsetRectilinearRegions();
+
+  problem.setObjective(objective)
+
   params.set("METHOD", "RIB");
 
-  mapping.solve();
+  problem.solve();
 
-  std::vector<int> rib_parts;
+  std::map<GNO, int> rib_mapping;
 
-  mapping.get_mapping(gids, rib_parts);
+  problem.getMapping(rib_mapping);
 
-  float rib_imbalance= mapping.imbalance();
+  float rib_imbalance= problem.imbalance();
 
   // Pick the best
 
   if ((rib_imbalance < rcb_imbalance) &&
       (rib_imbalance < imbalance_before) ){
 
-    redistribute_mv(mv, rib_parts);
+    Z2:Migrate(input, rib_mapping);
   }
   else if ((rcb_imbalance < rib_imbalance) &&
            (rcb_imbalance < imbalance_before) ){
 
-    redistribute_mv(mv, rcb_parts);
+    Z2:Migrate(input, rcb_mapping);
   }
 }
