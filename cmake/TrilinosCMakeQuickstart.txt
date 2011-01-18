@@ -981,8 +981,6 @@ name and the options to pass to 'make', use:
 After this finishes running, look for the build 'MyBuild' (or whatever build
 name you used above) in the Trilinos CDash dashboard.
 
-NOTE: The 'make dashboard' target sets 
-
 NOTE: It is useful to set CTEST_BUILD_NAME to some unique name to make it
 easier to find your results in the CDash dashboard.
 
@@ -1008,5 +1006,13 @@ NOTE: Doing a memory check with Valgrind requires that you set
 CTEST_DO_MEMORY_TESTING=TRUE with the 'env' command as:
 
   $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard
+
+NOTE: The CMake cache variable Trilinos_DASHBOARD_CTEST_ARGS can be set on the
+cmake configure line in order to pass additional arguments to 'ctest -S' when
+invoking the package-by-package CTest driver.  For example:
+
+  -D Trilinos_DASHBOARD_CTEST_ARGS:STRING="-VV"
+
+will set verbose output with CTest.
 
 */
