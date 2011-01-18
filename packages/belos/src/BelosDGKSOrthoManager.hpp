@@ -124,49 +124,55 @@ namespace Belos {
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
     const magnitude_type zero = Teuchos::ScalarTraits<magnitude_type>::zero();
     RCP<const ParameterList> defaultParams = getDefaultDgksParameters<ScalarType>();
-    //
-    // The _* variables ensure that this routine has no side effects
-    // until all the values have been read correctly.  As long as
-    // magnitude_type's assignment operator doesn't throw an
-    // exception, this routine therefore has the strong exception
-    // guarantee.
-    //
+
+    // Using temporary variables and fetching all values before
+    // setting the output arguments ensures the strong exception
+    // guarantee for this function: if an exception is thrown, no
+    // externally visible side effects (in this case, setting the
+    // output arguments) have taken place.
     int _maxNumOrthogPasses;
-    try {
-      _maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
-      if (_maxNumOrthogPasses < 1)
+    magnitude_type _blkTol, _depTol, _singTol;
+    if (params.is_null())
+      {
 	_maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
-    } catch (Teuchos::Exceptions::InvalidParameter&) {
-      _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
-    }
-
-    magnitude_type _blkTol;
-    try {
-      _blkTol = params->get<magnitude_type> ("blkTol");
-      if (_blkTol < zero)
 	_blkTol = defaultParams->get<magnitude_type> ("blkTol");
-    } catch (Teuchos::Exceptions::InvalidParameter&) {
-      _blkTol = defaultParams->get<magnitude_type> ("blkTol");
-    }
-
-    magnitude_type _depTol;
-    try {
-      _depTol = params->get<magnitude_type> ("depTol");
-      if (_depTol < zero)
-	_depTol = defaultParams->get<magnitude_type> ("depTol");
-    } catch (Teuchos::Exceptions::InvalidParameter&) {
-      _depTol = defaultParams->get<magnitude_type> ("depTol");
-    }
-
-    magnitude_type _singTol;
-    try {
-      _singTol = params->get<magnitude_type> ("singTol");
-      if (_singTol < zero)
+	_depTol = defaultParams->get<magnitude_type> ("depTol");	
 	_singTol = defaultParams->get<magnitude_type> ("singTol");
-    } catch (Teuchos::Exceptions::InvalidParameter&) {
-      _singTol = defaultParams->get<magnitude_type> ("singTol");
-    }
+      }
+    else
+      {
+	try {
+	  _maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
+	  if (_maxNumOrthogPasses < 1)
+	    _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+	} catch (Teuchos::Exceptions::InvalidParameter&) {
+	  _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+	}
 
+	try {
+	  _blkTol = params->get<magnitude_type> ("blkTol");
+	  if (_blkTol < zero)
+	    _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	} catch (Teuchos::Exceptions::InvalidParameter&) {
+	  _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	}
+
+	try {
+	  _depTol = params->get<magnitude_type> ("depTol");
+	  if (_depTol < zero)
+	    _depTol = defaultParams->get<magnitude_type> ("depTol");
+	} catch (Teuchos::Exceptions::InvalidParameter&) {
+	  _depTol = defaultParams->get<magnitude_type> ("depTol");
+	}
+
+	try {
+	  _singTol = params->get<magnitude_type> ("singTol");
+	  if (_singTol < zero)
+	    _singTol = defaultParams->get<magnitude_type> ("singTol");
+	} catch (Teuchos::Exceptions::InvalidParameter&) {
+	  _singTol = defaultParams->get<magnitude_type> ("singTol");
+	}
+      }
     maxNumOrthogPasses = _maxNumOrthogPasses;
     blkTol = _blkTol;
     depTol = _depTol;

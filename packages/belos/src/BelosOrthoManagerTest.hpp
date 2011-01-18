@@ -93,12 +93,20 @@ namespace Belos {
 		const Teuchos::RCP< MV >& S,
 		const int sizeX1,
 		const int sizeX2,
-		const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
+		const Teuchos::RCP<Belos::OutputManager<Scalar> >& MyOM)
       {
 	using Teuchos::Array;
+	using Teuchos::null;
 	using Teuchos::RCP;
 	using Teuchos::rcp;
+	using Teuchos::rcp_dynamic_cast;
 	using Teuchos::tuple;
+	typedef TsqrOrthoManager<Scalar, MV> tsqr_type;
+
+	// FIXME (mfh 17 Jan 2011) Should this be TsqrMatOrthoManager instead?
+	RCP<tsqr_type> tsqr = rcp_dynamic_cast<tsqr_type>(OM);
+	// Whether OM is a TsqrOrthoManager.
+	const bool testingTsqr = tsqr.is_null();
 
 	// Number of tests that have failed thus far.
 	int numFailed = 0; 
@@ -131,7 +139,7 @@ namespace Belos {
 	  //
 	  // Fill X1 with random values, and test the normalization error.
 	  //
-	  debugOut << "Filling X2 with random values... ";
+	  debugOut << "Filling X1 with random values... ";
 	  MVT::MvRandom(*X1);
 	  debugOut << "done." << endl
 		   << "Calling normalize() on X1... ";
@@ -157,7 +165,7 @@ namespace Belos {
 	  // Fill X2 with random values, project against X1 and normalize,
 	  // and test the orthogonalization error.
 	  //
-	  debugOut << "Filling X1 with random values... ";
+	  debugOut << "Filling X2 with random values... ";
 	  MVT::MvRandom(*X2);
 	  debugOut << "done." << endl
 		   << "Calling projectAndNormalize(X2,X1)... ";
@@ -196,6 +204,81 @@ namespace Belos {
 			     "orthogError(X2,X1) = " << err << " > TOL = " << TOL);
 	  debugOut << "done: || <X2,X1> || = " << err << endl;
 	}
+
+	if (testingTsqr)
+	  {
+	    magnitude_type err;
+
+	    //
+	    // Fill X1 with random values, and test the normalization
+	    // error with normalizeNoCopy().
+	    //
+	    debugOut << "Filling X1 with random values... ";
+	    MVT::MvRandom(*X1);
+	    debugOut << "done." << endl;
+	    debugOut << "Filling X1_out with different random values...";
+	    RCP<MV> X1_out = MVT::Clone(*X1, MVT::GetNumberVecs(*X1));
+	    MVT::MvRandom(*X1_out);
+	    debugOut << "done." << endl
+		     << "Calling normalizeNoCopy(*X1, *X1_out, null)... ";
+	    const int initialX1Rank = 
+	      tsqr->normalizeNoCopy(*X1, *X1_out, Teuchos::null);
+	    TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, std::runtime_error,
+			       "normalizeNoCopy(*X1, *X1_out, null) returned "
+			       "rank " << initialX1Rank << " from " << sizeX1
+			       << " vectors. Cannot continue.");
+	    debugOut << "done." << endl 
+		     << "Calling orthonormError() on X1_out... ";
+	    err = tsqr->orthonormError(*X1_out);
+	    TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+			       "After calling normalizeNoCopy(*X1, *X1_out, "
+			       "null), orthonormError(X1) = " << err 
+			       << " > TOL = " << TOL);
+	    debugOut << "done: ||<X1_out,X1_out> - I|| = " << err << endl;
+
+	    //
+	    // Fill X2 with random values, project against X1_out and
+	    // normalize by calling projectAndNormalizeNoCopy(), and
+	    // test the orthogonalization error.
+	    //
+	    debugOut << "Filling X2 with random values... ";
+	    MVT::MvRandom(*X2);
+	    debugOut << "done." << endl
+		     << "Filling X2_out with different random values...";
+	    RCP<MV> X2_out = MVT::Clone(*X2, MVT::GetNumberVecs(*X2));
+	    MVT::MvRandom(*X2_out);
+	    debugOut << "done." << endl
+		     << "Calling projectAndNormalizeNoCopy(X2, X2_out, C, B, X1_out)...";
+	    int initialX2Rank;
+	    {
+	      Array<RCP<serial_matrix_type> > C (1);
+	      RCP<serial_matrix_type> B = Teuchos::null;
+	      initialX2Rank = tsqr->projectAndNormalizeNoCopy (*X2, *X2_out, C, B, tuple<RCP<const MV> >(X1_out));
+	    }
+	    TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
+			       std::runtime_error, 
+			       "projectAndNormalizeNoCopy(*X2, *X2_out, C, B, "
+			       "tuple<RCP<const MV> >(X1_out)) returned rank " 
+			       << initialX2Rank << " from " << sizeX2 
+			       << " vectors. Cannot continue.");
+	    debugOut << "done." << endl
+		     << "Calling orthonormError() on X2_out... ";
+	    err = tsqr->orthonormError (*X2_out);
+	    TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+			       "projectAndNormalizeNoCopy(*X2, *X2_out, C, B, "
+			       "tuple<RCP<const MV> >(X1_out)) did not meet "
+			       "tolerance: orthonormError(X2_out) = " << err 
+			       << " > TOL = " << TOL);
+	    debugOut << "done: || <X2_out,X2_out> - I || = " << err << endl
+		     << "Calling orthogError(X2_out, X1_out)... ";
+	    err = tsqr->orthogError (*X2_out, *X1_out);
+	    TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+			       "projectAndNormalizeNoCopy(*X2, *X2_out, C, B, "
+			       "tuple<RCP<const MV> >(X1_out)) did not meet "
+			       "tolerance: orthogError(X2_out,X1_out) = " 
+			       << err << " > TOL = " << TOL);
+	    debugOut << "done: || <X2_out,X1_out> || = " << err << endl;
+	  }
 
 	{
 	  //

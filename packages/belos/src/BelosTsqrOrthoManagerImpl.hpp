@@ -1572,7 +1572,7 @@ namespace Belos {
 	// Copy X_out_null into the last few columns of X_in
 	// (X_in_null) and do projections in there.
 	RCP<MV> X_in_null = MVT::CloneViewNonConst (X_in, nullSpaceIndices);
-	MVT::Assign (X_out_null, X_in_null);
+	MVT::Assign (*X_out_null, *X_in_null);
 
 	// Space for projection coefficients (will be thrown away)
 	prev_coeffs_type C_null (num_Q_blocks);
@@ -1586,7 +1586,7 @@ namespace Belos {
 	// be thrown away).
 	RCP<serial_matrix_type> B_null (new serial_matrix_type (numNullSpaceCols, numNullSpaceCols));
 	// Normalize, putting the resulting vectors in X_out_null.
-	const int randomVectorsRank = normalizeNoCopy (X_in_null, X_out_null, B_null);
+	const int randomVectorsRank = normalizeNoCopy (*X_in_null, *X_out_null, B_null);
 
 	// It's not impossible for the random data not to be full rank
 	// after projection and normalization.  In that case, we could
