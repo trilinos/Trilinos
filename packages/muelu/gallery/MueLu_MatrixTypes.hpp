@@ -131,7 +131,7 @@ namespace MueLu {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
     RCP<Matrix>
     TriDiag(const RCP<const Map> & map,
-            const GlobalOrdinal nx,
+            const GlobalOrdinal nx, // note: nx unused
             const Scalar a, const Scalar b, const Scalar c)
     {
   

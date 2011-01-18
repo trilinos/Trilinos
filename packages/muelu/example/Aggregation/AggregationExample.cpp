@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("nx",&nx,"mesh points in x-direction.");
   cmdp.setOption("ny",&ny,"mesh points in y-direction.");
   cmdp.setOption("nz",&nz,"mesh points in z-direction.");
-  cmdp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Star2D, Laplace3D");
+  cmdp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Laplace3D"); //TODO: Star2D, numGlobalElements=...
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return EXIT_FAILURE;
   }
@@ -59,9 +59,14 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList pl;
   pl.set("Num Threads",numThreads);
 
-  GO numGlobalElements = nx*ny;
-  if (matrixType == "Laplace3D")
-    numGlobalElements *= nz;
+  GO numGlobalElements;
+  if (matrixType == "Laplace1D")
+    numGlobalElements = nx;
+  else if (matrixType == "Laplace2D")
+    numGlobalElements = nx*ny;
+  else if (matrixType == "Laplace3D")
+    numGlobalElements = nx*ny*nz;
+  else return EXIT_FAILURE;
   LO indexBase = 0;
 
   RCP<const Map > map;
