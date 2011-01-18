@@ -45,7 +45,7 @@ class SmootherBase : public Needs {
     //@{
 
     //! Prototype of the method to setup the number of iteration of the smoother.
-    virtual void SetNIts(LO Nits) = 0;
+    virtual void SetNIts(LO const &Nits) = 0;
 
     //! Get the smoother type.
     std::string GetType() {

@@ -93,24 +93,25 @@ class Level;
     //! @name Set/Get methods
 
     //@{
-    void SetNIts(LO nIts) {
-      if (!SmootherPrototype::IsSetup())
+    void SetNIts(LO const &nIts) {
+      if (!SmootherPrototype::IsSetup()) //FIXME precond doesn't have to be setup
         throw(Exceptions::RuntimeError("Call Setup before setting sweeps"));
-      Teuchos::ParameterList  ifpackList;
-      ifpackList.set("relaxation: sweeps", nIts);
-      prec_->SetParameters(ifpackList);
+      list_.set("relaxation: sweeps", nIts);
+      prec_->SetParameters(list_);
     }
 
     LO GetNIts() {
-      throw(MueLu::Exceptions::NotImplemented("#smoother sweeps are stored internally with Ifpack and cannot be retrieved."));
+      if (list_.isParameter("relaxation: sweeps") == false)
+        throw(Exceptions::RuntimeError("number of iterations is not set"));
+      return list_.get("relaxation: sweeps",1);
     }
     //@}
 
-    void Setup(RCP<Level> level) {
+    void Setup(Level const &level) {
       Teuchos::OSTab tab(out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "IfpackSmoother::Setup()" << std::endl;
       SmootherPrototype::IsSetup(true);
-      A_ = level->GetA();
+      A_ = level.GetA();
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       Ifpack factory;
       prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
@@ -120,10 +121,12 @@ class Level;
 
     void Apply(RCP<MultiVector> x, RCP<MultiVector> const rhs, bool InitialGuessIsZero=false)
     {
-      if (InitialGuessIsZero)
-        throw(Exceptions::NotImplemented("No logic for handling zero initial guesses"));
       if (!SmootherPrototype::IsSetup())
         throw(Exceptions::RuntimeError("Setup has not been called"));
+      Teuchos::ParameterList  ifpackList;
+      ifpackList.set("relaxation: zero starting solution", InitialGuessIsZero);
+      prec_->SetParameters(ifpackList);
+
       Teuchos::OSTab tab(out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "IfpackSmoother::Apply()" << std::endl;
       RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(x);

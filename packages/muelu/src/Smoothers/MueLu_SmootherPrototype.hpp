@@ -46,7 +46,7 @@ class SmootherPrototype : public SmootherBase<ScalarType,LocalOrdinal,GlobalOrdi
 
     virtual void CopyParameters(RCP<SmootherPrototype>) = 0;
 
-    virtual void Setup(RCP<Level<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >) = 0;
+    virtual void Setup(Level<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> const&) = 0;
 
     virtual RCP<SmootherPrototype> Copy() = 0;
 

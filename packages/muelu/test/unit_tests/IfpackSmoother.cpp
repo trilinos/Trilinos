@@ -69,6 +69,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, NotSetup)
 
   //try applying without setting up
   TEST_THROW( smoother->Apply(X,RHS) , MueLu::Exceptions::RuntimeError );
+  TEST_THROW( smoother->SetNIts(5), MueLu::Exceptions::RuntimeError );
 
 }
 
@@ -108,8 +109,10 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
   ifpackList.set("relaxation: damping factor", (double) 1.0);
   ifpackList.set("relaxation: zero starting solution", false);
   RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-  RCP<Level> aLevel = rcp( new Level() );
-  aLevel->SetA(Op);
+  //RCP<Level> aLevel = rcp( new Level() );
+  //aLevel->SetA(Op);
+  Level aLevel;
+  aLevel.SetA(Op);
 
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
@@ -121,7 +124,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
   X->randomize();
   Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-  double n;
+  //double n;
   //epX->Norm2(&n);
   //std::cout << "||X_true|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
 
@@ -135,6 +138,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
 
   int numIts = 50;
   smoother->SetNIts(numIts);
+  TEUCHOS_TEST_EQUALITY(smoother->GetNIts(),50,out,success);
   out << "Applying " << numIts << " GS sweeps" << std::endl;
   X->putScalar( (SC) 0.0);
   smoother->Apply(X,RHS);
