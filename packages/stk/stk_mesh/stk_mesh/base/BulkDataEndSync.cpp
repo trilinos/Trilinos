@@ -313,89 +313,94 @@ void BulkData::internal_resolve_shared_modify_delete()
 
   // We iterate backwards over remote_mod to ensure that we hit the
   // higher-ranking entities first.
-  for ( std::vector<EntityProcState>::iterator
-        i = remote_mod.end(); i != remote_mod.begin() ; ) {
+  for ( std::vector<EntityProcState>::reverse_iterator
+        i = remote_mod.rbegin(); i != remote_mod.rend() ; ) {
 
-    --i ;
+    Entity * const entity        = i->entity_proc.first ;
+    const bool locally_destroyed = EntityLogDeleted == entity->log_query();
+    bool remote_owner_destroyed  = false;
 
-    Entity * const entity         = i->entity_proc.first ;
-    const unsigned remote_proc    = i->entity_proc.second ;
-    const bool remotely_destroyed = EntityLogDeleted == i->state ;
-    const bool locally_destroyed  = EntityLogDeleted == entity->log_query();
+    // Iterate over all of this entity's remote changes
+    for ( ; i != remote_mod.rend() && i->entity_proc.first == entity ; ++i ) {
 
-    // When a shared entity is remotely modified or destroyed
-    // then the local copy is also modified.  This modification
-    // status is applied to all related higher ranking entities.
+      const unsigned remote_proc    = i->entity_proc.second ;
+      const bool remotely_destroyed = EntityLogDeleted == i->state ;
 
-    if ( ! locally_destroyed ) {
-      m_entity_repo.log_modified( *entity );
+      // When a shared entity is remotely modified or destroyed
+      // then the local copy is also modified.  This modification
+      // status is applied to all related higher ranking entities.
+
+      if ( ! locally_destroyed ) {
+        m_entity_repo.log_modified( *entity );
+      }
+
+      // A shared entity is being deleted on the remote process.
+      // Remove it from the sharing communication list.
+      // Ownership changes are processed later, but we'll need
+      // to know if the remote owner destroyed the entity in order
+      // to correctly resolve ownership (it is not sufficient to just
+      // look at the comm list of the entity since there is no
+      // guarantee that the comm list is correct or up-to-date).
+
+      if ( remotely_destroyed ) {
+        m_entity_repo.erase_comm_info( *entity, EntityCommInfo(0,remote_proc) );
+
+        // check if owner is destroying
+        if ( entity->owner_rank() == remote_proc ) {
+          remote_owner_destroyed = true ;
+        }
+      }
     }
 
-    // A shared entity is being deleted on the remote process.
-    // Remove it from the sharing communication list.
-    // Ownership changes are processed later based upon
-    // the final modification state and sharing communication.
+    // Have now processed all remote changes knowledge for this entity.
 
-    if ( remotely_destroyed ) {
-      m_entity_repo.erase_comm_info( *entity, EntityCommInfo(0,remote_proc) );
-    }
+    PairIterEntityComm new_sharing = entity->sharing();
+    const bool   exists_somewhere = ! ( remote_owner_destroyed &&
+                                        locally_destroyed &&
+                                        new_sharing.empty() );
 
-    // If this is the last information update on this entity
-    // then time to resolve ownership.
+    if ( exists_somewhere ) {
 
-    const bool last_update_of_this_entity =
-      (i == remote_mod.begin() || entity != (i-1)->entity_proc.first);
+      const bool old_local_owner = m_parallel_rank == entity->owner_rank();
 
-    if ( last_update_of_this_entity ) {
+      // Giving away ownership to another process in the sharing list:
+      const bool give_ownership = locally_destroyed && old_local_owner ;
 
-      PairIterEntityComm new_sharing = entity->sharing();
-      const bool   delete_everywhere = locally_destroyed && new_sharing.empty();
+      // If we are giving away ownership or the remote owner destroyed
+      // the entity, then we need to establish a new owner
+      if ( give_ownership || remote_owner_destroyed ) {
 
-      if ( ! delete_everywhere ) {
+        const unsigned new_owner = determine_new_owner( *entity );
 
-        const bool old_local_owner = m_parallel_rank == entity->owner_rank();
+        m_entity_repo.set_entity_owner_rank( *entity, new_owner );
+        m_entity_repo.set_entity_sync_count( *entity, m_sync_count );
+      }
 
-        // Giving away ownership to another process in the sharing list:
-        const bool give_ownership = locally_destroyed && old_local_owner ;
+      if ( ! locally_destroyed ) {
 
-        // The remote owner has been destroyed, choose a new owner
-        const bool remote_owner_destroyed =
-          ! old_local_owner && ! in_shared( *entity , entity->owner_rank() );
+        PartVector add_part , remove_part ;
 
-        if ( give_ownership || remote_owner_destroyed ) {
-
-          const unsigned new_owner = determine_new_owner( *entity );
-
-          m_entity_repo.set_entity_owner_rank( *entity, new_owner );
-          m_entity_repo.set_entity_sync_count( *entity, m_sync_count );
+        if ( new_sharing.empty() ) {
+          // Is no longer shared, remove the shared part.
+          remove_part.push_back(& m_mesh_meta_data.globally_shared_part());
         }
 
-        if ( ! locally_destroyed ) {
+        const bool new_local_owner = m_parallel_rank == entity->owner_rank();
 
-          PartVector add_part , remove_part ;
+        const bool local_claimed_ownership =
+          ( ! old_local_owner && new_local_owner );
 
-          if ( new_sharing.empty() ) {
-            // Is no longer shared, remove the shared part.
-            remove_part.push_back(& m_mesh_meta_data.globally_shared_part());
-          }
+        if ( local_claimed_ownership ) {
+          // Changing remotely owned to locally owned
+          add_part.push_back( & m_mesh_meta_data.locally_owned_part() );
+        }
 
-          const bool new_local_owner = m_parallel_rank == entity->owner_rank();
-
-          const bool local_claimed_ownership =
-           ( ! old_local_owner && new_local_owner );
-
-          if ( local_claimed_ownership ) {
-            // Changing remotely owned to locally owned
-            add_part.push_back( & m_mesh_meta_data.locally_owned_part() );
-          }
-
-          if ( ! add_part.empty() || ! remove_part.empty() ) {
-            internal_change_entity_parts( *entity , add_part , remove_part );
-          }
-        } // if ( ! locally_destroyed )
-      } // if ( ! delete_everywhere )
-    } // last touch of this shared entity
-  }
+        if ( ! add_part.empty() || ! remove_part.empty() ) {
+          internal_change_entity_parts( *entity , add_part , remove_part );
+        }
+      } // if ( ! locally_destroyed )
+    } // if ( ! delete_everywhere )
+  } // last touch of this shared entity
 
   // Erase all sharing communication lists for Destroyed entities:
   for ( std::vector<Entity*>::const_iterator
