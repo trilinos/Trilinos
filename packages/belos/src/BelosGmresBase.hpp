@@ -98,13 +98,15 @@ namespace Belos {
   /// candidate basis vector(s) due to (numerical) rank deficiency, 
   /// and doesn't know how to recover.
   ///
-  /// This usually means that the candidate basis vectors from
-  /// extendBasis() are not full rank after orthogonalization.
-  /// CA-GMRES may choose to retry with a shorter candidate basis
-  /// length, but if the candidate basis length is too short, it may
-  /// opt to "give up."  In that case, advance() throws this
-  /// exception.  Restarting with standard GMRES may be a good idea in
-  /// that case.
+  /// This usually means that after orthogonalizing the candidate
+  /// basis vector(s) from extendBasis(), they are not full rank.  In
+  /// the case of standard GMRES, this means the candidate basis
+  /// vector has zero norm.  For CA-GMRES, the vectors might have
+  /// nonzero norm, but are not full rank.  CA-GMRES may choose to
+  /// retry with a shorter candidate basis length, but if the
+  /// candidate basis length is too short, it may opt to "give up."
+  /// In that case, advance() throws this exception.  Restarting with
+  /// standard GMRES may be a good idea in that case.
   ///
   /// Applications may choose to recover from or deal with this error
   /// in one or more of the following ways: 
@@ -130,6 +132,7 @@ namespace Belos {
 
   /// \class GmresBase
   /// \brief Common state and functionality for new GMRES implementations
+  /// \ingroup belos_solver_framework
   /// \author Mark Hoemmen
   ///
   /// This class includes both state and functionality that are useful
@@ -224,6 +227,25 @@ namespace Belos {
     /// equivalent to several iterations of standard (F)GMRES.
     ///
     void advance();
+
+    /// Accept the candidate basis and prepare for the next iteration
+    /// 
+    /// \note Subclasses that produce more than one basis vector at a
+    ///   time should override this implementation appropriately.
+    virtual void acceptCandidateBasis () {
+      curNumIters_++;
+    }
+
+    /// Reject the candidate basis
+    /// 
+    /// \note Subclasses that retry rejected iterations should
+    ///   override this implementation appropriately.
+    virtual void rejectCandidateBasis () {
+      std::ostringstream os;
+      os << (flexible_ ? "Flexible GMRES" : "GMRES") 
+	 << " rejects the computed candidate basis vector(s)";
+      TEST_FOR_EXCEPTION(true, GmresRejectsCandidateBasis, os.str());
+    }
 
     /// \brief The number of completed iteration(s) (>= 0)
     /// 
@@ -853,26 +875,17 @@ namespace Belos {
     // Subclasses' implementations of orthogonalize() and/or
     // updateUpperHessenbergMatrix() might wish to set state to
     // indicate acceptance or rejection of the candidate basis
-    // vector(s), and perhaps also to facilitate calling advance()
-    // recursively (e.g., setting the "last rejected rank" so that the
-    // next call of advance() computes fewer candidate basis vectors).
+    // vector(s).  They may also call advance() recursively (e.g.,
+    // setting the "last rejected rank" so that the next call of
+    // advance() computes fewer candidate basis vectors).
     if (! acceptedCandidateBasis())
-      {
-	TEST_FOR_EXCEPTION( !shouldRetryAdvance(), 
-			    GmresRejectsCandidateBasis, 
-			    "GMRES rejects the computed candidate basis vector" 
-			    << ((flexible_ || s > 1) ? "s" : "")
-			    << "." );
-	advance(); // advance() recursively
-      }
+      rejectCandidateBasis ();
     else
-      {
-	curNumIters_ += rank;
-	// This is done lazily, whenever the "native" residual norm
-	// or the current solution update are requested.
-	//
-	//updateProjectedLeastSquaresProblem();
-      }
+      acceptCandidateBasis ();
+
+    // We don't update the projected least-squares problem here.
+    // This is done lazily, whenever the "native" residual norm
+    // or the current solution update are requested.
   }
 
 
