@@ -63,7 +63,7 @@ int utest_main(int argc, char **argv) {
   try {
     //TEST_geom_volume(run_environment.m_comm);
     
-    result = RUN_ALL_TESTS(); 
+    result = (RUN_ALL_TESTS() == 0); 
   }
   catch ( const std::exception * X ) {
     std::cout << "  unexpected exception POINTER: " << X->what() << std::endl;
@@ -84,6 +84,11 @@ int utest_main(int argc, char **argv) {
   MPI_Finalize(); 
 #endif
 
+  if (result) {
+    std::cout << "End Result: TEST PASSED" << std::endl;
+  } else {
+    std::cout << "End Result: TEST FAILED" << std::endl;
+  }
   return result;
 }
 
