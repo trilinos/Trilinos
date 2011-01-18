@@ -106,6 +106,43 @@ namespace Belos {
     return params;
   }
 
+  /// \brief "Fast" parameters for DGKSOrthoManager
+  ///
+  /// \warning This function is not reentrant.
+  template<class ScalarType>
+  Teuchos::RCP<const Teuchos::ParameterList> 
+  getFastDgksParameters()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::ScalarTraits;
+    typedef typename ScalarTraits<ScalarType>::magnitudeType magnitude_type;
+    typedef ScalarTraits<magnitude_type> STM;
+
+    // This part makes this class method non-reentrant.
+    static RCP<ParameterList> params;
+    if (params.is_null())
+      {
+	RCP<const ParameterList> defaultParams = getDefaultDgksParameters();
+	// Start with a clone of the default parameters
+	params = rcp (*defaultParams);
+
+	const int maxBlkOrtho = 1;
+	params->set ("maxNumOrthogPasses", maxBlkOrtho);
+
+	const magnitude_type blkTol = STM::zero();
+	params->set ("blkTol", blkTol);
+
+	const magnitude_type depTol = STM::zero();
+	params->set ("depTol", depTol);
+
+	const magnitude_type singTol = STM::zero();
+	params->set ("singTol", singTol);
+      }
+    return params;
+  }
+
   /// \brief Read DGKS options from the given parameter list
   ///
   /// Try to read DGKS options from the given parameter list.

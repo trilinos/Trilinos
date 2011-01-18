@@ -152,6 +152,23 @@ namespace Belos {
     ///
     static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters ();
 
+    /// \brief Get "fast" parameters for TsqrOrthoManagerImpl
+    ///
+    /// Get a (pointer to a) list of parameters for configuring a
+    /// TsqrOrthoManager or TsqrMatOrthoManager instance for maximum
+    /// speed, at the cost of accuracy (no block reorthogonalization)
+    /// and robustness to rank deficiency (no randomization of the
+    /// null space basis).
+    ///
+    /// \note TSQR implementation configuration options are stored
+    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
+    ///   sublist() to get them; call get().)
+    ///
+    /// \warning This method is not reentrant.  It should only be
+    ///   called by one thread at a time.
+    ///
+    static Teuchos::RCP<const Teuchos::ParameterList> getFastParameters ();
+
     /// Constructor
     ///
     /// \param params [in] Configuration parameters, both for this
@@ -1820,6 +1837,39 @@ namespace Belos {
 		 "is enabled (reorthogonalizeBlocks==true).");
     return params;
   }
+
+
+  template<class ScalarType, class MV>
+  Teuchos::RCP<const Teuchos::ParameterList>
+  TsqrOrthoManagerImpl<ScalarType, MV>::getFastParameters ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    // This part makes this class method non-reentrant.
+    static RCP<ParameterList> params;
+    if (params.is_null())
+      {
+	RCP<const ParameterList> defaultParams = getDefaultParameters();
+	// Start with a clone of the default parameters
+	params = rcp (*defaultParams);
+	
+	// Disable reorthogonalization and randomization of the null
+	// space basis.  Reorthogonalization tolerances don't matter,
+	// since we aren't reorthogonalizing blocks in the fast
+	// settings.  We can leave the default values.  Also,
+	// (re)orthogonalization faults may only occur with
+	// reorthogonalization, so we don't have to worry about the
+	// "throwOnReorthogFault" setting.
+	const bool randomizeNullSpace = false;
+	params->set ("randomizeNullSpace", randomizeNullSpace);      
+	const bool reorthogonalizeBlocks = false;
+	params->set ("reorthogonalizeBlocks", reorthogonalizeBlocks);
+      }
+    return params;
+  }
+
 
 } // namespace Belos
 

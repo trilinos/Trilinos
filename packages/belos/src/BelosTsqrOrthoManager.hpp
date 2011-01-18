@@ -150,11 +150,33 @@ namespace Belos {
     ///   make a deep copy of the returned parameter list, and then
     ///   modify individual entries as desired.
     ///
+    /// \note TSQR implementation configuration options are stored
+    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
+    ///   sublist() to get them; call get().)
+    ///
     /// \warning This method is not reentrant.  It should only be
     ///   called by one thread at a time.
     ///
     static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters() {
       return TsqrOrthoManagerImpl<Scalar, MV>::getDefaultParameters();
+    }
+
+    /// \brief Get "fast" parameters for TsqrOrthoManager
+    ///
+    /// Get a (pointer to a) list of parameters for configuring a
+    /// TsqrOrthoManager instance for maximum speed, at the cost of
+    /// accuracy (no block reorthogonalization) and robustness to rank
+    /// deficiency (no randomization of the null space basis).
+    ///
+    /// \note TSQR implementation configuration options are stored
+    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
+    ///   sublist() to get them; call get().)
+    ///
+    /// \warning This method is not reentrant.  It should only be
+    ///   called by one thread at a time.
+    ///
+    static Teuchos::RCP<const Teuchos::ParameterList> getFastParameters() {
+      return TsqrOrthoManagerImpl<Scalar, MV>::getFastParameters();
     }
 
     //! Constructor
@@ -356,12 +378,34 @@ namespace Belos {
     ///   make a deep copy of the returned parameter list, and then
     ///   modify individual entries as desired.
     ///
+    /// \note TSQR implementation configuration options are stored
+    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
+    ///   sublist() to get them; call get().)
+    ///
     /// \warning This method is not reentrant.  It should only be
     ///   called by one thread at a time.
     ///
     static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters() {
       // FIXME (mfh 11 Jan 2011) What about DGKS parameters?
       return TsqrOrthoManagerImpl<Scalar, MV>::getDefaultParameters();
+    }
+
+    /// \brief Get "fast" parameters for TsqrMatOrthoManager
+    ///
+    /// Get a (pointer to a) list of parameters for configuring a
+    /// TsqrMatOrthoManager instance for maximum speed, at the cost of
+    /// accuracy (no block reorthogonalization) and robustness to rank
+    /// deficiency (no randomization of the null space basis).
+    ///
+    /// \note TSQR implementation configuration options are stored
+    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
+    ///   sublist() to get them; call get().)
+    ///
+    /// \warning This method is not reentrant.  It should only be
+    ///   called by one thread at a time.
+    ///
+    static Teuchos::RCP<const Teuchos::ParameterList> getFastParameters() {
+      return TsqrOrthoManagerImpl<Scalar, MV>::getFastParameters();
     }
 
     //! Default constructor (sets Op to Teuchos::null)
@@ -661,4 +705,3 @@ namespace Belos {
 } // namespace Belos
 
 #endif // __BelosTsqrOrthoManager_hpp
-
