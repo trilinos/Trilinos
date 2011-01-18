@@ -2,6 +2,9 @@
 #define MUELU_UTILITIES_HPP
 
 #include <Teuchos_ArrayView.hpp>
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_TypeTraits.hpp>
 
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
@@ -262,6 +265,31 @@ namespace MueLu {
      throw(Exceptions::NotImplemented("TwoMatrixAdd for Tpetra"));
    }
 #endif
+
+   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+
+   //static Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType>
+   static Teuchos::Array<Magnitude>
+   ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
+   {
+     SC one = 1.0;
+     SC negone = -1.0;
+     //if (X.getNumVectors() != RHS.getNumVectors())
+     //  throw(Exceptions::RuntimeError("Number of solution vectors != number of right-hand sides"));
+     //const size_t numVecs = X.getNumVectors();
+     const size_t numVecs = 1;
+     RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRowMap(),numVecs);
+     Op.multiply(X,*RES,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+     RES->update(one,RHS,negone);
+     //Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(numVecs);
+     Teuchos::Array<Magnitude> norms(numVecs);
+     RES->norm2(norms);
+     //RCP<Epetra_MultiVector> epRES = Utils::MV2NonConstEpetraMV(RES);
+     //double n;
+     //epRES->Norm2(&n);
+     return norms;
+   }
+
   }; // class
 
 } //namespace MueLu

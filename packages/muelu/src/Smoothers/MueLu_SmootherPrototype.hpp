@@ -65,7 +65,7 @@ class SmootherPrototype : public SmootherBase<ScalarType,LocalOrdinal,GlobalOrdi
 
       This method should be called by Setup().
     */
-    void IsSetup(bool ToF) {
+    void IsSetup(bool const &ToF) {
       IsSetup_ = ToF;
     }
     //@}

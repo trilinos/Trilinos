@@ -31,12 +31,10 @@ class Level;
 
     //! Ifpack-specified key phrase that denote smoother type
     std::string type_;
-    //! number of smoother sweeps
-    LO nIts_;
     //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;
-    //RCP<Ifpack_Preconditioner> prec_;
-    Ifpack_Preconditioner* prec_;
+    RCP<Ifpack_Preconditioner> prec_;
+    //Ifpack_Preconditioner* prec_;
     //! matrix operator 
     Teuchos::RCP<Operator> A_;
     //! parameter list that is used by Ifpack internally
@@ -96,11 +94,15 @@ class Level;
 
     //@{
     void SetNIts(LO nIts) {
-      nIts_ = nIts;
+      if (!SmootherPrototype::IsSetup())
+        throw(Exceptions::RuntimeError("Call Setup before setting sweeps"));
+      Teuchos::ParameterList  ifpackList;
+      ifpackList.set("relaxation: sweeps", nIts);
+      prec_->SetParameters(ifpackList);
     }
 
     LO GetNIts() {
-      return nIts_;
+      throw(MueLu::Exceptions::NotImplemented("#smoother sweeps are stored internally with Ifpack and cannot be retrieved."));
     }
     //@}
 
@@ -111,19 +113,22 @@ class Level;
       A_ = level->GetA();
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       Ifpack factory;
-      prec_ = factory.Create(type_, &(*epA), overlap_);
+      prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
       prec_->SetParameters(list_);
       prec_->Compute();
     }
 
-    void Apply(RCP<MultiVector> x, RCP<MultiVector> const rhs, bool InitialGuessIsZero)
+    void Apply(RCP<MultiVector> x, RCP<MultiVector> const rhs, bool InitialGuessIsZero=false)
     {
       if (InitialGuessIsZero)
         throw(Exceptions::NotImplemented("No logic for handling zero initial guesses"));
+      if (!SmootherPrototype::IsSetup())
+        throw(Exceptions::RuntimeError("Setup has not been called"));
       Teuchos::OSTab tab(out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "IfpackSmoother::Apply()" << std::endl;
       RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(x);
       RCP<const Epetra_MultiVector> epRhs = Utils::MV2NonConstEpetraMV(rhs);
+
       prec_->ApplyInverse(*epRhs,*epX);
     }
 
@@ -142,7 +147,6 @@ class Level;
     {
       RCP<IfpackSmoother> ifpackSmoo = rcp_dynamic_cast<IfpackSmoother>(source);
       type_ = ifpackSmoo->type_;
-      nIts_ = ifpackSmoo->nIts_;
       prec_ = ifpackSmoo->prec_;
       A_ = ifpackSmoo->A_;
     }
