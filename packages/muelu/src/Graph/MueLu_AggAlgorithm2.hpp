@@ -534,57 +534,57 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
   // Grab the transpose matrix graph for unaggregated ghost vertices.
   //     a) count the number of nonzeros per row in the transpose
-  vector<int> cols; //TODO: vector
   vector<int> RowPtr(exp_nRows+1-nVertices);
-  {
-    ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+  //{
+  ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
 
-    for (int i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
-    for (int i = 0; i < nVertices;  i++) {
+  for (int i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
+  for (int i = 0; i < nVertices;  i++) {
 
-      // neighOfINode is the neighbor node list of node 'iNode'.
-      ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+    // neighOfINode is the neighbor node list of node 'iNode'.
+    ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
 
-      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-        int j = *it;
-        if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
-          RowPtr[j-nVertices]++;
-        }
+    for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      int j = *it;
+      if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
+        RowPtr[j-nVertices]++;
       }
     }
-
-    //     b) Convert RowPtr[i] to point to 1st first nnz spot in row i.
-
-    int iSum = 0, iTemp;
-    for (int i = nVertices; i < exp_nRows ;  i++) {
-      iTemp = RowPtr[i-nVertices];
-      RowPtr[i-nVertices] = iSum;
-      iSum += iTemp;
-    }
-    RowPtr[exp_nRows-nVertices] = iSum;
-    vector<int> cols(iSum+1);
-   
-    //     c) Traverse matrix and insert entries in proper location.
-    for (int i = 0; i < nVertices;  i++) {
-
-      // neighOfINode is the neighbor node list of node 'iNode'.
-      ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
-    
-      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-        int j = *it;
-        if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
-          cols[RowPtr[j-nVertices]++] = i;
-        }
-      }
-    }
-
-    //     d) RowPtr[i] points to beginning of row i+1 so shift by one location.
-    for (int i = exp_nRows; i > nVertices;  i--)
-      RowPtr[i-nVertices] = RowPtr[i-1-nVertices];
-    RowPtr[0] = 0;
-    
-    // views on distributed vectors are freed here.
   }
+
+  //     b) Convert RowPtr[i] to point to 1st first nnz spot in row i.
+
+  int iSum = 0, iTemp;
+  for (int i = nVertices; i < exp_nRows ;  i++) {
+    iTemp = RowPtr[i-nVertices];
+    RowPtr[i-nVertices] = iSum;
+    iSum += iTemp;
+  }
+  RowPtr[exp_nRows-nVertices] = iSum;
+  vector<int> cols(iSum+1);
+   
+  //     c) Traverse matrix and insert entries in proper location.
+  for (int i = 0; i < nVertices;  i++) {
+
+    // neighOfINode is the neighbor node list of node 'iNode'.
+    ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+    
+    for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      int j = *it;
+      if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
+        cols[RowPtr[j-nVertices]++] = i;
+      }
+    }
+  }
+
+  //     d) RowPtr[i] points to beginning of row i+1 so shift by one location.
+  for (int i = exp_nRows; i > nVertices;  i--)
+    RowPtr[i-nVertices] = RowPtr[i-1-nVertices];
+  RowPtr[0] = 0;
+    
+  // views on distributed vectors are freed here.
+  vertex2AggId = Teuchos::null;
+  //}
 
   int bestScoreCutoff;
   int thresholds[10] = {300,200,100,50,25,13,7,4,2,0};
