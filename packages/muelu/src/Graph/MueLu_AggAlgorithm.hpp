@@ -282,7 +282,10 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
                     vertex2AggId[jNode] = nAggregates;
                     if ( ordering == 2 ) /* if graph ordering */
                       {
-                        for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+
+                        ArrayView<const int> neighOfJNode = graph.getNeighborVertices(jNode);
+
+                        for (iter it = neighOfJNode.begin(); it != neighOfJNode.end(); ++it)
                           {
                             int index = *it;
                             if ( aggStat[index] == READY )
