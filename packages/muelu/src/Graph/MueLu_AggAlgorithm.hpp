@@ -255,7 +255,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
                     for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                       {
                         int index = *it;
-                        if ( aggStat[index] == READY )
+                        if  ( index < nRows && aggStat[index] == READY )
                           { 
                             newNode = new MueLu_Node;
                             newNode->nodeId = index;
@@ -288,7 +288,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
                         for (iter it = neighOfJNode.begin(); it != neighOfJNode.end(); ++it)
                           {
                             int index = *it;
-                            if ( aggStat[index] == READY )
+                            if ( index < nRows && aggStat[index] == READY )
                               { 
                                 newNode = new MueLu_Node;
                                 newNode->nodeId = index;
