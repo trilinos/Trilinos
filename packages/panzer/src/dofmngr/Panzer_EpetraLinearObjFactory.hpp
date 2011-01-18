@@ -14,15 +14,33 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_LinearOpBase.hpp"
+
 namespace panzer {
 
 template <typename LocalOrdinalT>
 class EpetraLinearObjFactory {
 public:
 
-   EpetraLinearObjFactory(const Teuchos::RCP<Epetra_Comm> & comm,const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider);
+   EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider);
 
    virtual ~EpetraLinearObjFactory();
+
+   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > getGhostedVector() const;
+   virtual Teuchos::RCP<Thyra::LinearOpBase<double> > getGhostedMatrix() const;
+
+   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > getVector() const;
+   virtual Teuchos::RCP<Thyra::LinearOpBase<double> > getMatrix() const;
+
+   virtual void ghostToGlobalMatrix(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & ghostA, 
+                                      const Teuchos::RCP<Thyra::LinearOpBase<double> > & A) const;
+
+   virtual void ghostToGlobalVector(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & ghostA, 
+                                    const Teuchos::RCP<Thyra::MultiVectorBase<double> > & A) const;
+
+   virtual void globalToGhostVector(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & A, 
+                                    const Teuchos::RCP<Thyra::MultiVectorBase<double> > & ghostA) const;
 
    //! get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getMap() const;
@@ -52,7 +70,7 @@ protected:
    virtual const Teuchos::RCP<Epetra_CrsGraph> buildGhostedGraph() const;
 
    // storage for Epetra graphs and maps
-   Teuchos::RCP<Epetra_Comm> comm_;
+   Teuchos::RCP<const Epetra_Comm> comm_;
    mutable Teuchos::RCP<Epetra_Map> map_;
    mutable Teuchos::RCP<Epetra_Map> ghostedMap_;
    mutable Teuchos::RCP<Epetra_CrsGraph> graph_;

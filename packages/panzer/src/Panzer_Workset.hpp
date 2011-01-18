@@ -15,6 +15,11 @@
 class Epetra_Vector;
 class Epetra_CrsMatrix;
 
+namespace Thyra {
+template <typename ScalarT> class MultiVectorBase;
+template <typename ScalarT> class LinearOpBase;
+}
+
 namespace panzer {
 
   struct Workset {
@@ -39,6 +44,11 @@ namespace panzer {
     Teuchos::RCP<Epetra_Vector> solution_deriv_vector;
     Teuchos::RCP<Epetra_Vector> residual_vector;
     Teuchos::RCP<Epetra_CrsMatrix> jacobian_matrix;
+
+    Teuchos::RCP<Thyra::MultiVectorBase<double> > th_solution_vector;
+    Teuchos::RCP<Thyra::MultiVectorBase<double> > th_solution_deriv_vector;
+    Teuchos::RCP<Thyra::MultiVectorBase<double> > th_residual_vector;
+    Teuchos::RCP<Thyra::LinearOpBase<double> > th_jacobian_matrix;
 
   };
 

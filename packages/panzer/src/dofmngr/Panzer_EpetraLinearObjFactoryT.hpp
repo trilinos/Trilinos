@@ -1,5 +1,13 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
+
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
+
 using Teuchos::RCP;
 
 namespace panzer {
@@ -9,7 +17,7 @@ namespace panzer {
 // ************************************************************
 
 template <typename LocalOrdinalT>
-EpetraLinearObjFactory<LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP<Epetra_Comm> & comm,
+EpetraLinearObjFactory<LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
                                                               const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider)
    : comm_(comm), gidProvider_(gidProvider)
 { }
@@ -17,6 +25,117 @@ EpetraLinearObjFactory<LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP
 template <typename LocalOrdinalT>
 EpetraLinearObjFactory<LocalOrdinalT>::~EpetraLinearObjFactory()
 { }
+
+// LinearObjectFactory functions 
+/////////////////////////////////////////////////////////////////////
+
+// build 
+template <typename LocalOrdinalT>
+Teuchos::RCP<Thyra::MultiVectorBase<double> > EpetraLinearObjFactory<LocalOrdinalT>::getGhostedVector() const
+{
+   Teuchos::RCP<Epetra_Map> eMap = getGhostedMap(); // use ghosted map
+   Teuchos::RCP<Epetra_MultiVector> eVec = Teuchos::rcp(new Epetra_Vector(*eMap));
+ 
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = Thyra::create_VectorSpace(eMap);
+   Teuchos::RCP<Thyra::MultiVectorBase<double> > vec = Thyra::create_MultiVector(eVec,vs,Teuchos::null);
+
+   Teuchos::set_extra_data(eMap,"epetra_map",Teuchos::inOutArg(vec));
+   return vec;
+}
+
+template <typename LocalOrdinalT>
+Teuchos::RCP<Thyra::LinearOpBase<double> > EpetraLinearObjFactory<LocalOrdinalT>::getGhostedMatrix() const
+{
+   Teuchos::RCP<Epetra_CrsGraph> eGraph = getGhostedGraph(); // use ghosted graph
+   Teuchos::RCP<Epetra_CrsMatrix> eMat = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
+
+   return Thyra::nonconstEpetraLinearOp(eMat);
+}
+
+template <typename LocalOrdinalT>
+Teuchos::RCP<Thyra::MultiVectorBase<double> > EpetraLinearObjFactory<LocalOrdinalT>::getVector() const
+{
+   Teuchos::RCP<Epetra_Map> eMap = getMap(); // use fully distributed map
+   Teuchos::RCP<Epetra_MultiVector> eVec = Teuchos::rcp(new Epetra_Vector(*eMap));
+ 
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = Thyra::create_VectorSpace(eMap);
+   Teuchos::RCP<Thyra::MultiVectorBase<double> > vec = Thyra::create_MultiVector(eVec,vs,Teuchos::null);
+
+   Teuchos::set_extra_data(eMap,"epetra_map",Teuchos::inOutArg(vec));
+   return vec;
+}
+
+template <typename LocalOrdinalT>
+Teuchos::RCP<Thyra::LinearOpBase<double> > EpetraLinearObjFactory<LocalOrdinalT>::getMatrix() const
+{
+   Teuchos::RCP<Epetra_CrsGraph> eGraph = getGraph(); // use fully distributed graph
+   Teuchos::RCP<Epetra_CrsMatrix> eMat = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
+
+   return Thyra::nonconstEpetraLinearOp(eMat);
+}
+
+
+template <typename LocalOrdinalT>
+void EpetraLinearObjFactory<LocalOrdinalT>::ghostToGlobalMatrix(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & ghostA, 
+                                                                const Teuchos::RCP<Thyra::LinearOpBase<double> > & A) const
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcp_dynamic_cast;
+
+   // grab CrsMatrix objects
+   RCP<Epetra_Export> exporter = getGhostedExport();
+   RCP<const Epetra_CrsMatrix> eGhostA = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*ghostA));
+   RCP<Epetra_CrsMatrix> eA = rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*A));
+
+   // do the global distribution
+   eA->PutScalar(0.0);
+   eA->Export(*eGhostA,*exporter,Add);
+}
+
+template <typename LocalOrdinalT>
+void EpetraLinearObjFactory<LocalOrdinalT>::ghostToGlobalVector(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & ghostV, 
+                                                                const Teuchos::RCP<Thyra::MultiVectorBase<double> > & V) const
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcp_dynamic_cast;
+
+   // grab maps for construction epetra vectors
+   Teuchos::RCP<const Epetra_Map> eGhostMap = getGhostedMap();
+   Teuchos::RCP<const Epetra_Map> eMap = getMap();
+
+   // build vectors and exporter
+   RCP<Epetra_Export> exporter = getGhostedExport();
+   RCP<const Epetra_MultiVector> eGhostV = Thyra::get_Epetra_MultiVector(*eGhostMap,ghostV);
+   RCP<Epetra_MultiVector> eV = Thyra::get_Epetra_MultiVector(*eMap,V);
+
+   // do the global distribution
+   eV->PutScalar(0.0);
+   eV->Export(*eGhostV,*exporter,Add);
+}
+
+template <typename LocalOrdinalT>
+void EpetraLinearObjFactory<LocalOrdinalT>::globalToGhostVector(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & V, 
+                                                                const Teuchos::RCP<Thyra::MultiVectorBase<double> > & ghostV) const
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcp_dynamic_cast;
+
+   // grab maps for construction epetra vectors
+   Teuchos::RCP<const Epetra_Map> eGhostMap = getGhostedMap();
+   Teuchos::RCP<const Epetra_Map> eMap = getMap();
+
+   // build vectors and importer
+   RCP<Epetra_Import> importer = getGhostedImport();
+   RCP<const Epetra_MultiVector> eV = Thyra::get_Epetra_MultiVector(*eMap,V);
+   RCP<Epetra_MultiVector> eGhostV = Thyra::get_Epetra_MultiVector(*eGhostMap,ghostV);
+
+   // do the global distribution
+   eGhostV->PutScalar(0.0);
+   eGhostV->Import(*eV,*importer,Insert);
+}
 
 // "Get" functions
 /////////////////////////////////////////////////////////////////////

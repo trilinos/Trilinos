@@ -1,18 +1,26 @@
-#ifndef __Panzer_UniqueGlobalIndexer_hpp__
-#define __Panzer_UniqueGlobalIndexer_hpp__
+#ifndef __UnitTest_UniqueGlobalIndexer_hpp__
+#define __UnitTest_UniqueGlobalIndexer_hpp__
 
 #include <vector>
 #include <string>
 
 #include "Teuchos_RCP.hpp"
 
-namespace panzer {
+#include "Panzer_UniqueGlobalIndexer.hpp"
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class UniqueGlobalIndexer {
+namespace panzer {
+namespace unit_test {
+
+/** This a dummy global indexer used for testing. It has two fields
+  *    "U" and "T"
+  * There is one element block called "block_0" with two elements. Each element
+  * resides on a different processor.
+  */
+class UniqueGlobalIndexer : public virtual panzer::UniqueGlobalIndexer<short,int> {
 public:
-   //! Pure virtual destructor: prevents warnings with inline empty implementation 
-   virtual ~UniqueGlobalIndexer() = 0;
+   UniqueGlobalIndexer(int rank,int procCount);
+
+   ~UniqueGlobalIndexer() {}
 
    /** \brief Get the number used for access to this
      *        field
@@ -28,11 +36,11 @@ public:
      *          field if the field exisits. Otherwise
      *          a -1 is returned.
      */
-   virtual int getFieldNum(const std::string & str) const = 0;
+   virtual int getFieldNum(const std::string & str) const;
 
    /** What are the blockIds included in this connection manager?
      */
-   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const; 
 
    /** Get the local element IDs for a paricular element
      * block.
@@ -41,17 +49,17 @@ public:
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<LocalOrdinalT> & getElementBlock(const std::string & blockId) const = 0;
+   virtual const std::vector<short> & getElementBlock(const std::string & blockId) const;
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids) const = 0;
+   virtual void getElementGIDs(short localElmtId,std::vector<int> & gids) const;
 
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array.
      */
-   virtual const std::vector<int> & getGIDFieldOffsets(const std::string & blockId,int fieldNum) const = 0;
+   virtual const std::vector<int> & getGIDFieldOffsets(const std::string & blockId,int fieldNum) const;
 
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array. This version lets you specify the sub
@@ -68,26 +76,29 @@ public:
    // virtual const std::vector<int> & 
    virtual const std::pair<std::vector<int>,std::vector<int> > & 
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
-                                                               int subcellDim,int subcellId) const = 0;
+                                                               int subcellDim,int subcellId) const;
 
    /** Get set of indices owned by this processor
      */
-   virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const = 0;
+   virtual void getOwnedIndices(std::vector<int> & indices) const;
 
    /** Get set of indices owned and shared by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const = 0;
+   virtual void getOwnedAndSharedIndices(std::vector<int> & indices) const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const = 0;
+   virtual void ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const;
+
+private:
+   int procRank_;
+   mutable Teuchos::RCP<std::vector<short> > elements_; // local element IDs
+   mutable Teuchos::RCP<std::vector<int> > field0Offset_; // local element IDs
+   mutable Teuchos::RCP<std::vector<int> > field1Offset_; // local element IDs
 };
 
-// prevents a warning because a destructor does not exist
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-inline UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::~UniqueGlobalIndexer() {}
-
-}
+} // end unit test
+} // end panzer
 
 #endif

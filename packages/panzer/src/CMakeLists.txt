@@ -111,6 +111,7 @@ APPEND_SET(HEADERS
   ) 
 
 APPEND_SET(SOURCES
+  Panzer_AssemblyEngine_InArgs.cpp
   Panzer_Basis.cpp
   Panzer_BC.cpp
   Panzer_BCStrategy.cpp
