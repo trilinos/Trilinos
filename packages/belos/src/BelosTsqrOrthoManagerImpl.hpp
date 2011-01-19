@@ -225,7 +225,9 @@ namespace Belos {
     norm (const MV& X, std::vector<MagnitudeType>& normvec) const
     {
       const int numCols = MVT::GetNumberVecs (X);
-      if (normvec.size() < numCols)
+      // std::vector<T>::size_type is unsigned; int is signed.  Mixed
+      // unsigned/signed comparisons trigger compiler warnings.
+      if (normvec.size() < static_cast<size_t>(numCols))
 	normvec.resize (numCols); // Resize normvec if necessary.
       MVT::MvNorm (X, normvec);
     }
@@ -1853,7 +1855,7 @@ namespace Belos {
       {
 	RCP<const ParameterList> defaultParams = getDefaultParameters();
 	// Start with a clone of the default parameters
-	params = rcp (*defaultParams);
+	params = rcp (new ParameterList (*defaultParams));
 	
 	// Disable reorthogonalization and randomization of the null
 	// space basis.  Reorthogonalization tolerances don't matter,

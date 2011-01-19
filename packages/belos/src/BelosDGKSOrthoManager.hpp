@@ -124,9 +124,9 @@ namespace Belos {
     static RCP<ParameterList> params;
     if (params.is_null())
       {
-	RCP<const ParameterList> defaultParams = getDefaultDgksParameters();
+	RCP<const ParameterList> defaultParams = getDefaultDgksParameters<ScalarType>();
 	// Start with a clone of the default parameters
-	params = rcp (*defaultParams);
+	params = rcp (new ParameterList (*defaultParams));
 
 	const int maxBlkOrtho = 1;
 	params->set ("maxNumOrthogPasses", maxBlkOrtho);

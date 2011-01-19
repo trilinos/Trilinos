@@ -210,11 +210,8 @@ namespace Belos {
     Teuchos::RCP<const Teuchos::ParameterList> 
     getFastParameters (const std::string& name)
     {
-      // FIXME (mfh 18 Jan 2011) Need to figure out good "fast"
-      // parameters for the other orthogonalization managers.  For
-      // now, we just return default parameters.
       if (name == "DGKS") {
-	return getDefaultDgksParameters<Scalar>();
+	return getFastDgksParameters<Scalar>();
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
@@ -222,10 +219,10 @@ namespace Belos {
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
-	return getDefaultIcgsParameters<Scalar>();
+	return getFastIcgsParameters<Scalar>();
       }
       else if (name == "IMGS") {
-	return getDefaultImgsParameters<Scalar>();
+	return getFastImgsParameters<Scalar>();
       }
       else {
 	TEST_FOR_EXCEPTION(true, std::invalid_argument, 

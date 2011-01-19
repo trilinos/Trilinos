@@ -111,7 +111,7 @@ namespace Belos {
 
     /*! \brief Provides the norm induced by innerProd().
      */
-    virtual void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > normvec ) const = 0;
+    virtual void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >& normvec ) const = 0;
 
     /*! \brief Given a list of (mutually and internally) orthonormal bases \c Q, this method
      * takes a multivector \c X and projects it onto the space orthogonal to the individual <tt>Q[i]</tt>, 

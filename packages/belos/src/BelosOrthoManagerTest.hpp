@@ -43,11 +43,13 @@
 /// \brief Tests for Belos::OrthoManager and Belos::MatOrthoManager subclasses
 ///
 
-#include "BelosConfigDefs.hpp"
-#include "BelosOutputManager.hpp"
-#include "BelosOrthoManager.hpp"
-#include <Teuchos_CommandLineProcessor.hpp>
+#include <BelosConfigDefs.hpp>
+#include <BelosOutputManager.hpp>
+#include <BelosOrthoManager.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+
+#include <iostream>
 #include <stdexcept>
 
 using std::endl;
@@ -55,21 +57,137 @@ using std::endl;
 namespace Belos {
   namespace Test {
 
+    /// \class OrthoManagerBenchmarker
+    /// \brief OrthoManager benchmark
+    /// \author Mark Hoemmen
+    ///
+    template<class Scalar, class MV>
+    class OrthoManagerBenchmarker {
+    private:
+      typedef Scalar scalar_type;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+      typedef MultiVecTraits<Scalar, MV> MVT;
+      typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+
+    public:
+      /// \brief Establish baseline for OrthoManager benchmark
+      ///
+      /// Establish baseline for the orthogonalization manager
+      /// benchmark, by replacing the projection and normalization
+      /// operations with the same number of copies.
+      void 
+      baseline (const Teuchos::RCP<MV>& X,
+		const int numCols,
+		const int numBlocks,
+		const int numTrials)
+      {
+	TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
+			   "X is null");
+	TEST_FOR_EXCEPTION(numCols < 1, std::invalid_argument, 
+			   "numCols = " << numCols << " < 1");
+	TEST_FOR_EXCEPTION(numBlocks < 1, std::invalid_argument, 
+			   "numBlocks = " << numBlocks << " < 1");
+	TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument, 
+			   "numTrials = " << numTrials << " < 1");
+      }
+
+      /// Benchmark the given orthogonalization manager
+      ///
+      /// \param orthoMan [in(/out)] The orthogonalization 
+      ///   manager to benchmark
+      /// \param orthoManName [in] Name of the orthogonalization
+      ///   manager (e.g., "TSQR", "ICGS", "DGKS")
+      /// \param X [in] "Prototype" multivector; not modified
+      /// \param numCols [in] Number of columns per block
+      /// \param numBlocks [in] Number of blocks
+      /// \param numTrials [in] Number of trials in the timing run
+      ///
+      void 
+      benchmark (const Teuchos::RCP<OrthoManager<Scalar, MV> >& orthoMan,
+		 const std::string& orthoManName,
+		 const Teuchos::RCP<const MV>& X,
+		 const int numCols,
+		 const int numBlocks,
+		 const int numTrials)
+      {
+	using Teuchos::Array;
+	using Teuchos::RCP;
+	using Teuchos::rcp;
+	using Teuchos::Time;
+	using Teuchos::TimeMonitor;
+
+	TEST_FOR_EXCEPTION(orthoMan.is_null(), std::invalid_argument,
+			   "orthoMan is null");
+	TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
+			   "X is null");
+	TEST_FOR_EXCEPTION(numCols < 1, std::invalid_argument, 
+			   "numCols = " << numCols << " < 1");
+	TEST_FOR_EXCEPTION(numBlocks < 1, std::invalid_argument, 
+			   "numBlocks = " << numBlocks << " < 1");
+	TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument, 
+			   "numTrials = " << numTrials << " < 1");
+
+	// Make space to put the projection and normalization
+	// coefficients.
+	Array<RCP<mat_type> > C (numBlocks);
+	for (int k = 0; k < numBlocks; ++k)
+	  C[k] = rcp (new mat_type (numCols, numCols));
+	RCP<mat_type> B (numCols, numCols);
+
+	// Make some blocks to orthogonalize.  Fill with random data.
+	// We won't be orthogonalizing X, or even modifying it.  We
+	// only need X so that we can make clones (it knows its data
+	// distribution).
+	Array<RCP<MV> > V (numBlocks);
+	for (int k = 0; k < numBlocks; ++k)
+	  {
+	    V[k] = MVT::Clone (*X, numCols);
+	    MVT::MvRandom (*V[k]);
+	  }
+
+	// Make a timer with an informative label
+	RCP<Time> timer;
+	{
+	  std::stringstream os;
+	  os << "OrthoManager \"" << orthoManName << "\" over " << numTrials;
+	  if (numTrials != 1)
+	    os << "trials";
+	  else
+	    os << "trial";
+	  timer = TimeMonitor::getNewCounter ("OrthoManager: " + orthoManName);
+	}
+	// Run the benchmark for the given number of trials
+	{
+	  TimeMonitor monitor (timer);
+	  
+	  for (int trial = 0; trial < numTrials; ++trial)
+	    {
+	      (void) normalize (*V[0], B);
+	      for (int k = 1; k < numBlocks; ++k)
+		// k is the number of elements in the ArrayView
+		(void) projectAndNormalize (V[k], C, B, V.view (0, k)); 
+	    }
+	}
+	// Report timing results to stdout
+	TimeMonitor::summarize (std::cout);
+      }
+    };
+
     /// \class OrthoManagerTester
     /// \brief Wrapper around OrthoManager test functionality
     ///
     template< class Scalar, class MV >
     class OrthoManagerTester {
     private:
-      typedef typename Teuchos::Array< Teuchos::RCP< MV > >::size_type size_type;
+      typedef typename Teuchos::Array<Teuchos::RCP<MV> >::size_type size_type;
 
     public:
       typedef Scalar scalar_type;
-      typedef Teuchos::ScalarTraits< scalar_type > SCT;
+      typedef Teuchos::ScalarTraits<scalar_type> SCT;
       typedef typename SCT::magnitudeType magnitude_type;
-      typedef Teuchos::ScalarTraits< magnitude_type > SMT;
-      typedef Belos::MultiVecTraits< scalar_type, MV > MVT;
-      typedef Teuchos::SerialDenseMatrix< int, scalar_type > serial_matrix_type;
+      typedef Teuchos::ScalarTraits<magnitude_type> SMT;
+      typedef MultiVecTraits<scalar_type, MV> MVT;
+      typedef Teuchos::SerialDenseMatrix<int, scalar_type> serial_matrix_type;
 
       /// \brief Run all the tests
       ///
@@ -88,12 +206,12 @@ namespace Belos {
       ///
       /// \return Number of tests that failed (zero means success)
       static int
-      runTests (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
+      runTests (const Teuchos::RCP<OrthoManager<Scalar, MV> >& OM,
 		const bool isRankRevealing,
-		const Teuchos::RCP< MV >& S,
+		const Teuchos::RCP<MV>& S,
 		const int sizeX1,
 		const int sizeX2,
-		const Teuchos::RCP<Belos::OutputManager<Scalar> >& MyOM)
+		const Teuchos::RCP<OutputManager<Scalar> >& MyOM)
       {
 	using Teuchos::Array;
 	using Teuchos::null;
