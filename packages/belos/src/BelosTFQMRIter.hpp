@@ -41,7 +41,7 @@
 //
 // This file contains an implementation of the TFQMR iteration
 // for solving non-Hermitian linear systems of equations Ax = b, 
-// where b is a single-std::vector and x is the corresponding solution.
+// where b is a single-vector and x is the corresponding solution.
 //
 // The implementation is a slight modification on the TFQMR iteration
 // found in Saad's "Iterative Methods for Sparse Linear Systems".
@@ -79,7 +79,7 @@
 
 	\brief This class implements the preconditioned transpose-free QMR algorithm for
 	solving non-Hermitian linear systems of equations Ax = b, where b is the right-hand 
-	side std::vector and x is the corresponding solution.
+	side vector and x is the corresponding solution.
 
         \ingroup belos_solver_framework
 
@@ -465,7 +465,7 @@ namespace Belos {
       //
       theta_[0] = MTzero;
       MVT::MvNorm( *R_, tau_ );                         // tau = ||r_0||
-      MVT::MvTransMv( one, *Rtilde_, *R_, rho_old_ );   // rho = (r_0, r_tilde)
+      MVT::MvTransMv( one, *Rtilde_, *R_, rho_old_ );   // rho = (r_tilde, r0)
     }
     else {
 
@@ -517,7 +517,7 @@ namespace Belos {
       //--------------------------------------------------------
       //
       if (iter_%2 == 0) {
-	MVT::MvTransMv( STone, *V_, *Rtilde_, alpha_ );      //   alpha = rho / (v, r_tilde) 
+	MVT::MvTransMv( STone, *Rtilde_, *V_, alpha_ );      //   alpha = rho / (r_tilde, v) 
 	alpha_(0,0) = rho_old_(0,0)/alpha_(0,0);
       }
       //
@@ -574,7 +574,7 @@ namespace Belos {
 	// Compute the new rho, beta if we need to.
 	//--------------------------------------------------------
 	//
-	MVT::MvTransMv( STone, *W_, *Rtilde_, rho_ );     // rho = ( w, r_tilde )
+	MVT::MvTransMv( STone, *Rtilde_, *W_, rho_ );     // rho = (r_tilde, w)
 	beta = rho_(0,0)/rho_old_(0,0);                   // beta = rho / rho_old
 	rho_old_(0,0) = rho_(0,0);                        // rho_old = rho
 	//
