@@ -305,6 +305,24 @@ std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should b
     stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
     stk::mesh::Selector selector(meta_data.locally_owned_part());
     stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition);
+    {
+      const int  print_stats = 1;
+      int        nobj        = 0;
+      double     obj_wgt     = 0;
+      int        ncuts       = 0;
+      double     cut_wgt     = 0;
+      int        nboundary   = 0;
+      int        nadj        = 0;
+      const int ierr = zoltan_partition.evaluate (print_stats, &nobj, &obj_wgt, &ncuts, &cut_wgt, &nboundary, &nadj);
+      std::cout <<" Information returned from the Zoltan evaluate function:"<<std::endl;
+      std::cout <<" Error Code:             :"<<ierr      <<std::endl;
+      std::cout <<" Number of objects:      :"<<nobj      <<std::endl;
+      std::cout <<" Number of objects:      :"<<nobj      <<std::endl;
+      std::cout <<" Number of cuts:         :"<<ncuts     <<std::endl;
+      std::cout <<" Cut Weight:             :"<<cut_wgt   <<std::endl;
+      std::cout <<" Number on Boundary:     :"<<nboundary <<std::endl;
+      std::cout <<" Number Adjancent:       :"<<nadj      <<std::endl;
+    }
   }
 
   imbalance_threshold = 1.5;
@@ -329,6 +347,7 @@ std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should b
 
   // Check that we satisfy our threshhold
   const bool result = !do_rebal ;
+
 
   return result;
 }

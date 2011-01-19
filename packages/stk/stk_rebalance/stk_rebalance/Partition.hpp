@@ -99,15 +99,13 @@ public:
    */
   virtual void set_mesh_info ( const std::vector<mesh::Entity *> &mesh_entities,
                                const VectorField   * nodal_coord_ref,
-                               const ScalarField   * elem_weight_ref=NULL)
-  { throw std::runtime_error("Interface class Partition does not implement set_mesh_info."); }
+                               const ScalarField   * elem_weight_ref=NULL) = 0;
 
   /** \brief Destructor. */
   virtual ~Partition();
 
   /** \brief Return the parallel communicator for this partition entity.*/
-  ParallelMachine parallel() const
-  { return comm_; }
+  ParallelMachine parallel() const { return comm_; }
 
   /** \brief Return the total number of mesh entities in all lists. */
   virtual unsigned num_elems() const = 0;
