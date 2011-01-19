@@ -1023,9 +1023,12 @@ namespace stk {
         // assert it is empty?
 
         subDimCellData.get<GLOBAL_NODE_IDS>() = nodeIds_onSE;
+
+#ifndef NDEBUG
         EntityId& owning_element_id = subDimCellData.get<OWNING_ELEMENT_ID>();
         VERIFY_OP(owning_element_id, !=, non_owning_elementId, "createNodeAndConnect:: bad elem ids");
         VERIFY_OP(owning_element_id, < , non_owning_elementId, "createNodeAndConnect:: bad elem ids 2");
+#endif
 
       }
 

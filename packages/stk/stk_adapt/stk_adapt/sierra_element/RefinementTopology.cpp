@@ -290,7 +290,7 @@ namespace stk {
                      faceN[ faceChildN[i] ] == childN[ childFaceN[i] ]; ++i);
 
               if (i == faceChildTop.getNodeCount()) {
-                VERIFY_TRUE(! flag);
+                VERIFY_TRUE_ON(! flag);
                 flag = true;
                 result.first  = cf.first;
                 result.second = cf.second;

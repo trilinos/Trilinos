@@ -402,8 +402,10 @@ namespace stk {
                 for (unsigned jNode = 0; jNode < FromTopology::vertex_count; jNode++)
                   {
                     unsigned childNodeIdx = ref_topo.child_node(iChild)[jNode];
+#ifndef NDEBUG
                     unsigned childNodeIdxCheck = ref_topo_x[childNodeIdx].ordinal_of_node;
                     VERIFY_OP(childNodeIdx, ==, childNodeIdxCheck, "childNodeIdxCheck");
+#endif
 
                     double *pc = ref_topo_x[childNodeIdx].parametric_coordinates;
                     Math::Vector v(pc);
@@ -966,7 +968,6 @@ namespace stk {
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
         unsigned num_child = ref_topo.num_child();
-
         VERIFY_OP(num_child, == , getNumNewElemPerElem(), "genericRefine_createNewElements num_child problem");
 
         // FIXME check if this is a wedge
@@ -982,8 +983,10 @@ namespace stk {
               {
                 unsigned childNodeIdx = ref_topo.child_node(iChild)[jNode];
 
+#ifndef NDEBUG
                 unsigned childNodeIdxCheck = ref_topo_x[childNodeIdx].ordinal_of_node;
                 VERIFY_OP(childNodeIdx, ==, childNodeIdxCheck, "childNodeIdxCheck");
+#endif
 
                 unsigned inode=0;
                 unsigned rank_of_subcell            = ref_topo_x[childNodeIdx].rank_of_subcell;

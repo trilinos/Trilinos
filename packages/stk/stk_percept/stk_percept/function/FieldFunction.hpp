@@ -156,10 +156,12 @@ namespace stk
       PerceptMesh::field_data( m_my_field , bucket_or_element, &stride);
 
       unsigned nDOF = stride;
+#ifndef NDEBUG
       int nOutDim = m_codomain_dimensions.back(); // FIXME for tensor
       // FIXME 
       VERIFY_OP((int)nDOF, == , nOutDim,
                 "FieldFunction::operator(): invalid dimensions nDOF, m_codomain_dimensions[0]= ");
+#endif
 
       int numCells = PerceptMesh::size1(bucket_or_element); // FIXME for multiple cells
 
