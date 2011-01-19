@@ -70,6 +70,11 @@ namespace {
     // create a Map
     const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), (size_t)0 );
     RCP<const Map<LO,GO> > map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
+    Teuchos::Array<LO> block_offsets( block_sizes.size() );
+    for (int i=0, offset = 0; i < (int)block_sizes.size(); ++i) {
+      block_offsets[i] = offset;
+      offset += block_sizes[i] * block_sizes[i];
+    }
     RCP<RowMatrix<Scalar,LO,GO> > mat;
     {
       RCP<CrsMatrix<Scalar,LO,GO> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
@@ -83,16 +88,14 @@ namespace {
       mat_crs->fillComplete();
       mat = mat_crs;
     }
-    Teuchos::ArrayRCP<Scalar> block_diagonals;
-    Teuchos::ArrayRCP<LO>     block_offsets;
     //
-    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO>( *mat, block_sizes, /*out*/ block_diagonals, /*out*/ block_offsets );
+    Teuchos::ArrayRCP<Scalar> block_diagonals;
+    block_diagonals = Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO>( *mat, block_offsets );
     //
     size_t expected_alloc_size = 0;
     for (int i=0; i != block_sizes.size(); ++i) {
       expected_alloc_size += block_sizes[i]*block_sizes[i];
     }
-    TEST_EQUALITY( block_sizes.size(), block_offsets.size() );
     TEST_EQUALITY( (size_t)expected_alloc_size, (size_t)block_diagonals.size() );
     const int num_zeros_extracted    = (int)std::count( block_diagonals.begin(), block_diagonals.end(), ScalarTraits<Scalar>::zero() );
     const int num_nonzeros_extracted = (int)block_diagonals.size() - num_zeros_extracted;

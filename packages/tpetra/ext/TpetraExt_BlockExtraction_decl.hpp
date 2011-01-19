@@ -47,10 +47,9 @@ namespace Tpetra {
         \post - <tt>out_block_offsets.size() == block_sizes.size()</tt>
       */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void extractBlockDiagonals(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
-                               const Teuchos::ArrayView<const LocalOrdinal> &block_sizes,
-                               Teuchos::ArrayRCP<Scalar>       &out_block_diagonals,
-                               Teuchos::ArrayRCP<LocalOrdinal> &out_block_offsets);
+    Teuchos::ArrayRCP<Scalar> 
+    extractBlockDiagonals(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
+                          const Teuchos::ArrayView<const LocalOrdinal> &block_offsets);
   }
 }
 
