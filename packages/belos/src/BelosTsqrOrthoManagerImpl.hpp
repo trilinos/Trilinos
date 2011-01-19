@@ -191,6 +191,12 @@ namespace Belos {
     typedef Teuchos::RCP< serial_matrix_type >                   serial_matrix_ptr;
     typedef Teuchos::Array< Teuchos::RCP< serial_matrix_type > > prev_coeffs_type;
 
+    //! Set the label for timers (if timers are enabled)
+    void setLabel (const std::string& label) { label_ = label; }
+
+    //! Get the label for timers (if timers are enabled)
+    const std::string& getLabel () { return label_; }
+
     /// \brief Euclidean inner product
     ///
     /// Compute the Euclidean block inner product X^* Y, and store the

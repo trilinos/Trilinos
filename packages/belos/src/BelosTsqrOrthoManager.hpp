@@ -188,12 +188,12 @@ namespace Belos {
     virtual ~TsqrOrthoManager() {}
 
     //! Compute the (block) inner product Z := <X,Y>
-    virtual void innerProd (const MV &X, const MV &Y, serial_matrix_type& Z) const {
+    void innerProd (const MV &X, const MV &Y, serial_matrix_type& Z) const {
       return impl_.innerProd (X, Y, Z);
     }
 
     //! Compute the norm(s) of the column(s) of X
-    virtual void norm (const MV& X, std::vector<magnitude_type>& normvec) const {
+    void norm (const MV& X, std::vector<magnitude_type>& normvec) const {
       return impl_.norm (X, normvec);
     }
 
