@@ -42,9 +42,6 @@ namespace Tpetra {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::CrsMatrixStruct()
- : numRows(0), numEntriesPerRow(NULL), indices(NULL), values(NULL),
-      remote(NULL), numRemote(0), rowMap(NULL), colMap(NULL),
-      domainMap(NULL), importColMap(NULL), importMatrix(NULL)
 {
 }
 
@@ -202,29 +199,33 @@ CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_graph()
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
-void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>& graphbuilder,
+void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node> & graphbuilder,
   Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >& C)
 {
   global_size_t max_row_length = graphbuilder.get_max_row_length();
   if (max_row_length < 1) return;
 
-  std::vector<GlobalOrdinal> indices(max_row_length);
-  std::vector<Scalar> zeros(max_row_length, 0.0);
+  Array<GlobalOrdinal> indices(max_row_length);
+  Array<Scalar> zeros(max_row_length, 0.0);
 
-  std::map<GlobalOrdinal,std::set<GlobalOrdinal>*>& graph = graphbuilder.get_graph();
+  typedef std::map<GlobalOrdinal,std::set<GlobalOrdinal>*> Graph;
+  typedef typename Graph::iterator    GraphIter;
+  typedef std::set<GlobalOrdinal>     Set;
+  typedef typename Set::iterator      SetIter;
+  Graph& graph = graphbuilder.get_graph();
 
-  typename std::map<GlobalOrdinal,std::set<GlobalOrdinal>*>::iterator
-    iter = graph.begin(), iter_end = graph.end();
-
-  for(; iter!=iter_end; ++iter) {
-    GlobalOrdinal row = iter->first;
-    //std::set<GlobalOrdinal>& cols = *(iter->second);
-    //global_size_t num_entries = cols.size();
-
-
-    C->insertGlobalValues(row, Teuchos::ArrayView<GlobalOrdinal>(indices), Teuchos::ArrayView<Scalar>(zeros));
+  const GraphIter iter_end = graph.end();
+  for(GraphIter iter=graph.begin(); iter!=iter_end; ++iter) {
+    const GlobalOrdinal row = iter->first;
+    const std::set<GlobalOrdinal> &cols = *(iter->second);
+    // "copy" entries out of set into contiguous array storage
+    const size_t num_entries = std::copy(cols.begin(), cols.end(), indices.begin()) - indices.begin();
+    // insert zeros into the result matrix at the appropriate locations
+    C->insertGlobalValues(row, indices(0,num_entries), zeros(0,num_entries));
   }
 }
+
+} //namespace Tpetra
 
 //
 // Explicit instantiation macro
@@ -248,5 +249,4 @@ void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, Globa
   \
   template class CrsWrapper_GraphBuilder< SCALAR , LO , GO , NODE >;
 
-}
 #endif // TPETRA_MMHELPERS_DEF_HPP

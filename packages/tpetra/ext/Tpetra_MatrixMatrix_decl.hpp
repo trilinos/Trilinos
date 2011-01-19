@@ -43,11 +43,14 @@
  */
 
 namespace Tpetra {
-#ifndef DOXYGEN_SHOULD_SKIP_THIS  
-  // forward declaration
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
-class CrsMatrix;
-#endif
+
+// CGB: you included the header file above. you don't need a forward declaration.
+// #ifndef DOXYGEN_SHOULD_SKIP_THIS  
+//   // forward declaration
+// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+// class CrsMatrix;
+// #endif
+
   /** Collection of matrix-matrix operations. This class basically
       functions as a namespace, containing only static methods.
       See the program epetraext/test/MatrixMatrix/cxx_main.cpp for
@@ -177,9 +180,9 @@ static int mult_A_B(
   Teuchos::RCP<CrsMatrixStruct_t >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
   
-static int mult_A_Btrans(
-  Teuchos::RCP<CrsMatrixStruct_t >& Aview, 
-  Teuchos::RCP<CrsMatrixStruct_t >& Bview,
+static void mult_A_Btrans(
+  const Teuchos::RCP<const CrsMatrixStruct_t> & Aview, 
+  const Teuchos::RCP<const CrsMatrixStruct_t> & Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
 
 static int mult_Atrans_B(
@@ -210,29 +213,41 @@ Teuchos::RCP<const Map_t >
 create_map_from_imported_rows(
   Teuchos::RCP<const Map_t > map,
   size_t totalNumSend,
-  Teuchos::ArrayView<GlobalOrdinal> sendRows,
+  const Teuchos::ArrayView<const GlobalOrdinal> &sendRows,
   int numProcs,
-  Teuchos::Array<size_t> numSendPerProc);
+  const Teuchos::ArrayView<const size_t> &numSendPerProc);
 
-static int form_map_union(
+static 
+Teuchos::RCP<const Map_t > 
+form_map_union(
   Teuchos::RCP<const Map_t > map1,
-  Teuchos::RCP<const Map_t > map2,
-  Teuchos::RCP<const Map_t >& mapunion);
+  Teuchos::RCP<const Map_t > map2);
+  
 };//class MatrixMatrix
 
 
-/**
- *Method for internal use... sparsedot forms a dot-product between two
- *sparsely-populated 'vectors'.
- *Important assumption: assumes the indices in u_ind and v_ind are sorted.
- */
- //double sparsedot(double* u, int* u_ind, int u_len,
-//      double* v, int* v_ind, int v_len);
-template<class Scalar, class LocalOrdinal>
-Scalar sparsedot(Teuchos::Array<Scalar> u, Teuchos::Array<LocalOrdinal> u_ind, 
-  Teuchos::Array<Scalar> v, Teuchos::Array<LocalOrdinal> v_ind);
+// CGB: If it isn't for public consumption, then hide it in a different namespace.
+namespace MMdebug {
+
+    RCP<Teuchos::FancyOStream> debug_stream;
+    Teuchos::EVerbosityLevel   debug_level;
 
 }
+
+namespace MMdetails {
+
+  /**
+   * Method for internal use... sparsedot forms a dot-product between two
+   * sparsely-populated 'vectors'.
+   * Important assumption: assumes the indices in u_ind and v_ind are sorted.
+   */
+  template <class Scalar, class LocalOrdinal>
+  Scalar sparsedot(const Teuchos::ArrayView<const Scalar> &u, const Teuchos::ArrayView<const LocalOrdinal> &u_ind, 
+                   const Teuchos::ArrayView<const Scalar> &v, const Teuchos::ArrayView<const LocalOrdinal> &v_ind);
+  
+} // end of MMdetails namespace
+
+} // end of Tpetra namespace
 
 #endif // TPETRA_MATRIXMATRIX_DECL_HPP
 
