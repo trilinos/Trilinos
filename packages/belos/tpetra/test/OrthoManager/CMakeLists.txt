@@ -16,3 +16,14 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_TSQR)
     COMM serial mpi
     )
 ENDIF()
+
+# This "test" passes trivially.  It is a benchmark that is meant to be
+# run manually.
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_OrthoManager_benchmark
+  SOURCES belos_orthomanager_tpetra_benchmark.cpp
+  ARGS ""
+  COMM serial mpi
+  )
+
+

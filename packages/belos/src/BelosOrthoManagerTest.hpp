@@ -44,11 +44,11 @@
 ///
 
 #include <BelosConfigDefs.hpp>
+#include <BelosMultiVecTraits.hpp>
 #include <BelosOutputManager.hpp>
-#include <BelosOrthoManager.hpp>
+#include <BelosOrthoManagerFactory.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-
 #include <iostream>
 #include <stdexcept>
 
@@ -75,7 +75,7 @@ namespace Belos {
       /// Establish baseline for the orthogonalization manager
       /// benchmark, by replacing the projection and normalization
       /// operations with the same number of copies.
-      void 
+      static void 
       baseline (const Teuchos::RCP<MV>& X,
 		const int numCols,
 		const int numBlocks,
@@ -102,7 +102,7 @@ namespace Belos {
       /// \param numBlocks [in] Number of blocks
       /// \param numTrials [in] Number of trials in the timing run
       ///
-      void 
+      static void 
       benchmark (const Teuchos::RCP<OrthoManager<Scalar, MV> >& orthoMan,
 		 const std::string& orthoManName,
 		 const Teuchos::RCP<const MV>& X,
@@ -111,6 +111,7 @@ namespace Belos {
 		 const int numTrials)
       {
 	using Teuchos::Array;
+	using Teuchos::ArrayView;
 	using Teuchos::RCP;
 	using Teuchos::rcp;
 	using Teuchos::Time;
@@ -132,7 +133,7 @@ namespace Belos {
 	Array<RCP<mat_type> > C (numBlocks);
 	for (int k = 0; k < numBlocks; ++k)
 	  C[k] = rcp (new mat_type (numCols, numCols));
-	RCP<mat_type> B (numCols, numCols);
+	RCP<mat_type> B (new mat_type (numCols, numCols));
 
 	// Make some blocks to orthogonalize.  Fill with random data.
 	// We won't be orthogonalizing X, or even modifying it.  We
@@ -158,14 +159,20 @@ namespace Belos {
 	}
 	// Run the benchmark for the given number of trials
 	{
-	  TimeMonitor monitor (timer);
+	  TimeMonitor monitor (*timer);
 	  
 	  for (int trial = 0; trial < numTrials; ++trial)
 	    {
-	      (void) normalize (*V[0], B);
+	      (void) orthoMan->normalize (*V[0], B);
 	      for (int k = 1; k < numBlocks; ++k)
-		// k is the number of elements in the ArrayView
-		(void) projectAndNormalize (V[k], C, B, V.view (0, k)); 
+		{
+		  // k is the number of elements in the ArrayView
+		  //(void) orthoMan->projectAndNormalize (*V[k], C, B, V.view (0, k)); 
+
+		  //ArrayView< RCP< const MV > > V_0k = V.view (0, k);
+		  ArrayView< RCP< const MV > > V_0k;
+		  (void) orthoMan->projectAndNormalize (*V[k], C, B, V_0k);
+		}
 	    }
 	}
 	// Report timing results to stdout
@@ -322,7 +329,7 @@ namespace Belos {
 	// If OM is an OutOfPlaceNormalizerMixin, exercise the
 	// out-of-place normalization routines.
 	//
-	typedef OutOfPlaceNormalizerMixin<Scalar, MV> mixin_type;
+	typedef Belos::OutOfPlaceNormalizerMixin<Scalar, MV> mixin_type;
 	RCP<mixin_type> tsqr = rcp_dynamic_cast<mixin_type>(OM);
 	if (! tsqr.is_null())
 	  {
