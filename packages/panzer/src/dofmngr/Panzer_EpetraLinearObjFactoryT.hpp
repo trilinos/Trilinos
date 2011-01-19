@@ -33,7 +33,7 @@ EpetraLinearObjFactory<LocalOrdinalT>::~EpetraLinearObjFactory()
 template <typename LocalOrdinalT>
 Teuchos::RCP<Thyra::MultiVectorBase<double> > EpetraLinearObjFactory<LocalOrdinalT>::getGhostedVector() const
 {
-   Teuchos::RCP<Epetra_Map> eMap = getGhostedMap(); // use ghosted map
+   Teuchos::RCP<const Epetra_Map> eMap = getGhostedMap(); // use ghosted map
    Teuchos::RCP<Epetra_MultiVector> eVec = Teuchos::rcp(new Epetra_Vector(*eMap));
  
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = Thyra::create_VectorSpace(eMap);
@@ -55,7 +55,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > EpetraLinearObjFactory<LocalOrdinalT>
 template <typename LocalOrdinalT>
 Teuchos::RCP<Thyra::MultiVectorBase<double> > EpetraLinearObjFactory<LocalOrdinalT>::getVector() const
 {
-   Teuchos::RCP<Epetra_Map> eMap = getMap(); // use fully distributed map
+   Teuchos::RCP<const Epetra_Map> eMap = getMap(); // use fully distributed map
    Teuchos::RCP<Epetra_MultiVector> eVec = Teuchos::rcp(new Epetra_Vector(*eMap));
  
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = Thyra::create_VectorSpace(eMap);

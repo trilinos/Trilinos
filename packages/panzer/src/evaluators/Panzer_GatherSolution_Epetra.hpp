@@ -10,6 +10,14 @@
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 
+class Epetra_Vector;
+class Epetra_CrsMatrix;
+
+namespace Thyra {
+template <typename ScalarT> class MultiVectorBase;
+template <typename ScalarT> class LinearOpBase;
+}
+
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -58,6 +66,8 @@ private:
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
+
+  Epetra_Vector & getEpetraVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & in_v) const;
 };
 
 // **************************************************************
@@ -87,6 +97,8 @@ private:
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
+
+  Epetra_Vector & getEpetraVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & in_v) const;
 };
 
 }

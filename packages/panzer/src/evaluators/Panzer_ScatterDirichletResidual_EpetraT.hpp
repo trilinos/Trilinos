@@ -14,9 +14,21 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
+
 // **********************************************************************
 // Specialization: Residual
 // **********************************************************************
+
+template<typename Traits>
+Epetra_Vector &
+panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, Traits>::
+getEpetraVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & in_v) const
+{
+   Teuchos::RCP<const Epetra_Map> eMap = Teuchos::get_extra_data<Teuchos::RCP<const Epetra_Map> >(in_v,"epetra_map");
+   return *Thyra::get_Epetra_MultiVector(*eMap,in_v)->operator()(0);
+}
 
 template<typename Traits>
 panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, Traits>::
@@ -89,7 +101,12 @@ evaluateFields(typename Traits::EvalData workset)
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-   Teuchos::RCP<Epetra_Vector> r = workset.residual_vector;
+
+   Teuchos::RCP<Epetra_Vector> r;
+   if(workset.th_residual_vector!=Teuchos::null)
+      r = Teuchos::rcpFromRef(getEpetraVector(workset.th_residual_vector));
+   else
+      r = workset.residual_vector;
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -138,6 +155,23 @@ evaluateFields(typename Traits::EvalData workset)
 // **********************************************************************
 // Specialization: Jacobian
 // **********************************************************************
+
+template<typename Traits>
+Epetra_Vector &
+panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, Traits>::
+getEpetraVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & in_v) const
+{
+   Teuchos::RCP<const Epetra_Map> eMap = Teuchos::get_extra_data<Teuchos::RCP<const Epetra_Map> >(in_v,"epetra_map");
+   return *Thyra::get_Epetra_MultiVector(*eMap,in_v)->operator()(0);
+}
+
+template<typename Traits>
+Teuchos::RCP<Epetra_CrsMatrix>
+panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, Traits>::
+getEpetraCrsMatrix(const Teuchos::RCP<Thyra::LinearOpBase<double> > & in_A) const
+{
+   return Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*in_A));
+}
 
 template<typename Traits>
 panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, Traits>::
@@ -210,8 +244,20 @@ evaluateFields(typename Traits::EvalData workset)
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-   Teuchos::RCP<Epetra_Vector> r = workset.residual_vector;
-   Teuchos::RCP<Epetra_CrsMatrix> Jac = workset.jacobian_matrix;
+   // Teuchos::RCP<Epetra_Vector> r = workset.residual_vector;
+   // Teuchos::RCP<Epetra_CrsMatrix> Jac = workset.jacobian_matrix;
+
+   Teuchos::RCP<Epetra_Vector> r;
+   if(workset.th_residual_vector!=Teuchos::null)
+      r = Teuchos::rcpFromRef(getEpetraVector(workset.th_residual_vector));
+   else
+      r = workset.residual_vector;
+
+   Teuchos::RCP<Epetra_CrsMatrix> Jac;
+   if(workset.th_jacobian_matrix!=Teuchos::null)
+      Jac = getEpetraCrsMatrix(workset.th_jacobian_matrix);
+   else
+      Jac = workset.jacobian_matrix;
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the

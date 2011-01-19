@@ -14,6 +14,7 @@ namespace panzer {
 }
 
 
+void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x);
 void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x);
 
 void gather_in_block(const std::string & blockId, const panzer::DOFManager<int,int> & dofMngr,

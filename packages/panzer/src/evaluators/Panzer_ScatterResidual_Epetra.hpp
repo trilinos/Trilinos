@@ -10,6 +10,14 @@
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 
+class Epetra_Vector;
+class Epetra_CrsMatrix;
+
+namespace Thyra {
+template <typename ScalarT> class MultiVectorBase;
+template <typename ScalarT> class LinearOpBase;
+}
+
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -68,6 +76,8 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  Epetra_Vector & getEpetraVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & in_v) const;
 };
 
 // **************************************************************
@@ -107,6 +117,9 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+ Epetra_Vector & getEpetraVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & in_v) const;
+ Teuchos::RCP<Epetra_CrsMatrix> getEpetraCrsMatrix(const Teuchos::RCP<Thyra::LinearOpBase<double> > & in_A) const;
 };
 
 }

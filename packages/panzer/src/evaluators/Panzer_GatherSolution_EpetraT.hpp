@@ -6,11 +6,24 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
+
 #include "Epetra_Vector.h"
+#include "Epetra_Map.h"
 
 // **********************************************************************
 // Specialization: Residual
 // **********************************************************************
+
+template<typename Traits>
+Epetra_Vector &
+panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits>::
+getEpetraVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & in_v) const
+{
+   Teuchos::RCP<const Epetra_Map> eMap = Teuchos::get_extra_data<Teuchos::RCP<const Epetra_Map> >(in_v,"epetra_map");
+   return *Thyra::get_Epetra_MultiVector(*eMap,in_v)->operator()(0);
+}
 
 template<typename Traits>
 panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits>::
@@ -63,7 +76,13 @@ evaluateFields(typename Traits::EvalData workset)
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-   Teuchos::RCP<Epetra_Vector> x = workset.solution_vector;
+   Teuchos::RCP<Epetra_Vector> x; 
+   if(workset.th_solution_vector!=Teuchos::null) {
+      Epetra_Vector & temp_X = getEpetraVector(workset.th_solution_vector);
+      x = Teuchos::rcpFromRef(temp_X);
+   }
+   else
+      x = workset.solution_vector;
  
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -99,6 +118,15 @@ evaluateFields(typename Traits::EvalData workset)
 // **********************************************************************
 // Specialization: Jacobian
 // **********************************************************************
+
+template<typename Traits>
+Epetra_Vector &
+panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits>::
+getEpetraVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & in_v) const
+{
+   Teuchos::RCP<const Epetra_Map> eMap = Teuchos::get_extra_data<Teuchos::RCP<const Epetra_Map> >(in_v,"epetra_map");
+   return *Thyra::get_Epetra_MultiVector(*eMap,in_v)->operator()(0);
+}
 
 template<typename Traits>
 panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits>::
@@ -151,7 +179,11 @@ evaluateFields(typename Traits::EvalData workset)
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-   Teuchos::RCP<Epetra_Vector> x = workset.solution_vector;
+   Teuchos::RCP<Epetra_Vector> x; 
+   if(workset.th_solution_vector!=Teuchos::null)
+      x = Teuchos::rcpFromRef(getEpetraVector(workset.th_solution_vector));
+   else
+      x = workset.solution_vector;
  
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the

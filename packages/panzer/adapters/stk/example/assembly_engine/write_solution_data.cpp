@@ -2,6 +2,11 @@
 
 #include "Panzer_DOFManager.hpp"
 
+void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x)
+{
+   write_solution_data(dofMngr,mesh,*x(0));
+}
+
 void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x)
 {
    typedef Intrepid::FieldContainer<double> FieldContainer;

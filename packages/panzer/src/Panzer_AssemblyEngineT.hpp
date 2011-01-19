@@ -45,6 +45,11 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
 	workset.residual_vector = in.f;
 	workset.jacobian_matrix = in.j;
 
+	workset.th_solution_vector = in.th_x;
+	workset.th_solution_deriv_vector = in.th_dxdt;
+	workset.th_residual_vector = in.th_f;
+	workset.th_jacobian_matrix = in.th_j;
+
 	fm->template evaluateFields<EvalT>(workset);
       }
     }
@@ -135,6 +140,11 @@ evaluateBCs(const panzer::BCType bc_type,
 	  workset.solution_deriv_vector = in.dxdt;
 	  workset.residual_vector = in.f;
 	  workset.jacobian_matrix = in.j;
+
+   	  workset.th_solution_vector = in.th_x;
+	  workset.th_solution_deriv_vector = in.th_dxdt;
+	  workset.th_residual_vector = in.th_f;
+	  workset.th_jacobian_matrix = in.th_j;
 	  
 	  local_side_fm.template evaluateFields<EvalT>(workset);
 	  

@@ -71,5 +71,30 @@ void AssemblyEngineInArgs::thyraToEpetra()
    if(th_f!=Teuchos::null)    f    = Thyra::get_Epetra_Vector(j->OperatorRangeMap(),th_f->col(0)); 
 }
 
+void AssemblyEngineInArgs::epetraToThyra(const Teuchos::RCP<const Epetra_Map> & rangeMap, 
+                                         const Teuchos::RCP<const Epetra_Map> & domainMap)
+{
+   using Teuchos::RCP;
+
+   if(j!=Teuchos::null) th_j = Thyra::nonconstEpetraLinearOp(j); 
+
+   RCP<const Thyra::VectorSpaceBase<double> > rangeVS = Thyra::create_VectorSpace(rangeMap);
+   RCP<const Thyra::VectorSpaceBase<double> > domainVS = Thyra::create_VectorSpace(domainMap);
+
+   // convert the vectors
+   if(x!=Teuchos::null) {
+      th_x = Thyra::create_Vector(x,domainVS);
+      Teuchos::set_extra_data(domainMap,"epetra_map",Teuchos::inOutArg(th_x));
+   }
+   if(dxdt!=Teuchos::null) {
+      th_dxdt = Thyra::create_Vector(dxdt,domainVS);
+      Teuchos::set_extra_data(domainMap,"epetra_map",Teuchos::inOutArg(th_dxdt));
+   }
+   if(f!=Teuchos::null) { 
+      th_f = Thyra::create_Vector(f,rangeVS);
+      Teuchos::set_extra_data(rangeMap,"epetra_map",Teuchos::inOutArg(th_f));
+   }
+}
+
 }
 

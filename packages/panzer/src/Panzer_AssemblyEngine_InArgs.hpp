@@ -5,6 +5,7 @@
 
 class Epetra_Vector;
 class Epetra_CrsMatrix;
+class Epetra_Map;
 
 namespace Thyra {
 template <typename ScalarT> class MultiVectorBase;
@@ -64,7 +65,7 @@ namespace panzer {
       alpha(in_alpha),
       beta(in_beta)
     {
-       thyraToEpetra();
+       // thyraToEpetra();
     }
 
     Teuchos::RCP<Epetra_Vector> x;
@@ -79,6 +80,9 @@ namespace panzer {
 
     double alpha;
     double beta;
+
+    void epetraToThyra(const Teuchos::RCP<const Epetra_Map> & range,
+                       const Teuchos::RCP<const Epetra_Map> & domain);
 
   private:
     void thyraToEpetra();

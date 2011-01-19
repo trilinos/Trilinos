@@ -37,10 +37,6 @@ using Teuchos::rcp;
 void testInitialzation(panzer::InputPhysicsBlock& ipb,
 		       std::vector<panzer::BC>& bcs);
 
-void prepForParallelSolve(Epetra_Export & exporter,const Epetra_CrsMatrix & inJac,const Epetra_Vector & inX,
-                                                   Epetra_CrsMatrix & outJac,Epetra_Vector & outX);
-void redistributeSolution(Epetra_Import & importer,const Epetra_Vector & inX,Epetra_Vector & outX);
-
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
 {
@@ -183,18 +179,18 @@ int main(int argc,char * argv[])
  
    // construct some linear algebra object, build object to pass to evaluators
    panzer::EpetraLinearObjFactory<int> linObjFactory(Comm,dofManager);
-   RCP<Epetra_Map> ghosted_map = linObjFactory.getGhostedMap();
-   RCP<Epetra_CrsGraph> ghosted_graph = linObjFactory.getGhostedGraph();
-   RCP<Epetra_Export> exporter = linObjFactory.getGhostedExport();
-   RCP<Epetra_Import> importer = linObjFactory.getGhostedImport();
-   RCP<Epetra_Map> map = linObjFactory.getMap();
-   RCP<Epetra_CrsGraph> graph = linObjFactory.getGraph();
+ 
+   // build ghosted variables
+   RCP<Thyra::MultiVectorBase<double> > ghostX = linObjFactory.getGhostedVector();
+   RCP<Thyra::MultiVectorBase<double> > ghostB = linObjFactory.getGhostedVector();
+   RCP<Thyra::LinearOpBase<double> > ghostA = linObjFactory.getGhostedMatrix();
+
+   // build global variables
+   RCP<Thyra::MultiVectorBase<double> > x = linObjFactory.getVector();
+   RCP<Thyra::MultiVectorBase<double> > b = linObjFactory.getVector();
+   RCP<Thyra::LinearOpBase<double> > A = linObjFactory.getMatrix();
    
-   panzer::AssemblyEngineInArgs input;
-   input.x = rcp(new Epetra_Vector(*ghosted_map));
-   input.dxdt = rcp(new Epetra_Vector(*ghosted_map));
-   input.f = rcp(new Epetra_Vector(*ghosted_map));
-   input.j = rcp(new Epetra_CrsMatrix(Copy, *ghosted_graph));
+   panzer::AssemblyEngineInArgs input(ghostX,Teuchos::null,ghostB,ghostA);
 
    // evaluate physics
    out << "EVALUTE" << std::endl;
@@ -204,17 +200,9 @@ int main(int argc,char * argv[])
    out << "RAN SUCCESSFULLY!" << std::endl;
 
    out << "SOLVE" << std::endl;
-   RCP<Epetra_CrsMatrix> epetra_A = rcp(new Epetra_CrsMatrix(Copy, *graph));
-   RCP<Epetra_Vector> epetra_x = rcp(new Epetra_Vector(*map));
-   RCP<Epetra_Vector> epetra_b = rcp(new Epetra_Vector(*map));
-
    // redistribute vectors and matrices so that we can parallel solve
-   prepForParallelSolve(*exporter,*input.j,*input.f,*epetra_A,*epetra_b);
-
-   // setup thyra stuff
-   RCP<const Thyra::LinearOpBase<double> > A = Thyra::epetraLinearOp( epetra_A );
-   RCP<Thyra::VectorBase<double> > x = Thyra::create_Vector( epetra_x, A->domain() );
-   RCP<const Thyra::VectorBase<double> > b = Thyra::create_Vector( epetra_b, A->range());
+   linObjFactory.ghostToGlobalVector(ghostB,b);
+   linObjFactory.ghostToGlobalMatrix(ghostA,A);
 
    // solve with amesos
    Stratimikos::DefaultLinearSolverBuilder solverBuilder;
@@ -222,14 +210,16 @@ int main(int argc,char * argv[])
    solverBuilder.setParameterList(validList);
    
    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = solverBuilder.createLinearSolveStrategy("Amesos");
-   RCP<Thyra::LinearOpWithSolveBase<double> > lows = Thyra::linearOpWithSolve(*lowsFactory, A);
+   RCP<Thyra::LinearOpWithSolveBase<double> > lows = Thyra::linearOpWithSolve(*lowsFactory, A.getConst());
    Thyra::solve<double>(*lows, Thyra::NOTRANS, *b, x.ptr());
 
    // redistribute solution vector
-   redistributeSolution(*importer,*epetra_x,*input.x);
+   linObjFactory.globalToGhostVector(x,ghostX);
 
    out << "WRITE" << std::endl;
-   write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*input.x);
+   RCP<const Epetra_Map> epetra_map = Teuchos::get_extra_data<RCP<const Epetra_Map> >(ghostX,"epetra_map");
+   RCP<Epetra_MultiVector> epetra_x = Thyra::get_Epetra_MultiVector(*epetra_map,x);
+   write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*epetra_x);
    mesh->writeToExodus("output2.exo");
 
    return 0;
@@ -319,19 +309,4 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
    		    strategy, p);
        bcs.push_back(bc);
      }
-}
-
-void prepForParallelSolve(Epetra_Export & exporter,const Epetra_CrsMatrix & inJac,const Epetra_Vector & inX,Epetra_CrsMatrix & outJac,Epetra_Vector & outX)
-{
-    outJac.PutScalar(0.0);
-    outJac.Export( inJac,exporter,Add);
-
-    outX.PutScalar(0.0);
-    outX.Export( inX,exporter,Add);
-}
-
-void redistributeSolution(Epetra_Import & importer,const Epetra_Vector & inX,Epetra_Vector & outX)
-{
-    outX.PutScalar(0.0);
-    outX.Import(inX,importer,Insert);
 }
