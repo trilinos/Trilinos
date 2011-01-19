@@ -342,10 +342,10 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
 
   /* Verbose */
   // TODO: replace AllReduce by Reduce to proc 0
-  int myPid = graph.GetComm()->getRank();
-  if ( myPid == 0 && aggOptions.GetPrintFlag() < MueLu_PrintLevel()) {
+  if (aggOptions.GetPrintFlag() < MueLu_PrintLevel()) {
     const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
-
+    int myPid = comm->getRank();
+    
     {
       int localReady=0, globalReady;
       
@@ -356,7 +356,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
       // Compute 'globalReady'
       sumAll(comm, localReady, globalReady);
       
-      if (globalReady > 0)
+      if (myPid == 0 && globalReady > 0)
         printf("Aggregation(UC) : Phase 1 (WARNING) - %d READY nodes left\n",globalReady);
     }
     
@@ -372,13 +372,15 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
       sumAll(comm, localSelected, globalSelected);
       sumAll(comm, nRows, globalNRows);
       
-      printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",globalSelected, globalNRows);
+      if (myPid == 0)
+        printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",globalSelected, globalNRows);
     }
     
     {
       int nAggregatesGlobal; 
       sumAll(comm, nAggregates, nAggregatesGlobal);
-      printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",nAggregatesGlobal);
+      if (myPid == 0)
+        printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",nAggregatesGlobal);
     }
     
   } // if myPid == 0 ...
