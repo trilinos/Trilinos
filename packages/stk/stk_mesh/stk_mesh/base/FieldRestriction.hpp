@@ -40,8 +40,8 @@ struct FieldRestriction {
     return *this ;
   }
 
-  FieldRestriction( EntityRank rank , EntityId ordinal)
-    : key( EntityKey(rank, ordinal))
+  FieldRestriction( EntityRank input_rank , EntityId input_ordinal)
+    : key( EntityKey(input_rank, input_ordinal))
   {
     Copy< MaximumFieldDimension >( stride , size_type(0) );
   }

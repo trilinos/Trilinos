@@ -30,8 +30,8 @@ class Field : public FieldBase {
 public:
 
   /** \brief  Query this field for a given field state. */
-  Field & field_of_state( FieldState state ) const {
-    return static_cast<Field &>( * FieldBase::field_state(state) );
+  Field & field_of_state( FieldState input_state ) const {
+    return static_cast<Field &>( * FieldBase::field_state(input_state) );
   }
 
 private:
