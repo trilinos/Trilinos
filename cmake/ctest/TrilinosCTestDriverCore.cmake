@@ -59,7 +59,6 @@ SET( CMAKE_MODULE_PATH
 
 INCLUDE(PrintVar)
 INCLUDE(SetDefaultAndFromEnv)
-INCLUDE(SetFromEnv)
 INCLUDE(AssertDefined)
 INCLUDE(AppendSet)
 INCLUDE(AppendStringVar)
