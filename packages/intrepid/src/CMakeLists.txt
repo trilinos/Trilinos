@@ -112,6 +112,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_TET_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_TET_C2_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_TET_C2_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_TET_COMP12_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_TET_COMP12_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_TRI_C1_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_TRI_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_TRI_C2_FEM.hpp
