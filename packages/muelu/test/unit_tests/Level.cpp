@@ -24,7 +24,9 @@ namespace {
   typedef Cthulhu::Operator<Scalar,LO,GO,Node,LMO> Operator;
   typedef Cthulhu::CrsOperator<Scalar,LO,GO,Node,LMO> CrsOperator;
   typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
+#ifdef HAVE_CTHULHU_TPETRA
   typedef Cthulhu::TpetraVector<Scalar,LO,GO,Node>    TpetraVector;
+#endif
   typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
 
 //this macro declares the unit-test-class:
@@ -34,6 +36,7 @@ TEUCHOS_UNIT_TEST(Level, SetCoreData)
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
 
+#ifdef HAVE_CTHULHU_TPETRA
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -66,6 +69,8 @@ TEUCHOS_UNIT_TEST(Level, SetCoreData)
   Level secondLevel(firstLevel);
   //out << secondLevel << std::endl;
   */
+
+#endif
 }
 
 }//namespace <anonymous>

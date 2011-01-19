@@ -2,15 +2,19 @@
 #define MUELU_SAPFACTORY_HPP
 
 #include <Cthulhu_Map.hpp>
-#include <Cthulhu_EpetraMap.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
+#ifdef HAVE_MUELU_EPETRA
+#include <Cthulhu_EpetraMap.hpp>
 #include <Cthulhu_EpetraCrsMatrix.hpp>
+#endif
 #include <Cthulhu_CrsOperator.hpp>
 #include <Cthulhu.hpp>
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 
+#ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
+#endif
 
 #include "MueLu_OperatorFactory.hpp"
 #include "MueLu_Utilities.hpp"

@@ -7,15 +7,21 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_TypeTraits.hpp>
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_Range1D.hpp>
 
+#include "Cthulhu_ConfigDefs.hpp"
+#include "Cthulhu_DefaultPlatform.hpp"
+
+#ifdef HAVE_CTHULHU_TPETRA
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 //#include "Tpetra_MultiVector.hpp"
 //#include "Tpetra_Vector.hpp"
-
-#define HAVE_CTHULHU_TPETRA //TODO
 #include "Cthulhu_TpetraMultiVector.hpp"
 #include "Cthulhu_TpetraVector.hpp"
+#endif
+
 // #include "Cthulhu_EpetraMultiVector.hpp"
 // #include "Cthulhu_EpetraVector.hpp"
 
@@ -83,14 +89,16 @@ namespace {
 
 //   using Tpetra::Map;
 //   using Tpetra::MultiVector;
-  using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
-  using Tpetra::GloballyDistributed;
+  using Cthulhu::global_size_t;
+  using Cthulhu::DefaultPlatform;
+  using Cthulhu::GloballyDistributed;
 
   //  using Tpetra::createContigMapWithNode;
   //  using Tpetra::createLocalMapWithNode;
+#ifdef HAVE_CTHULHU_TPETRA
   using Cthulhu::useTpetra::createContigMapWithNode;
   using Cthulhu::useTpetra::createLocalMapWithNode;
+#endif
 
   using Kokkos::SerialNode;
   RCP<SerialNode> snode;
@@ -194,7 +202,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NonMemberConstructors, MV, V, Ordinal, Scalar , Node )
   {
     RCP<Node> node = getNode<Node>();
-
+#ifdef HAVE_CTHULHU_TPETRA
 
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -208,12 +216,14 @@ namespace {
     RCP<V>   vec = Tpetra::createVector<Scalar>(map);
     TEST_EQUALITY(mvec->getNumVectors(), numVecs);
     TEST_EQUALITY_CONST(vec->getNumVectors(), 1);
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, basic, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -240,12 +250,14 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
     // print it
     //TODO    out << mvec << endl;
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadConstNumVecs, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -258,12 +270,14 @@ namespace {
     if (std::numeric_limits<size_t>::is_signed) {
       TEST_THROW(MV mvec(map,INVALID), std::invalid_argument);
     }
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadConstLDA, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     // numlocal > LDA
     // ergo, the arrayview doesn't contain enough data to specify the entries
@@ -288,12 +302,14 @@ namespace {
 #endif
     // LDA < numLocal throws an exception anytime
     TEST_THROW(MV mvec(map,values(0,4),1,numVecs), std::runtime_error);
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NonContigView, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     if (ScalarTraits<Scalar>::isOrdinal) return;
     
@@ -490,12 +506,14 @@ namespace {
         TEST_FLOATING_EQUALITY(nrmOrigC[exView2[j]], nrmOrigC_aft[exView2[j]], tol);
       }
     }
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Describable, MV, V, Ordinal , Scalar, Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
@@ -544,12 +562,14 @@ namespace {
     mvecA.describe(out,VERB_EXTREME);
     comm->barrier();
     comm->barrier();
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadMultiply, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -622,12 +642,14 @@ namespace {
       TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,S1,mv3nx2,mv2x3,S0), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
 #endif
     }
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Multiply, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     using Teuchos::View;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -766,11 +788,13 @@ namespace {
       tmpView = mv3nx2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,M0);
     }
 #endif
+#endif // HAVE_CTHULHU_TPETRA
   }
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ElementWiseMultiply, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     using Teuchos::View;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     
@@ -806,12 +830,14 @@ namespace {
       TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,6),check2,M0);
 #endif
     }
+#endif // HAVE_CTHULHU_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadConstAA, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     // constructor takes ArrayView<ArrayView<Scalar> A, NumVectors
     // A.size() == NumVectors
@@ -836,12 +862,14 @@ namespace {
     // individual ArrayViews could be too small
     TEST_THROW(MV mvec(map3,arrOfarr(),2), std::runtime_error);
 #endif
+#endif //HAVE_CTHULHU_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadDot, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     // get a comm and node
@@ -877,12 +905,14 @@ namespace {
       TEST_THROW(v2.dot(v1,dots()),std::runtime_error);
 #endif
     }
+#endif // HAVE_CTHULHU_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, OrthoDot, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     
@@ -949,12 +979,14 @@ namespace {
     std::fill(ans.begin(), ans.end(), as<Mag>(2*numImages));
     TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
     TEST_COMPARE_FLOATING_ARRAYS(norms2,ans,M0);
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CopyView, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     
@@ -1169,12 +1201,14 @@ namespace {
         TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
       }
     }
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, OffsetView, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     
@@ -1323,12 +1357,14 @@ namespace {
       }
     }
 #endif
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ZeroScaleUpdate, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     
@@ -1407,12 +1443,14 @@ namespace {
       C.norm2(norms);
       //TODO:FAILED  TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
+#endif // HAVE_CTHULHU_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ScaleAndAssign, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     if (ScalarTraits<Scalar>::isOrdinal) return;
     Teuchos::ScalarTraits<Scalar>::seedrandom(0);   // consistent seed
@@ -1530,12 +1568,14 @@ namespace {
       C.norm2(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
+#endif // HAVE_CTHULHU_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, ZeroScaleUpdate, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -1613,12 +1653,14 @@ namespace {
       //TODO FAILED: TEST_EQUALITY(norm,M0);
       //TODO FAILED: TEST_EQUALITY(norm,norms[0]);
     }
+#endif //HAVE_CTHULHU_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CopyConst, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -1687,12 +1729,14 @@ namespace {
       //            TEST_COMPARE_FLOATING_ARRAYS(ncopy1,ones,M0);
       //            TEST_COMPARE_FLOATING_ARRAYS(ncopy2,twos,M0);
     }
+#endif // HAVE_CTHULHU_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, CopyConst, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -1725,12 +1769,14 @@ namespace {
     //TODO FAILED: TEST_EQUALITY(norig, as<Scalar>(0));
     //TODO FAILED: TEST_EQUALITY(ncopy1,as<Scalar>(1));
     //TODO FAILED: TEST_EQUALITY(ncopy2,as<Scalar>(2));
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, Indexing, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar>              SCT;
     typedef typename SCT::magnitudeType Magnitude;
@@ -1760,12 +1806,14 @@ namespace {
     v1.update(-1.0,v2,1.0);
     err = v1.norm2();
     TEST_EQUALITY_CONST(err,SCT::zero());
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, SingleVecNormalize, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
     // error turned out to be a neglected return in both implementations of update(), 
@@ -1817,12 +1865,14 @@ namespace {
     mv.norm2(norms()); // should be all one now
     Array<Magnitude> ones(numVectors,M1);
     //TODO FAILED: TEST_COMPARE_FLOATING_ARRAYS(norms,ones,ScalarTraits<Magnitude>::eps()*as<Magnitude>(10.));
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountDot, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -1858,12 +1908,14 @@ namespace {
     // check the answers
     TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,answer,M0);
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountDotNonTrivLDA, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     // same as CountDot, but the A,LDA has a non-trivial LDA (i.e., LDA != myLen)
     
@@ -1908,12 +1960,14 @@ namespace {
     // check the answers
     TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,answer,M0);
+#endif // HAVE_CTHULHU_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountNorm1, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
@@ -1960,12 +2014,14 @@ namespace {
         //TODO FAILED: TEST_EQUALITY( mvec.getVector(j)->meanValue(), answer[j] );
       }
     }
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountNormInf, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
@@ -1997,12 +2053,14 @@ namespace {
     mvec.normInf(norms());
     // check the answers
     TEST_COMPARE_FLOATING_ARRAYS(norms,answer,M0);
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Norm2, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
@@ -2031,12 +2089,14 @@ namespace {
       TEST_ARRAY_ELE_EQUALITY(normsZero,i,M0);
     }
     success &= local_success;
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NormWeighted, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -2087,12 +2147,14 @@ namespace {
       TEST_FLOATING_EQUALITY( expnorm, normsW[j], tol );
       TEST_FLOATING_EQUALITY( expnorm1, normsW1[j], tol );
     }
+#endif
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadCombinations, MV, V, Ordinal, Scalar , Node )
   {
+#ifdef HAVE_CTHULHU_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -2138,12 +2200,13 @@ namespace {
     TEST_THROW(m1n2.normWeighted(m2n2,norms()), std::runtime_error);
     TEST_THROW(m1n2.reciprocal(m1n1), std::runtime_error);                  // reciprocal
     TEST_THROW(m1n2.reciprocal(m2n2), std::runtime_error);
+#endif
   }
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Typedefs,        MV, V, Ordinal, Scalar , Node )
   {
-    
+#ifdef HAVE_CTHULHU_TPETRA
     typedef typename MV::scalar_type scalar_type;
     typedef typename MV::local_ordinal_type local_ordinal_type;
     typedef typename MV::global_ordinal_type global_ordinal_type;
@@ -2152,6 +2215,7 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , Ordinal >::value) == true, true );
     TEST_EQUALITY_CONST( (is_same< global_ordinal_type , Ordinal >::value) == true, true );
     TEST_EQUALITY_CONST( (is_same< node_type           , Node    >::value) == true, true );
+#endif
   }
 
 // 
@@ -2166,6 +2230,7 @@ namespace {
 typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
 
+#ifdef HAVE_CTHULHU_TPETRA
   //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, NonMemberConstructors, MV, V, ORDINAL, SCALAR, NODE )
   //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, NonContigView     , MV, V, ORDINAL, SCALAR, NODE ) 
   //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Typedefs          , MV, V, ORDINAL, SCALAR, NODE )
@@ -2196,6 +2261,10 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Multiply          , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, ElementWiseMultiply,MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Describable       , MV, V, ORDINAL, SCALAR, NODE ) \
+
+#else
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE )
+#endif // HAVE_CTHULHU_TPETRA
 
 #define UNIT_TEST_SERIALNODE(MV, V, ORDINAL, SCALAR)                     \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, SerialNode )
@@ -2273,8 +2342,10 @@ typedef std::complex<double> ComplexDouble;
     UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, ComplexDouble) \
     UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(MV, V, ORDINAL)
 
-  typedef Cthulhu::TpetraMultiVector<double,int,int> MMultiVector;//TODO: remove Mprefix
+#ifdef HAVE_CTHULHU_TPETRA
+  typedef Cthulhu::TpetraMultiVector<double,int,int> MMultiVector;//TODO: remove 'M' prefix
   typedef Cthulhu::TpetraVector<double,int,int> MVector;
+#endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   UNIT_TEST_DOUBLE(MMultiVector, MVector, int)

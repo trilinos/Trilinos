@@ -5,13 +5,15 @@
 
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_CrsOperator.hpp>
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 #include <Cthulhu_MultiVectorFactory.hpp>
+#ifdef HAVE_MUELU_EPETRA
+#include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_EpetraVector.hpp>
 #include <Cthulhu_EpetraMultiVector.hpp>
+#endif
 #include <Cthulhu.hpp>
 
 #include "MueLu_MatrixFactory.hpp"
@@ -25,8 +27,10 @@ namespace MueLu {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
+#ifdef HAVE_MUELU_EPETRA
   using Cthulhu::EpetraCrsMatrix;
   using Cthulhu::EpetraMultiVector;
+#endif
 
 /*!
   @class Utils
@@ -46,6 +50,7 @@ namespace MueLu {
 
 
   public:
+#ifdef HAVE_MUELU_EPETRAEXT
     //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Cthulhu::MultiVector.
     static RCP<const Epetra_MultiVector> MV2EpetraMV(RCP<MultiVector> const Vec) {
       //rcp<const EpetraMultiVector> tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
@@ -112,7 +117,11 @@ namespace MueLu {
         throw(Exceptions::RuntimeError("A is not fill-completed"));
       if (!epB->Filled())
         throw(Exceptions::RuntimeError("B is not fill-completed"));
+#ifdef HAVE_MUELU_EPETRAEXT
       int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,false,*epC);
+#else 
+      int i = 42;
+#endif
       if (i != 0) {
         std::ostringstream buf;
         buf << i;
@@ -143,7 +152,11 @@ namespace MueLu {
       RCP<Epetra_CrsMatrix> epC = Op2NonConstEpetraCrs(C);
       //int i = EpetraExt::MatrixMatrix::Add(*epA,false,(double)alpha,*epB,false,(double)beta,&(*epC));
       Epetra_CrsMatrix* ref2epC = &*epC; //to avoid a compiler error...
+#ifdef HAVE_MUELU_EPETRAEXT
       int i = EpetraExt::MatrixMatrix::Add(*epA,false,(double)alpha,*epB,false,(double)beta,ref2epC);
+#else
+      int i = 42;
+#endif
       if (i != 0) {
         std::ostringstream buf;
         buf << i;
@@ -234,6 +247,21 @@ namespace MueLu {
 
     } //BuildMatrixInverseDiagonal()
 
+#else
+
+    static RCP<Operator> TwoMatrixMultiply(RCP<Operator> const &A, RCP<Operator> const &B, bool transposeA=false) {
+      throw(Exceptions::NotImplemented("TwoMatrixMultiply for Tpetra"));
+    }
+
+    static RCP<Operator> BuildMatrixInverseDiagonal(RCP<Operator> const &A) {
+      throw(Exceptions::NotImplemented("BuildMatrixInverseDiagonal for Tpetra"));
+    }
+
+   static RCP<Operator> TwoMatrixAdd(RCP<Operator> const &A, RCP<Operator> const &B,
+                                     SC alpha=1.0, SC beta=1.0) {
+     throw(Exceptions::NotImplemented("TwoMatrixAdd for Tpetra"));
+   }
+#endif
   }; // class
 
 } //namespace MueLu

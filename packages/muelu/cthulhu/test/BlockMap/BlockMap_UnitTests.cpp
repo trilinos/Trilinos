@@ -3,14 +3,18 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
+#include "Cthulhu_BlockMap.hpp"
+#include "Cthulhu_DefaultPlatform.hpp"
+
+#ifdef HAVE_CTHULHU_TPETRA
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Teuchos_as.hpp"
 //#include "Tpetra_Map.hpp"
 //#include "Tpetra_BlockMap.hpp"
-#include "Cthulhu_BlockMap.hpp"
 #include "Cthulhu_TpetraMap.hpp"
 #include "Cthulhu_TpetraBlockMap.hpp"
+#endif
 
 #ifdef HAVE_CTHULHU_EPETRA
 #include "Cthulhu_EpetraMap.hpp"
@@ -29,14 +33,16 @@ namespace {
   using Teuchos::tuple;
   //using Tpetra::Map;
   //using Tpetra::BlockMap;
+#ifdef HAVE_CTHULHU_TPETRA
   using Cthulhu::TpetraMap;
   using Cthulhu::TpetraBlockMap;
+#endif
 #ifdef HAVE_CTHULHU_EPETRA
   using Cthulhu::EpetraMap;
   using Cthulhu::EpetraBlockMap;
 #endif
   using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
+  using Cthulhu::DefaultPlatform;
   using std::sort;
   using std::find;
   using Teuchos::broadcast;
@@ -288,6 +294,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMap, ConstructorBadLengths1, BM, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMap, ConstructorBadLengths2, BM, M, LO, GO )
 
+#ifdef HAVE_CTHULHU_TPETRA
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
       typedef Cthulhu::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
       typedef Cthulhu::TpetraBlockMap<LO,GO> TpetraBlockMap ## LO ## GO; \
@@ -296,8 +303,9 @@ namespace {
     // UNIT_TEST_GROUP_ORDINAL(char , int)
 
     //TODO: missing constructor UNIT_TEST_GROUP_ORDINAL_(EpetraBlockMap, EpetraMap, int , int)
-      UNIT_TEST_GROUP_ORDINAL(int , int)
 
+      UNIT_TEST_GROUP_ORDINAL(int , int)
+#endif
     // typedef short int ShortInt;
     // UNIT_TEST_GROUP_ORDINAL(ShortInt, int)
 
@@ -309,6 +317,8 @@ namespace {
       // UNIT_TEST_GROUP_ORDINAL(char , LongLongInt)
       // UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)
 #   endif
+
+
 
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 

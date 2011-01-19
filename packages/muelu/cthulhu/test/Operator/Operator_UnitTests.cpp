@@ -4,16 +4,17 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include "Tpetra_ConfigDefs.hpp" //TODO
-#include "Tpetra_DefaultPlatform.hpp" //TODO
+#include "Cthulhu_ConfigDefs.hpp" //TODO
+#include "Cthulhu_DefaultPlatform.hpp" //TODO
 #include "Teuchos_as.hpp"
 
 //#include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_Operator.hpp"
 #include "Cthulhu_CrsOperator.hpp"
+#ifdef HAVE_CTHULHU_TPETRA
 #include "Cthulhu_TpetraCrsMatrix.hpp" //TMP
-
+#endif
 namespace {
   using Teuchos::Array;
   using Teuchos::as;
@@ -30,9 +31,12 @@ namespace {
   using Teuchos::Comm;
   using Kokkos::SerialNode;
 
+  using Cthulhu::DefaultPlatform;
   using Cthulhu::Operator;
   using Cthulhu::CrsOperator;
+#ifdef HAVE_CTHULHU_TPETRA
   using Cthulhu::TpetraCrsMatrix; //TMP
+#endif
   using Cthulhu::Map;
 
   using Cthulhu::viewLabel_t;
@@ -56,7 +60,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      return Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+      return DefaultPlatform::getDefaultPlatform().getComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }
@@ -69,6 +73,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Operator, ViewSwitching, Scalar, LO, GO, Node ) //TODO: add template parameter <Node,...>
   {
+#ifdef HAVE_CTHULHU_TPETRA
     typedef Teuchos::ScalarTraits<Scalar> ST;
     typedef Operator<Scalar, LO, GO, Node> Operator;
     typedef CrsOperator<Scalar, LO, GO, Node> CrsOperator;
@@ -114,6 +119,7 @@ namespace {
        
        op.fillComplete();
      }
+#endif
   }
 
   // 

@@ -8,6 +8,8 @@
 
 namespace MueLu {
 
+  using Teuchos::RCP;
+
 /*!
   @class SmootherBase
   @brief Base class for smoothers
@@ -22,7 +24,7 @@ class SmootherBase : public Needs {
 #include "MueLu_UseShortNames.hpp"
 
   private:
-    string Type_;
+  std::string Type_;
 
   public:
     //@{ Constructors/Destructors.
@@ -46,7 +48,7 @@ class SmootherBase : public Needs {
     virtual void SetNIts(LO Nits) = 0;
 
     //! Get the smoother type.
-    string GetType() {
+    std::string GetType() {
       return Type_;
     }
 

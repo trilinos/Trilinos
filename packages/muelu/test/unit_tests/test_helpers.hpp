@@ -5,11 +5,13 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Tpetra_ConfigDefs.hpp" //TODO: use Cthulhu
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Cthulhu_ConfigDefs.hpp" //TODO: use Cthulhu
+#include "Cthulhu_DefaultPlatform.hpp"
 
 #include "Cthulhu_Map.hpp"
+#ifdef HAVE_CTHULHU_TPETRA
 #include "Cthulhu_TpetraMap.hpp"
+#endif
 
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_MatrixTypes.hpp"
@@ -17,17 +19,18 @@
 
 namespace MueLu_UnitTest {
 
-  using Tpetra::global_size_t;
+  using Cthulhu::global_size_t;
   using Teuchos::RCP;
 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Cthulhu::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
   inline
   RCP<const Teuchos::Comm<int> > getDefaultComm()
   {
-    return Tpetra::DefaultPlatform::getDefaultPlatform().getComm(); //TODO: use Cthulhu here
+    return Cthulhu::DefaultPlatform::getDefaultPlatform().getComm(); //TODO: use Cthulhu here
   }
 
+#ifdef HAVE_CTHULHU_TPETRA
   //
   // Function that creates a map containing a specified number of local elements per process.
   //
@@ -44,6 +47,7 @@ namespace MueLu_UnitTest {
     return Teuchos::rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(INVALID, num_elements_per_proc, indexBase, comm));
   
   } // create_map()
+#endif
 
 } // namespace MueLu_UnitTest
 

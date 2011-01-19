@@ -3,15 +3,16 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
+#include "Teuchos_as.hpp"
+
+#include "Cthulhu_ConfigDefs.hpp"
+#include "Cthulhu_DefaultPlatform.hpp"
+
+#ifdef HAVE_CTHULHU_TPETRA
 #include "Tpetra_ConfigDefs.hpp" //TODO
 #include "Tpetra_DefaultPlatform.hpp" //TODO
-#include "Teuchos_as.hpp"
-//#include "Tpetra_Map.hpp"
-
-#define HAVE_CTHULHU_TPETRA //TODO!
-// #define HAVE_CTHULHU_EPETRA //TODO!
 #include "Cthulhu_TpetraMap.hpp"
-
+#endif
 
 #ifdef HAVE_CTHULHU_EPETRA
 #include "Cthulhu_EpetraMap.hpp"
@@ -32,9 +33,8 @@ namespace {
   using Teuchos::outArg;
   using Teuchos::Tuple;
   using Teuchos::tuple;
-  //  using Tpetra::Map;
-  using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
+  using Cthulhu::global_size_t;
+  using Cthulhu::DefaultPlatform;
   using std::sort;
   using std::find;
   using Teuchos::broadcast;
@@ -370,7 +370,9 @@ namespace {
 #ifdef HAVE_CTHULHU_EPETRA
       UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , int)
 #endif
+#ifdef HAVE_CTHULHU_TPETRA
       UNIT_TEST_GROUP_ORDINAL(int , int)
+#endif
 
     // typedef short int ShortInt;
     // UNIT_TEST_GROUP_ORDINAL(ShortInt, int)

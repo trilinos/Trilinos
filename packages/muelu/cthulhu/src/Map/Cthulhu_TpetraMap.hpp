@@ -14,8 +14,10 @@
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Map.hpp"
 
+#ifdef HAVE_CTHULHU_TPETRA
 //#include "Tpetra_Map_decl.hpp"
 #include "Tpetra_Map.hpp"
+#endif
 
 #include "Cthulhu_Debug.hpp"
 

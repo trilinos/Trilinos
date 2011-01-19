@@ -89,8 +89,14 @@ class TentativePFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalO
         Ptent->insertGlobalValues(i,iv,av);
       }
       //TODO replace this with a factory or something else
+#ifdef HAVE_CTHULHU_EPETRA
       RCP<Map> domainMap = rcp( new Cthulhu::EpetraMap(nCoarseDofs,Op->getRowMap()->getIndexBase(),Op->getRowMap()->getComm()) );
+
       Ptent->fillComplete(domainMap, Op->getRowMap());
+#else
+#warning
+#endif
+
       //MatrixPrint(Op);
       return Ptent;
     } //MakeTentative()
