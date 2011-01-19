@@ -283,7 +283,7 @@ namespace stk {
             unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
             shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
 
-            if (1 || TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
+            if ( TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
                                              << " elementType= " << elementType << std::endl;
 
             std::vector<EntityRank> ranks_one(1, ranks[irank]);
@@ -292,7 +292,7 @@ namespace stk {
             Colorer meshColorerThisTypeOnly(elementColorsByType[irank], ranks_one);   TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)... ");
             meshColorerThisTypeOnly.color(m_eMesh, &elementType);                     TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)...done ");
 
-            if (elementColorsByType[irank].size() == 0)
+            if (0 && elementColorsByType[irank].size() == 0)
               {
                 std::cout << "WARNING: no elements found of this type: " << cell_topo.getName() << " key= " << elementType << std::endl;
               }
@@ -300,6 +300,8 @@ namespace stk {
           }
 
         }
+
+      // FIXME warn if a topology shows up without a break pattern
 
       ///////////////////////////////////////////////////////////
       /////  // start top-level ranks
@@ -818,6 +820,7 @@ namespace stk {
     void UniformRefiner::
     fixElementSides1(EntityRank side_rank)
     {
+
       EXCEPTWATCH;
 
       SameRankRelation& parent_child = m_eMesh.adapt_parent_to_child_relations();
@@ -845,8 +848,10 @@ namespace stk {
 
               // if parent has any side relations, check if any of the sides' children match the parent's children's faces
               mesh::PairIterRelation parent_sides = parent->relations(side_rank);
-
               mesh::PairIterRelation side_to_parent = parent->relations(mesh::Element);
+
+              //std::cout << "tmp here 1 child_nsides= " << child_nsides 
+              //          << " parent_sides.size()=" << parent_sides.size() <<  " side_to_parent.size() = " << side_to_parent.size() << std::endl;
 
               for (unsigned i_parent_side = 0; i_parent_side < parent_sides.size(); i_parent_side++)
                 {
@@ -855,9 +860,15 @@ namespace stk {
 
                   SameRankRelationValue& parent_side_children = m_eMesh.adapt_parent_to_child_relations()[parent_side];
 
+                  //std::cout << "tmp here 2 parent_side_children.size() = " << parent_side_children.size()
+                  //          << std::endl;
+
                   for (unsigned i_parent_side_child = 0; i_parent_side_child < parent_side_children.size(); i_parent_side_child++)
                     {
                       Entity *parent_side_child = parent_side_children[i_parent_side_child];
+
+                      //std::cout << "tmp here 3 parent_side_child = " << *parent_side_child
+                      //      << std::endl;
 
                       int permIndex = -1;
                       int permPolarity = 1;
@@ -875,12 +886,18 @@ namespace stk {
                         }
 #endif
 
+
                       if (permIndex < 0)
                         {
                           // try search
                           for (unsigned j_child_side = 0; j_child_side < child_nsides; j_child_side++)
                             {
                               PerceptMesh::element_side_permutation(*child, *parent_side_child, j_child_side, permIndex, permPolarity);
+                              if (0)
+                                std::cout << "tmp j_child_side = " << j_child_side << " permIndex= " << permIndex 
+                                          << " child= " << *child
+                                          << " parent_side_child= " << *parent_side_child
+                                          <<  std::endl;
 
                               if (permIndex >= 0)
                                 {
@@ -892,6 +909,11 @@ namespace stk {
 
                       if (permIndex >= 0)
                         {
+                          if (0)
+                            std::cout << "tmp decl rel permIndex= " << permIndex 
+                                      << " child= " << *child
+                                      << " parent_side_child= " << *parent_side_child
+                                      <<  std::endl;
                           m_eMesh.getBulkData()->declare_relation(*child, *parent_side_child, k_child_side);
                           PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
                         }
