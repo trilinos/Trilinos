@@ -18,10 +18,10 @@ cd -
 export TDD_PARALLEL_LEVEL=1
 export TDD_CTEST_TEST_TYPE=Experimental
 
-time /usr/local/bin/python ../cron_driver.py
+time /usr/bin/python ../cron_driver.py
 
 echo
 echo "Ending nightly Trilinos testing on billmp1: `date`"
 echo
 
-# /home/rabartl/mailmsg.py "Finished nightly Trilinos CMake tests billmp1: http://trilinos-dev.sandia.gov/cdash/index.php?project=Trilinos"
+echo "Finished nightly Trilinos CMake tests billmp1: http://casl-dev.ornl.gov/cdash/index.php?project=Trilinos" | mailx -s "Nightly CTest: billmp1" bakercg@ornl.gov
