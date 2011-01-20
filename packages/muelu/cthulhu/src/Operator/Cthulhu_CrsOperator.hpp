@@ -322,7 +322,7 @@ public:
     
     //     if (myImageID == 0) out << this->description() << std::endl; 
     
-    out << "Cthulhu_CrsOperator.describe()" << std::endl;
+    matrixData_->describe(out,verbLevel);
 
     // Teuchos::OSTab tab(out);
   }

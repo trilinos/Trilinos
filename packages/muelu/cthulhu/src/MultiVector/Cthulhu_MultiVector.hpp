@@ -274,10 +274,8 @@ namespace Cthulhu {
     //! @name Attribute access functions
     //@{ 
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the number of vectors in the multi-vector.
     virtual size_t getNumVectors() const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Returns the local vector length on the calling processor of vectors in the multi-vector.
     virtual size_t getLocalLength() const =0;
