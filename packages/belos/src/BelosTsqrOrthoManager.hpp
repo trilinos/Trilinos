@@ -81,9 +81,8 @@ namespace Belos {
     //! \typedef Multivector type with which this class was specialized
     typedef MV multivector_type;
 
-    typedef Teuchos::SerialDenseMatrix<int, Scalar>           serial_matrix_type;
-    typedef Teuchos::RCP<serial_matrix_type>                  serial_matrix_ptr;
-    typedef Teuchos::Array<Teuchos::RCP<serial_matrix_type> > prev_coeffs_type;
+    typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+    typedef Teuchos::RCP<mat_type>                  mat_ptr;
 
     /// \brief Normalize X into Q*B, possibly overwriting X
     ///
@@ -96,7 +95,7 @@ namespace Belos {
     ///
     /// \return Rank of X
     virtual int 
-    normalizeOutOfPlace (MV& X, MV& Q, serial_matrix_ptr B) const = 0;
+    normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B) const = 0;
 
     /// \brief Project and normalize X_in into X_out; overwrite X_in
     ///
@@ -117,9 +116,11 @@ namespace Belos {
     ///
     /// \return Rank of X_in after projection
     virtual int 
-    projectAndNormalizeOutOfPlace (MV& X_in, MV& X_out, 
-				   prev_coeffs_type C, serial_matrix_ptr B,
-				   Teuchos::Array<Teuchos::RCP<const MV> > Q) const = 0;
+    projectAndNormalizeOutOfPlace (MV& X_in, 
+				   MV& X_out, 
+				   Teuchos::Array<mat_ptr> C,
+				   mat_ptr B,
+				   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
   };
 
   /// \class TsqrOrthoManager
@@ -137,9 +138,8 @@ namespace Belos {
     //! \typedef Multivector type with which this class was specialized
     typedef MV multivector_type;
 
-    typedef Teuchos::SerialDenseMatrix<int, Scalar>           serial_matrix_type;
-    typedef Teuchos::RCP<serial_matrix_type>                  serial_matrix_ptr;
-    typedef Teuchos::Array<Teuchos::RCP<serial_matrix_type> > prev_coeffs_type;
+    typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+    typedef Teuchos::RCP<mat_type>                  mat_ptr;
 
     /// \brief Get default parameters for TsqrOrthoManager
     ///
@@ -188,20 +188,26 @@ namespace Belos {
     virtual ~TsqrOrthoManager() {}
 
     //! Compute the (block) inner product Z := <X,Y>
-    void innerProd (const MV &X, const MV &Y, serial_matrix_type& Z) const {
+    void innerProd (const MV &X, const MV &Y, mat_type& Z) const {
       return impl_.innerProd (X, Y, Z);
     }
 
-    //! Compute the norm(s) of the column(s) of X
-    void norm (const MV& X, std::vector<magnitude_type>& normvec) const {
-      return impl_.norm (X, normvec);
+    /// Compute the norm(s) of the column(s) of X
+    ///
+    /// \param X [in] Multivector for which to compute column norm(s)
+    ///
+    /// \param normVec [out] normVec[j] is the norm of column j of X.
+    ///   normVec is resized if it has too few entries to hold all the
+    ///   norms, but it is not resize if it has too many entries.
+    void norm (const MV& X, std::vector<magnitude_type>& normVec) const {
+      return impl_.norm (X, normVec);
     }
 
     //! Project X against Q and store resulting coefficients in C
     void 
     project (MV &X, 
-	     prev_coeffs_type C, 
-	     Teuchos::Array<Teuchos::RCP<const MV> > Q) const
+	     Teuchos::Array<mat_ptr> C,
+	     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       return impl_.project (X, C, Q);
     }
@@ -210,7 +216,7 @@ namespace Belos {
     ///
     /// \return Rank of X
     int 
-    normalize (MV &X, serial_matrix_ptr B) const
+    normalize (MV &X, mat_ptr B) const
     {
       return impl_.normalize (X, B);
     }
@@ -219,12 +225,17 @@ namespace Belos {
     /// then normalize X in place, and store normalization
     /// coefficients in B.
     ///
+    /// \param X [in/out] Vector to project and normalize
+    /// \param C [out] Projection coefficients
+    /// \param B [out] Normalization coefficients
+    /// \param Q [in] Orthogonal basis against which to project
+    ///
     /// \return Rank of X
     int 
     projectAndNormalize (MV &X, 
-			 prev_coeffs_type C,
-			 serial_matrix_ptr B,
-			 Teuchos::Array<Teuchos::RCP<const MV> > Q) const
+			 Teuchos::Array<mat_ptr> C,
+			 mat_ptr B,
+			 Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       return impl_.projectAndNormalize (X, C, B, Q);
     }
@@ -239,8 +250,8 @@ namespace Belos {
     ///   avoid excessive copying of vectors when using TSQR for
     ///   orthogonalization.
     ///
-    /// \param X [in/out] Vector(s) to normalize
-    /// \param Q [out] Normalized vector(s)
+    /// \param X [in/out] Input vector(s) to normalize
+    /// \param Q [out] Normalized output vector(s)
     /// \param B [out] Normalization coefficients
     ///
     /// \return Rank of X
@@ -248,7 +259,7 @@ namespace Belos {
     /// \note Q must have at least as many columns as X.  It may have
     /// more columns than X; those columns are ignored.
     int 
-    normalizeOutOfPlace (MV& X, MV& Q, serial_matrix_ptr B) const
+    normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B) const
     {
       return impl_.normalizeOutOfPlace (X, Q, B);
     }
@@ -274,10 +285,10 @@ namespace Belos {
     ///   reason that we expose normalizeOutOfPlace().
     int 
     projectAndNormalizeOutOfPlace (MV& X_in, 
-			       MV& X_out,
-			       prev_coeffs_type C,
-			       serial_matrix_ptr B,
-			       Teuchos::Array<Teuchos::RCP<const MV> > Q) const
+				   MV& X_out,
+				   Teuchos::Array<mat_ptr> C,
+				   mat_ptr B,
+				   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       return impl_.projectAndNormalizeOutOfPlace (X_in, X_out, C, B, Q);
     }
@@ -338,12 +349,8 @@ namespace Belos {
     //! Operator type with which this class was specialized
     typedef OP operator_type;
 
-    typedef Teuchos::RCP<MV>                        mv_ptr;
-    typedef Teuchos::RCP<const MV>                  const_mv_ptr;
-    typedef Teuchos::Array<const_mv_ptr>            const_prev_mvs_type;
-    typedef Teuchos::SerialDenseMatrix<int, Scalar> serial_matrix_type;
-    typedef Teuchos::RCP<serial_matrix_type>                  serial_matrix_ptr;
-    typedef Teuchos::Array<Teuchos::RCP<serial_matrix_type> > prev_coeffs_type;
+    typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+    typedef Teuchos::RCP<mat_type>                  mat_ptr;
 
   private:
     /// \typedef base_type
@@ -485,8 +492,8 @@ namespace Belos {
     void 
     project (MV &X, 
 	     Teuchos::RCP<MV> MX,
-	     prev_coeffs_type C,
-	     const_prev_mvs_type Q) const
+	     Teuchos::Array<mat_ptr> C,
+	     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       if (getOp().is_null())
 	{
@@ -505,12 +512,15 @@ namespace Belos {
 
     /// Project X against Q with respect to the inner product computed
     /// by \c innerProd().  Store the resulting coefficients in C.
-    void project (MV &X, prev_coeffs_type C, const_prev_mvs_type Q) const {
+    void 
+    project (MV &X, 
+	     Teuchos::Array<mat_ptr> C,
+	     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
       project (X, Teuchos::null, C, Q);
     }
 
     int 
-    normalize (MV& X, Teuchos::RCP<MV> MX, serial_matrix_ptr B) const 
+    normalize (MV& X, Teuchos::RCP<MV> MX, mat_ptr B) const 
     {
       if (getOp().is_null())
 	{
@@ -528,16 +538,16 @@ namespace Belos {
 	}
     }
 
-    int normalize (MV& X, serial_matrix_ptr B) const {
+    int normalize (MV& X, mat_ptr B) const {
       return normalize (X, Teuchos::null, B);
     }
 
     int 
     projectAndNormalize (MV &X, 
 			 Teuchos::RCP<MV> MX,
-			 Teuchos::Array<serial_matrix_ptr> C,
-			 serial_matrix_ptr B, 
-			 Teuchos::Array<Teuchos::RCP<const MV> > Q ) const
+			 Teuchos::Array<mat_ptr> C,
+			 mat_ptr B, 
+			 Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       if (getOp().is_null())
 	{
@@ -574,7 +584,7 @@ namespace Belos {
     /// \note Q must have at least as many columns as X.  It may have
     /// more columns than X; those columns are ignored.
     int 
-    normalizeOutOfPlace (MV& X, MV& Q, serial_matrix_ptr B) const
+    normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B) const
     {
       if (getOp().is_null())
 	{
@@ -612,10 +622,10 @@ namespace Belos {
     ///   reason that we expose normalizeOutOfPlace().
     int 
     projectAndNormalizeOutOfPlace (MV& X_in, 
-			       MV& X_out,
-			       prev_coeffs_type C,
-			       serial_matrix_ptr B,
-			       const_prev_mvs_type Q) const
+				   MV& X_out,
+				   Teuchos::Array<mat_ptr> C,
+				   mat_ptr B,
+				   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       if (getOp().is_null())
 	{

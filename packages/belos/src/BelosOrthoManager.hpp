@@ -68,8 +68,6 @@
 #include "Teuchos_Array.hpp"
 
 
-
-
 namespace Belos {
 
 
@@ -113,28 +111,44 @@ namespace Belos {
      */
     virtual void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >& normvec ) const = 0;
 
-    /*! \brief Given a list of (mutually and internally) orthonormal bases \c Q, this method
-     * takes a multivector \c X and projects it onto the space orthogonal to the individual <tt>Q[i]</tt>, 
-     * optionally returning the coefficients of \c X for the individual <tt>Q[i]</tt>. All of this is done with respect
-     * to the inner product innerProd().
-     *  
-     * After calling this routine, \c X will be orthogonal to each of the <tt>Q[i]</tt>.
-     *
-     @param X [in/out] The multivector to be modified.
-       On output, \c X will be orthogonal to <tt>Q[i]</tt> with respect to innerProd().
-
-     @param C [out] The coefficients of \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
-       and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
-       pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
-
-     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
-     orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
-    */
-    virtual void project ( MV &X, 
-                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RCP<const MV> > Q) const = 0;
+    /// \brief Project X against the (orthogonal) entries of Q
+    ///
+    /// Given a list of (mutually and internally) orthonormal bases \c
+    /// Q, this method takes a multivector \c X and projects it onto
+    /// the space orthogonal to the individual <tt>Q[i]</tt>,
+    /// optionally returning the coefficients of \c X for the
+    /// individual <tt>Q[i]</tt>.  All of this is done with respect to
+    /// the inner product innerProd().
+    ///
+    /// After calling this routine, \c X will be orthogonal to each of
+    /// the <tt>Q[i]</tt>.
+    ///
+    /// \param X [in/out] The multivector to be modified.  On output,
+    ///   \c X will be orthogonal to <tt>Q[i]</tt> with respect to
+    ///   innerProd().
+    ///
+    /// \param C [out] The coefficients of \c X in the \c *Q[i], with
+    ///   respect to innerProd(). If <tt>C[i]</tt> is a non-null
+    ///   pointer and \c *C[i] matches the dimensions of \c X and \c
+    ///   *Q[i], then the coefficients computed during the
+    ///   orthogonalization routine will be stored in the matrix \c
+    ///   *C[i]. If <tt>C[i]</tt> is a nnon-null pointer whose size
+    ///   does not match the dimensions of \c X and \c *Q[i], then a
+    ///   std::invalid_argument std::exception will be
+    ///   thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt>
+    ///   is a null pointer, then the orthogonalization manager will
+    ///   declare storage for the coefficients and the user will not
+    ///   have access to them.
+    ///
+    /// \param Q [in] A list of multivector bases specifying the
+    ///   subspaces to be orthogonalized against. Each <tt>Q[i]</tt>
+    ///   is assumed to have orthonormal columns, and the
+    ///   <tt>Q[i]</tt> are assumed to be mutually orthogonal.
+    ///
+    virtual void 
+    project (MV &X, 
+	     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+	     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
 
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
      *
@@ -153,38 +167,65 @@ namespace Belos {
     virtual int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
 
 
-    /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
-     *
-     *  This routine returns an integer \c rank stating the rank of the computed basis. If the subspace \f$colspan(X) - \sum_i colspan(Q[i])\f$ does not 
-     *  have dimension as large as the number of columns of \c X and the orthogonalization manager doe not attempt to augment the subspace, then \c rank 
-     *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will 
-     *  be valid.
-     *
-     * \note This routine guarantees both the orthgonality constraints against the <tt>Q[i]</tt> as well as the orthonormality constraints. Therefore, this method 
-     * is not necessarily equivalent to calling project() followed by a call to normalize(); see the documentation for specific orthogonalization managers.
-     *
-     @param X [in/out] The multivector to the modified. 
-       On output, the relevant rows of \c X will be orthogonal to the <tt>Q[i]</tt> and will have orthonormal columns (with respect to innerProd()).
-
-     @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
-       and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
-       pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
-
-     @param B [out] The coefficients of the original \c X with respect to the computed basis. This matrix is not necessarily triangular; see the documentation
-       for specific orthogonalization managers.
-
-     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
-     orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
-
-     @return Rank of the basis computed by this method.
-    */
-    virtual int projectAndNormalize ( MV &X, 
-                                      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::Array<Teuchos::RCP<const MV> > Q ) const = 0;
-
+    /// \brief Project X against the Q[i] and normalize X
+    ///
+    /// Given a set of bases <tt>Q[i]</tt> and a multivector \c X,
+    /// this method computes an orthonormal basis for \f$colspan(X) -
+    /// \sum_i colspan(Q[i])\f$.
+    ///
+    /// This routine returns an integer \c rank stating the rank of
+    /// the computed basis. If the subspace \f$colspan(X) - \sum_i
+    /// colspan(Q[i])\f$ does not have dimension as large as the
+    /// number of columns of \c X and the orthogonalization manager
+    /// doe not attempt to augment the subspace, then \c rank may be
+    /// smaller than the number of columns of \c X. In this case, only
+    /// the first \c rank columns of output \c X and first \c rank
+    /// rows of \c B will be valid.  
+    ///
+    /// \note This routine guarantees both the orthgonality
+    ///   constraints against the <tt>Q[i]</tt> as well as the
+    ///   orthonormality constraints. Therefore, this method is not
+    ///   necessarily equivalent to calling project() followed by a
+    ///   call to normalize().  See the documentation for specific
+    ///   orthogonalization managers.
+    ///
+    /// \param X [in/out] The multivector to the modified. On output,
+    ///   the relevant rows of \c X will be orthogonal to the
+    ///   <tt>Q[i]</tt> and will have orthonormal columns (with
+    ///   respect to innerProd()).
+    ///
+    /// \param C [out] The coefficients of the original \c X in the \c
+    ///   *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a
+    ///   non-null pointer and \c *C[i] matches the dimensions of \c X
+    ///   and \c *Q[i], then the coefficients computed during the
+    ///   orthogonalization routine will be stored in the matrix \c
+    ///   *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does
+    ///   not match the dimensions of \c X and \c *Q[i], then a
+    ///   std::invalid_argument std::exception will be
+    ///   thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt>
+    ///   is a null pointer, then the orthogonalization manager will
+    ///   declare storage for the coefficients and the user will not
+    ///   have access to them.
+    ///
+    /// \param B [out] The coefficients of the original \c X with
+    ///   respect to the computed basis. This matrix is not
+    ///   necessarily upper triangular (as it would be for textbook
+    ///   Gram-Schmidt orthogonalization of a full-rank matrix, for
+    ///   example).  See the documentation for specific
+    ///   orthogonalization managers.
+    ///
+    /// \param Q [in] A list of multivector bases specifying the
+    ///   subspaces to be orthogonalized against. Each <tt>Q[i]</tt>
+    ///   is assumed to have orthonormal columns, and the
+    ///   <tt>Q[i]</tt> are assumed to be mutually orthogonal.
+    ///
+    /// \return Rank of the basis computed by this method.
+    ///
+    virtual int 
+    projectAndNormalize (MV &X, 
+			 Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+			 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+			 Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
     //@}
 
     //! @name Error methods

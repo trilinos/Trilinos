@@ -267,7 +267,7 @@ namespace Belos {
     */
     virtual void project ( MV &X, Teuchos::RCP<MV> MX, 
                            Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RCP<const MV> > Q) const = 0;
+                           Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
 
 
     
@@ -275,7 +275,7 @@ namespace Belos {
     */
     virtual void project ( MV &X, 
                            Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RCP<const MV> > Q) const {
+                           Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
       project(X,Teuchos::null,C,Q);
     }
 
@@ -348,14 +348,14 @@ namespace Belos {
     virtual int projectAndNormalize ( MV &X, Teuchos::RCP<MV> MX, 
                                       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::Array<Teuchos::RCP<const MV> > Q ) const = 0;
+                                      Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const = 0;
 
     /*! \brief This method calls projectAndNormalize(X,Teuchos::null,C,B,Q); see documentation for that function.
     */
     virtual int projectAndNormalize ( MV &X, 
                                       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
+                                      Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const {
       return projectAndNormalize(X,Teuchos::null,C,B,Q);
     }
 
