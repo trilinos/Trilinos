@@ -1,6 +1,6 @@
 # .bash_profile
-echo $PATH
-which git
+echo bash_profile: path is $PATH
+echo bash_profile: git is `which git`
 
 # Get the aliases and functions
 if [ -f ~/.bashrc ]; then
