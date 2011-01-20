@@ -55,6 +55,7 @@
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
+#include <algorithm>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -580,10 +581,10 @@ namespace Belos {
       // here.  This is done on demand in normalize().
     }
 
-    //! Check and set dimensions of X and Q
+    /// Return through output arguments some relevant dimension
+    /// information about X and Q.
     void
-    checkProjectionDims (int& nrows_X, 
-			 int& ncols_X, 
+    checkProjectionDims (int& ncols_X, 
 			 int& num_Q_blocks,
 			 int& ncols_Q_total,
 			 const MV& X, 
@@ -591,25 +592,28 @@ namespace Belos {
     {
       // First assign to temporary values, so the function won't
       // commit any externally visible side effects unless it will
-      // return normally (without throwing an exception).
-      int __nrows_X, __ncols_X, __num_Q_blocks, __ncols_Q_total;
+      // return normally (without throwing an exception).  (I'm being
+      // cautious; MVT::GetNumberVecs() probably shouldn't have any
+      // externally visible side effects, unless it is logging to a
+      // file or something.)
+      int __ncols_X, __num_Q_blocks, __ncols_Q_total;
       __num_Q_blocks = Q.size();
-      __nrows_X = MVT::GetVecLength (X);
       __ncols_X = MVT::GetNumberVecs (X);
 
       // Compute the total number of columns of all the Q[i] blocks.
       __ncols_Q_total = 0;
-      for (int i = 0; i < num_Q_blocks; ++i)
+      // You should be angry if your compiler doesn't support type
+      // inference ("auto").  That's why I need this awful typedef.
+      using Teuchos::ArrayView;
+      using Teuchos::RCP;
+      typedef typename ArrayView<RCP<const MV> >::const_iterator iter_type;
+      for (iter_type it = Q.begin(); it != Q.end(); ++it)
 	{
-	  const int nrows_Q = MVT::GetVecLength (*Q[i]);
-	  TEST_FOR_EXCEPTION( (nrows_Q != __nrows_X), 
-			      std::invalid_argument,
-			      "Belos::TsqrOrthoManagerImpl::checkProjectionDims(): "
-			      "Size of X not consistant with size of Q" );
-	  __ncols_Q_total += MVT::GetNumberVecs (*Q[i]);
+	  const MV& Qi = **it;
+	  __ncols_Q_total += MVT::GetNumberVecs (Qi);
 	}
+
       // Commit temporary values to the output arguments.
-      nrows_X = __nrows_X;
       ncols_X = __ncols_X;
       num_Q_blocks = __num_Q_blocks;
       ncols_Q_total = __ncols_Q_total;
@@ -630,9 +634,18 @@ namespace Belos {
 				    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q,
 				    const MV& X,
 				    const bool attemptToRecycle = true) const;
+
+    /// \brief Implementation of projection and normalization
+    ///
+    /// Implementation of projectAndNormalize() (in which case X_out
+    /// is not read or written, so it may alias X_in, and
+    /// outOfPlace==false) and projectAndNormalizeOutOfPlace() (in
+    /// which case X_out is written, and outOfPlace==true).
+    ///
+    /// \return Rank of X_in after projection
     int 
     projectAndNormalizeImpl (MV& X_in, 
-			     MV& X_out, // Only written if outOfPlace==false.
+			     MV& X_out,
 			     const bool outOfPlace,
 			     Teuchos::Array<mat_ptr> C,
 			     mat_ptr B,
@@ -646,39 +659,25 @@ namespace Belos {
     void
     rawProject (MV& X, 
 		Teuchos::ArrayView<Teuchos::RCP<const MV> > Q,
-		Teuchos::Array<mat_ptr> C) const
-    {
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      // rawProject() is part of orthogonalization, so we time it with
-      // total orthogonalization as well as with projection.  If
-      // rawProject() is called from project(), the TimeMonitor won't
-      // start timerProject_, because it is already running in
-      // project().  Similarly, if rawProject() is called from
-      // projectAndNormalize(), the TimeMonitor won't start
-      // timerProject_, because it is already running in
-      // projectAndNormalize().
-      Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-      Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
-#endif // BELOS_TEUCHOS_TIME_MONITOR
-
-      // "Modified Gram-Schmidt" version of Block Gram-Schmidt.
-      const int num_Q_blocks = Q.size();
-      for (int i = 0; i < num_Q_blocks; ++i)
-	{
-	  TEST_FOR_EXCEPTION(C[i].is_null(), std::logic_error,
-			     "TsqrOrthoManagerImpl::rawProject(): C[" 
-			     << i << "] is null");
-	  TEST_FOR_EXCEPTION(Q[i].is_null(), std::logic_error,
-			     "TsqrOrthoManagerImpl::rawProject(): Q[" 
-			     << i << "] is null");
-	  mat_type& Ci = *C[i];
-	  const MV& Qi = *Q[i];
-	  innerProd (Qi, X, Ci);
-	  MVT::MvTimesMatAddMv (-SCT::one(), Qi, Ci, SCT::one(), X);
-	}
-    }
+		Teuchos::ArrayView<mat_ptr> C) const;
 
     /// Normalize X into Q*B, overwriting X in the process.
+    /// 
+    /// \param X [in/out] On input: multivector whose columns are to
+    ///   be orthogonalized ("normalized").  On output: overwritten
+    ///   with invalid values.
+    ///
+    /// \param Q [out] The orthogonalized ("normalized") columns of X.
+    ///   If X on input had (numerical) rank r, the first r columns
+    ///   are a column space basis for X, and the remaining columns
+    ///   are a null space basis for X.
+    ///
+    /// \param B [out] Normalization coefficients: X = Q*B.  If X on
+    ///   input had full (numerical) rank, B is upper triangular.
+    ///   Otherwise, B may not be upper triangular, but the
+    ///   factorization X = Q*B is still valid.
+    ///
+    /// \return The rank of the input X
     ///
     /// \warning Q must have _exactly_ as many columns as X.
     ///
@@ -686,66 +685,27 @@ namespace Belos {
     ///   dimensions (square, with number of rows/columns equal to the
     ///   number of columns in X).
     int 
-    rawNormalize (MV& X, MV& Q, mat_type& B)
-    {
-      int rank;
-      try {
-	// This call only computes the QR factorization X = Q B.
-	// It doesn't compute the rank of X.  That comes from
-	// revealRank() below.
-	tsqrAdaptor_->factorExplicit (X, Q, B);
-	// This call will only modify *B if *B on input is not of full
-	// numerical rank.
-	rank = tsqrAdaptor_->revealRank (Q, B, relativeRankTolerance_);
-      } catch (std::exception& e) {
-	throw TsqrOrthoError (e.what()); // Toss the exception up the chain.
-      }
-      return rank;
-    }
+    rawNormalize (MV& X, MV& Q, mat_type& B);
 
-    /// Special case of normalize() when X has only one column.
-    /// The operation is done in place in X.  We assume that B(0,0)
-    /// makes sense, since we're going to assign to it.
+    /// \brief Normalize a "multivector" of only one column
+    ///
+    /// Special case of normalize() when X has only one column.  The
+    /// operation is done in place in X.  We assume that B(0,0) makes
+    /// sense, since we're going to assign to it.  
+    ///
+    /// \param X [in/out] On input: multivector of one column.  On
+    ///   output: if that column has nonzero 2-norm, the column scaled
+    ///   by its 2-norm; otherwise, if the column has zero 2-norm, it
+    ///   is not modified.
+    /// \param B [out] Matrix of dimension 1 x 1.  On output, the
+    ///   2-norm of X.
+    ///
+    /// \return One if X has nonzero 2-norm, else zero.
+    ///
+    /// \warning We do no checking of the dimensions of X or B, and we
+    ///   do not resize B if it has dimensions other than 1 x 1.
     int
-    normalizeOne (MV& X, mat_ptr B) const
-    {
-      std::vector< magnitude_type > theNorm (1, SCTM::zero());
-      MVT::MvNorm (X, theNorm);
-      if (Teuchos::is_null(B))
-	B = Teuchos::rcp (new mat_type (1, 1));
-      (*B)(0,0) = theNorm[0];
-      if (theNorm[0] == SCTM::zero())
-	{
-	  // Make a view of the first column of Q, fill it with random
-	  // data, and normalize it.  Throw away the resulting norm.
-	  if (randomizeNullSpace_)
-	    {
-	      MVT::MvRandom(X);
-	      MVT::MvNorm (X, theNorm);
-	      if (theNorm[0] == SCTM::zero())
-		throw TsqrOrthoError("normalizeOne(): a supposedly random "
-				     "vector has norm zero!");
-	      else
-		{
-		  // FIXME (mfh 09 Nov 2010) I'm assuming that this
-		  // operation that converts from a magnitude_type to
-		  // a Scalar makes sense.
-		  const Scalar alpha = SCT::one() / theNorm[0];
-		  MVT::MvScale (X, alpha);
-		}
-	    }
-	  return 0;
-	}
-      else
-	{
-	  // FIXME (mfh 09 Nov 2010) I'm assuming that this
-	  // operation that converts from a magnitude_type to
-	  // a Scalar makes sense.
-	  const Scalar alpha = SCT::one() / theNorm[0];
-	  MVT::MvScale (X, alpha);
-	  return 1;
-	}
-    }
+    normalizeOne (MV& X, mat_ptr B) const;
 
     /// Normalize X into Q*B, overwriting X in the process.
     ///
@@ -970,30 +930,16 @@ namespace Belos {
     // initialization until we get an X.
     lazyInit (X);
 
-    int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
-    checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
+    int ncols_X, num_Q_blocks, ncols_Q_total;
+    checkProjectionDims (ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
     // Test for quick exit: any dimension of X is zero, or there are
     // zero Q blocks, or the total number of columns of the Q blocks
     // is zero.
-    if (nrows_X == 0 || ncols_X == 0 || num_Q_blocks == 0 || ncols_Q_total == 0)
+    if (ncols_X == 0 || num_Q_blocks == 0 || ncols_Q_total == 0)
       return;
-    
-    // If we don't have enough C, expanding it creates null references.
-    // If we have too many, resizing just throws away the later ones.
-    // If we have exactly as many as we have Q, this call has no effect.
-    C.resize (num_Q_blocks);
-    for (int k = 0; k < num_Q_blocks; ++k) 
-      {
-	const int ncols_Q_k = MVT::GetNumberVecs (*Q[k]);
-	// Create a new C[k] if necessary; resize the existing C[k]
-	// if necessary.
-	if (C[k] == Teuchos::null)
-	  C[k] = Teuchos::rcp (new mat_type (ncols_Q_k, ncols_X));
-	else if (C[k]->numRows() != ncols_Q_k || C[k]->numCols() != ncols_X)
-	  C[k]->shape (ncols_Q_k, ncols_X);
-	else
-	  C[k]->putScalar (Scalar(0));
-      }
+
+    // Make space for first-pass projection coefficients
+    allocateProjectionCoefficients (C, Q, X, true);
 
     // We only use columnNormsBefore if doing block
     // reorthogonalization.
@@ -1129,6 +1075,10 @@ namespace Belos {
 		       mat_ptr B,
 		       Teuchos::ArrayView<Teuchos::RCP<const MV> > Q)
   {
+    // FIXME Delete stuff below this line
+    return projectAndNormalizeImpl (X, X, false, C, B, Q);
+    
+
     using Teuchos::Range1D;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -1138,36 +1088,21 @@ namespace Belos {
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
     // Fetch dimensions of X and Q.
-    int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
-    checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
+    int ncols_X, num_Q_blocks, ncols_Q_total;
+    checkProjectionDims (ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
 
     // Test for quick exit: any dimension of X is zero.
-    if (nrows_X == 0 || ncols_X == 0)
+    if (ncols_X == 0)
       return 0;
 
     // If there are zero Q blocks or zero Q columns, just normalize!
     if (num_Q_blocks == 0 || ncols_Q_total == 0)
       return normalize (X, B);
-      
-    // If we don't have enough C, expanding it creates null references.
-    // If we have too many, resizing just throws away the later ones.
-    // If we have exactly as many as we have Q, this call has no effect.
-    C.resize (num_Q_blocks);
-    Teuchos::Array<mat_ptr> newC (num_Q_blocks);
-    for (int i = 0; i < num_Q_blocks; ++i) 
-      {
-	const int ncols_Q_i = MVT::GetNumberVecs (*Q[i]);
-	// Create a new C[i] if necessary.
-	if (C[i].is_null())
-	  C[i] = rcp (new mat_type (ncols_Q_i, ncols_X));
-	else if (C[i]->numRows() != ncols_Q_i || C[i]->numCols() != ncols_X)
-	  C[i]->shape (ncols_Q_i, ncols_X);
-	else
-	  C[i]->putScalar (SCT::zero());
 
-	// Create newC[i] as well, with the same dimensions as C[i].
-	newC[i] = rcp (new mat_type (ncols_Q_i, ncols_X));
-      }
+    // Make space for first- and second-pass projection coefficients
+    allocateProjectionCoefficients (C, Q, X, true);
+    Teuchos::Array<mat_ptr> newC;
+    allocateProjectionCoefficients (newC, Q, X, false);
 
     // If we are doing block reorthogonalization, then compute the
     // column norms of X before projecting for the first time.  This
@@ -1537,18 +1472,20 @@ namespace Belos {
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
     // Fetch dimensions of X_in and Q.
-    int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
-    checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X_in, Q);
+    int ncols_X, num_Q_blocks, ncols_Q_total;
+    checkProjectionDims (ncols_X, num_Q_blocks, ncols_Q_total, X_in, Q);
 
     // Make sure that X_out has at least as many columns as X_in.
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < ncols_X, 
+    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < MVT::GetNumberVecs(X_in),
 		       std::invalid_argument, 
-		       "Belos::TsqrOrthoManagerImpl::projectAndNormalizeOutOfPlace("
-		       "...): X_out has " << MVT::GetNumberVecs(X_out) << " col"
-		       "umns, but X_in has " << ncols_X << " columns.");
+		       "Belos::TsqrOrthoManagerImpl::"
+		       "projectAndNormalizeOutOfPlace(...): X_out has " 
+		       << MVT::GetNumberVecs(X_out)
+		       << " columns, but X_in has " 
+		       << MVT::GetNumberVecs(X_in) << " columns.");
 
     // Test for quick exit: any dimension of X is zero.
-    if (nrows_X == 0 || ncols_X == 0)
+    if (ncols_X == 0)
       return 0;
 
     // If there are zero Q blocks or zero Q columns, just normalize!
@@ -1846,8 +1783,8 @@ namespace Belos {
       }
     // Fetch dimensions of X_in and Q, and allocate space for first-
     // and second-pass projection coefficients (C resp. C2).
-    int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
-    checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X_in, Q);
+    int ncols_X, num_Q_blocks, ncols_Q_total;
+    checkProjectionDims (ncols_X, num_Q_blocks, ncols_Q_total, X_in, Q);
 
     // Test for quick exit: any dimension of X is zero.
     if (ncols_X == 0)
@@ -2236,6 +2173,110 @@ namespace Belos {
     return params;
   }
 
+
+  template<class Scalar, class MV>
+  int
+  TsqrOrthoManagerImpl<Scalar, MV>::
+  rawNormalize (MV& X, 
+		MV& Q, 
+		Teuchos::SerialDenseMatrix<int, Scalar>& B)
+  {
+    int rank;
+    try {
+      // This call only computes the QR factorization X = Q B.
+      // It doesn't compute the rank of X.  That comes from
+      // revealRank() below.
+      tsqrAdaptor_->factorExplicit (X, Q, B);
+      // This call will only modify *B if *B on input is not of full
+      // numerical rank.
+      rank = tsqrAdaptor_->revealRank (Q, B, relativeRankTolerance_);
+    } catch (std::exception& e) {
+      throw TsqrOrthoError (e.what()); // Toss the exception up the chain.
+    }
+    return rank;
+  }
+
+  template<class Scalar, class MV>
+  int
+  TsqrOrthoManagerImpl<Scalar, MV>::
+  normalizeOne (MV& X, 
+		Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > B) const
+  {
+    std::vector<magnitude_type> theNorm (1, SCTM::zero());
+    MVT::MvNorm (X, theNorm);
+    if (Teuchos::is_null(B))
+      B = Teuchos::rcp (new mat_type (1, 1));
+    (*B)(0,0) = theNorm[0];
+    if (theNorm[0] == SCTM::zero())
+      {
+	// Make a view of the first column of Q, fill it with random
+	// data, and normalize it.  Throw away the resulting norm.
+	if (randomizeNullSpace_)
+	  {
+	    MVT::MvRandom(X);
+	    MVT::MvNorm (X, theNorm);
+	    if (theNorm[0] == SCTM::zero())
+	      throw TsqrOrthoError("normalizeOne(): a supposedly random "
+				   "vector has norm zero!");
+	    else
+	      {
+		// FIXME (mfh 09 Nov 2010) I'm assuming that this
+		// operation that converts from a magnitude_type to
+		// a Scalar makes sense.
+		const Scalar alpha = SCT::one() / theNorm[0];
+		MVT::MvScale (X, alpha);
+	      }
+	  }
+	return 0;
+      }
+    else
+      {
+	// FIXME (mfh 09 Nov 2010) I'm assuming that this
+	// operation that converts from a magnitude_type to
+	// a Scalar makes sense.
+	const Scalar alpha = SCT::one() / theNorm[0];
+	MVT::MvScale (X, alpha);
+	return 1;
+      }
+  }
+
+
+  template<class Scalar, class MV>
+  void
+  TsqrOrthoManagerImpl<Scalar, MV>::
+  rawProject (MV& X, 
+	      Teuchos::ArrayView<Teuchos::RCP<const MV> > Q,
+	      Teuchos::ArrayView<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > > C) const
+  {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    // rawProject() is part of orthogonalization, so we time it with
+    // total orthogonalization as well as with projection.  If
+    // rawProject() is called from project(), the TimeMonitor won't
+    // start timerProject_, because it is already running in
+    // project().  Similarly, if rawProject() is called from
+    // projectAndNormalize(), the TimeMonitor won't start
+    // timerProject_, because it is already running in
+    // projectAndNormalize().
+    Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
+    Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
+    // "Modified Gram-Schmidt" version of Block Gram-Schmidt.
+    const int num_Q_blocks = Q.size();
+    for (int i = 0; i < num_Q_blocks; ++i)
+      {
+	TEST_FOR_EXCEPTION(C[i].is_null(), std::logic_error,
+			   "TsqrOrthoManagerImpl::rawProject(): C[" 
+			   << i << "] is null");
+	TEST_FOR_EXCEPTION(Q[i].is_null(), std::logic_error,
+			   "TsqrOrthoManagerImpl::rawProject(): Q[" 
+			   << i << "] is null");
+	mat_type& Ci = *C[i];
+	const MV& Qi = *Q[i];
+	innerProd (Qi, X, Ci);
+	MVT::MvTimesMatAddMv (-SCT::one(), Qi, Ci, SCT::one(), X);
+      }
+  }
 
 } // namespace Belos
 

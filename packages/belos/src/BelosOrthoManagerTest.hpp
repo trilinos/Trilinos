@@ -194,7 +194,7 @@ namespace Belos {
       typedef typename SCT::magnitudeType magnitude_type;
       typedef Teuchos::ScalarTraits<magnitude_type> SMT;
       typedef MultiVecTraits<scalar_type, MV> MVT;
-      typedef Teuchos::SerialDenseMatrix<int, scalar_type> serial_matrix_type;
+      typedef Teuchos::SerialDenseMatrix<int, scalar_type> mat_type;
 
       /// \brief Run all the tests
       ///
@@ -287,7 +287,8 @@ namespace Belos {
 	  debugOut << "Filling X2 with random values... ";
 	  MVT::MvRandom(*X2);
 	  debugOut << "done." << endl
-		   << "Calling projectAndNormalize(X2,X1)... ";
+		   << "Calling projectAndNormalize(X2, C, B, tuple(X1))... "
+		   << std::flush;
 	  // The projectAndNormalize() interface also differs between 
 	  // Anasazi and Belos.  Anasazi's projectAndNormalize() puts 
 	  // the multivector and the array of multivectors first, and
@@ -297,10 +298,10 @@ namespace Belos {
 	  // not optional.
 	  int initialX2Rank;
 	  {
-	    Array< RCP< serial_matrix_type > > C (1);
-	    RCP< serial_matrix_type > B = Teuchos::null;
+	    Array<RCP<mat_type> > C (1);
+	    RCP<mat_type> B = Teuchos::null;
 	    initialX2Rank = 
-	      OM->projectAndNormalize (*X2, C, B, tuple< RCP< const MV > >(X1));
+	      OM->projectAndNormalize (*X2, C, B, tuple<RCP<const MV> >(X1));
 	  }
 	  TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
 			     std::runtime_error, 
@@ -388,8 +389,8 @@ namespace Belos {
 		     << "C, B, X1_out)...";
 	    int initialX2Rank;
 	    {
-	      Array<RCP<serial_matrix_type> > C (1);
-	      RCP<serial_matrix_type> B = Teuchos::null;
+	      Array<RCP<mat_type> > C (1);
+	      RCP<mat_type> B = Teuchos::null;
 	      initialX2Rank = 
 		tsqr->projectAndNormalizeOutOfPlace (*X2_in, *X2_out, C, B, 
 						     tuple<RCP<const MV> >(X1_out));
@@ -447,7 +448,7 @@ namespace Belos {
 	    // also, <Y2,Y2> = I, but <X1,X1> != I, so biOrtho must be set to false
 	    // it should require randomization, as 
 	    // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
-	    serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
+	    mat_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
 	    C1.random();
 	    C2.random();
 	    // S := X1*C1
@@ -471,7 +472,7 @@ namespace Belos {
 	  {
 	    MVT::MvRandom(*S);
 	    RCP<MV> mid = MVT::Clone(*S,1);
-	    serial_matrix_type c(sizeS,1);
+	    mat_type c(sizeS,1);
 	    MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
 	    std::vector<int> ind(1); 
 	    ind[0] = sizeS-1;
@@ -531,7 +532,7 @@ namespace Belos {
 	    // P_X1 P_X2 (X1*C1 + X2*C2) = P_X1 X1*C1 = 0
 	    // and 
 	    // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
-	    serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
+	    mat_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
 	    C1.random();
 	    C2.random();
 	    MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
@@ -553,7 +554,7 @@ namespace Belos {
 	  {
 	    MVT::MvRandom(*S);
 	    RCP<MV> mid = MVT::Clone(*S,1);
-	    serial_matrix_type c(sizeS,1);
+	    mat_type c(sizeS,1);
 	    MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
 	    std::vector<int> ind(1); 
 	    ind[0] = sizeS-1;
@@ -656,7 +657,7 @@ namespace Belos {
       {
 	const scalar_type ONE = SCT::one();
 	const int numCols = MVT::GetNumberVecs(X);
-	serial_matrix_type C (numCols, numCols);
+	mat_type C (numCols, numCols);
 
 	// $C := X^* X$
 	MVT::MvTransMv (ONE, X, X, C);
@@ -754,8 +755,8 @@ namespace Belos {
 	for (int t=0; t<numtests; t++) {
 
 	  Array< RCP< const MV > > theX;
-	  RCP<serial_matrix_type > B = rcp( new serial_matrix_type(sizeS,sizeS) );
-	  Array<RCP<serial_matrix_type > > C;
+	  RCP<mat_type > B = rcp( new mat_type(sizeS,sizeS) );
+	  Array<RCP<mat_type > > C;
 	  if ( (t && 3) == 0 ) {
 	    // neither <X1,Y1> nor <X2,Y2>
 	    // C, theX and theY are already empty
@@ -763,18 +764,18 @@ namespace Belos {
 	  else if ( (t && 3) == 1 ) {
 	    // X1
 	    theX = tuple(X1);
-	    C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)) );
+	    C = tuple( rcp(new mat_type(sizeX1,sizeS)) );
 	  }
 	  else if ( (t && 3) == 2 ) {
 	    // X2
 	    theX = tuple(X2);
-	    C = tuple( rcp(new serial_matrix_type(sizeX2,sizeS)) );
+	    C = tuple( rcp(new mat_type(sizeX2,sizeS)) );
 	  }
 	  else {
 	    // X1 and X2, and the reverse.
 	    theX = tuple(X1,X2);
-	    C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)), 
-		       rcp(new serial_matrix_type(sizeX2,sizeS)) );
+	    C = tuple( rcp(new mat_type(sizeX1,sizeS)), 
+		       rcp(new mat_type(sizeX2,sizeS)) );
 	  }
 
 	  // We wrap up all the OrthoManager calls in a try-catch
@@ -791,8 +792,8 @@ namespace Belos {
 
 	    // here is where the outputs go
 	    Array<RCP<MV> > S_outs;
-	    Array<Array<RCP<serial_matrix_type > > > C_outs;
-	    Array<RCP<serial_matrix_type > > B_outs;
+	    Array<Array<RCP<mat_type > > > C_outs;
+	    Array<RCP<mat_type > > B_outs;
 	    RCP<MV> Scopy;
 	    Array<int> ret_out;
 
@@ -832,18 +833,18 @@ namespace Belos {
 		ind[i] = i;
 	      }
 	      S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
-	      B_outs.push_back( rcp( new serial_matrix_type(Teuchos::Copy,*B,ret,sizeS) ) );
+	      B_outs.push_back( rcp( new mat_type(Teuchos::Copy,*B,ret,sizeS) ) );
 	    }
 	    else {
 	      S_outs.push_back( Scopy );
-	      B_outs.push_back( rcp( new serial_matrix_type(*B) ) );
+	      B_outs.push_back( rcp( new mat_type(*B) ) );
 	    }
-	    C_outs.push_back( Array<RCP<serial_matrix_type > >(0) );
+	    C_outs.push_back( Array<RCP<mat_type > >(0) );
 	    if (C.size() > 0) {
-	      C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
+	      C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
 	    }
 	    if (C.size() > 1) {
-	      C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
+	      C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
 	    }
 
 	    // do we run the reversed input?
@@ -886,16 +887,16 @@ namespace Belos {
 		  ind[i] = i;
 		}
 		S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
-		B_outs.push_back( rcp( new serial_matrix_type(Teuchos::Copy,*B,ret,sizeS) ) );
+		B_outs.push_back( rcp( new mat_type(Teuchos::Copy,*B,ret,sizeS) ) );
 	      }
 	      else {
 		S_outs.push_back( Scopy );
-		B_outs.push_back( rcp( new serial_matrix_type(*B) ) );
+		B_outs.push_back( rcp( new mat_type(*B) ) );
 	      }
-	      C_outs.push_back( Array<RCP<serial_matrix_type > >() );
+	      C_outs.push_back( Array<RCP<mat_type > >() );
 	      // reverse the Cs to compensate for the reverse projectors
-	      C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
-	      C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
+	      C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
+	      C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
 	      // flip the inputs back
 	      theX = tuple( theX[1], theX[0] );
 	    }
@@ -1064,7 +1065,7 @@ namespace Belos {
 	    RCP< MV > S_copy = MVT::CloneCopy (*S);
 
 	    // Matrix of coefficients from the normalization.
-	    RCP< serial_matrix_type > B (new serial_matrix_type (sizeS, sizeS));
+	    RCP< mat_type > B (new mat_type (sizeS, sizeS));
 	    // The contents of B will be overwritten, but fill with
 	    // random data just to make sure that the normalization
 	    // operated on all the elements of B on which it should
@@ -1098,10 +1099,10 @@ namespace Belos {
 	    //
 	    // NOTE: We create this as a copy and not a view, because
 	    // otherwise it would not be safe with respect to RCPs.
-	    // This is because serial_matrix_type uses raw pointers
+	    // This is because mat_type uses raw pointers
 	    // inside, so that a view would become invalid when B
 	    // would fall out of scope.
-	    RCP< serial_matrix_type > B_top (new serial_matrix_type (Teuchos::Copy, *B, reportedRank, sizeS));
+	    RCP< mat_type > B_top (new mat_type (Teuchos::Copy, *B, reportedRank, sizeS));
 
 	    // Check ||<S_view,S_view> - I||
 	    {
@@ -1224,15 +1225,15 @@ namespace Belos {
 	X[1] = MVT::CloneCopy(*X2);
 
 	// Coefficients for the normalization
-	RCP< serial_matrix_type > B (new serial_matrix_type (sizeS, sizeS));
+	RCP< mat_type > B (new mat_type (sizeS, sizeS));
 	  
 	// Array of coefficients matrices from the projection.  
 	// For our first test, we allocate each of these matrices
 	// with the proper dimensions.
-	Array< RCP< serial_matrix_type > > C (num_X);
+	Array< RCP< mat_type > > C (num_X);
 	for (int k = 0; k < num_X; ++k)
 	  {
-	    C[k] = rcp (new serial_matrix_type (MVT::GetNumberVecs(*X[k]), sizeS));
+	    C[k] = rcp (new mat_type (MVT::GetNumberVecs(*X[k]), sizeS));
 	    C[k]->random(); // will be overwritten
 	  }
 	try {
@@ -1268,10 +1269,10 @@ namespace Belos {
 	  MVT::MvAddMv (SCT::one(), *S, SCT::zero(), *Residual, *Residual);
 	  {
 	    // Pick out the first reportedRank rows of B.  Make a deep
-	    // copy, since serial_matrix_type is not safe with respect
+	    // copy, since mat_type is not safe with respect
 	    // to RCP-based memory management (it uses raw pointers
 	    // inside).
-	    RCP< const serial_matrix_type > B_top (new serial_matrix_type (Teuchos::Copy, *B, reportedRank, B->numCols()));
+	    RCP< const mat_type > B_top (new mat_type (Teuchos::Copy, *B, reportedRank, B->numCols()));
 	    // Residual := Residual - Q(:, 1:reportedRank) * B(1:reportedRank, :)
 	    MVT::MvTimesMatAddMv (-SCT::one(), *Q_left, *B_top, SCT::one(), *Residual);
 	  }
@@ -1402,10 +1403,10 @@ namespace Belos {
 	// Array of coefficients matrices from the projection.  
 	// For our first test, we allocate each of these matrices
 	// with the proper dimensions.
-	Array< RCP< serial_matrix_type > > C (num_X);
+	Array< RCP< mat_type > > C (num_X);
 	for (int k = 0; k < num_X; ++k)
 	  {
-	    C[k] = rcp (new serial_matrix_type (MVT::GetNumberVecs(*X[k]), sizeS));
+	    C[k] = rcp (new mat_type (MVT::GetNumberVecs(*X[k]), sizeS));
 	    C[k]->random(); // will be overwritten
 	  }
 	try {
@@ -1572,7 +1573,7 @@ namespace Belos {
 	for (int t = 0; t < numtests; ++t) 
 	  {
 	    Array< RCP< const MV > > theX;
-	    Array< RCP< serial_matrix_type > > C;
+	    Array< RCP< mat_type > > C;
 	    if ( (t && 3) == 0 ) {
 	      // neither X1 nor X2
 	      // C and theX are already empty
@@ -1580,18 +1581,18 @@ namespace Belos {
 	    else if ( (t && 3) == 1 ) {
 	      // X1
 	      theX = tuple(X1);
-	      C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)) );
+	      C = tuple( rcp(new mat_type(sizeX1,sizeS)) );
 	    }
 	    else if ( (t && 3) == 2 ) {
 	      // X2
 	      theX = tuple(X2);
-	      C = tuple( rcp(new serial_matrix_type(sizeX2,sizeS)) );
+	      C = tuple( rcp(new mat_type(sizeX2,sizeS)) );
 	    }
 	    else {
 	      // X1 and X2, and the reverse.
 	      theX = tuple(X1,X2);
-	      C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)), 
-			 rcp(new serial_matrix_type(sizeX2,sizeS)) );
+	      C = tuple( rcp(new mat_type(sizeX1,sizeS)), 
+			 rcp(new mat_type(sizeX2,sizeS)) );
 	    }
 
 	    try {
@@ -1604,7 +1605,7 @@ namespace Belos {
 
 	      // here is where the outputs go
 	      Array< RCP< MV > > S_outs;
-	      Array< Array< RCP< serial_matrix_type > > > C_outs;
+	      Array< Array< RCP< mat_type > > > C_outs;
 	      RCP< MV > Scopy;
 
 	      // copies of S,MS
@@ -1620,12 +1621,12 @@ namespace Belos {
 	      // we allocate S and MS for each test, so we can save these as views
 	      // however, save copies of the C
 	      S_outs.push_back( Scopy );
-	      C_outs.push_back( Array< RCP< serial_matrix_type > >(0) );
+	      C_outs.push_back( Array< RCP< mat_type > >(0) );
 	      if (C.size() > 0) {
-		C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
+		C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
 	      }
 	      if (C.size() > 1) {
-		C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
+		C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
 	      }
 
 	      // do we run the reversed input?
@@ -1647,10 +1648,10 @@ namespace Belos {
 		S_outs.push_back( Scopy );
 		// we are in a special case: P_X1 and P_X2, so we know we applied 
 		// two projectors, and therefore have two C[i]
-		C_outs.push_back( Array<RCP<serial_matrix_type > >() );
+		C_outs.push_back( Array<RCP<mat_type > >() );
 		// reverse the Cs to compensate for the reverse projectors
-		C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
-		C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
+		C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
+		C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
 		// flip the inputs back
 		theX = tuple( theX[1], theX[0] );
 	      }
