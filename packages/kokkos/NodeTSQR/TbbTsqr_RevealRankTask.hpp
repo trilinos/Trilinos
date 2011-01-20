@@ -88,11 +88,11 @@ namespace TSQR {
 				  contiguous_cache_blocks_);
 
 	    RevealRankTask& topTask = *new( c.allocate_child() )
-	      RevealRankTask (P_first_, P_mid, out_split.first, seq_, 
-			      contiguous_cache_blocks_);
+	      RevealRankTask (P_first_, P_mid, out_split.first, U_, 
+			      seq_, contiguous_cache_blocks_);
 	    RevealRankTask& botTask = *new( c.allocate_child() )
-	      RevealRankTask (P_mid+1, P_last_, out_split.second, seq_,
-			      contiguous_cache_blocks_);
+	      RevealRankTask (P_mid+1, P_last_, out_split.second, U_,
+			      seq_, contiguous_cache_blocks_);
 	    // Set reference count of parent (in this case, the
 	    // continuation task) to 2 (since 2 children -- no
 	    // additional task since no waiting).
