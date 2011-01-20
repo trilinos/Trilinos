@@ -1,6 +1,7 @@
 # .bash_profile
-echo bash_profile: path is $PATH
-echo bash_profile: git is `which git`
+# echo bash_profile: path is $PATH
+# echo bash_profile: git is `which git`
+PATH=${PATH}:/usr/local/git/bin; export PATH
 
 # Get the aliases and functions
 if [ -f ~/.bashrc ]; then
