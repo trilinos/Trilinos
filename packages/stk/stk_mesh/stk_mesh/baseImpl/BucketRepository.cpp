@@ -242,10 +242,8 @@ BucketRepository::declare_nil_bucket()
     new_key[0] = 1 ; // part_count + 1
     new_key[1] = 0 ; // family_count
 
-    const unsigned bad_entity_rank = ~0u ;
-
     Bucket * bucket =
-      new( alloc_ptr ) Bucket( m_mesh , bad_entity_rank , new_key ,
+      new( alloc_ptr ) Bucket( m_mesh , InvalidEntityRank , new_key ,
                               alloc_size , 0 , field_map , NULL );
 
     bucket->m_bucketImpl.set_bucket_family_pointer( bucket );
