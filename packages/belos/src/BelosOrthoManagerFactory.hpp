@@ -49,6 +49,7 @@
 #include <BelosICGSOrthoManager.hpp>
 #include <BelosIMGSOrthoManager.hpp>
 #include <BelosDGKSOrthoManager.hpp>
+#include <BelosSimpleOrthoManager.hpp>
 
 #include <Teuchos_StandardCatchMacros.hpp>
 
@@ -75,9 +76,9 @@ namespace Belos {
     /// subclass to test.  (Must be at least one.)
     static int numOrthoManagers () {
 #ifdef HAVE_BELOS_TSQR
-      return 4; 
+      return 5; 
 #else
-      return 3;
+      return 4;
 #endif // HAVE_BELOS_TSQR
     }
 
@@ -102,6 +103,7 @@ namespace Belos {
       theList_[index++] = "ICGS";
       theList_[index++] = "IMGS";
       theList_[index++] = "DGKS";
+      theList_[index++] = "Simple";
     }
 
     /// Valid names of (Mat)OrthoManagers.  Useful as a list of valid
@@ -179,6 +181,9 @@ namespace Belos {
       else if (name == "IMGS") {
 	return getDefaultImgsParameters<Scalar>();
       }
+      else if (name == "Simple") {
+	return SimpleOrthoManager<Scalar, MV>::getDefaultParameters();
+      }
       else {
 	TEST_FOR_EXCEPTION(true, std::invalid_argument, 
 			   "Invalid orthogonalization manager name \"" << name 
@@ -224,6 +229,9 @@ namespace Belos {
       else if (name == "IMGS") {
 	return getFastImgsParameters<Scalar>();
       }
+      else if (name == "Simple") {
+	return SimpleOrthoManager<Scalar, MV>::getFastParameters();
+      }
       else {
 	TEST_FOR_EXCEPTION(true, std::invalid_argument, 
 			   "Invalid orthogonalization manager name \"" << name 
@@ -266,8 +274,13 @@ namespace Belos {
       using Belos::ICGSOrthoManager;
       using Belos::IMGSOrthoManager;
       using Belos::DGKSOrthoManager;
+      using Belos::SimpleOrthoManager;
       using Teuchos::rcp;
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+      TEST_FOR_EXCEPTION(ortho == "Simple", std::logic_error,
+			 "SimpleOrthoManager does not yet support the "
+			 "MatOrthoManager interface");
 
       if (ortho == "DGKS") {
 	int maxNumOrthogPasses;
@@ -341,10 +354,16 @@ namespace Belos {
       // a MatOrthoManager is-an OrthoManager, so returning a
       // TsqrMatOrthoManager would still be correct; this is just an
       // optimization.
-      if (label == "TSQR" && M.is_null())
+      if (ortho == "TSQR" && M.is_null())
 	return rcp (new TsqrOrthoManager<Scalar, MV> (params, label));
 #endif // HAVE_BELOS_TSQR
 
+      if (ortho == "Simple")
+	{
+	  TEST_FOR_EXCEPTION(! M.is_null(), std::logic_error,
+			     "SimpleOrthoManager not yet supported for M != null");
+	  return rcp (new SimpleOrthoManager<Scalar, MV> (label, params);
+	}
       // A MatOrthoManager is-an OrthoManager.
       return makeMatOrthoManager (ortho, M, label, params);
     }
