@@ -122,7 +122,7 @@ void apply_rotation (std::vector<double> &coor)
     coor[0] = temp[0] ;
   }
   else {
-    assert(0);
+    ThrowRequire(false); // Should never make it here
   }
   return;
 }

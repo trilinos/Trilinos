@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
-#include <cassert>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
