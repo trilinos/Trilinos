@@ -138,6 +138,15 @@ IF(Stokhos_ENABLE_TriKota)
 
 	PACKAGE_ADD_TEST(
 	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
+	  NAME "Linear2D_Diffusion_CG_AGS"
+	  ARGS "--outer_krylov_method=CG --sg_prec_method=Approx-Gauss-Seidel --num_spatial_procs=1"
+	  COMM serial mpi
+	  NUM_MPI_PROCS 2
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
+        )
+
+	PACKAGE_ADD_TEST(
+	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
 	  NAME "Linear2D_Diffusion_GMRES_GS"
 	  ARGS "--sg_prec_method=Gauss-Seidel --num_spatial_procs=1"
 	  COMM serial mpi

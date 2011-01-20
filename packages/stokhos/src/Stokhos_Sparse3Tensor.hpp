@@ -278,7 +278,7 @@ namespace Stokhos {
    * Return index of a Sparse3Tensor iterator (e.g., i for a given kji_iterator)
    */
   template <typename index_iterator, typename value_iterator>
-  typename std::iterator_traits< SparseArrayIterator<index_iterator, value_iterator> >::value_type
+  typename SparseArrayIterator<index_iterator, value_iterator>::value_type
   index(const SparseArrayIterator<index_iterator, value_iterator>& it) {
     return *it;
   }
@@ -287,8 +287,9 @@ namespace Stokhos {
    * Return index of a Sparse3Tensor reverse iterator
    */
   template <typename index_iterator, typename value_iterator>
-  typename std::iterator_traits< std::reverse_iterator< SparseArrayIterator<index_iterator, value_iterator> > >::value_type
-  index(const std::reverse_iterator< SparseArrayIterator<index_iterator, value_iterator> >& it) {
+  typename SparseArrayReverseIterator<index_iterator, value_iterator>::value_type
+  index(const SparseArrayReverseIterator<index_iterator, value_iterator>& it)
+  {
     return *it;
   }
 
