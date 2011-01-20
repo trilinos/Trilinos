@@ -325,6 +325,7 @@ namespace {
 int 
 main (int argc, char *argv[]) 
 {
+  using Belos::OutputManager;
   using Teuchos::CommandLineProcessor;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -430,7 +431,7 @@ main (int argc, char *argv[])
   // FIXME In Anasazi, this class is called BasicOutputManager.  In
   // Belos, this class is called OutputManager.  The difference is
   // annoying and should be factored out.
-  RCP< Belos::OutputManager< scalar_type > > MyOM (new Belos::OutputManager< scalar_type > (selectVerbosity (verbose, debug)));
+  RCP<OutputManager<scalar_type> > MyOM (new OutputManager<scalar_type> (selectVerbosity (verbose, debug)));
 
   // Stream for debug output.  If debug output is not enabled, then
   // this stream doesn't print anything sent to it (it's a "black
@@ -490,20 +491,34 @@ main (int argc, char *argv[])
   // OrthoManager subclass.
 
   std::string timingLabel ("Belos");
+  // Flush before computation, to ensure the message gets out
+  // before any possible errors.
+  debugOut << "Asking factory to create the OrthoManager subclass..." 
+	   << std::flush; 
   RCP< Belos::OrthoManager< scalar_type, MV > > OM = 
     factory.makeOrthoManager (ortho, M, timingLabel, Teuchos::null);
+  TEST_FOR_EXCEPTION(OM.is_null(), std::logic_error, 
+		     "The OrthoManager factory returned null, "
+		     "for ortho=\"" << ortho << "\".");
+  debugOut << "done." << endl;
 
   // Whether the specific OrthoManager subclass promises to compute
   // rank-revealing orthogonalizations.  If yes, then test it on
   // rank-deficient multivectors, otherwise only test it on full-rank
   // multivectors.
   const bool isRankRevealing = factory.isRankRevealing (ortho);
+  if (isRankRevealing)
+    debugOut << "OrthoManager \"" << ortho << "\" claims to be "
+      "rank revealing." << endl;
+  else
+    debugOut << "OrthoManager \"" << ortho << "\" does not claim "
+      "to be rank revealing." << endl;
 
   // "Prototype" multivector.  The test code will use this (via
-  // Belos::MultiVecTraits) to clone other multivectors as
-  // necessary.  (This means the test code doesn't need the Map, and
-  // it also makes the test code independent of the idea of a Map.)
-  RCP< MV > S = rcp (new MV (*map, sizeS));
+  // Belos::MultiVecTraits) to clone other multivectors as necessary.
+  // (This means the test code doesn't need the Map, and it also makes
+  // the test code independent of the idea of a Map.)
+  RCP<MV> S = rcp (new MV (*map, sizeS));
 
   // Test the OrthoManager subclass.  Return the number of tests
   // that failed.  None of the tests should fail (this function
@@ -511,20 +526,23 @@ main (int argc, char *argv[])
   int numFailed = 0;
   {
     typedef Belos::Test::OrthoManagerTester< scalar_type, MV > tester_type;
+    debugOut << "Running OrthoManager tests..." << endl;
     numFailed = tester_type::runTests (OM, isRankRevealing, S, 
 				       sizeX1, sizeX2, MyOM);
+    debugOut << "...done running OrthoManager tests." << endl;
   }
 
   // Only Rank 0 gets to write to cout.  The other processes dump
   // output to a black hole.
   //std::ostream& finalOut = (pComm->MyPID() == 0) ? std::cout : Teuchos::oblackholestream;
 
-  if (numFailed != 0)
+  if (numFailed != 0) // Oops, at least one test didn't pass
     {
       MyOM->stream(Belos::Errors) << numFailed << " errors." << endl;
-
       // The Trilinos test framework depends on seeing this message,
-      // so don't rely on the OutputManager to report it correctly.
+      // so don't rely on the OutputManager to report it correctly,
+      // since the verbosity setting of the OutputManager may cause it
+      // not to print something.
       if (pComm->MyPID() == 0)
 	{
 	  std::cout << "Total number of errors: " << numFailed << endl;
@@ -532,8 +550,10 @@ main (int argc, char *argv[])
 	}
       return EXIT_FAILURE;
     }
-  else 
+  else // All the tests passed, yay!
     {
+      // The Trilinos test framework depends on seeing this message to
+      // know that the test passed.
       if (pComm->MyPID() == 0)
 	std::cout << "End Result: TEST PASSED" << endl;
       return EXIT_SUCCESS;

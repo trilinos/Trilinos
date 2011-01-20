@@ -342,9 +342,11 @@ namespace stk
                                    const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates, double time_value_optional) 
     {
       EXCEPTWATCH;
+#ifndef NDEBUG
       int num_elements_in_bucket   = bucket.size();
       VERIFY_OP(input_phy_points.dimension(0), ==, num_elements_in_bucket, "FieldFunction::operator() mismatch in input_phy_points and num_elements_in_bucket");
       VERIFY_OP(output_field_values.dimension(0), ==, num_elements_in_bucket, "FieldFunction::operator() mismatch in input_phy_points and num_elements_in_bucket");
+#endif
       helper(input_phy_points, output_field_values, bucket, parametric_coordinates, time_value_optional);
     }
 

@@ -102,6 +102,7 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   SPARSKIT        ""    SS
   QT              ""    SS
   gtest           ""    EX
+  BoostLib        ""    SS
   )
 
 # NOTES:

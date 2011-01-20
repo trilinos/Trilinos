@@ -21,31 +21,72 @@
 
 #include <stk_rebalance/Partition.hpp>
 
-/*---------------------------------------------------------------*/
-//: Rebalance class is intended to provide an application
-//: interface, API, for Engineering Science application codes to
-//: permit dynamic load balancing (e.g., using Zoltan). The class
-//: has no constructors, and only contains a handful of static
-//: method functions.
-/*---------------------------------------------------------------*/
+/** @file Rebalance.h
+ *
+ * \brief Static functions for dynamic load balancing.
+ *
+ *  The rebalance namespace is intended to provide an application
+ *  the top level functions to perform a mesh redistribution.
+ *  The action is controlled by instances of the Partition 
+ *  class that is passed into the rebalance function.
+ */
 
 namespace stk {
 namespace rebalance {
 
-/** Determine if rebalancing is needed.
+/** \brief Determine if rebalancing is needed.
+ *
+ * \param bulk_data      BulkData must be in a parallel consistent state.
+ *
+ * \param load_measure   Field defined on mesh objects of rank \a rank. 
+ *                       Can be a NULL pointer.
+ *
+ * \param imbalance_threshold  Rebalance needed if MAX divided by average load
+ *                             measure exceeds this value.
+ *
+ * \param rank                 Rank of mesh entities to define load measure.
+ *
+ * \param selector             Used to select a subset of mesh objects to compute measure.
+ *
+ * This function calculates the total weight of the load on each processor by summing
+ * the \a load_measure field over the \a selector objects of rank \a rank.  If \a selector is not
+ * specified, all ejects of rank are summed.  If \a load_balance is not specified, it is 
+ * assumed to be 1 for each object and the weight per processor is just the number
+ * of objects on each processor.  After a processor weight is defined the MAX over the
+ * processing grid is divided by the average to get a global imbalance which is
+ * compared to \a imbalance_threshold.  True is returned if the global imbalance is
+ * greater than \a imbalance_threshold.
  */
 
-// comm can also be obtained from Bulk data (as parallel_machine).
-bool rebalance_needed(mesh::BulkData &    bulk_data,
+bool rebalance_needed(mesh::BulkData            & bulk_data,
                       const mesh::Field<double> * load_measure,
-                      ParallelMachine    comm,
-                      double & imbalance_threshold,
+                      double                    & imbalance_threshold,
                       const stk::mesh::EntityRank rank = stk::mesh::InvalidEntityRank,
-                      const mesh::Selector *selector=NULL);
+                      const mesh::Selector      * selector=NULL);
 
-/** Rebalance with a Partition object.
- * This rebalance function will use the Partition object passed
- * to perform the rebalancing.
+/** \brief Rebalance with a Partition object.
+ *
+ * \param bulk_data      BulkData must be in a parallel consistent state.
+ *
+ * \param selector       Used to select a subset of mesh objects to compute measure.
+ *
+ * \param coord_ref      The field containing the nodal coordinates. For the default
+ *                       ZoltanPartition class in stk::reblance, this should be non-NULL.
+ *
+ * \param elem_weight_ref This field will be used by the \a Partition class and is the  
+ *                        same as that used by the \a rebalance_needed function.
+ *                        can be NULL.
+ *
+ * \param Partition       The base class of a derived class that is used to 
+ *                        determine the new partition.  See the \a ZoltanPartition
+ *                        class for an example.
+ *
+ * \param rank            Rank of the entities \a elem_weight_ref is defined on.
+ *
+ * This \a rebalance function will use the \a Partition object passed
+ * to perform the rebalancing.  It will be necessary to use one of the 
+ * pre-defined derived classes in stk::rebalance, like \a ZoltanPartition,
+ * or to define your own.
  */
 bool rebalance(mesh::BulkData & bulk_data ,
                const mesh::Selector & selector ,

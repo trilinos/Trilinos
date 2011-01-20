@@ -466,7 +466,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     // Allocate memory for scalars.
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> beta( beta1_ );
-    phibar_ = beta1_(0,0);
+    phibar_ = Teuchos::ScalarTraits<ScalarType>::magnitude( beta1_(0,0) );
     ScalarType shift = zero; // TODO Allow for proper shift.
 
     // Initialize a few variables.
@@ -574,7 +574,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       this->symOrtho(gbar, beta(0,0), &cs, &sn, &gamma);
 
       phi    = cs * phibar_; // phi_k
-      phibar_ = sn * phibar_; // phibar_{k+1}
+      phibar_ = Teuchos::ScalarTraits<ScalarType>::magnitude( sn * phibar_ ); // phibar_{k+1}
 
       //  w1 = w2;
       //  w2 = w;
@@ -608,34 +608,35 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
                                              )
   {
     const ScalarType one = SCT::one();
-    const MagnitudeType zero = SMT::zero();
+    const ScalarType zero = SCT::zero();
+    const MagnitudeType m_zero = SMT::zero();
     const MagnitudeType absA = SCT::magnitude( a );
     const MagnitudeType absB = SCT::magnitude( b );
-    if ( absB == zero ) {
+    if ( absB == m_zero ) {
         *s = zero;
         *r = absA;
-        if ( absA == zero )
+        if ( absA == m_zero )
             *c = one;
         else
             *c = a / absA;
-    } else if ( absA == zero ) {
+    } else if ( absA == m_zero ) {
         *c = zero;
         *s = b / absB;
         *r = absB;
     } else if ( absB >= absA ) { // && a!=0 && b!=0
         ScalarType tau = a / b;
-        if ( b < zero )
-            *s = -one / SCT::squareroot( 1+tau*tau );
+        if ( Teuchos::ScalarTraits<ScalarType>::real(b) < m_zero )
+            *s = -one / SCT::squareroot( one+tau*tau );
         else
-            *s =  one / SCT::squareroot( 1+tau*tau );
+            *s =  one / SCT::squareroot( one+tau*tau );
         *c = *s * tau;
         *r = b / *s;
     } else { // (absA > absB) && a!=0 && b!=0
         ScalarType tau = b / a;
-        if ( a < zero )
-            *c = -one / SCT::squareroot( 1+tau*tau );
+        if ( Teuchos::ScalarTraits<ScalarType>::real(a) < m_zero )
+            *c = -one / SCT::squareroot( one+tau*tau );
         else
-            *c =  one / SCT::squareroot( 1+tau*tau );
+            *c =  one / SCT::squareroot( one+tau*tau );
         *s = *c * tau;
         *r = a / *c;
     }

@@ -41,6 +41,8 @@
 #include <stk_percept/function/ElementOp.hpp>
 #include <stk_percept/function/BucketOp.hpp>
 
+#include <stk_percept/SameRankRelation.hpp>
+
 //using namespace Intrepid;
 
 using namespace shards;
@@ -55,6 +57,7 @@ namespace stk {
 
     typedef mesh::Field<double>                          ScalarFieldType ;
     typedef mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
+
 
     using namespace interface_table;
 
@@ -222,9 +225,11 @@ namespace stk {
       static void 
       element_side_nodes( const Entity & elem , int local_side_id, EntityRank side_entity_rank, std::vector<Entity *>& side_node_entities );
 
-      static int 
-      element_side_permutation(const Entity& element, const Entity& side, unsigned iSubDimOrd);
+      static void
+      element_side_permutation(const Entity& element, const Entity& side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity);
 
+      // FIXME
+      SameRankRelation& adapt_parent_to_child_relations() { return m_adapt_parent_to_child_relations; }
 
     private:
       /// reads meta data, commits it, reads bulk data
@@ -274,8 +279,10 @@ namespace stk {
       //VectorFieldType                      m_coordinates_field;
       //static std::map<unsigned, BasisType *> m_basisTable;
 
+
       static BasisTableMap m_basisTable;
 
+      SameRankRelation m_adapt_parent_to_child_relations;
 
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
       void checkState(const std::string& function)

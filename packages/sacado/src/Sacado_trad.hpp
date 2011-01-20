@@ -38,6 +38,10 @@
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_trad_Traits.hpp"
 
+#if defined(RAD_DEBUG_BLOCKKEEP) && !defined(HAVE_SACADO_UNINIT)
+#undef RAD_DEBUG_BLOCKKEEP
+#endif
+
 #ifndef RAD_REINIT
 #define RAD_REINIT 0
 #endif //RAD_REINIT

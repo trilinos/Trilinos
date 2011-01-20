@@ -5,9 +5,12 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
-#define FACE_BREAKER_HETERO_3D 0
+#include <Shards_CellTopologyData.h>
+
+#define FACE_BREAKER_HETERO_3D 1
 #if FACE_BREAKER_HETERO_3D
-#include "UniformRefinerPattern_Quad9_Quad9_4_sierra.hpp"
+#include "UniformRefinerPattern_Quad4_Quad4_4_sierra.hpp"
+#include "UniformRefinerPattern_Tri3_Tri3_4_sierra.hpp"
 #endif
 
 namespace stk {
@@ -19,7 +22,7 @@ namespace stk {
       std::vector<UniformRefinerPatternBase *> m_bp;
 
 #if FACE_BREAKER_HETERO_3D
-      UniformRefinerPattern<shards::Quadrilateral<9>, shards::Quadrilateral<9>, 4, SierraPort > * m_face_breaker;
+      UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > * m_face_breaker;
 #endif
 
     protected:
@@ -35,14 +38,19 @@ namespace stk {
         //!setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
 
-        m_bp.resize(3);
-        m_bp[0] = new UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,    8, SierraPort > (eMesh, block_names);
-        m_bp[1] = new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort > (eMesh, block_names);
-        m_bp[2] = new UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort > (eMesh, block_names);
+        // list all types of known break patterns to be used here
+        m_bp.resize(0);
+        m_bp.push_back(  new UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,    8, SierraPort > (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort > (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort > (eMesh, block_names) );
+
+        m_bp.push_back(  new UniformRefinerPattern<shards::ShellQuadrilateral<4>,  shards::ShellQuadrilateral<4>,   4, SierraPort > (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::ShellTriangle<3>,       shards::ShellTriangle<3>,   4, SierraPort > (eMesh, block_names) );
 
 #if FACE_BREAKER_HETERO_3D
         
-        m_face_breaker =  new UniformRefinerPattern<shards::Quadrilateral<9>, shards::Quadrilateral<9>, 4, SierraPort > (eMesh, block_names);
+        m_bp.push_back(  new UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::Triangle<3>, shards::Triangle<3>, 4, SierraPort > (eMesh, block_names) );
 
 #endif
 
@@ -51,6 +59,11 @@ namespace stk {
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
       {
         EXCEPTWATCH;
+
+        //bp.resize( m_bp.size() );
+        bp = m_bp;
+
+#if 0
 #if FACE_BREAKER_HETERO_3D
         bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
 #else
@@ -64,6 +77,8 @@ namespace stk {
 #if FACE_BREAKER_HETERO_3D
         bp[1] = m_face_breaker;
 #endif
+#endif
+
       }
 
       virtual void doBreak() 
@@ -76,6 +91,12 @@ namespace stk {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_3D::getFromTypeKey()");
 
       }
+
+      virtual const CellTopologyData * const getFromTopology()
+      {
+        throw std::runtime_error("shouldn't call URP_Heterogeneous_3D::getFromTopology()");
+      }
+
 
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {

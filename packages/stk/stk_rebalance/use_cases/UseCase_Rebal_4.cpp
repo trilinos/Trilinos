@@ -296,7 +296,7 @@ std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should b
    
   // Force a rebalance by using imbalance_threshold < 1.0
   double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
+  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold);
   // Coordinates are passed to support geometric-based load balancing algorithms
   if( do_rebal ) { 
     // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
@@ -305,10 +305,28 @@ std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should b
     stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
     stk::mesh::Selector selector(meta_data.locally_owned_part());
     stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition);
+    {
+      const int  print_stats = 1;
+      int        nobj        = 0;
+      double     obj_wgt     = 0;
+      int        ncuts       = 0;
+      double     cut_wgt     = 0;
+      int        nboundary   = 0;
+      int        nadj        = 0;
+      const int ierr = zoltan_partition.evaluate (print_stats, &nobj, &obj_wgt, &ncuts, &cut_wgt, &nboundary, &nadj);
+      std::cout <<" Information returned from the Zoltan evaluate function:"<<std::endl;
+      std::cout <<" Error Code:             :"<<ierr      <<std::endl;
+      std::cout <<" Number of objects:      :"<<nobj      <<std::endl;
+      std::cout <<" Number of objects:      :"<<nobj      <<std::endl;
+      std::cout <<" Number of cuts:         :"<<ncuts     <<std::endl;
+      std::cout <<" Cut Weight:             :"<<cut_wgt   <<std::endl;
+      std::cout <<" Number on Boundary:     :"<<nboundary <<std::endl;
+      std::cout <<" Number Adjancent:       :"<<nadj      <<std::endl;
+    }
   }
 
   imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
+  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold);
 
   if( !p_rank )
     std::cerr << std::endl 
@@ -321,7 +339,7 @@ std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should b
   }
 
   imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
+  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold);
 
   if( !p_rank )
     std::cerr << std::endl 
@@ -329,6 +347,7 @@ std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should b
 
   // Check that we satisfy our threshhold
   const bool result = !do_rebal ;
+
 
   return result;
 }

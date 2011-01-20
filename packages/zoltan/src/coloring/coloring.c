@@ -562,7 +562,7 @@ static int D1coloring(
     /* Memory allocation */
     isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
     visit = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
-    if (!isbound || !visit)
+    if (nvtx && (!isbound || !visit))
 	MEMORY_ERROR;
 
     /* Start timer */
@@ -583,12 +583,12 @@ static int D1coloring(
 	printf("\n");
     }
 #endif
-
+    
     ierr = ReorderGraph(zz, coloring_problem, nvtx, xadj, &xbadj, adj, adjproc, &nbound, isbound, visit, NULL, &nintvisit, &nboundvisit);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
 	ZOLTAN_COLOR_ERROR(ierr, "Error in ReorderGraph");
     if (get_times) times[1] = Zoltan_Time(zz->Timer);
-
+    
 #if 0
     printf("After reordering: nvtx:%d lastlno=%d Proc:%d\n", nvtx, lastlno, zz->Proc);
     for (i=0; i < nvtx; i++) {
@@ -612,7 +612,7 @@ static int D1coloring(
 
     /* Memory allocation */
     mark = (int *) ZOLTAN_CALLOC(gmaxdeg, sizeof(int));
-    conflicts = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
+    conflicts = (int *) ZOLTAN_MALLOC((1+nvtx) * sizeof(int));
     replies = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     stats = (MPI_Status *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Status));
     rreqs = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Request));
@@ -639,7 +639,7 @@ static int D1coloring(
     /* All processors generate the same random number corresponding
        to the same global vertex number */
     rand_key = (int *) ZOLTAN_MALLOC(sizeof(int) * lastlno);
-    if (!rand_key)
+    if (lastlno && !rand_key)
 	MEMORY_ERROR;
     for (i=0; i<lastlno; i++) {
 

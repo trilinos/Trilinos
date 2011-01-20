@@ -211,6 +211,7 @@ namespace stk {
               }
 
             change_entity_parts(eMesh, element, newElement);
+            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             {
               if (!elems[ielem].get<0>())

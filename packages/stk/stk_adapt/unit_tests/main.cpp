@@ -55,15 +55,14 @@ int utest_main(int argc, char **argv) {
   //boost::program_options::variables_map &vm = stk::get_variables_map();  
 
   std::cout << "Running main() from gtest_main.cc" << std::endl;
-  bool result = true;
+  int exitcode = 0;
 
 #ifndef REDS
   testing::InitGoogleTest(&argc, argv);  
-  //  bool result = 0;
   try {
     //TEST_geom_volume(run_environment.m_comm);
     
-    result = RUN_ALL_TESTS(); 
+    exitcode = RUN_ALL_TESTS(); 
   }
   catch ( const std::exception * X ) {
     std::cout << "  unexpected exception POINTER: " << X->what() << std::endl;
@@ -84,7 +83,12 @@ int utest_main(int argc, char **argv) {
   MPI_Finalize(); 
 #endif
 
-  return result;
+  if (exitcode == 0) {
+    std::cout << "End Result: TEST PASSED" << std::endl;
+  } else {
+    std::cout << "End Result: TEST FAILED" << std::endl;
+  }
+  return exitcode;
 }
 
     }

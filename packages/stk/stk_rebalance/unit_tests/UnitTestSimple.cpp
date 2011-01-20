@@ -260,7 +260,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
   partition.set_balance_step(MockPartition::FIRST);
   // Exercise the threshhold calculation by using imblance_threshhold > 1.0
   double imblance_threshhold = 1.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, comm, imblance_threshhold);
+  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, imblance_threshhold);
   if( do_rebal )
   {
     // Pick a few values as negative to exercise a check in rebalance::rebalance(...)
@@ -281,14 +281,14 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
   partition.set_balance_step(MockPartition::SECOND);
   // Force a rebalance by using imblance_threshhold < 1.0
   imblance_threshhold = 0.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, comm, imblance_threshhold);
+  do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, imblance_threshhold);
   if( do_rebal )
     stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
 
   partition.set_balance_step(MockPartition::THIRD);
   // Force a rebalance by using imblance_threshhold < 1.0
   imblance_threshhold = 0.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, comm, imblance_threshhold);
+  do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, imblance_threshhold);
   if( do_rebal )
     stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
 

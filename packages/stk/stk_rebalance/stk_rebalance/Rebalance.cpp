@@ -164,15 +164,15 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
 
 // ------------------------------------------------------------------------------
 
-bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
+bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data, 
                                       const mesh::Field<double> * load_measure,
-                                      ParallelMachine    comm,
 				      double & imbalance_threshold,
                                       const stk::mesh::EntityRank rank,
                                       const mesh::Selector *selector)
 {
   if ( (imbalance_threshold < 1.0) ) return true;
 
+  const ParallelMachine    &comm = bulk_data.parallel();
   double my_load = 0.0;
 
   const mesh::MetaData & meta_data = bulk_data.mesh_meta_data();

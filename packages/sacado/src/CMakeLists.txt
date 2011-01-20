@@ -145,9 +145,13 @@ SET(HEADERS ${HEADERS}
 SET(SOURCES ${SOURCES}
   Sacado_radops.cpp
   Sacado_radops2.cpp
-  uninit.c
   RAD_Const_Warn.c
   )
+IF(Sacado_ENABLE_UNINIT)
+  SET(SOURCES ${SOURCES}
+    uninit.c
+  )
+ENDIF()
 
 # UTILS
 SET(HEADERS ${HEADERS}

@@ -19,6 +19,7 @@ namespace stk {
   namespace adapt {
 
 
+
     using namespace std;
     using namespace mesh;
     using namespace percept;
@@ -100,7 +101,7 @@ namespace stk {
     }
 
     void UniformRefiner::
-    addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern)
+    addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType)
     {
       EXCEPTWATCH;
       m_eMesh.getBulkData()->modification_begin();
@@ -124,6 +125,9 @@ namespace stk {
           if (on_locally_owned_part(**k)) 
             {
               Bucket & bucket = **k ;
+              const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+              shards::CellTopology topo(bucket_cell_topo_data);
+
               const unsigned num_elements_in_bucket = bucket.size();
 
               for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
@@ -136,7 +140,16 @@ namespace stk {
                       throw std::runtime_error("element = 0");
                       //exit(1);
                     }
-                  elems.push_back(&element);
+
+                  
+                  if (elementType && (topo.getKey() != *elementType))
+                    {
+                    }
+                  else
+                    {
+                      elems.push_back(&element);
+                      //std::cout << "tmp adding to oldParts = " << element << std::endl;
+                    }
                 }
             }
         }
@@ -162,10 +175,10 @@ namespace stk {
         double cpu = Util::cpu_time();
         std::cout
           << msg
-                  << " mem= " << memory_in_Mb << " [Mb] "
+          << " mem= " << memory_in_Mb << " [Mb] "
           //<< " heap= " << heap_in_Mb << " [Mb] "
-                  << " cpu_time= " << cpu/(60.) << " [min] "
-                  <<std::endl;
+          << " cpu_time= " << cpu/(60.) << " [min] "
+          <<std::endl;
       }
 
     }
@@ -187,18 +200,18 @@ namespace stk {
 
       if (0)
         {
-        std::cout 
-          << "sizeof(myVec) = " << sizeof(myVec) << " "
-          << "sizeof(Relation) = " << sizeof(stk::mesh::Relation) << " "
-          << "sizeof(Entity) = " << sizeof(stk::mesh::Entity) << " "
-          << "sizeof(EntityImpl) = " << sizeof(stk::mesh::impl::EntityImpl) << " "
-          << "\nsizeof(EntityKey) = " << sizeof(stk::mesh::EntityKey) << " "
-          << "\nsizeof(RelationVector) = " << sizeof(stk::mesh::RelationVector) << " "
-          << "\nsizeof(EntityCommInfoVector) = " << sizeof(stk::mesh::EntityCommInfoVector) << " "
-          << "\nsizeof(Bucket *) = " << sizeof(stk::mesh::Bucket *) << " "
-          << "\nsizeof(unsigned) = " << sizeof(unsigned) << " "
-          << "\nsizeof(size_t) = " << sizeof(size_t) << " "
-          << "\nsizeof(EntityModificationLog) = " << sizeof(EntityModificationLog) << std::endl;
+          std::cout 
+            << "sizeof(myVec) = " << sizeof(myVec) << " "
+            << "sizeof(Relation) = " << sizeof(stk::mesh::Relation) << " "
+            << "sizeof(Entity) = " << sizeof(stk::mesh::Entity) << " "
+            << "sizeof(EntityImpl) = " << sizeof(stk::mesh::impl::EntityImpl) << " "
+            << "\nsizeof(EntityKey) = " << sizeof(stk::mesh::EntityKey) << " "
+            << "\nsizeof(RelationVector) = " << sizeof(stk::mesh::RelationVector) << " "
+            << "\nsizeof(EntityCommInfoVector) = " << sizeof(stk::mesh::EntityCommInfoVector) << " "
+            << "\nsizeof(Bucket *) = " << sizeof(stk::mesh::Bucket *) << " "
+            << "\nsizeof(unsigned) = " << sizeof(unsigned) << " "
+            << "\nsizeof(size_t) = " << sizeof(size_t) << " "
+            << "\nsizeof(EntityModificationLog) = " << sizeof(EntityModificationLog) << std::endl;
 
         }
 
@@ -240,7 +253,8 @@ namespace stk {
               ranks.push_back(irank);
               if (m_doRemove)
                 {
-                  addOldElementsToPart(irank, m_breakPattern[ibp]);
+                  unsigned elementType = m_breakPattern[ibp]->getFromTypeKey();
+                  addOldElementsToPart(irank, m_breakPattern[ibp], &elementType);
                 }
             }
           else
@@ -261,41 +275,33 @@ namespace stk {
 
       vector< vector< ColorerSetType > > elementColorsByType = vector < vector< ColorerSetType > > (ranks.size());
 
-      {
-          for (unsigned irank = 0; irank < ranks.size(); irank++)
-            {
-              if (ranks[irank] == ranks[0])
-                {
-                  EXCEPTWATCH;
-                  unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
-                  if (TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
-                                                   << " elementType= " << elementType << std::endl;
+      for (unsigned irank = 0; irank < ranks.size(); irank++)
+        {
+          //if (ranks[irank] == ranks[0])  //! color all elements of all types
+          {
+            EXCEPTWATCH;
+            unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
+            shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
 
-                  std::vector<EntityRank> ranks_one(1, ranks[irank]);
+            if ( TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
+                                             << " elementType= " << elementType << std::endl;
 
-                  // this gives a list of colored elements for this element type only
-                  Colorer meshColorerThisTypeOnly(ranks_one);
-                  /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)... ");
-                  //meshColorer.color(m_eMesh, elementType);
-                  meshColorerThisTypeOnly.color(m_eMesh, &elementType);
-                  /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)...done ");
+            std::vector<EntityRank> ranks_one(1, ranks[irank]);
 
-                  vector< ColorerSetType >& elementColors = meshColorerThisTypeOnly.getElementColors();
+            // this gives a list of colored elements for this element type only
+            Colorer meshColorerThisTypeOnly(elementColorsByType[irank], ranks_one);   TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)... ");
+            meshColorerThisTypeOnly.color(m_eMesh, &elementType);                     TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)...done ");
 
-                  if (1)
-                    {
-                      int nel = 0;
-                      for (unsigned ii = 0; ii < elementColors.size(); ii++)
-                        {
-                          nel += elementColors[ii].size();
-                        }
-                      std::cout << "tmp irank, number elements in this element type = " << irank << " " << nel << " elementType= " << elementType << std::endl;
-                    }
+            if (0 && elementColorsByType[irank].size() == 0)
+              {
+                std::cout << "WARNING: no elements found of this type: " << cell_topo.getName() << " key= " << elementType << std::endl;
+              }
 
-                  elementColorsByType[irank] = elementColors;  // avoid this copy by passing this into the colorer - FIXME
-                }
-            }
-      }
+          }
+
+        }
+
+      // FIXME warn if a topology shows up without a break pattern
 
       ///////////////////////////////////////////////////////////
       /////  // start top-level ranks
@@ -310,9 +316,11 @@ namespace stk {
 
         {  // node registration step
           EXCEPTWATCH;
-          m_nodeRegistry->initialize();
+          m_nodeRegistry->initialize();                           /**/  TRACE_PRINT("UniformRefiner: beginRegistration (top-level rank)... ");
 
-          /**/                                                TRACE_PRINT("UniformRefiner: beginRegistration (top-level rank)... ");
+#if NEW_FIX_ELEMENT_SIDES
+          m_eMesh.adapt_parent_to_child_relations().clear();
+#endif
 
           // register non-ghosted elements needs for new nodes, parallel create new nodes
           m_nodeRegistry->beginRegistration();
@@ -327,14 +335,12 @@ namespace stk {
 
                   vector<NeededEntityType> needed_entity_ranks;
                   m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
-
                   unsigned num_elem_not_ghost_0_incr = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks);
                   num_elem_not_ghost_0 += num_elem_not_ghost_0_incr;
                 }
             }
 
-          m_nodeRegistry->endRegistration();
-          /**/                                                TRACE_PRINT("UniformRefiner: endRegistration (top-level rank)... ");
+          m_nodeRegistry->endRegistration();                    /**/  TRACE_PRINT("UniformRefiner: endRegistration (top-level rank)... ");
         }
 
         ///////////////////////////////////////////////////////////
@@ -344,7 +350,7 @@ namespace stk {
         {   // beginCheckForRemote()
           EXCEPTWATCH;
 
-          /**/                                                TRACE_PRINT("UniformRefiner: beginCheckForRemote (top-level rank)... ");
+          /**/                                                        TRACE_PRINT("UniformRefiner: beginCheckForRemote (top-level rank)... ");
 
           // now register ghosted elements needs for new nodes (this does a pack operation)
           m_nodeRegistry->beginCheckForRemote();
@@ -363,8 +369,7 @@ namespace stk {
                   num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, needed_entity_ranks);
                 }
             }
-          m_nodeRegistry->endCheckForRemote();
-          /**/                                                TRACE_PRINT("UniformRefiner: endCheckForRemote (top-level rank)... ");
+          m_nodeRegistry->endCheckForRemote();                /**/   TRACE_PRINT("UniformRefiner: endCheckForRemote (top-level rank)... ");
 
           if (0)
             {
@@ -383,13 +388,14 @@ namespace stk {
         ///////////////////////////////////////////////////////////
         /////  Get from remote
         ///////////////////////////////////////////////////////////
+        /// communicate all-to-all the new node creation information which also updates the node registry so it can
+        /// be queried locally now for any ghost or non-ghost element
 
         { // get from remote
-          EXCEPTWATCH;
-          // communicate all-to-all the new node creation information which also updates the node registry so it can
-          // be queried locally now for any ghost or non-ghost element
 
-          /**/                                                TRACE_PRINT("UniformRefiner: beginGetFromRemote (top-level rank)... ");
+          EXCEPTWATCH;
+
+          /**/                                                        TRACE_PRINT("UniformRefiner: beginGetFromRemote (top-level rank)... ");
           m_nodeRegistry->beginGetFromRemote();
           unsigned num_elem = 0;
           for (unsigned irank = 0; irank < ranks.size(); irank++)
@@ -407,9 +413,7 @@ namespace stk {
                 }
             }
 
-          m_nodeRegistry->endGetFromRemote();
-          /**/                                                TRACE_PRINT("UniformRefiner: endGetFromRemote (top-level rank)... ");
-
+          m_nodeRegistry->endGetFromRemote();                    /**/  TRACE_PRINT("UniformRefiner: endGetFromRemote (top-level rank)... ");
 
           //stk::diag::printTimersTable(std::cout, perceptTimer(), stk::diag::METRICS_ALL, false);
 
@@ -424,9 +428,8 @@ namespace stk {
               std::cout << "P["<< m_eMesh.getRank() 
                         <<"] ========================================================================================================================" << std::endl;
             }
-        }
-
-      }
+        }  // get from remote
+      } // start top-level ranks
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       // for each element type, in top-down rank order, do the rest of the refinement operations
@@ -435,37 +438,15 @@ namespace stk {
         {
           EXCEPTWATCH;
 
+
           unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
-          if (1 && TRACE_STAGE_PRINT) 
+          if (TRACE_STAGE_PRINT) 
             std::cout << "tmp UniformRefiner:: irank = " << irank 
                       << " ranks[irank] = " << ranks[irank] << " elementType= " << elementType << std::endl;
 
           std::vector<EntityRank> ranks_one(1, ranks[irank]);
 
-          // this gives a list of colored elements for this element type only
-          Colorer meshColorerThisTypeOnly(ranks_one);
-          /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (specific element type)... ");
-          meshColorerThisTypeOnly.color(m_eMesh, &elementType);
-          /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (specific element type)...done ");
-
-          vector< ColorerSetType >& elementColors = meshColorerThisTypeOnly.getElementColors();
-
-          if (1)
-            {
-              int nel = 0;
-              for (unsigned ii = 0; ii < elementColors.size(); ii++)
-                {
-                  nel += elementColors[ii].size();
-                  std::cout << "tmp nel[icolor= " << ii << "]= " << elementColors[ii].size() << std::endl;
-                  for (ColorerSetType::iterator it = elementColors[ii].begin(); it != elementColors[ii].end(); ++it)
-                    {
-                      EntityId elemId = *it;
-                      const Entity& element = * m_eMesh.getBulkData()->get_entity( ranks[irank], elemId);
-                      if (0)std::cout << "tmp ele= " << element << std::endl;
-                    }
-                }
-              std::cout << "tmp 0 number elements in this element type = " << nel << " elementType= " << elementType << std::endl;
-            }
+          vector< ColorerSetType >& elementColors = elementColorsByType[irank];
 
           // loop over elements, build faces, edges in threaded mode (guaranteed no mem conflicts)
           // (note: invoke UniformRefinerPattern: what entities are needed)
@@ -474,58 +455,33 @@ namespace stk {
 
           vector<Entity *> new_elements;
 
-          if (ranks[irank] == ranks[0])
-            {
-              EXCEPTWATCH;
+          bulkData.modification_begin(); 
 
-              bulkData.modification_begin(); // FIXME
+          {
+            EXCEPTWATCH;
 
-              // count num new elements needed on this proc (served by UniformRefinerPattern)
-              bool count_only = true;
-              /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... ");
-              unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks, count_only);
-              /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... done ");
+            // count num new elements needed on this proc (served by UniformRefinerPattern)
+            bool count_only = true;  
+            /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... ");
+            unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks, count_only);
+            /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... done ");
 
-              unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
+            unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
 
-              std::cout << "tmp num_elem_needed= " << num_elem_needed << " num_elem_not_ghost_0 = " 
-                        << num_elem_not_ghost_0 << " num_elem_not_ghost= " << num_elem_not_ghost << std::endl;
+            if (0 && num_elem_not_ghost != num_elem_not_ghost_0) 
+              {
+                std::cout << "num_elem_not_ghost_0 = " << num_elem_not_ghost_0 << " num_elem_not_ghost= " << num_elem_not_ghost << std::endl;
+                //exit(1);
+                throw std::runtime_error("num_elem_not_ghost_0 != num_elem_not_ghost");
+              }
 
-              if (0 && num_elem_not_ghost != num_elem_not_ghost_0) 
-                {
-                  std::cout << "num_elem_not_ghost_0 = " << num_elem_not_ghost_0 << " num_elem_not_ghost= " << num_elem_not_ghost << std::endl;
-                  //exit(1);
-                  throw std::runtime_error("num_elem_not_ghost_0 != num_elem_not_ghost");
-                }
+            // create new entities on this proc
+            m_nodeRegistry->beginLocalMeshMods();
+            new_elements.resize(0);                                                /**/ TRACE_PRINT("UniformRefiner: createEntities... ranks[irank]==ranks[0] ");
+            m_eMesh.createEntities( ranks[irank], num_elem_needed, new_elements); /**/ TRACE_PRINT("UniformRefiner: createEntities... ranks[irank]==ranks[0] done ");
+            m_nodeRegistry->endLocalMeshMods();
 
-              // create new entities on this proc
-              // first, create elements...
-              m_nodeRegistry->beginLocalMeshMods();
-              new_elements.resize(0);
-              /**/                                                TRACE_PRINT("UniformRefiner: createEntities... ranks[irank]==ranks[0] ");
-              m_eMesh.createEntities( mesh::Element, num_elem_needed, new_elements);
-              /**/                                                TRACE_PRINT("UniformRefiner: createEntities... ranks[irank]==ranks[0] done ");
-              m_nodeRegistry->endLocalMeshMods();
-
-              bulkData.modification_end();  // FIXME
-
-            } // ranks[irank] == ranks[0]
-
-          bulkData.modification_begin();
-
-          if (irank)
-            {
-              EXCEPTWATCH;
-              bool count_only = true;
-              /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode...(count_only(true)) (irank != 0)");
-              unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks, count_only);
-              /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode...(count_only(true)) (irank != 0) done ");
-
-              unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
-              /**/                                                TRACE_PRINT("UniformRefiner: createEntities... (irank != 0) ");
-              m_eMesh.createEntities(  ranks[irank], num_elem_needed, new_elements);
-              /**/                                                TRACE_PRINT("UniformRefiner: createEntities... (irank != 0) done ");
-            }
+          } 
 
           /**/                                                TRACE_PRINT("UniformRefiner: connectLocal... ");
           /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL);
@@ -535,8 +491,9 @@ namespace stk {
           /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL);
           /**/                                                TRACE_PRINT("UniformRefiner: connectLocal...done ");
 
-          // new way, see below
-          if (m_doRemove)
+          // this is for testing removing old elements as early as possible for memory reasons
+          // FIXME - remove old elements on the fly?
+          if (0 && m_doRemove)
             {
               EXCEPTWATCH;
 
@@ -549,13 +506,12 @@ namespace stk {
               /**/                                                TRACE_PRINT( "UniformRefiner: remove old elements...done " );
             }
 
-          if (!m_eMesh.getRank()) {
+          if (TRACE_STAGE_PRINT && !m_eMesh.getRank()) {
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL, "CONNECT_LOCAL");
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_createNewNeededNodes, "CONNECT_LOCAL_createNewNeededNodes");
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_createNewElements, "CONNECT_LOCAL_createNewElements");
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_URP_createOrGetNode, "CONNECT_LOCAL_URP_createOrGetNode");
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_URP_declare_relation, "CONNECT_LOCAL_URP_declare_relation");
-
           }
 
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start... ");
@@ -570,9 +526,25 @@ namespace stk {
           EXCEPTWATCH;
 
           bulkData.modification_begin();
+
+          /***********************/                           TRACE_PRINT("UniformRefiner: fixElementSides1 ");
+#if NEW_FIX_ELEMENT_SIDES
+          fixElementSides1();
+          m_eMesh.adapt_parent_to_child_relations().clear();
+#endif
+          /***********************/                           TRACE_PRINT("UniformRefiner: fixElementSides1...done ");
+
+          for (unsigned irank = 0; irank < ranks.size(); irank++)
+            {
+              removeOldElements(ranks[irank], m_breakPattern[irank]);
+              renameNewParts(ranks[irank], m_breakPattern[irank]);
+              fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
+            } 
  
           /**/                                                TRACE_PRINT("UniformRefiner: fixElementSides ");
+#if !NEW_FIX_ELEMENT_SIDES
           fixElementSides();
+#endif
           /**/                                                TRACE_PRINT("UniformRefiner: fixElementSides...done ");
 
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start ");
@@ -595,13 +567,20 @@ namespace stk {
       unsigned num_elem = 0;
       for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
         {
+          if (elementColors[icolor].size() == 0)
+            {
+              std::cout << "tmp doForAllElements elementColors size = 0!!!" << std::endl;
+              continue;
+            }
           // do in threaded mode FIXME
           for (ColorerSetType::iterator iele = elementColors[icolor].begin();
                iele !=  elementColors[icolor].end(); 
                iele++)
             {
               const EntityId& eid = *iele;
-              const Entity& element = * m_eMesh.getBulkData()->get_entity(/* mesh::Element */ rank, eid);
+              const Entity * element_p =  m_eMesh.getBulkData()->get_entity( rank, eid);
+
+              const Entity& element = * element_p;
 
               bool elementIsGhost = m_eMesh.isGhostElement(element);
               if (!elementIsGhost) 
@@ -617,9 +596,6 @@ namespace stk {
 
       return num_elem;
     }
-
-
-    //static NewSubEntityNodesType s_new_sub_entity_nodes(mesh::EntityRankEnd);
 
     void UniformRefiner::
     connectLocal(EntityRank rank, UniformRefinerPatternBase *breakPattern,
@@ -643,6 +619,7 @@ namespace stk {
           
           if (elementColors[icolor].size() == 0)
             {
+              std::cout << "tmp elementColors size = 0!!!" << std::endl;
               continue;
             }
 
@@ -776,6 +753,7 @@ namespace stk {
     }
 
 
+    /** @deprecated */
     void UniformRefiner::
     fixElementSides()
     {
@@ -794,9 +772,161 @@ namespace stk {
         }
     }
 
+    void UniformRefiner::
+    fixElementSides1()
+    {
+      EXCEPTWATCH;
+      if (getIgnoreSideSets()) return;
+
+      if (m_eMesh.getSpatialDim() == 3)
+        {
+          fixElementSides1(mesh::Face);
+          //checkFixElementSides(mesh::Face, mesh::Element);
+        }
+      // FIXME
+      else if (m_eMesh.getSpatialDim() == 2)
+        {
+          fixElementSides1(mesh::Edge);
+        }
+    }
+
+
     /** Sets orientations and associativity of elements to sub-dimensional faces/edges after refinement.
      */
 #define EXTRA_PRINT_UR_FES 0
+
+    // new version 011411 srk
+    /**
+     *                                                                               
+     *        _____                                                                       
+     *       |  |  |   |                                                                
+     *       |__|__|  _|_                                                               
+     *       |  |  |   |                                                                    
+     *       |__|__|   |                                                                    
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *                                                                               
+     *
+     */
+
+    void UniformRefiner::
+    fixElementSides1(EntityRank side_rank)
+    {
+
+      EXCEPTWATCH;
+
+      SameRankRelation& parent_child = m_eMesh.adapt_parent_to_child_relations();
+      SameRankRelation::iterator pc_it;
+      for (pc_it = parent_child.begin(); pc_it != parent_child.end(); pc_it++)
+        {
+          const SameRankRelationKey& parent = pc_it->first;
+          SameRankRelationValue& child_vector = pc_it->second;
+
+          shards::CellTopology parent_topo(stk::mesh::get_cell_topology(*parent));
+          //unsigned parent_nsides = (unsigned)parent_topo.getSideCount();
+
+          for (unsigned i_child = 0; i_child < child_vector.size(); i_child++)
+            {
+              Entity *child = child_vector[i_child];
+              //mesh::PairIterRelation child_sides = child->relations(side_rank);
+              if (!child)
+                {
+                  std::cout << "fixElementSides1: child == null, i_child= " << i_child << " nchild= " << child_vector.size() << std::endl;
+                  throw std::runtime_error("fixElementSides1: child == null");
+                }
+
+              shards::CellTopology child_topo(stk::mesh::get_cell_topology(*child));
+              unsigned child_nsides = (unsigned)child_topo.getSideCount();
+
+              // if parent has any side relations, check if any of the sides' children match the parent's children's faces
+              mesh::PairIterRelation parent_sides = parent->relations(side_rank);
+              mesh::PairIterRelation side_to_parent = parent->relations(mesh::Element);
+
+              //std::cout << "tmp here 1 child_nsides= " << child_nsides 
+              //          << " parent_sides.size()=" << parent_sides.size() <<  " side_to_parent.size() = " << side_to_parent.size() << std::endl;
+
+              for (unsigned i_parent_side = 0; i_parent_side < parent_sides.size(); i_parent_side++)
+                {
+                  Entity *parent_side = parent_sides[i_parent_side].entity();
+                  //unsigned local_parent_side_id = parent_sides[i_parent_side].identifier();
+
+                  SameRankRelationValue& parent_side_children = m_eMesh.adapt_parent_to_child_relations()[parent_side];
+
+                  //std::cout << "tmp here 2 parent_side_children.size() = " << parent_side_children.size()
+                  //          << std::endl;
+
+                  for (unsigned i_parent_side_child = 0; i_parent_side_child < parent_side_children.size(); i_parent_side_child++)
+                    {
+                      Entity *parent_side_child = parent_side_children[i_parent_side_child];
+
+                      //std::cout << "tmp here 3 parent_side_child = " << *parent_side_child
+                      //      << std::endl;
+
+                      int permIndex = -1;
+                      int permPolarity = 1;
+
+                      // use of i_parent_side here implies that the children's sides match up with the parents, this could be untrue - 
+                      //  then will require a search through all child faces 
+                      // NOTE: have to search over child faces due to different topology cases - if parent & child have same topology,
+                      //   we can save a few ops here TODO FIXME
+                      unsigned k_child_side = 0;
+#if 0
+                      boolean sameTopology = false; // FIXME - get this from the break pattern
+                      if (sameTopology)
+                        {
+                          PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
+                        }
+#endif
+
+
+                      if (permIndex < 0)
+                        {
+                          // try search
+                          for (unsigned j_child_side = 0; j_child_side < child_nsides; j_child_side++)
+                            {
+                              PerceptMesh::element_side_permutation(*child, *parent_side_child, j_child_side, permIndex, permPolarity);
+                              if (0)
+                                std::cout << "tmp j_child_side = " << j_child_side << " permIndex= " << permIndex 
+                                          << " child= " << *child
+                                          << " parent_side_child= " << *parent_side_child
+                                          <<  std::endl;
+
+                              if (permIndex >= 0)
+                                {
+                                  k_child_side = j_child_side;
+                                  break;
+                                }
+                            }
+                        }
+
+                      if (permIndex >= 0)
+                        {
+                          if (0)
+                            std::cout << "tmp decl rel permIndex= " << permIndex 
+                                      << " child= " << *child
+                                      << " parent_side_child= " << *parent_side_child
+                                      <<  std::endl;
+                          m_eMesh.getBulkData()->declare_relation(*child, *parent_side_child, k_child_side);
+                          PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
+                        }
+                      else
+                        {
+                          // error condition?
+                          //throw std::runtime_error("fixElementSides1: couldn't find a matching face");
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     void UniformRefiner::
     fixElementSides(EntityRank side_rank)
@@ -912,7 +1042,9 @@ namespace stk {
                   unsigned super_element_side_ord = element_sideElem_sideOrd[i_set].get<SUPER_SIDE_ORDINAL>();
 
                   // check if this side element matches the orientation of the side from the super element
-                  int elem_side_perm = PerceptMesh::element_side_permutation(super_element, side_element, super_element_side_ord);
+                  int elem_side_perm = -1;
+                  int elem_side_perm_polarity = 1;
+                  PerceptMesh::element_side_permutation(super_element, side_element, super_element_side_ord, elem_side_perm, elem_side_perm_polarity);
                   bool side_polarity_is_good = true;
                   if (elem_side_perm >= 0)
                     {
@@ -959,15 +1091,15 @@ namespace stk {
                     }
                   
                   if (side_polarity_is_good)
-                  {
-                    EXCEPTWATCH;
-                    if (EXTRA_PRINT_UR_FES)
-                      {
-                        std::cout << "tmp  declare relation, super_element= " << super_element << " side_element= " << side_element 
-                                  << " ordinal= " << super_element_side_ord << std::endl;
-                      }
-                    m_eMesh.getBulkData()->declare_relation( super_element , side_element , super_element_side_ord);
-                  }
+                    {
+                      EXCEPTWATCH;
+                      if (EXTRA_PRINT_UR_FES)
+                        {
+                          std::cout << "tmp  declare relation, super_element= " << super_element << " side_element= " << side_element 
+                                    << " ordinal= " << super_element_side_ord << std::endl;
+                        }
+                      m_eMesh.getBulkData()->declare_relation( super_element , side_element , super_element_side_ord);
+                    }
 
                   //std::cout << "tmp  side rel= " << super_element << " " << side_element << std::endl;
 
@@ -1084,7 +1216,7 @@ namespace stk {
       mesh::Selector toPartSelector = mesh::selectUnion( breakPattern->getToParts() );
 #endif
 
-      const vector<Bucket*> & buckets = m_eMesh.getBulkData()->buckets( /* mesh::Element */ rank );
+      const vector<Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
       std::set<Entity *> elements_to_be_destroyed;
 
       for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
@@ -1095,7 +1227,7 @@ namespace stk {
               Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
 
-              if (1)
+              if (0)
                 {
                   std::string str;
                   PartVector pv;
@@ -1104,7 +1236,7 @@ namespace stk {
                     {
                       str += " "+pv[ip]->name();
                     }
-                  //std::cout << "P[" << m_eMesh.getRank() << "] removing elements in bucket of parts: " << str << std::endl;
+                  std::cout << "P[" << m_eMesh.getRank() << "] removing elements in bucket of parts: " << str << std::endl;
                 }
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
@@ -1114,6 +1246,7 @@ namespace stk {
                   if (!m_eMesh.isGhostElement(element))
                     {
                       elements_to_be_destroyed.insert(element_p);
+                      //std::cout << "tmp removing elem = " << *element_p << std::endl;
                     }
                 }
             }
@@ -1127,7 +1260,6 @@ namespace stk {
               throw std::logic_error("UniformRefiner::removeOldElements couldn't remove element");
             }
         }
-
     }
 
     /// fix names of surfaces (changing for example surface_hex8_quad4 to surface_tet4_tri3)

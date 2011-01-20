@@ -89,7 +89,7 @@ namespace stk
       return s_nameToFunctionMap;
     }
 
-    static std::string join(std::string str1, std::string str2)
+    std::string join(std::string str1, std::string str2)
     {
       return str1+str2;
     }
@@ -97,10 +97,10 @@ namespace stk
     bool Function::argsAreValid(const MDArray& inp, const MDArray& out)
     {
       EXCEPTWATCH;
-      VERIFY_OP((unsigned)inp.rank() , >= , m_domain_dimensions.size(), 
-                join("Function::argsAreValid inp.rank,dom.size: the input MDArray's rank must be >= to the Function's domain rank.\n Function.name= ",getName()) );
-      VERIFY_OP((unsigned)out.rank(), >= , m_codomain_dimensions.size(), 
-                join("Function::argsAreValid out.rank,codom.size: the output MDArray's rank must be >= to the Function's codomain rank.\n Function.name= ",getName()) );
+      VERIFY_OP_ON((unsigned)inp.rank() , >= , m_domain_dimensions.size(), 
+                   join("Function::argsAreValid inp.rank,dom.size: the input MDArray's rank must be >= to the Function's domain rank.\n Function.name= ",getName()) );
+      VERIFY_OP_ON((unsigned)out.rank(), >= , m_codomain_dimensions.size(), 
+                   join("Function::argsAreValid out.rank,codom.size: the output MDArray's rank must be >= to the Function's codomain rank.\n Function.name= ",getName()) );
 
       int domain_rank = m_domain_dimensions.size();
       int codomain_rank = m_codomain_dimensions.size();
@@ -112,13 +112,13 @@ namespace stk
       // the last dimensions must match
       for (int idomain = 0; idomain < domain_rank; idomain++)
         {
-          VERIFY_OP(inp.dimension(idomain+inp_offset), ==,  m_domain_dimensions[idomain], 
-                    join("Function::argsAreValid: inp dimensions are inconsistent with function's domain dimensions. \nFunction.name= ",getName()) );
+          VERIFY_OP_ON(inp.dimension(idomain+inp_offset), ==,  m_domain_dimensions[idomain], 
+                       join("Function::argsAreValid: inp dimensions are inconsistent with function's domain dimensions. \nFunction.name= ",getName()) );
         }
       for (int icodomain = 0; icodomain < codomain_rank; icodomain++)
         {
-          VERIFY_OP(out.dimension(icodomain+out_offset), ==,  m_codomain_dimensions[icodomain], 
-                    join("Function::argsAreValid: in dimensions are inconsistent with function's codomain dimensions. \nFunction.name= ", getName()) );
+          VERIFY_OP_ON(out.dimension(icodomain+out_offset), ==,  m_codomain_dimensions[icodomain], 
+                       join("Function::argsAreValid: in dimensions are inconsistent with function's codomain dimensions. \nFunction.name= ", getName()) );
         }
       return true;
     }

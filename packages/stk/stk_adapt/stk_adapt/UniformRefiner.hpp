@@ -99,7 +99,7 @@ namespace stk {
       removeOldElements(EntityRank rank, UniformRefinerPatternBase* breakPattern );
 
       void 
-      addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern);
+      addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);
 
       void 
       renameNewParts(EntityRank rank, UniformRefinerPatternBase* breakPattern);
@@ -111,7 +111,13 @@ namespace stk {
       fixElementSides();
 
       void 
+      fixElementSides1();
+
+      void 
       fixElementSides(EntityRank side_rank);
+
+      void 
+      fixElementSides1(EntityRank side_rank);
 
       void 
       checkFixElementSides(EntityRank side_rank, EntityRank elem_rank);

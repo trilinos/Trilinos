@@ -156,11 +156,11 @@ StringToIntegralValidatorXMLConverter<IntegralType>::convertXML(
 
   if(stringDocs.size() != 0 && integralValues.size() != 0){
     return stringToIntegralParameterEntryValidator<IntegralType>(
-      strings, stringDocs, integralValues, defaultParameterName);
+      strings, stringDocs, integralValues(), defaultParameterName);
   }
   else if(integralValues.size() != 0){
     return stringToIntegralParameterEntryValidator<IntegralType>(
-      strings, integralValues, defaultParameterName);
+      strings, integralValues(), defaultParameterName);
   }
   else{
     return stringToIntegralParameterEntryValidator<IntegralType>(

@@ -29,6 +29,7 @@ APPEND_SET(HEADERS
   BelosBlockGmresIter.hpp
   BelosBlockFGmresIter.hpp
   BelosBlockGmresSolMgr.hpp
+  BelosCaGmres.hpp  # Subclass of GmresBase
   BelosCGIter.hpp
   BelosCGIteration.hpp
   BelosConfigDefs.hpp
@@ -37,6 +38,7 @@ APPEND_SET(HEADERS
   BelosPCPGSolMgr.hpp
   BelosGCRODRIter.hpp
   BelosGCRODRSolMgr.hpp
+  BelosGmresBase.hpp
   BelosGmresIteration.hpp
   BelosGmresPolyOp.hpp
   BelosGmresPolySolMgr.hpp
@@ -64,6 +66,7 @@ APPEND_SET(HEADERS
   BelosRCGIter.hpp
   BelosRCGSolMgr.hpp
   BelosSolverManager.hpp
+  BelosStandardGmres.hpp  # Subclass of GmresBase
   BelosStatusTest.hpp
   BelosStatusTestCombo.hpp
   BelosStatusTestMaxIters.hpp

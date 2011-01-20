@@ -29,7 +29,6 @@ export Trilinos_PACKAGES=Zoltan
 #
 #export TDD_IN_TESTING_MODE=ON
 #export CTEST_DO_SUBMIT=FALSE
-#export TDD_DO_SUBMIT=FALSE
 #export CTEST_DO_UPDATES=FALSE
 #
 

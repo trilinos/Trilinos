@@ -22,13 +22,13 @@ namespace EpetraExt {
 
   void mm_typecode_to_str(MM_typecode matcode, char * buffer);
 
-int mm_read_banner(FILE *f, MM_typecode *matcode);
-int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz);
-int mm_read_mtx_array_size(FILE *f, int *M, int *N);
+int mm_read_banner(std::FILE *f, MM_typecode *matcode);
+int mm_read_mtx_crd_size(std::FILE *f, int *M, int *N, int *nz);
+int mm_read_mtx_array_size(std::FILE *f, int *M, int *N);
 
-int mm_write_banner(FILE *f, MM_typecode matcode);
-int mm_write_mtx_crd_size(FILE *f, int M, int N, int nz);
-int mm_write_mtx_array_size(FILE *f, int M, int N);
+int mm_write_banner(std::FILE *f, MM_typecode matcode);
+int mm_write_mtx_crd_size(std::FILE *f, int M, int N, int nz);
+int mm_write_mtx_array_size(std::FILE *f, int M, int N);
 
 
 /********************* MM_typecode query fucntions ***************************/
@@ -125,9 +125,9 @@ int mm_is_valid(MM_typecode matcode);		/* too complex for a macro */
 
 int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
 		 double val[], MM_typecode matcode);
-int mm_read_mtx_crd_data(FILE *f, int M, int N, int nz, int I[], int J[],
+int mm_read_mtx_crd_data(std::FILE *f, int M, int N, int nz, int I[], int J[],
 		double val[], MM_typecode matcode);
-int mm_read_mtx_crd_entry(FILE *f, int *I, int *J, double *real, double *img,
+int mm_read_mtx_crd_entry(std::FILE *f, int *I, int *J, double *real, double *img,
 			MM_typecode matcode);
 
 int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,

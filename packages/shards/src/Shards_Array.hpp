@@ -3414,13 +3414,13 @@ public:
   // Class specific constructors:
 
   Array( value_type * ptr ,
-         const size_type rank ,
+         const size_type input_rank ,
          const size_type * const dims ,
          const tag_type  * const tags )
-    : m_ptr( ptr ), m_rank( rank )
+    : m_ptr( ptr ), m_rank( input_rank )
     {
-      array_traits::init_dim( m_stride, dims, rank, Natural);
-      array_traits::init_tags( m_tag,   tags, rank, Natural);
+      array_traits::init_dim( m_stride, dims, input_rank, Natural);
+      array_traits::init_tags( m_tag,   tags, input_rank, Natural);
     }
 
   /** \} */

@@ -209,17 +209,40 @@ namespace stk {
 #define TOKENPASTE2(x,y) x ## y
 #define TOKENPASTE(x,y) TOKENPASTE2(x,y)
 
-#define VERIFY_1(message) do {  std::ostringstream msg_loc; msg_loc << message; \
-      std::cout << msg_loc.str() << std::endl;                          \
-      throw std::runtime_error(msg_loc.str());  } while (0)
+#define VERIFY_OP_ON( val1, op, val2, message) do { if (1) { if (!(val1 op val2)) { std::ostringstream msg_loc; \
+                                                               msg_loc << "\n\n  ERROR: " << __FILE__ << " line: " << __LINE__; \
+                                                               msg_loc << "\n          " << message << "\n" \
+                                                                       << "   { " #val1 << " = " << val1 << " } \n" \
+                                                                       << "   { " #val2 << " = " << val2 << " } \n"; \
+                                                               msg_loc << " ERROR condition is: \n    " << #val1 " " #op " " #val2 << "\n"; \
+                                                               std::cout << msg_loc.str() << std::endl; \
+                                                               Util::debug_stop(); \
+                                                               throw std::runtime_error(msg_loc.str()); } } } while (0)
+
+
+#ifdef NDEBUG
+
+#define VERIFY_1(message)  do {} while(0)
+#define VERIFY(expr, val1, val2, message)  do {} while(0) 
+#define VERIFY_OP( val1, op, val2, message)  do {} while(0) 
+#define VERIFY_EQ1( val1, val2, message)  do {} while(0)
+#define VERIFY_NE( val1, val2, message)  do {} while(0) 
+
+#else
+
+#define VERIFY_ON 1
+
+#define VERIFY_1(message) do { if(VERIFY_ON) {  std::ostringstream msg_loc; msg_loc << message; \
+                                              std::cout << msg_loc.str() << std::endl;          \
+                                              throw std::runtime_error(msg_loc.str());  } } while (0)
                                                    
 
-#define VERIFY(expr, val1, val2, message) { if (!(expr)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
+#define VERIFY(expr, val1, val2, message) do { if (VERIFY_ON) { if (!(expr)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
                                               std::cout << msg_loc.str() << std::endl; \
                                               Util::debug_stop();       \
-                                              throw std::runtime_error(msg_loc.str()); } }
+                                              throw std::runtime_error(msg_loc.str()); } } } while (0)
 
-#define VERIFY_OP( val1, op, val2, message) { if (!(val1 op val2)) { std::ostringstream msg_loc; \
+#define VERIFY_OP( val1, op, val2, message) do { if (VERIFY_ON) { if (!(val1 op val2)) { std::ostringstream msg_loc; \
                                                 msg_loc << "\n\n  ERROR: " << __FILE__ << " line: " << __LINE__; \
                                                 msg_loc << "\n          " << message << "\n" \
                                                         << "   { " #val1 << " = " << val1 << " } \n" \
@@ -227,21 +250,27 @@ namespace stk {
                                                 msg_loc << " ERROR condition is: \n    " << #val1 " " #op " " #val2 << "\n"; \
                                                 std::cout << msg_loc.str() << std::endl; \
                                                 Util::debug_stop();     \
-                                                throw std::runtime_error(msg_loc.str()); } }
+                                                throw std::runtime_error(msg_loc.str()); } } } while (0)
 
-#define VERIFY_EQ( val1, val2, message) VERIFY_OP(val1, ==, val2, message)
 
-#define VERIFY_TRUE( val1) VERIFY_OP( (val1), ==, true, EXPAND_AND_QUOTE(val1))
 
-#define VERIFY_EQ1( val1, val2, message) { if (!(val1==val2)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
+#define VERIFY_EQ1( val1, val2, message) do { if (VERIFY_ON) { if (!(val1==val2)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
                                              std::cout << msg_loc.str() << std::endl; \
                                              Util::debug_stop();        \
-                                             throw std::runtime_error(msg_loc.str()); } }
+                                             throw std::runtime_error(msg_loc.str()); } } } while (0) 
 
-#define VERIFY_NE( val1, val2, message) { if (!(val1 != val2)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
+#define VERIFY_NE( val1, val2, message) do { if (VERIFY_ON) { if (!(val1 != val2)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
                                             std::cout << msg_loc.str() << std::endl; \
                                             Util::debug_stop();         \
-                                            throw std::runtime_error(msg_loc.str()); } }
+                                            throw std::runtime_error(msg_loc.str()); } } } while (0)
+
+#endif
+
+#define VERIFY_EQ( val1, val2, message) VERIFY_OP(val1, ==, val2, message)
+#define VERIFY_EQ_ON( val1, val2, message) VERIFY_OP_ON(val1, ==, val2, message)
+
+#define VERIFY_TRUE( val1) VERIFY_OP( (val1), ==, true, EXPAND_AND_QUOTE(val1))
+#define VERIFY_TRUE_ON( val1) VERIFY_OP_ON( (val1), ==, true, EXPAND_AND_QUOTE(val1))
 
 
   }

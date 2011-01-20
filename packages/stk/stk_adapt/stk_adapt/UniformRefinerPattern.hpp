@@ -22,6 +22,7 @@
 #include <boost/multi_array.hpp>
 
 
+
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 
@@ -37,6 +38,9 @@
 
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
+
+#define NEW_FIX_ELEMENT_SIDES 1
+
 
 #define TRACE_STAGE_PRINT_ON 0
 #define TRACE_STAGE_PRINT (TRACE_STAGE_PRINT_ON && (m_eMesh.getRank()==0))
@@ -120,6 +124,8 @@ namespace stk {
       virtual void doBreak()=0;
 
       virtual unsigned getFromTypeKey()=0;
+      virtual const CellTopologyData * const getFromTopology()=0;
+
 
       EntityRank getPrimaryEntityRank() { return m_primaryEntityRank; }
       /// must be provided by derived classes
@@ -138,6 +144,9 @@ namespace stk {
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
                         FieldBase *proc_rank_field=0)=0;
+
+      /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
+      void set_parent_child_relations(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement, unsigned ordinal, unsigned *numChild=0);
 
       /// optionally overridden (must be overridden if sidesets are to work properly) to provide info on which sub pattern
       /// should be used to refine side sets (and edge sets)
@@ -247,6 +256,7 @@ namespace stk {
 
       // return the type of element this pattern can refine
       virtual unsigned getFromTypeKey() { return fromTopoKey; }
+      virtual const CellTopologyData * const getFromTopology() { return shards::getCellTopologyData< FromTopology >(); }
 
       // draw
       /// draw a picture of the element's topology and its refinement pattern (using the "dot" program from AT&T's graphviz program)
@@ -392,8 +402,10 @@ namespace stk {
                 for (unsigned jNode = 0; jNode < FromTopology::vertex_count; jNode++)
                   {
                     unsigned childNodeIdx = ref_topo.child_node(iChild)[jNode];
+#ifndef NDEBUG
                     unsigned childNodeIdxCheck = ref_topo_x[childNodeIdx].ordinal_of_node;
                     VERIFY_OP(childNodeIdx, ==, childNodeIdxCheck, "childNodeIdxCheck");
+#endif
 
                     double *pc = ref_topo_x[childNodeIdx].parametric_coordinates;
                     Math::Vector v(pc);
@@ -726,6 +738,8 @@ namespace stk {
 
             change_entity_parts(eMesh, element, newElement);
 
+            set_parent_child_relations(eMesh, element, newElement, ielem);
+
             for (int inode=0; inode < ToTopology::node_count; inode++)
               {
                 mesh::EntityId eid = elems[ielem][inode];
@@ -737,6 +751,8 @@ namespace stk {
                 mesh::Entity& node = eMesh.createOrGetNode(eid);
                 eMesh.getBulkData()->declare_relation(newElement, node, inode);
               }
+
+            //set_parent_child_relations(eMesh, element, newElement, ielem);
 
             element_pool++;
 
@@ -952,7 +968,6 @@ namespace stk {
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
         unsigned num_child = ref_topo.num_child();
-
         VERIFY_OP(num_child, == , getNumNewElemPerElem(), "genericRefine_createNewElements num_child problem");
 
         // FIXME check if this is a wedge
@@ -968,8 +983,10 @@ namespace stk {
               {
                 unsigned childNodeIdx = ref_topo.child_node(iChild)[jNode];
 
+#ifndef NDEBUG
                 unsigned childNodeIdxCheck = ref_topo_x[childNodeIdx].ordinal_of_node;
                 VERIFY_OP(childNodeIdx, ==, childNodeIdxCheck, "childNodeIdxCheck");
+#endif
 
                 unsigned inode=0;
                 unsigned rank_of_subcell            = ref_topo_x[childNodeIdx].rank_of_subcell;
@@ -1083,7 +1100,7 @@ namespace stk {
 
             // CHECK
             change_entity_parts(eMesh, element, newElement);
-
+            
             for (int inode=0; inode < ToTopology::node_count; inode++)
               {
                 mesh::EntityId eid = elems[iChild][inode];
@@ -1108,6 +1125,8 @@ namespace stk {
                 interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0], eMesh.getCoordinatesField() );
                 interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0]);
               }
+
+            set_parent_child_relations(eMesh, element, newElement, iChild);
 
             element_pool++;
           }
@@ -1941,6 +1960,7 @@ namespace stk {
                 if (part->name()[0] == '{')
                   continue;
 
+
                 bool doThisPart = (block_names.size() == 0);
                 for (unsigned ib = 0; ib < block_names.size(); ib++)
                   {
@@ -1976,10 +1996,14 @@ namespace stk {
                             stk::io::put_io_part_attribute(*block_to);
                           }
 
-                        //std::cout << "setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
+                        if (0) std::cout << "tmp setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
 
-                        m_fromParts.push_back(part);
-                        m_toParts.push_back(block_to);
+                        if (!(part->name() == m_oldElementsPartName+toString(m_primaryEntityRank)))
+                          {
+                            if (0) std::cout << "tmp setNeededParts:: fromPart = " << part->name() << " toPart = " << block_to->name() << std::endl;
+                            m_fromParts.push_back(part);
+                            m_toParts.push_back(block_to);
+                          }
                       }
                       break;
                     }
@@ -2006,8 +2030,8 @@ namespace stk {
 
       void change_entity_parts(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement)
       {
-        std::vector<stk::mesh::Part*> add_parts(1);
-        std::vector<stk::mesh::Part*> remove_parts;
+        static std::vector<stk::mesh::Part*> add_parts(1);
+        static std::vector<stk::mesh::Part*> remove_parts;
 
         bool found = false;
         for (unsigned i_part = 0; i_part < m_fromParts.size(); i_part++)

@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_MPI	
   // Initialize MPI
   MPI_Init(&argc,&argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
   Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
   (void)mpiFinalize;
 #endif
