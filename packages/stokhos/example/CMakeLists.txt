@@ -88,6 +88,10 @@ IF(Stokhos_ENABLE_TriKota)
        )
 
      ENDIF()
+  ENDIF()
+ENDIF()
+
+IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
 
      PACKAGE_ADD_EXECUTABLE_AND_TEST(
        Linear2D_Diffusion_PCE_Example
@@ -228,8 +232,6 @@ IF(Stokhos_ENABLE_TriKota)
 	  
 
      ENDIF()  
-
-  ENDIF()
 
 ENDIF()
 
