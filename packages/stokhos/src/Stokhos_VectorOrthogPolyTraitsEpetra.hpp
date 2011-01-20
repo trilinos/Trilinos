@@ -103,9 +103,9 @@ namespace Stokhos {
     const Epetra_CrsMatrix& mat;
   };
   
-  //! Specialization of VectorOrthogPolyTraits to Epetra_Vector coefficients
+  //! Specialization of ProductContainerTraits to Epetra_Vector coefficients
   template <> 
-  class VectorOrthogPolyTraits<Epetra_Vector> {
+  class ProductContainerTraits<Epetra_Vector> {
   public:
     
     //! Typename of values
@@ -133,9 +133,9 @@ namespace Stokhos {
 
   };
 
-  //! Specialization of VectorOrthogPolyTraits to Epetra_MultiVector coefficients
+  //! Specialization of ProductContainerTraits to Epetra_MultiVector coefficients
   template <> 
-  class VectorOrthogPolyTraits<Epetra_MultiVector> {
+  class ProductContainerTraits<Epetra_MultiVector> {
   public:
     
     //! Typename of values
@@ -166,9 +166,9 @@ namespace Stokhos {
 
   };
 
-  //! Specialization of VectorOrthogPolyTraits to Epetra_CrsMatrix coefficients
+  //! Specialization of ProductContainerTraits to Epetra_CrsMatrix coefficients
   template <> 
-  class VectorOrthogPolyTraits<Epetra_CrsMatrix> {
+  class ProductContainerTraits<Epetra_CrsMatrix> {
   public:
     
     //! Typename of values
@@ -202,9 +202,9 @@ namespace Stokhos {
 
   };
 
-  //! Specialization of VectorOrthogPolyTraits to Epetra_Operator coefficients
+  //! Specialization of ProductContainerTraits to Epetra_Operator coefficients
   template <> 
-  class VectorOrthogPolyTraits<Epetra_Operator> {
+  class ProductContainerTraits<Epetra_Operator> {
   public:
     
     //! Typename of values
@@ -219,7 +219,7 @@ namespace Stokhos {
     //! Initialize operator
     static void init(Epetra_Operator& op, double val) { 
       Epetra_CrsMatrix& mat = dynamic_cast<Epetra_CrsMatrix&>(op);
-      VectorOrthogPolyTraits<Epetra_CrsMatrix>::init(mat, val);
+      ProductContainerTraits<Epetra_CrsMatrix>::init(mat, val);
     }
 
     //! Update operator
@@ -227,14 +227,14 @@ namespace Stokhos {
 		       const Epetra_Operator& x_op) {
       Epetra_CrsMatrix& mat = dynamic_cast<Epetra_CrsMatrix&>(op);
       const Epetra_CrsMatrix& x = dynamic_cast<const Epetra_CrsMatrix&>(x_op);
-      VectorOrthogPolyTraits<Epetra_CrsMatrix>::update(mat, a, x);
+      ProductContainerTraits<Epetra_CrsMatrix>::update(mat, a, x);
     }
 
     //! Print operator
     static std::ostream& print(std::ostream& os, const Epetra_Operator& op) {
       os << "Epetra_Operator" << std::endl;
       const Epetra_CrsMatrix& mat = dynamic_cast<const Epetra_CrsMatrix&>(op);
-      VectorOrthogPolyTraits<Epetra_CrsMatrix>::print(os, mat);
+      ProductContainerTraits<Epetra_CrsMatrix>::print(os, mat);
       return os;
     }
 

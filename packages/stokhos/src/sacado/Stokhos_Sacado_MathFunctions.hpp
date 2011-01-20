@@ -44,11 +44,19 @@ namespace Sacado {							\
     template <typename T>						\
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);			\
   }									\
+									\
+  namespace ETV {							\
+    template <typename T> class FADOP;					\
+    template <typename T> class Expr;					\
+    template <typename T>						\
+    Expr< FADOP< Expr<T> > > OP (const Expr<T>&);			\
+  }									\
 }                                                                       \
                                                                         \
 namespace std {                                                         \
   using Sacado::PCE::OP;						\
   using Sacado::ETPCE::OP;						\
+  using Sacado::ETV::OP;						\
 }
 
 UNARYFUNC_MACRO(exp, ExpOp)
@@ -109,11 +117,32 @@ namespace Sacado {							\
     OP (const Expr<T>&, const typename Expr<T>::value_type&);		\
   }									\
 									\
+  namespace ETV {							\
+    template <typename T1, typename T2> class FADOP;			\
+    template <typename T> class Expr;					\
+    template <typename T1, typename T2>					\
+    Expr< FADOP< Expr<T1>, Expr<T2> > >					\
+    OP (const Expr<T1>&, const Expr<T2>&);				\
+									\
+    template <typename T>						\
+    Expr< FADOP< Expr<T>, Expr<T> > >					\
+    OP (const Expr<T>&, const Expr<T>&);				\
+									\
+    template <typename T>						\
+    Expr< FADOP< typename Expr<T>::value_type, Expr<T> > >		\
+    OP (const typename Expr<T>::value_type&, const Expr<T>&);		\
+									\
+    template <typename T>						\
+    Expr< FADOP< Expr<T>, typename Expr<T>::value_type > >		\
+    OP (const Expr<T>&, const typename Expr<T>::value_type&);		\
+  }									\
+									\
 }									\
                                                                         \
 namespace std {                                                         \
   using Sacado::PCE::OP;						\
   using Sacado::ETPCE::OP;						\
+  using Sacado::ETV::OP;						\
 }
 
 BINARYFUNC_MACRO(atan2, Atan2Op)

@@ -659,14 +659,14 @@ NOX::Epetra::LinearSystemStratimikos::getPrecOperator() const
 Teuchos::RCP<const Epetra_Operator> 
 NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator() const
 {
-  return solvePrecOpPtr;
+  return precPtr;
 }
 
 //***********************************************************************
 Teuchos::RCP<Epetra_Operator>
 NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator()
 {
-  return solvePrecOpPtr;
+  return precPtr;
 }
 
 //***********************************************************************
@@ -765,13 +765,23 @@ void
 NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve(
 	       const Teuchos::RCP<const Epetra_Operator>& solvePrecOp)
 {
-  /*
-  solvePrecOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
-  this->setAztecOOPreconditioner();
-  */
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEST_FOR_EXCEPTION(precMatrixSource != UserDefined_, std::logic_error,
      "NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve\n"
-     << " NOT IMPLEMENTED ");
+     << " only implemented for user-defined preconditioners!");
+
+  precPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
+
+  // Wrap the preconditioner so that apply() calls ApplyInverse()
+  Teuchos::RCP<const Thyra::LinearOpBase<double> > precOp =
+    Thyra::epetraLinearOp(precPtr, 
+			  Thyra::NOTRANS, 
+			  Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
+
+  Teuchos::RCP<Thyra::DefaultPreconditioner<double> > precObjDef =
+    rcp(new Thyra::DefaultPreconditioner<double>);
+  precObjDef->initializeRight(precOp);
+  precObj = precObjDef;
+  
 }
 
 //***********************************************************************

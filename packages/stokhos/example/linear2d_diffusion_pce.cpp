@@ -121,21 +121,6 @@ int main(int argc, char *argv[]) {
       Teuchos::rcp(new twoD_diffusion_ME(app_comm, n, num_KL, mu, s, basis, 
 					 nonlinear_expansion, symmetric));
     
-    // Set up stochastic parameters
-    Epetra_LocalMap p_sg_map(num_KL, 0, *sg_comm);
-    Teuchos::Array<Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >sg_p_init(1);
-    sg_p_init[0]= Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, p_sg_map));
-    for (int i=0; i<num_KL; i++) {
-      sg_p_init[0]->term(i,0)[i] = 0.0;
-      sg_p_init[0]->term(i,1)[i] = 1.0;
-    }
-
-    // Setup stochastic initial guess
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x_init = 
-      Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, 
-						       *(model->get_x_map())));
-    sg_x_init->init(0.0);
-    
     // Setup stochastic Galerkin algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> sgParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
@@ -172,14 +157,21 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
       Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
 						 expansion, sg_parallel_data, 
-						 sgParams, 
-						 sg_x_init, sg_p_init));
+						 sgParams));
+
+    // Set up stochastic parameters
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p_poly =
+      sg_model->create_p_sg(0);
+    for (int i=0; i<num_KL; i++) {
+      sg_p_poly->term(i,0)[i] = 0.0;
+      sg_p_poly->term(i,1)[i] = 1.0;
+    }
 
     // Create vectors and operators
-    Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(1);
-    Teuchos::RCP<Epetra_Vector> sg_x = 
+    Teuchos::RCP<const Epetra_Vector> sg_p = sg_p_poly->getBlockVector();
+    Teuchos::RCP<Epetra_Vector> sg_x =
       Teuchos::rcp(new Epetra_Vector(*(sg_model->get_x_map())));
-    *sg_x = *(sg_model->get_x_init());
+    sg_x->PutScalar(0.0);
     Teuchos::RCP<Epetra_Vector> sg_f = 
       Teuchos::rcp(new Epetra_Vector(*(sg_model->get_f_map())));
     Teuchos::RCP<Epetra_Vector> sg_dx = 
@@ -231,15 +223,12 @@ int main(int argc, char *argv[]) {
     EpetraExt::VectorToMatrixMarketFile("stochastic_solution.mm", *sg_x);
 
     // Save mean and variance to file
-    Teuchos::RCP<Epetra_Vector> sg_x_overlapped = 
-      sg_model->import_solution(*sg_x);
-    Stokhos::EpetraVectorOrthogPoly sg_x_poly(basis, View, 
-					      *(model->get_x_map()), 
-					      *sg_x_overlapped);
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x_poly = 
+      sg_model->create_x_sg(View, sg_x.get());
     Epetra_Vector mean(*(model->get_x_map()));
     Epetra_Vector std_dev(*(model->get_x_map()));
-    sg_x_poly.computeMean(mean);
-    sg_x_poly.computeStandardDeviation(std_dev);
+    sg_x_poly->computeMean(mean);
+    sg_x_poly->computeStandardDeviation(std_dev);
     EpetraExt::VectorToMatrixMarketFile("mean_gal.mm", mean);
     EpetraExt::VectorToMatrixMarketFile("std_dev_gal.mm", std_dev);
 
@@ -258,15 +247,15 @@ int main(int argc, char *argv[]) {
       std::cout << "\nFinal residual norm = " << norm_f << std::endl;
 
     // Print mean and standard deviation of responses
-    Stokhos::EpetraVectorOrthogPoly sg_g_poly(basis, View, 
-					      *(model->get_g_map(0)), *sg_g);
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_g_poly =
+      sg_model->create_g_sg(0, View, sg_g.get());
     Epetra_Vector g_mean(*(model->get_g_map(0)));
     Epetra_Vector g_std_dev(*(model->get_g_map(0)));
-    sg_g_poly.computeMean(g_mean);
-    sg_g_poly.computeStandardDeviation(g_std_dev);
+    sg_g_poly->computeMean(g_mean);
+    sg_g_poly->computeStandardDeviation(g_std_dev);
     // std::cout << "\nResponse Expansion = " << std::endl;
     // std::cout.precision(12);
-    // sg_g_poly.print(std::cout);
+    // sg_g_poly->print(std::cout);
     std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << g_std_dev << std::endl;
 

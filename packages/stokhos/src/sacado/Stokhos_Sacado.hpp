@@ -39,5 +39,6 @@
 // Sacado overloaded operators for Stokhos
 #include "Sacado_PCE_OrthogPoly.hpp"
 #include "Sacado_ETPCE_OrthogPoly.hpp"
+#include "Sacado_ETV_Vector.hpp"
 
 #endif // STOKHOS_SACADO_HPP 
