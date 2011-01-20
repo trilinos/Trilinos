@@ -423,7 +423,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_Atra
     //we'll need to get the row of B corresponding to Arows[i],
     //where Arows[i] is the GID of A's ith row.
     LocalOrdinal Bi = Bview->rowMap->getLocalElement(Arows[i]);
-    TEST_FOR_EXCEPTION(Bi<OrdinalTraits<LocalOrdinal>::zero(), std::runtime_error,
+    TEST_FOR_EXCEPTION(Bi == OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
       "mult_Atrans_B ERROR, proc "<<localProc<<" needs row "
      <<Arows[i]<<" of matrix B, but doesn't have it.");
 
@@ -584,7 +584,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_Atra
 
       //get the corresponding row in A
       LocalOrdinal ak = Aview->rowMap->getLocalElement(global_k);
-      if (ak<OrdinalTraits<LocalOrdinal>::zero()) {
+      if (ak == OrdinalTraits<LocalOrdinal>::invalid()) {
         continue;
       }
 
