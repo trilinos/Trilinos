@@ -42,6 +42,9 @@ bool comm_mesh_verify_parallel_consistency(
 
 unsigned BulkData::determine_new_owner( Entity & entity ) const
 {
+  // We will decide the new owner by looking at all the processes sharing
+  // this entity. The new owner will be the sharing process with lowest rank.
+
   // The local process is a candidate only if the entity is not destroyed.
   unsigned new_owner =
     EntityLogDeleted == entity.log_query() ? ~0u : m_parallel_rank ;
@@ -271,11 +274,11 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity * entity )
 
 void resolve_shared_removed_from_owned_closure( BulkData & mesh )
 {
-  for ( std::vector<Entity*>::const_iterator
-        i =  mesh.entity_comm().end() ;
-        i != mesh.entity_comm().begin() ; ) {
+  for ( std::vector<Entity*>::const_reverse_iterator
+        i =  mesh.entity_comm().rbegin() ;
+        i != mesh.entity_comm().rend() ; ++i) {
 
-    Entity * entity = *--i ;
+    Entity * entity = *i ;
 
     if ( ! entity->sharing().empty() &&
          ! in_owned_closure( *entity , mesh.parallel_rank() ) ) {
@@ -359,6 +362,7 @@ void BulkData::internal_resolve_shared_modify_delete()
                                         locally_destroyed &&
                                         new_sharing.empty() );
 
+    // If the entity has been deleted everywhere, nothing left to do
     if ( exists_somewhere ) {
 
       const bool old_local_owner = m_parallel_rank == entity->owner_rank();
@@ -399,13 +403,13 @@ void BulkData::internal_resolve_shared_modify_delete()
           internal_change_entity_parts( *entity , add_part , remove_part );
         }
       } // if ( ! locally_destroyed )
-    } // if ( ! delete_everywhere )
-  } // last touch of this shared entity
+    } // if ( exists_somewhere )
+  } // remote mod loop
 
   // Erase all sharing communication lists for Destroyed entities:
-  for ( std::vector<Entity*>::const_iterator
-        i = entity_comm().end() ; i != entity_comm().begin() ; ) {
-    Entity * entity = *--i ;
+  for ( std::vector<Entity*>::const_reverse_iterator
+        i = entity_comm().rbegin() ; i != entity_comm().rend() ; ++i) {
+    Entity * entity = *i ;
 
     if ( EntityLogDeleted == entity->log_query() ) {
       // m_ghosting[0] is the SHARED communication
@@ -443,11 +447,8 @@ void BulkData::internal_resolve_ghosted_modify_delete()
   // higher-ranking entities first. This is important because higher-ranking
   // entities like element must be deleted before the nodes they have are
   // deleted.
-  for ( std::vector<EntityProcState>::iterator
-        i = remote_mod.end(); i != remote_mod.begin() ; ) {
-
-    --i ;
-
+  for ( std::vector<EntityProcState>::reverse_iterator
+        i = remote_mod.rbegin(); i != remote_mod.rend() ; ++i ) {
     Entity *       entity       = i->entity_proc.first ;
     const unsigned remote_proc  = i->entity_proc.second ;
     const bool     local_owner  = entity->owner_rank() == m_parallel_rank ;
@@ -503,10 +504,10 @@ void BulkData::internal_resolve_ghosted_modify_delete()
   // 1) Destroyed entities.
   // 2) Owned and modified entities.
 
-  for ( std::vector<Entity*>::const_iterator
-        i = entity_comm().end() ; i != entity_comm().begin() ; ) {
+  for ( std::vector<Entity*>::const_reverse_iterator
+        i = entity_comm().rbegin() ; i != entity_comm().rend() ; ++i) {
 
-    Entity & entity = **--i ;
+    Entity & entity = **i ;
 
     const bool locally_destroyed = EntityLogDeleted == entity.log_query();
     const bool locally_owned_and_modified =
@@ -540,7 +541,6 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 }
 
 //----------------------------------------------------------------------
-
 
 void BulkData::internal_resolve_parallel_create()
 {
@@ -614,10 +614,10 @@ void BulkData::internal_resolve_parallel_create()
   shared_part.push_back( & m_mesh_meta_data.globally_shared_part() );
   owned_part.push_back(  & m_mesh_meta_data.locally_owned_part() );
 
-  for ( std::vector<Entity*>::const_iterator
-        i = shared_modified.end() ; i != shared_modified.begin() ; ) {
+  for ( std::vector<Entity*>::const_reverse_iterator
+        i = shared_modified.rbegin() ; i != shared_modified.rend() ; ++i) {
 
-    Entity * entity = *--i ;
+    Entity * entity = *i ;
 
     if ( entity->owner_rank() == m_parallel_rank &&
          entity->log_query() == EntityLogCreated ) {
