@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 /**
  * @author H. Carter Edwards
  */
@@ -226,8 +225,14 @@ void BulkData::internal_change_ghosting(
   //------------------------------------
   // Insert the current ghost receives and then remove from that list.
 
-  if ( & m_entity_comm != & remove_receive ) {
+  // This if-check is an optimization; if remove_receive is m_entity_comm,
+  // then we are removing all ghosting information and new_recv should
+  // be left empty.
+  if ( & entity_comm() != & remove_receive ) {
 
+    // Iterate over all entities with communication information, adding
+    // the entity if it's a ghost on this process. new_recv will contain
+    // all ghosts on this process by the end of the loop.
     for ( std::vector<Entity*>::const_iterator
           i = entity_comm().begin() ; i != entity_comm().end() ; ++i ) {
       Entity * const entity = *i ;
@@ -243,15 +248,15 @@ void BulkData::internal_change_ghosting(
       new_recv.erase( *i );
     }
 
-    //  Keep the closure of the remaining received ghosts.
-    //  Working from highest-to-lowest key (rank entity type)
-    //  results in insertion of the transitive closure.
-    //  Insertion will not invalidate the associative container's iterator.
+    // Keep the closure of the remaining received ghosts.
+    // Working from highest-to-lowest key (rank entity type)
+    // results in insertion of the closure because
+    // inserted entities will get looped over after they are inserted.
 
-    for ( std::set< Entity * , EntityLess >::iterator
-          i = new_recv.end() ; i != new_recv.begin() ; ) {
-      --i ;
+    // Insertion will not invalidate the associative container's iterator.
 
+    for ( std::set< Entity * , EntityLess >::reverse_iterator
+          i = new_recv.rbegin() ; i != new_recv.rend() ; ++i) {
       const unsigned erank = (*i)->entity_rank();
 
       for ( PairIterRelation
@@ -277,7 +282,7 @@ void BulkData::internal_change_ghosting(
 
   // Synchronize the send and receive list.
   // If the send list contains a not-owned entity
-  // inform the owner and receiver to ad that entity
+  // inform the owner and receiver to add that entity
   // to their ghost send and receive lists.
 
   comm_sync_send_recv( *this , new_send , new_recv );
@@ -290,10 +295,9 @@ void BulkData::internal_change_ghosting(
 
   bool removed = false ;
 
-  for ( std::vector<Entity*>::iterator
-        i = m_entity_comm.end() ; i != m_entity_comm.begin() ; ) {
-
-    Entity * entity = *--i ;
+  for ( std::vector<Entity*>::reverse_iterator
+        i = m_entity_comm.rbegin() ; i != m_entity_comm.rend() ; ++i) {
+    Entity * entity = *i ;
 
     const bool is_owner = entity->owner_rank() == m_parallel_rank ;
     const bool remove_recv = ( ! is_owner ) &&
@@ -304,11 +308,8 @@ void BulkData::internal_change_ghosting(
       // Have to make a copy
 
       std::vector<EntityCommInfo> comm_ghost ;
-
-      {
-        const PairIterEntityComm ec = entity->comm( ghosts );
-        comm_ghost.assign( ec.first , ec.second );
-      }
+      const PairIterEntityComm ec = entity->comm( ghosts );
+      comm_ghost.assign( ec.first , ec.second );
 
       for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
         const EntityCommInfo tmp = comm_ghost.back();
@@ -327,7 +328,7 @@ void BulkData::internal_change_ghosting(
       *i = NULL ; // No longer communicated
       if ( remove_recv ) {
         ThrowRequireMsg( destroy_entity( entity ),
-                         " FAILED attempt to destroy entity: " << entity );
+                         " FAILED attempt to destroy entity: " << print_entity_key(entity) );
       }
     }
   }
@@ -509,35 +510,31 @@ void comm_recv_to_send(
   const std::set< Entity * , EntityLess > & new_recv ,
         std::set< EntityProc , EntityLess > & new_send )
 {
-  static const char method[] = "stk::mesh::BulkData::change_ghosting" ;
-
   const unsigned parallel_size = mesh.parallel_size();
 
   CommAll all( mesh.parallel() );
 
-  for ( std::set< Entity * , EntityLess >::const_iterator
-        i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
-    const unsigned owner = (*i)->owner_rank();
-    all.send_buffer( owner ).skip<EntityKey>(1);
+  for ( int phase = 0; phase < 2; ++phase) {
+    for ( std::set< Entity * , EntityLess >::const_iterator
+            i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
+      const unsigned owner = (*i)->owner_rank();
+      const EntityKey key = (*i)->key();
+      all.send_buffer( owner ).pack<EntityKey>( key );
+    }
+    if (phase == 0) { //allocation phase
+      all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
+    }
+    else { //communication phase
+      all.communicate();
+    }
   }
 
-  all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
-
-  for ( std::set< Entity * , EntityLess >::const_iterator
-        i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
-    const unsigned owner = (*i)->owner_rank();
-    const EntityKey key = (*i)->key();
-    all.send_buffer( owner ).pack<EntityKey>( & key , 1 );
-  }
-
-  all.communicate();
-
-  for ( unsigned p = 0 ; p < parallel_size ; ++p ) {
-    CommBuffer & buf = all.recv_buffer(p);
+  for ( unsigned proc_rank = 0 ; proc_rank < parallel_size ; ++proc_rank ) {
+    CommBuffer & buf = all.recv_buffer(proc_rank);
     while ( buf.remaining() ) {
       EntityKey key ;
-      buf.unpack<EntityKey>( & key , 1 );
-      EntityProc tmp( mesh.get_entity( entity_rank(key), entity_id(key) , method ) , p );
+      buf.unpack<EntityKey>( key );
+      EntityProc tmp( mesh.get_entity( key ) , proc_rank );
       new_send.insert( tmp );
     }
   }

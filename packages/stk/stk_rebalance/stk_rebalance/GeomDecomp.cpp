@@ -41,16 +41,7 @@ std::vector<const mesh::Entity *> GeomDecomp::entity_coordinates(const mesh::Ent
   const mesh::EntityRank objtype   = obj.entity_rank();
   if ( objtype == NODE_RANK )
   {
-    const double * const coor = mesh::field_data(nodal_coor, obj);
-    if (!coor) throw std::runtime_error(" Error: The coordinate field does not exist.");
-
-    const unsigned ndim(field_data_size(nodal_coor, obj));
-    std::vector<double> temp(ndim);
-    for ( unsigned i = 0; i < ndim; ++i ) {
-      temp[i] = coor[i];
-    }
-    coordinates.push_back(temp);
-    mesh_nodes.push_back(&obj);
+    throw std::runtime_error("GeomDecomp::entity_coordinates Error: Can not be called for nodal objects.");
   } else {
 
     // Loop over node relations in mesh object
@@ -64,7 +55,7 @@ std::vector<const mesh::Entity *> GeomDecomp::entity_coordinates(const mesh::Ent
         const unsigned ndim(field_data_size(nodal_coor, *nobj)/sizeof(double)); // TODO - is there a better way to get this info?
         double * coor = mesh::field_data(nodal_coor, *nobj);
         if (!coor) {
-          throw std::runtime_error("Error: The coordinate field does not exist.");
+          throw std::runtime_error("GeomDecomp::entity_coordinates Error: The coordinate field does not exist.");
         }
         std::vector<double> temp(ndim);
         for ( unsigned i = 0; i < ndim; ++i ) { temp[i] = coor[i]; }
@@ -131,7 +122,7 @@ void apply_rotation (std::vector<double> &coor)
     coor[0] = temp[0] ;
   }
   else {
-    assert(0);
+    ThrowRequire(false); // Should never make it here
   }
   return;
 }

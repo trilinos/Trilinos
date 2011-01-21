@@ -36,6 +36,9 @@ namespace Stokhos {
 
   template <typename index_iterator, typename value_iterator> 
   struct SparseArrayIterator;
+
+  template <typename index_iterator, typename value_iterator> 
+  struct SparseArrayReverseIterator;
     
   //! Container for a "sparse" array
   template <typename ordinal_type, typename val_type>
@@ -59,7 +62,7 @@ namespace Stokhos {
     typedef typename Teuchos::Array<ordinal_type>::const_iterator index_const_iterator;
     typedef typename Teuchos::Array<val_type>::const_iterator value_const_iterator;
     typedef SparseArrayIterator<index_const_iterator, value_const_iterator> const_iterator;
-    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+    typedef SparseArrayReverseIterator<index_const_iterator, value_const_iterator> const_reverse_iterator;
     
     //! Iterator pointing to beginning of array
     const_iterator begin() const { 
@@ -207,6 +210,37 @@ namespace Stokhos {
 
     //! Value iterator
     value_iterator_type value_iterator;
+    
+  };
+
+  //! Bi-directional reverse iterator for traversing a sparse array
+  template <typename index_iterator_type, typename value_iterator_type>
+  class SparseArrayReverseIterator : 
+    public std::reverse_iterator< SparseArrayIterator<index_iterator_type,
+						      value_iterator_type> > {
+  public:
+
+    typedef SparseArrayIterator<index_iterator_type, value_iterator_type> iterator_type;
+    typedef std::reverse_iterator<iterator_type> base_type;
+    typedef typename base_type::iterator_category iterator_category;
+    typedef typename base_type::value_type value_type;
+    typedef typename base_type::difference_type difference_type;
+    typedef typename base_type::reference reference;
+    typedef typename base_type::pointer pointer;
+    typedef typename std::iterator_traits<value_iterator_type>::reference value_reference;
+
+    //! Default constructor
+    SparseArrayReverseIterator() : base_type() {}
+    
+    //! Constructor
+    SparseArrayReverseIterator(iterator_type it) : base_type(it) {}
+    
+    //! Return value associated with iterator
+    value_reference value() const {
+      iterator_type tmp = this->base();
+      --tmp;
+      return tmp.value();
+    }
     
   };
 

@@ -216,8 +216,8 @@ public:
    *  processes by modification_end.
    */
   void change_entity_parts( Entity & entity,
-      const std::vector<Part*> & add_parts ,
-      const std::vector<Part*> & remove_parts = std::vector<Part*>() );
+      const PartVector & add_parts ,
+      const PartVector & remove_parts = PartVector() );
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -381,6 +381,10 @@ private:
   BulkDataSyncState  m_sync_state ;
   bool               m_meta_data_verified ;
 
+  /**
+   * For all processors sharing an entity, find one to be the new
+   * owner.
+   */
   unsigned determine_new_owner( Entity & ) const ;
 
   /*  Entity modification consequences:

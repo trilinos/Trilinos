@@ -313,8 +313,8 @@ void verify_change_parts( const MetaData   & meta ,
 
 void BulkData::change_entity_parts(
   Entity & entity ,
-  const std::vector<Part*> & add_parts ,
-  const std::vector<Part*> & remove_parts )
+  const PartVector & add_parts ,
+  const PartVector & remove_parts )
 {
   require_ok_to_modify();
 

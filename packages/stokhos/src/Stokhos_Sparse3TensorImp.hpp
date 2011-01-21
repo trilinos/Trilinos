@@ -349,7 +349,7 @@ j_begin(const k_reverse_iterator& k) const
   TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling j_begin()!");
 #endif
-  return k.base().value().begin(); 
+  return k.value().begin(); 
 }
 
 template <typename ordinal_type, typename value_type>
@@ -361,7 +361,7 @@ j_end(const k_reverse_iterator& k) const
   TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling j_end()!");
 #endif
-  return k.base().value().end(); 
+  return k.value().end(); 
 }
 
 template <typename ordinal_type, typename value_type>
@@ -541,7 +541,7 @@ k_begin(const i_reverse_iterator& i) const
   TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling k_begin()!");
 #endif
-  return i.base().value().begin(); 
+  return i.value().begin(); 
 }
 
 template <typename ordinal_type, typename value_type>
@@ -553,7 +553,7 @@ k_end(const i_reverse_iterator& i) const
   TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling k_end()!");
 #endif
-  return i.base().value().end(); 
+  return i.value().end(); 
 }
 
 template <typename ordinal_type, typename value_type>
