@@ -7,89 +7,58 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-/**********************************************************************************/
-/* CREATE INITAL MATRIX                                                           */
-/**********************************************************************************/
-//#define CTHULHU_USE_EPETRA
+// Cthulhu
+#include <Cthulhu_Parameters.hpp>
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_MapFactory.hpp>
-#include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_CrsOperator.hpp>
 #include <Cthulhu.hpp>
 
-#define CTHULHU_ENABLED //TODO
+// Gallery
+#define CTHULHU_ENABLED // == Gallery have to be build with the support of Cthulhu matrices.
+#include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
-/**********************************************************************************/
 
-#include <MueLu_AggAlgorithm.hpp>
-#include <MueLu_AggAlgorithm2.hpp>
-
-// For the moment, this file is just a modified version of ML_Linker.hpp
+// Aggregation
+#include "MueLu_AggAlgorithm.hpp"
+#include "MueLu_AggAlgorithm2.hpp"
 
 int main(int argc, char *argv[]) {
   
-  std::cout << "Hello World !" << std::endl;
-
-  /**********************************************************************************/
-  /* CREATE INITAL MATRIX                                                           */
-  /**********************************************************************************/
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  LO numThreads=1;
-  GO nx=16;
-  GO ny=16;
-  GO nz=16;
-  Teuchos::CommandLineProcessor cmdp(false,true);
-  std::string matrixType("Laplace1D");
-  cmdp.setOption("nt",&numThreads,"number of threads.");
-  cmdp.setOption("nx",&nx,"mesh points in x-direction.");
-  cmdp.setOption("ny",&ny,"mesh points in y-direction.");
-  cmdp.setOption("nz",&nz,"mesh points in z-direction.");
-  cmdp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Laplace3D"); //TODO: Star2D, numGlobalElements=...
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return EXIT_FAILURE;
+  /**********************************************************************************/
+  /* SET TEST PARAMETERS                                                            */
+  /**********************************************************************************/
+  // Note: use --help to list available options.
+  Teuchos::CommandLineProcessor cmdp(false);
+  
+  Gallery::Parameters matrixParameters(cmdp);   // manage parameters of the test case
+  Cthulhu::Parameters cthulhuParameters(cmdp);  // manage parameters of cthulhu
+  
+  switch (cmdp.parse(argc,argv)) {
+  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
-
-  std::cout << "#threads = " << numThreads << std::endl;
-  std::cout << "problem size = " << nx*ny << std::endl;
-  std::cout << "matrix type = " << matrixType << std::endl;
-
-  Teuchos::ParameterList pl;
-  pl.set("Num Threads",numThreads);
-
-  GO numGlobalElements;
-  if (matrixType == "Laplace1D")
-    numGlobalElements = nx;
-  else if (matrixType == "Laplace2D")
-    numGlobalElements = nx*ny;
-  else if (matrixType == "Laplace3D")
-    numGlobalElements = nx*ny*nz;
-  else return EXIT_FAILURE;
-  LO indexBase = 0;
-
-  RCP<const Map> map = MapFactory::Build(Cthulhu::UseEpetra, numGlobalElements, indexBase, comm);
-
-  Teuchos::ParameterList matrixList;
-  matrixList.set("nx",nx);
-  matrixList.set("ny",ny);
-  matrixList.set("nz",nz);
-
-  RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>(matrixType,map,matrixList); //TODO: Operator vs. CrsOperator
-
-  RCP<const Epetra_CrsMatrix> A;
-
-  //  { // Get the underlying Epetra Mtx (Wow ! It's paintful ! => I should create a function to do that)
-    RCP<const CrsMatrix> tmp_CrsMtx = Op->getCrsMatrix();
-    const RCP<const Cthulhu::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Cthulhu::EpetraCrsMatrix>(tmp_CrsMtx);
-    if (tmp_ECrsMtx == Teuchos::null) { std::cout << "Error ! Not an Epetra matrix" << std::endl; return 1; }
-    A = tmp_ECrsMtx->getEpetra_CrsMatrix();
-    // }
   
-    RCP<Graph<> > graph = rcp(new Graph<>(Op->getCrsGraph(), "Uncoupled"));
-  
+  matrixParameters.check();
+  cthulhuParameters.check();
+
+  matrixParameters.print();
+  cthulhuParameters.print();
+
+  /**********************************************************************************/
+  /* CREATE INITAL MATRIX                                                           */
+  /**********************************************************************************/
+  const RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  /**********************************************************************************/
+  /*                                                                                */
+  /**********************************************************************************/
+
   int printFlag=6;
   
   AggregationOptions aggOptions;
@@ -101,13 +70,22 @@ int main(int argc, char *argv[]) {
   aggOptions.SetOrdering(2);
   aggOptions.SetPhase3AggCreation(0.5);
 
-  if (graph->GetComm()->getRank() == 0 && printFlag < MueLu_PrintLevel())
+  /**********************************************************************************/
+  /*                                                                                */
+  /**********************************************************************************/
+  
+  if (comm->getRank() == 0 && printFlag < MueLu_PrintLevel())
     printf("main() Aggregate_CoarsenUncoupled : \n");
  
+  RCP<Graph<> > graph = rcp(new Graph<>(Op->getCrsGraph(), "Uncoupled"));
   RCP<Aggregates<> > aggregates = MueLu_Aggregate_CoarsenUncoupled(aggOptions,*graph);
 
   std::string name = "UC_CleanUp";
   MueLu_AggregateLeftOvers(aggOptions, *aggregates, name, *graph);
+  
+  /**********************************************************************************/
+  /*                                                                                */
+  /**********************************************************************************/
   
   RCP<Cthulhu::Vector<int> > Final_ = Cthulhu::VectorFactory<int>::Build( aggregates->GetVertex2AggId()->getMap() );
 
@@ -124,5 +102,4 @@ int main(int argc, char *argv[]) {
   cout << *Final_ << endl; sleep(2);
 
   return EXIT_SUCCESS;
-
 }

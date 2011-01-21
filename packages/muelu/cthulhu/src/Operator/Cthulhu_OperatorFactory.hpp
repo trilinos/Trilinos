@@ -20,7 +20,7 @@ namespace Cthulhu {
 
   class OperatorFactory {
     
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+    typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
     typedef Cthulhu::Operator<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
     typedef Cthulhu::CrsOperator<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperator;
 

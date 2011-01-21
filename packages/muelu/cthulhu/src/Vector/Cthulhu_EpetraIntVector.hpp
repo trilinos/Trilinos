@@ -467,7 +467,6 @@ namespace Cthulhu {
       using Teuchos::VERB_EXTREME;
       Teuchos::EVerbosityLevel vl = verbLevel;
 
-
       TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
 
     }

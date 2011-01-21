@@ -7,6 +7,7 @@ SET(SOURCES "")
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+  MueLu_GalleryParameters.hpp
   MueLu_MatrixFactory.hpp  
   MueLu_MatrixTypes.hpp
   )
