@@ -471,3 +471,36 @@ int fevec3(Epetra_Comm& Comm, bool verbose)
   return(0);
 }
 
+int fevec4(Epetra_Comm& Comm, bool verbose)
+{
+  int NumElements = 4;
+  Epetra_Map     Map(NumElements, 0, Comm);
+  Epetra_FEVector x1(Map);
+  const double value = 1.;
+  x1.PutScalar (value);
+				// replace one element by itself. processor 0
+				// does not own this element
+  const int GID = 3;
+  x1.ReplaceGlobalValues(1, &GID, &value);
+  x1.GlobalAssemble (Insert);
+
+  if (Map.MyGID(3)) {
+    //insist that the value for GID==3 is 1:
+    if (std::abs(x1.Values()[Map.LID(3)] - 1) > 1.e-9) return -1;
+  }
+
+  std::cout << x1;
+
+  Comm.Barrier();
+
+				// re-apply GlobalAssemble. Nothing should
+				// happen
+  x1.GlobalAssemble (Insert);
+  std::cout << x1;
+  if (Map.MyGID(3)) {
+    //insist that the value for GID==3 is 1:
+    if (std::abs(x1.Values()[Map.LID(3)] - 1) > 1.e-9) return -1;
+  }
+
+  return 0;
+}
