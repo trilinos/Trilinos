@@ -8,6 +8,10 @@
 typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 #endif
 
+#ifdef CTHULHU_MAPFACTORY_SHORT
+typedef Cthulhu::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
+#endif
+
 #ifdef CTHULHU_CRSGRAPH_SHORT
 typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
 #endif

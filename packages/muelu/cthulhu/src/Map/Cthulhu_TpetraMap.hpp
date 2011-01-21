@@ -24,7 +24,7 @@
 /** \file Cthulhu_TpetraMap.hpp 
 
     The declarations for the class Cthulhu::TpetraMap and related non-member constructors.
- */
+*/
 
 namespace Cthulhu {
 
@@ -53,9 +53,9 @@ namespace Cthulhu {
      */
     //TODO: replace Tpetra::LocalGlobal by Cthulhu::LocalGlobal
     TpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-              Tpetra::LocalGlobal lg=Tpetra::GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) 
-      : map_(Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, indexBase, comm, lg))) { CTHULHU_DEBUG_ME; }
-
+              Cthulhu::LocalGlobal lg=Cthulhu::GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) //TODO: convert Cthulhu::LocalGlobal to Tpetra::LocalGlobal
+      : map_(Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, indexBase, comm))) { CTHULHU_DEBUG_ME; } //, lg, node TODO TODO TODO
+      
     /** \brief TpetraMap constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
      *  are non-overlapping and contiguous 
@@ -88,7 +88,6 @@ namespace Cthulhu {
     ~TpetraMap() { CTHULHU_DEBUG_ME; }
 
     //@}
-
 
     //! @name TpetraMap Attribute Methods
     //@{ 
@@ -217,6 +216,8 @@ namespace Cthulhu {
 
     //@}
 
+    inline UnderlyingLib lib() const { return Cthulhu::UseTpetra; };
+
     const RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > & getTpetra_Map() const { CTHULHU_DEBUG_ME; return map_; }
 
   private:
@@ -307,6 +308,7 @@ namespace Cthulhu {
       return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
     }
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
 
     The Map is configured to use zero-based indexing.
@@ -317,8 +319,9 @@ namespace Cthulhu {
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
     createWeightedContigMapWithNode(int thisNodeWeight, global_size_t numElements, 
                                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
-      return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createUniformContigMap<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+      return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createWeightedContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(thisNodeWeight, numElements, comm, node)));
     }
+#endif
 
   } // useTpetra namespace
 
@@ -342,3 +345,5 @@ bool operator!= (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1
 #endif // CTHULHU_TPETRAMAP_HPP
 
 // NOTE: not copy constructor for Tpetra::Map ?
+
+//TODO: why there is createBlaBla and createBlaBleWithNode in Tpetra ? Can we factorize that ?

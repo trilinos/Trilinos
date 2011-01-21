@@ -14,6 +14,11 @@
 
 namespace Cthulhu {
 
+  enum UnderlyingLib {
+    UseEpetra,
+    UseTpetra
+  };
+
   /** \brief A class for partitioning distributed 
   */
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
@@ -131,6 +136,8 @@ namespace Cthulhu {
     virtual void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const = 0;
 
     //@}
+
+    virtual UnderlyingLib lib() const = 0;
 
   }; // Map class
 

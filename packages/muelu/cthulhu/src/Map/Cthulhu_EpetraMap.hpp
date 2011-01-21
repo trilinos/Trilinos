@@ -541,6 +541,8 @@ namespace Cthulhu {
     */
     const Epetra_Map& getEpetra_Map() const { CTHULHU_DEBUG_ME; return (Epetra_Map &)*map_; } //TODO: write a note about that. It's the same in Epetra_CrsMatrix.h to get the map.
 
+    inline UnderlyingLib lib() const { return Cthulhu::UseEpetra; };
+
   private:
 
     RCP<const Epetra_BlockMap> map_;
@@ -576,7 +578,7 @@ namespace Cthulhu {
     createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { CTHULHU_DEBUG_ME;
       Teuchos::RCP< EpetraMap > map;
       map = Teuchos::rcp( new EpetraMap((Cthulhu::global_size_t)numElements, // num elements, global and local
-                                        0,                                  // index base is zero
+                                        0,                                   // index base is zero
                                         comm, LocallyReplicated, node));
       return map.getConst();
     }
@@ -639,6 +641,7 @@ namespace Cthulhu {
       return map.getConst();
     }
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
 
     The Map is configured to use zero-based indexing.
@@ -648,6 +651,7 @@ namespace Cthulhu {
     Teuchos::RCP< const EpetraMap >
     createWeightedContigMapWithNode(int myWeight, global_size_t numElements, 
                                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node);
+#endif
 
   } // useEpetra namespace
 

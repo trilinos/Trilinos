@@ -10,8 +10,9 @@
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
 /**********************************************************************************/
-#define CTHULHU_USE_EPETRA
+//#define CTHULHU_USE_EPETRA
 #include <Cthulhu_Map.hpp>
+#include <Cthulhu_MapFactory.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
 #include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_CrsOperator.hpp>
@@ -69,8 +70,7 @@ int main(int argc, char *argv[]) {
   else return EXIT_FAILURE;
   LO indexBase = 0;
 
-  RCP<const Map > map;
-  map = rcp( new MyMap(numGlobalElements, indexBase, comm) );
+  RCP<const Map> map = MapFactory::Build(Cthulhu::UseEpetra, numGlobalElements, indexBase, comm);
 
   Teuchos::ParameterList matrixList;
   matrixList.set("nx",nx);
@@ -84,15 +84,13 @@ int main(int argc, char *argv[]) {
   //  { // Get the underlying Epetra Mtx (Wow ! It's paintful ! => I should create a function to do that)
     RCP<const CrsMatrix> tmp_CrsMtx = Op->getCrsMatrix();
     const RCP<const Cthulhu::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Cthulhu::EpetraCrsMatrix>(tmp_CrsMtx);
-    if (tmp_ECrsMtx == Teuchos::null) { std::cout << "Error !" << std::endl; return 1; }
+    if (tmp_ECrsMtx == Teuchos::null) { std::cout << "Error ! Not an Epetra matrix" << std::endl; return 1; }
     A = tmp_ECrsMtx->getEpetra_CrsMatrix();
     // }
   
     RCP<Graph<> > graph = rcp(new Graph<>(Op->getCrsGraph(), "Uncoupled"));
   
   int printFlag=6;
-  if (graph->GetComm()->getRank() == 0 && printFlag < MueLu_PrintLevel())
-    printf("main() Aggregate_CoarsenUncoupled : \n");
   
   AggregationOptions aggOptions;
   
@@ -102,7 +100,10 @@ int main(int argc, char *argv[]) {
   // aggOptions.SetOrdering(1); //TODO: RandomReorder()
   aggOptions.SetOrdering(2);
   aggOptions.SetPhase3AggCreation(0.5);
-  
+
+  if (graph->GetComm()->getRank() == 0 && printFlag < MueLu_PrintLevel())
+    printf("main() Aggregate_CoarsenUncoupled : \n");
+ 
   RCP<Aggregates<> > aggregates = MueLu_Aggregate_CoarsenUncoupled(aggOptions,*graph);
 
   std::string name = "UC_CleanUp";
@@ -121,6 +122,7 @@ int main(int argc, char *argv[]) {
   
   printf("finals\n");
   cout << *Final_ << endl; sleep(2);
+
   return EXIT_SUCCESS;
 
 }
