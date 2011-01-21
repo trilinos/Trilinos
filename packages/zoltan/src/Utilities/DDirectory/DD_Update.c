@@ -230,7 +230,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
       ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL);
 
    /* compute offset into hash table to find head of linked list */
-   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashdata);
+   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashfn);
 
    /* walk linked list until end looking for matching gid */
    for (ptr = dd->table+index; *ptr != NULL; ptr = &((*ptr)->next))
