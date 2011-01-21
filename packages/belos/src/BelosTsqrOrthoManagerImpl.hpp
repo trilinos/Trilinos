@@ -290,15 +290,20 @@ namespace Belos {
     {
       if (MVT::GetNumberVecs(X) == 1)
 	{
+	  using Teuchos::Range1D;
+	  using Teuchos::RCP;
+	  using Teuchos::rcp;
+
 	  // Make space for the normalization coefficient
 	  if (B.is_null())
-	    B = Teuchos::rcp (new mat_type (1, 1));
+	    B = rcp (new mat_type (1, 1));
 	  else 
 	    B->shape (1, 1);
 	  // Normalize X in place (faster than TSQR for one column)
 	  const int rank = normalizeOne (X, B);
 	  // Copy results to first column of Q
-	  MVT::Assign (X, MVT::CloneViewNonConst (Q, Teuchos::Range1D(0,0)));
+	  RCP<MV> Q_0 = MVT::CloneViewNonConst (Q, Range1D(0,0));
+	  MVT::Assign (X, *Q_0);
 	  return rank;
 	}
       else

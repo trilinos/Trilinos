@@ -57,16 +57,17 @@ namespace Belos {
   /// reorthogonalization (no norm tests), but has no rank-revealing
   /// features.
   template<class Scalar, class MV>
-  class SimpleOrthoManager : OrthoManager<Scalar, MV> {
+  class SimpleOrthoManager : public OrthoManager<Scalar, MV> {
   public:
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
     typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+    typedef Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > mat_ptr;
     
   private:
     typedef MultiVecTraits<Scalar, MV> MVT;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
-    typedef Teuchos::ScalarTraits<magnitude_Type> SCTM;
+    typedef Teuchos::ScalarTraits<magnitude_type> SCTM;
 
     std::string label_;
     bool reorthogonalize_;
@@ -163,7 +164,7 @@ namespace Belos {
       else
 	{
 	  try {
-	    normalizeImpl = params->get("Normalization");
+	    normalizeImpl = params->get<std::string>("Normalization");
 	  } catch (InvalidParameter&) {
 	    normalizeImpl = "MGS";
 	  }
@@ -174,7 +175,7 @@ namespace Belos {
       else
 	{
 	  try {
-	    reorthogonalize = params->get("Reorthogonalization");
+	    reorthogonalize = params->get<bool>("Reorthogonalization");
 	  } catch (InvalidParameter&) {
 	    reorthogonalize = false;
 	  }
@@ -204,7 +205,7 @@ namespace Belos {
 
     void 
     project (MV &X, 
-	     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> > > C, 
+	     Teuchos::Array<mat_ptr> C,
 	     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -224,8 +225,7 @@ namespace Belos {
     }
 
     int 
-    normalize (MV &X, 
-	       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> > B) const
+    normalize (MV &X, mat_ptr B) const
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
@@ -240,14 +240,12 @@ namespace Belos {
 
     int 
     projectAndNormalize (MV &X, 
-			 Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-			 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+			 Teuchos::Array<mat_ptr> C,
+			 mat_ptr B,
 			 Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-#endif // BELOS_TEUCHOS_TIME_MONITOR
-
+      // Don't need time monitors here: project() and normalize() have
+      // their own.
       project (X, C, Q);
       return normalize (X, B);
     }
@@ -301,7 +299,7 @@ namespace Belos {
       std::vector<magnitude_type> normVec (1);
       for (int j = 0; j < numCols; ++j)
 	{
-	  RCP<MV> X_cur = MVT::CloneView (X, Range1D(j, j));
+	  RCP<MV> X_cur = MVT::CloneViewNonConst (X, Range1D(j, j));
 	  MV& X_j = *X_cur;
 	  for (int i = 0; i < j; ++i)
 	    {
@@ -315,18 +313,18 @@ namespace Belos {
 		  // innerProd() overwrites B(i,j), so save the
 		  // first-pass projection coefficient and update
 		  // B(i,j) afterwards.
-		  const Scalar B_ij_first = B(i, j);
+		  const Scalar B_ij_first = (*B)(i, j);
 		  innerProd (X_i, X_j, B_ij);
 		  MVT::MvTimesMatAddMv (-SCT::one(), X_i, B_ij, SCT::one(), X_j);
-		  B(i, j) += B_ij_first;
+		  (*B)(i, j) += B_ij_first;
 		}
 	    }
 	  // Normalize column j of X
 	  norm (X_j, normVec);
 	  const magnitude_type theNorm = normVec[0];
-	  B(j, j) = theNorm;
+	  (*B)(j, j) = theNorm;
 	  if (normVec[0] != SCTM::zero())
-	    MvScale (X_j, SCT::one() / theNorm);
+	    MVT::MvScale (X_j, SCT::one() / theNorm);
 	  else
 	    return j; // break out early
 	}
@@ -335,8 +333,7 @@ namespace Belos {
 
 
     int 
-    normalizeCgs (MV &X, 
-		  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> > B) const
+    normalizeCgs (MV &X, mat_ptr B) const
     {
       using Teuchos::Range1D;
       using Teuchos::RCP;
@@ -351,6 +348,7 @@ namespace Belos {
 	B = rcp (new mat_type (numCols, numCols));
       else if (B->numRows() != numCols || B->numCols() != numCols)
 	B->shape (numCols, numCols);
+      mat_type& B_ref = *B;
 
       // Classical Gram-Schmidt orthogonalization 
       std::vector<magnitude_type> normVec (1);
@@ -364,14 +362,14 @@ namespace Belos {
 	// Normalize column 0 of X
 	norm (*X_cur, normVec);
 	const magnitude_type theNorm = normVec[0];
-	B(0,0) = theNorm;
+	B_ref(0,0) = theNorm;
 	if (theNorm != SCTM::zero())
 	  {
 	    const Scalar invNorm = SCT::one() / theNorm;
 	    MVT::MvScale (*X_cur, invNorm);
 	  }
 	else
-	  return j; // break out early
+	  return 0; // break out early
       }
 
       // Orthogonalize the remaining columns of X
@@ -379,7 +377,7 @@ namespace Belos {
 	{
 	  RCP<MV> X_cur = MVT::CloneViewNonConst (X, Range1D(j, j));
 	  RCP<const MV> X_prv = MVT::CloneView (X, Range1D(0, j-1));	      
-	  mat_type B_prvcur (View, *B, j-1, 1, 0, j);
+	  mat_type B_prvcur (View, B_ref, j, 1, 0, j);
 
 	  // Project X_cur against X_prv (first pass)
 	  innerProd (*X_prv, *X_cur, B_prvcur);
@@ -388,7 +386,7 @@ namespace Belos {
 	  // project X_cur against X_prv (second pass)
 	  if (reorthogonalize_) 
 	    {		    
-	      mat_type B2_prvcur (View, *B2, j-1, 1, 0, j);
+	      mat_type B2_prvcur (View, B2, j, 1, 0, j);
 	      innerProd (*X_prv, *X_cur, B2_prvcur);
 	      MVT::MvTimesMatAddMv (-SCT::one(), *X_prv, B2_prvcur, SCT::one(), *X_cur);
 	      B_prvcur += B2_prvcur;
@@ -396,7 +394,7 @@ namespace Belos {
 	  // Normalize column j of X
 	  norm (*X_cur, normVec);
 	  const magnitude_type theNorm = normVec[0];
-	  B(j,j) = theNorm;
+	  B_ref(j,j) = theNorm;
 	  if (theNorm != SCTM::zero())
 	    {
 	      const Scalar invNorm = SCT::one() / theNorm;

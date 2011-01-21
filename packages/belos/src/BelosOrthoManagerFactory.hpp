@@ -361,8 +361,10 @@ namespace Belos {
       if (ortho == "Simple")
 	{
 	  TEST_FOR_EXCEPTION(! M.is_null(), std::logic_error,
-			     "SimpleOrthoManager not yet supported for M != null");
-	  return rcp (new SimpleOrthoManager<Scalar, MV> (label, params);
+			     "SimpleOrthoManager is not yet supported "
+			     "when the operator M is nontrivial (i.e., "
+			     "M != null).");
+	  return rcp (new SimpleOrthoManager<Scalar, MV> (label, params));
 	}
       // A MatOrthoManager is-an OrthoManager.
       return makeMatOrthoManager (ortho, M, label, params);
