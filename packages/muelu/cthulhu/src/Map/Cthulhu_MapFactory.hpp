@@ -43,7 +43,7 @@ namespace Cthulhu {
      */
     //TODO: replace Tpetra::LocalGlobal by Cthulhu::LocalGlobal
     static RCP<Map> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-                          Tpetra::LocalGlobal lg=Tpetra::GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
+                          Cthulhu::LocalGlobal lg=Cthulhu::GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra)
         return rcp( new TpetraMap(numGlobalElements, indexBase, comm, lg, node) );
@@ -81,16 +81,6 @@ namespace Cthulhu {
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp( new TpetraMap(numGlobalElements, elementList, indexBase, comm, node) );
-#endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
-    }
-
-    /** \brief Map constructor to wrap a Tpetra::Map object
-     */
-    static RCP<Map> Build(UnderlyingLib lib, const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &map) {
-#ifdef HAVE_CTHULHU_TPETRA
-      if (lib == UseTpetra)
-        return rcp( new TpetraMap(map) );
 #endif
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
     }
