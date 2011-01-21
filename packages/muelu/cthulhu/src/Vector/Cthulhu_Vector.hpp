@@ -107,15 +107,12 @@ namespace Cthulhu {
     //! @name Overridden from Teuchos::Describable 
     //@{
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Return a simple one-line description of this object. */
     virtual std::string description() const = 0;
-#endif
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
-#endif
+
     //@}
 
 //   protected:

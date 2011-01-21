@@ -121,26 +121,6 @@ namespace Cthulhu {
     int maxValue() const { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
     //@} 
 
-    //! @name Overridden from Teuchos::Describable 
-    //@{
-
-    /** \brief Return a simple one-line description of this object. */
-    inline std::string description() const { 
-      CTHULHU_DEBUG_ME; 
-
-      // This implementation come from Epetra_Vector_def.hpp (without modification)
-      std::ostringstream oss;
-      //TODO      oss << Teuchos::Describable::description();
-      //TODO oss << "{length="<<this->getGlobalLength()
-      //<< "}";
-      return oss.str();      
-    };
-
-    /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
-      
-    }
-
     //@}
 
     // protected:
@@ -436,15 +416,11 @@ namespace Cthulhu {
     inline size_t getNumVectors() const { CTHULHU_DEBUG_ME; return vec_->getNumVectors(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the local vector length on the calling processor of vectors in the multi-vector.
-    inline size_t getLocalLength() const { CTHULHU_DEBUG_ME; return vec_->getLocalLength(); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline size_t getLocalLength() const { CTHULHU_DEBUG_ME; return vec_->MyLength(); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the global vector length of vectors in the multi-vector.
-    inline global_size_t getGlobalLength() const { CTHULHU_DEBUG_ME; return vec_->getGlobalLength(); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline global_size_t getGlobalLength() const { CTHULHU_DEBUG_ME; return vec_->GlobalLength(); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true). WARNING: this may vary from node to node.
@@ -461,15 +437,40 @@ namespace Cthulhu {
     //! @name Overridden from Teuchos::Describable 
     //@{
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Return a simple one-line description of this object. */
-    inline std::string description() const { CTHULHU_DEBUG_ME; return vec_->description(); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline std::string description() const { CTHULHU_DEBUG_ME; 
+      CTHULHU_DEBUG_ME; 
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+      // This implementation come from Epetra_Vector_def.hpp (without modification)
+      std::ostringstream oss;
+      oss << Teuchos::Describable::description();
+      oss << "{length="<<this->getGlobalLength()
+      << "}";
+      return oss.str();
+    }
+
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { CTHULHU_DEBUG_ME; vec_->describe(out, verbLevel); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
+      CTHULHU_DEBUG_ME; 
+      
+      typedef Kokkos::MultiVector<double> KMV;
+      typedef Kokkos::DefaultArithmetic<KMV>   MVT;
+
+      // This implementation come from Tpetra_Vector_def.hpp (without modification)
+      using std::endl;
+      using std::setw;
+      using Teuchos::VERB_DEFAULT;
+      using Teuchos::VERB_NONE;
+      using Teuchos::VERB_LOW;
+      using Teuchos::VERB_MEDIUM;
+      using Teuchos::VERB_HIGH;
+      using Teuchos::VERB_EXTREME;
+      Teuchos::EVerbosityLevel vl = verbLevel;
+
+
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+
+    }
 
     //@}
 

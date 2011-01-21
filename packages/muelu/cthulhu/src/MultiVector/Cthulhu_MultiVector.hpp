@@ -279,15 +279,11 @@ namespace Cthulhu {
     virtual size_t getNumVectors() const =0;
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the local vector length on the calling processor of vectors in the multi-vector.
     virtual size_t getLocalLength() const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the global vector length of vectors in the multi-vector.
     virtual global_size_t getGlobalLength() const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true). WARNING: this may vary from node to node.

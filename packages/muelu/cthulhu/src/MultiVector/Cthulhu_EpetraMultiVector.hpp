@@ -350,15 +350,11 @@ namespace Cthulhu {
     inline size_t getNumVectors() const { CTHULHU_DEBUG_ME; return vec_->getNumVectors(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the local vector length on the calling processor of vectors in the multi-vector.
-    inline size_t getLocalLength() const { CTHULHU_DEBUG_ME; return vec_->getLocalLength(); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline size_t getLocalLength() const { CTHULHU_DEBUG_ME; return vec_->MyLength(); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the global vector length of vectors in the multi-vector.
-    inline global_size_t getGlobalLength() const { CTHULHU_DEBUG_ME; return vec_->getGlobalLength(); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline global_size_t getGlobalLength() const { CTHULHU_DEBUG_ME; return vec_->GlobalLength(); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true). WARNING: this may vary from node to node.
@@ -376,12 +372,15 @@ namespace Cthulhu {
     //@{
 
     /** \brief Return a simple one-line description of this object. */
-    inline std::string description() const { CTHULHU_DEBUG_ME; return "TODO"; }
+    inline std::string description() const { CTHULHU_DEBUG_ME; 
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+      return "TODO"; 
+    }
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
       CTHULHU_DEBUG_ME;
-      std::cout << "TODO" << std::endl;
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
     }
 
     //@}

@@ -139,11 +139,10 @@ namespace Cthulhu {
 
       // This implementation come from Epetra_Vector_def.hpp (without modification)
       std::ostringstream oss;
-      //TODO      oss << Teuchos::Describable::description();
-      //TODO oss << "{length="<<this->getGlobalLength()
-      //<< "}";
+      oss << Teuchos::Describable::description();
+      oss << "{length="<<this->getGlobalLength()
+      << "}";
       return oss.str();
-      
     };
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
@@ -163,6 +162,9 @@ namespace Cthulhu {
       using Teuchos::VERB_HIGH;
       using Teuchos::VERB_EXTREME;
       Teuchos::EVerbosityLevel vl = verbLevel;
+
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+
       if (vl == VERB_DEFAULT) vl = VERB_LOW;
 //       Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
 //       const int myImageID = comm->getRank(),
