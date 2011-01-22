@@ -277,7 +277,7 @@
   templated on the sparse kernels class, as the graph object does not provide
   multiplication and solve methods. However, because the sparse kernels may
   dictate the storage, they must have some input into the design of the sparse
-  graph class, in addition to their obvious significant to the matrix class.
+  graph class, in addition to their obvious significance to the matrix class.
 
   The following simplified code demonstrates the relationship between these objects and their typical usage:
   \code
