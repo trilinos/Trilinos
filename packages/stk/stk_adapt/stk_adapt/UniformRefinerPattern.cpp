@@ -77,6 +77,9 @@ namespace stk {
           entity_vector.resize(nchild);
         }
       entity_vector[ordinal] = &newElement;
+
+      if (0) std::cout << "tmp here 12 ordinal= " << ordinal << " [ " << getNumNewElemPerElem() << "] newElement_ptr= "<< &newElement<< std::endl;
+
 #endif
     }
 

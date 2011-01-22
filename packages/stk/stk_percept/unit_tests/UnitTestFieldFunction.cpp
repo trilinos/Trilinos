@@ -237,7 +237,7 @@ namespace stk
 
         /// get the new field created by readModelCreateOptionalFields()
         FieldBase* coords_mag_field = eMesh.getField("coords_mag_field");
-        VERIFY_OP(coords_mag_field, !=, 0, "TEST::function::fieldFunction_readMesh_createField_interpolateFrom: null coords_mag_field");
+        VERIFY_OP_ON(coords_mag_field, !=, 0, "TEST::function::fieldFunction_readMesh_createField_interpolateFrom: null coords_mag_field");
 
         /// create a field function from the existing coordinates field
         FieldFunction ff_coords("ff_coords", f_coords, eMesh, 3, 3, FieldFunction::SIMPLE_SEARCH );

@@ -79,12 +79,12 @@ namespace stk {
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo);
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
+#ifndef NDEBUG
         unsigned num_child = ref_topo.num_child();
-
         VERIFY_OP(num_child, == , 2, "createNewElements num_child problem");
         bool homogeneous_child = ref_topo.homogeneous_child();
-
         VERIFY_OP(homogeneous_child, ==, true, "createNewElements homogeneous_child");
+#endif
 
         // new_sub_entity_nodes[i][j]
         //const UInt * const * child_nodes() const {
@@ -101,8 +101,10 @@ namespace stk {
             for (unsigned jNode = 0; jNode < 2; jNode++)
               {
                 unsigned childNodeIdx = ref_topo.child_node(iChild)[jNode];
+#ifndef NDEBUG
                 unsigned childNodeIdxCheck = l2[childNodeIdx].ordinal_of_node;
                 VERIFY_OP(childNodeIdx, ==, childNodeIdxCheck, "childNodeIdxCheck");
+#endif
                 unsigned inode=0;
 
                 if (l2[childNodeIdx].rank_of_subcell == 0)

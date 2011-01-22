@@ -2122,15 +2122,6 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createCrsMatrix(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
-{
-  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ret;
-  ret = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map, 0, Tpetra::DynamicProfile) );
-  return ret;
-}
-
 //
 // Explicit instantiation macro
 //

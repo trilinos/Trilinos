@@ -1112,7 +1112,9 @@ namespace stk {
 	mesh::Part * const part = *i ;
 
 	if (is_part_io_part(*part)) {
-          if (part->primary_entity_rank() == no_rank)
+	  if (invalid_rank(part->primary_entity_rank()))
+	    continue;
+          else if (part->primary_entity_rank() == no_rank)
 	    define_node_set(*part, bulk_data, io_region);
           else if (part->primary_entity_rank() == el_rank)
 	    define_element_block(*part, bulk_data, io_region);

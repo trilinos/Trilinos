@@ -39,6 +39,7 @@
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_adapt/UniformRefiner.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
+#include <stk_percept/RunEnvironment.hpp>
 
 #include <stk_percept/fixtures/Fixture.hpp>
 #include <stk_percept/fixtures/HeterogeneousFixture.hpp>
@@ -66,22 +67,80 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
+      TEST(regr_uniformRefiner, break_tet_shell3_tet)
+      {
+        EXCEPTWATCH;
+
+        //if (1) return;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        std::cout << "p_size= " << p_size << std::endl;
+        // this case can't be load balanced (I presume there are too few elements)
+        if (p_size <= 1)
+          {
+            // start_demo_break_tet_shell3_tet
+
+            std::string input_mesh = "./input_files/shell-tests/tet_shell3_tet.g";
+            if (p_size) 
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh;
+            eMesh.open(input_mesh);
+
+            URP_Heterogeneous_3D break_pattern(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            eMesh.commit();
+
+            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+
+            //breaker.setRemoveOldElements(false);
+            //breaker.setIgnoreSideSets(true);
+            unsigned numRefines = 2;
+            for (unsigned iBreak = 0; iBreak < numRefines; iBreak++)
+              {
+                breaker.doBreak();
+              }
+
+            eMesh.saveAs("./output_files/tet_shell3_tet_"+toString(numRefines)+".g");
+            eMesh.close();
+
+            // end_demo
+
+          }
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
       TEST(regr_uniformRefiner, break_hex_shell4_hex)
       {
         EXCEPTWATCH;
 
-        if (1) return;
+        //if (1) return;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
+        // this case can't be load balanced (I presume there are too few elements)
         //if (p_size <= 3)
-        if (p_size == 1)
+          if (p_size == 1)
           {
             // start_demo_break_hex_shell4_hex
+            std::string input_mesh = "./input_files/shell-tests/hex_shell4_hex.g";
+            if (p_size) 
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
 
             percept::PerceptMesh eMesh;
-            eMesh.open("./input_files/shell-tests/hex_shell4_hex.g");
+            eMesh.open(input_mesh);
 
             URP_Heterogeneous_3D break_pattern(eMesh);
             int scalarDimension = 0; // a scalar
@@ -93,7 +152,7 @@ namespace stk
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
-            eMesh.saveAs("./output_files/hex_shell4_hex_1.e");
+            eMesh.saveAs("./output_files/hex_shell4_hex_1.g");
             eMesh.close();
 
             // end_demo
@@ -183,14 +242,20 @@ namespace stk
 
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
-          //if (p_size <= 3)
-        if (p_size == 1)
+
+        // this case can't be load balanced (I presume there are too few elements)
+
+        if (p_size <= 1)
           {
             // start_demo_break_quad_to_quad_shell
+            std::string input_mesh = "./input_files/shell-tests/freshell_quad4.g";
+            if (p_size) 
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
 
             percept::PerceptMesh eMesh;
-            eMesh.open("./input_files/shell-tests/freshell_quad4.g");
-
+            eMesh.open(input_mesh);
 
             UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
 
@@ -202,7 +267,7 @@ namespace stk
             eMesh.commit();
 
             eMesh.printInfo("quad mesh");
-            eMesh.saveAs("./output_files/freshell_quad4_0.e");
+            eMesh.saveAs("./output_files/freshell_quad4_0.g");
 
             UniformRefiner breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
             //breaker.setIgnoreSideSets(true);
@@ -210,7 +275,7 @@ namespace stk
 
             //eMesh.printInfo("quad mesh refined", 5);
             eMesh.printInfo("quad shell mesh refined");
-            eMesh.saveAs("./output_files/freshell_quad4_1.e");
+            eMesh.saveAs("./output_files/freshell_quad4_1.g");
             // end_demo
 
           }
@@ -229,13 +294,20 @@ namespace stk
 
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
-          //if (p_size <= 3)
-        if (p_size == 1)
+        // this case can't be load balanced (I presume there are too few elements)
+
+        if (p_size <= 1)
           {
             // start_demo_break_tri_to_tri_shell
 
+            std::string input_mesh = "./input_files/shell-tests/freshell_tri3.g";
+            if (p_size) 
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
             percept::PerceptMesh eMesh;
-            eMesh.open("./input_files/shell-tests/freshell_tri3.g");
+            eMesh.open(input_mesh);
 
 
             UniformRefinerPattern<shards::ShellTriangle<3>, shards::ShellTriangle<3>, 4, SierraPort > break_tri_to_tri_4(eMesh);
@@ -248,7 +320,7 @@ namespace stk
             eMesh.commit();
 
             eMesh.printInfo("tri mesh");
-            eMesh.saveAs("./output_files/freshell_tri3_0.e");
+            eMesh.saveAs("./output_files/freshell_tri3_0.g");
 
             UniformRefiner breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
             //breaker.setIgnoreSideSets(true);
@@ -256,7 +328,7 @@ namespace stk
 
             //eMesh.printInfo("tri mesh refined", 5);
             eMesh.printInfo("tri shell mesh refined");
-            eMesh.saveAs("./output_files/freshell_tri3_1.e");
+            eMesh.saveAs("./output_files/freshell_tri3_1.g");
             // end_demo
 
           }
@@ -1337,8 +1409,14 @@ namespace stk
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
             //breaker.doBreak();
-            breaker.doBreak();
-            eMesh.saveAs("./output_files/cylinder_tet10_tet10_1.e");
+
+            unsigned numRefines = 1;
+            for (unsigned iBreak = 0; iBreak < numRefines; iBreak++)
+              {
+                breaker.doBreak();
+              }
+            
+            eMesh.saveAs("./output_files/cylinder_tet10_tet10_"+toString(numRefines)+".e");
 
 
           }
@@ -1833,7 +1911,7 @@ namespace stk
         //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
         const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
 
-        if (p_size == 1)
+        if (p_size <= 1)
           {
             // create the mesh
             {

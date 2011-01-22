@@ -10,6 +10,7 @@
 #define FACE_BREAKER_HETERO_3D 1
 #if FACE_BREAKER_HETERO_3D
 #include "UniformRefinerPattern_Quad4_Quad4_4_sierra.hpp"
+#include "UniformRefinerPattern_Tri3_Tri3_4_sierra.hpp"
 #endif
 
 namespace stk {
@@ -21,7 +22,7 @@ namespace stk {
       std::vector<UniformRefinerPatternBase *> m_bp;
 
 #if FACE_BREAKER_HETERO_3D
-      UniformRefinerPattern<shards::Quadrilateral<9>, shards::Quadrilateral<9>, 4, SierraPort > * m_face_breaker;
+      UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > * m_face_breaker;
 #endif
 
     protected:
@@ -43,11 +44,13 @@ namespace stk {
         m_bp.push_back(  new UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort > (eMesh, block_names) );
         m_bp.push_back(  new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort > (eMesh, block_names) );
 
-        m_bp.push_back(  new UniformRefinerPattern<shards::ShellQuadrilateral<4>,   shards::ShellQuadrilateral<4>,   4, SierraPort > (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::ShellQuadrilateral<4>,  shards::ShellQuadrilateral<4>,   4, SierraPort > (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::ShellTriangle<3>,       shards::ShellTriangle<3>,   4, SierraPort > (eMesh, block_names) );
 
 #if FACE_BREAKER_HETERO_3D
         
         m_bp.push_back(  new UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::Triangle<3>, shards::Triangle<3>, 4, SierraPort > (eMesh, block_names) );
 
 #endif
 

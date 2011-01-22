@@ -178,6 +178,8 @@ int Zoltan_PHG_Coarsening
   int *intptr;
   float *floatptr;
   MPI_Datatype zoltan_gno_mpi_type;
+  struct phg_timer_indices *timer = NULL;
+  int time_details;
 
 #ifdef _DEBUG1
   int    totiden, totsize1;  
@@ -186,8 +188,8 @@ int Zoltan_PHG_Coarsening
 
   zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
-  struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
-  int time_details = (hgp->use_timers > 3);
+  timer = Zoltan_PHG_LB_Data_timers(zz);
+  time_details = (hgp->use_timers > 3);
 
   if (time_details) {
     if (timer->comerge < 0)

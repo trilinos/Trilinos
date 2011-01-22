@@ -39,7 +39,7 @@ int Zoltan_Initialize(int argc, char **argv, float *ver)
  *  uses MPI.
  */
 
-int mpi_flag, ierr;
+int mpi_flag;
 
   /* 
    *  Test whether MPI is already initialized.  If not, call MPI_Init.

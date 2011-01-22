@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 /* Local declarations. */
   struct Zoltan_Struct *zz = NULL;
 
-  char  *cmd_file, *info;
+  char  *cmd_file;
   char   cmesg[256]; /* for error messages */
 
   float  version;

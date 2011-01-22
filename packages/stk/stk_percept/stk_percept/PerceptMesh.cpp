@@ -70,7 +70,10 @@ namespace stk {
         {
           init(m_comm);
         }
-      std::cout << "PerceptMesh:: opening "<< in_filename << std::endl;
+
+      const unsigned p_rank = parallel_machine_rank( getBulkData()->parallel() );
+
+      if (p_rank == 0)  std::cout << "PerceptMesh:: opening "<< in_filename << std::endl;
       readMetaDataNoCommit(in_filename);
       m_isCommitted = false;
       m_isAdopted = false;
@@ -1192,7 +1195,9 @@ namespace stk {
 
     void PerceptMesh::writeModel( const std::string& out_filename)
     {
-      std::cout << "PerceptMesh:: saving "<< out_filename << std::endl;
+      const unsigned p_rank = parallel_machine_rank( getBulkData()->parallel() );
+
+      if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << std::endl;
       //checkState("writeModel" );
       stk::mesh::MetaData& meta_data = *m_metaData;
       stk::mesh::BulkData& bulk_data = *m_bulkData;

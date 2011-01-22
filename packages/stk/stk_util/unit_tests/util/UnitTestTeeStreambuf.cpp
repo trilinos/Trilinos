@@ -16,7 +16,7 @@ STKUNIT_UNIT_TEST(UnitTestTeeStreambuf, UnitTest)
 {
   stk::tee_streambuf    out_tee_streambuf;
 
-  std::ostream          out(&out_tee_streambuf);
+  std::ostream          my_out(&out_tee_streambuf);
   
   std::ostringstream    dest1;
   std::ostringstream    dest2;
@@ -29,21 +29,21 @@ STKUNIT_UNIT_TEST(UnitTestTeeStreambuf, UnitTest)
 
   std::string message3 = message1 + message2;
   
-  out << message1;
+  my_out << message1;
 
   STKUNIT_ASSERT_EQUAL(dest1.str(), message1);
   STKUNIT_ASSERT_EQUAL(dest2.str(), message1);
 
   out_tee_streambuf.remove(&dest2);
 
-  out << message2;
+  my_out << message2;
   
   STKUNIT_ASSERT_EQUAL(dest1.str(), message3);
   STKUNIT_ASSERT_EQUAL(dest2.str(), message1);
 
   out_tee_streambuf.remove(&dest1);
 
-  out << message2;
+  my_out << message2;
 
   STKUNIT_ASSERT_EQUAL(dest1.str(), message3);
   STKUNIT_ASSERT_EQUAL(dest2.str(), message1);

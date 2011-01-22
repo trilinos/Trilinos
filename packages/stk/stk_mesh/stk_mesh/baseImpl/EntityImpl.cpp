@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
-#include <cassert>
 
 #include <stk_mesh/base/Ghosting.hpp>
 

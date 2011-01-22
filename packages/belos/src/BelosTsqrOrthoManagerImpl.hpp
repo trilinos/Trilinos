@@ -239,31 +239,32 @@ namespace Belos {
     /// \return Rank of X
     int normalize (MV& X, serial_matrix_ptr B);
 
-    /// \brief Normalize X into Q*B, overwriting X with invalid values
+    /// \brief Normalize X into Q*B, overwriting X
     ///
-    /// Normalize X into Q*B, overwriting X with invalid values.  
+    /// Normalize X into Q*B, overwriting X with invalid values.
+    ///
+    /// \param X [in/out] Vector(s) to normalize
+    /// \param Q [out] Normalized vector(s)
+    /// \param B [out] Normalization coefficients
+    ///
+    /// \return Rank of X
+    ///
+    /// \note Q must have at least as many columns as X.  It may have
+    ///   more columns than X; those columns are ignored.
     ///
     /// \note We expose this interface to applications because TSQR is
     ///   not able to compute an orthogonal basis in place; it needs
     ///   scratch space.  Applications can exploit this interface to
     ///   avoid excessive copying of vectors when using TSQR for
     ///   orthogonalization.
-    ///
-    /// \param X [in/out] Vector(s) to orthogonalize
-    /// \param B [out] Orthogonalization coefficients
-    ///
-    /// \return Rank of X
-    ///
-    /// \note Q must have at least as many columns as X.  It may have
-    /// more columns than X; those columns are ignored.
     int 
-    normalizeNoCopy (MV& X, MV& Q, serial_matrix_ptr B);
+    normalizeOutOfPlace (MV& X, MV& Q, serial_matrix_ptr B);
 
     /// Equivalent (in exact arithmetic) to project(X,C,Q) followed by
     /// normalize(X,B).  However, this method performs
     /// reorthogonalization more efficiently and accurately.
     ///
-    /// \param X [in/out] The vectors to project against Q and normalize.
+    /// \param X [in/out] The vectors to project against Q and normalize
     /// \param C [out] The projection coefficients 
     /// \param B [out] The normalization coefficients
     /// \param Q [in] The orthogonal basis against which to project
@@ -283,24 +284,24 @@ namespace Belos {
     /// orthogonal vectors and X_in is overwritten with invalid values.
     ///
     /// \param X_in [in/out] On input: The vectors to project against
-    ///   Q and normalize.  Overwritten with invalid values on output.
-    /// \param X_out [out] On output: the normalized input vectors
-    ///   after projection against Q.
-    /// \param C [out] The projection coefficients 
-    /// \param B [out] The normalization coefficients
+    ///   Q and normalize.  On output: Overwritten with invalid values.
+    /// \param X_out [out] The normalized input vectors after 
+    ///   projection against Q.
+    /// \param C [out] Projection coefficients 
+    /// \param B [out] Normalization coefficients
     /// \param Q [in] The orthogonal basis against which to project
     ///
     /// \return Rank of X_in after projection
     ///
     /// \note We expose this interface to applications for the same
-    ///   reason that we expose normalizeNoCopy().
+    ///   reason that we expose normalizeOutOfPlace().
     int 
-    projectAndNormalizeNoCopy (MV& X_in, 
-			       MV& X_out,
-			       prev_coeffs_type C,
-			       serial_matrix_ptr B,
-			       const_prev_mvs_type Q);
-
+    projectAndNormalizeOutOfPlace (MV& X_in, 
+				   MV& X_out,
+				   prev_coeffs_type C,
+				   serial_matrix_ptr B,
+				   const_prev_mvs_type Q);
+    
     /// \brief Return \f$ \| I - X^* \cdot X \|_F \f$
     ///
     /// Return the Frobenius norm of I - X^* X, which is an absolute
@@ -1342,7 +1343,7 @@ namespace Belos {
   template<class ScalarType, class MV>
   int 
   TsqrOrthoManagerImpl<ScalarType, MV>::
-  normalizeNoCopy (MV& X, MV& Q, serial_matrix_ptr B)
+  normalizeOutOfPlace (MV& X, MV& Q, serial_matrix_ptr B)
   {
     using Teuchos::Range1D;
     using Teuchos::RCP;
@@ -1362,7 +1363,7 @@ namespace Belos {
       return 0; // Fast exit for an empty input matrix
     TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols, std::invalid_argument, 
 		       "Belos::TsqrOrthoManagerImpl::normaliz"
-		       "eImplNoCopy(...): Q has " << MVT::GetNumberVecs(Q) 
+		       "eImplOutOfPlace(...): Q has " << MVT::GetNumberVecs(Q) 
 		       << " columns, which is too few, since X has " 
 		       << numCols << " columns.");
     // TSQR wants a Q with the same number of columns as X, so have
@@ -1477,7 +1478,7 @@ namespace Belos {
   template<class ScalarType, class MV>
   int 
   TsqrOrthoManagerImpl<ScalarType, MV>::
-  projectAndNormalizeNoCopy (MV& X_in, 
+  projectAndNormalizeOutOfPlace (MV& X_in, 
 			     MV& X_out,
 			     prev_coeffs_type C,
 			     serial_matrix_ptr B,
@@ -1498,7 +1499,7 @@ namespace Belos {
     // Make sure that X_out has at least as many columns as X_in.
     TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < ncols_X, 
 		       std::invalid_argument, 
-		       "Belos::TsqrOrthoManagerImpl::projectAndNormalizeNoCopy("
+		       "Belos::TsqrOrthoManagerImpl::projectAndNormalizeOutOfPlace("
 		       "...): X_out has " << MVT::GetNumberVecs(X_out) << " col"
 		       "umns, but X_in has " << ncols_X << " columns.");
 
@@ -1508,7 +1509,7 @@ namespace Belos {
 
     // If there are zero Q blocks or zero Q columns, just normalize!
     if (num_Q_blocks == 0 || ncols_Q_total == 0)
-      return normalizeNoCopy (X_in, X_out, B);
+      return normalizeOutOfPlace (X_in, X_out, B);
       
     // If we don't have enough C, expanding it creates null references.
     // If we have too many, resizing just throws away the later ones.
@@ -1548,7 +1549,7 @@ namespace Belos {
 
     // Rank of X_in after first projection pass.
     // This overwrites X_in with invalid values.
-    const int firstPassRank = normalizeNoCopy (X_in, X_out, B);
+    const int firstPassRank = normalizeOutOfPlace (X_in, X_out, B);
     // Current rank of X_out (we overwrote X_in above).
     int rank = firstPassRank;
 
@@ -1557,7 +1558,7 @@ namespace Belos {
     // random data.
     if (firstPassRank < ncols_X && randomizeNullSpace_)
       {
-	// normalizeNoCopy() has already replaced the null space basis
+	// normalizeOutOfPlace() has already replaced the null space basis
         // with random vectors, and orthogonalized those against the
         // already orthogonalized column space basis of X.  Now we
         // need to project the new random vectors against the Q
@@ -1572,7 +1573,7 @@ namespace Belos {
 	// Copy X_out_null into the last few columns of X_in
 	// (X_in_null) and do projections in there.
 	RCP<MV> X_in_null = MVT::CloneViewNonConst (X_in, nullSpaceIndices);
-	MVT::Assign (X_out_null, X_in_null);
+	MVT::Assign (*X_out_null, *X_in_null);
 
 	// Space for projection coefficients (will be thrown away)
 	prev_coeffs_type C_null (num_Q_blocks);
@@ -1586,7 +1587,7 @@ namespace Belos {
 	// be thrown away).
 	RCP<serial_matrix_type> B_null (new serial_matrix_type (numNullSpaceCols, numNullSpaceCols));
 	// Normalize, putting the resulting vectors in X_out_null.
-	const int randomVectorsRank = normalizeNoCopy (X_in_null, X_out_null, B_null);
+	const int randomVectorsRank = normalizeOutOfPlace (*X_in_null, *X_out_null, B_null);
 
 	// It's not impossible for the random data not to be full rank
 	// after projection and normalization.  In that case, we could
@@ -1595,7 +1596,7 @@ namespace Belos {
 	TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
 			   TsqrOrthoError, 
 			   "Belos::TsqrOrthoManagerImpl::projectAndNormalize"
-			   "NoCopy(): After projecting and normalizing the "
+			   "OutOfPlace(): After projecting and normalizing the "
 			   "random vectors (used to replace the null space "
 			   "basis vectors from normalizing X), they have rank "
 			   << randomVectorsRank << ", but should have full "
@@ -1679,7 +1680,7 @@ namespace Belos {
 	    // Coefficients for (re)normalization of X_in
 	    RCP<serial_matrix_type> B2 (new serial_matrix_type (ncols_X, ncols_X));
 	    // Normalize X_in into X_out
-	    const int secondPassRank = normalizeNoCopy (X_in, X_out, B2);
+	    const int secondPassRank = normalizeOutOfPlace (X_in, X_out, B2);
 	    rank = secondPassRank;
 
 	    // Update normalization coefficients.  We begin with

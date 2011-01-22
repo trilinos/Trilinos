@@ -1,18 +1,26 @@
+#include "Tpetra_Map.hpp"
+#include "Tpetra_BlockMap.hpp"
+#include "Tpetra_Directory.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_CrsMatrixSolveOp.hpp"
+#include "TpetraExt_BlockExtraction.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
 // definitions
+#include "Tpetra_Map_def.hpp"
+#include "Tpetra_BlockMap_def.hpp"
+#include "Tpetra_Directory_def.hpp"
 #include "Tpetra_MultiVector_def.hpp"
 #include "Tpetra_Vector_def.hpp"
 #include "Tpetra_CrsMatrix_def.hpp"
 #include "Tpetra_CrsGraph_def.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
 #include "Tpetra_CrsMatrixSolveOp_def.hpp"
+#include "TpetraExt_BlockExtraction_def.hpp"
 // nodes
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)
@@ -24,7 +32,6 @@
 #if defined(HAVE_KOKKOS_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
-
 
 /* the unit tests require some explicit instantiations that is not enabled in the build of the library
    specifically,
@@ -119,6 +126,20 @@ namespace Tpetra {
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::ThrustGPUNode)
 # endif
 #endif
+
+typedef Kokkos::DefaultNode::DefaultNodeType Node;
+
+template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
+createContigMap<int,long>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+
+TPETRA_CRSMATRIX_INSTANT(double,int,long,Node)
+TPETRA_MAP_INSTANT(int,long,Node)
+TPETRA_BLOCKMAP_INSTANT(int,long,Node)
+TPETRA_DIRECTORY_INSTANT(int,long,Node)
+
+namespace Ext {
+TPETRAEXT_BLOCKEXTRACTION_INSTANT(double,int,long,Node)
+}
 
 }
 

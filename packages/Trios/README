@@ -69,9 +69,7 @@ cmake  \
 -D Trilinos_ENABLE_Trios:BOOL=ON \
 -D Trilinos_ENABLE_STK:BOOL=OFF \
 -D Trilinos_ENABLE_Pamgen:BOOL=OFF \
--D TPL_ENABLE_Boost:BOOL=OFF \
 -D TPL_ENABLE_MPI:BOOL=OFF \
--D TPL_Boost_INCLUDE_DIRS:PATH=/sierra/Dev/gdsjaar/code/TPLs_src/boost/ \
 -D TPL_ENABLE_Netcdf:BOOL=ON \
 -D TPL_Netcdf_INCLUDE_DIRS:PATH=$ACCESS/include \
 -D Netcdf_LIBRARY_DIRS:PATH=$ACCESS/lib \

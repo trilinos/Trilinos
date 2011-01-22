@@ -49,9 +49,12 @@ namespace stk
         // intentionally ignoring return value to get around compiler warning
         //PerceptMesh::field_data( field , bucket, &stride);
         unsigned nDOF = stride;
+
+#ifndef NDEBUG
         int nOutDim = output_field_values.dimension(2); // FIXME for tensor
         VERIFY_OP((int)nDOF, == , nOutDim,
                   "FieldValuesComputer::getFieldValues: invalid dimensions nDof, m_codomain_dimensions[0]= ");
+#endif
 
         int numCells = transformed_basis_values.dimension(0); // FIXME for multiple cells
 

@@ -93,11 +93,13 @@ namespace Belos {
 		const Teuchos::RCP< MV >& S,
 		const int sizeX1,
 		const int sizeX2,
-		const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
+		const Teuchos::RCP<Belos::OutputManager<Scalar> >& MyOM)
       {
 	using Teuchos::Array;
+	using Teuchos::null;
 	using Teuchos::RCP;
 	using Teuchos::rcp;
+	using Teuchos::rcp_dynamic_cast;
 	using Teuchos::tuple;
 
 	// Number of tests that have failed thus far.
@@ -131,7 +133,7 @@ namespace Belos {
 	  //
 	  // Fill X1 with random values, and test the normalization error.
 	  //
-	  debugOut << "Filling X2 with random values... ";
+	  debugOut << "Filling X1 with random values... ";
 	  MVT::MvRandom(*X1);
 	  debugOut << "done." << endl
 		   << "Calling normalize() on X1... ";
@@ -157,7 +159,7 @@ namespace Belos {
 	  // Fill X2 with random values, project against X1 and normalize,
 	  // and test the orthogonalization error.
 	  //
-	  debugOut << "Filling X1 with random values... ";
+	  debugOut << "Filling X2 with random values... ";
 	  MVT::MvRandom(*X2);
 	  debugOut << "done." << endl
 		   << "Calling projectAndNormalize(X2,X1)... ";
@@ -196,6 +198,104 @@ namespace Belos {
 			     "orthogError(X2,X1) = " << err << " > TOL = " << TOL);
 	  debugOut << "done: || <X2,X1> || = " << err << endl;
 	}
+
+
+	//
+	// If OM is an OutOfPlaceNormalizerMixin, exercise the
+	// out-of-place normalization routines.
+	//
+	typedef OutOfPlaceNormalizerMixin<Scalar, MV> mixin_type;
+	RCP<mixin_type> tsqr = rcp_dynamic_cast<mixin_type>(OM);
+	if (! tsqr.is_null())
+	  {
+	    magnitude_type err;
+	    debugOut << endl 
+		     << "=== OutOfPlaceNormalizerMixin tests ===" 
+		     << endl << endl;
+	    //
+	    // Fill X1_in with random values, and test the normalization
+	    // error with normalizeOutOfPlace().
+	    //
+	    // Don't overwrite X1, else you'll mess up the tests that
+	    // follow!
+	    //
+	    RCP<MV> X1_in = MVT::CloneCopy (*X1);
+	    debugOut << "Filling X1_in with random values... ";
+	    MVT::MvRandom(*X1_in);
+	    debugOut << "done." << endl;
+	    debugOut << "Filling X1_out with different random values...";
+	    RCP<MV> X1_out = MVT::Clone(*X1_in, MVT::GetNumberVecs(*X1_in));
+	    MVT::MvRandom(*X1_out);
+	    debugOut << "done." << endl
+		     << "Calling normalizeOutOfPlace(*X1_in, *X1_out, null)... ";
+	    const int initialX1Rank = 
+	      tsqr->normalizeOutOfPlace(*X1_in, *X1_out, Teuchos::null);
+	    TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, std::runtime_error,
+			       "normalizeOutOfPlace(*X1_in, *X1_out, null) "
+			       "returned rank " << initialX1Rank << " from " 
+			       << sizeX1 << " vectors. Cannot continue.");
+	    debugOut << "done." << endl 
+		     << "Calling orthonormError() on X1_out... ";
+	    err = OM->orthonormError(*X1_out);
+	    TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+			       "After calling normalizeOutOfPlace(*X1_in, "
+			       "*X1_out, null), orthonormError(X1) = " 
+			       << err << " > TOL = " << TOL);
+	    debugOut << "done: ||<X1_out,X1_out> - I|| = " << err << endl;
+
+	    //
+	    // Fill X2_in with random values, project against X1_out
+	    // and normalize via projectAndNormalizeOutOfPlace(), and
+	    // test the orthogonalization error.
+	    //
+	    // Don't overwrite X2, else you'll mess up the tests that
+	    // follow!
+	    //
+	    RCP<MV> X2_in = MVT::CloneCopy (*X2);
+	    debugOut << "Filling X2_in with random values... ";
+	    MVT::MvRandom(*X2_in);
+	    debugOut << "done." << endl
+		     << "Filling X2_out with different random values...";
+	    RCP<MV> X2_out = MVT::Clone(*X2_in, MVT::GetNumberVecs(*X2_in));
+	    MVT::MvRandom(*X2_out);
+	    debugOut << "done." << endl
+		     << "Calling projectAndNormalizeOutOfPlace(X2_in, X2_out, "
+		     << "C, B, X1_out)...";
+	    int initialX2Rank;
+	    {
+	      Array<RCP<serial_matrix_type> > C (1);
+	      RCP<serial_matrix_type> B = Teuchos::null;
+	      initialX2Rank = 
+		tsqr->projectAndNormalizeOutOfPlace (*X2_in, *X2_out, C, B, 
+						     tuple<RCP<const MV> >(X1_out));
+	    }
+	    TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
+			       std::runtime_error, 
+			       "projectAndNormalizeOutOfPlace(*X2_in, "
+			       "*X2_out, C, B, tuple(X1_out)) returned rank "
+			       << initialX2Rank << " from " << sizeX2 
+			       << " vectors. Cannot continue.");
+	    debugOut << "done." << endl
+		     << "Calling orthonormError() on X2_out... ";
+	    err = OM->orthonormError (*X2_out);
+	    TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+			       "projectAndNormalizeOutOfPlace(*X2_in, *X2_out, "
+			       "C, B, tuple(X1_out)) did not meet tolerance: "
+			       "orthonormError(X2_out) = " 
+			       << err << " > TOL = " << TOL);
+	    debugOut << "done: || <X2_out,X2_out> - I || = " << err << endl
+		     << "Calling orthogError(X2_out, X1_out)... ";
+	    err = OM->orthogError (*X2_out, *X1_out);
+	    TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+			       "projectAndNormalizeOutOfPlace(*X2_in, *X2_out, "
+			       "C, B, tuple(X1_out)) did not meet tolerance: "
+			       "orthogError(X2_out, X1_out) = " 
+			       << err << " > TOL = " << TOL);
+	    debugOut << "done: || <X2_out,X1_out> || = " << err << endl;
+	    debugOut << endl 
+		     << "=== Done with OutOfPlaceNormalizerMixin tests ===" 
+		     << endl << endl;
+	  }
 
 	{
 	  //

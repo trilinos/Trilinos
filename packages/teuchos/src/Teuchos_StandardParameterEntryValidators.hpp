@@ -622,11 +622,11 @@ public:
         return getStringEnumString();
         break;
       default:
-        throw std::runtime_error("Cannot convert enumValue: " + toString(enumValue) + " to a string");
+        static const std::string typeString(toString(enumValue));
+        throw std::runtime_error("Cannot convert enumValue: " + typeString + " to a string");
+        //Should never get here. This code is here so that a warning is not generated.
+        return typeString;
     }
-    //Should never get here. This code is here so that a warning is not generated.
-    static const std::string emptyString("");
-    return emptyString;
   }
 
   /** \brief Gets the preferred type enum associated with a give string. */

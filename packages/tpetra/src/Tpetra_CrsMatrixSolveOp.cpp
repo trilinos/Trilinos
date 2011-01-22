@@ -2,8 +2,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
-
 #include "Tpetra_CrsMatrixSolveOp_def.hpp"
 // need this to instantiate CrsMatrix::solve()
 #include "Tpetra_CrsMatrix_def.hpp"

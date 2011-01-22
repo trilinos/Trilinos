@@ -633,7 +633,12 @@ namespace Tpetra {
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
+  createCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
+  {
+    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ret;
+    ret = rcp(new CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map, 0, DynamicProfile) );
+    return ret;
+  }
 
 } // namespace Tpetra
 

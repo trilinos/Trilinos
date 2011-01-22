@@ -119,10 +119,10 @@ protected:
 
   Property( MetaData & meta_data ,
             unsigned meta_data_ordinal ,
-            const std::string & name ,
+            const std::string & input_name ,
             const std::type_info & type ,
             unsigned n )
-    : m_name( name ),
+    : m_name( input_name ),
       m_meta_data( meta_data ),
       m_meta_data_ordinal( meta_data_ordinal ),
       m_type( type ), m_size( n ) {}
@@ -167,9 +167,9 @@ private:
 protected:
 
   Property( MetaData & meta_data, unsigned meta_data_ordinal ,
-            const std::string & name, unsigned size = 1 )
+            const std::string & input_name, unsigned input_size = 1 )
     : PropertyBase( meta_data, meta_data_ordinal ,
-                    name, typeid(DataType), size ) {}
+                    input_name, typeid(DataType), input_size ) {}
 
   virtual void add_property( unsigned key ) { m_data_scalar[ key ]; }
 
