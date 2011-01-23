@@ -351,6 +351,7 @@ main (int argc, char *argv[])
   using Belos::OrthoManagerFactory;
   using Belos::OutputManager;
   using Teuchos::CommandLineProcessor;
+  using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -367,6 +368,10 @@ main (int argc, char *argv[])
   // If empty, we don't run any benchmarks, but say that the 
   // "test passes."
   std::string orthoManName;
+
+  // For SimpleOrthoManager: the normalization method to use.  Valid
+  // values: "MGS", "CGS".
+  std::string normalization ("CGS");
 
   // Name of the Harwell-Boeing sparse matrix file from which to read
   // the inner product operator matrix.  If name is "" or not provided
@@ -412,6 +417,9 @@ main (int argc, char *argv[])
     os << ".  If none is provided, the test trivially passes.";
     cmdp.setOption ("ortho", &orthoManName, os.str().c_str());
   }
+  cmdp.setOption ("normalization", &normalization, 
+		  "For SimpleOrthoManager (--ortho=Simple): the normalization "
+		  "method to use.  Valid values: \"MGS\", \"CGS\".");
   cmdp.setOption ("numRows", &numRows, 
 		  "(Global) number of rows in the test multivectors.  "
 		  "If an input matrix is given, this parameter\'s value is "
@@ -502,10 +510,23 @@ main (int argc, char *argv[])
 
   // Using the factory object, instantiate the specified OrthoManager
   // subclass to be tested.  Specify "fast" parameters for a fair
-  // benchmark comparison.
-  RCP<OrthoManager<scalar_type, MV> > orthoMan = 
-    factory.makeOrthoManager (orthoManName, M, std::string("Belos"),
-			      factory.getFastParameters (orthoManName));
+  // benchmark comparison, but override the fast parameters to get the
+  // correct normalization method for SimpleOrthoManaager.
+
+  RCP<OrthoManager<scalar_type, MV> > orthoMan;
+  {
+    std::string label (orthoManName);
+    RCP<const ParameterList> params = factory.getFastParameters (orthoManName);
+    if (orthoManName == "Simple")
+      {
+	RCP<ParameterList> paramsCopy (new ParameterList (*params));
+	paramsCopy->set ("Normalization", normalization);
+	params = paramsCopy;
+	label = label + " (" + normalization + " normalization)";
+      }
+    orthoMan = factory.makeOrthoManager (orthoManName, M, label, params);
+  }
+			      
 
   // "Prototype" multivector.  The test code will use this (via
   // Belos::MultiVecTraits) to clone other multivectors as necessary.

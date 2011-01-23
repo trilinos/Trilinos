@@ -288,6 +288,11 @@ namespace Belos {
     int 
     normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B)
     {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
+      Teuchos::TimeMonitor timerMonitorNormalize(*timerNormalize_);
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
       if (MVT::GetNumberVecs(X) == 1)
 	{
 	  using Teuchos::Range1D;
@@ -791,13 +796,13 @@ namespace Belos {
 					     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q)
   {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    // project() is part of orthogonalization, so we time it with
-    // total orthogonalization as well as with projection.  If
-    // project() is called from projectAndNormalize(), the TimeMonitor
-    // won't start timerOrtho_, because it is already running in
-    // projectAndNormalize().
+    // "Projection" only happens in rawProject(), so we only time
+    // projection inside rawProject().
+    //
+    // If project() is called from projectAndNormalize(), the
+    // TimeMonitor won't start timerOrtho_, because it is already
+    // running in projectAndNormalize().
     Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-    Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
     // Internal data used by this method require a specific MV object
@@ -997,6 +1002,8 @@ namespace Belos {
     using Teuchos::rcp;
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
+    // Projection is only timed in rawProject(), and normalization is
+    // only timed in normalize() and normalizeOutOfPlace().
     Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
@@ -1478,16 +1485,7 @@ namespace Belos {
 	      Teuchos::ArrayView<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > > C) const
   {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    // rawProject() is part of orthogonalization, so we time it with
-    // total orthogonalization as well as with projection.  If
-    // rawProject() is called from project(), the TimeMonitor won't
-    // start timerProject_, because it is already running in
-    // project().  Similarly, if rawProject() is called from
-    // projectAndNormalize(), the TimeMonitor won't start
-    // timerProject_, because it is already running in
-    // projectAndNormalize().
-    Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-    Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
+    Teuchos::TimeMonitor timerMonitorNormalize(*timerProject_);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
     // "Modified Gram-Schmidt" version of Block Gram-Schmidt.
@@ -1516,16 +1514,7 @@ namespace Belos {
 	      const Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> >& C) const
   {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    // rawProject() is part of orthogonalization, so we time it with
-    // total orthogonalization as well as with projection.  If
-    // rawProject() is called from project(), the TimeMonitor won't
-    // start timerProject_, because it is already running in
-    // project().  Similarly, if rawProject() is called from
-    // projectAndNormalize(), the TimeMonitor won't start
-    // timerProject_, because it is already running in
-    // projectAndNormalize().
-    Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-    Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
+    Teuchos::TimeMonitor timerMonitorNormalize(*timerProject_);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
     // Block Gram-Schmidt
@@ -1545,15 +1534,6 @@ namespace Belos {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::tuple;
-
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor timerMonitorNormalize(*timerNormalize_);
-    // If normalize() is called internally -- i.e., called from
-    // projectAndNormalize() -- the timer will not be started or 
-    // stopped, because it is already running.  TimeMonitor handles
-    // recursive invocation by doing nothing.
-    Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-#endif // BELOS_TEUCHOS_TIME_MONITOR
 
     const int numCols = MVT::GetNumberVecs (X);
     if (numCols == 0)
@@ -1628,9 +1608,6 @@ namespace Belos {
 	    // of X nearly to machine precision via a QR
 	    // factorization (TSQR) with accuracy comparable to
 	    // Householder QR.
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-	    Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
-#endif // BELOS_TEUCHOS_TIME_MONITOR
 	    RCP<const MV> Q_col = MVT::CloneView (*Q_view, Range1D(0, rank-1));
 
 	    // Temporary storage for projection coefficients.  We

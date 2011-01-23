@@ -452,19 +452,6 @@ namespace Belos {
 		Teuchos::ArrayView<Teuchos::RCP<const MV> > Q,
 		Teuchos::ArrayView<mat_ptr> C) const
     {	
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      // rawProject() is part of orthogonalization, so we time it with
-      // total orthogonalization as well as with projection.  If
-      // rawProject() is called from project(), the TimeMonitor won't
-      // start timerProject_, because it is already running in
-      // project().  Similarly, if rawProject() is called from
-      // projectAndNormalize(), the TimeMonitor won't start
-      // timerProject_, because it is already running in
-      // projectAndNormalize().
-      Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-      Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
-#endif // BELOS_TEUCHOS_TIME_MONITOR
-      
       // "Modified Gram-Schmidt" version of Block Gram-Schmidt.
       const int num_Q_blocks = Q.size();
       for (int i = 0; i < num_Q_blocks; ++i)

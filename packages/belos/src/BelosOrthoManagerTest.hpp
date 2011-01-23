@@ -76,19 +76,45 @@ namespace Belos {
       /// benchmark, by replacing the projection and normalization
       /// operations with the same number of copies.
       static void 
-      baseline (const Teuchos::RCP<MV>& X,
+      baseline (const Teuchos::RCP<const MV>& X,
 		const int numCols,
 		const int numBlocks,
 		const int numTrials)
       {
-	TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
-			   "X is null");
-	TEST_FOR_EXCEPTION(numCols < 1, std::invalid_argument, 
-			   "numCols = " << numCols << " < 1");
-	TEST_FOR_EXCEPTION(numBlocks < 1, std::invalid_argument, 
-			   "numBlocks = " << numBlocks << " < 1");
-	TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument, 
-			   "numTrials = " << numTrials << " < 1");
+	using Teuchos::Array;
+	using Teuchos::RCP;
+	using Teuchos::rcp;
+	using Teuchos::Time;
+	using Teuchos::TimeMonitor;
+
+	// Make some blocks to "orthogonalize."  Fill with random
+	// data.  We only need X so that we can make clones (it knows
+	// its data distribution).
+	Array<RCP<MV> > V (numBlocks);
+	for (int k = 0; k < numBlocks; ++k)
+	  {
+	    V[k] = MVT::Clone (*X, numCols);
+	    MVT::MvRandom (*V[k]);
+	  }
+
+	// Make timers with informative labels
+	RCP<Time> timer = TimeMonitor::getNewCounter ("Baseline for OrthoManager benchmark");
+
+	// Baseline benchmark just copies data.  It's sort of a lower
+	// bound proxy for the volume of data movement done by a real
+	// OrthoManager.
+	{
+	  TimeMonitor monitor (*timer);
+	  for (int trial = 0; trial < numTrials; ++trial)
+	    {
+	      for (int k = 0; k < numBlocks; ++k)
+		{
+		  for (int j = 0; j < k; ++j)
+		    MVT::Assign (*V[j], *V[k]);
+		  MVT::Assign (*X, *V[k]);
+		}
+	    }
+	}
       }
 
       /// Benchmark the given orthogonalization manager
@@ -128,6 +154,14 @@ namespace Belos {
 	TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument, 
 			   "numTrials = " << numTrials << " < 1");
 
+	// If you like, you can add the "baseline" as an approximate
+	// lower bound for orthogonalization performance.  It may be
+	// useful as a sanity check to make sure that your
+	// orthogonalizations are really computing something, though
+	// testing accuracy can help with that too.
+	//
+	//baseline (X, numCols, numBlocks, numTrials);
+
 	// Make space to put the projection and normalization
 	// coefficients.
 	Array<RCP<mat_type> > C (numBlocks);
@@ -136,9 +170,9 @@ namespace Belos {
 	RCP<mat_type> B (new mat_type (numCols, numCols));
 
 	// Make some blocks to orthogonalize.  Fill with random data.
-	// We won't be orthogonalizing X, or even modifying it.  We
-	// only need X so that we can make clones (it knows its data
-	// distribution).
+	// We won't be orthogonalizing X, or even modifying X.  We
+	// only need X so that we can make clones (since X knows its
+	// data distribution).
 	Array<RCP<MV> > V (numBlocks);
 	for (int k = 0; k < numBlocks; ++k)
 	  {
@@ -146,18 +180,64 @@ namespace Belos {
 	    MVT::MvRandom (*V[k]);
 	  }
 
-	// Make a timer with an informative label
+	// Make timers with informative labels.  We time an additional
+	// first run to measure the startup costs, if any, of the
+	// OrthoManager instance.
+	RCP<Time> firstRunTimer;
+	{
+	  std::ostringstream os;
+	  os << "OrthoManager: " << orthoManName << " first run";
+	  firstRunTimer = TimeMonitor::getNewCounter (os.str());
+	}
 	RCP<Time> timer;
 	{
-	  std::stringstream os;
-	  os << "OrthoManager \"" << orthoManName << "\" over " << numTrials;
-	  if (numTrials != 1)
-	    os << "trials";
-	  else
-	    os << "trial";
-	  timer = TimeMonitor::getNewCounter ("OrthoManager: " + orthoManName);
+	  std::ostringstream os;
+	  os << "OrthoManager: " << orthoManName << " total over " 
+	     << numTrials << " trials (excluding first run above)";
+	  timer = TimeMonitor::getNewCounter (os.str());
 	}
-	// Run the benchmark for the given number of trials
+	// The first run lets us measure the startup costs, if any, of
+	// the OrthoManager instance, without these costs influencing
+	// the following timing runs.
+	{
+	  TimeMonitor monitor (*firstRunTimer);
+	  {
+	    (void) orthoMan->normalize (*V[0], B);
+	    for (int k = 1; k < numBlocks; ++k)
+	      {
+		// k is the number of elements in the ArrayView.  We
+		// have to assign first to an ArrayView-of-RCP-of-MV,
+		// rather than to an ArrayView-of-RCP-of-const-MV, since
+		// the latter requires a reinterpret cast.  Don't you
+		// love C++ type inference?
+		ArrayView<RCP<MV> > V_0k_nonconst = V.view (0, k);
+		ArrayView<RCP<const MV> > V_0k = 
+		  Teuchos::av_reinterpret_cast<RCP<const MV> > (V_0k_nonconst);
+		(void) orthoMan->projectAndNormalize (*V[k], C, B, V_0k);
+	      }
+	  }
+	  // Test that the trial run actually orthogonalized correctly.
+	  //
+	  // FIXME (mfh 22 Jan 2011) For now, these results have to be
+	  // inspected visually.  We should add a simple automatic
+	  // test and only print results in "verbose" mode.
+	  for (int k = 0; k < numBlocks; ++k)
+	    {
+	      using std::cout;
+	      using std::endl;
+	      // Orthogonality of each block
+	      cout << "For block V[" << k << "]:" << endl;
+	      cout << "  ||<V[" << k << "], V[" << k << "]> - I|| = " 
+		   << orthoMan->orthonormError(*V[k]) << endl;
+	      // Relative orthogonality with the previous blocks
+	      for (int j = 0; j < k; ++j)
+		cout << "  ||< V[" << j << "], V[" << k << "] >|| = " 
+		     << orthoMan->orthogError(*V[j], *V[k]) << endl;
+	    }
+	}
+	
+	// Run the benchmark for numTrials trials.  Time all trials as
+	// a single run.
 	{
 	  TimeMonitor monitor (*timer);
 	  
@@ -166,11 +246,9 @@ namespace Belos {
 	      (void) orthoMan->normalize (*V[0], B);
 	      for (int k = 1; k < numBlocks; ++k)
 		{
-		  // k is the number of elements in the ArrayView
-		  //(void) orthoMan->projectAndNormalize (*V[k], C, B, V.view (0, k)); 
-
-		  //ArrayView< RCP< const MV > > V_0k = V.view (0, k);
-		  ArrayView< RCP< const MV > > V_0k;
+		  ArrayView<RCP<MV> > V_0k_nonconst = V.view (0, k);
+		  ArrayView<RCP<const MV> > V_0k = 
+		    Teuchos::av_reinterpret_cast<RCP<const MV> > (V_0k_nonconst);
 		  (void) orthoMan->projectAndNormalize (*V[k], C, B, V_0k);
 		}
 	    }
