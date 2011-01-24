@@ -140,7 +140,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   stk::mesh::PartVector add_parts;
   stk::mesh::create_adjacent_entities(bulk_data, add_parts);
 
-  // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
+  // Zoltan partition is specialized fomm a virtual base class, stk::rebalance::Partition.
   // Other specializations are possible.
   Teuchos::ParameterList emptyList;
   stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
@@ -174,7 +174,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 /// \section stk_rebalance_unit_test_zoltan_description Simple Zoltan Unit Test
 ///
 /// This unit test creates a 2D quad mesh on proc 0 with coordinates and 
-/// Parts assocaited with edges and nodes and then moves these elements
+/// Parts associated with edges, nodes, and constraints and then moves these entities
 /// as determined by calling Zoltan's load balancing capability using
 /// default settings. 
 ///
@@ -209,8 +209,20 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 ///   1       2
 /// </pre>
 ///
-/// perfect balancing should result using 2 or 4 procs, and
+/// Use of Zoltan with default settings is achieved by instantiating the
+/// appropriate Partition class with an empty parameter list as follows,
+/// \dontinclude UnitTestZoltanSimple.cpp
+/// \skip Zoltan partition is 
+/// \until zoltan_partition(
+///
+/// An initial assessment of imbalance is made using an element weight field
+/// followed by a call to actually do the rebalance as follows,
+/// \skip Force a rebalance
+/// \until rebalance::rebalance(
+/// 
+/// Perfect balancing should result using 2 or 4 procs, and
 /// on 3 procs, the imbalance threshold should be below 1.5.
 /// The test passes if these criteria are satisfied.
-
-
+///
+/// See \ref UnitTestZoltanSimple.cpp for the complete source listing.
+///

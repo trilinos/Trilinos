@@ -24,6 +24,18 @@
  *
  *  <h2>How to build stk with Rebalance enabled.</h2>
  *
+ *    The stk_rebalance capability is enabled in a Trilinos build that
+ *    has been configured with the Zoltan and STK pacgakes enabled, eg
+ *    \code
+ *      cmake \
+ *        .... other cmake options ....
+ *
+ *        -D Trilinos_ENABLE_STK:BOOL=ON \
+ *        -D Trilinos_ENABLE_Zoltan:BOOL=ON \
+ *
+ *        .... other cmake options ....
+ *    \endcode
+ *
  *   \defgroup stk_rebalance_unit_test_module Sierra Toolkit Rebalance Unit Tests
  *    \ingroup stk_rebalance_module
  *     

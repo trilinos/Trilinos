@@ -132,21 +132,22 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
       }
     }
 
+    // Assign constraint relations between nodes at top and bottom of mesh
     {
-      const unsigned iy_left  =  0;
-      const unsigned iy_right = ny;
+      const unsigned iy_bottom  =  0;
+      const unsigned iy_top = ny;
       stk::mesh::PartVector add(1, &meta_data.locally_owned_part());
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
-        stk::mesh::EntityId nid_left  = 1 + ix + iy_left  * nnx ;
-        stk::mesh::EntityId nid_right = 1 + ix + iy_right * nnx ;
-        stk::mesh::Entity * n_left  = bulk_data.get_entity( node_rank, nid_left  );
-        stk::mesh::Entity * n_right = bulk_data.get_entity( node_rank, nid_right );
+        stk::mesh::EntityId nid_bottom  = 1 + ix + iy_bottom  * nnx ;
+        stk::mesh::EntityId nid_top = 1 + ix + iy_top * nnx ;
+        stk::mesh::Entity * n_bottom  = bulk_data.get_entity( node_rank, nid_bottom  );
+        stk::mesh::Entity * n_top = bulk_data.get_entity( node_rank, nid_top );
         const stk::mesh::EntityId constraint_entity_id =  1 + ix + nny * nnx;
         stk::mesh::Entity & c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
-        bulk_data.declare_relation( c , *n_left  , 0 );
-        bulk_data.declare_relation( c , *n_right , 1 );
+        bulk_data.declare_relation( c , *n_bottom  , 0 );
+        bulk_data.declare_relation( c , *n_top , 1 );
       }
-    }
+    } // end snippet
 
   }
 

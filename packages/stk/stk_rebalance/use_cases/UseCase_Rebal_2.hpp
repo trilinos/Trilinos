@@ -80,7 +80,10 @@ namespace use_cases {
 /// where all 27 elements are assigned weights along with the 9 faces, 12 edges and 4 nodes
 /// on the plane at x = 0.
 /// \dontinclude UseCase_Rebal_2.cpp
-/// \skip Assign weights
-/// \until end assign weights
+/// \skip bulk.modification_begin
+/// \until bulk.modification_end
+///
+/// The use case passes if the amount of imbalance following a rebalance is
+/// below 1.45 for 3 procs and below 1.1 for 2 or 4 procs.
 /// 
 /// See \ref UseCase_Rebal_2.cpp for the complete source listing.
