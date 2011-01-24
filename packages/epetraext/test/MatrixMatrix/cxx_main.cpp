@@ -327,8 +327,8 @@ int read_input_file(Epetra_Comm& Comm,
       }
     }
 
-#ifdef EPETRA_MPI
     int numfiles = filenames.size();
+#ifdef EPETRA_MPI
     MPI_Bcast(&numfiles, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
     for(int i=0; i<numfiles; ++i) {
