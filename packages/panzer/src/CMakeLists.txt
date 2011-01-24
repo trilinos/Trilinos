@@ -82,6 +82,7 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_UniqueGlobalIndexerFactory.hpp
   dofmngr/Panzer_DOFManagerFactory.hpp
   dofmngr/Panzer_DOFManagerFactoryT.hpp
+  dofmngr/Panzer_LinearObjFactory.hpp
   evaluators/Panzer_Constant.hpp
   evaluators/Panzer_ConstantT.hpp
   evaluators/Panzer_Dirichlet_Constant.hpp

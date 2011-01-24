@@ -11,6 +11,7 @@
 
 #include "Panzer_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -20,7 +21,7 @@
 namespace panzer {
 
 template <typename LocalOrdinalT>
-class EpetraLinearObjFactory {
+class EpetraLinearObjFactory : public LinearObjFactory {
 public:
 
    EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider);
