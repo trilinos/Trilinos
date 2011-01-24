@@ -38,13 +38,11 @@ public:
      * Allows user to add solution fields and other pieces. The mesh can be "completed"
      * by calling <code>completeMeshConstruction</code>.
      */
-   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const 
-   { return Teuchos::null; }
+   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;
 
    /** Finishes building a mesh object started by <code>buildUncommitedMesh</code>.
      */
-   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
-   { return; }
+   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;
 
    //! From ParameterListAcceptor
    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);

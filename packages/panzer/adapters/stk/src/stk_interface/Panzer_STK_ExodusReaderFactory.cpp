@@ -10,6 +10,8 @@
 
 #include <stk_io/IossBridge.hpp>
 
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+
 namespace panzer_stk {
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
@@ -25,44 +27,100 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
    using Teuchos::RCP;
    using Teuchos::rcp;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+   
+   RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
+
+   // in here you would add your fields...but it is better to use
+   // the two step construction
+
+   // this calls commit on meta data
+   mesh->initialize(parallelMach,false);
+
+   completeMeshConstruction(*mesh,parallelMach); 
+
+   return mesh;
+}
+
+/** This builds all the meta data of the mesh. Does not call metaData->commit.
+  * Allows user to add solution fields and other pieces. The mesh can be "completed"
+  * by calling <code>completeMeshConstruction</code>.
+  */
+Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const 
+{ 
+   using Teuchos::RCP;
+   using Teuchos::rcp;
 
    RCP<STK_Interface> mesh = rcp(new STK_Interface());
    RCP<stk::mesh::MetaData> metaData = mesh->getMetaData();
 
    // read in meta data
    Ioss::Init::Initializer io;
-   stk::io::util::MeshData meshData;
+   stk::io::util::MeshData * meshData = new stk::io::util::MeshData;
    stk::io::util::create_input_mesh("exodusii", fileName_, "", parallelMach,
-                                    *metaData, meshData, false); 
+                                    *metaData, *meshData, false); 
+
+   // store mesh data pointer for later use in initializing 
+   // bulk data
+   metaData->declare_attribute_with_delete(meshData);
+
    mesh->initializeFromMetaData();
 
    // build element blocks
-   registerElementBlocks(*mesh,meshData);
-   registerSidesets(*mesh,meshData);
+   registerElementBlocks(*mesh,*meshData);
+   registerSidesets(*mesh,*meshData);
+   return mesh; 
+}
 
-   // this calls commit on meta data
-   mesh->initialize(parallelMach,false);
+void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
 
-   RCP<stk::mesh::BulkData> bulkData = mesh->getBulkData();
-   mesh->beginModification();
-   stk::io::util::populate_bulk_data(*bulkData, meshData, "exodusii");
-   mesh->endModification();
+   if(not mesh.isInitialized())
+      mesh.initialize(parallelMach,false);
 
-   mesh->buildSubcells();
-   mesh->buildLocalElementIDs();
-   
-   return mesh;
+   // grab mesh data pointer to build the bulk data
+   stk::io::util::MeshData * meshData = 
+         const_cast<stk::io::util::MeshData *>(mesh.getMetaData()->get_attribute<stk::io::util::MeshData>());
+         // if const_cast is wrong ... why does it feel so right?
+         // I believe this is safe since we are basically hiding this object under the covers
+         // until the mesh construction can be completed...below I cleanup the object myself.
+   TEUCHOS_ASSERT(mesh.getMetaData()->remove_attribute(meshData)); // remove the MeshData attribute
+
+   RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   mesh.beginModification();
+   stk::io::util::populate_bulk_data(*bulkData, *meshData, "exodusii");
+   mesh.endModification();
+
+   mesh.buildSubcells();
+   mesh.buildLocalElementIDs();
+
+   // clean up mesh data object
+   delete meshData;
 }
 
 //! From ParameterListAcceptor
 void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList)
 {
+   paramList->validateParameters(*getValidParameters()); 
+
+   setMyParamList(paramList);
+
+   fileName_ = paramList->get<std::string>("File Name");
 }
 
 //! From ParameterListAcceptor
 Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidParameters() const
 {
-   return Teuchos::null;
+   static Teuchos::RCP<Teuchos::ParameterList> validParams;
+
+   if(validParams==Teuchos::null) {
+      validParams = Teuchos::rcp(new Teuchos::ParameterList);
+      validParams->set<std::string>("File Name","<file name not set>","Name of exodus file to be read", 
+                                    Teuchos::rcp(new Teuchos::FileNameValidator));
+   }
+
+   return validParams.getConst();
 }
 
 void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io::util::MeshData & meshData) const 
