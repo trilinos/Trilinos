@@ -73,7 +73,7 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
   stk::mesh::BulkData & bulk  = fixture.m_bulk_data;
   stk::mesh::DefaultFEM & fem = fixture.m_fem;
 
-  // Put weights field on all elements
+  // Put weights field on all entities
   const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
   const stk::mesh::EntityRank face_rank = stk::mesh::fem::face_rank(fem);
   const stk::mesh::EntityRank edge_rank = stk::mesh::fem::edge_rank(fem);

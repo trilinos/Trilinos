@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -169,3 +168,49 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
     STKUNIT_ASSERT_LE(imbalance_threshold, 1.5);
   }
 }
+
+/// \page stk_rebalance_unit_test_zoltan
+///  \ingroup stk_rebalance_unit_test_module
+/// \section stk_rebalance_unit_test_zoltan_description Simple Zoltan Unit Test
+///
+/// This unit test creates a 2D quad mesh on proc 0 with coordinates and 
+/// Parts assocaited with edges and nodes and then moves these elements
+/// as determined by calling Zoltan's load balancing capability using
+/// default settings. 
+///
+/// Using the following mesh of 4 quads,
+///
+///  Global node and element numbering
+/// <pre>
+///
+///   7       8       9
+///   +-------+-------+
+///   |       |       |
+///   |  e3   |  e4   |
+///   |       |5      |
+///  4+-------+-------+6   
+///   |       |       |     Y
+///   |  e1   |  e2   |     |
+///   |       |       |     |
+///   +-------+-------+     *--> X
+///   1       2      3 
+/// </pre>
+///
+///  Local node numbering
+///
+/// <pre>
+///     
+///   3       4
+///   +-------+
+///   |       |
+///   |  e1   |
+///   |       |
+///   +-------+
+///   1       2
+/// </pre>
+///
+/// perfect balancing should result using 2 or 4 procs, and
+/// on 3 procs, the imbalance threshold should be below 1.5.
+/// The test passes if these criteria are satisfied.
+
+

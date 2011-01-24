@@ -82,6 +82,7 @@ bool test_unequal_weights( stk::ParallelMachine pm )
       nslabs += l;
     }
   }
+  // end assign weights
 
   bulk.modification_end();
 

@@ -21,7 +21,7 @@
 
 #include <stk_rebalance/Partition.hpp>
 
-/** @file Rebalance.h
+/** @file Rebalance.hpp
  *
  * \brief Static functions for dynamic load balancing.
  *

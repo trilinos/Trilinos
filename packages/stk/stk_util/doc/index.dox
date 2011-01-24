@@ -4,9 +4,6 @@ namespace stk {
 }//namespace stk
 
 /**
- * \mainpage Sierra Toolkit Utility Product
- *
- *    \copydoc stk_util_module
  *
  * \page stk_util_banner Sierra Toolkit Utilities
  *
@@ -15,7 +12,7 @@ namespace stk {
  *    The Sierra Toolkit Utility product provides many low level functions and classes which support
  *    the development of parallel applications.
  *  
- * \page stk_util_module Sierra Toolkit Utilities Product
+ * \addtogroup stk_util_module Sierra Toolkit Utilities Product
  *
  *    The Sierra Toolkit Utility product provides many low level functions and classes which support
  *    the development of parallel applications.  The utility product is divided into subdirectories
@@ -51,9 +48,8 @@ namespace stk {
  *
  *    Utilities How To ...
  *
- *    \copydoc stk_util_howto
- *
  * \page stk_util_howto Utilities How To ...
+ *  @ingroup stk_util_module
  *
  *    Sierra Tookit Utilities
  *

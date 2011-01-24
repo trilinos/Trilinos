@@ -20,8 +20,10 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/DefaultFEM.hpp>
 
+// relevant headers
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
+// end relevant headers
 
 using stk::mesh::fem::NODE_RANK;
 
@@ -215,6 +217,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
   const unsigned p_size = bulk_data.parallel_size();
   const unsigned p_rank = bulk_data.parallel_rank();
 
+  // create initial mesh
   bulk_data.modification_begin();
 
   if ( p_rank == 0 ) {
@@ -231,7 +234,9 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
         stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
       }
     }
+    // end create initial mesh
 
+    // assign element weights
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
@@ -240,6 +245,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
         *e_weight = 1.0;
       }
     }
+    // end assign element weights
   }
 
   // Only P0 has any nodes or elements
@@ -254,6 +260,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
 
   bulk_data.modification_end();
 
+  // Create our Partition and Selector objects
   MockPartition partition(meta_data, bulk_data);
   stk::mesh::Selector selector(meta_data.universal_part());
 
@@ -275,6 +282,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
         *e_weight = -2.0;
       }
     }
+    // Do the actual rebalance
     stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
   }
 
@@ -304,3 +312,80 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
     }
   }
 }
+
+/// \page stk_rebalance_unit_test_simple
+///  \ingroup stk_rebalance_unit_test_module
+///
+/// \section stk_rebalance_unit_test_simple_description Simple Basic Unit Test
+///
+/// This unit test creates a 2D quad mesh on proc 0 and then moves these elements
+/// in a predetermined way to other procs and finally all to proc 1 in parallel.
+/// The test passes in serial trivially and in paralle if all entities 
+/// end up on proc 1.
+///
+/// The relevant headers for this unit test are
+/// \dontinclude UnitTestSimple.cpp
+/// \skip relevant headers
+/// \until end relevant headers
+/// The following quad4 mesh :
+///
+///       Global node and element numbering
+///      <pre>
+///     
+///        7       8       9
+///        +-------+-------+
+///        |       |       |
+///        |  e3   |  e4   |
+///        |       |5      |
+///       4+-------+-------+6   
+///        |       |       |     Y
+///        |  e1   |  e2   |     |
+///        |       |       |     |
+///        +-------+-------+     *--> X
+///        1       2      3 
+///      </pre>
+///     
+///       Local node numbering
+///     
+///      <pre>
+///          
+///        3       4
+///        +-------+
+///        |       |
+///        |  e1   |
+///        |       |
+///        +-------+
+///        1       2
+///      </pre>
+///
+/// is constructed on proc 0 by the code
+/// \skip create initial mesh
+/// \until end create initial mesh
+/// 
+/// Uniform unit weights are assigned to elements via
+/// \skip assign element weights
+/// \until end assign element weights
+/// 
+/// Mesh creation is signaled complete by calling
+/// \skipline modification_end
+/// 
+/// We instantiate our MockPartition, our Selector to include all elements in the mesh
+/// and our imbalance threshold we want to use to determine whether or not to
+/// compute a new element partition among processors:
+/// \skip Partition and Selector
+/// \until universal_part
+/// \skipline double imblance_threshhold
+///
+/// We interrogate whether a rebalance is needed by calling
+/// \skipline rebalance::rebalance_needed
+/// If the current imbalance is above the threshold, the call returns true
+/// and we can then invoke the actual rebalance via
+/// \skip Do the actual rebalance
+/// \until rebalance::rebalance
+///
+/// Upon return the bulk_data will reflect the new partiioning of elements with 
+/// dependent entities, eg faces, edges, nodes, partitioned in a default
+/// greedy manner.
+///
+/// See \ref UnitTestSimple.cpp for the complete source listing.
+///

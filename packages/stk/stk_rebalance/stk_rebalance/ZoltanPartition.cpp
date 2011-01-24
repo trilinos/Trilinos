@@ -846,12 +846,12 @@ int  Zoltan::evaluate( int    print_stats,
   ZOLTAN_GRAPH_EVAL   graph = {{0}};
   if (Zoltan_LB_Eval_Balance( m_zoltan_id_, print_stats, &eval)) ierr = 1;
   if (Zoltan_LB_Eval_Graph( m_zoltan_id_, print_stats, &graph) ) ierr = 1;
-  *nobj         = eval.nobj[0];
-  *obj_wgt      = eval.obj_wgt[0];
-  *ncuts        = graph.cuts[0];
-  *cut_wgt      = graph.cut_wgt[0];
-  *nboundary    = graph.num_boundary[0];
-  *nadj         = graph.nnborparts[0];
+  *nobj         = (int)eval.nobj[0];
+  *obj_wgt      =      eval.obj_wgt[0];
+  *ncuts        = (int)graph.cuts[0];
+  *cut_wgt      =      graph.cut_wgt[0];
+  *nboundary    = (int)graph.num_boundary[0];
+  *nadj         = (int)graph.nnborparts[0];
 
   return ierr;
 
