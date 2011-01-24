@@ -46,21 +46,13 @@
 /// Tpetra::MultiVector as the multivector implementation, and
 /// Tpetra::Operator as the operator implementation.
 ///
-#include <BelosOrthoManagerTest.hpp>
-#include <BelosOrthoManagerFactory.hpp>
-#include <BelosTpetraAdapter.hpp>
-
+#include "belos_orthomanager_tpetra_util.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
-
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_DefaultNode.hpp>
-
-// I/O for Harwell-Boeing files
-#include <iohb.h>
 #include <algorithm>
+
+using std::endl;
 
 //
 // These typedefs make main() as generic as possible.
@@ -75,272 +67,17 @@ typedef Kokkos::TBBNode node_type;
 typedef Kokkos::SerialNode node_type;
 #endif // HAVE_KOKKOS_TBB
 
-typedef Teuchos::ScalarTraits< scalar_type > SCT;
+typedef Teuchos::ScalarTraits<scalar_type> SCT;
 typedef SCT::magnitudeType magnitude_type;
-typedef Tpetra::MultiVector< scalar_type, local_ordinal_type, global_ordinal_type, node_type > MV;
-typedef Tpetra::Operator< scalar_type, local_ordinal_type, global_ordinal_type, node_type > OP;
-typedef Belos::MultiVecTraits< scalar_type, MV > MVT;
-typedef Belos::OperatorTraits< scalar_type, MV, OP > OPT;
-typedef Teuchos::SerialDenseMatrix< int, scalar_type > serial_matrix_type;
-typedef Tpetra::Map< local_ordinal_type, global_ordinal_type, node_type > map_type;
-typedef Tpetra::CrsMatrix< scalar_type, local_ordinal_type, global_ordinal_type, node_type > sparse_matrix_type;
+typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
+typedef Belos::MultiVecTraits<scalar_type, MV> MVT;
+typedef Belos::OperatorTraits<scalar_type, MV, OP> OPT;
+typedef Teuchos::SerialDenseMatrix<int, scalar_type> serial_matrix_type;
+typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
 
 /* ******************************************************************* */
-
-// The accepted way to restrict the scope of functions to their source
-// file, is to use an anonymous namespace, rather than to declare the
-// functions "static."  Besides, "static" is a confusingly overloaded
-// term in C++.
-namespace {
-
-  void
-  printVersionInfo (std::ostream& debugOut)
-  {
-    using std::endl;
-
-    debugOut << "Belos version information:" << endl 
-	     << Belos::Belos_Version() << endl << endl;
-  }
-
-  int
-  selectVerbosity (const bool verbose, const bool debug)
-  {
-    // FIXME Calling this a "MsgType" (its correct type) or even an
-    // "enum MsgType" confuses the compiler.
-    int theType = Belos::Errors; // default (always print errors)
-    if (verbose) 
-      {
-	// "Verbose" also means printing out Debug messages (as well
-	// as everything else).
-	theType = theType | 
-	  Belos::Warnings | 
-	  Belos::IterationDetails |
-	  Belos::OrthoDetails | 
-	  Belos::FinalSummary | 
-	  Belos::TimingDetails |
-	  Belos::StatusTestDetails | 
-	  Belos::Debug;
-      }
-    if (debug)
-      // "Debug" doesn't necessarily mean the same thing as
-      // "Verbose".  We interpret "Debug" to mean printing out
-      // messages marked as Debug (as well as Error messages).
-      theType = theType | Belos::Debug;
-    return theType;
-  }
-
-  /// \fn getNode
-  /// \brief Return an RCP to a Kokkos Node
-  ///
-  template<class NodeType>
-  Teuchos::RCP<NodeType>
-  getNode() {
-    throw std::logic_error ("This Kokkos Node type not supported (compile-time error)");
-  }
-
-  template<>
-  Teuchos::RCP<Kokkos::SerialNode>
-  getNode() {
-    Teuchos::ParameterList defaultParams;
-    return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
-  }
-
-  template<>
-  Teuchos::RCP<Kokkos::TBBNode>
-  getNode() {
-    // "Num Threads" specifies the number of threads.  Defaults to an
-    // automatically chosen value.
-    Teuchos::ParameterList defaultParams;
-    return Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
-  }
-
-  /// \fn loadSparseMatrix
-  /// \brief Load a sparse matrix from a Harwell-Boeing file
-  ///
-  /// Load a sparse matrix from a Harwell-Boeing file, distribute
-  /// it, and return RCPs to a map_type (the map object describing the
-  /// distribution of the sparse matrix: we distribute in a way such
-  /// that the domain, range, and row maps are the same) and a
-  /// sparse_matrix_type (the sparse matrix itself).
-  ///
-  std::pair<Teuchos::RCP<map_type>, Teuchos::RCP<sparse_matrix_type> >
-  loadSparseMatrix (const Teuchos::RCP< const Teuchos::Comm<int> > pComm,
-		    const std::string& filename,
-		    int& numRows,
-		    std::ostream& debugOut)
-  {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using std::vector;
-
-    typedef Tpetra::Map< local_ordinal_type, global_ordinal_type, node_type > map_type;
-    typedef Tpetra::CrsMatrix< scalar_type, local_ordinal_type, global_ordinal_type, node_type > sparse_matrix_type;
-
-    const int myRank = Teuchos::rank (*pComm);
-    RCP< map_type > pMap;
-    RCP< sparse_matrix_type > pMatrix;
-
-    if (filename != "") 
-      {
-	debugOut << "Loading sparse matrix file \"" << filename << "\"" << endl;
-
-	int loadedNumRows = 0;
-	int numCols = 0;
-	int nnz = -1;
-	int rnnzmax = 0;
-	double *dvals = NULL;
-	int *colptr = NULL;
-	int *rowind = NULL;
-
-	// The Harwell-Boeing routines use info == 0 to signal failure.
-	int info = 0;
-
-	if (myRank == 0) 
-	  {
-	    // Proc 0 reads the sparse matrix (stored in Harwell-Boeing
-	    // format) from the file into the tuple (loadedNumRows, numCols, nnz,
-	    // colptr, rowind, dvals).  The routine allocates memory for
-	    // colptr, rowind, and dvals using malloc().
-	    info = readHB_newmat_double (filename.c_str(), &loadedNumRows, 
-					 &numCols, &nnz, &colptr, &rowind, 
-					 &dvals);
-	    // Make sure that loadedNumRows has a sensible value,
-	    // since we'll need to allocate an std::vector with that
-	    // many elements.
-	    TEST_FOR_EXCEPTION(loadedNumRows < 0, std::runtime_error,
-			       "Harwell-Boeing sparse matrix file reports that "
-			       "the matrix has # rows = " << loadedNumRows 
-			       << " < 0.");
-
-	    // The Harwell-Boeing routines use info == 0 to signal failure.
-	    if (info != 0)
-	      {
-		// rnnzmax := maximum number of nonzeros per row, over all
-		// rows of the sparse matrix.
-		std::vector<int> rnnz (loadedNumRows, 0);
-		for (int *ri = rowind; ri < rowind + nnz; ++ri) {
-		  ++rnnz[*ri-1];
-		}
-		// This business with the iterator ensures that results
-		// are sensible even if the sequence is empty.
-		std::vector<int>::const_iterator iter = 
-		  std::max_element (rnnz.begin(),rnnz.end());
-		if (iter != rnnz.end())
-		  rnnzmax = *iter;
-		else
-		  // The matrix has zero rows, so the max number of
-		  // nonzeros per row is trivially zero.
-		  rnnzmax = 0;
-	      }
-	  }
-
-	// Proc 0 now broadcasts the sparse matrix data to the other
-	// process(es).  First things broadcast are info and nnz, which
-	// tell the other process(es) whether reading the sparse matrix
-	// succeeded.  (info should be nonzero if so.  The
-	// Harwell-Boeing routines return "C boolean true" rather than
-	// the POSIX-standard "zero for success.")
-	Teuchos::broadcast (*pComm, 0, &info);
-	Teuchos::broadcast (*pComm, 0, &nnz);
-
-	TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
-			   "Error reading Harwell-Boeing sparse matrix file \"" 
-			   << filename << "\"" << std::endl);
-	
-	TEST_FOR_EXCEPTION(nnz < 0, std::runtime_error,
-			   "Harwell-Boeing sparse matrix file \"" 
-			   << filename << "\" reports having negative nnz "
-			   << "(= " << nnz << ")"
-			   << std::endl);
-	
-	TEST_FOR_EXCEPTION(nnz == 0, std::runtime_error,
-			   "Test matrix in Harwell-Boeing sparse matrix file '" 
-			   << filename << "' " << "has zero nonzero values, which "
-			   << "means it does not define a valid inner product." 
-			   << std::endl);
-
-	Teuchos::broadcast (*pComm, 0, &loadedNumRows);
-	Teuchos::broadcast (*pComm, 0, &numCols);
-	Teuchos::broadcast (*pComm, 0, &rnnzmax);
-
-	TEST_FOR_EXCEPTION(loadedNumRows != numCols, std::runtime_error,
-			   "Test matrix in Harwell-Boeing sparse matrix file '" 
-			   << filename << "' " << "is not square: it is " 
-			   << loadedNumRows << " by " << numCols << std::endl);
-	// We've fully validated the number of rows, so set the
-	// appropriate output parameter.
-	numRows = loadedNumRows;
-
-	// Create Tpetra::Map to represent multivectors in the range of
-	// the sparse matrix.
-	pMap = rcp (new map_type (numRows, 0, pComm, 
-				  Tpetra::GloballyDistributed,
-				  getNode< node_type >()));
-	// Second argument: max number of nonzero entries per row.
-	pMatrix = rcp (new sparse_matrix_type (pMap, rnnzmax));
-
-	if (myRank == 0) 
-	  {
-	    // Convert from Harwell-Boeing format (compressed sparse
-	    // column, one-indexed) to CrsMatrix format (compressed
-	    // sparse row, zero-index).  We do this by iterating over
-	    // all the columns of the matrix.
-	    int curNonzeroIndex = 0;
-	    for (int c = 0; c < numCols; ++c) 
-	      {
-		for (int colnnz = 0; colnnz < colptr[c+1] - colptr[c]; ++colnnz) 
-		  {
-		    // Row index: *rptr - 1 (1-based -> 0-based indexing)
-		    // Column index: c
-		    // Value to insert there: *dptr
-		    const int curGlobalRowIndex = rowind[curNonzeroIndex] - 1;
-		    const scalar_type curValue = dvals[curNonzeroIndex];
-		    pMatrix->insertGlobalValues (curGlobalRowIndex, 
-						 Teuchos::tuple(c), 
-						 Teuchos::tuple(curValue));
-		    curNonzeroIndex++;
-		  }
-	      }
-	  }
-	if (myRank == 0) 
-	  {
-	    // Free memory allocated by the Harwell-Boeing input routine.
-	    if (dvals != NULL)
-	      {
-		free (dvals);
-		dvals = NULL;
-	      }
-	    if (colptr != NULL)
-	      {
-		free (colptr);
-		colptr = NULL;
-	      }
-	    if (rowind != NULL)
-	      {
-		free (rowind);
-		rowind = NULL;
-	      }
-	  }
-	// We're done reading in the sparse matrix.  Now distribute it
-	// among the processes.  The domain, range, and row maps are
-	// the same (the matrix must be square).
-	pMatrix->fillComplete();
-	debugOut << "Completed loading and distributing sparse matrix" << endl;
-      } // else M == null
-    else 
-      {
-	debugOut << "Testing with Euclidean inner product" << endl;
-
-	// Let M remain null, and allocate map using the number of rows
-	// (numRows) specified on the command line.
-	pMap = rcp (new map_type (numRows, 0, pComm, 
-				  Tpetra::GloballyDistributed, 
-				  getNode<node_type>()));
-      }
-    return std::make_pair (pMap, pMatrix);
-  }
-}
-
 
 /// \fn main
 /// \brief Benchmark driver for (Mat)OrthoManager subclasses
@@ -361,13 +98,12 @@ main (int argc, char *argv[])
 
   // This factory object knows how to make a (Mat)OrthoManager
   // subclass, given a name for the subclass.  The name is not the
-  // same as the class' syntactic name: e.g., "DKGS" is the name of
-  // DkgsOrthoManager.
+  // same as the class' syntactic name: e.g., "TSQR" is the name of
+  // TsqrOrthoManager.
   OrthoManagerFactory<scalar_type, MV, OP> factory;
+
   // The name of the (Mat)OrthoManager subclass to instantiate.
-  // If empty, we don't run any benchmarks, but say that the 
-  // "test passes."
-  std::string orthoManName;
+  std::string orthoManName (factory.defaultName());
 
   // For SimpleOrthoManager: the normalization method to use.  Valid
   // values: "MGS", "CGS".
@@ -378,8 +114,11 @@ main (int argc, char *argv[])
   // at the command line, use the standard Euclidean inner product.
   std::string filename;
 
-  bool verbose = false;
-  bool debug = false;
+  bool verbose = false; // Verbosity of output
+  bool debug = false;   // Whether to print debugging-level output
+  // Whether or not to run the benchmark.  If false, we let this
+  // "test" pass trivially.
+  bool benchmark = false; 
 
   // The OrthoManager is benchmarked with numBlocks multivectors of
   // width numCols each, for numTrials trials.  The values below are
@@ -390,13 +129,16 @@ main (int argc, char *argv[])
   int numTrials = 3;
 
   // Default _global_ number of rows.  The number of rows per MPI
-  // process must be no less than max(sizeS, sizeX1, sizeX2).  To
-  // ensure that the test always passes with default parameters, we
-  // scale by the number of processes.  The default value below may be
-  // changed by a command-line parameter with a corresponding name.
+  // process must be no less than numCols*numBlocks.  To ensure that
+  // the test always passes with default parameters, we scale by the
+  // number of processes.  The default value below may be changed by a
+  // command-line parameter with a corresponding name.
   int numRows = 100 * pComm->getSize();
 
-  CommandLineProcessor cmdp(false,true);
+  CommandLineProcessor cmdp (false, true);
+  cmdp.setOption ("benchmark", "nobenchmark", &benchmark, 
+		  "Whether to run the benchmark.  If not, this \"test\" "
+		  "passes trivially.");
   cmdp.setOption ("verbose", "quiet", &verbose,
 		  "Print messages and results.");
   cmdp.setOption ("debug", "nodebug", &debug,
@@ -436,10 +178,9 @@ main (int argc, char *argv[])
   {
     const CommandLineProcessor::EParseCommandLineReturn parseResult = cmdp.parse (argc,argv);
     // If the caller asks us to print the documentation, or does not
-    // provide the name of an OrthoManager subclass, we let the "test"
-    // pass trivially.
-    if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED ||
-	orthoManName == "")
+    // explicitly say to run the benchmark, we let this "test" pass
+    // trivially.
+    if (! benchmark || parseResult == CommandLineProcessor::PARSE_HELP_PRINTED)
       {
 	if (Teuchos::rank(*pComm) == 0)
 	  std::cout << "End Result: TEST PASSED" << endl;
@@ -464,13 +205,14 @@ main (int argc, char *argv[])
     
   // Declare an output manager for handling local output.  Initialize,
   // using the caller's desired verbosity level.
-  RCP<OutputManager<scalar_type> > MyOM (new OutputManager<scalar_type> (selectVerbosity (verbose, debug)));
+  RCP<OutputManager<scalar_type> > outMan = 
+    Belos::Test::makeOutputManager<scalar_type> (verbose, debug);
 
   // Stream for debug output.  If debug output is not enabled, then
   // this stream doesn't print anything sent to it (it's a "black
   // hole" stream).
-  std::ostream& debugOut = MyOM->stream(Belos::Debug);
-  printVersionInfo (debugOut);
+  std::ostream& debugOut = outMan->stream(Belos::Debug);
+  Belos::Test::printVersionInfo (debugOut);
 
   // Load the inner product operator matrix from the given filename.
   // If filename == "", use the identity matrix as the inner product
@@ -480,11 +222,12 @@ main (int argc, char *argv[])
   RCP<map_type> map;
   RCP<sparse_matrix_type> M; 
   {
+    using Belos::Test::loadSparseMatrix;
     // If the sparse matrix is loaded successfully, this call will
     // modify numRows to be the number of rows in the sparse matrix.
     // Otherwise, it will leave numRows alone.
     std::pair<RCP<map_type>, RCP<sparse_matrix_type> > results = 
-      loadSparseMatrix (pComm, filename, numRows, debugOut);
+      loadSparseMatrix<local_ordinal_type, global_ordinal_type, node_type> (pComm, filename, numRows, debugOut);
     map = results.first;
     M = results.second;
   }
@@ -511,8 +254,7 @@ main (int argc, char *argv[])
   // Using the factory object, instantiate the specified OrthoManager
   // subclass to be tested.  Specify "fast" parameters for a fair
   // benchmark comparison, but override the fast parameters to get the
-  // correct normalization method for SimpleOrthoManaager.
-
+  // desired normalization method for SimpleOrthoManaager.
   RCP<OrthoManager<scalar_type, MV> > orthoMan;
   {
     std::string label (orthoManName);
@@ -526,7 +268,6 @@ main (int argc, char *argv[])
       }
     orthoMan = factory.makeOrthoManager (orthoManName, M, label, params);
   }
-			      
 
   // "Prototype" multivector.  The test code will use this (via
   // Belos::MultiVecTraits) to clone other multivectors as necessary.
