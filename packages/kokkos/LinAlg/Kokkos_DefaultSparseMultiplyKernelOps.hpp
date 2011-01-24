@@ -39,6 +39,12 @@
 #include <Teuchos_ScalarTraits.hpp>
 #endif
 
+// TODO: begs/ends instead of offsets/rowsizes seems clever, as it allows the same code to be
+// use for packed and non-packed storage, by setting ends=begs+1. 
+// however, in the packed scenario, it requires an additional (redundant) N reads
+// this may become significant as NNZ -> N
+// this should be revisited; we may have to add DefaultSparseMultiplyPacked and DefaultSparseTransposeMultiplyPacked kernels
+
 namespace Kokkos {
 
   template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>

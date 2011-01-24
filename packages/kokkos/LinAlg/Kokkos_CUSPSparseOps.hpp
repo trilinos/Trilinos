@@ -53,17 +53,27 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   class CUSPSparseOps {
   public:
+    //@{ 
+    //! @name Typedefs and structs
+
+    //!
     typedef Scalar  ScalarType;
+    //!
     typedef Ordinal OrdinalType;
+    //!
     typedef Node    NodeType;
 
+    /** \brief Rebind struct, for specifying type information for a different scalar.
+          
+        This specifies a CUSPSparseOps object, regardless of scalar type.
+      */
     template <class S2>
     struct rebind {
       typedef CUSPSparseOps<S2,Ordinal,Node> other;
     };
 
+    //@}
     //! @name Constructors/Destructor
-
     //@{
 
     //! CUSPSparseOps constuctor with variable number of indices per row.
@@ -73,7 +83,6 @@ namespace Kokkos {
     ~CUSPSparseOps();
 
     //@}
-
     //! @name Accessor routines.
     //@{ 
     
@@ -81,9 +90,7 @@ namespace Kokkos {
     RCP<Node> getNode() const;
 
     //@}
-
     //! @name Initialization of structure
-
     //@{
 
     //! Initialize structure of matrix, using CrsGraphHostCompute
@@ -96,9 +103,7 @@ namespace Kokkos {
     void clear();
 
     //@}
-
     //! @name Computational methods
-
     //@{
 
     //! Applies the matrix to a MultiVector, overwriting Y.
@@ -125,14 +130,16 @@ namespace Kokkos {
     RCP<cusp::csr_matrix<Ordinal,Scalar,cusp::host_memory  > > hostCSR_;
     RCP<cusp::hyb_matrix<Ordinal,Scalar,cusp::device_memory> > devcHYB_;
 
-    // 1D
-    ArrayRCP<size_t>  rowBegs_, rowEnds_;
-    ArrayRCP<Ordinal> cols1D_;
-    // 2D
-    ArrayRCP<ArrayRCP<Ordinal> > cols2D_;
+    // we do this one of two ways: 
+    // 1D/packed: arrays of offsets, array of ordinals, array of values.
+    ArrayRCP<size_t>  begs1D_, ends1D_;
+    ArrayRCP<Ordinal> inds1D_;
+    // 2D: array of pointers
+    ArrayRCP<ArrayRCP<Ordinal> > inds2D_;
 
+    size_t numRows_;
+    size_t numNZ_; 
     bool isEmpty_;
-    size_t numRows_, numNZ_; 
     bool indsInit_, valsInit_;
   };
 
@@ -163,10 +170,10 @@ namespace Kokkos {
     hostCSR_ = null;
     devcHYB_ = null;
     //
-    rowBegs_ = null;
-    rowEnds_ = null;
-    cols1D_ = null;
-    cols2D_ = null;
+    begs1D_ = null;
+    ends1D_ = null;
+    inds1D_ = null;
+    inds2D_ = null;
   }
 
   template <class Scalar, class Ordinal, class Node>
