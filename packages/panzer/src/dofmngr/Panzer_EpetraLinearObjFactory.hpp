@@ -12,6 +12,10 @@
 #include "Panzer_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_ScatterResidual_Epetra.hpp"
+#include "Panzer_ScatterDirichletResidual_Epetra.hpp"
+#include "Panzer_GatherSolution_Epetra.hpp"
+#include "Panzer_CloneableEvaluator.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -20,8 +24,8 @@
 
 namespace panzer {
 
-template <typename LocalOrdinalT>
-class EpetraLinearObjFactory : public LinearObjFactory {
+template <typename Traits,typename LocalOrdinalT>
+class EpetraLinearObjFactory : public LinearObjFactory<Traits> {
 public:
 
    EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider);
@@ -60,6 +64,21 @@ public:
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Export> getGhostedExport() const;
+
+   //! Use preconstructed scatter evaluators
+   template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
+   { return Teuchos::rcp(new ScatterResidual_Epetra<EvalT,Traits>); }
+
+   //! Use preconstructed gather evaluators
+   template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
+   { return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits>); }
+
+   //! Use preconstructed dirichlet scatter evaluators
+   template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
+   { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<EvalT,Traits>); }
 
 protected:
    // get the map from the matrix

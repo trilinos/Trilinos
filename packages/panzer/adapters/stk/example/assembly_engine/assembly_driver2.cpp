@@ -178,7 +178,7 @@ int main(int argc,char * argv[])
    out << "BUILD LA" << std::endl;
  
    // construct some linear algebra object, build object to pass to evaluators
-   panzer::EpetraLinearObjFactory<int> linObjFactory(Comm,dofManager);
+   panzer::EpetraLinearObjFactory<panzer::Traits,int> linObjFactory(Comm,dofManager);
  
    // build ghosted variables
    RCP<Thyra::MultiVectorBase<double> > ghostX = linObjFactory.getGhostedVector();

@@ -42,6 +42,7 @@ APPEND_SET(HEADERS
   Panzer_BCStrategy_Factory_Defines.hpp
   Panzer_BCStrategy_TemplateManager.hpp
   Panzer_CellData.hpp
+  Panzer_CloneableEvaluator.hpp
   Panzer_ConfigDefs.hpp
   Panzer_Dimension.hpp
   Panzer_EquationSet.hpp

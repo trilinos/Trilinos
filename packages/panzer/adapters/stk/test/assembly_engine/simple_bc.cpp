@@ -117,7 +117,7 @@ namespace panzer {
 
     RCP<DOFManager<int,int> > dofManager = 
       ae_tm.getAsObject<panzer::Traits::Residual>()->getManagerBuilder()->getDOFManager();
-    panzer::EpetraLinearObjFactory<int> linObjFactory(Comm,dofManager);
+    panzer::EpetraLinearObjFactory<panzer::Traits,int> linObjFactory(Comm,dofManager);
     RCP<Epetra_Map> ghosted_map = linObjFactory.getGhostedMap();
     RCP<Epetra_CrsGraph> ghosted_graph =  linObjFactory.getGhostedGraph();
     

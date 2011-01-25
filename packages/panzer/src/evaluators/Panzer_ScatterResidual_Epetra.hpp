@@ -9,6 +9,7 @@
 
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
+#include "Panzer_CloneableEvaluator.hpp"
 
 class Epetra_Vector;
 class Epetra_CrsMatrix;
@@ -46,9 +47,11 @@ template<typename EvalT, typename Traits> class ScatterResidual_Epetra;
 template<typename Traits>
 class ScatterResidual_Epetra<panzer::Traits::Residual,Traits>
   : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>  {
+    public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,
+    public panzer::CloneableEvaluator {
   
 public:
+  ScatterResidual_Epetra() {}
   
   ScatterResidual_Epetra(const Teuchos::ParameterList& p);
   
@@ -57,6 +60,9 @@ public:
   
   void evaluateFields(typename Traits::EvalData workset);
   
+  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
+  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::Residual,Traits>(pl)); }
+
 private:
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
 
@@ -86,10 +92,12 @@ private:
 template<typename Traits>
 class ScatterResidual_Epetra<panzer::Traits::Jacobian,Traits>
   : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {
+    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>, 
+    public panzer::CloneableEvaluator {
   
 public:
   
+  ScatterResidual_Epetra() {}
   ScatterResidual_Epetra(const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
@@ -97,6 +105,9 @@ public:
   
   void evaluateFields(typename Traits::EvalData workset);
   
+  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
+  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::Jacobian,Traits>(pl)); }
+
 private:
 
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
