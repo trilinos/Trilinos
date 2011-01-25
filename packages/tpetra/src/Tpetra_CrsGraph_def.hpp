@@ -34,6 +34,7 @@
 #include <Kokkos_NodeTrace.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_NullIteratorTraits.hpp>
+#include <Teuchos_as.hpp>
 #include <algorithm>
 #include <string>
 #include <utility>
@@ -2404,7 +2405,7 @@ namespace Tpetra {
     for (size_t dec=10; dec<getGlobalNumRows(); dec *= 10) {
       ++width;
     }
-    width = std::max<size_t>(width,11) + 2;
+    width = std::max<size_t>(width,Teuchos::as<size_t>(11)) + 2;
     Teuchos::OSTab tab(out);
     //    none: print nothing
     //     low: print O(1) info from node 0
