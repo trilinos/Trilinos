@@ -1,6 +1,9 @@
 
 // File: index.xml
 
+// File: classEpetraExt_1_1CrsGraph__SymmRCM_1_1BFT.xml
+
+
 // File: classEpetraExt_1_1BlockAdjacencyGraph.xml
 %feature("docstring") EpetraExt::BlockAdjacencyGraph "";
 
@@ -131,9 +134,6 @@ Destructor. ";
 int testLeafWidth=5)
 
 Constructor. ";
-
-
-// File: classEpetraExt_1_1CrsGraph__SymmRCM_1_1BFT.xml
 
 
 // File: classEpetraExt_1_1CrsGraph__Transpose.xml
@@ -789,7 +789,14 @@ system. ";
 %feature("docstring")
 EpetraExt::LinearProblem_CrsSingletonFilter::analyze "bool
 EpetraExt::LinearProblem_CrsSingletonFilter::analyze(OriginalTypeRef
-orig) ";
+orig)
+
+Initial analysis phase of transform. Returns true if the transform is
+possible allowing methods  construct(),  fwd() and  rvs() to be
+successfully utilized.
+
+Preconditions: default implementation calls method operator() and
+stores the resulting object in an internal attribute newObj_. ";
 
 %feature("docstring")
 EpetraExt::LinearProblem_CrsSingletonFilter::construct "LinearProblem_CrsSingletonFilter::NewTypeRef
@@ -1083,8 +1090,8 @@ A test program which exercises this Permutation class is located in
 the directory packages/epetraext/test/Permutation.
 
 Implementation Notes: Permutation currently inherits
-StructuralSameTypeTransform, which in turn inherits Transform through
-SameTypeTransform. Permutation, and its base classes,     are
+StructuralSameTypeTransform, which in turn     inherits Transform
+through SameTypeTransform. Permutation, and its base classes,     are
 templates. A couple of noteworthy consequences result from this:
 
 1. A separate instantiation of Permutation must be created for each
@@ -1209,11 +1216,15 @@ C++ includes: EpetraExt_ProductOperator.h ";
 
 /*  Public types  */
 
-/* */
+/*
+
+*/
 
 /*  Constructors / initializers / accessors  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  EpetraExt::ProductOperator::ProductOperator "EpetraExt::ProductOperator::ProductOperator()
 
@@ -1353,7 +1364,9 @@ Preconditions:  0 <= k <= this-> num_Op()-1 ";
 
 /*  Overridden from Epetra_Operator  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  EpetraExt::ProductOperator::SetUseTranspose "int EpetraExt::ProductOperator::SetUseTranspose(bool UseTranspose) ";
 
@@ -1440,9 +1453,21 @@ EpetraExt::SameTypeTransform< T >::~SameTypeTransform() ";
 // File: classEpetraExt_1_1StructuralSameTypeTransform.xml
 %feature("docstring") EpetraExt::StructuralSameTypeTransform "";
 
-%feature("docstring")  EpetraExt::StructuralSameTypeTransform::fwd "bool EpetraExt::StructuralSameTypeTransform< T >::fwd() ";
+%feature("docstring")  EpetraExt::StructuralSameTypeTransform::fwd "bool EpetraExt::StructuralSameTypeTransform< T >::fwd()
 
-%feature("docstring")  EpetraExt::StructuralSameTypeTransform::rvs "bool EpetraExt::StructuralSameTypeTransform< T >::rvs() ";
+Forward transfer of data from orig object input in the operator()
+method call to the new object created in this same call. Returns true
+is operation is successful.
+
+Preconditions: ";
+
+%feature("docstring")  EpetraExt::StructuralSameTypeTransform::rvs "bool EpetraExt::StructuralSameTypeTransform< T >::rvs()
+
+Reverse transfer of data from new object created in the operator()
+method call to the orig object input to this same method. Returns true
+if operation is successful.
+
+Preconditions: ";
 
 %feature("docstring")
 EpetraExt::StructuralSameTypeTransform::~StructuralSameTypeTransform "virtual EpetraExt::StructuralSameTypeTransform< T
@@ -1453,10 +1478,22 @@ EpetraExt::StructuralSameTypeTransform::~StructuralSameTypeTransform "virtual Ep
 %feature("docstring") EpetraExt::StructuralTransform "";
 
 %feature("docstring")  EpetraExt::StructuralTransform::fwd "bool
-EpetraExt::StructuralTransform< T, U >::fwd() ";
+EpetraExt::StructuralTransform< T, U >::fwd()
+
+Forward transfer of data from orig object input in the operator()
+method call to the new object created in this same call. Returns true
+is operation is successful.
+
+Preconditions: ";
 
 %feature("docstring")  EpetraExt::StructuralTransform::rvs "bool
-EpetraExt::StructuralTransform< T, U >::rvs() ";
+EpetraExt::StructuralTransform< T, U >::rvs()
+
+Reverse transfer of data from new object created in the operator()
+method call to the orig object input to this same method. Returns true
+if operation is successful.
+
+Preconditions: ";
 
 %feature("docstring")
 EpetraExt::StructuralTransform::~StructuralTransform "virtual
@@ -1476,11 +1513,15 @@ C++ includes: EpetraExt_Transform.h ";
 
 /*  Typedefs for templated classes  */
 
-/* */
+/*
+
+*/
 
 /*  Pure Virtual Methods which must be implemented by subclasses  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  EpetraExt::Transform::fwd "virtual bool
 EpetraExt::Transform< T, U >::fwd()=0
@@ -1503,7 +1544,7 @@ Preconditions: ";
 /*  Virtual functions with default implements allowing for optional
 */
 
-/* implementation by the Transform developer
+/*  implementation by the Transform developer
 
 */
 
@@ -1621,10 +1662,22 @@ NoOp ";
 %feature("docstring") EpetraExt::ViewTransform "";
 
 %feature("docstring")  EpetraExt::ViewTransform::fwd "bool
-EpetraExt::ViewTransform< T >::fwd() ";
+EpetraExt::ViewTransform< T >::fwd()
+
+Forward transfer of data from orig object input in the operator()
+method call to the new object created in this same call. Returns true
+is operation is successful.
+
+Preconditions: ";
 
 %feature("docstring")  EpetraExt::ViewTransform::rvs "bool
-EpetraExt::ViewTransform< T >::rvs() ";
+EpetraExt::ViewTransform< T >::rvs()
+
+Reverse transfer of data from new object created in the operator()
+method call to the orig object input to this same method. Returns true
+if operation is successful.
+
+Preconditions: ";
 
 %feature("docstring")  EpetraExt::ViewTransform::~ViewTransform "virtual EpetraExt::ViewTransform< T >::~ViewTransform() ";
 
@@ -2360,6 +2413,34 @@ I[], int J[], double val[], MM_typecode matcode) ";
 %feature("docstring")  EpetraExt::mm_typecode_to_str "void
 EpetraExt::mm_typecode_to_str(MM_typecode matcode, char *buffer) ";
 
+%feature("docstring")  EpetraExt::mm_read_banner "int
+EpetraExt::mm_read_banner(std::FILE *f, MM_typecode *matcode) ";
+
+%feature("docstring")  EpetraExt::mm_read_mtx_crd_size "int
+EpetraExt::mm_read_mtx_crd_size(std::FILE *f, int *M, int *N, int *nz)
+";
+
+%feature("docstring")  EpetraExt::mm_read_mtx_array_size "int
+EpetraExt::mm_read_mtx_array_size(std::FILE *f, int *M, int *N) ";
+
+%feature("docstring")  EpetraExt::mm_write_banner "int
+EpetraExt::mm_write_banner(std::FILE *f, MM_typecode matcode) ";
+
+%feature("docstring")  EpetraExt::mm_write_mtx_crd_size "int
+EpetraExt::mm_write_mtx_crd_size(std::FILE *f, int M, int N, int nz)
+";
+
+%feature("docstring")  EpetraExt::mm_write_mtx_array_size "int
+EpetraExt::mm_write_mtx_array_size(std::FILE *f, int M, int N) ";
+
+%feature("docstring")  EpetraExt::mm_read_mtx_crd_data "int
+EpetraExt::mm_read_mtx_crd_data(std::FILE *f, int M, int N, int nz,
+int I[], int J[], double val[], MM_typecode matcode) ";
+
+%feature("docstring")  EpetraExt::mm_read_mtx_crd_entry "int
+EpetraExt::mm_read_mtx_crd_entry(std::FILE *f, int *I, int *J, double
+*real, double *img, MM_typecode matcode) ";
+
 %feature("docstring")  EpetraExt::MatrixMarketFileToMultiVector "int
 EpetraExt::MatrixMarketFileToMultiVector(const char *filename, const
 Epetra_BlockMap &map, Epetra_MultiVector *&A)
@@ -2648,12 +2729,11 @@ Epetra_MultiVector &y, const Epetra_Map &rootDomainMap, const
 Epetra_Map &rootRangeMap, int startColumn) ";
 
 %feature("docstring")  EpetraExt::readEpetraLinearSystem "void
-EpetraExt::readEpetraLinearSystem(const std::string &fileName,const
-Epetra_Comm &comm,Teuchos::RefCountPtr< Epetra_CrsMatrix >
-*A=NULL,Teuchos::RefCountPtr< Epetra_Map >
-*map=NULL,Teuchos::RefCountPtr< Epetra_Vector >
-*x=NULL,Teuchos::RefCountPtr< Epetra_Vector >
-*b=NULL,Teuchos::RefCountPtr< Epetra_Vector > *xExact=NULL)
+EpetraExt::readEpetraLinearSystem(const std::string &fileName, const
+Epetra_Comm &comm, Teuchos::RefCountPtr< Epetra_CrsMatrix > *A=NULL,
+Teuchos::RefCountPtr< Epetra_Map > *map=NULL, Teuchos::RefCountPtr<
+Epetra_Vector > *x=NULL, Teuchos::RefCountPtr< Epetra_Vector >
+*b=NULL, Teuchos::RefCountPtr< Epetra_Vector > *xExact=NULL)
 
 Read in an Epetra linear system from a file.
 
@@ -3259,17 +3339,17 @@ std::string &delimiters=\" \") ";
 // File: EpetraExt__XMLWriter_8h.xml
 
 
-// File: dir_5781a56c2d902e0aeb5e108e3e924c39.xml
+// File: dir_11c281d317fac26a80734cfdf01c3276.xml
 
 
-// File: dir_2196435d541145669e6d6de61cf0dd79.xml
+// File: dir_390ceb73d984add9550a91a5a05c10bc.xml
 
 
-// File: dir_5be8cf3da72556c1d6794cde32a4b39c.xml
+// File: dir_df40b4453a44ce93def4751f410362de.xml
 
 
-// File: dir_3df1b2f74b9a4523960924633cfa27e1.xml
+// File: dir_1446c85883e8456091748f28f5dc619d.xml
 
 
-// File: dir_07dc8089d40faa358c7f0656e341f10e.xml
+// File: dir_7af1f200b770e582760f7ec5a7e1d7c3.xml
 
