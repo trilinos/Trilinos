@@ -197,11 +197,13 @@ int main(int argc, char* argv[]) {
 
   }
 
-
+/**
+ * Makes sure the multiply doesn't work if given bad matrices
+ */
   Teuchos::ParameterList wrongList;
-  wrongList.set("A", "wrong_m.hb");
-  wrongList.set("B", "wrong_tce.hb");
-  wrongList.set("C", "wrong_d.hb");
+  wrongList.set("A", "matrices/wrong_m.hb");
+  wrongList.set("B", "matrices/wrong_tce.hb");
+  wrongList.set("C", "matrices/wrong_d.hb");
   wrongList.set("TransA", false);
   wrongList.set("TransB", true);
   if(
@@ -457,11 +459,13 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
              bool result_mtx_to_file,
              bool verbose)
 {
+  static const double defaultEpsilon = 1e-7;
   std::string A_file = matrixSystem.get<std::string>("A");
   std::string B_file = matrixSystem.get<std::string>("B");
   std::string C_file = matrixSystem.get<std::string>("C");
   bool AT = matrixSystem.get<bool>("TransA");
   bool BT = matrixSystem.get<bool>("TransB");
+  double epsilon = matrixSystem.get<double>("epsilon", defaultEpsilon);
 
 
   int localProc = Comm->getRank();
@@ -525,7 +529,7 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   int return_code = 0;
 
 
-  if (euc_norm < 1.e-13) {
+  if (euc_norm < epsilon) {
     if (localProc == 0 && verbose) {
       std::cout << "Test Passed" << std::endl;
       std::cout << "euc_norm " << euc_norm << std::endl;

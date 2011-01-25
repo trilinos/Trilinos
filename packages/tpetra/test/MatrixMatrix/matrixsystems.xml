@@ -1,9 +1,17 @@
 <ParameterList>
 	<ParameterList name="matrixsystem1">
-		<Parameter name="A" value="cdt_m.hb" type="string"/>
-		<Parameter name="B" value="cdt_tce.hb" type="string"/>
-		<Parameter name="C" value="cdt_d.hb" type="string"/>
+		<Parameter name="A" value="matrices/cdt_m.hb" type="string"/>
+		<Parameter name="B" value="matrices/cdt_tce.hb" type="string"/>
+		<Parameter name="C" value="matrices/cdt_d.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
+	</ParameterList>
+	<ParameterList name="matrixsystem2">
+		<Parameter name="A" value="matrices/gen1a.hb" type="string"/>
+		<Parameter name="B" value="matrices/gen1b.hb" type="string"/>
+		<Parameter name="C" value="matrices/gen1c.hb" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+		<Parameter name="epsilon" value=".000001" type="double"/>
 	</ParameterList>
 </ParameterList>
