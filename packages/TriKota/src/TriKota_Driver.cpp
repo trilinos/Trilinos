@@ -64,8 +64,9 @@ TriKota::Driver::Driver(const char* dakota_in,
      first_model.parallel_configuration_iterator()->ea_parallel_level().server_intra_communicator();
 
 #ifdef HAVE_MPI
+  // Here we are determining the global rank, not the analysis rank
   int rank;
-  MPI_Comm_rank(analysis_comm, &rank);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (rank==0) rank_zero = true;
   else         rank_zero = false;
 #endif
