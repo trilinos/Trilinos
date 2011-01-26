@@ -29,7 +29,17 @@
 //Forward declaration for pointer to a Zoltan structrue.
 struct Zoltan_Struct;
 
-/** \file ZoltanPartition derived from \a Partition to implement Zoltan based rebalancing.
+/** \addtogroup stk_rebalance_module
+ *  \{
+ */
+
+/** \file ZoltanPartition.hpp derived from \a Partition to implement Zoltan based rebalancing.
+ *
+ * \class Zoltan 
+ *
+ * \brief Class for implementing Zoltan based rebalancing
+ *
+ * Derived from the \a GeomDecomp class.
  *
  * The \a Partition class can be derived from to define all different ways of 
  * determining a new partition for rebalancing. This is one example where the
@@ -76,7 +86,6 @@ public:
    * should form a unique global identification across all
    * processors.
    */
-
   struct MeshInfo {
     std::vector<mesh::Entity *>      mesh_entities;
     const VectorField              * nodal_coord_ref ;
@@ -109,7 +118,7 @@ public:
                                const VectorField   * nodal_coord_ref,
                                const ScalarField   * elem_weight_ref=NULL);
 
-  /** \bref Reset owning processor.
+  /** \brief Reset owning processor.
    *
    *  Default destination for an entity is the processor
    *  that already owns the entity, which is this processor.
@@ -324,6 +333,8 @@ private:
 
 
 };
+
+/** \} */
 
 }
 } // namespace stk

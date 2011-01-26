@@ -520,22 +520,6 @@ double Zoltan::zoltan_version()   const { return static_zoltan_version();  }
 //: Constructor
 //: ===========
 
-//Diag::Writer &
-//rebalance::Zoltan::verbose_print(
-//  Diag::Writer &                dout) const
-//{
-//  if (dout.shouldPrint()) {
-//    dout << "Fmwk::Zoltan" << sierra::Diag::push << dendl;
-//    GeomDecomp::verbose_print(dout).dendl();
-//    dout.m(LOG_MEMBERS) << "parameter_entry_Name, " << parameter_entry_Name << dendl;
-//    dout.m(LOG_MEMBERS) << "zoltan_version, " << static_zoltan_version() << dendl;
-//
-//    dout << sierra::Diag::pop;
-//  }
-//
-//  return dout;
-//}
-
 namespace {
 void merge_parameters(std::vector <std::pair<std::string, std::string> > &str_zoltan_params,
                       const Parameters &Zoltan_Params) {

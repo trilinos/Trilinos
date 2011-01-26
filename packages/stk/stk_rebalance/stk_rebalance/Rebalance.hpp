@@ -21,7 +21,8 @@
 
 #include <stk_rebalance/Partition.hpp>
 
-/** @file Rebalance.hpp
+/** \file Rebalance.hpp
+ *   \ingroup stk_rebalance_module
  *
  * \brief Static functions for dynamic load balancing.
  *
@@ -33,6 +34,10 @@
 
 namespace stk {
 namespace rebalance {
+
+/** \addtogroup stk_rebalance_module
+ *  \{
+ */
 
 /** \brief Determine if rebalancing is needed.
  *
@@ -57,7 +62,6 @@ namespace rebalance {
  * compared to \a imbalance_threshold.  True is returned if the global imbalance is
  * greater than \a imbalance_threshold.
  */
-
 bool rebalance_needed(mesh::BulkData            & bulk_data,
                       const mesh::Field<double> * load_measure,
                       double                    & imbalance_threshold,
@@ -94,6 +98,8 @@ bool rebalance(mesh::BulkData & bulk_data ,
                const ScalarField * elem_weight_ref,
                Partition & partition,
                const stk::mesh::EntityRank rank = stk::mesh::InvalidEntityRank);
+
+/** \} */
 
 }
 } // namespace stk
