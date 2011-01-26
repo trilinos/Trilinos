@@ -3,6 +3,7 @@ ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(environment)
 ADD_SUBDIRECTORY(diag)
 ADD_SUBDIRECTORY(parallel)
+ADD_SUBDIRECTORY(unit_test_support)
 
 IF ( TPL_ENABLE_BoostLib )
   ADD_SUBDIRECTORY(use_cases)
