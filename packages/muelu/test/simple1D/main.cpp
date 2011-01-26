@@ -131,6 +131,23 @@ int main(int argc, char *argv[]) {
   //H.FillHierarchy(Pfact,Rfact,Acfact);
   H.FullPopulate(Pfact,Rfact,Acfact,SmooFact,0,maxLevels);
 
+  RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
+
+  RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
+  epX->SetSeed(846930886);
+  X->randomize();
+  Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+  //double n;
+  //epX->Norm2(&n);
+  //std::cout << "||X_true|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
+
+  X->putScalar( (SC) 0.0);
+
+  H.Iterate(RHS,1,X);
+
+
 #endif // HAVE_MUELU_IFPACK
   
   return EXIT_SUCCESS;
