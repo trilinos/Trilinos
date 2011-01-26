@@ -133,7 +133,7 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
         //preSmoo = rcp( new SmootherPrototype(PreSmootherPrototype_) );
         //TODO if outputlevel high enough
         //TODO preSmoo.Print();
-        preSmoo->Setup(level);
+        preSmoo->Setup(*level);
       }
 
       // Is post-smoother of the same type as pre-smoother ?
@@ -153,14 +153,14 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
           // are in fact the parameters of the Setup phase. The call to
           // CopyParameters resets the smoother (only if parameters are
           // different) and we must call Setup() again.
-          postSmoo->Setup(level);
+          postSmoo->Setup(*level);
 
           // TODO: if CopyParameters do not exist, do setup twice.
       } else {
         // NO: post-smoother != pre-smoother 
         // Copy the prototype and run the setup phase.
         postSmoo = PostSmootherPrototype_->Copy();
-        postSmoo->Setup(level);
+        postSmoo->Setup(*level);
       }
 
     } //Build()
