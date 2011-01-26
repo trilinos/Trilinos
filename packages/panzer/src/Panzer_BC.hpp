@@ -42,6 +42,9 @@ namespace panzer {
        std::string strategy,
        const Teuchos::ParameterList& p);
 
+    //! \brief Ctor based on ParameterList
+    BC(const Teuchos::ParameterList& p);
+
     //! Dtor.
     ~BC();
 
@@ -71,6 +74,10 @@ namespace panzer {
 
     //! Print object using an ostream.
     void print(std::ostream& os) const;
+
+  private:
+
+    void validateParameters(const Teuchos::ParameterList& p) const;
 
   private:
 

@@ -55,6 +55,7 @@ APPEND_SET(HEADERS
   Panzer_ExplicitTemplateInstantiation.hpp
   Panzer_FieldManagerBuilder.hpp
   Panzer_FieldManagerBuilderT.hpp
+  Panzer_InputEquationSet.hpp
   Panzer_InputPhysicsBlock.hpp
   Panzer_IntegrationRule.hpp
   Panzer_IntegrationValues.hpp
@@ -63,8 +64,11 @@ APPEND_SET(HEADERS
   Panzer_MaterialModelEntry.hpp
   Panzer_ModelEvaluator.hpp
   Panzer_ModelEvaluatorT.hpp
+  Panzer_ModelEvaluator_Factory.hpp
+  Panzer_ModelEvaluator_FactoryT.hpp
   Panzer_ModelFactory.hpp
   Panzer_ModelFactory_TemplateManager.hpp
+  Panzer_ParameterList_ObjectBuilders.hpp
   Panzer_PhysicsBlock.hpp
   Panzer_Version.hpp
   Panzer_Workset.hpp
@@ -119,9 +123,11 @@ APPEND_SET(SOURCES
   Panzer_BCStrategy.cpp
   Panzer_Dimension.cpp
   Panzer_EquationSet_DefaultImpl.cpp
+  Panzer_InputEquationSet.cpp
   Panzer_InputPhysicsBlock.cpp
   Panzer_IntegrationRule.cpp
   Panzer_MaterialModelEntry.cpp
+  Panzer_ParameterList_ObjectBuilders.cpp
   Panzer_PhysicsBlock.cpp
   Panzer_Traits.cpp
   Panzer_Version.cpp

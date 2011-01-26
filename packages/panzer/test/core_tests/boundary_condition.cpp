@@ -60,6 +60,29 @@ namespace panzer {
     s << bc << std::endl;
   }
 
+  TEUCHOS_UNIT_TEST(bc, dirichlet_complete_param_list)
+  {
+    Teuchos::ParameterList p;
+    p.set<std::size_t>("ID", 0);
+    p.set("Type", "Dirichlet");
+    p.set("Sideset ID", "4");
+    p.set("Element Block ID", "fluid");
+    p.set("Equation Set Name", "UX");
+    p.set("Strategy", "Constant");
+    p.sublist("Data").set("Value",1.0);
+
+    panzer::BC bc(p);
+
+    TEST_EQUALITY(bc.bcID(), 0);
+    TEST_EQUALITY(bc.bcType(), BCT_Dirichlet);
+    TEST_EQUALITY(bc.sidesetID(), "4");
+    TEST_EQUALITY(bc.elementBlockID(), "fluid");
+    TEST_EQUALITY(bc.equationSetName(), "UX");
+
+    std::stringstream s;
+    s << bc << std::endl;
+  }
+
   TEUCHOS_UNIT_TEST(bc, map_comparitor)
   {
     using panzer::BC;

@@ -83,3 +83,9 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES evaluators.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  parameter_list_object_builders
+  SOURCES parameter_list_object_builders.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )

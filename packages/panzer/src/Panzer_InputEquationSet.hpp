@@ -17,6 +17,14 @@ namespace panzer {
     std::string model_factory;
     std::string prefix;
     Teuchos::ParameterList params;
+
+    InputEquationSet();
+
+    InputEquationSet(const Teuchos::ParameterList& p);
+    
+  private:
+
+    void validateParameters(const Teuchos::ParameterList& p) const;
   };
 
 }

@@ -41,6 +41,27 @@ panzer::BC::BC(std::size_t bc_id,
 
 //=======================================================================
 //=======================================================================
+panzer::BC::BC(const Teuchos::ParameterList& p)
+{
+  this->validateParameters(p);
+
+  m_bc_id = p.get<std::size_t>("ID");
+  std::string type = p.get<std::string>("Type");
+  if (type == "Dirichlet")
+    m_bc_type = BCT_Dirichlet;
+  else if (type == "Neumann")
+    m_bc_type = BCT_Neumann;
+
+  m_sideset_id = p.get<std::string>("Sideset ID");
+  m_element_block_id = p.get<std::string>("Element Block ID");
+  m_equation_set_name = p.get<std::string>("Equation Set Name");
+  m_strategy = p.get<std::string>("Strategy");
+  m_params = Teuchos::rcp(new Teuchos::ParameterList);
+  *m_params = p.sublist("Data");
+}
+
+//=======================================================================
+//=======================================================================
 panzer::BC::~BC()
 { }
 
@@ -128,6 +149,23 @@ void panzer::BC::print(std::ostream& os) const
   if (!Teuchos::is_null(m_params))
     os << endl << m_params;
 
+}
+
+//=======================================================================
+//=======================================================================
+void panzer::BC::validateParameters(const Teuchos::ParameterList& p) const
+{
+  Teuchos::ParameterList valid_params;
+  
+  valid_params.set<std::size_t>("ID", 0);
+  valid_params.set<std::string>("Type", "Dirichlet");
+  valid_params.set<std::string>("Sideset ID", "???");
+  valid_params.set<std::string>("Element Block ID", "???");
+  valid_params.set<std::string>("Equation Set Name", "???");
+  valid_params.set<std::string>("Strategy", "???");
+  valid_params.sublist("Data");
+
+  p.validateParameters(valid_params, 0);
 }
 
 //=======================================================================
