@@ -107,9 +107,14 @@ namespace MueLu {
     /*! @brief Helper function to do matrix-matrix multiply "in-place"
 
       Returns RCP to non-constant Cthulhu::Operator.
+
+      @param A left matrix
+      @param B right matrix
+      @param transposeA if true, use the transpose of A
+      @param transposeB if true, use the transpose of B
     */
    static RCP<Operator> TwoMatrixMultiply(RCP<Operator> const &A, RCP<Operator> const &B,
-                                          bool transposeA=false)
+                                          bool transposeA=false, bool transposeB=false)
     {
       RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
       RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
@@ -121,7 +126,7 @@ namespace MueLu {
       if (!epB->Filled())
         throw(Exceptions::RuntimeError("B is not fill-completed"));
 #ifdef HAVE_MUELU_EPETRAEXT
-      int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,false,*epC);
+      int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC);
 #else 
       int i = 42;
 #endif
@@ -268,9 +273,20 @@ namespace MueLu {
 
    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
-   //static Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType>
    static Teuchos::Array<Magnitude>
    ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
+   {
+     //if (X.getNumVectors() != RHS.getNumVectors())
+     //  throw(Exceptions::RuntimeError("Number of solution vectors != number of right-hand sides"));
+     //const size_t numVecs = X.getNumVectors();
+     const size_t numVecs = 1;
+     RCP<MultiVector> RES = Residual(Op,X,RHS);
+     Teuchos::Array<Magnitude> norms(numVecs);
+     RES->norm2(norms);
+     return norms;
+   }
+
+   static RCP<MultiVector> Residual(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
    {
      SC one = 1.0;
      SC negone = -1.0;
@@ -281,13 +297,7 @@ namespace MueLu {
      RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRowMap(),numVecs);
      Op.multiply(X,*RES,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
      RES->update(one,RHS,negone);
-     //Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(numVecs);
-     Teuchos::Array<Magnitude> norms(numVecs);
-     RES->norm2(norms);
-     //RCP<Epetra_MultiVector> epRES = Utils::MV2NonConstEpetraMV(RES);
-     //double n;
-     //epRES->Norm2(&n);
-     return norms;
+     return RES;
    }
 
   }; // class
