@@ -22,6 +22,9 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Headers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/MueCentral)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Transfers/Smoothed-Aggregation)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Transfers/Generic)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Transfers/BaseClass)
 
 #TODO: APPEND_GLOB(HEADERS */*.hpp) instead ?
 APPEND_SET(HEADERS
@@ -32,9 +35,9 @@ APPEND_SET(HEADERS
   MueCentral/MueLu_Hierarchy.hpp
   MueCentral/MueLu_Needs.hpp
   MueCentral/MueLu_RAPFactory.hpp
-  Transfers/MueLu_SaPFactory.hpp
-  Transfers/MueLu_TransPFactory.hpp
-  Transfers/MueLu_TentativePFactory.hpp
+  Transfers/Smoothed-Aggregation/MueLu_SaPFactory.hpp
+  Transfers/Generic/MueLu_TransPFactory.hpp
+  Transfers/Smoothed-Aggregation/MueLu_TentativePFactory.hpp
   Smoothers/MueLu_GaussSeidel.hpp
   Smoothers/MueLu_SmootherPrototype.hpp
   Smoothers/MueLu_SmootherBase.hpp
