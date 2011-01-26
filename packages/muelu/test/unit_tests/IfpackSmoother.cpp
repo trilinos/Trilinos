@@ -4,6 +4,8 @@
 
 #include "MueLu_Version.hpp"
 
+#include "test_helpers.hpp"
+
 #include "MueLu_Level.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_IfpackSmoother.hpp"
@@ -86,22 +88,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
 
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-  GO nx,ny,nz;
-  nx = ny = nz = 5;
-  GO numGlobalElements = nx*ny*nz;
-  LO indexBase = 0;
-  RCP<const Map > map;
-  map = rcp( new Cthulhu::EpetraMap(numGlobalElements, indexBase, comm) );
-
-  Teuchos::ParameterList matrixList;
-  matrixList.set("nx",nx);
-  matrixList.set("ny",ny);
-  matrixList.set("nz",nz);
-
-  std::string matrixType("Laplace1D");
-  RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>(matrixType,map,matrixList);
-
-  //Epetra_Util blech;
+  RCP<CrsOperator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(125);
 
   Teuchos::ParameterList  ifpackList;
   ifpackList.set("relaxation: type", "Gauss-Seidel");
@@ -109,13 +96,11 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
   ifpackList.set("relaxation: damping factor", (double) 1.0);
   ifpackList.set("relaxation: zero starting solution", false);
   RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-  //RCP<Level> aLevel = rcp( new Level() );
-  //aLevel->SetA(Op);
   Level aLevel;
   aLevel.SetA(Op);
 
-  RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
-  RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
+  RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getDomainMap(),1);
 
   smoother->Setup(aLevel);
 
@@ -123,10 +108,6 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
   epX->SetSeed(846930886);
   X->randomize();
   Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-
-  //double n;
-  //epX->Norm2(&n);
-  //std::cout << "||X_true|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
 
   X->putScalar( (SC) 0.0);
 
