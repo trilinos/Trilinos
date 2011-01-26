@@ -107,7 +107,7 @@ class Level;
     }
     //@}
 
-    void Setup(Level const &level) {
+    void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "IfpackSmoother::Setup()" << std::endl;
       SmootherPrototype::IsSetup(true);
