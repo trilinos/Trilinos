@@ -84,6 +84,17 @@ TEUCHOS_UNIT_TEST(Needs, CheckOut_Exception)
   TEST_THROW( needs.CheckOut("nonExistentNeed",value), std::logic_error );
 }
 
+TEUCHOS_UNIT_TEST(Needs, Checkout_Without_Request)
+{
+  out << "version: " << MueLu::Version() << std::endl;
+  Needs needs = Needs();
+  std::string aNeed = "knockNeed";
+  double trueValue = 42;
+  needs.Save(aNeed,trueValue);
+  double expectedValue = 0;
+  TEST_THROW( needs.CheckOut(aNeed,expectedValue), MueLu::Exceptions::RuntimeError );
+}
+
 TEUCHOS_UNIT_TEST(Needs, CheckOut)
 {
   out << "version: " << MueLu::Version() << std::endl;
