@@ -133,7 +133,7 @@ int main(int argc,char * argv[])
    // build worksets
    ////////////////////////////////////////////////////////
 
-   // build worksets: note that buildWorksets and buildBCWorksets 
+   // build worksets
    out << "BUILD WORKSETS" << std::endl;
    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
          volume_worksets = panzer_stk::buildWorksets(*mesh, ipb, workset_size);

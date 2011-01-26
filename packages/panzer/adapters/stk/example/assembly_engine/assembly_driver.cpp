@@ -87,7 +87,7 @@ int main(int argc,char * argv[])
      physics_id_to_input_physics_blocks;
    physics_id_to_input_physics_blocks["test physics"] = ipb;
  
-   // build worksets: note that buildWorksets and buildBCWorksets both call testInitialization
+   // build worksets
    out << "BUILD WORKSETS" << std::endl;
    const std::size_t workset_size = 20;
    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
