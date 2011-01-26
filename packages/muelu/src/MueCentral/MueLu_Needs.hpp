@@ -4,6 +4,8 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "MueLu_Exceptions.hpp"
+
 #define MueLu_cout(minimumVerbLevel) \
     if (this->getVerbLevel() >= minimumVerbLevel) *(this->getOStream())
 
@@ -74,7 +76,10 @@ class Needs : public Teuchos::VerboseObject<Needs> {
     void CheckOut(const std::string ename, T &value) {
       if (!countTable_.isParameter(ename)) {
         std::string msg =  "Checkout: " + ename + " not found in countTable_";
-        throw(std::logic_error(msg));
+        throw(Exceptions::RuntimeError(msg));
+      } else if (countTable_.get(ename,0) < 1) {
+        std::string msg =  "Checkout: you must first Request " + ename;
+        throw(Exceptions::RuntimeError(msg));
       } else {
         value = dataTable_.get<T>(ename);
         int currentCount = countTable_.get(ename,0);
@@ -96,7 +101,7 @@ class Needs : public Teuchos::VerboseObject<Needs> {
       if (!countTable_.isParameter(ename)) {
         Teuchos::OSTab tab(out_);
         std::string msg =  "Examine: " + ename + " not found in countTable_";
-        throw(std::logic_error(msg));
+        throw(Exceptions::RuntimeError(msg));
       } else {
         value = dataTable_.get<T>(ename);
       }
@@ -130,14 +135,14 @@ class Needs : public Teuchos::VerboseObject<Needs> {
 
     /*! @brief Return the number of outstanding requests for a need.
 
-        Throws a <tt>std::logic_error</tt> exception if the need either hasn't been requested or
+        Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or
         hasn't been saved.
     */
     int NumRequests(const std::string ename) {
       //FIXME should we return 0 instead of throwing an exception?
       if (!countTable_.isParameter(ename)) {
         std::string msg =  "NumRequests: " + ename + " not found in countTable_";
-        throw(std::logic_error(msg));
+        throw(Exceptions::RuntimeError(msg));
       } else {
         return countTable_.get(ename,0);
       }
