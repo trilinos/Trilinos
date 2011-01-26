@@ -21,6 +21,7 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFactory.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -75,6 +76,11 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(*mesh, ipb, bcs);
 
+    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
+      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
     const std::size_t workset_size = 20;
     std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
       volume_worksets = panzer_stk::buildWorksets(*mesh,ipb, workset_size);
@@ -82,41 +88,48 @@ namespace panzer {
     const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
        = panzer_stk::buildBCWorksets(*mesh,ipb,bcs);
 
-    std::map<std::string,std::string> block_ids_to_physics_ids;
-    block_ids_to_physics_ids["eblock-0_0"] = "test physics";
-    
-    std::map<std::string,panzer::InputPhysicsBlock> 
-      physics_id_to_input_physics_blocks;
-    physics_id_to_input_physics_blocks["test physics"] = ipb;
+    // build physics blocks
+    //////////////////////////////////////////////////////////////
+    user_app::MyFactory eqset_factory;
+    user_app::BCFactory bc_factory;
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
 
+    {
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+      
+      std::map<std::string,panzer::InputPhysicsBlock> 
+        physics_id_to_input_physics_blocks;
+      physics_id_to_input_physics_blocks["test physics"] = ipb;
+  
+      fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
+                              physics_id_to_input_physics_blocks,
+                              Teuchos::as<int>(mesh->getDimension()), workset_size,
+                              eqset_factory,
+                              physicsBlocks);
+    }
+
+   // build DOF Manager
+   /////////////////////////////////////////////////////////////
+ 
+   // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-    
-    user_app::MyFactory eqset_factory;
-				  
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
 
-    user_app::BCFactory bc_factory;
+    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+         = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
 
-    fmb->setup(conn_manager,
-	      MPI_COMM_WORLD,
-	      block_ids_to_physics_ids,
-	      physics_id_to_input_physics_blocks,
-	      volume_worksets,
-	      bc_worksets,
-	      Teuchos::as<int>(mesh->getDimension()),
-	      eqset_factory,
-	      bc_factory,
-	      workset_size);
+    // setup field manager build
+    /////////////////////////////////////////////////////////////
+ 
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory);
 
     panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
     panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb);
     ae_tm.buildObjects(builder);
 
-
-    RCP<DOFManager<int,int> > dofManager = 
-      ae_tm.getAsObject<panzer::Traits::Residual>()->getManagerBuilder()->getDOFManager();
     panzer::EpetraLinearObjFactory<panzer::Traits,int> linObjFactory(Comm,dofManager);
     RCP<Epetra_Map> ghosted_map = linObjFactory.getGhostedMap();
     RCP<Epetra_CrsGraph> ghosted_graph =  linObjFactory.getGhostedGraph();

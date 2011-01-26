@@ -26,6 +26,7 @@ namespace panzer {
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
 
+/*
   TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   {
     using Teuchos::RCP;
@@ -104,6 +105,7 @@ namespace panzer {
     TEST_EQUALITY(fmb_bc_fm.size(), 3);
     TEST_EQUALITY(fmb_bc_fm.size(), fmb_bc_worksets.size());
   }
+*/
 
   TEUCHOS_UNIT_TEST(field_manager_builder, incremental_setup_interface)
   {
