@@ -112,18 +112,6 @@ namespace panzer {
 
   private:
 
-    /** Construct the DOFManager using this set of physics blocks. This builds the internally
-      * stored DOFManager. After the call to this we should have that getDOFManager()!=Teuchos::null
-      * and that the global IDs are fully constructed for the system.
-      */
-    void buildDOFManager(const Teuchos::RCP<panzer::ConnManager<LO,GO> > & conn_manager, MPI_Comm comm,
-                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
-
-    void buildFieldManagers(MPI_Comm, const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-                            std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_volume_field_managers,
-                            bool write_graphviz_files) const;
-
-
     //! Phalanx volume field managers for each element block.
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >
       phx_volume_field_managers_;

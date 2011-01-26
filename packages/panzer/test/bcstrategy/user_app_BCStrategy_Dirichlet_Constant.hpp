@@ -22,6 +22,10 @@ namespace user_app {
     void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				    const panzer::PhysicsBlock& pb) const;
 
+    void 
+    buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+				            const panzer::PhysicsBlock& pb) const;
+
   };
 
 }

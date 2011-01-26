@@ -68,92 +68,6 @@ void panzer::FieldManagerBuilder<LO,GO>::buildPhysicsBlocks(const std::map<std::
    }
 }
 
-//=======================================================================
-//=======================================================================
-template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::buildDOFManager(const Teuchos::RCP<panzer::ConnManager<LO,GO> > & conn_manager, MPI_Comm comm,
-                                                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks)
-{
-   Teuchos::RCP<Teuchos::FancyOStream> pout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-   pout->setShowProcRank(true);
-   pout->setOutputToRootOnly(0);
-
-   // build the DOF manager for the problem
-   Teuchos::RCP<panzer::DOFManager<LO,GO> > dofManager 
-         = Teuchos::rcp(new panzer::DOFManager<LO,GO>(conn_manager,comm));
-
-   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
-   for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
-      Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
-       
-      const std::vector<StrBasisPair> & blockFields = pb->getProvidedDOFs();
-
-      // insert all fields into a set
-      std::set<StrBasisPair,StrBasisComp> fieldNames;
-      fieldNames.insert(blockFields.begin(),blockFields.end()); 
-
-      // add basis to DOF manager: block specific
-      std::set<StrBasisPair>::const_iterator fieldItr; 
-      for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
-         Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepidBasis 
-               = fieldItr->second->getIntrepidBasis();
-         Teuchos::RCP<IntrepidFieldPattern> fp = Teuchos::rcp(new IntrepidFieldPattern(intrepidBasis));
-         dofManager->addField(pb->elementBlockID(),fieldItr->first,fp);
-
-         *pout << "\"" << fieldItr->first << "\" Field Pattern = \n";
-         fp->print(*pout);
-      }
-   } 
-
-   dofManager->buildGlobalUnknowns();
-   dofManager->printFieldInformation(*pout);
-   dofMngr_ = dofManager;
-}
-//=======================================================================
-//=======================================================================
-template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::buildFieldManagers(MPI_Comm comm,
-							    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& phxPhysicsBlocks, 
-							    std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_volume_field_managers,
-							    bool write_graphviz_files) const
-{
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  phx_volume_field_managers.resize(0);
-  
-  for (std::size_t block=0; block < phxPhysicsBlocks.size(); ++block) {
-
-    phx_volume_field_managers.push_back(Teuchos::rcp(new PHX::FieldManager<panzer::Traits>));
-
-    RCP<panzer::PhysicsBlock> pb = phxPhysicsBlocks[block];
-    
-    // register the evaluators
-    PHX::FieldManager<panzer::Traits>& fm = 
-      *(phx_volume_field_managers[block]);
-    
-    pb->buildAndRegisterEquationSetEvaluators(fm);
-    pb->buildAndRegisterGatherScatterEvaluators(fm);
-    //pb->buildAndRegisterModelEvaluators(fm, pb->getProvidedDOFs());
-    
-    Traits::SetupData setupData;
-    setupData.globalIndexer_ = dofMngr_;
-    setupData.worksets_ = worksets_[block];
-    fm.postRegistrationSetup(setupData);
-    
-    if (write_graphviz_files) {
-      int my_rank;
-      MPI_Comm_rank(comm, &my_rank);
-      if (my_rank == 0) {
-	std::stringstream filename;
-	filename << "panzer_dependency_graph_" << block;  
-	fm.writeGraphvizFile(filename.str(), ".dot");
-      }
-    }
-
-  }
-  
-}
 
 //=======================================================================
 //=======================================================================
@@ -260,6 +174,7 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
       for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator 
 	     bcs_type = bcs->begin(); bcs_type != bcs->end(); ++bcs_type) {
 	bcs_type->buildAndRegisterEvaluators(fm,*side_pb);
+	bcs_type->buildAndRegisterGatherScatterEvaluators(fm,*side_pb);
       }
 
       // Setup the fieldmanager

@@ -22,6 +22,10 @@ namespace panzer {
       buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				 const panzer::PhysicsBlock& pb) const = 0;
 
+    virtual void 
+      buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+  				              const panzer::PhysicsBlock& pb) const = 0;
+
   };
   
 }
