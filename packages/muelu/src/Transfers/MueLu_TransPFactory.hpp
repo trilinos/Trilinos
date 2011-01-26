@@ -47,8 +47,13 @@ namespace MueLu {
       MueLu_cout(Teuchos::VERB_HIGH) << "TransPFactory: Building a restriction operator" << std::endl;
       Teuchos::ParameterList matrixList;
       RCP<Operator> P = coarseLevel.GetP();
-      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRowMap(),matrixList); //FIXME should this be range map instead?
-      RCP<Operator> R = Utils::TwoMatrixMultiply(P,I,true);
+      //doesn't work -- bug in EpetraExt?
+      //RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
+
+      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);
+
+      //RCP<Operator> R = Utils::TwoMatrixMultiply(P,I,true); //doesn't work -- bug in EpetraExt?
+      RCP<Operator> R = Utils::TwoMatrixMultiply(I,P,false,true);
       coarseLevel.SetR(R);
       return true;
     }
