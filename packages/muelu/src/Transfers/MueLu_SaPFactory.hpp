@@ -103,8 +103,8 @@ class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
         fineLevel.CheckOut("Nullspace",fineNullspace);
       else {
         //TODO add this functionality
-        throw(Exceptions::NotImplemented("SaPFactory.Build():  nullspace generation not implemented yet"));
-        ;
+        //throw(Exceptions::NotImplemented("SaPFactory.Build():  nullspace generation not implemented yet"));
+        std::cout << "nullspace generation not implemented yet" << std::endl;
       }
 
       RCP<Operator> Ptent = TentativePFactory::MakeTentative(fineLevel);
