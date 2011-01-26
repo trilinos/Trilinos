@@ -22,8 +22,7 @@ namespace panzer {
   void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
 		  std::vector<stk::mesh::EntityId> & nodeIds);
 
-  void testInitialzation(const panzer_stk::STK_Interface& mesh,
-			 panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
 
 
@@ -48,7 +47,7 @@ namespace panzer {
 
     panzer::InputPhysicsBlock ipb;
     std::vector<panzer::BC> bcs;
-    testInitialzation(*mesh, ipb, bcs);
+    testInitialzation(ipb, bcs);
 
 
     std::vector< Teuchos::RCP<std::vector<panzer::Workset> > > worksets;
@@ -107,7 +106,7 @@ namespace panzer {
 
     panzer::InputPhysicsBlock ipb;
     std::vector<panzer::BC> bcs;
-    testInitialzation(*mesh, ipb, bcs);
+    testInitialzation(ipb, bcs);
 
     std::vector<std::string> sideSets; 
     std::vector<std::string> elementBlocks; 
@@ -216,8 +215,7 @@ namespace panzer {
       nodeIds.push_back(itr->entity()->identifier());
   }
   
-  void testInitialzation(const panzer_stk::STK_Interface& mesh,
-			 panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
     panzer::InputEquationSet ies_1;

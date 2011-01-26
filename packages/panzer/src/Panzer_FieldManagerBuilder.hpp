@@ -32,42 +32,6 @@ namespace panzer {
 
     typedef std::map<unsigned,panzer::Workset> BCFaceWorksetMap;
 
-    /** This function builds everything. It builds the PhysicsBlocks,
-      * degree of freedom manager, and the field managers for both volume
-      * and BC evaluators.
-      *
-      * \param[in] conn_manager Connection manager mainly included to build the 
-      *                         DOFManager
-      * \param[in] block_ids_to_physics_ids A mapping from element block IDs to
-      *                                     physics IDs 
-      * \param[in] physics_id_to_input_physics_blocks This takes the physics IDs and
-      *                                               maps to an input physics block.
-      *                                               Essentially this is used to construct
-      *                                               the physics block object
-      * \param[in] volume_worksets Maps the element block to a set of worksets containing the
-      *                            elements to be assembled
-      * \param[in] bc_worksets Maps the boundary conditions to worksets with an associated
-      *                        side Id. 
-      * \param[in] base_cell_dimension What is the dimension of the volume element
-      * \param[in] factory ?
-      * \param[in] bc_factory ?
-      * \param[in] workset_size ?
-      * \param[in] write_graphviz_files Output the dot files associated with the assembly graph
-      */
-    void 
-    setup(const Teuchos::RCP<panzer::ConnManager<LO,GO> >& conn_manager,
-	  MPI_Comm comm,
-	  const std::map<std::string,std::string>& block_ids_to_physics_ids,
-	  const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
-	  const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, // element block -> vector of worksets
-	  const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>& bc_worksets,
-                                                                                                     // boundary condition -> maps of (side set id -> workset)
-	  int base_cell_dimension,
-	  const panzer::EquationSetFactory& factory,
-	  const panzer::BCStrategyFactory& bc_factory,
-	  std::size_t workset_size,
-	  bool write_graphviz_files = false);
-
     void print(std::ostream& os) const;
 
     const 

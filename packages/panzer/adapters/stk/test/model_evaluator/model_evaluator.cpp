@@ -22,6 +22,7 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ModelEvaluator.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
@@ -50,33 +51,8 @@ namespace panzer {
       comm->barrier();
    }
 
-
-  std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-  buildWorksets(const RCP<panzer_stk::STK_Interface>& mesh,
-		const std::size_t workset_size);
-
-  const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> buildBCWorksets(const RCP<panzer_stk::STK_Interface>& mesh);
-
-  template<typename Array>
-  void getIdsAndVertices(const panzer_stk::STK_Interface& si,
-			 std::string blockId,
-			 std::vector<std::size_t>& localIds,
-			 Array& vertices);
-
-  void getNodeIds(const stk::mesh::Entity * element,
-		  std::vector<stk::mesh::EntityId> & nodeIds);
-
-  void getSideElements(const panzer_stk::STK_Interface & mesh,
-		       const std::string & blockId, 
-		       const std::vector<stk::mesh::Entity*> & sides,
-		       std::vector<std::size_t> & localSideIds, 
-		       std::vector<stk::mesh::Entity*> & elements);
-
-  void testInitialzation(const panzer_stk::STK_Interface& mesh,
-			 panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
-
-
 
   TEUCHOS_UNIT_TEST(model_evaluator, basic)
   {
@@ -97,8 +73,13 @@ namespace panzer {
 
     panzer::InputPhysicsBlock ipb;
     std::vector<panzer::BC> bcs;
-    testInitialzation(*mesh, ipb, bcs);
+    testInitialzation(ipb, bcs);
 
+    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
+      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
     const std::size_t workset_size = 20;
     std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
       volume_worksets = panzer_stk::buildWorksets(*mesh,ipb, workset_size);
@@ -106,43 +87,51 @@ namespace panzer {
     const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
        = panzer_stk::buildBCWorksets(*mesh,ipb,bcs);
 
-    std::map<std::string,std::string> block_ids_to_physics_ids;
-    block_ids_to_physics_ids["eblock-0_0"] = "test physics";
-    block_ids_to_physics_ids["eblock-1_0"] = "test physics";
-    
-    std::map<std::string,panzer::InputPhysicsBlock> 
-      physics_id_to_input_physics_blocks;
-    physics_id_to_input_physics_blocks["test physics"] = ipb;
+    // build physics blocks
+    //////////////////////////////////////////////////////////////
+    user_app::MyFactory eqset_factory;
+    user_app::BCFactory bc_factory;
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
 
+    {
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+      block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+      
+      std::map<std::string,panzer::InputPhysicsBlock> 
+        physics_id_to_input_physics_blocks;
+      physics_id_to_input_physics_blocks["test physics"] = ipb;
+  
+      fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
+                              physics_id_to_input_physics_blocks,
+                              Teuchos::as<int>(mesh->getDimension()), workset_size,
+                              eqset_factory,
+                              physicsBlocks);
+    }
+
+    // build DOF Manager
+    /////////////////////////////////////////////////////////////
+ 
+    // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-    
-    user_app::MyFactory eqset_factory;
-				  
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
 
-    user_app::BCFactory bc_factory;
+    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+         = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
 
-    fmb->setup(conn_manager,
-	      MPI_COMM_WORLD,
-	      block_ids_to_physics_ids,
-	      physics_id_to_input_physics_blocks,
-	      volume_worksets,
-	      bc_worksets,
-	      Teuchos::as<int>(mesh->getDimension()),
-	      eqset_factory,
-	      bc_factory,
-	      workset_size);
+    // setup field manager build
+    /////////////////////////////////////////////////////////////
+ 
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory);
 
     panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
     panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb);
     ae_tm.buildObjects(builder);
 
 
-    RCP<DOFManager<int,int> > dofManager = 
-      ae_tm.getAsObject<panzer::Traits::Residual>()->getManagerBuilder()->getDOFManager();
-    panzer::EpetraLinearObjFactory<int> linObjFactory(Comm,dofManager);
+    panzer::EpetraLinearObjFactory<panzer::Traits,int> linObjFactory(Comm,dofManager);
     RCP<Epetra_Map> ghosted_map = linObjFactory.getGhostedMap();
     RCP<Epetra_CrsGraph> ghosted_graph = linObjFactory.getGhostedGraph();
     
@@ -166,209 +155,7 @@ namespace panzer {
     //input.j->Print(std::cout);
   }
 
-  std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-  buildWorksets(const RCP<panzer_stk::STK_Interface>& mesh,
-		const std::size_t workset_size)
-  {
-    std::vector<std::string> element_blocks;
-    mesh->getElementBlockNames(element_blocks);
-    int base_cell_dimension = 2;
-
-    panzer::InputPhysicsBlock ipb;
-    std::vector<panzer::BC> bcs;
-    testInitialzation(*mesh, ipb, bcs);
-
-
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > worksets;
-
-    for (std::vector<std::string>::size_type i=0; i < element_blocks.size(); 
-	 ++i) {
-
-      std::vector<std::size_t> local_cell_ids;
-      Intrepid::FieldContainer<double> cell_vertex_coordinates;
-
-      panzer::getIdsAndVertices(*mesh, element_blocks[i], local_cell_ids, 
-				cell_vertex_coordinates);
-
-      worksets.insert(std::make_pair(element_blocks[i],panzer::buildWorksets(element_blocks[i],
-							      local_cell_ids,
-							      cell_vertex_coordinates,
-							      ipb,
-							      workset_size,
-							      base_cell_dimension)));
-    }
-    
-    return worksets;
-  }
-
-  const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>
-  buildBCWorksets(const RCP<panzer_stk::STK_Interface>& mesh)
-  {
-    using Teuchos::RCP;
-    
-    unsigned dim = mesh->getDimension();
-
-    int base_cell_dimension = 2;
-
-    panzer::InputPhysicsBlock ipb;
-    std::vector<panzer::BC> bcs;
-    testInitialzation(*mesh, ipb, bcs);
-
-    std::vector<std::string> sideSets; 
-    std::vector<std::string> elementBlocks; 
-    mesh->getSidesetNames(sideSets);
-    mesh->getElementBlockNames(elementBlocks);
-
-    
-    std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
-    
-    for (std::vector<panzer::BC>::const_iterator bc = bcs.begin();
-	 bc != bcs.end(); ++bc) {
-      
-      std::vector<stk::mesh::Entity*> sideEntities; 
-      mesh->getMySides(bc->sidesetID(),bc->elementBlockID(),sideEntities);
-   
-      
-      std::vector<stk::mesh::Entity*> elements;
-      std::vector<std::size_t> local_cell_ids;
-      std::vector<std::size_t> local_side_ids;
-      getSideElements(*mesh, bc->elementBlockID(),
-		      sideEntities,local_side_ids,elements);
-
-      Intrepid::FieldContainer<double> vertices;
-      vertices.resize(elements.size(),4,dim);  
-      
-      // loop over elements of this block
-      for(std::size_t elm=0;elm<elements.size();++elm) {
-	std::vector<stk::mesh::EntityId> nodes;
-	stk::mesh::Entity * element = elements[elm];
-	
-	local_cell_ids.push_back(mesh->elementLocalId(element));
-	getNodeIds(element,nodes);
-	
-	TEUCHOS_ASSERT(nodes.size()==4);
-	
-	for(std::size_t v=0;v<nodes.size();++v) {
-	  const double * coord = mesh->getNodeCoordinates(nodes[v]);
-          
-	  for(unsigned d=0;d<dim;++d) 
-	    vertices(elm,v,d) = coord[d]; 
-	}
-      }
-      
-      Teuchos::RCP<std::map<unsigned,panzer::Workset> > workset = 
-	buildBCWorkset(*bc, local_cell_ids, local_side_ids,
-		       vertices, ipb, base_cell_dimension);
-      
-
-      bc_worksets[*bc] = workset;
-    }
-    
-    return bc_worksets;
-  }
-
-  
-// *******************************************
-// functions
-// *******************************************
- 
-  template<typename Array>
-  void getIdsAndVertices(const panzer_stk::STK_Interface& si,
-			 std::string blockId,
-			 std::vector<std::size_t>& localIds,
-			 Array& vertices) {
-    
-    std::vector<stk::mesh::Entity*> elements;
-    si.getMyElements(blockId,elements);
-    
-    unsigned dim = si.getDimension();
-    
-    vertices.resize(elements.size(),4,dim);
-    
-    // loop over elements of this block
-    for(std::size_t elm=0;elm<elements.size();++elm) {
-      std::vector<stk::mesh::EntityId> nodes;
-      stk::mesh::Entity * element = elements[elm];
-      
-      localIds.push_back(si.elementLocalId(element));
-      getNodeIds(element,nodes);
-      
-      TEUCHOS_ASSERT(nodes.size()==4);
-      
-      for(std::size_t v=0;v<nodes.size();++v) {
-	const double * coord = si.getNodeCoordinates(nodes[v]);
-	
-	for(unsigned d=0;d<dim;++d) 
-	  vertices(elm,v,d) = coord[d]; 
-      }
-    }
-  }
-
-
-  void getNodeIds(const stk::mesh::Entity * element,
-		  std::vector<stk::mesh::EntityId> & nodeIds)
-  {
-    stk::mesh::PairIterRelation nodeRel = element->relations(stk::mesh::Node);
-    
-    stk::mesh::PairIterRelation::iterator itr;
-    for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 
-      nodeIds.push_back(itr->entity()->identifier());
-  }
-  
-  /** This function loops over the passed in set of "Sides" and looks
-   * at there related elements. It is then determined which elements
-   * belong in the requested element block, and what the local ID of 
-   * the side is.
-   *
-   * \param[in] mesh STK mesh interface
-   * \param[in] blockId Requested element block identifier
-   * \param[in] sides Set of sides (entities of dimension-1) where
-   *                  there is assumed part membership (induced or not)
-   *                  in the requested element block.
-   * \param[out] localSideIds On output this will contain the local side ids. 
-   *             Assumed that on input <code>sides.size()==0</code>
-   * \param[out] elements On output this will contain the elements associated
-   *             with each side in the requested block. Assumed that on input
-   *             <code>elements.size()==0</code>
-   *
-   * \note Some elements may be repeated in the lists, however the
-   *       local side ID should be distinct for each of those.
-   */
-  void getSideElements(const panzer_stk::STK_Interface & mesh,
-		       const std::string & blockId, 
-		       const std::vector<stk::mesh::Entity*> & sides,
-		       std::vector<std::size_t> & localSideIds, 
-		       std::vector<stk::mesh::Entity*> & elements) 
-  {
-    // for verifying that an element is in specified block
-    stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
-    
-    // loop over each side extracting elements and local side ID that
-    // are containted in specified block.
-    std::vector<stk::mesh::Entity*>::const_iterator sideItr;
-    for(sideItr=sides.begin();sideItr!=sides.end();++sideItr) {
-      stk::mesh::Entity * side = *sideItr;
-      
-      stk::mesh::PairIterRelation relations = 
-	side->relations(stk::mesh::Element);
-
-      for(std::size_t e=0;e<relations.size();++e) {
-	stk::mesh::Entity * element = relations[e].entity();
-	std::size_t sideId = relations[e].identifier();
-	
-         // is this element in requested block
-	bool inBlock = element->bucket().member(*blockPart);
-	if(inBlock) {
-	  // add element and Side ID to output vectors
-	  elements.push_back(element);
-	  localSideIds.push_back(sideId);
-	}
-      }
-    }
-  }
-
-  void testInitialzation(const panzer_stk::STK_Interface& mesh,
-			 panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
     panzer::InputEquationSet ies_1;
