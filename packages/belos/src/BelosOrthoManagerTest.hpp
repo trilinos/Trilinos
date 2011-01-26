@@ -123,18 +123,42 @@ namespace Belos {
       ///   manager to benchmark
       /// \param orthoManName [in] Name of the orthogonalization
       ///   manager (e.g., "TSQR", "ICGS", "DGKS")
+      /// \param normalization [in] Normalization scheme used
+      ///   by the orthogonalization manager (only applicable
+      ///   to the "Simple" orthogonalization)
       /// \param X [in] "Prototype" multivector; not modified
       /// \param numCols [in] Number of columns per block
       /// \param numBlocks [in] Number of blocks
       /// \param numTrials [in] Number of trials in the timing run
+      /// \param outMan [out] Output manager
       ///
-      static void 
+      /// \param resultStream [out] Output stream for printing
+      ///   benchmark results.  If displayResultsCompactly is true, it
+      ///   will be written by all MPI rank(s), so on ranks other than
+      ///   0, it should be set appropriately to a "black hole stream"
+      ///   that doesn't write anything.
+      ///
+      /// \param displayResultsCompactly [in] If false, rely on
+      ///   TimeMonitor::summarize() to print results to resultStream
+      ///   (and ensure only MPI Rank 0 does so).  If true, print
+      ///   results in a more compact format suitable for automatic
+      ///   parsing, using a CSV (Comma-Delimited Values) parser.  In
+      ///   "compact" mode, two lines are printed, both of which are
+      ///   comma-delimited ASCII text.  The first line begins with a
+      ///   "comment" character #; following that are column ("field")
+      ///   labels.  The second line contains the actual data, again
+      ///   in ASCII comma-delimited format.
+      static void
       benchmark (const Teuchos::RCP<OrthoManager<Scalar, MV> >& orthoMan,
 		 const std::string& orthoManName,
+		 const std::string& normalization,
 		 const Teuchos::RCP<const MV>& X,
 		 const int numCols,
 		 const int numBlocks,
-		 const int numTrials)
+		 const int numTrials,
+		 const Teuchos::RCP<OutputManager<Scalar> >& outMan,
+		 std::ostream& resultStream,
+		 const bool displayResultsCompactly=false)
       {
 	using Teuchos::Array;
 	using Teuchos::ArrayView;
@@ -142,7 +166,8 @@ namespace Belos {
 	using Teuchos::rcp;
 	using Teuchos::Time;
 	using Teuchos::TimeMonitor;
-
+	using std::endl;
+	      
 	TEST_FOR_EXCEPTION(orthoMan.is_null(), std::invalid_argument,
 			   "orthoMan is null");
 	TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
@@ -153,6 +178,8 @@ namespace Belos {
 			   "numBlocks = " << numBlocks << " < 1");
 	TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument, 
 			   "numTrials = " << numTrials << " < 1");
+	// Debug output stream
+	std::ostream& debugOut = outMan->stream(Debug);
 
 	// If you like, you can add the "baseline" as an approximate
 	// lower bound for orthogonalization performance.  It may be
@@ -216,23 +243,27 @@ namespace Belos {
 		(void) orthoMan->projectAndNormalize (*V[k], C, B, V_0k);
 	      }
 	  }
-	  // Test that the trial run actually orthogonalized correctly.
+	  // "Test" that the trial run actually orthogonalized
+	  // correctly.  Results are printed to the OutputManager's
+	  // Belos::Debug output stream, so depending on the
+	  // OutputManager's chosen verbosity level, you may or may
+	  // not see the results of the test.
 	  //
 	  // FIXME (mfh 22 Jan 2011) For now, these results have to be
 	  // inspected visually.  We should add a simple automatic
-	  // test and only print results in "verbose" mode.
+	  // test.
+	  debugOut << "Orthogonality of V[0:" << (numBlocks-1) 
+		   << "]:" << endl;
 	  for (int k = 0; k < numBlocks; ++k)
 	    {
-	      using std::cout;
-	      using std::endl;
 	      // Orthogonality of each block
-	      cout << "For block V[" << k << "]:" << endl;
-	      cout << "  ||<V[" << k << "], V[" << k << "]> - I|| = " 
-		   << orthoMan->orthonormError(*V[k]) << endl;
+	      debugOut << "For block V[" << k << "]:" << endl;
+	      debugOut << "  ||<V[" << k << "], V[" << k << "]> - I|| = " 
+		       << orthoMan->orthonormError(*V[k]) << endl;
 	      // Relative orthogonality with the previous blocks
 	      for (int j = 0; j < k; ++j)
-		cout << "  ||< V[" << j << "], V[" << k << "] >|| = " 
-		     << orthoMan->orthogError(*V[j], *V[k]) << endl;
+		debugOut << "  ||< V[" << j << "], V[" << k << "] >|| = " 
+			 << orthoMan->orthogError(*V[j], *V[k]) << endl;
 	    }
 	}
 	
@@ -253,8 +284,37 @@ namespace Belos {
 		}
 	    }
 	}
-	// Report timing results to stdout
-	TimeMonitor::summarize (std::cout);
+
+	// Report timing results.
+	if (displayResultsCompactly)
+	  {
+	    // The "compact" format is suitable for automatic parsing,
+	    // using a CSV (Comma-Delimited Values) parser.  The first
+	    // "comment" line may be parsed to extract column
+	    // ("field") labels; the second line contains the actual
+	    // data, in ASCII comma-delimited format.
+	    using std::endl;
+	    resultStream << "#orthoManName"
+			 << ",normalization"
+			 << ",numRows"
+			 << ",numCols"
+			 << ",numBlocks"
+			 << ",firstRunTimeInSeconds"
+			 << ",timeInSeconds"
+			 << ",numTrials" 
+			 << endl;
+	    resultStream << orthoManName 
+			 << "," << (orthoManName=="Simple" ? normalization : "N/A")
+			 << "," << MVT::GetVecLength(*X)
+			 << "," << numCols
+			 << "," << numBlocks
+			 << "," << firstRunTimer->totalElapsedTime()
+			 << "," << timer->totalElapsedTime()
+			 << "," << numTrials
+			 << endl;
+	  }
+	else
+	  TimeMonitor::summarize (resultStream);
       }
     };
 

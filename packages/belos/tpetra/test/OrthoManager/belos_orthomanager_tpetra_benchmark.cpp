@@ -120,6 +120,19 @@ main (int argc, char *argv[])
   // "test" pass trivially.
   bool benchmark = false; 
 
+  // Whether to display benchmark results compactly (in a CSV format),
+  // or in a human-readable table.
+  bool displayResultsCompactly = false;
+
+  // Default _local_ (per MPI process) number of rows.  This will
+  // change if a sparse matrix is loaded in as an inner product
+  // operator.  Regardless, the number of rows per MPI process must be
+  // no less than numCols*numBlocks in order for TSQR to work.  To
+  // ensure that the test always passes with default parameters, we
+  // scale by the number of processes.  The default value below may be
+  // changed by a command-line parameter with a corresponding name.
+  int numRowsPerProcess = 100;
+
   // The OrthoManager is benchmarked with numBlocks multivectors of
   // width numCols each, for numTrials trials.  The values below are
   // defaults and may be changed by the corresponding command-line
@@ -127,13 +140,6 @@ main (int argc, char *argv[])
   int numCols = 10;
   int numBlocks = 5;
   int numTrials = 3;
-
-  // Default _global_ number of rows.  The number of rows per MPI
-  // process must be no less than numCols*numBlocks.  To ensure that
-  // the test always passes with default parameters, we scale by the
-  // number of processes.  The default value below may be changed by a
-  // command-line parameter with a corresponding name.
-  int numRows = 100 * pComm->getSize();
 
   CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("benchmark", "nobenchmark", &benchmark, 
@@ -143,6 +149,9 @@ main (int argc, char *argv[])
 		  "Print messages and results.");
   cmdp.setOption ("debug", "nodebug", &debug,
 		  "Print debugging information.");
+  cmdp.setOption ("compact", "human", &displayResultsCompactly,
+		  "Whether to display benchmark results compactly (in a "
+		  "CSV format), or in a human-readable table.");
   cmdp.setOption ("filename", &filename,
 		  "Filename of a Harwell-Boeing sparse matrix, used as the "
 		  "inner product operator by the orthogonalization manager."
@@ -162,11 +171,11 @@ main (int argc, char *argv[])
   cmdp.setOption ("normalization", &normalization, 
 		  "For SimpleOrthoManager (--ortho=Simple): the normalization "
 		  "method to use.  Valid values: \"MGS\", \"CGS\".");
-  cmdp.setOption ("numRows", &numRows, 
-		  "(Global) number of rows in the test multivectors.  "
-		  "If an input matrix is given, this parameter\'s value is "
-		  "ignored, since the vectors must be commensurate with the "
-		  "dimensions of the matrix.");
+  cmdp.setOption ("numRowsPerProcess", &numRowsPerProcess, 
+		  "Number of rows per MPI process in the test multivectors.  "
+		  "If an input matrix is given, this value is ignored, since "
+		  "the vectors must be commensurate with the dimensions of "
+		  "the matrix.");
   cmdp.setOption ("numCols", &numCols, 
 		  "Number of columns in the input multivector (>= 1).");
   cmdp.setOption ("numBlocks", &numBlocks, 
@@ -190,18 +199,18 @@ main (int argc, char *argv[])
 		       std::invalid_argument, 
 		       "Failed to parse command-line arguments");
   }
+  // Total number of rows in the test vector(s).
+  // This may be changed if we load in a sparse matrix.
+  int numRows = numRowsPerProcess * pComm->getSize();
   //
   // Validate command-line arguments
   //
-  TEST_FOR_EXCEPTION(numRows <= 0, std::invalid_argument, "numRows <= 0 is not allowed");
-  TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument, "numCols <= 0 is not allowed");
-  TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, "numBlocks <= 0 is not allowed");  
-  TEST_FOR_EXCEPTION(numRows <= numCols, std::invalid_argument, 
-		     "numRows <= numCols is not allowed");
-  // Number of rows _per_ _process_ has to be >= number of rows.
-  TEST_FOR_EXCEPTION(numRows / pComm->getSize() <= numCols, 
-		     std::invalid_argument,
-		     "numRows / (number of process(es)) <= numCols is not allowed");
+  TEST_FOR_EXCEPTION(numRowsPerProcess <= 0, std::invalid_argument, 
+		     "numRowsPerProcess <= 0 is not allowed");
+  TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument, 
+		     "numCols <= 0 is not allowed");
+  TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, 
+		     "numBlocks <= 0 is not allowed");  
     
   // Declare an output manager for handling local output.  Initialize,
   // using the caller's desired verbosity level.
@@ -224,8 +233,8 @@ main (int argc, char *argv[])
   {
     using Belos::Test::loadSparseMatrix;
     // If the sparse matrix is loaded successfully, this call will
-    // modify numRows to be the number of rows in the sparse matrix.
-    // Otherwise, it will leave numRows alone.
+    // modify numRows to be the total number of rows in the sparse
+    // matrix.  Otherwise, it will leave numRows alone.
     std::pair<RCP<map_type>, RCP<sparse_matrix_type> > results = 
       loadSparseMatrix<local_ordinal_type, global_ordinal_type, node_type> (pComm, filename, numRows, debugOut);
     map = results.first;
@@ -234,6 +243,13 @@ main (int argc, char *argv[])
   TEST_FOR_EXCEPTION(map.is_null(), std::logic_error,
 		     "Error: (Mat)OrthoManager test code failed to "
 		     "initialize the Map");
+  if (M.is_null())
+    {
+      // Number of rows per process has to be >= number of rows.
+      TEST_FOR_EXCEPTION(numRowsPerProcess <= numCols,
+			 std::invalid_argument,
+			 "numRowsPerProcess <= numCols is not allowed");
+    }
   // Loading the sparse matrix may have changed numRows, so check
   // again that the number of rows per process is >= numCols.
   // getNodeNumElements() returns a size_t, which is unsigned, and you
@@ -248,6 +264,9 @@ main (int argc, char *argv[])
 	"subclass will need to process a multivector with " << numCols 
 	 << " columns.  Not all MatOrthoManager subclasses can handle a "
 	"local row block with fewer rows than columns.";
+      // FIXME (mfh 26 Jan 2011) Should this be a logic error instead?
+      // It's really TSQR's fault that it can't handle a local number
+      // of elements less than the number of columns.
       throw std::invalid_argument(os.str());
     }
 
@@ -278,11 +297,22 @@ main (int argc, char *argv[])
   // play it safe and allocate 1 column instead.)
   RCP<MV> X = rcp (new MV (map, 1));
 
+  // "Compact" mode means that we have to override
+  // TimeMonitor::summarize(), which both handles multiple MPI
+  // processes correctly (only Rank 0 prints to std::cout), and prints
+  // verbosely in a table form.  We deal with the former by making an
+  // ostream which is std::cout on Rank 0, and prints nothing (is a
+  // "bit bucket") elsewhere.  We deal with the latter inside the
+  // benchmark itself.
+  Teuchos::oblackholestream bitBucket;
+  std::ostream& resultStream = 
+    (displayResultsCompactly && Teuchos::rank(*pComm) != 0) ? bitBucket : std::cout;
+
   // Benchmark the OrthoManager subclass.
   typedef Belos::Test::OrthoManagerBenchmarker<scalar_type, MV> benchmarker_type;
-  benchmarker_type::benchmark (orthoMan, orthoManName, X, 
-			       numCols, numBlocks, numTrials);
-
+  benchmarker_type::benchmark (orthoMan, orthoManName, normalization, X, 
+			       numCols, numBlocks, numTrials, 
+			       outMan, resultStream, displayResultsCompactly);
   // Only Rank 0 gets to write to cout.
   if (Teuchos::rank(*pComm) == 0)
     std::cout << "End Result: TEST PASSED" << endl;
