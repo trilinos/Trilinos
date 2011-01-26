@@ -21,6 +21,7 @@ RAPFactory.cpp
 SaPFactory.cpp
 TransPFactory.cpp
 SmootherFactory.cpp
+IfpackSmoother.cpp
 Needs.cpp
   )
 
