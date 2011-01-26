@@ -78,6 +78,8 @@ class TentativePFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalO
       Teuchos::RCP< Operator > Op = currentLevel.GetA();
       GO nFineDofs = Op->getGlobalNumRows();
       GO nCoarseDofs = nFineDofs/3;
+      if (nCoarseDofs*3 != nFineDofs)
+        throw(Exceptions::NotImplemented("MakeTentative: currently #fine DOFS must be a multiple of 3"));
       Teuchos::RCP< Operator > Ptent = Teuchos::rcp( new CrsOperator(Op->getRowMap(), 2) );
       std::vector<SC> Values(1);
       Values[0] = 1.0/sqrt(3.0);
