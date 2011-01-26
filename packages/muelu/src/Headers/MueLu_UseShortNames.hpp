@@ -43,6 +43,18 @@ typedef MueLu::Hierarchy<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 typedef MueLu::SaPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      SaPFactory;
 #endif
 
+#ifdef MUELU_PRFACTORY_SHORT
+typedef MueLu::PRFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      PRFactory;
+#endif
+
+#ifdef MUELU_PFACTORY_SHORT
+typedef MueLu::PFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      PFactory;
+#endif
+
+#ifdef MUELU_RFACTORY_SHORT
+typedef MueLu::RFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      RFactory;
+#endif
+
 #ifdef MUELU_TRANSPFACTORY_SHORT
 typedef MueLu::TransPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>   TransPFactory;
 #endif

@@ -35,8 +35,11 @@ APPEND_SET(HEADERS
   MueCentral/MueLu_Hierarchy.hpp
   MueCentral/MueLu_Needs.hpp
   MueCentral/MueLu_RAPFactory.hpp
-  Transfers/Smoothed-Aggregation/MueLu_SaPFactory.hpp
+  Transfers/BaseClass/MueLu_PRFactory.hpp
+  Transfers/BaseClass/MueLu_PFactory.hpp
+  Transfers/BaseClass/MueLu_RFactory.hpp
   Transfers/Generic/MueLu_TransPFactory.hpp
+  Transfers/Smoothed-Aggregation/MueLu_SaPFactory.hpp
   Transfers/Smoothed-Aggregation/MueLu_TentativePFactory.hpp
   Smoothers/MueLu_GaussSeidel.hpp
   Smoothers/MueLu_SmootherPrototype.hpp
