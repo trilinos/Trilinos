@@ -28,9 +28,10 @@ class RAPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
     //@}
 
     //@{ Build methods.
-    bool Build(Level &fineLevel, Level &coarseLevel) {
+    bool Build(Level &fineLevel, Level &coarseLevel) {  //FIXME make fineLevel const!!
       Teuchos::OSTab tab(this->getOStream());
       MueLu_cout(Teuchos::VERB_HIGH) << "RAPFactory: Building a coarse operator" << std::endl;
+#define CTHULHU_USE_EPETRA //FIXME
 #ifdef CTHULHU_USE_EPETRA //FIXME this check goes away once Tpetra has MM multiply
       MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
       RCP<Operator> P = coarseLevel.GetP();
