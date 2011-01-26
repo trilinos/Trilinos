@@ -12,11 +12,6 @@ SET(ASSEMBLY_EXAMPLE_SOURCES
   assembly_driver.cpp
   write_solution_data.cpp
   )
-
-#SET(ASSEMBLY_EXAMPLE_SOURCES2
-#  assembly_driver2.cpp
-#  write_solution_data.cpp
-#  )
   
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   assembly_example
@@ -24,10 +19,3 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
-
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#  assembly_example2
-#  SOURCES ${ASSEMBLY_EXAMPLE_SOURCES2}
-#  COMM serial mpi
-#  NUM_MPI_PROCS 1
-#  )
