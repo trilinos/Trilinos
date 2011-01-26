@@ -157,12 +157,15 @@ int main(int argc,char * argv[])
    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
 
+   // construct some linear algebra object, build object to pass to evaluators
+   panzer::EpetraLinearObjFactory<panzer::Traits,int> linObjFactory(Comm,dofManager);
+
    // setup field manager build
    /////////////////////////////////////////////////////////////
  
    out << "SETUP FMB" << std::endl;
-   fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager);
-   fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory);
+   fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,linObjFactory);
+   fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,linObjFactory);
 
    // setup assembly engine
    /////////////////////////////////////////////////////////////
@@ -175,12 +178,8 @@ int main(int argc,char * argv[])
    // setup linear algebra and solve 
    /////////////////////////////////////////////////////////////
 
-   out << "BUILD LA" << std::endl;
- 
-   // construct some linear algebra object, build object to pass to evaluators
-   panzer::EpetraLinearObjFactory<panzer::Traits,int> linObjFactory(Comm,dofManager);
- 
    // build ghosted variables
+   out << "BUILD LA" << std::endl;
    RCP<Thyra::MultiVectorBase<double> > ghostX = linObjFactory.getGhostedVector();
    RCP<Thyra::MultiVectorBase<double> > ghostB = linObjFactory.getGhostedVector();
    RCP<Thyra::LinearOpBase<double> > ghostA = linObjFactory.getGhostedMatrix();

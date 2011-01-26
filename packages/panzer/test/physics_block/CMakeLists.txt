@@ -11,7 +11,7 @@ SET(UNIT_TEST_DRIVER
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   physics_block
-  SOURCES physics_block.cpp ${UNIT_TEST_DRIVER}
+  SOURCES physics_block.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
   

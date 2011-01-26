@@ -76,7 +76,8 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
                                             const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
                                                                        // element block -> vector of worksets
                                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
-                                            const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager)
+                                            const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
+                                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -97,7 +98,7 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
     
     // use the physics block to register evaluators
     pb->buildAndRegisterEquationSetEvaluators(*fm);
-    pb->buildAndRegisterGatherScatterEvaluators(*fm);
+    pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory);
     //pb->buildAndRegisterModelEvaluators(fm, pb->getProvidedDOFs());
      
     // build the setup data using passed in information
@@ -119,7 +120,8 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
                                                        // boundary condition -> map of (side_id,worksets)
                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 	                   const panzer::EquationSetFactory & eqset_factory,
-                           const panzer::BCStrategyFactory& bc_factory)
+                           const panzer::BCStrategyFactory& bc_factory,
+                           const panzer::LinearObjFactory<panzer::Traits> & lo_factory)
 {
 
   // for convenience build a map (element block id => physics block)

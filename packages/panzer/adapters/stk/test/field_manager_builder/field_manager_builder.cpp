@@ -17,6 +17,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
+#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -25,87 +26,6 @@ namespace panzer {
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
-
-/*
-  TEUCHOS_UNIT_TEST(field_manager_builder, basic)
-  {
-    using Teuchos::RCP;
-
-    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("X Blocks",2);
-    pl->set("Y Blocks",1);
-    pl->set("X Elements",6);
-    pl->set("Y Elements",4);
-    
-    panzer_stk::SquareQuadMeshFactory factory;
-    factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-
-    panzer::InputPhysicsBlock ipb;
-    std::vector<panzer::BC> bcs;
-    testInitialzation(ipb, bcs);
-
-
-    const std::size_t workset_size = 20;
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-      volume_worksets = panzer_stk::buildWorksets(*mesh,ipb, workset_size);
-    
-    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
-          = panzer_stk::buildBCWorksets(*mesh,ipb,bcs);
-
-    std::map<std::string,std::string> block_ids_to_physics_ids;
-    block_ids_to_physics_ids["eblock-0_0"] = "test physics";
-    block_ids_to_physics_ids["eblock-1_0"] = "test physics";
-    
-    std::map<std::string,panzer::InputPhysicsBlock> 
-      physics_id_to_input_physics_blocks;
-    physics_id_to_input_physics_blocks["test physics"] = ipb;
-
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-
-    
-    user_app::MyFactory eqset_factory;
-				  
-    panzer::FieldManagerBuilder<int,int> fmb;
-
-    user_app::BCFactory bc_factory;
-
-    const bool write_graphviz_files = true;
-
-    fmb.setup(conn_manager,
-	      MPI_COMM_WORLD,
-	      block_ids_to_physics_ids,
-	      physics_id_to_input_physics_blocks,
-	      volume_worksets,
-	      bc_worksets,
-	      Teuchos::as<int>(mesh->getDimension()),
-	      eqset_factory,
-	      bc_factory,
-	      workset_size,
-	      write_graphviz_files);
- 
-    const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm = 
-      fmb.getVolumeFieldManagers();
-    
-    const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& fmb_vol_worksets = 
-      fmb.getWorksets();
-    
-    TEST_EQUALITY(fmb_vol_fm.size(), 2);
-    TEST_EQUALITY(fmb_vol_fm.size(), fmb_vol_worksets.size());
-
-    const std::map<panzer::BC, 
-      std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
-      panzer::LessBC>& fmb_bc_fm = fmb.getBCFieldManagers();
-      
-    const std::map<panzer::BC,
-		   Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-		   panzer::LessBC>& fmb_bc_worksets = fmb.getBCWorksets();
-
-    TEST_EQUALITY(fmb_bc_fm.size(), 3);
-    TEST_EQUALITY(fmb_bc_fm.size(), fmb_bc_worksets.size());
-  }
-*/
 
   TEUCHOS_UNIT_TEST(field_manager_builder, incremental_setup_interface)
   {
@@ -174,10 +94,13 @@ namespace panzer {
     const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
           = indexerFactory->buildUniqueGlobalIndexer(MPI_COMM_WORLD,physics_blocks,conn_manager);
 
+    // and linear object factory
+    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD)),dofManager);
+
     // setup field manager builder
     /////////////////////////////////////////////
-    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,dofManager);
-    fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,bc_factory);
+    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,dofManager,elof);
+    fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,bc_factory,elof);
 
     // run tests
     /////////////////////////////////

@@ -98,7 +98,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm) con
 
 // *******************************************************************
 void panzer::PhysicsBlock::
-buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm) const
+buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+                                        const LinearObjFactory<panzer::Traits> & lof) const
 {
   using namespace std;
   using namespace panzer;

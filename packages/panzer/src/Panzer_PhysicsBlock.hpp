@@ -11,6 +11,7 @@
 #include "Panzer_CellData.hpp"
 #include "Panzer_EquationSet.hpp"
 #include "Panzer_EquationSet_TemplateManager.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 namespace shards {
   class CellTopology;
@@ -41,7 +42,8 @@ namespace panzer {
 
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm) const;
 
-    void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm) const;
+    void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+                                                 const LinearObjFactory<panzer::Traits> & lof) const;
 
     void buildAndRegisterModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					 const std::map<std::string,Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > >& factories,
@@ -51,7 +53,8 @@ namespace panzer {
     void buildAndRegisterEquationSetEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm) const;
 
     template<typename EvalT>
-    void buildAndRegisterGatherScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm) const;
+    void buildAndRegisterGatherScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+                                                        const LinearObjFactory<panzer::Traits> & lof) const;
 
     template<typename EvalT>
     void buildAndRegisterModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
@@ -116,7 +119,8 @@ void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::Fie
 }
 
 template<typename EvalT>
-void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm) const
+void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+                                                                          const LinearObjFactory<panzer::Traits> & lof) const
 {
   using std::vector;
   using Teuchos::RCP;

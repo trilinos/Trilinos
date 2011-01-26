@@ -120,18 +120,19 @@ namespace panzer {
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
 
+    panzer::EpetraLinearObjFactory<panzer::Traits,int> linObjFactory(Comm,dofManager);
+
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager);
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory);
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,linObjFactory);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,linObjFactory);
 
     panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
     panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb);
     ae_tm.buildObjects(builder);
 
 
-    panzer::EpetraLinearObjFactory<panzer::Traits,int> linObjFactory(Comm,dofManager);
     RCP<Epetra_Map> ghosted_map = linObjFactory.getGhostedMap();
     RCP<Epetra_CrsGraph> ghosted_graph = linObjFactory.getGhostedGraph();
     

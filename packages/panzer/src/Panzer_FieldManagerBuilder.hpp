@@ -8,6 +8,7 @@
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 // Forward Declarations
 namespace panzer {
@@ -100,7 +101,8 @@ namespace panzer {
     void setupVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
                                                           // element block -> vector of worksets
                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-                                  const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager);
+                                  const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
+                                  const LinearObjFactory<panzer::Traits> & lo_factory);
 
     /** Build the BC field managers.
       */
@@ -108,7 +110,8 @@ namespace panzer {
                                                           // boundary condition -> map of (side_id,worksets)
                               const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 	                      const panzer::EquationSetFactory & eqset_factory,
-                              const panzer::BCStrategyFactory& bc_factory);
+                              const panzer::BCStrategyFactory& bc_factory,
+                              const LinearObjFactory<panzer::Traits> & lo_factory);
 
   private:
 
