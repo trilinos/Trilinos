@@ -803,36 +803,34 @@ namespace stk {
 
       int getPermutation(int num_verts, Entity& element, CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
       {
-        //std::cout << "tmp element 0= " << element << " cell_topo= " << cell_topo.getName() << " rank_of_subcell= " << rank_of_subcell
-        //<< " num_verts= " << num_verts
-        //          << std::endl;
-
         if (rank_of_subcell == 0 || rank_of_subcell == 3) return 0;
 
-        static std::set<unsigned> subdimCell_global_baseline;
-        static std::vector<unsigned> subdimCell_global_baseline_vector;
-        static std::set<unsigned>::iterator subdimCell_global_baseline_iter;
-        static std::vector<unsigned> subCell_from_element;
+        //! We choose to define the "global baseline" as an imaginary face that has its nodes sorted on their identifiers.
+        //! The main part of this is to find the minimum node index.
+        //! Once sorted, the node id's go into the vector_sdcell_global_baseline array.
 
-        subdimCell_global_baseline.clear();
-        subdimCell_global_baseline_vector.resize(0);
-        subCell_from_element.resize(0);
+        static std::vector<unsigned> vector_sdcell_global_baseline(4);
+        static std::vector<unsigned> subCell_from_element(4);
 
         const mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
 
         const unsigned * inodes = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].node;
         int num_subcell_verts = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology->vertex_count;
+
+        // tmp
+        //vector_sdcell_global_baseline.resize(num_subcell_verts);
+        //subCell_from_element.resize(num_subcell_verts);
+        // tmp end
+
+        unsigned minNodeId = 0;
         for (int iv = 0; iv < num_subcell_verts; iv++)
           {
-            subdimCell_global_baseline.insert(elem_nodes[inodes[iv]].entity()->identifier());
-            subCell_from_element.push_back(elem_nodes[inodes[iv]].entity()->identifier());
-          }
-
-        for (subdimCell_global_baseline_iter = subdimCell_global_baseline.begin();
-             subdimCell_global_baseline_iter != subdimCell_global_baseline.end();
-             subdimCell_global_baseline_iter++)
-          {
-            subdimCell_global_baseline_vector.push_back( *subdimCell_global_baseline_iter );
+            unsigned nid = elem_nodes[inodes[iv]].entity()->identifier();
+            if (iv == 0)
+              minNodeId = nid;
+            else
+              minNodeId = std::min(minNodeId, nid);
+            subCell_from_element[iv] = nid;
           }
 
         int perm = -1;
@@ -849,12 +847,15 @@ namespace stk {
               {
                 std::cout << "tmp b4 element 1= " << element << " cell_topo= " << cell_topo.getName() 
                           << " rank_of_subcell= " << rank_of_subcell << std::endl;
-                std::cout << "tmp b4 subdimCell_global_baseline_vector= " << subdimCell_global_baseline_vector << std::endl;
+                std::cout << "tmp b4 vector_sdcell_global_baseline= " << vector_sdcell_global_baseline << std::endl;
                 std::cout << "tmp b4 subCell_from_element = " << subCell_from_element << std::endl;
               }
 
-            subdimCell_global_baseline_iter = subdimCell_global_baseline.begin();
-            unsigned i0 = *subdimCell_global_baseline_iter;
+            //! extract the minimal node index
+            //set_sdcell_global_baseline_iter = set_sdcell_global_baseline.begin();
+            unsigned i0 = minNodeId;
+
+            //! find the rotation to get to the minimal node
             int j0 = -1;
             for (int iv = 0; iv < num_subcell_verts; iv++)
               {
@@ -864,33 +865,39 @@ namespace stk {
                     break;
                   }
               }
+
             if (j0 < 0) throw std::logic_error("j0 < 0 ");
+
             int j1 = (j0 + 1) % num_subcell_verts;
             int j2 = (j0 + (num_subcell_verts-1)) % num_subcell_verts;  // adds 3 for quads, or 2 for tris to pickup the neigh node
+
+            //! see if we need to reverse the order to make it match up; save the newly oriented nodes in vector_sdcell_global_baseline
             if (subCell_from_element[j1] < subCell_from_element[j2])
               {
                 for (int iv = 0; iv < num_subcell_verts; iv++)
                   {
-                    subdimCell_global_baseline_vector[iv] = subCell_from_element[(j0 + iv) % num_subcell_verts];
+                    vector_sdcell_global_baseline[iv] = subCell_from_element[(j0 + iv) % num_subcell_verts];
                   }
               }
             else
               {
                 for (int iv = 0; iv < num_subcell_verts; iv++)
                   {
-                    subdimCell_global_baseline_vector[(num_subcell_verts - iv) % num_subcell_verts] = 
+                    vector_sdcell_global_baseline[(num_subcell_verts - iv) % num_subcell_verts] = 
                       subCell_from_element[(j0 + iv) % num_subcell_verts];
                   }
               }
 
+            //! now we have a set of nodes in the right order, use Shards to get the actual permutation
             perm = findPermutation(cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology,
-                                              &subdimCell_global_baseline_vector[0], &subCell_from_element[0]);
+                                              &vector_sdcell_global_baseline[0], &subCell_from_element[0]);
 
             if ( perm < 0)
               {
                 std::cout << "tmp aft element 1= " << element << " cell_topo= " << cell_topo.getName() << " rank_of_subcell= " << rank_of_subcell << std::endl;
-                std::cout << "tmp aft subdimCell_global_baseline_vector= " << subdimCell_global_baseline_vector << std::endl;
+                std::cout << "tmp aft vector_sdcell_global_baseline= " << vector_sdcell_global_baseline << std::endl;
                 std::cout << "tmp aft subCell_from_element = " << subCell_from_element << std::endl;
+                throw std::logic_error("getPermutation: perm < 0");
               }
 
             if (0 && num_subcell_verts==3)
@@ -907,8 +914,9 @@ namespace stk {
         if (perm < 0)
           {
             std::cout << "tmp element 1= " << element << " cell_topo= " << cell_topo.getName() << " rank_of_subcell= " << rank_of_subcell << std::endl;
-            std::cout << "tmp subdimCell_global_baseline_vector= " << subdimCell_global_baseline_vector << std::endl;
+            std::cout << "tmp vector_sdcell_global_baseline= " << vector_sdcell_global_baseline << std::endl;
             std::cout << "tmp subCell_from_element = " << subCell_from_element << std::endl;
+            throw std::logic_error("getPermutation 2: perm < 0");
           }
 
         return perm;
@@ -1014,12 +1022,17 @@ namespace stk {
                 unsigned ordinal_of_node_on_subcell = ref_topo_x[childNodeIdx].ordinal_of_node_on_subcell;
                 unsigned num_nodes_on_subcell       = ref_topo_x[childNodeIdx].num_nodes_on_subcell;
 
-                bool usePerm = true;  //FIXME FIXME FIXME
-                //bool usePerm = false;
+                bool usePerm = true;  
+
+                // only need permuation for quadratic elements
+                if (num_nodes_on_subcell == 1)
+                  usePerm = false;
+
                 const unsigned * perm_array = 0;
                 if (usePerm)
                   {
                     int perm_ord = getPermutation(FromTopology::vertex_count, element, cell_topo, rank_of_subcell, ordinal_of_subcell);
+                      
                     if (perm_ord < 0)
                       throw std::logic_error("permutation < 0 ");
                     //std::cout << "tmp 0 " << perm_ord << " rank_of_subcell= " << rank_of_subcell << " ordinal_of_subcell= " << ordinal_of_subcell <<  std::endl;
