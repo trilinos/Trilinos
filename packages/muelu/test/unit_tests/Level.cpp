@@ -40,11 +40,7 @@ TEUCHOS_UNIT_TEST(Level, SetCoreData)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  Teuchos::ParameterList list;
-  list.set("nx",10);
-  LO nx = list.get("nx",10);
-  RCP<const Map> map = MueLu_UnitTest::create_map<LO,GO,Node>(nx);
-  RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<Scalar, LO, GO, Map, CrsOperator>("Laplace1D",map,list);
+  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<Scalar, LO, GO>(10);
 
   Level firstLevel;
   firstLevel.SetA(A);
