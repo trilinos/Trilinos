@@ -22,6 +22,8 @@
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
 
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
+
 //----------------------------------------------------------------------
 
 using namespace stk::mesh::fixtures;
@@ -235,6 +237,22 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
 
   // Check that we satisfy our threshhold
   bool result = !do_rebal;
+
+  // And verify that all dependent entities are on the same proc as their parent element
+  {
+    stk::mesh::EntityVector entities;
+    stk::mesh::Selector selector = meta.locally_owned_part();
+
+    get_selected_entities(selector, bulk.buckets(node_rank), entities);
+    result &= verify_dependent_ownership(element_rank, entities, fem);
+
+    get_selected_entities(selector, bulk.buckets(edge_rank), entities);
+    result &= verify_dependent_ownership(element_rank, entities, fem);
+
+    get_selected_entities(selector, bulk.buckets(face_rank), entities);
+    result &= verify_dependent_ownership(element_rank, entities, fem);
+  }
+
   return result;
 }
 

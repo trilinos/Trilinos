@@ -25,6 +25,8 @@
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
 
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
+
 using stk::mesh::fem::NODE_RANK;
 
 typedef stk::mesh::Field<double> ScalarField ;
@@ -160,6 +162,17 @@ STKUNIT_UNIT_TEST(UnitTestZoltanGraph, testUnit)
   {
     STKUNIT_ASSERT_LE(imbalance_threshold, 1.5);
   }
+
+  // And verify that all dependent entities are on the same proc as their parent element
+  {
+    stk::mesh::EntityVector entities;
+    stk::mesh::Selector selector = meta_data.universal_part();
+
+    get_selected_entities(selector, bulk_data.buckets(element_rank), entities);
+    bool result = stk::rebalance::verify_dependent_ownership(NODE_RANK, entities, top_data);
+    STKUNIT_ASSERT( result );
+  }
+
 }
 
 /// \page stk_rebalance_unit_test_zoltan

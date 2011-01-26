@@ -88,12 +88,12 @@ namespace stk {
                        bool only_count=false);
 
       void 
-      connectLocal(unsigned irank,  UniformRefinerPatternBase* breakPattern, 
+      createElementsAndNodesAndConnectLocal(unsigned irank,  UniformRefinerPatternBase* breakPattern, 
                    vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,  vector<Entity *>& new_elements_pool);
 
       bool
-      createNewNeededNodes(const CellTopologyData * const cell_topo_data, 
-                           const Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes);
+      createNewNeededNodeIds(const CellTopologyData * const cell_topo_data, 
+                             const Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes);
 
       void 
       removeOldElements(EntityRank rank, UniformRefinerPatternBase* breakPattern );

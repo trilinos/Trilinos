@@ -642,6 +642,9 @@ void BulkData::internal_regenerate_shared_aura()
 
   std::vector<EntityProc> send ;
 
+  // Iterate over all entities with communication info, get the sharing
+  // comm info for each entity, and ensure that upwardly related
+  // entities to the shared entity are ghosted on the sharing proc.
   for ( std::vector<Entity*>::const_iterator
         i = entity_comm().begin() ; i != entity_comm().end() ; ++i ) {
 
@@ -653,19 +656,20 @@ void BulkData::internal_regenerate_shared_aura()
 
     for ( size_t j = 0 ; j < sharing.size() ; ++j ) {
 
-      const unsigned p = sharing[j].proc ;
+      const unsigned share_proc = sharing[j].proc ;
 
       for ( PairIterRelation
             rel = entity.relations() ; ! rel.empty() ; ++rel ) {
 
         Entity * const rel_entity = rel->entity();
 
-        // Higher rank and I own it, ghost to the sharing processor
+        // If related entity is higher rank, I own it, and it is not
+        // already shared by proc, ghost it to the sharing processor
         if ( erank < rel_entity->entity_rank() &&
                      rel_entity->owner_rank() == m_parallel_rank &&
-             ! in_shared( *rel_entity , p ) ) {
+             ! in_shared( *rel_entity , share_proc ) ) {
 
-          EntityProc entry( rel_entity , p );
+          EntityProc entry( rel_entity , share_proc );
           send.push_back( entry );
         }
       }
@@ -674,7 +678,6 @@ void BulkData::internal_regenerate_shared_aura()
 
   // Add new aura, remove all of the old aura.
   // The change_ghosting figures out what to actually delete and add.
-
   internal_change_ghosting( shared_aura() , send , m_entity_comm );
 }
 
@@ -683,4 +686,3 @@ void BulkData::internal_regenerate_shared_aura()
 
 } // namespace mesh
 } // namespace stk
-

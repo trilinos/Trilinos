@@ -19,38 +19,63 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/ProgramOptions.hpp>
 
+#define STK_ADAPT_COLORER_STORED_ENTITYID 0
+
+#define STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR 1
+
 /// define only one of these to be 1
-#define SET_TYPE_BOOST 1
-#define SET_TYPE_TR1 0
-#define SET_TYPE_STD 0
+#define STK_ADAPT_COLORER_SET_TYPE_BOOST 1
+#define STK_ADAPT_COLORER_SET_TYPE_TR1 0
+#define STK_ADAPT_COLORER_SET_TYPE_STD 0
 
 
-#if SET_TYPE_BOOST
+#if STK_ADAPT_COLORER_SET_TYPE_BOOST
 #include <boost/unordered_set.hpp>
 #endif
 
-#if SET_TYPE_STD
+#if STK_ADAPT_COLORER_SET_TYPE_STD
 #include <set>
 #endif
 
-#if SET_TYPE_TR1
+#if STK_ADAPT_COLORER_SET_TYPE_TR1
 #include <tr1/unordered_set>
 #endif
 
 namespace stk {
   namespace adapt {
 
-
-#if SET_TYPE_BOOST
-    typedef boost::unordered_set<EntityId> ColorerSetType;
+#if STK_ADAPT_COLORER_STORED_ENTITYID
+    typedef EntityId ColorerStoredEntity;
+#else
+    typedef Entity *ColorerStoredEntity;
 #endif
 
-#if SET_TYPE_TR1
-    typedef tr1::unordered_set<EntityId> ColorerSetType;
+#if STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
+    typedef std::vector<ColorerStoredEntity> ColorerSetType;
 #endif
 
-#if SET_TYPE_STD
-    typedef std::set<EntityId> ColorerSetType;
+#if STK_ADAPT_COLORER_SET_TYPE_BOOST
+#if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
+    typedef boost::unordered_set<ColorerStoredEntity> ColorerSetType;
+#endif
+    typedef boost::unordered_set<EntityId> ColorerNodeSetType;
+    typedef boost::unordered_set<EntityId> ColorerElementSetType;
+#endif
+
+#if STK_ADAPT_COLORER_SET_TYPE_TR1
+#if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
+    typedef tr1::unordered_set<ColorerStoredEntity> ColorerSetType;
+#endif
+    typedef tr1::unordered_set<EntityId> ColorerNodeSetType;
+    typedef tr1::unordered_set<EntityId> ColorerElementSetType;
+#endif
+
+#if STK_ADAPT_COLORER_SET_TYPE_STD
+#if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
+    typedef std::set<ColorerStoredEntity> ColorerSetType;
+#endif
+    typedef std::set<EntityId> ColorerNodeSetType;
+    typedef std::set<EntityId> ColorerElementSetType;
 #endif
 
 

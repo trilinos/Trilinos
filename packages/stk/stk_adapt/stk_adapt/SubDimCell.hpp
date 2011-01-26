@@ -11,6 +11,9 @@
 #include <algorithm>
 #include <iostream>
 
+#ifdef STK_HAVE_TBB
+#include <tbb/scalable_allocator.h>
+#endif
 
 
 namespace stk {
@@ -18,16 +21,22 @@ namespace stk {
 
 #define SUBDIMCELL_USES_STL_SET 1
 #if SUBDIMCELL_USES_STL_SET
+
+#ifdef STK_HAVE_TBB
+  typedef std::set<unsigned, std::less<unsigned>, tbb::scalable_allocator<unsigned> > SubDimCellBaseClass;
+#else
+  typedef std::set<unsigned> SubDimCellBaseClass;
+#endif
+
     /// this class represents the set of node id's defining a sub-dimensional entity of an element (like a face or edge)
     template<typename Ids=unsigned, std::size_t N=4>
-    class SubDimCell : public std::set<Ids>
+    class SubDimCell : public SubDimCellBaseClass
     {
       std::size_t m_hash;
     public:
-      typedef std::set<Ids> BaseClass;
       //set<Ids> m_ids;
-      SubDimCell() : BaseClass(), m_hash(0u) {}
-      SubDimCell(unsigned num_ids, Ids *ids) : BaseClass(ids, ids+num_ids), m_hash(0u)
+      SubDimCell() : SubDimCellBaseClass(), m_hash(0u) {}
+      SubDimCell(unsigned num_ids, Ids *ids) : SubDimCellBaseClass(ids, ids+num_ids), m_hash(0u)
       {
       }
       unsigned getHash() const
@@ -41,7 +50,7 @@ namespace stk {
       void clear() 
       {
         m_hash = 0u;
-        BaseClass::clear();
+        SubDimCellBaseClass::clear();
       }
     };
 #else

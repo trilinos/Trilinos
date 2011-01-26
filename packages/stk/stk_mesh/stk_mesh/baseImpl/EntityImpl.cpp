@@ -61,8 +61,10 @@ PairIterEntityComm EntityImpl::sharing() const
   EntityCommInfoVector::const_iterator i = m_comm.begin();
   EntityCommInfoVector::const_iterator e = m_comm.end();
 
-  e = std::lower_bound( i , e , EntityCommInfo(1,0) );
+  e = std::lower_bound( i , e , EntityCommInfo(1,     // ghost id, 1->aura
+                                               0 ) ); // proc
 
+  // Contains everything up the first aura comm (IE, only contains shared comms)
   return PairIterEntityComm( i , e );
 }
 

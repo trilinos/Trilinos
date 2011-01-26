@@ -47,9 +47,9 @@ namespace stk {
     color(percept::PerceptMesh& eMesh, unsigned * elementType, FieldBase *element_color_field)
     {
       const unsigned MAX_COLORS=100;
-      vector< ColorerSetType > node_colors(MAX_COLORS+1); 
+      vector< ColorerNodeSetType > node_colors(MAX_COLORS+1); 
       m_element_colors = vector< ColorerSetType > (MAX_COLORS+1);
-      ColorerSetType all_elements; 
+      ColorerElementSetType all_elements; 
 
       BulkData& bulkData = *eMesh.getBulkData();
       int ncolor = 0;
@@ -117,7 +117,11 @@ namespace stk {
                                     double *fdata = stk::mesh::field_data( *static_cast<const percept::ScalarFieldType *>(element_color_field) , element );
                                     fdata[0] = double(icolor);
                                   }
-                                m_element_colors[icolor].insert(element.identifier());
+#if STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
+                                m_element_colors[icolor].push_back(&element);
+#else
+                                m_element_colors[icolor].insert(&element);
+#endif
                                 all_elements.insert(element.identifier());
                                 for (unsigned inode=0; inode < num_node; inode++)
                                   {

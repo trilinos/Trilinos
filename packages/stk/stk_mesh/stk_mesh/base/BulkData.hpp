@@ -154,7 +154,6 @@ public:
    */
   void update_field_data_states() const { m_bucket_repository.update_field_data_states(); }
 
-
   /** \brief  Copy field data from src entity to Dest entity
    *           - Fields that exist on the src that don't exist on the dest will
    *             be ignored
@@ -364,7 +363,6 @@ private:
   BulkData( const BulkData & );
   BulkData & operator = ( const BulkData & );
 
-
   /** \brief  Parallel index for entity keys */
   parallel::DistributedIndex          m_entities_index ;
   impl::EntityRepository              m_entity_repo ;
@@ -435,7 +433,6 @@ private:
   /** \} */
 
   //------------------------------------
-
 
   // FIXME: Remove this friend once unit-testing has been refactored
   friend class UnitTestModificationEndWrapper;

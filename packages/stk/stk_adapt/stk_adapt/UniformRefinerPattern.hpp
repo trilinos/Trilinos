@@ -39,8 +39,11 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
+// more efficient fixElementSides implementation using parent/child relations
 #define NEW_FIX_ELEMENT_SIDES 1
 
+// set to 0 for doing global (and thus more efficient) computation of node coords and adding to parts
+#define STK_ADAPT_URP_LOCAL_NODE_COMPS 0
 
 #define TRACE_STAGE_PRINT_ON 0
 #define TRACE_STAGE_PRINT (TRACE_STAGE_PRINT_ON && (m_eMesh.getRank()==0))
@@ -491,9 +494,6 @@ namespace stk {
       {
         EXCEPTWATCH;
 
-        // FIXME
-        //if (1) return;
-
         unsigned *null_u = 0;
 
         CellTopology cell_topo(get_cell_topology(element));
@@ -618,8 +618,22 @@ namespace stk {
           }
       }
 
-      enum { NumNewElements_Enrich = 1 };
 
+      mesh::Entity& createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, EntityId eid)
+      {
+#if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
+        mesh::Entity *node_p = nodeRegistry.get_entity_node(*eMesh.getBulkData(), mesh::Node, eid);
+        if (node_p)
+          return *node_p;
+        else
+          return eMesh.createOrGetNode(eid);
+#else
+        return eMesh.createOrGetNode(eid);
+#endif
+      }
+
+      enum { NumNewElements_Enrich = 1 };
+      
       void
       genericEnrich_createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                                       Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
@@ -664,9 +678,12 @@ namespace stk {
 
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
-                nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
-                nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
-                nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
+
+#if STK_ADAPT_URP_LOCAL_NODE_COMPS
+                 nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
+#endif
               }
           }
 
@@ -748,7 +765,8 @@ namespace stk {
                     std::cout << "P[" << eMesh.getRank() << "] eid = 0 for inode = " << inode << std::endl;
                     throw std::logic_error("UniformRefinerPatternBase::genericEnrich_createNewElements bad entity id = 0 ");
                   }
-                mesh::Entity& node = eMesh.createOrGetNode(eid);
+                //mesh::Entity& node = eMesh.createOrGetNode(eid);
+                mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
                 eMesh.getBulkData()->declare_relation(newElement, node, inode);
               }
 
@@ -910,9 +928,6 @@ namespace stk {
         static std::vector<NeededEntityType> needed_entities;
         fillNeededEntities(needed_entities);
 
-        //
-
-        // CHECK
         const CellTopologyData * const cell_topo_data = get_cell_topology(element);
 
         static vector<refined_element_type> elems;
@@ -949,14 +964,19 @@ namespace stk {
                 nSubDimEntities = 1;
               }
 
+
             // FIXME - assumes first node on each sub-dim entity is the "linear" one
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
+                //!
+#if STK_ADAPT_URP_LOCAL_NODE_COMPS
                 nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                 if (linearElement)
                   {
                     nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                   }
+#endif
+
               }
           }
 
@@ -1111,7 +1131,8 @@ namespace stk {
                   }
 
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_createOrGetNode);
-                mesh::Entity& node = eMesh.createOrGetNode(eid);
+                //mesh::Entity& node = eMesh.createOrGetNode(eid);
+                mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_createOrGetNode);
                
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_declare_relation);

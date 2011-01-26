@@ -27,6 +27,8 @@
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
 
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
+
 //----------------------------------------------------------------------
 
 using namespace stk::mesh::fixtures;
@@ -175,7 +177,8 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
      << "imbalance_threshold after rebalance = " << imbalance_threshold <<", "<<do_rebal << std::endl;
 
   // Check that we satisfy our threshhold
-  const bool result = !do_rebal ;
+  bool result = !do_rebal ;
+
   return result;
 }
 

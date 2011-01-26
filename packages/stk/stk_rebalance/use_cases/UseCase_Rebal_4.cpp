@@ -27,6 +27,8 @@
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
 
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
+
 //----------------------------------------------------------------------
 
 using namespace stk::mesh::fixtures;
@@ -346,7 +348,19 @@ std::cout<<__FILE__<<":"<<__LINE__<<" Added side to reblance. This side should b
      << "imbalance_threshold after rebalance = " << imbalance_threshold <<", "<<do_rebal << std::endl;
 
   // Check that we satisfy our threshhold
-  const bool result = !do_rebal ;
+  bool result = !do_rebal ;
+
+  // And verify that all dependent entities are on the same proc as their parent element
+  {
+    stk::mesh::EntityVector entities;
+    stk::mesh::Selector selector = meta_data.locally_owned_part();
+
+    get_selected_entities(selector, bulk_data.buckets(node_rank), entities);
+    result &= verify_dependent_ownership(element_rank, entities, top_data);
+    get_selected_entities(selector, bulk_data.buckets(stk::mesh::fem::side_rank(top_data)), entities);
+    result &= verify_dependent_ownership(element_rank, entities, top_data);
+  }
+
 
 
   return result;
