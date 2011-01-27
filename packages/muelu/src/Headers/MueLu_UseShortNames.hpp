@@ -47,6 +47,10 @@ typedef MueLu::SaPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMa
 typedef MueLu::PRFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      PRFactory;
 #endif
 
+#ifdef MUELU_GENERICPRFACTORY_SHORT
+typedef MueLu::GenericPRFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> GenericPRFactory;
+#endif
+
 #ifdef MUELU_PFACTORY_SHORT
 typedef MueLu::PFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      PFactory;
 #endif

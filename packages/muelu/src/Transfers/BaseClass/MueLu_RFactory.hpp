@@ -26,7 +26,7 @@ class RFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,No
     //@{
 
     //! Constructor.
-    RFactory() : reUseGraph_(false), reUseAggregates_(false)
+    RFactory()
     {
       Teuchos::OSTab tab(this->out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "RFactory: Instantiating a new factory" << std::endl;

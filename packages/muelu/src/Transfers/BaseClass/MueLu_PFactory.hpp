@@ -51,11 +51,11 @@ class PFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,No
     //! @name Set methods.
     //@{
 
-    void ReUseAggregates(bool value) {
+    void ReUseAggregates(bool const &value) {
       reUseAggregates_ = value;
     }
 
-    void ReUseGraph(bool value) {
+    void ReUseGraph(bool const &value) {
       reUseGraph_ = value;
     }
     //@}
@@ -63,11 +63,11 @@ class PFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,No
     //! @name Get methods.
     //@{
 
-    bool ReUseAggregates() {
+    bool ReUseAggregates() const {
       return reUseAggregates_;
     }
 
-    bool ReUseGraph() {
+    bool ReUseGraph() const {
       return reUseGraph_;
     }
 

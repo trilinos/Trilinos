@@ -19,7 +19,7 @@ template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, 
 class PRFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 #include "MueLu_UseShortNames.hpp"
 
-  private:
+  protected:
 
      GO maxCoarseSize_;
      bool reUseGraph_;
@@ -51,15 +51,15 @@ class PRFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,N
 
     //! @name Set methods.
     //@{
-    void SetMaxCoarseSize(GO maxCoarseSize) {
+    void SetMaxCoarseSize(GO const &maxCoarseSize) {
       maxCoarseSize_ = maxCoarseSize;
     }
 
-    void ReUseAggregates(bool value) {
+    void ReUseAggregates(bool const &value) {
       reUseAggregates_ = value;
     }
 
-    void ReUseGraph(bool value) {
+    void ReUseGraph(bool const &value) {
       reUseGraph_ = value;
     }
     //@}
@@ -67,15 +67,15 @@ class PRFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,N
     //! @name Get methods.
     //@{
 
-    GO GetMaxCoarseSize() {
+    GO GetMaxCoarseSize() const {
       return maxCoarseSize_;
     }
 
-    bool ReUseAggregates() {
+    bool ReUseAggregates() const {
       return reUseAggregates_;
     }
 
-    bool ReUseGraph() {
+    bool ReUseGraph() const {
       return reUseGraph_;
     }
 
