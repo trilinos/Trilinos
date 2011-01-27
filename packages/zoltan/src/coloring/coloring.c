@@ -175,6 +175,7 @@ int Zoltan_Color(
   ZOLTAN_ID_PTR my_global_ids= NULL;  /* gids local to this proc */
   struct Zoltan_DD_Struct *dd_color;  /* DDirectory for colors */
 
+  int nobj=0;
 
 #ifdef _DEBUG_TIMES  
   double times[6]={0.,0.,0.,0.,0.,0.}, rtimes[6]; /* Used for timing measurements */
@@ -321,11 +322,14 @@ int Zoltan_Color(
       MEMORY_ERROR;
 
   if (coloring_problem == 'P') {
+    /* CC: Partial D2 is already allocated through ZG_Export */
+#if 0
       if (nvtx && !(partialD2 = (int *) ZOLTAN_CALLOC(nvtx, sizeof(int))))
 	  MEMORY_ERROR;
       for (i=0; i<nvtx; i++)
 	  partialD2[i] = 1; /* UVCUVC: TODO CHECK: We need to fill this from fixed vertex function
 			     1: indicates vertex needs to be colored, 0 means don't color  */
+#endif /* CC: Not needed I think */
   }
 
 #ifdef _DEBUG_TIMES
@@ -348,7 +352,6 @@ int Zoltan_Color(
      ZOLTAN_ID_PTR my_lids = NULL;
      float *wgts = NULL;
      int *parts = NULL;
-     int nobj=0;
 
      Zoltan_Get_Obj_List(zz, &nobj, &my_global_ids, &my_lids, 0, &wgts, &parts);
      
@@ -362,8 +365,9 @@ int Zoltan_Color(
    if (ierr != ZOLTAN_OK)
      ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
    /* Put color in part field. */
+   /* Number is nobj, not nvtx because nvtx is after symmetrization */
    ierr = Zoltan_DD_Update (dd_color, my_global_ids, NULL,
-            NULL, color, nvtx);
+            NULL, color, nobj);
    if (ierr != ZOLTAN_OK)
      ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
 
