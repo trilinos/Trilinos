@@ -1,6 +1,8 @@
 
 INCLUDE(PackageLibraryMacros)
 
+IF(NOT TriKota_ENABLE_DakotaCMake)
+
 #
 IF (NOT EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/configure)
   MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota needs to 
@@ -136,40 +138,9 @@ ADD_DEPENDENCIES(TriKota_Dakota_install  TriKota_Dakota_libs)
 
 ENDIF()
 
-#
-# Build the TriKota library
-#
-
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
-SET(HEADERS "")
-SET(SOURCES "")
-
-SET(HEADERS ${HEADERS}
-  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
-  )
-
-INCLUDE_DIRECTORIES(
-  ${CMAKE_CURRENT_BINARY_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}
+SET(Dakota_INCLUDE_DIRS 
   ${CMAKE_CURRENT_BINARY_DIR}/../Dakota
-  ${CMAKE_CURRENT_BINARY_DIR}/../Dakota/install/include
-  )
-
-APPEND_SET(HEADERS
-    TriKota_ConfigDefs.hpp
-    TriKota_DirectApplicInterface.hpp
-    TriKota_ThyraDirectApplicInterface.hpp
-    TriKota_Driver.hpp
-    TriKota_Version.hpp
-  ) 
-
-APPEND_SET(SOURCES
-    TriKota_DirectApplicInterface.cpp
-    TriKota_ThyraDirectApplicInterface.cpp
-    TriKota_Driver.cpp
-    TriKota_Version.cpp
-  )
+  ${CMAKE_CURRENT_BINARY_DIR}/../Dakota/install/include)
 
 SET(DAKOTA_LIBS
     dakota pecos lhs surfpack conmin
@@ -187,6 +158,53 @@ LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib
 # Compiling code that includes Dakota headers requires
 # -DHAVE_CONFIG_H.
 ADD_DEFINITIONS(-DHAVE_CONFIG_H)
+
+ENDIF() # IF(NOT TriKota_ENABLE_DakotaCMake)
+
+#
+# Build the TriKota library
+#
+
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+
+SET(HEADERS "")
+SET(SOURCES "")
+
+SET(HEADERS ${HEADERS}
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  )
+
+INCLUDE_DIRECTORIES(
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${Dakota_INCLUDE_DIRS}
+  )
+
+APPEND_SET(HEADERS
+    TriKota_ConfigDefs.hpp
+    TriKota_DirectApplicInterface.hpp
+    TriKota_ThyraDirectApplicInterface.hpp
+    TriKota_Driver.hpp
+    TriKota_Version.hpp
+  ) 
+
+APPEND_SET(SOURCES
+    TriKota_DirectApplicInterface.cpp
+    TriKota_ThyraDirectApplicInterface.cpp
+    TriKota_Driver.cpp
+    TriKota_Version.cpp
+  )
+
+IF(TriKota_ENABLE_DakotaCMake)
+
+PACKAGE_ADD_LIBRARY(
+  trikota
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  DEPLIBS ${Dakota_LIBRARIES}
+  )
+
+ELSE()
 
 PACKAGE_ADD_LIBRARY(
   trikota
@@ -206,3 +224,5 @@ INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/lib/ DESTINATION lib)
 INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/include/ DESTINATION include)
 # Temporary fix, to be removed by boostsignals TPL
 INSTALL(FILES ${Boost_LIBRARY_DIRS}/libboost_signals.a  DESTINATION lib)
+
+ENDIF() # IF(TriKota_ENABLE_DakotaCMake)
