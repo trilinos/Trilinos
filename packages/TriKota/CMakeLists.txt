@@ -28,13 +28,13 @@ SET(TriKota_ENABLE_DakotaCMake OFF CACHE BOOL
 # and is enabled by configuring with TriKota_ENABLE_DakotaCMake on.
 # This gives you complete control of the Dakota configure through your
 # Trilinos configure scripts, makes it much easier to rebuild Dakota
-# after updates, is and is much faster.
+# after updates, and is much faster.
 #
 # Currently Dakota does its own checking for libraries such as blas,
 # lapack, boost, mpi, etc... which ultimately we would want to pass in.
 # Also the following packages likely need to be disabled via 
 # -D HAVE_X=OFF, where X is:
-#   Acro, HOPSPACK, AMPL
+#   ACRO, HOPSPACK, AMPL
 # Acro isn't cmake'd yet anyway, but boost_signals will be a problem.
 # HOPSPACK doesn't link correctly in static builds.
 # Turning AMPL on caused very strange runtime errors.
