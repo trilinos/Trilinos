@@ -17,6 +17,7 @@ namespace panzer {
   template <typename LO, typename GO> class DOFManager;
   class EquationSetFactory;
   class BCStrategyFactory;
+  class PhysicsBlock;
 }
 
 namespace PHX {
@@ -53,11 +54,11 @@ namespace panzer {
 
     //! get the degree of freedom manager for this mesh
     const Teuchos::RCP<DOFManager<LO,GO> > getDOFManager()
-    { return rcp_dynamic_cast<DOFManager<LO,GO> >(dofMngr_); }
+    { return Teuchos::rcp_dynamic_cast<DOFManager<LO,GO> >(dofMngr_); }
 
     //! get the degree of freedom manager for this mesh
     const Teuchos::RCP<const DOFManager<LO,GO> > getDOFManager() const
-    { return rcp_dynamic_cast<const DOFManager<LO,GO> >(dofMngr_); }
+    { return Teuchos::rcp_dynamic_cast<const DOFManager<LO,GO> >(dofMngr_); }
 
     //! get the unique global indexer for this mesh
     const Teuchos::RCP<UniqueGlobalIndexer<LO,GO> > getGlobalIndexer()

@@ -15,14 +15,16 @@ namespace panzer {
   class ModelEvaluator_Factory : 
     public Teuchos::ParameterListAcceptorDefaultBase{
 
-    void setParameterList(RCP<ParameterList> const& paramList);
+    void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
     
-    RCP<const ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
     
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > buildModelEvaluator() const;
     
   };
 
 }
+
+#include "Panzer_ModelEvaluator_FactoryT.hpp"
 
 #endif

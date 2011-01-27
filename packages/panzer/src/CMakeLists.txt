@@ -64,6 +64,7 @@ APPEND_SET(HEADERS
   Panzer_MaterialModelEntry.hpp
   Panzer_ModelEvaluator.hpp
   Panzer_ModelEvaluatorT.hpp
+  Panzer_ModelEvaluator_Epetra.hpp
   Panzer_ModelEvaluator_Factory.hpp
   Panzer_ModelEvaluator_FactoryT.hpp
   Panzer_ModelFactory.hpp
@@ -127,6 +128,7 @@ APPEND_SET(SOURCES
   Panzer_InputPhysicsBlock.cpp
   Panzer_IntegrationRule.cpp
   Panzer_MaterialModelEntry.cpp
+  Panzer_ModelEvaluator_Epetra.cpp
   Panzer_ParameterList_ObjectBuilders.cpp
   Panzer_PhysicsBlock.cpp
   Panzer_Traits.cpp
