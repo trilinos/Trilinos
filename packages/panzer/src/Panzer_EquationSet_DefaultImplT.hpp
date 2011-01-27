@@ -1,10 +1,14 @@
 #ifndef PANZER_EQUATIONSET_DEFAULT_IMPL_T_HPP
 #define PANZER_EQUATIONSET_DEFAULT_IMPL_T_HPP
 
-#include "Panzer_GatherSolution_Epetra.hpp"
-#include "Panzer_ScatterResidual_Epetra.hpp"
+// #include "Panzer_GatherSolution_Epetra.hpp"
+// #include "Panzer_ScatterResidual_Epetra.hpp"
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOFGradient.hpp"
+
+#include "Phalanx_MDField.hpp"
+#include "Phalanx_DataLayout.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
 
 // ***********************************************************************
 template <typename EvalT>
@@ -20,7 +24,8 @@ EquationSet_DefaultImpl(const panzer::InputEquationSet& ies,
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const
+					const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+                                        const LinearObjFactory<panzer::Traits> & lof) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -36,8 +41,8 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Basis", m_basis);
     p.set("DOF Names", m_dof_names);
     
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::GatherSolution_Epetra<EvalT,panzer::Traits>(p));
+    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
+    //   rcp(new panzer::GatherSolution_Epetra<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }
@@ -58,8 +63,8 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Dependent Names", this->m_residual_names);
     p.set("Dependent Map", names_map);
 
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::ScatterResidual_Epetra<EvalT,panzer::Traits>(p));
+    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
+      // rcp(new panzer::ScatterResidual_Epetra<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }

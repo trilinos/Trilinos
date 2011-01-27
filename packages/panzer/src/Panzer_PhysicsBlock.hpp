@@ -132,7 +132,7 @@ void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::F
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    eqstm.getAsObject<EvalT>()->buildAndRegisterGatherScatterEvaluators(fm, m_provided_dofs);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterGatherScatterEvaluators(fm, m_provided_dofs,lof);
 
   }
 }

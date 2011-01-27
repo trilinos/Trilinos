@@ -9,6 +9,7 @@
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_ModelFactory_TemplateManager.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -31,7 +32,8 @@ namespace panzer {
 						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const = 0;
     
     virtual void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const = 0;
+							 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+                                                         const LinearObjFactory<panzer::Traits> & lof) const = 0;
     
     virtual void buildAndRegisterModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,

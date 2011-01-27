@@ -115,7 +115,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
       eqstm.begin();
     for (; eval_type != eqstm.end(); ++eval_type) {
-      eval_type->buildAndRegisterGatherScatterEvaluators(fm, m_provided_dofs);
+      eval_type->buildAndRegisterGatherScatterEvaluators(fm, m_provided_dofs, lof);
     }
   }
 }

@@ -24,7 +24,8 @@ namespace panzer {
 						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const = 0;
 
     virtual void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const = 0;
+							 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+                                                         const LinearObjFactory<panzer::Traits> & lof) const = 0;
     
     virtual void buildAndRegisterModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
