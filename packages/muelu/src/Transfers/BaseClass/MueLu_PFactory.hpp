@@ -2,6 +2,7 @@
 #define MUELU_PFACTORY_HPP
 
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_Level.hpp"
 
 #include "Teuchos_VerboseObject.hpp"
 #define MueLu_cout(minimumVerbLevel) \

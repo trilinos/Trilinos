@@ -70,16 +70,14 @@ TEUCHOS_UNIT_TEST(RAPFactory, Correctness)
   fineLevel.SetA(Op);
   MueLu::Level<SC,LO,GO,NO,LMO> coarseLevel;
 
-  MueLu::TentativePFactory<SC,LO,GO,NO,LMO> tentPFact;
-  tentPFact.Build(fineLevel,coarseLevel);
   MueLu::SaPFactory<SC,LO,GO,NO,LMO> sapFactory;
-  sapFactory.Build(fineLevel,coarseLevel);
+  sapFactory.BuildP(fineLevel,coarseLevel);
 
   RCP<Operator> P = coarseLevel.GetP();
   RCP<Operator> A = fineLevel.GetA();
 
   MueLu::TransPFactory<SC,LO,GO,NO,LMO> transPFactory;
-  transPFactory.Build(fineLevel,coarseLevel);
+  transPFactory.BuildR(fineLevel,coarseLevel);
 
   RCP<Operator> R = coarseLevel.GetR();
 

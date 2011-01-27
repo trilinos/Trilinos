@@ -23,7 +23,8 @@ TransPFactory.cpp
 SmootherFactory.cpp
 IfpackSmoother.cpp
 Needs.cpp
-  )
+GenericPRFactory.cpp
+)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     unit_tests

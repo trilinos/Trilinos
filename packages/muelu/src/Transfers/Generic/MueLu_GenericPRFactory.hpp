@@ -73,8 +73,9 @@ class GenericPRFactory : public PRFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       @brief Build method.
     */
     bool Build(Level &fineLevel, Level &coarseLevel) {
-      throw(Exceptions::NotImplemented("GenericPRFactory: Build method not implemented yet!"));
 
+      //FIXME what if map is a block map .... I'm pretty sure maxCoarseSize_ will always be point DOFs
+      std::cout << "warning: if map is blocked, this comparison to maxCoarseSize_ will be wrong!" << std::endl;
       if (fineLevel.GetA()->getRowMap()->getGlobalNumElements() <= PRFactory::maxCoarseSize_)
         return false;
       
@@ -84,6 +85,7 @@ class GenericPRFactory : public PRFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       RFact_->BuildR(fineLevel,coarseLevel);
 
       //FIXME restore output level here
+      return true;
     }
     //@}
 

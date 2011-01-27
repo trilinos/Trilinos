@@ -59,7 +59,33 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
     //! @name Build methods.
     //@{
     bool BuildP(Level & fineLevel, Level & coarseLevel) {
-      Teuchos::OSTab tab(this->out_); MueLu_cout(Teuchos::VERB_HIGH) << "TentativePFactory: Building a restriction operator" << std::endl; return true;
+      Teuchos::OSTab tab(this->out_); MueLu_cout(Teuchos::VERB_HIGH) << "TentativePFactory: Building tentative prolongator" << std::endl;
+
+      //TODO get or generate fine grid nullspace here
+      RCP<MultiVector> fineNullspace;
+      if (fineLevel.IsSaved("Nullspace"))
+        fineLevel.CheckOut("Nullspace",fineNullspace);
+      else {
+        //TODO add this functionality
+        //throw(Exceptions::NotImplemented("TenativePFactory.BuildP():  nullspace generation not implemented
+        //yet"));
+        std::cout << "nullspace generation not implemented yet" << std::endl;
+      }
+/*
+       //TODO build aggregates
+            % 1) build aggregates
+            AggInfo = TentativePFactory.BuildAggregates(FineLevel, CoarseLevel,...
+                this.CoalesceFact_, this.AggFact_, ...
+                this.GetOutputLevel(), Specs, ...
+                this.ReUseAggregates(), this.ReUseGraph());
+*/
+      RCP<Operator> Ptent = MakeTentative(fineLevel);
+      if (coarseLevel.IsRequested("Ptent"))
+        coarseLevel.Save("Ptent",Ptent);
+      coarseLevel.SetP(Ptent);
+      //coarseLevel.Save("nullspace",cnull);
+
+      return true;
     }
     //@}
 
@@ -99,10 +125,10 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
     } //MakeTentative()
 
     static void BuildAggregates() {
-      throw(Exceptions::NotImplemented());
+      throw(Exceptions::NotImplemented("TentativePFactory: BuildAggregates no implemented"));
     }
     static void MakeNoQRTentative() {
-      throw(Exceptions::NotImplemented());
+      throw(Exceptions::NotImplemented("TentativePFactory: MakeNoQRTentative no implemented"));
     }
     //@}
 

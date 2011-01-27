@@ -53,8 +53,6 @@ TEUCHOS_UNIT_TEST(SaPFactory, GetSetMethods)
   out << "version: " << MueLu::Version() << std::endl;
 
   RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
-  sapFactory->SetMaxCoarseSize( (GO)55 );
-  TEUCHOS_TEST_EQUALITY(((GO)55 ) == sapFactory->GetMaxCoarseSize(), true, out, success);
   sapFactory->SetDampingFactor( (Scalar)4/3 );
   TEUCHOS_TEST_EQUALITY(((Scalar)4/3) == sapFactory->GetDampingFactor(), true, out, success);
   sapFactory->TentativeWithQR(true);
@@ -63,10 +61,9 @@ TEUCHOS_UNIT_TEST(SaPFactory, GetSetMethods)
   TEUCHOS_TEST_EQUALITY( sapFactory->ReUseP(), true, out, success);
   sapFactory->ReUsePtent(true);
   TEUCHOS_TEST_EQUALITY( sapFactory->ReUsePtent(), true, out, success);
-  sapFactory->ReUseAggregates(true);
-  TEUCHOS_TEST_EQUALITY( sapFactory->ReUseAggregates(), true, out, success);
-  sapFactory->ReUseGraph(true);
-  TEUCHOS_TEST_EQUALITY( sapFactory->ReUseGraph(), true, out, success);
+  sapFactory->SetDiagonalView("roomWithAView");
+  TEUCHOS_TEST_EQUALITY( sapFactory->GetDiagonalView(), "roomWithAView", out, success);
+  TEST_THROW( sapFactory->SetUseAFiltered(true), MueLu::Exceptions::NotImplemented ); //FIXME
 
 } //GetSetMethods
 

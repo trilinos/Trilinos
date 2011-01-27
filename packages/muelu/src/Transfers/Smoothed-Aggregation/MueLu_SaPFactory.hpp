@@ -201,6 +201,10 @@ class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, L
       return reUsePtent_;
     }
 
+    std::string GetDiagonalView() {
+      return diagonalView_;
+    }
+
     //@}
 /*
 //TODO
