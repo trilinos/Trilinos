@@ -16,7 +16,7 @@
 #include "EpetraExt_MatrixMatrix.h"
 #endif
 
-#include "MueLu_OperatorFactory.hpp"
+#include "MueLu_PFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
@@ -35,7 +35,7 @@ namespace MueLu {
 */
 
 template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 #include "MueLu_UseShortNames.hpp"
 
   template<class AA, class BB, class CC, class DD, class EE>
@@ -43,27 +43,30 @@ class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
   private:
 /*
+     TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
      AggFact_
      CoalesceFact_
-     diagonalView_ = 'current' % diagonal view label (default == current view)
+     TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
 */
-     GO maxCoarseSize_;
-     ScalarType dampingFactor_;
+     std::string diagonalView_;
      bool doQR_;
+     ScalarType dampingFactor_;
+     bool useAFiltered_;
      bool reUseP_;
      bool reUsePtent_;
-     bool reUseGraph_;
-     bool reUseAggregates_;
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
-    SaPFactory() : dampingFactor_(4./3), doQR_(false),
-                   reUseP_(false), reUsePtent_(false),
-                   reUseGraph_(false), reUseAggregates_(false)
+    SaPFactory() : diagonalView_("current"),
+                   doQR_(false), dampingFactor_(4./3), useAFiltered_(false), reUseP_(false),
+                   reUsePtent_(false)
+                   //, PFactory::reUseGraph_(false), PFactory::reUseAggregates_(false)
     {
+      PFactory::reUseGraph_=false;
+      PFactory::reUseAggregates_=false;
       Teuchos::OSTab tab(this->out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Instantiating a new factory" << std::endl;
     }
@@ -82,7 +85,7 @@ class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       //FIXME what does the return code mean (unclear in MueMat)?
       //FIXME how should nullspace be stored?
     */
-    bool Build(Level &fineLevel, Level &coarseLevel) {
+    bool BuildP(Level &fineLevel, Level &coarseLevel) {
       Teuchos::OSTab tab(this->out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Building a prolongator" << std::endl;
 
@@ -151,16 +154,22 @@ class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
     //! @name Set methods.
     //@{
-    void SetMaxCoarseSize(GO maxCoarseSize) {
-      maxCoarseSize_ = maxCoarseSize;
-    }
-
     void SetDampingFactor(ScalarType dampingFactor) {
       dampingFactor_ = dampingFactor;
     }
 
     void TentativeWithQR(bool value) {
       doQR_ = value;
+    }
+
+    void SetDiagonalView(std::string const& diagView) {
+      diagonalView_ = diagView;
+    }
+
+    void SetUseAFiltered(bool value) {
+      throw(Exceptions::NotImplemented("SetUseAFiltered not fully implemented"));
+      useAFiltered_ = value;
+      //FIXME add to needs?
     }
 
     void ReUseP(bool value) {
@@ -171,21 +180,10 @@ class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       reUsePtent_ = value;
     }
 
-    void ReUseAggregates(bool value) {
-      reUseAggregates_ = value;
-    }
-
-    void ReUseGraph(bool value) {
-      reUseGraph_ = value;
-    }
     //@}
 
     //! @name Get methods.
     //@{
-
-    GO GetMaxCoarseSize() {
-      return maxCoarseSize_;
-    }
 
     ScalarType GetDampingFactor() {
       return dampingFactor_;
@@ -201,14 +199,6 @@ class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
     bool ReUsePtent() {
       return reUsePtent_;
-    }
-
-    bool ReUseAggregates() {
-      return reUseAggregates_;
-    }
-
-    bool ReUseGraph() {
-      return reUseGraph_;
     }
 
     //@}

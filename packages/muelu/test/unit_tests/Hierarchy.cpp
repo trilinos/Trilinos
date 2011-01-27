@@ -3,6 +3,10 @@
 #include "test_helpers.hpp"
 #include "MueLu_Version.hpp"
 #include "MueLu_Hierarchy.hpp"
+#include "MueLu_PRFactory.hpp"
+#include "MueLu_PFactory.hpp"
+#include "MueLu_RFactory.hpp"
+#include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -104,12 +108,19 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PFact_Only)
   Hierarchy H;
   H.SetLevel(levelOne);
 
+  /*
+  TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+  SaPFactory must inherit from PFactory ... dude
+  TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+  */
+
   RCP<SaPFactory>  PFact = rcp(new SaPFactory());
+  RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact));
 
   out << "Providing just prolongator factory to FillHierarchy." << std::endl;
   //FIXME until Hierarchy.FillHierarchy takes a generic (?) RP factory, this
   //FIXME won't work with with more than 2 levels
-  H.FillHierarchy(PFact,Teuchos::null,Teuchos::null,0,1);
+  H.FillHierarchy(PRFact,Teuchos::null,0,1);
 }
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
@@ -152,7 +163,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy1)
   Hierarchy H;
   H.SetLevel(levelOne);
 
-  RCP< SaPFactory >    PFact = Teuchos::null;
+  RCP< PRFactory >    PFact = Teuchos::null;
+  //FIXME this won't throw anymore ...
   TEST_THROW(H.FillHierarchy(PFact), std::logic_error);
 }
 
@@ -169,10 +181,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy2)
   Hierarchy H;
   H.SetLevel(levelOne);
 
-  RCP<SaPFactory>    PFact = rcp(new SaPFactory());
+  RCP<SaPFactory>  PFact = rcp(new SaPFactory());
+  RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact));
 
-  out << "Providing just prolongator factory to FillHierarchy." << std::endl;
-  H.FillHierarchy(PFact);
+  out << "Providing just PR factory to FillHierarchy." << std::endl;
+  H.FillHierarchy(PRFact);
 }
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy3)
@@ -188,12 +201,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy3)
   Hierarchy H;
   H.SetLevel(levelOne);
 
-  RCP<SaPFactory>    PFact = rcp(new SaPFactory());
-  RCP<TransPFactory> RFact = rcp(new TransPFactory());
+  RCP<SaPFactory>  PFact = rcp(new SaPFactory());
+  RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact));
   RCP<RAPFactory>    AcFact= rcp(new RAPFactory());
 
-  out << "Providing all three factories to FillHierarchy." << std::endl;
-  H.FillHierarchy(PFact,RFact,AcFact);
+  out << "Providing both factories to FillHierarchy." << std::endl;
+  H.FillHierarchy(PRFact,AcFact);
 }
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)

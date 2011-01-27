@@ -3,8 +3,7 @@
 
 #include <iostream>
 #include "Cthulhu_CrsOperator.hpp"
-#include "MueLu_OperatorFactory.hpp"
-#include "MueLu_MatrixFactory.hpp"
+#include "MueLu_RFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -19,7 +18,7 @@ namespace MueLu {
   */
 
   template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class TransPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+  class TransPFactory : public RFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -42,7 +41,7 @@ namespace MueLu {
 
     //! @name Build methods.
     //@{
-    bool Build(Level & fineLevel, Level & coarseLevel) {
+    bool BuildR(Level & fineLevel, Level & coarseLevel) {
       Teuchos::OSTab tab(this->out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "TransPFactory: Building a restriction operator" << std::endl;
       Teuchos::ParameterList matrixList;

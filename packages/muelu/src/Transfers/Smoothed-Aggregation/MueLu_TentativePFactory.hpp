@@ -13,28 +13,34 @@ namespace MueLu {
   */
 
 template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class TentativePFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 #include "MueLu_UseShortNames.hpp"
 
   private:
 
-#ifdef MUELU_NOT_IMPLEMENTED
-    CoalesceFact_;
-    AggFact_;
-#endif //MUELU_NOT_IMPLEMENTED
+    /*
+    TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+    coalesceFact_;
+    aggregationFact_;
+    TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+    */
     //! use QR decomposition for improving nullspace information per default
     bool QR_;
-    bool reUseGraph_;
-    bool reUseAggregates_;
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
-    TentativePFactory() : QR_(false),reUseGraph_(false),reUseAggregates_(false) {
+    TentativePFactory(/*TODO*/ /*CoalesceFact, AggregationFact*/ /*TODO*/) : QR_(false) {
       Teuchos::OSTab tab(this->out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "TentativePFactory: Instantiating a new factory" << std::endl;
+      /*
+        if (CoalesceFact != Teuchos::null) coalesceFact_ = CoalesceFact;
+        else                               coalesceFact_ = rcp(new CoalesceDropFactory());
+        if (AggregationFact != Teuchos::null) aggregationFact_ = AggregationFact;
+        else                                  aggregationFact_ = rcp(new AggregationFactory());
+      */
     }
 
     //! Destructor.
@@ -43,36 +49,25 @@ class TentativePFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalO
 
     //! @name Set methods.
     //@{
-#ifdef MUELU_NOT_IMPLEMENTED
-    void TentativeWithQR() {}
-#endif //MUELU_NOT_IMPLEMENTED
-    bool ReUseAggregates() {
-      return reUseAggregates_;
+
+    void TentativeWithQR(bool value) {
+      QR_ = value;
     }
 
-    void ReUseAggregates(bool const ToF) {
-      reUseAggregates_ = ToF;
-    }
-
-    bool ReUseGraph() {
-      return reUseGraph_;
-    }
-
-    void ReUseGraph(bool ToF) {
-      reUseGraph_ = ToF;
-    }
     //@}
 
     //! @name Build methods.
     //@{
-    bool Build(Level & fineLevel, Level & coarseLevel) {
+    bool BuildP(Level & fineLevel, Level & coarseLevel) {
       Teuchos::OSTab tab(this->out_); MueLu_cout(Teuchos::VERB_HIGH) << "TentativePFactory: Building a restriction operator" << std::endl; return true;
     }
     //@}
 
     //! @name Static methods.
     //@{
-    //TODO this signature does not match MueMat
+    /*! @brief Make tenative prolongator.
+        TODO this signature does not match MueMat
+    */
     static RCP<Operator> MakeTentative(Level const &currentLevel)
     {
       Teuchos::RCP< Operator > Op = currentLevel.GetA();
@@ -103,10 +98,12 @@ class TentativePFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalO
       return Ptent;
     } //MakeTentative()
 
-#ifdef MUELU_NOT_IMPLEMENTED //TODO
-    static BuildAggregates() {};
-    static MakeNoQRTentative() {};
-#endif //MUELU_NOT_IMPLEMENTED
+    static void BuildAggregates() {
+      throw(Exceptions::NotImplemented());
+    }
+    static void MakeNoQRTentative() {
+      throw(Exceptions::NotImplemented());
+    }
     //@}
 
 }; //class TentativePFactory

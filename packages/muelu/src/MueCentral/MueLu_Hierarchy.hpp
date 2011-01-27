@@ -6,6 +6,7 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -91,8 +92,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
        Note: Empty factories are simply skipped.
      */
-     void FullPopulate(Teuchos::RCP<OperatorFactory> PFact,
-                       Teuchos::RCP<OperatorFactory> RFact=Teuchos::null,
+     void FullPopulate(Teuchos::RCP<PRFactory> PRFact,
                        Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
                        Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
                        int startLevel=0, int numDesiredLevels=10 )
@@ -100,7 +100,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        Teuchos::OSTab tab(out_);
        MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::FullPopulate()" << std::endl;
 
-       if (RFact == Teuchos::null)  RFact = rcp( new TransPFactory());
+       if (PRFact == Teuchos::null) PRFact = rcp( new GenericPRFactory(SaPFactory()));
        if (AcFact == Teuchos::null) AcFact = rcp( new RAPFactory());
        if (SmooFact == Teuchos::null) {
 //FIXME #ifdef we're using tpetra
@@ -116,7 +116,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 //FIXME #endif
        }
 
-       FillHierarchy(PFact,RFact,AcFact,startLevel,numDesiredLevels /*,status*/);
+       FillHierarchy(PRFact,AcFact,startLevel,numDesiredLevels /*,status*/);
        SetSmoothers(SmooFact,startLevel,numDesiredLevels);
 
      } //FullPopulate()
@@ -127,9 +127,11 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
          Prolongator factory defaults to SaPFactory.
      */
+
      void FillHierarchy() {
-       RCP<OperatorFactory> PFact = rcp(new SaPFactory());
-       FillHierarchy(PFact);
+       RCP<SaPFactory> PFact = rcp(new SaPFactory());
+       RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact));
+       FillHierarchy(PRFact);
      } //FillHierarchy()
      
      /*! @brief Populate hierarchy with A's, R's, and P's.
@@ -141,14 +143,17 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          order) a multigrid Hierarchy starting with information on 'startLevel' 
          and continuing for at most 'numDesiredLevels'. 
      */
-     void FillHierarchy(Teuchos::RCP<OperatorFactory> PFact,
-                       Teuchos::RCP<OperatorFactory> RFact=Teuchos::null,
+     void FillHierarchy(Teuchos::RCP<PRFactory> PRFact,
                        Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
                        int startLevel=0, int numDesiredLevels=10 )
      {
        Teuchos::OSTab tab(out_);
        MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::FillHierachy()" << std::endl;
-       if (PFact == Teuchos::null) PFact = rcp(new SaPFactory());
+       RCP<SaPFactory> PFact;
+       if (PRFact == Teuchos::null) {
+         PFact = rcp(new SaPFactory());
+         PRFact = rcp(new GenericPRFactory(PFact));
+       }
        bool goodBuild=true;
        int i = startLevel;
        while (i < startLevel + numDesiredLevels - 1)
@@ -158,17 +163,12 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            Levels_.push_back( Levels_[i]->Build(*out_) );
          }
          Levels_[i+1]->SetLevelID(i+1);
-         goodBuild = PFact->Build(*(Levels_[i]),*(Levels_[i+1]) /*,MySpecs*/);
+         goodBuild = PRFact->Build(*(Levels_[i]),*(Levels_[i+1]) /*,MySpecs*/);
          if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right way to cast?
          if (!goodBuild) {
            Levels_.resize(i+1); //keep only entries 0..i
            break;
          }
-         if (RFact != Teuchos::null)
-           if ( !RFact->Build(*(Levels_[i]),*(Levels_[i+1])) ) {
-             Levels_.resize(i+1); //keep only entries 0..i
-             break;
-           }
          if (AcFact != Teuchos::null)
            if ( !AcFact->Build(*(Levels_[i]),*(Levels_[i+1])) ) {
              Levels_.resize(i+1); //keep only entries 0..i

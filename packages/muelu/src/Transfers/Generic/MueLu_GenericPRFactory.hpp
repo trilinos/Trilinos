@@ -4,6 +4,7 @@
 #include "MueLu_PRFactory.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_RFactory.hpp"
+#include "MueLu_TransPFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 
@@ -41,7 +42,7 @@ class GenericPRFactory : public PRFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
        Defaults to plain aggregation.
     */
-    GenericPRFactory(RCP<PFactory> &PFact=Teuchos::null, RCP<RFactory> &RFact=Teuchos::null)
+    GenericPRFactory(RCP<PFactory> PFact=Teuchos::null, RCP<RFactory> RFact=Teuchos::null)
     {
       Teuchos::OSTab tab(this->out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "GenericPRFactory: Instantiating a new factory" << std::endl;
@@ -72,15 +73,15 @@ class GenericPRFactory : public PRFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       @brief Build method.
     */
     bool Build(Level &fineLevel, Level &coarseLevel) {
-      throw(Exceptions::NotImplemented());
+      throw(Exceptions::NotImplemented("GenericPRFactory: Build method not implemented yet!"));
 
-      if (fineLevel.GetA().getRowMap().size() <= PRFactory::maxCoarseSize_)
+      if (fineLevel.GetA()->getRowMap()->getGlobalNumElements() <= PRFactory::maxCoarseSize_)
         return false;
       
       //FIXME cache output level here
 
-      PFact_.BuildP(fineLevel,coarseLevel);
-      RFact_.BuildR(fineLevel,coarseLevel);
+      PFact_->BuildP(fineLevel,coarseLevel);
+      RFact_->BuildR(fineLevel,coarseLevel);
 
       //FIXME restore output level here
     }

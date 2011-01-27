@@ -4,6 +4,9 @@
 #include "MueLu_OperatorFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 
+#define MueLu_cout(minimumVerbLevel) \
+    if (this->getVerbLevel() >= minimumVerbLevel) *(this->getOStream())
+
 #include <iostream>
 
 namespace MueLu {
@@ -16,17 +19,20 @@ namespace MueLu {
 */
 
 template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class RFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+class RFactory : public Teuchos::VerboseObject<RFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
 #include "MueLu_UseShortNames.hpp"
 
   private:
+
+  protected:
+     Teuchos::RCP<Teuchos::FancyOStream> out_;
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
-    RFactory()
+    RFactory() : out_(this->getOStream())
     {
       Teuchos::OSTab tab(this->out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "RFactory: Instantiating a new factory" << std::endl;
@@ -42,7 +48,7 @@ class RFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,No
     /*!
       @brief Abstract Build method.
     */
-    bool BuildR(Level &fineLevel, Level &coarseLevel) = 0;
+    virtual bool BuildR(Level &fineLevel, Level &coarseLevel) = 0;
     //@}
 
 }; //class RFactory
