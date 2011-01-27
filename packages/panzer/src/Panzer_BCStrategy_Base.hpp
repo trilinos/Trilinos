@@ -1,6 +1,9 @@
 #ifndef PANZER_BCSTRATEGY_BASE_HPP
 #define PANZER_BCSTRATEGY_BASE_HPP
 
+#include "Panzer_Traits.hpp"
+#include "Panzer_LinearObjFactory.hpp"
+
 namespace PHX {
   template<typename T> class FieldManager;
 }
@@ -24,7 +27,8 @@ namespace panzer {
 
     virtual void 
       buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-  				              const panzer::PhysicsBlock& pb) const = 0;
+  				              const panzer::PhysicsBlock& pb,
+                                              const LinearObjFactory<panzer::Traits> & lof) const = 0;
 
   };
   

@@ -6,8 +6,10 @@
 #include <string>
 
 #include "Teuchos_RCP.hpp"
+
 #include "Panzer_BCStrategy.hpp"
 #include "Panzer_Traits.hpp"
+
 #include "Phalanx_FieldManager.hpp"
 
 namespace user_app {
@@ -24,7 +26,8 @@ namespace user_app {
 
     void 
     buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				            const panzer::PhysicsBlock& pb) const;
+				            const panzer::PhysicsBlock& pb,
+				            const panzer::LinearObjFactory<panzer::Traits> & lof) const;
 
   };
 

@@ -11,9 +11,11 @@
 // Evaluators
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOFGradient.hpp"
-#include "Panzer_GatherSolution_Epetra.hpp"
-#include "Panzer_ScatterDirichletResidual_Epetra.hpp"
 #include "Panzer_Dirichlet_Constant.hpp"
+
+#include "Phalanx_MDField.hpp"
+#include "Phalanx_DataLayout.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
 
 // ***********************************************************************
 template <typename EvalT>
@@ -88,7 +90,8 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 template <typename EvalT>
 void user_app::BCStrategy_Dirichlet_Constant<EvalT>::
 buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-			                const panzer::PhysicsBlock& pb) const
+			                const panzer::PhysicsBlock& pb,
+				        const panzer::LinearObjFactory<panzer::Traits> & lof) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -125,8 +128,8 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Basis", basis);
     p.set("DOF Names", field_names);
     
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::GatherSolution_Epetra<EvalT,panzer::Traits>(p));
+    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
+      // rcp(new panzer::GatherSolution_Epetra<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }
@@ -157,8 +160,8 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 	       pb.getBaseCellTopology().getDimension() - 1);
     p.set<int>("Local Side ID", pb.cellData().side());
 
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::ScatterDirichletResidual_Epetra<EvalT,panzer::Traits>(p));
+    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterDirichlet<EvalT>(p);
+      // rcp(new panzer::ScatterDirichletResidual_Epetra<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }

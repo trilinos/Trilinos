@@ -19,7 +19,8 @@ namespace panzer {
 
     virtual void 
       buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-  				              const panzer::PhysicsBlock& pb) const = 0;
+  				              const panzer::PhysicsBlock& pb,
+                                              const LinearObjFactory<panzer::Traits> & lof) const = 0;
 
   protected:
 

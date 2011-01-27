@@ -35,6 +35,8 @@ const std::vector<short> & UniqueGlobalIndexer::getElementBlock(const std::strin
       elements_->push_back(0);
       elements_->push_back(1);
    }
+
+   return *elements_;
 }
 
 void UniqueGlobalIndexer::getElementGIDs(short localElmtId,std::vector<int> & gids) const

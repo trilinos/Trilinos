@@ -176,7 +176,7 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
       for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator 
 	     bcs_type = bcs->begin(); bcs_type != bcs->end(); ++bcs_type) {
 	bcs_type->buildAndRegisterEvaluators(fm,*side_pb);
-	bcs_type->buildAndRegisterGatherScatterEvaluators(fm,*side_pb);
+	bcs_type->buildAndRegisterGatherScatterEvaluators(fm,*side_pb,lo_factory);
       }
 
       // Setup the fieldmanager

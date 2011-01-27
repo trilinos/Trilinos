@@ -7,6 +7,8 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
+#include "Thyra_get_Epetra_Operator.hpp"
+
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Panzer_STK_Version.hpp"
@@ -29,10 +31,28 @@ using Teuchos::rcp;
 
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
+#include "EpetraExt_MultiVectorOut.h"
 
 #include "write_solution_data.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+
+void pause_to_attach()
+{
+   MPI_Comm mpicomm = MPI_COMM_WORLD;
+   Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(
+         Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
+   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+   out.setShowProcRank(true);
+   out.setOutputToRootOnly(-1);
+
+   out << "PID = " << getpid();
+
+   if (comm->getRank() == 0)
+      getchar();
+   comm->barrier();
+}
+
 
 void testInitialzation(panzer::InputPhysicsBlock& ipb,
 		       std::vector<panzer::BC>& bcs);
@@ -49,6 +69,8 @@ int main(int argc,char * argv[])
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setOutputToRootOnly(0);
    out.setShowProcRank(true);
+
+   // pause_to_attach();
 
    // variable declarations
    ////////////////////////////////////////////////////
@@ -188,7 +210,7 @@ int main(int argc,char * argv[])
    RCP<Thyra::MultiVectorBase<double> > x = linObjFactory.getVector();
    RCP<Thyra::MultiVectorBase<double> > b = linObjFactory.getVector();
    RCP<Thyra::LinearOpBase<double> > A = linObjFactory.getMatrix();
-   
+
    panzer::AssemblyEngineInArgs input(ghostX,Teuchos::null,ghostB,ghostA);
 
    // evaluate physics
@@ -212,12 +234,22 @@ int main(int argc,char * argv[])
    RCP<Thyra::LinearOpWithSolveBase<double> > lows = Thyra::linearOpWithSolve(*lowsFactory, A.getConst());
    Thyra::solve<double>(*lows, Thyra::NOTRANS, *b, x.ptr());
 
+   {
+      RCP<const Epetra_Map> epetra_map = Teuchos::get_extra_data<RCP<const Epetra_Map> >(x,"epetra_map");
+      RCP<Epetra_MultiVector> epetra_x = Thyra::get_Epetra_MultiVector(*epetra_map,x);
+
+      Teuchos::RCP<const Epetra_CrsMatrix> eop = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*A));
+      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*eop);
+      EpetraExt::MultiVectorToMatrixMarketFile("x_vec.mm",*epetra_x);
+   }
+
    // redistribute solution vector
    linObjFactory.globalToGhostVector(x,ghostX);
 
    out << "WRITE" << std::endl;
    RCP<const Epetra_Map> epetra_map = Teuchos::get_extra_data<RCP<const Epetra_Map> >(ghostX,"epetra_map");
-   RCP<Epetra_MultiVector> epetra_x = Thyra::get_Epetra_MultiVector(*epetra_map,x);
+   RCP<Epetra_MultiVector> epetra_x = Thyra::get_Epetra_MultiVector(*epetra_map,ghostX);
+
    write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*epetra_x);
    mesh->writeToExodus("output.exo");
 
@@ -286,7 +318,7 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
        std::string element_block_id = "eblock-1_0";
        std::string dof_name = "ION_TEMPERATURE";
        std::string strategy = "Constant";
-       double value = 10.0;
+       double value = 20.0;
        Teuchos::ParameterList p;
        p.set("Value",value);
        panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
