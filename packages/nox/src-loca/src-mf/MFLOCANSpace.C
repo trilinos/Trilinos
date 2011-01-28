@@ -45,19 +45,16 @@ extern "C" {
 
 #include <MFNSpace.h>
 #include <MFNVector.h>
-#include <MFError.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <MFTime.h>
+//#include <MFTime.h>
 
-void MFSetError(int,char*,char*,int,char*);
-
-double MFLOCANSpaceDistance(MFNSpace,MFNVector,MFNVector,void*);
-void MFLOCANSpaceDirection(MFNSpace,MFNVector,MFNVector,MFNVector,void*);
-void MFLOCANSpaceAdd(MFNSpace,MFNVector,MFNVector,MFNVector,void*);
-void MFLOCANSpaceScale(MFNSpace,double,MFNVector,MFNVector,void*);
-double MFLOCANSpaceInner(MFNSpace,MFNVector,MFNVector,void*);
+double MFLOCANSpaceDistance(MFNSpace,MFNVector,MFNVector,void*,MFErrorHandler);
+void MFLOCANSpaceDirection(MFNSpace,MFNVector,MFNVector,MFNVector,void*,MFErrorHandler);
+void MFLOCANSpaceAdd(MFNSpace,MFNVector,MFNVector,MFNVector,void*,MFErrorHandler);
+void MFLOCANSpaceScale(MFNSpace,double,MFNVector,MFNVector,void*,MFErrorHandler);
+double MFLOCANSpaceInner(MFNSpace,MFNVector,MFNVector,void*,MFErrorHandler);
 
 MFNSpace MFCreateLOCANSpace(LOCAData* data)
 {
@@ -70,13 +67,13 @@ MFNSpace MFCreateLOCANSpace(LOCAData* data)
   starttime=clock();
 #endif
 
-  cthis=MFCreateNSpaceBaseClass("LOCANSpace");
-  MFNSpaceSetData(cthis, (void*)data);
-  MFNSpaceSetDistance(cthis,MFLOCANSpaceDistance);
-  MFNSpaceSetInnerProduct(cthis,MFLOCANSpaceInner);
-  MFNSpaceSetDirection(cthis,MFLOCANSpaceDirection);
-  MFNSpaceSetAdd(cthis,MFLOCANSpaceAdd);
-  MFNSpaceSetScale(cthis,MFLOCANSpaceScale);
+  cthis=MFCreateNSpaceBaseClass("LOCANSpace", data->mfErrorHandler);
+  MFNSpaceSetData(cthis, (void*)data, data->mfErrorHandler);
+  MFNSpaceSetDistance(cthis,MFLOCANSpaceDistance, data->mfErrorHandler);
+  MFNSpaceSetInnerProduct(cthis,MFLOCANSpaceInner, data->mfErrorHandler);
+  MFNSpaceSetDirection(cthis,MFLOCANSpaceDirection, data->mfErrorHandler);
+  MFNSpaceSetAdd(cthis,MFLOCANSpaceAdd, data->mfErrorHandler);
+  MFNSpaceSetScale(cthis,MFLOCANSpaceScale, data->mfErrorHandler);
 
 #ifdef MFTIMINGS
     MFTimeMFCreateNSpace+=clock()-starttime;
@@ -84,7 +81,8 @@ MFNSpace MFCreateLOCANSpace(LOCAData* data)
   return cthis;
 }
 
-double MFLOCANSpaceDistance(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
+double MFLOCANSpaceDistance(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d,
+			    MFErrorHandler err)
 {
   double result;
   MFNVector dv;
@@ -95,10 +93,10 @@ double MFLOCANSpaceDistance(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
   MFCalledMFNSpaceDistance++;
   starttime=clock();
 #endif
-  dv=MFCloneNVector(v0);
-  MFLOCANSpaceDirection(cthis,v0,v1,dv,d);
-  result=MFLOCANSpaceInner(cthis,dv,dv,d);
-  MFFreeNVector(dv);
+  dv=MFCloneNVector(v0,err);
+  MFLOCANSpaceDirection(cthis,v0,v1,dv,d,err);
+  result=MFLOCANSpaceInner(cthis,dv,dv,d,err);
+  MFFreeNVector(dv,err);
 
 #ifdef MFTIMINGS
     MFTimeMFNSpaceDistance+=clock()-starttime;
@@ -106,7 +104,7 @@ double MFLOCANSpaceDistance(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
   return sqrt(result);
 }
 
-void MFLOCANSpaceDirection(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector diff,void *d)
+void MFLOCANSpaceDirection(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector diff,void *d, MFErrorHandler err)
 {
 #ifdef MFTIMINGS
   clock_t starttime;
@@ -115,7 +113,7 @@ void MFLOCANSpaceDirection(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector di
   starttime=clock();
 #endif
 
-  MFNVDiff(v1,v0,diff);
+  MFNVDiff(v1,v0,diff,err);
 
 #ifdef MFTIMINGS
     MFTimeMFNSpaceDirection+=clock()-starttime;
@@ -123,7 +121,7 @@ void MFLOCANSpaceDirection(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector di
   return;
 }
 
-double MFLOCANSpaceInner(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
+double MFLOCANSpaceInner(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d, MFErrorHandler err)
 {
 
 #ifdef MFTIMINGS
@@ -135,8 +133,8 @@ double MFLOCANSpaceInner(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
 
   LOCAData* data = (LOCAData*) d;
 
-  LOCANVectorData *v0_data = (LOCANVectorData *) MFNVectorGetData(v0);
-  LOCANVectorData *v1_data = (LOCANVectorData *) MFNVectorGetData(v1);
+  LOCANVectorData *v0_data = (LOCANVectorData *) MFNVectorGetData(v0,err);
+  LOCANVectorData *v1_data = (LOCANVectorData *) MFNVectorGetData(v1,err);
 
   double dotp = data->grp->computeScaledDotProduct(*(v0_data->u_ptr),
 						   *(v1_data->u_ptr));
@@ -148,7 +146,7 @@ double MFLOCANSpaceInner(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d)
 }
 
 void MFLOCANSpaceAdd(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector sum,
-		     void *d)
+		     void *d, MFErrorHandler err)
 {
 
 #ifdef MFTIMINGS
@@ -158,7 +156,7 @@ void MFLOCANSpaceAdd(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector sum,
   starttime=clock();
 #endif
 
-  MFNVAdd(v0,v1,sum);
+  MFNVAdd(v0,v1,sum,err);
 
 #ifdef MFTIMINGS
     MFTimeMFNSpaceAdd+=clock()-starttime;
@@ -167,7 +165,7 @@ void MFLOCANSpaceAdd(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector sum,
 }
 
 void MFLOCANSpaceScale(MFNSpace cthis,double s, MFNVector v,MFNVector w,
-		       void *d)
+		       void *d, MFErrorHandler err)
 {
 #ifdef MFTIMINGS
   clock_t starttime;
@@ -176,8 +174,8 @@ void MFLOCANSpaceScale(MFNSpace cthis,double s, MFNVector v,MFNVector w,
   starttime=clock();
 #endif
 
-  LOCANVectorData* u_data = (LOCANVectorData *) MFNVectorGetData(v);
-  LOCANVectorData* ur_data = (LOCANVectorData *) MFNVectorGetData(w);
+  LOCANVectorData* u_data = (LOCANVectorData *) MFNVectorGetData(v,err);
+  LOCANVectorData* ur_data = (LOCANVectorData *) MFNVectorGetData(w,err);
   ur_data->u_ptr->update(s, *(u_data->u_ptr), 0.0);
 
 #ifdef MFTIMINGS
