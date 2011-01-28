@@ -221,7 +221,6 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
 
   meta_data.commit();
   const unsigned p_rank = bulk_data.parallel_rank();
-
   bulk_data.modification_begin();
 
   if ( !p_rank ) {
@@ -315,14 +314,36 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     std::cout <<" Cut Weight:             :"<<cut_wgt   <<std::endl;
     std::cout <<" Number on Boundary:     :"<<nboundary <<std::endl;
     std::cout <<" Number Adjancent:       :"<<nadj      <<std::endl;
+    {
+      stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
+      const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
+      const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+      const mesh::Entity *s = bulk_data.get_entity(side_rank,7);
+      if (s) {
+        const mesh::Entity & side = *s;
+        if (p_rank == side.owner_rank()) {
+          stk::mesh::PairIterRelation iElem = side.relations(elem_rank);
+          for ( ; iElem.first != iElem.second; ++iElem.first ) {
+            const mesh::Entity & elem = *iElem.first->entity();
+            const unsigned elemProc = elem.owner_rank();
+            if (elemProc!=p_rank) {
+              std::cout <<p_rank<<" Good: Found element of of side 7 not owned."
+                        <<" Element "<<elemProc
+                        <<" on processor "<<p_rank
+                        <<" owned by "<<elemProc<<std::endl;
+            }
+          }
+        }
+      }
+    }
   }
   
   const double imbalance_threshold = 1.5;
   bool do_rebal = imbalance_threshold < stk::rebalance::check_balance(bulk_data, NULL, element_rank);
 
   if( !p_rank )
-    std::cerr << std::endl
-     << "imbalance_threshold after rebalance = " << imbalance_threshold <<", "<<do_rebal << std::endl;
+    std::cout << std::endl
+     << "Use Case 4: imbalance_threshold after rebalance 1 = " << imbalance_threshold <<", "<<do_rebal << std::endl;
 
   {
     stk::rebalance::use_cases::GreedySideset greedy_sideset(comm, surfaces, bulk_data);
@@ -333,9 +354,28 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   do_rebal = imbalance_threshold < stk::rebalance::check_balance(bulk_data, NULL, element_rank);
 
   if( !p_rank )
-    std::cerr << std::endl
-     << "imbalance_threshold after rebalance = " << imbalance_threshold <<", "<<do_rebal << std::endl;
-
+    std::cout << std::endl
+     << "Use Case 4: imbalance_threshold after rebalance 2 = " << imbalance_threshold <<", "<<do_rebal << std::endl;
+  {
+    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
+    const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
+    const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+    mesh::Entity *s = bulk_data.get_entity(side_rank,7);
+    if (s) {
+      mesh::Entity & side = *s;
+      if (p_rank == side.owner_rank()) {
+        stk::mesh::PairIterRelation iElem = side.relations(elem_rank);
+        for ( ; iElem.first != iElem.second; ++iElem.first ) {
+          const mesh::Entity & elem = *iElem.first->entity();
+          const unsigned elemProc = elem.owner_rank();
+          if (elemProc!=p_rank) {
+            std::cerr <<p_rank<<" Error: Found element of of side 7 not owned:"<<elemProc<<std::endl;
+          }
+          ThrowRequire(elemProc==p_rank);
+        }
+      }
+    }
+  }
   // Check that we satisfy our threshhold
   bool result = !do_rebal ;
 
