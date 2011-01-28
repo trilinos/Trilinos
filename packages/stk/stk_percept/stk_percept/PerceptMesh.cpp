@@ -465,11 +465,11 @@ namespace stk {
     int PerceptMesh::
     getSpatialDim()
     {
-#ifndef NDEBUG
-      const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getMetaData()->universal_part());
-      unsigned dataStride = r.stride[0] ;
-      VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::getSpatialDim() bad spatial dim");
-#endif
+// #ifndef NDEBUG
+//       const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getMetaData()->universal_part());
+//       unsigned dataStride = r.stride[0] ;
+//       VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::getSpatialDim() bad spatial dim");
+// #endif
       return m_spatialDim;
     }
 

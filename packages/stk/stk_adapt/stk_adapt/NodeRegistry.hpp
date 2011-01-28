@@ -18,6 +18,8 @@
 #include <stk_percept/stk_mesh.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
+#include <stk_percept/Teuchos_My_Hashtable.hpp>
+#include <stk_percept/Hashtable.hpp>
 
 #include <boost/array.hpp>
 
@@ -29,6 +31,8 @@
 #define NODE_REGISTRY_MAP_TYPE_BOOST 1
 #define NODE_REGISTRY_MAP_TYPE_TR1 0
 #define NODE_REGISTRY_MAP_TYPE_STD 0
+#define NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE 0
+#define NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE 0
 
 /// current best is STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO 1, DO_REHASH 1
 #define STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO 1
@@ -48,6 +52,11 @@
 
 
 #include <stk_adapt/SubDimCell.hpp>
+
+#if NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE
+#include <Teuchos_Hashtable.hpp>
+#endif
+
 
 namespace stk {
   namespace adapt {
@@ -112,6 +121,53 @@ namespace stk {
     typedef boost::tuple<NodeIdsOnSubDimEntityType, EntityId> SubDimCellData;
 
     typedef SubDimCell<EntityId> SubDimCell_EntityId;
+  }
+}
+
+#if NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE
+namespace Teuchos
+{
+  //template <class T> int hashCode(const T& x);
+
+  typedef stk::adapt::SubDimCell_EntityId SDCell_HashTable_Key;
+  typedef stk::adapt::SubDimCellData      SDCell_HashTable_Value;
+  typedef Teuchos::Hashtable<SDCell_HashTable_Key, SDCell_HashTable_Value> SDCell_HashTable;
+
+  template <> 
+  inline
+  int hashCode(const SDCell_HashTable_Key& x)
+  {
+    return (int)x.getHash();
+  }
+
+}
+#endif
+
+#if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
+namespace stk {
+  namespace adapt {
+    typedef stk::adapt::SubDimCell_EntityId SDCell_HashTable_Key;
+    typedef stk::adapt::SubDimCellData      SDCell_HashTable_Value;
+    typedef percept::Hashtable<SDCell_HashTable_Key, SDCell_HashTable_Value> SDCell_HashTable;
+  }
+}
+
+namespace Teuchos
+{
+  //template <class T> int hashCode(const T& x);
+
+  template <> 
+  inline
+  int hashCode(const stk::adapt::SDCell_HashTable_Key& x)
+  {
+    return (int)x.getHash();
+  }
+
+}
+#endif
+
+namespace stk {
+  namespace adapt {
 
     struct EntityPtr
     {
@@ -133,6 +189,7 @@ namespace stk {
     typedef tbb::scalable_allocator<std::pair<SubDimCell_EntityId const, SubDimCellData> > RegistryAllocator;
     typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4>, RegistryAllocator > SubDimCellToDataMap;
 #else
+
     typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4> > SubDimCellToDataMap;
     typedef boost::unordered_map<EntityId, EntityPtr > EntityRepo;
 
@@ -145,13 +202,46 @@ namespace stk {
 #endif
 
 #if NODE_REGISTRY_MAP_TYPE_STD
-#if SUBDIMCELL_USES_STL_SET
-    typedef map<SubDimCell_EntityId, SubDimCellData> SubDimCellToDataMap;
-#else
-    typedef map<SubDimCell_EntityId, SubDimCellData, SubDimCell_compare<EntityId> > SubDimCellToDataMap;
-#endif
-    typedef map<EntityId, EntityPtr > EntityRepo;
 
+#  if STK_ADAPT_SUBDIMCELL_USES_STL_SET
+    typedef map<SubDimCell_EntityId, SubDimCellData> SubDimCellToDataMap;
+#  endif
+
+#  if STK_ADAPT_SUBDIMCELL_USES_STL_VECTOR
+    typedef map<SubDimCell_EntityId, SubDimCellData, SubDimCell_compare<EntityId> > SubDimCellToDataMap;
+#  endif
+
+#  if STK_ADAPT_SUBDIMCELL_USES_NO_MALLOC_ARRAY
+    typedef map<SubDimCell_EntityId, SubDimCellData, SubDimCell_compare<EntityId> > SubDimCellToDataMap;
+#  endif
+
+    typedef map<EntityId, EntityPtr > EntityRepo;
+#endif
+
+#if NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE
+    class SubDimCellToDataMapType : public Teuchos::SDCell_HashTable
+    {
+    public:
+      typedef Teuchos::SDCell_HashTable base_type;
+      typedef Teuchos::SDCell_HashTable_Key Key;
+      typedef Teuchos::SDCell_HashTable_Value Value;
+
+      SubDimCellToDataMapType(int capacity=101, double rehashDensity = 0.8) : base_type(capacity, rehashDensity) {}
+
+      //Value& operator[](Key& key) { return *const_cast<Value *>(&(get(key))); }
+      //const Value& operator[](Key& key) const { return get(key); }
+      
+    };
+
+    typedef SubDimCellToDataMapType SubDimCellToDataMap;
+    //typedef SubDimCellToDataMapType TSubDimCellToDataMap;
+
+    typedef boost::unordered_map<EntityId, EntityPtr > EntityRepo;
+#endif
+
+#if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
+    typedef SDCell_HashTable SubDimCellToDataMap;
+    typedef boost::unordered_map<EntityId, EntityPtr > EntityRepo;
 #endif
 
     // Rank of sub-dim cells needing new nodes, which sub-dim entity, one non-owning element identifier, nodeId_elementOwnderId.first 
@@ -198,8 +288,11 @@ namespace stk {
       void initialize() //stk::CommAll& comm_all)
       {
         //m_comm_all = &comm_all;
-        m_cell_2_data_map.clear();
+#if NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE || NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
         
+#else
+        m_cell_2_data_map.clear();
+#endif        
         for (unsigned i = 0; i < mesh::EntityRankEnd; i++) m_entity_repo[i].clear();
       }
 
@@ -305,6 +398,10 @@ namespace stk {
           {
             //!NodeIdsOnSubDimEntityType nids(1u, 0u);
             NodeIdsOnSubDimEntityType nids(needed_entity_rank.second, 0u);
+#if NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE 
+            //m_cell_2_data_map.put(subDimEntity, SubDimCellData(nids, element.identifier()) );
+#else
+#endif
             m_cell_2_data_map[subDimEntity] = SubDimCellData(nids, element.identifier());
 
             return true;
@@ -318,6 +415,7 @@ namespace stk {
       ///   3. returns the new node after all communications are done
       bool checkForRemote(const Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd)
       {
+        EXCEPTWATCH;
         static const SubDimCellData empty_SubDimCellData;
         static CommDataType buffer_entry;
 
@@ -465,13 +563,11 @@ namespace stk {
         return get_entity(bulk, rank, id);
       }
 
+
       NodeIdsOnSubDimEntityType& getNewNodesOnSubDimEntity(const Entity& element,  EntityRank& needed_entity_rank, unsigned iSubDimOrd)
       {
         EXCEPTWATCH;
-        //SubDimCell_EntityId subDimEntity;
-
         static SubDimCell_EntityId subDimEntity;
-        //subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static const SubDimCellData empty_SubDimCellData;
         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
@@ -643,12 +739,17 @@ namespace stk {
 
 
         SubDimCellToDataMap::iterator iter;
-        for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); iter++)
+        for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
           {
             EXCEPTWATCH;
-            const SubDimCell_EntityId& subDimEntity = iter->first;
+#if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
+            const SubDimCell_EntityId& subDimEntity = (*iter).first();
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second();
+#else
+            const SubDimCell_EntityId& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+#endif
           
-            SubDimCellData& nodeId_elementOwnderId = iter->second;
             NodeIdsOnSubDimEntityType nodeIds_onSE = nodeId_elementOwnderId.get<GLOBAL_NODE_IDS>();
             //unsigned nidsz=nodeIds_onSE.size();
 
@@ -738,7 +839,7 @@ namespace stk {
                 EXCEPTWATCH;
                 double dnpts = subDimEntity.size();
 
-                for (SubDimCell_EntityId::iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ids++)
+                for (SubDimCell_EntityId::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                   {
                     EntityId nodeId = *ids;
 
@@ -879,7 +980,7 @@ namespace stk {
                 else
                   {
                     //double dnpts = subDimEntity.size();
-                    for (SubDimCell_EntityId::iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ids++)
+                    for (SubDimCell_EntityId::iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                       {
                         EntityId nodeId = *ids;
                         //Entity * node = m_eMesh.getBulkData()->get_entity(Node, nodeId);
@@ -948,11 +1049,19 @@ namespace stk {
                 std::vector<stk::mesh::Part*> remove_parts;
 
                 SubDimCellToDataMap::iterator iter;
-                for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); iter++)
+                for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
                   {
-                    const SubDimCell_EntityId& subDimEntity = iter->first;
-          
-                    SubDimCellData& nodeId_elementOwnderId = iter->second;
+                    //const SubDimCell_EntityId& subDimEntity = iter->first;
+                    //SubDimCellData& nodeId_elementOwnderId = iter->second;
+
+#if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
+                    const SubDimCell_EntityId& subDimEntity = (*iter).first();
+                    SubDimCellData& nodeId_elementOwnderId = (*iter).second();
+#else
+                    const SubDimCell_EntityId& subDimEntity = (*iter).first;
+                    SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+#endif
+
                     NodeIdsOnSubDimEntityType nodeIds_onSE = nodeId_elementOwnderId.get<GLOBAL_NODE_IDS>();
                     unsigned nidsz=nodeIds_onSE.size();
 
@@ -1013,7 +1122,7 @@ namespace stk {
                           }
                         else
                           {
-                            for (SubDimCell_EntityId::iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ids++)
+                            for (SubDimCell_EntityId::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                               {
                                 EntityId nodeId = *ids;
                                 Entity * node = get_entity_node(*m_eMesh.getBulkData(),Node, nodeId);
@@ -1178,9 +1287,13 @@ namespace stk {
         //throw std::runtime_error("not ready");
         //return m_cell_2_data_map.size(); 
         unsigned sz=0;
-        for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); cell_iter++)
+        for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
           {
+#if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
+            SubDimCellData& data = (*cell_iter).second();
+#else
             SubDimCellData& data = (*cell_iter).second;
+#endif
             //EntityId& owning_elementId = data.get<OWNING_ELEMENT_ID>();
             NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<GLOBAL_NODE_IDS>();
 
@@ -1191,9 +1304,13 @@ namespace stk {
       unsigned local_size() 
       { 
         unsigned sz=0;
-        for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); cell_iter++)
+        for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
           {
+#if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
+            SubDimCellData& data = (*cell_iter).second();
+#else
             SubDimCellData& data = (*cell_iter).second;
+#endif
             EntityId& owning_elementId = data.get<OWNING_ELEMENT_ID>();
             NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<GLOBAL_NODE_IDS>();
 
@@ -1220,9 +1337,13 @@ namespace stk {
         if (0)
           {
             unsigned sz=0;
-            for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); cell_iter++)
+            for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
               {
+#if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
+                SubDimCellData& data = (*cell_iter).second();
+#else
                 SubDimCellData& data = (*cell_iter).second;
+#endif
                 EntityId& owning_elementId = data.get<OWNING_ELEMENT_ID>();
                 NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<GLOBAL_NODE_IDS>();
 
@@ -1378,9 +1499,13 @@ namespace stk {
       
         // set map values to new node id's
         unsigned inode=0;
-        for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); cell_iter++)
+        for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
           {
+#if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
+            SubDimCellData& data = (*cell_iter).second();
+#else
             SubDimCellData& data = (*cell_iter).second;
+#endif
             EntityId& owning_elementId = data.get<OWNING_ELEMENT_ID>();
 
             //Entity * owning_element = m_eMesh.getBulkData()->get_entity(mesh::Element, owning_elementId);
@@ -1452,6 +1577,9 @@ namespace stk {
       percept::PerceptMesh& m_eMesh;
       stk::CommAll m_comm_all;
       SubDimCellToDataMap m_cell_2_data_map;
+#if NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE
+      //TSubDimCellToDataMap m_cell_2_data_map_t;
+#endif
 
       vector<EntityProc> m_nodes_to_ghost;
     public:

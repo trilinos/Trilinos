@@ -45,6 +45,7 @@
 // set to 0 for doing global (and thus more efficient) computation of node coords and adding to parts
 #define STK_ADAPT_URP_LOCAL_NODE_COMPS 0
 
+// set to 1 to turn on some print tracing and cpu/mem tracing
 #define TRACE_STAGE_PRINT_ON 0
 #define TRACE_STAGE_PRINT (TRACE_STAGE_PRINT_ON && (m_eMesh.getRank()==0))
 

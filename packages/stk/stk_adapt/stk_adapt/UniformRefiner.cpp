@@ -638,7 +638,7 @@ namespace stk {
         {
           //std::string msg = 
           TRACE_PRINT(  "UniformRefiner:connectLocal color= " + percept::toString(icolor) + " [ " +
-                        percept::toString (((double)icolor)/((double)elementColors.size())*100 ) + " %] ");
+                        (percept::toString (((double)icolor)/((double)elementColors.size())*100 )).substr(0,4) + " %] ");
           
           if (elementColors[icolor].size() == 0)
             {
@@ -1108,6 +1108,7 @@ namespace stk {
               // CHECK
               NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element, needed_entity_ranks[ineed_ent].first, iSubDimOrd);
               
+
               if (!nodeIds_onSE[0]) {
                 std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " << std::endl;
                 throw std::logic_error("UniformRefiner logic error");
