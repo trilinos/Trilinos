@@ -267,8 +267,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
 
   partition.set_balance_step(MockPartition::FIRST);
   // Exercise the threshhold calculation by using imblance_threshhold > 1.0
-  double imblance_threshhold = 1.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, imblance_threshhold);
+  bool do_rebal = 1.5 < stk::rebalance::check_balance(bulk_data, &weight_field, element_rank);
   if( do_rebal )
   {
     // Pick a few values as negative to exercise a check in rebalance::rebalance(...)
@@ -288,18 +287,10 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
   }
 
   partition.set_balance_step(MockPartition::SECOND);
-  // Force a rebalance by using imblance_threshhold < 1.0
-  imblance_threshhold = 0.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, imblance_threshhold);
-  if( do_rebal )
-    stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
+  stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
 
   partition.set_balance_step(MockPartition::THIRD);
-  // Force a rebalance by using imblance_threshhold < 1.0
-  imblance_threshhold = 0.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, imblance_threshhold);
-  if( do_rebal )
-    stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
+  stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
 
   if ( 1 < p_size ) {
     // Only P1 has any nodes or elements
@@ -378,7 +369,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
 /// \skipline double imblance_threshhold
 ///
 /// We interrogate whether a rebalance is needed by calling
-/// \skipline rebalance::rebalance_needed
+/// \skipline rebalance::check_balance
 /// If the current imbalance is above the threshold, the call returns true
 /// and we can then invoke the actual rebalance via
 /// \skip Do the actual rebalance

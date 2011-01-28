@@ -18,32 +18,26 @@
 
 //----------------------------------------------------------------------
 
-bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data, 
+double stk::rebalance::check_balance(mesh::BulkData &    bulk_data, 
                                       const mesh::Field<double> * load_measure,
-                                      double & imbalance_threshold,
                                       const stk::mesh::EntityRank rank,
                                       const mesh::Selector *selector)
 {
-  if ( (imbalance_threshold < 1.0) ) return true;
-
   const ParallelMachine    &comm = bulk_data.parallel();
   double my_load = 0.0;
 
   const mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
-  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
-  const stk::mesh::EntityRank element_rank = (rank != stk::mesh::InvalidEntityRank ) ? rank :
-                                             stk::mesh::fem::element_rank(fem);
 
   mesh::EntityVector local_elems;
   if (selector) {
     mesh::get_selected_entities(*selector,
-                                bulk_data.buckets(element_rank),
+                                bulk_data.buckets(rank),
                                 local_elems);
   } else {
     mesh::Selector select_owned( meta_data.locally_owned_part() );
     // Determine imbalance based on current element decomposition
     mesh::get_selected_entities(select_owned,
-                                bulk_data.buckets(element_rank),
+                                bulk_data.buckets(rank),
                                 local_elems);
   }
 
@@ -65,10 +59,9 @@ bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
   const int proc_size = parallel_machine_size(comm);
   const double avg_load = tot_load / proc_size;
 
-  bool need_to_rebalance =  max_load / avg_load > imbalance_threshold;
-  imbalance_threshold = max_load / avg_load;
+  const double imbalance_threshold = max_load / avg_load;
 
-  return need_to_rebalance;
+  return imbalance_threshold;
 }
 
 

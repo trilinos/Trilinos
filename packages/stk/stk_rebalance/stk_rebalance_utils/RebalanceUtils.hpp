@@ -44,10 +44,9 @@ namespace stk {
  * greater than \a imbalance_threshold.
  */
 
-    bool rebalance_needed(mesh::BulkData            & bulk_data,
+    double check_balance(mesh::BulkData      & bulk_data,
                       const mesh::Field<double> * load_measure,
-                      double                    & imbalance_threshold,
-                      const stk::mesh::EntityRank rank = stk::mesh::InvalidEntityRank,
+                      const stk::mesh::EntityRank rank,
                       const mesh::Selector      * selector=NULL);
 
     bool verify_dependent_ownership(const stk::mesh::EntityRank & parent_rank,
