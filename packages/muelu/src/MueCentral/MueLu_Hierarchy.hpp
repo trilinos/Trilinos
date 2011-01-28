@@ -206,7 +206,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          ifpackList.set("relaxation: damping factor", (double) 1.0);
          ifpackList.set("relaxation: zero starting solution", false);
          RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-         RCP<SmootherFactory>    smooFact = rcp( new SmootherFactory(smoother) );
+         smooFact = rcp( new SmootherFactory(smoother) );
 //FIXME #endif
        }
        if (numDesiredLevels == -1)

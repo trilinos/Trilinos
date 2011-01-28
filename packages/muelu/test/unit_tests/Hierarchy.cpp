@@ -177,6 +177,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
+  RCP<CrsOperator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(99);
+  levelOne->SetA(A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
@@ -197,6 +199,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
+  RCP<CrsOperator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(99);
+  levelOne->SetA(A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
@@ -218,6 +222,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
+  RCP<CrsOperator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(99);
+  levelOne->SetA(A);
 
   Hierarchy H;
   H.SetLevel(levelOne);

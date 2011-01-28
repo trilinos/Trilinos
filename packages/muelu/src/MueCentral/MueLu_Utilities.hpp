@@ -240,7 +240,7 @@ namespace MueLu {
         }
       }
 
-      static RCP< Operator > D = Teuchos::rcp( new CrsOperator(rowmap, 1) );
+      RCP< Operator > D = Teuchos::rcp( new CrsOperator(rowmap, 1) );
       std::vector<LO> diagInd(1);
       Teuchos::ArrayView<GO> iv(&diagInd[0],1);
       //for (size_t i=0; i< A->getNodeNumRows(); ++i) {

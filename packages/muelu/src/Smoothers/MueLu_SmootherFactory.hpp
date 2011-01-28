@@ -171,7 +171,7 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
     //@{
 
     //! Set smoother prototypes.
-    void SetSmootherPrototypes(RCP<SmootherPrototype> preProto, RCP<SmootherPrototype> postProto)
+    void SetSmootherPrototypes(RCP<SmootherPrototype> &preProto, RCP<SmootherPrototype> &postProto)
     {
       PreSmootherPrototype_ = preProto;
       PostSmootherPrototype_ = postProto;

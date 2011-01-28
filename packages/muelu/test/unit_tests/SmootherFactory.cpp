@@ -2,6 +2,8 @@
 
 #include "MueLu_Version.hpp"
 
+#include "test_helpers.hpp"
+
 #include "MueLu_Level.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_IfpackSmoother.hpp"
@@ -96,6 +98,35 @@ TEUCHOS_UNIT_TEST(SmootherFactory, SetSmootherPrototypes)
   TEUCHOS_TEST_EQUALITY(checkSmoo1 == newSmoo1, true, out, success);
   TEUCHOS_TEST_EQUALITY(checkSmoo2 == newSmoo2, true, out, success);
 
+}
+
+TEUCHOS_UNIT_TEST(SmootherFactory, Build)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  out << "version: " << MueLu::Version() << std::endl;
+  out << "Testing SmootherFactory::Build method" << std::endl;
+
+  Teuchos::ParameterList  ifpackList;
+  ifpackList.set("relaxation: type", "Gauss-Seidel");
+  ifpackList.set("relaxation: sweeps", (LO) 1);
+  ifpackList.set("relaxation: damping factor", (SC) 1.0);
+  RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smoother) );
+
+  RCP<Level> aLevel = rcp(new Level() );
+  aLevel->SetLevelID(1);
+  RCP<CrsOperator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(99);
+
+  RCP<SmootherPrototype>  preSmoo, postSmoo;
+  //Check for exception if matrix is not set in Level.
+  //FIXME once Level-GetA() doesn't throw an exception, this must be changed
+  //TEST_THROW(smooFactory->Build(aLevel,preSmoo,postSmoo),MueLu::Exceptions::RuntimeError);
+  TEST_THROW(smooFactory->Build(aLevel,preSmoo,postSmoo),std::logic_error);
+
+  aLevel->SetA(A);
+  smooFactory->Build(aLevel,preSmoo,postSmoo);
 }
 
 }//namespace <anonymous>
