@@ -107,10 +107,10 @@ namespace panzer {
                               physicsBlocks);
     }
 
-   // build DOF Manager
-   /////////////////////////////////////////////////////////////
- 
-   // build the connection manager 
+    // build DOF Manager
+    /////////////////////////////////////////////////////////////
+
+    // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
@@ -118,26 +118,30 @@ namespace panzer {
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
  
-    panzer::EpetraLinearObjFactory<panzer::Traits,int> linObjFactory(Comm,dofManager);
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm,dofManager));
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,linObjFactory);
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,linObjFactory);
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,*linObjFactory);
+
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,*linObjFactory);
 
     panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb);
+    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
     ae_tm.buildObjects(builder);
 
-    RCP<Epetra_Map> ghosted_map = linObjFactory.getGhostedMap();
-    RCP<Epetra_CrsGraph> ghosted_graph = linObjFactory.getGhostedGraph();
+    // RCP<Epetra_Map> ghosted_map = linObjFactory->getGhostedMap();
+    // RCP<Epetra_CrsGraph> ghosted_graph = linObjFactory->getGhostedGraph();
     
-    panzer::AssemblyEngineInArgs input;
-    input.x = rcp(new Epetra_Vector(*ghosted_map));
-    input.dxdt = rcp(new Epetra_Vector(*ghosted_map));
-    input.f = rcp(new Epetra_Vector(*ghosted_map));
-    input.j = rcp(new Epetra_CrsMatrix(Copy, *ghosted_graph));
+    panzer::AssemblyEngineInArgs input(
+             linObjFactory->buildGhostedLinearObjContainer(),
+             linObjFactory->buildLinearObjContainer());
+    // input.x = rcp(new Epetra_Vector(*ghosted_map));
+    // input.dxdt = rcp(new Epetra_Vector(*ghosted_map));
+    // input.f = rcp(new Epetra_Vector(*ghosted_map));
+    // input.j = rcp(new Epetra_CrsMatrix(Copy, *ghosted_graph));
 
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);

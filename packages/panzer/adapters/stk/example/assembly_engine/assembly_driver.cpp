@@ -180,21 +180,22 @@ int main(int argc,char * argv[])
          = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
 
    // construct some linear algebra object, build object to pass to evaluators
-   panzer::EpetraLinearObjFactory<panzer::Traits,int> linObjFactory(Comm,dofManager);
+   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm,dofManager));
 
    // setup field manager build
    /////////////////////////////////////////////////////////////
  
    out << "SETUP FMB" << std::endl;
-   fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,linObjFactory);
-   fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,linObjFactory);
+   fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,*linObjFactory);
+   fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,*linObjFactory);
 
    // setup assembly engine
    /////////////////////////////////////////////////////////////
 
    // build assembly engine
    panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb);
+   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
    ae_tm.buildObjects(builder);
 
    // setup linear algebra and solve 
@@ -202,16 +203,12 @@ int main(int argc,char * argv[])
 
    // build ghosted variables
    out << "BUILD LA" << std::endl;
-   RCP<Thyra::MultiVectorBase<double> > ghostX = linObjFactory.getGhostedVector();
-   RCP<Thyra::MultiVectorBase<double> > ghostB = linObjFactory.getGhostedVector();
-   RCP<Thyra::LinearOpBase<double> > ghostA = linObjFactory.getGhostedMatrix();
+   RCP<panzer::EpetraLinearObjContainer> ghostCont 
+         = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(linObjFactory->buildGhostedLinearObjContainer());
+   RCP<panzer::EpetraLinearObjContainer> container 
+         = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(linObjFactory->buildLinearObjContainer());
 
-   // build global variables
-   RCP<Thyra::MultiVectorBase<double> > x = linObjFactory.getVector();
-   RCP<Thyra::MultiVectorBase<double> > b = linObjFactory.getVector();
-   RCP<Thyra::LinearOpBase<double> > A = linObjFactory.getMatrix();
-
-   panzer::AssemblyEngineInArgs input(ghostX,Teuchos::null,ghostB,ghostA);
+   panzer::AssemblyEngineInArgs input(ghostCont,container);
 
    // evaluate physics
    out << "EVALUTE" << std::endl;
@@ -220,10 +217,11 @@ int main(int argc,char * argv[])
 
    out << "RAN SUCCESSFULLY!" << std::endl;
 
+/*
    out << "SOLVE" << std::endl;
    // redistribute vectors and matrices so that we can parallel solve
-   linObjFactory.ghostToGlobalVector(*ghostB,*b);
-   linObjFactory.ghostToGlobalMatrix(*ghostA,*A);
+   linObjFactory->ghostToGlobalVector(*ghostB,*b);
+   linObjFactory->ghostToGlobalMatrix(*ghostA,*A);
 
    // solve with amesos
    Stratimikos::DefaultLinearSolverBuilder solverBuilder;
@@ -244,7 +242,7 @@ int main(int argc,char * argv[])
    }
 
    // redistribute solution vector
-   linObjFactory.globalToGhostVector(*x,*ghostX);
+   linObjFactory->globalToGhostVector(*x,*ghostX);
 
    out << "WRITE" << std::endl;
    RCP<const Epetra_Map> epetra_map = Teuchos::get_extra_data<RCP<const Epetra_Map> >(ghostX,"epetra_map");
@@ -252,6 +250,7 @@ int main(int argc,char * argv[])
 
    write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*epetra_x);
    mesh->writeToExodus("output.exo");
+*/
 
    return 0;
 }

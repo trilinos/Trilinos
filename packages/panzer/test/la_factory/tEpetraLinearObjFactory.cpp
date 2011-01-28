@@ -39,6 +39,7 @@ RCP<Epetra_MultiVector> getEpetraMultiVector(RCP<Thyra::MultiVectorBase<double> 
    return Thyra::get_Epetra_MultiVector(eMap,vec);
 }
 
+#if 0
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, vector_constr)
 {
    // build global (or serial communicator)
@@ -121,6 +122,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, vector_constr)
       }
    }
 }
+#endif
 
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 {
