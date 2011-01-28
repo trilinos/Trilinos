@@ -131,8 +131,14 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      void FillHierarchy() {
        RCP<SaPFactory> PFact = rcp(new SaPFactory());
        RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact));
-       FillHierarchy(PRFact);
+       RCP<RAPFactory> AcFact = rcp(new RAPFactory());
+       FillHierarchy(*PRFact,*AcFact);
      } //FillHierarchy()
+
+     void FillHierarchy(GenericPRFactory const &PRFact) {
+       RAPFactory AcFact;
+       FillHierarchy(PRFact,AcFact);
+     }
      
      /*! @brief Populate hierarchy with A's, R's, and P's.
          TODO should return status structure containing complexity, start level, end level
@@ -143,17 +149,14 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          order) a multigrid Hierarchy starting with information on 'startLevel' 
          and continuing for at most 'numDesiredLevels'. 
      */
-     void FillHierarchy(Teuchos::RCP<PRFactory> PRFact,
-                       Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
-                       int startLevel=0, int numDesiredLevels=10 )
+     //void FillHierarchy(Teuchos::RCP<PRFactory> PRFact,
+     //                  Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
+     void FillHierarchy(PRFactory const &PRFact,
+                        OperatorFactory const &AcFact,
+                        int startLevel=0, int numDesiredLevels=10 )
      {
        Teuchos::OSTab tab(out_);
        MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::FillHierachy()" << std::endl;
-       RCP<SaPFactory> PFact;
-       if (PRFact == Teuchos::null) {
-         PFact = rcp(new SaPFactory());
-         PRFact = rcp(new GenericPRFactory(PFact));
-       }
        bool goodBuild=true;
        int i = startLevel;
        while (i < startLevel + numDesiredLevels - 1)
@@ -163,17 +166,16 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            Levels_.push_back( Levels_[i]->Build(*out_) );
          }
          Levels_[i+1]->SetLevelID(i+1);
-         goodBuild = PRFact->Build(*(Levels_[i]),*(Levels_[i+1]) /*,MySpecs*/);
+         goodBuild = PRFact.Build(*(Levels_[i]),*(Levels_[i+1]));
          if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right way to cast?
          if (!goodBuild) {
            Levels_.resize(i+1); //keep only entries 0..i
            break;
          }
-         if (AcFact != Teuchos::null)
-           if ( !AcFact->Build(*(Levels_[i]),*(Levels_[i+1])) ) {
-             Levels_.resize(i+1); //keep only entries 0..i
-             break;
-           }
+         if ( !AcFact.Build(*(Levels_[i]),*(Levels_[i+1])) ) {
+           Levels_.resize(i+1); //keep only entries 0..i
+           break;
+         }
          ++i;
        } //while
      }

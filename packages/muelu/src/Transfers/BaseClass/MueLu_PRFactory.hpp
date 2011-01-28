@@ -46,7 +46,7 @@ class PRFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,N
     /*!
       @brief Abstract Build method.
     */
-    bool Build(Level &fineLevel, Level &coarseLevel) = 0;
+    bool Build(Level &fineLevel, Level &coarseLevel) const = 0;
     //@}
 
     //! @name Set methods.

@@ -85,7 +85,7 @@ class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, L
       //FIXME what does the return code mean (unclear in MueMat)?
       //FIXME how should nullspace be stored?
     */
-    bool BuildP(Level &fineLevel, Level &coarseLevel) {
+    bool BuildP(Level &fineLevel, Level &coarseLevel) const {
       Teuchos::OSTab tab(this->out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Building a prolongator" << std::endl;
 

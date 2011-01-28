@@ -58,7 +58,7 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
     //! @name Build methods.
     //@{
-    bool BuildP(Level & fineLevel, Level & coarseLevel) {
+    bool BuildP(Level & fineLevel, Level & coarseLevel) const {
       Teuchos::OSTab tab(this->out_); MueLu_cout(Teuchos::VERB_HIGH) << "TentativePFactory: Building tentative prolongator" << std::endl;
 
       //TODO get or generate fine grid nullspace here

@@ -51,7 +51,7 @@ class PFactory : public Teuchos::VerboseObject<PFactory<ScalarType,LocalOrdinal,
     /*!
       @brief Abstract Build method.
     */
-    virtual bool BuildP(Level &fineLevel, Level &coarseLevel) = 0;
+    virtual bool BuildP(Level &fineLevel, Level &coarseLevel) const = 0;
     //@}
 
     //! @name Set methods.

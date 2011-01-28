@@ -37,7 +37,7 @@ namespace MueLu {
     //! @name Build methods.
 
     //! Build an object with this factory.
-    virtual bool Build(Level & i, Level & j) = 0;
+    virtual bool Build(Level & i, Level & j) const = 0;
 
     //@}
 

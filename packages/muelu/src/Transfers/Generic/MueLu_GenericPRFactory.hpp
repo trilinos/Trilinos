@@ -72,7 +72,7 @@ class GenericPRFactory : public PRFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
     /*!
       @brief Build method.
     */
-    bool Build(Level &fineLevel, Level &coarseLevel) {
+    bool Build(Level &fineLevel, Level &coarseLevel) const {
 
       //FIXME what if map is a block map .... I'm pretty sure maxCoarseSize_ will always be point DOFs
       std::cout << "warning: if map is blocked, this comparison to maxCoarseSize_ will be wrong!" << std::endl;
