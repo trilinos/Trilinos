@@ -16,11 +16,6 @@
 class Epetra_Vector;
 class Epetra_CrsMatrix;
 
-namespace Thyra {
-template <typename ScalarT> class MultiVectorBase;
-template <typename ScalarT> class LinearOpBase;
-}
-
 namespace panzer {
 
   class LinearObjContainer;
@@ -43,16 +38,8 @@ namespace panzer {
     //! Static basis function data, key is basis name, value is index in the static_bases vector
     std::vector<Teuchos::RCP< panzer::BasisValues<double,Intrepid::FieldContainer<double> > > > bases;
     
-/*
-    Teuchos::RCP<Epetra_Vector> solution_vector;
-    Teuchos::RCP<Epetra_Vector> solution_deriv_vector;
-    Teuchos::RCP<Epetra_Vector> residual_vector;
-    Teuchos::RCP<Epetra_CrsMatrix> jacobian_matrix;
-*/
-
     Teuchos::RCP<panzer::LinearObjContainer> ghostedLinContainer;
     Teuchos::RCP<panzer::LinearObjContainer> linContainer;
-
   };
 
 } // namespace panzer

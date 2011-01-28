@@ -33,6 +33,11 @@ using Teuchos::rcp;
 #include "EpetraExt_VectorOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 
+#include "Thyra_VectorSpaceBase.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_LinearOpBase.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+
 #include "write_solution_data.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
@@ -217,11 +222,17 @@ int main(int argc,char * argv[])
 
    out << "RAN SUCCESSFULLY!" << std::endl;
 
-/*
    out << "SOLVE" << std::endl;
+
    // redistribute vectors and matrices so that we can parallel solve
-   linObjFactory->ghostToGlobalVector(*ghostB,*b);
-   linObjFactory->ghostToGlobalMatrix(*ghostA,*A);
+   linObjFactory->ghostToGlobalContainer(*ghostCont,*container);
+
+   Teuchos::RCP<const Thyra::LinearOpBase<double> > th_A = Thyra::epetraLinearOp(container->A);
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > range  = th_A->range();
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domain = th_A->domain();
+
+   Teuchos::RCP<Thyra::VectorBase<double> > th_x = Thyra::create_Vector(container->x,domain);
+   Teuchos::RCP<Thyra::VectorBase<double> > th_f = Thyra::create_Vector(container->f,range);
 
    // solve with amesos
    Stratimikos::DefaultLinearSolverBuilder solverBuilder;
@@ -229,28 +240,22 @@ int main(int argc,char * argv[])
    solverBuilder.setParameterList(validList);
    
    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = solverBuilder.createLinearSolveStrategy("Amesos");
-   RCP<Thyra::LinearOpWithSolveBase<double> > lows = Thyra::linearOpWithSolve(*lowsFactory, A.getConst());
-   Thyra::solve<double>(*lows, Thyra::NOTRANS, *b, x.ptr());
+   RCP<Thyra::LinearOpWithSolveBase<double> > lows = Thyra::linearOpWithSolve(*lowsFactory, th_A.getConst());
+   Thyra::solve<double>(*lows, Thyra::NOTRANS, *th_f, th_x.ptr());
 
    {
-      RCP<const Epetra_Map> epetra_map = Teuchos::get_extra_data<RCP<const Epetra_Map> >(x,"epetra_map");
-      RCP<Epetra_MultiVector> epetra_x = Thyra::get_Epetra_MultiVector(*epetra_map,x);
-
-      Teuchos::RCP<const Epetra_CrsMatrix> eop = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*A));
-      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*eop);
-      EpetraExt::MultiVectorToMatrixMarketFile("x_vec.mm",*epetra_x);
+      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*container->A);
+      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*container->x);
+      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*container->f);
    }
 
    // redistribute solution vector
-   linObjFactory->globalToGhostVector(*x,*ghostX);
+   linObjFactory->globalToGhostContainer(*container,*ghostCont);
 
    out << "WRITE" << std::endl;
-   RCP<const Epetra_Map> epetra_map = Teuchos::get_extra_data<RCP<const Epetra_Map> >(ghostX,"epetra_map");
-   RCP<Epetra_MultiVector> epetra_x = Thyra::get_Epetra_MultiVector(*epetra_map,ghostX);
 
-   write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*epetra_x);
+   write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ghostCont->x);
    mesh->writeToExodus("output.exo");
-*/
 
    return 0;
 }

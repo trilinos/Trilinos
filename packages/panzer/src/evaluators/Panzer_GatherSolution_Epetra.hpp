@@ -14,11 +14,6 @@
 class Epetra_Vector;
 class Epetra_CrsMatrix;
 
-namespace Thyra {
-template <typename ScalarT> class MultiVectorBase;
-template <typename ScalarT> class LinearOpBase;
-}
-
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>

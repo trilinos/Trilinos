@@ -7,9 +7,6 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 

@@ -7,11 +7,6 @@ class Epetra_Vector;
 class Epetra_CrsMatrix;
 class Epetra_Map;
 
-namespace Thyra {
-template <typename ScalarT> class MultiVectorBase;
-template <typename ScalarT> class LinearOpBase;
-}
-
 namespace panzer {
 
   class LinearObjContainer;

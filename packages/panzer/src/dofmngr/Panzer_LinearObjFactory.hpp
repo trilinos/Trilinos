@@ -73,7 +73,14 @@ public:
     template <typename BuilderT>
     void buildGatherScatterEvaluators(const BuilderT & builder);
 
+   /** Build a container with all the neccessary linear algebra objects. This is
+     * the non-ghosted version.
+     */ 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const = 0;
+
+   /** Build a container with all the neccessary linear algebra objects. This is
+     * the ghosted version.
+     */ 
    virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const = 0;
 
    virtual void globalToGhostContainer(const LinearObjContainer & container,
