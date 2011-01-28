@@ -19,6 +19,8 @@
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
 
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
+
 //----------------------------------------------------------------------
 
 using namespace stk::mesh::fixtures;

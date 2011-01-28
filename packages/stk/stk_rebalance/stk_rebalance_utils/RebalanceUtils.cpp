@@ -7,9 +7,71 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_rebalance_utils/RebalanceUtils.hpp>
+
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+
 
 //----------------------------------------------------------------------
+
+bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data, 
+                                      const mesh::Field<double> * load_measure,
+                                      double & imbalance_threshold,
+                                      const stk::mesh::EntityRank rank,
+                                      const mesh::Selector *selector)
+{
+  if ( (imbalance_threshold < 1.0) ) return true;
+
+  const ParallelMachine    &comm = bulk_data.parallel();
+  double my_load = 0.0;
+
+  const mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
+  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
+  const stk::mesh::EntityRank element_rank = (rank != stk::mesh::InvalidEntityRank ) ? rank :
+                                             stk::mesh::fem::element_rank(fem);
+
+  mesh::EntityVector local_elems;
+  if (selector) {
+    mesh::get_selected_entities(*selector,
+                                bulk_data.buckets(element_rank),
+                                local_elems);
+  } else {
+    mesh::Selector select_owned( meta_data.locally_owned_part() );
+    // Determine imbalance based on current element decomposition
+    mesh::get_selected_entities(select_owned,
+                                bulk_data.buckets(element_rank),
+                                local_elems);
+  }
+
+  for(mesh::EntityVector::iterator elem_it = local_elems.begin(); elem_it != local_elems.end(); ++elem_it)
+  {
+    if (load_measure) {
+      const double * load_val = mesh::field_data(*load_measure, **elem_it);
+      my_load += *load_val;
+    } else {
+      my_load += 1;
+    }   
+  }
+
+  double max_load = my_load;
+  double tot_load = my_load;
+
+  all_reduce(comm, ReduceMax<1>(&max_load) & ReduceSum<1>(&tot_load));
+
+  const int proc_size = parallel_machine_size(comm);
+  const double avg_load = tot_load / proc_size;
+
+  bool need_to_rebalance =  max_load / avg_load > imbalance_threshold;
+  imbalance_threshold = max_load / avg_load;
+
+  return need_to_rebalance;
+}
+
+
 
 bool stk::rebalance::verify_dependent_ownership( const stk::mesh::EntityRank & parent_rank,
                                                  stk::mesh::EntityVector & entities, 
