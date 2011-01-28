@@ -222,8 +222,8 @@ int main(int argc,char * argv[])
 
    out << "SOLVE" << std::endl;
    // redistribute vectors and matrices so that we can parallel solve
-   linObjFactory.ghostToGlobalVector(ghostB,b);
-   linObjFactory.ghostToGlobalMatrix(ghostA,A);
+   linObjFactory.ghostToGlobalVector(*ghostB,*b);
+   linObjFactory.ghostToGlobalMatrix(*ghostA,*A);
 
    // solve with amesos
    Stratimikos::DefaultLinearSolverBuilder solverBuilder;
@@ -244,7 +244,7 @@ int main(int argc,char * argv[])
    }
 
    // redistribute solution vector
-   linObjFactory.globalToGhostVector(x,ghostX);
+   linObjFactory.globalToGhostVector(*x,*ghostX);
 
    out << "WRITE" << std::endl;
    RCP<const Epetra_Map> epetra_map = Teuchos::get_extra_data<RCP<const Epetra_Map> >(ghostX,"epetra_map");

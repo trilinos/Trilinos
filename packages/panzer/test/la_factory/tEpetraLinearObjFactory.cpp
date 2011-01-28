@@ -86,7 +86,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, vector_constr)
 
    // run parallel assembly for global vector
    eVec.PutScalar(-10000.0);
-   la_factory.ghostToGlobalVector(ghostedVec,vec);
+   la_factory.ghostToGlobalVector(*ghostedVec,*vec);
 
    // check global vector 
    {
@@ -104,7 +104,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, vector_constr)
 
    // construct ghosted vector
    eGhostedVec.PutScalar(-10000.0);
-   la_factory.globalToGhostVector(vec,ghostedVec);
+   la_factory.globalToGhostVector(*vec,*ghostedVec);
 
    // check ghosted vector 
    {

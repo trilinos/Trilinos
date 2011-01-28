@@ -80,8 +80,8 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > EpetraLinearObjFactory<Traits,LocalOr
 
 
 template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalMatrix(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & ghostA, 
-                                                                const Teuchos::RCP<Thyra::LinearOpBase<double> > & A) const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalMatrix(const Thyra::LinearOpBase<double> & ghostA, 
+                                                                       Thyra::LinearOpBase<double> & A) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -89,8 +89,8 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalMatrix(const Teu
 
    // grab CrsMatrix objects
    RCP<Epetra_Export> exporter = getGhostedExport();
-   RCP<const Epetra_CrsMatrix> eGhostA = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*ghostA));
-   RCP<Epetra_CrsMatrix> eA = rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*A));
+   RCP<const Epetra_CrsMatrix> eGhostA = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(ghostA));
+   RCP<Epetra_CrsMatrix> eA = rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(A));
 
    // do the global distribution
    eA->PutScalar(0.0);
@@ -98,8 +98,19 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalMatrix(const Teu
 }
 
 template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalVector(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & ghostV, 
-                                                                const Teuchos::RCP<Thyra::MultiVectorBase<double> > & V) const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::assignToMatrix(Thyra::LinearOpBase<double> & oper,double value)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcp_dynamic_cast;
+
+   RCP<Epetra_CrsMatrix> eA = rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(oper));
+   eA->PutScalar(value);
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalVector(const Thyra::MultiVectorBase<double> & ghostV, 
+                                                                       Thyra::MultiVectorBase<double> & V) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -120,8 +131,8 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalVector(const Teu
 }
 
 template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostVector(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & V, 
-                                                                const Teuchos::RCP<Thyra::MultiVectorBase<double> > & ghostV) const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostVector(const Thyra::MultiVectorBase<double> & V, 
+                                                                       Thyra::MultiVectorBase<double> & ghostV) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp;

@@ -38,14 +38,19 @@ public:
    virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > getVector() const;
    virtual Teuchos::RCP<Thyra::LinearOpBase<double> > getMatrix() const;
 
-   virtual void ghostToGlobalMatrix(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & ghostA, 
-                                      const Teuchos::RCP<Thyra::LinearOpBase<double> > & A) const;
+   virtual void ghostToGlobalMatrix(const Thyra::LinearOpBase<double> & ghostA, 
+                                    Thyra::LinearOpBase<double> & A) const;
 
-   virtual void ghostToGlobalVector(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & ghostA, 
-                                    const Teuchos::RCP<Thyra::MultiVectorBase<double> > & A) const;
+   virtual void ghostToGlobalVector(const Thyra::MultiVectorBase<double> & ghostA, 
+                                    Thyra::MultiVectorBase<double> & A) const;
 
-   virtual void globalToGhostVector(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & A, 
-                                    const Teuchos::RCP<Thyra::MultiVectorBase<double> > & ghostA) const;
+   virtual void globalToGhostVector(const Thyra::MultiVectorBase<double> & A, 
+                                    Thyra::MultiVectorBase<double> & ghostA) const;
+
+   /** Do a simple assignment to a linear operator. The intention is that this
+     * sets up the operator to be filled.
+     */
+   virtual void assignToMatrix(Thyra::LinearOpBase<double> & oper,double value);
 
    //! get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getMap() const;
