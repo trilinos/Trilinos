@@ -142,15 +142,11 @@ STKUNIT_UNIT_TEST(UnitTestZoltanGraph, testUnit)
   // end configure snippet
   stk::mesh::Selector selector(meta_data.universal_part());
 
-  // Force a rebalance by using imbalance_threshold < 1.0
-  double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold,  stk::mesh::fem::node_rank(top_data), &selector);
   // Coordinates are passed to support geometric-based load balancing algorithms
-  if( do_rebal )
-    stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition, stk::mesh::fem::node_rank(top_data));
+  stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition, stk::mesh::fem::node_rank(top_data));
 
-  imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold,  stk::mesh::fem::node_rank(top_data), &selector);
+  const double imbalance_threshold = stk::rebalance::check_balance(bulk_data, NULL, stk::mesh::fem::node_rank(top_data), &selector);
+  const bool do_rebal = 1.5 < imbalance_threshold;
 
   // Check that we satisfy our threshhold
   STKUNIT_ASSERT( !do_rebal );
@@ -188,7 +184,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanGraph, testUnit)
 /// \dontinclude UnitTestZoltanGraph.cpp
 /// \skip Configure Zoltan to use graph-based partitioning
 /// \until end configure snippet
-/// and then calling rebalance_needed and rebalance with NULL weight fields 
+/// and then calling check_balance and rebalance with NULL weight fields 
 /// and calling rebalance with non-NULL coordinates, eg
 /// \skip double imbalance_threshold = 
 /// \until rebalance::rebalance(
