@@ -12,15 +12,13 @@
 #include "Panzer_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_ScatterResidual_Epetra.hpp"
 #include "Panzer_ScatterDirichletResidual_Epetra.hpp"
 #include "Panzer_GatherSolution_Epetra.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 
 #include "Teuchos_RCP.hpp"
-
-#include "Thyra_MultiVectorBase.hpp"
-#include "Thyra_LinearOpBase.hpp"
 
 namespace panzer {
 
@@ -32,25 +30,33 @@ public:
 
    virtual ~EpetraLinearObjFactory();
 
-   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > getGhostedVector() const;
-   virtual Teuchos::RCP<Thyra::LinearOpBase<double> > getGhostedMatrix() const;
+/*************** Linear object factory methods *******************/
 
-   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > getVector() const;
-   virtual Teuchos::RCP<Thyra::LinearOpBase<double> > getMatrix() const;
+   virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
 
-   virtual void ghostToGlobalMatrix(const Thyra::LinearOpBase<double> & ghostA, 
-                                    Thyra::LinearOpBase<double> & A) const;
+   virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const;
 
-   virtual void ghostToGlobalVector(const Thyra::MultiVectorBase<double> & ghostA, 
-                                    Thyra::MultiVectorBase<double> & A) const;
+   virtual void globalToGhostContainer(const LinearObjContainer & container,
+                                       LinearObjContainer & ghostContainer) const;
+   virtual void ghostToGlobalContainer(const LinearObjContainer & ghostContainer,
+                                       LinearObjContainer & container) const;
 
-   virtual void globalToGhostVector(const Thyra::MultiVectorBase<double> & A, 
-                                    Thyra::MultiVectorBase<double> & ghostA) const;
+   //! Use preconstructed scatter evaluators
+   template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
+   { return Teuchos::rcp(new ScatterResidual_Epetra<EvalT,Traits>); }
 
-   /** Do a simple assignment to a linear operator. The intention is that this
-     * sets up the operator to be filled.
-     */
-   virtual void assignToMatrix(Thyra::LinearOpBase<double> & oper,double value);
+   //! Use preconstructed gather evaluators
+   template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
+   { return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits>); }
+
+   //! Use preconstructed dirichlet scatter evaluators
+   template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
+   { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<EvalT,Traits>); }
+
+/*************** Epetra based methods *******************/
 
    //! get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getMap() const;
@@ -70,22 +76,16 @@ public:
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Export> getGhostedExport() const;
 
-   //! Use preconstructed scatter evaluators
-   template <typename EvalT>
-   Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
-   { return Teuchos::rcp(new ScatterResidual_Epetra<EvalT,Traits>); }
-
-   //! Use preconstructed gather evaluators
-   template <typename EvalT>
-   Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
-   { return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits>); }
-
-   //! Use preconstructed dirichlet scatter evaluators
-   template <typename EvalT>
-   Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
-   { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<EvalT,Traits>); }
-
 protected:
+   Teuchos::RCP<Epetra_Vector> getGhostedEpetraVector() const;
+   Teuchos::RCP<Epetra_Vector> getEpetraVector() const;
+   Teuchos::RCP<Epetra_CrsMatrix> getEpetraMatrix() const;
+   Teuchos::RCP<Epetra_CrsMatrix> getGhostedEpetraMatrix() const;
+
+   void ghostToGlobalEpetraVector(const Epetra_Vector in,Epetra_Vector & out) const;
+   void ghostToGlobalEpetraMatrix(const Epetra_CrsMatrix in,Epetra_CrsMatrix & out) const;
+   void globalToGhostEpetraVector(const Epetra_Vector in,Epetra_Vector & out) const;
+
    // get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> buildMap() const;
    virtual const Teuchos::RCP<Epetra_Map> buildGhostedMap() const;

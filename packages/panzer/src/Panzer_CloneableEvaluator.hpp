@@ -2,6 +2,7 @@
 #define PANZER_CloneableEvaluator_H
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace panzer {
 

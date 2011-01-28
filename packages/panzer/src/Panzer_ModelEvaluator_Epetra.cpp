@@ -3,6 +3,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 
 panzer::ModelEvaluator_Epetra::
@@ -12,6 +13,7 @@ ModelEvaluator_Epetra(Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb,
   lof_(lof)
 {
   using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
 
   map_x_ = lof->getMap();
   x0_ = rcp(new Epetra_Vector(*map_x_));
@@ -20,13 +22,22 @@ ModelEvaluator_Epetra(Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb,
   // Initialize the graph for W CrsMatrix object
   W_graph_ = lof->getGraph();
 
-  panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb);
+  panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,lof);
   ae_tm_.buildObjects(builder);
 
+  ae_inargs_ = rcp(new panzer::AssemblyEngineInArgs(lof->buildGhostedLinearObjContainer(),
+                                                    lof->buildLinearObjContainer()));
+  
+  // for convenience save the container objects
+  ghostedContainer_ = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->ghostedContainer_);
+  container_ = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->container_);
+
+/*
   ae_inargs_.x = rcp(new Epetra_Vector(*(lof->getGhostedMap())));
   ae_inargs_.dxdt = rcp(new Epetra_Vector(*(lof->getGhostedMap())));
   ae_inargs_.f = rcp(new Epetra_Vector(*(lof->getGhostedMap())));
   ae_inargs_.j = rcp(new Epetra_CrsMatrix(View, *(lof->getGhostedGraph())));
+*/
 
   isInitialized_ = true;
 }
@@ -101,23 +112,26 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
 
   // move global solution to ghosted solution
   RCP<Epetra_Import> importer = lof_->getGhostedImport();
-  ae_inargs_.x->Import(x, *importer, Insert);
+  ghostedContainer_->x->Import(x,*importer,Insert);
+  // ae_inargs_.x->Import(x, *importer, Insert);
 
   if(f_out) {
-    ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluate(ae_inargs_);
+    ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluate(*ae_inargs_);
 
     // move ghosted residual to global residual
     RCP<Epetra_Export> exporter = lof_->getGhostedExport();
     f_out->PutScalar(0.0);
-    f_out->Export(*ae_inargs_.f, *exporter, Add);
+    // f_out->Export(*ae_inargs_.f, *exporter, Add);
+    f_out->Export(*ghostedContainer_->f, *exporter, Add);
   }
   if(W_out) {
-    ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs_);
+    ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(*ae_inargs_);
 
     // move ghosted Jacobian to global Jacobian
     RCP<Epetra_Export> exporter = lof_->getGhostedExport();
     Epetra_CrsMatrix& J = dynamic_cast<Epetra_CrsMatrix&>(*W_out);
     J.PutScalar(0.0);
-    J.Export(*ae_inargs_.j, *exporter, Add);
+    // J.Export(*ae_inargs_.j, *exporter, Add);
+    J.Export(*ghostedContainer_->A, *exporter, Add);
   }
 }

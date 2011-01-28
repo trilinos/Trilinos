@@ -9,8 +9,9 @@
 //===========================================================================
 template <typename EvalT,typename LO,typename GO>
 panzer::AssemblyEngine<EvalT,LO,GO>::
-AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb) :
-  m_field_manager_builder(fmb)
+AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
+               const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof)
+  : m_field_manager_builder(fmb), m_lin_obj_factory(lof)
 { 
 
 }
@@ -40,15 +41,8 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
       for (std::size_t i = 0; i < w.size(); ++i) {
 	panzer::Workset& workset = w[i];
 
-	workset.solution_vector = in.x;
-	workset.solution_deriv_vector = in.dxdt;
-	workset.residual_vector = in.f;
-	workset.jacobian_matrix = in.j;
-
-	workset.th_solution_vector = in.th_x;
-	workset.th_solution_deriv_vector = in.th_dxdt;
-	workset.th_residual_vector = in.th_f;
-	workset.th_jacobian_matrix = in.th_j;
+        workset.ghostedLinContainer = in.ghostedContainer_;
+        workset.linContainer = in.container_;
 
 	fm->template evaluateFields<EvalT>(workset);
       }
@@ -133,18 +127,9 @@ evaluateBCs(const panzer::BCType bc_type,
 	  panzer::Workset& workset = 
 	    const_cast<panzer::Workset&>(wkst_it->second); 
 	  
-	  
-	  
 	  // We have one workset per face
-	  workset.solution_vector = in.x;
-	  workset.solution_deriv_vector = in.dxdt;
-	  workset.residual_vector = in.f;
-	  workset.jacobian_matrix = in.j;
-
-   	  workset.th_solution_vector = in.th_x;
-	  workset.th_solution_deriv_vector = in.th_dxdt;
-	  workset.th_residual_vector = in.th_f;
-	  workset.th_jacobian_matrix = in.th_j;
+      workset.ghostedLinContainer = in.ghostedContainer_;
+      workset.linContainer = in.container_;
 	  
 	  local_side_fm.template evaluateFields<EvalT>(workset);
 	  

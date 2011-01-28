@@ -87,8 +87,6 @@ private:
 
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
-
-  Epetra_Vector & getEpetraVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & in_v) const;
 };
 
 // **************************************************************
@@ -139,9 +137,6 @@ private:
 
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
-
-  Epetra_Vector & getEpetraVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & in_v) const;
-  Teuchos::RCP<Epetra_CrsMatrix> getEpetraCrsMatrix(const Teuchos::RCP<Thyra::LinearOpBase<double> > & in_A) const;
 };
 
 }

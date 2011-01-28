@@ -4,6 +4,8 @@
 #include "Panzer_Base.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Panzer_BC.hpp"
+#include "Panzer_Traits.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 namespace panzer {
   template <typename LO, typename GO> class FieldManagerBuilder;
@@ -18,8 +20,8 @@ namespace panzer {
 
   public:    
     
-    AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& 
-		   fmb);
+    AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
+                   const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof);
     
     void evaluate(const panzer::AssemblyEngineInArgs& input_arguments);
 
@@ -35,6 +37,9 @@ namespace panzer {
     
       Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> > 
       m_field_manager_builder;
+
+      Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > 
+      m_lin_obj_factory;
     
   };
   

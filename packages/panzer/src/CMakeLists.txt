@@ -85,6 +85,7 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_UniqueGlobalIndexer.hpp
   dofmngr/Panzer_EpetraLinearObjFactory.hpp
   dofmngr/Panzer_EpetraLinearObjFactoryT.hpp
+  dofmngr/Panzer_EpetraLinearObjContainer.hpp
   dofmngr/Panzer_UniqueGlobalIndexerFactory.hpp
   dofmngr/Panzer_DOFManagerFactory.hpp
   dofmngr/Panzer_DOFManagerFactoryT.hpp
@@ -118,7 +119,6 @@ APPEND_SET(HEADERS
   ) 
 
 APPEND_SET(SOURCES
-  Panzer_AssemblyEngine_InArgs.cpp
   Panzer_Basis.cpp
   Panzer_BC.cpp
   Panzer_BCStrategy.cpp

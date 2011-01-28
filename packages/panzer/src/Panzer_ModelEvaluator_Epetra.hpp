@@ -14,6 +14,7 @@ namespace panzer {
 
   template<typename, typename>  class FieldManagerBuilder;
   template<typename, typename>  class EpetraLinearObjFactory;
+  class EpetraLinearObjContainer;
 
   class ModelEvaluator_Epetra : public EpetraExt::ModelEvaluator {
   public:
@@ -54,7 +55,8 @@ namespace panzer {
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof_;
 
     mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm_;
-    mutable panzer::AssemblyEngineInArgs ae_inargs_;
+    mutable Teuchos::RCP<panzer::AssemblyEngineInArgs> ae_inargs_;
+    mutable Teuchos::RCP<EpetraLinearObjContainer> ghostedContainer_, container_;
   };
   
 }

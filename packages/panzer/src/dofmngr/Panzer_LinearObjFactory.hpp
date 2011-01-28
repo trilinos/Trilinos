@@ -3,9 +3,6 @@
 
 #include <map>
 
-#include "Thyra_MultiVectorBase.hpp"
-#include "Thyra_LinearOpBase.hpp"
-
 #include "Phalanx_TemplateManager.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
@@ -16,6 +13,13 @@
 using namespace boost::mpl::placeholders;
 
 namespace panzer {
+
+class LinearObjContainer {
+public:
+   virtual ~LinearObjContainer() {}
+
+   virtual void initialize() = 0;
+};
 
 /** Abstract factory that builds the linear algebra 
   * objects required for the assembly including the 
@@ -69,45 +73,13 @@ public:
     template <typename BuilderT>
     void buildGatherScatterEvaluators(const BuilderT & builder);
 
-   /** get a vector meant to be filled by the phalanx assembly
-     * this vector has ghosted entries and needs to be summed over
-     * all the processors before it is actually used to solve with.
-     */
-   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > getGhostedVector() const = 0;
+   virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const = 0;
+   virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const = 0;
 
-   /** Get a ghosted matrix.
-     */
-   virtual Teuchos::RCP<Thyra::LinearOpBase<double> > getGhostedMatrix() const = 0;
-
-   /** Get a globally distributed vector.
-     */
-   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > getVector() const = 0;
-   /** Get a globally distributed matrix.
-     */
-   virtual Teuchos::RCP<Thyra::LinearOpBase<double> > getMatrix() const = 0;
-
-   /** Do the communication to fill a global matrix from a ghosted
-     * matrix.
-     */
-   virtual void ghostToGlobalMatrix(const Thyra::LinearOpBase<double> & ghostA, 
-                                    Thyra::LinearOpBase<double> & A) const = 0;
-
-   /** Do the communication to fill a global vector from a ghosted
-     * matrix.
-     */
-   virtual void ghostToGlobalVector(const Thyra::MultiVectorBase<double> & ghostA, 
-                                    Thyra::MultiVectorBase<double> & A) const = 0;
-
-   /** Do the communication to fill a ghosted vector from a global
-     * vector.
-     */
-   virtual void globalToGhostVector(const Thyra::MultiVectorBase<double> & A, 
-                                    Thyra::MultiVectorBase<double> & ghostA) const = 0;
-
-   /** Do a simple assignment to a linear operator. The intention is that this
-     * sets up the operator to be filled.
-     */
-   virtual void assignToMatrix(Thyra::LinearOpBase<double> & oper,double value) = 0;
+   virtual void globalToGhostContainer(const LinearObjContainer & container,
+                                       LinearObjContainer & ghostContainer) const = 0;
+   virtual void ghostToGlobalContainer(const LinearObjContainer & ghostContainer,
+                                       LinearObjContainer & container) const = 0;
 
    //! Use preconstructed scatter evaluators
    template <typename EvalT>

@@ -1,9 +1,5 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
@@ -33,123 +29,84 @@ EpetraLinearObjFactory<Traits,LocalOrdinalT>::~EpetraLinearObjFactory()
 // LinearObjectFactory functions 
 /////////////////////////////////////////////////////////////////////
 
-// build 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<Thyra::MultiVectorBase<double> > EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedVector() const
+Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildLinearObjContainer() const
 {
-   Teuchos::RCP<const Epetra_Map> eMap = getGhostedMap(); // use ghosted map
-   Teuchos::RCP<Epetra_MultiVector> eVec = Teuchos::rcp(new Epetra_Vector(*eMap));
- 
-   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = Thyra::create_VectorSpace(eMap);
-   Teuchos::RCP<Thyra::MultiVectorBase<double> > vec = Thyra::create_MultiVector(eVec,vs,Teuchos::null);
+   Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer);
+   container->x    = getEpetraVector();
+   container->dxdt = getEpetraVector();
+   container->f    = getEpetraVector();
+   container->A    = getEpetraMatrix();
 
-   Teuchos::set_extra_data(eMap,"epetra_map",Teuchos::inOutArg(vec));
-   return vec;
+   return container;
 }
 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<Thyra::LinearOpBase<double> > EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedMatrix() const
+Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildGhostedLinearObjContainer() const
 {
-   Teuchos::RCP<Epetra_CrsGraph> eGraph = getGhostedGraph(); // use ghosted graph
-   Teuchos::RCP<Epetra_CrsMatrix> eMat = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
+   Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer);
+   container->x    = getGhostedEpetraVector();
+   container->dxdt = getGhostedEpetraVector();
+   container->f    = getGhostedEpetraVector();
+   container->A    = getGhostedEpetraMatrix();
 
-   return Thyra::nonconstEpetraLinearOp(eMat);
+   return container;
 }
 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<Thyra::MultiVectorBase<double> > EpetraLinearObjFactory<Traits,LocalOrdinalT>::getVector() const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostContainer(const LinearObjContainer & in,
+                                                                          LinearObjContainer & out) const
 {
-   Teuchos::RCP<const Epetra_Map> eMap = getMap(); // use fully distributed map
-   Teuchos::RCP<Epetra_MultiVector> eVec = Teuchos::rcp(new Epetra_Vector(*eMap));
- 
-   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = Thyra::create_VectorSpace(eMap);
-   Teuchos::RCP<Thyra::MultiVectorBase<double> > vec = Thyra::create_MultiVector(eVec,vs,Teuchos::null);
+   const EpetraLinearObjContainer & e_in = Teuchos::dyn_cast<const EpetraLinearObjContainer>(in); 
+   EpetraLinearObjContainer & e_out = Teuchos::dyn_cast<EpetraLinearObjContainer>(out); 
 
-   Teuchos::set_extra_data(eMap,"epetra_map",Teuchos::inOutArg(vec));
-   return vec;
+   globalToGhostEpetraVector(*e_in.x,*e_out.x);
+   globalToGhostEpetraVector(*e_in.dxdt,*e_out.dxdt);
 }
 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<Thyra::LinearOpBase<double> > EpetraLinearObjFactory<Traits,LocalOrdinalT>::getMatrix() const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalContainer(const LinearObjContainer & in,
+                                                                          LinearObjContainer & out) const
 {
-   Teuchos::RCP<Epetra_CrsGraph> eGraph = getGraph(); // use fully distributed graph
-   Teuchos::RCP<Epetra_CrsMatrix> eMat = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
+   const EpetraLinearObjContainer & e_in = Teuchos::dyn_cast<const EpetraLinearObjContainer>(in); 
+   EpetraLinearObjContainer & e_out = Teuchos::dyn_cast<EpetraLinearObjContainer>(out); 
 
-   return Thyra::nonconstEpetraLinearOp(eMat);
+   globalToGhostEpetraVector(*e_in.f,*e_out.f);
+   globalToGhostEpetraVector(*e_in.dxdt,*e_out.dxdt);
+   ghostToGlobalEpetraMatrix(*e_in.A,*e_out.A);
 }
 
-
 template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalMatrix(const Thyra::LinearOpBase<double> & ghostA, 
-                                                                       Thyra::LinearOpBase<double> & A) const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraVector(const Epetra_Vector in,Epetra_Vector & out) const
 {
    using Teuchos::RCP;
-   using Teuchos::rcp;
-   using Teuchos::rcp_dynamic_cast;
-
-   // grab CrsMatrix objects
-   RCP<Epetra_Export> exporter = getGhostedExport();
-   RCP<const Epetra_CrsMatrix> eGhostA = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(ghostA));
-   RCP<Epetra_CrsMatrix> eA = rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(A));
 
    // do the global distribution
-   eA->PutScalar(0.0);
-   eA->Export(*eGhostA,*exporter,Add);
-}
-
-template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::assignToMatrix(Thyra::LinearOpBase<double> & oper,double value)
-{
-   using Teuchos::RCP;
-   using Teuchos::rcp;
-   using Teuchos::rcp_dynamic_cast;
-
-   RCP<Epetra_CrsMatrix> eA = rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(oper));
-   eA->PutScalar(value);
-}
-
-template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalVector(const Thyra::MultiVectorBase<double> & ghostV, 
-                                                                       Thyra::MultiVectorBase<double> & V) const
-{
-   using Teuchos::RCP;
-   using Teuchos::rcp;
-   using Teuchos::rcp_dynamic_cast;
-
-   // grab maps for construction epetra vectors
-   Teuchos::RCP<const Epetra_Map> eGhostMap = getGhostedMap();
-   Teuchos::RCP<const Epetra_Map> eMap = getMap();
-
-   // build vectors and exporter
    RCP<Epetra_Export> exporter = getGhostedExport();
-   RCP<const Epetra_MultiVector> eGhostV = Thyra::get_Epetra_MultiVector(*eGhostMap,ghostV);
-   RCP<Epetra_MultiVector> eV = Thyra::get_Epetra_MultiVector(*eMap,V);
+   out.PutScalar(0.0);
+   out.Export(in,*exporter,Add);
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraMatrix(const Epetra_CrsMatrix in,Epetra_CrsMatrix & out) const
+{
+   using Teuchos::RCP;
 
    // do the global distribution
-   eV->PutScalar(0.0);
-   eV->Export(*eGhostV,*exporter,Add);
+   RCP<Epetra_Export> exporter = getGhostedExport();
+   out.PutScalar(0.0);
+   out.Export(in,*exporter,Add);
 }
 
 template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostVector(const Thyra::MultiVectorBase<double> & V, 
-                                                                       Thyra::MultiVectorBase<double> & ghostV) const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostEpetraVector(const Epetra_Vector in,Epetra_Vector & out) const
 {
    using Teuchos::RCP;
-   using Teuchos::rcp;
-   using Teuchos::rcp_dynamic_cast;
 
-   // grab maps for construction epetra vectors
-   Teuchos::RCP<const Epetra_Map> eGhostMap = getGhostedMap();
-   Teuchos::RCP<const Epetra_Map> eMap = getMap();
-
-   // build vectors and importer
+   // do the global distribution
    RCP<Epetra_Import> importer = getGhostedImport();
-   RCP<const Epetra_MultiVector> eV = Thyra::get_Epetra_MultiVector(*eMap,V);
-   RCP<Epetra_MultiVector> eGhostV = Thyra::get_Epetra_MultiVector(*eGhostMap,ghostV);
-
-   // do the global distribution
-   eGhostV->PutScalar(0.0);
-   eGhostV->Import(*eV,*importer,Insert);
+   out.PutScalar(0.0);
+   out.Import(in,*importer,Insert);
 }
 
 // "Get" functions
@@ -285,6 +242,34 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
    graph->FillComplete();
 
    return graph;
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<Epetra_Vector> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedEpetraVector() const
+{
+   Teuchos::RCP<const Epetra_Map> eMap = getGhostedMap(); 
+   return Teuchos::rcp(new Epetra_Vector(*eMap));
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<Epetra_Vector> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getEpetraVector() const
+{
+   Teuchos::RCP<const Epetra_Map> eMap = getMap(); 
+   return Teuchos::rcp(new Epetra_Vector(*eMap));
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<Epetra_CrsMatrix> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getEpetraMatrix() const
+{
+   Teuchos::RCP<Epetra_CrsGraph> eGraph = getGraph();
+   return Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<Epetra_CrsMatrix> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedEpetraMatrix() const
+{
+   Teuchos::RCP<Epetra_CrsGraph> eGraph = getGhostedGraph(); 
+   return Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
 }
 
 }

@@ -10,6 +10,7 @@
 #include "Shards_Array.hpp"
 #include "Panzer_BasisValues.hpp"
 #include "Panzer_IntegrationValues.hpp"
+
 #include "Intrepid_FieldContainer.hpp"
 
 class Epetra_Vector;
@@ -21,6 +22,8 @@ template <typename ScalarT> class LinearOpBase;
 }
 
 namespace panzer {
+
+  class LinearObjContainer;
 
   struct Workset {
     
@@ -40,15 +43,15 @@ namespace panzer {
     //! Static basis function data, key is basis name, value is index in the static_bases vector
     std::vector<Teuchos::RCP< panzer::BasisValues<double,Intrepid::FieldContainer<double> > > > bases;
     
+/*
     Teuchos::RCP<Epetra_Vector> solution_vector;
     Teuchos::RCP<Epetra_Vector> solution_deriv_vector;
     Teuchos::RCP<Epetra_Vector> residual_vector;
     Teuchos::RCP<Epetra_CrsMatrix> jacobian_matrix;
+*/
 
-    Teuchos::RCP<Thyra::MultiVectorBase<double> > th_solution_vector;
-    Teuchos::RCP<Thyra::MultiVectorBase<double> > th_solution_deriv_vector;
-    Teuchos::RCP<Thyra::MultiVectorBase<double> > th_residual_vector;
-    Teuchos::RCP<Thyra::LinearOpBase<double> > th_jacobian_matrix;
+    Teuchos::RCP<panzer::LinearObjContainer> ghostedLinContainer;
+    Teuchos::RCP<panzer::LinearObjContainer> linContainer;
 
   };
 
