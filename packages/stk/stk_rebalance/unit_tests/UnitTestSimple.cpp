@@ -23,6 +23,7 @@
 // relevant headers
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
 // end relevant headers
 
 using stk::mesh::fem::NODE_RANK;
