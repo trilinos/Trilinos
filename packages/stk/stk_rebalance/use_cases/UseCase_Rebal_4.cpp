@@ -169,7 +169,8 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
   {
     const mesh::Entity & side = *sides[iSide];
     const unsigned sideProc = side.owner_rank();
-    ThrowRequire(sideProc!=p_rank);
+    ThrowRequireMsg(sideProc!=p_rank,
+     "When iterating Non-locally owned sides, found a locally owned side.");
 
     stk::mesh::PairIterRelation iElem = side.relations(elem_rank);
     for ( ; iElem.first != iElem.second; ++iElem.first ) {
@@ -178,14 +179,15 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
       const bool mesh_object_found = find_mesh_entity(&elem, moid);
       if (mesh_object_found) {
         const unsigned elemProc = elem.owner_rank();
-        ThrowRequire(elemProc==p_rank);
-        // Sanity check:
-        // it's possible that an element will be connected to
-        // two sides that are owned by different procs.  We don't
-        // yet handle that situation here but we can, at least,
-        // detect it.
+        ThrowRequireMsg(elemProc==p_rank,
+          "When iterating locally owned elements, found a non-locally owned element.");
         const unsigned destProc = destination_proc(moid);
-        ThrowRequire(destProc==p_rank || destProc==sideProc);
+        ThrowRequireMsg(destProc==p_rank || destProc==sideProc,
+         " Sanity check failed: "
+         "It's possible that an element is connected to "
+         "two sides that are owned by different procs.  We don't "
+         "yet handle that situation here but we can, at least, "
+         "detect it. ");
         if(elemProc != sideProc)
         {
           ++local_changes;
@@ -371,7 +373,8 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
           if (elemProc!=p_rank) {
             std::cerr <<p_rank<<" Error: Found element of of side 7 not owned:"<<elemProc<<std::endl;
           }
-          ThrowRequire(elemProc==p_rank);
+          ThrowRequireMsg(elemProc==p_rank,
+           "Use case 4 error check failed. Found element of of side 7 not owned.");
         }
       }
     }
