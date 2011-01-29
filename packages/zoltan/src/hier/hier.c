@@ -1118,7 +1118,7 @@ End:
 static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
 
 char *yo = "Zoltan_Hier_Initialize_Params";
-int assist, i, j, len;
+int assist, i=0, j, len;
 int num_cpus, num_siblings;
 char platform[MAX_PARAM_STRING_LEN+1];
 char topology[MAX_PARAM_STRING_LEN+1];
