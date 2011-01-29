@@ -1892,29 +1892,19 @@ static int D2ParallelColoring (
     for (i=0; i<nvtx; ++i) {
 	int u = visit[i], gu;
 	gu = Zoltan_G2LHash_L2G(hash, u);
-	assert (xbadj[u] >= xadj[u]);
-	assert (xbadj[u] <= xadj[u+1]);
 	for (j=xadj[u]; j<xbadj[u]; j++) {
 	    if (ssp[adjproc[j]] != ssendbuf[adjproc[j]]) {
 		if (*(ssp[adjproc[j]]-1) != gu) {
-                    assert (ssp[adjproc[j]] >= ssendbuf[adjproc[j]]);
-                    assert (ssp[adjproc[j]] - ssendbuf[adjproc[j]] < ((ssendsize[adjproc[j]] == 0) ? 1 : ssendsize[adjproc[j]]));
 		    *(ssp[adjproc[j]]++) = gu;
 		}
 	    } else {
-                assert (ssp[adjproc[j]] >= ssendbuf[adjproc[j]]);
-                assert (ssp[adjproc[j]] - ssendbuf[adjproc[j]] < ((ssendsize[adjproc[j]] == 0) ? 1 : ssendsize[adjproc[j]]));
-
 		*(ssp[adjproc[j]]++) = gu;
-              }
+            }
 	}
 	if (n == ss) { /* mark the end of superstep */
 	    n = 0;
 	    for (p=0; p<zz->Num_Proc; p++)
 		if (p != zz->Proc) {
-		    assert (ssendsize[p]>0);
-		    assert (ssp[p] >= ssendbuf[p]);
-                    assert (ssp[p] - ssendbuf[p] < ((ssendsize[p] == 0) ? 1 : ssendsize[p]));
 		    *(ssp[p]++) = -1;
 		}
 	}
@@ -1923,10 +1913,6 @@ static int D2ParallelColoring (
     /* Mark end of superstep info by -2 */
     for (p=0; p<zz->Num_Proc; p++) {
 	if (p != zz->Proc) {
-            assert (ssendsize[p]>0);
-            assert (ssp[p] >= ssendbuf[p]);
-            assert (ssp[p] - ssendbuf[p] < ((ssendsize[p] == 0) ? 1 : ssendsize[p]));
-
 	    if (ssp[p] == ssendbuf[p]) 
 		*ssp[p] = -2;
 	    else if (*(ssp[p]-1) == -1)
