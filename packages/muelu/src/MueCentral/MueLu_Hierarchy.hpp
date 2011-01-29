@@ -83,7 +83,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
      /*!
        @brief Constructs components of the hierarchy.
-       FIXME should return status data structure
 
        Invoke a set of factories to populate (construct prolongation,
        restriction, coarse level discretizations, and smoothers in this
@@ -92,7 +91,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
        Note: Empty factories are simply skipped.
      */
-     void FullPopulate(Teuchos::RCP<PRFactory> PRFact,
+     Teuchos::ParameterList FullPopulate(Teuchos::RCP<PRFactory> PRFact,
                        Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
                        Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
                        int startLevel=0, int numDesiredLevels=10 )
@@ -116,33 +115,35 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 //FIXME #endif
        }
 
-       FillHierarchy(PRFact,AcFact,startLevel,numDesiredLevels /*,status*/);
+       Teuchos::ParameterList status;
+       status = FillHierarchy(PRFact,AcFact,startLevel,numDesiredLevels /*,status*/);
        SetSmoothers(SmooFact,startLevel,numDesiredLevels);
+       return status;
 
      } //FullPopulate()
 
      /*! @brief Populate hierarchy with A's, R's, and P's.
-         TODO should return status structure containing complexity, start level, end level
-         TODO replace PFact and RFact with PRFact
 
          Prolongator factory defaults to SaPFactory.
      */
 
-     void FillHierarchy() {
+     Teuchos::ParameterList FillHierarchy() {
        RCP<SaPFactory> PFact = rcp(new SaPFactory());
        RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact));
        RCP<RAPFactory> AcFact = rcp(new RAPFactory());
-       FillHierarchy(*PRFact,*AcFact);
+       Teuchos::ParameterList status;
+       status = FillHierarchy(*PRFact,*AcFact);
+       return status;
      } //FillHierarchy()
 
-     void FillHierarchy(GenericPRFactory const &PRFact) {
+     Teuchos::ParameterList FillHierarchy(GenericPRFactory const &PRFact) {
        RAPFactory AcFact;
-       FillHierarchy(PRFact,AcFact);
+       Teuchos::ParameterList status;
+       status = FillHierarchy(PRFact,AcFact);
+       return status;
      }
      
      /*! @brief Populate hierarchy with A's, R's, and P's.
-         TODO should return status structure containing complexity, start level, end level
-         TODO replace PFact and RFact with PRFact
 
          Invoke a set of factories to populate (construct prolongation,
          restriction, and coarse level discretizations in this
@@ -151,12 +152,18 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      */
      //void FillHierarchy(Teuchos::RCP<PRFactory> PRFact,
      //                  Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
-     void FillHierarchy(PRFactory const &PRFact,
+     Teuchos::ParameterList FillHierarchy(PRFactory const &PRFact,
                         OperatorFactory const &AcFact,
                         int startLevel=0, int numDesiredLevels=10 )
      {
        Teuchos::OSTab tab(out_);
        MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::FillHierachy()" << std::endl;
+
+       RCP<Operator> A = Levels_[startLevel]->GetA();
+       Cthulhu::global_size_t fineNnz = A->getGlobalNumEntries();
+       std::cout << "level " << startLevel << ": " << A->getGlobalNumEntries() << " nnzs" << std::endl;
+       Cthulhu::global_size_t totalNnz = fineNnz;
+
        bool goodBuild=true;
        int i = startLevel;
        while (i < startLevel + numDesiredLevels - 1)
@@ -176,12 +183,22 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            Levels_.resize(i+1); //keep only entries 0..i
            break;
          }
+         //RCP<Operator> A = Levels_[i+1]->GetA();
+         totalNnz += Levels_[i+1]->GetA()->getGlobalNumEntries();
+         std::cout << "level " << i+1 << ": " << Levels_[i+1]->GetA()->getGlobalNumEntries() << " nnzs" << std::endl;
          ++i;
        } //while
-     }
+
+       Teuchos::ParameterList status;
+       status.set("fine nnz",fineNnz);
+       status.set("total nnz",totalNnz);
+       status.set("start level",startLevel);
+       status.set("end level",i);
+       status.set("operator complexity",((SC)totalNnz) / fineNnz);
+       return status;
+     } //FillHierarchy
 
      /*! @brief Construct smoothers on all levels but the coarsest.
-       TODO should return status
        TODO need to check whether using Tpetra or Epetra
 
         Invoke a set of factories to construct smoothers within 

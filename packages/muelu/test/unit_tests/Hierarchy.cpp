@@ -15,42 +15,11 @@
 
 namespace {
 
-#ifdef SKIP_THIS_FOR_NOW
-//this macro declares the unit-test-class:
-TEUCHOS_UNIT_TEST(Hierarchy,Test0)
-{
-
-  using namespace Teuchos;
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<Level> levelOne = rcp(new Level() );
-  levelOne->SetLevelID(1);
-  RCP<Level> levelTwo = rcp(new Level() );
-  levelTwo->SetLevelID(2);
-
-  Hierarchy H;
-
-  H.SetLevel(levelOne);
-  H.SetLevel(levelTwo);
-
-  std::cout << H << std::endl;
-
-  /* TODO
-  Test set/get of R & P matrices.
-  */
-  /*
-  RCP<Vector> x = rcp(new Cthulhu::TpetraVector<Scalar,LO,GO,Node>(map,nx) );
-  RCP<Vector> y = rcp(new Cthulhu::TpetraVector<Scalar,LO,GO,Node>(map,nx) );
-  x->putScalar(1);
-  */
-
-} //TEST0
-#endif
 TEUCHOS_UNIT_TEST(Hierarchy,Constructor)
 {
 
-  using namespace Teuchos;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -63,7 +32,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,Constructor)
 TEUCHOS_UNIT_TEST(Hierarchy,SetAndGetLevel)
 {
 
-  using namespace Teuchos;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -78,7 +48,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetAndGetLevel)
 TEUCHOS_UNIT_TEST(Hierarchy,NumberOfLevels)
 {
 
-  using namespace Teuchos;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -92,36 +63,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,NumberOfLevels)
   TEUCHOS_TEST_EQUALITY(H.GetNumberOfLevels(), 3, out, success);
 
 }//NumberOfLevels
-
-TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PFact_Only)
-{
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<Level> levelOne = rcp(new Level() );
-  levelOne->SetLevelID(1);
-  RCP<CrsOperator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(99);
-  levelOne->SetA(A);
-
-  Hierarchy H;
-  H.SetLevel(levelOne);
-
-  /*
-  TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-  SaPFactory must inherit from PFactory ... dude
-  TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-  */
-
-  RCP<SaPFactory>  PFact = rcp(new SaPFactory());
-  GenericPRFactory PRFact(PFact);
-
-  out << "Providing just prolongator factory to FillHierarchy." << std::endl;
-  //FIXME until Hierarchy.FillHierarchy takes a generic (?) RP factory, this
-  //FIXME won't work with with more than 2 levels
-  H.FillHierarchy(PRFact);
-}
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 {
@@ -139,34 +80,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
   H.SetLevel(levelOne);
 
   out << "Providing no factories to FillHierarchy." << std::endl;
-  //FIXME until Hierarchy.FillHierarchy takes a generic (?) RP factory, this
-  //FIXME test will ALWAYS fail because it is trying to produce more than two levels.
-  //FIXME Without an R factory, Acoarse can't be made, and the next time through,
-  //FIXME GetA fails.
   H.FillHierarchy();
-}
-
-TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy1)
-{
-//we are now in a class method declared by the above macro, and
-//that method has these input arguments:
-//Teuchos::FancyOStream& out, bool& success
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<Level> levelOne = rcp(new Level() );
-  levelOne->SetLevelID(1);
-
-  Hierarchy H;
-  H.SetLevel(levelOne);
-
-  RCP< PRFactory >    PFact = Teuchos::null;
-  //FIXME this won't throw anymore ...
-  //TEST_THROW(H.FillHierarchy(PFact), std::logic_error); FIXME -- do we need this test anymore?
-}
+} //FillHierarchy_NoFactoriesGiven
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
 {
@@ -187,8 +102,15 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
   GenericPRFactory PRFact(PFact);
 
   out << "Providing just PR factory to FillHierarchy." << std::endl;
-  H.FillHierarchy(PRFact);
-}
+  Teuchos::ParameterList status;
+  status = H.FillHierarchy(PRFact);
+  TEUCHOS_TEST_EQUALITY(status.get("fine nnz",(Cthulhu::global_size_t)-1), 295, out, success);
+  TEUCHOS_TEST_EQUALITY(status.get("total nnz",(Cthulhu::global_size_t)-1), 392, out, success);
+  TEUCHOS_TEST_EQUALITY(status.get("start level",-1), 0, out, success);
+  TEUCHOS_TEST_EQUALITY(status.get("end level",-1), 1, out, success);
+  TEUCHOS_TEST_FLOATING_EQUALITY(status.get("operator complexity",(SC)-1.0),1.32881,1e-5,out,success);
+
+} //FillHierarchy_PRFactoryOnly
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 {
@@ -211,7 +133,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 
   out << "Providing both factories to FillHierarchy." << std::endl;
   H.FillHierarchy(PRFact,AcFact);
-}
+} //FillHierarchy_BothFactories
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 {
@@ -228,7 +150,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   Hierarchy H;
   H.SetLevel(levelOne);
   H.SetSmoothers();
-}
+} //SetSmoothers
 
 }//namespace <anonymous>
 
