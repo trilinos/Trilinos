@@ -865,8 +865,9 @@ static int D1coloring(
 static int D2coloring(
     ZZ *zz,
     char coloring_problem,/* Coloring problem. '2' or 'P'  in this case */
-    char coloring_order,  /* (I) interior vertices first
-			  (B) boundary vertices first (U) interleaved */
+    char coloring_order,  /* (I) interior vertices first (B) boundary vertices first 
+		             (U) interleaved (N) Natural Ordering (L) Largest First (S) Smallest Last
+ 		 	     Note that LF and SL orderings are same with the ones in distance-1 function.*/
     char coloring_method, /* Coloring method. (F) First fit
 			  (S) staggered first fit (L) load balancing */
     char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
@@ -1046,7 +1047,8 @@ static int D2coloring(
     }
     for (i=0; i<zz->Num_Proc; i++)
 	if (i != zz->Proc)
-	    ssendsize[i] += (int) (ceil((double)nbound / (double)ss) + 1);
+	    ssendsize[i] += (int) (ceil((double)nvtx / (double)ss) + 1);
+          
     /* Send the superstep info size so that other processors will allocate enough space */
     for (sreqcntC=p=0; p<zz->Num_Proc; ++p)
 	if (p != zz->Proc)
@@ -1153,6 +1155,22 @@ static int D2coloring(
     }
     else if (coloring_order=='B')
 	nConflict = nboundvisit;
+    else if (coloring_order=='N' || coloring_order=='L' || coloring_order=='S') {
+        nConflict = nvtx;
+        if (coloring_order=='N') {
+            for (i=0; i<nvtx; i++)
+                visit[i] = i;
+        }   
+        else if (coloring_order=='L') {
+            LargestDegreeFirstOrdering(zz, visit, xadj, nvtx, lmaxdeg);
+        }
+        else if (coloring_order=='S') {            
+	    SmallestDegreeLastOrdering(zz, visit, xadj, adj, nvtx, lmaxdeg);  
+        }
+        if (zz->Num_Proc==1)
+            InternalColoring(zz, coloring_problem, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxcolor, coloring_method);
+    }
+
 /*
     else if (coloring_order == 'U') { ** not implemented **
 	nConflict = nvtx;
@@ -1836,9 +1854,9 @@ static int D2ParallelColoring (
     int *confChk,        /* Arrays used for conflict detection */
     int *ssendsize,
     int *srecsize,
-    int **ssendbuf,
+    int **ssendbuf, /* the size of ssendbuf[i] is ssendsize[i] */
     int **srecbuf,
-    int **ssp,
+    int **ssp, /* ssp[i] is a pointer inside ssendbuf[i] memory */
     int **srp,
     int **xfp,
     int *xfpMark,
@@ -1855,7 +1873,7 @@ static int D2ParallelColoring (
     int fp = 0; /*index to forbidProc*/
     int ierr = ZOLTAN_OK;
 
-    /* DETEMINE THE SUPERSTEP NUMBER OF LOCAL VERTICES AND COMMUNICATE THEM */
+    /* DETERMINE THE SUPERSTEP NUMBER OF LOCAL VERTICES AND COMMUNICATE THEM */
     /* Issue async recvs for superstep info */
     for (rreqcntC=p=0; p<zz->Num_Proc; ++p)
 	if (p!=zz->Proc)
@@ -1874,26 +1892,42 @@ static int D2ParallelColoring (
     for (i=0; i<nvtx; ++i) {
 	int u = visit[i], gu;
 	gu = Zoltan_G2LHash_L2G(hash, u);
+	assert (xbadj[u] >= xadj[u]);
+	assert (xbadj[u] <= xadj[u+1]);
 	for (j=xadj[u]; j<xbadj[u]; j++) {
 	    if (ssp[adjproc[j]] != ssendbuf[adjproc[j]]) {
 		if (*(ssp[adjproc[j]]-1) != gu) {
+                    assert (ssp[adjproc[j]] >= ssendbuf[adjproc[j]]);
+                    assert (ssp[adjproc[j]] - ssendbuf[adjproc[j]] < ((ssendsize[adjproc[j]] == 0) ? 1 : ssendsize[adjproc[j]]));
 		    *(ssp[adjproc[j]]++) = gu;
 		}
-	    } else
+	    } else {
+                assert (ssp[adjproc[j]] >= ssendbuf[adjproc[j]]);
+                assert (ssp[adjproc[j]] - ssendbuf[adjproc[j]] < ((ssendsize[adjproc[j]] == 0) ? 1 : ssendsize[adjproc[j]]));
+
 		*(ssp[adjproc[j]]++) = gu;
+              }
 	}
 	if (n == ss) { /* mark the end of superstep */
 	    n = 0;
 	    for (p=0; p<zz->Num_Proc; p++)
-		if (p!= zz->Proc)
+		if (p != zz->Proc) {
+		    assert (ssendsize[p]>0);
+		    assert (ssp[p] >= ssendbuf[p]);
+                    assert (ssp[p] - ssendbuf[p] < ((ssendsize[p] == 0) ? 1 : ssendsize[p]));
 		    *(ssp[p]++) = -1;
+		}
 	}
 	++n;
     }
     /* Mark end of superstep info by -2 */
     for (p=0; p<zz->Num_Proc; p++) {
 	if (p != zz->Proc) {
-	    if (ssp[p] == ssendbuf[p])
+            assert (ssendsize[p]>0);
+            assert (ssp[p] >= ssendbuf[p]);
+            assert (ssp[p] - ssendbuf[p] < ((ssendsize[p] == 0) ? 1 : ssendsize[p]));
+
+	    if (ssp[p] == ssendbuf[p]) 
 		*ssp[p] = -2;
 	    else if (*(ssp[p]-1) == -1)
 		*(--ssp[p]) = -2;
