@@ -11,24 +11,26 @@
 
 /// copied and edited from stk_util/use_cases/UseCaseEnvironment 
 
-#include <boost/program_options.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/BroadcastArg.hpp>
 #include <stk_util/diag/Writer_fwd.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/environment/OutputLog.hpp>
-#include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/environment/RuntimeWarning.hpp>
 #include <stk_util/environment/RuntimeDoomed.hpp>
 
 #include <iosfwd>
 
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
+
 namespace stk {
   namespace percept {
 
-    namespace bopt = boost::program_options;
 
     enum LogMask {
       LOG_ALWAYS          = stk::LOG_ALWAYS,
@@ -93,16 +95,16 @@ namespace stk {
 
     void my_report_handler(const char *message, int type);
 
-    struct RunEnvironment
+    class RunEnvironment
     {
+    public:
       // Will initialize a comm
-      RunEnvironment(int *argc, char ***argv);
+      RunEnvironment(int *argc, char ***argv, bool debug=false);
 
       // Assumes already-initialized comm
-      RunEnvironment(int *argc, char ***argv, stk::ParallelMachine comm);
+      RunEnvironment(int *argc, char ***argv, stk::ParallelMachine comm, bool debug=false);
 
-      // shared constructor implementation; do not call directly
-      void initialize(int* argc, char ***argv);
+      void processCommandLine(int* argc, char ***argv);
 
       ~RunEnvironment();
 
@@ -114,9 +116,42 @@ namespace stk {
       static void 
       doLoadBalance(stk::ParallelMachine comm, std::string meshFileName);
 
+      std::string
+      build_log_description(const std::string &           working_directory,
+                            int                           parallel_rank,
+                            int                           parallel_size);
+
+
+      // command line options
+      Teuchos::CommandLineProcessor clp;
+
+      std::string output_log_opt;
+      std::string dw_opt;
+      std::string timer_opt;
+      std::string directory_opt;
+
+      std::string pout_opt;
+      std::string dout_opt;
+      std::string runtest_opt;
+
+      int help_opt;
+
+      // data
       const stk::ParallelMachine    m_comm;
       std::string                   m_workingDirectory;
+
+    private:
+
       bool                          m_need_to_finalize;
+      bool                          m_debug;
+      bool                          m_processCommandLine_invoked;
+
+      int  processCLP(int procRank, int argc, char* argv[]);
+      // shared constructor implementation; do not call directly
+      void internal_initialize(int* argc, char ***argv);
+      void bootstrap();
+
+      void setSierraOpts(int procRank, int argc, char* argv[]);
     };
 
   } // namespace percept

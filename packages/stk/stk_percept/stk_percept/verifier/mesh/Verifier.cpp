@@ -16,25 +16,14 @@ namespace stk
       EXPECT_TRUE(1);
     }
 
-    static void process_options()
+    void Verifier::process_options(RunEnvironment& re)
     {
-      bopt::options_description desc("verifier options", 132);
+      re.clp.setDocString("verifier options");
 
+      re.clp.setOption("mesh",       &mesh_opt,          "mesh file." );
+      re.clp.setOption("printTable", &printTable_opt,    "print a table of min/max jacobian and quality measures " );
+      re.clp.setOption("fullPrint",  &fullPrint_opt,     "print every element's jacobian" );
 
-      desc.add_options()
-        ("help,h",        "produce help message")
-        ("mesh,m",        bopt::value<std::string>(), "mesh file." )
-        //("directory,d",   bopt::value<std::string>(), "working directory with trailing '/'" )
-        ("printTable,p" ,   "print a table of min/max jacobian and quality measures " )
-        ("fullPrint,f" ,    "print every element's jacobian" )
-
-        // bogus - need to strip off the sierra.sh options ??
-        (",o",             "un-used - for sierra.sh internal use only")
-        (",d",             "un-used - for sierra.sh internal use only")
-        (",i",             "un-used - for sierra.sh internal use only")
-        ;
-
-      stk::get_options_description().add(desc);
 
     }
 
@@ -46,21 +35,14 @@ namespace stk
       bool fullJacobianPrints = false;
       std::string file_name;
       
-      //bopt::variables_map vm = process_options(parallel_machine, argc, argv);
-      process_options();
 
-      RunEnvironment run_environment(&argc, &argv);
-
-      bopt::variables_map& vm = stk::get_variables_map();
-
+      bool debug_re=true;
+      RunEnvironment run_environment(&argc, &argv, debug_re);
+      process_options(run_environment);
+      run_environment.processCommandLine(&argc, &argv);
 
       {
-        //bopt::options_description &desc = stk::get_options_description();
-        if (vm.count("exit")) {
-          exit(1);
-        }
-
-        if (vm.count("help")) {
+        if (run_environment.help_opt) {
           run_environment.printHelp();
           std::exit(EXIT_SUCCESS);
         }
@@ -68,13 +50,11 @@ namespace stk
         std::string working_directory = "";
         std::string in_filename = "";
 
-        if (vm.count("mesh")) 
+        if (true)
           {
-            in_filename = boost::any_cast<std::string>(vm["mesh"].value());;
+            in_filename = mesh_opt;
     
-            if (vm.count("directory")) {
-              working_directory = boost::any_cast<std::string>(vm["directory"].value());
-            }
+            working_directory = run_environment.directory_opt;
 
             file_name = in_filename;
             if (in_filename[0] != '/' && !working_directory.empty() > 0) {
@@ -88,11 +68,11 @@ namespace stk
             std::exit(EXIT_FAILURE);
           }
 
-        if (vm.count("fullPrint"))
+        if (fullPrint_opt)
           {
             fullJacobianPrints = true;
           }
-        if (vm.count("printTable"))
+        if (printTable_opt)
           {
             printTable = true;
           }

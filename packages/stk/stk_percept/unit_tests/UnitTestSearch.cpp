@@ -16,7 +16,6 @@
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
 
-#include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/WriterExt.hpp>
 #include <stk_search/CoarseSearch.hpp>
@@ -25,7 +24,7 @@
 
 //#include "junk.hpp"
 
-using namespace use_case;
+//using namespace use_case;
 
 using namespace stk::diag;
 

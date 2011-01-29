@@ -275,7 +275,7 @@ namespace stk
           {
             MDArray vv = evalVec3(0.1, 0.2, 0.3, 0.0, ff_coords);
 
-#define EXPECT_DOUBLE_EQ_1(a,b)    if (fabs(a-b) > 1.e-12) exit(1);
+#define EXPECT_DOUBLE_EQ_1(a,b)    if (fabs(a-b) > 1.e-12) exit(123);
 
             EXPECT_DOUBLE_EQ(vv(0), 0.1);
             EXPECT_DOUBLE_EQ(vv(1), 0.2);
@@ -297,15 +297,15 @@ namespace stk
         }
         catch ( const std::exception * X ) {
           std::cout << "  unexpected exception: " << X->what() << std::endl;
-          exit(1);
+          exit(123);
         }
         catch ( const std::exception & X ) {
           std::cout << "  unexpected exception: " << X.what() << std::endl;
-          exit(1);
+          exit(124);
         }
         catch( ... ) {
           std::cout << "  ... exception" << std::endl;
-          exit(1);
+          exit(125);
         }
       }
 
