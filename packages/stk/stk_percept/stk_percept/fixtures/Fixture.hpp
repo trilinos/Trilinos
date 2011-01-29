@@ -6,7 +6,8 @@
 #include <cmath>
 
 #include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/environment/ProgramOptions.hpp>
+
+
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/PrintTable.hpp>
@@ -45,7 +46,6 @@ namespace stk {
       }
 
 
-      //namespace bopt = boost::program_options;
       //using namespace use_case;
       enum { 
         LOG_NORM              = 2*LOG_APPLICATION,

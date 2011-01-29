@@ -18,80 +18,66 @@
 #endif
 
 #include <stk_percept/fixtures/Fixture.hpp>
+#include <stk_percept/RunEnvironment.hpp>
 
 namespace stk { 
   namespace percept { 
     namespace regression_tests {
 
-    std::string s_working_directory = "./";
+      std::string s_working_directory = "./";
 
-    int rtest_main(int argc, char **argv) { 
+      int rtest_main(int argc, char **argv) 
+      { 
+        EXCEPTWATCH;
 
-      //dw_option_mask.mask("search", use_case::LOG_SEARCH, "log search diagnostics");
+        RunEnvironment run_environment(&argc, &argv);
+        run_environment.clp.setDocString("stk_percept regression tests options");
 
-      // junk - FIXME
-      //myMain3();
-      //myMain2();
-      bopt::options_description desc("stk_percept regression tests options");
-    
-      // NOTE: Options --directory --output-log --runtest are handled/defined in RunEnvironment
-#if 0
-      desc.add_options()
-        ("range_mesh",    bopt::value<std::string>(&range_mesh), " range mesh")
-        ("offset",       bopt::value<double>()->default_value(0.1), "transfer use case 3 offset" )
-        //    ("dw", boost::program_options::value<std::string>(), dw_option_mask.describe().c_str())
-        ("scale",        bopt::value<double>()->default_value(0.0), "transfer use case 3 scale." )
-        ;
+        // NOTE: Options --directory --output-log --runtest are handled/defined in RunEnvironment
+        std::string range_mesh;
 
-#endif
-      std::string range_mesh;
-      desc.add_options()
-        ("range_mesh",    bopt::value<std::string>(&range_mesh), " range mesh");
-
+        run_environment.clp.setOption("range_mesh", &range_mesh,  " range mesh");
+        run_environment.processCommandLine(&argc, &argv);
       
-      stk::get_options_description().add(desc);
+        if (true)
+          {
+            s_working_directory = run_environment.directory_opt;
+            //std::cout << "tmp 0 s_working_directory = " << s_working_directory << std::endl;
+          }
 
-      RunEnvironment run_environment(&argc, &argv);
-
-      bopt::variables_map &vm = stk::get_variables_map();  
-      if (vm.count("directory"))
-        {
-          s_working_directory = vm["directory"].as<std::string>();
-          //std::cout << "tmp 0 s_working_directory = " << s_working_directory << std::endl;
-        }
-
-
-      bool result = true;
+        bool result = true;
 
 #ifndef REDS
-      testing::InitGoogleTest(&argc, argv);  
-      //  bool result = 0;
-      try {
-        //TEST_geom_volume(run_environment.m_comm);
+        testing::InitGoogleTest(&argc, argv);  
+        //  bool result = 0;
+        try {
+          //TEST_geom_volume(run_environment.m_comm);
     
-        result = RUN_ALL_TESTS(); 
-      }
-      catch ( const std::exception * X ) {
-        std::cout << "RegressionTestMain::  unexpected exception POINTER: " << X->what() << std::endl;
-        //exit(1);
-      }
-      catch ( const std::exception & X ) {
-        std::cout << "RegressionTestMain:: stk_percept::regression_tests::main unexpected exception: " << X.what() << std::endl;
-        //exit(1);
-      }
-      catch( ... ) {
-        std::cout << "RegressionTestMain::  ... exception" << std::endl;
-        //exit(1);
-      }
+          result = RUN_ALL_TESTS(); 
+          //std::cout << "tmp result = " << result << std::endl;
+        }
+        catch ( const std::exception * X ) {
+          std::cout << "RegressionTestMain::  unexpected exception POINTER: " << X->what() << std::endl;
+          //exit(1);
+        }
+        catch ( const std::exception & X ) {
+          std::cout << "RegressionTestMain:: stk_percept::regression_tests::main unexpected exception: " << X.what() << std::endl;
+          //exit(1);
+        }
+        catch( ... ) {
+          std::cout << "RegressionTestMain::  ... exception" << std::endl;
+          //exit(1);
+        }
 
 #endif
 
 #if doMPI
-      MPI_Finalize(); 
+        //MPI_Finalize(); 
 #endif
+        //std::cout << "tmp 0 result = " << result << std::endl;
 
-      return result;
-    }
+        return result;
+      }
 
     }
   }
@@ -101,7 +87,9 @@ namespace stk {
 //#if !PY_PERCEPT
 int main(int argc, char **argv) { 
 
-  //return 0;
-  return stk::percept::regression_tests::rtest_main(argc, argv);
+  int res = stk::percept::regression_tests::rtest_main(argc, argv);
+  //std::cout << "tmp res = " << res << std::endl;
+  
+  return res;
 }
 //#endif

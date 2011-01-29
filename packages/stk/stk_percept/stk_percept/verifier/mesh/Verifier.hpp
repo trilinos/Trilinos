@@ -8,10 +8,7 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-#include <boost/program_options.hpp>
-
 #include <stk_util/parallel/BroadcastArg.hpp>
-#include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
@@ -26,8 +23,6 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-//#include <stk_util/use_cases/UseCaseEnvironment.hpp>
-
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
@@ -36,6 +31,8 @@
 #include <stk_percept/TopologyVerifier.hpp>
 #include <stk_percept/GeometryVerifier.hpp>
 #include <stk_percept/PerceptMesh.hpp>
+
+#include <stk_percept/RunEnvironment.hpp>
 
 
 namespace stk
@@ -49,6 +46,11 @@ namespace stk
       Verifier() {}
       void verify(int argc,  char** argv);
 
+      void process_options(RunEnvironment& re);
+      // command line
+      std::string mesh_opt;
+      int printTable_opt;
+      int fullPrint_opt;
     };
 
     class MeshVerifier : public Verifier

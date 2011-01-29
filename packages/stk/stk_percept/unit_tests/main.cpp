@@ -18,93 +18,87 @@
 #endif
 
 #include <stk_percept/fixtures/Fixture.hpp>
+#include <stk_percept/RunEnvironment.hpp>
 
-namespace stk { namespace percept { namespace unit_tests {
+namespace stk { 
+  namespace percept { 
+    namespace unit_tests {
 
-    void test_shards_array();
-    int testSweepMesher( stk::ParallelMachine parallel_machine );
+      void test_shards_array();
+      int testSweepMesher( stk::ParallelMachine parallel_machine );
 
-  //OptionMaskParser dw_option_mask("use case diagnostic writer");
+      //OptionMaskParser dw_option_mask("use case diagnostic writer");
 
-  void TEST_geom_volume(const stk::ParallelMachine comm);
+      void TEST_geom_volume(const stk::ParallelMachine comm);
 
-int utest_main(int argc, char **argv) { 
+      int utest_main(int argc, char **argv) { 
 
-  //dw_option_mask.mask("search", use_case::LOG_SEARCH, "log search diagnostics");
+        for (int i = 0; i < argc; ++i) {
+          const std::string s(argv[i]);
+          std::cout << "tmp 0 argv["<<i<<"]= " << s << std::endl;
+        }
 
-  // junk - FIXME
-  //myMain3();
-  //myMain2();
-  bopt::options_description desc("stk_percept unit tests options");
-    
-  // NOTE: Options --directory --output-log --runtest are handled/defined in UseCaseEnvironment
-#if 0
-  std::string range_mesh;
-  desc.add_options()
-    ("range_mesh",    bopt::value<std::string>(&range_mesh), " range mesh")
-    ("offset",       bopt::value<double>()->default_value(0.1), "transfer use case 3 offset" )
-    //    ("dw", boost::program_options::value<std::string>(), dw_option_mask.describe().c_str())
-    ("scale",        bopt::value<double>()->default_value(0.0), "transfer use case 3 scale." )
-    ;
+        std::cout << "tmp 0 argv["<<0<<"]= " << argv[0] << std::endl;
 
-  stk::get_options_description().add(desc);
-#endif
+        RunEnvironment run_environment(&argc, &argv, true);
+        run_environment.clp.setDocString("stk_percept unit tests options");
+        run_environment.processCommandLine(&argc, &argv);
 
-  //use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
-  RunEnvironment run_environment(&argc, &argv);
+        unsigned p_size = stk::parallel_machine_size(run_environment.m_comm);
+        bool isParallel = p_size > 0; // FIXME
+        std::cout << "isParallel = " << isParallel << std::endl;
+        if (!isParallel)
+          {
+            std::cout << "running testSweepMesher ..." << std::endl;
+            stk::percept::unit_tests::test_shards_array();
 
-  //bopt::variables_map &vm = stk::get_variables_map();  
+            // run a few tests of SweepMesher - these aren't unit tests, and just produce some output FIXME: move to use_cases directory?
+            int res1 =  stk::percept::unit_tests::testSweepMesher(run_environment.m_comm);
+            std::cout << "testSweepMesher result= " << res1 << std::endl;
+          }
 
-  unsigned p_size = stk::parallel_machine_size(run_environment.m_comm);
-  bool isParallel = p_size > 0; // FIXME
-  if (!isParallel)
-    {
-      stk::percept::unit_tests::test_shards_array();
-
-      // run a few tests of SweepMesher - these aren't unit tests, and just produce some output FIXME: move to use_cases directory?
-      int res1 =  stk::percept::unit_tests::testSweepMesher(run_environment.m_comm);
-      std::cout << "testSweepMesher result= " << res1 << std::endl;
-    }
-
-  std::cout << "Running main() from gtest_main.cc" << std::endl;
-  bool result = true;
+        std::cout << "Running main() from gtest_main.cc" << std::endl;
+        bool result = true;
 
 #ifndef REDS
-  testing::InitGoogleTest(&argc, argv);  
-  //  bool result = 0;
-  try {
-    //TEST_geom_volume(run_environment.m_comm);
+        testing::InitGoogleTest(&argc, argv);  
+        //  bool result = 0;
+        try {
+          //TEST_geom_volume(run_environment.m_comm);
     
-    result = RUN_ALL_TESTS(); 
-  }
-  catch ( const std::exception * X ) {
-    std::cout << "  unexpected exception POINTER: " << X->what() << std::endl;
-    //exit(1);
-  }
-  catch ( const std::exception & X ) {
-    std::cout << " stk_percept::unit_tests::main unexpected exception: " << X.what() << std::endl;
-    //exit(1);
-  }
-  catch( ... ) {
-    std::cout << "  ... exception" << std::endl;
-    //exit(1);
-  }
+          result = RUN_ALL_TESTS(); 
+          std::cout << "stk::percept: result = " << result << std::endl;
+        }
+        catch ( const std::exception * X ) {
+          std::cout << "  unexpected exception POINTER: " << X->what() << std::endl;
+          //exit(1);
+        }
+        catch ( const std::exception & X ) {
+          std::cout << " stk_percept::unit_tests::main unexpected exception: " << X.what() << std::endl;
+          //exit(1);
+        }
+        catch( ... ) {
+          std::cout << "  ... exception" << std::endl;
+          //exit(1);
+        }
 
 #endif
 
 #if doMPI
-  MPI_Finalize(); 
+        MPI_Finalize(); 
 #endif
 
-  return result;
-}
+        return result;
+      }
 
-}}}
+    }}}
 
 #include <stk_percept/pyencore.h>
 #if !PY_PERCEPT
 int main(int argc, char **argv) { 
 
-  return stk::percept::unit_tests::utest_main(argc, argv);
+  int success = stk::percept::unit_tests::utest_main(argc, argv);
+  std::cout << "stk::percept: success = " << success << std::endl;
+  return success;
 }
 #endif

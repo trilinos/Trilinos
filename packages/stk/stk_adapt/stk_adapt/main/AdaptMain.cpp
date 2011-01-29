@@ -26,7 +26,6 @@
 #include <stk_util/environment/WallTime.hpp>
 
 #include <stk_adapt/UniformRefiner.hpp>
-#include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
 
 #define ALLOW_MEM_TEST 1
@@ -87,31 +86,6 @@ namespace stk {
 
     }
 
-    using namespace boost::program_options;
-
-    static void 
-    print(boost::program_options::options_description& options)
-    {
-      const std::vector< boost::shared_ptr<option_description> >& m_options = options.options();
-
-      /* Find the maximum width of the option column */
-      unsigned width(23);
-      unsigned i; // vc6 has broken for loop scoping
-      for (i = 0; i < m_options.size(); ++i)
-        {
-          const option_description& opt = *m_options[i];
-          std::stringstream ss;
-          ss << "  " << opt.format_name() << ' ' << opt.format_parameter();
-          width = std::max(width, static_cast<unsigned>(ss.str().size()));
-        }
-        
-      /* add an additional space to improve readability */
-      ++width;
-            
-      if(0) std::cout << "width= " << width << std::endl;
-      //exit(1);
-    }
-
     static void checkInput(std::string option, std::string value, std::string allowed_values, RunEnvironment& run_environment)
     {
       //if (value.length() == 0) return;
@@ -135,26 +109,29 @@ namespace stk {
     int adapt_main(int argc, char **argv) 
     { 
       EXCEPTWATCH;
-      //dw_option_mask.mask("search", use_case::LOG_SEARCH, "log search diagnostics");
+      bool debug_re = false;
+      RunEnvironment run_environment(&argc, &argv, debug_re);
+      unsigned p_rank = stk::parallel_machine_rank(run_environment.m_comm);
 
       double t0 =  stk::wall_time(); 
 
-      bopt::options_description desc("stk_adapt options", 132);
+      //bopt::options_description desc("stk_adapt options", 132);
+      std::string options_description_desc = "stk_adapt options";
     
       // NOTE: Options --directory --output-log --runtest are handled/defined in RunEnvironment
-      std::string input_mesh;
-      std::string output_mesh;
-      std::string block_name;
-      std::string convert;
-      std::string refine;
-      std::string enrich;
+      std::string input_mesh="";
+      std::string output_mesh="";
+      std::string block_name = "";
+      std::string convert="";
+      std::string refine="";
+      std::string enrich="";
       bool doConvert = true;
-      bool doLoadBal = true;
+      int load_balance = 1;
       std::string convert_Hex8_Tet4_24 = "Hex8_Tet4_24";      
-      int printInfo=0;
-      bool remove_original_elements = true;
-      unsigned numRefines = 1;
-      bool addProcRankField = false;
+      int print_info=0;
+      int remove_original_elements = 1;
+      int number_refines = 1u;
+      int proc_rank_field = 0;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc = 
@@ -174,63 +151,40 @@ namespace stk {
       int test_memory_elements = 0;
       int test_memory_nodes = 0;
       
-      desc.add_options()
-        //         ("convert",    bopt::value<std::string>(&convert)->default_value(Util::split(convert_options, ", ")[0]), convert_options.c_str())
-        //         ("refine",     bopt::value<std::string>(&refine)->default_value(Util::split(refine_options, ", ")[0]), refine_options.c_str())
-        //         ("enrich",     bopt::value<std::string>(&enrich)->default_value(Util::split(enrich_options, ", ")[0]), enrich_options.c_str())
-        ("convert",    bopt::value<std::string>(&convert), convert_options.c_str())
-        ("refine",     bopt::value<std::string>(&refine), refine_options.c_str())
-        ("enrich",     bopt::value<std::string>(&enrich), enrich_options.c_str())
-        ("input_mesh",    bopt::value<std::string>(&input_mesh), "input mesh name")
-        ("output_mesh",    bopt::value<std::string>(&output_mesh), "output mesh name")
-        ("number_refines",    bopt::value<unsigned>(&numRefines)->default_value(1),   "number of refinement passes")
-        ("block_name",    bopt::value<std::string>(&block_name)->default_value(""), block_name_desc.c_str())
-        ("print_info",    bopt::value<int>(&printInfo)->default_value(0),                 ">= 0  (higher values print more info)")
-        ("load_balance",    bopt::value<bool>(&doLoadBal)->default_value(true), " load balance (slice/spread) input mesh file")
-#if ALLOW_MEM_TEST
-        ("test_memory_elements",  bopt::value<int>(&test_memory_elements)->default_value(0), " give a number of elements")
-        ("test_memory_nodes",  bopt::value<int>(&test_memory_nodes)->default_value(0), " give a number of nodes")
-#endif
-        ("proc_rank_field",    bopt::value<bool>(&addProcRankField)->default_value(false), " add an element field to show processor rank")
-        ("remove_original_elements",    bopt::value<bool>(&remove_original_elements)->default_value(true), " remove original (converted) elements (default=true)")
-        ;
+      run_environment.clp.setOption("convert"                  , &convert                  , convert_options.c_str());
+      run_environment.clp.setOption("refine"                   , &refine                   , refine_options.c_str());
+      run_environment.clp.setOption("enrich"                   , &enrich                   , enrich_options.c_str());
+      run_environment.clp.setOption("input_mesh"               , &input_mesh               , "input mesh name");
+      run_environment.clp.setOption("output_mesh"              , &output_mesh              , "output mesh name");
+      run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
+      run_environment.clp.setOption("block_name"               , &block_name               , block_name_desc.c_str());
+      run_environment.clp.setOption("print_info"               , &print_info               , ">= 0  (higher values print more info)");
+      run_environment.clp.setOption("load_balance"             , &load_balance             , " load balance (slice/spread) input mesh file");
 
-      stk::get_options_description().add(desc);
-      print(stk::get_options_description());
+#if ALLOW_MEM_TEST
+      run_environment.clp.setOption("test_memory_elements"     , &test_memory_elements     , " give a number of elements");
+      run_environment.clp.setOption("test_memory_nodes"        , &test_memory_nodes        , " give a number of nodes");
+#endif
+      run_environment.clp.setOption("proc_rank_field"          , &proc_rank_field          , " add an element field to show processor rank");
+      run_environment.clp.setOption("remove_original_elements" , &remove_original_elements , " remove original (converted) elements (default=true)");
+
+      run_environment.processCommandLine(&argc, &argv);
 
       int result = 0;
       unsigned failed_proc_rank = 0u;
 
-      RunEnvironment run_environment(&argc, &argv);
-      unsigned p_rank = stk::parallel_machine_rank(run_environment.m_comm);
-
-
       try {
 
-        bopt::variables_map &vm = stk::get_variables_map();  
+        if (convert.length())
+          checkInput("convert", convert, convert_options, run_environment);
 
-        if (vm.count("input_mesh"))
-          input_mesh = vm["input_mesh"].as<std::string>();
-        if (vm.count("output_mesh"))
-          output_mesh = vm["output_mesh"].as<std::string>();
+        if (refine.length())
+          checkInput("refine", refine, refine_options, run_environment);
 
-        if (vm.count("convert"))
-          {
-            convert = vm["convert"].as<std::string>();
-            checkInput("convert", convert, convert_options, run_environment);
-          }
-        if (vm.count("refine"))
-          {
-            refine = vm["refine"].as<std::string>();
-            checkInput("refine", refine, refine_options, run_environment);
-          }
-        if (vm.count("enrich"))
-          {
-            enrich = vm["enrich"].as<std::string>();
-            checkInput("enrich", enrich, enrich_options, run_environment);
-          }
+        if (enrich.length())
+          checkInput("enrich", enrich, enrich_options, run_environment);
 
-        if (printInfo)
+        if (print_info)
           {
             doConvert = false;
           }
@@ -245,12 +199,11 @@ namespace stk {
             exit(1);
           }
 
-        EXCEPTWATCH;
 #if defined( STK_HAS_MPI )
         MPI_Barrier( MPI_COMM_WORLD );
 #endif
 
-        if (doLoadBal)
+        if (load_balance)
           {
             RunEnvironment::doLoadBalance(run_environment.m_comm, input_mesh);
           }
@@ -287,8 +240,8 @@ namespace stk {
 
         int scalarDimension = 0; // a scalar
 
-        FieldBase* proc_rank_field = 0;
-        if (addProcRankField)
+        FieldBase* proc_rank_field_ptr = 0;
+        if (proc_rank_field)
           eMesh.addField("proc_rank", mesh::Element, scalarDimension);
 
         eMesh.commit();
@@ -306,9 +259,9 @@ namespace stk {
             exit(1);
           }
         
-        if (printInfo)
+        if (print_info)
           {
-            eMesh.printInfo("convert", printInfo);
+            eMesh.printInfo("convert", print_info);
           }
 
         // FIXME
@@ -320,12 +273,11 @@ namespace stk {
 
         if (doConvert)
           {
-            UniformRefiner breaker(eMesh, *pattern, proc_rank_field);
+            UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
             breaker.setRemoveOldElements(remove_original_elements);
 
-            for (unsigned iBreak = 0; iBreak < numRefines; iBreak++)
+            for (int iBreak = 0; iBreak < number_refines; iBreak++)
               {
-                //if (iBreak == 3) Util::setFlag(1245, true);
                 if (!eMesh.getRank())
                   {
                     std::cout << "Refinement pass # " << (iBreak+1) << " start..." << std::endl;
@@ -337,9 +289,6 @@ namespace stk {
                   }
               }
 
-            // FIXME
-            //eMesh.printInfo("after convert", 2);
-
             eMesh.saveAs(output_mesh);
           }
 
@@ -349,8 +298,6 @@ namespace stk {
             std::cout << "tmp timer[" << itime << "]= " << s_timers[itime] << " " << s_timers[itime]/s_timers[3]*100 << " %" << std::endl;
           }
 #endif
-        // tmp
-        //if (p_rank == 1) throw std::runtime_error("test");
         
       }
       catch ( const std::exception * X ) {
@@ -380,7 +327,8 @@ namespace stk {
       return result;
     }
 
-  }}
+  }
+}
 
 //#include "pyencore.h"
 //#if !PY_PERCEPT

@@ -17,7 +17,6 @@
 #include <stk_percept/Util.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/environment/ProgramOptions.hpp>
 
 #define STK_ADAPT_COLORER_STORED_ENTITYID 0
 
