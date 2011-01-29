@@ -28,6 +28,7 @@
 #include <boost/lexical_cast.hpp>
 #include <stk_io/IossBridge.hpp>
 
+#include <stk_percept/Percept.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
 
@@ -75,7 +76,6 @@ namespace stk
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
-
         const unsigned p_size = stk::parallel_machine_size( pm );
         std::cout << "p_size= " << p_size << std::endl;
         // this case can't be load balanced (I presume there are too few elements)
@@ -84,7 +84,7 @@ namespace stk
             // start_demo_break_tet_shell3_tet
 
             std::string input_mesh = "./input_files/shell-tests/tet_shell3_tet.g";
-            if (p_size) 
+            if (p_size > 1)
               {
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
@@ -130,11 +130,11 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         // this case can't be load balanced (I presume there are too few elements)
         //if (p_size <= 3)
-          if (p_size == 1)
+        if (p_size == 1)
           {
             // start_demo_break_hex_shell4_hex
             std::string input_mesh = "./input_files/shell-tests/hex_shell4_hex.g";
-            if (p_size) 
+            if (p_size > 1)
               {
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
@@ -204,6 +204,8 @@ namespace stk
               "*/\n\n"
                  << std::endl;
 
+            // FIXME
+#if !(defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
             Line2_Line2_2            :: printRefinementTopoX_Table(file);
             ShellLine2_ShellLine2_2  :: printRefinementTopoX_Table(file);
             Quad4_Quad4_4            :: printRefinementTopoX_Table(file);
@@ -218,7 +220,7 @@ namespace stk
             Quad9_Quad9_4            :: printRefinementTopoX_Table(file);
             Hex27_Hex27_8            :: printRefinementTopoX_Table(file);
             Tet10_Tet10_8            :: printRefinementTopoX_Table(file);
-
+#endif
             file << "#endif" << std::endl;
           }
       }
@@ -249,7 +251,7 @@ namespace stk
           {
             // start_demo_break_quad_to_quad_shell
             std::string input_mesh = "./input_files/shell-tests/freshell_quad4.g";
-            if (p_size) 
+            if (p_size > 1)
               {
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
@@ -301,7 +303,7 @@ namespace stk
             // start_demo_break_tri_to_tri_shell
 
             std::string input_mesh = "./input_files/shell-tests/freshell_tri3.g";
-            if (p_size) 
+            if (p_size > 1)
               {
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
@@ -1818,11 +1820,11 @@ namespace stk
             //                         std::string output_filename
             //                         )
             percept::WedgeFixture::createMesh(MPI_COMM_WORLD,
-                                             4, 3, 2,
-                                             0, 1,
-                                             0, 1,
-                                             0, 1,
-                                             std::string("swept-wedge_0.e") );
+                                              4, 3, 2,
+                                              0, 1,
+                                              0, 1,
+                                              0, 1,
+                                              std::string("swept-wedge_0.e") );
 
             eMesh.open("swept-wedge_0.e");
 
@@ -1868,11 +1870,11 @@ namespace stk
             //                         std::string output_filename
             //                         )
             percept::WedgeFixture::createMesh(MPI_COMM_WORLD,
-                                             4, 3, 2,
-                                             0, 1,
-                                             0, 1,
-                                             0, 1,
-                                             std::string("swept-wedge_enrich_0.e") );
+                                              4, 3, 2,
+                                              0, 1,
+                                              0, 1,
+                                              0, 1,
+                                              std::string("swept-wedge_enrich_0.e") );
 
             eMesh.open("swept-wedge_enrich_0.e");
 
@@ -1905,57 +1907,57 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        //if (1) return;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
         // start_demo_use_case_3_heterogeneous_mesh
 
         //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
         const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
 
-        if (p_size <= 1)
+        if (p_size <= 3)
           {
             // create the mesh
             {
-              //stk::mesh::use_cases::UseCase_3_Mesh mesh(MPI_COMM_WORLD, false);
               stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
               stk::io::put_io_part_attribute(  mesh.m_block_hex );
               stk::io::put_io_part_attribute(  mesh.m_block_wedge );
               stk::io::put_io_part_attribute(  mesh.m_block_tet );
-              ///
+
 #if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
               stk::io::put_io_part_attribute(  mesh.m_block_pyramid );
               stk::io::put_io_part_attribute(  mesh.m_block_quad_shell );
               stk::io::put_io_part_attribute(  mesh.m_block_tri_shell );
 #endif
-              ///
-              mesh.m_metaData.commit();
 
+              mesh.m_metaData.commit();
               mesh.populate();
-              //std::cout << "tmp here 1 " << &mesh.m_metaData << " " << &mesh.m_bulkData << std::endl;
-              //bool local_status =  stk::mesh::use_cases::verifyMesh(mesh);
 
               bool isCommitted = true;
               percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
 
-              em1.printInfo("heterogeneous", 1);
+              //em1.printInfo("heterogeneous", 4);
 
               em1.saveAs("./input_files/heterogeneous_0.e");
               em1.close();
             }
-            
+
+            std::string input_mesh = "./input_files/heterogeneous_0.e";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
             // refine the mesh
             if (1)
-            {
+              {
                 percept::PerceptMesh eMesh1;
+
                 eMesh1.open("./input_files/heterogeneous_0.e");
 
-                //UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_pattern(eMesh1);
                 URP_Heterogeneous_3D break_pattern(eMesh1);
                 int scalarDimension = 0; // a scalar
                 FieldBase* proc_rank_field = eMesh1.addField("proc_rank", mesh::Element, scalarDimension);
                 eMesh1.commit();
-
-                //                 if (iBreak != 0)
-                //                   proc_rank_field = eMesh1.getField("proc_rank");
 
                 UniformRefiner breaker(eMesh1, break_pattern, proc_rank_field);
 
@@ -1963,11 +1965,9 @@ namespace stk
                 breaker.setIgnoreSideSets(true);
                 breaker.doBreak();
 
-                //eMesh1.printInfo("quad_fixture_1.e");
-
                 eMesh1.saveAs("./output_files/heterogeneous_1.e");
                 eMesh1.close();
-            }
+              }
           }
       }
 

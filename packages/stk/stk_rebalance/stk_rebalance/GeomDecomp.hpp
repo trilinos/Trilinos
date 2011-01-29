@@ -11,7 +11,27 @@
 #ifndef stk_rebalance_GeomDecomp_hpp
 #define stk_rebalance_GeomDecomp_hpp
 
-/** \file GeomDecomp.h
+// STL components
+#include <vector>
+#include <string>
+#include <utility>
+#include <map>
+
+#include <stk_rebalance/Partition.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/Entity.hpp>
+
+namespace stk {
+/** Rebalance API
+*/
+namespace rebalance {
+
+/** \addtogroup stk_rebalance_module
+ *  \{
+ */
+
+/** \file GeomDecomp.hpp
  *
  * \brief Geometric support for partitioning of mesh entities.
  *
@@ -30,20 +50,6 @@
  * having specialized knowledge of the derived classes.
  */
 
-
-// STL components
-#include <vector>
-#include <string>
-#include <utility>
-#include <map>
-
-#include <stk_rebalance/Partition.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Entity.hpp>
-
-namespace stk {
-namespace rebalance {
 
 /** \class GeomDecomp 
  *
@@ -131,6 +137,9 @@ public:
   static bool confirm ( const std::string &param_set_name );
 
 };
+
+/** \} */
+
 }
 } // namespace stk
 

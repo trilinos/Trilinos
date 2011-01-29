@@ -183,47 +183,50 @@ namespace stk{
 
       m_bulkData.modification_begin();
 
-      EntityId curr_elem_id = 1;
+      if (m_bulkData.parallel_rank() == 0)
+        {
+          EntityId curr_elem_id = 1;
 
-      // For each element topology declare elements
+          // For each element topology declare elements
 
-      for ( unsigned i = 0 ; i < number_hex ; ++i , ++curr_elem_id ) {
-        declare_element( m_bulkData, m_block_hex, curr_elem_id, hex_node_ids[i] );
-      }
+          for ( unsigned i = 0 ; i < number_hex ; ++i , ++curr_elem_id ) {
+            declare_element( m_bulkData, m_block_hex, curr_elem_id, hex_node_ids[i] );
+          }
 
-      for ( unsigned i = 0 ; i < number_wedge ; ++i , ++curr_elem_id ) {
-        declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
-      }
+          for ( unsigned i = 0 ; i < number_wedge ; ++i , ++curr_elem_id ) {
+            declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
+          }
 
-      for ( unsigned i = 0 ; i < number_tetra ; ++i , ++curr_elem_id ) {
-        declare_element( m_bulkData, m_block_tet, curr_elem_id, tetra_node_ids[i] );
-      }
+          for ( unsigned i = 0 ; i < number_tetra ; ++i , ++curr_elem_id ) {
+            declare_element( m_bulkData, m_block_tet, curr_elem_id, tetra_node_ids[i] );
+          }
 
 #if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-      for ( unsigned i = 0 ; i < number_pyramid ; ++i , ++curr_elem_id ) {
-        declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
-      }
+          for ( unsigned i = 0 ; i < number_pyramid ; ++i , ++curr_elem_id ) {
+            declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
+          }
 
-      for ( unsigned i = 0 ; i < number_shell_quad ; ++i , ++curr_elem_id ) {
-        declare_element( m_bulkData, m_block_quad_shell, curr_elem_id, shell_quad_node_ids[i]);
-      }
+          for ( unsigned i = 0 ; i < number_shell_quad ; ++i , ++curr_elem_id ) {
+            declare_element( m_bulkData, m_block_quad_shell, curr_elem_id, shell_quad_node_ids[i]);
+          }
 
-      for ( unsigned i = 0 ; i < number_shell_tri ; ++i , ++curr_elem_id ) {
-        declare_element( m_bulkData, m_block_tri_shell, curr_elem_id, shell_tri_node_ids[i] );
-      }
+          for ( unsigned i = 0 ; i < number_shell_tri ; ++i , ++curr_elem_id ) {
+            declare_element( m_bulkData, m_block_tri_shell, curr_elem_id, shell_tri_node_ids[i] );
+          }
 #endif
 
-      // For all nodes assign nodal coordinates
-      for ( unsigned i = 0 ; i < node_count ; ++i ) {
-        Entity * const node = m_bulkData.get_entity( NODE_RANK , i + 1 );
-        double * const coord = field_data( m_coordinates_field , *node );
-        coord[0] = node_coord_data[i][0] ;
-        coord[1] = node_coord_data[i][1] ;
-        coord[2] = node_coord_data[i][2] ;
-      }
+          // For all nodes assign nodal coordinates
+          for ( unsigned i = 0 ; i < node_count ; ++i ) {
+            Entity * const node = m_bulkData.get_entity( NODE_RANK , i + 1 );
+            double * const coord = field_data( m_coordinates_field , *node );
+            coord[0] = node_coord_data[i][0] ;
+            coord[1] = node_coord_data[i][1] ;
+            coord[2] = node_coord_data[i][2] ;
+          }
 
+        }
       m_bulkData.modification_end();
-      // No parallel stuff for now
+
     }
 
     // Verify mesh for 6 different parts

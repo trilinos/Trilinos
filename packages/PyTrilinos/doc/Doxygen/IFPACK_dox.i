@@ -6140,11 +6140,16 @@ Returns the number of rows contained in specified partition. ";
 
 %feature("docstring")  Ifpack_OverlappingPartitioner::RowsInPart "int
 Ifpack_OverlappingPartitioner::RowsInPart(const int Part, int *List)
-const ";
+const
+
+Copies into List the rows in the (overlapping) partition Part. ";
 
 %feature("docstring")
 Ifpack_OverlappingPartitioner::NonOverlappingPartition "const int*
-Ifpack_OverlappingPartitioner::NonOverlappingPartition() const ";
+Ifpack_OverlappingPartitioner::NonOverlappingPartition() const
+
+Returns a pointer to the integer vector containing the non-overlapping
+partition ID of each local row. ";
 
 %feature("docstring")  Ifpack_OverlappingPartitioner::SetParameters "int
 Ifpack_OverlappingPartitioner::SetParameters(Teuchos::ParameterList
@@ -8192,10 +8197,6 @@ Computes the partitions. Returns 0 if successful. ";
 
 
 // File: Ifpack_8cpp.xml
-%feature("docstring")  precTypeNameToIntMap "const
-Teuchos::StringToIntMap @0::precTypeNameToIntMap(\"parameter
-\\\\\"Prec Type\\\\\"\", Ifpack::numPrecTypes, Ifpack::precTypeNames)
-";
 
 
 // File: Ifpack_8h.xml
@@ -8966,8 +8967,8 @@ IFPACK. ";
 %feature("docstring")  Ifpack_Version "string Ifpack_Version() ";
 
 
-// File: dir_207d99e23ac77274753a810581b3f875.xml
+// File: dir_9b150e231a3088b15fbe04166109c688.xml
 
 
-// File: dir_0562ae9d8b33a9f28564b6cabeba0009.xml
+// File: dir_0edeec2379d245cfc73672c515d4a02d.xml
 

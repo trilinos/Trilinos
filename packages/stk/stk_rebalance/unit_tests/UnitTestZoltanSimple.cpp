@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -25,6 +24,8 @@
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
+
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
 
 using stk::mesh::fem::NODE_RANK;
 
@@ -141,22 +142,17 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   stk::mesh::PartVector add_parts;
   stk::mesh::create_adjacent_entities(bulk_data, add_parts);
 
-  // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
+  // Zoltan partition is specialized fomm a virtual base class, stk::rebalance::Partition.
   // Other specializations are possible.
   Teuchos::ParameterList emptyList;
   stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
 
   stk::mesh::Selector selector(meta_data.universal_part());
 
-  // Force a rebalance by using imbalance_threshold < 1.0
-  double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, imbalance_threshold);
-  // Coordinates are passed to support geometric-based load balancing algorithms
-  if( do_rebal )
-    stk::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
+  stk::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
 
-  imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, &weight_field, imbalance_threshold);
+  const double imbalance_threshold = stk::rebalance::check_balance(bulk_data, &weight_field, element_rank);
+  const bool do_rebal = 1.5 < imbalance_threshold;
 
   // Check that we satisfy our threshhold
   STKUNIT_ASSERT( !do_rebal );
@@ -168,4 +164,74 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   {
     STKUNIT_ASSERT_LE(imbalance_threshold, 1.5);
   }
+
+  // And verify that all dependent entities are on the same proc as their parent element
+  {
+    stk::mesh::EntityVector entities;
+    stk::mesh::Selector selector = meta_data.locally_owned_part();
+
+    get_selected_entities(selector, bulk_data.buckets(NODE_RANK), entities);
+    bool result = stk::rebalance::verify_dependent_ownership(element_rank, entities, top_data);
+    //get_selected_entities(selector, bulk_data.buckets(constraint_rank), entities);
+    //result &= stk::rebalance::verify_dependent_ownership(element_rank, entities, top_data);
+    STKUNIT_ASSERT( result );
+  }
 }
+
+/// \page stk_rebalance_unit_test_zoltan
+///  \ingroup stk_rebalance_unit_test_module
+/// \section stk_rebalance_unit_test_zoltan_description Simple Zoltan Unit Test
+///
+/// This unit test creates a 2D quad mesh on proc 0 with coordinates and 
+/// Parts associated with edges, nodes, and constraints and then moves these entities
+/// as determined by calling Zoltan's load balancing capability using
+/// default settings. 
+///
+/// Using the following mesh of 4 quads,
+///
+///  Global node and element numbering
+/// <pre>
+///
+///   7       8       9
+///   +-------+-------+
+///   |       |       |
+///   |  e3   |  e4   |
+///   |       |5      |
+///  4+-------+-------+6   
+///   |       |       |     Y
+///   |  e1   |  e2   |     |
+///   |       |       |     |
+///   +-------+-------+     *--> X
+///   1       2      3 
+/// </pre>
+///
+///  Local node numbering
+///
+/// <pre>
+///     
+///   3       4
+///   +-------+
+///   |       |
+///   |  e1   |
+///   |       |
+///   +-------+
+///   1       2
+/// </pre>
+///
+/// Use of Zoltan with default settings is achieved by instantiating the
+/// appropriate Partition class with an empty parameter list as follows,
+/// \dontinclude UnitTestZoltanSimple.cpp
+/// \skip Zoltan partition is 
+/// \until zoltan_partition(
+///
+/// An initial assessment of imbalance is made using an element weight field
+/// followed by a call to actually do the rebalance as follows,
+/// \skip Force a rebalance
+/// \until rebalance::rebalance(
+/// 
+/// Perfect balancing should result using 2 or 4 procs, and
+/// on 3 procs, the imbalance threshold should be below 1.5.
+/// The test passes if these criteria are satisfied.
+///
+/// See \ref UnitTestZoltanSimple.cpp for the complete source listing.
+///

@@ -7,7 +7,7 @@
 #include <stk_percept/Util.hpp>
 
 
-#include "PerceptMesh.hpp"
+#include <stk_percept/PerceptMesh.hpp>
 
 //#include <Intrepid_Basis.hpp>
 
@@ -38,12 +38,23 @@ namespace stk {
     //========================================================================================================================
     /// high-level interface
 
-
-    PerceptMesh::PerceptMesh(stk::ParallelMachine comm  ) 
+    PerceptMesh::PerceptMesh(stk::ParallelMachine comm) :
+      m_metaData(NULL),
+      m_bulkData(NULL),
+      m_fixture(NULL),
+      m_iossRegion(NULL),
+      m_coordinatesField(NULL),
+      m_spatialDim(0),
+      m_ownData(false),
+      m_isCommitted(false),
+      m_isOpen(false),
+      m_isInitialized(false),
+      m_isAdopted(false),
+      m_dontCheckState(false),
+      m_filename(),
+      m_comm(comm)
     {
-      m_dontCheckState = false;
-      m_comm = comm;
-      init(comm);
+        init(m_comm);
     }
 
     /// reads and commits mesh, editing disabled
@@ -141,12 +152,12 @@ namespace stk {
     }
 
     /// commits mesh  - any operations done on a non-committed mesh, except to add fields will throw an exception
-    void PerceptMesh::
-    commit()
+    void PerceptMesh::commit()
     {
       commitMetaData();
       // no op if mesh created by newMesh
       readBulkData();  
+      setCoordinatesField();
       m_isCommitted = true;
     }
 
@@ -454,11 +465,11 @@ namespace stk {
     int PerceptMesh::
     getSpatialDim()
     {
-#ifndef NDEBUG
-      const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getMetaData()->universal_part());
-      unsigned dataStride = r.stride[0] ;
-      VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::getSpatialDim() bad spatial dim");
-#endif
+// #ifndef NDEBUG
+//       const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getMetaData()->universal_part());
+//       unsigned dataStride = r.stride[0] ;
+//       VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::getSpatialDim() bad spatial dim");
+// #endif
       return m_spatialDim;
     }
 
@@ -475,25 +486,29 @@ namespace stk {
         }
     }
 
-    PerceptMesh::PerceptMesh(stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) : 
-      m_ownData(false), m_metaData(metaData), m_bulkData(bulkData),  m_iossRegion(0)
+    PerceptMesh::PerceptMesh(stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) :
+        m_metaData(metaData),
+        m_bulkData(bulkData),
+        m_fixture(NULL),
+        m_iossRegion(NULL),
+        m_coordinatesField(NULL),
+        m_spatialDim(3),
+        m_ownData(false),
+        m_isCommitted(isCommitted),
+        m_isOpen(true),
+        m_isInitialized(true),
+        m_isAdopted(true),
+        m_dontCheckState(false),
+        m_filename(),
+        m_comm()
     {
       if (!bulkData) 
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
-      m_fixture       = 0;
-      m_iossRegion    = 0;
-      m_isCommitted   = isCommitted;
-      m_isAdopted     = true;
-      m_isOpen        = true;
-      m_filename      = "";
-      m_isInitialized = true;
-      m_dontCheckState = false;
-      m_spatialDim = 3;
-#if 1
 
-      if (getCoordinatesField())
-        {
-          const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getMetaData()->universal_part());
+      setCoordinatesField();
+
+      if (m_coordinatesField) {
+          const stk::mesh::FieldBase::Restriction & r = m_coordinatesField->restriction(stk::mesh::Node, getMetaData()->universal_part());
           unsigned dataStride = r.stride[0] ;
           m_spatialDim = dataStride;
           if (m_spatialDim != 2 && m_spatialDim != 3)
@@ -502,11 +517,10 @@ namespace stk {
               throw std::runtime_error("PerceptMesh::PerceptMesh(adopt form): bad spatial dim");
             }
         }
-#endif
     }
 
     void PerceptMesh::
-    init (stk::ParallelMachine comm)
+    init(stk::ParallelMachine comm)
     {
       m_isInitialized = true;
       m_comm          = comm;
@@ -519,10 +533,10 @@ namespace stk {
       m_isAdopted     = false;
       m_isOpen        = false;
       m_filename      = "";
+      m_coordinatesField = NULL;
     }
 
-    void PerceptMesh::
-    destroy()
+    void PerceptMesh::destroy()
     {
       //EXCEPTWATCH;
       if (m_ownData)
@@ -538,7 +552,9 @@ namespace stk {
           m_fixture = 0;
         }
       m_spatialDim = 0;
+      m_coordinatesField = NULL;
     }
+
     PerceptMesh::~PerceptMesh() 
     { 
       destroy();
@@ -555,6 +571,15 @@ namespace stk {
       return m_metaData;
     }
 
+    void PerceptMesh::setCoordinatesField() {
+      if (m_bulkData == NULL || m_metaData == NULL) {
+        throw std::runtime_error("PerceptMesh::setCoordinatesField() requires metadata and bulkdata");
+      }
+      m_coordinatesField = m_metaData->get_field<VectorFieldType >("coordinates");
+      if (m_coordinatesField == NULL) {
+          throw std::runtime_error("PerceptMesh::setCoordinatesField() could not obtain the field from meta data");
+      }
+    }
 
     mesh::Part* PerceptMesh::
     getNonConstPart(const std::string& part_name) 
@@ -643,19 +668,6 @@ namespace stk {
       stk::io::set_field_role(*field, Ioss::Field::TRANSIENT);
 
       return field;
-    }
-
-    VectorFieldType* PerceptMesh::
-    getCoordinatesField() 
-    {
-      VectorFieldType *coords_field = getMetaData()->get_field<VectorFieldType >("coordinates");
-#if 1
-      if (!coords_field) 
-        {
-          throw std::runtime_error("PerceptMesh::getCoordinatesField() coords_field = null");
-        }
-#endif
-      return coords_field;
     }
 
     // modeled after Kuettler's code
@@ -1441,11 +1453,9 @@ namespace stk {
       EXCEPTWATCH;
       //checkState("nodalOpLoop");
 
-      mesh::MetaData& metaData = *m_metaData;
       mesh::BulkData& bulkData = *m_bulkData;
 
-      // FIXME consider caching the coords_field in FieldFunction
-      VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
+      VectorFieldType *coords_field = getCoordinatesField();
 
       // for each node in the codomain, evaluate the function_to_interpolate's function, assign to the codomain field
 
@@ -1533,6 +1543,9 @@ namespace stk {
          supportedTopologies.push_back(shards::getCellTopologyData<Wedge<6> >() );
          supportedTopologies.push_back(shards::getCellTopologyData<Wedge<18> >() );
       */
+
+      // FIXME
+#if !(defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
       m_basisTable[shards::getCellTopologyData<Line<2> >()-> key]          = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
       //m_basisTable[shards::getCellTopologyData<Line<3> >()-> key]          = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
 
@@ -1557,7 +1570,7 @@ namespace stk {
       m_basisTable[shards::getCellTopologyData<ShellTriangle<6> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
 
       m_basisTable[shards::getCellTopologyData<ShellQuadrilateral<4> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
-      
+#endif      
 
       // etc....
 

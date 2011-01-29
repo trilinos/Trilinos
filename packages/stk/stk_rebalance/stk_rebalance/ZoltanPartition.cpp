@@ -520,22 +520,6 @@ double Zoltan::zoltan_version()   const { return static_zoltan_version();  }
 //: Constructor
 //: ===========
 
-//Diag::Writer &
-//rebalance::Zoltan::verbose_print(
-//  Diag::Writer &                dout) const
-//{
-//  if (dout.shouldPrint()) {
-//    dout << "Fmwk::Zoltan" << sierra::Diag::push << dendl;
-//    GeomDecomp::verbose_print(dout).dendl();
-//    dout.m(LOG_MEMBERS) << "parameter_entry_Name, " << parameter_entry_Name << dendl;
-//    dout.m(LOG_MEMBERS) << "zoltan_version, " << static_zoltan_version() << dendl;
-//
-//    dout << sierra::Diag::pop;
-//  }
-//
-//  return dout;
-//}
-
 namespace {
 void merge_parameters(std::vector <std::pair<std::string, std::string> > &str_zoltan_params,
                       const Parameters &Zoltan_Params) {
@@ -846,12 +830,12 @@ int  Zoltan::evaluate( int    print_stats,
   ZOLTAN_GRAPH_EVAL   graph = {{0}};
   if (Zoltan_LB_Eval_Balance( m_zoltan_id_, print_stats, &eval)) ierr = 1;
   if (Zoltan_LB_Eval_Graph( m_zoltan_id_, print_stats, &graph) ) ierr = 1;
-  *nobj         = eval.nobj[0];
-  *obj_wgt      = eval.obj_wgt[0];
-  *ncuts        = graph.cuts[0];
-  *cut_wgt      = graph.cut_wgt[0];
-  *nboundary    = graph.num_boundary[0];
-  *nadj         = graph.nnborparts[0];
+  *nobj         = (int)eval.nobj[0];
+  *obj_wgt      =      eval.obj_wgt[0];
+  *ncuts        = (int)graph.cuts[0];
+  *cut_wgt      =      graph.cut_wgt[0];
+  *nboundary    = (int)graph.num_boundary[0];
+  *nadj         = (int)graph.nnborparts[0];
 
   return ierr;
 

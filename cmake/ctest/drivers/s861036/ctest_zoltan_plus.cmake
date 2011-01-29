@@ -31,8 +31,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DZoltan_ENABLE_Scotch:BOOL=ON"
   "-DParMETIS_INCLUDE_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
   "-DParMETIS_LIBRARY_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
-  "-DScotch_INCLUDE_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/include"
-  "-DScotch_LIBRARY_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/lib"
+  "-DScotch_INCLUDE_DIRS:FILEPATH=/home/lriesen/local/system/scotch_5.1.10a-32/include"
+  "-DScotch_LIBRARY_DIRS:FILEPATH=/home/lriesen/local/system/scotch_5.1.10a-32/lib"
   "-DTPL_BLAS_LIBRARIES:STRING=-L/usr/local/lib -lcblas -lf77blas -latlas -lblas"
   "-DTPL_LAPACK_LIBRARIES:STRING=/usr/local/lib/liblapack.a"
   )

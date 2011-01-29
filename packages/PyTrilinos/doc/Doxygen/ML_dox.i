@@ -103,7 +103,9 @@ BaseOperator &A, const MultiVector &x) ";
 
 %feature("docstring")
 MLAPI::BaseOperatorTimesMultiVector::GetVectorSpace "const Space
-MLAPI::BaseOperatorTimesMultiVector::GetVectorSpace() const ";
+MLAPI::BaseOperatorTimesMultiVector::GetVectorSpace() const
+
+Returns the vector space of the underlying object. ";
 
 %feature("docstring")
 MLAPI::BaseOperatorTimesMultiVector::GetBaseOperator "const
@@ -247,7 +249,9 @@ Epetra_Map& MLAPI::DistributedMatrix::Map() const ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::Apply "int
 MLAPI::DistributedMatrix::Apply(const MultiVector &X, MultiVector &Y)
-const ";
+const
+
+Applies this operator to LHS, returns the result in RHS. ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::Apply "virtual int
 MLAPI::DistributedMatrix::Apply(const Epetra_MultiVector &X,
@@ -269,12 +273,18 @@ Epetra_Comm& MLAPI::DistributedMatrix::Comm() const ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::Print "std::ostream&
 MLAPI::DistributedMatrix::Print(std::ostream &os, const bool
-verbose=true) const ";
+verbose=true) const
 
-%feature("docstring")  MLAPI::DistributedMatrix::GetDomainSpace "Space MLAPI::DistributedMatrix::GetDomainSpace() const ";
+Prints basic information about this object. ";
+
+%feature("docstring")  MLAPI::DistributedMatrix::GetDomainSpace "Space MLAPI::DistributedMatrix::GetDomainSpace() const
+
+Returns a reference to the internally stored domain space. ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::GetRangeSpace "Space
-MLAPI::DistributedMatrix::GetRangeSpace() const ";
+MLAPI::DistributedMatrix::GetRangeSpace() const
+
+Returns a reference to the internally stored range space. ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::ReplaceElement "void
 MLAPI::DistributedMatrix::ReplaceElement(const int GRID, const int
@@ -627,7 +637,9 @@ Prints out basic information about this object. ";
 MLAPI::LinearCombinationAdd::LinearCombinationAdd "MLAPI::LinearCombinationAdd::LinearCombinationAdd(const
 BaseLinearCombination &left, const BaseLinearCombination &right) ";
 
-%feature("docstring")  MLAPI::LinearCombinationAdd::GetVectorSpace "const Space MLAPI::LinearCombinationAdd::GetVectorSpace() const ";
+%feature("docstring")  MLAPI::LinearCombinationAdd::GetVectorSpace "const Space MLAPI::LinearCombinationAdd::GetVectorSpace() const
+
+Returns the vector space of the underlying object. ";
 
 %feature("docstring")  MLAPI::LinearCombinationAdd::Update "void
 MLAPI::LinearCombinationAdd::Update(MultiVector &v) const ";
@@ -644,7 +656,9 @@ MLAPI::LinearCombinationMixed::LinearCombinationMixed "MLAPI::LinearCombinationM
 BaseLinearCombination &left, const MultiVector &right, double alpha)
 ";
 
-%feature("docstring")  MLAPI::LinearCombinationMixed::GetVectorSpace "const Space MLAPI::LinearCombinationMixed::GetVectorSpace() const ";
+%feature("docstring")  MLAPI::LinearCombinationMixed::GetVectorSpace "const Space MLAPI::LinearCombinationMixed::GetVectorSpace() const
+
+Returns the vector space of the underlying object. ";
 
 %feature("docstring")  MLAPI::LinearCombinationMixed::Update "void
 MLAPI::LinearCombinationMixed::Update(MultiVector &v) const ";
@@ -662,7 +676,8 @@ BaseLinearCombination &left, double scalar) ";
 
 %feature("docstring")  MLAPI::LinearCombinationScaled::GetVectorSpace
 "const Space MLAPI::LinearCombinationScaled::GetVectorSpace() const
-";
+
+Returns the vector space of the underlying object. ";
 
 %feature("docstring")  MLAPI::LinearCombinationScaled::Set "void
 MLAPI::LinearCombinationScaled::Set(MultiVector &v) const ";
@@ -1453,7 +1468,7 @@ Returns a pointer to the double array (const version). ";
 MLAPI::MultiVector::SetRCPValues(const Teuchos::RefCountPtr<
 DoubleVector > &RCPValues, const int v)
 
-Sets the RefCountPtr<Values_>. ";
+Sets the RefCountPtr<Values_> ";
 
 %feature("docstring")  MLAPI::MultiVector::Update "void
 MLAPI::MultiVector::Update(const double alpha, int v=-1)
@@ -1539,7 +1554,9 @@ MLAPI::MultiVector::IsAlias(const MultiVector &rhs) const ";
 MLAPI::MultiVectorCombination::MultiVectorCombination "MLAPI::MultiVectorCombination::MultiVectorCombination(const double
 alpha, const MultiVector x, const double beta, const MultiVector y) ";
 
-%feature("docstring")  MLAPI::MultiVectorCombination::GetVectorSpace "const Space MLAPI::MultiVectorCombination::GetVectorSpace() const ";
+%feature("docstring")  MLAPI::MultiVectorCombination::GetVectorSpace "const Space MLAPI::MultiVectorCombination::GetVectorSpace() const
+
+Returns the vector space of the underlying object. ";
 
 %feature("docstring")
 MLAPI::MultiVectorCombination::GetLeftMultiVector "const MultiVector
@@ -1566,7 +1583,9 @@ MLAPI::MultiVectorCombination::Set(MultiVector &v) const ";
 %feature("docstring")  MLAPI::MultiVectorScaled::MultiVectorScaled "MLAPI::MultiVectorScaled::MultiVectorScaled(const MultiVector &vector,
 const double alpha) ";
 
-%feature("docstring")  MLAPI::MultiVectorScaled::GetVectorSpace "const Space MLAPI::MultiVectorScaled::GetVectorSpace() const ";
+%feature("docstring")  MLAPI::MultiVectorScaled::GetVectorSpace "const Space MLAPI::MultiVectorScaled::GetVectorSpace() const
+
+Returns the vector space of the underlying object. ";
 
 %feature("docstring")  MLAPI::MultiVectorScaled::GetMultiVector "const MultiVector& MLAPI::MultiVectorScaled::GetMultiVector() const ";
 
@@ -1751,7 +1770,9 @@ Build the column space, by computing the GID of all local columns. ";
 beta, const BaseOperator &A, const MultiVector &x) ";
 
 %feature("docstring")  MLAPI::Residual::GetVectorSpace "const Space
-MLAPI::Residual::GetVectorSpace() const ";
+MLAPI::Residual::GetVectorSpace() const
+
+Returns the vector space of the underlying object. ";
 
 %feature("docstring")  MLAPI::Residual::Update "void
 MLAPI::Residual::Update(MultiVector &v) const ";
@@ -1770,7 +1791,9 @@ MLAPI::Residual::Set(MultiVector &v) const ";
 
 %feature("docstring")  MLAPI::SerialMatrix::Print "std::ostream&
 MLAPI::SerialMatrix::Print(std::ostream &os, const bool verbose=true)
-const ";
+const
+
+Prints basic information about this object. ";
 
 
 // File: classMLAPI_1_1Space.xml
@@ -2433,14 +2456,14 @@ MLAPI::GetMatrixType() ";
 // File: MLAPI__Workspace_8h.xml
 
 
-// File: dir_d136d99f436d66ac79262c571aec36be.xml
+// File: dir_155fcb0d4cda658caac02c78710535e4.xml
 
 
-// File: dir_d74a4d2709be09b9ccea214c305ad782.xml
+// File: dir_cc1e09988ecec1a328546f0af31f254d.xml
 
 
-// File: dir_50ffe10e94f4b54803eff0b5854be557.xml
+// File: dir_b81d57d7b52d20c51be34aee0631351e.xml
 
 
-// File: dir_b38d87d99409f5994ae3d0661f909fab.xml
+// File: dir_3e2c3fa1e52511a70276f9374dc35ced.xml
 

@@ -46,10 +46,10 @@ extern "C" {
 #include <MFNRegion.h>
 #include <stdlib.h>
 
-int LOCATest(MFNVector, void *);
-void MFFreeLOCAData(void*);
+int LOCATest(MFNVector, void *, MFErrorHandler);
+void MFFreeLOCAData(void*, MFErrorHandler);
 
-void MFFreeLOCAData(void* data)
+void MFFreeLOCAData(void* data, MFErrorHandler err)
 {
   LOCAData* locaData = (LOCAData*) data;
   delete locaData;
@@ -59,18 +59,18 @@ MFNRegion MFNRegionCreateLOCA(LOCAData* data)
 {
   MFNRegion loca;
 
-  loca=MFNRegionCreateBaseClass("LOCA");
-  MFNRegionSetTest(loca,LOCATest);
-  MFNRegionSetData(loca,(void *)data);
-  MFNRegionSetFreeData(loca,MFFreeLOCAData);
+  loca=MFNRegionCreateBaseClass("LOCA", data->mfErrorHandler);
+  MFNRegionSetTest(loca,LOCATest, data->mfErrorHandler);
+  MFNRegionSetData(loca,(void *)data, data->mfErrorHandler);
+  MFNRegionSetFreeData(loca,MFFreeLOCAData, data->mfErrorHandler);
 
   return(loca);
 }
 
-int LOCATest(MFNVector u, void *d)
+int LOCATest(MFNVector u, void *d, MFErrorHandler err)
 {
    
-  LOCANVectorData* v_data = (LOCANVectorData *)MFNVectorGetData(u);
+  LOCANVectorData* v_data = (LOCANVectorData *)MFNVectorGetData(u,err);
   LOCAData* data = (LOCAData*) d;
   
   list<ParamData>::iterator it = data->paramData->begin();

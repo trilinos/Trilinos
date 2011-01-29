@@ -49,6 +49,7 @@
 #include <BelosICGSOrthoManager.hpp>
 #include <BelosIMGSOrthoManager.hpp>
 #include <BelosDGKSOrthoManager.hpp>
+#include <BelosSimpleOrthoManager.hpp>
 
 #include <Teuchos_StandardCatchMacros.hpp>
 
@@ -75,9 +76,9 @@ namespace Belos {
     /// subclass to test.  (Must be at least one.)
     static int numOrthoManagers () {
 #ifdef HAVE_BELOS_TSQR
-      return 4; 
+      return 5; 
 #else
-      return 3;
+      return 4;
 #endif // HAVE_BELOS_TSQR
     }
 
@@ -102,6 +103,7 @@ namespace Belos {
       theList_[index++] = "ICGS";
       theList_[index++] = "IMGS";
       theList_[index++] = "DGKS";
+      theList_[index++] = "Simple";
     }
 
     /// Valid names of (Mat)OrthoManagers.  Useful as a list of valid
@@ -179,6 +181,9 @@ namespace Belos {
       else if (name == "IMGS") {
 	return getDefaultImgsParameters<Scalar>();
       }
+      else if (name == "Simple") {
+	return SimpleOrthoManager<Scalar, MV>::getDefaultParameters();
+      }
       else {
 	TEST_FOR_EXCEPTION(true, std::invalid_argument, 
 			   "Invalid orthogonalization manager name \"" << name 
@@ -192,14 +197,59 @@ namespace Belos {
       }
     }
 
-    /// \brief Make specified MatOrthoManager subclass
+
+    /// \brief "Fast" parameters for the given (Mat)OrthoManager
     ///
-    /// Instantiate and return (an RCP to) the specified
-    /// MatOrthoManager subclass.
+    /// "Fast" parameters for the given orthogonalization manager.
+    /// "Fast" usually means that accuracy and/or robustness with
+    /// respect to rank deficiency might be compromised for the sake
+    /// of better performance.
     ///
-    /// \param ortho [in] Name of MatOrthoManager to instantiate.
-    ///   The validNames() method returns a list of the supported
-    ///   names.
+    /// \param name [in] Orthogonalization manager name.  Must be
+    ///   supported by this factory (i.e., validName(name)==true).
+    ///
+    /// \return "Fast" parameters for the given orthogonalization
+    ///   manager
+    /// 
+    /// \warning This method may not be reentrant.
+    Teuchos::RCP<const Teuchos::ParameterList> 
+    getFastParameters (const std::string& name)
+    {
+      if (name == "DGKS") {
+	return getFastDgksParameters<Scalar>();
+      }
+#ifdef HAVE_BELOS_TSQR
+      else if (name == "TSQR") {
+	return TsqrMatOrthoManager<Scalar, MV, OP>::getFastParameters();
+      }
+#endif // HAVE_BELOS_TSQR
+      else if (name == "ICGS") {
+	return getFastIcgsParameters<Scalar>();
+      }
+      else if (name == "IMGS") {
+	return getFastImgsParameters<Scalar>();
+      }
+      else if (name == "Simple") {
+	return SimpleOrthoManager<Scalar, MV>::getFastParameters();
+      }
+      else {
+	TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+			   "Invalid orthogonalization manager name \"" << name 
+			   << "\": Valid names are " << validNamesString() 
+			   << ".  For many of the test executables, the "
+			   "orthogonalization manager name often corresponds "
+			   "to the \"ortho\" command-line argument.");
+	// Placate the compiler if necessary; we should never reach
+	// this point.
+	return Teuchos::null; 
+      }
+    }
+
+
+    /// Create and return the specified MatOrthoManager subclass
+    ///
+    /// \param ortho [in] Name of MatOrthoManager subclass.  The \c
+    ///   validNames() method returns a list of the supported names.
     /// \param M [in] Inner product operator.  If Teuchos::null,
     ///   orthogonalize with respect to the standard Euclidean 
     ///   inner product.
@@ -224,8 +274,13 @@ namespace Belos {
       using Belos::ICGSOrthoManager;
       using Belos::IMGSOrthoManager;
       using Belos::DGKSOrthoManager;
+      using Belos::SimpleOrthoManager;
       using Teuchos::rcp;
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+      TEST_FOR_EXCEPTION(ortho == "Simple", std::logic_error,
+			 "SimpleOrthoManager does not yet support the "
+			 "MatOrthoManager interface");
 
       if (ortho == "DGKS") {
 	int maxNumOrthogPasses;
@@ -266,10 +321,10 @@ namespace Belos {
       }
     }
 
-    /// Instantiate and return an RCP to the specified OrthoManager
-    /// subclass.
+    /// Create and return the specified OrthoManager subclass
     ///
-    /// \param ortho [in] Name of OrthoManager to instantiate
+    /// \param ortho [in] Name of OrthoManager subclass.  The \c
+    ///   validNames() method returns a list of the supported names.
     /// \param M [in] Inner product operator.  If Teuchos::null,
     ///   orthogonalize with respect to the standard Euclidean 
     ///   inner product.
@@ -279,12 +334,38 @@ namespace Belos {
     ///
     /// \return (Smart pointer to a) OrthoManager instance
     ///   
-    Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >
+    Teuchos::RCP<Belos::OrthoManager<Scalar, MV> >
     makeOrthoManager (const std::string& ortho, 
-		      const Teuchos::RCP< const OP >& M,
+		      const Teuchos::RCP<const OP>& M,
 		      const std::string& label,
 		      const Teuchos::RCP<const Teuchos::ParameterList>& params)
     {
+#ifdef HAVE_BELOS_TSQR
+      using Belos::TsqrOrthoManager;
+#endif // HAVE_BELOS_TSQR
+      using Teuchos::rcp;
+
+#ifdef HAVE_BELOS_TSQR
+      // TsqrMatOrthoManager has to store more things and do more work
+      // than TsqrOrthoManager, in order for the former to be correct
+      // for the case of a nondefault (non-Euclidean) inner product.
+      // Thus, it's better to create a TsqrOrthoManager, when we know
+      // the operator is the default operator (M is null).  Of course,
+      // a MatOrthoManager is-an OrthoManager, so returning a
+      // TsqrMatOrthoManager would still be correct; this is just an
+      // optimization.
+      if (ortho == "TSQR" && M.is_null())
+	return rcp (new TsqrOrthoManager<Scalar, MV> (params, label));
+#endif // HAVE_BELOS_TSQR
+
+      if (ortho == "Simple")
+	{
+	  TEST_FOR_EXCEPTION(! M.is_null(), std::logic_error,
+			     "SimpleOrthoManager is not yet supported "
+			     "when the operator M is nontrivial (i.e., "
+			     "M != null).");
+	  return rcp (new SimpleOrthoManager<Scalar, MV> (label, params));
+	}
       // A MatOrthoManager is-an OrthoManager.
       return makeMatOrthoManager (ortho, M, label, params);
     }

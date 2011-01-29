@@ -401,7 +401,7 @@
   <SubProject name="STK">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="LO"/>
-    <Dependency name="Sacado" type="ILO"/>
+    <Dependency name="Sacado" type="LO"/>
     <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="LO"/>

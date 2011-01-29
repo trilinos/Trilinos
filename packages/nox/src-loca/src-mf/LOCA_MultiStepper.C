@@ -210,41 +210,41 @@ LOCA::MultiStepper::run() {
 				Teuchos::rcp(&conParamData,false));
   M=MFIMFCreateLOCA(data);
   Omega=MFNRegionCreateLOCA(data);
-  u0=MFCreateLOCANVectorWithData(Teuchos::rcp_dynamic_cast<LMCEV>(curGroupPtr->getX().clone()));
+  u0=MFCreateLOCANVectorWithData(Teuchos::rcp_dynamic_cast<LMCEV>(curGroupPtr->getX().clone()), data->mfErrorHandler);
 
-  H=MFCreateHendersonsMethod();
+  H=MFCreateMultifariosMethod(data->mfErrorHandler);
 
   /* Max distance from TS to M */
-  MFHendersonsMethodSetEpsilon(H, stepperList->get("Epsilon", 0.1));
+  MFMultifarioSetRealParameter(H, "epsilon", stepperList->get("Epsilon", 0.1), data->mfErrorHandler);
 
   /* -1 means infinite */
-  MFHendersonsMethodSetMaxCharts(H,stepperList->get("Max Charts", -1));
+  MFMultifarioSetIntegerParameter(H, "maxCharts", stepperList->get("Max Charts", -1), data->mfErrorHandler);
 
   /* Write info to stdout */
-  MFHendersonsMethodSetVerbose(H, stepperList->get("Verbosity", 1));
+  MFMultifarioSetIntegerParameter(H, "verbose", stepperList->get("Verbosity", 1), data->mfErrorHandler);
 
   /* Page out non-interior polyhedra */
-  MFHendersonsMethodSetPage(H, stepperList->get("Page Charts", 1));
+  MFMultifarioSetIntegerParameter(H, "page", stepperList->get("Page Charts", 1), data->mfErrorHandler);
 
   /* Write polyhedra to a plotfile */
-  MFHendersonsMethodSetDumpToPlotFile(H, stepperList->get("Dump Polyhedra", true));
+  MFMultifarioSetIntegerParameter(H, "dumpToPlotFile", stepperList->get("Dump Polyhedra", true), data->mfErrorHandler);
 
   /* Write points to a file */
-  MFHendersonsMethodSetDumpToCenterFile(H,stepperList->get("Dump Centers", false)); 
+  MFMultifarioSetIntegerParameter(H,"dumpToCenterFile", stepperList->get("Dump Centers", false), data->mfErrorHandler); 
 
   /* File name to save data */
   const char *fname = 
     stepperList->get("Filename", "MFresults").c_str();
-  MFHendersonsMethodSetFilename(H,const_cast<char*>(fname));
+  MFMultifarioSetFilename(H,const_cast<char*>(fname), data->mfErrorHandler);
 
-  A=MFComputeAtlas(H,M,Omega,u0);
-  MFCloseAtlas(H,A);
+  A=MFComputeAtlas(H,M,Omega,u0,data->mfErrorHandler);
+  MFCloseAtlas(H,A,data->mfErrorHandler);
   printf("\n\tDone computing Atlas\n");fflush(stdout);
-  MFFreeAtlas(A);
-  MFFreeImplicitMF(M);
+  MFFreeAtlas(A,data->mfErrorHandler);
+  MFFreeImplicitMF(M,data->mfErrorHandler);
   //MFFreeNRegion(Omega);
-  MFFreeNVector(u0);
-  MFFreeHendersonsMethod(H);
+  MFFreeNVector(u0,data->mfErrorHandler);
+  MFFreeContinuationMethod(H,data->mfErrorHandler);
 
   return LOCA::Abstract::Iterator::Finished;
 }

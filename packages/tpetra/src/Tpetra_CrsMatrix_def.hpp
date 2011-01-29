@@ -38,6 +38,7 @@
 #include <Kokkos_NodeTrace.hpp>
 
 #include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_as.hpp>
 
 #include "Tpetra_CrsMatrixMultiplyOp.hpp" // must include for implicit instantiation to work
 #ifdef DOXYGEN_USE_ONLY
@@ -1676,7 +1677,7 @@ namespace Tpetra {
     for (size_t dec=10; dec<getGlobalNumRows(); dec *= 10) {
       ++width;
     }
-    width = std::max<size_t>(width,11) + 2;
+    width = std::max<size_t>(width,Teuchos::as<size_t>(11)) + 2;
     Teuchos::OSTab tab(out);
     //    none: print nothing
     //     low: print O(1) info from node 0

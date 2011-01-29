@@ -65,6 +65,7 @@ APPEND_SET(HEADERS
   BelosPseudoBlockGmresSolMgr.hpp
   BelosRCGIter.hpp
   BelosRCGSolMgr.hpp
+  BelosSimpleOrthoManager.hpp # New (mfh 20 Jan 2011)
   BelosSolverManager.hpp
   BelosStandardGmres.hpp  # Subclass of GmresBase
   BelosStatusTest.hpp

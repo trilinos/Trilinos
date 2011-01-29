@@ -25,5 +25,6 @@ IF (NOX_ENABLE_LOCA AND NOX_ENABLE_MF)
     locamf
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
+    DEPLIBS loca
     )
 ENDIF()

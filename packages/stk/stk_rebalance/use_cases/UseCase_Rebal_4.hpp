@@ -23,3 +23,52 @@ namespace use_cases {
 
 #endif // Stk_Rebalance_Use_Cases_UseCase_1_hpp
 
+/// \page stk_rebalance_use_case_4
+///  \ingroup stk_rebalance_use_case_module
+///
+/// \section stk_rebalance_use_case_4_description Use Case 4: User-customization following default rebalance
+///
+/// This use case demonstrates additional user customization following a
+/// default rebalance in order to enforce constraints for new partitions.  In
+/// this case, the constraint is that two quad4 elements sharing edge #7
+/// be collocated on the same proc following rebalance.  This is enforced using
+/// a greedy sideset class which inherits the determine_new_partition method.
+///
+/// The following quad4 mesh is used in this use case:
+///
+///  Global node and element numbering
+///  <pre>
+///
+///     13      14      15      16
+///     +-------+-------+-------+
+///     |       |       |       |
+///     |  e7   |  e8   |  e9   |
+///     |       |       |       |
+///   9 +-------+-------+-------+ 12    Y
+///     |       |       |       |       |
+///     |  e4   |  e5   |  e6   |       |
+///     |       |       |       |       *--> X
+///   5 +-------+-------+-------+ 8
+///     |       |       |       | 
+///     |  e1   |  e2   |  e3   |
+///     |       |       |       | 
+///     +-------+-------+-------+ 
+///     1       2       3       4
+/// </pre>
+///
+///  Local node numbering
+///  <pre>
+///           3       4
+///           +-------+
+///           |       |
+///           |  e1   |
+///           |       |
+///           +-------+
+///           1       2
+/// </pre>
+/// 
+/// See \ref UseCase_Rebal_4.cpp for the complete source listing.
+/// 
+/// 
+/// 
+/// 

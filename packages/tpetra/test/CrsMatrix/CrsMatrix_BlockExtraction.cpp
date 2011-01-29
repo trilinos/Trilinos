@@ -63,7 +63,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // set the block sizes
     // note one block of zero size, to test capability
-    Teuchos::ArrayView<int> block_sizes( Teuchos::tuple<LO>(1,3,5,0,5,3,1) );
+    Teuchos::Tuple<int,7> block_sizes = Teuchos::tuple<int>(1,3,5,0,5,3,1) ;
     const int maxBlockSize = *std::max_element( block_sizes.begin(), block_sizes.end() );
     // create a Map
     const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), (size_t)0 );
@@ -84,29 +84,37 @@ namespace {
     //
     // bad block offsets
     //
-    // because the block sizes are underdetermined, solely based on the first indices (the first is always zero)
-    // invalid block indices require violating the constraint that all block sizes are non-negative.
-    // specifically, that the last block size is positive; this is all that extractBlockDiagonals() will check.
-    // this is done by having any except the last block size be too large (the last block size isn't used to generate
-    // an offset)
+    // block sizes too small (corresponds to latter first_points too small)
     {
-      Teuchos::ArrayView<int> bad_bsizes( Teuchos::tuple<LO>(1,3,5,2,5,3,1) );
-      Teuchos::Array<LO> bad_bfirsts( bad_bsizes.size() );
+      Teuchos::Tuple<int,7> bad_bsizes = Teuchos::tuple<int>(1, /* BAD */ 1,5,0,5,3,1) ;
+      Teuchos::Array<LO> bad_bfirsts( bad_bsizes.size()+1 );
       bad_bfirsts[0] = 0;
-      for (int i=1; i < (int)bad_bsizes.size(); ++i) {
-        bad_bfirsts[i] = bad_bfirsts[i-1] + bad_bsizes[i-1];
+      for (int i=0; i < (int)bad_bsizes.size(); ++i) {
+        bad_bfirsts[i+1] = bad_bfirsts[i] + bad_bsizes[i];
       }
       Teuchos::ArrayRCP<Scalar> out_diags;
       Teuchos::ArrayRCP<LO>     out_offsets;
       TEST_THROW( Tpetra::Ext::extractBlockDiagonals( *mat, bad_bfirsts().getConst(), out_diags, out_offsets ) , std::runtime_error );
     }
-    // negative block size corresponds here to non-monotonically increasing first_points
+    // block sizes too large (corresponds to latter first_points too large)
     {
-      Teuchos::ArrayView<int> bad_bsizes( Teuchos::tuple<LO>(1,3,5,-1,5,3,1) );
-      Teuchos::Array<LO> bad_bfirsts( bad_bsizes.size() );
+      Teuchos::Tuple<int,7> bad_bsizes = Teuchos::tuple<int>(1, /* BAD */ 5 ,5,0,5,3,1) ;
+      Teuchos::Array<LO> bad_bfirsts( bad_bsizes.size()+1 );
       bad_bfirsts[0] = 0;
-      for (int i=1; i < (int)bad_bsizes.size(); ++i) {
-        bad_bfirsts[i] = bad_bfirsts[i-1] + bad_bsizes[i-1];
+      for (int i=0; i < (int)bad_bsizes.size(); ++i) {
+        bad_bfirsts[i+1] = bad_bfirsts[i] + bad_bsizes[i];
+      }
+      Teuchos::ArrayRCP<Scalar> out_diags;
+      Teuchos::ArrayRCP<LO>     out_offsets;
+      TEST_THROW( Tpetra::Ext::extractBlockDiagonals( *mat, bad_bfirsts().getConst(), out_diags, out_offsets ) , std::runtime_error );
+    }
+    // negative block size (corresponds to non-monotonically increasing first_points)
+    {
+      Teuchos::Tuple<int,7> bad_bsizes = Teuchos::tuple<int>(1,3,5, /* BAD */ -1 ,5,3,1) ;
+      Teuchos::Array<LO> bad_bfirsts( bad_bsizes.size()+1 );
+      bad_bfirsts[0] = 0;
+      for (int i=0; i < (int)bad_bsizes.size(); ++i) {
+        bad_bfirsts[i+1] = bad_bfirsts[i] + bad_bsizes[i];
       }
       Teuchos::ArrayRCP<Scalar> out_diags;
       Teuchos::ArrayRCP<LO>     out_offsets;
@@ -114,11 +122,11 @@ namespace {
     }
     // first first_point required to be zero
     {
-      Teuchos::ArrayView<int> bad_bsizes( Teuchos::tuple<LO>(1,3,5,0,5,3,1) );
-      Teuchos::Array<LO> bad_bfirsts( bad_bsizes.size() );
-      bad_bfirsts[0] = 1;
-      for (int i=1; i < (int)bad_bsizes.size(); ++i) {
-        bad_bfirsts[i] = bad_bfirsts[i-1] + bad_bsizes[i-1];
+      Teuchos::Tuple<int,7> bad_bsizes = Teuchos::tuple<int>(1,3,5,0,5,3,1) ;
+      Teuchos::Array<LO> bad_bfirsts( bad_bsizes.size()+1 );
+      bad_bfirsts[0] = 1; /* BAD */
+      for (int i=0; i < (int)bad_bsizes.size(); ++i) {
+        bad_bfirsts[i+1] = bad_bfirsts[i] + bad_bsizes[i];
       }
       Teuchos::ArrayRCP<Scalar> out_diags;
       Teuchos::ArrayRCP<LO>     out_offsets;
@@ -126,11 +134,11 @@ namespace {
     }
     // matrix is required to be fillComplete()
     {
-      Teuchos::ArrayView<int> bad_bsizes( Teuchos::tuple<LO>(1,3,5,0,5,3,1) );
-      Teuchos::Array<LO> bfirsts( bad_bsizes.size() );
+      Teuchos::Tuple<int,7> bad_bsizes = Teuchos::tuple<int>(1,3,5,0,5,3,1) ;
+      Teuchos::Array<LO> bfirsts( bad_bsizes.size()+1 );
       bfirsts[0] = 0;
-      for (int i=1; i < (int)bad_bsizes.size(); ++i) {
-        bfirsts[i] = bfirsts[i-1] + bad_bsizes[i-1];
+      for (int i=0; i < (int)bad_bsizes.size(); ++i) {
+        bfirsts[i+1] = bfirsts[i] + bad_bsizes[i];
       }
       Teuchos::ArrayRCP<Scalar> out_diags;
       Teuchos::ArrayRCP<LO>     out_offsets;
@@ -152,7 +160,7 @@ namespace {
     //
     // set the block sizes
     // note one block of zero size, to test capability
-    Teuchos::ArrayView<int> block_sizes( Teuchos::tuple<LO>(1,3,5,0,5,3,1) );
+    Teuchos::Tuple<int,7> block_sizes = Teuchos::tuple<int>(1,3,5,0,5,3,1) ;
     const int maxBlockSize = *std::max_element( block_sizes.begin(), block_sizes.end() );
     const size_t expected_alloc_size = std::inner_product( block_sizes.begin(), block_sizes.end(), block_sizes.begin(), 0 );
     //
@@ -180,10 +188,10 @@ namespace {
     //
     // create block_firsts for first extraction
     //
-    Teuchos::Array<LO> block_firsts( block_sizes.size() );
+    Teuchos::Array<LO> block_firsts( block_sizes.size()+1 );
     block_firsts[0] = 0;
-    for (int i=1; i < (int)block_sizes.size(); ++i) {
-      block_firsts[i] = block_firsts[i-1] + block_sizes[i-1];
+    for (int i=0; i < (int)block_sizes.size(); ++i) {
+      block_firsts[i+1] = block_firsts[i] + block_sizes[i];
     }
     //
     // perform first extraction
@@ -206,7 +214,7 @@ namespace {
     //
     // create a BlockMap for use in second extraction
     //
-    Teuchos::ArrayView<GO> globalBlockIDs( Teuchos::tuple<GO>(1,2,3,4,5,6,7) );
+    Teuchos::Tuple<GO,7> globalBlockIDs = Teuchos::tuple<GO>(1,2,3,4,5,6,7) ;
     RCP<const BlockMap> bmap = rcp(new BlockMap(map,globalBlockIDs,block_sizes,map->getNode()));
     // 
     // perform second extraction

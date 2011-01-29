@@ -335,8 +335,8 @@ Zoltan_ZG_Query (ZZ* zz, const ZG* const graph,
 
 void
 Zoltan_ZG_Free(ZG *graph){
-  if (graph->bipartite)
-    ZOLTAN_FREE(&graph->fixed_vertices);
+/*   if (graph->bipartite) */
+/*     ZOLTAN_FREE(&graph->fixed_vertices); */
 
   Zoltan_Matrix2d_Free(&graph->mtx);
 }

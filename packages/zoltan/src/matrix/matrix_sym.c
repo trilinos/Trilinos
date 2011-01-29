@@ -79,7 +79,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   }
   ZOLTAN_FREE(&matrix->pinwgt);
 
-  Zoltan_Matrix_Remove_DupArcs(zz, cnt, tr_tab, pinwgt, matrix);
+  Zoltan_Matrix_Remove_DupArcs(zz, cnt, tr_tab, pinwgt, matrix); /* Compute new nY too */
   ZOLTAN_FREE(&tr_tab);
   ZOLTAN_FREE(&pinwgt);
 
@@ -110,7 +110,8 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
     for (i = endX ; i < matrix->nY ; ++i) {
       yGNO[i-endX] = matrix->yGNO[i] - matrix->globalX;
       /* TODO: add a something to have the correct ypid */
-      ybipart[endX] = 1;
+      ybipart[i] = 1;
+      ypid[i] = ypid[i-endX]; /* Be sure to update ypid */
     }
     /* Get Informations about Y */
     Zoltan_DD_Find (matrix->ddY, (ZOLTAN_ID_PTR)yGNO,

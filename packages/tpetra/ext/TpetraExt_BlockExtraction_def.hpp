@@ -38,36 +38,31 @@ Tpetra::Ext::extractBlockDiagonals(
           Teuchos::ArrayRCP<LocalOrdinal>                         & out_offsets)
 {
   // block meta-data
-  const int numBlocks = (int)first_points.size();
+  const int numBlocks = (int)first_points.size()-1;
   const size_t numRows = matrix.getNodeNumRows();
-  TEST_FOR_EXCEPTION(numRows != 0 && numBlocks == 0, std::runtime_error,
+  TEST_FOR_EXCEPTION(numRows != 0 && numBlocks <= 0, std::runtime_error,
       "Tpetra::Ext::extractBlockDiagonals(): specified zero blocks for a matrix with more than zero rows.");
   TEST_FOR_EXCEPTION(numBlocks > 0 && first_points[0] != 0, std::runtime_error,
       "Tpetra::Ext::extractBlockDiagonals(): first point of first block must be zero.");
   TEST_FOR_EXCEPTION(matrix.isFillComplete() == false, std::runtime_error,
       "Tpetra::Ext::extractBlockDiagonals(): matrix must be fill-complete.");
-  // INVARIANT: first_points[i] - first_points[i-1] = block_size[i]
-  // therefore, block_size[numBlocks-1] = first_points[numBlocks] - first_points[numBlocks-1]
-  // however, first_points[numBlocks] does not exist. therefore, the size of the last block must be inferred by 
-  // subtracting the number of rows from the sum of the size of all other blocks
-  int alloc_size      = 0, 
-      last_block_size = numRows;
+  // INVARIANT: for all i=0,...,numBlock-1: first_points[i] - first_points[i-1] = block_size[i]
+  int alloc_size      = 0,
+      sum_block_sizes = 0;
   if (numBlocks) {
     out_offsets = arcp<LocalOrdinal>(numBlocks);
   }
-  for (int b=0; b < numBlocks-1; ++b) 
+  for (int b=0; b < numBlocks; ++b) 
   {
     const int block_size_b = (int)first_points[b+1] - (int)first_points[b];
     TEST_FOR_EXCEPTION(block_size_b < 0, std::runtime_error,
         "Tpetra::Ext::extractBlockDiagonals(): first points are not coherent.");
-    last_block_size -= block_size_b;
+    sum_block_sizes += block_size_b;
     out_offsets[b]   = alloc_size;
     alloc_size      += block_size_b*block_size_b;
   }
-  out_offsets[numBlocks-1] = alloc_size;
-  alloc_size += last_block_size*last_block_size;
-  TEST_FOR_EXCEPTION( last_block_size < 0, std::runtime_error, 
-      "Tpetra::Ext::extractBlockDiagonals(): specified blocks are not compatible with specified matrix (blocks are too large).");
+  TEST_FOR_EXCEPTION( sum_block_sizes != (int)matrix.getNodeNumRows(), std::runtime_error, 
+      "Tpetra::Ext::extractBlockDiagonals(): specified blocks are not compatible with specified matrix (blocks are too large or too small or the last offset was missing).");
   if (alloc_size) {
     out_diags = arcp<Scalar>(alloc_size);
     // must explicitly fill with zeros, because we will only insert non-zeros below
@@ -82,11 +77,9 @@ Tpetra::Ext::extractBlockDiagonals(
     // b is ready to be incremented to zero
     // block is invalid
     // subrow and block_size_b are prepared to trigger the while loop and properly initialize the others
-    const int first_block = 0,
-               last_block = numBlocks-1;
-    int                 b = first_block-1, 
-                   subrow = 0, 
-             block_size_b = 0;
+    int b            = -1, // zero minus one
+        subrow       =  0, 
+        block_size_b =  subrow;
     typename ArrayRCP<Scalar>::iterator block = out_diags.end();
     // loop over all local rows
     for (LocalOrdinal lrow = first_row; lrow <= last_row; ++lrow)
@@ -96,8 +89,7 @@ Tpetra::Ext::extractBlockDiagonals(
       {
         // we busted the block, move to the next
         b += 1;
-        block_size_b = (b == last_block) ? last_block_size 
-                                         : (first_points[b+1] - first_points[b]);
+        block_size_b = first_points[b+1] - first_points[b];
         // an iterator to the beginning of this particular space will ensure bounds in a debug build
         // in a release build, it will simply be a pointer
         if (block_size_b) {
@@ -129,10 +121,9 @@ Tpetra::Ext::extractBlockDiagonals(
           Teuchos::ArrayRCP<Scalar>                               & out_diags,
           Teuchos::ArrayRCP<LocalOrdinal>                         & out_offsets)
 {
-  ArrayRCP<const LocalOrdinal> block_firsts_arcp_is_too_long = block_map.getNodeFirstPointInBlocks();
-  ArrayView<const LocalOrdinal> block_firsts = block_firsts_arcp_is_too_long(0,block_firsts_arcp_is_too_long.size()-1);
+  ArrayRCP<const LocalOrdinal> block_firsts = block_map.getNodeFirstPointInBlocks();
   try {
-    extractBlockDiagonals( matrix, block_firsts, out_diags, out_offsets );
+    extractBlockDiagonals( matrix, block_firsts(), out_diags, out_offsets );
   }
   catch (std::exception &e) {
     TEST_FOR_EXCEPTION(true, std::runtime_error, 

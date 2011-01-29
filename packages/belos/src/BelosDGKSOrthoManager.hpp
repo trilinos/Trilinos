@@ -106,6 +106,43 @@ namespace Belos {
     return params;
   }
 
+  /// \brief "Fast" parameters for DGKSOrthoManager
+  ///
+  /// \warning This function is not reentrant.
+  template<class ScalarType>
+  Teuchos::RCP<const Teuchos::ParameterList> 
+  getFastDgksParameters()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::ScalarTraits;
+    typedef typename ScalarTraits<ScalarType>::magnitudeType magnitude_type;
+    typedef ScalarTraits<magnitude_type> STM;
+
+    // This part makes this class method non-reentrant.
+    static RCP<ParameterList> params;
+    if (params.is_null())
+      {
+	RCP<const ParameterList> defaultParams = getDefaultDgksParameters<ScalarType>();
+	// Start with a clone of the default parameters
+	params = rcp (new ParameterList (*defaultParams));
+
+	const int maxBlkOrtho = 1;
+	params->set ("maxNumOrthogPasses", maxBlkOrtho);
+
+	const magnitude_type blkTol = STM::zero();
+	params->set ("blkTol", blkTol);
+
+	const magnitude_type depTol = STM::zero();
+	params->set ("depTol", depTol);
+
+	const magnitude_type singTol = STM::zero();
+	params->set ("singTol", singTol);
+      }
+    return params;
+  }
+
   /// \brief Read DGKS options from the given parameter list
   ///
   /// Try to read DGKS options from the given parameter list.
@@ -274,14 +311,14 @@ namespace Belos {
     */
     void project ( MV &X, Teuchos::RCP<MV> MX, 
                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                   Teuchos::Array<Teuchos::RCP<const MV> > Q) const;
+                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
 
     /*! \brief This method calls project(X,Teuchos::null,C,Q); see documentation for that function.
     */
     void project ( MV &X, 
                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                   Teuchos::Array<Teuchos::RCP<const MV> > Q) const {
+                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
       project(X,Teuchos::null,C,Q);
     }
 
@@ -380,14 +417,14 @@ namespace Belos {
     int projectAndNormalize ( MV &X, Teuchos::RCP<MV> MX, 
                               Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                               Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                              Teuchos::Array<Teuchos::RCP<const MV> > Q) const;
+                              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
     /*! \brief This method calls projectAndNormalize(X,Teuchos::null,C,B,Q); see documentation for that function.
     */
     int projectAndNormalize ( MV &X, 
                               Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                               Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                              Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
+                              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const {
       return projectAndNormalize(X,Teuchos::null,C,B,Q);
     }
 
@@ -467,12 +504,25 @@ namespace Belos {
     //! Routine to compute the block orthogonalization
     bool blkOrtho ( MV &X, Teuchos::RCP<MV> MX, 
 		    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-		    Teuchos::Array<Teuchos::RCP<const MV> > Q) const;
+		    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
+    /// Project X against QQ and normalize X, one vector at a time
+    ///
+    /// \note QQ is called QQ, rather than Q, because we convert it
+    ///   internally from an ArrayView to an Array (named Q inside).
+    ///   This is because the C++ compiler doesn't know how to do type
+    ///   inference (Array has a constructor that takes an ArrayView
+    ///   input).  This routine wants an Array rather than an
+    ///   ArrayView internally, because it likes to add (via
+    ///   push_back()) and remove (via resize()) elements to the Q
+    ///   array.  Remember that Arrays can be passed by value, just
+    ///   like std::vector objects, so this routine can add whatever
+    ///   it likes to the Q array without changing it from the
+    ///   caller's perspective.
     int blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX, 
 		       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
 		       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-		       Teuchos::Array<Teuchos::RCP<const MV> > Q) const;    
+		       Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const;    
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -523,7 +573,7 @@ namespace Belos {
                                     MV &X, Teuchos::RCP<MV> MX, 
                                     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                    Teuchos::Array<Teuchos::RCP<const MV> > Q ) const 
+                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const 
   {
     using Teuchos::Array;
     using Teuchos::null;
@@ -541,7 +591,7 @@ namespace Belos {
     ScalarType    ONE  = SCT::one();
     ScalarType    ZERO  = SCT::zero();
 
-    int nq = Q.length();
+    int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
     int rank = xc;
@@ -687,7 +737,7 @@ namespace Belos {
   void DGKSOrthoManager<ScalarType, MV, OP>::project(
                           MV &X, Teuchos::RCP<MV> MX, 
                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                          Teuchos::Array<Teuchos::RCP<const MV> > Q) const {
+                          Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
     // For the inner product defined by the operator Op or the identity (Op == 0)
     //   -> Orthogonalize X against each Q[i]
     // Modify MX accordingly
@@ -709,7 +759,7 @@ namespace Belos {
 
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
-    int nq = Q.length();
+    int nq = Q.size();
     std::vector<int> qcs(nq);
     // short-circuit
     if (nq == 0 || xc == 0 || xr == 0) {
@@ -1027,9 +1077,9 @@ namespace Belos {
   bool 
   DGKSOrthoManager<ScalarType, MV, OP>::blkOrtho ( MV &X, Teuchos::RCP<MV> MX, 
 						   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-						   Teuchos::Array<Teuchos::RCP<const MV> > Q) const
+						   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
-    int nq = Q.length();
+    int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
     bool dep_flg = false;
     const ScalarType ONE  = SCT::one();
@@ -1107,19 +1157,20 @@ namespace Belos {
     return dep_flg;
   }
   
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Routine to compute the block orthogonalization using single-std::vector orthogonalization
+
   template<class ScalarType, class MV, class OP>
   int
   DGKSOrthoManager<ScalarType, MV, OP>::blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX, 
 						       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
 						       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-						       Teuchos::Array<Teuchos::RCP<const MV> > Q) const
+						       Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const
   {
+    Teuchos::Array<Teuchos::RCP<const MV> > Q (QQ);
+
     const ScalarType ONE  = SCT::one();
     const ScalarType ZERO  = SCT::zero();
     
-    int nq = Q.length();
+    int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
     std::vector<int> indX( 1 );
     std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
@@ -1134,7 +1185,7 @@ namespace Belos {
     Teuchos::RCP<MV> Xj, MXj;
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lastC;
 
-    // Perform the Gram-Schmidt transformation for each std::vector in the block of vectors.
+    // Perform the Gram-Schmidt transformation for each vector in the block of vectors.
     for (int j=0; j<xc; j++) {
       
       bool dep_flg = false;
@@ -1166,9 +1217,9 @@ namespace Belos {
       // Compute the initial Op-norms
       MVT::MvDot( *Xj, *MXj, oldDot );
       
-      Teuchos::Array<Teuchos::RCP<MV> > MQ(Q.length());
+      Teuchos::Array<Teuchos::RCP<MV> > MQ(Q.size());
       // Define the product Q^T * (Op*X)
-      for (int i=0; i<Q.length(); i++) {
+      for (int i=0; i<Q.size(); i++) {
 
 	// Get a view of the current serial dense matrix
 	Teuchos::SerialDenseMatrix<int,ScalarType> tempC( Teuchos::View, *C[i], qcs[i], 1, 0, j );
@@ -1200,7 +1251,7 @@ namespace Belos {
       
       if ( SCT::magnitude(newDot[0]) < SCT::magnitude(oldDot[0]*dep_tol_) ) {
 	
-	for (int i=0; i<Q.length(); i++) {
+	for (int i=0; i<Q.size(); i++) {
 	  Teuchos::SerialDenseMatrix<int,ScalarType> tempC( Teuchos::View, *C[i], qcs[i], 1, 0, j );
 	  Teuchos::SerialDenseMatrix<int,ScalarType> C2( qcs[i], 1 );
 	  
@@ -1220,7 +1271,7 @@ namespace Belos {
 	      OPT::Apply( *(this->_Op), *Xj, *MXj);
 	    }
 	  }
-	} // for (int i=0; i<Q.length(); i++)
+	} // for (int i=0; i<Q.size(); i++)
 	
 	// Compute the Op-norms after the correction step.
 	MVT::MvDot( *Xj, *MXj, newDot );
@@ -1261,7 +1312,7 @@ namespace Belos {
 	//
 	for (int num_orth=0; num_orth<max_blk_ortho_; num_orth++) {
 	  
-	  for (int i=0; i<Q.length(); i++) {
+	  for (int i=0; i<Q.size(); i++) {
 	    Teuchos::SerialDenseMatrix<int,ScalarType> product( qcs[i], 1 );
 	    
 	    // Apply another step of classical Gram-Schmidt

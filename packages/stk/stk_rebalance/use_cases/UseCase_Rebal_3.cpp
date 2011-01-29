@@ -27,6 +27,8 @@
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
 
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
+
 //----------------------------------------------------------------------
 
 using namespace stk::mesh::fixtures;
@@ -132,49 +134,46 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
       }
     }
 
+    // Assign constraint relations between nodes at top and bottom of mesh
     {
-      const unsigned iy_left  =  0;
-      const unsigned iy_right = ny;
+      const unsigned iy_bottom  =  0;
+      const unsigned iy_top = ny;
       stk::mesh::PartVector add(1, &meta_data.locally_owned_part());
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
-        stk::mesh::EntityId nid_left  = 1 + ix + iy_left  * nnx ;
-        stk::mesh::EntityId nid_right = 1 + ix + iy_right * nnx ;
-        stk::mesh::Entity * n_left  = bulk_data.get_entity( node_rank, nid_left  );
-        stk::mesh::Entity * n_right = bulk_data.get_entity( node_rank, nid_right );
+        stk::mesh::EntityId nid_bottom  = 1 + ix + iy_bottom  * nnx ;
+        stk::mesh::EntityId nid_top = 1 + ix + iy_top * nnx ;
+        stk::mesh::Entity * n_bottom  = bulk_data.get_entity( node_rank, nid_bottom  );
+        stk::mesh::Entity * n_top = bulk_data.get_entity( node_rank, nid_top );
         const stk::mesh::EntityId constraint_entity_id =  1 + ix + nny * nnx;
         stk::mesh::Entity & c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
-        bulk_data.declare_relation( c , *n_left  , 0 );
-        bulk_data.declare_relation( c , *n_right , 1 );
+        bulk_data.declare_relation( c , *n_bottom  , 0 );
+        bulk_data.declare_relation( c , *n_top , 1 );
       }
-    }
+    } // end snippet
 
   }
 
   bulk_data.modification_end();
 
-  // Force a rebalance by using imbalance_threshold < 1.0
   stk::mesh::Selector selector(side_part);
   selector &=  meta_data.locally_owned_part();
-  double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold, side_rank, &selector);
   // Coordinates are passed to support geometric-based load balancing algorithms
-  if( do_rebal ) {
-    // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
-    // Other specializations are possible.
-    Teuchos::ParameterList emptyList;
-    stk::rebalance::use_cases::Test_Case_3_Partition zoltan_partition(comm, spatial_dimension, emptyList);
-    stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition, side_rank);
-  }
+  // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
+  // Other specializations are possible.
+  Teuchos::ParameterList emptyList;
+  stk::rebalance::use_cases::Test_Case_3_Partition zoltan_partition(comm, spatial_dimension, emptyList);
+  stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition, side_rank);
 
-  imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold, side_rank, &selector);
+  const double imbalance_threshold = 1.5;
+  const bool do_rebal = imbalance_threshold < stk::rebalance::check_balance(bulk_data, NULL, side_rank, &selector);
 
   if( !p_rank )
     std::cerr << std::endl 
      << "imbalance_threshold after rebalance = " << imbalance_threshold <<", "<<do_rebal << std::endl;
 
   // Check that we satisfy our threshhold
-  const bool result = !do_rebal ;
+  bool result = !do_rebal ;
+
   return result;
 }
 

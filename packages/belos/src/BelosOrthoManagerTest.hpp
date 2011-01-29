@@ -43,11 +43,13 @@
 /// \brief Tests for Belos::OrthoManager and Belos::MatOrthoManager subclasses
 ///
 
-#include "BelosConfigDefs.hpp"
-#include "BelosOutputManager.hpp"
-#include "BelosOrthoManager.hpp"
-#include <Teuchos_CommandLineProcessor.hpp>
+#include <BelosConfigDefs.hpp>
+#include <BelosMultiVecTraits.hpp>
+#include <BelosOutputManager.hpp>
+#include <BelosOrthoManagerFactory.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <iostream>
 #include <stdexcept>
 
 using std::endl;
@@ -55,21 +57,282 @@ using std::endl;
 namespace Belos {
   namespace Test {
 
+    /// \class OrthoManagerBenchmarker
+    /// \brief OrthoManager benchmark
+    /// \author Mark Hoemmen
+    ///
+    template<class Scalar, class MV>
+    class OrthoManagerBenchmarker {
+    private:
+      typedef Scalar scalar_type;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+      typedef MultiVecTraits<Scalar, MV> MVT;
+      typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+
+    public:
+      /// \brief Establish baseline for OrthoManager benchmark
+      ///
+      /// Establish baseline for the orthogonalization manager
+      /// benchmark, by replacing the projection and normalization
+      /// operations with the same number of copies.
+      static void 
+      baseline (const Teuchos::RCP<const MV>& X,
+		const int numCols,
+		const int numBlocks,
+		const int numTrials)
+      {
+	using Teuchos::Array;
+	using Teuchos::RCP;
+	using Teuchos::rcp;
+	using Teuchos::Time;
+	using Teuchos::TimeMonitor;
+
+	// Make some blocks to "orthogonalize."  Fill with random
+	// data.  We only need X so that we can make clones (it knows
+	// its data distribution).
+	Array<RCP<MV> > V (numBlocks);
+	for (int k = 0; k < numBlocks; ++k)
+	  {
+	    V[k] = MVT::Clone (*X, numCols);
+	    MVT::MvRandom (*V[k]);
+	  }
+
+	// Make timers with informative labels
+	RCP<Time> timer = TimeMonitor::getNewCounter ("Baseline for OrthoManager benchmark");
+
+	// Baseline benchmark just copies data.  It's sort of a lower
+	// bound proxy for the volume of data movement done by a real
+	// OrthoManager.
+	{
+	  TimeMonitor monitor (*timer);
+	  for (int trial = 0; trial < numTrials; ++trial)
+	    {
+	      for (int k = 0; k < numBlocks; ++k)
+		{
+		  for (int j = 0; j < k; ++j)
+		    MVT::Assign (*V[j], *V[k]);
+		  MVT::Assign (*X, *V[k]);
+		}
+	    }
+	}
+      }
+
+      /// Benchmark the given orthogonalization manager
+      ///
+      /// \param orthoMan [in(/out)] The orthogonalization 
+      ///   manager to benchmark
+      /// \param orthoManName [in] Name of the orthogonalization
+      ///   manager (e.g., "TSQR", "ICGS", "DGKS")
+      /// \param normalization [in] Normalization scheme used
+      ///   by the orthogonalization manager (only applicable
+      ///   to the "Simple" orthogonalization)
+      /// \param X [in] "Prototype" multivector; not modified
+      /// \param numCols [in] Number of columns per block
+      /// \param numBlocks [in] Number of blocks
+      /// \param numTrials [in] Number of trials in the timing run
+      /// \param outMan [out] Output manager
+      ///
+      /// \param resultStream [out] Output stream for printing
+      ///   benchmark results.  If displayResultsCompactly is true, it
+      ///   will be written by all MPI rank(s), so on ranks other than
+      ///   0, it should be set appropriately to a "black hole stream"
+      ///   that doesn't write anything.
+      ///
+      /// \param displayResultsCompactly [in] If false, rely on
+      ///   TimeMonitor::summarize() to print results to resultStream
+      ///   (and ensure only MPI Rank 0 does so).  If true, print
+      ///   results in a more compact format suitable for automatic
+      ///   parsing, using a CSV (Comma-Delimited Values) parser.  In
+      ///   "compact" mode, two lines are printed, both of which are
+      ///   comma-delimited ASCII text.  The first line begins with a
+      ///   "comment" character #; following that are column ("field")
+      ///   labels.  The second line contains the actual data, again
+      ///   in ASCII comma-delimited format.
+      static void
+      benchmark (const Teuchos::RCP<OrthoManager<Scalar, MV> >& orthoMan,
+		 const std::string& orthoManName,
+		 const std::string& normalization,
+		 const Teuchos::RCP<const MV>& X,
+		 const int numCols,
+		 const int numBlocks,
+		 const int numTrials,
+		 const Teuchos::RCP<OutputManager<Scalar> >& outMan,
+		 std::ostream& resultStream,
+		 const bool displayResultsCompactly=false)
+      {
+	using Teuchos::Array;
+	using Teuchos::ArrayView;
+	using Teuchos::RCP;
+	using Teuchos::rcp;
+	using Teuchos::Time;
+	using Teuchos::TimeMonitor;
+	using std::endl;
+	      
+	TEST_FOR_EXCEPTION(orthoMan.is_null(), std::invalid_argument,
+			   "orthoMan is null");
+	TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
+			   "X is null");
+	TEST_FOR_EXCEPTION(numCols < 1, std::invalid_argument, 
+			   "numCols = " << numCols << " < 1");
+	TEST_FOR_EXCEPTION(numBlocks < 1, std::invalid_argument, 
+			   "numBlocks = " << numBlocks << " < 1");
+	TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument, 
+			   "numTrials = " << numTrials << " < 1");
+	// Debug output stream
+	std::ostream& debugOut = outMan->stream(Debug);
+
+	// If you like, you can add the "baseline" as an approximate
+	// lower bound for orthogonalization performance.  It may be
+	// useful as a sanity check to make sure that your
+	// orthogonalizations are really computing something, though
+	// testing accuracy can help with that too.
+	//
+	//baseline (X, numCols, numBlocks, numTrials);
+
+	// Make space to put the projection and normalization
+	// coefficients.
+	Array<RCP<mat_type> > C (numBlocks);
+	for (int k = 0; k < numBlocks; ++k)
+	  C[k] = rcp (new mat_type (numCols, numCols));
+	RCP<mat_type> B (new mat_type (numCols, numCols));
+
+	// Make some blocks to orthogonalize.  Fill with random data.
+	// We won't be orthogonalizing X, or even modifying X.  We
+	// only need X so that we can make clones (since X knows its
+	// data distribution).
+	Array<RCP<MV> > V (numBlocks);
+	for (int k = 0; k < numBlocks; ++k)
+	  {
+	    V[k] = MVT::Clone (*X, numCols);
+	    MVT::MvRandom (*V[k]);
+	  }
+
+	// Make timers with informative labels.  We time an additional
+	// first run to measure the startup costs, if any, of the
+	// OrthoManager instance.
+	RCP<Time> firstRunTimer;
+	{
+	  std::ostringstream os;
+	  os << "OrthoManager: " << orthoManName << " first run";
+	  firstRunTimer = TimeMonitor::getNewCounter (os.str());
+	}
+	RCP<Time> timer;
+	{
+	  std::ostringstream os;
+	  os << "OrthoManager: " << orthoManName << " total over " 
+	     << numTrials << " trials (excluding first run above)";
+	  timer = TimeMonitor::getNewCounter (os.str());
+	}
+	// The first run lets us measure the startup costs, if any, of
+	// the OrthoManager instance, without these costs influencing
+	// the following timing runs.
+	{
+	  TimeMonitor monitor (*firstRunTimer);
+	  {
+	    (void) orthoMan->normalize (*V[0], B);
+	    for (int k = 1; k < numBlocks; ++k)
+	      {
+		// k is the number of elements in the ArrayView.  We
+		// have to assign first to an ArrayView-of-RCP-of-MV,
+		// rather than to an ArrayView-of-RCP-of-const-MV, since
+		// the latter requires a reinterpret cast.  Don't you
+		// love C++ type inference?
+		ArrayView<RCP<MV> > V_0k_nonconst = V.view (0, k);
+		ArrayView<RCP<const MV> > V_0k = 
+		  Teuchos::av_reinterpret_cast<RCP<const MV> > (V_0k_nonconst);
+		(void) orthoMan->projectAndNormalize (*V[k], C, B, V_0k);
+	      }
+	  }
+	  // "Test" that the trial run actually orthogonalized
+	  // correctly.  Results are printed to the OutputManager's
+	  // Belos::Debug output stream, so depending on the
+	  // OutputManager's chosen verbosity level, you may or may
+	  // not see the results of the test.
+	  //
+	  // FIXME (mfh 22 Jan 2011) For now, these results have to be
+	  // inspected visually.  We should add a simple automatic
+	  // test.
+	  debugOut << "Orthogonality of V[0:" << (numBlocks-1) 
+		   << "]:" << endl;
+	  for (int k = 0; k < numBlocks; ++k)
+	    {
+	      // Orthogonality of each block
+	      debugOut << "For block V[" << k << "]:" << endl;
+	      debugOut << "  ||<V[" << k << "], V[" << k << "]> - I|| = " 
+		       << orthoMan->orthonormError(*V[k]) << endl;
+	      // Relative orthogonality with the previous blocks
+	      for (int j = 0; j < k; ++j)
+		debugOut << "  ||< V[" << j << "], V[" << k << "] >|| = " 
+			 << orthoMan->orthogError(*V[j], *V[k]) << endl;
+	    }
+	}
+	
+	// Run the benchmark for numTrials trials.  Time all trials as
+	// a single run.
+	{
+	  TimeMonitor monitor (*timer);
+	  
+	  for (int trial = 0; trial < numTrials; ++trial)
+	    {
+	      (void) orthoMan->normalize (*V[0], B);
+	      for (int k = 1; k < numBlocks; ++k)
+		{
+		  ArrayView<RCP<MV> > V_0k_nonconst = V.view (0, k);
+		  ArrayView<RCP<const MV> > V_0k = 
+		    Teuchos::av_reinterpret_cast<RCP<const MV> > (V_0k_nonconst);
+		  (void) orthoMan->projectAndNormalize (*V[k], C, B, V_0k);
+		}
+	    }
+	}
+
+	// Report timing results.
+	if (displayResultsCompactly)
+	  {
+	    // The "compact" format is suitable for automatic parsing,
+	    // using a CSV (Comma-Delimited Values) parser.  The first
+	    // "comment" line may be parsed to extract column
+	    // ("field") labels; the second line contains the actual
+	    // data, in ASCII comma-delimited format.
+	    using std::endl;
+	    resultStream << "#orthoManName"
+			 << ",normalization"
+			 << ",numRows"
+			 << ",numCols"
+			 << ",numBlocks"
+			 << ",firstRunTimeInSeconds"
+			 << ",timeInSeconds"
+			 << ",numTrials" 
+			 << endl;
+	    resultStream << orthoManName 
+			 << "," << (orthoManName=="Simple" ? normalization : "N/A")
+			 << "," << MVT::GetVecLength(*X)
+			 << "," << numCols
+			 << "," << numBlocks
+			 << "," << firstRunTimer->totalElapsedTime()
+			 << "," << timer->totalElapsedTime()
+			 << "," << numTrials
+			 << endl;
+	  }
+	else
+	  TimeMonitor::summarize (resultStream);
+      }
+    };
+
     /// \class OrthoManagerTester
     /// \brief Wrapper around OrthoManager test functionality
     ///
     template< class Scalar, class MV >
     class OrthoManagerTester {
     private:
-      typedef typename Teuchos::Array< Teuchos::RCP< MV > >::size_type size_type;
+      typedef typename Teuchos::Array<Teuchos::RCP<MV> >::size_type size_type;
 
     public:
       typedef Scalar scalar_type;
-      typedef Teuchos::ScalarTraits< scalar_type > SCT;
+      typedef Teuchos::ScalarTraits<scalar_type> SCT;
       typedef typename SCT::magnitudeType magnitude_type;
-      typedef Teuchos::ScalarTraits< magnitude_type > SMT;
-      typedef Belos::MultiVecTraits< scalar_type, MV > MVT;
-      typedef Teuchos::SerialDenseMatrix< int, scalar_type > serial_matrix_type;
+      typedef Teuchos::ScalarTraits<magnitude_type> SMT;
+      typedef MultiVecTraits<scalar_type, MV> MVT;
+      typedef Teuchos::SerialDenseMatrix<int, scalar_type> mat_type;
 
       /// \brief Run all the tests
       ///
@@ -88,12 +351,12 @@ namespace Belos {
       ///
       /// \return Number of tests that failed (zero means success)
       static int
-      runTests (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
+      runTests (const Teuchos::RCP<OrthoManager<Scalar, MV> >& OM,
 		const bool isRankRevealing,
-		const Teuchos::RCP< MV >& S,
+		const Teuchos::RCP<MV>& S,
 		const int sizeX1,
 		const int sizeX2,
-		const Teuchos::RCP<Belos::OutputManager<Scalar> >& MyOM)
+		const Teuchos::RCP<OutputManager<Scalar> >& MyOM)
       {
 	using Teuchos::Array;
 	using Teuchos::null;
@@ -162,7 +425,8 @@ namespace Belos {
 	  debugOut << "Filling X2 with random values... ";
 	  MVT::MvRandom(*X2);
 	  debugOut << "done." << endl
-		   << "Calling projectAndNormalize(X2,X1)... ";
+		   << "Calling projectAndNormalize(X2, C, B, tuple(X1))... "
+		   << std::flush;
 	  // The projectAndNormalize() interface also differs between 
 	  // Anasazi and Belos.  Anasazi's projectAndNormalize() puts 
 	  // the multivector and the array of multivectors first, and
@@ -172,10 +436,10 @@ namespace Belos {
 	  // not optional.
 	  int initialX2Rank;
 	  {
-	    Array< RCP< serial_matrix_type > > C (1);
-	    RCP< serial_matrix_type > B = Teuchos::null;
+	    Array<RCP<mat_type> > C (1);
+	    RCP<mat_type> B = Teuchos::null;
 	    initialX2Rank = 
-	      OM->projectAndNormalize (*X2, C, B, tuple< RCP< const MV > >(X1));
+	      OM->projectAndNormalize (*X2, C, B, tuple<RCP<const MV> >(X1));
 	  }
 	  TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
 			     std::runtime_error, 
@@ -204,7 +468,7 @@ namespace Belos {
 	// If OM is an OutOfPlaceNormalizerMixin, exercise the
 	// out-of-place normalization routines.
 	//
-	typedef OutOfPlaceNormalizerMixin<Scalar, MV> mixin_type;
+	typedef Belos::OutOfPlaceNormalizerMixin<Scalar, MV> mixin_type;
 	RCP<mixin_type> tsqr = rcp_dynamic_cast<mixin_type>(OM);
 	if (! tsqr.is_null())
 	  {
@@ -263,8 +527,8 @@ namespace Belos {
 		     << "C, B, X1_out)...";
 	    int initialX2Rank;
 	    {
-	      Array<RCP<serial_matrix_type> > C (1);
-	      RCP<serial_matrix_type> B = Teuchos::null;
+	      Array<RCP<mat_type> > C (1);
+	      RCP<mat_type> B = Teuchos::null;
 	      initialX2Rank = 
 		tsqr->projectAndNormalizeOutOfPlace (*X2_in, *X2_out, C, B, 
 						     tuple<RCP<const MV> >(X1_out));
@@ -322,7 +586,7 @@ namespace Belos {
 	    // also, <Y2,Y2> = I, but <X1,X1> != I, so biOrtho must be set to false
 	    // it should require randomization, as 
 	    // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
-	    serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
+	    mat_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
 	    C1.random();
 	    C2.random();
 	    // S := X1*C1
@@ -346,7 +610,7 @@ namespace Belos {
 	  {
 	    MVT::MvRandom(*S);
 	    RCP<MV> mid = MVT::Clone(*S,1);
-	    serial_matrix_type c(sizeS,1);
+	    mat_type c(sizeS,1);
 	    MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
 	    std::vector<int> ind(1); 
 	    ind[0] = sizeS-1;
@@ -406,7 +670,7 @@ namespace Belos {
 	    // P_X1 P_X2 (X1*C1 + X2*C2) = P_X1 X1*C1 = 0
 	    // and 
 	    // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
-	    serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
+	    mat_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
 	    C1.random();
 	    C2.random();
 	    MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
@@ -428,7 +692,7 @@ namespace Belos {
 	  {
 	    MVT::MvRandom(*S);
 	    RCP<MV> mid = MVT::Clone(*S,1);
-	    serial_matrix_type c(sizeS,1);
+	    mat_type c(sizeS,1);
 	    MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
 	    std::vector<int> ind(1); 
 	    ind[0] = sizeS-1;
@@ -531,7 +795,7 @@ namespace Belos {
       {
 	const scalar_type ONE = SCT::one();
 	const int numCols = MVT::GetNumberVecs(X);
-	serial_matrix_type C (numCols, numCols);
+	mat_type C (numCols, numCols);
 
 	// $C := X^* X$
 	MVT::MvTransMv (ONE, X, X, C);
@@ -629,8 +893,8 @@ namespace Belos {
 	for (int t=0; t<numtests; t++) {
 
 	  Array< RCP< const MV > > theX;
-	  RCP<serial_matrix_type > B = rcp( new serial_matrix_type(sizeS,sizeS) );
-	  Array<RCP<serial_matrix_type > > C;
+	  RCP<mat_type > B = rcp( new mat_type(sizeS,sizeS) );
+	  Array<RCP<mat_type > > C;
 	  if ( (t && 3) == 0 ) {
 	    // neither <X1,Y1> nor <X2,Y2>
 	    // C, theX and theY are already empty
@@ -638,18 +902,18 @@ namespace Belos {
 	  else if ( (t && 3) == 1 ) {
 	    // X1
 	    theX = tuple(X1);
-	    C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)) );
+	    C = tuple( rcp(new mat_type(sizeX1,sizeS)) );
 	  }
 	  else if ( (t && 3) == 2 ) {
 	    // X2
 	    theX = tuple(X2);
-	    C = tuple( rcp(new serial_matrix_type(sizeX2,sizeS)) );
+	    C = tuple( rcp(new mat_type(sizeX2,sizeS)) );
 	  }
 	  else {
 	    // X1 and X2, and the reverse.
 	    theX = tuple(X1,X2);
-	    C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)), 
-		       rcp(new serial_matrix_type(sizeX2,sizeS)) );
+	    C = tuple( rcp(new mat_type(sizeX1,sizeS)), 
+		       rcp(new mat_type(sizeX2,sizeS)) );
 	  }
 
 	  // We wrap up all the OrthoManager calls in a try-catch
@@ -666,8 +930,8 @@ namespace Belos {
 
 	    // here is where the outputs go
 	    Array<RCP<MV> > S_outs;
-	    Array<Array<RCP<serial_matrix_type > > > C_outs;
-	    Array<RCP<serial_matrix_type > > B_outs;
+	    Array<Array<RCP<mat_type > > > C_outs;
+	    Array<RCP<mat_type > > B_outs;
 	    RCP<MV> Scopy;
 	    Array<int> ret_out;
 
@@ -707,18 +971,18 @@ namespace Belos {
 		ind[i] = i;
 	      }
 	      S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
-	      B_outs.push_back( rcp( new serial_matrix_type(Teuchos::Copy,*B,ret,sizeS) ) );
+	      B_outs.push_back( rcp( new mat_type(Teuchos::Copy,*B,ret,sizeS) ) );
 	    }
 	    else {
 	      S_outs.push_back( Scopy );
-	      B_outs.push_back( rcp( new serial_matrix_type(*B) ) );
+	      B_outs.push_back( rcp( new mat_type(*B) ) );
 	    }
-	    C_outs.push_back( Array<RCP<serial_matrix_type > >(0) );
+	    C_outs.push_back( Array<RCP<mat_type > >(0) );
 	    if (C.size() > 0) {
-	      C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
+	      C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
 	    }
 	    if (C.size() > 1) {
-	      C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
+	      C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
 	    }
 
 	    // do we run the reversed input?
@@ -761,16 +1025,16 @@ namespace Belos {
 		  ind[i] = i;
 		}
 		S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
-		B_outs.push_back( rcp( new serial_matrix_type(Teuchos::Copy,*B,ret,sizeS) ) );
+		B_outs.push_back( rcp( new mat_type(Teuchos::Copy,*B,ret,sizeS) ) );
 	      }
 	      else {
 		S_outs.push_back( Scopy );
-		B_outs.push_back( rcp( new serial_matrix_type(*B) ) );
+		B_outs.push_back( rcp( new mat_type(*B) ) );
 	      }
-	      C_outs.push_back( Array<RCP<serial_matrix_type > >() );
+	      C_outs.push_back( Array<RCP<mat_type > >() );
 	      // reverse the Cs to compensate for the reverse projectors
-	      C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
-	      C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
+	      C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
+	      C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
 	      // flip the inputs back
 	      theX = tuple( theX[1], theX[0] );
 	    }
@@ -939,7 +1203,7 @@ namespace Belos {
 	    RCP< MV > S_copy = MVT::CloneCopy (*S);
 
 	    // Matrix of coefficients from the normalization.
-	    RCP< serial_matrix_type > B (new serial_matrix_type (sizeS, sizeS));
+	    RCP< mat_type > B (new mat_type (sizeS, sizeS));
 	    // The contents of B will be overwritten, but fill with
 	    // random data just to make sure that the normalization
 	    // operated on all the elements of B on which it should
@@ -973,10 +1237,10 @@ namespace Belos {
 	    //
 	    // NOTE: We create this as a copy and not a view, because
 	    // otherwise it would not be safe with respect to RCPs.
-	    // This is because serial_matrix_type uses raw pointers
+	    // This is because mat_type uses raw pointers
 	    // inside, so that a view would become invalid when B
 	    // would fall out of scope.
-	    RCP< serial_matrix_type > B_top (new serial_matrix_type (Teuchos::Copy, *B, reportedRank, sizeS));
+	    RCP< mat_type > B_top (new mat_type (Teuchos::Copy, *B, reportedRank, sizeS));
 
 	    // Check ||<S_view,S_view> - I||
 	    {
@@ -1099,15 +1363,15 @@ namespace Belos {
 	X[1] = MVT::CloneCopy(*X2);
 
 	// Coefficients for the normalization
-	RCP< serial_matrix_type > B (new serial_matrix_type (sizeS, sizeS));
+	RCP< mat_type > B (new mat_type (sizeS, sizeS));
 	  
 	// Array of coefficients matrices from the projection.  
 	// For our first test, we allocate each of these matrices
 	// with the proper dimensions.
-	Array< RCP< serial_matrix_type > > C (num_X);
+	Array< RCP< mat_type > > C (num_X);
 	for (int k = 0; k < num_X; ++k)
 	  {
-	    C[k] = rcp (new serial_matrix_type (MVT::GetNumberVecs(*X[k]), sizeS));
+	    C[k] = rcp (new mat_type (MVT::GetNumberVecs(*X[k]), sizeS));
 	    C[k]->random(); // will be overwritten
 	  }
 	try {
@@ -1143,10 +1407,10 @@ namespace Belos {
 	  MVT::MvAddMv (SCT::one(), *S, SCT::zero(), *Residual, *Residual);
 	  {
 	    // Pick out the first reportedRank rows of B.  Make a deep
-	    // copy, since serial_matrix_type is not safe with respect
+	    // copy, since mat_type is not safe with respect
 	    // to RCP-based memory management (it uses raw pointers
 	    // inside).
-	    RCP< const serial_matrix_type > B_top (new serial_matrix_type (Teuchos::Copy, *B, reportedRank, B->numCols()));
+	    RCP< const mat_type > B_top (new mat_type (Teuchos::Copy, *B, reportedRank, B->numCols()));
 	    // Residual := Residual - Q(:, 1:reportedRank) * B(1:reportedRank, :)
 	    MVT::MvTimesMatAddMv (-SCT::one(), *Q_left, *B_top, SCT::one(), *Residual);
 	  }
@@ -1277,10 +1541,10 @@ namespace Belos {
 	// Array of coefficients matrices from the projection.  
 	// For our first test, we allocate each of these matrices
 	// with the proper dimensions.
-	Array< RCP< serial_matrix_type > > C (num_X);
+	Array< RCP< mat_type > > C (num_X);
 	for (int k = 0; k < num_X; ++k)
 	  {
-	    C[k] = rcp (new serial_matrix_type (MVT::GetNumberVecs(*X[k]), sizeS));
+	    C[k] = rcp (new mat_type (MVT::GetNumberVecs(*X[k]), sizeS));
 	    C[k]->random(); // will be overwritten
 	  }
 	try {
@@ -1447,7 +1711,7 @@ namespace Belos {
 	for (int t = 0; t < numtests; ++t) 
 	  {
 	    Array< RCP< const MV > > theX;
-	    Array< RCP< serial_matrix_type > > C;
+	    Array< RCP< mat_type > > C;
 	    if ( (t && 3) == 0 ) {
 	      // neither X1 nor X2
 	      // C and theX are already empty
@@ -1455,18 +1719,18 @@ namespace Belos {
 	    else if ( (t && 3) == 1 ) {
 	      // X1
 	      theX = tuple(X1);
-	      C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)) );
+	      C = tuple( rcp(new mat_type(sizeX1,sizeS)) );
 	    }
 	    else if ( (t && 3) == 2 ) {
 	      // X2
 	      theX = tuple(X2);
-	      C = tuple( rcp(new serial_matrix_type(sizeX2,sizeS)) );
+	      C = tuple( rcp(new mat_type(sizeX2,sizeS)) );
 	    }
 	    else {
 	      // X1 and X2, and the reverse.
 	      theX = tuple(X1,X2);
-	      C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)), 
-			 rcp(new serial_matrix_type(sizeX2,sizeS)) );
+	      C = tuple( rcp(new mat_type(sizeX1,sizeS)), 
+			 rcp(new mat_type(sizeX2,sizeS)) );
 	    }
 
 	    try {
@@ -1479,7 +1743,7 @@ namespace Belos {
 
 	      // here is where the outputs go
 	      Array< RCP< MV > > S_outs;
-	      Array< Array< RCP< serial_matrix_type > > > C_outs;
+	      Array< Array< RCP< mat_type > > > C_outs;
 	      RCP< MV > Scopy;
 
 	      // copies of S,MS
@@ -1495,12 +1759,12 @@ namespace Belos {
 	      // we allocate S and MS for each test, so we can save these as views
 	      // however, save copies of the C
 	      S_outs.push_back( Scopy );
-	      C_outs.push_back( Array< RCP< serial_matrix_type > >(0) );
+	      C_outs.push_back( Array< RCP< mat_type > >(0) );
 	      if (C.size() > 0) {
-		C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
+		C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
 	      }
 	      if (C.size() > 1) {
-		C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
+		C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
 	      }
 
 	      // do we run the reversed input?
@@ -1522,10 +1786,10 @@ namespace Belos {
 		S_outs.push_back( Scopy );
 		// we are in a special case: P_X1 and P_X2, so we know we applied 
 		// two projectors, and therefore have two C[i]
-		C_outs.push_back( Array<RCP<serial_matrix_type > >() );
+		C_outs.push_back( Array<RCP<mat_type > >() );
 		// reverse the Cs to compensate for the reverse projectors
-		C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
-		C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
+		C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
+		C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
 		// flip the inputs back
 		theX = tuple( theX[1], theX[0] );
 	      }

@@ -23,6 +23,8 @@
 #include <stk_percept/Util.hpp>
 #include <stk_percept/RunEnvironment.hpp>
 
+#include <stk_util/environment/WallTime.hpp>
+
 #include <stk_adapt/UniformRefiner.hpp>
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
@@ -135,6 +137,8 @@ namespace stk {
       EXCEPTWATCH;
       //dw_option_mask.mask("search", use_case::LOG_SEARCH, "log search diagnostics");
 
+      double t0 =  stk::wall_time(); 
+
       bopt::options_description desc("stk_adapt options", 132);
     
       // NOTE: Options --directory --output-log --runtest are handled/defined in RunEnvironment
@@ -203,9 +207,6 @@ namespace stk {
 
       try {
 
-        //RunEnvironment run_environment(&argc, &argv);
-
-
         bopt::variables_map &vm = stk::get_variables_map();  
 
         if (vm.count("input_mesh"))
@@ -244,8 +245,6 @@ namespace stk {
             exit(1);
           }
 
-        //try {
-        
         EXCEPTWATCH;
 #if defined( STK_HAS_MPI )
         MPI_Barrier( MPI_COMM_WORLD );
@@ -357,17 +356,14 @@ namespace stk {
       catch ( const std::exception * X ) {
         std::cout << "AdaptMain::  unexpected exception POINTER: " << X->what() << std::endl;
         failed_proc_rank = p_rank+1u;
-        //exit(1);
       }
       catch ( const std::exception & X ) {
         std::cout << "AdaptMain:: unexpected exception: " << X.what() << std::endl;
         failed_proc_rank = p_rank+1u;
-        //exit(1);
       }
       catch( ... ) {
         std::cout << "AdaptMain::  ... exception" << std::endl;
         failed_proc_rank = p_rank+1u;
-        //exit(1);
       }
 
       stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &failed_proc_rank ) );
@@ -376,6 +372,11 @@ namespace stk {
           stk::percept::pout() << "P[" << p_rank << "]  exception found on processor " << (failed_proc_rank-1) << "\n";
           exit(1);
         }
+
+      double t1 =  stk::wall_time(); 
+      stk::percept::pout() << "P[" << p_rank << "]  wall clock time on processor [" << p_rank << "]= " << (t1-t0) << " (sec)\n";
+      std::cout << "P[" << p_rank << "]  wall clock time on processor [" << p_rank << "]= " << (t1-t0) << " (sec)" << std::endl;
+
       return result;
     }
 

@@ -219,8 +219,10 @@ namespace stk {
       static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field, 
                                        FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length);
 
-      VectorFieldType* getCoordinatesField();
-
+      VectorFieldType* getCoordinatesField() {
+        // this should have been set by a previous internal call to setCoordinatesField
+        return m_coordinatesField;
+      }
 
       static void 
       element_side_nodes( const Entity & elem , int local_side_id, EntityRank side_entity_rank, std::vector<Entity *>& side_node_entities );
@@ -232,6 +234,7 @@ namespace stk {
       SameRankRelation& adapt_parent_to_child_relations() { return m_adapt_parent_to_child_relations; }
 
     private:
+
       /// reads meta data, commits it, reads bulk data
       void readModel( const std::string& in_filename );
 
@@ -242,6 +245,7 @@ namespace stk {
       void createMetaDataNoCommit( const std::string& gmesh_spec);
 
       void commitMetaData();
+
       /// read the bulk data (no op in create mode)
       void readBulkData();
 
@@ -254,6 +258,9 @@ namespace stk {
       // deprecated
       void createFields(bool print, FieldCreateOrderVec create_field = FieldCreateOrderVec());
 
+      /// Cache internal pointer to coordinate field
+      void setCoordinatesField();
+
       // write in exodus format to given file
       void writeModel( const std::string& out_filename );
 
@@ -263,38 +270,33 @@ namespace stk {
       //static void transformMesh(GenericFunction& coordinate_transform);
 
     private:
-      bool                                 m_ownData;
-      stk::mesh::MetaData *                m_metaData;
-      stk::mesh::BulkData *                m_bulkData;
-      stk::io::util::Gmesh_STKmesh_Fixture * m_fixture;
-      Ioss::Region *                       m_iossRegion;
-      stk::ParallelMachine                 m_comm;
-      bool                                 m_isCommitted;
-      bool                                 m_isOpen;
-      bool                                 m_isInitialized;
-      std::string                          m_filename;
-      int                                  m_spatialDim;
-      bool                                 m_isAdopted;
+      stk::mesh::MetaData *                 m_metaData;
+      stk::mesh::BulkData *                 m_bulkData;
+      stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
+      Ioss::Region *                        m_iossRegion;
+      VectorFieldType*                      m_coordinatesField;
+      int                                   m_spatialDim;
+      bool                                  m_ownData;
+      bool                                  m_isCommitted;
+      bool                                  m_isOpen;
+      bool                                  m_isInitialized;
+      bool                                  m_isAdopted;
+      bool                                  m_dontCheckState;
+      std::string                           m_filename;
+      stk::ParallelMachine                  m_comm;
 
-      //VectorFieldType                      m_coordinates_field;
       //static std::map<unsigned, BasisType *> m_basisTable;
-
-
       static BasisTableMap m_basisTable;
 
       SameRankRelation m_adapt_parent_to_child_relations;
 
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
-      void checkState(const std::string& function)
-      {
+
+      void checkState(const std::string& function) {
         return checkStateSpec(function, m_isOpen, m_isInitialized, m_isCommitted);
       }
 
-    public:
-      bool m_dontCheckState;
-
-
-    };
+    }; // class PerceptMesh
 
 
 #if 0
