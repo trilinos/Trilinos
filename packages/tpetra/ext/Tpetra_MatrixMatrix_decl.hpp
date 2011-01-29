@@ -111,7 +111,7 @@ public:
              B are not already Filled, or if errors occur in putting values
              into C, etc.
      */
-static int Multiply(
+static void Multiply(
   Teuchos::RCP<const CrsMatrix_t > A,
   bool transposeA,
   Teuchos::RCP<const CrsMatrix_t > B,
@@ -134,11 +134,11 @@ static int Multiply(
              not already Filled, or if errors occur in putting values
              into B, etc.
      */
-  static int Add(
-    Teuchos::RCP<CrsMatrix_t > A,
+  static void Add(
+    RCP<const CrsMatrix_t > A,
     bool transposeA,
     Scalar scalarA,
-    Teuchos::RCP<CrsMatrix_t > B,
+    RCP<CrsMatrix_t > B,
     Scalar scalarB );
 
     /** Given CrsMatrix objects A and B, form the sum C = a*A + b*B
@@ -159,14 +159,14 @@ static int Multiply(
              not already Filled, or if errors occur in putting values
              into C, etc.
      */
-  static int Add(
-    Teuchos::RCP<const CrsMatrix_t > A,
+  static void Add(
+    RCP<const CrsMatrix_t > A,
     bool transposeA,
     Scalar scalarA,
-    Teuchos::RCP<const CrsMatrix_t > B,
+    RCP<const CrsMatrix_t > B,
     bool transposeB,
     Scalar scalarB,
-    Teuchos::RCP<CrsMatrix_t > C);
+    RCP<CrsMatrix_t > C);
 
   static Teuchos::RCP<const Map_t >
   find_rows_containing_cols(
@@ -175,7 +175,7 @@ static int Multiply(
 
 private:
 
-static int mult_A_B(
+static void mult_A_B(
   Teuchos::RCP<CrsMatrixStruct_t >& Aview, 
   Teuchos::RCP<CrsMatrixStruct_t >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
@@ -185,23 +185,23 @@ static void mult_A_Btrans(
   const Teuchos::RCP<const CrsMatrixStruct_t> & Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
 
-static int mult_Atrans_B(
+static void mult_Atrans_B(
   Teuchos::RCP<CrsMatrixStruct_t >& Aview, 
   Teuchos::RCP<CrsMatrixStruct_t >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>&  C);
 
-static int mult_Atrans_Btrans(
+static void mult_Atrans_Btrans(
   Teuchos::RCP<CrsMatrixStruct_t >& Aview, 
   Teuchos::RCP<CrsMatrixStruct_t >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
 
-static int import_and_extract_views(
+static void import_and_extract_views(
   Teuchos::RCP<const CrsMatrix_t >& M,
   Teuchos::RCP<const Map_t >& targetMap,
   Teuchos::RCP<CrsMatrixStruct_t >& Mview);
 
 template<class Ordinal>
-static int distribute_list(
+static void distribute_list(
   const Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm,
   size_t lenSendList,
   const Teuchos::Array<GlobalOrdinal>& sendList,

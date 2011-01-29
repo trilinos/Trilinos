@@ -4,8 +4,8 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-/*namespace Tpetra{
-extern
+namespace Tpetra{
+/*extern
 template<
   class Scalar,
   class LocalOrdinal,
@@ -13,68 +13,28 @@ template<
   class Node,
   class SpMatVec,
   class SpMatSlv>
-Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > find_row_containing_cols(
-  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > M,
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap);
+RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > find_row_containing_cols(
+  RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > M,
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap);
 }*/
 
-/*template<class Ordinal>
-int read_input_file(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
-  const char* input_file_name,
-  const char**& filenames,
-  int& numfiles,
-  int& numfilenames_allocated);
+static const double defaultEpsilon = 1e-7;
 
 template<class Ordinal>
-int read_matrix_file_names(Teuchos::RCP<Teuchos::Comm<Ordinal> > Comm,
-  const char* input_file_name,
-  char*& A_file,
-  bool& transA,
-  char*& B_file,
-  bool& transB,
-  char*& C_file);
-
-template<class Ordinal>
-int broadcast_name(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm, const char*& name);
-
-template<class Ordinal, class LocalOrdinal, class GlobalOrdinal, class Node>
-int create_maps(
-  Teuchos::RCP<Teuchos::Comm<Ordinal> > Comm,
-  const char* input_file_name,
-  Teuchos::RCP<Tpetra::Map<LocalOrdinal, Global, Node> > row_map,
-  Teuchos::RCP<Tpetra::Map<LocalOrdinal, Global, Node> >col_map,
-  Teuchos::RCP<Tpetra::Map<LocalOrdinal, Global, Node> > range_map,
-  Teuchos::RCP<Tpetra::Map<LocalOrdinal, Global, Node> > domain_map);
-
-template<
-  class Ordinal,
-  class Scalar,
-  class LocalOrdinal,
-  class GlobalOrdinal,
-  class Node,
-  class SpMatVec,
-  class SpMatSlv>
-int read_matrix(
-  const char* filename,
-  Teuchos::RCP<Teuchos::Comm<Ordinal> > Comm,
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, Global, Node> > rowmap,
-  Teuchos::RCP<Tpetra::Map<LocalOrdinal, Global, Node> > colmap,
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, Global, Node> > rangemap,
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, Global, Node> > domainmap,
-  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > mat);
-*/
-template<class Ordinal>
-int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
+int run_test(RCP<const Comm<Ordinal> > Comm,
   Teuchos::ParameterList matrixSystem,
   bool result_mtx_to_file=false,
   bool verbose=false);
 
+template<class Ordinal>
+int simple_add_test(RCP<const Comm<Ordinal> > Comm, bool verbose);
+
 template<class CommOrdinal>
-int two_proc_test(Teuchos::RCP<const Teuchos::Comm<CommOrdinal> > Comm,
+int two_proc_test(RCP<const Comm<CommOrdinal> > Comm,
   bool verbose=false);
 
 template<class Ordinal>
-int test_find_rows(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm);
+int test_find_rows(RCP<const Comm<Ordinal> > Comm);
 
 template<
   class Scalar,
@@ -84,207 +44,98 @@ template<
   class SpMatVec,
   class SpMatSlv,
   class CommOrdinal>
-Teuchos::RCP<Tpetra::CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > 
+RCP<CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > 
 create_crsmatrix(
-  Teuchos::RCP<const Teuchos::Comm<CommOrdinal> > comm,
+  RCP<const Comm<CommOrdinal> > comm,
   size_t local_n,
   bool callFillComplete,
   bool symmetric);
-/*
+
 template<class Ordinal>
-int time_matrix_matrix_multiply(Teuchos::RCP<Teuchos::Comm<Ordinal> > Comm,
-  bool verbose);
-*/
-/////////////////////////////////////
-//Global variable!!!!
-//char* path;
-////////////////////////////////////
+int simple_add_test(RCP<const Comm<Ordinal> > Comm, bool verbose){
+  int localProc = Comm->getRank();
+  RCP<CrsMatrix<double,int> > A = null;
+  RCP<CrsMatrix<double,int> > B = null;
+  RCP<CrsMatrix<double,int> > C = null;
 
-int main(int argc, char* argv[]) {
-  Teuchos::CommandLineProcessor clp;
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  bool verbose = false;
-  std::string matnamesFile;
-  bool write_result_hb = false;
-  clp.setOption("matnames-file", &matnamesFile, "A file containing a list of matricies we'll import", true);
-  clp.setOption("writeresults", "no-write-results", &write_result_hb, "Whether or not to write the resutling matricies to hb files");
-  clp.setOption("v", "not-verbose", &verbose, "Whether or not to use verbose output");
-  clp.parse(argc, argv);
-  /*int write = 0;
-  bool path_specified = false;
-  char* input_file = NULL;
-  bool input_file_specified = false;
+  if (localProc == 0 && verbose) {
+    std::cout << "Before reading" << std::endl;
+  }
+  Utils::readHBMatrix("matrices/addA3.hb", Comm, Kokkos::DefaultNode::getDefaultNode(), A);
+  Utils::readHBMatrix("matrices/addB3.hb", Comm, Kokkos::DefaultNode::getDefaultNode(), B);
+  Utils::readHBMatrix("matrices/addC3.hb", Comm, Kokkos::DefaultNode::getDefaultNode(), C);
+  if (localProc == 0 && verbose) {
+    std::cout << "after reading" << std::endl;
+  }
 
-  if (comm->getRank()==0) {
-    for(int ii=0; ii<argc; ++ii) {
-      if (!strcmp("-write_result", argv[ii])) write_result_mtx = true;
-      if (!strcmp("-v", argv[ii])) verbose = true;
-      if (!strcmp("-i", argv[ii])) {
-        input_file = argv[ii+1];
-        input_file_specified = true;
-      }
-      if (!strcmp("-d",argv[ii])) {
-        path = argv[ii+1];
-        path_specified = true;
-      }
+  typedef Kokkos::DefaultNode::DefaultNodeType DNode;
+
+  
+
+  MatrixMatrix<
+    double, 
+    int,
+    int,
+    DNode,
+    typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+  Add(A, false, 1.0, B, 1.0);
+
+  MatrixMatrix<
+    double, 
+    int,
+    int,
+    DNode,
+    typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+  Add(C, false, -1.0, B, 1.0);
+
+  double calculated_euc_norm = B->getEuclideanNorm();
+  double c_euc_norm = C->getEuclideanNorm();
+  double resultVal = calculated_euc_norm/c_euc_norm;
+
+  int return_code =0;
+  if (resultVal < defaultEpsilon) {
+    if (localProc == 0 && verbose) {
+      std::cout << "Test Passed" << std::endl;
+      std::cout << "||(A+B)-C||/||C|| " << resultVal << std::endl;
     }
-    write = write_result_mtx ? 1 : 0;
   }
-
-  Teuchos::broadcast(*comm, 0, 1, &write);
-  if (write) write_result_mtx = true;
-
-  if (!path_specified) {
-    path = new char[32];
-    sprintf(path, "%s", ".");
-  }*/
-
-  int err = two_proc_test(comm, verbose);
-  if (err != 0) {
-    std::cerr << "two_proc_test returned err=="<<err<<std::endl;
-    return(err);
-  }
-
-/*  if (!input_file_specified) {
-    input_file = new char[64];
-    sprintf(input_file, "%s", "infiles");
-  }
-
-  const char** filenames = NULL;
-  int numfiles = 0;
-  int numfilenames_allocated = 0;
-
-  err = read_input_file(comm, input_file,
-                        filenames, numfiles, numfilenames_allocated);
-  if (err != 0) {
-    if (path_specified) path_specified = false;
-    sprintf(path, "%s", "./MatrixMatrix");
-    read_input_file(comm, input_file,
-                    filenames, numfiles, numfilenames_allocated);
-  }
-*/
-  err = test_find_rows(comm);
-  if (err != 0 && comm->getRank() ==0) {
-    std::cerr << "test_find_rows returned err=="<<err<<std::endl;
-    return(err);
-  } 
-  Teuchos::RCP<Teuchos::ParameterList> matrixSystems = 
-    Teuchos::getParametersFromXmlFile(matnamesFile);
-  for(
-    Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
-    it != matrixSystems->end();
-    ++it)
-  {
-	TEST_FOR_EXCEPTION(!it->second.isList(), std::runtime_error,
-    "All top level items in the matrix "
-	  "file names list must be ParameterLists! In otherwords, you always "
-    "need to have matricies "
-	  "encapsulated within a matrixsystem" << std::endl <<
-    "Bad tag's name: " << it->first << 
-    "Type name: " << it->second.getAny().typeName() << 
-    std::endl << std::endl);
-      
-    if( run_test<int>(
-      comm, 
-      matrixSystems->sublist(it->first), 
-      write_result_hb, 
-      verbose) != 0)
-    {
-      err = -1;
+  else {
+    return_code = -1;
+    if (localProc == 0) {
+      std::cout << "Test Failed: ||(A+B)-C||/||C|| " << resultVal << std::endl;
     }
-
   }
 
-/**
- * Makes sure the multiply doesn't work if given bad matrices
- */
-  Teuchos::ParameterList wrongList;
-  wrongList.set("A", "matrices/wrong_m.hb");
-  wrongList.set("B", "matrices/wrong_tce.hb");
-  wrongList.set("C", "matrices/wrong_d.hb");
-  wrongList.set("TransA", false);
-  wrongList.set("TransB", true);
-  if(
-    run_test<int>(
-      comm, 
-      wrongList, 
-      write_result_hb, 
-      verbose) == 0 )
-  {
-    err = -1;
-  }
+  return(return_code);
 
-/*
-  for(int i=0; i<numfiles; ++i) {
-    err = run_test(comm, matnamesFile, write_result_mtx, verbose);
-  //  delete [] filenames[i];
-    if (err != 0) break;
-  }*/
-/*
-  for(int j=numfiles; j<numfilenames_allocated; ++j) {
-    delete [] filenames[j];
-  }
-
-  delete [] filenames;
-
-  if (!input_file_specified) delete [] input_file;
-  if (!path_specified) delete [] path;*/
-
-  //THIS SHOULD BECOME A TEMPLATED UNIT TEST
-  /*Teuchos::RCP<Tpetra::CrsMatrix<double, int> > D = 
-     create_crsmatrix<double, int, int,
-     Kokkos::DefaultNode::DefaultNodeType,
-     Kokkos::DefaultSparseMultiply<double,int,Kokkos::DefaultNode::DefaultNodeType>,
-     Kokkos::DefaultSparseSolve<double,int,Kokkos::DefaultNode::DefaultNodeType> >  (comm, (size_t)10, true, false);
-
-  std::cout << "D: \n"  << *D << std::endl;*/
-
-  //EpetraExt::MatrixMatrix::Add(*D, true, 0.5, *D, 0.5);
-
-//  std::cout << "symm D: \n"  << *D << std::endl;
-
-  //delete D;
-
-  /*
-  if (err == 0) {
-    err = time_matrix_matrix_multiply(comm, verbose);
-  }*/
-
-  int global_err = err;
-
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &err, &global_err);
-
-  return(global_err);
 
 }
 
 template<class Ordinal>
-int test_find_rows(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm)
+int test_find_rows(RCP<const Comm<Ordinal> > Comm)
 {
   int numprocs = Comm->getSize();
   int localproc = Comm->getRank();
   int numlocalrows = 2;
-  Tpetra::global_size_t numglobalrows = numprocs*numlocalrows;
-  Teuchos::RCP<Tpetra::Map<int> > rowmap = 
-    Teuchos::rcp(new Tpetra::Map<int>(numglobalrows, 0, Comm));
-  Teuchos::RCP<Tpetra::CrsMatrix<double, int> > matrix = 
-    Teuchos::rcp(new Tpetra::CrsMatrix<double, int>(rowmap, numglobalrows));
+  global_size_t numglobalrows = numprocs*numlocalrows;
+  RCP<Map<int> > rowmap = 
+    rcp(new Map<int>(numglobalrows, 0, Comm));
+  RCP<CrsMatrix<double, int> > matrix = 
+    rcp(new CrsMatrix<double, int>(rowmap, numglobalrows));
 
-  Teuchos::Array<int> cols(numglobalrows);
-  Teuchos::Array<double> vals(numglobalrows);
+  Array<int> cols(numglobalrows);
+  Array<double> vals(numglobalrows);
 
   for(size_t j=0; j<numglobalrows; ++j) {
     cols[j] = j;
     vals[j] = 1.0;
   }
 
-  Teuchos::RCP<Tpetra::Map<int> > colmap = 
-    Teuchos::rcp(new Tpetra::Map<int>(-1, cols(), 0, Comm));
+  RCP<Map<int> > colmap = 
+    rcp(new Map<int>(-1, cols(), 0, Comm));
 
   for(int i=0; i<numlocalrows; ++i) {
-    Teuchos::Array<int> row(1,localproc*numlocalrows+i);
+    Array<int> row(1,localproc*numlocalrows+i);
     matrix->insertGlobalValues(
       row[0], row.view(0,1),  vals.view(i,1) );
   }
@@ -293,8 +144,8 @@ int test_find_rows(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm)
 
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
 
-  Teuchos::RCP<const Tpetra::Map<int> > map_rows = 
-    Tpetra::MatrixMatrix<
+  RCP<const Map<int> > map_rows = 
+    MatrixMatrix<
       double, 
       int,
       int,
@@ -343,7 +194,7 @@ int test_find_rows(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm)
 }
 
 template<class Ordinal>
-int broadcast_name(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm, const char*& name)
+int broadcast_name(RCP<const Comm<Ordinal> > Comm, const char*& name)
 {
   if (Comm->getSize() < 2) return(0);
 
@@ -370,7 +221,7 @@ int broadcast_name(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm, const char*
 }
 
 template<class Odrinal>
-int read_input_file(Teuchos::RCP<const Teuchos::Comm<Odrinal> > Comm,
+int read_input_file(RCP<const Comm<Odrinal> > Comm,
                     const char* input_file_name,
                     const char**& filenames,
                     int& numfiles,
@@ -454,12 +305,11 @@ int read_input_file(Teuchos::RCP<const Teuchos::Comm<Odrinal> > Comm,
 */
 
 template<class Ordinal>
-int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
+int run_test(RCP<const Comm<Ordinal> > Comm,
              Teuchos::ParameterList matrixSystem,
              bool result_mtx_to_file,
              bool verbose)
 {
-  static const double defaultEpsilon = 1e-7;
   std::string A_file = matrixSystem.get<std::string>("A");
   std::string B_file = matrixSystem.get<std::string>("B");
   std::string C_file = matrixSystem.get<std::string>("C");
@@ -475,33 +325,33 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
               << ", B:" << B_file << ", C:" << C_file << std::endl;
   }
 
-  Teuchos::RCP<Tpetra::CrsMatrix<double,int> > A = Teuchos::null;
-  Teuchos::RCP<Tpetra::CrsMatrix<double,int> > B = Teuchos::null;
-  Teuchos::RCP<Tpetra::CrsMatrix<double,int> > C = Teuchos::null;
-  Teuchos::RCP<Tpetra::CrsMatrix<double,int> > C_check = Teuchos::null;
+  RCP<CrsMatrix<double,int> > A = null;
+  RCP<CrsMatrix<double,int> > B = null;
+  RCP<CrsMatrix<double,int> > C = null;
+  RCP<CrsMatrix<double,int> > C_check = null;
 
 /*
-  Tpetra::Utils::readMatrixMarketMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A);
-  Tpetra::Utils::readMatrixMarketMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B);
-  Tpetra::Utils::readMatrixMarketMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);*/
-  Tpetra::Utils::readHBMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A);
-  Tpetra::Utils::readHBMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B);
-  Tpetra::Utils::readHBMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
+  Utils::readMatrixMarketMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A);
+  Utils::readMatrixMarketMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B);
+  Utils::readMatrixMarketMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);*/
+  Utils::readHBMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A);
+  Utils::readHBMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B);
+  Utils::readHBMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
 
 
-  /*Teuchos::RCP<Teuchos::basic_FancyOStream<char> > outstream = 
-    Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+  /*RCP<Teuchos::basic_FancyOStream<char> > outstream = 
+    Teuchos::getFancyOStream(rcpFromRef(std::cout));
   B->describe(*outstream, Teuchos::VERB_EXTREME);*/
-  Teuchos::RCP<const Tpetra::Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+  RCP<const Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
 
-  C = Teuchos::rcp( new Tpetra::CrsMatrix<double,int>(rowmap, 1));
+  C = rcp( new CrsMatrix<double,int>(rowmap, 1));
 
-  Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constA = A;
-  Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constB = B;
+  RCP<const CrsMatrix<double,int> > constA = A;
+  RCP<const CrsMatrix<double,int> > constB = B;
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
 
 
-  Tpetra::MatrixMatrix<
+  MatrixMatrix<
     double, 
     int,
     int,
@@ -515,8 +365,9 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   //}
 
   
+  double c_euc_norm = C_check->getEuclideanNorm();
 
-  Tpetra::MatrixMatrix<
+  MatrixMatrix<
     double, 
     int,
     int,
@@ -524,151 +375,36 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
     typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
   Add(C, false, -1.0, C_check, 1.0);
 
-  double euc_norm = C_check->getEuclideanNorm();
+  double c_check_euc_norm = C_check->getEuclideanNorm();
 
-  int return_code = 0;
+  double diff_result = c_check_euc_norm/c_euc_norm;
 
-
-  if (euc_norm < epsilon) {
+  int return_code =0;
+  if (diff_result < epsilon) {
     if (localProc == 0 && verbose) {
       std::cout << "Test Passed" << std::endl;
-      std::cout << "euc_norm " << euc_norm << std::endl;
+      std::cout << "||A*B-C||/||C|| " << diff_result << std::endl;
     }
   }
   else {
     return_code = -1;
     if (localProc == 0) {
-      std::cout << "Test Failed, euc_norm = " << euc_norm << std::endl;
+      std::cout << "Test Failed: ||A*B-C||/||C|| " << diff_result << std::endl;
     }
   }
 
   return(return_code);
 }
-/*
+
 template<class Ordinal>
-int read_matrix_file_names(Teuchos::RCP<Teuchos::Comm<Ordinal> > Comm,
-                           const char* input_file_name,
-                           char*& A_file,
-                           bool& transA,
-                           char*& B_file,
-                           bool& transB,
-                           char*& C_file)
-{
-  int pathlen = path!=0 ? (int)strlen(path) : 0;
-
-  if (Comm->getRank()==0) {
-    std::ifstream infile(input_file_name);
-    if (!infile) {
-      std::cout << "error opening input file " << input_file_name << std::endl;
-      return(-1);
-    }
-
-    int linelen = 512;
-    char line[512];
-
-    infile.getline(line, linelen);
-    if (!infile.eof()) {
-      if (strchr(line, '#') == NULL) {
-        A_file = new char[pathlen+strlen(line)+2];
-        sprintf(A_file, "%s/%s",path,line);
-      }
-    }
-
-    infile.getline(line, linelen);
-    if (!infile.eof()) {
-      if (!strcmp(line, "TRANSPOSE")) {
-        transA = true;
-      }
-      else transA = false;
-    }
-
-    infile.getline(line, linelen);
-    if (!infile.eof()) {
-      if (strchr(line, '#') == NULL) {
-        B_file = new char[pathlen+strlen(line)+2];
-        sprintf(B_file, "%s/%s",path,line);
-      }
-    }
-
-    infile.getline(line, linelen);
-    if (!infile.eof()) {
-      if (!strcmp(line, "TRANSPOSE")) {
-        transB = true;
-      }
-      else transB = false;
-    }
-
-    infile.getline(line, linelen);
-    if (!infile.eof()) {
-      if (strchr(line, '#') == NULL) {
-        C_file = new char[pathlen+strlen(line)+2];
-        sprintf(C_file, "%s/%s", path, line);
-      }
-    }
-
-    broadcast_name(Comm, (const char*&)A_file);
-    broadcast_name(Comm, (const char*&)B_file);
-    broadcast_name(Comm, (const char*&)C_file);
-    int len = transA ? 1 : 0;
-	Teuchos::broadcast(Comm, 0, 1, &len);
-    len = transB ? 1 : 0;
-	Teuchos::broadcast(Comm, 0, 1, &len);
-	
-  }
-  else {
-    broadcast_name(Comm, (const char*&)A_file);
-    broadcast_name(Comm, (const char*&)B_file);
-    broadcast_name(Comm, (const char*&)C_file);
-    int len = 0;
-	Teuchos::broadcast(Comm, 0, 1, &len);
-    transA = len==1 ? true : false;
-	Teuchos::broadcast(Comm, 0, 1, &len);
-    transB = len==1 ? true : false;
-  }
-
-  return(0);
-}
-
-int create_maps(Epetra_Comm& Comm,
-                const char* input_file_name,
-                Epetra_Map*& row_map,
-                Epetra_Map*& col_map,
-                Epetra_Map*& range_map,
-                Epetra_Map*& domain_map)
-{
-  return( EpetraExt::MatrixMarketFileToBlockMaps(input_file_name,
-                                         Comm,
-                                         (Epetra_BlockMap*&)row_map,
-                                         (Epetra_BlockMap*&)col_map,
-                                         (Epetra_BlockMap*&)range_map,
-                                         (Epetra_BlockMap*&)domain_map)
-  );
-}
-
-int read_matrix(const char* filename,
-                Epetra_Comm& Comm,
-                const Epetra_Map* rowmap,
-                Epetra_Map* colmap,
-                const Epetra_Map* rangemap,
-                const Epetra_Map* domainmap,
-                Epetra_CrsMatrix*& mat)
-{
-  (void)Comm;
-  int err = EpetraExt::MatrixMarketFileToCrsMatrix(filename, *rowmap, *colmap,
-                                                   *rangemap, *domainmap, mat);
-
-  return(err);
-}
-*/
-template<class Ordinal>
-int two_proc_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
+int two_proc_test(RCP<const Comm<Ordinal> > Comm,
   bool verbose)
 {
-  typedef Tpetra::Map<int>                                       Map;
-  typedef Tpetra::CrsMatrix<double,int>                          CrsMatrix;
+  typedef Map<int>                                       Map;
+  typedef CrsMatrix<double,int>                          CrsMatrix;
   typedef typename CrsMatrix::mat_vec_type                       MatVec;
   typedef typename CrsMatrix::node_type                          DNode;
-  typedef Tpetra::MatrixMatrix< double, int, int, DNode, MatVec> MatMat;
+  typedef MatrixMatrix< double, int, int, DNode, MatVec> MatMat;
 
   (void)verbose;
   int thisproc = Comm->getRank();
@@ -678,35 +414,35 @@ int two_proc_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   //only run this test on 2 procs
   if (numprocs != 2) return(0);
 
-  Teuchos::RCP< Teuchos::FancyOStream > out = Teuchos::fancyOStream(Teuchos::rcp(&std::cout,false),"",0,false,10,false,true);
-  Tpetra::MMdebug::debug_stream = out;
-  Tpetra::MMdebug::debug_level  = Teuchos::VERB_NONE;
+  RCP< Teuchos::FancyOStream > out = Teuchos::fancyOStream(rcp(&std::cout,false),"",0,false,10,false,true);
+  MMdebug::debug_stream = out;
+  MMdebug::debug_level  = Teuchos::VERB_NONE;
 
   // set up a row-std::map with 2 global elements,
   // 1 on each proc.
   const int numGlobalRows = 2;
-  Teuchos::ArrayRCP<int> myrow(1);
+  ArrayRCP<int> myrow(1);
   if (thisproc == 1) myrow[0] = 7;
   else               myrow[0] = 3;
-  Teuchos::RCP<const Map> rowmap = Teuchos::rcp(new Map(numGlobalRows, myrow(), 0, Comm));
+  RCP<const Map> rowmap = rcp(new Map(numGlobalRows, myrow(), 0, Comm));
 
   //set up a domain-std::map with columns 0 - 4 on proc 0,
   //and columns 5 - 9 on proc 1.
   const int numGlobalCols = 10;
   const int numMyCols = 5;
-  Teuchos::ArrayRCP<int> mycols(numGlobalCols);
+  ArrayRCP<int> mycols(numGlobalCols);
   for(int i=0; i<numGlobalCols; ++i) {
     mycols[i] = i;
   }
-  Teuchos::RCP<const Map> domainmap = Teuchos::rcp(new Map(numGlobalCols, mycols(thisproc*numMyCols,numMyCols), 0, Comm));
+  RCP<const Map> domainmap = rcp(new Map(numGlobalCols, mycols(thisproc*numMyCols,numMyCols), 0, Comm));
 
   // now create matrices A, B and C with rowmap; the second argument is just the suggested allocation size
-  Teuchos::RCP<CrsMatrix> A = Teuchos::rcp(new CrsMatrix(rowmap, 1));
+  RCP<CrsMatrix> A = rcp(new CrsMatrix(rowmap, 1));
   A->setObjectLabel("Factor Matrix A");
-  Teuchos::RCP<CrsMatrix> C = Teuchos::rcp(new CrsMatrix(rowmap, 1));
+  RCP<CrsMatrix> C = rcp(new CrsMatrix(rowmap, 1));
   C->setObjectLabel("Product matrix C");
 
-  Teuchos::ArrayRCP<double> coefs(numGlobalCols);
+  ArrayRCP<double> coefs(numGlobalCols);
   for(int i=0; i<numGlobalCols; ++i) {
     coefs[i] = 1.0*i;
   }
@@ -851,43 +587,43 @@ template<
   class SpMatVec,
   class SpMatSlv,
   class CommOrdinal>
-Teuchos::RCP<Tpetra::CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > 
+RCP<CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > 
 create_crsmatrix(
-  Teuchos::RCP<const Teuchos::Comm<CommOrdinal> > comm,
+  RCP<const Comm<CommOrdinal> > comm,
   size_t local_n,
   bool callFillComplete,
   bool symmetric)
 {
   int numProcs = comm->getSize();
-  Tpetra::global_size_t global_num_rows = numProcs*local_n;
+  global_size_t global_num_rows = numProcs*local_n;
 
-  Teuchos::RCP<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowmap = 
-    Teuchos::rcp(global_num_rows, local_n, 0, comm);
+  RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > rowmap = 
+    rcp(global_num_rows, local_n, 0, comm);
 
   size_t nnz_per_row = 9;
-  Teuchos::RCP<Tpetra::CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > matrix =
-    Teuchos::rcp(new Tpetra::CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>(rowmap, nnz_per_row));
+  RCP<CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > matrix =
+    rcp(new CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>(rowmap, nnz_per_row));
 
   // Add  rows one-at-a-time
-  Teuchos::ArrayRCP<Scalar> negOne(1, -Teuchos::ScalarTraits<Scalar>::one());
-  Teuchos::ArrayRCP<Scalar> posTwo(1, 2*Teuchos::ScalarTraits<Scalar>::one());
-  Teuchos::ArrayRCP<Scalar> val_L(1, symmetric ? negOne : 0.5*negOne);
+  ArrayRCP<Scalar> negOne(1, -ScalarTraits<Scalar>::one());
+  ArrayRCP<Scalar> posTwo(1, 2*ScalarTraits<Scalar>::one());
+  ArrayRCP<Scalar> val_L(1, symmetric ? negOne : 0.5*negOne);
 
-  GlobalOrdinal GO1 = Teuchos::OrdinalTraits<GlobalOrdinal>::one();
-  GlobalOrdinal GO0 = Teuchos::OrdinalTraits<GlobalOrdinal>::zero();
+  GlobalOrdinal GO1 = OrdinalTraits<GlobalOrdinal>::one();
+  GlobalOrdinal GO0 = OrdinalTraits<GlobalOrdinal>::zero();
 
   for (int i=0; i<local_n; i++) {
-    Teuchos::ArrayRCP<GlobalOrdinal> GlobalRow(1, matrix->getRowMap()->getGlobalElement(i));
-    Teuchos::ArrayRCP<GlobalOrdinal> RowLess1(1,GlobalRow - GO1);
-    Teuchos::ArrayRCP<GlobalOrdinal> RowPlus1(1,GlobalRow + GO1);
-    Teuchos::ArrayRCP<GlobalOrdinal> RowLess5(1,GlobalRow - (5*GO1));
-    Teuchos::ArrayRCP<GlobalOrdinal> RowPlus5(1,GlobalRow + (5*GO1));
-    Teuchos::ArrayRCP<GlobalOrdinal> RowLess9(1,GlobalRow - (9*GO1));
-    Teuchos::ArrayRCP<GlobalOrdinal> RowPlus9(1,GlobalRow + (9*GO1));
-    Teuchos::ArrayRCP<GlobalOrdinal> RowLess24(1,GlobalRow - (24*GO1));
-    Teuchos::ArrayRCP<GlobalOrdinal> RowPlus24(1,GlobalRow + (24*GO1));
-    Teuchos::ArrayRCP<GlobalOrdinal> RowLess48(1,GlobalRow - (48*GO1));
-    Teuchos::ArrayRCP<GlobalOrdinal> RowPlus48(1,GlobalRow + (48*GO1));
+    ArrayRCP<GlobalOrdinal> GlobalRow(1, matrix->getRowMap()->getGlobalElement(i));
+    ArrayRCP<GlobalOrdinal> RowLess1(1,GlobalRow - GO1);
+    ArrayRCP<GlobalOrdinal> RowPlus1(1,GlobalRow + GO1);
+    ArrayRCP<GlobalOrdinal> RowLess5(1,GlobalRow - (5*GO1));
+    ArrayRCP<GlobalOrdinal> RowPlus5(1,GlobalRow + (5*GO1));
+    ArrayRCP<GlobalOrdinal> RowLess9(1,GlobalRow - (9*GO1));
+    ArrayRCP<GlobalOrdinal> RowPlus9(1,GlobalRow + (9*GO1));
+    ArrayRCP<GlobalOrdinal> RowLess24(1,GlobalRow - (24*GO1));
+    ArrayRCP<GlobalOrdinal> RowPlus24(1,GlobalRow + (24*GO1));
+    ArrayRCP<GlobalOrdinal> RowLess48(1,GlobalRow - (48*GO1));
+    ArrayRCP<GlobalOrdinal> RowPlus48(1,GlobalRow + (48*GO1));
 
 //    if (!symmetric) RowLess5 -= 2;
 
@@ -932,4 +668,120 @@ create_crsmatrix(
   return(matrix);
 }
 
+} //namespace
 
+/*
+template<class Ordinal>
+int time_matrix_matrix_multiply(RCP<Comm<Ordinal> > Comm,
+  bool verbose);
+*/
+/////////////////////////////////////
+//Global variable!!!!
+//char* path;
+////////////////////////////////////
+
+int main(int argc, char* argv[]) {
+  Teuchos::CommandLineProcessor clp;
+  Teuchos::oblackholestream blackhole;
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  bool verbose = false;
+  std::string matnamesFile;
+  bool write_result_hb = false;
+  clp.setOption("matnames-file", &matnamesFile, "A file containing a list of matricies we'll import", true);
+  clp.setOption("writeresults", "no-write-results", &write_result_hb, "Whether or not to write the resutling matricies to hb files");
+  clp.setOption("v", "not-verbose", &verbose, "Whether or not to use verbose output");
+  clp.parse(argc, argv);
+
+  int err = Tpetra::two_proc_test(comm, verbose);
+  if (err != 0) {
+    std::cerr << "two_proc_test returned err=="<<err<<std::endl;
+    return(err);
+  }
+
+  err = Tpetra::simple_add_test(comm, verbose);
+  if(err != 0){
+    std::cerr << "two_proc_test returned err=="<<err<<std::endl;
+    return(err);
+  }
+
+
+  err = Tpetra::test_find_rows(comm);
+  if (err != 0 && comm->getRank() ==0) {
+    std::cerr << "test_find_rows returned err=="<<err<<std::endl;
+    return(err);
+  } 
+  Teuchos::RCP<Teuchos::ParameterList> matrixSystems = 
+    Teuchos::getParametersFromXmlFile(matnamesFile);
+  for(
+    Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
+    it != matrixSystems->end();
+    ++it)
+  {
+	TEST_FOR_EXCEPTION(!it->second.isList(), std::runtime_error,
+    "All top level items in the matrix "
+	  "file names list must be ParameterLists! In otherwords, you always "
+    "need to have matricies "
+	  "encapsulated within a matrixsystem" << std::endl <<
+    "Bad tag's name: " << it->first << 
+    "Type name: " << it->second.getAny().typeName() << 
+    std::endl << std::endl);
+      
+    if( Tpetra::run_test<int>(
+      comm, 
+      matrixSystems->sublist(it->first), 
+      write_result_hb, 
+      verbose) != 0)
+    {
+      err = -1;
+    }
+
+  }
+
+/**
+ * Makes sure the multiply doesn't work if given bad matrices
+ */
+  Teuchos::ParameterList wrongList;
+  wrongList.set("A", "matrices/wrong_m.hb");
+  wrongList.set("B", "matrices/wrong_tce.hb");
+  wrongList.set("C", "matrices/wrong_d.hb");
+  wrongList.set("TransA", false);
+  wrongList.set("TransB", true);
+  if(
+    Tpetra::run_test<int>(
+      comm, 
+      wrongList, 
+      write_result_hb, 
+      verbose) == 0 )
+  {
+    err = -1;
+  }
+
+
+  //THIS SHOULD BECOME A TEMPLATED UNIT TEST
+  /*RCP<CrsMatrix<double, int> > D = 
+     create_crsmatrix<double, int, int,
+     Kokkos::DefaultNode::DefaultNodeType,
+     Kokkos::DefaultSparseMultiply<double,int,Kokkos::DefaultNode::DefaultNodeType>,
+     Kokkos::DefaultSparseSolve<double,int,Kokkos::DefaultNode::DefaultNodeType> >  (comm, (size_t)10, true, false);
+
+  std::cout << "D: \n"  << *D << std::endl;*/
+
+  //EpetraExt::MatrixMatrix::Add(*D, true, 0.5, *D, 0.5);
+
+//  std::cout << "symm D: \n"  << *D << std::endl;
+
+  //delete D;
+
+  /*
+  if (err == 0) {
+    err = time_matrix_matrix_multiply(comm, verbose);
+  }*/
+
+  int global_err = err;
+
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &err, &global_err);
+
+  return(global_err);
+
+}

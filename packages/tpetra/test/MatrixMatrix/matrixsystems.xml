@@ -14,4 +14,12 @@
 		<Parameter name="TransB" value="false" type="bool"/>
 		<Parameter name="epsilon" value=".000001" type="double"/>
 	</ParameterList>
+	<ParameterList name="matrixsystem3">
+		<Parameter name="A" value="matrices/gen2a.hb" type="string"/>
+		<Parameter name="B" value="matrices/gen2b.hb" type="string"/>
+		<Parameter name="C" value="matrices/gen2c.hb" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+		<Parameter name="epsilon" value=".0001" type="double"/>
+	</ParameterList>
 </ParameterList>

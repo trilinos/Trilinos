@@ -58,7 +58,7 @@ template<class Scalar,
          class GlobalOrdinal, 
          class Node, 
          class SpMatOps>
-int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_B(
+void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_B(
   RCP<CrsMatrixStruct_t >& Aview, 
   RCP<CrsMatrixStruct_t >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C)
@@ -171,7 +171,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_B(
   //delete [] dwork;
   //delete [] iwork;
 
-  return(0);
+  //return(0);
 }
 
 //kernel method for computing the local portion of C = A*B^T
@@ -354,7 +354,7 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_B
     }
   }
 
-  return;
+//  return;
 }
 
 
@@ -364,7 +364,7 @@ template<class Scalar,
          class GlobalOrdinal, 
          class Node, 
          class SpMatOps>
-int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_Atrans_B(
+void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_Atrans_B(
   RCP<CrsMatrixStruct_t >& Aview, 
   RCP<CrsMatrixStruct_t >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>&  C)
@@ -487,7 +487,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_Atra
   //delete [] C_row_i;
   //delete [] C_colInds;
 
-  return(0);
+  //return(0);
 }
 
 //kernel method for computing the local portion of C = A^T*B^T
@@ -496,7 +496,7 @@ template<class Scalar,
          class GlobalOrdinal, 
          class Node, 
          class SpMatOps>
-int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_Atrans_Btrans(
+void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_Atrans_Btrans(
   RCP<CrsMatrixStruct_t >& Aview, 
   RCP<CrsMatrixStruct_t >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C)
@@ -645,7 +645,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_Atra
   //delete [] dwork;
   //delete [] iwork;
 
-  return(0);
+  //return(0);
 }
 
 template<class Scalar, 
@@ -653,7 +653,7 @@ template<class Scalar,
          class GlobalOrdinal, 
          class Node, 
          class SpMatOps>
-int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::import_and_extract_views(
+void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::import_and_extract_views(
   RCP<const CrsMatrix_t >& M,
   RCP<const Map_t >& targetMap,
   RCP<CrsMatrixStruct_t >& Mview)
@@ -729,7 +729,8 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::import_an
     // return(-1);
 
     //If only one processor we don't need to import any remote rows, so return.
-    return(0);
+    //return(0);
+    return;
   }
 
   //
@@ -783,7 +784,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::import_an
       }
     }
   }
-  return(0);
+  //return(0);
 }
 
 // CGB: check this...
@@ -793,7 +794,7 @@ template<class Scalar,
          class Node, 
          class SpMatOps>
 template<class Ordinal >
-int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::distribute_list(
+void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::distribute_list(
   const RCP<const Teuchos::Comm<Ordinal> > comm,
   size_t lenSendList,
   const Array<GlobalOrdinal>& sendList,
@@ -807,7 +808,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::distribut
   Array<GlobalOrdinal> send(maxSendLen);
   std::copy(sendList.begin(), sendList.end(), send.begin());
   Teuchos::gatherAll(*comm, (Ordinal)maxSendLen, send.getRawPtr(), (Ordinal)(numProcs*maxSendLen), recvList.getRawPtr());
-  return(0);
+  //return(0);
 }
 
 
@@ -1030,7 +1031,7 @@ template <class Scalar,
            class GlobalOrdinal,
            class Node,
            class SpMatOps >
-int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Multiply(
+void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Multiply(
   RCP<const CrsMatrix_t > A,
   bool transposeA,
   RCP<const CrsMatrix_t > B,
@@ -1239,7 +1240,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Multiply(
     }
   }
 
-  return(0);
+  //return(0);
 }
 
 // CGB: check this...
@@ -1248,8 +1249,8 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node,
           class SpMatOps >
-int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
-  RCP<CrsMatrix_t > A,
+void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
+  RCP<const CrsMatrix_t > A,
   bool transposeA,
   Scalar scalarA,
   RCP<CrsMatrix_t > B,
@@ -1267,14 +1268,16 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
     "MatrixMatrix::Add ERROR, input matrix A.isFillComplete() is false, it is required to be true. (Result matrix B is not required to be isFillComplete()).");
 
   //explicit tranpose A formed as necessary
-  RCP<CrsMatrix_t > Aprime = null;
+  RCP<const CrsMatrix_t > Aprime = null;
   if( transposeA )
   {
-	RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
-    theTransposer.createTranspose(DoOptimizeStorage, Aprime);
+    RCP<CrsMatrix_t > transposeResult = null;
+	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
+      theTransposer.createTranspose(DoOptimizeStorage, transposeResult);
+    Aprime = transposeResult;
   }
   else{
-    Aprime = Teuchos::rcp_const_cast<CrsMatrix_t >(A);
+    Aprime = A;
   }
 
   /*size_t MaxNumEntries = std::max(
@@ -1294,7 +1297,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
 
   size_t NumMyRows = B->getNodeNumRows();
   GlobalOrdinal Row;
-  int ierr = 0;
+  //int ierr = 0;
 
   if( scalarB != ScalarTraits<Scalar>::zero() &&
     scalarB != ScalarTraits<Scalar>::one())
@@ -1302,7 +1305,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
     B->scale(scalarB);
   }
   
-  if( scalarA )
+  if( scalarA  )
   {
     //Loop over B's rows and sum into
     for( 
@@ -1321,20 +1324,19 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
         {
           A_Values[j] *= scalarA;
         }
-      
-        if( B->isFillComplete() ) {//Sum In Values
-          B->sumIntoGlobalValues( Row, A_Indices, A_Values );
-        }
-        else {
-          B->insertGlobalValues( Row, A_Indices, A_Values);
-        }
-      }
+      } 
+      ///if( B->isFillComplete() ) {//Sum In Values
+        B->sumIntoGlobalValues( Row, A_Indices, A_Values );
+      //}
+      //else {
+        //B->insertGlobalValues( Row, A_Indices, A_Values);
+      //}
     }
   }
   else {
       B->scale(scalarB);
   }
-  return(ierr);
+//  return(ierr);
 }
 
 // CGB: check this...
@@ -1343,7 +1345,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node,
           class SpMatOps>
-int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
+void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
   RCP<const CrsMatrix_t > A,
   bool transposeA,
   Scalar scalarA,
@@ -1426,7 +1428,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
         }
      }
   }
-  return(ierr);
+//  return(ierr);
 }
 
 
