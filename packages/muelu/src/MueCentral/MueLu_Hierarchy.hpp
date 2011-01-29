@@ -161,7 +161,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
        RCP<Operator> A = Levels_[startLevel]->GetA();
        Cthulhu::global_size_t fineNnz = A->getGlobalNumEntries();
-       std::cout << "level " << startLevel << ": " << A->getGlobalNumEntries() << " nnzs" << std::endl;
        Cthulhu::global_size_t totalNnz = fineNnz;
 
        bool goodBuild=true;
@@ -185,7 +184,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          }
          //RCP<Operator> A = Levels_[i+1]->GetA();
          totalNnz += Levels_[i+1]->GetA()->getGlobalNumEntries();
-         std::cout << "level " << i+1 << ": " << Levels_[i+1]->GetA()->getGlobalNumEntries() << " nnzs" << std::endl;
          ++i;
        } //while
 
