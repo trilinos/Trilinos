@@ -224,8 +224,8 @@ int main(int argc,char * argv[])
 
    out << "SOLVE" << std::endl;
 
-   // redistribute vectors and matrices so that we can parallel solve
-   linObjFactory->ghostToGlobalContainer(*ghostCont,*container);
+   // notice that this should be called by the assembly driver!
+   // linObjFactory->ghostToGlobalContainer(*ghostCont,*container);
 
    Teuchos::RCP<const Thyra::LinearOpBase<double> > th_A = Thyra::epetraLinearOp(container->A);
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > range  = th_A->range();
@@ -249,10 +249,10 @@ int main(int argc,char * argv[])
       EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*container->f);
    }
 
+   out << "WRITE" << std::endl;
+
    // redistribute solution vector
    linObjFactory->globalToGhostContainer(*container,*ghostCont);
-
-   out << "WRITE" << std::endl;
 
    write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ghostCont->x);
    mesh->writeToExodus("output.exo");
@@ -274,7 +274,7 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
    
      panzer::InputEquationSet ies_2;
      ies_2.name = "Energy";
-     ies_2.basis = "Q2";
+     ies_2.basis = "Q1";
      ies_2.integration_order = 2;
      ies_2.model_id = 6;
      ies_2.model_factory = "rf";

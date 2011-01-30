@@ -93,7 +93,8 @@ evaluateFields(typename Traits::EvalData workset)
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
+         // = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
+         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
    Teuchos::RCP<Epetra_Vector> r = epetraContainer->f; 
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -127,14 +128,13 @@ evaluateFields(typename Traits::EvalData workset)
    
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int basisId = basisIdMap[basis];
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
-    
-            if(is_owned[offset])
-               (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
-            else
-               (*r)[lid] = 0.0;
+            if(lid<0) // not on this processor!
+               continue;
+
+            int basisId = basisIdMap[basis];
+            (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
          }
       }
    }
@@ -219,7 +219,8 @@ evaluateFields(typename Traits::EvalData workset)
    // Teuchos::RCP<Epetra_CrsMatrix> Jac = workset.jacobian_matrix;
 
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
+         // = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
+         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
    Teuchos::RCP<Epetra_Vector> r = epetraContainer->f; 
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer->A;
 
@@ -254,24 +255,34 @@ evaluateFields(typename Traits::EvalData workset)
    
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int basisId = basisIdMap[basis];
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
+            if(lid<0) // not on this processor
+               continue;
+
+            // zero out matrix row
+            {
+               int numEntries = 0;
+               int * rowIndices = 0;
+               double * rowValues = 0;
+
+               Jac->ExtractMyRowView(lid,numEntries,rowValues,rowIndices);
+
+               for(int i=0;i<numEntries;i++)
+                  rowValues[i] = 0.0;
+            }
+ 
+            int basisId = basisIdMap[basis];
             int gid = GIDs[offset];
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
     
-            if(is_owned[offset])
-               (*r)[lid] = scatterField.val();
-            else
-               (*r)[lid] = 0.0;
+            (*r)[lid] = scatterField.val();
     
             // loop over the sensitivity indices: all DOFs on a cell
             std::vector<double> jacRow(scatterField.size(),0.0);
     
-            if(is_owned[offset]) {
-               for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
-                  jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
-            }
+            for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
+               jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
             TEUCHOS_ASSERT(jacRow.size()==GIDs.size());
     
             int err = Jac->ReplaceGlobalValues(gid, scatterField.size(), &jacRow[0],&GIDs[0]);

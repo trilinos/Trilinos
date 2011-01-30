@@ -25,6 +25,10 @@ namespace panzer {
     
     void evaluate(const panzer::AssemblyEngineInArgs& input_arguments);
 
+    void evaluateVolume(const panzer::AssemblyEngineInArgs& input_arguments);
+    void evaluateNeumannBCs(const panzer::AssemblyEngineInArgs& input_arguments);
+    void evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& input_arguments);
+
     Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> > getManagerBuilder()
       { return m_field_manager_builder; }
     

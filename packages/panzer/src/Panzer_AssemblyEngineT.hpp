@@ -25,30 +25,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // *********************
   // Volumetric fill
   // *********************
-  {
-    const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& 
-      worksets = m_field_manager_builder->getWorksets();
-  
-    // Loop over element blocks
-    for (std::size_t block = 0; block < worksets.size(); ++block) {
-
-      std::vector<panzer::Workset>& w = *worksets[block]; 
-
-      Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = 
-	m_field_manager_builder->getVolumeFieldManagers()[block];
-
-      // Loop over worksets in this element block
-      for (std::size_t i = 0; i < w.size(); ++i) {
-	panzer::Workset& workset = w[i];
-
-        workset.ghostedLinContainer = in.ghostedContainer_;
-        workset.linContainer = in.container_;
-
-	fm->template evaluateFields<EvalT>(workset);
-      }
-    }
-
-  }
+  this->evaluateVolume(in);
 
   // *********************
   // BC fill
@@ -57,10 +34,60 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // bcs overwrite equations where neumann sum into equations.  Make
   // sure all neumann are done before dirichlet.
 
-  this->evaluateBCs(panzer::BCT_Neumann, in);
-  this->evaluateBCs(panzer::BCT_Dirichlet, in);
+  this->evaluateNeumannBCs(in);
+
+  // Dirchlet conditions require a global matrix
+  m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_);
+  this->evaluateDirichletBCs(in);
 
   return;
+}
+
+//===========================================================================
+//===========================================================================
+template <typename EvalT,typename LO,typename GO>
+void panzer::AssemblyEngine<EvalT,LO,GO>::
+evaluateVolume(const panzer::AssemblyEngineInArgs& in)
+{
+  const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& 
+    worksets = m_field_manager_builder->getWorksets();
+
+  // Loop over element blocks
+  for (std::size_t block = 0; block < worksets.size(); ++block) {
+
+    std::vector<panzer::Workset>& w = *worksets[block]; 
+
+    Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = 
+	m_field_manager_builder->getVolumeFieldManagers()[block];
+
+    // Loop over worksets in this element block
+    for (std::size_t i = 0; i < w.size(); ++i) {
+	panzer::Workset& workset = w[i];
+
+      workset.ghostedLinContainer = in.ghostedContainer_;
+      workset.linContainer = in.container_;
+
+	fm->template evaluateFields<EvalT>(workset);
+    }
+  }
+}
+
+//===========================================================================
+//===========================================================================
+template <typename EvalT,typename LO,typename GO>
+void panzer::AssemblyEngine<EvalT,LO,GO>::
+evaluateNeumannBCs(const panzer::AssemblyEngineInArgs& in)
+{
+  this->evaluateBCs(panzer::BCT_Neumann, in);
+}
+
+//===========================================================================
+//===========================================================================
+template <typename EvalT,typename LO,typename GO>
+void panzer::AssemblyEngine<EvalT,LO,GO>::
+evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
+{
+  this->evaluateBCs(panzer::BCT_Dirichlet, in);
 }
 
 //===========================================================================
@@ -128,8 +155,8 @@ evaluateBCs(const panzer::BCType bc_type,
 	    const_cast<panzer::Workset&>(wkst_it->second); 
 	  
 	  // We have one workset per face
-      workset.ghostedLinContainer = in.ghostedContainer_;
-      workset.linContainer = in.container_;
+          workset.ghostedLinContainer = in.ghostedContainer_;
+          workset.linContainer = in.container_;
 	  
 	  local_side_fm.template evaluateFields<EvalT>(workset);
 	  
