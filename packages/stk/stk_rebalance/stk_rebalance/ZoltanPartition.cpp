@@ -94,13 +94,13 @@ void fill_name_conversion( Parameters & name_conversion )
   general.set("RECTILINEAR RCB BLOCKS"     , "RCB_RECTILINEAR_BLOCKS");
   general.set("OCTREE DIMENSION"           , "OCT_DIM");
   general.set("OCTREE METHOD"              , "OCT_METHOD");
-  general.set("OCTREE MIN OBJECTS"         , "OCT_MINOBJECTS");
-  general.set("OCTREE MAX OBJECTS"         , "OCT_MAXOBJECTS");
+  general.set("OCTREE MIN ENTITIES"         , "OCT_MINOBJECTS");
+  general.set("OCTREE MAX ENTITIES"         , "OCT_MAXOBJECTS");
   // These values are never changed, but must
   // be set so default values work correctly.
   general.set("NUMBER GLOBAL ID ENTRIES"   , "NUM_GID_ENTRIES");
   general.set("NUMBER LOCAL ID ENTRIES"    , "NUM_LID_ENTRIES");
-  general.set("OBJECT WEIGHT DIMENSION"    , "OBJ_WEIGHT_DIM");
+  general.set("ENTITY WEIGHT DIMENSION"    , "OBJ_WEIGHT_DIM");
   general.set("RETURN LISTS"               , "RETURN_LISTS");
   general.set("AUTOMATIC MIGRATION"        , "AUTO_MIGRATE");
   general.set("DISTANCE"                   , "DISTANCE");
@@ -157,11 +157,11 @@ void fill_default_values( Parameters & values )
   default_values.set("REUSE CUTS"                 , "1");
   default_values.set("OVER ALLOCATE MEMORY"       , "1.1");
   default_values.set("ALGORITHM DEBUG LEVEL"      , "0");
-  default_values.set("OCTREE MIN OBJECTS"         , "1");
-  default_values.set("OCTREE MAX OBJECTS"         , "1");
+  default_values.set("OCTREE MIN ENTITIES"        , "1");
+  default_values.set("OCTREE MAX ENTITIES"        , "1");
   default_values.set("NUMBER GLOBAL ID ENTRIES"   , "2");
   default_values.set("NUMBER LOCAL ID ENTRIES"    , "2");
-  default_values.set("OBJECT WEIGHT DIMENSION"    , "1");
+  default_values.set("ENTITY WEIGHT DIMENSION"    , "1");
   default_values.set("RETURN LISTS"               , "EXPORT");
 }
 
@@ -350,18 +350,18 @@ void Callback_Centroid_Coord( void *data,
 
   int lid = local_id[  0 ]; // Local Element ID
 
-  const mesh::Entity & target_obj = * zdata->mesh_entity( lid );
+  const mesh::Entity & target_entity = * zdata->mesh_entity( lid );
   const GeomDecomp::VectorField & coor = * zdata->entity_coord_ref();
   const unsigned                        nd   =  zdata->spatial_dimension();
 
   /*
    * Obtain the centroid coordinates of the element by averaging all
    * the nodal coordinates of the nodes associated with the element.
-   * Use GeomDecomp friend function, obj_to_point( , , )
+   * Use GeomDecomp friend function, ent( , , )
    *
    */
 
-  rebalance::GeomDecomp::obj_to_point( target_obj, coor, temp );
+  rebalance::GeomDecomp::entity_to_point( target_entity, coor, temp );
 
   for (size_t i=0 ; i < nd ; i++ ) geom[ i ] = (double) temp[ i ];
 
@@ -370,31 +370,31 @@ void Callback_Centroid_Coord( void *data,
 
 
 
-void getNeighbors( const mesh::Entity & obj,
+void getNeighbors( const mesh::Entity & entity,
                    std::set<const mesh::Entity*> & nodes )
 {
-  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(obj);
+  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(entity);
   const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
 
   nodes.clear();
 
-  mesh::PairIterRelation iElem = obj.relations(element_rank);
+  mesh::PairIterRelation iElem = entity.relations(element_rank);
 
   for ( ; iElem.first != iElem.second; ++iElem.first ) {
     mesh::Entity * elem = iElem.first->entity();
     mesh::PairIterRelation iNode = elem->relations(stk::mesh::fem::NODE_RANK);
     for ( ; iNode.first != iNode.second; ++iNode.first ) {
       mesh::Entity * node = iNode.first->entity();
-      if (&obj != node) nodes.insert( node );
+      if (&entity != node) nodes.insert( node );
     }
   }
 }
 
-int numEdges( const mesh::Entity & obj ) {
+int numEdges( const mesh::Entity & entity ) {
 
   std::set<const mesh::Entity*> nodes;
 
-  getNeighbors( obj, nodes );
+  getNeighbors( entity, nodes );
   return nodes.size();
 }
 
@@ -425,9 +425,9 @@ int Callback_Num_Edges( void *data,
 
   int lid = local_id[  0 ]; // Local Element ID
 
-  const mesh::Entity & target_obj = * zdata->mesh_entity( lid );
+  const mesh::Entity & target_entity = * zdata->mesh_entity( lid );
 
-  return  numEdges( target_obj );
+  return  numEdges( target_entity );
 
 }
 
@@ -465,10 +465,10 @@ void Callback_Edge_List( void *data,
 
   int lid = local_id[  0 ]; // Local Node ID
 
-  const mesh::Entity & target_obj = * zdata->mesh_entity( lid );
+  const mesh::Entity & target_entity = * zdata->mesh_entity( lid );
 
   std::set<const mesh::Entity*> nodes;
-  getNeighbors( target_obj, nodes );
+  getNeighbors( target_entity, nodes );
 
   int counter(0);
   for ( std::set<const mesh::Entity*>::iterator i = nodes.begin();
@@ -698,12 +698,12 @@ Zoltan::destination_proc(const unsigned moid) const
 }
 
 bool
-Zoltan::find_mesh_entity(const mesh::Entity * obj, unsigned & moid) const
+Zoltan::find_mesh_entity(const mesh::Entity * entity, unsigned & moid) const
 {
   unsigned len = m_mesh_information_.mesh_entities.size();
   for(moid = 0; moid < len; ++moid)
   {
-    if(m_mesh_information_.mesh_entities[moid] == obj) return true;
+    if(m_mesh_information_.mesh_entities[moid] == entity) return true;
   }
   return false;
 }
@@ -713,9 +713,9 @@ Zoltan::get_new_partition(stk::mesh::EntityProcVec &rebal_spec)
 {
   const unsigned entity_iter_len = m_mesh_information_.mesh_entities.size();
   for (unsigned entity_iter =0; entity_iter != entity_iter_len; ++entity_iter) {
-    mesh::Entity * mesh_obj = mesh_entity(entity_iter);
+    mesh::Entity * mesh_ent = mesh_entity(entity_iter);
     int proc = destination_proc(entity_iter);
-    mesh::EntityProc et(mesh_obj, proc);
+    mesh::EntityProc et(mesh_ent, proc);
     rebal_spec.push_back(et);
   }
   return 0;
@@ -770,8 +770,8 @@ int Zoltan::register_callbacks()
    * Register the Zoltan/SIERRA "call-back" (querry) functions.
    * Use ONLY THE BARE ESSENTIALS for decompositions:
    *
-   *    Zoltan_Set_Num_Obj_Fn
-   *    Zoltan_Set_Obj_List_Fn
+   *    Zoltan_Set_Num_Obj_Fn      
+   *    Zoltan_Set_Obj_List_Fn     
    *    Zoltan_Set_Num_Geom_Fn
    *    Zoltan_Set_Geom_Fn
    */
@@ -817,8 +817,8 @@ int Zoltan::register_callbacks()
 
 
 int  Zoltan::evaluate( int    print_stats,
-                       int*   nobj,
-                       double*  obj_wgt,
+                       int*   nentity,
+                       double*  entity_wgt,
                        int*   ncuts,
                        double*  cut_wgt,
                        int*   nboundary,
@@ -830,8 +830,8 @@ int  Zoltan::evaluate( int    print_stats,
   ZOLTAN_GRAPH_EVAL   graph = {{0}};
   if (Zoltan_LB_Eval_Balance( m_zoltan_id_, print_stats, &eval)) ierr = 1;
   if (Zoltan_LB_Eval_Graph( m_zoltan_id_, print_stats, &graph) ) ierr = 1;
-  *nobj         = (int)eval.nobj[0];
-  *obj_wgt      =      eval.obj_wgt[0];
+  *nentity      = (int)eval.nobj[0];
+  *entity_wgt   =      eval.obj_wgt[0];
   *ncuts        = (int)graph.cuts[0];
   *cut_wgt      =      graph.cut_wgt[0];
   *nboundary    = (int)graph.num_boundary[0];

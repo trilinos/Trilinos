@@ -129,7 +129,7 @@ public:
 
   /** \brief Perform communication to create new partition.
    *
-   * \param  new_partition  New layout of mesh objects on the processing grid.
+   * \param  new_partition  New layout of mesh entities on the processing grid.
    *
    * Given a communication specification this
    * function will apply the new partition by
