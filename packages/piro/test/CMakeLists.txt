@@ -70,6 +70,7 @@ IF (Piro_ENABLE_NOX)
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
     DEST_FILES   input_Solve_NOX_1.xml
+                 input_Solve_NOX_2.xml
                  input_Solve_LOCA_1.xml
                  input_Solve_Rythmos_1.xml
                  input_Solve_VV.xml
