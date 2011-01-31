@@ -67,7 +67,7 @@ class GreedySideset : public Partition {
   virtual unsigned num_elems() const;
   virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition);
   virtual bool partition_dependents_needed()const;
-  bool find_mesh_entity(const mesh::Entity * obj, unsigned & moid) const;
+  bool find_mesh_entity(const mesh::Entity * entity, unsigned & moid) const;
   unsigned destination_proc(const unsigned moid) const;
   void set_destination_proc(const unsigned moid, const unsigned proc );
   MeshInfo  mesh_information_;
@@ -118,21 +118,21 @@ std::vector<unsigned>     ::iterator j=mesh_information_.dest_proc_ids.begin();
   for (;i != mesh_information_.mesh_entities.end(),
         j != mesh_information_.dest_proc_ids.end();
         ++i,++j) {
-    mesh::Entity * mesh_obj = *i;
+    mesh::Entity * mesh_entity = *i;
     unsigned proc = *j;
-    mesh::EntityProc et(mesh_obj, proc);
+    mesh::EntityProc et(mesh_entity, proc);
     new_partition.push_back(et);
   }
   return 0;
 }
 bool GreedySideset::partition_dependents_needed()const{return true;}
 
-bool GreedySideset::find_mesh_entity(const mesh::Entity * obj, unsigned & moid) const
+bool GreedySideset::find_mesh_entity(const mesh::Entity * entity, unsigned & moid) const
 {
   unsigned len = mesh_information_.mesh_entities.size();
   for(moid = 0; moid < len; ++moid)
   {
-    if(mesh_information_.mesh_entities[moid] == obj) return true;
+    if(mesh_information_.mesh_entities[moid] == entity) return true;
   }
   return false;
 }
@@ -176,8 +176,8 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
     for ( ; iElem.first != iElem.second; ++iElem.first ) {
       const mesh::Entity & elem = *iElem.first->entity();
       unsigned moid;
-      const bool mesh_object_found = find_mesh_entity(&elem, moid);
-      if (mesh_object_found) {
+      const bool mesh_entity_found = find_mesh_entity(&elem, moid);
+      if (mesh_entity_found) {
         const unsigned elemProc = elem.owner_rank();
         ThrowRequireMsg(elemProc==p_rank,
           "When iterating locally owned elements, found a non-locally owned element.");
@@ -301,17 +301,16 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition);
   {
     const int  print_stats = 1;
-    int        nobj        = 0;
-    double     obj_wgt     = 0;
+    int        nentity     = 0;
+    double     entity_wgt  = 0;
     int        ncuts       = 0;
     double     cut_wgt     = 0;
     int        nboundary   = 0;
     int        nadj        = 0;
-    const int ierr = zoltan_partition.evaluate (print_stats, &nobj, &obj_wgt, &ncuts, &cut_wgt, &nboundary, &nadj);
+    const int ierr = zoltan_partition.evaluate (print_stats, &nentity, &entity_wgt, &ncuts, &cut_wgt, &nboundary, &nadj);
     std::cout <<" Information returned from the Zoltan evaluate function:"<<std::endl;
     std::cout <<" Error Code:             :"<<ierr      <<std::endl;
-    std::cout <<" Number of objects:      :"<<nobj      <<std::endl;
-    std::cout <<" Number of objects:      :"<<nobj      <<std::endl;
+    std::cout <<" Number of entities:     :"<<nentity   <<std::endl;
     std::cout <<" Number of cuts:         :"<<ncuts     <<std::endl;
     std::cout <<" Cut Weight:             :"<<cut_wgt   <<std::endl;
     std::cout <<" Number on Boundary:     :"<<nboundary <<std::endl;

@@ -79,7 +79,7 @@ public:
 
   /** \brief Convert a single mesh entity to a single point.
    *
-   * \param obj  Entity to take centroid of, element, side, face or node.
+   * \param entity  Entity to take centroid of, element, side, face or node.
    *
    * \param ref  Coordinate field to average, usually defined on the nodes.
    *
@@ -87,35 +87,35 @@ public:
    *             be large enough to hold a single coordinate.
    *             Note the maximum needed in all cases is length 3.
    *
-   * The \a obj_to_point function is used in the case where a mesh entity is
+   * The \a entity_to_point function is used in the case where a mesh entity is
    * an element with many nodes.  Then something like
    * the element centroid can be used to define
    * a single coordinate point for it.
    *
    */
-  static void obj_to_point( const mesh::Entity  & obj,
+  static void entity_to_point( const mesh::Entity  & entity,
                             const VectorField   & ref,
                             std::vector<double> & coor);
 
-  /** \brief Used to return the nodal entities that \a compute_obj_centroid averages.
+  /** \brief Used to return the nodal entities that \a compute_entity_centroid averages.
    *
-   * \param obj  Entity to take coordinates of, element, side, face or node.
+   * \param entity  Entity to take coordinates of, element, side, face or node.
    *
    * \param ref  Coordinate field to average, usually defined on the nodes.
    *
-   * \param coor Is the output coordinates that obj_to_point would average to 
+   * \param coor Is the output coordinates that entity_to_point would average to 
    *             determine a centroid.
    *
    * The return value is the mesh entities from which the coordinates were obtained.
    */
 
-  static std::vector<const mesh::Entity *> entity_coordinates(const mesh::Entity     & obj,
+  static std::vector<const mesh::Entity *> entity_coordinates(const mesh::Entity     & entity,
                                                                const VectorField     & ref,
                                                                std::vector<std::vector<double> >    & coordinates);
 
   /** \brief  Returns a vector of vectors containing the coordinates of the nodes that were used to compute the centroid.
    *
-   * \param obj  Entity to take coordinates of, element, side, face or node.
+   * \param entity  Entity to take coordinates of, element, side, face or node.
    *
    * \param ref  Coordinate field to average, usually defined on the nodes.
    *
@@ -123,11 +123,11 @@ public:
    *             be large enough to hold a single coordinate.
    *             Note the maximum needed in all cases is length 3.
    *
-   * return value is the output coordinates that obj_to_point would average to 
+   * return value is the output coordinates that entity_to_point would average to 
    *             determine a centroid.
    *
    */
-  static std::vector<std::vector<double> > compute_obj_centroid( const mesh::Entity     & obj,
+  static std::vector<std::vector<double> > compute_entity_centroid( const mesh::Entity     & entity,
                                                                const VectorField   & ref,
                                                                std::vector<double> & coor);
   /** \brief Check existence of library entry name on domain library.

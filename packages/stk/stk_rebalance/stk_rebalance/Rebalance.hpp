@@ -39,7 +39,7 @@ namespace rebalance {
  *
  * \param bulk_data      BulkData must be in a parallel consistent state.
  *
- * \param selector       Used to select a subset of mesh objects to compute measure.
+ * \param selector       Used to select a subset of mesh entities to compute measure.
  *
  * \param coord_ref      The field containing the nodal coordinates. For the default
  *                       ZoltanPartition class in stk::reblance, this should be non-NULL.
