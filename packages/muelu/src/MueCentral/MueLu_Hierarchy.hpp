@@ -91,7 +91,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
        Note: Empty factories are simply skipped.
      */
-     Teuchos::ParameterList FullPopulate(Teuchos::RCP<PRFactory> PRFact,
+     Teuchos::ParameterList FullPopulate(Teuchos::RCP<PRFactory> PRFact=Teuchos::null,
                        Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
                        Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
                        int startLevel=0, int numDesiredLevels=10 )
@@ -99,7 +99,10 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        Teuchos::OSTab tab(out_);
        MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::FullPopulate()" << std::endl;
 
-       if (PRFact == Teuchos::null) PRFact = rcp( new GenericPRFactory(SaPFactory()));
+       if (PRFact == Teuchos::null) {
+         RCP<SaPFactory> SaPFact = rcp( new SaPFactory() );
+         PRFact = rcp( new GenericPRFactory(SaPFact));
+       }
        if (AcFact == Teuchos::null) AcFact = rcp( new RAPFactory());
        if (SmooFact == Teuchos::null) {
 //FIXME #ifdef we're using tpetra
@@ -116,7 +119,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        }
 
        Teuchos::ParameterList status;
-       status = FillHierarchy(PRFact,AcFact,startLevel,numDesiredLevels /*,status*/);
+       status = FillHierarchy(*PRFact,*AcFact,startLevel,numDesiredLevels /*,status*/);
        SetSmoothers(SmooFact,startLevel,numDesiredLevels);
        return status;
 
@@ -136,12 +139,16 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        return status;
      } //FillHierarchy()
 
-     Teuchos::ParameterList FillHierarchy(GenericPRFactory const &PRFact) {
+     Teuchos::ParameterList FillHierarchy(PRFactory const &PRFact) {
        RAPFactory AcFact;
        Teuchos::ParameterList status;
        status = FillHierarchy(PRFact,AcFact);
        return status;
      }
+
+     //TODO should there be another version of FillHierarchy:
+     //TODO   Teuchos::ParameterList FillHierarchy(OperatorFactory const &AcFact)
+     //TODO where the PRFactory is automatically generated?
      
      /*! @brief Populate hierarchy with A's, R's, and P's.
 
@@ -150,8 +157,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          order) a multigrid Hierarchy starting with information on 'startLevel' 
          and continuing for at most 'numDesiredLevels'. 
      */
-     //void FillHierarchy(Teuchos::RCP<PRFactory> PRFact,
-     //                  Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
      Teuchos::ParameterList FillHierarchy(PRFactory const &PRFact,
                         OperatorFactory const &AcFact,
                         int startLevel=0, int numDesiredLevels=10 )
