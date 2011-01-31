@@ -50,8 +50,8 @@ Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix(void)
 {
 }
 //=============================================================================
-Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix(Epetra_DataAccess CV, double *A, int LDA, int NumRowsCols)
-  : Epetra_SerialDenseMatrix(CV, A, LDA, NumRowsCols, NumRowsCols),
+Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix(Epetra_DataAccess CV_in, double *A_in, int LDA_in, int NumRowsCols)
+  : Epetra_SerialDenseMatrix(CV_in, A_in, LDA_in, NumRowsCols, NumRowsCols),
     Upper_(false),
     UPLO_('L')
 
@@ -69,29 +69,29 @@ Epetra_SerialSymDenseMatrix::~Epetra_SerialSymDenseMatrix()
 {
 }
 //=============================================================================
-void Epetra_SerialSymDenseMatrix::CopyUPLOMat(bool Upper, double * A, int LDA, int NumRows) {
+void Epetra_SerialSymDenseMatrix::CopyUPLOMat(bool Upper_in, double * A_in, int LDA_in, int NumRows) {
 
   int i, j;
   double * ptr1;
   double * ptr2;
 
-  if (Upper) {
+  if (Upper_in) {
     for (j=1; j<NumRows; j++) {
-      ptr1 = A + j;
-      ptr2 = A + j*LDA;
+      ptr1 = A_in + j;
+      ptr2 = A_in + j*LDA_in;
       for (i=0; i<j; i++) {
 	*ptr1 = *ptr2++;
-	ptr1+=LDA;
+	ptr1+=LDA_in;
       }
     }
   }
   else {
     for (i=1; i<NumRows; i++) {
-      ptr1 = A + i;
-      ptr2 = A + i*LDA;
+      ptr1 = A_in + i;
+      ptr2 = A_in + i*LDA_in;
       for (j=0; j<i; j++) {
 	*ptr2++ = *ptr1;
-	ptr1+=LDA;
+	ptr1+=LDA_in;
       }
     }
   }

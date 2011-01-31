@@ -11,6 +11,7 @@
 
 #include <utility>
 #include <vector>
+#include <iosfwd>
 
 #include <stk_mesh/base/Types.hpp>
 
@@ -214,6 +215,10 @@ public:
     return lhs_key == rhs_key;
   }
 };
+
+std::string print_entity_key(const Entity& entity);
+
+std::string print_entity_key(const Entity* entity);
 
 //----------------------------------------------------------------------
 

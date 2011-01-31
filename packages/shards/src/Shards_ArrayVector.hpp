@@ -58,7 +58,7 @@ namespace shards {
  *  \{
  */
 
-template< typename Scalar , ArrayOrder Order , 
+template< typename Scalar , ArrayOrder Order ,
           class Tag1 = void , class Tag2 = void ,
           class Tag3 = void , class Tag4 = void ,
           class Tag5 = void , class Tag6 = void ,
@@ -173,7 +173,7 @@ public:
 
 //----------------------------------------------------------------------
 
-template< typename Scalar , ArrayOrder Order , 
+template< typename Scalar , ArrayOrder Order ,
           class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
           class Tag5 , class Tag6 , class Tag7 , class Tag8 >
 class ArrayVector
@@ -211,7 +211,7 @@ public:
       m_storage.resize( n );
       BaseType::m_ptr = get_ptr();
     }
-  
+
   void resize( const size_type n1 , const size_type n2 ,
                const size_type n3 , const size_type n4 ,
                const size_type n5 , const size_type n6 ,

@@ -20,7 +20,7 @@ extern "C" {
 #include "phg.h"
 #include "phg_tree.h"
 #include "phg_distrib.h"
-#include "zz_const.h"
+#include "zz_util_const.h"
 
 /*
 #define _DEBUG1
@@ -64,7 +64,8 @@ int Zoltan_PHG_rdivide(
   HGraph *left=NULL, *right=NULL;
   int    *proclist=NULL, *sendbuf=NULL, *recvbuf=NULL, nsend, msg_tag=7777;
   PHGComm *hgc = hg->comm;
-  int nVtx = hg->nVtx, gnVtx = hg->dist_x[hgc->nProc_x]; 
+  int nVtx = hg->nVtx;
+  ZOLTAN_GNO_TYPE gnVtx = hg->dist_x[hgc->nProc_x];
   double leftw=0.0, rightw=0.0;
   float  bal_tol = hgp->bal_tol;
   float  *bisec_part_sizes=NULL;   /* Target partition sizes; dimension is 2*hg->VtxWeightDim  
@@ -73,6 +74,8 @@ int Zoltan_PHG_rdivide(
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   int do_timing = (hgp->use_timers > 1);
   int detail_timing = (hgp->use_timers > 3);
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   Zoltan_PHG_Tree_Set(zz, father, lo, hi);
 
@@ -153,6 +156,7 @@ int Zoltan_PHG_rdivide(
   /*uprintf(hgc, "OLD MAxImbal: %.3f   New MaxImbal: %.3f\n", bal_tol, hgp->bal_tol);*/
   if (hgp->UseFixedVtx || hgp->UsePrefPart)
       hg->bisec_split = mid+1;
+
   ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp);
 
   if (do_timing)  /* Restart rdivide timer */
@@ -300,7 +304,7 @@ int Zoltan_PHG_rdivide(
       if (leftend<0 || (leftend+1)>=hgc->nProc ||
           rightstart<0 || rightstart>=hgc->nProc)
           errexit("hey hey Proc Number range is [0, %d] leftend=%d rightstart=%d"
-                  "for left #pins=%d nPins=%d", hgc->nProc-1, leftend, rightstart,
+                  "for left #pins=%zd nPins=%zd", hgc->nProc-1, leftend, rightstart,
                   left->dist_x[hgc->nProc_x] , gnVtx);
       uprintf(hgc, "before redistribute for left nProc=%d leftend=%d  rightstart=%d  ---------------\n",
               hgc->nProc, leftend, rightstart);
@@ -421,8 +425,7 @@ int Zoltan_PHG_rdivide(
           ZOLTAN_TIMER_START(zz->ZTime, timer->rdsend, hgc->Communicator);
       }
       --msg_tag;
-      ierr |= Zoltan_Comm_Create(&plan, nsend, proclist, hgc->Communicator,
-                                 msg_tag, &i);
+      ierr |= Zoltan_Comm_Create(&plan, nsend, proclist, hgc->Communicator, msg_tag, &i);
 
 #ifdef _DEBUG1
       if (!hgc->myProc_y) {
@@ -435,8 +438,7 @@ int Zoltan_PHG_rdivide(
 #endif
       
       --msg_tag;
-      Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, 2*sizeof(int),
-                     (char *) recvbuf);
+      Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, 2*sizeof(int), (char *) recvbuf);
 
       MPI_Bcast(recvbuf, nVtx*2, MPI_INT, 0, hgc->col_comm);
 
@@ -519,6 +521,8 @@ End:
   if (do_timing) 
     ZOLTAN_TIMER_STOP(zz->ZTime, timer->rdrdivide, hgc->Communicator);
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
+
   return ierr;
 }
 
@@ -581,6 +585,10 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
   PHGComm *hgc = ohg->comm;
   char *yo = "split_hypergraph";
   double pw[2], tpw[2];
+  ZOLTAN_GNO_TYPE tmp_gno;
+  MPI_Datatype zoltan_gno_mpi_type;
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   pw[0] = pw[1] = 0; /* 0 is the part being splitted, 1 is the other part(s) */
   Zoltan_HG_HGraph_Init (nhg);
@@ -685,16 +693,20 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
       nhg->hindex[nhg->nEdge] = nhg->nPins;
 
   /* We need to compute dist_x, dist_y */
-  if (!(nhg->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
-	 || !(nhg->dist_y = (int *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(int))))
+  if (!(nhg->dist_x = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(ZOLTAN_GNO_TYPE)))
+	 || !(nhg->dist_y = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(ZOLTAN_GNO_TYPE))))
       MEMORY_ERROR;
 
-  MPI_Scan(&nhg->nVtx, nhg->dist_x, 1, MPI_INT, MPI_SUM, hgc->row_comm);
-  MPI_Allgather(nhg->dist_x, 1, MPI_INT, &(nhg->dist_x[1]), 1, MPI_INT, hgc->row_comm);
+  tmp_gno = (ZOLTAN_GNO_TYPE)nhg->nVtx;
+
+  MPI_Scan(&tmp_gno, nhg->dist_x, 1, zoltan_gno_mpi_type, MPI_SUM, hgc->row_comm);
+  MPI_Allgather(nhg->dist_x, 1, zoltan_gno_mpi_type, &(nhg->dist_x[1]), 1, zoltan_gno_mpi_type, hgc->row_comm);
   nhg->dist_x[0] = 0;
   
-  MPI_Scan(&nhg->nEdge, nhg->dist_y, 1, MPI_INT, MPI_SUM, hgc->col_comm);
-  MPI_Allgather(nhg->dist_y, 1, MPI_INT, &(nhg->dist_y[1]), 1, MPI_INT, hgc->col_comm);
+  tmp_gno = (ZOLTAN_GNO_TYPE)nhg->nEdge;
+
+  MPI_Scan(&tmp_gno, nhg->dist_y, 1, zoltan_gno_mpi_type, MPI_SUM, hgc->col_comm);
+  MPI_Allgather(nhg->dist_y, 1, zoltan_gno_mpi_type, &(nhg->dist_y[1]), 1, zoltan_gno_mpi_type, hgc->col_comm);
   nhg->dist_y[0] = 0;
     
   ierr = Zoltan_HG_Create_Mirror (zz, nhg);

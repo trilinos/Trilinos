@@ -172,7 +172,7 @@ void PreconditionerLinearOp<ScalarT>::describe(Teuchos::FancyOStream & out_arg,
    switch(verbLevel) {
       case Teuchos::VERB_DEFAULT:
       case Teuchos::VERB_LOW:
-         *out << this->description() << std::endl;
+         *out << this->description() << " ( [Operator] = " << getOperator_cnoc()->description() << " )" << std::endl;
          break;
       case Teuchos::VERB_MEDIUM:
       case Teuchos::VERB_HIGH:

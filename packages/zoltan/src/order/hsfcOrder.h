@@ -18,7 +18,7 @@ int Zoltan_LocalHSFC_Order(
 	                      /* The application must allocate enough space */
         ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
 	   		      /* The application must allocate enough space */
-	int *rank,            /* rank[i] is the rank of gids[i] */
+	ZOLTAN_ID_PTR rank,      /* rank[i] is the rank of gids[i] */
 	int *iperm,
 	ZOOS *order_opt       /* Ordering options, parsed by Zoltan_Order */
 			   );

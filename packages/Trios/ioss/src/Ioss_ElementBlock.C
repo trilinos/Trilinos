@@ -50,6 +50,12 @@ Ioss::ElementBlock::ElementBlock(const Ioss::DatabaseIO *io_database,
 {
   properties.add(Ioss::Property(this, "attribute_count",
 				Ioss::Property::INTEGER));
+
+  if (topology()->master_element_name() != element_type &&
+      topology()->name() != element_type) {
+    // Maintain original element type on output database if possible.
+    properties.add(Ioss::Property("original_element_type", element_type));
+  }
 }
 
 Ioss::ElementBlock::~ElementBlock() {}

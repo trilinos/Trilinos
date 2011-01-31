@@ -950,7 +950,7 @@ int NodeCommMgr::exchangeSharedRemoteFieldsBlks()
     recvDataReqs = new MPI_Request[numRecvProcs];
   }
 
-  int dataTag = 199904;
+  int dataTag = 19904;
 
   int numRcvStarted = 0;
   for(i=0; i<remoteSharingProcs_.size(); i++) {

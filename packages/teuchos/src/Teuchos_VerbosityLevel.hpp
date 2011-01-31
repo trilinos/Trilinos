@@ -54,6 +54,15 @@ enum EVerbosityLevel {
 	VERB_EXTREME=4    ///< Generate the most output possible
 };
 
+/** Needed for serialization KLN 23/09/2010 */
+inline std::istream& operator>>(std::istream& std_is, EVerbosityLevel& prec){
+  int intval;
+  std_is >> intval;
+  prec = (EVerbosityLevel)intval;
+  return std_is;
+}
+
+
 
 /** \brief Return a std::string representation of the verbosity level.
  *

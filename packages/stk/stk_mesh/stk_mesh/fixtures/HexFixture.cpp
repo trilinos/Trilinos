@@ -8,6 +8,8 @@
 
 #include <algorithm>
 
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
 #include <stk_mesh/base/FieldData.hpp>
@@ -16,7 +18,6 @@
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
@@ -24,57 +25,49 @@ namespace stk {
 namespace mesh {
 namespace fixtures {
 
-HexFixture::~HexFixture()
-{}
-
-
 HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz)
-  :
-    spatial_dimension(3)
-  , NX(nx)
-  , NY(ny)
-  , NZ(nz)
-  , meta_data( TopologicalMetaData::entity_rank_names(spatial_dimension) )
-  , bulk_data( meta_data , pm )
-  , top_data( meta_data, spatial_dimension )
-  , hex_part( top_data.declare_part<shards::Hexahedron<8> >("hex_part" ) )
-  , coord_field( meta_data.declare_field<CoordFieldType>("Coordinates") )
-  , coord_gather_field(
-        meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates")
-      )
+  : m_spatial_dimension(3),
+    m_nx(nx),
+    m_ny(ny),
+    m_nz(nz),
+    m_meta_data( fem::entity_rank_names(m_spatial_dimension) ),
+    m_bulk_data( m_meta_data , pm ),
+    m_fem(m_meta_data, m_spatial_dimension),
+    m_hex_part( declare_part<shards::Hexahedron<8> >( m_meta_data, "hex_part" ) ),
+    m_coord_field( m_meta_data.declare_field<CoordFieldType>("Coordinates") ),
+    m_coord_gather_field(m_meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates"))
 {
   typedef shards::Hexahedron<8> Hex8 ;
-  enum { SpatialDim = 3 };
-  enum { NodesPerElem = Hex8::node_count };
+  const unsigned nodes_per_elem = Hex8::node_count;
 
   //put coord-field on all nodes:
   put_field(
-      coord_field,
-      top_data.node_rank,
-      meta_data.universal_part(),
-      SpatialDim
-      );
+    m_coord_field,
+    fem::NODE_RANK,
+    m_meta_data.universal_part(),
+    m_spatial_dimension);
 
   //put coord-gather-field on all elements:
   put_field(
-      coord_gather_field,
-      top_data.element_rank,
-      meta_data.universal_part(),
-      NodesPerElem
-      );
+    m_coord_gather_field,
+    fem::element_rank(m_fem),
+    m_meta_data.universal_part(),
+    nodes_per_elem);
 
   // Field relation so coord-gather-field on elements points
   // to coord-field of the element's nodes
-  meta_data.declare_field_relation( coord_gather_field, element_node_stencil<Hex8>, coord_field);
-
+  m_meta_data.declare_field_relation( m_coord_gather_field,
+                                      fem::element_node_stencil<Hex8, 3>,
+                                      m_coord_field);
 }
 
-void HexFixture::generate_mesh() {
+void HexFixture::generate_mesh()
+{
   std::vector<EntityId> element_ids_on_this_processor;
 
-  const unsigned p_size = bulk_data.parallel_size();
-  const unsigned p_rank = bulk_data.parallel_rank();
-  const unsigned num_elems = NX * NY * NZ ;
+  const unsigned p_size = m_bulk_data.parallel_size();
+  const unsigned p_rank = m_bulk_data.parallel_rank();
+  const unsigned num_elems = m_nx * m_ny * m_nz ;
 
   const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
   const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
@@ -86,8 +79,34 @@ void HexFixture::generate_mesh() {
   generate_mesh(element_ids_on_this_processor);
 }
 
-void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor) {
+void HexFixture::node_x_y_z( EntityId entity_id, unsigned &x , unsigned &y , unsigned &z ) const
+{
+  entity_id -= 1;
 
+  x = entity_id % (m_nx+1);
+  entity_id /= (m_nx+1);
+
+  y = entity_id % (m_ny+1);
+  entity_id /= (m_ny+1);
+
+  z = entity_id;
+}
+
+void HexFixture::elem_x_y_z( EntityId entity_id, unsigned &x , unsigned &y , unsigned &z ) const
+{
+  entity_id -= 1;
+
+  x = entity_id % m_nx;
+  entity_id /= m_nx;
+
+  y = entity_id % m_ny;
+  entity_id /= m_ny;
+
+  z = entity_id;
+}
+
+void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor)
+{
   {
     //sort and unique the input elements
     std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
@@ -98,15 +117,17 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
     element_ids_on_this_processor.erase(ib, ie);
   }
 
-  bulk_data.modification_begin();
+  m_bulk_data.modification_begin();
 
   {
+    // Declare the elements that belong on this process
+
     std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
     const std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
     for (; ib != ie; ++ib) {
       EntityId entity_id = *ib;
       unsigned ix = 0, iy = 0, iz = 0;
-      elem_ix_iy_iz(entity_id, ix, iy, iz);
+      elem_x_y_z(entity_id, ix, iy, iz);
 
       stk::mesh::EntityId elem_node[8] ;
 
@@ -119,30 +140,28 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
       elem_node[6] = node_id( ix+1 , iy+1 , iz+1 );
       elem_node[7] = node_id( ix   , iy+1 , iz+1 );
 
-      stk::mesh::declare_element( bulk_data, hex_part, elem_id( ix , iy , iz ) , elem_node);
+      stk::mesh::declare_element( m_bulk_data, m_hex_part, elem_id( ix , iy , iz ) , elem_node);
 
       for (unsigned i = 0; i<8; ++i) {
-        stk::mesh::Entity * const node =
-          bulk_data.get_entity( top_data.node_rank , elem_node[i] );
+        stk::mesh::Entity * const node = m_bulk_data.get_entity( fem::NODE_RANK , elem_node[i] );
 
-        if ( node != NULL) {
+        ThrowRequireMsg( node != NULL,
+          "This process should know about the nodes that make up its element");
 
-          unsigned nx = 0, ny = 0, nz = 0;
-          node_ix_iy_iz(elem_node[i], nx, ny, nz);
+        // Compute and assign coordinates to the node
+        unsigned nx = 0, ny = 0, nz = 0;
+        node_x_y_z(elem_node[i], nx, ny, nz);
 
-          Scalar * data = stk::mesh::field_data( coord_field , *node );
+        Scalar * data = stk::mesh::field_data( m_coord_field , *node );
 
-          data[0] = nx ;
-          data[1] = ny ;
-          data[2] = -nz ;
-        }
+        data[0] = nx ;
+        data[1] = ny ;
+        data[2] = -(Scalar)nz ;
       }
     }
   }
 
-  bulk_data.modification_end();
-
-
+  m_bulk_data.modification_end();
 }
 
 } // fixtures

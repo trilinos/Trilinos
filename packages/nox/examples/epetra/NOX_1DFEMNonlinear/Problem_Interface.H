@@ -65,7 +65,7 @@ public:
 
   //! Compute and return F
   bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, 
-		FillType flag = Residual);
+		const FillType flag = Residual);
 
   //! Compute an explicit Jacobian
   bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);

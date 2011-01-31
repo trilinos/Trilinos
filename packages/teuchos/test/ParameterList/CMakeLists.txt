@@ -1,6 +1,11 @@
-
 INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
+
+SET(SerializationFiles 
+    BadRootElement.xml BadParameterListElement.xml
+    NoNameAttribute.xml NoTypeAttribute.xml NoValueAttribute.xml 
+	  CantFindParameterEntryConverter.xml 
+    DuplicateParameterIDs.xml )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ParameterList_test 
@@ -19,6 +24,19 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  ParameterList_SerializationTest
+  SOURCES ParameterList_SerializationTest.cpp Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+PACKAGE_COPY_FILES_TO_BINARY_DIR(ParameterListFileCopies
+  DEST_FILES ${SerializationFiles}
+  SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/ParameterList
+  EXEDEPS ParameterList_SerializationTest
+)
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ParameterList_UnitTest_Parallel
   SOURCES ParameterList_UnitTest_Parallel.cpp Teuchos_StandardUnitTestMain.cpp

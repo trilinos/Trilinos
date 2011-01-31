@@ -301,17 +301,16 @@ except ImportError:
 }
 %typemap(argout) Epetra_##CLASS *&
 {
-  PyObject * obj;
   Epetra_NumPy##CLASS * npa$argnum = new Epetra_NumPy##CLASS(**$1);
   Teuchos::RCP< Epetra_NumPy##CLASS > *smartobj$argnum =
     new Teuchos::RCP< Epetra_NumPy##CLASS >(npa$argnum);
-  obj = SWIG_NewPointerObj((void*)smartobj$argnum,
+  PyObject * obj = SWIG_NewPointerObj((void*)smartobj$argnum,
 			   $descriptor(Teuchos::RCP< Epetra_NumPy##CLASS > *), SWIG_POINTER_OWN);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
 
 // Director input of a plain reference
-%typemap(directorin) CONST Epetra_##CLASS & ()
+%typemap(directorin) CONST Epetra_##CLASS &
 %{
   Teuchos::RCP< CONST Epetra_NumPy##CLASS > *temp$argnum = new
     Teuchos::RCP< CONST Epetra_NumPy##CLASS >(new Epetra_NumPy##CLASS(View,$1_name), false);
@@ -333,7 +332,7 @@ except ImportError:
   if ($1 == NULL) $result = Py_BuildValue("");
   else
   {
-    CONST Epetra_NumPy##CLASS * npa = new CONST Epetra_NumPy##CLASS(*$1);
+    Epetra_NumPy##CLASS * npa = new Epetra_NumPy##CLASS(*$1);
     $result = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy##CLASS*), $owner);
   }
 }
@@ -348,16 +347,16 @@ except ImportError:
 }
 %typemap(argout) Epetra_##CLASS *&
 {
-  PyObject * obj;
-  Epetra_NumPy##CLASS * npa = new Epetra_NumPy##CLASS(**$1);
-  obj = SWIG_NewPointerObj((void*)npa, $descriptor(Epetra_NumPy##CLASS*), SWIG_POINTER_OWN);
+  Epetra_NumPy##CLASS * npa$argnum = new Epetra_NumPy##CLASS(**$1);
+  PyObject * obj = SWIG_NewPointerObj((void*)(npa$argnum), $descriptor(Epetra_NumPy##CLASS*),
+				      SWIG_POINTER_OWN);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
 
 // Director input of a plain reference
 %typemap(directorin) CONST Epetra_##CLASS &
 %{
-  CONST Epetra_NumPy##CLASS *npa$argnum = new CONST Epetra_NumPy##CLASS(View,$1_name);
+  Epetra_NumPy##CLASS *npa$argnum = new Epetra_NumPy##CLASS(View,$1_name);
   $input = SWIG_NewPointerObj(npa$argnum, $descriptor(Epetra_NumPy##CLASS*), SWIG_POINTER_OWN);
 %}
 
@@ -366,16 +365,19 @@ except ImportError:
 
 // Use the %teuchos_rcp_epetra_numpy_overrides macro to define the
 // %teuchos_rcp_epetra macro
+#define EMPTYHACK
 %define %teuchos_rcp_epetra_numpy(CLASS)
   %teuchos_rcp_epetra(Epetra_##CLASS)
   %teuchos_rcp_epetra(Epetra_NumPy##CLASS)
-  %teuchos_rcp_epetra_numpy_overrides(SWIGEMPTYHACK, CLASS)
+  %teuchos_rcp_epetra_numpy_overrides(EMPTYHACK, CLASS)
   %teuchos_rcp_epetra_numpy_overrides(const, CLASS)
 %enddef
 
 // Define macros for typemaps that convert a reference to a pointer to
 // an object, into a python return argument (which might be placed into a
 // tuple, if there are more than one).
+#ifdef HAVE_TEUCHOS
+
 %define %teuchos_rcp_epetra_argout(ClassName)
 %typemap(in,numinputs=0) ClassName *& (ClassName * _object)
 {
@@ -383,12 +385,28 @@ except ImportError:
 }
 %typemap(argout) ClassName *&
 {
-  Teuchos::RCP< ClassName > *smartresult = new Teuchos::RCP< ClassName >(*$1, true);
+  Teuchos::RCP< ClassName > *smartresult = new Teuchos::RCP< ClassName >(*$1);
   PyObject * obj = SWIG_NewPointerObj(%as_voidptr(smartresult),
 				      $descriptor(Teuchos::RCP< ClassName >*), SWIG_POINTER_OWN);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
 %enddef
+
+#else
+
+%define %teuchos_rcp_epetra_argout(ClassName)
+%typemap(in,numinputs=0) ClassName *& (ClassName * _object)
+{
+  $1 = &_object;
+}
+%typemap(argout) ClassName *&
+{
+  PyObject * obj = SWIG_NewPointerObj(%as_voidptr($1), $descriptor(ClassName *), SWIG_POINTER_OWN);
+  $result = SWIG_Python_AppendOutput($result,obj);
+}
+%enddef
+
+#endif
 
 ////////////////////////////
 // Epetra_Version support //

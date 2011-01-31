@@ -73,6 +73,46 @@ the Trilinos package LOCA:
 // Trilinos module imports
 %import "Teuchos.i"
 
+// Exception handling
+%include "exception.i"
+
+// Director exception handling
+%feature("director:except")
+{
+  if ($error != NULL) {
+    throw Swig::DirectorMethodException();
+  }
+}
+
+// General exception handling
+%exception
+{
+  try
+  {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  catch(PythonException & e)
+  {
+    e.restore();
+    SWIG_fail;
+  }
+  catch(int errCode)
+  {
+    PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
+    SWIG_fail;
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch (Swig::DirectorException & e)
+  {
+    SWIG_fail;
+  }
+  catch(...)
+  {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
+
 // Teuchos::RCPs typemaps
 %teuchos_rcp(LOCA::Epetra::Interface::Required)
 %teuchos_rcp(LOCA::Epetra::Interface::MassMatrix)
@@ -80,11 +120,11 @@ the Trilinos package LOCA:
 %teuchos_rcp(LOCA::Epetra::Interface::TimeDependentMatrixFree)
 
 // Epetra_Vector directorin typemap
-%typemap(directorin) Epetra_Vector &
-%{
-  Epetra_NumPyVector *npa$argnum = new Epetra_NumPyVector(View,$1_name);
-  $input = SWIG_NewPointerObj((void*)npa$argnum, $descriptor(Epetra_NumPyVector*), 0);
-%}
+// %typemap(directorin) Epetra_Vector &
+// %{
+//   Epetra_NumPyVector *npa$argnum = new Epetra_NumPyVector(View,$1_name);
+//   $input = SWIG_NewPointerObj((void*)npa$argnum, $descriptor(Epetra_NumPyVector*), 0);
+// %}
 
 ///////////////////////
 // NOX_Utils support //

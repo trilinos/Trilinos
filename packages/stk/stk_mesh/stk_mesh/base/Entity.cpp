@@ -29,6 +29,22 @@ Entity::Entity( const EntityKey & arg_key )
 Entity::~Entity()
 {}
 
+std::string print_entity_key(const Entity& entity)
+{
+  return print_entity_key(entity.bucket().mesh().mesh_meta_data(),
+                          entity.key());
+}
+
+std::string print_entity_key(const Entity* entity)
+{
+  if (entity == NULL) {
+    return "NULL ENTITY";
+  }
+  else {
+    return print_entity_key(*entity);
+  }
+}
+
 //
 //----------------------------------------------------------------------
 

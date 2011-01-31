@@ -17,19 +17,8 @@ namespace stk {
   using namespace rebalance;
 }
 
-Partition::Partition(ParallelMachine comm) :
-  comm_(comm)
-{
-}
-
-Partition::Partition(const Partition & p) :
-  comm_(p.comm_)
-{
-}
-
-Partition::~Partition()
-{
-}
+Partition::Partition(ParallelMachine comm) : comm_(comm) { }
+Partition::~Partition() { }
 
 
 

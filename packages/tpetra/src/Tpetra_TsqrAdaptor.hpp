@@ -80,6 +80,20 @@ namespace Tpetra {
     typedef TSQR::Tsqr< ordinal_type, scalar_type, node_tsqr_type > tsqr_type;
 
   public:
+    /// \brief Default parameters
+    ///
+    /// Return default parameters for the TSQR variant used by Epetra.
+    ///
+    /// \warning This method may not be reentrant.  It should only be
+    ///   called by one thread at a time.  We do not protect it from
+    ///   calls by more than one thread at a time.
+    static Teuchos::RCP<const Teuchos::ParameterList>
+    getDefaultParameters ()
+    {
+      // For now, only the intranode part of TSQR accepts parameters.
+      return node_tsqr_factory_type::getDefaultParameters ();
+    }
+
     /// \brief Constructor
     ///
     /// \param mv [in] Multivector object, used only to access the
@@ -89,13 +103,12 @@ namespace Tpetra {
     ///   this Adaptor works must use the same map and communicator.
     ///
     /// \param plist [in] List of parameters for configuring TSQR.
-    ///   The specific parameter keys that are read depend on the
-    ///   TSQR implementation.  "cacheBlockSize" (cache block size
-    ///   per core, in bytes) tends to be defined for all of the
-    ///   non-GPU implementations.  For details, check the specific
-    ///   NodeTsqrFactory implementation.
+    ///   The specific parameter keys that are read depend on the TSQR
+    ///   implementation.  For details, call getDefaultParameters(),
+    ///   examine the documentation embedded therein, and modify the
+    ///   default values as necessary.
     TsqrAdaptor (const MV& mv,
-		 const Teuchos::ParameterList& plist) :
+		 const Teuchos::RCP<const Teuchos::ParameterList>& plist) :
       pTsqr_ (new tsqr_type (makeNodeTsqr (plist), makeDistTsqr (mv)))
     {}
 
@@ -208,7 +221,7 @@ namespace Tpetra {
     /// Initialize and return intranode TSQR implementation
     ///
     static RCP< node_tsqr_type >
-    makeNodeTsqr (const Teuchos::ParameterList& plist)
+    makeNodeTsqr (const Teuchos::RCP<const Teuchos::ParameterList>& plist)
     {
       return node_tsqr_factory_type::makeNodeTsqr (plist);
     }

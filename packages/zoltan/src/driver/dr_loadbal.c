@@ -51,7 +51,6 @@ static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
 
 
-
 extern int Zoltan_Order_Test(struct Zoltan_Struct *zz, int *num_gid_entries,  int *num_lid_entries,
   int num_obj,  ZOLTAN_ID_PTR global_ids,  ZOLTAN_ID_PTR local_ids,  int *rank,  int *iperm);
 
@@ -700,7 +699,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	if (current_elem->fixed_part != -1 &&
 	    current_elem->fixed_part != current_elem->my_part) {
 	  errcnt++;
-	  printf("%d:  Object %d fixed to %d but assigned to %d\n",
+	  printf("%d:  Object " ZOLTAN_ID_SPEC " fixed to %d but assigned to %d\n",
 		 Proc, current_elem->globalID, current_elem->fixed_part,
 		 current_elem->my_part);
 	}
@@ -875,8 +874,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       }
 
       color = (int *) malloc (mesh->num_elems * sizeof(int));
-      gids = (ZOLTAN_ID_PTR) calloc(mesh->num_elems*Num_GID, sizeof(int));
-      lids = (ZOLTAN_ID_PTR) calloc(mesh->num_elems*Num_LID, sizeof(int));
+      gids = (ZOLTAN_ID_PTR) calloc(mesh->num_elems*Num_GID, sizeof(ZOLTAN_ID_TYPE));
+      lids = (ZOLTAN_ID_PTR) calloc(mesh->num_elems*Num_LID, sizeof(ZOLTAN_ID_TYPE));
 
       if (!color || !gids || !lids) {
 	  safe_free((void **)(void *) &color);
@@ -1011,7 +1010,7 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
 	(current_elem->globalID > mesh->visible_nvtx)) continue;
 
     for (j = 0; j < gid; j++) global_id[idx*num_gid_entries+j]=0;
-    global_id[idx*num_gid_entries+gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
+    global_id[idx*num_gid_entries+gid] = current_elem->globalID;
     if (num_lid_entries) {
       for (j = 0; j < lid; j++) local_id[idx*num_lid_entries+j]=0;
       local_id[idx*num_lid_entries+lid] = i;
@@ -1090,7 +1089,7 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
     local_id[lid] = first;
   }
   for (j = 0; j < gid; j++) global_id[j]=0;
-  global_id[gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
+  global_id[gid] = current_elem->globalID;
 
   if (wdim>0){
     for (i=0; i<wdim; i++){
@@ -1860,7 +1859,7 @@ void get_nemesis_hg(
   edg_GID = meshvtxGID;
   /* copy vertex GIDs -- elements are vertices */
   for (i = 0; i < mesh->elem_array_len; i++){
-    if (mesh->elements[i].globalID < 0) continue;
+    if (mesh->elements[i].globalID == ZOLTAN_ID_INVALID) continue;
     for (k=0; k<gid; k++) *vtx_GID++ = 0;
     *vtx_GID++ = mesh->elements[i].globalID;
     /* copy mesh vertex IDs into pins array */
@@ -2047,7 +2046,7 @@ void get_hg_edge_weights(
 )
 {
   MESH_INFO_PTR mesh;
-  int *id=NULL;
+  ZOLTAN_ID_TYPE *id=NULL;
   int i, k;
   int gid = num_gid_entries-1;
   *ierr = ZOLTAN_OK;
@@ -2153,8 +2152,7 @@ int ngid = num_gid_entries-1;
   for (i = 0; i < mesh->num_elems; i++){
     if (mesh->blank && mesh->blank[i]) continue;
     if (mesh->elements[i].fixed_part != -1) {
-      fixed_gids[cnt*num_gid_entries+ngid] =
-		 (ZOLTAN_ID_TYPE) mesh->elements[i].globalID;
+      fixed_gids[cnt*num_gid_entries+ngid] =  mesh->elements[i].globalID;
       fixed_part[cnt] = mesh->elements[i].fixed_part;
       cnt++;
     }
@@ -2173,7 +2171,7 @@ int ngid = num_gid_entries-1;
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-ELEM_INFO *search_by_global_id(MESH_INFO *mesh, int global_id, int *idx)
+ELEM_INFO *search_by_global_id(MESH_INFO *mesh, ZOLTAN_ID_TYPE global_id, int *idx)
 {
 /*
  * Function that searchs for an element based upon its global ID.
@@ -2250,8 +2248,8 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
     double x[3] = {0., 0., 0.};
     int iierr = 0;
     ELEM_INFO_PTR current_elem = &(mesh->elements[0]);
-    unsigned int lid = 0;
-    unsigned int gid = (unsigned) (current_elem->globalID);
+    ZOLTAN_ID_TYPE lid = 0;
+    ZOLTAN_ID_TYPE gid = current_elem->globalID;
 
     if (mesh->eb_nnodes[current_elem->elem_blk] == 1) {
       x[0] = current_elem->coord[0][0];
@@ -2260,8 +2258,9 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
       if (mesh->num_dims > 2)
 	x[2] = current_elem->coord[0][2];
     }
-    else
+    else{
       get_geom((void *) mesh, 1, 1, &gid, &lid, x, &iierr);
+    }
 
     xlo[0] = x[0];
     xlo[1] = x[1];

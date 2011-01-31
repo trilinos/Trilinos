@@ -51,8 +51,8 @@
 #include "Epetra_SerialDenseMatrix.h"
 
 //==============================================================================
-Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int *NumBlockEntriesPerRow) 
-  : Epetra_DistObject(RowMap, "Epetra::VbrMatrix"),
+Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& rowMap, int *NumBlockEntriesPerRow) 
+  : Epetra_DistObject(rowMap, "Epetra::VbrMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
     Graph_(0),
@@ -60,7 +60,7 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
     StaticGraph_(false),
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
-    NumMyBlockRows_(RowMap.NumMyElements()),
+    NumMyBlockRows_(rowMap.NumMyElements()),
     CV_(CV),
     NormInf_(0.0),
     NormOne_(0.0),
@@ -68,14 +68,14 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
     squareFillCompleteCalled_(false)
 {
   InitializeDefaults();
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, NumBlockEntriesPerRow);
+  Graph_ = new Epetra_CrsGraph(CV, rowMap, NumBlockEntriesPerRow);
   int err = Allocate();
   assert( err == 0 );
 }
 
 //==============================================================================
-Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumBlockEntriesPerRow) 
-  : Epetra_DistObject(RowMap, "Epetra::VbrMatrix"),
+Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& rowMap, int NumBlockEntriesPerRow) 
+  : Epetra_DistObject(rowMap, "Epetra::VbrMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
     Graph_(0),
@@ -83,19 +83,19 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
     StaticGraph_(false),
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
-    NumMyBlockRows_(RowMap.NumMyElements()),
+    NumMyBlockRows_(rowMap.NumMyElements()),
     CV_(CV),
     squareFillCompleteCalled_(false)
 {
   InitializeDefaults();
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, NumBlockEntriesPerRow);
+  Graph_ = new Epetra_CrsGraph(CV, rowMap, NumBlockEntriesPerRow);
   int err = Allocate();
   assert( err == 0 );
 }
 //==============================================================================
-Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
-				   const Epetra_BlockMap& ColMap, int *NumBlockEntriesPerRow) 
-  : Epetra_DistObject(RowMap, "Epetra::VbrMatrix"),
+Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& rowMap, 
+				   const Epetra_BlockMap& colMap, int *NumBlockEntriesPerRow) 
+  : Epetra_DistObject(rowMap, "Epetra::VbrMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
     Graph_(0),
@@ -103,20 +103,20 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
     StaticGraph_(false),
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
-    NumMyBlockRows_(RowMap.NumMyElements()),
+    NumMyBlockRows_(rowMap.NumMyElements()),
     CV_(CV),
     squareFillCompleteCalled_(false)
 {
   InitializeDefaults();
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumBlockEntriesPerRow);
+  Graph_ = new Epetra_CrsGraph(CV, rowMap, colMap, NumBlockEntriesPerRow);
   int err = Allocate();
   assert( err == 0 );
 }
 
 //==============================================================================
-Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
-				   const Epetra_BlockMap& ColMap, int NumBlockEntriesPerRow) 
-  : Epetra_DistObject(RowMap, "Epetra::VbrMatrix"),
+Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& rowMap, 
+				   const Epetra_BlockMap& colMap, int NumBlockEntriesPerRow) 
+  : Epetra_DistObject(rowMap, "Epetra::VbrMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
     Graph_(0),
@@ -124,30 +124,30 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
     StaticGraph_(false),
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
-    NumMyBlockRows_(RowMap.NumMyElements()),
+    NumMyBlockRows_(rowMap.NumMyElements()),
     CV_(CV),
     squareFillCompleteCalled_(false)
 {
   InitializeDefaults();
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumBlockEntriesPerRow);
+  Graph_ = new Epetra_CrsGraph(CV, rowMap, colMap, NumBlockEntriesPerRow);
   int err = Allocate();
   assert( err == 0 );
 }
 //==============================================================================
-Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph & Graph) 
-  : Epetra_DistObject(Graph.RowMap(), "Epetra::VbrMatrix"),
+Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph & graph) 
+  : Epetra_DistObject(graph.RowMap(), "Epetra::VbrMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(new Epetra_CrsGraph(Graph)),
+    Graph_(new Epetra_CrsGraph(graph)),
     Allocated_(false),
     StaticGraph_(true),
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
-    NumMyBlockRows_(Graph.RowMap().NumMyElements()),
+    NumMyBlockRows_(graph.RowMap().NumMyElements()),
     CV_(CV),
     squareFillCompleteCalled_(false)
 {
-  constructedWithFilledGraph_ = Graph.Filled();
+  constructedWithFilledGraph_ = graph.Filled();
   InitializeDefaults();
   int err = Allocate();
   assert(err==0);
@@ -479,8 +479,8 @@ int Epetra_VbrMatrix::BeginInsertGlobalValues(int BlockRow, int NumBlockEntries,
   Graph_->SetIndicesAreGlobal(true);
   int LocalBlockRow = LRID(BlockRow); // Find local row number for this global row index
   
-  bool IndicesAreLocal = false;
-  EPETRA_CHK_ERR(BeginInsertValues(LocalBlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal));
+  bool indicesAreLocal = false;
+  EPETRA_CHK_ERR(BeginInsertValues(LocalBlockRow, NumBlockEntries, BlockIndices, indicesAreLocal));
   return(0);
 }
 
@@ -490,15 +490,15 @@ int Epetra_VbrMatrix::BeginInsertMyValues(int  BlockRow, int NumBlockEntries,
 {
   if (IndicesAreGlobal()) EPETRA_CHK_ERR(-2); // Cannot insert local values until MakeIndicesLocal() is called either directly or through FillComplete()
   Graph_->SetIndicesAreLocal(true);
-  bool IndicesAreLocal = true;
-  EPETRA_CHK_ERR(BeginInsertValues(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal));
+  bool indicesAreLocal = true;
+  EPETRA_CHK_ERR(BeginInsertValues(BlockRow, NumBlockEntries, BlockIndices, indicesAreLocal));
   return(0);
 
 }
 
 //==========================================================================
 int Epetra_VbrMatrix::BeginInsertValues(int BlockRow, int NumBlockEntries, 
-					int * BlockIndices, bool IndicesAreLocal)
+					int * BlockIndices, bool indicesAreLocal)
 {
   if (StaticGraph()) EPETRA_CHK_ERR(-2); // If the matrix graph is fully constructed, we cannot insert new values
 
@@ -515,15 +515,15 @@ int Epetra_VbrMatrix::BeginInsertValues(int BlockRow, int NumBlockEntries,
   Epetra_CombineMode SubmitMode = Insert;
 
   EPETRA_CHK_ERR(ierr);
-  EPETRA_CHK_ERR(SetupForSubmits(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal, SubmitMode));
+  EPETRA_CHK_ERR(SetupForSubmits(BlockRow, NumBlockEntries, BlockIndices, indicesAreLocal, SubmitMode));
   return(0);
 }
 //==========================================================================
 int Epetra_VbrMatrix::BeginReplaceGlobalValues(int BlockRow, int NumBlockEntries, int *BlockIndices) {
 
   BlockRow = LRID(BlockRow); // Normalize row range
-  bool IndicesAreLocal = false;
-  EPETRA_CHK_ERR(BeginReplaceValues(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal));
+  bool indicesAreLocal = false;
+  EPETRA_CHK_ERR(BeginReplaceValues(BlockRow, NumBlockEntries, BlockIndices, indicesAreLocal));
   return(0);
 }
 
@@ -532,8 +532,8 @@ int Epetra_VbrMatrix::BeginReplaceMyValues(int BlockRow, int NumBlockEntries, in
 
   if (!Graph_->IndicesAreLocal()) EPETRA_CHK_ERR(-1);
 
-  bool IndicesAreLocal = true;
-  EPETRA_CHK_ERR(BeginReplaceValues(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal));
+  bool indicesAreLocal = true;
+  EPETRA_CHK_ERR(BeginReplaceValues(BlockRow, NumBlockEntries, BlockIndices, indicesAreLocal));
   return(0);
 }
 
@@ -541,12 +541,12 @@ int Epetra_VbrMatrix::BeginReplaceMyValues(int BlockRow, int NumBlockEntries, in
 int Epetra_VbrMatrix::BeginReplaceValues(int BlockRow,
 					 int NumBlockEntries, 
 					 int *BlockIndices,
-					 bool IndicesAreLocal)
+					 bool indicesAreLocal)
 {
   if (BlockRow < 0 || BlockRow >= NumMyBlockRows_) EPETRA_CHK_ERR(-1); // Not in BlockRow range
 
   Epetra_CombineMode SubmitMode = Zero; // This is a misuse of Zero mode, fix it later
-  EPETRA_CHK_ERR(SetupForSubmits(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal, SubmitMode));
+  EPETRA_CHK_ERR(SetupForSubmits(BlockRow, NumBlockEntries, BlockIndices, indicesAreLocal, SubmitMode));
   return(0);
 }
 
@@ -554,34 +554,34 @@ int Epetra_VbrMatrix::BeginReplaceValues(int BlockRow,
 int Epetra_VbrMatrix::BeginSumIntoGlobalValues(int BlockRow, int NumBlockEntries, int *BlockIndices) {
 
   BlockRow = LRID(BlockRow); // Normalize row range
-  bool IndicesAreLocal = false;
-  EPETRA_CHK_ERR(BeginSumIntoValues(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal));
+  bool indicesAreLocal = false;
+  EPETRA_CHK_ERR(BeginSumIntoValues(BlockRow, NumBlockEntries, BlockIndices, indicesAreLocal));
   return(0);
 }
 
 //==========================================================================
 int Epetra_VbrMatrix::BeginSumIntoMyValues(int BlockRow, int NumBlockEntries, int *BlockIndices) {
 
-  bool IndicesAreLocal = true;
-  EPETRA_CHK_ERR(BeginSumIntoValues(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal));
+  bool indicesAreLocal = true;
+  EPETRA_CHK_ERR(BeginSumIntoValues(BlockRow, NumBlockEntries, BlockIndices, indicesAreLocal));
   return(0);
 }
 
 //==========================================================================
 int Epetra_VbrMatrix::BeginSumIntoValues(int BlockRow, int NumBlockEntries, 
-					 int *BlockIndices, bool IndicesAreLocal) {
+					 int *BlockIndices, bool indicesAreLocal) {
 
   if (BlockRow < 0 || BlockRow >= NumMyBlockRows_) EPETRA_CHK_ERR(-1); // Not in BlockRow range
 
   Epetra_CombineMode SubmitMode = Add;
-  EPETRA_CHK_ERR(SetupForSubmits(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal, SubmitMode));
+  EPETRA_CHK_ERR(SetupForSubmits(BlockRow, NumBlockEntries, BlockIndices, indicesAreLocal, SubmitMode));
   return(0);
 }
 
 //==========================================================================
 int Epetra_VbrMatrix::SetupForSubmits(int BlockRow, int NumBlockEntries,
 				      int * BlockIndices, 
-				      bool IndicesAreLocal,
+				      bool indicesAreLocal,
 				      Epetra_CombineMode SubmitMode) {
 
   if (NumBlockEntries>LenTemps_) {
@@ -598,14 +598,14 @@ int Epetra_VbrMatrix::SetupForSubmits(int BlockRow, int NumBlockEntries,
   CurNumBlockEntries_ = NumBlockEntries;
   CurBlockIndices_ = BlockIndices;
   CurEntry_ = 0;
-  CurIndicesAreLocal_ = IndicesAreLocal;
+  CurIndicesAreLocal_ = indicesAreLocal;
   CurSubmitMode_ = SubmitMode;
     
   return(0);
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::SubmitBlockEntry(double *Values, int LDA,
+int Epetra_VbrMatrix::SubmitBlockEntry(double *values, int LDA,
 				       int NumRows, int NumCols)
 {
   if (CurEntry_==-1) EPETRA_CHK_ERR(-1); // This means that a Begin routine was not called
@@ -614,7 +614,7 @@ int Epetra_VbrMatrix::SubmitBlockEntry(double *Values, int LDA,
   // Fill up temp space with entry
 
   TempRowDims_[CurEntry_] = NumRows;
-  TempEntries_[CurEntry_] = new Epetra_SerialDenseMatrix(CV_, Values, LDA,
+  TempEntries_[CurEntry_] = new Epetra_SerialDenseMatrix(CV_, values, LDA,
 							 NumRows, NumCols, false);
   CurEntry_++;
 
@@ -849,8 +849,8 @@ int Epetra_VbrMatrix::TransformToLocal() {
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::TransformToLocal(const Epetra_BlockMap* DomainMap, const Epetra_BlockMap* RangeMap) {
-  EPETRA_CHK_ERR(FillComplete(*DomainMap, *RangeMap));
+int Epetra_VbrMatrix::TransformToLocal(const Epetra_BlockMap* domainMap, const Epetra_BlockMap* rangeMap) {
+  EPETRA_CHK_ERR(FillComplete(*domainMap, *rangeMap));
   return(0);
 }
 
@@ -983,8 +983,8 @@ int Epetra_VbrMatrix::OptimizeStorage() {
 
   if ( ConstantShape ) {
 
-    int NumMyNonzeros = Graph_->NumMyNonzeros();
-    All_Values_ = new double[NumMyNonzeros];
+    int numMyNonzeros = Graph_->NumMyNonzeros();
+    All_Values_ = new double[numMyNonzeros];
     All_Values_Orig_ = All_Values_ ;
     for (i=0; i<NumMyBlockRows_; i++) {
       int NumBlockEntries = NumBlockEntriesPerRow_[i];
@@ -1041,10 +1041,10 @@ int Epetra_VbrMatrix::OptimizeStorage() {
      if (Contiguous) return(0); // Everything is done.  Return
 
      // Compute Number of Nonzero entries (Done in FillComplete, but we may not have been there yet.)
-     int NumMyNonzeros = Graph_->NumMyNonzeros();
+     int numMyNonzeros = Graph_->NumMyNonzeros();
 
      // Allocate one big integer array for all index values
-     All_Values_ = new double[NumMyNonzeros];
+     All_Values_ = new double[numMyNonzeros];
   
      // Set Entries_ to point into All_Entries_
   
@@ -1064,55 +1064,55 @@ int Epetra_VbrMatrix::OptimizeStorage() {
 int Epetra_VbrMatrix::ExtractGlobalRowCopy(int GlobalRow,
 					   int Length, 
 					   int & NumEntries,
-					   double *Values,
+					   double *values,
 					   int * Indices) const
 {
   (void)GlobalRow;
   (void)Length;
   (void)NumEntries;
-  (void)Values;
+  (void)values;
   (void)Indices;
   cout << "Must implement..." << endl;
   return(0);
 }
 //==========================================================================
-int Epetra_VbrMatrix::ExtractGlobalBlockRowPointers(int BlockRow, int MaxNumBlockEntries, 
+int Epetra_VbrMatrix::ExtractGlobalBlockRowPointers(int BlockRow, int maxNumBlockEntries, 
 						    int & RowDim, int & NumBlockEntries, 
 						    int * BlockIndices,
 						    Epetra_SerialDenseMatrix** & Entries) const {
 
-  bool IndicesAreLocal = false;
-  EPETRA_CHK_ERR(ExtractBlockRowPointers(BlockRow, MaxNumBlockEntries, RowDim, NumBlockEntries, BlockIndices, 
-					 Entries, IndicesAreLocal));
+  bool indicesAreLocal = false;
+  EPETRA_CHK_ERR(ExtractBlockRowPointers(BlockRow, maxNumBlockEntries, RowDim, NumBlockEntries, BlockIndices, 
+					 Entries, indicesAreLocal));
   return(0);
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::ExtractMyBlockRowPointers(int BlockRow, int MaxNumBlockEntries, 
+int Epetra_VbrMatrix::ExtractMyBlockRowPointers(int BlockRow, int maxNumBlockEntries, 
 						int & RowDim, int & NumBlockEntries, 
 						int * BlockIndices,
 						Epetra_SerialDenseMatrix** & Entries) const {
 
-  bool IndicesAreLocal = true;
-  EPETRA_CHK_ERR(ExtractBlockRowPointers(BlockRow,MaxNumBlockEntries , RowDim, NumBlockEntries, BlockIndices, 
-					 Entries, IndicesAreLocal));
+  bool indicesAreLocal = true;
+  EPETRA_CHK_ERR(ExtractBlockRowPointers(BlockRow,maxNumBlockEntries , RowDim, NumBlockEntries, BlockIndices, 
+					 Entries, indicesAreLocal));
   return(0);
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::ExtractBlockRowPointers(int BlockRow, int MaxNumBlockEntries, 
+int Epetra_VbrMatrix::ExtractBlockRowPointers(int BlockRow, int maxNumBlockEntries, 
 					      int & RowDim, int & NumBlockEntries, 
 					      int * BlockIndices,
 					      Epetra_SerialDenseMatrix** & Entries, 
-					      bool IndicesAreLocal) const {
+					      bool indicesAreLocal) const {
   int ierr = 0;
-  if (!IndicesAreLocal) {
-    ierr = Graph_->ExtractGlobalRowCopy(BlockRow, MaxNumBlockEntries,
+  if (!indicesAreLocal) {
+    ierr = Graph_->ExtractGlobalRowCopy(BlockRow, maxNumBlockEntries,
 					NumBlockEntries, BlockIndices);
     BlockRow = LRID(BlockRow);
   }
   else {
-    ierr = Graph_->ExtractMyRowCopy(BlockRow, MaxNumBlockEntries,
+    ierr = Graph_->ExtractMyRowCopy(BlockRow, maxNumBlockEntries,
 				    NumBlockEntries, BlockIndices);
   }
   if (ierr) EPETRA_CHK_ERR(ierr);
@@ -1127,41 +1127,41 @@ int Epetra_VbrMatrix::ExtractBlockRowPointers(int BlockRow, int MaxNumBlockEntri
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::BeginExtractGlobalBlockRowCopy(int BlockRow, int MaxNumBlockEntries, 
+int Epetra_VbrMatrix::BeginExtractGlobalBlockRowCopy(int BlockRow, int maxNumBlockEntries, 
 						     int & RowDim, int & NumBlockEntries, 
 						     int * BlockIndices, int * ColDims) const {
 
-  bool IndicesAreLocal = false;
-  EPETRA_CHK_ERR(BeginExtractBlockRowCopy(BlockRow, MaxNumBlockEntries, RowDim, NumBlockEntries, BlockIndices, 
-					  ColDims, IndicesAreLocal));
+  bool indicesAreLocal = false;
+  EPETRA_CHK_ERR(BeginExtractBlockRowCopy(BlockRow, maxNumBlockEntries, RowDim, NumBlockEntries, BlockIndices, 
+					  ColDims, indicesAreLocal));
   return(0);
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::BeginExtractMyBlockRowCopy(int BlockRow, int MaxNumBlockEntries, 
+int Epetra_VbrMatrix::BeginExtractMyBlockRowCopy(int BlockRow, int maxNumBlockEntries, 
 						 int & RowDim, int & NumBlockEntries, 
 						 int * BlockIndices, int * ColDims) const {
 
-  bool IndicesAreLocal = true;
-  EPETRA_CHK_ERR(BeginExtractBlockRowCopy(BlockRow,MaxNumBlockEntries , RowDim, NumBlockEntries, BlockIndices, 
-					  ColDims, IndicesAreLocal));
+  bool indicesAreLocal = true;
+  EPETRA_CHK_ERR(BeginExtractBlockRowCopy(BlockRow,maxNumBlockEntries , RowDim, NumBlockEntries, BlockIndices, 
+					  ColDims, indicesAreLocal));
   return(0);
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::BeginExtractBlockRowCopy(int BlockRow, int MaxNumBlockEntries, 
+int Epetra_VbrMatrix::BeginExtractBlockRowCopy(int BlockRow, int maxNumBlockEntries, 
 					       int & RowDim, int & NumBlockEntries, 
 					       int * BlockIndices, int * ColDims, 
-					       bool IndicesAreLocal) const  {
+					       bool indicesAreLocal) const  {
   int ierr = 0;
-  if (!IndicesAreLocal)
-    ierr = Graph_->ExtractGlobalRowCopy(BlockRow, MaxNumBlockEntries, NumBlockEntries, BlockIndices);
+  if (!indicesAreLocal)
+    ierr = Graph_->ExtractGlobalRowCopy(BlockRow, maxNumBlockEntries, NumBlockEntries, BlockIndices);
   else
-    ierr = Graph_->ExtractMyRowCopy(BlockRow, MaxNumBlockEntries, NumBlockEntries, BlockIndices);
+    ierr = Graph_->ExtractMyRowCopy(BlockRow, maxNumBlockEntries, NumBlockEntries, BlockIndices);
   if (ierr) EPETRA_CHK_ERR(ierr);
 
   bool ExtractView = false;
-  ierr = SetupForExtracts(BlockRow, RowDim, NumBlockEntries, ExtractView, IndicesAreLocal);
+  ierr = SetupForExtracts(BlockRow, RowDim, NumBlockEntries, ExtractView, indicesAreLocal);
   if (ierr) EPETRA_CHK_ERR(ierr);
 
   EPETRA_CHK_ERR(ExtractBlockDimsCopy(NumBlockEntries, ColDims));
@@ -1170,13 +1170,13 @@ int Epetra_VbrMatrix::BeginExtractBlockRowCopy(int BlockRow, int MaxNumBlockEntr
 
 //==========================================================================
 int Epetra_VbrMatrix::SetupForExtracts(int BlockRow, int & RowDim, int NumBlockEntries, bool ExtractView, 
-				       bool IndicesAreLocal) const {
+				       bool indicesAreLocal) const {
 
-  if (!IndicesAreLocal) BlockRow = LRID(BlockRow); // Normalize row range
+  if (!indicesAreLocal) BlockRow = LRID(BlockRow); // Normalize row range
   CurExtractBlockRow_ = BlockRow;
   CurExtractEntry_ = 0;
   CurExtractNumBlockEntries_ = NumBlockEntries;
-  CurExtractIndicesAreLocal_ = IndicesAreLocal;
+  CurExtractIndicesAreLocal_ = indicesAreLocal;
   CurExtractView_ = ExtractView;
   CurRowDim_ = ElementSizeList_[CurExtractBlockRow_];
   RowDim = CurRowDim_;
@@ -1195,7 +1195,7 @@ int Epetra_VbrMatrix::ExtractBlockDimsCopy(int NumBlockEntries, int * ColDims) c
 
 //==========================================================================
 int Epetra_VbrMatrix::ExtractEntryCopy(int SizeOfValues,
-				       double * Values,
+				       double * values,
 				       int LDA,
 				       bool SumInto) const
 {
@@ -1213,9 +1213,9 @@ int Epetra_VbrMatrix::ExtractEntryCopy(int SizeOfValues,
   double* vals = CurEntries->A();
   if (LDA==CurRowDim && CurLDA==CurRowDim) // Columns of the entry are contiguous, can treat as single array
     for (int ii=0; ii<CurRowDim*CurColDim; ++ii)
-      Values[ii] = vals[ii];
+      values[ii] = vals[ii];
   else {
-    double * CurTargetCol = Values;
+    double * CurTargetCol = values;
     double * CurSourceCol = vals;
 
     for (int jj=0; jj<CurColDim; jj++) {
@@ -1235,9 +1235,9 @@ int Epetra_VbrMatrix::BeginExtractGlobalBlockRowView(int BlockRow,
 						     int * & BlockIndices) const
 {
 
-  bool IndicesAreLocal = false;
+  bool indicesAreLocal = false;
   EPETRA_CHK_ERR(BeginExtractBlockRowView(BlockRow, RowDim, NumBlockEntries,
-					  BlockIndices, IndicesAreLocal));
+					  BlockIndices, indicesAreLocal));
   return(0);
 }
 
@@ -1246,26 +1246,26 @@ int Epetra_VbrMatrix::BeginExtractMyBlockRowView(int BlockRow, int & RowDim, int
 						 int * & BlockIndices)  const
 {
 
-  bool IndicesAreLocal = true;
+  bool indicesAreLocal = true;
   EPETRA_CHK_ERR(BeginExtractBlockRowView(BlockRow, RowDim, NumBlockEntries, BlockIndices, 
-					  IndicesAreLocal));
+					  indicesAreLocal));
   return(0);
 }
 
 //==========================================================================
 int Epetra_VbrMatrix::BeginExtractBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
 					       int * & BlockIndices,
-					       bool IndicesAreLocal) const
+					       bool indicesAreLocal) const
 {
   int ierr = 0;
-  if (!IndicesAreLocal)
+  if (!indicesAreLocal)
     ierr = Graph_->ExtractGlobalRowView(BlockRow, NumBlockEntries, BlockIndices);
   else
     ierr = Graph_->ExtractMyRowView(BlockRow,  NumBlockEntries, BlockIndices);
   if (ierr) EPETRA_CHK_ERR(ierr);
 
   bool ExtractView = true;
-  ierr = SetupForExtracts(BlockRow, RowDim, NumBlockEntries, ExtractView, IndicesAreLocal);
+  ierr = SetupForExtracts(BlockRow, RowDim, NumBlockEntries, ExtractView, indicesAreLocal);
   if (ierr) EPETRA_CHK_ERR(ierr);
 
   return(0);
@@ -1287,10 +1287,10 @@ int Epetra_VbrMatrix::ExtractGlobalBlockRowView(int BlockRow, int & RowDim, int 
 {
 
   Entries = Entries_[LRID(BlockRow)]; // Pointer to Array of pointers for this row's block entries
-  bool IndicesAreLocal = false;
+  bool indicesAreLocal = false;
   EPETRA_CHK_ERR(BeginExtractBlockRowView(BlockRow, RowDim, NumBlockEntries,
 					  BlockIndices, 
-					  IndicesAreLocal));
+					  indicesAreLocal));
   return(0);
 }
 
@@ -1301,9 +1301,9 @@ int Epetra_VbrMatrix::ExtractMyBlockRowView(int BlockRow, int & RowDim, int & Nu
 {
 
   Entries = Entries_[BlockRow]; // Pointer to Array of pointers for this row's block entries
-  bool IndicesAreLocal = true;
+  bool indicesAreLocal = true;
   EPETRA_CHK_ERR(BeginExtractBlockRowView(BlockRow, RowDim, NumBlockEntries, BlockIndices, 
-					  IndicesAreLocal));
+					  indicesAreLocal));
   return(0);
 }
 
@@ -1360,18 +1360,18 @@ int Epetra_VbrMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
   return(0);
 }
 //==============================================================================
-int Epetra_VbrMatrix::BeginExtractBlockDiagonalCopy(int MaxNumBlockDiagonalEntries, 
+int Epetra_VbrMatrix::BeginExtractBlockDiagonalCopy(int maxNumBlockDiagonalEntries, 
 						    int & NumBlockDiagonalEntries, int * RowColDims ) const{
 	
   if (!Filled()) EPETRA_CHK_ERR(-1); // Can't get diagonal unless matrix is filled
   CurBlockDiag_ = 0; // Initialize pointer
   NumBlockDiagonalEntries = NumMyBlockRows_;
-  if (NumBlockDiagonalEntries>MaxNumBlockDiagonalEntries) EPETRA_CHK_ERR(-2);
+  if (NumBlockDiagonalEntries>maxNumBlockDiagonalEntries) EPETRA_CHK_ERR(-2);
   EPETRA_CHK_ERR(RowMap().ElementSizeList(RowColDims));
   return(0);
 }
 //==============================================================================
-int Epetra_VbrMatrix::ExtractBlockDiagonalEntryCopy(int SizeOfValues, double * Values, int LDA, bool SumInto ) const {
+int Epetra_VbrMatrix::ExtractBlockDiagonalEntryCopy(int SizeOfValues, double * values, int LDA, bool SumInto ) const {
 	
   if (CurBlockDiag_==-1) EPETRA_CHK_ERR(-1); // BeginExtractBlockDiagonalCopy was not called
   int i = CurBlockDiag_;
@@ -1383,8 +1383,8 @@ int Epetra_VbrMatrix::ExtractBlockDiagonalEntryCopy(int SizeOfValues, double * V
     int Col = Indices[j];
     if (BlockRow==Col) {
       int ColDim = Entries_[i][j]->N();
-      if (LDA*ColDim>SizeOfValues) EPETRA_CHK_ERR(-2); // Not enough room in Values
-      CopyMat(Entries_[i][j]->A(), Entries_[i][j]->LDA(), RowDim, ColDim, Values, LDA, SumInto);
+      if (LDA*ColDim>SizeOfValues) EPETRA_CHK_ERR(-2); // Not enough room in values
+      CopyMat(Entries_[i][j]->A(), Entries_[i][j]->LDA(), RowDim, ColDim, values, LDA, SumInto);
       break;
     }
   }
@@ -1402,7 +1402,7 @@ int Epetra_VbrMatrix::BeginExtractBlockDiagonalView(int & NumBlockDiagonalEntrie
   return(0);
 }
 //==============================================================================
-int Epetra_VbrMatrix::ExtractBlockDiagonalEntryView(double * & Values, int & LDA) const {
+int Epetra_VbrMatrix::ExtractBlockDiagonalEntryView(double * & values, int & LDA) const {
 	
   if (CurBlockDiag_==-1) EPETRA_CHK_ERR(-1); // BeginExtractBlockDiagonalCopy was not called
   int i = CurBlockDiag_;
@@ -1412,7 +1412,7 @@ int Epetra_VbrMatrix::ExtractBlockDiagonalEntryView(double * & Values, int & LDA
   for (int j=0; j<NumEntries; j++) {
     int Col = Indices[j];
     if (BlockRow==Col) {
-      Values = Entries_[i][j]->A();
+      values = Entries_[i][j]->A();
       LDA = Entries_[i][j]->LDA();
       break;
     }
@@ -1478,7 +1478,7 @@ int Epetra_VbrMatrix::NumMyRowEntries(int MyRow, int & NumEntries) const {
 int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow,
 				       int Length,
 				       int & NumEntries,
-				       double *Values,
+				       double *values,
 				       int * Indices) const
 {
   if (!Filled()) EPETRA_CHK_ERR(-1); // Can't extract row unless matrix is filled
@@ -1509,7 +1509,7 @@ int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow,
     double * A = ValBlocks[i]->A()+BlockOffset; // Point to first element in row
     int Index = ColFirstPointInElementList[BlockIndices[i]];
     for (int j=0; j < ColDim; j++) {
-      *Values++ = *A;
+      *values++ = *A;
       A += LDA;
       *Indices++ = Index++;
     }
@@ -2871,14 +2871,14 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
   
   // Do copy first
   if (NumSameIDs>0) {
-    int MaxNumBlockEntries = A.MaxNumBlockEntries();
-    BlockIndices = new int[MaxNumBlockEntries];  // Need some temporary space
+    int maxNumBlockEntries = A.MaxNumBlockEntries();
+    BlockIndices = new int[maxNumBlockEntries];  // Need some temporary space
  
 
     for (i=0; i<NumSameIDs; i++) {
       BlockRow = GRID(i);
       EPETRA_CHK_ERR( A.ExtractGlobalBlockRowPointers(BlockRow,
-                                                      MaxNumBlockEntries,
+                                                      maxNumBlockEntries,
 						      RowDim, NumBlockEntries, 
 						      BlockIndices, Entries)); // Set pointers
       // Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
@@ -2900,13 +2900,13 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
 
   // Do local permutation next
   if (NumPermuteIDs>0) {
-    int MaxNumBlockEntries = A.MaxNumBlockEntries();
-    BlockIndices = new int[MaxNumBlockEntries];  // Need some temporary space
+    int maxNumBlockEntries = A.MaxNumBlockEntries();
+    BlockIndices = new int[maxNumBlockEntries];  // Need some temporary space
       
     for (i=0; i<NumPermuteIDs; i++) {
       FromBlockRow = A.GRID(PermuteFromLIDs[i]);
       ToBlockRow = GRID(PermuteToLIDs[i]);
-      EPETRA_CHK_ERR(A.ExtractGlobalBlockRowPointers(FromBlockRow, MaxNumBlockEntries, RowDim, NumBlockEntries, 
+      EPETRA_CHK_ERR(A.ExtractGlobalBlockRowPointers(FromBlockRow, maxNumBlockEntries, RowDim, NumBlockEntries, 
 					     BlockIndices, Entries)); // Set pointers
       // Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
       if (StaticGraph() || IndicesAreLocal()) {
@@ -2944,11 +2944,11 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
 
   double * DoubleExports = 0;
-  int GlobalMaxNumNonzeros = A.GlobalMaxNumNonzeros();
-  int GlobalMaxNumBlockEntries = A.GlobalMaxNumBlockEntries();
-  // Will have GlobalMaxNumEntries doubles, GlobalMaxNumEntries +2 ints, pack them interleaved
-  int DoublePacketSize = GlobalMaxNumNonzeros +  
-    (((2*GlobalMaxNumBlockEntries+3)+(int)sizeof(int)-1)*(int)sizeof(int))/(int)sizeof(double);
+  int globalMaxNumNonzeros = A.GlobalMaxNumNonzeros();
+  int globalMaxNumBlockEntries = A.GlobalMaxNumBlockEntries();
+  // Will have globalMaxNumEntries doubles, globalMaxNumEntries +2 ints, pack them interleaved
+  int DoublePacketSize = globalMaxNumNonzeros +  
+    (((2*globalMaxNumBlockEntries+3)+(int)sizeof(int)-1)*(int)sizeof(int))/(int)sizeof(double);
   SizeOfPacket = DoublePacketSize * (int)sizeof(double); 
 
   if (DoublePacketSize*NumExportIDs>LenExports_) {
@@ -2975,20 +2975,20 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
   // next int:  RowDim of Block Row
   // next int: NumBlockEntries, Number of indices in row.
   // next NumBlockEntries: The actual indices for the row.
-  // Any remaining space (of length GlobalMaxNumNonzeros - NumBlockEntries ints) will be wasted but we need fixed
+  // Any remaining space (of length globalMaxNumNonzeros - NumBlockEntries ints) will be wasted but we need fixed
   //   sized segments for current communication routines.
 
   // Each segment of Exports will be filled with values.
 
   valptr = (double *) Exports;
-  dintptr = valptr + GlobalMaxNumNonzeros;
+  dintptr = valptr + globalMaxNumNonzeros;
   intptr = (int *) dintptr;
   bool NoSumInto = false;
   for (i=0; i<NumExportIDs; i++) {
     FromBlockRow = A.GRID(ExportLIDs[i]);
     BlockIndices = intptr + 3;
-    ColDims = BlockIndices + GlobalMaxNumBlockEntries;
-    EPETRA_CHK_ERR(A.BeginExtractGlobalBlockRowCopy(FromBlockRow, GlobalMaxNumBlockEntries, RowDim,
+    ColDims = BlockIndices + globalMaxNumBlockEntries;
+    EPETRA_CHK_ERR(A.BeginExtractGlobalBlockRowCopy(FromBlockRow, globalMaxNumBlockEntries, RowDim,
 					    NumBlockEntries, BlockIndices, ColDims));
     // Now extract each block entry into send buffer
     Entries = valptr;
@@ -3002,7 +3002,7 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
     intptr[1] = RowDim;
     intptr[2] = NumBlockEntries;
     valptr += DoublePacketSize; // Point to next segment
-    dintptr = valptr + GlobalMaxNumNonzeros;
+    dintptr = valptr + globalMaxNumNonzeros;
     intptr = (int *) dintptr;
   }
     
@@ -3035,17 +3035,17 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   int NumBlockEntries;
   int * BlockIndices;
   int RowDim, * ColDims;
-  double * Values;
+  double * values;
   int ToBlockRow;
   int i, j;
   
   double * valptr, *dintptr;
   int * intptr;
-  int GlobalMaxNumNonzeros = A.GlobalMaxNumNonzeros();
-  int GlobalMaxNumBlockEntries = A.GlobalMaxNumBlockEntries();
-  // Will have GlobalMaxNumEntries doubles, GlobalMaxNumEntries +2 ints, pack them interleaved
-  int DoublePacketSize = GlobalMaxNumNonzeros +  
-    (((2*GlobalMaxNumBlockEntries+3)+(int)sizeof(int)-1)*(int)sizeof(int))/(int)sizeof(double);
+  int globalMaxNumNonzeros = A.GlobalMaxNumNonzeros();
+  int globalMaxNumBlockEntries = A.GlobalMaxNumBlockEntries();
+  // Will have globalMaxNumEntries doubles, globalMaxNumEntries +2 ints, pack them interleaved
+  int DoublePacketSize = globalMaxNumNonzeros +  
+    (((2*globalMaxNumBlockEntries+3)+(int)sizeof(int)-1)*(int)sizeof(int))/(int)sizeof(double);
   // Unpack it...
 
 
@@ -3054,11 +3054,11 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   // next int:  NumBlockEntries, Number of indices in row.
   // next int:  RowDim of Block Row
   // next NumBlockEntries: The actual indices for the row.
-  // Any remaining space (of length GlobalMaxNumNonzeros - NumBlockEntries ints) will be 
+  // Any remaining space (of length globalMaxNumNonzeros - NumBlockEntries ints) will be 
   //  wasted but we need fixed sized segments for current communication routines.
 
   valptr = (double *) Imports;
-  dintptr = valptr + GlobalMaxNumNonzeros;
+  dintptr = valptr + globalMaxNumNonzeros;
   intptr = (int *) dintptr;
     
   for (i=0; i<NumImportIDs; i++) {
@@ -3068,7 +3068,7 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     assert((intptr[1])==RowDim); // Sanity check
     NumBlockEntries = intptr[2];
     BlockIndices = intptr + 3; 
-    ColDims = BlockIndices + GlobalMaxNumBlockEntries;
+    ColDims = BlockIndices + globalMaxNumBlockEntries;
     if (CombineMode==Add) {
       if (StaticGraph() || IndicesAreLocal()) {
 	// Replace any current values
@@ -3090,16 +3090,16 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       }
     }
     // Now extract each block entry into send buffer
-    Values = valptr;
+    values = valptr;
     for (j=0; j<NumBlockEntries; j++) {
       int LDA = RowDim;
       int ColDim = ColDims[j];
-      SubmitBlockEntry(Values, LDA, RowDim, ColDim);
-      Values += (LDA*ColDim);
+      SubmitBlockEntry(values, LDA, RowDim, ColDim);
+      values += (LDA*ColDim);
     }
     EndSubmitEntries(); // Done with this block row
     valptr += DoublePacketSize; // Point to next segment
-    dintptr = valptr + GlobalMaxNumNonzeros;
+    dintptr = valptr + globalMaxNumNonzeros;
     intptr = (int *) dintptr;
   }
   
@@ -3313,7 +3313,7 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
 	os.width(10);
 	os <<  "   Block Col Index \n";
 	os.width(20);
-	os <<  "   Values     ";
+	os <<  "   values     ";
 	os << endl;
       }
       for (i=0; i<NumBlockRows1; i++) {
@@ -3338,7 +3338,7 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
 
 	  Epetra_SerialDenseMatrix entry(View, Entries1[j]->A(), Entries1[j]->LDA(),
 					 RowDim1, Entries1[j]->N());
-	  os << entry; os << "    ";
+          os << *(Entries1[j]); os << "    ";
 	  os << endl;
 	}
       }

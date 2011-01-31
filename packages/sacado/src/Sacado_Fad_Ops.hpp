@@ -78,6 +78,8 @@ namespace Sacado {							\
       bool hasFastAccess() const { return expr.hasFastAccess(); }	\
 									\
       bool isPassive() const { return expr.isPassive();}		\
+									\
+      bool updateValue() const { return expr.updateValue(); }		\
       									\
       value_type val() const {						\
 	return VALUE;							\
@@ -258,6 +260,10 @@ namespace Sacado {							\
 	return expr1.isPassive() && expr2.isPassive();			\
       }									\
 									\
+      bool updateValue() const {					\
+	return expr1.updateValue() && expr2.updateValue();		\
+      }									\
+									\
       const value_type val() const {					\
 	return VALUE;							\
       }									\
@@ -301,6 +307,8 @@ namespace Sacado {							\
 	return expr1.isPassive();					\
       }									\
 									\
+      bool updateValue() const { return expr1.updateValue(); }		\
+									\
       const value_type val() const {					\
 	return VAL_CONST_DX_2;						\
       }									\
@@ -342,6 +350,8 @@ namespace Sacado {							\
       bool isPassive() const {						\
 	return expr2.isPassive();					\
       }									\
+									\
+      bool updateValue() const { return expr2.updateValue(); }		\
 									\
       const value_type val() const {					\
 	return VAL_CONST_DX_1;						\
@@ -426,18 +436,18 @@ FAD_BINARYOP_MACRO(operator-,
 		   expr1.dx(i),
 		   -expr2.fastAccessDx(i),
 		   expr1.fastAccessDx(i))
-FAD_BINARYOP_MACRO(operator*,
-		   MultiplicationOp, 
-		   expr1.val() * expr2.val(),
-		   expr1.val()*expr2.dx(i) + expr1.dx(i)*expr2.val(),
-		   expr1.val()*expr2.fastAccessDx(i) + 
-		     expr1.fastAccessDx(i)*expr2.val(),
-		   c * expr2.val(),
-		   expr1.val() * c,
-		   c*expr2.dx(i),
-		   expr1.dx(i)*c,
-		   c*expr2.fastAccessDx(i),
-		   expr1.fastAccessDx(i)*c)
+// FAD_BINARYOP_MACRO(operator*,
+// 		   MultiplicationOp, 
+// 		   expr1.val() * expr2.val(),
+// 		   expr1.val()*expr2.dx(i) + expr1.dx(i)*expr2.val(),
+// 		   expr1.val()*expr2.fastAccessDx(i) + 
+// 		     expr1.fastAccessDx(i)*expr2.val(),
+// 		   c * expr2.val(),
+// 		   expr1.val() * c,
+// 		   c*expr2.dx(i),
+// 		   expr1.dx(i)*c,
+// 		   c*expr2.fastAccessDx(i),
+// 		   expr1.fastAccessDx(i)*c)
 FAD_BINARYOP_MACRO(operator/,
 		   DivisionOp, 
 		   expr1.val() / expr2.val(),
@@ -468,17 +478,14 @@ FAD_BINARYOP_MACRO(atan2,
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
 		   std::pow(expr1.val(), expr2.val()),
-		   (expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/
-		    expr1.val())*std::pow(expr1.val(),expr2.val()),
-		   (expr2.fastAccessDx(i)*std::log(expr1.val())+
-		    expr2.val()*expr1.fastAccessDx(i)/
-		    expr1.val())*std::pow(expr1.val(),expr2.val()),
+		   expr1.val() == value_type(0) ? value_type(0) : value_type((expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
+		   expr1.val() == value_type(0) ? value_type(0.0) : value_type((expr2.fastAccessDx(i)*std::log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
 		   std::pow(c, expr2.val()),
 		   std::pow(expr1.val(), c),
-		   expr2.dx(i)*std::log(c)*std::pow(c,expr2.val()),
-		   c*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),c),
-		   expr2.fastAccessDx(i)*std::log(c)*std::pow(c,expr2.val()),
-		   c*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),c))
+		   c == value_type(0) ? value_type(0) : value_type(expr2.dx(i)*std::log(c)*std::pow(c,expr2.val())),
+		   expr1.val() == value_type(0) ? value_type(0.0) : value_type(c*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),c)),
+		   c == value_type(0) ? value_type(0) : value_type(expr2.fastAccessDx(i)*std::log(c)*std::pow(c,expr2.val())),
+		   expr1.val() == value_type(0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),c)))
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    std::max(expr1.val(), expr2.val()),
@@ -505,6 +512,199 @@ FAD_BINARYOP_MACRO(min,
                    expr1.val() <= c ? expr1.fastAccessDx(i) : value_type(0))
 
 #undef FAD_BINARYOP_MACRO
+
+namespace Sacado {							
+  namespace Fad {							
+									
+    template <typename ExprT1, typename ExprT2>				
+    class MultiplicationOp {};							
+									
+    template <typename T1, typename T2>					
+    class Expr< MultiplicationOp< Expr<T1>, Expr<T2> > > {				
+									
+    public:								
+									
+      typedef Expr<T1> ExprT1;						
+      typedef Expr<T2> ExprT2;						
+      typedef typename ExprT1::value_type value_type_1;			
+      typedef typename ExprT2::value_type value_type_2;			
+      typedef typename Sacado::Promote<value_type_1,			
+				       value_type_2>::type value_type;  
+									
+      Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		
+	expr1(expr1_), expr2(expr2_) {}					
+									
+      int size() const {						
+	int sz1 = expr1.size(), sz2 = expr2.size();			
+	return sz1 > sz2 ? sz1 : sz2;					
+      }									
+									
+      bool hasFastAccess() const {					
+	return expr1.hasFastAccess() && expr2.hasFastAccess();		
+      }									
+									
+      bool isPassive() const {						
+	return expr1.isPassive() && expr2.isPassive();			
+      }
+
+      bool updateValue() const { 
+	return expr1.updateValue() && expr2.updateValue(); 
+      }
+
+      const value_type val() const {					
+	return expr1.val()*expr2.val();
+      }									
+									
+      const value_type dx(int i) const {
+	if (expr1.size() > 0 && expr2.size() > 0)
+	  return expr1.val()*expr2.dx(i) + expr1.dx(i)*expr2.val();
+	else if (expr1.size() > 0)
+	  return expr1.dx(i)*expr2.val();
+	else
+	  return expr1.val()*expr2.dx(i);
+      }									
+									
+      const value_type fastAccessDx(int i) const {			
+	return expr1.val()*expr2.fastAccessDx(i) + 
+	  expr1.fastAccessDx(i)*expr2.val();
+      }									
+      									
+    protected:								
+									
+      const ExprT1& expr1;						
+      const ExprT2& expr2;						
+									
+    };									
+									
+    template <typename T1>						
+    class Expr< MultiplicationOp< Expr<T1>, typename Expr<T1>::value_type> > {	
+									
+    public:								
+									
+      typedef Expr<T1> ExprT1;						
+      typedef typename ExprT1::value_type value_type;			
+      typedef typename ExprT1::value_type ConstT;			
+									
+      Expr(const ExprT1& expr1_, const ConstT& c_) :			
+	expr1(expr1_), c(c_) {}						
+									
+      int size() const {						
+	return expr1.size();						
+      }									
+									
+      bool hasFastAccess() const {					
+	return expr1.hasFastAccess();					
+      }									
+									
+      bool isPassive() const {						
+	return expr1.isPassive();					
+      }
+
+      bool updateValue() const { return expr1.updateValue(); }
+									
+      const value_type val() const {					
+	return expr1.val()*c;						
+      }									
+									
+      const value_type dx(int i) const {				
+	return expr1.dx(i)*c;						
+      }									
+									
+      const value_type fastAccessDx(int i) const {			
+	return expr1.fastAccessDx(i)*c;					
+      }									
+									
+    protected:								
+									
+      const ExprT1& expr1;						
+      const ConstT& c;							
+    };									
+									
+    template <typename T2>						
+    class Expr< MultiplicationOp< typename Expr<T2>::value_type, Expr<T2> > > {	
+									
+    public:								
+									
+      typedef Expr<T2> ExprT2;						
+      typedef typename ExprT2::value_type value_type;			
+      typedef typename ExprT2::value_type ConstT;			
+									
+      Expr(const ConstT& c_, const ExprT2& expr2_) :			
+	c(c_), expr2(expr2_) {}						
+									
+      int size() const {						
+	return expr2.size();						
+      }									
+									
+      bool hasFastAccess() const {					
+	return expr2.hasFastAccess();					
+      }									
+									
+      bool isPassive() const {						
+	return expr2.isPassive();					
+      }
+
+      bool updateValue() const { return expr2.updateValue(); }
+									
+      const value_type val() const {					
+	return c*expr2.val();						
+      }									
+									
+      const value_type dx(int i) const {				
+	return c*expr2.dx(i);						
+      }									
+									
+      const value_type fastAccessDx(int i) const {			
+	return c*expr2.fastAccessDx(i);					
+      }									
+      									
+    protected:								
+									
+      const ConstT& c;							
+      const ExprT2& expr2;						
+    };									
+									
+    template <typename T1, typename T2>					
+    inline Expr< MultiplicationOp< Expr<T1>, Expr<T2> > >				
+    operator* (const Expr<T1>& expr1, const Expr<T2>& expr2)		
+    {									
+      typedef MultiplicationOp< Expr<T1>, Expr<T2> > expr_t;				
+    									
+      return Expr<expr_t>(expr1, expr2);				
+    }									
+									
+    template <typename T>						
+    inline Expr< MultiplicationOp< Expr<T>, Expr<T> > >				
+    operator* (const Expr<T>& expr1, const Expr<T>& expr2)			
+    {									
+      typedef MultiplicationOp< Expr<T>, Expr<T> > expr_t;				
+    									
+      return Expr<expr_t>(expr1, expr2);				
+    }									
+									
+    template <typename T>						
+    inline Expr< MultiplicationOp< typename Expr<T>::value_type, Expr<T> > >		
+    operator* (const typename Expr<T>::value_type& c,			
+	    const Expr<T>& expr)					
+    {									
+      typedef typename Expr<T>::value_type ConstT;			
+      typedef MultiplicationOp< ConstT, Expr<T> > expr_t;				
+									
+      return Expr<expr_t>(c, expr);					
+    }									
+									
+    template <typename T>						
+    inline Expr< MultiplicationOp< Expr<T>, typename Expr<T>::value_type > >		
+    operator* (const Expr<T>& expr,					
+	    const typename Expr<T>::value_type& c)			
+    {									
+      typedef typename Expr<T>::value_type ConstT;			
+      typedef MultiplicationOp< Expr<T>, ConstT > expr_t;				
+									
+      return Expr<expr_t>(expr, c);					
+    }									
+  }									
+}
 
 //-------------------------- Relational Operators -----------------------
 

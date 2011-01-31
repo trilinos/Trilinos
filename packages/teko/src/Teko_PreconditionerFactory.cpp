@@ -65,6 +65,7 @@
 
 #ifdef Teko_ENABLE_DEV_MODE
 #include "Teko_SmootherPreconditionerFactory.hpp"
+#include "Teko_MLPreconditionerFactory.hpp"
 #endif
 
 
@@ -311,14 +312,14 @@ void PreconditionerFactory::initializePrecFactoryBuilder()
    clone = rcp(new AutoClone<DiagonallyScaledPreconditionerFactory>());
    precFactoryBuilder_.addClone("Diagonal Scaling",clone);
 
-#ifdef Teko_ENABLE_DEV_MODE
-   clone = rcp(new AutoClone<SmootherPreconditionerFactory>());
-   precFactoryBuilder_.addClone("Smoother",clone);
-#endif
-
 #ifdef Teko_ENABLE_Isorropia
    clone = rcp(new AutoClone<ProbingPreconditionerFactory>());
    precFactoryBuilder_.addClone("Probing Preconditioner",clone);
+#endif
+
+#ifdef Teko_ENABLE_DEV_MODE
+   clone = rcp(new AutoClone<MLPreconditionerFactory>());
+   precFactoryBuilder_.addClone("Blocked ML Preconditioner",clone);
 #endif
 }
 

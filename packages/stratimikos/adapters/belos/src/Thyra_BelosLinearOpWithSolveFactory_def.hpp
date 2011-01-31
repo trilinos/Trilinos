@@ -11,11 +11,14 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosGCRODRSolMgr.hpp"
+#include "BelosMinresSolMgr.hpp"
 #include "BelosThyraAdapter.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_StandardValidatorXMLConverters.hpp"
 
 
 namespace Thyra {
@@ -40,8 +43,9 @@ const std::string BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockCG_name = "P
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GCRODR_name = "GCRODR";
 template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::MINRES_name = "MINRES";
+template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name = "Convergence Test Frequency";
-
 
 // Constructors/initializers/accessors
 
@@ -240,7 +244,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(
   paramList->validateParametersAndSetDefaults(*this->getValidParameters(), 1);
   paramList_ = paramList;
   solverType_ =
-    Teuchos::getIntegralValue<ESolverType>(*paramList_, SolverType_name);
+    Teuchos::getIntegralValue<EBelosSolverType>(*paramList_, SolverType_name);
   convergenceTestFrequency_ =
     Teuchos::getParameter<int>(*paramList_, ConvergenceTestFrequency_name);
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
@@ -306,12 +310,19 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
   using Teuchos::as;
   using Teuchos::tuple;
   using Teuchos::setStringToIntegralParameter;
+Teuchos::ValidatorXMLConverterDB::addConverter(
+  Teuchos::DummyObjectGetter<
+    Teuchos::StringToIntegralParameterEntryValidator<EBelosSolverType> 
+  >::getDummyObject(),
+  Teuchos::DummyObjectGetter<Teuchos::StringToIntegralValidatorXMLConverter<
+    EBelosSolverType> >::getDummyObject());
+
   typedef MultiVectorBase<Scalar> MV_t;
   typedef LinearOpBase<Scalar> LO_t;
   static RCP<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("BelosLinearOpWithSolveFactory"));
-    setStringToIntegralParameter<ESolverType>(
+    setStringToIntegralParameter<EBelosSolverType>(
       SolverType_name, SolverType_default,
       "Type of linear solver algorithm to use.",
       tuple<std::string>(
@@ -319,7 +330,8 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
         "Pseudo Block GMRES",
         "Block CG",
         "Pseudo Block CG",
-        "GCRODR"
+        "GCRODR",
+        "MINRES"
         ),
       tuple<std::string>(
         "Performs block and single single-RHS GMRES as well as\n"
@@ -337,19 +349,22 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
         "of global communication.  Individual linear systems are deflated out as\n"
         "they are solved.",
 
-        "GMRES solver that performs subspace recycling between RHS and linear systems."
+        "GMRES solver that performs subspace recycling between RHS and linear systems.",
+
+        "MINRES solver that performs single-RHS MINRES on multiple RHSs sequentially."
         ),
-      tuple<ESolverType>(
+      tuple<EBelosSolverType>(
         SOLVER_TYPE_BLOCK_GMRES,
         SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
         SOLVER_TYPE_BLOCK_CG,
         SOLVER_TYPE_PSEUDO_BLOCK_CG,
-        SOLVER_TYPE_GCRODR
+        SOLVER_TYPE_GCRODR,
+        SOLVER_TYPE_MINRES
         ),
       &*validParamList
       );
     validParamList->set(ConvergenceTestFrequency_name, as<int>(1),
-      "Number of linear solver iterations to skip betwee applying"
+      "Number of linear solver iterations to skip between applying"
       " user-defined convergence test.");
     Teuchos::ParameterList
       &solverTypesSL = validParamList->sublist(SolverTypes_name);
@@ -380,6 +395,12 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
     {
       Belos::GCRODRSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(GCRODR_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Belos::MinresSolMgr<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(MINRES_name).setParameters(
         *mgr.getValidParameters()
         );
     }
@@ -422,8 +443,10 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOpImpl(...) ...\n";
 
-  typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
-  VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
+  // These lines are changing the verbosity of the preconditioner, which has its own verbose object list,
+  // so I am commenting these out, as it is not the job of the linear solver to dictate preconditioner verbosity.
+  //typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
+  //VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
   
   TEST_FOR_EXCEPT(Op==NULL);
   TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
@@ -658,6 +681,26 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       }
       break;
     }
+    case SOLVER_TYPE_MINRES:
+    {
+      // Set the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &minresPL = solverTypesPL.sublist(MINRES_name);
+        solverPL = Teuchos::rcp( &minresPL, false );
+      }
+      // Create the solver
+      if (oldIterSolver != Teuchos::null) {
+        iterativeSolver = oldIterSolver;
+        iterativeSolver->setProblem( lp );
+        iterativeSolver->setParameters( solverPL );
+      }
+      else {
+        iterativeSolver = rcp(new Belos::MinresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+      }
+      break;
+    }
+
     default:
     {
       TEST_FOR_EXCEPT(true);

@@ -71,29 +71,60 @@ REH set_report_handler(REH reh);
 void report(const char *message, int type);
 
 /**
- * @brief Function <b>source_relative_path</b> strips everything through "/src/",
- * "/include/" or "/App_" so that error message output doesn't mention names.
+ * @brief Function <b>source_relative_path</b> strips everything through
+ * "/src/", "/include/", "/App_", or "/stk_" so that error message output
+ * doesn't mention names.
  *
- * @param s		a <b>std::string</b> const reference to the original path.
+ * @param path  a <b>std::string</b> const reference to the original path.
  *
- * @return		a <b>std::string</b> value of the stripped path.
+ * @return      a <b>std::string</b> value of the stripped path.
  */
 std::string source_relative_path(const std::string &path);
 
 /**
- * A function used to create and throw nice-looking exceptions (used by
- * the Throw* macros).
+ * A function used to create and throw nice-looking exceptions for assertion
+ * failures.
  */
 void default_assert_handler(const char* expr,
                             const std::string& location,
                             std::ostringstream& message);
 
 /**
+ * A function used to create and throw nice-looking exceptions for runtime
+ * errors.
+ */
+void default_error_handler(const char* expr,
+                           const std::string& location,
+                           std::ostringstream& message);
+
+/**
+ * A function used to create and throw nice-looking exceptions for invalid
+ * argument errors.
+ */
+void default_invalid_arg_handler(const char* expr,
+                                 const std::string& location,
+                                 std::ostringstream& message);
+
+/**
  * Change the error handler for ThrowAssert and ThrowRequire.
  *
  * @return The previous error handler (useful if you want to restore it later)
  */
-ErrorHandler set_assert_handler(ErrorHandler error_handler);
+ErrorHandler set_assert_handler(ErrorHandler handler);
+
+/**
+ * Change the error handler for ThrowError.
+ *
+ * @return The previous error handler (useful if you want to restore it later)
+ */
+ErrorHandler set_error_handler(ErrorHandler handler);
+
+/**
+ * Change the error handler for ThrowInvalidArg.
+ *
+ * @return The previous error handler (useful if you want to restore it later)
+ */
+ErrorHandler set_invalid_arg_handler(ErrorHandler handler);
 
 /**
  * Makes the call to the current assert handler
@@ -101,6 +132,21 @@ ErrorHandler set_assert_handler(ErrorHandler error_handler);
 void handle_assert(const char* expr,
                    const std::string& location,
                    std::ostringstream& message);
+
+/**
+ * Makes the call to the current error handler
+ */
+void handle_error(const char* expr,
+                   const std::string& location,
+                   std::ostringstream& message);
+
+/**
+ * Makes the call to the current invalid_arg handler
+ */
+void handle_invalid_arg(const char* expr,
+                        const std::string& location,
+                        std::ostringstream& message);
+
 
 ///
 /// @}
@@ -145,18 +191,83 @@ void handle_assert(const char* expr,
 //   ThrowRequire(foo);
 // The compiler does not know whether the else statement that the macro inserts
 // applies to the "if (something) " or the "if (expr)".
-#define ThrowRequireMsg(expr, message)                                  \
+#define ThrowGenericCond(expr, message, handler)                        \
   do {                                                                  \
     if ( !(expr) ) {                                                    \
       std::ostringstream stk_util_internal_throw_require_oss;           \
       stk_util_internal_throw_require_oss << message;                   \
-      stk::handle_assert( #expr,                                        \
-                          STR_TRACE,                                    \
-                          stk_util_internal_throw_require_oss );        \
+      stk::handler( #expr,                                              \
+                    STR_TRACE,                                          \
+                    stk_util_internal_throw_require_oss );              \
     }                                                                   \
   } while (false)
 
-#define ThrowRequire(expr) ThrowRequireMsg(expr, "")
+// This generic macro is for unconditional throws. We pass "" as the expr
+// string, the handler should be smart enough to realize that this means there
+// was not expression checked, AKA, this throw was unconditional.
+#define ThrowGeneric(message, handler)                                  \
+  do {                                                                  \
+    std::ostringstream stk_util_internal_throw_require_oss;             \
+    stk_util_internal_throw_require_oss << message;                     \
+    stk::handler( "",                                                   \
+                  STR_TRACE,                                            \
+                  stk_util_internal_throw_require_oss );                \
+} while (false)
+
+// The macros below define the exceptions that we want to support within
+// STK. The intent is that STK developers will never call throw XXX
+// directly. This will give us full control over the exceptions being generated
+// by STK and how they are handled. These macros are also designed to make
+// it as easy as possible for developers to throw exceptions that have good
+// error messages and to reduce the volume of coded needed for error handling.
+//
+// We currently support the following exceptions in STK:
+//   logic_error <-> ThrowAssert, ThrowAsserMsg, ThrowRequire, ThrowRequireMsg
+//   runtime_error <-> ThrowErrorMsgIf, ThrowErrorMsg
+//   invalid_argument <-> ThrowInvalidArgMsgIf, ThrowInvalidArgIf
+//
+// Please note the logic of the errors is the opposite of the asserts. The
+// asserts will throw exceptions if the given expression is false; for the
+// error macros, exceptions will be thrown if the given expression is true.
+//
+// USE:
+//     All of the following have versions that do not require a message, but
+//     we strongly encourage developers to use the versions that take the
+//     message.
+//
+//   ASSERTS:
+//     ThrowAssertMsg(expr, message);
+//       If NDEBUG is not defined, throw a logic error if expr evaluates to
+//       false, adding message to the error message . Use this for expensive
+//       logic-mistake checks that could impact performance.
+//
+//     ThrowRequireMsg(code, message);
+//       Always throw a logic error if expr evaluates to false, adding message
+//       to error message. Use this for inexpensive logic-mistake checks
+//       that do not impact performance.
+//
+//   ERRORS:
+//     ThrowErrorMsgIf(expr, message);
+//       Throw a runtime error if expr evaluates to true, adding message to
+//       the error message. Use this to generate errors dealing with system
+//       errors or other errors that do not involve invalid parameters being
+//       passed to functions.
+//
+//     ThrowInvalidArgMsgIf(expr, message);
+//       Throw an invalid_argument error if expr evaluates to true, adding
+//       message to the error message. Use this to generate errors dealing with
+//       users passing invalid arguments to functions in the API.
+//
+// EXAMPLES:
+//
+// 1) Require that i equals j, demonstate use of put-tos in the message arg
+//   ThrowRequireMsg(i == j, "i(" << i << ") != j(" << j << ")");
+//
+// 2) Check method argument foo is not NULL
+//   ThrowInvalidArgMsgIf(foo != NULL, "Arg foo is NULL");
+
+#define ThrowRequireMsg(expr,message) ThrowGenericCond(expr, message, handle_assert)
+#define ThrowRequire(expr)            ThrowRequireMsg(expr, "")
 
 #ifdef NDEBUG
 #  define ThrowAssert(expr)            ((void) (0))
@@ -165,6 +276,13 @@ void handle_assert(const char* expr,
 #  define ThrowAssert(expr)            ThrowRequire(expr)
 #  define ThrowAssertMsg(expr,message) ThrowRequireMsg(expr,message)
 #endif
+
+#define ThrowErrorMsgIf(expr, message) ThrowGenericCond( !(expr), message, handle_error)
+#define ThrowErrorIf(expr)             ThrowErrorMsgIf(expr, "")
+#define ThrowErrorMsg(message)         ThrowGeneric( message, handle_error )
+
+#define ThrowInvalidArgMsgIf(expr, message) ThrowGenericCond( !(expr), message, handle_invalid_arg)
+#define ThrowInvalidArgIf(expr)             ThrowInvalidArgMsgIf(expr, "")
 
 ///
 /// @}

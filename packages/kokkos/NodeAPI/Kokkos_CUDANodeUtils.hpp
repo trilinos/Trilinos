@@ -4,6 +4,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+#include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_CUDA_util_inline_runtime.h"
 #define KOKKOS_NO_INCLUDE_INSTANTIATIONS
 #include "Kokkos_CUDANodeMemoryModel.hpp"

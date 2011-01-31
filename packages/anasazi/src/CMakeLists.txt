@@ -152,6 +152,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   #
   # Build the TSQR-based OrthoManager and MatOrthoManager classes.
   #
+  APPEND_SET(HEADERS AnasaziTsqrOrthoManagerImpl.hpp)
   APPEND_SET(HEADERS AnasaziTsqrOrthoManager.hpp)
 ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
 

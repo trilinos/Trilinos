@@ -35,6 +35,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_IOSS
   "Enable support for Ioss in ${PACKAGE_NAME}."
   ON )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_FEM_IO
+  HAVE_TRIOS_FEM_IO
+  "Enable support for the fem_io (helper/interface library for connecting Ioss to application) in ${PACKAGE_NAME}."
+  OFF )
+
 #
 # C) Add the libraries, tests, and examples
 #
@@ -49,6 +54,10 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_IOSS)
 ADD_SUBDIRECTORY(ioss)
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_FEM_IO)
+ADD_SUBDIRECTORY(fem_io)
 ENDIF()
 
 #

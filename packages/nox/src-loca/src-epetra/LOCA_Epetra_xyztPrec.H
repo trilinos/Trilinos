@@ -172,7 +172,7 @@ namespace LOCA {
       //! Compute residual \f$F\f$.
       virtual bool computeF(const Epetra_Vector&, 
 			    Epetra_Vector&, 
-			    NOX::Epetra::Interface::Required::FillType);
+			    const NOX::Epetra::Interface::Required::FillType);
       
       //! Compute Jacobian \f$J\f$.
       virtual bool computeJacobian(const Epetra_Vector&, Epetra_Operator&);

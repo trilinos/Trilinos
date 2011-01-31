@@ -21,8 +21,7 @@
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -40,7 +39,7 @@ class RingFixture {
   const int             m_spatial_dimension;
   stk::mesh::MetaData   m_meta_data;
   stk::mesh::BulkData   m_bulk_data;
-  stk::mesh::TopologicalMetaData   m_top_data;
+  stk::mesh::DefaultFEM m_fem;
   stk::mesh::PartVector m_edge_parts ;
   stk::mesh::Part     & m_edge_part_extra ;
   const size_t          m_num_edge_per_proc ;

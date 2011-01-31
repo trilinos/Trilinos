@@ -34,6 +34,9 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Stokhos_SGPreconditioner.hpp"
+#include "EpetraExt_MultiComm.h"
+#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_EpetraSparse3Tensor.hpp"
 #include "Epetra_Map.h"
 #include "Stokhos_PreconditionerFactory.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -50,11 +53,14 @@ namespace Stokhos {
   public:
 
     //! Constructor 
-  ApproxGaussSeidelPreconditioner(
-    const Teuchos::RCP<const Epetra_Map>& base_map,
-    const Teuchos::RCP<const Epetra_Map>& sg_map,
-    const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory,
-    const Teuchos::RCP<Teuchos::ParameterList>& params);
+    ApproxGaussSeidelPreconditioner(
+      const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+      const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk,
+      const Teuchos::RCP<const Epetra_Map>& base_map,
+      const Teuchos::RCP<const Epetra_Map>& sg_map,
+      const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory,
+      const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
     virtual ~ApproxGaussSeidelPreconditioner();
@@ -136,6 +142,15 @@ namespace Stokhos {
     
     //! Label for operator
     std::string label;
+
+    //! Stores SG parallel communicator
+    Teuchos::RCP<const EpetraExt::MultiComm> sg_comm;
+
+    //! Stochastic Galerking basis
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
+
+    //! Stores Epetra Cijk tensor
+    Teuchos::RCP<const Stokhos::EpetraSparse3Tensor> epetraCijk;
     
     //! Stores base map
     Teuchos::RCP<const Epetra_Map> base_map;
@@ -163,6 +178,9 @@ namespace Stokhos {
 
     //! Pointer to triple product
     Teuchos::RCP<const Cijk_type > Cijk;
+
+    //! Flag indicating whether operator be scaled with <\psi_i^2>
+    bool scale_op;
 
     //! Use symmetric Gauss-Seidel
     bool symmetric;

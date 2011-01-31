@@ -15,6 +15,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_mesh/baseImpl/BucketImpl.hpp>
 
 #include <stk_mesh/base/Types.hpp>
@@ -75,8 +77,6 @@ private:
   size_t         m_current_entity;
 
   inline Entity & entity( const size_t ) const ;
-
-  void throw_error(const char *err) const;
 
   template< class field_type >
     friend
@@ -154,43 +154,43 @@ public:
 
   /** \brief Less than */
   inline bool operator<(const BucketIterator &i) const {
-    if (m_bucket_ptr != i.m_bucket_ptr)
-      throw_error("operator < given iterator from different bucket");
+    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
+                    "operator < given iterator from different bucket");
     return (m_current_entity < i.m_current_entity);
   }
 
   /** \brief Less than equal too */
   inline bool operator<=(const BucketIterator &i) const {
-    if (m_bucket_ptr != i.m_bucket_ptr)
-      throw_error("operator <= given iterator from different bucket");
+    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
+                    "operator <= given iterator from different bucket");
     return (m_current_entity <= i.m_current_entity);
   }
 
   /** \brief Greater than  */
   inline bool operator>(const BucketIterator &i) const {
-    if (m_bucket_ptr != i.m_bucket_ptr)
-      throw_error("operator > given iterator from different bucket");
+    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
+                    "operator > given iterator from different bucket");
     return (m_current_entity > i.m_current_entity);
   }
 
   /** \brief Greater than equal too */
   inline bool operator>=(const BucketIterator &i) const {
-    if (m_bucket_ptr != i.m_bucket_ptr)
-      throw_error("operator >= given iterator from different bucket");
+    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
+                    "operator >= given iterator from different bucket");
     return (m_current_entity >= i.m_current_entity);
   }
 
   /** \brief Equal too */
   inline bool operator==(const BucketIterator &i) const {
-    if (m_bucket_ptr != i.m_bucket_ptr)
-      throw_error("operator == given iterator from different bucket");
+    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
+                    "operator == given iterator from different bucket");
     return (m_current_entity == i.m_current_entity);
   }
 
   /** \brief Not equal */
   inline bool operator!=(const BucketIterator &i) const {
-    if (m_bucket_ptr != i.m_bucket_ptr)
-      throw_error("operator != given iterator from different bucket");
+    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
+                    "operator != given iterator from different bucket");
     return (m_current_entity != i.m_current_entity);
   }
 
@@ -214,8 +214,8 @@ public:
 
   /** \brief Distance between iterators */
   inline ptrdiff_t operator-(const BucketIterator &i) const {
-    if (m_bucket_ptr != i.m_bucket_ptr)
-      throw_error("operator - given iterator from different bucket");
+    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
+                    "operator - given iterator from different bucket");
     return static_cast<ptrdiff_t>(m_current_entity - i.m_current_entity);
   }
 
@@ -331,7 +331,7 @@ private:
   Bucket & operator = ( const Bucket & );
 
   Bucket( BulkData        & arg_mesh ,
-          unsigned          arg_entity_rank ,
+          EntityRank        arg_entity_rank ,
           const unsigned  * arg_key ,
           size_t            arg_alloc_size ,
           size_t            arg_capacity ,
@@ -368,7 +368,7 @@ namespace mesh {
 
 inline Entity & BucketIterator::entity( const size_t i ) const
 {
-  //if ( ! m_bucket_ptr ) { throw_error("is NULL"); }
+  ThrowAssert( m_bucket_ptr );
   return (*m_bucket_ptr)[ m_current_entity + i ] ;
 }
 

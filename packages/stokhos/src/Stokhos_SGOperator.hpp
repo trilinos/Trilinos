@@ -54,8 +54,7 @@ namespace Stokhos {
 
     //! Setup operator
     virtual void setupOperator(
-      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly,
-      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk) = 0;
+      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly) = 0;
 
     //! Get SG polynomial
     virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
@@ -64,10 +63,6 @@ namespace Stokhos {
     //! Get SG polynomial
     virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
     getSGPolynomial() const = 0;
-
-    //! Get triple product tensor
-    virtual Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > 
-    getTripleProduct() const = 0;
 
   }; // class SGOperator
 

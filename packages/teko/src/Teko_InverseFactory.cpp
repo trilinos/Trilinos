@@ -137,6 +137,7 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
    return inv;
 }
 
+#if 0
 /** Build an inverse operator using a factory and a linear operator
   * This functionality is only useful for Teko::PreconditionerFactory inverses.
   */
@@ -163,6 +164,7 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A,
 
    return inv;
 }
+#endif
 
 /** Build an inverse operator using a factory and a linear operator
   *
@@ -198,6 +200,7 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A,c
    return inv;
 }
 
+#if 0
 /** Build an inverse operator using a factory and a linear operator
   * This functionality is only useful for Teko::PreconditionerFactory inverses.
   *
@@ -235,6 +238,7 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & lin
 
    return inv;
 }
+#endif
 
 /** Using a prebuilt linear operator, use factory to build an inverse operator
   * given a new forward operator.

@@ -27,6 +27,7 @@ void get_buckets( const Selector & selector ,
                   const std::vector< Bucket * > & input ,
                         std::vector< Bucket * > & output )
 {
+  output.clear();
   for ( std::vector< Bucket * >::const_iterator
         i = input.begin() ; i != input.end() ; ++i ) {
     Bucket * const b = *i ;

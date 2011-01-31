@@ -48,6 +48,9 @@
 /* Define if want to build teuchos-boost */
 #cmakedefine HAVE_TEUCHOS_BOOST
 
+/* Define if you want to build teuchos-qt */
+#cmakedefine HAVE_TEUCHOS_QT
+
 /* Define if want to build teuchos-qd */
 #cmakedefine HAVE_TEUCHOS_QD
 
@@ -99,6 +102,14 @@
 #cmakedefine HAVE_TEUCHOS_LIBXML2
 
 #cmakedefine HAVE_TEUCHOS_C_EXCEPTIONS
+
+#cmakedefine HAVE_TEUCHOS_LINK
+
+#cmakedefine HAVE_TEUCHOS_BFD
+
+#cmakedefine HAVE_TEUCHOS_STACKTRACE
+
+#cmakedefine HAVE_TEUCHOS_DEFAULT_STACKTRACE
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H

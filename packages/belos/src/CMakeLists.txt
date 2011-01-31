@@ -29,6 +29,7 @@ APPEND_SET(HEADERS
   BelosBlockGmresIter.hpp
   BelosBlockFGmresIter.hpp
   BelosBlockGmresSolMgr.hpp
+  BelosCaGmres.hpp  # Subclass of GmresBase
   BelosCGIter.hpp
   BelosCGIteration.hpp
   BelosConfigDefs.hpp
@@ -37,6 +38,7 @@ APPEND_SET(HEADERS
   BelosPCPGSolMgr.hpp
   BelosGCRODRIter.hpp
   BelosGCRODRSolMgr.hpp
+  BelosGmresBase.hpp
   BelosGmresIteration.hpp
   BelosGmresPolyOp.hpp
   BelosGmresPolySolMgr.hpp
@@ -51,14 +53,21 @@ APPEND_SET(HEADERS
   BelosOperator.hpp
   BelosOperatorTraits.hpp
   BelosOrthoManager.hpp
+  BelosOrthoManagerFactory.hpp
+  BelosOrthoManagerTest.hpp
   BelosOutputManager.hpp
   BelosPseudoBlockCGIter.hpp
   BelosPseudoBlockCGSolMgr.hpp
+  BelosMinresIter.hpp
+  BelosMinresIteration.hpp
+  BelosMinresSolMgr.hpp
   BelosPseudoBlockGmresIter.hpp
   BelosPseudoBlockGmresSolMgr.hpp
   BelosRCGIter.hpp
   BelosRCGSolMgr.hpp
+  BelosSimpleOrthoManager.hpp # New (mfh 20 Jan 2011)
   BelosSolverManager.hpp
+  BelosStandardGmres.hpp  # Subclass of GmresBase
   BelosStatusTest.hpp
   BelosStatusTestCombo.hpp
   BelosStatusTestMaxIters.hpp
@@ -86,12 +95,14 @@ APPEND_SET(SOURCES
 # COMP_H
 APPEND_SET(HEADERS
   BelosBlockCGSolMgr.hpp
+  BelosMinresSolMgr.hpp
   BelosBlockGmresSolMgr.hpp
   BelosPseudoBlockCGSolMgr.hpp
   BelosPseudoBlockGmresSolMgr.hpp
   BelosTFQMRSolMgr.hpp
   BelosCGIter.hpp
   BelosBlockCGIter.hpp
+  BelosMinresIter.hpp
   BelosBlockGmresIter.hpp
   BelosPseudoBlockCGIter.hpp
   BelosPseudoBlockGmresIter.hpp
@@ -107,7 +118,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   #
   # Build the TSQR-based OrthoManager and MatOrthoManager classes.
   #
-  APPEND_SET(HEADERS BelosTsqrOrthoManager.hpp)
+  APPEND_SET(HEADERS BelosTsqrOrthoManagerImpl.hpp BelosTsqrOrthoManager.hpp)
 ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
 
 ######################################################################

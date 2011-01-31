@@ -22,7 +22,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stk_rebalance_unit_tests
     SOURCES ${SOURCES}
     ARGS ""
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 1-4
     )
 

@@ -44,7 +44,7 @@ int Zoltan_RIB_inertial1d(
      /* Copy values into double precision array. */
      for (j = 0; j < dotnum; j++) {
         i = (dindx ? dindx[j] : j);
-        value[j] = dotpt[i].X[0];
+        value[j] = dotpt->X[i];
      }
 
      /* zero unused center of mass and eigenvector */

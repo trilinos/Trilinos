@@ -223,15 +223,20 @@ namespace Tpetra {
 } // end of Tpetra namespace
 
 
-//! Namespace for Tpetra example classes and methods
+//! Namespace for %Tpetra example classes and methods
 namespace TpetraExamples {
 }
 
 namespace Tpetra {
-  //! Namespace for Tpetra Reduction/Tranformation Interface
+  //! Namespace for %Tpetra Reduction/Tranformation Interface
   namespace RTI {
   }
 }
 
+namespace Tpetra {
+  //! Namespace for external %Tpetra functionality
+  namespace Ext {
+  }
+}
 
 #endif // TPETRA_CONFIGDEFS_HPP

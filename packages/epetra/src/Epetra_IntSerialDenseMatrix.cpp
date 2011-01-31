@@ -75,31 +75,31 @@ Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix(int NumRows, int NumCol
 		throw ReportError("Shape returned non-zero (" + toString(errorcode) + ").", -2);
 }
 //=============================================================================
-Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix(Epetra_DataAccess CV, int* A, int LDA, 
+Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix(Epetra_DataAccess CV_in, int* A_in, int lda, 
 																												 int NumRows, int NumCols)
   : Epetra_Object("Epetra::IntSerialDenseMatrix"),
-		CV_(CV),
+		CV_(CV_in),
 		A_Copied_(false),
 		M_(NumRows),
 		N_(NumCols),
-		LDA_(LDA),
-		A_(A)
+		LDA_(lda),
+		A_(A_in)
 {
-	if(A == 0)
-		throw ReportError("Null pointer passed as A parameter.", -3);
+	if(A_in == 0)
+		throw ReportError("Null pointer passed as A_in parameter.", -3);
 	if(NumRows < 0)
 		throw ReportError("NumRows = " + toString(NumRows) + ". Should be >= 0", -1);
 	if(NumCols < 0)
 		throw ReportError("NumCols = " + toString(NumCols) + ". Should be >= 0", -1);
-	if(LDA < 0)
-		throw ReportError("LDA = " + toString(LDA) + ". Should be >= 0", -1);
+	if(lda < 0)
+		throw ReportError("LDA = " + toString(lda) + ". Should be >= 0", -1);
 
-  if(CV == Copy) {
+  if(CV_in == Copy) {
     LDA_ = M_;
 		const int newsize = LDA_ * N_;
 		if(newsize > 0) {
 			A_ = new int[newsize];
-			CopyMat(A, LDA, M_, N_, A_, LDA_);
+			CopyMat(A_in, lda, M_, N_, A_, LDA_);
 			A_Copied_ = true;
 		}
 		else {
@@ -170,7 +170,7 @@ int Epetra_IntSerialDenseMatrix::Shape(int NumRows, int NumCols) {
 	const int newsize = LDA_ * N_;
 	if(newsize > 0) {
 		A_ = new int[newsize];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for
 #endif
 		for(int k = 0; k < newsize; k++)
@@ -261,14 +261,14 @@ bool Epetra_IntSerialDenseMatrix::operator==(const Epetra_IntSerialDenseMatrix& 
 {
   if (M_ != rhs.M_ || N_ != rhs.N_) return(false);
 
-  const int* A = A_;
+  const int* A_tmp = A_;
   const int* rhsA = rhs.A_;
 
   for(int j=0; j<N_; ++j) {
     int offset = j*LDA_;
     int rhsOffset = j*rhs.LDA_;
     for(int i=0; i<M_; ++i) {
-      if (A[offset+i] != rhsA[rhsOffset+i]) {
+      if (A_tmp[offset+i] != rhsA[rhsOffset+i]) {
 	return(false);
       }
     }

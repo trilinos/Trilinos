@@ -50,7 +50,7 @@ public:
     }
 
   int Create(const MPI_Comm &comm, const int &num_gid, const int &num_lid, 
-    const int &user_length,  const int &table_length, const int &debug_level) 
+    const int &user_length_in_chars,  const int &table_length, const int &debug_level) 
     {
     if (this->DD)
       {
@@ -59,7 +59,7 @@ public:
       }
 
     int rc =  Zoltan_DD_Create (&this->DD, comm, num_gid, 
-                  num_lid, user_length,  table_length, debug_level);
+                  num_lid, user_length_in_chars,  table_length, debug_level);
 
     return rc;
     }
@@ -82,12 +82,12 @@ public:
   }
  
   int Update (ZOLTAN_ID_PTR gid, ZOLTAN_ID_PTR lid, 
-    ZOLTAN_ID_PTR user, int *partition, const int &count) 
+    char *user, int *partition, const int &count) 
     {
     return Zoltan_DD_Update (this->DD, gid, lid, user, partition, count) ;
     }
   
-  int Find (ZOLTAN_ID_PTR gid, ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR data, 
+  int Find (ZOLTAN_ID_PTR gid, ZOLTAN_ID_PTR lid, char *data, 
                    int *partition, const int &count, int *owner) const
     {
     return Zoltan_DD_Find (this->DD, gid, lid, data, partition, count, owner);

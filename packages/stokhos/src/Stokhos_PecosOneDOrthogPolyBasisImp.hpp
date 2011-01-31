@@ -111,6 +111,39 @@ computeTripleProductTensor() const
 }
 
 template <typename ordinal_type, typename value_type>
+Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::PecosOneDOrthogPolyBasis<ordinal_type, value_type>::
+computeSparseTripleProductTensor(ordinal_type order) const
+{
+  // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
+  value_type sparse_tol = 1.0e-15;
+  ordinal_type sz = size();
+  Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
+    Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>());
+  Teuchos::Array<value_type> points, weights;
+  Teuchos::Array< Teuchos::Array<value_type> > values;
+  getQuadPoints(3*p, points, weights, values);
+
+  for (ordinal_type i=0; i<sz; i++) {
+    for (ordinal_type j=0; j<sz; j++) {
+      for (ordinal_type k=0; k<order; k++) {
+	value_type triple_product = 0;
+	for (ordinal_type l=0; l<static_cast<ordinal_type>(points.size());
+	     l++){
+	  triple_product += 
+	    weights[l]*(values[l][i])*(values[l][j])*(values[l][k]);
+	}
+	if (std::abs(triple_product/norms[i]) > sparse_tol)
+	  Cijk->add_term(i,j,k,triple_product);
+      }
+    }
+  }
+  Cijk->fillComplete();
+
+  return Cijk;
+}
+
+template <typename ordinal_type, typename value_type>
 Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> >
 Stokhos::PecosOneDOrthogPolyBasis<ordinal_type, value_type>::
 computeDerivDoubleProductTensor() const

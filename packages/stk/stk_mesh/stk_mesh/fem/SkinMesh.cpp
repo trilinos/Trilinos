@@ -1,10 +1,8 @@
-
 #include <map>
 #include <set>
 #include <algorithm>
 
 #include <stk_mesh/base/Types.hpp>
-
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -13,12 +11,8 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Relation.hpp>
 
-
-#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-
 #include <stk_mesh/fem/SkinMesh.hpp>
 
 #include <stk_util/parallel/ParallelComm.hpp>
@@ -119,6 +113,29 @@ class SideCommHelper {
     }
 };
 
+// Use permutation that starts with lowest entity id
+void ensure_consistent_order(EntityVector & side_entities)
+{
+  ThrowRequire( !side_entities.empty() );
+
+  EntityId lowest_id = side_entities.front()->identifier();
+  unsigned idx_of_lowest_id = 0;
+
+  for (unsigned idx = 1; idx < side_entities.size(); ++idx) {
+    EntityId curr_id = side_entities[idx]->identifier();
+    if (curr_id < lowest_id) {
+      idx_of_lowest_id = idx;
+      lowest_id = curr_id;
+    }
+  }
+
+  if (idx_of_lowest_id != 0) {
+    std::rotate(side_entities.begin(),
+                side_entities.begin() + idx_of_lowest_id,
+                side_entities.end());
+  }
+}
+
 // populate the side_map with 'owned' sides that need to be created
 //
 // a side needs to be created if the outside is NULL and the element
@@ -153,7 +170,13 @@ void add_owned_sides_to_map(
         //                                            the node with the smallest identifier
         SideKey side_key;
 
-        side_key.first = get_elem_side_nodes(inside_entity, side_ordinal, side_key.second);
+        side_key.first = get_subcell_nodes(
+            inside_entity,
+            element_rank - 1, // subcell rank
+            side_ordinal,     // subcell identifier
+            side_key.second  // subcell nodes
+            );
+        ensure_consistent_order(side_key.second);
 
         //add this side to the side_map
         side_map[side_key].push_back(inside);
@@ -195,7 +218,13 @@ void add_non_owned_sides_to_map(
         // Get the nodes for the inside entity
         SideKey side_key;
 
-        side_key.first = get_elem_side_nodes(inside_entity, side_ordinal, side_key.second);
+        side_key.first = get_subcell_nodes(
+            inside_entity,
+            element_rank - 1, // subcell rank
+            side_ordinal,     // subcell identifier
+            side_key.second  // subcell nodes
+            );
+        ensure_consistent_order(side_key.second);
 
         //only add the side if the side_key currently exist in the map
         if ( side_map.find(side_key) != side_map.end()) {
@@ -253,9 +282,8 @@ size_t determine_creating_processes(
 } //end un-named namespace
 
 void skin_mesh( BulkData & mesh, EntityRank element_rank, Part * skin_part) {
-  if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
-    throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
-  }
+  ThrowErrorMsgIf( mesh.synchronized_state() == BulkData::MODIFIABLE,
+                   "mesh is not SYNCHRONIZED" );
 
   EntityVector owned_elements;
 
@@ -269,9 +297,8 @@ void skin_mesh( BulkData & mesh, EntityRank element_rank, Part * skin_part) {
 }
 
 void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned_elements, Part * skin_part) {
-  if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
-    throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
-  }
+  ThrowErrorMsgIf( mesh.synchronized_state() == BulkData::MODIFIABLE,
+                   "mesh is not SYNCHRONIZED" );
 
   EntityVector elements_closure;
 
@@ -306,10 +333,6 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
   //set to aid comm packing
   std::set<SideCommHelper> side_comm_helper_set;
 
-  PartVector add_parts ;
-  if (skin_part) {
-    add_parts.push_back(skin_part);
-  }
 
   size_t current_side = 0;
   for ( BoundaryMap::iterator map_itr = side_map.begin();
@@ -334,7 +357,15 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
       Entity & side = *(requested_sides[current_side]);
       EntityId side_id = side.identifier();
 
-      //add the side to the skin part
+
+      PartVector add_parts ;
+      {
+        Part * topo_part = & fem::get_part(mesh.mesh_meta_data(), side_key.first);
+        add_parts.push_back( topo_part);
+        if (skin_part) {
+          add_parts.push_back(skin_part);
+        }
+      }
       mesh.change_entity_parts(side, add_parts);
 
 
@@ -348,8 +379,8 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
 
       //declare the elem->side relations
       for (SideVector::iterator side_itr = side_vector.begin();
-           side_itr != side_vector.end();
-           ++side_itr)
+          side_itr != side_vector.end();
+          ++side_itr)
       {
         Entity & elem = *(side_itr->entity);
         //only declare relations for owned elements
@@ -404,6 +435,14 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
       //get the SideVector for the corresponding side_key
       SideVector & side_vector = side_map[side_key];
 
+      PartVector add_parts ;
+      {
+        Part * topo_part = & fem::get_part(mesh.mesh_meta_data(), side_key.first);
+        add_parts.push_back( topo_part);
+        if (skin_part) {
+          add_parts.push_back(skin_part);
+        }
+      }
       Entity & side = mesh.declare_entity(element_rank-1,generated_side_id,add_parts);
 
       //declare the side->node relations

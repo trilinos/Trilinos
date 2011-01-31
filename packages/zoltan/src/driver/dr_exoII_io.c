@@ -127,15 +127,16 @@ int read_exoII_file(int Proc,
   mesh->data_type = MESH;
   mesh->vwgt_dim = 1;  /* One weight for now. */
   mesh->ewgt_dim = 1;  /* One weight for now. */
-  mesh->eb_etypes = (int *) malloc (5 * mesh->num_el_blks * sizeof(int));
+  mesh->eb_etypes = (int *) malloc (4 * mesh->num_el_blks * sizeof(int));
   if (!mesh->eb_etypes) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
   mesh->eb_ids = mesh->eb_etypes + mesh->num_el_blks;
-  mesh->eb_cnts = mesh->eb_ids + mesh->num_el_blks;
-  mesh->eb_nnodes = mesh->eb_cnts + mesh->num_el_blks;
+  mesh->eb_nnodes = mesh->eb_ids + mesh->num_el_blks;
   mesh->eb_nattrs = mesh->eb_nnodes + mesh->num_el_blks;
+
+  mesh->eb_cnts = (ZOLTAN_ID_TYPE *) malloc (mesh->num_el_blks * sizeof(ZOLTAN_ID_TYPE));
 
   mesh->eb_names = (char **) malloc (mesh->num_el_blks * sizeof(char *));
   if (!mesh->eb_names) {
@@ -218,7 +219,7 @@ int read_exoII_file(int Proc,
 
   /*
    * intialize all of the element structs as unused by
-   * setting the globalID to -1
+   * setting the globalID to ZOLTAN_ID_INVALID.
    */
   for (i = 0; i < mesh->elem_array_len; i++) 
     initialize_element(&(mesh->elements[i]));
@@ -347,7 +348,7 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
       for (ielem = 0; ielem < mesh->eb_cnts[iblk]; ielem++) {
         /* set some fields in the element structure */
         elements[iplace].border = 0;
-        elements[iplace].globalID = emap[iplace];
+        elements[iplace].globalID = (ZOLTAN_ID_TYPE)emap[iplace];
         elements[iplace].elem_blk = iblk;
         elements[iplace].my_part = Proc;
         elements[iplace].perm_value = -1;
@@ -367,8 +368,8 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
         elements[iplace].mem_wgt = 1.0;
 
         /* allocate space for the connect list and the coordinates */
-        elements[iplace].connect = (int *) malloc(mesh->eb_nnodes[iblk] *
-                                                  sizeof(int));
+        elements[iplace].connect = (ZOLTAN_ID_TYPE *) malloc(mesh->eb_nnodes[iblk] *
+                                                  sizeof(ZOLTAN_ID_TYPE));
         if (!(elements[iplace].connect)) {
           Gen_Error(0, "fatal: insufficient memory");
           return 0;
@@ -384,8 +385,8 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
         /* save the connect table as local numbers for the moment */
         tmp0 = tmp1 = tmp2 = 0.;
         for (inode = 0; inode < mesh->eb_nnodes[iblk]; inode++) {
-          lnode = connect[cnode] - 1;
-          elements[iplace].connect[inode] = lnode;
+          lnode = (int)connect[cnode] - 1;
+          elements[iplace].connect[inode] = (ZOLTAN_ID_TYPE)lnode;
           cnode++;
 
           elements[iplace].coord[inode] = (float *) calloc(mesh->num_dims,
@@ -460,7 +461,7 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   for (ielem = 0; ielem < mesh->num_elems; ielem++) {
     iblk = elements[ielem].elem_blk;
     for (inode = 0; inode < mesh->eb_nnodes[iblk]; inode++) {
-      elements[ielem].connect[inode] = nmap[elements[ielem].connect[inode]];
+      elements[ielem].connect[inode] = (ZOLTAN_ID_TYPE)nmap[elements[ielem].connect[inode]];
     }
   }
 
@@ -523,7 +524,7 @@ static int find_surnd_elem(MESH_INFO_PTR mesh, int **sur_elem, int *nsurnd,
   /* Find the surrounding elements for each node in the mesh */
   for(ielem=0; ielem < mesh->num_elems; ielem++) {
     for(inode=0; inode < mesh->eb_nnodes[elements[ielem].elem_blk]; inode++) {
-      lnode = elements[ielem].connect[inode];
+      lnode = (int)elements[ielem].connect[inode];
 
       /*
        * in the case of degenerate elements, where a node can be
@@ -614,7 +615,7 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
         return 0;
       }
 
-      elements[ielem].adj = (int *) malloc(nsides*sizeof(int));
+      elements[ielem].adj = (ZOLTAN_ID_TYPE *) malloc(nsides*sizeof(ZOLTAN_ID_TYPE));
       elements[ielem].adj_proc = (int *) malloc(nsides*sizeof(int));
       elements[ielem].edge_wgt = (float *) malloc(nsides*sizeof(float));
       if(!(elements[ielem].adj) || !(elements[ielem].edge_wgt) ||
@@ -627,7 +628,7 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
 
       /* Initialize adjacency entries to -1 for each side. */
       for (nscnt = 0; nscnt < nsides; nscnt++) {
-        elements[ielem].adj[nscnt] = -1;
+        elements[ielem].adj[nscnt] = ZOLTAN_INVALID;
         elements[ielem].adj_proc[nscnt] = -1;
         elements[ielem].edge_wgt[nscnt] = 0;
       }
@@ -710,7 +711,7 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
                 /*
                  * store the adjacency info in the entry for this side.
                  */
-                elements[ielem].adj[nscnt] = entry;
+                elements[ielem].adj[nscnt] = (ZOLTAN_ID_TYPE)entry;
                 elements[ielem].adj_proc[nscnt] = Proc;
 
                 /*
@@ -751,7 +752,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   int  nnodei, nnodeb, nnodee, nelemi, nelemb, nncmap;
   int *int_elem, *bor_elem;
   int *proc_ids;
-  int *gids, *my_procs, *recv_procs;
+  int *gids, *my_procs, *recv_procs, *buf;
   int  ierr, nrecv;
   int  msg = 200;
   int  sid;
@@ -824,7 +825,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   recv_procs = my_procs + max_len;
   mesh->ecmap_elemids = (int *) malloc(max_len * sizeof(int));
   mesh->ecmap_sideids = (int *) malloc(max_len * sizeof(int));
-  mesh->ecmap_neighids = (int *) malloc(max_len * sizeof(int));
+  mesh->ecmap_neighids = (ZOLTAN_ID_TYPE *) malloc(max_len * sizeof(ZOLTAN_ID_TYPE));
   if (!mesh->ecmap_elemids || !mesh->ecmap_sideids || !mesh->ecmap_neighids) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
@@ -850,7 +851,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    */
   for (ielem = 0; ielem < max_len; ielem++) {
     mesh->ecmap_elemids[ielem]--;
-    gids[ielem] = elements[mesh->ecmap_elemids[ielem]].globalID;
+    gids[ielem] = (int)elements[mesh->ecmap_elemids[ielem]].globalID;
     my_procs[ielem] = Proc;
   }
   /*
@@ -874,8 +875,23 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * Assuming messages will be stored in order of processor number in 
    * ecmap_neighids. 
    */
-  ierr = Zoltan_Comm_Do(comm_obj, msg+1, (char *) gids, sizeof(int), 
-                        (char *) (mesh->ecmap_neighids));
+
+  if (nrecv > 0){
+    buf = (int *)malloc(nrecv * sizeof(int));
+  }
+  else{
+    buf = NULL;
+  }
+
+  ierr = Zoltan_Comm_Do(comm_obj, msg+1, (char *) gids, sizeof(int), (char *) buf);
+
+  for (i=0; i < nrecv; i++){
+    mesh->ecmap_neighids[i] = (ZOLTAN_ID_TYPE)buf[i];
+  }
+
+  if (buf){
+    free(buf);
+  }
 
   /* Exchange sanity check information. 
    * Allows to check assumption that messages are stored in order of
@@ -1002,7 +1018,7 @@ char *str = "Proc";
     for (j = 0, i = 0; i < mesh->num_elems; i++) {
       if (mesh->elements[i].elem_blk == iblk) {
         /* Element is in block; see whether it is to be exported. */
-        if ((tmp=in_list(mesh->elements[i].globalID, num_exp, (int *) exp_gids)) != -1)
+        if ((tmp=in_list2((int)mesh->elements[i].globalID, num_exp, (int *) exp_gids)) != -1)
           vars[j++] = (Output.Plot_Partition ? (float) (exp_to_part[tmp]) 
                                        : (float) (exp_procs[tmp]));
         else

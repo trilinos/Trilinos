@@ -9,10 +9,11 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
-
 
 #include <stdlib.h>
 
@@ -30,103 +31,73 @@ const char * universal_part_name()
   return name ;
 }
 
-void append_part_method(
-  std::string & msg , const Part & part , const char * method )
+void assert_same_universe( const Part & superset ,
+                           const Part & subset,
+                           const char * method )
 {
-  msg.append( "stk::mesh::Part[" );
-  msg.append( part.name() );
-  msg.append( "]." );
-  msg.append( method );
+  const PartVector & a = superset.supersets();
+  const PartVector & b = subset.supersets();
+
+  ThrowErrorMsgIf( a.empty() || b.empty() || a[0] != b[0],
+                   method << "(...) FAILED Requirement that " <<
+                   "Part[" << superset.name() << "] and " <<
+                   "Part[" << subset.name() << "] are in the same " <<
+                   universal_part_name() );
 }
 
-
-void assert_contain( Part & superset , Part & subset , const char * method )
+void assert_same( const Part & part1 ,
+                  const Part & part2,
+                  const char * method )
 {
-  if ( ! contain( subset.supersets() , superset ) ) {
-    std::string msg ;
-    append_part_method( msg , superset , method );
-    msg.append( "(...) FAILED Requirement that " );
-    msg.append( "Part[" );
-    msg.append( subset.name() );
-    msg.append( "] is a subset" );
-    throw std::runtime_error(msg);
-  }
+  ThrowErrorMsgIf( & part1 != & part2,
+                   method << "(...) FAILED Requirement that " <<
+                   "Part[" << part1.name() << "] and " <<
+                   "Part[" << part2.name() << "] are the same" );
 }
 
-void assert_same_universe( const Part & part_superset ,
-                           const char * method ,
-                           const Part & part_subset )
+void assert_not_same( const Part & part1 ,
+                      const Part & part2 ,
+                      const char * method )
 {
-  const PartVector & a = part_superset.supersets();
-  const PartVector & b = part_subset.supersets();
-
-  if ( a.empty() || b.empty() || a[0] != b[0] ) {
-    std::string msg ;
-    append_part_method( msg , part_superset , method );
-    msg.append( "(...) FAILED Requirement that Part[" );
-    msg.append( part_subset.name() );
-    msg.append( "] are in the same " );
-    msg.append( universal_part_name() );
-    throw std::runtime_error(msg);
-  }
+  ThrowErrorMsgIf( & part1 == & part2,
+                   method << "(...) FAILED Requirement that " <<
+                   "Part[" << part1.name() << "] and " <<
+                   "Part[" << part2.name() << "] are not the same" );
 }
 
-void assert_not_same( const Part & part ,
-                      const char * method ,
-                      const Part & arg_part )
+void assert_superset( Part & superset ,
+                      Part & subset ,
+                      const char * method )
 {
-  if ( & part == & arg_part ) {
-    std::string msg ;
-    append_part_method( msg , part , method );
-    msg.append( "(...) FAILED Requirement that Part[" );
-    msg.append( arg_part.name() );
-    msg.append( "] is not the same" );
-    throw std::runtime_error(msg);
-  }
+  ThrowErrorMsgIf( ! contain( subset.supersets() , superset ),
+                   method << "(...) FAILED Requirement that " <<
+                   "Part[" << superset.name() << "] " <<
+                   "is a superset of " <<
+                   "Part[" << subset.name() << "]" );
 }
 
-void assert_same( const Part & part ,
-                      const char * method ,
-                      const Part & arg_part )
+void assert_not_superset( const Part & superset ,
+                          const Part & subset ,
+                          const char * method )
 {
-  if ( & part != & arg_part ) {
-    std::string msg ;
-    append_part_method( msg , part , method );
-    msg.append( "(...) FAILED Requirement that Part[" );
-    msg.append( arg_part.name() );
-    msg.append( "] is the same" );
-    throw std::runtime_error(msg);
-  }
-}
-
-void assert_not_superset( const Part & part ,
-                          const char * method ,
-                          const Part & arg_part )
-{
-  if ( contain( part.supersets() , arg_part ) ) {
-    std::string msg ;
-    append_part_method( msg , part , method );
-    msg.append( "(...) FAILED Requirement that Part[" );
-    msg.append( arg_part.name() );
-    msg.append( "] is not a superset" );
-    throw std::runtime_error(msg);
-  }
+  ThrowErrorMsgIf( contain( subset.supersets() , superset ),
+                   method << "(...) FAILED Requirement that " <<
+                   "Part[" << superset.name() << "] " <<
+                   "is not a superset of " <<
+                   "Part[" << subset.name() << "]" );
 }
 
 void assert_rank_ordering( const Part & superset ,
-                           const char * method ,
-                           const Part & subset )
+                           const Part & subset ,
+                           const char * method )
 {
-  if ( superset.primary_entity_rank() < subset.primary_entity_rank() ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::Part[ " << superset.name();
-    msg << " , rank(" << superset.primary_entity_rank();
-    msg << ") ]." << method ;
-    msg << "( Part[ " << subset.name();
-    msg << " , rank(" << subset.primary_entity_rank();
-    msg << ") ] ) FAILED Rank ordering requirement" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( superset.primary_entity_rank() < subset.primary_entity_rank(),
+                   method << "(...) FAILED Requirement that " <<
+                   "Part[ " << superset.name() <<
+                   " , rank(" << superset.primary_entity_rank() <<
+                   ") ] has greater rank than " <<
+                   "Part[ " << subset.name() <<
+                   " , rank(" << subset.primary_entity_rank() << ") ]");
 }
 
 } // namespace
@@ -151,18 +122,13 @@ Part * PartRepository::declare_part( const std::string & arg_name , EntityRank a
     p = declare_part_impl( arg_name, arg_rank );
   }
 
-  if ( p->primary_entity_rank() != arg_rank ) {
-    std::ostringstream msg;
-    msg << "stk::mesh::Part[ " << arg_name ;
-    msg << ",rank(" << p->primary_entity_rank() << ")" ;
-    msg << "] : FAILED to declare part; " ;
-    msg << "Part of name '" << arg_name ;
-    msg << "' of rank " << p->primary_entity_rank() ;
-    msg << " already exists";
-    msg << " User cannot redeclare " << arg_name ;
-    msg << " with different rank, " << arg_rank ;
-    throw std::runtime_error ( msg.str() );
-  }
+  ThrowErrorMsgIf( p->primary_entity_rank() != arg_rank,
+                   "Cannot declare Part[ " << arg_name <<
+                   ",rank(" << p->primary_entity_rank() << ")]\n" <<
+                   "Part of name '" << arg_name <<
+                   "' of rank " << p->primary_entity_rank() <<
+                   " already exists, user cannot redeclare " << arg_name <<
+                   " with different rank " << arg_rank );
 
   return p;
 }
@@ -176,7 +142,7 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
   for ( PartVector::const_iterator
         i = part_intersect.begin() ; i != part_intersect.end() ; ++i ) {
     Part * const p = *i ;
-    assert_contain( *m_universal_part, *p , method );
+    assert_superset( *m_universal_part, *p , method );
 
     // If 'p' is a superset of another member
     // then it is redundant in this intersection.
@@ -204,7 +170,7 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
     // Rank is the minimum rank of the intersection members.
 
     std::string p_name ;
-    EntityRank p_rank = std::numeric_limits<EntityRank>::max();
+    EntityRank p_rank = InvalidEntityRank;
 
     p_name.assign("{");
     for ( PartVector::iterator
@@ -234,12 +200,11 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
         declare_subset( **i, *p );
       }
     }
-    else if ( pset_clean != p->intersection_of()) {
+    else {
       // This error is "inconceivable" and is
       // only possible by heroic malicious abuse.
-      std::string msg ;
-      msg.append(method).append(p_name).append(" FAILED FROM MALICIOUS ABUSE");
-      throw std::invalid_argument(msg);
+      ThrowInvalidArgMsgIf( pset_clean != p->intersection_of(),
+                            p_name << " FAILED FROM MALICIOUS ABUSE" );
     }
   }
 
@@ -269,10 +234,10 @@ void PartRepository::declare_subset( Part & superset, Part & subset )
 
   if ( ! contain( subset.supersets() , superset ) ) {
 
-    assert_not_same( superset , method , subset );
-    assert_not_superset(  superset , method , subset );
-    assert_same_universe( superset , method , subset );
-    assert_rank_ordering( superset , method , subset );
+    assert_not_same(      superset , subset , method );
+    assert_not_superset(  superset , subset , method );
+    assert_same_universe( superset , subset , method );
+    assert_rank_ordering( superset , subset , method );
 
     // Insert this symmetric relationship first
     // so that it does not get revisited.
@@ -319,10 +284,10 @@ void PartRepository::declare_part_relation( Part & root_part, PartRelation relat
 {
   static const char method[] = "stk::mesh::PartRepository::declare_part_relation" ;
 
-  assert_not_same( root_part , method , target_part );
-  assert_same_universe( root_part, method, target_part );
-  assert_same( root_part, method, *relation.m_root );
-  assert_same( target_part, method, *relation.m_target );
+  assert_not_same(      root_part   , target_part        , method );
+  assert_same_universe( root_part   , target_part        , method );
+  assert_same(          root_part   , *relation.m_root   , method );
+  assert_same(          target_part , *relation.m_target , method );
 
   root_part.m_partImpl.add_relation( relation );
   target_part.m_partImpl.add_relation( relation );

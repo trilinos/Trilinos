@@ -43,25 +43,23 @@
 
 extern "C" {
 
-#include <MFError.h>
 #include <MFNVector.h>
 #include <float.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <MFTime.h>
+//#include <MFTime.h>
 
-void MFLOCANVDiff(void*,void*,void*);
-void MFLOCANVAdd(void*,void*,void*);
-void MFLOCANVPrint(FILE*, void*);
-MFNVector MFCloneLOCANVector(void*);
-void MFFreeLOCANVectorData(void*);
-MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>&);
-void MFSetError(int,char*,char*,int,char*);
+void MFLOCANVDiff(void*,void*,void*,MFErrorHandler);
+void MFLOCANVAdd(void*,void*,void*,MFErrorHandler);
+void MFLOCANVPrint(FILE*, void*,MFErrorHandler);
+MFNVector MFCloneLOCANVector(void*,MFErrorHandler);
+void MFFreeLOCANVectorData(void*,MFErrorHandler);
+MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>&,MFErrorHandler);
 
 static char MFNVectorErrorMsg[256]="";
 
-void MFLOCANVDiff(void *adata, void *bdata, void *cdata)
+void MFLOCANVDiff(void *adata, void *bdata, void *cdata, MFErrorHandler err)
 {
   static char RoutineName[]={"MFLOCANVDiff"};
   LOCANVectorData *a_vec_data;
@@ -76,7 +74,7 @@ void MFLOCANVDiff(void *adata, void *bdata, void *cdata)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for a (argument 1) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
-    MFSetError(12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
+    MFSetError(err, 12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
     return;
    }
 
@@ -85,7 +83,7 @@ void MFLOCANVDiff(void *adata, void *bdata, void *cdata)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for b (argument 2) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
-    MFSetError(12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
+    MFSetError(err, 12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
     return;
    }
 
@@ -94,7 +92,7 @@ void MFLOCANVDiff(void *adata, void *bdata, void *cdata)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for c (argument 3) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
-    MFSetError(12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
+    MFSetError(err, 12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
     return;
    }
 
@@ -107,7 +105,7 @@ void MFLOCANVDiff(void *adata, void *bdata, void *cdata)
   return;
 }
 
-void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
+void MFLOCANVAdd(void *adata,void *bdata,void *cdata, MFErrorHandler err)
 {
   static char RoutineName[]={"MFLOCANVAdd"};
 
@@ -123,7 +121,7 @@ void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for a (argument 1) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
-    MFSetError(12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
+    MFSetError(err, 12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
     return;
    }
 
@@ -132,7 +130,7 @@ void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for b (argument 2) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
-    MFSetError(12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
+    MFSetError(err, 12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
     return;
    }
 
@@ -141,7 +139,7 @@ void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
    {
     sprintf(MFNVectorErrorMsg,"Pointer to Vector Data for c (argument 3) is NULL");
     printf("%s -- %s\n",RoutineName,MFNVectorErrorMsg);fflush(stdout);
-    MFSetError(12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
+    MFSetError(err, 12,RoutineName,MFNVectorErrorMsg,__LINE__,__FILE__);
     return;
    }
 
@@ -154,26 +152,27 @@ void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
   return;
 }
 
-void MFLOCANVPrint(FILE *ifp, void *u)
+void MFLOCANVPrint(FILE *ifp, void *u, MFErrorHandler err)
 {
 }
 
-MFNVector MFCloneLOCANVector(void *data)
+MFNVector MFCloneLOCANVector(void *data, MFErrorHandler err)
 {
   LOCANVectorData *vec_data = (LOCANVectorData*) data;
   Teuchos::RCP<LMCEV> u2 = 
     Teuchos::rcp_dynamic_cast<LMCEV>(vec_data->u_ptr->clone(),true);
   
-  return  MFCreateLOCANVectorWithData(u2);
+  return MFCreateLOCANVectorWithData(u2, err);
 }
 
-void MFFreeLOCANVectorData(void *data)
+void MFFreeLOCANVectorData(void *data, MFErrorHandler err)
 {
   LOCANVectorData *vec_data = (LOCANVectorData*) data;
   delete vec_data;
 }
 
-MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>& u)
+MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>& u, 
+				      MFErrorHandler err)
 {
   MFNVector cthis;
 
@@ -184,21 +183,21 @@ MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>& u)
   starttime=clock();
 #endif
 
-  cthis=MFCreateNVectorBaseClass("LOCA");
+  cthis=MFCreateNVectorBaseClass("LOCA",err);
   LOCANVectorData *vec_data = new LOCANVectorData(u);
 
-  MFNVectorSetData(cthis,vec_data);
+  MFNVectorSetData(cthis,vec_data,err);
 
-  MFNVectorSetDiff(cthis,MFLOCANVDiff);
-  MFNVectorSetAdd(cthis,MFLOCANVAdd);
-  MFNVectorSetClone(cthis,MFCloneLOCANVector);
-  MFNVectorSetPrint(cthis,MFLOCANVPrint);
-  MFNVectorSetFreeData(cthis,MFFreeLOCANVectorData);
+  MFNVectorSetDiff(cthis,MFLOCANVDiff,err);
+  MFNVectorSetAdd(cthis,MFLOCANVAdd,err);
+  MFNVectorSetClone(cthis,MFCloneLOCANVector,err);
+  MFNVectorSetPrint(cthis,MFLOCANVPrint,err);
+  MFNVectorSetFreeData(cthis,MFFreeLOCANVectorData,err);
 
 #ifdef MFTIMINGS
     MFTimeMFCreateNVector+=clock()-starttime;
 #endif
   return cthis;
- }
+}
 
 }  /*extern C*/

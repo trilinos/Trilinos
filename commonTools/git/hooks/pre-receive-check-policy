@@ -61,27 +61,6 @@ EOF
 	    ;;
     esac
 
-    subject="$(git log $commit -1 --pretty=format:%s)"
-    if expr "$subject" : ".*Merge branch.*of.*\(git\|ssh\|sierra-trac\|software\|software.sandia.gov\):" > /dev/null 2>&1; then
-	if ! in_import && ! forced ; then
-	    cat <<EOF >&2
----
-The commit:
-
-EOF
-	    git log $commit -1 >&2
-	    cat <<EOF >&2
-
-Looks like it was produced by typing 'eg pull' without the --rebase
-option when you had local changes. Running 'eg  pull --rebase' now
-will fix the problem. Then please try, 'eg push' again. Please see:
-
-  https://software.sandia.gov/trilinos/developer/git/help/ExtraMergeCommits.html
----
-EOF
-	    exit 1
-	fi
-    fi
 }
 
 check_ref_update() {

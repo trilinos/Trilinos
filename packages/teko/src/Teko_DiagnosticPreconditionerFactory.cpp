@@ -140,7 +140,7 @@ LinearOp DiagnosticPreconditionerFactory::buildPreconditionerOperator(LinearOp &
          // start timer on construction, end on destruction
          Teuchos::TimeMonitor monitor(*buildTimer_,false);   
 
-         invOp = Teko::buildInverse(*invFactory_,lo,state);
+         invOp = Teko::buildInverse(*invFactory_,lo);
       }
 
       // only printing residual requires use of forward operator

@@ -56,7 +56,8 @@
 template <typename T, typename Storage> 
 template <typename S> 
 inline Sacado::Fad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
-  Storage(T(0.))
+  Storage(T(0.)),
+  update_val_(x.updateValue())
 {
   int sz = x.size();
 
@@ -72,7 +73,8 @@ inline Sacado::Fad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
 	this->fastAccessDx(i) = x.dx(i);
   }
 
-  this->val() = x.val();
+  if (update_val_)
+    this->val() = x.val();
 }
 
 
@@ -109,7 +111,8 @@ Sacado::Fad::GeneralFad<T,Storage>::operator=(
 {
   // Copy value & dx_
   Storage::operator=(x);
-  
+  update_val_ = x.update_val_;
+
   return *this;
 }
 
@@ -132,7 +135,9 @@ Sacado::Fad::GeneralFad<T,Storage>::operator=(const Expr<S>& x)
 	this->fastAccessDx(i) = x.dx(i);
   }
   
-  this->val() = x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() = x.val();
   
   return *this;
 }
@@ -141,7 +146,8 @@ template <typename T, typename Storage>
 inline  Sacado::Fad::GeneralFad<T,Storage>& 
 Sacado::Fad::GeneralFad<T,Storage>::operator += (const T& v)
 {
-  this->val() += v;
+  if (update_val_)
+    this->val() += v;
 
   return *this;
 }
@@ -150,7 +156,8 @@ template <typename T, typename Storage>
 inline Sacado::Fad::GeneralFad<T,Storage>& 
 Sacado::Fad::GeneralFad<T,Storage>::operator -= (const T& v)
 {
-  this->val() -= v;
+  if (update_val_)
+    this->val() -= v;
 
   return *this;
 }
@@ -161,7 +168,8 @@ Sacado::Fad::GeneralFad<T,Storage>::operator *= (const T& v)
 {
   int sz = this->size();
 
-  this->val() *= v;
+  if (update_val_)
+    this->val() *= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) *= v;
 
@@ -174,7 +182,8 @@ Sacado::Fad::GeneralFad<T,Storage>::operator /= (const T& v)
 {
   int sz = this->size();
 
-  this->val() /= v;
+  if (update_val_)
+    this->val() /= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) /= v;
 
@@ -186,7 +195,8 @@ inline  Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::
 operator += (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  this->val() += v;
+  if (update_val_)
+    this->val() += v;
 
   return *this;
 }
@@ -196,7 +206,8 @@ inline Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::
 operator -= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  this->val() -= v;
+  if (update_val_)
+    this->val() -= v;
 
   return *this;
 }
@@ -208,7 +219,8 @@ operator *= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
   int sz = this->size();
 
-  this->val() *= v;
+  if (update_val_)
+    this->val() *= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) *= v;
 
@@ -222,7 +234,8 @@ operator /= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
   int sz = this->size();
 
-  this->val() /= v;
+  if (update_val_)
+    this->val() /= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) /= v;
 
@@ -261,7 +274,9 @@ Sacado::Fad::GeneralFad<T,Storage>::operator += (const Sacado::Fad::Expr<S>& x)
     }
   }
 
-  this->val() += x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() += x.val();
 
   return *this;
 }
@@ -298,7 +313,9 @@ Sacado::Fad::GeneralFad<T,Storage>::operator -= (const Sacado::Fad::Expr<S>& x)
     }
   }
 
-  this->val() -= x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() -= x.val();
 
 
   return *this;
@@ -344,7 +361,9 @@ Sacado::Fad::GeneralFad<T,Storage>::operator *= (const Sacado::Fad::Expr<S>& x)
     }
   }
 
-  this->val() *= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() *= xval;
 
   return *this;
 }
@@ -389,7 +408,9 @@ Sacado::Fad::GeneralFad<T,Storage>::operator /= (const Sacado::Fad::Expr<S>& x)
     }
   }
 
-  this->val() /= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() /= xval;
 
   return *this;
 }

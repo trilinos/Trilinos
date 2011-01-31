@@ -26,7 +26,12 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
-/* \brief  Select buckets from the input to the output. */
+/* \brief  Select buckets from the input to the output. Buckets in the input
+ *         vector will be placed in the output vector if the bucket is
+ *         selected by the selector argument.
+ *         On entry, the output vector is cleared before being filled with
+ *         selected buckets.
+ */
 void get_buckets( const Selector & selector ,
                   const std::vector< Bucket * > & input ,
                         std::vector< Bucket * > & output );

@@ -56,6 +56,8 @@ int num_procs_for_part;
 int hash_value;
 char msg[256];
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   if (zz->LB.PartDist == NULL) {
     /*  number of parts == number of procs, uniformly distributed. 
      *  return input part. */
@@ -88,6 +90,8 @@ char msg[256];
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     proc = -1;
   }
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return proc;
 }
 

@@ -86,6 +86,9 @@ public:
   //! Get the number of content lines
   int numContentLines() const {return content_.length();}
 
+  //! Get all attributes
+  const Map& getAttributes() const {return attributes_;}
+  
   //! Look up a content line by index
   const std::string& getContentLine(int i) const {return content_[i];}
 

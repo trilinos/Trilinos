@@ -54,28 +54,29 @@ struct HierPartParamsStruct {
 					each gid in global_ids has been
 					migrated somewhere else */
   struct Zoltan_DD_Struct *dd;       /* distributed data to track migrated 
-					gids during hierarchical balancing */
-  int allocsize_gnos_of_interest;    /* size of gids_of_interest array */
-  int num_gnos_of_interest;          /* num gids in gids_of_interest */
-  indextype *gnos_of_interest;    /* list of gids of interest, used
+					gnos during hierarchical balancing */
+  int allocsize_gnos_of_interest;    /* size of gnos_of_interest array */
+  int num_gnos_of_interest;          /* num gnos in gnos_of_interest */
+  ZOLTAN_GNO_TYPE *gnos_of_interest;    /* list of gnos of interest, used
 					when looking up remote proc locations
 					for graph edge callbacks */
-  int *gnos_of_interest_procs;       /* list of procs where gids of interest
+  int *gnos_of_interest_procs;       /* list of procs where gnos of interest
 					are located */
   int obj_wgt_dim, edge_wgt_dim;     /* object and edge weight dimensions */
   float *vwgt;                       /* vector of vertex weights */
   int *input_parts;                  /* Initial partitions for objects. */
-  indextype *vtxdist, *xadj;           /* intermediate graph structure storage */
-  indextype *adjncy;              /*    see Zoltan_Build_Graph */
+  ZOLTAN_GNO_TYPE *vtxdist;          /* intermediate graph structure storage */
+  int *xadj;                         /* intermediate graph structure storage */
+  ZOLTAN_GNO_TYPE *adjncy;              /*    see Zoltan_Build_Graph */
   float *ewgts;                      /* edge weights for intermediate struct */
   int *adjproc;                      /* adjacent proc for each edge */
   int ndims;                         /* number of dimensions for geom data */
   int num_edges;                     /* number of edges in graph rep */
   double *geom_vec;                  /* geometry of objects in intermediate */
-  int num_migrated_in_gnos;          /* number of gids migrated to this proc */
+  int num_migrated_in_gnos;          /* number of gnos migrated to this proc */
   int alloc_migrated_in_gnos;        /* size of allocated array of migrated
-					in gids */
-  indextype *migrated_in_gnos;    /* ordered array of gids migrated in */
+					in gnos */
+  ZOLTAN_GNO_TYPE *migrated_in_gnos;    /* ordered array of gnos migrated in */
   void **migrated_in_data;           /* data migrated in, parallel array to
 					migrated_in_gnos */
 

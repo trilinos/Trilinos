@@ -23,6 +23,8 @@ extern "C" {
 #include <stdio.h>
 
 /* MPI tags */
+#undef TAG1
+#undef TAG2
 #define TAG1 32111
 #define TAG2 32112
 

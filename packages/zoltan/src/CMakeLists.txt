@@ -101,12 +101,14 @@ APPEND_SET(NOINSTALLHEADERS
   coloring/coloring_const.h
   coloring/coloring.h
   coloring/g2l_hash.h
+  coloring/bucket.h
   )
 
 APPEND_SET(SOURCES
   coloring/coloring.c
   coloring/color_test.c
   coloring/g2l_hash.c
+  coloring/bucket.c
   )
 
 #
@@ -581,6 +583,7 @@ APPEND_SET(SOURCES
   zz/zz_set_fn.c
   zz/zz_sort.c
   zz/zz_struct.c
+  zz/zz_back_trace.c
   zz/zz_util.c
   )
 

@@ -23,10 +23,7 @@
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
-#include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -538,7 +535,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     const FieldRestrictionVector::const_iterator ie = rMap.end() ;
         FieldRestrictionVector::const_iterator i = rMap.begin();
 
-    unsigned entity_id = 0;
+    EntityId entity_id = 0;
     unsigned max = 0 ;
 
     for ( ; i != ie ; ++i ) {

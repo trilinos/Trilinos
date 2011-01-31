@@ -16,24 +16,22 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 
 using stk::mesh::MetaData;
-using stk::mesh::TopologicalMetaData;
 using stk::mesh::Part;
 using stk::mesh::Property;
-
 
 namespace {
 
 STKUNIT_UNIT_TEST(UnitTestProperty, testProperty)
 {
   const int spatial_dimension = 3;
-  MetaData meta_data(TopologicalMetaData::entity_rank_names(spatial_dimension));
-  MetaData meta_data2(TopologicalMetaData::entity_rank_names(spatial_dimension));
+  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dimension));
+  MetaData meta_data2(stk::mesh::fem::entity_rank_names(spatial_dimension));
   unsigned size = 0;
   unsigned EntityRank = 0;
 

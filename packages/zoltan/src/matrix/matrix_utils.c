@@ -24,15 +24,25 @@ extern "C" {
 #include "matrix.h"
 
 void
-Zoltan_Matrix_Free(Zoltan_matrix *m)
+Zoltan_Matrix_Free(Zoltan_matrix *m, int delete_flag)
 {
   if (m->yend != m->ystart + 1)
     ZOLTAN_FREE(&m->yend);
-  ZOLTAN_FREE(&m->ystart);
+
+  if (FIELD_QUERY_DO_FREE(delete_flag, FIELD_YSTART))
+    ZOLTAN_FREE(&m->ystart);
+
   ZOLTAN_FREE(&m->yGNO);
-  ZOLTAN_FREE(&m->pinGNO);
-  ZOLTAN_FREE(&m->pinwgt);
-  ZOLTAN_FREE(&m->yGID);  
+
+  if (FIELD_QUERY_DO_FREE(delete_flag, FIELD_PINGNO))
+    ZOLTAN_FREE(&m->pinGNO);
+
+  if (FIELD_QUERY_DO_FREE(delete_flag, FIELD_PINWGT))
+    ZOLTAN_FREE(&m->pinwgt);
+
+  if (FIELD_QUERY_DO_FREE(delete_flag, FIELD_YGID))
+    ZOLTAN_FREE(&m->yGID);
+
   ZOLTAN_FREE(&m->ybipart);
   ZOLTAN_FREE(&m->ypid);
 
@@ -47,12 +57,18 @@ Zoltan_Matrix_Free(Zoltan_matrix *m)
 void
 Zoltan_Matrix2d_Free(Zoltan_matrix_2d *m)
 {
-  Zoltan_Matrix_Free (&m->mtx);
+  Zoltan_Matrix_Free (&m->mtx, m->delete_flag);
 
   ZOLTAN_FREE(&m->dist_x);
-  ZOLTAN_FREE(&m->dist_y);
+
+  if (FIELD_QUERY_DO_FREE(m->delete_flag,FIELD_DIST_Y))
+    ZOLTAN_FREE(&m->dist_y);
 
   Zoltan_PHGComm_Destroy(m->comm);
+
+  ZOLTAN_FREE(&m->comm); 
+
+  memset (m, 0, sizeof(Zoltan_matrix_2d));
 }
 
 void
@@ -70,9 +86,18 @@ Zoltan_Matrix_Reset(Zoltan_matrix* m)
 void
 Zoltan_Matrix2d_Init(Zoltan_matrix_2d *m)
 {
+  int i;
   memset(m, 0, sizeof(Zoltan_matrix_2d));
 
-  Zoltan_Distribute_Set(m, &Zoltan_Distribute_Origin, (void*)m);
+  /* deletion flag is required because of confusing memory usage - pointers in
+   *   m may be copied to other structures, which will free them later.  So
+   *   when that happens we'll turn off the FREE indicator in the flag.
+   */
+  for (i=0; i < FIELD_NUMBER_OF_FIELDS; i++){
+    FIELD_FREE_WHEN_DONE(m->delete_flag, i);
+  }
+
+  Zoltan_Distribute_Set(m, (distFnct *)&Zoltan_Distribute_Origin, (void*)m);
 }
 
 int
@@ -105,7 +130,7 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
       if (m->ystart[y] == m->yend[y-1]) /* No hole */
 	continue;
       length = m->yend[y]-m->ystart[y];
-      memcpy(m->pinGNO+m->yend[y-1], m->pinGNO+m->ystart[y], length*sizeof(int));
+      memcpy(m->pinGNO+m->yend[y-1], m->pinGNO+m->ystart[y], length*sizeof(ZOLTAN_GNO_TYPE));
       memcpy(m->pinwgt+m->yend[y-1]*m->pinwgtdim,
 	     m->pinGNO+m->ystart[y]*m->pinwgtdim, length*sizeof(float)*m->pinwgtdim);
       m->ystart[y] = m->yend[y-1];
@@ -125,7 +150,7 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
     MEMORY_ERROR;
 
   /* Get Informations about Y */
-  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (ZOLTAN_ID_PTR)m->ypid, m->ybipart,
+  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (char *)m->ypid, m->ybipart,
 		  m->nY, NULL);
 
   if (m->ddY != m->ddX) {

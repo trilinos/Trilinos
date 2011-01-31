@@ -50,8 +50,8 @@ Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector()
 }
 
 //=============================================================================
-Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(int Length)
-  : Epetra_IntSerialDenseMatrix(Length, 1)
+Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(int length)
+  : Epetra_IntSerialDenseMatrix(length, 1)
 {
 	SetLabel("Epetra::IntSerialDenseVector");
 }

@@ -31,10 +31,11 @@ BoxFixture::BoxFixture( stk::ParallelMachine pm ,
                         const std::vector<std::string>& entity_names )
   : m_meta_data ( entity_names ),
     m_bulk_data ( m_meta_data , pm , block_size ),
+    m_fem ( m_meta_data , spatial_dimension ),
     m_comm_rank( stk::parallel_machine_rank( pm ) ),
     m_comm_size( stk::parallel_machine_size( pm ) ),
     m_previous_state ( stk::mesh::BulkData::MODIFIABLE )
-{ }
+{}
 
 Entity& BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )
 {

@@ -45,735 +45,282 @@
 #ifndef __BelosTsqrOrthoManager_hpp
 #define __BelosTsqrOrthoManager_hpp
 
-#include "BelosConfigDefs.hpp" // HAVE_BELOS_TSQR
-#include "BelosMultiVecTraits.hpp"
+#include "BelosTsqrOrthoManagerImpl.hpp"
 // Belos doesn't have an SVQB orthomanager implemented yet, so we just
 // use a default orthomanager for the case where the inner product
 // matrix is nontrivial.
 #include "BelosDGKSOrthoManager.hpp" 
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_ParameterList.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace Belos {
 
-  /// \class TsqrOrthoError
-  /// \brief TsqrOrthoManager(Impl) error
-  class TsqrOrthoError : public OrthoError
-  {
-  public: 
-    TsqrOrthoError (const std::string& what_arg) : 
-      OrthoError (what_arg) {}
-  };
-
-  /// \class TsqrOrthoFault
-  /// \brief Orthogonalization fault
+  /// \class OutOfPlaceNormalizerMixin
+  /// \brief Mixin for out-of-place orthogonalization 
+  /// \author Mark Hoemmen
   ///
-  /// Stewart (SISC 2008) gives a Block Gram-Schmidt (BGS) with
-  /// reorthogonalization algorithm.  An "orthogonalization fault" is
-  /// what happens when the second BGS pass does not succeed (which is
-  /// possible in BGS, but not possible in (non-block) Gram-Schmidt if
-  /// you use Stewart's randomization procedure).  Stewart gives an
-  /// algorithm for recovering from an orthogonalization fault, but
-  /// the algorithm is expensive: it involves careful
-  /// reorthogonalization with non-block Gram-Schmidt.  We choose
-  /// instead to report the orthogonalization fault and let users
-  /// recover from it.
-  ///
-  /// \note This is not a (subclass of) TsqrOrthoError, because the
-  /// latter is a logic or runtime bug, whereas a TsqrOrthoFault is a
-  /// property of the input and admits recovery.
-  class TsqrOrthoFault : public OrthoError
-  {
-  public: 
-    TsqrOrthoFault (const std::string& what_arg) : 
-      OrthoError (what_arg) {}
-  };
-
-
-  class NonNullOperatorError : public OrthoError
-  {
+  /// Abstract interface for multiple inheritance ("mixin") for
+  /// special orthogonalization methods that normalize "out-of-place."
+  /// OrthoManager and MatOrthoManager both normalize (and
+  /// projectAndNormalize) multivectors "in place," meaning that the
+  /// input and output multivectors are the same (X, in both cases).
+  /// Gram-Schmidt (modified or classical) is an example of an
+  /// orthogonalization method that can normalize (and
+  /// projectAndNormalize) in place.  TSQR (the Tall Skinny QR
+  /// factorization, see \c TsqrOrthoManager.hpp for references) is an
+  /// orthogonalization method which cannot normalize (or
+  /// projectAndNormalize) in place.  For TSQR, we provide this mixin,
+  /// so that iterative methods can exploit TSQR's unique interface to
+  /// avoid one multivector copy.
+  template<class Scalar, class MV>
+  class OutOfPlaceNormalizerMixin {
   public:
-    NonNullOperatorError () : 
-      OrthoError ("Sorry, TsqrOrthoManager doesn\'t work with a non-null Op "
-		  "argument.  I know this is bad class design, but it will "
-		  "have to do for now, since TsqrOrthoManager has to inherit "
-		  "from MatOrthoManager in order to work in Belos\'s "
-		  "eigensolvers.  If you want to solve this problem yourself, "
-		  "the thing to do is to have TsqrOrthoManager degrade to "
-		  "DGKSOrthoManager when this->getOp() != Teuchos::null.")
-    {}
+    typedef Scalar scalar_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+    //! \typedef Multivector type with which this class was specialized
+    typedef MV multivector_type;
+
+    typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+    typedef Teuchos::RCP<mat_type>                  mat_ptr;
+
+    /// \brief Normalize X into Q*B, possibly overwriting X
+    ///
+    /// Normalize X into Q*B.  X may be overwritten with invalid
+    /// values.
+    ///
+    /// \param X [in/out] Vector(s) to normalize
+    /// \param Q [out] Normalized vector(s)
+    /// \param B [out] Normalization coefficients
+    ///
+    /// \return Rank of X
+    virtual int 
+    normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B) const = 0;
+
+    /// \brief Project and normalize X_in into X_out; overwrite X_in
+    ///
+    /// Project X_in against Q, storing projection coefficients in C,
+    /// and normalize X_in into X_out, storing normalization
+    /// coefficients in B.  On output, X_out has the resulting
+    /// orthogonal vectors.  X_in may be overwritten with invalid
+    /// values.
+    ///
+    /// \param X_in [in/out] On input: The vectors to project against
+    ///   Q and normalize.  On output: possibly overwritten with 
+    ///   invalid values.
+    /// \param X_out [out] The normalized input vectors after
+    ///   projection against Q.
+    /// \param C [out] Projection coefficients 
+    /// \param B [out] Normalization coefficients
+    /// \param Q [in] The orthogonal basis against which to project
+    ///
+    /// \return Rank of X_in after projection
+    virtual int 
+    projectAndNormalizeOutOfPlace (MV& X_in, 
+				   MV& X_out, 
+				   Teuchos::Array<mat_ptr> C,
+				   mat_ptr B,
+				   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
   };
-
-  /// \class TsqrOrthoManagerImpl
-  /// \brief TSQR-based OrthoManager subclass implementation
-  /// 
-  /// TsqrOrthoManagerImpl implements the interface defined by
-  /// OrthoManager.  It doesn't actually inherit from OrthoManager,
-  /// which gives us a bit more freedom when defining the actual
-  /// subclass of OrthoManager (TsqrOrthoManager).  
-  ///
-  /// This class uses a combination of Tall Skinny QR (TSQR) and Block
-  /// Gram-Schmidt (BGS) to orthogonalize multivectors.
-  ///
-  /// The Block Gram-Schmidt procedure used here is inspired by that
-  /// of G. W. Stewart ("Block Gram-Schmidt Orthogonalization", SISC
-  /// vol 31 #1 pp. 761--775, 2008), except that we use TSQR+SVD
-  /// instead of standard Gram-Schmidt with orthogonalization to
-  /// handle the current block.  "Orthogonalization faults" may still
-  /// happen, but we do not handle them by default.  Rather, we make
-  /// one BGS pass, do TSQR+SVD, check the resulting column norms, and
-  /// make a second BGS pass (+ TSQR+SVD) if necessary.  If we then
-  /// detect an orthogonalization fault, we throw TsqrOrthoFault.
-  ///
-  template< class ScalarType, class MV >
-  class TsqrOrthoManagerImpl
-  {
-  private:
-    typedef typename Teuchos::ScalarTraits< ScalarType >::magnitudeType MagnitudeType;
-    typedef Teuchos::ScalarTraits< ScalarType >    SCT;
-    typedef Teuchos::ScalarTraits< MagnitudeType > SCTM;
-    typedef MultiVecTraits< ScalarType, MV >       MVT;
-
-    typedef typename MVT::tsqr_adaptor_type tsqr_adaptor_type;
-    typedef Teuchos::RCP< tsqr_adaptor_type > tsqr_adaptor_ptr;
-
-  public:
-
-    /// \brief Constructor
-    ///
-    /// \param tsqrParams [in] Configuration parameters for TSQR.  See
-    ///   TSQR documentation for how to set those.  They depend on
-    ///   which multivector (MV) class you are using (since each MV
-    ///   class maps to a specific TSQR implementation).
-    ///
-    /// \param Op [in] Inner product.  Don't set to anything not 
-    ///   Teuchos::null, otherwise an exception will be thrown.
-    ///   Also, don't call setOp().
-    ///
-    TsqrOrthoManagerImpl (const Teuchos::ParameterList& tsqrParams) :
-      tsqrParams_ (tsqrParams),
-      tsqrAdaptor_ (Teuchos::null),
-      Q_ (Teuchos::null),
-      eps_ (SCT::eps()), // ScalarTraits< ScalarType >::eps() returns MagnitudeType
-      blockReorthogThreshold_ (MagnitudeType(1) / MagnitudeType(2)),
-      relativeRankTolerance_ (MagnitudeType(100)*SCTM::eps()),
-      throwOnReorthogFault_ (true)
-    {
-      using Teuchos::Exceptions::InvalidParameterName;
-      using Teuchos::Exceptions::InvalidParameterType;
-
-      // Use input parameter list to set nondefault parameter values,
-      // if provided by the caller.  Silently ignore invalid values.
-
-      try {
-	const MagnitudeType brt = 
-	  tsqrParams.get< MagnitudeType >(std::string("blockReorthogThreshold"));
-	if (brt >= MagnitudeType(0))
-	  blockReorthogThreshold_ = brt;
-      } catch (InvalidParameterName&) {
-	;
-      } catch (InvalidParameterType&) {
-	;
-      }
-
-      try {
-	const MagnitudeType rrt = 
-	  tsqrParams.get< MagnitudeType >(std::string("relativeRankTolerance"));
-	if (rrt >= MagnitudeType(0))
-	  relativeRankTolerance_ = rrt;
-      } catch (InvalidParameterName&) {
-	;
-      } catch (InvalidParameterType&) {
-	;
-      }
-
-      try {
-	const bool tof = 
-	  tsqrParams.get< bool >(std::string("throwOnReorthogFault"));
-	throwOnReorthogFault_ = tof;
-      } catch (InvalidParameterName&) {
-	;
-      } catch (InvalidParameterType&) {
-	;
-      }
-    }
-
-    // void 
-    // setOp (Teuchos::RCP< const OP > Op)
-    // {
-    //   static_cast< MatOrthoManager< ScalarType, MV, OP >* const >(this)->setOp (Op);
-    //   if (getOp() != Teuchos::null) 
-    // 	throw NonNullOperatorError();
-    // }
-
-    typedef Teuchos::RCP< MV >       mv_ptr;
-    typedef Teuchos::RCP< const MV > const_mv_ptr;
-    typedef Teuchos::Array< const_mv_ptr >                       const_prev_mvs_type;
-    typedef Teuchos::SerialDenseMatrix< int, ScalarType >        serial_matrix_type;
-    typedef Teuchos::RCP< serial_matrix_type >                   serial_matrix_ptr;
-    typedef Teuchos::Array< Teuchos::RCP< serial_matrix_type > > prev_coeffs_type;
-
-    void 
-    innerProd (const MV& X, 
-	       const MV& Y, 
-	       serial_matrix_type& Z) const
-    {
-      MVT::MvTransMv (SCT::one(), X, Y, Z);
-    }
-
-    void
-    norm (const MV& X, 
-	  std::vector< MagnitudeType >& normvec) const
-    {
-      const int ncols = MVT::GetNumberVecs (X);
-
-      // mfh 20 Jul 2010: MatOrthoManager::normMat() computes norms
-      // one column at a time, which results in too much
-      // communication.  Instead, we compute the whole inner product,
-      // which takes more computation but is the only option
-      // available, given the current MVT interface.
-      serial_matrix_type XTX (ncols, ncols); 
-      innerProd (X, X, XTX);
-
-      // Record the results.  Make sure normvec is long enough.
-      if (normvec.size() < ncols)
-	normvec.resize (ncols);
-      for (int k = 0; k < ncols; ++k)
-	normvec[k] = SCTM::squareroot (XTX(k,k));
-    }
-
-    /// \brief Compute \f$C := Q^* X\f$ and \f$X := X - Q C\f$.
-    ///
-    /// \warning This method does not do reorthogonalization.  This is
-    /// because the reorthogonalization test requires normalization as
-    /// well.
-    void 
-    project (MV& X, 
-	     prev_coeffs_type C,
-	     const_prev_mvs_type Q) 
-    {
-      int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
-      checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
-      // Test for quick exit: any dimension of X is zero, or there are
-      // zero Q blocks, or the total number of columns of the Q blocks
-      // is zero.
-      if (nrows_X == 0 || ncols_X == 0 || num_Q_blocks == 0 || ncols_Q_total == 0)
-	return;
-
-      // If we don't have enough C, expanding it creates null references.
-      // If we have too many, resizing just throws away the later ones.
-      // If we have exactly as many as we have Q, this call has no effect.
-      C.resize (num_Q_blocks);
-      for (int i = 0; i < num_Q_blocks; ++i) 
-	{
-	  const int ncols_Q_i = MVT::GetNumberVecs (*Q[i]);
-	  // Create a new C[i] if necessary.
-	  if (C[i] == Teuchos::null)
-	    C[i] = Teuchos::rcp (new serial_matrix_type (ncols_Q_i, ncols_X));
-	}
-      rawProject (X, Q, C);
-    }
-
-
-    int 
-    normalize (MV& X, serial_matrix_ptr B) 
-    {
-      // Internal data used by this method require a specific MV
-      // object for initialization (e.g., to get a Map / communicator,
-      // and to initialize scratch space).  Thus, we delay (hence
-      // "lazy") initialization until we get an X.
-      lazyInit (X);
-      
-      // MVT returns int for this, even though the local_ordinal_type
-      // of the MV may be some other type.
-      const int ncols = MVT::GetNumberVecs (X);
-
-      // TSQR's rank-revealing part doesn't work unless B is provided.
-      // If B is not provided, allocate a temporary B for use in TSQR.
-      // If it is provided, adjust dimensions as necessary.
-      if (B == Teuchos::null)
-	B = Teuchos::rcp (new serial_matrix_type (ncols, ncols));
-      else
-	B->shape (ncols, ncols);
-      //
-      // Compute rank-revealing decomposition (in this case, TSQR of X
-      // followed by SVD of the R factor and appropriate updating of
-      // the resulting Q factor) of X.  X is modified in place, and Q_
-      // contains the resulting explicit Q factor.  Later, we will
-      // copy this back into X.  
-      //
-      // The matrix *B will only be upper triangular if X is of full
-      // numerical rank.
-      //
-      int rank;
-      try {
-	tsqrAdaptor_->factorExplicit (X, *Q_, *B);
-	// This call will only modify *B if *B on input is not of full
-	// numerical rank.
-	rank = tsqrAdaptor_->revealRank (*Q_, *B, relativeRankTolerance());
-      } catch (std::exception& e) {
-	throw OrthoError (e.what());
-      }
-      // Now we should copy Q_ back into X, but don't do it yet: if we
-      // want to fill the last ncols-rank columns with random data, we
-      // should do so in Q_, because it's fresh in the cache.
-      if (false)
-	{
-	  // If X did not have full (numerical rank), augment the last
-	  // ncols-rank columns of X with random data.
-	  const int ncolsToFill = ncols - rank;
-	  if (ncolsToFill > 0)
-	    {
-	      // ind: Indices of columns of X to fill with random data.
-	      std::vector< int > fillIndices (ncolsToFill);
-	      for (int j = 0; j < ncolsToFill; ++j)
-		fillIndices[j] = j + rank;
-
-	      mv_ptr Q_null = MVT::CloneViewNonConst (*Q_, fillIndices);
-	      MVT::MvRandom (*Q_null);
-	      // Done with Q_null; tell Teuchos to deallocate it.
-	      Q_null = Teuchos::null;
-	    }
-	}
-      // MultiVecTraits (MVT) doesn't have a "deep copy from one MV
-      // into an existing MV in place" method, but it does have two
-      // methods which may be used to this effect:
-      // 
-      // 1. MvAddMv() (compute X := 1*Q_ + 0*X)
-      //
-      // 2. SetBlock() (Copy from A to mv by setting the index vector
-      //    to [0, 1, ..., GetNumberVecs(mv)-1])
-      //
-      // MVT doesn't state the aliasing rules for MvAddMv(), but I'm
-      // guessing it's OK for B and mv to alias one another (that is
-      // the way AXPY works in the BLAS).
-      MVT::MvAddMv (ScalarType(1), *Q_, ScalarType(0), X, X);
-
-      // Don't deallocate B, even if the user provided Teuchos::null
-      // as the B input (or the default B input took over).  The RCP's
-      // destructor should work just fine.
-      return rank;
-    }
-
-
-    int 
-    projectAndNormalize (MV &X,
-			 prev_coeffs_type C,
-			 serial_matrix_ptr B,
-			 const_prev_mvs_type Q)
-    {
-      // Fetch dimensions of X and Q.
-      int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
-      checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
-
-      // Test for quick exit: any dimension of X is zero.
-      if (nrows_X == 0 || ncols_X == 0)
-	return 0;
-
-      // If there are zero Q blocks or zero Q columns, just normalize!
-      if (num_Q_blocks == 0 || ncols_Q_total == 0)
-	return normalize (X, B);
-      
-      // If we don't have enough C, expanding it creates null references.
-      // If we have too many, resizing just throws away the later ones.
-      // If we have exactly as many as we have Q, this call has no effect.
-      C.resize (num_Q_blocks);
-      prev_coeffs_type newC (num_Q_blocks);
-      for (int i = 0; i < num_Q_blocks; ++i) 
-	{
-	  const int ncols_Q_i = MVT::GetNumberVecs (*Q[i]);
-	  // Create a new C[i] if necessary.
-	  if (C[i] == Teuchos::null)
-	    C[i] = Teuchos::rcp (new serial_matrix_type (ncols_Q_i, ncols_X));
-	  // Fill C[i] with zeros.
-	  C[i]->putScalar (ScalarType(0));
-	  // Create newC[i] as a clone of C[i].  (All that really
-	  // matters is that is has the same dimensions and is filled
-	  // with zeros; cloning C[i] accomplishes both in this case.)
-	  newC[i] = Teuchos::rcp (new serial_matrix_type (*C[i]));
-	}
-
-      // std::cerr << "Got past initialization of newC[0.." 
-      // 		<< (num_Q_blocks-1) << "]" << std::endl;
-
-      // Keep track of the column norms of X, both before and after
-      // each orthogonalization pass.
-      std::vector< MagnitudeType > normsBeforeFirstPass (ncols_X, MagnitudeType(0));
-      std::vector< MagnitudeType > normsAfterFirstPass (ncols_X, MagnitudeType(0));
-      std::vector< MagnitudeType > normsAfterSecondPass (ncols_X, MagnitudeType(0));
-      MVT::MvNorm (X, normsBeforeFirstPass);
-
-      // First BGS pass.  "Modified Gram-Schmidt" version of Block
-      // Gram-Schmidt:
-      //
-      // \li \f$C^{\text{new}}_i := Q_i^* \cdot X\f$
-      // \li \f$X := X - Q_i \cdot C^{\text{new}}_i\f$
-      rawProject (X, Q, newC);
-
-      // std::cerr << "Got past rawProject(X,Q,newC)" << std::endl;
-
-      // Update the C matrices:
-      //
-      // \li \f$C_i := C_i + C^{\text{new}}_i\f$
-      for (int i = 0; i < num_Q_blocks; ++i)
-	*C[i] += *newC[i];
-
-      // std::cerr << "Got past *C[i] += *newC[i]" << std::endl;
-
-      // Normalize the matrix X.
-      if (B == Teuchos::null)
-	B = Teuchos::rcp (new serial_matrix_type (ncols_X, ncols_X));
-      int rank = normalize (X, B);
-
-      // std::cerr << "Got past normalize(X, B)" << std::endl;
-      
-      // Compute post-first-pass (pre-normalization) norms, using B.
-      // normalize() doesn't guarantee in general that B is upper
-      // triangular, so we compute norms using the entire column of B.
-      Teuchos::BLAS< int, ScalarType > blas;
-      for (int j = 0; j < ncols_X; ++j)
-	{
-	  const ScalarType* const B_j = &(*B)(0,j);
-	  // Teuchos::BLAS returns a MagnitudeType result on
-	  // ScalarType inputs.
-	  normsAfterFirstPass[j] = blas.NRM2 (ncols_X, B_j, 1);
-	}
-      // Test whether any of the norms dropped below the
-      // reorthogonalization threshold.
-      bool reorthog = false;
-      for (int j = 0; j < ncols_X; ++j)
-	if (normsBeforeFirstPass[j] / normsAfterFirstPass[j] <= blockReorthogThreshold())
-	  {
-	    reorthog = true; 
-	    break;
-	  }
-
-      // Perform another BGS pass if necessary.  "Twice is enough"
-      // (Kahan's theorem) for a Krylov method, unless (using
-      // Stewart's term) there is an "orthogonalization fault"
-      // (indicated by reorthogFault).
-      bool reorthogFault = false;
-      // Indices of X at which there was an orthogonalization fault.
-      std::vector< int > faultIndices (0);
-      if (reorthog)
-	{
-	  // Block Gram-Schmidt (again):
-	  //
-	  // \li \f$C^{\text{new}} = Q^* X\f$
-	  // \li \f$X := X - Q C^{\text{new}}\f$
-	  // \li \f$C := C + C^{\text{new}}\f$
-	  rawProject (X, Q, newC);
-	  for (int i = 0; i < num_Q_blocks; ++i)
-	    *C[i] += *newC[i];
-
-	  // Normalize the matrix X.
-	  serial_matrix_ptr B_new (new serial_matrix_type (ncols_X, ncols_X));
-	  rank = normalize (X, B_new);
-	  *B += *B_new;
-
-	  // Compute post-second-pass (pre-normalization) norms, using
-	  // B.  normalize() doesn't guarantee in general that B is
-	  // upper triangular, so we compute norms using the entire
-	  // column of B.
-	  for (int j = 0; j < ncols_X; ++j)
-	    {
-	      // FIXME Should we use B_new or B here?
-	      const ScalarType* const B_j = &(*B)(0,j);
-	      // Teuchos::BLAS returns a MagnitudeType result on
-	      // ScalarType inputs.
-	      normsAfterSecondPass[j] = blas.NRM2 (ncols_X, B_j, 1);
-	    }
-	  // Test whether any of the norms dropped below the
-	  // reorthogonalization threshold.  If so, it's an
-	  // orthogonalization fault, which requires expensive
-	  // recovery.
-	  reorthogFault = false;
-	  for (int j = 0; j < ncols_X; ++j)
-	    if (normsAfterSecondPass[j] / normsAfterFirstPass[j] <= blockReorthogThreshold())
-	      {
-		reorthogFault = true; 
-		faultIndices.push_back (j);
-	      }
-	} // if (reorthog) // reorthogonalization pass
-
-      if (reorthogFault)
-	{
-	  if (throwOnReorthogFault_)
-	    {
-	      using std::endl;
-	      typedef std::vector<int>::size_type size_type;
-	      std::ostringstream os;
-
-	      os << "Orthogonalization fault at the following column(s) of X:" << endl;
-	      os << "Column\tNorm decrease factor" << endl;
-	      for (size_type k = 0; k < faultIndices.size(); ++k)
-		{
-		  const int index = faultIndices[k];
-		  const MagnitudeType decreaseFactor = 
-		    normsAfterSecondPass[index] / normsAfterFirstPass[index];
-		  os << index << "\t" << decreaseFactor << endl;
-		}
-	      throw TsqrOrthoFault (os.str());
-	    }
-	  else // Slowly reorthogonalize, one vector at a time, the offending vectors of X.
-	    {
-	      throw std::logic_error ("Slow-and-careful reorthogonalization "
-				      "is not yet implemented");
-
-	      // for (int k = 0; k < faultIndices.size(); ++k)
-	      // 	{
-	      // 	  // Get a view of the current column of X.
-	      // 	  std::vector<int> currentIndex (1, faultIndices[k]);
-	      // 	  Teuchos::RCP< MV > X_j = MVT::CloneViewNonConst (X, currentIndex);
-
-	      // 	  // Reorthogonalize X_j against all columns of each Q[i].
-	      // 	}
-	    }
-	}
-      return rank;
-    }
-
-    /// \brief Return \f$ \| I - X^* \cdot X \|_F \f$
-    ///
-    /// Return the Frobenius norm of I - X^* X, which is an absolute
-    /// measure of the orthogonality of the columns of X.
-    MagnitudeType 
-    orthonormError (const MV &X) const
-    {
-      const ScalarType ONE = SCT::one();
-      const int ncols = MVT::GetNumberVecs(X);
-      serial_matrix_type XTX (ncols, ncols);
-      innerProd (X, X, XTX);
-      for (int k = 0; k < ncols; ++k)
-	XTX(k,k) -= ONE;
-      return XTX.normFrobenius();
-    }
-
-    MagnitudeType 
-    orthogError (const MV &X1, 
-		 const MV &X2) const
-    {
-      const int ncols_X1 = MVT::GetNumberVecs (X1);
-      const int ncols_X2 = MVT::GetNumberVecs (X2);
-      serial_matrix_type X1_T_X2 (ncols_X1, ncols_X2);
-      innerProd (X1, X2, X1_T_X2);
-      return X1_T_X2.normFrobenius();
-    }
-
-    /// Relative tolerance for triggering a block reorthogonalization.
-    /// If any column norm in a block decreases by this amount, then
-    /// we reorthogonalize.
-    MagnitudeType blockReorthogThreshold() const { return blockReorthogThreshold_; }
-    /// Relative tolerance for determining (via the SVD) whether a
-    /// block is of full numerical rank.
-    MagnitudeType relativeRankTolerance() const { return relativeRankTolerance_; }
-
-  private:
-    /// 
-    /// Parameters for initializing TSQR
-    Teuchos::ParameterList tsqrParams_;
-    ///
-    /// Interface between Belos and TSQR (the Tall Skinny QR
-    /// factorization).
-    tsqr_adaptor_ptr tsqrAdaptor_;
-    ///
-    /// Scratch space for TSQR
-    mv_ptr Q_;
-    /// 
-    // Machine precision for ScalarType
-    MagnitudeType eps_;
-    ///
-    /// Reorthogonalization threshold (relative) in Block Gram-Schmidt.
-    MagnitudeType blockReorthogThreshold_;
-    ///
-    /// Relative tolerance for measuring the numerical rank of a matrix.
-    MagnitudeType relativeRankTolerance_;
-    
-    /// Whether to throw an exception when an orthogonalization fault
-    /// occurs.  Recovery is possible, but expensive.
-    bool throwOnReorthogFault_;
-
-    /// \brief Initialize the TSQR adaptor and scratch space
-    ///
-    /// Initialize the TSQR adaptor and scratch space for TSQR.  Both
-    /// require a specific MV object, so we have to delay their
-    /// initialization until we get an X input (for normalize(), since
-    /// only that method uses the TSQR adaptor and the scratch space).
-    /// (Hence, "lazy," for delayed initialization.)
-    void
-    lazyInit (const MV& X)
-    {
-      // The TSQR adaptor object requires a specific MV object for
-      // initialization.  As long as subsequent MV objects use the
-      // same communicator (e.g., the same Teuchos::Comm<int>), we
-      // don't need to reinitialize the adaptor.
-      //
-      // FIXME (mfh 15 Jul 2010) If tsqrAdaptor_ has already been
-      // initialized, check to make sure that X has the same
-      // communicator as the multivector previously used to initialize
-      // tsqrAdaptor_.
-      if (tsqrAdaptor_ == Teuchos::null)
-	tsqrAdaptor_ = Teuchos::rcp (new tsqr_adaptor_type (X, tsqrParams_));
-
-      const int nrows = MVT::GetVecLength (X);
-      const int ncols = MVT::GetNumberVecs (X);
-
-      // Q_ is temporary workspace.  It must have the same dimensions
-      // as X.  If not, we have to reallocate.  We also have to
-      // allocate (not "re-") if we haven't allocated Q_ before.  (We
-      // can't allocate Q_ until we have some X, so we need a
-      // multivector as the "prototype.")
-      if (Q_ == Teuchos::null || 
-	  nrows != MVT::GetVecLength(X) || 
-	  ncols != MVT::GetVecLength(X))
-	// Allocate Q_ to have the same dimensions as X.  Contents of
-	// X are not copied.
-	Q_ = MVT::Clone (X, ncols);
-    }
-
-    void
-    checkProjectionDims (int& nrows_X, 
-			 int& ncols_X, 
-			 int& num_Q_blocks,
-			 int& ncols_Q_total,
-			 const MV& X, 
-			 const_prev_mvs_type Q) const
-    {
-      // Test for quick exit
-      num_Q_blocks = Q.length();
-      nrows_X = MVT::GetVecLength (X);
-      ncols_X = MVT::GetNumberVecs (X);
-
-      //
-      // Make sure that for each i, the dimensions of X and Q[i] are
-      // compatible.
-      //
-      ncols_Q_total = 0; // total over all Q blocks
-      for (int i = 0; i < num_Q_blocks; ++i)
-	{
-	  const int nrows_Q = MVT::GetVecLength (*Q[i]);
-	  TEST_FOR_EXCEPTION( (nrows_Q != nrows_X), 
-			      std::invalid_argument,
-			      "Belos::TsqrOrthoManager::project(): "
-			      "Size of X not consistant with size of Q" );
-	  ncols_Q_total += MVT::GetNumberVecs (*Q[i]);
-	}
-    }
-
-
-    /// Like project(), but does no allocation of blocks of C, and
-    /// does no updating of newC (see project() for details).
-    void
-    rawProject (MV& X, 
-		const_prev_mvs_type Q,
-		prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null))) const
-    {
-      int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
-      checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
-      // Test for quick exit: any dimension of X is zero, or there are
-      // zero Q blocks, or the total number of columns of the Q blocks
-      // is zero.
-      if (nrows_X == 0 || ncols_X == 0 || num_Q_blocks == 0 || ncols_Q_total == 0)
-	return;
-
-      // "Modified Gram-Schmidt" version of Block Gram-Schmidt.
-      for (int i = 0; i < num_Q_blocks; ++i)
-	{
-	  if (C[i] == Teuchos::null)
-	    {
-	      std::ostringstream os;
-	      os << "C[" << i << "] is null" << std::endl;
-	      throw std::logic_error (os.str());
-	    }
-	  innerProd (*Q[i], X, *C[i]);
-	  MVT::MvTimesMatAddMv (ScalarType(-1), *Q[i], *C[i], ScalarType(1), X);
-	}
-    }
-  };
-
 
   /// \class TsqrOrthoManager
   /// \brief TSQR-based OrthoManager subclass
   ///
   /// This is the actual subclass of OrthoManager, implemented using
   /// TsqrOrthoManagerImpl (TSQR + Block Gram-Schmidt).
-  template< class ScalarType, class MV >
-  class TsqrOrthoManager : public OrthoManager< ScalarType, MV > {
+  template<class Scalar, class MV>
+  class TsqrOrthoManager : 
+    public OrthoManager<Scalar, MV>, 
+    public OutOfPlaceNormalizerMixin<Scalar, MV> {
   public:
-    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
+    typedef Scalar scalar_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+    //! \typedef Multivector type with which this class was specialized
+    typedef MV multivector_type;
 
-    TsqrOrthoManager (const Teuchos::ParameterList& tsqrParams) :
-      impl_ (tsqrParams)
+    typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+    typedef Teuchos::RCP<mat_type>                  mat_ptr;
+
+    /// \brief Get default parameters for TsqrOrthoManager
+    ///
+    /// Get a (pointer to a) default list of parameters for
+    /// configuring a TsqrOrthoManager instance.
+    ///
+    /// \note To get nondefault behavior, a good thing to do is to
+    ///   make a deep copy of the returned parameter list, and then
+    ///   modify individual entries as desired.
+    ///
+    /// \note TSQR implementation configuration options are stored
+    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
+    ///   sublist() to get them; call get().)
+    ///
+    /// \warning This method is not reentrant.  It should only be
+    ///   called by one thread at a time.
+    ///
+    static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters() {
+      return TsqrOrthoManagerImpl<Scalar, MV>::getDefaultParameters();
+    }
+
+    /// \brief Get "fast" parameters for TsqrOrthoManager
+    ///
+    /// Get a (pointer to a) list of parameters for configuring a
+    /// TsqrOrthoManager instance for maximum speed, at the cost of
+    /// accuracy (no block reorthogonalization) and robustness to rank
+    /// deficiency (no randomization of the null space basis).
+    ///
+    /// \note TSQR implementation configuration options are stored
+    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
+    ///   sublist() to get them; call get().)
+    ///
+    /// \warning This method is not reentrant.  It should only be
+    ///   called by one thread at a time.
+    ///
+    static Teuchos::RCP<const Teuchos::ParameterList> getFastParameters() {
+      return TsqrOrthoManagerImpl<Scalar, MV>::getFastParameters();
+    }
+
+    //! Constructor
+    TsqrOrthoManager (const Teuchos::RCP<const Teuchos::ParameterList>& params, 
+		      const std::string& label = "Belos") :
+      impl_ (params, label)
     {}
 
     virtual ~TsqrOrthoManager() {}
 
-    virtual void 
-    innerProd (const MV &X, 
-	       const MV &Y, 
-	       Teuchos::SerialDenseMatrix<int,ScalarType>& Z) const
-    {
+    //! Compute the (block) inner product Z := <X,Y>
+    void innerProd (const MV &X, const MV &Y, mat_type& Z) const {
       return impl_.innerProd (X, Y, Z);
     }
 
-    virtual void 
-    norm (const MV& X, 
-	  std::vector< magnitude_type > &normvec) const
-    {
-      return impl_.norm (X, normvec);
+    /// Compute the norm(s) of the column(s) of X
+    ///
+    /// \param X [in] Multivector for which to compute column norm(s)
+    ///
+    /// \param normVec [out] normVec[j] is the norm of column j of X.
+    ///   normVec is resized if it has too few entries to hold all the
+    ///   norms, but it is not resize if it has too many entries.
+    void norm (const MV& X, std::vector<magnitude_type>& normVec) const {
+      return impl_.norm (X, normVec);
     }
 
-    virtual void 
+    //! Project X against Q and store resulting coefficients in C
+    void 
     project (MV &X, 
-	     Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > > C,
-	     Teuchos::Array<Teuchos::RCP<const MV> > Q) const
+	     Teuchos::Array<mat_ptr> C,
+	     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       return impl_.project (X, C, Q);
     }
 
-    virtual int 
-    normalize (MV &X, 
-	       Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > B) const
+    /// Normalize X in place, and store resulting coefficients in B
+    ///
+    /// \return Rank of X
+    int 
+    normalize (MV &X, mat_ptr B) const
     {
       return impl_.normalize (X, B);
     }
 
-    virtual int 
+    /// Project X against Q, storing projection coefficients in C;
+    /// then normalize X in place, and store normalization
+    /// coefficients in B.
+    ///
+    /// \param X [in/out] Vector to project and normalize
+    /// \param C [out] Projection coefficients
+    /// \param B [out] Normalization coefficients
+    /// \param Q [in] Orthogonal basis against which to project
+    ///
+    /// \return Rank of X
+    int 
     projectAndNormalize (MV &X, 
-			 Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > > C,
-			 Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > B,
-			 Teuchos::Array<Teuchos::RCP<const MV> > Q) const
+			 Teuchos::Array<mat_ptr> C,
+			 mat_ptr B,
+			 Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       return impl_.projectAndNormalize (X, C, B, Q);
     }
 
-    virtual typename Teuchos::ScalarTraits< ScalarType >::magnitudeType 
-    orthonormError (const MV &X) const
+    /// \brief Normalize X into Q*B, overwriting X with invalid values
+    ///
+    /// Normalize X into Q*B, overwriting X with invalid values.  
+    ///
+    /// \note We expose this interface to applications because TSQR is
+    ///   not able to compute an orthogonal basis in place; it needs
+    ///   scratch space.  Applications can exploit this interface to
+    ///   avoid excessive copying of vectors when using TSQR for
+    ///   orthogonalization.
+    ///
+    /// \param X [in/out] Input vector(s) to normalize
+    /// \param Q [out] Normalized output vector(s)
+    /// \param B [out] Normalization coefficients
+    ///
+    /// \return Rank of X
+    ///
+    /// \note Q must have at least as many columns as X.  It may have
+    /// more columns than X; those columns are ignored.
+    int 
+    normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B) const
     {
+      return impl_.normalizeOutOfPlace (X, Q, B);
+    }
+
+    /// \brief Project and normalize X_in into X_out; overwrite X_in
+    ///
+    /// Project X_in against Q, storing projection coefficients in C,
+    /// and normalize X_in into X_out, storing normalization
+    /// coefficients in B.  On output, X_out has the resulting
+    /// orthogonal vectors and X_in is overwritten with invalid values.
+    ///
+    /// \param X_in [in/out] On input: The vectors to project against
+    ///   Q and normalize.  Overwritten with invalid values on output.
+    /// \param X_out [out] The normalized input vectors after
+    ///   projection against Q.
+    /// \param C [out] Projection coefficients 
+    /// \param B [out] Normalization coefficients
+    /// \param Q [in] The orthogonal basis against which to project
+    ///
+    /// \return Rank of X_in after projection
+    ///
+    /// \note We expose this interface to applications for the same
+    ///   reason that we expose normalizeOutOfPlace().
+    int 
+    projectAndNormalizeOutOfPlace (MV& X_in, 
+				   MV& X_out,
+				   Teuchos::Array<mat_ptr> C,
+				   mat_ptr B,
+				   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
+    {
+      return impl_.projectAndNormalizeOutOfPlace (X_in, X_out, C, B, Q);
+    }
+
+    //! Return \f$\| <X,X> - I \|\f$
+    magnitude_type orthonormError (const MV &X) const {
       return impl_.orthonormError (X);
     }
 
-    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
-    orthogError (const MV &X1, 
-		 const MV &X2) const 
-    {
+    magnitude_type orthogError (const MV &X1, const MV &X2) const {
       return impl_.orthogError (X1, X2);
     }
 
-    /// Belos::OrthoManager wants this virtual function to be
-    /// implemented; Anasazi::OrthoManager does not.
-    void setLabel (const std::string& label) { label_ = label; }
-    const std::string& getLabel() const { return label_; }
+    /// Set the label for (the timers for) this orthogonalization
+    /// manager, and create new timers if the label has changed.
+    ///
+    /// \param label [in] New label for timers
+    ///
+    /// \note Belos::OrthoManager wants this virtual function to be
+    ///   implemented; Anasazi::OrthoManager does not.
+    void setLabel (const std::string& label) { impl_.setLabel (label); }
+
+    //! Return timers label
+    const std::string& getLabel() const { return impl_.getLabel(); }
 
   private:
     /// "Mutable" because it has internal scratch space state.  I know
     /// it's bad, but it's the only way this class can be part of the
     /// OrthoManager hierarchy.
-    mutable TsqrOrthoManagerImpl< ScalarType, MV > impl_;
+    mutable TsqrOrthoManagerImpl<Scalar, MV> impl_;
 
+    //! Label for timers (if timers are enabled at compile time)
     std::string label_;
   };
 
@@ -784,64 +331,129 @@ namespace Belos {
   /// Subclass of MatOrthoManager.  When getOp() == null (Euclidean
   /// inner product), uses TSQR + Block Gram-Schmidt for
   /// orthogonalization.  When getOp() != null, uses DGKSOrthoManager
-  /// for orthogonalization.  Avoids communication only in the TSQR
-  /// case.  Initialization of either orthogonalization manager is
-  /// "lazy," so you don't have to pay for scratch space if you don't
-  /// use it.
+  /// (Classical Gram-Schmidt with reorthogonalization) for
+  /// orthogonalization.  Avoids communication only in the TSQR case.
+  /// Initialization of either orthogonalization manager is "lazy," so
+  /// you don't have to pay for scratch space if you don't use it.
   ///
-  template< class ScalarType, class MV, class OP >
-  class TsqrMatOrthoManager : public MatOrthoManager< ScalarType, MV, OP > {
-  private:
-    // This will be used to help C++ resolve getOp().  We can't call
-    // getOp() directly, because C++ can't figure out that it belongs
-    // to the base class MatOrthoManager.  (Remember that at this
-    // point, we might not have specialized the specific base class
-    // yet; it's just a template at the moment and not a "real
-    // class.")
-    typedef MatOrthoManager< ScalarType, MV, OP > base_type;
+  template<class Scalar, class MV, class OP>
+  class TsqrMatOrthoManager : 
+    public MatOrthoManager<Scalar, MV, OP>,
+    public OutOfPlaceNormalizerMixin<Scalar, MV>
+  {
+  public:
+    typedef Scalar scalar_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+    //! Multivector type with which this class was specialized
+    typedef MV multivector_type;
+    //! Operator type with which this class was specialized
+    typedef OP operator_type;
 
-    typedef TsqrOrthoManagerImpl< ScalarType, MV > tsqr_type;
-    typedef DGKSOrthoManager< ScalarType, MV, OP > dgks_type;
+    typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+    typedef Teuchos::RCP<mat_type>                  mat_ptr;
+
+  private:
+    /// \typedef base_type
+    ///
+    /// This will be used to help C++ resolve getOp().  We can't call
+    /// getOp() directly, because C++ can't figure out that it belongs
+    /// to the base class MatOrthoManager.  (Remember that at this
+    /// point, we might not have specialized the specific base class
+    /// yet; it's just a template at the moment and not a "real
+    /// class.")
+    typedef MatOrthoManager<Scalar, MV, OP> base_type;
+
+    /// \typedef tsqr_type
+    /// \brief Implementation of TSQR-based orthogonalization
+    typedef TsqrOrthoManagerImpl<Scalar, MV> tsqr_type;
+
+    /// \typedef dgks_type
+    /// \brief Implementation of DGKS-based orthogonalization
+    typedef DGKSOrthoManager<Scalar, MV, OP> dgks_type;
+
+    /// \typedef MVT
+    /// \brief Traits class for the multivector type
+    typedef MultiVecTraits<Scalar, MV> MVT;
 
   public:
-    typedef Teuchos::RCP< MV >       mv_ptr;
-    typedef Teuchos::RCP< const MV > const_mv_ptr;
-    typedef Teuchos::Array< const_mv_ptr >                       const_prev_mvs_type;
-    typedef Teuchos::SerialDenseMatrix< int, ScalarType >        serial_matrix_type;
-    typedef Teuchos::RCP< serial_matrix_type >                   serial_matrix_ptr;
-    typedef Teuchos::Array< Teuchos::RCP< serial_matrix_type > > prev_coeffs_type;
-    typedef typename Teuchos::ScalarTraits< ScalarType >::magnitudeType magnitude_type; 
-
-    /// \brief Default constructor (sets Op to Teuchos::null)
+    /// \brief Get default parameters for TsqrMatOrthoManager
     ///
+    /// Get a (pointer to a) default list of parameters for
+    /// configuring a TsqrMatOrthoManager instance.
+    ///
+    /// \note To get nondefault behavior, a good thing to do is to
+    ///   make a deep copy of the returned parameter list, and then
+    ///   modify individual entries as desired.
+    ///
+    /// \note TSQR implementation configuration options are stored
+    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
+    ///   sublist() to get them; call get().)
+    ///
+    /// \warning This method is not reentrant.  It should only be
+    ///   called by one thread at a time.
+    ///
+    static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters() {
+      // FIXME (mfh 11 Jan 2011) What about DGKS parameters?
+      return TsqrOrthoManagerImpl<Scalar, MV>::getDefaultParameters();
+    }
+
+    /// \brief Get "fast" parameters for TsqrMatOrthoManager
+    ///
+    /// Get a (pointer to a) list of parameters for configuring a
+    /// TsqrMatOrthoManager instance for maximum speed, at the cost of
+    /// accuracy (no block reorthogonalization) and robustness to rank
+    /// deficiency (no randomization of the null space basis).
+    ///
+    /// \note TSQR implementation configuration options are stored
+    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
+    ///   sublist() to get them; call get().)
+    ///
+    /// \warning This method is not reentrant.  It should only be
+    ///   called by one thread at a time.
+    ///
+    static Teuchos::RCP<const Teuchos::ParameterList> getFastParameters() {
+      return TsqrOrthoManagerImpl<Scalar, MV>::getFastParameters();
+    }
+
+    //! Default constructor (sets Op to Teuchos::null)
     TsqrMatOrthoManager () :
-      MatOrthoManager< ScalarType, MV, OP >(Teuchos::null),
+      MatOrthoManager<Scalar, MV, OP>(Teuchos::null),
       pTsqr_ (Teuchos::null), // Lazy initialization
       pDgks_ (Teuchos::null)  // Lazy initialization
     {}
 
-    /// Belos::OrthoManager wants this virtual function to be
-    /// implemented; Anasazi::OrthoManager does not.
-    void setLabel (const std::string& label) { label_ = label; }
+    /// \brief Set label for timers (if timers enabled)
+    ///
+    /// \note Belos::OrthoManager wants this virtual function to be
+    ///   implemented; Anasazi::OrthoManager does not.
+    void setLabel (const std::string& label) {
+      label_ = label; 
+    }
+    //! Return label for timers (if timers enabled)
     const std::string& getLabel() const { return label_; }
 
     /// \brief Constructor
     ///
-    /// \param tsqrParams [in] Parameters used to initialize TSQR 
+    /// \param params [in] Parameters used to set up the
+    ///   orthogonalization.  Call the getDefaultParameters() class
+    ///   method for default parameters and their documentation.
+    ///
+    /// \param label [in] Label for timers (if timers are used) 
     ///
     /// \param Op [in] Inner product with respect to which to
     ///   orthogonalize vectors.  If Teuchos::null, use the Euclidean
     ///   inner product.
-    TsqrMatOrthoManager (const Teuchos::ParameterList& tsqrParams, 
+    TsqrMatOrthoManager (const Teuchos::RCP<const Teuchos::ParameterList>& params,
+			 const std::string& label = "Belos",
 			 Teuchos::RCP< const OP > Op = Teuchos::null) :
-      MatOrthoManager< ScalarType, MV, OP >(Op),
-      tsqrParams_ (tsqrParams),
+      MatOrthoManager<Scalar, MV, OP>(Op),
+      params_ (params),
+      label_ (label),
       pTsqr_ (Teuchos::null), // Lazy initialization
       pDgks_ (Teuchos::null)  // Lazy initialization
     {}
 
-    /// \brief Destructor
-    ///
+    //! \brief Destructor
     virtual ~TsqrMatOrthoManager() {}
 
     /// \brief Return the inner product operator
@@ -852,31 +464,44 @@ namespace Belos {
     ///
     /// \note We override the base class' setOp() so that the
     ///   DGKSOrthoManager gets the new op.
-    virtual void 
-    setOp (Teuchos::RCP< const OP > Op) 
+    void 
+    setOp (Teuchos::RCP<const OP> Op) 
     {
       // We use this notation to help C++ resolve the name.
       // Otherwise, it won't know where to find setOp(), since this is
       // a member function of the base class which does not depend on
       // the template parameters.
       base_type::setOp (Op); // base class gets a copy of the Op too
+      ensureDgksInit (); // Make sure the DGKS object has been initialized
       pDgks_->setOp (Op);
     }
-    /// We override only to help C++ do name lookup in the other member functions.
-    virtual Teuchos::RCP< const OP > getOp () const { return base_type::getOp(); }
 
-    virtual void 
+    /// Return the inner product operator, if any
+    ///
+    /// \note We override only to help C++ do name lookup in the other
+    ///   member functions.
+    Teuchos::RCP<const OP> getOp () const { 
+      return base_type::getOp(); 
+    }
+
+    /// Project X against Q with respect to the inner product computed
+    /// by \c innerProd().  Store the resulting coefficients in C.  If
+    /// MX is not null, assume that MX is the result of applying the
+    /// operator to X, and exploit this when computing the inner
+    /// product.
+    void 
     project (MV &X, 
-	     Teuchos::RCP< MV > MX,
-	     prev_coeffs_type C,
-	     const_prev_mvs_type Q) const
+	     Teuchos::RCP<MV> MX,
+	     Teuchos::Array<mat_ptr> C,
+	     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
-      if (getOp() == Teuchos::null)
+      if (getOp().is_null())
 	{
 	  ensureTsqrInit ();
-	  // MX is not modified by MatOrthoManager::project(), so we
-	  // don't need to use it here.
 	  pTsqr_->project (X, C, Q);
+	  if (! MX.is_null())
+	    // MX gets a copy of X; M is the identity operator.
+	    MVT::Assign (X, *MX);
 	}
       else
 	{
@@ -885,25 +510,25 @@ namespace Belos {
 	}
     }
 
-    virtual void 
+    /// Project X against Q with respect to the inner product computed
+    /// by \c innerProd().  Store the resulting coefficients in C.
+    void 
     project (MV &X, 
-	     prev_coeffs_type C,
-	     const_prev_mvs_type Q) const
-    {
+	     Teuchos::Array<mat_ptr> C,
+	     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
       project (X, Teuchos::null, C, Q);
     }
 
-    virtual int 
-    normalize (MV& X, 
-	       Teuchos::RCP< MV > MX,
-	       Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > B) const
+    int 
+    normalize (MV& X, Teuchos::RCP<MV> MX, mat_ptr B) const 
     {
-      if (getOp() == Teuchos::null)
+      if (getOp().is_null())
 	{
 	  ensureTsqrInit ();
 	  const int rank = pTsqr_->normalize (X, B);
-	  if (MX != Teuchos::null)
-	    ; // FIXME: MX should get a copy of X
+	  if (! MX.is_null())
+	    // MX gets a copy of X; M is the identity operator.
+	    MVT::Assign (X, *MX);
 	  return rank;
 	}
       else
@@ -913,27 +538,24 @@ namespace Belos {
 	}
     }
 
-    virtual int
-    normalize (MV& X, 
-	       Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > B) const 
-    {
+    int normalize (MV& X, mat_ptr B) const {
       return normalize (X, Teuchos::null, B);
     }
 
-
-    virtual int 
+    int 
     projectAndNormalize (MV &X, 
-			 Teuchos::RCP< MV > MX,
-			 Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-			 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-			 Teuchos::Array<Teuchos::RCP<const MV> > Q ) const
+			 Teuchos::RCP<MV> MX,
+			 Teuchos::Array<mat_ptr> C,
+			 mat_ptr B, 
+			 Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
-      if (getOp() == Teuchos::null)
+      if (getOp().is_null())
 	{
 	  ensureTsqrInit ();
 	  const int rank = pTsqr_->projectAndNormalize (X, C, B, Q); 
-	  if (MX != Teuchos::null)
-	    ; // FIXME: MX should get a copy of X
+	  if (! MX.is_null())
+	    // MX gets a copy of X; M is the identity operator.
+	    MVT::Assign (X, *MX);
 	  return rank;
 	}
       else
@@ -943,15 +565,90 @@ namespace Belos {
 	}
     }
 
-    virtual magnitude_type
-    orthonormError (const MV &X,
-		    Teuchos::RCP< const MV > MX) const
+    /// \brief Normalize X into Q*B, overwriting X with invalid values
+    ///
+    /// Normalize X into Q*B, overwriting X with invalid values.  
+    ///
+    /// \note We expose this interface to applications because TSQR is
+    ///   not able to compute an orthogonal basis in place; it needs
+    ///   scratch space.  Applications can exploit this interface to
+    ///   avoid excessive copying of vectors when using TSQR for
+    ///   orthogonalization.
+    ///
+    /// \param X [in/out] Vector(s) to normalize
+    /// \param Q [out] Normalized vector(s)
+    /// \param B [out] Normalization coefficients
+    ///
+    /// \return Rank of X
+    ///
+    /// \note Q must have at least as many columns as X.  It may have
+    /// more columns than X; those columns are ignored.
+    int 
+    normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B) const
     {
-      if (getOp() == Teuchos::null)
+      if (getOp().is_null())
 	{
 	  ensureTsqrInit ();
-	  // Ignore MX.
-	  return pTsqr_->orthonormError (X);
+	  return pTsqr_->normalizeOutOfPlace (X, Q, B);
+	}
+      else
+	{
+	  // DGKS normalizes in place, so we have to copy.
+	  ensureDgksInit ();
+	  const int rank = pDgks_->normalize (X, B);
+	  MVT::Assign (X, Q);
+	  return rank;
+	}
+    }
+
+    /// \brief Project and normalize X_in into X_out; overwrite X_in
+    ///
+    /// Project X_in against Q, storing projection coefficients in C,
+    /// and normalize X_in into X_out, storing normalization
+    /// coefficients in B.  On output, X_out has the resulting
+    /// orthogonal vectors and X_in is overwritten with invalid values.
+    ///
+    /// \param X_in [in/out] On input: The vectors to project against
+    ///   Q and normalize.  Overwritten with invalid values on output.
+    /// \param X_out [out] The normalized input vectors after
+    ///   projection against Q.
+    /// \param C [out] Projection coefficients 
+    /// \param B [out] Normalization coefficients
+    /// \param Q [in] The orthogonal basis against which to project
+    ///
+    /// \return Rank of X_in after projection
+    ///
+    /// \note We expose this interface to applications for the same
+    ///   reason that we expose normalizeOutOfPlace().
+    int 
+    projectAndNormalizeOutOfPlace (MV& X_in, 
+				   MV& X_out,
+				   Teuchos::Array<mat_ptr> C,
+				   mat_ptr B,
+				   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
+    {
+      if (getOp().is_null())
+	{
+	  ensureTsqrInit ();
+	  return pTsqr_->projectAndNormalizeOutOfPlace (X_in, X_out, C, B, Q);
+	}
+      else
+	{
+	  // DGKS normalizes in place, so we have to copy.
+	  ensureDgksInit ();
+	  const int rank = pDgks_->projectAndNormalize (X_in, Teuchos::null, C, B, Q);
+	  MVT::Assign (X_in, X_out);
+	  return rank;
+	}
+    }
+
+    magnitude_type 
+    orthonormError (const MV &X, Teuchos::RCP<const MV> MX) const
+    {
+      if (getOp().is_null())
+	{
+	  ensureTsqrInit ();
+	  return pTsqr_->orthonormError (X); // Ignore MX
 	}
       else
 	{
@@ -960,25 +657,20 @@ namespace Belos {
 	}
     }
 
-    virtual magnitude_type
-    orthonormError (const MV &X) const
-    {
+    magnitude_type orthonormError (const MV &X) const {
       return orthonormError (X, Teuchos::null);
     }
 
-    virtual magnitude_type
-    orthogError (const MV &X1, 
-		 const MV &X2) const
-    {
+    magnitude_type orthogError (const MV &X1, const MV &X2) const {
       return orthogError (X1, Teuchos::null, X2);
     }
 
-    virtual magnitude_type
+    magnitude_type
     orthogError (const MV &X1, 
-		 Teuchos::RCP< const MV > MX1,
+		 Teuchos::RCP<const MV> MX1,
 		 const MV &X2) const
     {
-      if (getOp() == Teuchos::null)
+      if (getOp().is_null())
 	{
 	  ensureTsqrInit ();
 	  // Ignore MX1, since we don't need to write to it.
@@ -995,32 +687,31 @@ namespace Belos {
     void
     ensureTsqrInit () const
     {
-      if (pTsqr_ == Teuchos::null)
-	pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+      if (pTsqr_.is_null())
+	pTsqr_ = Teuchos::rcp (new tsqr_type (params_, getLabel()));
     }
     void 
     ensureDgksInit () const
     {
-      if (pDgks_ == Teuchos::null)
+      // FIXME (mfh 11 Jan 2011) 
+      //
+      // DGKS has a parameter that needs to be set.
+      if (pDgks_.is_null())
 	pDgks_ = Teuchos::rcp (new dgks_type (getLabel(), getOp()));
     }
 
-    ///
-    /// Parameter list for initializing TSQR
-    Teuchos::ParameterList tsqrParams_;
-    ///
+    //! Parameter list for initializing the orthogonalization
+    Teuchos::RCP<const Teuchos::ParameterList> params_;
+    //! Label for timers (if timers are used)
+    std::string label_;
     /// TSQR + BGS orthogonalization manager implementation, used when
     /// getOp() == null (Euclidean inner product).
-    mutable Teuchos::RCP< tsqr_type > pTsqr_;
-    ///
+    mutable Teuchos::RCP<tsqr_type> pTsqr_;
     /// DGKS orthogonalization manager, used when getOp() != null
     /// (could be a non-Euclidean inner product, but not necessarily).
-    mutable Teuchos::RCP< dgks_type > pDgks_;
-
-    std::string label_;
+    mutable Teuchos::RCP<dgks_type> pDgks_;
   };
 
 } // namespace Belos
 
 #endif // __BelosTsqrOrthoManager_hpp
-

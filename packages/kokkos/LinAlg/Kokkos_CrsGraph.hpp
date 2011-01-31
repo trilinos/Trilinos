@@ -467,7 +467,7 @@ namespace Kokkos {
 
       This is externally identical to the host-based graph; in fact, it
       derives from CrsGraphHostCompute. The difference is that that it
-      contains additional storage and logic for device-bound compute buffers.
+      contains additional storage and logic for device-bound compute buffers, and it over-rides finalize() to fill these.
    */
   template <class Ordinal, 
             class Node,

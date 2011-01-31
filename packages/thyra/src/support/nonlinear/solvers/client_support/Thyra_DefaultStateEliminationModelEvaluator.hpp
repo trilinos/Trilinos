@@ -324,11 +324,11 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModelImpl(
   ) const
 {
   typedef ModelEvaluatorBase MEB;
-  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
+  using Teuchos::as;
 
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
@@ -353,7 +353,7 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModelImpl(
     }
     else {
       x_guess_solu_ = createMember(thyraModel->get_x_space());
-      assign(&*x_guess_solu_,Scalar(0.0));
+      assign(x_guess_solu_.ptr(), as<Scalar>(0.0));
     }
   }
 

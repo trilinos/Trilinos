@@ -269,6 +269,7 @@ namespace Belos {
     // Default solver values.
     static const MagnitudeType convtol_default_;
     static const int maxIters_default_;
+    static const bool assertPositiveDefiniteness_default_;
     static const bool showMaxResNormOnly_default_;
     static const int verbosity_default_;
     static const int outputStyle_default_;
@@ -282,7 +283,7 @@ namespace Belos {
     MagnitudeType convtol_;
     int maxIters_, numIters_;
     int verbosity_, outputStyle_, outputFreq_, defQuorum_;
-    bool showMaxResNormOnly_;
+    bool assertPositiveDefiniteness_, showMaxResNormOnly_;
     std::string resScale_;       
  
     // Timers.
@@ -300,6 +301,9 @@ const typename PseudoBlockCGSolMgr<ScalarType,MV,OP>::MagnitudeType PseudoBlockC
 
 template<class ScalarType, class MV, class OP>
 const int PseudoBlockCGSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
+
+template<class ScalarType, class MV, class OP>
+const bool PseudoBlockCGSolMgr<ScalarType,MV,OP>::assertPositiveDefiniteness_default_ = true;
 
 template<class ScalarType, class MV, class OP>
 const bool PseudoBlockCGSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
@@ -336,6 +340,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr() :
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   defQuorum_(defQuorum_default_),
+  assertPositiveDefiniteness_(assertPositiveDefiniteness_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   resScale_(resScale_default_),
   label_(label_default_),
@@ -355,6 +360,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr(
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   defQuorum_(defQuorum_default_),
+  assertPositiveDefiniteness_(assertPositiveDefiniteness_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   resScale_(resScale_default_),
   label_(label_default_),
@@ -388,6 +394,14 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
     params_->set("Maximum Iterations", maxIters_);
     if (maxIterTest_!=Teuchos::null)
       maxIterTest_->setMaxIters( maxIters_ );
+  }
+
+  // Check if positive definiteness assertions are to be performed
+  if (params->isParameter("Assert Positive Definiteness")) {
+    assertPositiveDefiniteness_ = params->get("Assert Positive Definiteness",assertPositiveDefiniteness_default_);
+
+    // Update parameter in our list.
+    params_->set("Assert Positive Definiteness", assertPositiveDefiniteness_);
   }
 
   // Check to see if the timer label changed.
@@ -570,6 +584,9 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Maximum Iterations", maxIters_default_,
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
+    pl->set("Assert Positive Definiteness", assertPositiveDefiniteness_default_,
+      "Whether or not to assert that the linear operator\n"
+      "and the preconditioner are indeed positive definite.");
     pl->set("Verbosity", verbosity_default_,
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
@@ -630,6 +647,8 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list
   Teuchos::ParameterList plist;
+
+  plist.set("Assert Positive Definiteness",assertPositiveDefiniteness_);
 
   // Reset the status test.  
   outputTest_->reset();

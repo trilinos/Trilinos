@@ -1,5 +1,6 @@
 
 INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageAddAdvancedTest)
 
 
 #
@@ -24,6 +25,63 @@ IF (${PACKAGE_NAME}_ENABLE_Boost)
   ENDIF()
 ENDIF()
 
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TestForException_throwTest
+  SOURCES
+    TestForException_throwTest.cpp
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "This is an exception I throw"
+  )
+
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_STACKTRACE)
+IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
+
+  SET(PASS_REGEXS
+    "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:39"
+    "Throw number = 1"
+    "Throw test that evaluated to true: true"
+    "This is an exception I throw!"
+    )
+
+  IF (CMAKE_BUILD_TYPE STREQUAL DEBUG)
+    APPEND_SET(PASS_REGEXS
+      "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_b()"
+      "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_a()"
+      )
+  ELSEIF (${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS)
+    APPEND_SET(PASS_REGEXS
+      "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_.()"
+      )
+  ELSE()
+    APPEND_SET(PASS_REGEXS
+      "in func_a()"
+      )
+  ENDIF()
+
+  PACKAGE_ADD_ADVANCED_TEST(
+    TestForException_throwTest_stacktrace
+    TEST_0 EXEC TestForException_throwTest
+      ARGS  --enable-stacktrace
+      PASS_REGULAR_EXPRESSION_ALL ${PASS_REGEXS}
+    OVERALL_NUM_MPI_PROCS 1
+    )
+    # ToDo: Add more greps to look for the stacktrace output!
+
+  PACKAGE_ADD_ADVANCED_TEST(
+    TestForException_throwTest_nostacktrace
+    TEST_0 EXEC TestForException_throwTest
+      ARGS  --no-enable-stacktrace
+      PASS_REGULAR_EXPRESSION_ALL
+        "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:39"
+        "Throw number = 1"
+        "Throw test that evaluated to true: true"
+        "This is an exception I throw!"
+    OVERALL_NUM_MPI_PROCS 1
+    )
+
+ENDIF()
 
 # These RCPNodeHandle tests are pulled out to run first in order to catch
 # problems before running the other memory management tests.
@@ -173,25 +231,25 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #
 # RCP Beginners Guide example code
 #
+IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+  # The raw pointer version should build but is supposed to segfault so we will
+  # not bother running it.  The problem is that even if we put WILL_FAIL onto
+  # it, CTest will intercept signall 11 (segfault) and mark it as failed, even
+  # though it is supposed to fail.  So much for WILL_FAIL ...
+  PACKAGE_ADD_EXECUTABLE(
+    example_raw_cpp_pointers
+    SOURCES
+      ${TRILINOS_HOME_DIR}/doc/RefCountPtr/example/example_raw_cpp_pointers.cpp
+    )
 
-# The raw pointer version should build but is supposed to segfault so we will
-# not bother running it.  The problem is that even if we put WILL_FAIL onto
-# it, CTest will intercept signall 11 (segfault) and mark it as failed, even
-# though it is supposed to fail.  So much for WILL_FAIL ...
-PACKAGE_ADD_EXECUTABLE(
-  example_raw_cpp_pointers
-  SOURCES
-    ${TRILINOS_HOME_DIR}/doc/RefCountPtr/example/example_raw_cpp_pointers.cpp
-  )
-
-# The RCP version should run just fine
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  example_ref_count_ptr
-  SOURCES
-    ${TRILINOS_HOME_DIR}/doc/RefCountPtr/example/example_ref_count_ptr.cpp
-  NUM_MPI_PROCS 1
-  )
-
+  # The RCP version should run just fine
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    example_ref_count_ptr
+    SOURCES
+      ${TRILINOS_HOME_DIR}/doc/RefCountPtr/example/example_ref_count_ptr.cpp
+    NUM_MPI_PROCS 1
+    )
+ENDIF()
 
 
 

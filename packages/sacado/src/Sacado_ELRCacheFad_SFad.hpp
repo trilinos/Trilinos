@@ -94,13 +94,14 @@ namespace Sacado {
       //@{
 
       //! Default constructor
-      Expr() : val_( T(0.)) { ss_array<T>::zero(dx_, Num); }
+      Expr() : val_( T(0.)), update_val_(true) { ss_array<T>::zero(dx_, Num); }
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      Expr(const T & x) : val_(x)  { ss_array<T>::zero(dx_, Num); }
+      Expr(const T & x) : val_(x), update_val_(true)  { 
+	ss_array<T>::zero(dx_, Num); }
 
       //! Constructor with size \c sz and value \c x
       /*!
@@ -117,7 +118,7 @@ namespace Sacado {
       Expr(const int sz, const int i, const T & x);
 
       //! Copy constructor
-      Expr(const Expr& x) : val_(x.val_) { 
+      Expr(const Expr& x) : val_(x.val_), update_val_(x.update_val_) { 
 	//ss_array<T>::copy(x.dx_, dx_, Num);
 	for (int i=0; i<Num; i++)
 	  dx_[i] = x.dx_[i];
@@ -147,6 +148,15 @@ namespace Sacado {
 
       //! Zero out the derivative array
       void zero() { ss_array<T>::zero(dx_, Num); }
+
+      //! Set whether this Fad object should update values
+      void setUpdateValue(bool update_val) { update_val_ = update_val; }
+
+      //! Return whether this Fad object has an updated value
+      bool updateValue() const { return update_val_; }
+
+      //! Cache values
+      void cache() const {}
 
       //@}
 
@@ -278,6 +288,9 @@ namespace Sacado {
 
       //! Derivatives
       T dx_[Num];
+
+      //! Update value
+      bool update_val_;
 
       // Functor for mpl::for_each to compute the local accumulation
       // of a tangent derivative

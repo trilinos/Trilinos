@@ -39,7 +39,7 @@ static int cnt = 0;
 char filename[32];
 FILE *fp = NULL;
 int i, j;
-int egno, vgno;
+ZOLTAN_GNO_TYPE egno, vgno;
 
   sprintf(filename, "phg%02d.%02d", cnt, zz->Proc);
   fp = fopen(filename, "w");
@@ -48,7 +48,7 @@ int egno, vgno;
     egno = EDGE_LNO_TO_GNO(phg, i);
     for (j = phg->hindex[i]; j < phg->hindex[i+1]; j++) {
       vgno = VTX_LNO_TO_GNO(phg, phg->hvertex[j]);
-      fprintf(fp, "%d  %d\n", vgno, -egno);
+      fprintf(fp, ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC "\n", vgno, -egno);
     }
   }
   fclose(fp);
@@ -81,7 +81,7 @@ int egno, vgno;
     vgno = VTX_LNO_TO_GNO(phg, i);
     for (j = phg->vindex[i]; j < phg->vindex[i+1]; j++) {
       egno = EDGE_LNO_TO_GNO(phg, phg->vedge[j]);
-      fprintf(fp, "%d  %d\n", vgno, -egno);
+      fprintf(fp, ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC "\n", vgno, -egno);
     }
   }
   fclose(fp);

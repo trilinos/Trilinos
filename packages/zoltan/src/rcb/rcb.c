@@ -100,8 +100,8 @@ static int set_preset_dir(int, int, int, struct rcb_box *, int **);
 static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   struct rcb_box *, double *, int, int, int *, int *, int, int, int, int,
   int, int, int, int, int, int, int, int, MPI_Op, MPI_Datatype,
-  int, int *, struct rcb_tree *, int *, int,
-  double *, double *, float *, double *, int, int, double);
+  int, ZOLTAN_GNO_TYPE *, struct rcb_tree *, int *, int, double *, double *,
+  float *, double *, int, int, double);
 static void compute_RCB_box(struct rcb_box *, int, struct Dot_Struct *, int *,
   MPI_Op, MPI_Datatype, MPI_Comm, int, int, int, int);
 
@@ -309,7 +309,7 @@ static int rcb_fn(
                                    1.0 = no extra; 1.5 = 50% extra; etc.     */
   int reuse,                    /* (0) don't use (1) use previous cuts
                                    stored in treept at initial guesses.      */
-  int wgtflag,                  /* No. of weights per dot                    */
+  int wgtflag,                  /* No. of weights per dot provided by user    */
   int check_geom,               /* Check input & output for consistency?     */
   int stats,                    /* Print timing & count summary?             */
   int gen_tree,                 /* (0) do not (1) do generate full treept    */
@@ -355,8 +355,9 @@ static int rcb_fn(
   int     ierr = ZOLTAN_OK;         /* error flag. */
   int    *proc_list = NULL;         /* temp array for reusing old cuts */
   int     outgoing;                 /* number of outgoing dots for reuse */
-  double *coord = NULL;             /* temp array for median_find */
-  double *wgts = NULL;              /* temp array for median_find */
+  double *coord = NULL;             /* temp array for serial_rcb */
+  double *wgts = NULL;              /* temp array for serial_rcb */
+  double *wgt, *pts ;
   double  valuehalf;                /* median cut position */
   int     first_guess;              /* flag if first guess for median search */
   int     allocflag;                /* have to re-allocate space */
@@ -367,7 +368,7 @@ static int rcb_fn(
 				      1 = time before median iterations
 				      2 = time in median iterations
 				      3 = communication time */
-  int     counters[7];              /* diagnostic counts
+  ZOLTAN_GNO_TYPE counters[7];        /* diagnostic counts
 			              0 = unused
 				      1 = # of dots sent
 				      2 = # of dots received
@@ -375,7 +376,7 @@ static int rcb_fn(
 				      4 = most dot memory this proc ever allocs
 				      5 = # of times a previous cut is re-used
 				      6 = # of reallocs of dot array  */
-  int     reuse_count[7];           /* counter (as above) for reuse to record
+  ZOLTAN_GNO_TYPE reuse_count[7];   /* counter (as above) for reuse to record
                                        the number of dots premoved */
   int     i,j;                      /* local variables */
   int     use_ids;                  /* When true, global and local IDs will be
@@ -403,6 +404,7 @@ static int rcb_fn(
                                        parallel partitioning.  */
   int    old_nprocs;                /* added for Tflops_Special */
   int    old_nparts;                /* added for Tflops_Special */
+  double newwgt;
   double weight[RB_MAX_WGTS];       /* weight for current set */
   double weightlo[RB_MAX_WGTS];     /* weight of lower side of cut */
   double weighthi[RB_MAX_WGTS];     /* weight of upper side of cut */
@@ -430,6 +432,7 @@ static int rcb_fn(
   double norm_max, norm_best;       /* norm of largest half after bisection */
   double max_box;                   /* largest length of bbox */
   char msg[128];                    /* buffer for error messages */
+  double pt[3];
 
   /* MPI data types and user functions */
 
@@ -488,9 +491,9 @@ static int rcb_fn(
   start_time = Zoltan_Time(zz->Timer);
   ierr = Zoltan_RCB_Build_Structure(zz, &pdotnum, &dotmax, wgtflag, overalloc,
                                     use_ids);
+
   if (ierr < 0) {
-    ZOLTAN_PRINT_ERROR(proc, yo, 
-                   "Error returned from Zoltan_RCB_Build_Structure.");
+    ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RCB_Build_Structure.");
     goto End;
   }
 
@@ -517,6 +520,8 @@ static int rcb_fn(
   counters[6] = 0;
   for (i = 0; i < 7; i++) reuse_count[i] = 0;
 
+  /* Ensure there are dots */
+
   MPI_Allreduce(&dotnum, &i, 1, MPI_INT, MPI_MAX, zz->Communicator);
 
   if (i == 0){
@@ -535,8 +540,6 @@ static int rcb_fn(
   wgtdim = (wgtflag>0 ? wgtflag : 1);
   if (dotmax > 0) {
     if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
-     || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
-     || !(wgts = (double *) ZOLTAN_MALLOC(wgtdim*dotmax*sizeof(double)))
      || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
       ierr = ZOLTAN_MEMERR;
@@ -545,8 +548,6 @@ static int rcb_fn(
   }
   else {
     dotmark = NULL;
-    coord = NULL;
-    wgts = NULL;
     dotlist = NULL;
   }
 
@@ -554,12 +555,20 @@ static int rcb_fn(
   /* Also, if this is not first time through, send dots to previous proc. */
   if (reuse) {
     gen_tree = 1;
-    dotpt  = rcb->Dots; 
+    dotpt  = &rcb->Dots; 
+    pt[1] = pt[2] = 0;
 
     if (treept[0].dim != -1) {
       /* find previous location of dots */
       for (outgoing = i = 0; i < dotnum; i++) {
-        ierr = Zoltan_RB_Point_Assign(zz, dotpt[i].X, &dotmark[i], NULL);
+        pt[0] = dotpt->X[i];
+        if (dotpt->Y){
+          pt[1] = dotpt->Y[i];
+          if (dotpt->Z){
+            pt[2] = dotpt->Z[i];
+          }
+        }
+        ierr = Zoltan_RB_Point_Assign(zz, pt, &dotmark[i], NULL);
         if (ierr < 0) {
           ZOLTAN_PRINT_ERROR(proc, yo, 
                              "Error returned from Zoltan_RB_Point_Assign");
@@ -583,12 +592,21 @@ static int rcb_fn(
 
       /* move dots */
       allocflag = 0;
+#if 0
       ierr = Zoltan_RB_Send_Dots(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                  &(rcb->Dots), &dotmark, 
                                  proc_list, outgoing, 
                                  &dotnum, &dotmax, proc, &allocflag,
                                  overalloc, stats, reuse_count, use_ids,
                                  zz->Communicator);
+#else
+      ierr = Zoltan_RB_Send_Dots_less_memory(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
+                                 &(rcb->Dots), &dotmark, 
+                                 proc_list, outgoing, 
+                                 &dotnum, &dotmax, proc, &allocflag,
+                                 overalloc, stats, reuse_count, use_ids,
+                                 zz->Communicator);
+#endif
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(proc, yo, 
                            "Error returned from Zoltan_RB_Send_Dots.");
@@ -604,35 +622,50 @@ static int rcb_fn(
     }
   }
 
-  /* set dot weights = 1.0 if user didn't and determine total weight */
+  dotpt = &rcb->Dots;
 
-  dotpt = rcb->Dots;
-  if (!wgtflag) {
-    wgtflag = 1;
-    for (i = 0; i < dotnum; i++) dotpt[i].Weight[0] = 1.0;
+  if (wgtflag == 0){   /* no user supplied weights */
     weightlo[0] = (double) dotnum;
   }
   else {
     /* put sum of weights in weightlo */
-    for (j=0; j<wgtflag; j++) weightlo[j] = 0.0;
-    for (i=0; i < dotnum; i++){
-      for (j=0; j<wgtflag; j++)
-        weightlo[j] += dotpt[i].Weight[j];
+    for (j=0; j<dotpt->nWeights; j++){
+      weightlo[j] = 0.0;
+      wgt = dotpt->Weight + j;
+      for (i=0; i < dotnum; i++){
+        weightlo[j] += *wgt;
+        wgt += wgtflag;
+      }
     }
   }
   /* Let weight be the global sum of all weights. */
-  MPI_Allreduce(weightlo, weight, wgtflag, MPI_DOUBLE, MPI_SUM, 
-                zz->Communicator);
+  MPI_Allreduce(weightlo, weight, wgtdim, MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
   /* Set weight scaling factors. */
-  wgtscale[0]= 1.0;
-  if (wgtdim>1){
+
+  wgtscale[0] = 1.0;
+  if (wgtdim > 1){
     for (j=0; j<wgtdim; j++){
       if (obj_wgt_comp || (weight[j]==0.0))
         wgtscale[j] = 1.0;
       else{
         wgtscale[j] = 1.0/weight[j]; /* normalize to make sum 1.0 */
         weight[j] = 1.0;
+      }
+    }
+  }
+
+  if (wgtflag == 0){   /* no user supplied weights */
+    dotpt->uniformWeight = wgtscale[0];
+  }
+  else{
+    /* scale the weights */
+    for (j=0; j<dotpt->nWeights; j++){
+      wgt = dotpt->Weight + j;
+      for (i=0; i < dotnum; i++){
+        newwgt = *wgt * wgtscale[j];
+        *wgt = newwgt;
+        wgt += wgtflag;
       }
     }
   }
@@ -645,7 +678,6 @@ static int rcb_fn(
       goto End;
     }
   }
-
 
   /* initialize sub-domain bounding box to entire domain */
   compute_RCB_box(rcbbox, dotnum, dotpt, NULL, box_op, box_type, 
@@ -737,12 +769,8 @@ static int rcb_fn(
     if (allocflag) {
       allocflag = 0;
       ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&coord);
-      ZOLTAN_FREE(&wgts);
       ZOLTAN_FREE(&dotlist);
       if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
-       || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
-       || !(wgts = (double *) ZOLTAN_MALLOC(wgtdim*dotmax*sizeof(double)))
        || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
         ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
         ierr = ZOLTAN_MEMERR;
@@ -767,7 +795,7 @@ static int rcb_fn(
     breakflag= 0;
     dim_best = -1;
     norm_best = -1.;
-    one_cut_dir = (wgtflag<=1) || lock_direction || preset_dir;
+    one_cut_dir = (wgtdim<=1) || lock_direction || preset_dir;
     if (!one_cut_dir){
       if (!(dotmark0 = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
        || !(dotmark_best = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))){
@@ -804,16 +832,10 @@ static int rcb_fn(
           dotmark[j] = dotmark0[j];
       }
 
-      /* copy correct coordinate value into the temporary array */
-      dotpt = rcb->Dots;
-      for (i = 0; i < dotnum; i++) {
-        coord[i] = dotpt[i].X[dim];
-        for (j=0; j<wgtflag; j++){
-          /* use the scaled weights. */
-          wgts[i*wgtflag+j] = wgtscale[j]*dotpt[i].Weight[j];
-        }
-      }
-  
+      dotpt = &rcb->Dots;
+
+      pts = ((dim==0) ? dotpt->X : ((dim==1) ? dotpt->Y : dotpt->Z));
+
       /* determine if there is a first guess to use */
       /* The test on old_nparts is for the TFLOPS_SPECIAL flag */
       if (old_nparts > 1 && reuse && dim == treept[partmid].dim) {
@@ -828,8 +850,8 @@ static int rcb_fn(
   
       if (wgtflag <= 1){
         if (pivot_choice == PIVOT_CHOICE_BISECTION){
-          if (!Zoltan_RB_find_median(
-               zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
+          if (!Zoltan_RB_find_median(          
+               zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight, dotmark, dotnum, proc, 
                fraclo[0], local_comm, &valuehalf, first_guess,
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
@@ -842,7 +864,7 @@ static int rcb_fn(
         }
         else{
           if (!Zoltan_RB_find_median_randomized(
-               zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
+               zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight, dotmark, dotnum, proc, 
                fraclo[0], local_comm, &valuehalf, first_guess,
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
@@ -856,7 +878,7 @@ static int rcb_fn(
       }
       else { 
         if (Zoltan_RB_find_bisector(
-               zz, zz->Tflops_Special, coord, wgts, dotmark, dotnum, 
+               zz, zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight, dotmark, dotnum, 
                wgtflag, mcnorm, fraclo, local_comm, 
                &valuehalf, first_guess,
                old_nprocs, proclower, old_nparts, 
@@ -875,7 +897,7 @@ static int rcb_fn(
               (!tfs_disregard_results && (norm_max < norm_best)))) {
           norm_best = norm_max; 
           dim_best = dim;
-          for (j=0; j<wgtflag; j++){
+          for (j=0; j<wgtdim; j++){
             weightlo_best[j] = weightlo[j];
             weighthi_best[j] = weighthi[j];
           }
@@ -903,7 +925,7 @@ static int rcb_fn(
         goto End;
       }
       dim = dim_best;
-      for (j=0; j<wgtflag; j++){
+      for (j=0; j<wgtdim; j++){
         weightlo[j] = weightlo_best[j];
         weighthi[j] = weighthi_best[j];
       }
@@ -924,9 +946,9 @@ static int rcb_fn(
     }
 
     if (set)    /* set weight for current partition */
-      for (j=0; j<wgtflag; j++) weight[j] = weighthi[j];
+      for (j=0; j<wgtdim; j++) weight[j] = weighthi[j];
     else
-      for (j=0; j<wgtflag; j++) weight[j] = weightlo[j];
+      for (j=0; j<wgtdim; j++) weight[j] = weightlo[j];
 
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time3 = Zoltan_Time(zz->Timer);
@@ -969,11 +991,13 @@ static int rcb_fn(
     }
 
     allocflag = 0;
+
     ierr = Zoltan_RB_Send_Outgoing(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                &(rcb->Dots), &dotmark,
                                &dottop, &dotnum, &dotmax,
                                set, &allocflag, overalloc,
-                               stats, counters, use_ids, local_comm, proclower,
+                               stats, counters, use_ids, 
+                                local_comm, proclower,
                                old_nprocs, partlower, partmid);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo,
@@ -1032,21 +1056,28 @@ static int rcb_fn(
     int *tmpdindx = dindx + dotnum;
     if (allocflag) {
       ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&coord);
-      ZOLTAN_FREE(&wgts);
       ZOLTAN_FREE(&dotlist);
       if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
-       || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
-       || !(wgts = (double *) ZOLTAN_MALLOC(wgtflag*dotmax*sizeof(double)))
        || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
         ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
         ierr = ZOLTAN_MEMERR;
         goto End;
       }
     }
+
+    coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
+    wgts = (double *) ZOLTAN_MALLOC(wgtflag*dotmax*sizeof(double));
+
+    if (!coord || (wgtflag && !wgts)){
+      ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+
     for (i = 0; i < dotnum; i++)
       dindx[i] = i;
-    ierr = serial_rcb(zz, rcb->Dots, dotmark, dotlist, old_set, root,
+
+    ierr = serial_rcb(zz, &rcb->Dots, dotmark, dotlist, old_set, root,
                rcbbox, weight, dotnum, num_parts,
                &(dindx[0]), &(tmpdindx[0]), partlower, 
                proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
@@ -1075,7 +1106,7 @@ static int rcb_fn(
   /* error checking and statistics */
 
   if (check_geom) {
-    ierr = Zoltan_RB_check_geom_output(zz, rcb->Dots, part_sizes, np, fp,
+    ierr = Zoltan_RB_check_geom_output(zz, &rcb->Dots, part_sizes, np, fp,
                                        dotnum, pdotnum, rcbbox);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo, 
@@ -1097,7 +1128,7 @@ EndReporting:
   if (zz->LB.Remap_Flag) {
     ierr = Zoltan_RB_Remap(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                            &(rcb->Dots), &dotnum, &dotmax,
-                           &allocflag, overalloc, stats, counters, use_ids);
+                &allocflag, overalloc, stats, counters, use_ids);
     /* Note:  dottop is no longer valid after remapping.  Remapping might
        destroy the nice local-followed-by-non-local ordering of the 
        dots array.  Do not use dottop after remapping. */
@@ -1112,7 +1143,7 @@ EndReporting:
   if (zz->LB.Return_Lists) {
     /* zz->LB.Return_Lists is true ==> use_ids is true */
     ierr = Zoltan_RB_Return_Arguments(zz, rcb->Global_IDs, rcb->Local_IDs, 
-                                      rcb->Dots, num_import,
+                                      &rcb->Dots, num_import,
                                       import_global_ids, import_local_ids,
                                       import_procs, import_to_part, 
                                       dotnum);
@@ -1171,7 +1202,7 @@ EndReporting:
   lb_time[0] += (end_time - start_time);
 
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
-    Zoltan_RB_stats(zz, timestop-timestart,rcb->Dots,dotnum,part_sizes,
+    Zoltan_RB_stats(zz, timestop-timestart,&rcb->Dots,dotnum,part_sizes,
                 timers,counters,stats,reuse_count,rcbbox,reuse);
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
@@ -1186,7 +1217,7 @@ EndReporting:
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
     /* zz->Debug_Level >= ZOLTAN_DEBUG_ALL ==> use_ids is true */
-    Zoltan_RB_Print_All(zz, rcb->Global_IDs, rcb->Dots, 
+    Zoltan_RB_Print_All(zz, rcb->Global_IDs, &rcb->Dots, 
                     dotnum, *num_import,
                     *import_global_ids, *import_procs);
   }
@@ -1199,9 +1230,9 @@ End:
   MPI_Type_free(&box_type);
   MPI_Op_free(&box_op);
 
+  ZOLTAN_FREE(&dotmark);
   ZOLTAN_FREE(&coord);
   ZOLTAN_FREE(&wgts);
-  ZOLTAN_FREE(&dotmark);
   ZOLTAN_FREE(&dotlist);
   if (preset_dir) ZOLTAN_FREE(&dim_spec);
   if (dotmark0) ZOLTAN_FREE(&dotmark0);
@@ -1215,7 +1246,7 @@ End:
     /* Free only Dots and IDs; keep other structures. */
     ZOLTAN_FREE(&(rcb->Global_IDs));
     ZOLTAN_FREE(&(rcb->Local_IDs));
-    ZOLTAN_FREE(&(rcb->Dots));
+    Zoltan_Free_And_Reset_Dot_Structure(&rcb->Dots);
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -1446,12 +1477,12 @@ static int serial_rcb(
   MPI_Datatype box_type,     /* Data type needed if recompute_box */
   int average_cuts,          /* Flag forcing median line to be drawn halfway
                                 between two closest objects. */
-  int counters[],            /* diagnostic counts */
+  ZOLTAN_GNO_TYPE counters[],            /* diagnostic counts */
   struct rcb_tree *treept,   /* tree of RCB cuts */
   int *dim_spec,             /* specified direction for preset_dir */
   int level,                 /* recursion level of RCB for preset_dir */
-  double *coord,             /* temp array for median_find */
-  double *wgts,              /* temp array for median_find */
+  double *coord,
+  double *wgts,
   float *part_sizes,         /* Array of size zz->LB.Num_Global_Parts
                                 containing the percentage of work to be
                                 assigned to each partition.               */
@@ -1469,6 +1500,7 @@ static int serial_rcb(
   int first_guess;
   int new_nparts;
   int partmid;
+  int wgtdim;
   double valuehalf;
   double fractionlo[RB_MAX_WGTS];    /* desired weight in lower half */
   double weightlo[RB_MAX_WGTS];      /* weight in lower half */
@@ -1483,11 +1515,14 @@ static int serial_rcb(
   int dim_best;                     /* best cut dimension  */
   double norm_max, norm_best;       /* norm of largest half after bisection */
   double max_box;                   /* largest length of bbox */
+  double *c, *w;
+  double uniformWeight;
 
+  wgtdim = (wgtflag>0 ? wgtflag : 1);
 
   if (num_parts == 1) {
     for (i = 0; i < dotnum; i++)
-      dotpt[dindx[i]].Part = partlower;
+      dotpt->Part[dindx[i]] = partlower;
   }
   else {
     ierr = Zoltan_Divide_Parts(zz, zz->Obj_Weight_Dim, part_sizes, num_parts,
@@ -1540,16 +1575,25 @@ static int serial_rcb(
           dotmark[j] = dotmark0[j];
       }
 
+      c = ((dim==0) ? dotpt->X : ((dim==1) ? dotpt->Y : dotpt->Z));
+      uniformWeight = dotpt->uniformWeight;
+
       /* copy correct coordinate value into the temporary array */
       /* dotpt = rcb->Dots; */
+
       for (i = 0; i < dotnum; i++) {
-        coord[i] = dotpt[dindx[i]].X[dim];
-        for (j=0; j<wgtflag; j++){
-          /* use the scaled weights. */
-          wgts[i*wgtflag+j] = wgtscale[j]*dotpt[dindx[i]].Weight[j];
+        coord[i] = c[dindx[i]];        /* INVALID WRITE */
+      }
+
+      if (dotpt->nWeights > 0){
+        w = wgts;
+        for (i = 0; i < dotnum; i++) {
+          for (j=0; j<dotpt->nWeights; j++){
+            *w++ = dotpt->Weight[dindx[i] * dotpt->nWeights + j];
+          }
         }
       }
-  
+
       /* determine if there is a first guess to use */
       if (reuse && dim == treept[partmid].dim) {
         if (stats) counters[5]++;
@@ -1562,7 +1606,7 @@ static int serial_rcb(
         /* Call find_median with Tflops_Special == 0; avoids communication */
         if (pivot_choice == PIVOT_CHOICE_BISECTION){
           if (!Zoltan_RB_find_median(
-                 0, coord, wgts, dotmark, dotnum, proc, 
+                 0, coord, wgts, uniformWeight, dotmark, dotnum, proc, 
                  fractionlo[0], MPI_COMM_SELF, &valuehalf, 
                  first_guess, zz->Num_Proc, 1, zz->Proc, num_parts,
                  wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
@@ -1575,7 +1619,7 @@ static int serial_rcb(
         }
         else{  
           if (!Zoltan_RB_find_median_randomized(
-                 0, coord, wgts, dotmark, dotnum, proc, 
+                 0, coord, wgts, uniformWeight,  dotmark, dotnum, proc, 
                  fractionlo[0], MPI_COMM_SELF, &valuehalf, 
                  first_guess,
                  zz->Num_Proc, 1, zz->Proc, num_parts,
@@ -1591,7 +1635,7 @@ static int serial_rcb(
       else { 
         /* Call find_bisector with Tflops_Special == 0; avoids communication */
         if (Zoltan_RB_find_bisector(
-             zz, 0, coord, wgts, dotmark, dotnum, 
+             zz, 0, coord, wgts, uniformWeight, dotmark, dotnum, 
              wgtflag, mcnorm, fractionlo, MPI_COMM_SELF, 
              &valuehalf, first_guess, 
              1, zz->Proc, num_parts, 
@@ -1610,7 +1654,7 @@ static int serial_rcb(
              (norm_max < norm_best))) {
           norm_best = norm_max; 
           dim_best = dim;
-          for (j=0; j<wgtflag; j++){
+          for (j=0; j<wgtdim; j++){
             weightlo_best[j] = weightlo[j];
             weighthi_best[j] = weighthi[j];
           }
@@ -1638,7 +1682,7 @@ static int serial_rcb(
         goto End;
       }
       dim = dim_best;
-      for (j=0; j<wgtflag; j++){
+      for (j=0; j<wgtdim; j++){
         weightlo[j] = weightlo_best[j];
         weighthi[j] = weighthi_best[j];
       }
@@ -1727,6 +1771,7 @@ End:
 }
 
 /*****************************************************************************/
+
 static void compute_RCB_box(
   struct rcb_box *rcbbox,    /* bounding box of RCB sub-domain */
   int dotnum,                /* # of dots on this processor */
@@ -1743,21 +1788,40 @@ static void compute_RCB_box(
 )
 {
 /* Compute sub-domain bounding box to entire domain within communicator */
-int i, j, k;
+int i, k;
 struct rcb_box boxtmp;
 
   rcbbox->lo[0] = rcbbox->lo[1] = rcbbox->lo[2] = DBL_MAX;
   rcbbox->hi[0] = rcbbox->hi[1] = rcbbox->hi[2] = -DBL_MAX;
   boxtmp.lo[0] = boxtmp.lo[1] = boxtmp.lo[2] = DBL_MAX;
   boxtmp.hi[0] = boxtmp.hi[1] = boxtmp.hi[2] = -DBL_MAX;
+
+  if (dotpt->Z ==  NULL){
+    boxtmp.hi[2] = boxtmp.lo[2] = 0;
+    if (dotpt->Y ==  NULL){
+      boxtmp.hi[1] = boxtmp.lo[1] = 0;
+    }
+  }
   
   for (i = 0; i < dotnum; i++) {
     k = (dindx ? dindx[i] : i);
-    for (j = 0; j < 3; j++) {
-      if (dotpt[k].X[j] < boxtmp.lo[j])
-	boxtmp.lo[j] = dotpt[k].X[j];
-      if (dotpt[k].X[j] > boxtmp.hi[j])
-	boxtmp.hi[j] = dotpt[k].X[j];
+
+    if (dotpt->X[k] < boxtmp.lo[0])
+      boxtmp.lo[0] = dotpt->X[k];
+    if (dotpt->X[k] > boxtmp.hi[0])
+      boxtmp.hi[0] = dotpt->X[k];
+
+    if (dotpt->Y){
+      if (dotpt->Y[k] < boxtmp.lo[1])
+        boxtmp.lo[1] = dotpt->Y[k];
+      if (dotpt->Y[k] > boxtmp.hi[1])
+        boxtmp.hi[1] = dotpt->Y[k];
+      if (dotpt->Z){
+        if (dotpt->Z[k] < boxtmp.lo[2])
+          boxtmp.lo[2] = dotpt->Z[k];
+        if (dotpt->Z[k] > boxtmp.hi[2])
+          boxtmp.hi[2] = dotpt->Z[k];
+      }
     }
   }
 

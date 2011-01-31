@@ -138,7 +138,7 @@ int Ifpack_SILU::Initialize()
   Epetra_CrsMatrix* CrsMatrix;
   CrsMatrix = dynamic_cast<Epetra_CrsMatrix*>(&*A_);
 
-  if(CrsMatrix && CrsMatrix->RowMap().SameAs(CrsMatrix->ColMap())){
+  if(CrsMatrix && CrsMatrix->RowMap().SameAs(CrsMatrix->ColMap()) && CrsMatrix->IndicesAreContiguous()){
     // Case #1: Use original matrix
     Aover_=rcp(CrsMatrix,false);
   }

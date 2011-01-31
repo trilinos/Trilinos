@@ -40,7 +40,7 @@ typedef struct RIB_Struct {
                                    FALSE.   */
     ZOLTAN_ID_PTR Local_IDs;        /* This array is NOT used if Zoltan_RB_Use_IDs returns
                                    FALSE.   */
-    struct Dot_Struct *Dots;
+    struct Dot_Struct Dots;
     struct rib_tree   *Tree_Ptr;
     int                Num_Geom;
     ZZ_Transform       Tran;     /* transformation for degenerate geometry */

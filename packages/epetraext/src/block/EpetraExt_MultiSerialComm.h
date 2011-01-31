@@ -34,6 +34,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "EpetraExt_ConfigDefs.h"
 #include "EpetraExt_MultiComm.h" 
 #include "Epetra_SerialComm.h" 
+#include "Teuchos_RCP.hpp"
 
 //! EpetraExt::MultiSerialComm is a class for keeping track of two levels of
 //! parallelism. The class is an Epetra_SerialComm for the global problem 
@@ -75,15 +76,86 @@ class MultiSerialComm: public EpetraExt::MultiComm {
   //@}
   
   //! Get reference to split Communicator for sub-domain
-  Epetra_Comm& SubDomainComm() const {return *subComm;}
+  virtual Epetra_Comm& SubDomainComm() const {return *subComm;}
+
+  //! Get reference to split Communicator for time domain
+  virtual Epetra_Comm& TimeDomainComm() const { return *subComm; }
+
+  //! Return number of sub-domains that the global problem is split into.
+  virtual int NumSubDomains() const {return 1;}
+
+  //! Return integer [0:numSubDomains-1} corresponding to this sub-domain's rank.
+  virtual int SubDomainRank() const {return 0;}
+
+  //! Return number of time domains that the global problem is split into.
+  virtual int NumTimeDomains() const { return 1; }
+
+  //! Return integer [0:numTimeDomains-1} corresponding to this time-domain's rank.
+  virtual int TimeDomainRank() const { return 0; }
+
+  //! Return number of time steps, first step number, on time domain.
+  virtual int NumTimeStepsOnDomain() const {return numTimeSteps;}
+  virtual int FirstTimeStepOnDomain() const {return 0;}
+
+  //! Return total number of time steps.
+  virtual int NumTimeSteps() const {return numTimeSteps;}
 
   //! Reset total number of time steps, allowing time steps per domain to
   //  be set later than the MultiLevel parallelism is set up.
   void ResetNumTimeSteps(int numTimeSteps);
 
+  virtual Epetra_Comm * Clone() const  { return myComm->Clone(); };
+  virtual void Barrier() const { myComm->Barrier(); };
+  virtual int Broadcast(double * MyVals, int Count, int Root) const
+          { return myComm->Broadcast( MyVals, Count, Root); };
+  virtual int Broadcast(int * MyVals, int Count, int Root) const
+          { return myComm->Broadcast( MyVals, Count, Root); };
+  virtual int Broadcast(long * MyVals, int Count, int Root) const
+          { return myComm->Broadcast( MyVals, Count, Root); };
+  virtual int Broadcast(char * MyVals, int Count, int Root) const
+          { return myComm->Broadcast( MyVals, Count, Root); };
+  virtual int GatherAll(double * MyVals, double * AllVals, int Count) const
+          { return myComm->GatherAll( MyVals,  AllVals, Count); };
+  virtual int GatherAll(int * MyVals, int * AllVals, int Count) const
+          { return myComm->GatherAll( MyVals, AllVals, Count); };
+  virtual int GatherAll(long * MyVals, long * AllVals, int Count) const
+          { return myComm->GatherAll( MyVals,  AllVals, Count); };
+  virtual int SumAll(double * PartialSums, double * GlobalSums, int Count) const
+          { return myComm->SumAll( PartialSums,  GlobalSums, Count); };
+  virtual int SumAll(int * PartialSums, int * GlobalSums, int Count) const
+          { return myComm->SumAll( PartialSums,  GlobalSums, Count); };
+  virtual int SumAll(long * PartialSums, long * GlobalSums, int Count) const
+          { return myComm->SumAll( PartialSums,  GlobalSums, Count); };
+  virtual int MaxAll(double * PartialMaxs, double * GlobalMaxs, int Count) const
+          { return myComm->MaxAll( PartialMaxs,  GlobalMaxs, Count); };
+  virtual int MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const
+          { return myComm->MaxAll( PartialMaxs,  GlobalMaxs, Count); };
+  virtual int MaxAll(long * PartialMaxs, long * GlobalMaxs, int Count) const
+          { return myComm->MaxAll( PartialMaxs, GlobalMaxs, Count); };
+  virtual int MinAll(double * PartialMins, double * GlobalMins, int Count) const
+          { return myComm->MinAll( PartialMins, GlobalMins, Count); };
+  virtual int MinAll(int * PartialMins, int * GlobalMins, int Count) const
+          { return myComm->MinAll( PartialMins, GlobalMins, Count); };
+  virtual int MinAll(long * PartialMins, long * GlobalMins, int Count)const
+          { return myComm->MinAll( PartialMins, GlobalMins, Count); };
+  virtual int ScanSum(double * MyVals, double * ScanSums, int Count)const
+          { return myComm->ScanSum( MyVals,  ScanSums, Count); };
+  virtual int ScanSum(int * MyVals, int * ScanSums, int Count) const
+          { return myComm->ScanSum(MyVals, ScanSums, Count); };
+  virtual int ScanSum(long * MyVals, long * ScanSums, int Count) const
+          { return myComm->ScanSum(MyVals, ScanSums, Count); };
+  virtual int MyPID() const { return myComm->MyPID(); };
+  virtual int NumProc() const { return myComm->NumProc(); };
+  virtual Epetra_Distributor * CreateDistributor() const { return myComm->CreateDistributor(); };
+  virtual Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const 
+          { return myComm->CreateDirectory(Map); };
+  virtual void PrintInfo(ostream & os) const { myComm->PrintInfo( os); };
+
  protected:
 
+  Teuchos::RCP<Epetra_Comm> myComm;
   Epetra_SerialComm* subComm; 
+  int numTimeSteps;
 };
 
 } //namespace EpetraExt

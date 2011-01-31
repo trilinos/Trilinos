@@ -19,7 +19,6 @@ namespace mesh {
 FieldBase::~FieldBase()
 {}
 
-
 namespace {
 
 void print_restriction( std::ostream & os ,
@@ -45,7 +44,6 @@ void print_restriction( std::ostream & os ,
 }
 
 }
-
 
 std::ostream & operator << ( std::ostream & s , const FieldBase & field )
 {

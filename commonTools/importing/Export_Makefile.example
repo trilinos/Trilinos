@@ -1,18 +1,67 @@
-include Makefile.export.Epetra
+# CMAKE File for "MyApp" application building against an installed Trilinos
 
-CFLAGS=$(Epetra_CXX_FLAGS)
-CC=$(Epetra_CXX_COMPILER)
+#This file is an adaptation of the CMakeLists.txt file that was converted from 
+#the buildAgainstTrilinos example. This Makefile was designed to be used in a
+#flat directory structure. If you would like to run this example you will need
+#put this file and src_file.cpp, src_file.hpp, main_file.cpp from
+#buildAgainstTrilinos into a new directory. You will then need to set the
+#environment variable MYAPP_TRILINOS_DIR to point to your base installation of
+#Trilinos. Note that this example assumes that the installation of Trilinos that
+#you point to has Epetra enabled.
 
-INCLUDE_INFO=$(Epetra_INCLUDE_DIRS) $(Epetra_TPL_INCLUDE_DIRS)
-LIBRARY_INFO=$(Epetra_EXTRA_LD_FLAGS) $(Epetra_LIBRARY_DIRS) $(Epetra_TPL_LIBRARY_DIRS) $(Epetra_LIBRARIES) $(Epetra_TPL_LIBRARIES)
+# Get Trilinos as one entity
+include $(MYAPP_TRILINOS_DIR)/include/Makefile.export.Trilinos
 
-default: main_prog
+# Make sure to use same compilers and flags as Trilinos
+CXX=$(Trilinos_CXX_COMPILER)
+CC=$(Trilinos_C_COMPILER)
+FORT=$(Trilinos_Fortran_COMPILER)
 
-main_prog: main.o
-	$(CC) $(CFLAGS) $(LIBRARY_INFO) main.o
+CXX_FLAGS=$(Trilinos_CXX_COMPILER_FLAGS) $(USER_CXX_FLAGS)
+C_FLAGS=$(Trilinos_C_COMPILER_FLAGS) $(USERC_FLAGS)
+FORT_FLAGS=$(Trilinos_Fortran_COMPILER_FLAGS) $(USER_FORT_FLAGS)
 
-main.o: main.cpp
-	$(CC) -c $(CFLAGS) $(INCLUDE_INFO) main.cpp
+INCLUDE_DIRS=$(Trilinos_INCLUDE_DIRS) $(Trilinos_TPL_INCLUDE_DIRS)
+LIBRARY_DIRS=$(Trilinos_LIBRARY_DIRS) $(Trilinos_TPL_LIBRARY_DIRS)
+LIBRARIES=$(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES)
 
+LINK_FLAGS=$(Trilinos_EXTRA_LD_FLAGS)
+
+#just assuming that epetra is turned on.
+DEFINES=-DMYAPP_EPETRA
+
+
+default: print_info MyApp.exe
+
+# Echo trilinos build info just for fun
+print_info:
+	@echo "\nFound Trilinos!  Here are the details: "
+	@echo "   Trilinos_VERSION = $(Trilinos_VERSION)"
+	@echo "   Trilinos_PACKAGE_LIST = $(Trilinos_PACKAGE_LIST)"
+	@echo "   Trilinos_LIBRARIES = $(Trilinos_LIBRARIES)"
+	@echo "   Trilinos_INCLUDE_DIRS = $(Trilinos_INCLUDE_DIRS)"
+	@echo "   Trilinos_LIBRARY_DIRS = $(Trilinos_LIBRARY_DIRS)"
+	@echo "   Trilinos_TPL_LIST = $(Trilinos_TPL_LIST)"
+	@echo "   Trilinos_TPL_INCLUDE_DIRS = $(Trilinos_TPL_INCLUDE_DIRS)"
+	@echo "   Trilinos_TPL_LIBRARIES = $(Trilinos_TPL_LIBRARIES)"
+	@echo "   Trilinos_TPL_LIBRARY_DIRS = $(Trilinos_TPL_LIBRARY_DIRS)"
+	@echo "   Trilinos_BUILD_SHARED_LIBS = $(Trilinos_BUILD_SHARED_LIBS)"
+	@echo "End of Trilinos details\n"
+
+# run the given test
+test: MyApp.exe input.xml
+	./MyApp.exe
+
+# build the 
+MyApp.exe: libmyappLib.a
+	$(CXX) $(CXX_FLAGS) $(LINK_FLAGS) $(INCLUDE_DIRS) $(DEFINES) $(LIBRARY_DIRS) $(LIBRARIES) libMyappLib.a main_file.cpp -o MyApp.exe
+
+libmyappLib.a: src_file.o
+	$(Trilinos_AR) cr libmyappLib.a src_file.o
+
+src_file.o:
+	$(CXX) -c $(CXX_FLAGS) $(INCLUDE_DIRS) $(DEFINES) src_file.cpp
+
+.PHONY: clean
 clean:
-	rm -rf *.o a.out
+	rm -f *.o *.a *.exe 

@@ -19,7 +19,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="Boost,MPI,ARPREC,QD"/>
+    <LIB_OPTIONAL_DEP_TPLS value="BinUtils,Boost,MPI,ARPREC,QD,QT"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -489,20 +489,6 @@
       <Regression address="trikota-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="STK" dir="stk">
-    <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Trios,FEI,AztecOO,ThreadPool,Zoltan"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Boost"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="stk-checkins@software.sandia.gov"/>
-      <Regression address="stk-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
   <Package name="Intrepid" dir="intrepid">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards,Sacado"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -515,6 +501,20 @@
     <EmailAddresses>
       <Checkin address="intrepid-checkins@software.sandia.gov"/>
       <Regression address="intrepid-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
+  <Package name="STK" dir="stk">
+    <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Trios,FEI,AztecOO,ThreadPool,Zoltan,Intrepid,Sacado"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="Boost"/>
+    <LIB_OPTIONAL_DEP_TPLS value="BoostLib"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="gtest"/>
+    <EmailAddresses>
+      <Checkin address="stk-checkins@software.sandia.gov"/>
+      <Regression address="stk-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="Phalanx" dir="phalanx">
@@ -631,7 +631,7 @@
   </Package>
   <Package name="Stokhos" dir="stokhos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Ifpack,ML,TriKota,Anasazi,Sacado,NOX"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Ifpack,ML,TriKota,Anasazi,Sacado,NOX,Isorropia"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos"/>
     <LIB_REQUIRED_DEP_TPLS/>

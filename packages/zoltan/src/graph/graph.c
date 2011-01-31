@@ -32,11 +32,10 @@ static PARAM_VARS ZG_params[] = {
 	{ "GRAPH_SYMMETRIZE", NULL, "STRING", 0 },
 	{ "GRAPH_SYM_WEIGHT", NULL, "STRING", 0 },
 	{ "GRAPH_BIPARTITE_TYPE", NULL, "STRING", 0},
-	{ "GRAPH_BUILD_TYPE", NULL, "STRING"},
+	{ "GRAPH_BUILD_TYPE", NULL, "STRING", 0},
 	{ NULL, NULL, NULL, 0 } };
 
 #define AFFECT_NOT_NULL(ptr, src) do { if ((ptr) != NULL) (*(ptr)) = (src); } while (0)
-
 
 /* This function needs a distribution : rows then cols to work properly */
 int
@@ -161,10 +160,10 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
 #endif
 
   if (bipartite) {
-/*  int vertlno; */
-/*  int limit; */
-/*  int offset; */
 
+/*    int vertlno; */
+/*    int limit; */
+/*    int offset; */
     graph->bipartite = 1;
     graph->fixed_vertices = graph->mtx.mtx.ybipart;
 /*     graph->fixed_vertices = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int)); */
@@ -203,28 +202,22 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
 }
 
 int
-Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
+Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, ZOLTAN_GNO_TYPE *gvtx, int *nvtx,
 		  int *obj_wgt_dim, int *edge_wgt_dim,
-		  int **vtxdist, int **xadj, int **adjncy, int **adjproc,
-		  /* float **xwgt, */ float **ewgt, int **partialD2)
+		  ZOLTAN_GNO_TYPE **vtxdist, int **xadj, ZOLTAN_GNO_TYPE **adjncy, int **adjproc,
+		  float **ewgt, int **partialD2)
 {
   AFFECT_NOT_NULL(gvtx, graph->mtx.mtx.globalY);
   AFFECT_NOT_NULL(nvtx, graph->mtx.mtx.nY);
   AFFECT_NOT_NULL(vtxdist, graph->mtx.dist_y);
-  AFFECT_NOT_NULL(xadj, graph->mtx.mtx.ystart);
+  AFFECT_NOT_NULL(xadj, graph->mtx.mtx.ystart); 
   AFFECT_NOT_NULL(adjncy, graph->mtx.mtx.pinGNO);
   AFFECT_NOT_NULL(partialD2, graph->fixed_vertices);
-  /* I have to convert from float to int */
+
   AFFECT_NOT_NULL(obj_wgt_dim, graph->mtx.mtx.ywgtdim);
   AFFECT_NOT_NULL(edge_wgt_dim, graph->mtx.mtx.pinwgtdim);
-/*   AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt); */
-  AFFECT_NOT_NULL(ewgt, graph->mtx.mtx.pinwgt);
 
-/*   /\* TODO: convert wgt to int to be able to call Zoltan_Verify_Graph *\/ */
-/*   ierr = Zoltan_Verify_Graph(zz->Communicator, *vtxdist, *xadj, */
-/* 			     *adjncy, NULL, NULL, */
-/* 			     0, 0, */
-/* 			     0, 2, 2); */
+  AFFECT_NOT_NULL(ewgt, graph->mtx.mtx.pinwgt);
 
   return Zoltan_Matrix2d_adjproc(zz, &graph->mtx, adjproc);
 }
@@ -246,7 +239,7 @@ Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
     if (graph->mtx.mtx.nY >0 && zz->Obj_Weight_Dim > 0 && *pwwgt == NULL) MEMORY_ERROR;
   }
   if (pinput_part != NULL) {
-    input_part = *pinput_part = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int));
+    input_part = *pinput_part = (int *) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int));
     if (graph->mtx.mtx.nY > 0 && *pinput_part == NULL) MEMORY_ERROR;
   }
   if (plid != NULL) {
@@ -302,7 +295,7 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
     GID = graph->mtx.mtx.yGID;
     if (graph->mtx.mtx.ddY == NULL) {
       ierr = Zoltan_DD_Create (&graph->mtx.mtx.ddY, zz->Communicator, 1, zz->Num_GID,
-			       1, graph->mtx.mtx.globalY/zz->Num_Proc, 0);
+			       sizeof(ZOLTAN_ID_TYPE), graph->mtx.mtx.globalY/zz->Num_Proc, 0);
       CHECK_IERR;
       /* Hope a linear assignment will help a little */
       if (graph->mtx.mtx.globalX/zz->Num_Proc)
@@ -342,11 +335,10 @@ Zoltan_ZG_Query (ZZ* zz, const ZG* const graph,
 
 void
 Zoltan_ZG_Free(ZG *graph){
-  if (graph->bipartite)
-    ZOLTAN_FREE(&graph->fixed_vertices);
+/*   if (graph->bipartite) */
+/*     ZOLTAN_FREE(&graph->fixed_vertices); */
 
   Zoltan_Matrix2d_Free(&graph->mtx);
-  ZOLTAN_FREE(&graph->mtx.comm);
 }
 
 

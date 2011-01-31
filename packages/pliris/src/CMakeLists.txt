@@ -118,11 +118,11 @@ IF (TPL_ENABLE_MPI)
 
   IF(Pliris_ENABLE_DREAL)
     APPEND_SET(HEADERS
-      Pliris.cpp
+      Pliris.h
       )
 
     APPEND_SET(SOURCES
-      Pliris.h
+      Pliris.cpp
       )
   ENDIF()
 

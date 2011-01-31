@@ -188,7 +188,17 @@ public:
    Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > getPrecFactory()
    { return precFactory_; }
 
+   /** This process the extra parameters passed in through the constructor.
+     * Including the preRequest call and request calls to the request handler.
+     * Another option would be to move the request call to the inverse construction
+     * function.  However that breaks the "const" nature of the function and requires
+     * the precFactory_ member to be mutable.  This is OK but not ideal. Note the user 
+     * should not call this directly because its called from the InverseLibrary::getInverseFactory
+     * function.
+     */
+   void setupParameterListFromRequestHandler();
 protected:
+
    Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > precFactory_;
    Teuchos::RCP<Teuchos::ParameterList> extraParams_;
 

@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# NOTE: Source this file instead of just running it and it will set these in
+# your outer environment!
+
+export GCC_INSTALL_BASE=/usr/local/trilinos-toolset
+
+export LD_LIBRARY_PATH=$GCC_INSTALL_BASE/lib64
+
+EXTRA_ARGS=$@
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=ON \
+-D CMAKE_CXX_COMPILER:PATH=$GCC_INSTALL_BASE/bin/g++ \
+-D CMAKE_C_COMPILER:PATH=$GCC_INSTALL_BASE/bin/gcc \
+-D CMAKE_Fortran_COMPILER:PATH=$GCC_INSTALL_BASE/bin/gfortran \
+-D TPL_ENABLE_Boost:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/serial/dbg \
+-D DART_TESTING_TIMEOUT:STRING=180.0 \
+$EXTRA_ARGS \
+../../../Trilinos
+
+
+# (2010/11/29) For some reason, building with shared libraries with this GCC
+# compiler gives the link error:
+#
+#/usr/bin/ld: /usr/local/trilinos-toolset/lib/gcc/x86_64-unknown-linux-gnu/4.5.1/../../../../lib64/libiberty.a(hashtab.o): relocation R_X86_64_32S against `a local symbol' can not be used when making a shared object; recompile with -fPIC
+#/usr/local/trilinos-toolset/lib/gcc/x86_64-unknown-linux-gnu/4.5.1/../../../../lib64/libiberty.a: could not read symbols: Bad value
+#
+# Therefore, I am just going to build without shared libraries.
+#
+# -D BUILD_SHARED_LIBS:BOOL=ON \

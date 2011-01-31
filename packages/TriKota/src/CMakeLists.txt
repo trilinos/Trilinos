@@ -1,6 +1,8 @@
 
 INCLUDE(PackageLibraryMacros)
 
+IF(NOT TriKota_ENABLE_DakotaCMake)
+
 #
 IF (NOT EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/configure)
   MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota needs to 
@@ -18,12 +20,20 @@ IF (NOT EXISTS ${Boost_INCLUDE_DIRS}/boost/type.hpp)
 
   IF (EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost/boost/type.hpp)
     SET(Boost_INCLUDE_DIRS ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost)
+    SET(Boost_LIBRARY_DIRS ${PACKAGE_BINARY_DIR}/Dakota/install/lib)
+    SET(TriKota_Dakota_Boost ON)
   ELSE()
     MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota requires
      Boost, and the headers were not found in ${Boost_INCLUDE_DIRS}
      nor inside of Dakota at ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost. ")
   ENDIF()
-
+ELSE()
+  IF (NOT EXISTS ${Boost_LIBRARY_DIRS}/libboost_signals.a)
+      MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota (Colin) now requires
+       Boost Signals library: looking for   
+       ${Boost_LIBRARY_DIRS}/libboost_signals.a ")
+  ENDIF()
+  SET(TriKota_Dakota_Boost OFF)
 ENDIF()
 
 #
@@ -58,7 +68,7 @@ SET(DAKOTA_CONFIGURE_COMMAND ${PACKAGE_SOURCE_DIR}/Dakota/configure
     --prefix=${PACKAGE_BINARY_DIR}/Dakota/install
     --with-teuchos-include=${PACKAGE_SOURCE_DIR}/../teuchos/src
     --with-teuchos-lib=${PACKAGE_BINARY_DIR}/../teuchos/src
-    --with-boost=${Boost_INCLUDE_DIRS}
+    --disable-tests
     --with-plugin 
     --without-graphics
     --without-dot 
@@ -70,6 +80,20 @@ IF(TPL_ENABLE_MPI)
 ELSE()
   SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
     --disable-mpi)
+ENDIF()
+IF(BUILD_SHARED_LIBS)
+  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+    --enable-shared
+    --disable-static)
+ELSE()
+  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+    --disable-shared
+    --enable-static)
+ENDIF()
+IF(NOT TriKota_Dakota_Boost)
+  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+    --with-boost=${Boost_INCLUDE_DIRS}
+    --with-boost-libdir=${Boost_LIBRARY_DIRS})
 ENDIF()
 
 EXECUTE_PROCESS(
@@ -114,6 +138,29 @@ ADD_DEPENDENCIES(TriKota_Dakota_install  TriKota_Dakota_libs)
 
 ENDIF()
 
+SET(Dakota_INCLUDE_DIRS 
+  ${CMAKE_CURRENT_BINARY_DIR}/../Dakota
+  ${CMAKE_CURRENT_BINARY_DIR}/../Dakota/install/include)
+
+SET(DAKOTA_LIBS
+    dakota pecos lhs surfpack conmin
+    ddace fsudace jega opt
+    psuade newmat ncsuopt sparsegrid 
+    colin interfaces momh scolib pebbl tinyxml
+    utilib 3po hopspack 
+    cport amplsolver nidr dl 
+    boost_signals
+  )
+
+LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib
+                 ${Boost_LIBRARY_DIRS})
+
+# Compiling code that includes Dakota headers requires
+# -DHAVE_CONFIG_H.
+ADD_DEFINITIONS(-DHAVE_CONFIG_H)
+
+ENDIF() # IF(NOT TriKota_ENABLE_DakotaCMake)
+
 #
 # Build the TriKota library
 #
@@ -130,8 +177,7 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_BINARY_DIR}/../Dakota
-  ${CMAKE_CURRENT_BINARY_DIR}/../Dakota/install/include
+  ${Dakota_INCLUDE_DIRS}
   )
 
 APPEND_SET(HEADERS
@@ -149,19 +195,22 @@ APPEND_SET(SOURCES
     TriKota_Version.cpp
   )
 
-SET(DAKOTA_LIBS
-    dakota pecos lhs surfpack conmin
-    ddace fsudace jega opt
-    psuade newmat ncsuopt sparsegrid coliny colin
-    pebbl utilib 3po nappspack appspack conveyor
-    shared cdd cport amplsolver lhs nidr dl
+IF(TriKota_ENABLE_DakotaCMake)
+
+# The DEPLIBS part is to tell CMake that trikota depends on the specified
+# Dakota libraries.  The IMPORTEDLIBS part is to get the PACKAGE_ADD_LIBRARY
+# macro to put the Dakota libraries TriKota_LIBRARIES when writing
+# TriKotaConfig.cmake and Makefile.export.TriKota.  There should be a better
+# way of doing this...
+PACKAGE_ADD_LIBRARY(
+  trikota
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  DEPLIBS ${Dakota_LIBRARIES}
+  IMPORTEDLIBS ${Dakota_LIBRARIES}
   )
 
-LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib)
-
-# Compiling code that includes Dakota headers requires
-# -DHAVE_CONFIG_H.
-ADD_DEFINITIONS(-DHAVE_CONFIG_H)
+ELSE()
 
 PACKAGE_ADD_LIBRARY(
   trikota
@@ -179,3 +228,7 @@ ENDIF()
 # Custom "make install" command to copy contents of Dakota lib&include
 INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/lib/ DESTINATION lib)
 INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/include/ DESTINATION include)
+# Temporary fix, to be removed by boostsignals TPL
+INSTALL(FILES ${Boost_LIBRARY_DIRS}/libboost_signals.a  DESTINATION lib)
+
+ENDIF() # IF(TriKota_ENABLE_DakotaCMake)

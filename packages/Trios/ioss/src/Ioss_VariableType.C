@@ -37,19 +37,16 @@
 #include <Ioss_ConstructedVariableType.h>
 #include <Ioss_NamedSuffixVariableType.h>
 
+#include <algorithm>
 #include <string>
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
 #include <assert.h>
 #include <sstream>
-#include <algorithm>
 #include <cctype>
 
 namespace {
-  std::string uppercase(const std::string &name);
-  std::string lowercase(const std::string &name);
-
   class Deleter {
   public:
     void operator()(Ioss::VariableType* t) {delete t;}
@@ -75,21 +72,21 @@ Ioss::VariableType::~VariableType() {}
 Ioss::VariableType::VariableType(const std::string& type, int comp_count, bool delete_me)
   : name_(type), componentCount(comp_count)
 {
-  std::string low_type = lowercase(type);
+  std::string low_type = Ioss::Utils::lowercase(type);
   registry().insert(Ioss::VTM_ValuePair(low_type, this), delete_me);
 
   // Register uppercase version also
-  std::string up_type = uppercase(type);
+  std::string up_type = Ioss::Utils::uppercase(type);
   registry().insert(Ioss::VTM_ValuePair(up_type, this), false);
 
 }
 
 void Ioss::VariableType::alias(const std::string& base, const std::string& syn)
 {
-  registry().insert(Ioss::VTM_ValuePair(lowercase(syn),
+  registry().insert(Ioss::VTM_ValuePair(Ioss::Utils::lowercase(syn),
 					(Ioss::VariableType*)factory(base)), false);
   // Register uppercase version also
-  std::string up_type = uppercase(syn);
+  std::string up_type = Ioss::Utils::uppercase(syn);
   registry().insert(Ioss::VTM_ValuePair(up_type,
 					(Ioss::VariableType*)factory(base)), false);
 
@@ -115,8 +112,8 @@ int Ioss::VariableType::describe(NameList *names)
 bool Ioss::VariableType::add_field_type_mapping(const std::string &raw_field, const std::string &raw_type)
 {
   // See if storage type 'type' exists...
-  std::string field = lowercase(raw_field);
-  std::string type  = lowercase(raw_type);
+  std::string field = Ioss::Utils::lowercase(raw_field);
+  std::string type  = Ioss::Utils::lowercase(raw_type);
   if (registry().find(type) == registry().end())
     return false;
 
@@ -133,7 +130,7 @@ bool Ioss::VariableType::create_named_suffix_field_type(const std::string &type_
   if (count < 1)
     return false;
 
-  std::string low_name = lowercase(type_name);
+  std::string low_name = Ioss::Utils::lowercase(type_name);
   // See if the variable already exists...
   if (registry().find(low_name) != registry().end())
     return false;
@@ -151,7 +148,7 @@ bool Ioss::VariableType::get_field_type_mapping(const std::string &field, std::s
 {
   // Returns true if a mapping exists, 'type' contains the mapped type.
   // Returns false if no custom mapping exists for this field.
-  std::string low_field = lowercase(field);
+  std::string low_field = Ioss::Utils::lowercase(field);
   
   if (registry().customFieldTypes.find(low_field) == registry().customFieldTypes.end()) {
     return false;
@@ -165,7 +162,7 @@ bool Ioss::VariableType::get_field_type_mapping(const std::string &field, std::s
 const Ioss::VariableType* Ioss::VariableType::factory(const std::string& raw_name, int copies)
 {
   Ioss::VariableType* inst = NULL;
-  std::string name = lowercase(raw_name);
+  std::string name = Ioss::Utils::lowercase(raw_name);
   Ioss::VariableTypeMap::iterator iter = registry().find(name);
   if (iter == registry().end()) {
     bool can_construct = build_variable_type(name);
@@ -294,7 +291,7 @@ bool Ioss::VariableType::build_variable_type(const std::string& raw_type)
   // An example would be REAL[2] which is a basic real type with
   // two components.  The suffices would be .0 and .1
 
-  std::string type = lowercase(raw_type);
+  std::string type = Ioss::Utils::lowercase(raw_type);
   
   // Step 0:
   // See if the type contains '[' and ']'
@@ -361,19 +358,4 @@ std::string Ioss::VariableType::numeric_label(int which, int ncomp, const std::s
 
   std::sprintf(digits, format, which);
   return std::string(digits);
-}
-
-namespace {
-  std::string uppercase(const std::string &name)
-  {
-    std::string s(name);
-    std::transform(s.begin(), s.end(), s.begin(), toupper);
-    return s;
-  }
-  std::string lowercase(const std::string &name)
-  {
-    std::string s(name);
-    std::transform(s.begin(), s.end(), s.begin(), tolower);
-    return s;
-  }
 }

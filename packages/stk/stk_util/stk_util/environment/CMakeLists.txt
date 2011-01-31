@@ -33,7 +33,6 @@ Demangle.hpp
 LogControl.hpp
 OutputLog.hpp
 ProductRegistry.hpp
-ProgramOptions.hpp
 ReportHandler.hpp
 RuntimeDoomed.hpp
 RuntimeMessage.hpp
@@ -41,19 +40,27 @@ RuntimeWarning.hpp
 WallTime.hpp
   )
 
+IF ( TPL_ENABLE_BoostLib )
+  APPEND_SET(HEADERS ProgramOptions.hpp)
+ENDIF()
+
 APPEND_SET(SOURCES
 CPUTime.cpp
 Demangle.cpp
 LogControl.cpp
 OutputLog.cpp
 ProductRegistry.cpp
-ProgramOptions.cpp
 ReportHandler.cpp
 RuntimeDoomed.cpp
 RuntimeMessage.cpp
 RuntimeWarning.cpp
 WallTime.cpp
   )
+
+IF ( TPL_ENABLE_BoostLib )
+  APPEND_SET(SOURCES ProgramOptions.cpp)
+ENDIF()
+
 
 IF (TPL_ENABLE_MPI)
 ENDIF()
@@ -67,3 +74,6 @@ PACKAGE_ADD_LIBRARY(
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+INSTALL(FILES ${HEADERS} DESTINATION
+        ${CMAKE_INSTALL_PREFIX}/include/stk_util/environment/)

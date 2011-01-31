@@ -1,0 +1,188 @@
+$------------------------------------------------------------------------
+$ ID:		RF Fluid Flow
+$ Title:	CHARON: Reacting Flow Navier-Stokes Test
+$------------------------------------------------------------------------
+
+title
+    CHARON: reacting flow navier-stokes test
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+$ Charon-specific input section
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+CHARON
+
+  $debug level = 10
+  $debug method, charon::vm_output 1 -1
+  $debug method, Charon::computeJacobian 10, -1
+  $debug method, Charon_Fill::fillResidual 10, -1
+  $debug method, charon::Fill::appplyBCs 10, -1
+  $debug method, Charon::Check_BC_Sets 10, -1
+  $debug method, charon::VP_ElementVariantTensors::evaluateProvidedVariables 10, -1
+
+  $ Physics setup
+  PHYSICS = 1, reactingflow, reactingflow
+    REGION = Fluid Flow
+      solve fluid flow equations = true
+
+      filtering multiplier = 15.000000
+      pressure stabilization = filtering
+
+      convection stabilization = supg
+
+      disable momentum source = true
+      solve heat transfer equations = false
+      solve mass transfer equations = false
+      use mass transfer sum equation = false
+      use picard jacobian = false
+
+     use supg jacobian = false
+
+      compute peclet numbers = true
+    END
+  END
+
+  $ Memory Management
+  memory management = all elements
+
+  time variation = steady 
+
+  $ Time integration setup
+  time integration
+    algorithm = generalized alpha
+    initial time step size = 1.0
+    time step control = variable
+    constant time step count = 5
+    $ Use BE
+    $parameter, rho_inf = 0.0
+    parameter, alpha_f = 1.0
+    parameter, alpha_m = 1.0
+    parameter, gamma = 1.0
+    time step increase factor = 2.0
+    time step decrease factor = 0.6
+    relative error = 1.0e+5
+    absolute error = 1.0e+5
+    end time = 1000.0
+    max time step = 1.0
+    max number of time steps = 25
+  end $$time integration
+
+  $ Jacobian Type
+  jacobian = ad
+
+  nox parameters
+    maximum nonlinear iterations = 40
+    use absolute tolerance test = false
+    use relative tolerance test = true
+    absolute tolerance = 1.0e-2
+    relative tolerance = 1.0e-5
+    wrms absolute tolerance = 1.0e-1
+    wrms relative tolerance = 1.0e-1
+    wrms tolerance = 1.0
+    wrms alpha = 1.0
+    wrms beta = 0.1
+    linear scaling = none
+    print solution statistics = true
+
+
+    sublist "Direction"
+      "Method" = "Newton"
+      sublist "Newton"
+        "Rescue Bad Newton Solve" = "true"
+        $"Forcing Term Method" = "Type 1"
+        $"Forcing Term Minimum Tolerance" = 1.0e-4
+        $"Forcing Term Maximum Tolerance" = 0.1
+        sublist "Linear Solver"
+          "Aztec Solver" = "GMRES"
+          "Max Iterations" = 2000
+          "Size of Krylov Subspace" = 2000
+          "Tolerance" = 0.001000
+          "Output Frequency" = 10
+          "Preconditioner Operator" = "Use Jacobian"
+          "Overlap" = 1
+          "Fill Factor" = 20
+          "Max Age Of Prec" = 1
+          "Zero Initial Guess" = "true"
+          "Preconditioner Operator" = "Use Jacobian"
+          "Write Linear System" = "true"
+
+          "Preconditioner" = "User Defined"
+          "Preconditioning" = "User Supplied Preconditioner"
+        END $$ End Linear Solver
+      END $$ End Newton
+    END $$ End Direction
+
+    sublist "Line Search"
+      "Method" = "Polynomial"
+    END
+  END
+
+  $ BCs on Velocity at Inlet
+  bc, dirichlet, VELOCITY, sideset 6, element block 1, method function 1
+
+  $ BCs at outlet - Natural conditions (sideset 4). -- none needed
+  
+  $ BCs on solid surfaces
+  bc, dirichlet, VX, sideset 1, element block 1 0.0
+  bc, dirichlet, VY, sideset 1, element block 1 0.0
+  bc, dirichlet, VX, sideset 2, element block 1 0.0
+  bc, dirichlet, VY, sideset 2, element block 1 0.0
+  bc, dirichlet, VX, sideset 3, element block 1 0.0
+  bc, dirichlet, VY, sideset 3, element block 1 0.0
+  bc, dirichlet, VX, sideset 5, element block 1 0.0
+  bc, dirichlet, VY, sideset 5, element block 1 0.0
+
+  METHOD FUNCTION 1
+    key = parabolic_inflow 
+    velocity_magnitude = 1.0
+    x =  -1.0
+    y =   0.0
+    length = 1.0
+  END
+
+  initial guess = constant
+    default = 0.0
+    VX = 0.0
+    VY = 0.0
+    PRES = 0.0
+  END
+
+  $ Element block to material map
+  block 1
+    material 1
+    physics 1
+  end
+
+  VARIABLE MANAGER DATA OUTPUT
+    "PECLET_VELOCITY", q, re
+  END 
+
+END $CHARON
+
+plot variable
+
+end
+
+$$$$$$$$$$$$$$$$$$$$$$$
+$ Generic Nevada input
+$$$$$$$$$$$$$$$$$$$$$$$
+$emit restart, cycle = 0
+emit plot, cycle = 1
+
+$$$$$$$$$$$$$$$$$$$
+$ # of time cycles
+$$$$$$$$$$$$$$$$$$$
+termination cycle = 1
+termination time = 2.0
+
+$$$$$$$$$$$$$$$$$
+$ Material specs
+$$$$$$$$$$$$$$$$$
+Material 1
+  model 1
+end
+
+MODEL 1 CHARON REACTINGFLOW MATERIAL
+  DENSITY = 1.0
+  VISCOSITY = 2.000000e-01
+  STRESS_TENSOR = Newtonian
+END

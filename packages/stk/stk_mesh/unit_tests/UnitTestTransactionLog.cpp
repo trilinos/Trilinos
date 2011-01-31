@@ -29,7 +29,6 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>
 

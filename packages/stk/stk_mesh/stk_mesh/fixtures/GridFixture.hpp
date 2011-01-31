@@ -13,7 +13,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 namespace stk {
 namespace mesh {
@@ -28,20 +28,20 @@ public:
 
   MetaData& meta_data() { return m_meta_data; }
   BulkData& bulk_data() { return m_bulk_data; }
-  TopologicalMetaData& top_data() { return m_top_data; }
+  DefaultFEM& fem() { return m_fem; }
 
   Part* quad_part() const { return & m_quad_part; }
   Part* dead_part() const { return & m_dead_part; }
 
   void generate_grid();
 
-private:
   const unsigned m_spatial_dimension;
-  MetaData  m_meta_data;
-  BulkData  m_bulk_data;
-  TopologicalMetaData m_top_data;
-  Part    & m_quad_part;
-  Part    & m_dead_part;
+
+  MetaData      m_meta_data;
+  BulkData      m_bulk_data;
+  DefaultFEM    m_fem;
+  Part &        m_quad_part;
+  Part &        m_dead_part;
 };
 
 } // fixtures

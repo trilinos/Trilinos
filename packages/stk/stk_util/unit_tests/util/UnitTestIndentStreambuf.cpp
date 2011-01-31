@@ -6,30 +6,11 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cppunit/TestCase.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
-
 #include <sstream>
 #include <string>
 #include <stk_util/util/IndentStreambuf.hpp>
 
-class UnitTestIndentStreambuf : public CppUnit::TestCase {
-private:
-  CPPUNIT_TEST_SUITE(UnitTestIndentStreambuf);
-  CPPUNIT_TEST(testUnit);
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-  void setUp()
-  {}
-
-  void tearDown()
-  {}
-
-  void testUnit();
-};
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 using stk::push;
 using stk::pop;
@@ -55,8 +36,7 @@ void deep(std::ostream &log_stream, int depth)
 
 } // namespace <empty>
 
-
-void UnitTestIndentStreambuf::testUnit()
+STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
 {
   {
     std::string result = 
@@ -96,7 +76,7 @@ void UnitTestIndentStreambuf::testUnit()
     log_stream << "indented 1\017" << std::endl;
     log_stream << "indented 0" << std::endl;
 
-    CPPUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL(result, dest.str());
   }
 
   {
@@ -131,7 +111,7 @@ void UnitTestIndentStreambuf::testUnit()
     log_stream << "indented 1\017" << std::endl;
     log_stream << "indented 0" << std::endl;
 
-    CPPUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL(result, dest.str());
   }
 
   {
@@ -153,7 +133,7 @@ void UnitTestIndentStreambuf::testUnit()
     log_stream << pop << std::endl;
     log_stream << pop << std::endl;
 
-    CPPUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL(result, dest.str());
   }
 
   {
@@ -178,7 +158,7 @@ void UnitTestIndentStreambuf::testUnit()
     log_stream << "pop push" << pop << push << std::endl;
     log_stream << "pop pop" << pop << pop << std::endl;
 
-    CPPUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL(result, dest.str());
   }
   
   {
@@ -220,7 +200,7 @@ void UnitTestIndentStreambuf::testUnit()
     log_stream << "indented 1\017" << std::endl << std::endl;
     log_stream << "indented 0" << std::endl << std::endl;
 
-    CPPUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL(result, dest.str());
   }
 
   {
@@ -265,7 +245,7 @@ void UnitTestIndentStreambuf::testUnit()
     log_stream << "indented 1\017" << std::endl << std::endl;
     log_stream << "indented 0" << std::endl << std::endl;
 
-    CPPUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL(result, dest.str());
   }
 
   {
@@ -480,8 +460,6 @@ void UnitTestIndentStreambuf::testUnit()
     log_stream << "Depth test" << std::endl;
     deep(log_stream, 0);
 
-    CPPUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL(result, dest.str());
   }
 }
-
-CPPUNIT_TEST_SUITE_REGISTRATION(UnitTestIndentStreambuf);

@@ -333,6 +333,7 @@ void ForwardResponseSensitivityComputer<Scalar>::computeResponseAndSensitivityIm
 {
 
   using Teuchos::rcp;
+  using Teuchos::ptr;
   using Teuchos::includesVerbLevel;
   typedef ScalarTraits<Scalar> ST;
   using Thyra::apply;
@@ -457,21 +458,21 @@ void ForwardResponseSensitivityComputer<Scalar>::computeResponseAndSensitivityIm
     if (trace)
       *out << "\nD_g_hat_D_p = DgDx_dot * S_dot + DgDx * S + DgDp ...\n";
     
-    assign( D_g_hat_D_p, ST::zero() );
+    assign( ptr(D_g_hat_D_p), ST::zero() );
       
     // D_g_hat_D_p += DgDx_dot * S_dot
     if (response_func_supports_D_x_dot_) {
       apply( *D_g_D_x_dot_, Thyra::NOTRANS, *S_dot,
-        D_g_hat_D_p, ST::one(), ST::one() );
+        ptr(D_g_hat_D_p), ST::one(), ST::one() );
     }
     
     // D_g_hat_D_p += DgDx * S
     apply( *D_g_D_x_, Thyra::NOTRANS, *S,
-      D_g_hat_D_p, ST::one(), ST::one() );
+      ptr(D_g_hat_D_p), ST::one(), ST::one() );
     
     // D_g_hat_D_p += DgDp
     if (response_func_supports_D_p_) {
-      Vp_V( &*D_g_hat_D_p, *D_g_D_p_ );
+      Vp_V( ptr(D_g_hat_D_p), *D_g_D_p_ );
     }
       
     if (dumpSensitivities_ || print_x)

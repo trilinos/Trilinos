@@ -2,7 +2,7 @@
 # cmake script for building ML serial on Linux 64 bit workstations with the Intel blas/lapack (aka mkl)
 #
 # Note: you must put the following line in your .cshrc file:
-#   source /usr/local/intel/mkl/10.0.3.020/tools/environment/mklvarsem64t.csh
+#   source /usr/local/intel/Compiler/11.1/064/mkl/tools/environment/mklvarsem64t.csh
 # Otherwise, you may see link failures and/or run-time errors like
 # "error while loading shared libraries: libmkl_intel_lp64.so".
 #
@@ -13,8 +13,10 @@ cmake \
   -D CMAKE_BUILD_TYPE:STRING=DEBUG \
   -D Trilinos_ENABLE_ML:BOOL=ON \
   -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-  -D TPL_BLAS_LIBRARIES:STRING="-lmkl_intel_lp64 -Wl,--start-group -lmkl_intel_thread -lmkl_core -Wl,--end-group -lguide -lpthread" \
-  -D TPL_LAPACK_LIBRARIES:STRING="-lmkl_intel_lp64 -Wl,--start-group -lmkl_intel_thread -lmkl_core -Wl,--end-group -lguide -lpthread" \
+  -D BLAS_LIBRARY_DIRS:STRING="/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t;/usr/local/intel/Compiler/11.1/064/lib/intel64;/usr/lib64" \
+  -D BLAS_LIBRARY_NAMES:STRING="mkl_intel_lp64; mkl_intel_thread; mkl_core; iomp5; pthread" \
+  -D LAPACK_LIBRARY_DIRS:STRING="/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t;/usr/local/intel/Compiler/11.1/064/lib/intel64;/usr/lib64" \
+  -D LAPACK_LIBRARY_NAMES:STRING="mkl_intel_lp64; mkl_intel_thread; mkl_core; iomp5; pthread" \
   -D Trilinos_ENABLE_TESTS:BOOL=ON \
   -D DART_TESTING_TIMEOUT:STRING=600 \
   $EXTRA_ARGS \

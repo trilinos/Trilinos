@@ -278,7 +278,6 @@ int proc,                       /* processor # (controls debug printing)  */
 int print_proc                  /* processor that should perform printing */
 )
 {	
-    char     *yo = "Zoltan_Filter_Params";
     char     *name;		/* name of parameter being reset */
     char     *val;		/* new value for parameter       */
     int       index;		/* index of parameter entry      */

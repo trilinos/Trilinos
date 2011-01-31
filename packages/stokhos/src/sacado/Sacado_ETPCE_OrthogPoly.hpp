@@ -37,6 +37,7 @@
 
 #include "Sacado_Handle.hpp"
 
+#include "Stokhos_OrthogPolyExpansion.hpp"
 #include "Stokhos_QuadOrthogPolyExpansion.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 
@@ -110,8 +111,11 @@ namespace Sacado {
       //! Basis type
       typedef Stokhos::OrthogPolyBasis<ordinal_type,T> basis_type;
 
-      //! Expansion type
-      typedef Stokhos::QuadOrthogPolyExpansion<ordinal_type,T,Storage> expansion_type;
+      //! Quad Expansion type
+      typedef Stokhos::OrthogPolyExpansion<ordinal_type,T,Storage> expansion_type;
+
+      //! Quad Expansion type
+      typedef Stokhos::QuadOrthogPolyExpansion<ordinal_type,T,Storage> quad_expansion_type;
 
       //! Stokhos approximation type
       typedef Stokhos::OrthogPolyApprox<ordinal_type,T,Storage> approx_type;
@@ -242,6 +246,9 @@ namespace Sacado {
       //! Get expansion
       Teuchos::RCP<expansion_type> expansion() const { return expansion_; }
 
+      //! Get quad expansion
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const { return quad_expansion_; }
+
       //@}
 
       /*!
@@ -276,7 +283,7 @@ namespace Sacado {
 
       //! Returns degree \c i term with bounds checking
       value_type coeff(ordinal_type i) const { 
-	value_type tmp= i<th_->size() ? (*th_)[i]:value_type(0.); return tmp;}
+	return i<th_->size() ? (*th_)[i]:value_type(0.); }
     
       //! Returns degree \c i term without bounds checking
       reference fastAccessCoeff(ordinal_type i) { return (*th_)[i];}
@@ -315,34 +322,6 @@ namespace Sacado {
       //! Division-assignment operator with constant right-hand-side
       OrthogPolyImpl& operator /= (const value_type& x);
 
-      //! Addition-assignment operator with Expr right-hand-side
-      template <typename S> 
-      OrthogPolyImpl& operator += (const Expr<S>& x) {
-	*this = *this + x;
-	return *this;
-      }
-
-      //! Subtraction-assignment operator with Expr right-hand-side
-      template <typename S> 
-      OrthogPolyImpl& operator -= (const Expr<S>& x) {
-	*this = *this - x;
-	return *this;
-      }
-  
-      //! Multiplication-assignment operator with Expr right-hand-side
-      template <typename S> 
-      OrthogPolyImpl& operator *= (const Expr<S>& x) {
-	*this = *this * x;
-	return *this;
-      }
-
-      //! Division-assignment operator with Expr right-hand-side
-      template <typename S> 
-      OrthogPolyImpl& operator /= (const Expr<S>& x) {
-	*this = *this / x;
-	return *this;
-      }
-
       //@}
 
       //! Get underlying Stokhos::OrthogPolyApprox
@@ -360,6 +339,12 @@ namespace Sacado {
 
       //! Expansion class
       Teuchos::RCP<expansion_type> expansion_;
+
+      //! Cast of expansion class to QuadExpansion
+      Teuchos::RCP<quad_expansion_type> quad_expansion_;
+
+      //! Static constant expansion class for constants
+      static Teuchos::RCP<expansion_type> const_expansion_;
 
       //! Handle to underlying OrthogPolyApprox
       Sacado::Handle< Stokhos::OrthogPolyApprox<int,value_type,Storage> > th_;
@@ -422,9 +407,13 @@ namespace Sacado {
       const approx_type& getArg(int i) const { 
 	return this->getOrthogPolyApprox(); }
 
-      bool has_fast_access() const { return this->size() > 1; }
+      bool has_fast_access(int sz) const { return this->size() >= sz; }
 
-      int order() const { return this->size() == 0 ? 0 : 1; }
+      bool has_nonconst_expansion() const { 
+	return this->expansion_ != this->const_expansion_; 
+      }
+
+      int order() const { return this->size() == 1 ? 0 : 1; }
 
       value_type fast_higher_order_coeff(int i) const { 
 	return this->fastAccessCoeff(i); 
@@ -440,7 +429,21 @@ namespace Sacado {
 	return get<offset>(x);
       }
 
+      std::string name() const { return "x"; }
+
     }; // class Expr<OrthogPolyImpl>
+
+  } // namespace ETPCE
+
+} // namespace Sacado
+
+#include "Sacado_ETPCE_OrthogPolyTraits.hpp"
+#include "Sacado_ETPCE_OrthogPolyImp.hpp"
+#include "Sacado_ETPCE_OrthogPolyOps.hpp"
+
+namespace Sacado {
+
+  namespace ETPCE {
 
     //! Generalized polynomial chaos expansion class
     template <typename T, typename Storage> 
@@ -542,15 +545,67 @@ namespace Sacado {
 	return *this;
       }
 
+      //@{
+
+      //! Addition-assignment operator with constant right-hand-side
+      OrthogPoly& operator += (const value_type& x) {
+	OrthogPolyImpl<T,Storage>::operator+=(x);
+	return *this;
+      }
+
+      //! Subtraction-assignment operator with constant right-hand-side
+      OrthogPoly& operator -= (const value_type& x) {
+	OrthogPolyImpl<T,Storage>::operator-=(x);
+	return *this;
+      }
+
+      //! Multiplication-assignment operator with constant right-hand-side
+      OrthogPoly& operator *= (const value_type& x) {
+	OrthogPolyImpl<T,Storage>::operator*=(x);
+	return *this;
+      }
+
+      //! Division-assignment operator with constant right-hand-side
+      OrthogPoly& operator /= (const value_type& x) {
+	OrthogPolyImpl<T,Storage>::operator/=(x);
+	return *this;
+      }
+
+      //! Addition-assignment operator with Expr right-hand-side
+      template <typename S> 
+      OrthogPoly& operator += (const Expr<S>& x) {
+	*this = *this + x;
+	return *this;
+      }
+
+      //! Subtraction-assignment operator with Expr right-hand-side
+      template <typename S> 
+      OrthogPoly& operator -= (const Expr<S>& x) {
+	*this = *this - x;
+	return *this;
+      }
+  
+      //! Multiplication-assignment operator with Expr right-hand-side
+      template <typename S> 
+      OrthogPoly& operator *= (const Expr<S>& x) {
+	*this = *this * x;
+	return *this;
+      }
+
+      //! Division-assignment operator with Expr right-hand-side
+      template <typename S> 
+      OrthogPoly& operator /= (const Expr<S>& x) {
+	*this = *this / x;
+	return *this;
+      }
+
+      //@}
+
     }; // class OrthogPoly
 
   } // namespace ETPCE
 
 } // namespace Sacado
-
-#include "Sacado_ETPCE_OrthogPolyTraits.hpp"
-#include "Sacado_ETPCE_OrthogPolyImp.hpp"
-#include "Sacado_ETPCE_OrthogPolyOps.hpp"
 
 #endif // HAVE_STOKHOS_SACADO
 

@@ -10,10 +10,14 @@
 #include "NOX_Epetra_LinearSystem.H"	// base class
 #include "NOX_Utils.H"                  // class data element
 
+#include "Stokhos_ParallelData.hpp"
+#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_EpetraSparse3Tensor.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 #include "Stokhos_SGOperator.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
+#include "Epetra_Export.h"
 
 namespace NOX {
   namespace Epetra {
@@ -41,9 +45,10 @@ namespace NOX {
 	Teuchos::ParameterList& printingParams, 
 	Teuchos::ParameterList& linearSolverParams, 
 	const Teuchos::RCP<NOX::Epetra::LinearSystem>& detsolve,
-	const Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> >& Cijk, 
 	const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
 	const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+	const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+	const Teuchos::RCP<const Stokhos::ParallelData>& sg_parallel_data,
 	const Teuchos::RCP<Epetra_Operator>& J,
 	const Teuchos::RCP<const Epetra_Map>& base_map,
 	const Teuchos::RCP<const Epetra_Map>& sg_map,
@@ -136,6 +141,18 @@ namespace NOX {
       
       //! Pointer to deterministic solver
       Teuchos::RCP<NOX::Epetra::LinearSystem> det_solver;
+
+      //! Stochastic Galerking basis
+      Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
+
+      //! Stores Epetra Cijk tensor
+      Teuchos::RCP<const Stokhos::EpetraSparse3Tensor> epetraCijk;
+
+      //! Whether we have parallelism over stochastic blocks
+      bool is_stoch_parallel;
+
+      //! Stores stochastic part of row map
+      Teuchos::RCP<const Epetra_BlockMap> stoch_row_map;
       
       //! Short-hand for Cijk
       typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
@@ -164,23 +181,35 @@ namespace NOX {
       //! Printing Utilities object
       NOX::Utils utils;
       
-      //! Temporary vector used in Gauss-Seidel iteration
+      //! Stores block vector of right-hand-sides
       mutable Teuchos::RCP<EpetraExt::BlockVector> sg_df_block;
 
-      //! Temporary vector used in Gauss-Seidel iteration
+      //! Stores block residual vector to compute residual norm
       mutable Teuchos::RCP<EpetraExt::BlockVector> sg_y_block;
       
-      //! Temporary vector used in Gauss-Seidel iteration
+      //! Stores K_0*x for the most recently computed x
       mutable Teuchos::RCP<Epetra_Vector> kx;
+
+      //! Flag indicating whether stochastic blocks are distributed
+      bool is_parallel;
+
+      //! Stores global column map
+      Teuchos::RCP<const Epetra_BlockMap> sg_col_map;
+
+      //! Stores exporter from column map to row map
+      Teuchos::RCP<Epetra_Export> col_exporter;
+
+      //! Stores off-processor contributions to right-hand-sides
+      Teuchos::RCP<EpetraExt::BlockVector> sg_df_col;
+
+      //! Stores summed off-processor contributions
+      Teuchos::RCP<EpetraExt::BlockVector> sg_df_tmp;
 
       //! Only use linear terms in interation
       bool only_use_linear;
 
       //! Limit to k-index
-      int K_limit;
-
-      //! Size of SG expansion
-      int sz;
+      int k_limit;
     };
     
   } // namespace Epetra

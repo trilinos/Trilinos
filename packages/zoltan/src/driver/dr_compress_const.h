@@ -55,8 +55,8 @@ typedef enum ZOLTAN_FILETYPE_ {
 typedef struct ZOLTAN_FILE_ {
   ZOLTAN_FILETYPE type;
   char * buffer;
-  int size;
-  int pos;
+  ssize_t size;  /* size & pos should be off_t, but because of their use */
+  ssize_t pos;   /* they need to be signed (pos is initialized to -1).   */
   union {
     FILE * fileunc;
 #ifdef ZOLTAN_GZIP
@@ -82,7 +82,7 @@ int ZOLTAN_FILE_ungetc(int c, ZOLTAN_FILE* file);
 int ZOLTAN_FILE_flush(ZOLTAN_FILE* file);
 int ZOLTAN_FILE_close(ZOLTAN_FILE* file);
 void ZOLTAN_FILE_rewind(ZOLTAN_FILE* stream);
-int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file);
+ssize_t ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file);
 
 #ifndef ZOLTAN_COMPRESS
 #define ZOLTAN_FILE_open(path, mode, type) fopen(path, mode)

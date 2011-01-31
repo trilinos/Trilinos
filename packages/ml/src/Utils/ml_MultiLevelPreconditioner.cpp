@@ -1680,6 +1680,22 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   VisualizeAggregates();
  } 
+ catch(const std::exception& e)
+ {
+   if (Comm().MyPID() == 0) {
+     const char * what = e.what();
+
+     fprintf(stderr,"%s","\n*********************************************************\n");
+     fprintf(stderr,"%s","ML failed to compute the multigrid preconditioner. The\n");
+     fprintf(stderr,"%s","most common problem is an incorrect  data type in ML's\n");
+     fprintf(stderr,"%s","parameter list (e.g. 'int' instead of 'bool').\n\n");
+     fprintf(stderr,"%s","Note: List.set(\"ML print initial list\",X) might help\nfigure out the bad one on pid X.\n");
+     fprintf(stderr,"%s","\nThe following exception was thrown:\n");
+     fprintf(stderr,"%s",what);
+     fprintf(stderr,"%s","*********************************************************\n\n");
+   }
+   ML_CHK_ERR(-1);
+ }
  catch(...)
  {
    if (Comm().MyPID() == 0) {

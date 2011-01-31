@@ -29,6 +29,7 @@
 
 #include "Teuchos_ParameterEntry.hpp" // class definition
 #include "Teuchos_ParameterList.hpp"	 // for sublists
+#include "Teuchos_OrdinalTraits.hpp"
 
 
 namespace Teuchos {
@@ -59,7 +60,6 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
 
   return *this;
 }
-
 
 void ParameterEntry::setAnyValue(
   const any &value_in, bool isDefault_in
@@ -119,7 +119,6 @@ std::ostream& ParameterEntry::leftshift(std::ostream& os, bool printFlags) const
   return os;
 }
 
-
 // private
 
 
@@ -132,3 +131,5 @@ void ParameterEntry::reset()
 
 
 } // namespace Teuchos
+
+

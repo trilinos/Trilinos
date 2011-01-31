@@ -110,6 +110,10 @@ privileges, or if you need to install to a directory that already exists, do:
   $ cd download_area
   $ sudo cp -r cmake-2.8.0-Linux-i386/ /usr/local
 
+Alternatively, if you have sudo access you can do the install in one shot as:
+
+  $ sudo ./download-cmake.py --install-dir=/usr/local
+
 After you have done a successful install, you may remove the downloaded files:
 
   $ rm -r download_area
@@ -343,7 +347,7 @@ def Install(basedir, url):
       if not os.path.exists(options.installDir):
         raise
 
-    echoRunSysCmnd("cp -r \"" + dirname + "/\" \"" + options.installDir + "\"")
+    echoRunSysCmnd("cp -r " + dirname + "/* " + options.installDir)
 
 
 def DownloadForPlatform(p):

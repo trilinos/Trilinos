@@ -8,20 +8,20 @@
 
 
 #include <stdexcept>
+
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_mesh/baseImpl/PartRepository.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
+#include <stk_mesh/base/MetaData.hpp>
+
+#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Part;
 using stk::mesh::impl::PartRepository;
-using stk::mesh::TopologicalMetaData;
-
 
 class UnitTestPartRepository
 {
@@ -46,13 +46,11 @@ public:
    std::vector<stk::mesh::Part *> intersection;
    stk::mesh::PartRelation relation;
    const CellTopologyData * singleton;
-
 };
-
 
 UnitTestPartRepository::UnitTestPartRepository()
   : spatial_dimension(3)
-  , meta( TopologicalMetaData::entity_rank_names(spatial_dimension) )
+  , meta( stk::mesh::fem::entity_rank_names(spatial_dimension) )
   , partRepo( &meta )
   , partRepo_1( &meta )
   , partRepo_2( &meta )
@@ -67,11 +65,9 @@ UnitTestPartRepository::UnitTestPartRepository()
   , intersection ( )
   , relation ( )
   , singleton ( NULL )
-
 {
  meta.commit();
 }
-
 
 namespace {
 
@@ -90,7 +86,6 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, universal_in_subset )
     );
 }
 
-
 STKUNIT_UNIT_TEST( UnitTestPartRepository, subset_equal_superset )
 {
   UnitTestPartRepository upr;
@@ -99,7 +94,6 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, subset_equal_superset )
     std::runtime_error
     );
 }
-
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, universal_in_intersection )
 {
@@ -116,7 +110,6 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, universal_in_intersection )
     );
 }
 
-
 STKUNIT_UNIT_TEST( UnitTestPartRepository, circular_subset )
 {
   UnitTestPartRepository upr;
@@ -127,7 +120,6 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, circular_subset )
     std::runtime_error
     );
 }
-
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, inconsistent_rank_subset )
 {
@@ -192,6 +184,3 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, declare_attribute_no_delete )
 }
 
 }
-
-
-

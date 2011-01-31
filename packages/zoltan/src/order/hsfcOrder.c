@@ -28,7 +28,7 @@ int Zoltan_LocalHSFC_Order(
 			                         /* The application must allocate enough space */
 			   ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
 			                         /* The application must allocate enough space */
-			   int *rank,            /* rank[i] is the rank of gids[i] */
+			   ZOLTAN_ID_TYPE *rank,            /* rank[i] is the rank of gids[i] */
 			   int *iperm,
 			   ZOOS *order_opt       /* Ordering options, parsed by Zoltan_Order */
                            )
@@ -36,7 +36,9 @@ int Zoltan_LocalHSFC_Order(
 
   static char *yo = "Zoltan_LocalHSFC_Order";
 
-  int n, ierr=ZOLTAN_OK;
+  int ierr=ZOLTAN_OK;
+
+  int n;
 
   double (*fhsfc)(ZZ*, double*);  /* space filling curve function */
 
@@ -60,7 +62,7 @@ int Zoltan_LocalHSFC_Order(
   int objNum;
   int dimNum;
 
-  int offset=0;
+  ZOLTAN_ID_TYPE tmp, offset=0;
 
   int myrank;
   MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
@@ -226,8 +228,9 @@ int Zoltan_LocalHSFC_Order(
   /******************************************************/
   /* Determine offsets                                  */
   /******************************************************/
-  MPI_Scan(&n, &offset, 1, MPI_INT, MPI_SUM, zz->Communicator);
-  offset -= n; /* MPI_Scan is inclusive, so subtract off local size */
+  tmp = (ZOLTAN_ID_TYPE)n;
+  MPI_Scan(&tmp, &offset, 1, ZOLTAN_ID_MPI_TYPE, MPI_SUM, zz->Communicator);
+  offset -= tmp; /* MPI_Scan is inclusive, so subtract off local size */
   /******************************************************/
 
   for(objNum=0; objNum<n; objNum++)

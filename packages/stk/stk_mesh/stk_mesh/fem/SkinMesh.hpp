@@ -24,16 +24,18 @@ typedef std::vector<Entity *> EntityVector;
  * Skin the entire mesh.
  */
 void skin_mesh( BulkData & mesh,
-                EntityRank element_rank,
+                EntityRank entity_rank,
                 Part * skin_part = NULL );
 
 /**
  * Given a vector of modified/created elements, update the skin.
  */
 void reskin_mesh( BulkData & mesh,
-                  EntityRank element_rank,
+                  EntityRank entity_rank,
                   EntityVector & owned_modified_elements,
                   Part * skin_part = NULL );
+
+
 
 }
 }

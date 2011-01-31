@@ -282,7 +282,10 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
       RCP<Thyra::PreconditionerFactoryBase<double> > precFact = strat.createPreconditioningStrategy(type);
 
       // string must map to a preconditioner
-      return rcp(new PreconditionerInverseFactory(precFact,xtraParams,getRequestHandler()));
+      RCP<Teko::PreconditionerInverseFactory> precInvFact 
+            = rcp(new PreconditionerInverseFactory(precFact,xtraParams,getRequestHandler()));
+      precInvFact->setupParameterListFromRequestHandler();
+      return precInvFact;
    }
    else if(isStratSolver) {
       RCP<Teuchos::ParameterList> solveList = rcp(new Teuchos::ParameterList(*pl));

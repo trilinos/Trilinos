@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <sstream>
 #include <stdexcept>
 
@@ -15,29 +14,28 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
+
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-
 #include <stk_mesh/base/FieldRelation.hpp>
 #include <stk_mesh/base/PartRelation.hpp>
+
 #include <stk_mesh/fem/Stencils.hpp>
+#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 using stk::mesh::MetaData;
-using stk::mesh::TopologicalMetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::PartRelation;
 using stk::mesh::EntityRank;
+using stk::mesh::DefaultFEM;
 using std::cout;
 using std::endl;
-
 
 //----------------------------------------------------------------------
 
@@ -55,10 +53,11 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
 {
   //Test functions in MetaData.cpp
   const int spatial_dimension = 3;
-  MetaData metadata_committed(TopologicalMetaData::entity_rank_names(spatial_dimension));
-  MetaData metadata_not_committed(TopologicalMetaData::entity_rank_names(spatial_dimension));
-  MetaData metadata(TopologicalMetaData::entity_rank_names(spatial_dimension));
-  TopologicalMetaData top( metadata_committed, spatial_dimension );
+  const std::vector<std::string> & rank_names = stk::mesh::fem::entity_rank_names(spatial_dimension);
+  MetaData metadata_committed(rank_names);
+  MetaData metadata_not_committed(rank_names);
+  MetaData metadata(rank_names);
+
   Part &pa = metadata.declare_part( std::string("a") , 0 );
   Part &pb = metadata.declare_part( std::string("b") , 0 );
   Part &pc = metadata.declare_part( std::string("c") , 0 );
@@ -70,12 +69,6 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
   PartVector part_vector;
   metadata_committed.commit();
 
-  STKUNIT_ASSERT_THROW( metadata_not_committed.assert_committed("test throw"),std::logic_error);
-
-  STKUNIT_ASSERT_THROW( metadata_committed.assert_not_committed("test throw"),std::logic_error);
-
-  STKUNIT_ASSERT_THROW( metadata_not_committed.assert_same_mesh_meta_data("test throw", metadata_committed),std::logic_error);
-
   //test get_part with part that does not exist
   std::string test_string = "this_part_does_not_exist";
   STKUNIT_ASSERT_THROW( metadata_committed.get_part(test_string,"test_throw"),std::runtime_error);
@@ -84,27 +77,28 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
   STKUNIT_ASSERT( metadata.get_part(std::string("a"),"do_not_throw"));
 
   //test declare part
-   metadata.declare_part_relation( pe,stencil_test_function, pg);
+  metadata.declare_part_relation( pe,stencil_test_function, pg);
 
-   part_vector.push_back(& pa);
-   part_vector.push_back(& pb);
-   part_vector.push_back(& pc);
-   part_vector.push_back(& pd);
+  part_vector.push_back(& pa);
+  part_vector.push_back(& pb);
+  part_vector.push_back(& pc);
+  part_vector.push_back(& pd);
 
   //Part * const intersection_part = &
-   metadata.declare_part( part_vector);
- 
+  declare_part(metadata, part_vector);
+
+
   //Test declare_part_subset
   STKUNIT_ASSERT_THROW(  metadata.declare_part_subset( pe, pe), std::runtime_error);
- 
+
   //Test declare_part_relation with parts that are not subsets of each other
-  STKUNIT_ASSERT_THROW(  metadata.declare_part_relation( pg,stencil_test_function, ph), std::runtime_error);
+  STKUNIT_ASSERT_THROW(  metadata.declare_part_relation( pg,stencil_test_function, ph), std::logic_error);
 
   //Test declare_part_relation with a NULL stencil function
   STKUNIT_ASSERT_THROW(  metadata.declare_part_relation( pe,NULL, pe), std::runtime_error);
 
   //Test declare_part_relation with parts that are subsets of each other
-   metadata.declare_part_subset( pd, pf);
+  metadata.declare_part_subset( pd, pf);
   STKUNIT_ASSERT_THROW(  metadata.declare_part_relation( pd,stencil_test_function, pf), std::runtime_error);
 
   metadata.commit();
@@ -114,28 +108,29 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, rankHigherThanDefined )
 {
   //Test function entity_rank_name in MetaData.cpp
   const int spatial_dimension = 3;
-  MetaData metadata(TopologicalMetaData::entity_rank_names(spatial_dimension));
+  const std::vector<std::string> & rank_names = stk::mesh::fem::entity_rank_names(spatial_dimension);
+  MetaData metadata(rank_names);
   int i = 2;
 
   const std::string& i_name2 =  metadata.entity_rank_name( i );
 
-  const std::vector<std::string> & type_names = TopologicalMetaData::entity_rank_names(spatial_dimension);
-   
-  STKUNIT_ASSERT( i_name2 == type_names[i] );
-   
-  EntityRank one_rank_higher_than_defined = type_names.size();
-    
-  STKUNIT_ASSERT_THROW( 
-     metadata.entity_rank_name( one_rank_higher_than_defined ),
+  STKUNIT_ASSERT( i_name2 == rank_names[i] );
+
+  EntityRank one_rank_higher_than_defined = rank_names.size();
+
+  STKUNIT_ASSERT_THROW(
+    metadata.entity_rank_name( one_rank_higher_than_defined ),
     std::runtime_error
-    );
+                        );
 }
 
 STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
 {
+  static const size_t spatial_dimension = 3;
+
   //Test Entity repository - covering EntityRepository.cpp/hpp
-  stk::mesh::MetaData meta ( stk::mesh::fem_entity_rank_names() );
-  stk::mesh::Part & part = meta.declare_part( "another part");
+  stk::mesh::MetaData meta ( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk::mesh::Part & part = stk::mesh::declare_part(meta, "another part");
 
   meta.commit();
 
@@ -215,17 +210,17 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, noEntityTypes )
   //MetaData constructor fails because there are no entity types:
   std::vector<std::string> empty_names;
   STKUNIT_ASSERT_THROW(
-      MetaData metadata(empty_names),
-      std::runtime_error
-      );
+    MetaData metadata(empty_names),
+    std::runtime_error
+    );
 }
 
 STKUNIT_UNIT_TEST( UnitTestMetaData, declare_attribute_no_delete )
 {
-  //Coverage of declare_attribute_no_delete in MetaData.hpp 
+  //Coverage of declare_attribute_no_delete in MetaData.hpp
   const CellTopologyData * singleton = NULL;
   const int spatial_dimension = 3;
-  MetaData metadata(TopologicalMetaData::entity_rank_names(spatial_dimension));
+  MetaData metadata(stk::mesh::fem::entity_rank_names(spatial_dimension));
   Part &pa = metadata.declare_part( std::string("a") , 0 );
   metadata.declare_attribute_no_delete( pa, singleton);
   metadata.commit();

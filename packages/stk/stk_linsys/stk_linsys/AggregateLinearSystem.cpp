@@ -30,6 +30,19 @@ AggregateLinearSystem::~AggregateLinearSystem()
 }
 
 void
+AggregateLinearSystem::set_parameters(Teuchos::ParameterList& paramlist)
+{
+  m_linear_system.set_parameters(paramlist);
+}
+
+void
+AggregateLinearSystem::set_num_matrices_rhsvecs(size_t num_matrices, size_t num_rhsvecs)
+{
+  m_matrices.resize(num_matrices);
+  m_rhsvecs.resize(num_rhsvecs);
+}
+
+void
 AggregateLinearSystem::synchronize_mappings_and_structure()
 {
   m_linear_system.synchronize_mappings_and_structure();
@@ -121,6 +134,17 @@ AggregateLinearSystem::get_DofMapper()
   return m_linear_system.get_DofMapper();
 }
 
+void
+AggregateLinearSystem::reset_to_zero()
+{
+  for(size_t i=0; i<m_matrices.size(); ++i) {
+    if (m_matrices[i].get() != NULL) m_matrices[i]->putScalar(0);
+  }
+  for(size_t i=0; i<m_rhsvecs.size(); ++i) {
+    if (m_rhsvecs[i].get() != NULL) m_rhsvecs[i]->putScalar(0);
+  }
+}
+
 const fei::SharedPtr<fei::MatrixGraph>
 AggregateLinearSystem::get_fei_MatrixGraph() const
 {
@@ -143,6 +167,25 @@ fei::SharedPtr<fei::LinearSystem>
 AggregateLinearSystem::get_fei_LinearSystem()
 {
   return m_linear_system.get_fei_LinearSystem();
+}
+
+void
+AggregateLinearSystem::write_files(const std::string& base_name) const
+{
+  for(size_t i=0; i<m_matrices.size(); ++i) {
+    if (m_matrices[i].get() == NULL) continue;
+    std::ostringstream ossA;
+    ossA << "A_" << base_name << ".mat"<<i<<".mtx";
+    std::string Aname = ossA.str();
+    m_matrices[i]->writeToFile(Aname.c_str());
+  }
+  for(size_t i=0; i<m_rhsvecs.size(); ++i) {
+    if (m_rhsvecs[i].get() == NULL) continue;
+    std::ostringstream ossb;
+    ossb << "b_" << base_name << ".vec"<<i<<".vec";
+    std::string bname = ossb.str();
+    m_rhsvecs[i]->writeToFile(bname.c_str());
+  }
 }
 
 int

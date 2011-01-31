@@ -125,7 +125,7 @@ int output_gnu(const char *cmd_file,
     elem_index = index + nelems;
     for (j = 0, i = 0; i < mesh->elem_array_len; i++) {
       current_elem = &(mesh->elements[i]);
-      if (current_elem->globalID >= 0) {
+      if (current_elem->globalID != ZOLTAN_ID_INVALID) {
 
         if (mesh->blank_count && (mesh->blank[i] == 1)) continue;
         

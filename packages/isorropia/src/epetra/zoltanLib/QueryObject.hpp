@@ -116,8 +116,8 @@ class QueryObject
   std::map<int,int> procmap_;
   std::set<int> graph_self_edges_;
 
-  int myProc_;
-  int base_;
+  unsigned int myProc_;
+  unsigned int base_;
 
   void fill_procmap();
 

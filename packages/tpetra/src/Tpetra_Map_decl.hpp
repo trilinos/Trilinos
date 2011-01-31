@@ -304,6 +304,18 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
   createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
+  /** \brief Non-member function to create a non-contiguous Map with a user-specified node.
+
+      The Map is configured to use zero-based indexing.
+
+      \relates Map
+   */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createNonContigMapWithNode(const ArrayView<const GlobalOrdinal> &elementList,
+                             const RCP<const Teuchos::Comm<int> > &comm, 
+                             const RCP<Node> &node);
+
   /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
 
       The Map is configured to use zero-based indexing.

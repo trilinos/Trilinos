@@ -47,11 +47,11 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 			      ZOLTAN_ID_PTR       global_ids,
 			      ZOLTAN_ID_PTR       local_ids);
 
-static int Compute_Bal(ZZ *, int, indextype *, int, int *, double *);
-static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
-static float Compute_NetCut(ZZ *, int, int *, float *, int *, int *);
-static float Compute_ConCut(ZZ *, int, int *, float *, int *, int *);
-static int Compute_Adjpart(ZZ *, int, int *, int *, int *, int *, int *, int *);
+static int Compute_Bal(ZZ *, int, weighttype *, int, indextype *, double *);
+static int Compute_EdgeCut(ZZ *, int, indextype *, float *, indextype *, int *, double *);
+static float Compute_NetCut(ZZ *, int, indextype *, float *, indextype *, int *);
+static float Compute_ConCut(ZZ *, int, indextype *, float *, indextype *, int *);
+static int Compute_Adjpart(ZZ *, int, indextype *, indextype *, indextype *, int *, indextype *, int *);
 
 
 
@@ -193,11 +193,13 @@ Zoltan_Postprocess_Order (ZZ *zz,
     FILE *fp;
     fp = fopen("separators.txt", "w");
     fprintf(fp, "%i\n", ord->num_part);
-    for (i=0; i<ord->num_part; ++i)
-      fprintf(fp, "%i ", ord->sep_sizes[i]);
+    for (i=0; i<ord->num_part; ++i){
+      fprintf(fp, TPL_IDX_SPEC " ", ord->sep_sizes[i]);
+    }
     fprintf(fp, "\n");
-    for (i=ord->num_part; i<2*ord->num_part-1; ++i)
-      fprintf(fp, "%i ", ord->sep_sizes[i]);
+    for (i=ord->num_part; i<2*ord->num_part-1; ++i){
+      fprintf(fp, TPL_IDX_SPEC " ", ord->sep_sizes[i]);
+    }
     fprintf(fp, "\n");
     fclose(fp);
   }
@@ -217,7 +219,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 
   int ierr = ZOLTAN_OK;
   int i, j, nsend;
-  int *newproc;
+  int *newproc, *tmp_part, *tmp_input_part;
 
   int num_gid_entries = zz->Num_GID;
   int num_lid_entries = zz->Num_LID;
@@ -230,7 +232,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory. ");
   }
   for (i=0; i<gr->num_obj; i++){
-    newproc[i] = Zoltan_LB_Part_To_Proc(zz, prt->part[i],
+    newproc[i] = Zoltan_LB_Part_To_Proc(zz, (int)prt->part[i],
 					&(global_ids[i*num_gid_entries]));
     if (newproc[i]<0){
       ZOLTAN_FREE(&newproc);
@@ -242,8 +244,32 @@ Zoltan_Postprocess_Partition (ZZ *zz,
   if (zz->LB.Remap_Flag) {
     int new_map;
 
-    ierr = Zoltan_LB_Remap(zz, &new_map, gr->num_obj, newproc, prt->input_part,
-			   prt->part, 1);
+    if (sizeof(indextype) == sizeof(int)){
+      ierr = Zoltan_LB_Remap(zz, &new_map, gr->num_obj, newproc, (int *)prt->input_part,
+			   (int *)prt->part, 1);
+    }
+    else{
+      tmp_part = (int *)ZOLTAN_MALLOC(sizeof(int) * gr->num_obj);
+      tmp_input_part = (int *)ZOLTAN_MALLOC(sizeof(int) * gr->num_obj);
+
+      if (gr->num_obj && (!tmp_part || !tmp_input_part)){
+	ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
+      }
+      for (i=0; i < gr->num_obj; i++){
+        tmp_part[i] = (int)prt->part[i];
+        tmp_input_part[i] = (int)prt->input_part[i];
+      }
+      ierr = Zoltan_LB_Remap(zz, &new_map, gr->num_obj, newproc, tmp_input_part, tmp_part, 1);
+
+      for (i=0; i < gr->num_obj; i++){
+        prt->part[i] = (indextype)tmp_part[i];
+        prt->input_part[i] = (indextype)tmp_input_part[i];
+      }
+
+      ZOLTAN_FREE(&tmp_part);
+      ZOLTAN_FREE(&tmp_input_part);
+    }
+
     if (ierr < 0) {
       ZOLTAN_FREE(&newproc);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
@@ -257,7 +283,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 						  (newproc[i] != zz->Proc)))
       nsend++;
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-      printf("[%1d] DEBUG: local object %1d: old part = %1d, new part = %1d\n",
+      printf("[%1d] DEBUG: local object %1d: old part = " TPL_IDX_SPEC ", new part = " TPL_IDX_SPEC "\n",
 	     zz->Proc, i, prt->input_part[i], prt->part[i]);
   }
 
@@ -293,7 +319,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 	  if (num_lid_entries)
 	    ZOLTAN_SET_LID(zz, &((*(part->exp_lids))[j*num_lid_entries]),
 			   &(local_ids[i*num_lid_entries]));
-	  (*(part->exp_part))[j] = prt->part[i];
+	  (*(part->exp_part))[j] = (int)prt->part[i];
 	  (*(part->exp_procs))[j] = newproc[i];
 /*	  printf("[%1d] Debug: Move object %1d to part %1d, proc %1d\n", */
 /*	     zz->Proc, i, prt->part[i], newproc[i]); */
@@ -315,6 +341,7 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 				int use_timers, double itr)
 {
 #define FOMAXDIM 10
+  static char * yo = "Zoltan_Postprocess_FinalOutput";
   static int nRuns=0;
   static double balsum[FOMAXDIM], cutesum[FOMAXDIM];
   static double balmax[FOMAXDIM], cutemax[FOMAXDIM];
@@ -337,7 +364,7 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
   int edim;
   indextype *vsizeBACKUP = NULL;
   indextype *input_part;
-  int i;
+  int i,rc;
 
 /* #define UVC_DORUK_COMP_OBJSIZE */
 #ifdef UVC_DORUK_COMP_OBJSIZE
@@ -363,12 +390,24 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
   edim = MAX(zz->Edge_Weight_Dim,1);
 
   if (gr->obj_wgt_dim < FOMAXDIM && zz->Edge_Weight_Dim < FOMAXDIM) {
-    adjpart = (int *) ZOLTAN_MALLOC(gr->xadj[gr->num_obj] * sizeof(int));
+    if (gr->xadj[gr->num_obj]){
+      adjpart = (int *) ZOLTAN_MALLOC(gr->xadj[gr->num_obj] * sizeof(int));
+      if (!adjpart){
+        ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR,
+			 "Error 1 returned from Zoltan_Postprocess_FinalOutput");
+      }
+    }
 
     Compute_Bal(zz, gr->num_obj, gr->vwgt, gr->obj_wgt_dim, prt->part, bal);
-    Compute_Adjpart(zz, gr->num_obj, gr->vtxdist, gr->xadj, gr->adjncy,
+
+    rc = Compute_Adjpart(zz, gr->num_obj, gr->vtxdist, gr->xadj, gr->adjncy,
                     gr->adjproc, prt->part, adjpart);
-    Compute_EdgeCut(zz, gr->num_obj, gr->xadj, gr->float_ewgts, 
+
+    if (rc != ZOLTAN_OK){
+      ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR,
+			 "Error 2 returned from Zoltan_Postprocess_FinalOutput");
+    }
+    Compute_EdgeCut(zz, gr->num_obj, gr->xadj, gr->float_ewgts,
                     prt->part, adjpart, cute);
     cutl = Compute_ConCut(zz, gr->num_obj, gr->xadj,  gr->float_ewgts,
                           prt->part, adjpart);
@@ -475,9 +514,9 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 static int Compute_Bal(
   ZZ *zz,
   int nvtx,
-  indextype *vwgts,
+  weighttype *vwgts,
   int obj_wgt_dim,
-  int *parts,
+  indextype *parts,
   double *bal
 )
 {
@@ -522,9 +561,9 @@ float *tot = NULL, *max = NULL;
 static int Compute_EdgeCut(
   ZZ *zz,
   int nvtx,
-  int *xadj,
+  indextype *xadj,
   float *ewgts,
-  int *parts,
+  indextype *parts,
   int *nborparts,
   double *cute
 )
@@ -532,7 +571,7 @@ static int Compute_EdgeCut(
 /*
  * Compute total weight of cut graph edges w.r.t. partitions.
  */
-int i, j, k;
+indextype i, j, k;
 int dim = MAX(zz->Edge_Weight_Dim, 1);
 double *cut = NULL;
 
@@ -553,9 +592,9 @@ double *cut = NULL;
 static float Compute_NetCut(
   ZZ *zz,
   int nvtx,
-  int *xadj,
+  indextype *xadj,
   float *ewgts,
-  int *parts,
+  indextype *parts,
   int *nborparts
 )
 {
@@ -564,7 +603,7 @@ static float Compute_NetCut(
  * Assume one hyperedge per vertex.
  * Equivalent to number of boundary vertices weighted by edge weights.
  */
-int i, j;
+indextype i, j;
 float cutn = 0., gcutn = 0.;
 int dim = zz->Edge_Weight_Dim;
 
@@ -593,9 +632,9 @@ int dim = zz->Edge_Weight_Dim;
 static float Compute_ConCut(
   ZZ *zz,
   int nvtx,
-  int *xadj,
+  indextype *xadj,
   float *ewgts,
-  int *parts,
+  indextype *parts,
   int *nborparts
 )
 {
@@ -603,12 +642,12 @@ static float Compute_ConCut(
  * Compute SUM over hyperedges( (#parts/hyperedge - 1)*ewgt);
  * Assume one hyperedge per vertex.
  */
-int i, j;
+indextype i, j;
 float cutl = 0., gcutl = 0.;
-int *used = NULL;
+indextype *used = NULL;
 int dim = zz->Edge_Weight_Dim;
 
-  used = (int *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(int));
+  used = (indextype *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(indextype));
   for (i = 0; i < zz->LB.Num_Global_Parts; i++) used[i] = -1;
 
   for (i = 0; i < nvtx; i++) {
@@ -637,12 +676,12 @@ int dim = zz->Edge_Weight_Dim;
 static int Compute_Adjpart(
   ZZ *zz,
   int nvtx,         /* Input:  # vtxs in this processor */
-  int *vtxdist,     /* Input:  Distribution of vertices across processors */
-  int *xadj,        /* Input:  Index of adjncy:  adjncy[xadj[i]] to 
+  indextype *vtxdist,     /* Input:  Distribution of vertices across processors */
+  indextype *xadj,        /* Input:  Index of adjncy:  adjncy[xadj[i]] to 
                                adjncy[xadj[i]+1] are all edge nbors of vtx i. */
-  int *adjncy,      /* Input:  Array of nbor vertices. */
+  indextype *adjncy,      /* Input:  Array of nbor vertices. */
   int *adjproc,     /* Input:  adjproc[j] == processor owning adjncy[j]. */
-  int *part,        /* Input:  Partition assignments of vtxs. */
+  indextype *part,        /* Input:  Partition assignments of vtxs. */
   int *adjpart      /* Output: adjpart[j] == partition owning adjncy[j] */
 )
 {
@@ -651,25 +690,33 @@ static int Compute_Adjpart(
  */
 ZOLTAN_COMM_OBJ *plan;
 int i;
-int start = vtxdist[zz->Proc];  /* First vertex on this processor */
+indextype start = vtxdist[zz->Proc];  /* First vertex on this processor */
+indextype *recv_gno= NULL;
+int *send_int=NULL;
 int nrecv;
-int *vtxs = NULL;
 int tag = 24542;
 
-  Zoltan_Comm_Create(&plan, xadj[nvtx], adjproc, zz->Communicator, tag++,
-                     &nrecv);
+  Zoltan_Comm_Create(&plan, (int)xadj[nvtx], adjproc, zz->Communicator, tag++, &nrecv);
 
-  vtxs = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+  if (nrecv){
+    recv_gno = (indextype *) ZOLTAN_MALLOC(nrecv * sizeof(indextype));
+    send_int = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+    if (!recv_gno || !send_int){
+      return ZOLTAN_MEMERR;
+    }
+  }
 
-  Zoltan_Comm_Do(plan, tag++, (char *) adjncy, sizeof(int), (char *) vtxs);
+  Zoltan_Comm_Do(plan, tag++, (char *) adjncy, sizeof(indextype), (char *) recv_gno);
 
-  for (i = 0; i < nrecv; i++)
-    vtxs[i] = part[vtxs[i]-start];
+  for (i = 0; i < nrecv; i++){
+    send_int[i] = part[recv_gno[i] - start];
+  }
 
-  Zoltan_Comm_Do_Reverse(plan, tag, (char *) vtxs, sizeof(int), NULL,
-                         (char *) adjpart);
+  ZOLTAN_FREE(&recv_gno);
 
-  ZOLTAN_FREE(&vtxs);
+  Zoltan_Comm_Do_Reverse(plan, tag, (char *)send_int, sizeof(int), NULL, (char *) adjpart);
+
+  ZOLTAN_FREE(&send_int);
 
   Zoltan_Comm_Destroy(&plan);
 

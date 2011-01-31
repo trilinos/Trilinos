@@ -44,6 +44,7 @@ namespace Ioss {
 		   EDGEBLOCK    =  64,
 		   FACEBLOCK    = 128,
                    REGION       = 256,
-                   SUPERELEMENT = 512};
+                   SUPERELEMENT = 512,
+                   INVALID_TYPE =   0};
 }
 #endif

@@ -335,7 +335,7 @@ namespace Teuchos
     void TREVC(const char SIDE, const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, MagnitudeType* RWORK, OrdinalType* info) const;
 
     /*! Reorders the Schur factorization of a matrix \c T via unitary similarity transformations so that the diagonal element of \c T with row index \c ifst is moved to row \c ilst. If \c ScalarType is \c float or \c double, then \c T should be in real Schur form and the operation affects the diagonal block referenced by \c ifst.
-      \note This method will ignore the WORK std::vector when ScalarType is \c std::complex<float> or \c std::complex<double>.
+      \note This method will ignore the WORK vector when ScalarType is \c std::complex<float> or \c std::complex<double>.
     */
     void TREXC(const char COMPQ, const OrdinalType n, ScalarType* T, const OrdinalType ldt, ScalarType* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, ScalarType* WORK, OrdinalType* info) const;
 
@@ -344,11 +344,22 @@ namespace Teuchos
     //! @name Rotation/Reflection generators
     //@{ 
 
-    //! Generates a plane rotation that zeros out the second component of the input std::vector.
+    //! Gnerates a plane rotation that zeros out the second component of the input vector.
     void LARTG( const ScalarType f, const ScalarType g, MagnitudeType* c, ScalarType* s, ScalarType* r ) const;
 
-    //! Generates an elementary reflector of order \c n that zeros out the last \c n-1 components of the input std::vector.
+    //! Generates an elementary reflector of order \c n that zeros out the last \c n-1 components of the input vector.
     void LARFG( const OrdinalType n, ScalarType* alpha, ScalarType* x, const OrdinalType incx, ScalarType* tau ) const;
+
+    //@}
+
+    //! @name Matrix Balancing Routines
+    //@{
+
+    //! Balances a general matrix A, through similarity transformations to make the rows and columns as close in norm as possible.
+    void GEBAL(const char JOBZ, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, MagnitudeType* scale, OrdinalType* info) const; 
+
+    //! Forms the left or right eigenvectors of a general matrix that has been balanced by GEBAL by backward transformation of the computed eigenvectors \c V.
+    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const MagnitudeType* scale , const OrdinalType m, ScalarType* V, const OrdinalType ldv, OrdinalType* info) const; 
 
     //@}
 
@@ -357,7 +368,7 @@ namespace Teuchos
     //! Returns a random number from a uniform or normal distribution.
     ScalarType LARND( const OrdinalType idist, OrdinalType* seed ) const;
 
-    //! Returns a std::vector of random numbers from a chosen distribution.
+    //! Returns a vector of random numbers from a chosen distribution.
     void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, ScalarType* v ) const;    
     //@}
 
@@ -720,6 +731,19 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::GEBAL( const char JOBZ, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, MagnitudeType* scale, OrdinalType* info ) const
+  {
+    return UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+ 
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::GEBAK( const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const MagnitudeType* scale, const OrdinalType m, ScalarType* V, const OrdinalType ldv, OrdinalType* info ) const 
+  {
+    return UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
   ScalarType LAPACK<OrdinalType, ScalarType>::LARND( const OrdinalType idist, OrdinalType* seed ) const
   {
     return UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -813,6 +837,10 @@ namespace Teuchos
     // Rotation/reflection generators
     void LARTG( const float f, const float g, float* c, float* s, float* r ) const;
     void LARFG( const OrdinalType n, float* alpha, float* x, const OrdinalType incx, float* tau ) const;
+
+    // Matrix balancing routines.
+    void GEBAL(const char JOBZ, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, float* scale, OrdinalType* info) const; 
+    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* scale, const OrdinalType m, float* V, const OrdinalType ldv, OrdinalType* info) const; 
 
     // Random number generators
     float LARND( const OrdinalType idist, OrdinalType* seed ) const;
@@ -1141,6 +1169,18 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
+  void LAPACK<OrdinalType, float>::GEBAL(const char JOBZ, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, float* scale, OrdinalType* info) const
+  {
+    SGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo, &ihi, scale, info);
+  }
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, float>::GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* scale, const OrdinalType m, float* V, const OrdinalType ldv, OrdinalType* info) const
+  {
+    SGEBAK_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(SIDE), &n, &ilo, &ihi, scale, &m, V, &ldv, info);
+  }
+
+  template<typename OrdinalType>
   float LAPACK<OrdinalType, float>::LARND( const OrdinalType idist, OrdinalType* seed ) const
   {
     return(SLARND_F77(&idist, seed));
@@ -1273,6 +1313,10 @@ namespace Teuchos
     // Rotation/reflection generators
     void LARTG( const double f, const double g, double* c, double* s, double* r ) const;
     void LARFG( const OrdinalType n, double* alpha, double* x, const OrdinalType incx, double* tau ) const;
+
+    // Matrix balancing routines.
+    void GEBAL(const char JOBZ, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, double* scale, OrdinalType* info) const; 
+    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* scale, const OrdinalType m, double* V, const OrdinalType ldv, OrdinalType* info) const; 
 
     // Random number generators
     double LARND( const OrdinalType idist, OrdinalType* seed ) const;
@@ -1603,6 +1647,18 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
+  void LAPACK<OrdinalType, double>::GEBAL(const char JOBZ, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, double* scale, OrdinalType* info) const
+  {
+    DGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo, &ihi, scale, info);
+  }
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, double>::GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* scale, const OrdinalType m, double* V, const OrdinalType ldv, OrdinalType* info) const
+  {
+    DGEBAK_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(SIDE), &n, &ilo, &ihi, scale, &m, V, &ldv, info);
+  }
+
+  template<typename OrdinalType>
   double LAPACK<OrdinalType, double>::LARND( const OrdinalType idist, OrdinalType* seed ) const
   {
     return(DLARND_F77(&idist, seed));
@@ -1710,6 +1766,10 @@ namespace Teuchos
     // Rotation/reflection generators
     void LARTG( const std::complex<float> f, const std::complex<float> g, float* c, std::complex<float>* s, std::complex<float>* r ) const;
     void LARFG( const OrdinalType n, std::complex<float>* alpha, std::complex<float>* x, const OrdinalType incx, std::complex<float>* tau ) const;
+
+    // Matrix balancing routines.
+    void GEBAL(const char JOBZ, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, float* scale, OrdinalType* info) const; 
+    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* scale, const OrdinalType m, std::complex<float>* V, const OrdinalType ldv, OrdinalType* info) const; 
 
     // Random number generators
     std::complex<float> LARND( const OrdinalType idist, OrdinalType* seed ) const;
@@ -1980,6 +2040,18 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
+  void LAPACK<OrdinalType, std::complex<float> >::GEBAL(const char JOBZ, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, float* scale, OrdinalType* info) const
+  {
+    CGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo, &ihi, scale, info);
+  }
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, std::complex<float> >::GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* scale, const OrdinalType m, std::complex<float>* V, const OrdinalType ldv, OrdinalType* info) const
+  {
+    CGEBAK_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(SIDE), &n, &ilo, &ihi, scale, &m, V, &ldv, info);
+  }
+
+  template<typename OrdinalType>
   std::complex<float> LAPACK<OrdinalType, std::complex<float> >::LARND( const OrdinalType idist, OrdinalType* seed ) const
   {
     return(CLARND_F77(&idist, seed));
@@ -2069,6 +2141,10 @@ namespace Teuchos
     // Rotation/reflection generators
     void LARTG( const std::complex<double> f, const std::complex<double> g, double* c, std::complex<double>* s, std::complex<double>* r ) const;
     void LARFG( const OrdinalType n, std::complex<double>* alpha, std::complex<double>* x, const OrdinalType incx, std::complex<double>* tau ) const;
+
+    // Matrix balancing routines.
+    void GEBAL(const char JOBZ, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, double* scale, OrdinalType* info) const; 
+    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* scale, const OrdinalType m, std::complex<double>* V, const OrdinalType ldv, OrdinalType* info) const; 
 
     // Random number generators
     std::complex<double> LARND( const OrdinalType idist, OrdinalType* seed ) const;
@@ -2336,6 +2412,18 @@ namespace Teuchos
   void LAPACK<OrdinalType, std::complex<double> >::LARFG( const OrdinalType n, std::complex<double>* alpha, std::complex<double>* x, const OrdinalType incx, std::complex<double>* tau ) const
   {
     ZLARFG_F77(&n, alpha, x, &incx, tau);
+  }
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, std::complex<double> >::GEBAL(const char JOBZ, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, double* scale, OrdinalType* info) const
+  {
+    ZGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo, &ihi, scale, info);
+  }
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, std::complex<double> >::GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* scale, const OrdinalType m, std::complex<double>* V, const OrdinalType ldv, OrdinalType* info) const
+  {
+    ZGEBAK_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(SIDE), &n, &ilo, &ihi, scale, &m, V, &ldv, info);
   }
 
   template<typename OrdinalType>

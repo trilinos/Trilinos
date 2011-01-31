@@ -73,7 +73,7 @@ Teuchos::RCP<const Epetra_RowMatrix>
 int main(int argc, char** argv) {
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
-  int p, numProcs = 1;
+  int numProcs = 1;
   int localProc = 0;
 
   //first, set up our MPI environment...
@@ -108,7 +108,6 @@ int main(int argc, char** argv) {
 #ifdef HAVE_ISORROPIA_ZOLTAN
   paramlist.set("PARTITIONING METHOD", "GRAPH");
   paramlist.set("PRINT ZOLTAN_METRICS", "1");
-  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
 #else
   // If Zoltan is not available, a simple linear partitioner will be
   // used.

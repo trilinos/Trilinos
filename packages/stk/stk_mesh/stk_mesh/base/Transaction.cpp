@@ -392,10 +392,8 @@ void Transaction::remove_entity_from_bucket ( Entity &e , BucketList &buckets )
 
     std::vector<Bucket*>::iterator ik = lower_bound(buckets, last->m_key);
 
-    if ( ik == buckets.end() || last != *ik ) {
-      throw std::runtime_error(
-        std::string("stk::mesh::Transaction::remove_entity_from_bucket INTERNAL FAILURE") );
-    }
+    ThrowRequireMsg( ik != buckets.end() && last == *ik,
+        "Internal failure during removal of entity " << print_entity_key(e) );
 
     ik = buckets.erase( ik );
 

@@ -8,3 +8,4 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(  DummySparseKernelDriver
   STANDARD_PASS_OUTPUT
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
+PACKAGE_ADD_TEST_DIRECTORIES(PDP10)

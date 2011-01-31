@@ -428,14 +428,16 @@ int **exp_to_part )         /* list of partitions to which exported objs
          participate in partitioning. */
 
       /* TODO : Construct a fake tree when there are only two parts */
-      if (hgp.kway) { /* || zz->LB.Num_Global_Parts == 2) { */
+      if (hgp.kway) { /* || zz->LB.Num_Global_Parts == 2)  */
         /* call main V cycle routine */
         err = Zoltan_PHG_Partition(zz, hg, p,
                                    hgp.part_sizes, parts, &hgp);
+
         if (err != ZOLTAN_OK) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
           goto End;
         }
+
       }
       else {
         int i;
@@ -458,7 +460,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
 
         /* partition hypergraph */
         err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0, 1);
-  
+
         if (hgp.output_level >= PHG_DEBUG_LIST)     
           uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s p=%d "
                   "bal=%.2f cutl=%.2f\n", 
@@ -843,11 +845,13 @@ int Zoltan_PHG_Initialize_Params(
   }
   else if (zz->Obj_Weight_Dim > 0) {
     /* Do not add_obj_weight until multiconstraint PHG is implemented */
-    ZOLTAN_PRINT_WARN(zz->Proc, yo,
-     "Both application supplied *and* ADD_OBJ_WEIGHT "
-     "calculated vertex weights were provided.");
-    ZOLTAN_PRINT_WARN(zz->Proc, yo,
-      "Only the first application supplied weight per vertex will be used.");
+    if (zz->Proc == 0){
+      ZOLTAN_PRINT_WARN(zz->Proc, yo,
+       "Both application supplied *and* ADD_OBJ_WEIGHT "
+       "calculated vertex weights were provided.");
+      ZOLTAN_PRINT_WARN(zz->Proc, yo,
+        "Only the first application supplied weight per vertex will be used.");
+    }
     hgp->add_obj_weight = PHG_ADD_NO_WEIGHT;
   } 
   else {
@@ -1237,7 +1241,7 @@ int ierr = ZOLTAN_OK;
   /* Error check */
   if (comm->nProc_x * comm->nProc_y != nProc) {
     ZOLTAN_PRINT_ERROR(proc, yo,
-                       "Values for PHG_NPROC_X and PHG_NPROC_Y "
+                       "Values for PHG_NPROC_VERTEX and PHG_NPROC_EDGE "
                        "do not evenly divide the "
                        "total number of processors.");
     ierr = ZOLTAN_FATAL;

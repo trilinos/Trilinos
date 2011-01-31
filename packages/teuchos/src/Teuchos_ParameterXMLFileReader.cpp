@@ -30,13 +30,14 @@
 #include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_TestForException.hpp"
 
-using namespace Teuchos;
 
+namespace Teuchos {
 
 
 ParameterXMLFileReader::ParameterXMLFileReader(const std::string& filename)
   : fis_(filename)
 {;}
+
 
 ParameterList ParameterXMLFileReader::getParameters() const
 {
@@ -46,3 +47,5 @@ ParameterList ParameterXMLFileReader::getParameters() const
   return paramReader.toParameterList(xml);
 }
 
+
+} // namespace Teuchos

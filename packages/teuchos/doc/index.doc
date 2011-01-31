@@ -28,6 +28,7 @@ The following people have contributed to the development of Teuchos:
 	<li> Michael Heroux, Sandia National Labs, maherou@sandia.gov
 	<li> Kris Kampshoff, University of Minnesota, kamp@cs.umn.edu
 	<li> Kevin Long, Sandia National Labs, krlong@sandia.gov
+	<li> Kurtis Nusbaum, Sandia National Labs, klnusbaum@gmail.com
 	<li> Paul Sexton, University of Illinois-Chicago, pmsext@software.sandia.gov
 	<li> Heidi Thornquist (Package Lead), Sandia National Labs, hkthorn@sandia.gov
 </ul>
@@ -223,13 +224,53 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
   <ul>
 
-  <li> Testing for Exceptions: The TEST_FOR_EXCEPTION() macro accepts a
+  <li> <em>Testing for Exceptions</em>: The TEST_FOR_EXCEPTION() macro accepts
+  a
   logical test, an exception handler, and a
   message.  It then throws an "intelligent" exception informing the
   user of the file, line, and message where
   the exception was thrown.  The macro TEST_FOR_EXCEPT() is a shorter
   macro that just accepts a logic test and is therefore easier to write.
-  Please use TEST_FOR_EXCEPT(!test) as an alternative to assert(test).
+  Please use TEST_FOR_EXCEPT(!test) as an alternative to assert(test).</li>
+
+  <li> <em>Stack Tracing</em>: When a debug build is enabled
+  (CMAKE_BUILD_TYPE=DEBUG OR Trilinos_ENABLE_DEBUG=ON) and when using GCC and
+  when enabling BinUtils (TPL_ENABLE_BinUtils=ON) then the
+  TEST_FOR_EXCEPTION() family of macros
+  will take snapshopts of the stacktrace when exceptions are thrown.  These
+  stacktraces can be printed out after an exception is thrown using the
+  funciton Teuchos::get_stored_stacktrace().  The standard catch macro
+  TEUCHOS_STANDARD_CATCH_STATEMENTS() automatically invokes this function so
+  all main() programs written using this macro will automatically print out
+  stack trace information when uncaught exceptions are encountered.  A program
+  can also cause strack tracing info to be printed when an segfault occurs by
+  calling Teuchos::print_stack_on_segfault() before main() runs.  More fine
+  tuning of stacktracing can be controlled at configure time using the CMake
+  options Teuchos_ENABLE_STACKTRACE and Teuchos_ENABLE_DEFAULT_STRACTRACE.
+  When Teuchos_ENABLE_STACKTRACE=ON, then stracktracing of exceptions can be
+  turned on and off at runtime using the function
+  TestForException_setEnableStacktrace().  The configure varible
+  Teuchos_ENABLE_DEFAULT_STRACTRACE determines if stack tracing is on or off
+  by defualt at runtime.
+
+  NOTE: Stacktracing is always off by default
+  in any build type except CMAKE_BUILD_TYPE=DEBUG and/or
+  Trilinos_ENABLE_DEBUG=ON.  Therefore, by default an optimized build of the
+  code will never have stack tracking enabled and will suffer no performance
+  penalty due to stacktracing.  It is just debug builds that it is enabled
+  for (and then only be default and can be disabled).
+
+  NOTE: Stacktracing is only enabled when the using GCC and when the binutils
+  libraries are available (see teuchos/CMakeLists.txt and cmake configure
+  output for details).
+
+  <b>WARNING:</b> Printing stacktraces can be very
+  expensive if your program throws a lot of excpetions.  Therefore, the
+  testing infrastructure for Trilinos with the checkin-test.py script turns
+  off stack tracing by default by configuring with
+  Teuchos_ENABLE_DEFAULT_STRACTRACE=OFF.
+
+  </li>
 
   </ul>
 

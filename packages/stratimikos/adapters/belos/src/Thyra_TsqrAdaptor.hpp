@@ -72,6 +72,21 @@ namespace Thyra {
     typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
 
   public:
+    /// \brief Default parameters
+    ///
+    /// Return default parameters for the TSQR variant used by Epetra.
+    ///
+    /// \warning This method may not be reentrant.  It should only be
+    ///   called by one thread at a time.  We do not protect it from
+    ///   calls by more than one thread at a time.
+    ///
+    /// \warning This method is a stub for now.
+    static Teuchos::RCP<const Teuchos::ParameterList>
+    getDefaultParameters ()
+    {
+      return Teuchos::parameterList();
+    }
+
     /// \brief Constructor
     ///
     /// \param mv [in] Multivector object, used only to access the
@@ -87,7 +102,7 @@ namespace Thyra {
     ///   non-GPU implementations.  For details, check the specific
     ///   NodeTsqrFactory implementation.
     TsqrAdaptor (const MV& mv,
-		 const Teuchos::ParameterList& plist) 
+		 const Teuchos::RCP<const Teuchos::ParameterList>& plist) 
     {
       throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }

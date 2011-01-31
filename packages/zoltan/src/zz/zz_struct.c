@@ -23,6 +23,7 @@ extern "C" {
 #include "lb_init_const.h"
 #include "params_const.h"
 #include "ha_const.h"
+#include "zz_util_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -57,6 +58,9 @@ ZZ *Zoltan_Create(MPI_Comm communicator)
 
 char *yo = "Zoltan_Create";
 ZZ *zz;
+int proc;
+
+    MPI_Comm_rank(communicator, &proc);
 
   /*
    * Allocate storage for the Zoltan structure.
@@ -64,8 +68,6 @@ ZZ *zz;
 
   zz = (ZZ *) ZOLTAN_MALLOC(sizeof(ZZ));
   if (!zz) {
-    int proc;
-    MPI_Comm_rank(communicator, &proc);
     ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory to create structure.");
     return NULL;
   }
@@ -211,6 +213,7 @@ static void Zoltan_Free_Zoltan_Struct_Members(ZZ *zz)
   Zoltan_Free_Structures(zz);  /* Algorithm-specific structures */
   Zoltan_LB_Free_Struct(&(zz->LB));
   Zoltan_Order_Free_Struct(&(zz->Order));
+  Zoltan_TPL_Order_Free_Struct(&(zz->TPL_Order));
 }
 
 /****************************************************************************/
@@ -367,6 +370,7 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Hier_Method_Data = NULL;
 
   zz->Order.needfree = 0;
+  zz->TPL_Order.needfree = 0;
 }
 
 #ifdef __cplusplus

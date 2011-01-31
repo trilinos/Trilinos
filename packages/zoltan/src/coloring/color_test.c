@@ -28,6 +28,7 @@ extern "C" {
 #include "zz_util_const.h"
 #include "graph.h"
 #include "all_allo_const.h"
+#include "third_library_const.h"
 
 
 /*****************************************************************************/
@@ -67,14 +68,12 @@ int Zoltan_Color_Test(
   int ss=100;
   char comm_pattern='S', coloring_order='I', coloring_method='F';
   int comm[2],gcomm[2];
-  int *color=NULL, *reccnt=NULL;
+  int *color=NULL, *reccnt=NULL, *tmp=NULL;
 
-
-  int *vtxdist=NULL, *xadj=NULL, *adjncy=NULL; /* arrays to store the graph structure */
-  int *adjproc=NULL;
-  int gvtx;                         /* number of global vertices */
+  int *adjproc=NULL, *xadj=NULL;
+  ZOLTAN_GNO_TYPE gvtx;                         /* number of global vertices */
+  ZOLTAN_GNO_TYPE *vtxdist=NULL, *adjncy=NULL;
   ZG graph;
-
 
   memset (&graph, 0, sizeof(ZG));
 
@@ -114,7 +113,7 @@ int Zoltan_Color_Test(
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Asynchronous communication pattern is not implemented for distance-2 coloring and its variants. Using synchronous communication (S).");
       comm_pattern = 'S';
   }
-  if (coloring_order != 'I' && coloring_order != 'B' && coloring_order != 'U') {
+  if (coloring_order != 'I' && coloring_order != 'B' && coloring_order != 'U' && coloring_order != 'L' && coloring_order != 'N' && coloring_order != 'S') {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring order. Using internal first coloring order (I).");
       coloring_order = 'I';
   }
@@ -126,7 +125,6 @@ int Zoltan_Color_Test(
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring method. Using first fit method (F).");
       coloring_method = 'F';
   }
-
 
   /* Compute Max number of array entries per ID over all processors.
      This is a sanity-maintaining step; we don't want different
@@ -149,33 +147,53 @@ int Zoltan_Color_Test(
 
 
   Zoltan_ZG_Build (zz, &graph, 0);
+
   Zoltan_ZG_Export (zz, &graph,
-		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
+		    &gvtx, &nvtx, NULL, NULL, 
+                    &vtxdist, &xadj, &adjncy, &adjproc,
 		    NULL, NULL);
 
+  if (gvtx > (ZOLTAN_GNO_TYPE)INT_MAX){
+    if (zz->Proc == 0){
+      fprintf(stderr,
+      "Zoltan_Color_Test assumes number of vertices (%ld) is less than INT_MAX\n",gvtx);
+    }
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
 
   /* Exchange global color information */
   color = (int *) ZOLTAN_MALLOC(vtxdist[zz->Num_Proc] * sizeof(int));
   reccnt = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
-  if (!color || !reccnt)
+  tmp = (int *)ZOLTAN_MALLOC(sizeof(int) * zz->Num_Proc);
+  if (!color || !reccnt || !tmp)
       MEMORY_ERROR;
 
+  for (i=0; i<zz->Num_Proc; i++){
+      reccnt[i] = (int)(vtxdist[i+1]-vtxdist[i]);
+      tmp[i] = (int)vtxdist[i];
+  }
 
-  for (i=0; i<zz->Num_Proc; i++)
-      reccnt[i] = vtxdist[i+1]-vtxdist[i];
-  MPI_Allgatherv(color_exp, nvtx, MPI_INT, color, reccnt, vtxdist, MPI_INT, zz->Communicator);
+  /*
+   * MPI_Allgatherv requires that offsets be ints. So this won't work if global number
+   *   of vertices exceeds 2^32.
+   */
+
+  MPI_Allgatherv(color_exp, nvtx, MPI_INT, color, reccnt, tmp, MPI_INT, zz->Communicator);
+
+  ZOLTAN_FREE(&tmp);
 
   /* Check if there is an error in coloring */
   if (coloring_problem == '1') {
       for (i=0; i<nvtx; i++) {
-          int gno = i + vtxdist[zz->Proc];
+          int gno = i + (int)vtxdist[zz->Proc];
           if (color[gno] <= 0) { /* object i is not colored properly */
               ierr = ZOLTAN_FATAL;
               break;
               /* printf("Error in coloring! u:%d, cu:%d\n", gno, color[gno]); */
           }
           for (j = xadj[i]; j < xadj[i+1]; ++j) {
-              int v = adjncy[j];
+              int v = (int)adjncy[j];
               if (color[gno] == color[v]) { /* neighbors have the same color */
                   ierr = ZOLTAN_FATAL;
                   break;
@@ -187,21 +205,21 @@ int Zoltan_Color_Test(
       }
   } else if (coloring_problem == '2') {
       for (i=0; i<nvtx; i++) {
-          int gno = i + vtxdist[zz->Proc];
+          int gno = i + (int)vtxdist[zz->Proc];
           if (color[gno] <= 0) { /* object i is not colored properly */
               ierr = ZOLTAN_FATAL;
               break;
               /* printf("Error in coloring! u:%d, cu:%d\n", gno, color[gno]); */
           }
           for (j = xadj[i]; j < xadj[i+1]; ++j) {
-              int v = adjncy[j], k;
+              int v = (int)adjncy[j], k;
               if (color[gno] == color[v]) { /* d-1 neighbors have the same color */
                   ierr = ZOLTAN_FATAL;
                   break;
                   /* printf("Error in coloring! d1-neigh: u:%d, v:%d, cu:%d, cv:%d\n", gno, v, color[gno], color[v]); */
               }
               for (k = j+1; k < xadj[i+1]; ++k) {
-                  int w = adjncy[k];
+                  int w = (int)adjncy[k];
                   if (color[v] == color[w]) { /* d-2 neighbors have the same color */
                       ierr = ZOLTAN_FATAL;
                       break;

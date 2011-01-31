@@ -9,6 +9,9 @@
 /* Define if want to build intrepid-debug */
 #cmakedefine HAVE_INTREPID_DEBUG
 
+/* Define if want to build intrepid-debug with inf and nan checking */
+#cmakedefine HAVE_INTREPID_DEBUG_INF_CHECK
+
 /* Define if want to build with intrepid enabled */
 #cmakedefine HAVE_INTREPID_EPETRA
 

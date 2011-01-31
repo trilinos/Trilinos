@@ -277,6 +277,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   preCopyrightTrilinos_ShowInvalidPackageNameError
   ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
     -DSHOW_INVALID_PACKAGE_NAME_ERROR=ON
+    -DTrilinos_ASSERT_MISSING_PACKAGES=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Error, the package 'Anasazi' is listed as a dependency of the package"
     "'Teko' in the list 'Trilinos_PACKAGES' but the package 'Anasazi' is either"

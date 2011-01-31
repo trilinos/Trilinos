@@ -44,10 +44,10 @@
 #include "Epetra_Comm.h"
 
 //============================================================================
-Epetra_LocalMap::Epetra_LocalMap(int NumMyElements, int IndexBase, 
-																 const Epetra_Comm& Comm)
+Epetra_LocalMap::Epetra_LocalMap(int numMyElements, int indexBase, 
+				 const Epetra_Comm& comm)
   // LocalMap is just a special case of Map
-	: Epetra_Map(NumMyElements, NumMyElements, IndexBase, Comm) 
+	: Epetra_Map(numMyElements, numMyElements, indexBase, comm) 
 {
   SetLabel("Epetra::LocalMap");
   if (CheckInput()!=0)

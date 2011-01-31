@@ -34,6 +34,9 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   int *ypid=NULL;
   float *pinwgt=NULL;
   int * ybipart = NULL;
+  int gno_size_for_dd;
+
+  gno_size_for_dd = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   if (bipartite || !matrix->opts.enforceSquare) {
@@ -51,9 +54,8 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   if (matrix->nPins && tr_tab == NULL) MEMORY_ERROR;
 
   pinwgt = (float*)ZOLTAN_MALLOC((matrix->nPins*2+matrix->nY)*matrix->pinwgtdim*sizeof(float));
-  for (i = 0 ; i < 2 ; ++i) /* Copy pin weights */
-    memcpy(pinwgt + i*matrix->nPins*matrix->pinwgtdim*sizeof(float),
-	   matrix->pinwgt, matrix->nPins*matrix->pinwgtdim*sizeof(float));
+
+  if (((matrix->nPins*2+matrix->nY)*matrix->pinwgtdim) && !pinwgt) MEMORY_ERROR;
 
   for (i=0, cnt = 0 ; i < matrix->nY ; ++i) {
     for (j = matrix->ystart[i] ; j < matrix->yend[i] ; ++j) {
@@ -63,7 +65,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 	     matrix->pinwgtdim*sizeof(float));
       cnt ++;
 
-      tr_tab[cnt].GNO[0] = matrix->pinGNO[j];                        /* Symmetric arc */
+      tr_tab[cnt].GNO[0] = matrix->pinGNO[j];          /* Symmetric arc */
       tr_tab[cnt].GNO[1] = matrix->yGNO[i] + bipartite*matrix->globalX; /* new ordering */
       memcpy(pinwgt + cnt*matrix->pinwgtdim, matrix->pinwgt+j*matrix->pinwgtdim,
 	     matrix->pinwgtdim*sizeof(float));
@@ -77,13 +79,13 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   }
   ZOLTAN_FREE(&matrix->pinwgt);
 
-  Zoltan_Matrix_Remove_DupArcs(zz, cnt, tr_tab, pinwgt, matrix);
+  Zoltan_Matrix_Remove_DupArcs(zz, cnt, tr_tab, pinwgt, matrix); /* Compute new nY too */
   ZOLTAN_FREE(&tr_tab);
   ZOLTAN_FREE(&pinwgt);
 
   if (bipartite) {
     int endX;
-    int * yGNO = NULL;
+    ZOLTAN_GNO_TYPE * yGNO = NULL;
 
     /* Update data directories */
     yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, matrix->nY);
@@ -91,20 +93,25 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 
     ybipart = (int*) ZOLTAN_MALLOC(matrix->nY*sizeof(int));
 
+    if (matrix->nY && (!yGID || !ypid || !ybipart)) MEMORY_ERROR;
+
     for (endX = 0 ; endX < matrix->nY ; ++endX) {
       if (matrix->yGNO[endX] >= matrix->globalX)
 	break;
       ybipart[endX] = 0;
     }
     /* Get Informations about X */
-    Zoltan_DD_Find (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR)ypid, NULL,
+    Zoltan_DD_Find (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (char *)ypid, NULL,
 		    endX, NULL);
 
-    yGNO = (int*)ZOLTAN_MALLOC(endX*sizeof(int));
+    yGNO = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(endX*sizeof(ZOLTAN_GNO_TYPE));
+    if (endX && !yGNO) MEMORY_ERROR;
+
     for (i = endX ; i < matrix->nY ; ++i) {
       yGNO[i-endX] = matrix->yGNO[i] - matrix->globalX;
       /* TODO: add a something to have the correct ypid */
-      ybipart[endX] = 1;
+      ybipart[i] = 1;
+      ypid[i] = ypid[i-endX]; /* Be sure to update ypid */
     }
     /* Get Informations about Y */
     Zoltan_DD_Find (matrix->ddY, (ZOLTAN_ID_PTR)yGNO,
@@ -120,14 +127,14 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
     matrix->globalY = matrix->globalX;
 
     /* I store : xGNO, xGID, xpid, bipart */
-    ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
-			     1, matrix->globalX/zz->Num_Proc, 0);
+    ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, gno_size_for_dd, zz->Num_GID,
+			     sizeof(int), matrix->globalX/zz->Num_Proc, 0);
     matrix->ddY = matrix->ddX;
     /* Hope a linear assignment will help a little */
     if (matrix->globalX/zz->Num_Proc)
       Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
     /* Associate all the data with our xyGNO */
-    Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR)ypid, ybipart,
+    Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (char *)ypid, ybipart,
 		      matrix->nY);
   }
 

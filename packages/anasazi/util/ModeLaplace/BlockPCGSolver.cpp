@@ -408,17 +408,13 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 
       // Compute the pseudo-inverse of the eigenvalues
       for (ii = 0; ii < blkSize; ++ii) {
-        if (da[ii] < 0.0) {
-          if (MyComm.MyPID() == 0) {
-            std::cerr << std::endl << std::endl;
-            std::cerr << " !!! Negative eigenvalue for P^tKP (" << da[ii] << ") !!!";
-            std::cerr << std::endl << std::endl;
-          }
-          exit(-1);
-        }
-        else {
-          da[ii] = (da[ii] == 0.0) ? 0.0 : 1.0/da[ii];
-        }
+	// FIXME (mfh 14 Jan 2011) Is this the right exception to
+	// throw?  I'm just replacing an exit(-1) with an exception,
+	// as per Trilinos coding standards.
+	TEST_FOR_EXCEPTION(da[ii] < 0.0, std::runtime_error, "Negative "
+			   "eigenvalue for P^T K P: da[" << ii << "] = " 
+			   << da[ii] << ".");
+	da[ii] = (da[ii] == 0.0) ? 0.0 : 1.0/da[ii];
       } // for (ii = 0; ii < blkSize; ++ii)
 
       // Compute P^t R

@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -29,17 +27,22 @@
 // @HEADER
 
 #include "Stokhos_ApproxJacobiPreconditioner.hpp"
-#include "Epetra_config.h"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Stokhos_SGOperatorFactory.hpp"
 
 Stokhos::ApproxJacobiPreconditioner::
 ApproxJacobiPreconditioner(
+  const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm_,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
+  const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk_,
   const Teuchos::RCP<const Epetra_Map>& base_map_,
   const Teuchos::RCP<const Epetra_Map>& sg_map_,
   const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_) :
   label("Stokhos Approximate Jacobi Preconditioner"),
+  sg_comm(sg_comm_),
+  sg_basis(sg_basis_),
+  epetraCijk(epetraCijk_),
   base_map(base_map_),
   sg_map(sg_map_),
   prec_factory(prec_factory_),
@@ -48,20 +51,31 @@ ApproxJacobiPreconditioner(
   num_iter(2),
   sg_op(),
   sg_poly(),
-  Cijk(),
   rhs_block()
 {
   num_iter = params_->get("Number of Jacobi Iterations", 2);
+
   Teuchos::RCP<Teuchos::ParameterList> sgOpParams =
     Teuchos::rcp(&(params_->sublist("Jacobi SG Operator")), false);
-  if (!sgOpParams->isParameter("Scale Operator by Inverse Basis Norms"))
-    sgOpParams->set("Scale Operator by Inverse Basis Norms", true);
-  if (!sgOpParams->isParameter("Include Mean"))
-    sgOpParams->set("Include Mean", false);
+  sgOpParams->set("Include Mean", false);
   if (!sgOpParams->isParameter("Only Use Linear Terms"))
     sgOpParams->set("Only Use Linear Terms", true);
+
+  // Build new parallel Cijk if we are only using the linear terms, Cijk
+  // is distributed over proc's, and Cijk includes more than just the linear
+  // terms (so we have the right column map; otherwise we will be importing
+  // much more than necessary)
+  if (sgOpParams->get<bool>("Only Use Linear Terms") && 
+      epetraCijk->isStochasticParallel()) {
+    int dim = sg_basis->dimension();
+    if (epetraCijk->getKEnd() > dim+1)
+      epetraCijk = 
+	Teuchos::rcp(new EpetraSparse3Tensor(*epetraCijk, 1, dim+1));
+					     
+  }
   Stokhos::SGOperatorFactory sg_op_factory(sgOpParams);
-  mat_free_op = sg_op_factory.build(base_map, base_map, sg_map, sg_map);
+  mat_free_op = sg_op_factory.build(sg_comm, sg_basis, epetraCijk, 
+				    base_map, base_map, sg_map, sg_map);
 }
 
 Stokhos::ApproxJacobiPreconditioner::
@@ -80,8 +94,7 @@ setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op_,
   label = std::string("Stokhos Approximate Jacobi Preconditioner:\n") + 
     std::string("		***** ") + 
     std::string(mean_prec->Label());
-  Cijk = sg_op->getTripleProduct();
-  mat_free_op->setupOperator(sg_poly, Cijk);
+  mat_free_op->setupOperator(sg_poly);
 }
 
 int 
@@ -126,7 +139,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   EpetraExt::BlockMultiVector input_block(View, *base_map, *input);
   EpetraExt::BlockMultiVector result_block(View, *base_map, Result);
 
-  int sz = sg_poly->basis()->size();
+  int myBlockRows = epetraCijk->numMyRows();
   result_block.PutScalar(0.0);
   for (int iter=0; iter<num_iter; iter++) {
 
@@ -139,7 +152,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     }
 
     // Apply deterministic preconditioner
-    for(int i=0; i<sz; i++) {
+    for(int i=0; i<myBlockRows; i++) {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
       TEUCHOS_FUNC_TIME_MONITOR("Total AJ Deterministic Preconditioner Time");
 #endif
@@ -188,7 +201,7 @@ const Epetra_Comm &
 Stokhos::ApproxJacobiPreconditioner::
 Comm() const
 {
-  return base_map->Comm();
+  return *sg_comm;
 }
 const Epetra_Map& 
 Stokhos::ApproxJacobiPreconditioner::

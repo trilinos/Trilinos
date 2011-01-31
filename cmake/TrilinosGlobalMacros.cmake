@@ -27,6 +27,9 @@ ENDMACRO()
 MACRO(TRILINOS_ADD_DASHBOARD_TARGET)
 
   IF (NOT (WIN32 AND NOT CYGWIN))
+
+    ADVANCED_SET(Trilinos_DASHBOARD_CTEST_ARGS "" CACHE STRING
+      "Extra arguments to pass to CTest when calling 'ctest -S' to run the 'dashboard' make target." )
   
     # H.1) Enable all packages that are enabled and have tests enabled
   
@@ -91,12 +94,12 @@ MACRO(TRILINOS_ADD_DASHBOARD_TARGET)
       COMMAND echo
       COMMAND echo Running: env ${EXPR_CMND_ARGS}
         Trilinos_PACKAGES=${Trilinos_ENABLED_PACKAGES_LIST}
-        ${CMAKE_CTEST_COMMAND} -S
+        ${CMAKE_CTEST_COMMAND} ${Trilinos_DASHBOARD_CTEST_ARGS} -S
           ${TRILINOS_HOME_DIR}/cmake/ctest/experimental_build_test.cmake
       COMMAND echo
       COMMAND env ${EXPR_CMND_ARGS}
         Trilinos_PACKAGES=${Trilinos_ENABLED_PACKAGES_LIST}
-        ${CMAKE_CTEST_COMMAND} -S
+        ${CMAKE_CTEST_COMMAND} ${Trilinos_DASHBOARD_CTEST_ARGS} -S
           ${TRILINOS_HOME_DIR}/cmake/ctest/experimental_build_test.cmake || echo
   
       # 2009/07/05: rabartl: Above, I added the ending '|| echo' to always make
@@ -160,6 +163,8 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_DIR}/packages/WebTrilinos
     ${Trilinos_SOURCE_DIR}/packages/cmmlib
     ${Trilinos_SOURCE_DIR}/packages/Trios
+    ${Trilinos_SOURCE_DIR}/packages/meros
+    ${Trilinos_SOURCE_DIR}/packages/phdmesh
     ${Trilinos_SOURCE_DIR}/demos/FEApp
     ${Trilinos_SOURCE_DIR}/packages/configure.ac
     ${Trilinos_SOURCE_DIR}/packages/configure

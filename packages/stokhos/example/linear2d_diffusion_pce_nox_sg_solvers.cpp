@@ -76,10 +76,15 @@ enum Krylov_Method { GMRES, CG, FGMRES, RGMRES };
 const int num_krylov_method = 4;
 const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES, RGMRES };
 const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES", "RGMRES" };
-// enum Krylov_Method { GMRES, CG, FGMRES };
-// const int num_krylov_method = 3;
-// const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES };
-// const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES" };
+
+// Krylov operator approaches
+enum SG_Op { MATRIX_FREE, KL_MATRIX_FREE, KL_REDUCED_MATRIX_FREE, FULLY_ASSEMBLED };
+const int num_sg_op = 4;
+const SG_Op sg_op_values[] = { MATRIX_FREE, KL_MATRIX_FREE, KL_REDUCED_MATRIX_FREE, FULLY_ASSEMBLED };
+const char *sg_op_names[] = { "Matrix-Free",
+			      "KL-Matrix-Free",
+			      "KL-Reduced-Matrix-Free",
+			      "Fully-Assembled" };
 
 // Krylov preconditioning approaches
 enum SG_Prec { MEAN, GS, AGS, AJ, KP };
@@ -105,14 +110,13 @@ int main(int argc, char *argv[]) {
 #endif
 
   // Create a communicator for Epetra objects
-  Teuchos::RCP<Epetra_Comm> Comm;
+  Teuchos::RCP<const Epetra_Comm> globalComm;
 #ifdef HAVE_MPI
-  Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+  globalComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-  Comm = Teuchos::rcp(new Epetra_SerialComm);
+  globalComm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
-
-  int MyPID = Comm->MyPID();
+  int MyPID = globalComm->MyPID();
 
   try {
 
@@ -127,6 +131,13 @@ int main(int argc, char *argv[]) {
     bool symmetric = false;
     CLP.setOption("symmetric", "unsymmetric", &symmetric, 
 		  "Symmetric discretization");
+
+    int num_spatial_procs = -1;
+    CLP.setOption("num_spatial_procs", &num_spatial_procs, "Number of spatial processors (set -1 for all available procs)");
+
+    bool rebalance_stochastic_graph = false;
+    CLP.setOption("rebalance", "no-rebalance", &rebalance_stochastic_graph, 
+		  "Rebalance parallel stochastic graph (requires Isorropia)");
 
     SG_RF randField = UNIFORM;
     CLP.setOption("rand_field", &randField, 
@@ -145,7 +156,7 @@ int main(int argc, char *argv[]) {
     int num_KL = 2;
     CLP.setOption("num_kl", &num_KL, "Number of KL terms");
 
-    int p = 5;
+    int p = 3;
     CLP.setOption("order", &p, "Polynomial order");
 
     bool normalize_basis = true;
@@ -189,6 +200,11 @@ int main(int argc, char *argv[]) {
     int inner_its = 1000;
     CLP.setOption("inner_its", &inner_its, "Maximum inner iterations");
 
+    SG_Op opMethod = MATRIX_FREE;
+    CLP.setOption("sg_operator_method", &opMethod, 
+		  num_sg_op, sg_op_values, sg_op_names,
+		  "Operator method");
+
     SG_Prec precMethod = AGS;
     CLP.setOption("sg_prec_method", &precMethod, 
 		  num_sg_prec, sg_prec_values, sg_prec_names,
@@ -206,6 +222,9 @@ int main(int argc, char *argv[]) {
       std::cout << "Summary of command line options:" << std::endl
 		<< "\tnum_mesh            = " << n << std::endl
 		<< "\tsymmetric           = " << symmetric << std::endl
+		<< "\tnum_spatial_procs   = " << num_spatial_procs << std::endl
+		<< "\trebalance           = " << rebalance_stochastic_graph
+		<< std::endl
 		<< "\trand_field          = " << sg_rf_names[randField] 
 		<< std::endl
 		<< "\tmean                = " << mean << std::endl
@@ -220,15 +239,23 @@ int main(int argc, char *argv[]) {
 		<< krylov_method_names[outer_krylov_method] << std::endl
 		<< "\touter_krylov_solver = " 
 		<< krylov_solver_names[outer_krylov_solver] << std::endl
+		<< "\touter_tol           = " << outer_tol << std::endl
+		<< "\touter_its           = " << outer_its << std::endl
 		<< "\tinner_krylov_method = " 
 		<< krylov_method_names[inner_krylov_method] << std::endl
 		<< "\tinner_krylov_solver = " 
 		<< krylov_solver_names[inner_krylov_solver] << std::endl
-		<< "\tprec_method         = " << sg_prec_names[precMethod] 
-		<< std::endl;
+		<< "\tinner_tol           = " << inner_tol << std::endl
+		<< "\tinner_its           = " << inner_its << std::endl
+		<< "\tsg_operator_method  = " << sg_op_names[opMethod] 
+		<< std::endl
+		<< "\tsg_prec_method      = " << sg_prec_names[precMethod] 
+		<< std::endl
+		<< "\tgs_prec_tol         = " << gs_prec_tol << std::endl
+		<< "\tgs_prec_its         = " << gs_prec_its << std::endl;
     }
 
-    bool nonlinear_expansion;
+    bool nonlinear_expansion = false;
     if (randField == UNIFORM)
       nonlinear_expansion = false;
     else if (randField == LOGNORMAL)
@@ -258,11 +285,25 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
 									 Cijk));
-    std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
+    if (MyPID == 0)
+      std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
+
+    // Create stochastic parallel distribution
+    Teuchos::ParameterList parallelParams;
+    parallelParams.set("Number of Spatial Processors", num_spatial_procs);
+    parallelParams.set("Rebalance Stochastic Graph", 
+		       rebalance_stochastic_graph);
+    Teuchos::RCP<Stokhos::ParallelData> sg_parallel_data =
+      Teuchos::rcp(new Stokhos::ParallelData(basis, Cijk, globalComm,
+					     parallelParams));
+    Teuchos::RCP<const EpetraExt::MultiComm> sg_comm = 
+      sg_parallel_data->getMultiComm();
+    Teuchos::RCP<const Epetra_Comm> app_comm = 
+      sg_parallel_data->getSpatialComm();
     
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model =
-      Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, sigma, 
+      Teuchos::rcp(new twoD_diffusion_ME(app_comm, n, num_KL, sigma, 
 					 mean, basis, nonlinear_expansion,
 					 symmetric));
 
@@ -339,49 +380,35 @@ int main(int argc, char *argv[]) {
     det_printParams.set("Output Precision", 3);
     det_printParams.set("Output Processor", 0);
     det_printParams.set("Output Information", NOX::Utils::Error);
-    Teuchos::ParameterList det_lsParams, det_ML;
-    Teuchos::RCP<NOX::Epetra::LinearSystem> det_linsys;
-    ML_Epetra::SetDefaults("SA", det_ML);
-    det_ML.set("ML output", 0);
-    det_ML.set("max levels",5);
-    det_ML.set("increasing or decreasing","increasing");
-    det_ML.set("aggregation: type", "Uncoupled");
-    det_ML.set("smoother: type","ML symmetric Gauss-Seidel");
-    det_ML.set("smoother: sweeps",2);
-    det_ML.set("smoother: pre or post", "both");
-    det_ML.set("coarse: max size", 200);
-#ifdef HAVE_ML_AMESOS
-    det_ML.set("coarse: type","Amesos-KLU");
-#else
-    det_ML.set("coarse: type","Jacobi");
-#endif
+    
+    Teuchos::ParameterList det_lsParams;
+    Teuchos::ParameterList& det_stratParams = 
+      det_lsParams.sublist("Stratimikos");
     if (inner_krylov_solver == AZTECOO) {
-      if (inner_krylov_method == GMRES)
-	det_lsParams.set("Aztec Solver", "GMRES");  
-      else if (inner_krylov_method == CG)
-	det_lsParams.set("Aztec Solver", "CG");  
-      det_lsParams.set("Max Iterations", inner_its);
-      det_lsParams.set("Size of Krylov Subspace", 100);
-      det_lsParams.set("Tolerance", inner_tol); 
-      det_lsParams.set("Output Frequency", 0);
-      det_lsParams.set("Preconditioner", "ML");    
-      det_lsParams.set("Zero Initial Guess", true);    
-      det_lsParams.sublist("ML") = det_ML;
-      det_linsys =
-	Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(det_printParams, 
-							  det_lsParams,
-							  det_iReq, 
-							  det_iJac, 
-							  det_A,
-							  *det_u));
+      det_stratParams.set("Linear Solver Type", "AztecOO");
+      Teuchos::ParameterList& aztecOOParams = 
+	det_stratParams.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve");
+      Teuchos::ParameterList& aztecOOSettings =
+	aztecOOParams.sublist("AztecOO Settings");
+      if (inner_krylov_method == GMRES) {
+	aztecOOSettings.set("Aztec Solver","GMRES");
+      }
+      else if (inner_krylov_method == CG) {
+	aztecOOSettings.set("Aztec Solver","CG");
+      }
+      aztecOOSettings.set("Output Frequency", 0);
+      aztecOOSettings.set("Size of Krylov Subspace", 100);
+      aztecOOParams.set("Max Iterations", inner_its);
+      aztecOOParams.set("Tolerance", inner_tol);
+      Teuchos::ParameterList& verbParams = 
+	det_stratParams.sublist("Linear Solver Types").sublist("AztecOO").sublist("VerboseObject");
+      verbParams.set("Verbosity Level", "none");
     }
     else if (inner_krylov_solver == BELOS) {
-      Teuchos::ParameterList& stratParams = 
-	det_lsParams.sublist("Stratimikos");
-      stratParams.set("Linear Solver Type", "Belos");
+      det_stratParams.set("Linear Solver Type", "Belos");
       Teuchos::ParameterList& belosParams = 
-	stratParams.sublist("Linear Solver Types").sublist("Belos");
-      Teuchos::ParameterList* belosSolverParams;
+	det_stratParams.sublist("Linear Solver Types").sublist("Belos");
+      Teuchos::ParameterList* belosSolverParams = NULL;
       if (inner_krylov_method == GMRES || inner_krylov_method == FGMRES) {
 	belosParams.set("Solver Type","Block GMRES");
 	belosSolverParams = 
@@ -406,16 +433,31 @@ int main(int argc, char *argv[]) {
       belosSolverParams->set("Verbosity",0);
       Teuchos::ParameterList& verbParams = belosParams.sublist("VerboseObject");
       verbParams.set("Verbosity Level", "none");
-      stratParams.set("Preconditioner Type", "ML");
-      stratParams.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings") = det_ML;
-      det_linsys = 
-	Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
-		       det_printParams, det_lsParams, det_iJac, 
-		       det_A, *det_u));
     }
+    det_stratParams.set("Preconditioner Type", "ML");
+    Teuchos::ParameterList& det_ML = 
+      det_stratParams.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings");
+    ML_Epetra::SetDefaults("SA", det_ML);
+    det_ML.set("ML output", 0);
+    det_ML.set("max levels",5);
+    det_ML.set("increasing or decreasing","increasing");
+    det_ML.set("aggregation: type", "Uncoupled");
+    det_ML.set("smoother: type","ML symmetric Gauss-Seidel");
+    det_ML.set("smoother: sweeps",2);
+    det_ML.set("smoother: pre or post", "both");
+    det_ML.set("coarse: max size", 200);
+#ifdef HAVE_ML_AMESOS
+    det_ML.set("coarse: type","Amesos-KLU");
+#else
+    det_ML.set("coarse: type","Jacobi");
+#endif
+    Teuchos::RCP<NOX::Epetra::LinearSystem> det_linsys = 
+      Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+		     det_printParams, det_lsParams, det_iJac, 
+		     det_A, *det_u));
    
     // Set up stochastic parameters
-    Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
+    Epetra_LocalMap p_sg_map(num_KL, 0, *sg_comm);
     Teuchos::Array<Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >sg_p_init(1);
     sg_p_init[0]= Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, p_sg_map));
     for (int i=0; i<num_KL; i++) {
@@ -441,7 +483,26 @@ int main(int argc, char *argv[]) {
       sgParams->set("Parameter Expansion Type", "Linear");
       sgParams->set("Jacobian Expansion Type", "Linear");
     }
-    sgOpParams.set("Operator Method", "Matrix Free");
+    if (opMethod == MATRIX_FREE)
+      sgOpParams.set("Operator Method", "Matrix Free");
+    else if (opMethod == KL_MATRIX_FREE)
+      sgOpParams.set("Operator Method", "KL Matrix Free");
+    else if (opMethod == KL_REDUCED_MATRIX_FREE) {
+      sgOpParams.set("Operator Method", "KL Reduced Matrix Free");
+      if (randField == UNIFORM)
+	sgOpParams.set("Number of KL Terms", num_KL);
+      else
+	sgOpParams.set("Number of KL Terms", basis->size());
+      sgOpParams.set("KL Tolerance", outer_tol);
+      sgOpParams.set("Sparse 3 Tensor Drop Tolerance", outer_tol);
+      sgOpParams.set("Do Error Tests", true);
+    }
+    else if (opMethod == FULLY_ASSEMBLED)
+      sgOpParams.set("Operator Method", "Fully Assembled");
+    else
+      TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Error!  Unknown operator method " << opMethod
+			 << "." << std::endl);
     if (precMethod == MEAN)  {
       sgPrecParams.set("Preconditioner Method", "Mean-based");
       sgPrecParams.set("Mean Preconditioner Type", "ML");
@@ -502,8 +563,9 @@ int main(int argc, char *argv[]) {
     // Create stochastic Galerkin model evaluator
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
       Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
-                                                 expansion, Cijk, sgParams,
-                                                 Comm, sg_x_init, sg_p_init,
+                                                 expansion, sg_parallel_data, 
+						 sgParams,
+						 sg_x_init, sg_p_init,
 						 scaleOP));
 
      // Create NOX interface
@@ -525,26 +587,32 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = 
 	nox_interface;
       if (outer_krylov_solver == AZTECOO) {
-	if (outer_krylov_method == GMRES)
-	  lsParams.set("Aztec Solver", "GMRES");
-	else if (outer_krylov_method == CG)
-	  lsParams.set("Aztec Solver", "CG");
-	lsParams.set("Max Iterations", outer_its);
-	lsParams.set("Size of Krylov Subspace", 100);
-	lsParams.set("Tolerance", outer_tol); 
-	lsParams.set("Output Frequency", 1);
-	lsParams.set("Preconditioner", "ML");
-	lsParams.set("Zero Initial Guess", true);
-	lsParams.set("Preconditioner", "User Defined");
+	stratParams.set("Linear Solver Type", "AztecOO");
+	Teuchos::ParameterList& aztecOOParams = 
+	  stratParams.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve");
+	Teuchos::ParameterList& aztecOOSettings =
+	  aztecOOParams.sublist("AztecOO Settings");
+	if (outer_krylov_method == GMRES) {
+	  aztecOOSettings.set("Aztec Solver","GMRES");
+	}
+	else if (outer_krylov_method == CG) {
+	  aztecOOSettings.set("Aztec Solver","CG");
+	}
+	aztecOOSettings.set("Output Frequency", 1);
+	aztecOOSettings.set("Size of Krylov Subspace", 100);
+	aztecOOParams.set("Max Iterations", outer_its);
+	aztecOOParams.set("Tolerance", outer_tol);
+	stratLinSolParams.set("Preconditioner", "User Defined");
 	linsys = 
-	  Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(
-			 printParams, lsParams, iJac, A, iPrec, M, *u));
+	  Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+			 printParams, stratLinSolParams, iJac, A, iPrec, M, 
+			 *u, true));
       }
       else if (outer_krylov_solver == BELOS){
 	stratParams.set("Linear Solver Type", "Belos");
 	Teuchos::ParameterList& belosParams = 
 	  stratParams.sublist("Linear Solver Types").sublist("Belos");
-	Teuchos::ParameterList* belosSolverParams;
+	Teuchos::ParameterList* belosSolverParams = NULL;
 	if (outer_krylov_method == GMRES || outer_krylov_method == FGMRES) {
 	  belosParams.set("Solver Type","Block GMRES");
 	  belosSolverParams = 
@@ -580,8 +648,8 @@ int main(int argc, char *argv[]) {
       lsParams.set("Tolerance", outer_tol);
       linsys =
 	Teuchos::rcp(new NOX::Epetra::LinearSystemSGGS(
-		       printParams, lsParams, det_linsys, Cijk,
-		       iReq, iJac, A, base_map, sg_map));
+		       printParams, lsParams, det_linsys, iReq, iJac, 
+		       basis, sg_parallel_data, A, base_map, sg_map));
     }
     else {
       lsParams.sublist("Deterministic Solver Parameters") = det_lsParams;
@@ -592,8 +660,8 @@ int main(int argc, char *argv[]) {
       jacobiOpParams.set("Only Use Linear Terms", true);
       linsys =
 	Teuchos::rcp(new NOX::Epetra::LinearSystemSGJacobi(
-		       printParams, lsParams, det_linsys, Cijk,
-		       iReq, iJac, A, base_map, sg_map));
+		       printParams, lsParams, det_linsys, iReq, iJac, 
+		       basis, sg_parallel_data, A, base_map, sg_map));
     }
 
     // Build NOX group
@@ -626,9 +694,11 @@ int main(int argc, char *argv[]) {
 					finalSolution);
 
     // Save mean and variance to file
+    Teuchos::RCP<Epetra_Vector> solution_overlapped = 
+      sg_model->import_solution(finalSolution);
     Stokhos::EpetraVectorOrthogPoly sg_x_poly(basis, View, 
 					      *(model->get_x_map()), 
-					      finalSolution);
+					      *solution_overlapped);
     Epetra_Vector mean(*(model->get_x_map()));
     Epetra_Vector std_dev(*(model->get_x_map()));
     sg_x_poly.computeMean(mean);
@@ -661,7 +731,7 @@ int main(int argc, char *argv[]) {
     std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << g_std_dev << std::endl;
 
-    if (status == NOX::StatusTest::Converged) 
+    if (status == NOX::StatusTest::Converged && MyPID == 0) 
       utils.out() << "Example Passed!" << std::endl;
 
     }

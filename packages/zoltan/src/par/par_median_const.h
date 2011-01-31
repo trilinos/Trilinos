@@ -22,13 +22,13 @@
 extern "C" {
 #endif
 
-extern int Zoltan_RB_find_median(int, double *, double *, int *,
+extern int Zoltan_RB_find_median(int, double *, double *, double, int *,
   int, int, double, MPI_Comm,
   double *, int, int, int,
   int, int, int, double, double, double,
   double *, double *, int *, int, int);
 
-extern int Zoltan_RB_find_median_randomized(int, double *, double *, int *,
+extern int Zoltan_RB_find_median_randomized(int, double *, double *, double, int *,
   int, int, double, MPI_Comm,
   double *, int, int, int,
   int, int, int, double, double, double,

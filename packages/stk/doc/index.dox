@@ -6,7 +6,7 @@
  *
  * -  @copydoc stk_mesh_banner
  *
- * -  @copydoc stk_search_banner
+ * -  @copydoc stk_rebalance_banner
  *
  * -  @copydoc stk_util_banner
  *
@@ -17,7 +17,7 @@
  *
  * -  @copydoc stk_mesh_howto
  *
- * -  @copydoc stk_search_howto
+ * -  @copydoc stk_rebalance_howto
  *
  * -  @copydoc stk_util_howto
  *

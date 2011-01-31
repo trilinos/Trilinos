@@ -32,6 +32,8 @@ namespace use_case {
 
 namespace {
 
+  using stk::mesh::fem::NODE_RANK;
+
   stk::mesh::Entity *
   get_side_neighbor(const shards::CellTopology &  elem_top ,
 		    const stk::mesh::Entity &     elem ,
@@ -41,12 +43,20 @@ namespace {
 
     const shards::CellTopology side_top(elem_top.getTopology(elem_top.getDimension() - 1, side_id));
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
     const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::Node );
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+    const stk::mesh::PairIterRelation elem_nodes = elem.relations( NODE_RANK);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
     // Find other element that shares this side...
     stk::mesh::Entity & node = * elem_nodes[ elem_top.getNodeMap(side_dimension, side_id, 0) ].entity();
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
     const stk::mesh::PairIterRelation node_elems = node.relations( stk::mesh::Element );
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+    const stk::mesh::PairIterRelation node_elems = node.relations( elem.entity_rank());
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
     stk::mesh::Entity * neighbor = NULL ;
 
@@ -54,7 +64,11 @@ namespace {
 
       neighbor = node_elems[i].entity();
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       const stk::mesh::PairIterRelation neighbor_nodes = neighbor->relations( stk::mesh::Node );
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      const stk::mesh::PairIterRelation neighbor_nodes = neighbor->relations( NODE_RANK);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
       if ( & elem == neighbor ) { neighbor = NULL ; }
 
@@ -106,9 +120,15 @@ namespace {
   determine_local_side_id(const stk::mesh::Entity &     elem,
 			  stk::mesh::Entity &           side )
   {
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
     const shards::CellTopology elem_top(stk::mesh::get_cell_topology( elem ));
     const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::Node );
     const stk::mesh::PairIterRelation side_nodes = side.relations( stk::mesh::Node );
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+    const shards::CellTopology elem_top(stk::mesh::fem::get_cell_topology( elem ).getCellTopologyData());
+    const stk::mesh::PairIterRelation elem_nodes = elem.relations( NODE_RANK);
+    const stk::mesh::PairIterRelation side_nodes = side.relations( NODE_RANK);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
     const unsigned side_dimension = elem_top.getDimension() - 1;
 
@@ -180,7 +200,11 @@ namespace {
     //         if either element or neighbor is not local
     //           then add to sharing
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
     const shards::CellTopology elem_top = shards::CellTopology(stk::mesh::get_cell_topology(element));
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+    const shards::CellTopology elem_top = shards::CellTopology(stk::mesh::fem::get_cell_topology(element).getCellTopologyData());
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
     const unsigned p_rank = mesh.parallel_rank();
     const bool element_owned  = p_rank == element.owner_rank();
@@ -209,14 +233,22 @@ namespace {
 
 	stk::mesh::Entity & side = mesh.declare_entity( side_type, side_id , parts );
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 	stk::mesh::PairIterRelation rel = element.relations( stk::mesh::Node );
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+	stk::mesh::PairIterRelation rel = element.relations( NODE_RANK);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
 	for ( unsigned k = 0 ; k < side_top.getNodeCount() ; ++k ) {
 	  stk::mesh::Entity & node = * rel[ elem_top.getNodeMap(elem_top.getDimension() - 1, i, k) ].entity();
 	  mesh.declare_relation( side , node , k );
 	}
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 	assert(side.relations(stk::mesh::Node).size() == side_top.getNodeCount());
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+	assert(side.relations(NODE_RANK).size() == side_top.getNodeCount());
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
 	/** \todo REFACTOR Eliminate const_cast... */
 	mesh.declare_relation( const_cast<stk::mesh::Entity&>(element), side , i );
@@ -247,18 +279,29 @@ namespace stk {
         mesh.modification_begin();
 
 	const stk::mesh::MetaData& meta_data = mesh.mesh_meta_data();
+#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+        stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
 	const stk::mesh::PartVector & all_parts = meta_data.get_parts();
 	for (stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip) {
 	  stk::mesh::Part *part = *ip;
 
 	  // Filter out parts with "non-solid" (hexes and tets) topology...
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 	  const CellTopologyData * const cell_topo = stk::mesh::get_cell_topology(*part);
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+	  const CellTopologyData * const cell_topo = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 	  if (cell_topo == NULL || cell_topo->dimension != 3)
 	    continue;
 
           stk::mesh::Selector selector = *part & meta_data.locally_owned_part();
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
           const std::vector<stk::mesh::Bucket*>& all_element_buckets = mesh.buckets(stk::mesh::Element);
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+          const std::vector<stk::mesh::Bucket*>& all_element_buckets = mesh.buckets(stk::mesh::fem::element_rank(fem));
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 	  std::vector<stk::mesh::Bucket *> elem_buckets;
 	  stk::mesh::get_buckets(selector, all_element_buckets, elem_buckets);
 

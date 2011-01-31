@@ -34,7 +34,7 @@ IF (Kokkos_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
   APPEND_SET(TIMING_INSTALLS Tpetra_GEMMTiming_TPI)
 ENDIF()
 
-IF (Kokkos_ENABLE_Thrust AND Tpetra_ENABLE_MPI)
+IF (Kokkos_ENABLE_Thrust AND Tpetra_ENABLE_MPI AND Kokkos_ENABLE_CUDA_DOUBLE)
   PACKAGE_ADD_EXECUTABLE(
       GEMMTiming_Thrust
       SOURCES GEMMTiming_Thrust

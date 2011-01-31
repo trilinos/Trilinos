@@ -144,7 +144,7 @@ namespace {
 
 twoD_diffusion_ME::
 twoD_diffusion_ME(
-  const Teuchos::RCP<Epetra_Comm>& comm, int n, int d, 
+  const Teuchos::RCP<const Epetra_Comm>& comm, int n, int d, 
   double s, double mu, 
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis_,
   bool log_normal_,
@@ -545,19 +545,17 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     }
     f_sg->init(0.0);
 
-    double pc_size;
-    if(!log_normal) 
-      pc_size = basis->dimension()+1;
-    else
-      pc_size = basis->size(); 
-    for (int k=0; k<pc_size; k++) {
-      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
-	   j_it != Cijk->j_end(k); ++j_it) {
+    Cijk_type::k_iterator k_begin = Cijk->k_begin();
+    Cijk_type::k_iterator k_end = Cijk->k_end();
+    for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+      int k = Stokhos::index(k_it);
+      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+	   j_it != Cijk->j_end(k_it); ++j_it) {
 	int j = Stokhos::index(j_it);
 	A_k[k]->Apply((*x_sg)[j],*(sg_kx_vec_all[j]));
       }
-      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
-	   j_it != Cijk->j_end(k); ++j_it) {
+      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+	   j_it != Cijk->j_end(k_it); ++j_it) {
 	int j = Stokhos::index(j_it);
 	for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
 	     i_it != Cijk->i_end(j_it); ++i_it) {

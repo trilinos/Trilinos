@@ -462,7 +462,6 @@ char *recv_data)		/* array of data I'll own after comm */
 *  process does one receive at a time.
 */
 
-
 int       Zoltan_Comm_Do_AlltoAll(
 ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
 char *send_data,		/* array of data I currently own */
@@ -535,6 +534,7 @@ char *recv_data)		/* array of data I'll own after comm */
       /*
        * items are not grouped by message
        */
+
       buf = outbuf = (char *)ZOLTAN_MALLOC(outbufLen * nbytes);
       if (outbufLen && nbytes && !outbuf){
         ZOLTAN_COMM_ERROR("memory error", yo, me);
@@ -572,6 +572,7 @@ char *recv_data)		/* array of data I'll own after comm */
        */
 
       if (!sorted || (plan->nvals > nSendItems) ){
+
         buf = outbuf = (char *)ZOLTAN_MALLOC(outbufLen * nbytes);
         if (outbufLen && nbytes && !outbuf){
           ZOLTAN_COMM_ERROR("memory error", yo, me);
@@ -744,6 +745,7 @@ char *recv_data)		/* array of data I'll own after comm */
   }
   ZOLTAN_FREE(&outbufCounts);
   ZOLTAN_FREE(&outbufOffsets);
+
 
   /* WRITE RECEIVED DATA INTO USER'S BUFFER WHERE IT'S EXPECTED */
 

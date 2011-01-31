@@ -59,7 +59,7 @@ typedef struct _hshVtx{ /* Vertices assigned to this process with hash func */
   int           size;      /* number of vertices assigned to this process */
   ZOLTAN_ID_PTR vtxGID;    /* vertex global IDs  */
   int           *vtxOwner; /* process that returned vtx in Get_Obj_List  */
-  int           *vtxGNO;   /* vertex global number */
+  ZOLTAN_GNO_TYPE *vtxGNO;   /* vertex global number */
 }zoltan_temp_vertices;
 
 /* 

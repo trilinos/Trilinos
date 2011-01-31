@@ -1,6 +1,0 @@
-#BANNER @copydoc stk_mesh_banner
-#HOWTO @copydoc stk_mesh_howto
-
-INPUT += ../../stk_mesh/dox/index.dox \
-         ../../stk_mesh/stk_mesh \
-         ../../stk_mesh/unit_tests

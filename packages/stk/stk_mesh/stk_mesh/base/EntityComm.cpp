@@ -86,15 +86,20 @@ bool in_ghost( const Ghosting & ghost , const Entity & entity , unsigned p )
  */
 bool in_owned_closure( const Entity & entity , unsigned proc )
 {
+  // TODO: This function has a potential performance problem if relations
+  // are dense.
+
+  // Does proc own this entity? If so, we're done
   bool result = entity.owner_rank() == proc ;
-  
+
   if ( ! result ) {
     const unsigned erank = entity.entity_rank();
 
+    // Does entity have an upward relation to an entity owned by proc
     for ( PairIterRelation
           rel = entity.relations(); ! result && ! rel.empty() ; ++rel ) {
       result =  erank < rel->entity_rank() &&
-                proc == rel->entity()->owner_rank();
+                in_owned_closure( * rel->entity(), proc);
     }
   }
 

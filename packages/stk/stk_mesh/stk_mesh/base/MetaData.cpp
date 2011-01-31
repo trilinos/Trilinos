@@ -27,7 +27,7 @@
 
 namespace stk {
 namespace mesh {
-  
+
 //----------------------------------------------------------------------
 
 std::ostream &
@@ -48,51 +48,44 @@ print_entity_key( std::ostream & os , const MetaData & meta_data ,
   return print_entity_id( os , meta_data , type , id );
 }
 
-
+std::string
+print_entity_key( const MetaData & meta_data , const EntityKey & key )
+{
+  std::ostringstream out;
+  print_entity_key(out, meta_data, key);
+  return out.str();
+}
 
 //----------------------------------------------------------------------
 
-void MetaData::assert_not_committed( const char * method ) const
+void MetaData::require_not_committed() const
 {
-  if ( m_commit ) {
-    std::string msg ;
-    msg.append( method )
-       .append( " FAILED: mesh MetaData has been committed." );
-    throw std::logic_error( msg );
-  }
+  ThrowRequireMsg(!m_commit, "mesh MetaData has been committed.");
 }
 
-void MetaData::assert_committed( const char * method ) const
+void MetaData::require_committed() const
 {
-  if ( ! m_commit ) {
-    std::string msg ;
-    msg.append( method )
-       .append( " FAILED: mesh MetaData has not been committed." );
-    throw std::logic_error( msg );
-  }
+  ThrowRequireMsg(m_commit, "mesh MetaData has not been committed.");
 }
 
-void MetaData::assert_same_mesh_meta_data( const char * method ,
-                                           const MetaData & rhs ) const
+void MetaData::require_same_mesh_meta_data( const MetaData & rhs ) const
 {
-  if ( this != & rhs ) {
-    std::string msg ;
-    msg.append( method )
-       .append( " FAILED: Different mesh_meta_data." );
-    throw std::logic_error( msg );
-  }
+  ThrowRequireMsg(this == &rhs, "Different mesh_meta_data.");
 }
 
-void MetaData::assert_entity_rank( const char * method ,
-                                   unsigned rank ) const
+void MetaData::require_valid_entity_rank( EntityRank rank ) const
 {
-  if ( m_entity_rank_names.size() <= rank ) {
-    std::ostringstream msg ;
-    msg << method ;
-    msg << " FAILED: entity_rank( " << rank ;
-    msg << " ) >= maximum_value( " << m_entity_rank_names.size();
-    msg << " )" ;
-    throw std::logic_error( msg.str() );
+  ThrowRequireMsg(check_rank(rank),
+      "entity_rank " << rank << " >= " << m_entity_rank_names.size() );
+}
+
+void MetaData::require_not_relation_target( const Part * const part ) const
+{
+  std::vector<PartRelation>::const_iterator i_end = part->relations().end();
+  std::vector<PartRelation>::const_iterator i     = part->relations().begin();
+  for ( ; i != i_end ; ++i ) {
+    ThrowRequireMsg( part != i->m_target,
+                     "Part[" << part->name() << "] is a PartRelation target");
   }
 }
 
@@ -110,11 +103,27 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
     m_properties( ),
     m_entity_rank_names( entity_rank_names )
 {
-  if ( entity_rank_names.empty() ) {
-    std::string msg( "stk::mesh::MetaData constructor FAILED: no entity types" );
-    throw std::runtime_error( msg );
-  }
+  ThrowErrorMsgIf( entity_rank_names.empty(), "entity ranks empty" );
 
+  // Declare the predefined parts
+
+  m_universal_part = m_part_repo.universal_part();
+  m_owns_part = & declare_part( std::string("{OWNS}") );
+  m_shares_part = & declare_part( std::string("{SHARES}") );
+}
+
+MetaData::MetaData()
+  : m_commit( false ),
+    m_part_repo( this ),
+    m_attributes(),
+    m_universal_part( NULL ),
+    m_owns_part( NULL ),
+    m_shares_part( NULL ),
+    m_field_repo(),
+    m_field_relations( ),
+    m_properties( ),
+    m_entity_rank_names( )
+{
   // Declare the predefined parts
 
   m_universal_part = m_part_repo.universal_part();
@@ -124,17 +133,32 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
 
 //----------------------------------------------------------------------
 
-const std::string& MetaData::entity_rank_name( unsigned ent_type ) const
+void MetaData::set_entity_rank_names(const std::vector<std::string> &entity_rank_names) 
 {
-  if (ent_type >= m_entity_rank_names.size()) {
-    std::ostringstream msg;
-    msg << "Error in MetaData::entity_rank_name: entity-type (" << ent_type
-        << ") out of range. Must be in range [0 .. " << m_entity_rank_names.size()
-        << ").";
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( entity_rank_names.empty(), "entity ranks empty" );
 
-  return m_entity_rank_names[ent_type];
+  m_entity_rank_names = entity_rank_names;
+}
+
+const std::string& MetaData::entity_rank_name( EntityRank entity_rank ) const
+{
+  ThrowErrorMsgIf( entity_rank >= m_entity_rank_names.size(),
+      "entity-rank " << entity_rank <<
+      " out of range. Must be in range 0.." << m_entity_rank_names.size());
+
+  return m_entity_rank_names[entity_rank];
+}
+
+EntityRank MetaData::entity_rank( const std::string &name ) const
+{
+  EntityRank entity_rank = InvalidEntityRank;
+
+  for (size_t i = 0; i < m_entity_rank_names.size(); ++i)
+    if (equal_case(name, m_entity_rank_names[i])) {
+      entity_rank = i;
+      break;
+    }
+  return entity_rank;
 }
 
 //----------------------------------------------------------------------
@@ -146,28 +170,18 @@ Part * MetaData::get_part( const std::string & p_name ,
 
   Part * const p = find( all_parts , p_name );
 
-  if ( required_by && NULL == p ) { // ERROR
-    static const char method[] = "stk::mesh::MetaData::get_part" ;
-    std::string msg ;
-    msg.append( method )
-       .append( "( " )
-       .append( p_name )
-       .append( " , " )
-       .append( required_by )
-       .append( " ) FAILED to find part" );
-    throw std::runtime_error( msg );
-  }
+  ThrowErrorMsgIf( required_by && NULL == p,
+                   "Failed to find part with name " << p_name <<
+                   " for method " << required_by );
 
   return p ;
 }
 
 Part & MetaData::declare_part( const std::string & p_name )
 {
-  static const char method[] = "stk::mesh::MetaData::declare_part" ;
+  require_not_committed();
 
-  const unsigned rank = std::numeric_limits<unsigned>::max();
-
-  assert_not_committed( method );
+  const EntityRank rank = InvalidEntityRank;
 
   return *m_part_repo.declare_part( p_name, rank );
 }
@@ -175,45 +189,19 @@ Part & MetaData::declare_part( const std::string & p_name )
 
 Part & MetaData::declare_part( const std::string & p_name , EntityRank rank )
 {
-  static const char method[] = "stk::mesh::MetaData::declare_part" ;
-
-  assert_not_committed( method );
-  assert_entity_rank( method , rank );
+  require_not_committed();
+  require_valid_entity_rank(rank);
 
   return *m_part_repo.declare_part( p_name , rank );
 }
 
-namespace {
-
-void assert_not_relation_target(
-  const char * const method ,
-  const Part * const part )
-{
-  std::vector<PartRelation>::const_iterator i_end = part->relations().end();
-  std::vector<PartRelation>::const_iterator i     = part->relations().begin();
-  for ( ; i != i_end ; ++i ) {
-    if ( part == i->m_target ) {
-      std::string msg ;
-      msg.append( method );
-      msg.append( "(...) FAILED Requirement that Part[" );
-      msg.append( part->name() );
-      msg.append( "] is not a PartRelation target" );
-      throw std::runtime_error(msg);
-    }
-  }
-}
-
-}
-
 Part & MetaData::declare_part( const PartVector & part_intersect )
 {
-  static const char method[] = "stk::mesh::MetaData::declare_part" ;
-
-  assert_not_committed( method );
+  require_not_committed();
 
   for ( PartVector::const_iterator
         i = part_intersect.begin() ; i != part_intersect.end() ; ++i ) {
-    assert_not_relation_target( method , *i );
+    require_not_relation_target(*i);
   }
 
   return *m_part_repo.declare_part( part_intersect );
@@ -223,17 +211,17 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
 {
   static const char method[] = "stk::mesh::MetaData::declare_part_subset" ;
 
-  assert_not_committed( method );
-  assert_same_mesh_meta_data( method , superset.mesh_meta_data() );
-  assert_same_mesh_meta_data( method , subset.mesh_meta_data() );
-  assert_not_relation_target( method , & superset );
-  assert_not_relation_target( method , & subset );
+  require_not_committed();
+  require_same_mesh_meta_data( superset.mesh_meta_data() );
+  require_same_mesh_meta_data( subset.mesh_meta_data() );
+  require_not_relation_target( &superset );
+  require_not_relation_target( &subset );
 
   m_part_repo.declare_subset( superset, subset );
 
   // The new superset / subset relationship can cause a
   // field restriction to become incompatible or redundant.
-  m_field_repo.verify_and_clean_restrictions( method , m_part_repo.all_parts() );
+  m_field_repo.verify_and_clean_restrictions(method, m_part_repo.all_parts());
 }
 
 void MetaData::declare_part_relation(
@@ -241,28 +229,16 @@ void MetaData::declare_part_relation(
   relation_stencil_ptr stencil ,
   Part & target_part )
 {
-  static const char method[] = "stk::mesh::MetaData::declare_part_relation" ;
+  require_not_committed();
+  require_not_relation_target( &root_part );
 
-  assert_not_committed( method );
-  assert_not_relation_target( method , & root_part );
+  ThrowErrorMsgIf( !stencil, "stencil function pointer cannot be NULL" );
 
-  if (!stencil) {
-    std::string msg ;
-    msg.append( method );
-    msg.append( "stencil function pointer cannott be NULL" );
-    throw std::runtime_error( msg );
-  }
-
-  if ( 0 != target_part.subsets().size() ||
-       0 != target_part.intersection_of().size() ||
-       1 != target_part.supersets().size() ) {
-    std::string msg ;
-    msg.append( method );
-    msg.append( ": FAILED Requirement that target Part[" );
-    msg.append( target_part.name() );
-    msg.append( "] is not a superset or subset" );
-    throw std::runtime_error( msg );
-  }
+  ThrowErrorMsgIf( 0 != target_part.subsets().size() ||
+                   0 != target_part.intersection_of().size() ||
+                   1 != target_part.supersets().size(),
+                   "target Part[" << target_part.name() <<
+                   "] cannot be a superset or subset" );
 
   PartRelation tmp ;
   tmp.m_root = & root_part ;
@@ -282,9 +258,7 @@ MetaData::declare_field_base(
   const shards::ArrayDimTag * const * arg_dim_tags ,
   unsigned            arg_num_states )
 {
-  static const char method[] = "std::mesh::MetaData::declare_field" ;
-
-  assert_not_committed( method );
+  require_not_committed();
 
   return m_field_repo.declare_field(
                 arg_name,
@@ -298,16 +272,16 @@ MetaData::declare_field_base(
 
 void MetaData::declare_field_restriction(
   FieldBase      & arg_field ,
-  unsigned         arg_entity_rank ,
+  EntityRank         arg_entity_rank ,
   const Part     & arg_part ,
   const unsigned * arg_stride )
 {
   static const char method[] =
     "std::mesh::MetaData::declare_field_restriction" ;
 
-  assert_not_committed( method );
-  assert_same_mesh_meta_data( method , arg_field.mesh_meta_data() );
-  assert_same_mesh_meta_data( method , arg_part.mesh_meta_data() );
+  require_not_committed();
+  require_same_mesh_meta_data( arg_field.mesh_meta_data() );
+  require_same_mesh_meta_data( arg_part.mesh_meta_data() );
 
   m_field_repo.declare_field_restriction(
       method,
@@ -337,9 +311,7 @@ void MetaData::internal_declare_field_relation(
 
 void MetaData::commit()
 {
-  static const char method[] = "stk::mesh::MetaData::commit" ;
-
-  assert_not_committed( method );
+  require_not_committed();
 
   m_commit = true ; // Cannot add or change parts or fields now
 }
@@ -472,8 +444,6 @@ bool unpack_verify( CommBuffer & ,
 
 void verify_parallel_consistency( const MetaData & s , ParallelMachine pm )
 {
-  static const char method[] = "stk::mesh::verify_parallel_consistency(MetaData)" ;
-
   const unsigned p_rank = parallel_machine_rank( pm );
 
   const bool is_root = 0 == p_rank ;
@@ -501,21 +471,11 @@ void verify_parallel_consistency( const MetaData & s , ParallelMachine pm )
 
   all_reduce( pm , ReduceMin<2>( ok ) );
 
-  if ( ! ok[0] || ! ok[1] ) {
-    std::ostringstream msg ;
-    msg << "P" << p_rank ;
-    msg << ": " << method ;
-    msg << " : FAILED for:" ;
-    if ( ! ok[0] ) { msg << " Parts" ; }
-    if ( ! ok[1] ) { msg << " Fields" ; }
-    throw std::logic_error( msg.str() );
-  }
+  ThrowRequireMsg(ok[0], "P" << p_rank << ": FAILED for Parts");
+  ThrowRequireMsg(ok[1], "P" << p_rank << ": FAILED for Fields");
 }
 
-
 //----------------------------------------------------------------------
-
-
 
 } // namespace mesh
 } // namespace stk

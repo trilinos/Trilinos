@@ -86,6 +86,8 @@
 #include "Teuchos_ParameterList.hpp"
 #endif
 
+#include "Teuchos_TimeMonitor.hpp"
+
 #include <typeinfo>
 
 //***********************************************************************
@@ -292,6 +294,10 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+#ifdef NOX_TEUCHOS_TIME_MONITOR
+  TEUCHOS_FUNC_TIME_MONITOR("NOX: Total Linear Solve Time");
+#endif
+
   double startTime = timer.WallTime();
 
   // Need non-const version of the input vector
@@ -406,6 +412,10 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+#ifdef NOX_TEUCHOS_TIME_MONITOR
+  TEUCHOS_FUNC_TIME_MONITOR("NOX: Total Preconditioner Generation Time");
+#endif
+
   double startTime = timer.WallTime();  
 
   if (utils.isPrintType(Utils::LinearSolverDetails))
@@ -466,10 +476,11 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
     precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					    *precPtr, &p);
 
-    Teuchos::RCP<Epetra_Operator> invPrecPtr =
-      Teuchos::rcp(new Epetra_InvOperator(precPtr.get()));
+    // Wrap the preconditioner so that apply() calls ApplyInverse()
     RCP<const Thyra::LinearOpBase<double> > precOp =
-      Thyra::epetraLinearOp(invPrecPtr);
+      Thyra::epetraLinearOp(precPtr, 
+			    Thyra::NOTRANS, 
+			    Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
 
     RCP<Thyra::DefaultPreconditioner<double> > precObjDef =
        rcp(new Thyra::DefaultPreconditioner<double>);

@@ -87,7 +87,7 @@ LinearOp IterativePreconditionerFactory::buildPreconditionerOperator(LinearOp & 
    // build user specified preconditioner
    ModifiableLinearOp & invP = state.getModifiableOp("prec");
    if(invP==Teuchos::null)
-      invP = Teko::buildInverse(*precFactory_,lo,state);
+      invP = Teko::buildInverse(*precFactory_,lo);
    else
       Teko::rebuildInverse(*precFactory_,lo,invP);
 

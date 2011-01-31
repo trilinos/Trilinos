@@ -1,9 +1,22 @@
 ##
-## a basic makefile to build examples
+## a basic makefile to build examples 
 ##
 
+##
+## The default type for a Zoltan global ID is "int".  This can be changed
+## with compile-time flags like:
+##
+##   -DZOLTAN_ID_TYPE_LONG_LONG
+##
+## See src/include/zoltan_types.h for the valid id type macros.  If Zoltan was compiled
+## with one of these flags, then these examples need to be compiled with the same flag.
+##
+ID_TYPE_FLAG=-DZOLTAN_ID_TYPE_LONG_LONG
+##
+
+
 ## Location of zoltan library, also location of Zoltan_config.h if
-## using the autoconf build harness
+## using the autoconf build
 
 BLD=../../build/src
 
@@ -30,49 +43,36 @@ ZOLTAN_CONFIG_INCLUDE=-I$(BLD)/include
 ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
                     -I$(SRC)/par \
                     -I$(SRC)/order \
+                    -I$(SRC)/tpls \
                     -I$(SRC)/lb \
                     -I$(SRC)/params \
                     -I$(SRC)/Utilities/shared
 
 ##
-## If Zoltan was built with ParMETIS, provide the information required
-## to link with the ParMETIS library.
+## If Zoltan was built with a third party library, provide the information required
+## to link with that library.
 ##
 
-PAR_LIB_DIR=-L/home/lafisk/system/parmetis/ParMetis-3.1.1
-PAR_LIBS=-lparmetis -lmetis
+SCOTCH=/home/lriesen/system/scotch_5.1.10a-32
+PARMETIS=/home/lafisk/system/parmetis/ParMetis-3.1
 
-##
-## C compiler
-##
+TPL_LIB_DIR=-L$(PARMETIS) -L$(SCOTCH)/lib
+TPL_INCLUDE=-I$(PARMETIS) -I$(SCOTCH)/include
+TPL_LIBS=-lparmetis -lmetis -lptscotch -lscotch -lptscotcherr -lscotcherr
+
 CC=mpicc
 
-##
-## C++ compiler
-##
-CXX=mpicxx
+CFLAGS =$(ID_TYPE_FLAG)
 
-# MPI include and library options if needed
-MPI_INCLUDE=
-MPI_LIBS=
+EXAMPLE_NAMES= simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH simpleHIER problemGRAPH
 
-
-CFLAGS=-g -Wall
-CXXFLAGS=-g -Wall
-
-C_EXAMPLES = simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH simpleHIER
-
-all:   $(C_EXAMPLES) $(CPP_EXAMPLES)
+all:   $(EXAMPLE_NAMES)
 
 %: %.c
-	$(CC) $(CFLAGS) $(PAR_LIB_DIR)  \
-        -I$(BLD) $(MPI_INCLUDE) $(ZOLTAN_CONFIG_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
-        -o $@ $< $(BLD)/libzoltan.a $(PAR_LIBS) -lm $(MPI_LIBS)
-
-%: %.cpp
-	$(CXX) $(CFLAGS) $(CXXFLAGS) $(PAR_LIB_DIR)  \
-        -I$(BLD) $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
-        -o $@ $< $(BLD)/libzoltan.a $(PAR_LIBS) -lm $(MPI_LIBS)
+	$(CC) $(CFLAGS) $(TPL_LIB_DIR)  \
+        -I$(BLD)/include $(TPL_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
+        -o $@ $< $(BLD)/libzoltan.a $(TPL_LIBS) -lm
 
 clean:
-	@rm -rf $(all)
+	@rm -rf  $(EXAMPLE_NAMES)
+

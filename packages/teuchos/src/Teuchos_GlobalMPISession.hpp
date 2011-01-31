@@ -83,10 +83,10 @@ public:
   //! @name Static functions 
   //@{
 
-  /** \breif Return if MPI is initialized or not. */
+  /** \brief Return if MPI is initialized or not. */
   static bool mpiIsInitialized();
 
-  /** \breif Return if MPI has already been finalized. */
+  /** \brief Return if MPI has already been finalized. */
   static bool mpiIsFinalized();
   
   /** \brief Returns the process rank relative to <tt>MPI_COMM_WORLD</tt>

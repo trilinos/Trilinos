@@ -32,23 +32,26 @@
 
 Stokhos::FullyAssembledOperator::
 FullyAssembledOperator(
-  const Teuchos::RCP<const Epetra_CrsMatrix>& base_matrix,
-  const Teuchos::RCP<const std::vector< std::vector<int> > >& rowStencil,
-  const Teuchos::RCP<const std::vector<int> >& rowIndex,
-  const Teuchos::RCP<const Epetra_Comm>& sg_comm,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm_,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
+  const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk_,
+  const Teuchos::RCP<const Epetra_CrsGraph>& base_graph,
   const Teuchos::RCP<Teuchos::ParameterList>& params) : 
-  EpetraExt::BlockCrsMatrix(*base_matrix, *rowStencil, *rowIndex, *sg_comm),
-  Cijk(),
+  EpetraExt::BlockCrsMatrix(*base_graph, 
+			    *(epetraCijk_->getStochasticGraph()), 
+			    *sg_comm_),
+  sg_comm(sg_comm_),
+  sg_basis(sg_basis_),
+  epetraCijk(epetraCijk_),
+  Cijk(epetraCijk->getParallelCijk()),
   block_ops(),
   scale_op(true),
   include_mean(true),
   only_use_linear(false)
 {
-  if (params != Teuchos::null) {
-    scale_op = params->get("Scale Operator by Inverse Basis Norms", true);
-    include_mean = params->get("Include Mean", true);
-    only_use_linear = params->get("Only Use Linear Terms", false);
-  }
+  scale_op = params->get("Scale Operator by Inverse Basis Norms", true);
+  include_mean = params->get("Include Mean", true);
+  only_use_linear = params->get("Only Use Linear Terms", false);
 }
 
 Stokhos::FullyAssembledOperator::
@@ -59,44 +62,40 @@ Stokhos::FullyAssembledOperator::
 void 
 Stokhos::FullyAssembledOperator::
 setupOperator(
-   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops,
-   const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_)
+   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops)
 {
   block_ops = ops;
-  Cijk = Cijk_;
 
   // Zero out matrix
   this->PutScalar(0.0);
 
   // Compute loop bounds
-  int num_blocks = block_ops->size();
-  int k_begin = 0;
-  if (!include_mean)
-    k_begin = 1;
-  int k_end = num_blocks;
-  int dim = block_ops->basis()->dimension();
-  if (only_use_linear && num_blocks > dim+1)
-    k_end = dim + 1;
+  Cijk_type::k_iterator k_begin = Cijk->k_begin();
+  Cijk_type::k_iterator k_end = Cijk->k_end();
+  if (!include_mean && index(k_begin) == 0)
+    ++k_begin;
+  if (only_use_linear) {
+    int dim = sg_basis->dimension();
+    k_end = Cijk->find_k(dim+1);
+  }
 
   // Assemble matrix
-  const Teuchos::Array<double>& norms = block_ops->basis()->norm_squared();
-  for (int k=k_begin; k<k_end; k++) {
+  const Teuchos::Array<double>& norms = sg_basis->norm_squared();
+  for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+    int k = index(k_it);
     Teuchos::RCP<Epetra_RowMatrix> block = 
       Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(block_ops->getCoeffPtr(k), 
 						  true);
-    int nj = Cijk->num_j(k);
-    if (nj > 0) {
-      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
-	   j_it != Cijk->j_end(k); ++j_it) {
-	int j = index(j_it);
-	for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
-	     i_it != Cijk->i_end(j_it); ++i_it) {
-	  int i = index(i_it);
-	  double c = value(i_it);
-	  if (scale_op)
-	    c /= norms[i];
-	  this->SumIntoBlock(c, *block, i, j);
-	}
+    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+	 j_it != Cijk->j_end(k_it); ++j_it) {
+      int j = epetraCijk->GCID(index(j_it));
+      for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	   i_it != Cijk->i_end(j_it); ++i_it) {
+	int i = epetraCijk->GRID(index(i_it));
+	double c = value(i_it);
+	if (scale_op)
+	  c /= norms[i];
+	this->SumIntoGlobalBlock(c, *block, i, j);
       }
     }
   }
@@ -114,11 +113,4 @@ Stokhos::FullyAssembledOperator::
 getSGPolynomial() const
 {
   return block_ops;
-}
-
-Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > 
-Stokhos::FullyAssembledOperator::
-getTripleProduct() const
-{
-  return Cijk;
 }

@@ -29,38 +29,26 @@
 // @HEADER
 
 #include "Stokhos_MeanBasedPreconditioner.hpp"
-#include "Epetra_config.h"
 #include "EpetraExt_BlockMultiVector.h"
 
 Stokhos::MeanBasedPreconditioner::
 MeanBasedPreconditioner(
-   const Teuchos::RCP<const Epetra_Map>& base_map_,
-   const Teuchos::RCP<const Epetra_Map>& sg_map_,
-   const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory_,
-   const Teuchos::RCP<Teuchos::ParameterList>& params_) :
+  const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm_,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
+  const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk_,
+  const Teuchos::RCP<const Epetra_Map>& base_map_,
+  const Teuchos::RCP<const Epetra_Map>& sg_map_,
+  const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory_,
+  const Teuchos::RCP<Teuchos::ParameterList>& params_) :
   label("Stokhos Mean-Based Preconditioner"),
+  sg_comm(sg_comm_),
+  sg_basis(sg_basis_),
+  epetraCijk(epetraCijk_),
   base_map(base_map_),
   sg_map(sg_map_),
   num_blocks(0),
   prec_factory(prec_factory_),
   mean_prec(),
-  useTranspose(false)
-{
-}
-
-Stokhos::MeanBasedPreconditioner::
-MeanBasedPreconditioner(
-   const Teuchos::RCP<const Epetra_Map>& base_map_,
-   const Teuchos::RCP<const Epetra_Map>& sg_map_,
-   int num_blocks_,
-   const Teuchos::RCP<Epetra_Operator>& prec_op_,
-   const Teuchos::RCP<Teuchos::ParameterList>& params_) :
-  label("Stokhos Mean-Based Preconditioner"),
-  base_map(base_map_),
-  sg_map(sg_map_),
-  num_blocks(num_blocks_),
-  prec_factory(),
-  mean_prec(prec_op_),
   useTranspose(false)
 {
 }
@@ -85,7 +73,7 @@ setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op,
    label = std::string("Stokhos Mean-Based Preconditioner:\n") + 
      std::string("		***** ") + 
      std::string(mean_prec->Label());
-   num_blocks = sg_poly->basis()->size();
+   num_blocks = sg_basis()->size();
 }
 
 int 
@@ -102,9 +90,10 @@ int
 Stokhos::MeanBasedPreconditioner::
 Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
+  int myBlockRows = epetraCijk->numMyRows();
   EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
   EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
-  for (int i=0; i<num_blocks; i++) {
+  for (int i=0; i<myBlockRows; i++) {
     mean_prec->Apply(*(sg_input.GetBlock(i)), *(sg_result.GetBlock(i)));
   }
 
@@ -115,9 +104,10 @@ int
 Stokhos::MeanBasedPreconditioner::
 ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
+  int myBlockRows = epetraCijk->numMyRows();
   EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
   EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
-  for (int i=0; i<num_blocks; i++) {
+  for (int i=0; i<myBlockRows; i++) {
     mean_prec->ApplyInverse(*(sg_input.GetBlock(i)), *(sg_result.GetBlock(i)));
   }
 
@@ -157,7 +147,7 @@ const Epetra_Comm &
 Stokhos::MeanBasedPreconditioner::
 Comm() const
 {
-  return base_map->Comm();
+  return *sg_comm;
 }
 const Epetra_Map& 
 Stokhos::MeanBasedPreconditioner::

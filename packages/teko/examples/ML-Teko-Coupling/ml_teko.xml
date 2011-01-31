@@ -1,0 +1,185 @@
+<ParameterList>
+  
+  <Parameter name="Max Aztec Iters" type="int" value="100"/>
+  <Parameter name="Aztec Tolerance" type="double" value="1.0e-5"/>
+  <Parameter name="Use C For Pressure" type="bool" value="false"/>
+
+  <ParameterList name="Main ML List">
+    <Parameter name="ML label" type="string" value="2x2 system"/>
+    <Parameter name="ML output" type="int" value="10"/>
+    <Parameter name="max levels" type="int" value="4"/>
+
+    <Parameter name="smoother: pre or post" type="string" value="both"/>
+    <Parameter name="smoother: sweeps" type="int" value="1"/>
+    <Parameter name="smoother: type" type="string" value="teko"/>
+    <Parameter name="smoother: teko is blocked" type="int" value="1"/>
+
+    <Parameter name="coarse: type" type="string" value="teko"/>
+
+    <Parameter name="smoother: teko inverse" type="string" value="SIMPLE-GS"/>
+    <Parameter name="coarse: teko inverse" type="string" value="SIMPLE-Direct"/>
+  </ParameterList>
+
+  <ParameterList name="u ML List">
+    <Parameter name="ML label" type="string" value="U block"/>
+    <Parameter name="ML output" type="int" value="10"/>
+    <Parameter name="max levels" type="int" value="4"/>
+    <Parameter name="PDE equations" type="int" value="2"/>
+
+    <Parameter name="aggregation: damping factor" type="double" value="1.3333"/>
+
+    <Parameter name="smoother: type" type="string" value="do-nothing"/>
+    <Parameter name="coarse: type" type="string" value="do-nothing"/>
+    <Parameter name="coarse: max size" type="int" value="1"/>
+  </ParameterList>
+
+  <ParameterList name="p ML List">
+    <Parameter name="ML label" type="string" value="P block"/>
+    <Parameter name="ML output" type="int" value="10"/>
+    <Parameter name="max levels" type="int" value="4"/>
+    <Parameter name="PDE equations" type="int" value="1"/>
+
+    <Parameter name="aggregation: damping factor" type="double" value="0.0"/>
+
+    <Parameter name="smoother: type" type="string" value="do-nothing"/>
+    <Parameter name="coarse: type" type="string" value="do-nothing"/>
+    <Parameter name="coarse: max size" type="int" value="1"/>
+  </ParameterList>
+
+  <ParameterList name="Inverse Library">
+
+    <ParameterList name="GS">
+      <Parameter name="Type" type="string" value="Ifpack"/>
+      <ParameterList name="Ifpack Settings">
+        <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int" value="2"/>
+        <Parameter name="relaxation: damping factor" type="double" value="1.00"/>
+        <Parameter name="relaxation: zero starting solution" type="bool" value="true"/>
+      </ParameterList>
+      <Parameter name="Overlap" type="int" value="0"/>
+      <Parameter name="Prec Type" type="string" value="point relaxation"/>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Output File" type="string" value="none"/>
+        <Parameter name="Verbosity Level" type="string" value="default"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="GS-Single">
+      <Parameter name="Type" type="string" value="Ifpack"/>
+      <ParameterList name="Ifpack Settings">
+        <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="1.00"/>
+        <Parameter name="relaxation: zero starting solution" type="bool" value="true"/>
+      </ParameterList>
+      <Parameter name="Overlap" type="int" value="0"/>
+      <Parameter name="Prec Type" type="string" value="point relaxation"/>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Output File" type="string" value="none"/>
+        <Parameter name="Verbosity Level" type="string" value="default"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="ILU">
+      <Parameter name="Type" type="string" value="Ifpack"/>
+      <ParameterList name="Ifpack Settings">
+        <Parameter name="fact: level-of-fill" type="int" value="1"/>
+        <Parameter name="schwarz: reordering type" type="string" value="rcm"/>
+      </ParameterList>
+      <Parameter name="Overlap" type="int" value="0"/>
+      <Parameter name="Prec Type" type="string" value="ILU"/>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Output File" type="string" value="none"/>
+        <Parameter name="Verbosity Level" type="string" value="default"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="LSC-GS">
+      <Parameter name="Type" type="string" value="NS LSC"/>
+      <Parameter name="Inverse Velocity Type" type="string" value="GS"/>
+      <Parameter name="Inverse Pressure Type" type="string" value="GS"/>
+      <Parameter name="Ignore Boundary Rows" type="bool" value="true"/>
+      <Parameter name="Use LDU" type="bool" value="false"/>
+      <Parameter name="Scaling Type" type="string" value="AbsRowSum"/>
+      <Parameter name="Use Mass Scaling" type="bool" value="false"/>
+    </ParameterList>
+
+    <ParameterList name="LSC-Direct">
+      <Parameter name="Type" type="string" value="NS LSC"/>
+      <Parameter name="Inverse Velocity Type" type="string" value="Amesos"/>
+      <Parameter name="Inverse Pressure Type" type="string" value="Amesos"/>
+      <Parameter name="Ignore Boundary Rows" type="bool" value="false"/>
+      <Parameter name="Use LDU" type="bool" value="false"/>
+      <Parameter name="Scaling Type" type="string" value="AbsRowSum"/>
+      <Parameter name="Use Mass Scaling" type="bool" value="false"/>
+    </ParameterList>
+
+    <ParameterList name="SIMPLE-GS">
+      <Parameter name="Type" type="string" value="NS SIMPLE"/>
+      <Parameter name="Inverse Type" type="string" value="Amesos"/>
+      <Parameter name="Inverse Velocity Type" type="string" value="GS"/>
+      <Parameter name="Inverse Pressure Type" type="string" value="GS"/>
+      <Parameter name="Alpha" type="double" value="1.0"/>
+      <Parameter name="Explicit Velocity Inverse Type" type="string" value="AbsRowSum"/>
+    </ParameterList>
+
+    <ParameterList name="SIMPLE-Direct">
+      <Parameter name="Type" type="string" value="NS SIMPLE"/>
+      <Parameter name="Inverse Type" type="string" value="Amesos"/>
+      <Parameter name="Inverse Velocity Type" type="string" value="Amesos"/>
+      <Parameter name="Inverse Pressure Type" type="string" value="Amesos"/>
+      <Parameter name="Alpha" type="double" value="1.0"/>
+      <Parameter name="Explicit Velocity Inverse Type" type="string" value="AbsRowSum"/>
+    </ParameterList>
+
+    <ParameterList name="ML-Teko">
+      <Parameter name="Type" type="string" value="Blocked ML Preconditioner"/>
+      <Parameter name="Block Row Count" type="int" value="2"/>
+
+      <ParameterList name="Smoothing Parameters">
+        <Parameter name="ML label" type="string" value="2x2 system"/>
+        <Parameter name="ML output" type="int" value="10"/>
+        <Parameter name="max levels" type="int" value="4"/>
+    
+        <Parameter name="smoother: pre or post" type="string" value="both"/>
+        <Parameter name="smoother: sweeps" type="int" value="1"/>
+        <Parameter name="smoother: type" type="string" value="teko"/>
+        <Parameter name="smoother: teko is blocked" type="int" value="1"/>
+    
+        <Parameter name="coarse: type" type="string" value="teko"/>
+    
+        <Parameter name="smoother: teko inverse" type="string" value="SIMPLE-GS"/>
+        <Parameter name="coarse: teko inverse" type="string" value="SIMPLE-Direct"/>
+      </ParameterList>
+    
+      <ParameterList name="Block Aggregation">
+        <ParameterList name="Block 0"> <!-- u block -->
+          <Parameter name="ML label" type="string" value="U block"/>
+          <Parameter name="ML output" type="int" value="10"/>
+          <Parameter name="max levels" type="int" value="4"/>
+          <Parameter name="PDE equations" type="int" value="2"/>
+      
+          <Parameter name="aggregation: damping factor" type="double" value="1.3333"/>
+      
+          <Parameter name="smoother: type" type="string" value="do-nothing"/>
+          <Parameter name="coarse: type" type="string" value="do-nothing"/>
+          <Parameter name="coarse: max size" type="int" value="1"/>
+        </ParameterList>
+      
+        <ParameterList name="Block 1"> <!-- p block -->
+          <Parameter name="ML label" type="string" value="P block"/>
+          <Parameter name="ML output" type="int" value="10"/>
+          <Parameter name="max levels" type="int" value="4"/>
+          <Parameter name="PDE equations" type="int" value="1"/>
+      
+          <Parameter name="aggregation: damping factor" type="double" value="0.0"/>
+      
+          <Parameter name="smoother: type" type="string" value="do-nothing"/>
+          <Parameter name="coarse: type" type="string" value="do-nothing"/>
+          <Parameter name="coarse: max size" type="int" value="1"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+</ParameterList>

@@ -32,7 +32,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Stokhos_Epetra.hpp"
 
-SimpleME::SimpleME(const Teuchos::RCP<Epetra_Comm>& comm) 
+SimpleME::SimpleME(const Teuchos::RCP<const Epetra_Comm>& comm) 
 {
   // Solution vector map
   x_map = Teuchos::rcp(new Epetra_Map(2, 0, *comm));

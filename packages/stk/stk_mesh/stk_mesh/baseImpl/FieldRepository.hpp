@@ -23,7 +23,7 @@
 namespace stk {
 namespace mesh {
 
-  typedef std::vector<FieldBase *> FieldVector;
+typedef std::vector<FieldBase *> FieldVector;
 
 namespace impl {
 
@@ -85,22 +85,16 @@ class FieldRepository {
       verify_and_clean_restrictions( arg_method, arg_all_parts );
     }
 
-
-
   private:
     FieldVector m_fields;
-
 
     //disallow copy and assignment
     FieldRepository( const FieldRepository &);
     FieldRepository & operator = ( const FieldRepository &);
 };
 
-
-
 } // namespace impl
 } // namespace mesh
 } // namespace stk
-
 
 #endif //stk_mesh_baseImpl_FieldRepository_hpp

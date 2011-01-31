@@ -12,7 +12,7 @@ LATEX = pdflatex
 SRC_FILE = DevelopersGuide.txt
 
 # Files that $(SRC_FILE) depends on
-DEPEND_FILES = AddingModules.txt BuildSystem.txt Documentation.txt \
+DEPEND_FILES = AddingModules.txt BuildSystem.txt C-Arrays.txt Documentation.txt \
 	       ExceptionHandling.txt Introduction.txt \
 	       ReferenceCountedPointers.txt Testing.txt
 

@@ -15,16 +15,16 @@
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
-#include <cassert>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyHelpersDeprecated.hpp>
+
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
 
@@ -33,31 +33,39 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology_deprecated( const Part & p )
-{ return p.attribute<CellTopologyData>(); }
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+{
+  return p.attribute<CellTopologyData>();
+}
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology( const Part & p )
-{ 
-  const TopologicalMetaData * top_data = p.mesh_meta_data().get_attribute< TopologicalMetaData >();
-  const CellTopologyData * cell_topology_data;
-  if (top_data != NULL) {
-    cell_topology_data = TopologicalMetaData::get_cell_topology(p); 
-  } else {
+{
+  const fem::FEMInterface * fem = p.mesh_meta_data().get_attribute<fem::FEMInterface>();
+  const CellTopologyData * cell_topology_data = NULL;
+  if (fem) {
+    cell_topology_data = fem::get_cell_topology(p).getCellTopologyData();
+  }
+  if (cell_topology_data == NULL) {
     cell_topology_data = get_cell_topology_deprecated(p);
   }
   return cell_topology_data;
 }
 
 
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 void set_cell_topology( Part & p , const CellTopologyData * singleton )
 {
-  set_cell_topology_deprecated( p, singleton );
+  const fem::FEMInterface * fem = p.mesh_meta_data().get_attribute<fem::FEMInterface>();
+  if (fem) {
+    fem::set_cell_topology(p, singleton);
+  } else {
+    set_cell_topology_deprecated( p, singleton );
+  }
 }
 
 
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 void set_cell_topology_deprecated( Part & p , const CellTopologyData * singleton )
 {
   static const char method[] = "stk::mesh::set_cell_topology" ;
@@ -83,7 +91,7 @@ void set_cell_topology_deprecated( Part & p , const CellTopologyData * singleton
 //----------------------------------------------------------------------
 
 
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology_deprecated( const Bucket & bucket )
 {
   const CellTopologyData * top = NULL ;
@@ -115,7 +123,7 @@ const CellTopologyData * get_cell_topology_deprecated( const Bucket & bucket )
         const CellTopologyData * const tmp = get_cell_topology( **i );
         msg << " " << (*i)->name();
         if ( tmp ) { msg << "->" << tmp->name ; }
-        msg << " ] ) FAILED WITH MULTIPLE LOCAL TOPOLOGIES" ;
+        msg << " ] ).getTopologyData() FAILED WITH MULTIPLE LOCAL TOPOLOGIES" ;
         throw std::runtime_error( msg.str() );
       }
     }
@@ -124,13 +132,13 @@ const CellTopologyData * get_cell_topology_deprecated( const Bucket & bucket )
 }
 
 
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology( const Bucket & bucket )
 {
-  const TopologicalMetaData * top_data = bucket.mesh().mesh_meta_data().get_attribute< TopologicalMetaData >();
+  const fem::FEMInterface * fem = bucket.mesh().mesh_meta_data().get_attribute< fem::FEMInterface >();
   const CellTopologyData * cell_topology_data;
-  if (top_data != NULL) {
-    cell_topology_data = TopologicalMetaData::get_cell_topology(bucket); 
+  if (fem) {
+    cell_topology_data = fem::get_cell_topology(bucket).getCellTopologyData();
   } else {
     cell_topology_data = get_cell_topology_deprecated(bucket);
   }
@@ -138,12 +146,12 @@ const CellTopologyData * get_cell_topology( const Bucket & bucket )
 }
 
 
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology_deprecated( const Entity & entity )
 { return get_cell_topology_deprecated( entity.bucket() ); }
 
 
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology( const Entity & entity )
 { return get_cell_topology(entity.bucket()); }
 

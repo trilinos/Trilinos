@@ -26,5 +26,6 @@
 .. include:: BuildSystem.txt
 .. include:: Documentation.txt
 .. include:: ExceptionHandling.txt
+.. include:: C-Arrays.txt
 .. include:: ReferenceCountedPointers.txt
 .. include:: Testing.txt

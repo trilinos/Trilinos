@@ -83,7 +83,7 @@ struct Zoltan_DD_Struct {
   int gid_length;         /* = zz->Num_GID -- avoid needing Zoltan_Struct */
   int lid_length;         /* = zz->Num_LID -- avoid needing Zoltan_Struct */
   int max_id_length;      /* max (gid_length, lid_length)           */
-  int user_data_length;   /* Optional user data stored as ZOLTAN_ID_PTR */
+  int user_data_length;   /* Optional user data length in chars */
   int table_length;       /* # of heads of linked lists             */
   int node_size;          /* Malloc'd to include GID & LID storage  */
   int find_msg_size;      /* Total allocation for DD_FIND_MSG       */
@@ -92,7 +92,8 @@ struct Zoltan_DD_Struct {
   int debug_level;        /* Determines actions to multiple updates */
 
   DD_Hash_fn *hash;       /* Hash function used by this DD */
-  void *hashdata;         /* Data useful to compute hash */
+  void *hashdata;
+  ZOLTAN_HASH_FN *hashfn;  /* hash function */
   DD_Cleanup_fn *cleanup;
 
   MPI_Comm comm;          /* Dup of original MPI Comm (KDD)         */
@@ -152,7 +153,7 @@ typedef struct  {          /* Only used by Zoltan_DD_Remove()      */
 /***********  Distributed Directory Function Prototypes ************/
 
 unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries,
- unsigned int n, void* hashdata);
+ unsigned int n, void *hashdata);
 
 void Zoltan_DD_default_cleanup(void *hashdata);
 

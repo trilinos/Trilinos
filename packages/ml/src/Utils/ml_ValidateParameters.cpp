@@ -10,6 +10,12 @@
 #include "ml_ValidateParameters.h"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
+# ifdef HAVE_ML_TekoSmoothers
+namespace Teko {
+class InverseLibrary;
+}
+#endif
+
 using namespace Teuchos;
 using namespace ML_Epetra;
 using namespace std;
@@ -91,6 +97,16 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
 # ifdef HAVE_PETSC
   void *petscKSP;
   PL->set("smoother: petsc ksp",petscKSP);
+# endif
+# ifdef HAVE_ML_TekoSmoothers
+  { 
+     Teuchos::RCP<Teuchos::ParameterList> nullList;
+     PL->set("smoother: teko filename",std::string("teko_smoother.xml"));
+     PL->set<Teuchos::RCP<const Teko::InverseLibrary> >("smoother: teko inverse library",Teuchos::null);
+     PL->set("smoother: teko parameter list",nullList);
+     PL->set("smoother: teko inverse",std::string("Amesos"));
+     PL->set("smoother: teko is blocked",0);
+  }
 # endif
   /* Unlisted Options */ 
   setIntParameter("smoother: self overlap",0,"experimental option",PL,intParam);
@@ -219,6 +235,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   const int num_smoothers=30;
 # elif defined(HAVE_PETSC) || defined(HAVE_ML_SUPERLU4_0)
   const int num_smoothers=29;
+#elif defined(HAVE_ML_TekoSmoothers)
+  const int num_smoothers=29; // won't work with SUPERLU or PETSC!
 # else
   const int num_smoothers=28;
 # endif
@@ -236,6 +254,9 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
    ,"SILU"
 //#else
 //#error "No SuperLU for you!"					      
+#  endif
+#  ifdef HAVE_ML_TekoSmoothers
+   ,"teko"
 #  endif
    };
   Array<string> smoothers(num_smoothers);

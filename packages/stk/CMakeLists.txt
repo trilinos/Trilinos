@@ -29,6 +29,10 @@ ADD_SUBDIRECTORY(stk_util)
 
 ADD_SUBDIRECTORY(stk_mesh)
 
+IF (STK_ENABLE_Sacado)
+  ADD_SUBDIRECTORY(stk_expreval)
+ENDIF()
+
 IF( STK_ENABLE_Trios )
   ADD_SUBDIRECTORY(stk_io)
 ENDIF()
@@ -45,6 +49,11 @@ ADD_SUBDIRECTORY(stk_transfer)
 
 IF( STK_ENABLE_ThreadPool )
   ADD_SUBDIRECTORY(stk_search)
+ENDIF()
+
+IF( STK_ENABLE_Intrepid AND STK_ENABLE_Trios AND TPL_ENABLE_BoostLib )
+  ADD_SUBDIRECTORY(stk_percept)
+  ADD_SUBDIRECTORY(stk_adapt)
 ENDIF()
 
 #

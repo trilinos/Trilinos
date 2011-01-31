@@ -108,45 +108,47 @@
     Epetra_Vector C1(View, Map2d, Cpp[0]);
 
     for (int strided = 0; strided<2; strided++){
-    int ierr;
     // Loop through all trans cases using a variety of values for alpha and beta
     for (i=0; i<4; i++){
-	ierr = 0;
+	int localierr = 0;
 	char transa = 'N'; if (i>1) transa = 'T';
 	char transb = 'N'; if (i%2!=0) transb = 'T';
 	double alpha = (double) i+1;
 	double beta  = (double) (i/2);
 	EPETRA_TEST_ERR(C.Random(),ierr);  // Fill C with random numbers
-	ierr += BuildMatrixTests(C,transa, transb, alpha, A, B, beta, C_GEMM );
-	if (strided)
-	  {
-	    Ap = &A; Bp = &B; Cp = &C;
-	  }
-	else
-	  {
-	    A.ExtractCopy(App[0]); Ap = &A1;
-	    B.ExtractCopy(Bpp[0]); Bp = &B1;
-	    C.ExtractCopy(Cpp[0]); Cp = &C1;
-	  }
+	localierr = BuildMatrixTests(C,transa, transb, alpha, A, B, beta, C_GEMM );
+        if (localierr!=-2) { // -2 means the shapes didn't match and we skip the tests
+	  if (strided)
+	    {
+	      Ap = &A; Bp = &B; Cp = &C;
+	    }
+	  else
+	    {
+	      A.ExtractCopy(App[0]); Ap = &A1;
+	      B.ExtractCopy(Bpp[0]); Bp = &B1;
+	      C.ExtractCopy(Cpp[0]); Cp = &C1;
+	    }
 	  
-	ierr += Cp->Multiply(transa, transb, alpha, *Ap, *Bp, beta);
-	ierr += Cp->Update(-1.0, C_GEMM, 1.0);
-	ierr += Cp->Norm2(residual);
-
-	if (verbose && ierr==0)
-	  {
-	    out << "XXXXX Replicated Local Vector GEMM tests";
-	    if (strided)
-	    out << " (Strided Multivectors)" << endl;
-	    else
-	    out << " (Non-Strided Multivectors)" << endl;
-	    out << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
-		 <<", transb = " << transb;
+	  localierr = Cp->Multiply(transa, transb, alpha, *Ap, *Bp, beta);
+	  if (localierr!=-2) { // -2 means the shapes didn't match and we skip the tests
+	    ierr += Cp->Update(-1.0, C_GEMM, 1.0);
+	    ierr += Cp->Norm2(residual);
+	    
+	    if (verbose && ierr==0)
+	      {
+		out << "XXXXX Replicated Local Vector GEMM tests";
+		if (strided)
+		  out << " (Strided Multivectors)" << endl;
+		else
+		  out << " (Non-Strided Multivectors)" << endl;
+		out << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
+		    <<", transb = " << transb;
+	      }
+	    if (ierr==0 && BadResidual(verbose,residual)) return(-1);
 	  }
-	if (ierr==0 && BadResidual(verbose,residual)) return(-1);
-      }
-
-      }
+	}
+    }
+    }
     for (i=0; i<NumVectors; i++)
       {
 	delete [] App[i];

@@ -43,16 +43,16 @@ static PARAM_VARS Scotch_params[] = {
 static int Zoltan_Scotch_Bind_Param(ZZ * zz, char *alg, char* graph_type, char **strat);
 
 static int
-Zoltan_Scotch_Construct_Offset(ZOS *order,
-			       indextype *children,
-			       int root,
-			       indextype* size,
-			       indextype* tree,
-			       int offset, int *leafnum);
+Zoltan_Scotch_Construct_Offset(ZTPL_OS *order,
+			       SCOTCH_Num *children,
+			       SCOTCH_Num root,
+			       SCOTCH_Num* size,
+			       SCOTCH_Num* tree,
+			       SCOTCH_Num offset, SCOTCH_Num *leafnum);
 
-static int compar_int (const void * a, const void * b)
+static int compar_indextype(const void * a, const void * b)
 {
-  return ( *(int*)a - *(int*)b );
+  return ( *(indextype*)a - *(indextype*)b );
 }
 
 static int
@@ -82,13 +82,13 @@ int Zoltan_Scotch_Order(
   /* The application must allocate enough space */
   ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
 /* The application must allocate enough space */
-  int *rank,		/* rank[i] is the rank of gids[i] */
+  ZOLTAN_ID_PTR rank,		/* rank[i] is the global rank of gids[i] */
   int *iperm,
   ZOOS *order_opt 	/* Ordering options, parsed by Zoltan_Order */
 )
 {
   static char *yo = "Zoltan_Scotch_Order";
-  int n, ierr;
+  int i, n, ierr;
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
   SCOTCH_Strat        stradat;
@@ -99,14 +99,11 @@ int Zoltan_Scotch_Order(
   SCOTCH_Dgraph       grafdat;
   SCOTCH_Dordering    ordedat;
   /* The following are used to convert elimination tree in Zoltan format */
-  indextype          *tree;
-  indextype          *size;
-  indextype          *children;
-  indextype           leafnum;
-  indextype           start;
+  SCOTCH_Num *tree, *size, *children;
+  SCOTCH_Num leafnum, start;
   int root = -1;
 #endif /* ZOLTAN_PTSCOTCH */
-  int numbloc;
+  indextype numbloc;
 
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
   int timer_p = 0;
@@ -120,6 +117,24 @@ int Zoltan_Scotch_Order(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+#if TPL_USE_DATATYPE != TPL_SCOTCH_DATATYPES
+
+#ifdef TPL_FLOAT_WEIGHT
+  i = 1;
+#else
+  i = 0;
+#endif
+
+  if ((sizeof(indextype) != sizeof(SCOTCH_Num)) ||
+      (sizeof(weighttype) != sizeof(SCOTCH_Num)) || i){
+
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, 
+          "Not supported: Multiple 3rd party libraries with incompatible data types.");
+    return ZOLTAN_FATAL;
+  }
+
+#endif
+
   memset(&gr, 0, sizeof(ZOLTAN_Third_Graph));
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
   memset(times, 0, sizeof(times));
@@ -132,7 +147,7 @@ int Zoltan_Scotch_Order(
     return(ierr);
   }
 
-  ord.order_info = &(zz->Order);
+  ord.order_info = &(zz->TPL_Order);
   ord.order_opt = order_opt;
 
   if (!order_opt){
@@ -178,7 +193,6 @@ int Zoltan_Scotch_Order(
   }
   gr.get_data = 1;
 
-
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
     /* Start timer */
@@ -190,6 +204,9 @@ int Zoltan_Scotch_Order(
 
   ierr = Zoltan_Preprocess_Graph(zz, &l_gids, &l_lids,  &gr, NULL, NULL, NULL);
 
+  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    ZOLTAN_THIRD_ERROR(ierr, "Cannot preprocess Scotch Graph");
+  }
 
   if (Zoltan_Scotch_Build_Graph(&gr, comm,
 #ifdef ZOLTAN_PTSCOTCH
@@ -199,6 +216,7 @@ int Zoltan_Scotch_Order(
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch Graph");
   }
+
 
   if (strat != NULL) {
     int len, pos;
@@ -243,7 +261,7 @@ int Zoltan_Scotch_Order(
   }
 
   if (IS_LOCAL_GRAPH(gr.graph_type)) { /* Allocate separators tree */
-    if (Zoltan_Order_Init_Tree (&zz->Order, gr.num_obj + 1, gr.num_obj) != ZOLTAN_OK) {
+    if (Zoltan_TPL_Order_Init_Tree (&zz->TPL_Order, gr.num_obj + 1, gr.num_obj) != ZOLTAN_OK) {
       Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
@@ -269,8 +287,9 @@ int Zoltan_Scotch_Order(
 #endif /* ZOLTAN_PTSCOTCH */
     {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the Scotch library");
+
     ierr = SCOTCH_graphOrder (&cgrafdat,  &stradat, ord.rank, ord.iperm,
-				     &zz->Order.nbr_blocks, zz->Order.start, zz->Order.ancestor);
+				     &zz->TPL_Order.nbr_blocks, zz->TPL_Order.start, zz->TPL_Order.ancestor);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the Scotch library");
   }
 
@@ -283,52 +302,53 @@ int Zoltan_Scotch_Order(
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
 
   if (IS_LOCAL_GRAPH(gr.graph_type)) { /* We already have separator tree, just have to compute the leaves */
-    for (numbloc = 0 ; numbloc < zz->Order.nbr_blocks ; ++numbloc) {
-      zz->Order.leaves[numbloc] = numbloc;
+    for (numbloc = 0 ; numbloc < zz->TPL_Order.nbr_blocks ; ++numbloc) {
+      zz->TPL_Order.leaves[numbloc] = numbloc;
     }
-    for (numbloc = 0 ; numbloc < zz->Order.nbr_blocks ; ++numbloc) {
-      if (zz->Order.ancestor[numbloc] < 0)
+    for (numbloc = 0 ; numbloc < zz->TPL_Order.nbr_blocks ; ++numbloc) {
+      if (zz->TPL_Order.ancestor[numbloc] < 0)
 	continue;
-      zz->Order.leaves[zz->Order.ancestor[numbloc]] = zz->Order.nbr_blocks + 1;
+      zz->TPL_Order.leaves[zz->TPL_Order.ancestor[numbloc]] = zz->TPL_Order.nbr_blocks + 1;
     }
     /* TODO : check if there is a normalized sort in Zoltan */
-    qsort(zz->Order.leaves, zz->Order.nbr_blocks, sizeof(int), compar_int);
-    zz->Order.nbr_leaves = 0;
-    for (numbloc = 0 ; numbloc < zz->Order.nbr_blocks ; ++numbloc) {
-      if (zz->Order.leaves[numbloc] > zz->Order.nbr_blocks) {
-	zz->Order.leaves[numbloc] = -1;
-	zz->Order.nbr_leaves = numbloc;
+    qsort(zz->TPL_Order.leaves, zz->TPL_Order.nbr_blocks, sizeof(indextype), compar_indextype);
+    zz->TPL_Order.nbr_leaves = 0;
+    for (numbloc = 0 ; numbloc < zz->TPL_Order.nbr_blocks ; ++numbloc) {
+      if (zz->TPL_Order.leaves[numbloc] > zz->TPL_Order.nbr_blocks) {
+	zz->TPL_Order.leaves[numbloc] = -1;
+	zz->TPL_Order.nbr_leaves = numbloc;
 	break;
       }
     }
-    if (zz->Order.nbr_leaves == 0) {
-      zz->Order.leaves[zz->Order.nbr_blocks] = -1;
-      zz->Order.nbr_leaves = zz->Order.nbr_blocks;
+    if (zz->TPL_Order.nbr_leaves == 0) {
+      zz->TPL_Order.leaves[zz->TPL_Order.nbr_blocks] = -1;
+      zz->TPL_Order.nbr_leaves = zz->TPL_Order.nbr_blocks;
     }
 
   }
 #ifdef ZOLTAN_PTSCOTCH
   else{
     /* Compute permutation */
+
     if (SCOTCH_dgraphOrderPerm (&grafdat, &ordedat, ord.rank) != 0) {
       Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch rank array");
     }
 
     /* Construct elimination tree */
-    zz->Order.nbr_blocks = SCOTCH_dgraphOrderCblkDist (&grafdat, &ordedat);
-    if (zz->Order.nbr_blocks <= 0) {
+    zz->TPL_Order.nbr_blocks = SCOTCH_dgraphOrderCblkDist (&grafdat, &ordedat);
+    if (zz->TPL_Order.nbr_blocks <= 0) {
       Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch block");
     }
 
-    if (Zoltan_Order_Init_Tree (&zz->Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
+    if (Zoltan_TPL_Order_Init_Tree (&zz->TPL_Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
       Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
 
-    tree = (indextype *) ZOLTAN_MALLOC((zz->Order.nbr_blocks+1)*sizeof(indextype));
-    size = (indextype *) ZOLTAN_MALLOC((zz->Order.nbr_blocks+1)*sizeof(indextype));
+    tree = (SCOTCH_Num *) ZOLTAN_MALLOC((zz->TPL_Order.nbr_blocks+1)*sizeof(SCOTCH_Num));
+    size = (SCOTCH_Num *) ZOLTAN_MALLOC((zz->TPL_Order.nbr_blocks+1)*sizeof(SCOTCH_Num));
 
     if ((tree == NULL) || (size == NULL)){
       /* Not enough memory */
@@ -341,15 +361,15 @@ int Zoltan_Scotch_Order(
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch rank array");
     }
 
-    children = (indextype *) ZOLTAN_MALLOC(3*zz->Order.nbr_blocks*sizeof(indextype));
-    for (numbloc = 0 ; numbloc < 3*zz->Order.nbr_blocks ; ++numbloc) {
+    children = (SCOTCH_Num *) ZOLTAN_MALLOC(3*zz->TPL_Order.nbr_blocks*sizeof(SCOTCH_Num));
+    for (numbloc = 0 ; numbloc < 3*zz->TPL_Order.nbr_blocks ; ++numbloc) {
       children[numbloc] = -2;
     }
 
     /* Now convert scotch separator tree in Zoltan elimination tree */
     root = -1;
-    for (numbloc = 0 ; numbloc < zz->Order.nbr_blocks ; ++numbloc) { /* construct a top-bottom tree */
-      indextype tmp;
+    for (numbloc = 0 ; numbloc < zz->TPL_Order.nbr_blocks ; ++numbloc) { /* construct a top-bottom tree */
+      SCOTCH_Num tmp;
       int index=0;
 
       tmp = tree[numbloc];
@@ -365,23 +385,23 @@ int Zoltan_Scotch_Order(
 	ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch tree array");
       }
 
-      children[3*tmp+index] = numbloc;
+      children[3*tmp+index] = (SCOTCH_Num)numbloc;
     }
 
     leafnum = 0;
-    zz->Order.nbr_blocks = Zoltan_Scotch_Construct_Offset(&zz->Order, children, root, size, tree, 0, &leafnum);
-    zz->Order.leaves[leafnum] =-1;
-    zz->Order.nbr_leaves = leafnum;
+    zz->TPL_Order.nbr_blocks = Zoltan_Scotch_Construct_Offset(&zz->TPL_Order, children, root, size, tree, 0, &leafnum);
+    zz->TPL_Order.leaves[leafnum] =-1;
+    zz->TPL_Order.nbr_leaves = leafnum;
 
-    for (numbloc = 0, start=0 ; numbloc < zz->Order.nbr_blocks ; ++numbloc) {
+    for (numbloc = 0, start=0 ; numbloc < zz->TPL_Order.nbr_blocks ; ++numbloc) {
       int tmp;
-      tmp = zz->Order.start[numbloc];
-      zz->Order.start[numbloc]  = start;
+      tmp = zz->TPL_Order.start[numbloc];
+      zz->TPL_Order.start[numbloc]  = start;
       start += tmp;
-      if (zz->Order.ancestor[numbloc] >= 0)
-	zz->Order.ancestor[numbloc] = size[zz->Order.ancestor[numbloc]];
+      if (zz->TPL_Order.ancestor[numbloc] >= 0)
+	zz->TPL_Order.ancestor[numbloc] = size[zz->TPL_Order.ancestor[numbloc]];
     }
-    zz->Order.start[zz->Order.nbr_blocks]  = start;
+    zz->TPL_Order.start[zz->TPL_Order.nbr_blocks]  = start;
 
     /* Free temporary tables */
     ZOLTAN_FREE(&tree);
@@ -391,12 +411,12 @@ int Zoltan_Scotch_Order(
 #endif /* ZOLTAN_PTSCOTCH */
 
   /* Correct because no redistribution */
-  memcpy(gids, l_gids, n*zz->Num_GID*sizeof(int));
-  memcpy(lids, l_lids, n*zz->Num_GID*sizeof(int));
+  memcpy(gids, l_gids, n*zz->Num_GID*sizeof(ZOLTAN_ID_TYPE));
+  memcpy(lids, l_lids, n*zz->Num_GID*sizeof(ZOLTAN_ID_TYPE));
 
   ierr = Zoltan_Postprocess_Graph (zz, l_gids, l_lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
-  /* KDD WILL BE FREED IN Zoltan_Third_Exit ZOLTAN_FREE(&l_gids); */
+  ZOLTAN_FREE(&l_gids);
   ZOLTAN_FREE(&l_lids);
 
   /* Get a time here */
@@ -420,11 +440,30 @@ int Zoltan_Scotch_Order(
   if (use_timers)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_p, zz->Communicator);
 
-  if ((ord.iperm != NULL) && (iperm != NULL))
-    memcpy(iperm, ord.iperm, gr.num_obj*sizeof(indextype));
+  if (order_opt->return_args&RETURN_RANK){
+    if (sizeof(indextype) == sizeof(ZOLTAN_ID_TYPE)){
+      memcpy(rank, ord.rank, gr.num_obj*sizeof(indextype));
+    }
+    else{
+      for (i=0; i < gr.num_obj; i++){
+        rank[i] = (ZOLTAN_ID_TYPE)ord.rank[i];
+      }
+    }
+  }
+
+  if ((ord.iperm != NULL) && (iperm != NULL)){
+    if (sizeof(indextype) == sizeof(int)){
+      memcpy(iperm, ord.iperm, gr.num_obj*sizeof(indextype));
+    }
+    else{
+      for (i=0; i < gr.num_obj; i++){
+        iperm[i] = (int)ord.iperm[i];
+      }
+    }
+  }
+
   if (ord.iperm != NULL)  ZOLTAN_FREE(&ord.iperm);
-  if (order_opt->return_args&RETURN_RANK)
-    memcpy(rank, ord.rank, gr.num_obj*sizeof(indextype));
+
   ZOLTAN_FREE(&ord.rank);
   ZOLTAN_FREE(&strat);
 
@@ -438,11 +477,11 @@ int Zoltan_Scotch_Order(
 
 
 static int
-Zoltan_Scotch_Construct_Offset(ZOS *order, indextype *children, int root,
-			       indextype* size, indextype* tree, int offset, int *leafnum)
+Zoltan_Scotch_Construct_Offset(ZTPL_OS *order, SCOTCH_Num *children, SCOTCH_Num root,
+			       SCOTCH_Num* size, SCOTCH_Num* tree, SCOTCH_Num offset, SCOTCH_Num *leafnum)
 {
   int i = 0;
-  int childrensize = 0;
+  SCOTCH_Num childrensize = 0;
 
 
   for (i=0 ; i < 2 ; i++) {
@@ -527,8 +566,6 @@ int Zoltan_Scotch(
   int num_part = zz->LB.Num_Global_Parts;    /* passed to PT-Scotch. Don't             */
   MPI_Comm comm = zz->Communicator;          /* want to risk letting external packages */
                                              /* change our zz struct.                  */
-
-
 #ifndef ZOLTAN_SCOTCH
   ZOLTAN_PRINT_ERROR(zz->Proc, yo,
 		     "Scotch requested but not compiled into library.");
@@ -537,6 +574,24 @@ int Zoltan_Scotch(
 #endif /* ZOLTAN_SCOTCH */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+#if TPL_USE_DATATYPE != TPL_SCOTCH_DATATYPES
+
+#ifdef TPL_FLOAT_WEIGHT
+  i = 1;
+#else
+  i = 0;
+#endif
+
+  if ((sizeof(indextype) != sizeof(SCOTCH_Num)) ||
+      (sizeof(weighttype) != sizeof(SCOTCH_Num)) || i){
+
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, 
+          "Not supported: Multiple 3rd party libraries with incompatible data types.");
+    return ZOLTAN_FATAL;
+  }
+
+#endif
 
   Zoltan_Third_Init(&gr, &prt, &vsp, &part,
 		    imp_gids, imp_lids, imp_procs, imp_to_part,
@@ -711,7 +766,8 @@ int Zoltan_Scotch(
   }
 
   Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
-  /* KDD ALREADY FREED BY Zoltan_Third_Exit ZOLTAN_FREE(&global_ids); */
+
+  ZOLTAN_FREE(&global_ids);
   ZOLTAN_FREE(&local_ids);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -830,16 +886,21 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
 			  SCOTCH_Graph *       cgrafptr,
 			  SCOTCH_Strat *       stratptr)
 {
-  int edgelocnbr;
-
+  SCOTCH_Num edgelocnbr;
   edgelocnbr =  gr->xadj[gr->num_obj];
+
 #ifdef ZOLTAN_PTSCOTCH
   if (IS_GLOBAL_GRAPH(gr->graph_type)){
     if (SCOTCH_dgraphInit (dgrafptr, comm) != 0) {
       return (ZOLTAN_FATAL);
     }
 
-    if (SCOTCH_dgraphBuild (dgrafptr, 0, gr->num_obj, gr->num_obj, gr->xadj, gr->xadj + 1,
+    /* TODO: are we certain that we don't allow randomization of global numbers?  This
+          call assumes the global numbers are consectutive across processes
+     */
+
+    if (SCOTCH_dgraphBuild (dgrafptr, 0, (SCOTCH_Num)gr->num_obj, (SCOTCH_Num)gr->num_obj, 
+                            gr->xadj, gr->xadj + 1,
 		  	    gr->vwgt, NULL,edgelocnbr, edgelocnbr, gr->adjncy, NULL, gr->ewgts) != 0) {
       SCOTCH_dgraphExit(dgrafptr);
       return (ZOLTAN_FATAL);
@@ -852,7 +913,7 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
       return (ZOLTAN_FATAL);
     }
 
-    if (SCOTCH_graphBuild (cgrafptr, 0, gr->num_obj, gr->xadj, gr->xadj + 1,
+    if (SCOTCH_graphBuild (cgrafptr, 0, (SCOTCH_Num)gr->num_obj, gr->xadj, gr->xadj + 1,
 			   gr->vwgt, NULL,edgelocnbr, gr->adjncy, gr->ewgts) != 0) {
       SCOTCH_graphExit(cgrafptr);
       return (ZOLTAN_FATAL);

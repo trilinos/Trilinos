@@ -83,11 +83,16 @@ public:
   //! Accessor for final parameters after an optimization run.
   const Dakota::Variables getFinalSolution() const;
 
+  //! Query if current processor is rankZero for this iterator
+  bool rankZero() const { return rank_zero;};
+
 private:
 
   Dakota::ParallelLibrary parallel_lib;
   Dakota::ProblemDescDB problem_db;
   Dakota::Strategy selected_strategy;
+  MPI_Comm analysis_comm;
+  bool rank_zero;
 
 }; // end of class Driver
 

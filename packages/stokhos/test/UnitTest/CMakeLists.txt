@@ -27,13 +27,13 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  DerivExpansionUnitTest
-  SOURCES Stokhos_DerivExpansionUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#  DerivExpansionUnitTest
+#  SOURCES Stokhos_DerivExpansionUnitTest.cpp
+#  COMM serial mpi
+#  STANDARD_PASS_OUTPUT
+#  NUM_MPI_PROCS 1
+#  )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   QuadExpansionUnitTest
@@ -108,6 +108,27 @@ IF(Stokhos_ENABLE_TriKota)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     SparseGridQuadratureUnitTest
     SOURCES Stokhos_SparseGridQuadratureUnitTest.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+ENDIF()
+
+IF(Stokhos_ENABLE_Sacado)
+
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    SacadoPCEUnitTest
+    SOURCES Stokhos_SacadoPCEUnitTest.cpp Stokhos_SacadoPCEUnitTest.hpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    SacadoETPCEUnitTest
+    SOURCES Stokhos_SacadoETPCEUnitTest.cpp Stokhos_SacadoPCEUnitTest.hpp
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1

@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     int num_KL = 2;
     CLP.setOption("num_kl", &num_KL, "Number of KL terms");
 
-    int p = 5;
+    int p = 3;
     CLP.setOption("order", &p, "Polynomial order");
 
     bool normalize_basis = true;

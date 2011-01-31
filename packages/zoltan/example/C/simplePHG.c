@@ -27,13 +27,13 @@ typedef struct{
            /* Zoltan will partition vertices, while minimizing edge cuts */
 
   int numMyVertices;  /* number of vertices that I own initially */
-  int *vtxGID;        /* global ID of these vertices */
+  ZOLTAN_ID_TYPE *vtxGID;        /* global ID of these vertices */
 
   int numMyHEdges;    /* number of my hyperedges */
   int numAllNbors; /* number of vertices in my hyperedges */
-  int *edgeGID;       /* global ID of each of my hyperedges */
+  ZOLTAN_ID_TYPE *edgeGID;       /* global ID of each of my hyperedges */
   int *nborIndex;     /* index into nborGID array of edge's vertices */
-  int *nborGID;  /* Vertices of edge edgeGID[i] begin at nborGID[nborIndex[i]] */
+  ZOLTAN_ID_TYPE *nborGID;  /* Vertices of edge edgeGID[i] begin at nborGID[nborIndex[i]] */
 } HGRAPH_DATA;
 
 /* 4 application defined query functions.  If we were going to define
@@ -55,7 +55,7 @@ static void get_hypergraph(void *data, int sizeGID, int num_edges, int num_nonze
 static int get_next_line(FILE *fp, char *buf, int bufsize);
 static int get_line_ints(char *buf, int bufsize, int *vals);
 static void input_file_error(int numProcs, int tag, int startProc);
-static void showHypergraph(int myProc, int numProc, int numIDs, int *GIDs, int *parts);
+static void showHypergraph(int myProc, int numProc, int numIDs, ZOLTAN_ID_TYPE *GIDs, int *parts);
 static void read_input_file(int myRank, int numProcs, char *fname, HGRAPH_DATA *data);
 
 static HGRAPH_DATA global_hg; 
@@ -385,14 +385,16 @@ int i, val[3];
 
 /* Draw the partition assignments of the objects */
 
-static void showHypergraph(int myProc, int numProcs, int numIDs, int *GIDs, int *parts)
+static void showHypergraph(int myProc, int numProcs, int numIDs, ZOLTAN_ID_TYPE *GIDs, int *parts)
 {
 int *partAssign, *allPartAssign;
 int i, j, part, count, numVtx, numEdges;
-int edgeID, edgeIdx, vtxID, vtxIdx;
+int edgeIdx, vtxIdx;
 int maxPart, nPart, partIdx;
 int **M;
-int *nextID, *partNums, *partCount;
+int *partNums, *partCount;
+ZOLTAN_ID_TYPE *nextID;
+ZOLTAN_ID_TYPE edgeID, vtxID;
 int cutn, cutl;
 float imbal, localImbal;
 
@@ -432,12 +434,12 @@ float imbal, localImbal;
   for (i=0; i < numEdges; i++){
 
     edgeID = global_hg.edgeGID[i];
-    edgeIdx = edgeID - 1;
+    edgeIdx = (int)edgeID - 1;
     count = global_hg.nborIndex[i+1] - global_hg.nborIndex[i];
 
     for (j=0; j < count; j++){
       vtxID = *nextID++;
-      vtxIdx = vtxID - 1;
+      vtxIdx = (int)vtxID - 1;
 
       part = allPartAssign[vtxIdx];
 
@@ -554,7 +556,7 @@ int to=-1, from, remaining;
 int vGID;
 int i, j;
 int vals[128], send_count[3];
-int *idx;
+ZOLTAN_ID_TYPE *idx;
 unsigned int id;
 FILE *fp;
 MPI_Status status;
@@ -575,7 +577,7 @@ HGRAPH_DATA *send_hg;
     if (num != 1) input_file_error(numProcs, count_tag, 1);
 
     global_hg.numMyVertices = numGlobalVertices;
-    global_hg.vtxGID = (int *)malloc(sizeof(int) * numGlobalVertices);
+    global_hg.vtxGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numGlobalVertices);
 
     /* Get the vertex global IDs */
 
@@ -586,7 +588,7 @@ HGRAPH_DATA *send_hg;
       num = sscanf(buf, "%d", &vGID);
       if (num != 1) input_file_error(numProcs, count_tag, 1);
 
-      global_hg.vtxGID[i] = vGID;
+      global_hg.vtxGID[i] = (ZOLTAN_ID_TYPE)vGID;
     }
 
     /* Get the number hyperedges which contain those vertices */
@@ -597,7 +599,7 @@ HGRAPH_DATA *send_hg;
     if (num != 1) input_file_error(numProcs, count_tag, 1);
 
     global_hg.numMyHEdges = numGlobalEdges;
-    global_hg.edgeGID = (int *)malloc(sizeof(int) * numGlobalEdges);
+    global_hg.edgeGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numGlobalEdges);
     global_hg.nborIndex = (int *)malloc(sizeof(int) * (numGlobalEdges + 1));
 
     /* Get the total number of vertices or neighbors in all the hyperedges of
@@ -610,7 +612,7 @@ HGRAPH_DATA *send_hg;
     num = sscanf(buf, "%d", &numGlobalNZ);
     if (num != 1) input_file_error(numProcs, count_tag, 1);
 
-    global_hg.nborGID = (int *)malloc(sizeof(int) * numGlobalNZ);
+    global_hg.nborGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numGlobalNZ);
 
     /* Get the list of vertices in each hyperedge  */
 
@@ -630,10 +632,10 @@ HGRAPH_DATA *send_hg;
 
       if (num < (nnbors + 2)) input_file_error(numProcs, count_tag, 1);
 
-      global_hg.edgeGID[i] = id;
+      global_hg.edgeGID[i] = (ZOLTAN_ID_TYPE)id;
 
       for (j=0; j < nnbors; j++){
-        global_hg.nborGID[global_hg.nborIndex[i] + j] = vals[2 + j];
+        global_hg.nborGID[global_hg.nborIndex[i] + j] = (ZOLTAN_ID_TYPE)vals[2 + j];
       }
 
       global_hg.nborIndex[i+1] = global_hg.nborIndex[i] + nnbors;
@@ -662,7 +664,7 @@ HGRAPH_DATA *send_hg;
 
       if (count){
 
-        send_hg[i].vtxGID = (int *)malloc(sizeof(int) * count);
+        send_hg[i].vtxGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * count);
 
         for (j=0; j < count; j++){
           send_hg[i].vtxGID[j] = *idx++;
@@ -696,8 +698,8 @@ HGRAPH_DATA *send_hg;
 
         send_hg[i].numAllNbors = nnbors;
   
-        send_hg[i].edgeGID = (int *)malloc(sizeof(int) * count);
-        memcpy(send_hg[i].edgeGID, global_hg.edgeGID + from, sizeof(int) * count);
+        send_hg[i].edgeGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * count);
+        memcpy(send_hg[i].edgeGID, global_hg.edgeGID + from, sizeof(ZOLTAN_ID_TYPE) * count);
 
         send_hg[i].nborIndex = (int *)malloc(sizeof(int) * (count + 1));
         send_hg[i].nborIndex[0] = 0;
@@ -710,10 +712,10 @@ HGRAPH_DATA *send_hg;
             send_hg[i].nborIndex[j] = global_hg.nborIndex[from+j] - num;
           }
         
-          send_hg[i].nborGID = (int *)malloc(sizeof(int) * nnbors);
+          send_hg[i].nborGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * nnbors);
           memcpy(send_hg[i].nborGID, 
                  global_hg.nborGID + global_hg.nborIndex[from], 
-                 sizeof(int) * nnbors);
+                 sizeof(ZOLTAN_ID_TYPE) * nnbors);
         }
       }
 
@@ -734,19 +736,19 @@ HGRAPH_DATA *send_hg;
       MPI_Recv(&ack, 1, MPI_INT, i, ack_tag, MPI_COMM_WORLD, &status);
 
       if (send_count[0] > 0){
-        MPI_Send(send_hg[i].vtxGID, send_count[0], MPI_INT, i, id_tag, MPI_COMM_WORLD);
+        MPI_Send(send_hg[i].vtxGID, send_count[0], ZOLTAN_ID_MPI_TYPE, i, id_tag, MPI_COMM_WORLD);
         free(send_hg[i].vtxGID);
       }
 
       if (send_count[1] > 0){
-        MPI_Send(send_hg[i].edgeGID, send_count[1], MPI_INT, i, id_tag + 1, MPI_COMM_WORLD);
+        MPI_Send(send_hg[i].edgeGID, send_count[1], ZOLTAN_ID_MPI_TYPE, i, id_tag + 1, MPI_COMM_WORLD);
         free(send_hg[i].edgeGID);
 
         MPI_Send(send_hg[i].nborIndex, send_count[1] + 1, MPI_INT, i, id_tag + 2, MPI_COMM_WORLD);
         free(send_hg[i].nborIndex);
 
         if (send_count[2] > 0){
-          MPI_Send(send_hg[i].nborGID, send_count[2], MPI_INT, i, id_tag + 3, MPI_COMM_WORLD);
+          MPI_Send(send_hg[i].nborGID, send_count[2], ZOLTAN_ID_MPI_TYPE, i, id_tag + 3, MPI_COMM_WORLD);
           free(send_hg[i].nborGID);
         }
       }
@@ -778,29 +780,29 @@ HGRAPH_DATA *send_hg;
     hg->numAllNbors = send_count[2];
 
     if (send_count[0] > 0){
-      hg->vtxGID = (int *)malloc(sizeof(int) * send_count[0]);
+      hg->vtxGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * send_count[0]);
     }
 
     if (send_count[1] > 0){
-      hg->edgeGID = (int *)malloc(sizeof(int) * send_count[1]);
+      hg->edgeGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * send_count[1]);
       hg->nborIndex = (int *)malloc(sizeof(int) * (send_count[1] + 1));
 
       if (send_count[2] > 0){
-        hg->nborGID = (int *)malloc(sizeof(int) * send_count[2]);
+        hg->nborGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * send_count[2]);
       }
     }
 
     MPI_Send(&ack, 1, MPI_INT, 0, ack_tag, MPI_COMM_WORLD);
 
     if (send_count[0] > 0){
-      MPI_Recv(hg->vtxGID,send_count[0], MPI_INT, 0, id_tag, MPI_COMM_WORLD, &status);
+      MPI_Recv(hg->vtxGID,send_count[0], ZOLTAN_ID_MPI_TYPE, 0, id_tag, MPI_COMM_WORLD, &status);
 
       if (send_count[1] > 0){
-        MPI_Recv(hg->edgeGID,send_count[1], MPI_INT, 0, id_tag + 1, MPI_COMM_WORLD, &status);
+        MPI_Recv(hg->edgeGID,send_count[1], ZOLTAN_ID_MPI_TYPE, 0, id_tag + 1, MPI_COMM_WORLD, &status);
         MPI_Recv(hg->nborIndex,send_count[1] + 1, MPI_INT, 0, id_tag + 2, MPI_COMM_WORLD, &status);
 
         if (send_count[2] > 0){
-          MPI_Recv(hg->nborGID,send_count[2], MPI_INT, 0, id_tag + 3, MPI_COMM_WORLD, &status);
+          MPI_Recv(hg->nborGID,send_count[2], ZOLTAN_ID_MPI_TYPE, 0, id_tag + 3, MPI_COMM_WORLD, &status);
         }
       }
     }

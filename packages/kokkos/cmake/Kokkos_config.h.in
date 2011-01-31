@@ -20,6 +20,7 @@
 
 #cmakedefine HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
 #cmakedefine HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
+#cmakedefine HAVE_KOKKOS_TREAT_SERIALNODE_AS_DEVICE
 
 /* Enable complex<float> type for CUDA nodes. */
 #cmakedefine HAVE_KOKKOS_CUDA_COMPLEX_FLOAT

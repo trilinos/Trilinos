@@ -61,6 +61,7 @@ APPEND_SET(HEADERS
   Teuchos_CommandLineProcessor.hpp
   Teuchos_CompObject.hpp
   Teuchos_CompileTimeAssert.hpp
+  Teuchos_Condition.hpp
   Teuchos_ConfigDefs.hpp
   Teuchos_ConstNonconstObjectContainer.hpp
   Teuchos_ConstTypeTraits.hpp
@@ -68,7 +69,10 @@ APPEND_SET(HEADERS
   Teuchos_DebugDefaultAsserts.hpp
   Teuchos_DefaultComm.hpp
   Teuchos_DefaultSerialComm.hpp
+  Teuchos_Dependency.hpp
+  Teuchos_DependencySheet.hpp
   Teuchos_Describable.hpp
+  Teuchos_DummyObjectGetter.hpp
   Teuchos_ENull.hpp
   Teuchos_ErrorPolling.hpp
   Teuchos_Exceptions.hpp
@@ -76,10 +80,12 @@ APPEND_SET(HEADERS
   Teuchos_F77_wrappers.h
   Teuchos_FancyOStream.hpp
   Teuchos_Flops.hpp
-  Teuchos_getRawPtr.hpp
+  Teuchos_FunctionObject.hpp
   Teuchos_GlobalMPISession.hpp
   Teuchos_Handle.hpp
   Teuchos_Handleable.hpp
+  Teuchos_InvalidConditionException.hpp
+  Teuchos_InvalidDependencyException.hpp
   Teuchos_LAPACK.hpp
   Teuchos_LAPACK_wrappers.hpp
   Teuchos_LabeledObject.hpp
@@ -120,14 +126,14 @@ APPEND_SET(HEADERS
   Teuchos_RefCountPtr.hpp
   Teuchos_RefCountPtrDecl.hpp
   Teuchos_ScalarTraits.hpp
-  Teuchos_ScalarTraitsDecl.hpp
   Teuchos_ScalarTraitsCUDA.hpp
-  Teuchos_SerialDenseMatrix.hpp
-  Teuchos_SerialSymDenseMatrix.hpp
-  Teuchos_SerialDenseVector.hpp
-  Teuchos_SerialDenseSolver.hpp
-  Teuchos_SerialSpdDenseSolver.hpp
+  Teuchos_ScalarTraitsDecl.hpp
   Teuchos_SerialDenseHelpers.hpp
+  Teuchos_SerialDenseMatrix.hpp
+  Teuchos_SerialDenseSolver.hpp
+  Teuchos_SerialDenseVector.hpp
+  Teuchos_SerialSpdDenseSolver.hpp
+  Teuchos_SerialSymDenseMatrix.hpp
   Teuchos_SerializationTraits.hpp
   Teuchos_SerializationTraitsHelpers.hpp
   Teuchos_Serializer.hpp
@@ -135,10 +141,13 @@ APPEND_SET(HEADERS
   Teuchos_SimpleObjectTable.hpp
   Teuchos_StandardCatchMacros.hpp
   Teuchos_StandardCompositionMacros.hpp
+  Teuchos_StandardConditions.hpp
+  Teuchos_StandardDependencies.hpp
+  Teuchos_StandardFunctionObjects.hpp
   Teuchos_StandardMemberCompositionMacros.hpp
   Teuchos_StandardParameterEntryValidators.hpp
+  Teuchos_StaticSetupMacro.hpp
   Teuchos_StringToIntMap.hpp
-  Teuchos_toString.hpp
   Teuchos_TableColumn.hpp
   Teuchos_TableEntry.hpp
   Teuchos_TableFormat.hpp
@@ -148,17 +157,19 @@ APPEND_SET(HEADERS
   Teuchos_Time.hpp
   Teuchos_TimeMonitor.hpp
   Teuchos_Tuple.hpp
-  Teuchos_TypeTraits.hpp
   Teuchos_TypeNameTraits.hpp
+  Teuchos_TypeTraits.hpp
   Teuchos_UnitTestBase.hpp
   Teuchos_UnitTestHarness.hpp
   Teuchos_UnitTestHelpers.hpp
   Teuchos_UnitTestRepository.hpp
   Teuchos_Utils.hpp
+  Teuchos_ValidatorFactory.hpp
   Teuchos_VerboseObject.hpp
   Teuchos_VerboseObjectParameterListHelpers.hpp
   Teuchos_VerbosityLevel.hpp
   Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp
+  Teuchos_Version.hpp
   Teuchos_Workspace.hpp
   Teuchos_any.hpp
   Teuchos_arrayArg.hpp
@@ -167,10 +178,12 @@ APPEND_SET(HEADERS
   Teuchos_dyn_cast.hpp
   Teuchos_getBaseObjVoidPtr.hpp
   Teuchos_getConst.hpp
+  Teuchos_getRawPtr.hpp
   Teuchos_implicit_cast.hpp
   Teuchos_map.hpp
   Teuchos_oblackholestream.hpp
-  Teuchos_Version.hpp
+  Teuchos_stacktrace.hpp
+  Teuchos_toString.hpp
   )
 
 # Set sources
@@ -181,6 +194,8 @@ APPEND_SET(SOURCES
   Teuchos_CommandLineProcessor.cpp
   Teuchos_CompObject.cpp
   Teuchos_Describable.cpp
+  Teuchos_Dependency.cpp
+  Teuchos_DependencySheet.cpp
   Teuchos_ErrorPolling.cpp
   Teuchos_Flops.cpp
   Teuchos_GlobalMPISession.cpp
@@ -199,6 +214,8 @@ APPEND_SET(SOURCES
   Teuchos_RCPNode.cpp
   Teuchos_Range1D.cpp
   Teuchos_ScalarTraits.cpp
+  Teuchos_StandardConditions.cpp
+  Teuchos_StandardDependencies.cpp
   Teuchos_StandardParameterEntryValidators.cpp
   Teuchos_StringToIntMap.cpp
   Teuchos_TableColumn.cpp
@@ -213,20 +230,25 @@ APPEND_SET(SOURCES
   Teuchos_UnitTestBase.cpp
   Teuchos_UnitTestRepository.cpp
   Teuchos_Utils.cpp
+  Teuchos_ValidatorFactory.cpp
   Teuchos_VerboseObject.cpp
   Teuchos_VerboseObjectParameterListHelpers.cpp
   Teuchos_VerbosityLevel.cpp
   Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp
   Teuchos_Workspace.cpp
   Teuchos_dyn_cast.cpp
+  Teuchos_stacktrace.cpp
   )
 
 # Set addition headers and source based on package-specific
 # configuration options
 
 IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
-
-  APPEND_SET(HEADERS
+APPEND_SET(HEADERS
+    Teuchos_ConditionXMLConverter.hpp
+    Teuchos_ConditionXMLConverterDB.hpp
+    Teuchos_DependencyXMLConverter.hpp
+    Teuchos_DependencyXMLConverterDB.hpp
     Teuchos_ExpatHandlerAdapter.hpp
     Teuchos_FileInputSource.hpp
     Teuchos_FileInputStream.hpp
@@ -235,14 +257,26 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_HashUtils.hpp
     Teuchos_Libxml2HandlerAdapter.hpp
     Teuchos_ParameterXMLFileReader.hpp
+    Teuchos_ParameterEntryXMLConverter.hpp
+    Teuchos_ParameterEntryXMLConverterDB.hpp
+    Teuchos_StandardConditionXMLConverters.hpp
+    Teuchos_StandardDependencyXMLConverters.hpp
+    Teuchos_StandardParameterEntryXMLConverters.hpp
+    Teuchos_StandardValidatorXMLConverters.hpp
     Teuchos_StringInputSource.hpp
     Teuchos_StringInputStream.hpp
     Teuchos_StrUtils.hpp
     Teuchos_TreeBuildingXMLHandler.hpp
+    Teuchos_ValidatorMaps.hpp
+    Teuchos_ValidatorXMLConverter.hpp
+    Teuchos_ValidatorXMLConverterDB.hpp
+    Teuchos_XMLConditionExceptions.hpp
+    Teuchos_XMLDependencyExceptions.hpp
     Teuchos_XMLInputSource.hpp
     Teuchos_XMLInputStream.hpp
     Teuchos_XMLObject.hpp
     Teuchos_XMLObjectImplem.hpp
+    Teuchos_XMLParameterListExceptions.hpp
     Teuchos_XMLParameterListHelpers.hpp
     Teuchos_XMLParameterListReader.hpp
     Teuchos_XMLParameterListWriter.hpp
@@ -250,16 +284,29 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     )
 
   APPEND_SET(SOURCES
+    Teuchos_ConditionXMLConverter.cpp
+    Teuchos_ConditionXMLConverterDB.cpp
+    Teuchos_DependencyXMLConverter.cpp
+    Teuchos_DependencyXMLConverterDB.cpp
     Teuchos_ExpatHandlerAdapter.cpp
     Teuchos_FileInputSource.cpp
     Teuchos_FileInputStream.cpp
     Teuchos_HashUtils.cpp
     Teuchos_Libxml2HandlerAdapter.cpp
     Teuchos_ParameterXMLFileReader.cpp
+    Teuchos_ParameterEntryXMLConverter.cpp
+    Teuchos_ParameterEntryXMLConverterDB.cpp
+    Teuchos_StandardDependencyXMLConverters.cpp
+    Teuchos_StandardParameterEntryXMLConverters.cpp
+    Teuchos_StandardValidatorXMLConverters.cpp
+    Teuchos_StandardConditionXMLConverters.cpp
     Teuchos_StrUtils.cpp
     Teuchos_StringInputSource.cpp
     Teuchos_StringInputStream.cpp
     Teuchos_TreeBuildingXMLHandler.cpp
+    Teuchos_ValidatorMaps.cpp
+    Teuchos_ValidatorXMLConverter.cpp
+    Teuchos_ValidatorXMLConverterDB.cpp
     Teuchos_XMLInputSource.cpp
     Teuchos_XMLInputStream.cpp
     Teuchos_XMLObject.cpp
@@ -297,6 +344,14 @@ ENDIF()
 #
 # C) Define the targets for package's library(s)
 #
+
+IF (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+  # Must suppress strick aliasing warnings for this file!
+  SET_SOURCE_FILES_PROPERTIES(
+    Teuchos_stacktrace.cpp
+    PROPERTIES COMPILE_FLAGS -fno-strict-aliasing
+    )
+ENDIF()
 
 PACKAGE_ADD_LIBRARY(
   teuchos

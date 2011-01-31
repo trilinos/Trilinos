@@ -39,10 +39,6 @@
 #include "Teuchos_CommHelpers.hpp"
 %}
 
-// Create python interfaces to MPI initialization and finalization
-PyObject* Init_Argv(PyObject *args);
-PyObject* Finalize();
-
 /////////////////////////////////////
 // Teuchos::VerbosityLevel support //
 /////////////////////////////////////
@@ -401,20 +397,6 @@ def scan(comm, reductOp, buffer):
   return comm.scan(reductOp, buffer)
 %}
 
-// MPI-related Python code.  This will be inserted directly into the
-// python module
-%pythoncode
-%{
-# Call MPI_Init if appropriate
-import sys
-Init_Argv(sys.argv)
-del sys
-
-# Arrange for MPI_Finalize to be called at exit, if appropriate
-import atexit
-atexit.register(Finalize)
-%}
-
 ////////////////////////////////////////////////////////////////////////////////
 // The following code is implemented if HAVE_MPI is defined
 ////////////////////////////////////////////////////////////////////////////////
@@ -424,66 +406,84 @@ atexit.register(Finalize)
 #include "mpi.h"
 #include "Teuchos_OpaqueWrapper.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
+%}
 
-PyObject* Init_Argv(PyObject *args)
+%inline
 {
-  // Check if MPI is already initialized
-  int ierr = 0;
-  MPI_Initialized(&ierr);
-  if (ierr) return Py_BuildValue("");
+  PyObject* Teuchos_MPI_Init_Argv(PyObject *args)
+  {
+    // Check if MPI is already initialized
+    int ierr = 0;
+    MPI_Initialized(&ierr);
+    if (ierr) Py_RETURN_FALSE;
 
-  // Reconstruct the command-line arguments
-  int    argc  = 0;
-  char **argv  = 0;
-  if (!PySequence_Check(args))
-  {
-    PyErr_SetString(PyExc_TypeError, "Init_Argv argument must be a sequence");
-    goto fail;
-  }
-  argc = PySequence_Size(args);
-  argv = new char*[argc+1];
-  for (int i=0; i<argc; ++i)
-  {
-    PyObject * item = PySequence_GetItem(args, i);
-    if (!PyString_Check(item))
+    // Reconstruct the command-line arguments
+    int    argc  = 0;
+    char **argv  = 0;
+    if (!PySequence_Check(args))
     {
-      PyErr_SetString(PyExc_TypeError, "Init_Argv argument list contains non-string");
+      PyErr_SetString(PyExc_TypeError, "Init_Argv argument must be a sequence");
       goto fail;
     }
-    argv[i] = PyString_AsString(item);
-  }
-  argv[argc] = NULL; //Lam 7.0 requires last arg to be NULL
+    argc = PySequence_Size(args);
+    argv = new char*[argc+1];
+    for (int i=0; i<argc; ++i)
+    {
+      PyObject * item = PySequence_GetItem(args, i);
+      if (!PyString_Check(item))
+      {
+	PyErr_SetString(PyExc_TypeError, "Init_Argv argument list contains non-string");
+	goto fail;
+      }
+      argv[i] = PyString_AsString(item);
+    }
+    argv[argc] = NULL; //Lam 7.0 requires last arg to be NULL
 
-  //Initialize MPI
-  ierr = MPI_Init(&argc, &argv);
-  if (ierr)
-  {
-    PyErr_Format(PyExc_RuntimeError, "MPI initialization error %d", ierr);
-    goto fail;
-  }
-  delete [] argv;
-  return Py_BuildValue("");
- fail:
-  if (argv) delete [] argv;
-  return NULL;
-}
-
-PyObject* Finalize()
-{
-  // Check if MPI has already been finalized
-  int ierr = 0;
-  MPI_Finalized(&ierr);
-  if (ierr) return Py_BuildValue("");
-
-  // Finalize MPI
-  ierr = MPI_Finalize();
-  if (ierr)
-  {
-    PyErr_Format(PyExc_RuntimeError, "MPI finalization error %d", ierr);
+    //Initialize MPI
+    ierr = MPI_Init(&argc, &argv);
+    if (ierr)
+    {
+      PyErr_Format(PyExc_RuntimeError, "MPI initialization error %d", ierr);
+      goto fail;
+    }
+    delete [] argv;
+    Py_RETURN_TRUE;
+  fail:
+    if (argv) delete [] argv;
     return NULL;
   }
-  return Py_BuildValue("");
+
+  PyObject* Teuchos_MPI_Finalize()
+  {
+    // Check if MPI has already been finalized
+    int ierr = 0;
+    MPI_Finalized(&ierr);
+    if (ierr) return Py_BuildValue("");
+
+    // Finalize MPI
+    ierr = MPI_Finalize();
+    if (ierr)
+    {
+      PyErr_Format(PyExc_RuntimeError, "MPI finalization error %d", ierr);
+      return NULL;
+    }
+    return Py_BuildValue("");
+  }
 }
+
+// Add python code to call MPI_Init() if appropriate.  If Init_Argv()
+// returns True, then MPI_Init() was not called before and Epetra is
+// responsible for calling MPI_Finalize(), via the atexit module.
+%pythoncode
+%{
+# Call MPI_Init if appropriate
+import sys
+calledMpiInit = Teuchos_MPI_Init_Argv(sys.argv)
+
+# Arrange for MPI_Finalize to be called at exit, if appropriate
+if calledMpiInit:
+    import atexit
+    atexit.register(Teuchos_MPI_Finalize)
 %}
 
 //////////////////////////////
@@ -530,18 +530,6 @@ class DefaultComm:
 
 #else
 
-%{
-PyObject* Init_Argv(PyObject *args)
-{
-  return Py_BuildValue("");
-}
-
-PyObject* Finalize()
-{
-  return Py_BuildValue("");
-}
-%}
-
 /////////////////////////////////////////////
 // Teuchos.DefaultComm support without MPI //
 /////////////////////////////////////////////
@@ -555,4 +543,5 @@ class DefaultComm:
         "Return the default global communicator"
         return cls.__defaultComm
 %}
+
 #endif

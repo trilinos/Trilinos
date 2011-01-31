@@ -246,6 +246,9 @@ namespace Stokhos {
      //! Basis
     Teuchos::RCP<const OrthogPolyBasis<int, float> > basis;
 
+    //! Short-hand for Cijk
+    typedef Stokhos::Sparse3Tensor<int,float> Cijk_type;
+
     //! Triple-product tensor
     Teuchos::RCP<const Stokhos::Sparse3Tensor<int, float> > Cijk;
 

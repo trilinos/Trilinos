@@ -6,9 +6,10 @@
 
 #include <stk_rebalance/ZoltanPartition.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -119,6 +120,10 @@ void fill_name_conversion( Parameters & name_conversion )
   Parameters & oct = name_conversion.sublist("3");
   oct.set("OVER ALLOCATE MEMORY"       , "");
   oct.set("ALGORITHM DEBUG LEVEL"      , "OCT_OUTPUT_LEVEL");
+
+  Parameters & graph = name_conversion.sublist("4");
+  graph.set("OVER ALLOCATE MEMORY"       , "");
+  graph.set("ALGORITHM DEBUG LEVEL"      , "" );
 }
 
 
@@ -129,6 +134,7 @@ void fill_value_conversion( Parameters & value_conversion )
   lb_method.set("1"   , "RIB");
   lb_method.set("2"   , "HSFC");
   lb_method.set("3"   , "OCTPART");
+  lb_method.set("4"   , "GRAPH");
 
   Parameters & timer = value_conversion.sublist("TIMER");
   timer.set("0"   , "WALL");
@@ -206,25 +212,6 @@ extern "C" {
                              int wdim,
                              float *weights,
                              int *ierr );
-  int Callback_First_Element( void *data,
-                              int Num_gid_entries,
-                              int Num_lid_entries,
-                              ZOLTAN_ID_PTR global_id,
-                              ZOLTAN_ID_PTR local_id,   //{Iterator or index}
-                              int wdim,
-                              float *weight,
-                              int *ierr );
-  int Callback_Next_Element( void *data,
-                             int Num_gid_entries,
-                             int Num_lid_entries,
-                             ZOLTAN_ID_PTR global_id,
-                             ZOLTAN_ID_PTR local_id,     //{Iterator or index}
-                             ZOLTAN_ID_PTR next_global_id,
-                             ZOLTAN_ID_PTR next_local_id,
-                             int wdim,
-                             float *next_weight,
-                             int *ierr );
-
   int Callback_Num_Dimensions( void *data, int *ierr );
   void Callback_Centroid_Coord( void *data,
                                 int Num_gid_entries,
@@ -314,99 +301,6 @@ void Callback_Element_List( void *data,
 
 }
 
-
-int Callback_First_Element( void *data,
-                        int Num_gid_entries,
-                        int Num_lid_entries,
-                        ZOLTAN_ID_PTR global_id,
-                        ZOLTAN_ID_PTR local_id,   //{Iterator or index}
-                        int wdim,
-                        float *weight,
-                        int *ierr )
-{
-
-  if ( data == NULL ) {
-    *ierr = ZOLTAN_FATAL;
-    return 0;
-  }
-
-  stk::rebalance::GeomDecomp   *gdata =  static_cast<stk::rebalance::GeomDecomp*>  (data);
-  stk::rebalance::Zoltan *zdata       = dynamic_cast<stk::rebalance::Zoltan*>     (gdata);
-
-  if ( zdata == NULL ) {
-    *ierr = ZOLTAN_FATAL;
-    return 0;
-  }
-
-  zdata->iter_init();
-
-  //: Set first element
-  local_id [ 0 ] = static_cast<ZOLTAN_ID_TYPE>(zdata->iter_current_key());
-  global_id[ 0 ] = 0;
-  global_id[ 1 ] =
-    static_cast<ZOLTAN_ID_TYPE>(zdata->iter_mesh_entity()->identifier());
-  //: Set weight for first element
-  weight[ 0 ] = zdata->iter_entity_weight();
-  for (int j=1; j < wdim ; j++) {
-    weight[ j ] = weight[0];
-  }
-
-  *ierr = ZOLTAN_OK;
-  return 1;
-
-}
-
-int Callback_Next_Element( void *data,
-                                  int Num_gid_entries,
-                                  int Num_lid_entries,
-                                  ZOLTAN_ID_PTR global_id,
-                                  ZOLTAN_ID_PTR local_id,     //{Iterator or index}
-                                  ZOLTAN_ID_PTR next_global_id,
-                                  ZOLTAN_ID_PTR next_local_id,
-                                  int wdim,
-                                  float *next_weight,
-                                  int *ierr )
-{
-  // (from include Fmwk_Sierra_Zoltan_Defines.h:)
-  // ( Num_gid_entries = ZOLTAN_GID_SIZE 2 )
-  // ( Num_lid_entries = ZOLTAN_LID_SIZE 2 )
-
-  if (!data) {
-    *ierr = ZOLTAN_FATAL;           // Set FATAL Zoltan error flag
-    return 0;
-  }
-
-  stk::rebalance::GeomDecomp   *gdata =  static_cast<stk::rebalance::GeomDecomp*>  (data);
-  stk::rebalance::Zoltan *zdata       = dynamic_cast<stk::rebalance::Zoltan*>     (gdata);
-
-  if (!zdata) {
-    *ierr = ZOLTAN_FATAL;           // Set FATAL Zoltan error flag
-    return 0;
-  }
-
-  // Check that we are in sync with Zoltan.
-  unsigned key = zdata->iter_current_key();
-
-  // Increment local id in current region
-  ++(*zdata);
-
-  // Store region, local, and global ids in the "next" arrays
-  key = zdata->iter_current_key();
-  next_local_id [ 0 ] = key;
-  next_global_id[ 0 ] = 0;
-  next_global_id[ 1 ] =
-    static_cast<ZOLTAN_ID_TYPE>(zdata->iter_mesh_entity()->identifier());
-  //: Set weight for next element
-  next_weight[ 0 ] = zdata->iter_entity_weight();
-  for (int j=1; j < wdim ; j++) {
-    next_weight[ j ] = next_weight[0];
-  }
-
-  *ierr = ZOLTAN_OK;
-  return 1;
-
-}
-
 int Callback_Num_Dimensions( void *data, int *ierr )
 {
   if ( !data ) {
@@ -477,15 +371,18 @@ void Callback_Centroid_Coord( void *data,
 
 
 void getNeighbors( const mesh::Entity & obj,
-                   std::set<const mesh::Entity*> & nodes ) {
+                   std::set<const mesh::Entity*> & nodes )
+{
+  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(obj);
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
 
   nodes.clear();
 
-  mesh::PairIterRelation iElem = obj.relations(mesh::Element);
+  mesh::PairIterRelation iElem = obj.relations(element_rank);
 
   for ( ; iElem.first != iElem.second; ++iElem.first ) {
     mesh::Entity * elem = iElem.first->entity();
-    mesh::PairIterRelation iNode = elem->relations(mesh::Node);
+    mesh::PairIterRelation iNode = elem->relations(stk::mesh::fem::NODE_RANK);
     for ( ; iNode.first != iNode.second; ++iNode.first ) {
       mesh::Entity * node = iNode.first->entity();
       if (&obj != node) nodes.insert( node );
@@ -594,30 +491,24 @@ void Callback_Edge_List( void *data,
 
 
 
-const std::string Zoltan::zoltanparametersname="Zoltan_Parameters";
-const std::string Zoltan::defaultparametersname="DEFAULT";
+const std::string Zoltan::m_zoltanparametersname_="Zoltan_Parameters";
+const std::string Zoltan::m_defaultparametersname_="DEFAULT";
 
 
 const std::string Zoltan::zoltan_parameters_name()
 {
-  return zoltanparametersname;
+  return m_zoltanparametersname_;
 }
 
 const std::string Zoltan::default_parameters_name()
 {
-  return defaultparametersname;
+  return m_defaultparametersname_;
 }
 
 void Zoltan::init_default_parameters()
 {
   fill_default_values(m_default_parameters_);
 }
-
-//bool Zoltan::confirm( const std::string &param_set)
-//{
-//  Parameters *domain_parameters = &m_default_parameters_;
-//  return ( (domain_parameters)? 1 : 0 ) ;
-//}
 
 
 static Parameters *Name_Conversion =NULL;
@@ -628,22 +519,6 @@ double Zoltan::zoltan_version()   const { return static_zoltan_version();  }
 //: ===========
 //: Constructor
 //: ===========
-
-//Diag::Writer &
-//rebalance::Zoltan::verbose_print(
-//  Diag::Writer &                dout) const
-//{
-//  if (dout.shouldPrint()) {
-//    dout << "Fmwk::Zoltan" << sierra::Diag::push << dendl;
-//    GeomDecomp::verbose_print(dout).dendl();
-//    dout.m(LOG_MEMBERS) << "parameter_entry_Name, " << parameter_entry_Name << dendl;
-//    dout.m(LOG_MEMBERS) << "zoltan_version, " << static_zoltan_version() << dendl;
-//
-//    dout << sierra::Diag::pop;
-//  }
-//
-//  return dout;
-//}
 
 namespace {
 void merge_parameters(std::vector <std::pair<std::string, std::string> > &str_zoltan_params,
@@ -665,10 +540,9 @@ void merge_parameters(std::vector <std::pair<std::string, std::string> > &str_zo
 
 Zoltan::Zoltan(ParallelMachine pm, const unsigned ndim, Parameters & rebal_region_parameters, const std::string parameters_name) :
   GeomDecomp(pm),
-  zoltan_id(NULL),
+  m_zoltan_id_(NULL),
   m_spatial_dimension_(ndim),
-  total_number_entities_(0),
-  iter_initialized_(false)
+  m_total_number_entities_(0)
 {
   /* Determine if the default set of parameters already exists. */
   if( !rebal_region_parameters.isSublist(default_parameters_name()) )
@@ -700,7 +574,7 @@ Zoltan::set_mesh_info( const std::vector<mesh::Entity *> &mesh_entities,
   MeshInfo mesh_info;
 
   /* Keep track of the total number of elements. */
-  total_number_entities_ = mesh_entities.size();
+  m_total_number_entities_ = mesh_entities.size();
 
   mesh_info.mesh_entities = mesh_entities;
   mesh_info.nodal_coord_ref = nodal_coord_ref;
@@ -713,7 +587,7 @@ Zoltan::set_mesh_info( const std::vector<mesh::Entity *> &mesh_entities,
   */
   mesh_info.dest_proc_ids.assign(mesh_entities.size(), stk::parallel_machine_rank(comm_));
 
-  mesh_information_ = mesh_info;
+  m_mesh_information_ = mesh_info;
 }
 
 void Zoltan::init( const vector< pair<std::string,std::string> >
@@ -727,8 +601,8 @@ void Zoltan::init( const vector< pair<std::string,std::string> >
    * Create a zoltanID entity
    */
 
-  zoltan_id = Zoltan_Create( comm_ );
-  if ( zoltan_id == NULL ) {
+  m_zoltan_id_ = Zoltan_Create( comm_ );
+  if ( m_zoltan_id_ == NULL ) {
     throw runtime_error ("(FATAL ERROR) Zoltan_Create() returned NULL");
   }
 
@@ -745,7 +619,7 @@ void Zoltan::init( const vector< pair<std::string,std::string> >
     char * label = const_cast<char*>( P->first.c_str() ) ;
     char * value = const_cast<char*>( P->second.c_str() ) ;
 
-    if (ZOLTAN_OK != (Zoltan_Set_Param(zoltan_id,label,value)))
+    if (ZOLTAN_OK != (Zoltan_Set_Param(m_zoltan_id_,label,value)))
     {
       throw runtime_error(": FATAL ERROR returned from Zoltan_Set_Param ");
     }
@@ -759,7 +633,7 @@ void Zoltan::init( const vector< pair<std::string,std::string> >
 
 #if STK_GEOMDECOMP_DEBUG>=2
   {
-    debug_print_decomp_export( zoltan, zoltan_id );
+    debug_print_decomp_export( zoltan, m_zoltan_id_ );
   }
 #endif
   return;
@@ -788,10 +662,10 @@ double Zoltan::init_zoltan_library () {
 
 Zoltan::~Zoltan()
 {
-  if ( zoltan_id != NULL ) {
-    Zoltan_Destroy( &zoltan_id );
+  if ( m_zoltan_id_ != NULL ) {
+    Zoltan_Destroy( &m_zoltan_id_ );
   }
-  zoltan_id = NULL ;
+  m_zoltan_id_ = NULL ;
   if(Name_Conversion) {
     delete Name_Conversion;
     Name_Conversion = NULL;
@@ -806,59 +680,30 @@ void
 Zoltan::reset_dest_proc_data()
 {
   const int  proc = 0; //Env::parallel_rank();
-  const unsigned size = mesh_information_.mesh_entities.size();
-  mesh_information_.dest_proc_ids.assign(size, proc);
-}
-
-int
-Zoltan::proc_owner( const mesh::Entity & mesh_obj , const int & /* index */ )
-{
-  int procid = -1;
-
-  this->iter_init();
-
-  for (; !this->at_end(); ++(*this)) {
-    const mesh::Entity & elem = *(this->iter_mesh_entity());
-    if ( elem.key() == mesh_obj.key() ) {
-      procid = this->iter_destination_proc();
-      break;
-    }
-  }
-  return procid;
+  const unsigned size = m_mesh_information_.mesh_entities.size();
+  m_mesh_information_.dest_proc_ids.assign(size, proc);
 }
 
 void
 Zoltan::set_destination_proc(const unsigned moid,
                              const unsigned proc )
 {
-  mesh_information_.dest_proc_ids[ moid ] = proc;
+  m_mesh_information_.dest_proc_ids[ moid ] = proc;
 }
 
 unsigned
 Zoltan::destination_proc(const unsigned moid) const
 {
-  return mesh_information_.dest_proc_ids[ moid ];
-}
-
-unsigned
-Zoltan::iter_destination_proc() const
-{
-  return destination_proc(entity_iter_);
-}
-
-void
-Zoltan::iter_set_destination_proc (unsigned id)
-{
-  set_destination_proc(entity_iter_, id);
+  return m_mesh_information_.dest_proc_ids[ moid ];
 }
 
 bool
 Zoltan::find_mesh_entity(const mesh::Entity * obj, unsigned & moid) const
 {
-  unsigned len = mesh_information_.mesh_entities.size();
+  unsigned len = m_mesh_information_.mesh_entities.size();
   for(moid = 0; moid < len; ++moid)
   {
-    if(mesh_information_.mesh_entities[moid] == obj) return true;
+    if(m_mesh_information_.mesh_entities[moid] == obj) return true;
   }
   return false;
 }
@@ -866,10 +711,10 @@ Zoltan::find_mesh_entity(const mesh::Entity * obj, unsigned & moid) const
 int
 Zoltan::get_new_partition(stk::mesh::EntityProcVec &rebal_spec)
 {
-  iter_init();
-  for (; ! at_end(); ++(*this)) {
-    mesh::Entity * mesh_obj = iter_mesh_entity();
-    int proc = iter_destination_proc();
+  const unsigned entity_iter_len = m_mesh_information_.mesh_entities.size();
+  for (unsigned entity_iter =0; entity_iter != entity_iter_len; ++entity_iter) {
+    mesh::Entity * mesh_obj = mesh_entity(entity_iter);
+    int proc = destination_proc(entity_iter);
     mesh::EntityProc et(mesh_obj, proc);
     rebal_spec.push_back(et);
   }
@@ -879,52 +724,13 @@ Zoltan::get_new_partition(stk::mesh::EntityProcVec &rebal_spec)
 const VectorField *
 Zoltan::entity_coord_ref() const
 {
-   return mesh_information_.nodal_coord_ref;
+   return m_mesh_information_.nodal_coord_ref;
 }
 
 mesh::Entity *
 Zoltan::mesh_entity(const unsigned moid ) const
 {
-  return mesh_information_.mesh_entities[ moid ];
-}
-
-void
-Zoltan::iter_init()
-{
-  entity_iter_ = 0;
-  entity_iter_len_ = mesh_information_.mesh_entities.size();
-  iter_initialized_ = true;
-}
-
-bool
-Zoltan::at_end() const
-{
-  return (entity_iter_ == entity_iter_len_);
-}
-
-Partition &
-Zoltan::operator++()
-{
-  ++entity_iter_;
-  return (*this);
-}
-
-mesh::Entity *
-Zoltan::iter_mesh_entity() const
-{
-  return mesh_entity(entity_iter_);
-}
-
-double
-Zoltan::iter_entity_weight() const
-{
-  return entity_weight(entity_iter_);
-}
-
-unsigned
-Zoltan::iter_current_key() const
-{
-  return entity_iter_;
+  return m_mesh_information_.mesh_entities[ moid ];
 }
 
 double
@@ -933,7 +739,7 @@ Zoltan::entity_weight(const unsigned moid ) const
   double mo_weight = 1.0;
   if (entity_weight_ref()) {
     mo_weight = * static_cast<double *>
-      ( mesh::field_data (*entity_weight_ref(), *mesh_information_.mesh_entities[ moid ]));
+      ( mesh::field_data (*entity_weight_ref(), *m_mesh_information_.mesh_entities[ moid ]));
   }
   return mo_weight;
 }
@@ -941,54 +747,18 @@ Zoltan::entity_weight(const unsigned moid ) const
 const ScalarField *
 Zoltan::entity_weight_ref() const
 {
-  return mesh_information_.elem_weight_ref;
+  return m_mesh_information_.elem_weight_ref;
 }
 
 unsigned
 Zoltan::num_moid() const
 {
-  return mesh_information_.mesh_entities.size() ;
+  return m_mesh_information_.mesh_entities.size() ;
 }
-
-int Zoltan::point_assign( double *position,
-                          int  *proc_id ) const
-{
-  int status = Zoltan_LB_Point_Assign(zoltan_id, position, proc_id );
-
-  if (status != ZOLTAN_OK ) {
-    throw std::runtime_error("Zoltan_LB_Point_Asssign returned status code " + status);
-    return 1;
-  }
-  return 0;
-}
-
-
-int Zoltan::box_assign(double min[],
-                       double max[],
-                       std::vector<int> &procs) const
-{
-  /* Allocate maximum array size needed to hold processor
-     numbers.
-  */
-  int num_procs;
-  int *procbuf = new int[parallel_machine_size(comm_)];
-  if (ZOLTAN_OK != Zoltan_LB_Box_Assign   (zoltan_id,
-                                           min[0],  min[1], min[2],
-                                           max[0],  max[1], max[2],
-                                           procbuf, &num_procs)) {
-    delete [] procbuf;
-    return 1;
-  }
-  procs.resize(num_procs);
-  for (int i=0; i<num_procs; ++i) procs[i] = procbuf[i];
-  delete [] procbuf;
-  return 0;
-}
-
 
 const std::string &Zoltan::parameter_entry_name() const
 {
-  return parameter_entry_Name;
+  return m_parameter_entry_name_;
 }
 
 
@@ -1001,8 +771,7 @@ int Zoltan::register_callbacks()
    * Use ONLY THE BARE ESSENTIALS for decompositions:
    *
    *    Zoltan_Set_Num_Obj_Fn
-   *    Zoltan_Set_First_Obj_Fn
-   *    Zoltan_Set_Next_Obj_Fn
+   *    Zoltan_Set_Obj_List_Fn
    *    Zoltan_Set_Num_Geom_Fn
    *    Zoltan_Set_Geom_Fn
    */
@@ -1015,37 +784,29 @@ int Zoltan::register_callbacks()
    *
    */
 
-  if ( Zoltan_Set_Num_Obj_Fn( zoltan_id,
+  if ( Zoltan_Set_Num_Obj_Fn( m_zoltan_id_,
                               Callback_Num_Elements,
                               this )
        != ZOLTAN_OK ) {
     throw std::runtime_error("Zoltan_Set_Num_Obj_Fn using Callback_Num_Elements failed to register");
   }
-  if ( Zoltan_Set_Obj_List_Fn( zoltan_id, Callback_Element_List,this )
+  if ( Zoltan_Set_Obj_List_Fn( m_zoltan_id_, Callback_Element_List,this )
        != ZOLTAN_OK ) {
-    throw std::runtime_error("Zoltan_Set_Next_Obj_Fn using Callback_Element_List");
+    throw std::runtime_error("Zoltan_Set_Obj_List_Fn using Callback_Element_List");
   }
-  if ( Zoltan_Set_First_Obj_Fn( zoltan_id, Callback_First_Element,this )
-       != ZOLTAN_OK ) {
-    throw std::runtime_error("Zoltan_Set_First_Obj_Fn using Callback_fFirst_Element");
-  }
-  if ( Zoltan_Set_Next_Obj_Fn( zoltan_id, Callback_Next_Element,this )
-       != ZOLTAN_OK ) {
-    throw std::runtime_error("Zoltan_Set_Next_Obj_Fn using Callback_Next_Element");
-  }
-  if ( Zoltan_Set_Num_Geom_Fn( zoltan_id, Callback_Num_Dimensions,this )
+  if ( Zoltan_Set_Num_Geom_Fn( m_zoltan_id_, Callback_Num_Dimensions,this )
        != ZOLTAN_OK ) {
     throw std::runtime_error("Zoltan_Set_Num_Geom_Fn using Callback_Num_Dimensions");
   }
-  if ( Zoltan_Set_Geom_Fn( zoltan_id, Callback_Centroid_Coord,this )
+  if ( Zoltan_Set_Geom_Fn( m_zoltan_id_, Callback_Centroid_Coord,this )
        != ZOLTAN_OK ) {
     throw std::runtime_error("Zoltan_Set_Geom_Fn using Callback_Centroid_Coord");
   }
-  if ( Zoltan_Set_Num_Edges_Fn( zoltan_id, Callback_Num_Edges,this )
+  if ( Zoltan_Set_Num_Edges_Fn( m_zoltan_id_, Callback_Num_Edges,this )
        != ZOLTAN_OK ) {
     throw std::runtime_error("Zoltan_Set_Num_Edges_Fn using Callback_Num_Edges");
   }
-  if ( Zoltan_Set_Edge_List_Fn( zoltan_id, Callback_Edge_List,this )
+  if ( Zoltan_Set_Edge_List_Fn( m_zoltan_id_, Callback_Edge_List,this )
        != ZOLTAN_OK ) {
     throw std::runtime_error("Zoltan_Set_Edge_List_Fn using Callback_Edge_List");
   }
@@ -1067,14 +828,14 @@ int  Zoltan::evaluate( int    print_stats,
 
   ZOLTAN_BALANCE_EVAL eval  = {0};
   ZOLTAN_GRAPH_EVAL   graph = {{0}};
-  if (Zoltan_LB_Eval_Balance( zoltan_id, print_stats, &eval)) ierr = 1;
-  if (Zoltan_LB_Eval_Graph( zoltan_id, print_stats, &graph) ) ierr = 1;
-  *nobj         = eval.nobj[0];
-  *obj_wgt      = eval.obj_wgt[0];
-  *ncuts        = graph.cuts[0];
-  *cut_wgt      = graph.cut_wgt[0];
-  *nboundary    = graph.num_boundary[0];
-  *nadj         = graph.nnborparts[0];
+  if (Zoltan_LB_Eval_Balance( m_zoltan_id_, print_stats, &eval)) ierr = 1;
+  if (Zoltan_LB_Eval_Graph( m_zoltan_id_, print_stats, &graph) ) ierr = 1;
+  *nobj         = (int)eval.nobj[0];
+  *obj_wgt      =      eval.obj_wgt[0];
+  *ncuts        = (int)graph.cuts[0];
+  *cut_wgt      =      graph.cut_wgt[0];
+  *nboundary    = (int)graph.num_boundary[0];
+  *nadj         = (int)graph.nnborparts[0];
 
   return ierr;
 
@@ -1160,7 +921,7 @@ void Zoltan::determine_new_partition (bool &RebalancingNeeded)
        *                  the destination processors).
        */
 
-  int status = Zoltan_LB_Balance( zoltan_id,        &new_decomp,
+  int status = Zoltan_LB_Balance( m_zoltan_id_,        &new_decomp,
                                   &length_gid     , &length_lid,
                                   &num_imported,    &import_gids,
                                   &import_lids,     &import_procs,
@@ -1270,6 +1031,6 @@ void Zoltan::merge_default_values(const Parameters &from,
 {
   Parameters default_values;
   fill_default_values(default_values);
-  to.setParameters(default_values.sublist("General"));
+  to.setParameters(default_values);
   to.setParameters(from);
 }

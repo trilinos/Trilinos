@@ -21,8 +21,6 @@ source ~/.bashrc
 #
 
 echo "
--DBUILD_SHARED_LIBS:BOOL=ON
--DTrilinos_ENABLE_Fortran:BOOL=OFF
 " > COMMON.config
 
 echo "
@@ -30,6 +28,9 @@ echo "
 
 
 echo "
+-DCMAKE_C_COMPILER=icc
+-DCMAKE_CXX_COMPILER=icpc
+-DCMAKE_Fortran_COMPILER=ifort
 " > SERIAL_RELEASE.config
 
 
@@ -43,7 +44,6 @@ echo "
 --ctest-options=\"-j1\" \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
---do-all \
 $EXTRA_ARGS
 
 

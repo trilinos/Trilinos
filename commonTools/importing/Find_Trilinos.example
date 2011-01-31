@@ -1,0 +1,74 @@
+# CMAKE File for "MyApp" application building against an installed Trilinos
+
+#This file was created by modifiying the files in
+#Trilinos/demos/buildAgaintsTrilinos. The primary change was to make it a single
+#file cmake system in a flat directory. If you would like to run a cmake
+#configure using this file you should grab this file and src_file.cpp,
+#src_file.hpp, main_file.cpp from buildAgainstTrilinos and place them in a new
+#directory. From there you can run:
+#"cmake -DMYAPP_TRILINOS_DIR=<path to trilinos>." to configure. Another
+#important change is the buildAgainstTrilinos does some checking to see which
+#packages and tpls are enabled and behaves accordingly. However, this file does
+#only a serial configure(no mpi) and assumes that the install of Trilinos it is
+#pointed to has Epetra enabled. 
+
+cmake_minimum_required(VERSION 2.8)
+
+# Error check up front
+IF (NOT DEFINED MYAPP_TRILINOS_DIR)
+  MESSAGE(FATAL_ERROR "\nMyApp Error: cmake must define MYAPP_TRILINOS_DIR:
+  (-D MYAPP_TRILINOS_DIR:FILEPATH=<trilinos_install_prefix>)!")
+ENDIF()
+
+# Get Trilinos as one entity
+FIND_PACKAGE(Trilinos PATHS ${MYAPP_TRILINOS_DIR}/include)
+
+IF(NOT Trilinos_FOUND)
+  MESSAGE(FATAL_ERROR "Could not find Trilinos!")
+ENDIF()
+
+# Echo trilinos build info just for fun
+MESSAGE("\nFound Trilinos!  Here are the details: ")
+MESSAGE("   Trilinos_DIR = ${Trilinos_DIR}")
+MESSAGE("   Trilinos_VERSION = ${Trilinos_VERSION}")
+MESSAGE("   Trilinos_PACKAGE_LIST = ${Trilinos_PACKAGE_LIST}")
+MESSAGE("   Trilinos_LIBRARIES = ${Trilinos_LIBRARIES}")
+MESSAGE("   Trilinos_INCLUDE_DIRS = ${Trilinos_INCLUDE_DIRS}")
+MESSAGE("   Trilinos_LIBRARY_DIRS = ${Trilinos_LIBRARY_DIRS}")
+MESSAGE("   Trilinos_TPL_LIST = ${Trilinos_TPL_LIST}")
+MESSAGE("   Trilinos_TPL_INCLUDE_DIRS = ${Trilinos_TPL_INCLUDE_DIRS}")
+MESSAGE("   Trilinos_TPL_LIBRARIES = ${Trilinos_TPL_LIBRARIES}")
+MESSAGE("   Trilinos_TPL_LIBRARY_DIRS = ${Trilinos_TPL_LIBRARY_DIRS}")
+MESSAGE("   Trilinos_BUILD_SHARED_LIBS = ${Trilinos_BUILD_SHARED_LIBS}")
+MESSAGE("End of Trilinos details\n")
+
+# Make sure to use same compilers and flags as Trilinos
+SET(CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER} )
+SET(CMAKE_C_COMPILER ${Trilinos_C_COMPILER} )
+SET(CMAKE_Fortran_COMPILER ${Trilinos_Fortran_COMPILER} )
+
+SET(CMAKE_CXX_FLAGS  "${Trilinos_CXX_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}")
+SET(CMAKE_C_FLAGS  "${Trilinos_C_COMPILER_FLAGS} ${CMAKE_C_FLAGS}")
+SET(CMAKE_Fortran_FLAGS  "${Trilinos_Fortran_COMPILER_FLAGS} ${CMAKE_Fortran_FLAGS}")
+
+#
+# End of setup and error checking
+#  NOTE: PROJECT command checks for compilers, so this statement
+#        is moved AFTER setting CMAKE_CXX_COMPILER from Trilinos
+
+PROJECT(MyApp)
+
+ADD_DEFINITIONS(-DMYAPP_EPETRA)
+
+INCLUDE_DIRECTORIES(${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
+LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS} ${Trilinos_TPL_LIBRARY_DIRS})
+
+ADD_LIBRARY(myappLib src_file.cpp src_file.hpp)
+
+ADD_EXECUTABLE(MyApp.exe main_file.cpp)
+
+TARGET_LINK_LIBRARIES(MyApp.exe  myappLib  ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES}) 
+
+enable_testing()
+add_test(NAME MyTest COMMAND MyApp.exe)
+

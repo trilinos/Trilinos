@@ -46,9 +46,9 @@ int Zoltan_Scatter_Graph(
   indextype **vtxdist,
   indextype **xadj,
   indextype **adjncy,
-  indextype **vwgt,
+  weighttype **vwgt,
   indextype **vsize,
-  indextype **adjwgt,
+  weighttype **adjwgt,
   float   **xyz,
   int     ndims,		/* # dimensions of xyz geometry data */
   int     vwgt_dim,
@@ -58,8 +58,10 @@ int Zoltan_Scatter_Graph(
 {
   static char *yo = "Zoltan_Scatter_Graph";
   char     msg[256];
-  indextype *old_vtxdist, *old_xadj, *old_adjncy, *old_vwgt; 
-  indextype *old_vsize, *old_adjwgt;
+  indextype *old_vtxdist, *old_adjncy;
+  indextype *old_xadj;
+  indextype *old_vsize;
+  weighttype *old_vwgt, *old_adjwgt;
   float   *old_xyz;
   int *ptr, *proclist = NULL, *proclist2 = NULL;
   int i, j, num_obj, old_num_obj, num_edges, nrecv;
@@ -71,8 +73,10 @@ int Zoltan_Scatter_Graph(
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Save pointers to "old" data distribution */
-  old_vtxdist = old_xadj = old_adjncy = NULL;
-  old_vwgt = old_vsize = old_adjwgt = NULL;
+  old_vtxdist = old_adjncy = NULL;
+  old_xadj = NULL;
+  old_vwgt = old_adjwgt = NULL;
+  old_vsize = NULL;
   old_xyz = NULL;
   if (vtxdist)
     old_vtxdist = *vtxdist;
@@ -89,7 +93,7 @@ int Zoltan_Scatter_Graph(
   if (xyz)
     old_xyz = *xyz;
 
-  old_num_obj = old_vtxdist[zz->Proc+1] - old_vtxdist[zz->Proc]; 
+  old_num_obj = (int)(old_vtxdist[zz->Proc+1] - old_vtxdist[zz->Proc]); 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: Old number of objects = %d\n", zz->Proc, old_num_obj);
 
@@ -109,7 +113,9 @@ int Zoltan_Scatter_Graph(
           use_graph, use_vsize);
 
   /* Reset all data pointers to NULL for now */
-  *xadj = *adjncy = *vwgt = *adjwgt = NULL;
+  *xadj = NULL;
+  *adjncy = NULL;
+  *vwgt = *adjwgt = NULL;
   *xyz = NULL;
   if (use_vsize) *vsize = NULL;
 
@@ -121,13 +127,13 @@ int Zoltan_Scatter_Graph(
   }
 
   /* Allocate new space for vertex data */
-  num_obj = (*vtxdist)[zz->Proc+1] - (*vtxdist)[zz->Proc];
+  num_obj = (int)((*vtxdist)[zz->Proc+1] - (*vtxdist)[zz->Proc]);
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: New number of objects = %d\n", zz->Proc, num_obj);
   if (use_graph)
     *xadj = (indextype *) ZOLTAN_MALLOC((num_obj+1)*sizeof(indextype));
   if (vwgt_dim)
-    *vwgt = (indextype *) ZOLTAN_MALLOC(vwgt_dim*num_obj*sizeof(indextype));
+    *vwgt = (weighttype *) ZOLTAN_MALLOC(vwgt_dim*num_obj*sizeof(weighttype));
   if (use_vsize)
     *vsize = (indextype *) ZOLTAN_MALLOC(num_obj*sizeof(indextype));
   if (ndims)
@@ -170,13 +176,13 @@ int Zoltan_Scatter_Graph(
     Zoltan_Comm_Do( *plan, TAG2, (char *) old_xadj, sizeof(indextype), (char *) *xadj);
   }
   if (vwgt_dim){
-    Zoltan_Comm_Do( *plan, TAG3, (char *) old_vwgt, vwgt_dim*sizeof(indextype), (char *) *vwgt);
+    Zoltan_Comm_Do( *plan, TAG3, (char *) old_vwgt, vwgt_dim*sizeof(weighttype), (char *) *vwgt);
   }
   if (use_vsize){
     Zoltan_Comm_Do( *plan, TAG4, (char *) old_vsize, sizeof(indextype), (char *) *vsize);
   }
   if (ndims){
-    Zoltan_Comm_Do( *plan, TAG5, (char *) old_xyz, ndims*sizeof(indextype), (char *) *xyz);
+    Zoltan_Comm_Do( *plan, TAG5, (char *) old_xyz, ndims*sizeof(float), (char *) *xyz);
   }
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: Finished vertex-based communication.\n", zz->Proc);
@@ -195,7 +201,7 @@ int Zoltan_Scatter_Graph(
     *adjncy = (indextype *) ZOLTAN_MALLOC(num_edges*sizeof(indextype));
   
     if (ewgt_dim)
-      *adjwgt = (indextype *) ZOLTAN_MALLOC(ewgt_dim*num_edges*sizeof(indextype));
+      *adjwgt = (weighttype *) ZOLTAN_MALLOC(ewgt_dim*num_edges*sizeof(weighttype));
   
     /* Set up the communication plan for the edge data. */
     ptr = proclist2 = (int *) ZOLTAN_MALLOC(old_xadj[old_num_obj] * sizeof(int));
@@ -203,11 +209,11 @@ int Zoltan_Scatter_Graph(
       for (j=0; j<old_xadj[i]; j++)
         *ptr++ = proclist[i];
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
-      printf("[%1d] Debug: Allocated proclist of length %d for edges.\n", 
+      printf("[%1d] Debug: Allocated proclist of length " TPL_IDX_SPEC " for edges.\n", 
              zz->Proc, old_xadj[old_num_obj]);
     }
 
-    Zoltan_Comm_Create(&plan2, old_xadj[old_num_obj], proclist2, zz->Communicator, 
+    Zoltan_Comm_Create(&plan2, (int)old_xadj[old_num_obj], proclist2, zz->Communicator, 
                    TAG1, &nrecv);
   
     if (nrecv != num_edges){
@@ -234,7 +240,7 @@ int Zoltan_Scatter_Graph(
     /* Do the communication. */
     Zoltan_Comm_Do( plan2, TAG2, (char *) old_adjncy, sizeof(indextype), (char *) *adjncy);
     if (ewgt_dim){
-      Zoltan_Comm_Do( plan2, TAG3, (char *) old_adjwgt, ewgt_dim*sizeof(indextype), (char *) *adjwgt);
+      Zoltan_Comm_Do( plan2, TAG3, (char *) old_adjwgt, ewgt_dim*sizeof(weighttype), (char *) *adjwgt);
     }
   
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) 

@@ -65,6 +65,9 @@
 #include "AMGOperator.h"
 #include "MyIncompleteChol.h"
 
+#include <stdexcept>
+#include <Teuchos_TestForException.hpp>
+
 const int LOBPCG_CHOL = 1;
 const int LOBPCG_LIGHT = 2;
 const int LOBPCG_AK_CHOL = 3;
@@ -124,10 +127,8 @@ int main(int argc, char *argv[]) {
     if (myPid == i) {
       ifstream fin("control.driver");
       char buff[101];
-      if (!fin) {
-        cerr << "\n\n !! No input file 'control.driver' available !! \n\n";
-        exit(1);
-      }
+      TEST_FOR_EXCEPTION( !fin, std::runtime_error, "The input file 'control."
+			  "driver' could not be opened." );
       fin >> dimension; fin.getline(buff, 100);
       switch (dimension) {
         case 1:
@@ -251,7 +252,10 @@ int main(int argc, char *argv[]) {
       cerr << " * one block size for Jacobi-Davidson JDCG (13)" << endl;
       cerr << endl;
     }
-    exit(1);
+    // mfh 14 Jan 2011: Replaced "exit(1)" with "return 1" since this
+    // is the "main" routine.  If you move this part of the code out
+    // of main(), change the line below accordingly.
+    return 1;
   }  
 
   double highMem = currentSize();
@@ -311,14 +315,14 @@ int main(int argc, char *argv[]) {
     Epetra_MultiVector QQ(Map, 6);
     QQ.Random();
     int massNEV = eigMassSolver.solve(1, QQ, lTmp);
-    if (massNEV < 1) {
-      // Exit if the computation failed
-      cerr << endl;
-      cerr << " !! Error in the computation of smallest eigenvalue for the mass matrix !!\n";
-      cerr << " Output information from eigensolver = " << massNEV << endl;
-      cerr << endl;
-      exit(1);
-    }
+
+    // FIXME (mfh 14 Jan 2011) I'm not sure if std::runtime_error is
+    // the right exception to throw.  I'm just replacing exit(1) with
+    // an exception, as per Trilinos coding standards.
+    TEST_FOR_EXCEPTION( massNEV < 1, std::runtime_error, 
+			"Error in the computation of smallest eigenvalue for "
+			"the mass matrix. Output information from eigensolver"
+			" = " << massNEV );
     globalMassMin = lTmp[0];
     delete[] lTmp;
   }

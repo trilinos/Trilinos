@@ -1,6 +1,231 @@
 
 // File: index.xml
 
+// File: classTeuchos_1_1BadParameterEntryXMLConverterTypeException.xml
+%feature("docstring")
+Teuchos::BadParameterEntryXMLConverterTypeException "
+
+Thrown when a converter is being used to convert either and XML tag or
+ParameterEntry with an innappropriate type.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::BadParameterEntryXMLConverterTypeException::BadParameterEntryXMLConverterTypeException
+"Teuchos::BadParameterEntryXMLConverterTypeException::BadParameterEntryXMLConverterTypeException(const
+std::string &what_arg)
+
+Constructs a BadParmaeterEntryXMLConverterTypeException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1BadParameterListElementException.xml
+%feature("docstring") Teuchos::BadParameterListElementException "
+
+Thrown when an element inside a parameter list is bad.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::BadParameterListElementException::BadParameterListElementException
+"Teuchos::BadParameterListElementException::BadParameterListElementException(const
+std::string &what_arg)
+
+Constructs a BadParameterListElementException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1BadTagException.xml
+%feature("docstring") Teuchos::BadTagException "
+
+Thrown when xml tag is encountered that is either unrecognized or
+inappropriate for a given context.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")  Teuchos::BadTagException::BadTagException "Teuchos::BadTagException::BadTagException(const std::string &what_arg)
+
+Constructs a MissingValidatorDefinitionException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1BadValidatorXMLConverterException.xml
+%feature("docstring") Teuchos::BadValidatorXMLConverterException "
+
+Thrown when a bad validator xml converter is used.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::BadValidatorXMLConverterException::BadValidatorXMLConverterException
+"Teuchos::BadValidatorXMLConverterException::BadValidatorXMLConverterException(const
+std::string &what_arg)
+
+Constructs an BadValidatorXMLConverterException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1BadXMLParameterListRootElementException.xml
+%feature("docstring") Teuchos::BadXMLParameterListRootElementException
+"
+
+Thrown when the root xml tag for a parameter list is incorrect.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::BadXMLParameterListRootElementException::BadXMLParameterListRootElementException
+"Teuchos::BadXMLParameterListRootElementException::BadXMLParameterListRootElementException(const
+std::string &what_arg)
+
+Constructs a BadXMLParameterListRootElementException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1CantFindConditionConverterException.xml
+%feature("docstring") Teuchos::CantFindConditionConverterException "
+
+Thrown when an appropriate Condition Converter can't be found.
+
+C++ includes: Teuchos_XMLConditionExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::CantFindConditionConverterException::CantFindConditionConverterException
+"Teuchos::CantFindConditionConverterException::CantFindConditionConverterException(const
+std::string &what_arg)
+
+Constructs an CantFindConditionConverterException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1CantFindDependencyConverterException.xml
+%feature("docstring") Teuchos::CantFindDependencyConverterException "
+
+Thrown when an appropriate Dependency Converter can't be found.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::CantFindDependencyConverterException::CantFindDependencyConverterException
+"Teuchos::CantFindDependencyConverterException::CantFindDependencyConverterException(const
+std::string &what_arg)
+
+Constructs an CantFindDependencyConverterException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1CantFindParameterEntryConverterException.xml
+%feature("docstring")
+Teuchos::CantFindParameterEntryConverterException "
+
+Thrown when an appropriate ParameterEntryXMLConverter can't be found.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::CantFindParameterEntryConverterException::CantFindParameterEntryConverterException
+"Teuchos::CantFindParameterEntryConverterException::CantFindParameterEntryConverterException(const
+std::string &what_arg)
+
+Constructs an CantFindParameterEntryConverterException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1CantFindValidatorConverterException.xml
+%feature("docstring") Teuchos::CantFindValidatorConverterException "
+
+Thrown when the ValidatorXMLConverterDB can't find an appropriate
+converter.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::CantFindValidatorConverterException::CantFindValidatorConverterException
+"Teuchos::CantFindValidatorConverterException::CantFindValidatorConverterException(const
+std::string &what_arg)
+
+Constructs a CantFindValidatorConverterException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1DuplicateParameterIDsException.xml
+%feature("docstring") Teuchos::DuplicateParameterIDsException "
+
+Thrown when two parameters in an XML file have the same ID.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::DuplicateParameterIDsException::DuplicateParameterIDsException
+"Teuchos::DuplicateParameterIDsException::DuplicateParameterIDsException(const
+std::string &what_arg)
+
+Constructs an DuplicateParameterIDsException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1DuplicateValidatorIDsException.xml
+%feature("docstring") Teuchos::DuplicateValidatorIDsException "
+
+Constructs a CantFindParameterEntryConverterException.
+
+Thrown when two validators in an XML file have the same ID.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::DuplicateValidatorIDsException::DuplicateValidatorIDsException
+"Teuchos::DuplicateValidatorIDsException::DuplicateValidatorIDsException(const
+std::string &what_arg)
+
+Constructs an DuplicateValidatorIDsException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
 // File: classTeuchos_1_1EmptyXMLError.xml
 %feature("docstring") Teuchos::EmptyXMLError "
 
@@ -68,6 +293,288 @@ Teuchos::Exceptions::InvalidParameterValue::InvalidParameterValue "Teuchos::Exce
 std::string &what_arg) ";
 
 
+// File: classTeuchos_1_1MissingConditionTagException.xml
+%feature("docstring") Teuchos::MissingConditionTagException "
+
+Thrown when no condtion tag is found when converting a
+ConditionVisualDependency from XML.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingConditionTagException::MissingConditionTagException "Teuchos::MissingConditionTagException::MissingConditionTagException(const
+std::string &what_arg)
+
+Constructs an MissingConditionTagException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1MissingDependeeException.xml
+%feature("docstring") Teuchos::MissingDependeeException "
+
+Thrown when no dependes of a dependency can't be found when converting
+the dependency to or from XML.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingDependeeException::MissingDependeeException "Teuchos::MissingDependeeException::MissingDependeeException(const
+std::string &what_arg)
+
+Constructs an MissingDependeeException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1MissingDependeesException.xml
+%feature("docstring") Teuchos::MissingDependeesException "
+
+Thrown when no dependess of a dependency are specified when converting
+the dependency from XML.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingDependeesException::MissingDependeesException "Teuchos::MissingDependeesException::MissingDependeesException(const
+std::string &what_arg)
+
+Constructs an MissingDependeesException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1MissingDependentException.xml
+%feature("docstring") Teuchos::MissingDependentException "
+
+Thrown when a dependent of a dependency cant be found when converting
+the dependency to or from XML.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingDependentException::MissingDependentException "Teuchos::MissingDependentException::MissingDependentException(const
+std::string &what_arg)
+
+Constructs an MissingDependentException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1MissingDependentsException.xml
+%feature("docstring") Teuchos::MissingDependentsException "
+
+Thrown when no dependents of a dependency are specified when
+converting the dependency from XML.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingDependentsException::MissingDependentsException "Teuchos::MissingDependentsException::MissingDependentsException(const
+std::string &what_arg)
+
+Constructs an MissingDependentsException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1MissingParameterEntryDefinitionException.xml
+%feature("docstring")
+Teuchos::MissingParameterEntryDefinitionException "
+
+Thrown when a referenced ParameterEntry can't be found.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingParameterEntryDefinitionException::MissingParameterEntryDefinitionException
+"Teuchos::MissingParameterEntryDefinitionException::MissingParameterEntryDefinitionException(const
+std::string &what_arg)
+
+Constructs a MissingParameterEntryDefinitionException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1MissingRangesAndValidatorsTagException.xml
+%feature("docstring") Teuchos::MissingRangesAndValidatorsTagException
+"
+
+Thrown when the rangesAndValidators tag for the
+RangeValidatorDepencyConverter can't be found.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingRangesAndValidatorsTagException::MissingRangesAndValidatorsTagException
+"Teuchos::MissingRangesAndValidatorsTagException::MissingRangesAndValidatorsTagException(const
+std::string &what_arg)
+
+Constructs an MissingRangesAndValidatorsTagException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1MissingValidatorDefinitionException.xml
+%feature("docstring") Teuchos::MissingValidatorDefinitionException "
+
+Thrown when a referenced validator can't be found.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingValidatorDefinitionException::MissingValidatorDefinitionException
+"Teuchos::MissingValidatorDefinitionException::MissingValidatorDefinitionException(const
+std::string &what_arg)
+
+Constructs a MissingValidatorDefinitionException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1MissingValidatorException.xml
+%feature("docstring") Teuchos::MissingValidatorException "
+
+Thrown when converting a dependency that has validaotrs to and from
+XML. This excetpion indicates that a specified validator could not be
+found.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingValidatorException::MissingValidatorException "Teuchos::MissingValidatorException::MissingValidatorException(const
+std::string &what_arg)
+
+Constructs an MissingValidatorException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1MissingValuesAndValidatorsTagException.xml
+%feature("docstring") Teuchos::MissingValuesAndValidatorsTagException
+"
+
+Thrown when converting a StrinvValidatorDependcny from XML and no
+valuesAndValidators tag is found.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingValuesAndValidatorsTagException::MissingValuesAndValidatorsTagException
+"Teuchos::MissingValuesAndValidatorsTagException::MissingValuesAndValidatorsTagException(const
+std::string &what_arg)
+
+Constructs an MissingValuesAndValidatorsTagException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1MissingValuesTagException.xml
+%feature("docstring") Teuchos::MissingValuesTagException "
+
+Thrown when a StringConditon is missing it's Value tag.
+
+C++ includes: Teuchos_XMLConditionExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::MissingValuesTagException::MissingValuesTagException "Teuchos::MissingValuesTagException::MissingValuesTagException(const
+std::string &what_arg)
+
+Constructs an MissingValuesTagException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1NoNameAttributeExecption.xml
+%feature("docstring") Teuchos::NoNameAttributeExecption "
+
+Thrown when a parameter entry tag is missing it's name attribute.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::NoNameAttributeExecption::NoNameAttributeExecption "Teuchos::NoNameAttributeExecption::NoNameAttributeExecption(const
+std::string &what_arg)
+
+Constructs a NoNameAttributeExecption.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1NoTypeAttributeExecption.xml
+%feature("docstring") Teuchos::NoTypeAttributeExecption "
+
+Thrown when a parameter entry tag is missing it's type attribute.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::NoTypeAttributeExecption::NoTypeAttributeExecption "Teuchos::NoTypeAttributeExecption::NoTypeAttributeExecption(const
+std::string &what_arg)
+
+Constructs a NoTypeAttributeExecption.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
+// File: classTeuchos_1_1NoValueAttributeExecption.xml
+%feature("docstring") Teuchos::NoValueAttributeExecption "
+
+Thrown when a parameter entry tag is missing it's value attribute.
+
+C++ includes: Teuchos_XMLParameterListExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::NoValueAttributeExecption::NoValueAttributeExecption "Teuchos::NoValueAttributeExecption::NoValueAttributeExecption(const
+std::string &what_arg)
+
+Constructs a NoValueAttributeExecption.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
 // File: classTeuchos_1_1ParameterList.xml
 %feature("docstring") Teuchos::ParameterList "
 
@@ -88,7 +595,15 @@ C++ includes: Teuchos_ParameterList.hpp ";
 
 /*  Public types  */
 
+/*
+
+*/
+
 /*  Constructors/Destructor.  */
+
+/*
+
+*/
 
 %feature("docstring")  Teuchos::ParameterList::ParameterList "Teuchos::ParameterList::ParameterList()
 
@@ -107,6 +622,10 @@ Copy Constructor. ";
 Deconstructor. ";
 
 /*  Set Functions  */
+
+/*
+
+*/
 
 %feature("docstring")  Teuchos::ParameterList::setName "ParameterList
 & Teuchos::ParameterList::setName(const std::string &name)
@@ -195,6 +714,10 @@ from XML. KL 7 August 2004 ";
 
 /*  Get Functions  */
 
+/*
+
+*/
+
 %feature("docstring")  Teuchos::ParameterList::get "T &
 Teuchos::ParameterList::get(const std::string &name, T def_value)
 
@@ -231,7 +754,7 @@ Teuchos::ParameterList::get(const std::string &name)
 Retrieves parameter name of type T from a list, an
 Exceptions::InvalidParameter std::exception is thrown if this
 parameter doesn't exist (  Exceptions::InvalidParameterName) or is the
-wrong type (  Exceptions::InvalidParameterName).
+wrong type (  Exceptions::InvalidParameterType).
 
 The syntax for calling this method is:  list.template get<int>(
 \"Iters\" ) ";
@@ -242,7 +765,7 @@ Teuchos::ParameterList::get(const std::string &name) const
 Retrieves parameter name of type T from a constant list, an
 Exceptions::InvalidParameter std::exception is thrown if this
 parameter doesn't exist (  Exceptions::InvalidParameterName) or is the
-wrong type (  Exceptions::InvalidParameterName).
+wrong type (  Exceptions::InvalidParameterType).
 
 The syntax for calling this method is:  list.template get<int>(
 \"Iters\" ) ";
@@ -296,7 +819,24 @@ ParameterEntry * Teuchos::ParameterList::getEntryPtr(const std::string
 Retrieves the pointer for a constant entry with the name name if it
 exists. ";
 
+%feature("docstring")  Teuchos::ParameterList::getEntryRCP "RCP<
+ParameterEntry > Teuchos::ParameterList::getEntryRCP(const std::string
+&name)
+
+Retrieves the RCP for an entry with the name name if it exists. ";
+
+%feature("docstring")  Teuchos::ParameterList::getEntryRCP "RCP<
+const ParameterEntry > Teuchos::ParameterList::getEntryRCP(const
+std::string &name) const
+
+Retrieves the RCP for a constant entry with the name name if it
+exists. ";
+
 /*  Parameter removal functions  */
+
+/*
+
+*/
 
 %feature("docstring")  Teuchos::ParameterList::remove "bool
 Teuchos::ParameterList::remove(std::string const &name, bool
@@ -318,6 +858,10 @@ throwIfExists==false). ";
 
 /*  Sublist Functions  */
 
+/*
+
+*/
+
 %feature("docstring")  Teuchos::ParameterList::sublist "ParameterList
 & Teuchos::ParameterList::sublist(const std::string &name, bool
 mustAlreadyExist=false, const std::string &docString=\"\")
@@ -335,6 +879,10 @@ not already exist or the name exists but is not a sublist, an
 std::exception is thrown. ";
 
 /*  Attribute Functions  */
+
+/*
+
+*/
 
 %feature("docstring")  Teuchos::ParameterList::name "const
 std::string & Teuchos::ParameterList::name() const
@@ -385,6 +933,18 @@ method. ";
 
 /*  I/O Functions  */
 
+/*
+
+*/
+
+%feature("docstring")  Teuchos::ParameterList::print "void
+Teuchos::ParameterList::print() const
+
+Print function to use in debugging in a debugger.
+
+Prints to *VerboseObjectBasegetDefaultOStream() so it will print well
+in parallel. ";
+
 %feature("docstring")  Teuchos::ParameterList::print "std::ostream &
 Teuchos::ParameterList::print(std::ostream &os, const PrintOptions
 &printOptions) const
@@ -412,6 +972,10 @@ parameters in this list. ";
 
 /*  Read-only access to the iterator  */
 
+/*
+
+*/
+
 %feature("docstring")  Teuchos::ParameterList::begin "ParameterList::ConstIterator Teuchos::ParameterList::begin() const
 
 An iterator pointing to the first entry. ";
@@ -431,6 +995,10 @@ std::string & Teuchos::ParameterList::name(ConstIterator i) const
 Access to name (i.e., returns i->first). ";
 
 /*  Validation Functions  */
+
+/*
+
+*/
 
 %feature("docstring")  Teuchos::ParameterList::validateParameters "void Teuchos::ParameterList::validateParameters(ParameterList const
 &validParamList, int const depth=1000, EValidateUsed const
@@ -519,47 +1087,6 @@ A breath-first search is performed to validate all of the parameters
 in one sublist before moving into nested subslist. ";
 
 
-// File: classTeuchos_1_1ParameterList_1_1PrintOptions.xml
-%feature("docstring") Teuchos::ParameterList::PrintOptions "
-
-Utility class for setting and passing in print options.
-
-C++ includes: Teuchos_ParameterList.hpp ";
-
-%feature("docstring")
-Teuchos::ParameterList::PrintOptions::PrintOptions "Teuchos::ParameterList::PrintOptions::PrintOptions() ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::indent "PrintOptions& Teuchos::ParameterList::PrintOptions::indent(int
-_indent) ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showTypes
-"PrintOptions& Teuchos::ParameterList::PrintOptions::showTypes(bool
-_showTypes) ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showFlags
-"PrintOptions& Teuchos::ParameterList::PrintOptions::showFlags(bool
-_showFlags) ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showDoc "PrintOptions& Teuchos::ParameterList::PrintOptions::showDoc(bool
-_showDoc) ";
-
-%feature("docstring")
-Teuchos::ParameterList::PrintOptions::incrIndent "PrintOptions&
-Teuchos::ParameterList::PrintOptions::incrIndent(int indents) ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::indent "int Teuchos::ParameterList::PrintOptions::indent() const ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showTypes
-"bool Teuchos::ParameterList::PrintOptions::showTypes() const ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showFlags
-"bool Teuchos::ParameterList::PrintOptions::showFlags() const ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showDoc "bool Teuchos::ParameterList::PrintOptions::showDoc() const ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::copy "PrintOptions Teuchos::ParameterList::PrintOptions::copy() const ";
-
-
 // File: classTeuchos_1_1ParameterListAcceptor.xml
 %feature("docstring") Teuchos::ParameterListAcceptor "
 
@@ -570,6 +1097,10 @@ ToDo: Finish Documentation!
 C++ includes: Teuchos_ParameterListAcceptor.hpp ";
 
 /*  Pure virtual functions that must be overridden in subclasses  */
+
+/*
+
+*/
 
 %feature("docstring")
 Teuchos::ParameterListAcceptor::setParameterList "virtual void
@@ -626,6 +1157,10 @@ Postconditions:  this-> getParameterList(). get() == NULL ";
 
 /*  Virtual functions with default implementation  */
 
+/*
+
+*/
+
 %feature("docstring")
 Teuchos::ParameterListAcceptor::getParameterList "Teuchos::RCP< const
 Teuchos::ParameterList >
@@ -665,7 +1200,9 @@ C++ includes: Teuchos_ParameterListAcceptorDefaultBase.hpp ";
 
 /*  Overridden from ParameterListAcceptor  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")
 Teuchos::ParameterListAcceptorDefaultBase::getNonconstParameterList "RCP< ParameterList >
@@ -684,7 +1221,9 @@ Teuchos::ParameterListAcceptorDefaultBase::getParameterList() const ";
 
 /*  Protected accessors to actual parameter list object.  */
 
-/* */
+/*
+
+*/
 
 
 // File: classTeuchos_1_1ParameterListNonAcceptor.xml
@@ -700,7 +1239,9 @@ C++ includes: Teuchos_ParameterListNonAcceptor.hpp ";
 
 /*  Overridden from ParameterListAcceptor  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")
 Teuchos::ParameterListNonAcceptor::setParameterList "void
@@ -717,34 +1258,45 @@ Teuchos::ParameterListNonAcceptor::getValidParameters() const
 Returns a non-null but empty parameter list. ";
 
 
-// File: structTeuchos_1_1ScalarTraits.xml
-%feature("docstring") Teuchos::ScalarTraits "
+// File: classTeuchos_1_1ParameterList_1_1PrintOptions.xml
+%feature("docstring") Teuchos::ParameterList::PrintOptions "
 
-This structure defines some basic traits for a scalar field type.
+Utility class for setting and passing in print options.
 
-Scalar traits are an essential part of templated codes. This structure
-offers the basic traits of the templated scalar type, like defining
-zero and one, and basic functions on the templated scalar type, like
-performing a square root.
+C++ includes: Teuchos_ParameterList.hpp ";
 
-The functions in the templated base unspecialized struct are designed
-not to compile (giving a nice compile-time error message) and
-therefore specializations must be written for Scalar types actually
-used.
+%feature("docstring")
+Teuchos::ParameterList::PrintOptions::PrintOptions "Teuchos::ParameterList::PrintOptions::PrintOptions() ";
 
-The default defined specializations are provided for int, float, and
-double.
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::indent "PrintOptions& Teuchos::ParameterList::PrintOptions::indent(int
+_indent) ";
 
-ScalarTraits can be used with the Arbitrary Precision Library (
-http://crd.lbl.gov/~dhbailey/mpdist/ ) by configuring Teuchos with
---enable-teuchos-arprec and giving the appropriate paths to ARPREC.
-Then ScalarTraits has the specialization: mp_real.
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showTypes
+"PrintOptions& Teuchos::ParameterList::PrintOptions::showTypes(bool
+_showTypes) ";
 
-If Teuchos is configured with --enable-teuchos-stdcomplex then
-ScalarTraits also has a parital specialization for all std::complex
-numbers of the form std::complex<T>.
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showFlags
+"PrintOptions& Teuchos::ParameterList::PrintOptions::showFlags(bool
+_showFlags) ";
 
-C++ includes: Teuchos_ScalarTraits.hpp ";
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showDoc "PrintOptions& Teuchos::ParameterList::PrintOptions::showDoc(bool
+_showDoc) ";
+
+%feature("docstring")
+Teuchos::ParameterList::PrintOptions::incrIndent "PrintOptions&
+Teuchos::ParameterList::PrintOptions::incrIndent(int indents) ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::indent "int Teuchos::ParameterList::PrintOptions::indent() const ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showTypes
+"bool Teuchos::ParameterList::PrintOptions::showTypes() const ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showFlags
+"bool Teuchos::ParameterList::PrintOptions::showFlags() const ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showDoc "bool Teuchos::ParameterList::PrintOptions::showDoc() const ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::copy "PrintOptions Teuchos::ParameterList::PrintOptions::copy() const ";
 
 
 // File: structTeuchos_1_1ScalarTraits_3_01char_01_4.xml
@@ -777,6 +1329,10 @@ C++ includes: Teuchos_ScalarTraits.hpp ";
 
 // File: structTeuchos_1_1ScalarTraits_3_01unsigned_01int_01_4.xml
 %feature("docstring") Teuchos::ScalarTraits< unsigned int > " ";
+
+
+// File: structTeuchos_1_1ScalarTraits_3_01unsigned_01short_01int_01_4.xml
+%feature("docstring") Teuchos::ScalarTraits< unsigned short int > " ";
 
 
 // File: classTeuchos_1_1StringInputSource.xml
@@ -834,8 +1390,9 @@ Stops the timer. ";
 %feature("docstring")  Teuchos::Time::totalElapsedTime "double
 Teuchos::Time::totalElapsedTime(bool readCurrentTime=false) const
 
-Returns the total time accumulated by this timer. This should be
-called only when the clock is stopped.. ";
+Returns the total time (in seconds) accumulated by this timer.
+
+This should be called only when the clock is stopped. ";
 
 %feature("docstring")  Teuchos::Time::reset "void
 Teuchos::Time::reset()
@@ -868,12 +1425,51 @@ Teuchos::Time::numCalls() const
 Return the number of times this timer has been called. ";
 
 
+// File: classTeuchos_1_1TooManyDependeesException.xml
+%feature("docstring") Teuchos::TooManyDependeesException "
+
+Thrown when a Dependency has too many dependees specified in its XML.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::TooManyDependeesException::TooManyDependeesException "Teuchos::TooManyDependeesException::TooManyDependeesException(const
+std::string &what_arg)
+
+Constructs an TooManyDependeesException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
 // File: classTeuchos_1_1TypeNameTraits_3_01ParameterList_01_4.xml
 %feature("docstring") Teuchos::TypeNameTraits< ParameterList > "
 
 Traits specialization.
 
 C++ includes: Teuchos_ParameterList.hpp ";
+
+
+// File: classTeuchos_1_1ValuesTagMissingException.xml
+%feature("docstring") Teuchos::ValuesTagMissingException "
+
+Thrown when a StringVisualDependency is being converted from XML and
+no Values tag is found.
+
+C++ includes: Teuchos_XMLDependencyExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::ValuesTagMissingException::ValuesTagMissingException "Teuchos::ValuesTagMissingException::ValuesTagMissingException(const
+std::string &what_arg)
+
+Constructs an ValuesTagMissingException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
 
 
 // File: classTeuchos_1_1XMLInputSource.xml
@@ -951,15 +1547,19 @@ C++ includes: Teuchos_XMLObject.hpp ";
 
 /*  Constructors  */
 
+/*
+
+*/
+
 %feature("docstring")  Teuchos::XMLObject::XMLObject "Teuchos::XMLObject::XMLObject()
 
 Empty constructor. ";
 
-%feature("docstring")  Teuchos::XMLObject::XMLObject "XMLObject::XMLObject(const std::string &tag)
+%feature("docstring")  Teuchos::XMLObject::XMLObject "Teuchos::XMLObject::XMLObject(const std::string &tag)
 
 Construct using a node labeled by tag. ";
 
-%feature("docstring")  Teuchos::XMLObject::XMLObject "XMLObject::XMLObject(XMLObjectImplem *ptr)
+%feature("docstring")  Teuchos::XMLObject::XMLObject "Teuchos::XMLObject::XMLObject(XMLObjectImplem *ptr)
 
 Construct with a pointer to the low-level representation.
 
@@ -968,31 +1568,41 @@ XMLObjectImplem* return value of ExceptionBase::toXML(). ";
 
 /*  Copy methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Teuchos::XMLObject::deepCopy "XMLObject
-XMLObject::deepCopy() const
+Teuchos::XMLObject::deepCopy() const
 
 Make a deep copy of this object. ";
 
 /*  Data Access methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Teuchos::XMLObject::getTag "const std::string
-& XMLObject::getTag() const
+& Teuchos::XMLObject::getTag() const
 
 Return the tag of the current node. ";
 
 %feature("docstring")  Teuchos::XMLObject::hasAttribute "bool
-XMLObject::hasAttribute(const std::string &name) const
+Teuchos::XMLObject::hasAttribute(const std::string &name) const
 
 Find out if the current node has an attribute of the specified name.
 ";
 
 %feature("docstring")  Teuchos::XMLObject::getAttribute "const
-std::string & XMLObject::getAttribute(const std::string &name) const
+std::string & Teuchos::XMLObject::getAttribute(const std::string
+&name) const
 
 Return the value of the attribute with the specified name. ";
 
-%feature("docstring")  Teuchos::XMLObject::getRequired "const
-std::string & XMLObject::getRequired(const std::string &name) const
+%feature("docstring")  Teuchos::XMLObject::getRequired "std::string
+Teuchos::XMLObject::getRequired< std::string >(const std::string
+&name) const
 
 Get an attribute, throwing an std::exception if it is not found. ";
 
@@ -1006,60 +1616,72 @@ Teuchos::XMLObject::getRequiredInt(const std::string &name) const
 
 Get a required attribute, returning it as an int. ";
 
+%feature("docstring")  Teuchos::XMLObject::getRequired "T
+Teuchos::XMLObject::getRequired(const std::string &name) const
+
+Get a required attribute, returning it as T. ";
+
 %feature("docstring")  Teuchos::XMLObject::getRequiredBool "bool
-XMLObject::getRequiredBool(const std::string &name) const
+Teuchos::XMLObject::getRequiredBool(const std::string &name) const
 
 Get a required attribute, returning it as a bool. ";
 
-%feature("docstring")  Teuchos::XMLObject::getWithDefault "std::string XMLObject::getWithDefault(const std::string &name, const
-std::string &defaultValue) const
+%feature("docstring")  Teuchos::XMLObject::getWithDefault "T
+Teuchos::XMLObject::getWithDefault(const std::string &name, const T
+&defaultValue) const
 
 Get an attribute, assigning a default value if the requested attribute
 does not exist. ";
 
 %feature("docstring")  Teuchos::XMLObject::numChildren "int
-XMLObject::numChildren() const
+Teuchos::XMLObject::numChildren() const
 
 Return the number of child nodes owned by this node. ";
 
 %feature("docstring")  Teuchos::XMLObject::getChild "const XMLObject
-& XMLObject::getChild(int i) const
+& Teuchos::XMLObject::getChild(int i) const
 
 Return the i-th child node. ";
 
+%feature("docstring")  Teuchos::XMLObject::findFirstChild "int
+Teuchos::XMLObject::findFirstChild(std::string tagName) const
+
+returns the index of the first child found with the given tag name
+Returns -1 if no child is found. ";
+
 %feature("docstring")  Teuchos::XMLObject::numContentLines "int
-XMLObject::numContentLines() const
+Teuchos::XMLObject::numContentLines() const
 
 Return the number of lines of character content stored in this node.
 ";
 
 %feature("docstring")  Teuchos::XMLObject::getContentLine "const
-std::string & XMLObject::getContentLine(int i) const
+std::string & Teuchos::XMLObject::getContentLine(int i) const
 
 Return the i-th line of character content stored in this node. ";
 
 %feature("docstring")  Teuchos::XMLObject::toString "std::string
-XMLObject::toString() const
+Teuchos::XMLObject::toString() const
 
 Represent this node and its children as a std::string. ";
 
 %feature("docstring")  Teuchos::XMLObject::print "void
-XMLObject::print(std::ostream &os, int indent) const
+Teuchos::XMLObject::print(std::ostream &os, int indent) const
 
 Print this node and its children to stream with the given indentation.
 ";
 
 %feature("docstring")  Teuchos::XMLObject::header "std::string
-XMLObject::header() const
+Teuchos::XMLObject::header() const
 
 Write the header for this object to a std::string. ";
 
-%feature("docstring")  Teuchos::XMLObject::terminatedHeader "std::string XMLObject::terminatedHeader() const
+%feature("docstring")  Teuchos::XMLObject::terminatedHeader "std::string Teuchos::XMLObject::terminatedHeader() const
 
 Write the header for this object to a std::string. ";
 
 %feature("docstring")  Teuchos::XMLObject::footer "std::string
-XMLObject::footer() const
+Teuchos::XMLObject::footer() const
 
 Write the footer for this object to a std::string. ";
 
@@ -1069,17 +1691,15 @@ Teuchos::XMLObject::isEmpty() const
 Find out if a node is empty. ";
 
 %feature("docstring")  Teuchos::XMLObject::checkTag "void
-XMLObject::checkTag(const std::string &expected) const
+Teuchos::XMLObject::checkTag(const std::string &expected) const
 
 Check that a tag is equal to an expected std::string. ";
 
 /*  Tree-Assembly methods  */
 
-%feature("docstring")  Teuchos::XMLObject::addAttribute "void
-XMLObject::addAttribute(const std::string &name, const std::string
-&value)
+/*
 
-Add an attribute to the current node's atribute list. ";
+*/
 
 %feature("docstring")  Teuchos::XMLObject::addDouble "void
 Teuchos::XMLObject::addDouble(const std::string &name, double val)
@@ -1096,15 +1716,24 @@ Teuchos::XMLObject::addBool(const std::string &name, bool val)
 
 Add a bool as an attribute. ";
 
+%feature("docstring")  Teuchos::XMLObject::addAttribute "void
+Teuchos::XMLObject::addAttribute(const std::string &name, T value)
+
+Lookup whether or not Doubles are allowed. ";
+
 %feature("docstring")  Teuchos::XMLObject::addChild "void
-XMLObject::addChild(const XMLObject &child)
+Teuchos::XMLObject::addChild(const XMLObject &child)
 
 Add a child node to the node. ";
 
 %feature("docstring")  Teuchos::XMLObject::addContent "void
-XMLObject::addContent(const std::string &contentLine)
+Teuchos::XMLObject::addContent(const std::string &contentLine)
 
 Add a line of character content. ";
+
+%feature("docstring")  Teuchos::XMLObject::addAttribute "void
+Teuchos::XMLObject::addAttribute(const std::string &name, const
+std::string &value) ";
 
 
 // File: classTeuchos_1_1XMLObjectImplem.xml
@@ -1170,6 +1799,11 @@ Teuchos::XMLObjectImplem::numContentLines() const
 
 Get the number of content lines. ";
 
+%feature("docstring")  Teuchos::XMLObjectImplem::getAttributes "const
+Map& Teuchos::XMLObjectImplem::getAttributes() const
+
+Get all attributes. ";
+
 %feature("docstring")  Teuchos::XMLObjectImplem::getContentLine "const std::string& Teuchos::XMLObjectImplem::getContentLine(int i)
 const
 
@@ -1193,7 +1827,7 @@ Write the header. ";
 %feature("docstring")  Teuchos::XMLObjectImplem::terminatedHeader "std::string XMLObjectImplem::terminatedHeader(bool strictXML=false)
 const
 
-Write the header terminated as <Header>. ";
+Write the header terminated as <Header> ";
 
 %feature("docstring")  Teuchos::XMLObjectImplem::footer "std::string
 Teuchos::XMLObjectImplem::footer() const
@@ -1208,16 +1842,32 @@ Writes an XML object to a parameter list.
 
 C++ includes: Teuchos_XMLParameterListReader.hpp ";
 
+/*  Public Types  */
+
+/*
+
+*/
+
 /*  Constructors  */
 
-%feature("docstring")
-Teuchos::XMLParameterListReader::XMLParameterListReader "XMLParameterListReader::XMLParameterListReader()
+/*
 
-Construct a reader ";
+*/
+
+%feature("docstring")
+Teuchos::XMLParameterListReader::XMLParameterListReader "Teuchos::XMLParameterListReader::XMLParameterListReader() ";
+
+%feature("docstring")
+Teuchos::XMLParameterListReader::toParameterList "RCP< ParameterList
+> Teuchos::XMLParameterListReader::toParameterList(const XMLObject
+&xml, RCP< DependencySheet > depSheet) const
+
+Write the given XML object to a parameter list ";
 
 %feature("docstring")
 Teuchos::XMLParameterListReader::toParameterList "ParameterList
-XMLParameterListReader::toParameterList(const XMLObject &xml) const
+Teuchos::XMLParameterListReader::toParameterList(const XMLObject &xml)
+const
 
 Write the given XML object to a parameter list ";
 
@@ -1229,14 +1879,25 @@ Writes a ParameterList to an XML object.
 
 C++ includes: Teuchos_XMLParameterListWriter.hpp ";
 
+/*  Public Types  */
+
+/*
+
+*/
+
 /*  Constructors  */
 
+/*
+
+*/
+
 %feature("docstring")
-Teuchos::XMLParameterListWriter::XMLParameterListWriter "XMLParameterListWriter::XMLParameterListWriter()
+Teuchos::XMLParameterListWriter::XMLParameterListWriter "Teuchos::XMLParameterListWriter::XMLParameterListWriter()
 
 Construct a writer ";
 
-%feature("docstring")  Teuchos::XMLParameterListWriter::toXML "XMLObject XMLParameterListWriter::toXML(const ParameterList &p) const
+%feature("docstring")  Teuchos::XMLParameterListWriter::toXML "XMLObject Teuchos::XMLParameterListWriter::toXML(const ParameterList
+&p, RCP< const DependencySheet > depSheet=null) const
 
 Write the given list to an XML object ";
 
@@ -1270,22 +1931,6 @@ Consume the XMLInputStream to build an XMLObject. ";
 
 
 // File: namespaceTeuchos.xml
-%feature("docstring")  Teuchos::Exceptions::haveSameValues "bool
-Teuchos::haveSameValues(const ParameterList &list1, const
-ParameterList &list2) ";
-
-%feature("docstring")  Teuchos::Exceptions::parameterList "RCP<ParameterList> Teuchos::parameterList()
-
-Nonmember constructor. ";
-
-%feature("docstring")  Teuchos::Exceptions::parameterList "RCP<ParameterList> Teuchos::parameterList(const std::string &name)
-
-Nonmember constructor. ";
-
-%feature("docstring")  Teuchos::Exceptions::parameterList "RCP<ParameterList> Teuchos::parameterList(const ParameterList &source)
-
-Nonmember constructor. ";
-
 %feature("docstring")  Teuchos::Exceptions::printValidParameters "void Teuchos::printValidParameters(const ParameterListAcceptor
 &paramListAccpetor, std::ostream &out, const bool showDoc=true)
 
@@ -1296,95 +1941,93 @@ Pretty print the valid parameters from a ParameterListAccpetor object.
 Teuchos::Exceptions::throwScalarTraitsNanInfError "void
 Teuchos::throwScalarTraitsNanInfError(const std::string &errMsg) ";
 
+%feature("docstring")  Teuchos::Exceptions::generic_real_isnaninf "bool Teuchos::generic_real_isnaninf(const Scalar &x) ";
+
+%feature("docstring")  Teuchos::Exceptions::XMLObject::getRequired<
+std::string > " std::string Teuchos::XMLObject::getRequired<
+std::string >(const std::string &name) const ";
+
+%feature("docstring")  Teuchos::Exceptions::XMLObject::addAttribute<
+const std::string & > " void Teuchos::XMLObject::addAttribute< const
+std::string & >(const std::string &name, const std::string &value) ";
+
 %feature("docstring")
 Teuchos::Exceptions::updateParametersFromXmlFile "void
 Teuchos::updateParametersFromXmlFile(const std::string &xmlFileName,
-Teuchos::ParameterList *paramList)
+ParameterList *paramList) ";
 
-Reads XML parameters from a file and updates those already in the
-given parameter list.
+%feature("docstring")
+Teuchos::Exceptions::updateParametersFromXmlFileAndBroadcast "void
+Teuchos::updateParametersFromXmlFileAndBroadcast(const std::string
+&xmlFileName, ParameterList *paramList, const Comm< int > &comm) ";
 
-Parameters:
------------
+%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlFile "RCP<ParameterList> Teuchos::getParametersFromXmlFile(const std::string
+&xmlFileName) ";
 
-xmlFileName:  [in] The file name containing XML parameter list
-specification.
-
-paramList:  [in/out] On input, *paramList may be empty or contain some
-parameters and sublists. On output, parameters and sublist from the
-file xmlFileName will be set or overide those in *paramList. ";
-
-%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlFile "RCP< ParameterList > Teuchos::getParametersFromXmlFile(const
-std::string &xmlFileName)
-
-Reads XML parameters from a file and return them in a new parameter
-list.
-
-Parameters:
------------
-
-xmlFileName:  [in] The file name containing XML parameter list
-specification. ";
+%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlFile "RCP<ParameterList> Teuchos::getParametersFromXmlFile(const std::string
+&xmlFileName, RCP< DependencySheet > depSheet) ";
 
 %feature("docstring")
 Teuchos::Exceptions::updateParametersFromXmlString "void
 Teuchos::updateParametersFromXmlString(const std::string &xmlStr,
-Teuchos::ParameterList *paramList)
-
-Reads XML parameters from a std::string and updates those already in
-the given parameter list.
-
-Parameters:
------------
-
-xmlStr:  [in] String containing XML parameter list specification.
-
-paramList:  [in/out] On input, *paramList may be empty or contain some
-parameters and sublists. On output, parameters and sublist from the
-file xmlStr will be set or overide those in *paramList. ";
+ParameterList *paramList) ";
 
 %feature("docstring")  Teuchos::Exceptions::getParametersFromXmlString
-"RCP< ParameterList > Teuchos::getParametersFromXmlString(const
-std::string &xmlStr)
+"RCP<ParameterList> Teuchos::getParametersFromXmlString(const
+std::string &xmlStr) ";
 
-Reads XML parameters from a std::string and return them in a new
-parameter list.
-
-Parameters:
------------
-
-xmlStr:  [in] String containing XML parameter list specification. ";
+%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlString
+"RCP<ParameterList> Teuchos::getParametersFromXmlString(const
+std::string &xmlStr, RCP< DependencySheet > depSheet) ";
 
 %feature("docstring")
 Teuchos::Exceptions::writeParameterListToXmlOStream "void
-Teuchos::writeParameterListToXmlOStream(const Teuchos::ParameterList
-&paramList, std::ostream &xmlOut)
-
-Write parameters and sublists in XML format to an std::ostream.
-
-Parameters:
------------
-
-paramList:  [in] Contains the parameters and sublists that will be
-written to file.
-
-xmlOut:  [in] The stream that will get the XML output. ";
+Teuchos::writeParameterListToXmlOStream(const ParameterList
+&paramList, std::ostream &xmlOut, RCP< const DependencySheet >
+depSheet) ";
 
 %feature("docstring")
 Teuchos::Exceptions::writeParameterListToXmlFile "void
-Teuchos::writeParameterListToXmlFile(const Teuchos::ParameterList
-&paramList, const std::string &xmlFileName)
+Teuchos::writeParameterListToXmlFile(const ParameterList &paramList,
+const std::string &xmlFileName, RCP< const DependencySheet > depSheet)
+";
 
-Write parameters and sublist to an XML file.
+%feature("docstring")  Teuchos::Exceptions::writeThenReadPL "RCP<
+ParameterList > Teuchos::writeThenReadPL(ParameterList &myList)
+
+Write a parameter list to xml and then read that xml back in via a
+string. The intent of this function is to be used for testing
+purposes.
 
 Parameters:
 -----------
 
 paramList:  [in] Contains the parameters and sublists that will be
-written to file.
+written out and then read back in.
 
-xmlFileName:  [in] The file name that will be create to contain the
-XML version of the parameter list specification. ";
+The read in parameter list. ";
+
+%feature("docstring")  Teuchos::Exceptions::writeThenReadPL "RCP<
+ParameterList > Teuchos::writeThenReadPL(ParameterList &myList, RCP<
+DependencySheet > depSheetIn, RCP< DependencySheet > depSheetOut)
+
+Write a parameter list to xml and then read that xml back in via a
+string. The intent of this function is to be used for testing
+purposes.
+
+Parameters:
+-----------
+
+paramList:  [in] Contains the parameters and sublists that will be
+written out and then read back in.
+
+depSheetIn:  [in] The Dependency Sheet from which Dependencies should
+be should be written.
+
+depSheetOut:  [out] The Dependency Sheet into which Dependencies
+should be placed once read.
+
+The read in parameter list. ";
 
 
 // File: namespaceTeuchos_1_1Exceptions.xml
@@ -1397,8 +2040,6 @@ XML version of the parameter list specification. ";
 
 
 // File: Teuchos__ParameterList_8cpp.xml
-%feature("docstring")  Teuchos::filterValueToString "std::string
-@2::filterValueToString(const Teuchos::ParameterEntry &entry) ";
 
 
 // File: Teuchos__ParameterList_8hpp.xml
@@ -1432,11 +2073,6 @@ XML version of the parameter list specification. ";
 
 
 // File: Teuchos__ScalarTraits_8cpp.xml
-%feature("docstring")  returnFloatZero "float @13::returnFloatZero()
-";
-
-%feature("docstring")  returnDoubleZero "double
-@13::returnDoubleZero() ";
 
 
 // File: Teuchos__ScalarTraits_8hpp.xml
@@ -1452,6 +2088,12 @@ XML version of the parameter list specification. ";
 
 
 // File: Teuchos__Time_8hpp.xml
+
+
+// File: Teuchos__XMLConditionExceptions_8hpp.xml
+
+
+// File: Teuchos__XMLDependencyExceptions_8hpp.xml
 
 
 // File: Teuchos__XMLInputSource_8cpp.xml
@@ -1478,6 +2120,9 @@ XML version of the parameter list specification. ";
 // File: Teuchos__XMLObjectImplem_8hpp.xml
 
 
+// File: Teuchos__XMLParameterListExceptions_8hpp.xml
+
+
 // File: Teuchos__XMLParameterListHelpers_8cpp.xml
 
 
@@ -1502,11 +2147,11 @@ XML version of the parameter list specification. ";
 // File: Teuchos__XMLParser_8hpp.xml
 
 
-// File: dir_daa2443682d0f547b84c7fa838636502.xml
+// File: dir_3e7ac0723db077e4460d28d277456290.xml
 
 
-// File: dir_2c9d975476051ec1d3cf6e8ee401cf57.xml
+// File: dir_ccb49250c8a2ae42b75bc28c0fcd3e62.xml
 
 
-// File: ParameterList_2cxx__main_8cpp-example.xml
+// File: ParameterList_2cxx__main.cpp-example.xml
 

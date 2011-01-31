@@ -98,6 +98,7 @@ public:
    virtual InverseLinearOp buildInverse(const LinearOp & linearOp,const LinearOp & precOp) const
    { return buildInverse(linearOp); }
 
+   #if 0
    /** \brief Build an inverse operator and make sure it aware of some parents state
      *        This functionality is only useful for Teko::PreconditionerFactory inverses.
      *
@@ -130,6 +131,7 @@ public:
      */
    virtual InverseLinearOp buildInverse(const LinearOp & linearOp, const LinearOp & precOp, const PreconditionerState & parentState) const
    { return buildInverse(linearOp,precOp); }
+   #endif
 
    /** \brief Pass in an already constructed inverse operator. Update
      *        the inverse operator based on the new source operator.
@@ -322,6 +324,7 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A);
   */
 InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A,const LinearOp & precOp);
 
+#if 0
 /** Build an inverse operator using a factory and a linear operator
   * This functionality is only useful for Teko::PreconditionerFactory inverses.
   *
@@ -353,6 +356,7 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & lin
 InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & linearOp,
                              const LinearOp & precOp,
                              const PreconditionerState & parentState);
+#endif
 
 /** Using a prebuilt linear operator, use factory to build an inverse operator
   * given a new forward operator.

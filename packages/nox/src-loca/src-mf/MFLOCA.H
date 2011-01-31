@@ -54,6 +54,7 @@ extern "C" {
 #include <MFNRegion.h>
 #include <MFImplicitMF.h>
 #include <MFNVector.h>
+#include <MFErrorHandler.h>
 
 }
 
@@ -94,6 +95,7 @@ struct LOCAData {
   double maxRadius;
   double minRadius;
   double solutionMax;
+  MFErrorHandler mfErrorHandler;
 private:
   // Private to prohibit copying
   LOCAData(const LOCAData&);
@@ -110,7 +112,7 @@ extern "C" {
 MFNSpace MFCreateLOCANSpace(LOCAData*);
 MFNRegion MFNRegionCreateLOCA(LOCAData*);
 MFImplicitMF MFIMFCreateLOCA(LOCAData*);
-MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>&);
+MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>&,MFErrorHandler);
 
 }
 

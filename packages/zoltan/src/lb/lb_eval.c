@@ -17,6 +17,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
 #include "phg.h"
@@ -244,7 +245,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
   int *edges_per_obj=NULL, *nbors_proc=NULL;
   int *num_boundary=NULL, *cuts=NULL;
   int *partNbors= NULL, *partCount=NULL;
-  int *key = NULL, keyValue;
+  int *key=NULL;
 
   float obj_edge_weights;
 
@@ -253,7 +254,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
   float *cut_wgt=NULL;
   float *part_sizes = NULL;
 
-  int partPair[2], dummyValue=0;
+  int partPair[2];
+  intptr_t keyValue, dummyValue = 0;
 
   ZOLTAN_GRAPH_EVAL localEval;
 
@@ -421,8 +423,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
      */
 
     map = Zoltan_Map_Create(zz,
-                   hashTableSize, /* size of hash table            */
-                   2,             /* number of integers in key */
+                   hashTableSize,     /* size of hash table            */
+                   2 * sizeof(int),   /* size of key */
                    1,             /* yes, store a copy of the key */
                    0);            /* dynamically allocate hash table entries */
 
@@ -497,7 +499,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
           partPair[0] = obj_part;
           partPair[1] = nbor_part;
 
-          ierr = Zoltan_Map_Add(zz, map, partPair, dummyValue);
+          ierr = Zoltan_Map_Add(zz, map, (char *)partPair, dummyValue);
           if (ierr != ZOLTAN_OK){
             goto End;
           }
@@ -545,7 +547,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 
       /* Zoltan_Map "iterator */
 
-      ierr = Zoltan_Map_First(zz, map, &key, &keyValue);
+      ierr = Zoltan_Map_First(zz, map, (char **) (void *) &key, &keyValue);
 
       if ( ((ierr == ZOLTAN_OK) && !key) ||  /* must be at least one pair */
            (ierr != ZOLTAN_OK)){
@@ -557,7 +559,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
         partNbors[num_parts++] = key[0];
         partNbors[num_parts++] = key[1];
 
-        ierr = Zoltan_Map_Next(zz, map, &key, &keyValue);
+        ierr = Zoltan_Map_Next(zz, map, (char **) (void *) &key, &keyValue);
   
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Map_Next\n");

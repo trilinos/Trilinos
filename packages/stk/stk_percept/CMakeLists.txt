@@ -1,0 +1,7 @@
+
+ADD_SUBDIRECTORY(stk_percept)
+
+#IF( TPL_ENABLE_gtest)
+#  PACKAGE_ADD_TEST_DIRECTORIES(unit_tests)
+#  PACKAGE_ADD_TEST_DIRECTORIES(regression_tests)
+#ENDIF()

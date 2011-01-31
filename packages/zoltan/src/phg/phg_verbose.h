@@ -25,7 +25,7 @@ extern "C" {
 void print_zoltan_pins(zoltan_pins *z, int me, int ewgt_dim);
 void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight);
 void show_edges(char *s, ZZ *zz, int num_lists, int num_pins,
-                int *edg_GID, int *row_ptr, int *vtx_GID);
+                ZOLTAN_ID_TYPE *edg_GID, int *row_ptr, ZOLTAN_ID_TYPE  *vtx_GID);
 void debug_graph_to_hg(
   int nedges, ZOLTAN_ID_PTR egids, ZOLTAN_ID_PTR elids,
   int *esizes, float *ewgts, int npins,

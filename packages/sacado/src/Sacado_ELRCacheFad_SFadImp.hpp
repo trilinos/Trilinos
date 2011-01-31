@@ -57,7 +57,7 @@
 
 template <typename T, int Num> 
 inline Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
-Expr(const int sz, const T & x) : val_(x)
+Expr(const int sz, const T & x) : val_(x), update_val_(true)
 {
 #ifdef SACADO_DEBUG
   if (sz != Num)
@@ -69,7 +69,7 @@ Expr(const int sz, const T & x) : val_(x)
 
 template <typename T, int Num> 
 inline Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
-Expr(const int sz, const int i, const T & x) : val_(x) 
+Expr(const int sz, const int i, const T & x) : val_(x), update_val_(true)
 {
 #ifdef SACADO_DEBUG
   if (sz != Num)
@@ -85,12 +85,17 @@ Expr(const int sz, const int i, const T & x) : val_(x)
 template <typename T, int Num> 
 template <typename S> 
 inline Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
-Expr(const Expr<S>& x) : val_(x.val())
+Expr(const Expr<S>& x) : update_val_(x.updateValue())
 {
 #ifdef SACADO_DEBUG
   if (x.size() != Num)
     throw "ELRCacheFad::SFad() Error:  Attempt to assign with incompatible sizes";
 #endif
+
+  x.cache();
+
+  if (update_val_)
+    this->val() = x.val();
 
   // Number of arguments
   const int N = Expr<S>::num_args;
@@ -162,6 +167,8 @@ operator=(const Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Nu
   //ss_array<T>::copy(x.dx_, dx_, Num);
   for (int i=0; i<Num; i++)
     dx_[i] = x.dx_[i];
+
+  update_val_ = x.update_val_;
   
   return *this;
 }
@@ -177,8 +184,7 @@ operator=(const Expr<S>& x)
     throw "ELRCacheFad::operator=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-  // Compute value
-  T xval = x.val();
+  x.cache();
 
   // Number of arguments
   const int N = Expr<S>::num_args;
@@ -199,7 +205,9 @@ operator=(const Expr<S>& x)
     dx_[i] = op.t;
   }
   
-  val_ = xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() = x.val();
   
   return *this;
 }
@@ -209,7 +217,8 @@ inline  Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator += (const T& v)
 {
-  val_ += v;
+  if (update_val_)
+    val_ += v;
 
   return *this;
 }
@@ -219,7 +228,8 @@ inline Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator -= (const T& v)
 {
-  val_ -= v;
+  if (update_val_)
+    val_ -= v;
 
   return *this;
 }
@@ -229,7 +239,8 @@ inline Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator *= (const T& v)
 {
-  val_ *= v;
+  if (update_val_)
+    val_ *= v;
 
   for (int i=0; i<Num; ++i)
     dx_[i] *= v;
@@ -242,7 +253,8 @@ inline Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator /= (const T& v)
 {
-  val_ /= v;
+  if (update_val_)
+    val_ /= v;
 
   for (int i=0; i<Num; ++i)
     dx_[i] /= v;
@@ -261,8 +273,7 @@ operator += (const Sacado::ELRCacheFad::Expr<S>& x)
     throw "ELRCacheFad::operator+=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-  // Compute value
-  T xval = x.val();
+  x.cache();
 
   // Number of arguments
   const int N = Expr<S>::num_args;
@@ -283,8 +294,9 @@ operator += (const Sacado::ELRCacheFad::Expr<S>& x)
     dx_[i] += op.t;
   }
  
-  // Compute value
-  val_ += xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() += x.val();
 
   return *this;
 }
@@ -300,8 +312,7 @@ operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
     throw "ELRCacheFad::operator-=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-  // Compute value
-  T xval = x.val();
+  x.cache();
 
   // Number of arguments
   const int N = Expr<S>::num_args;
@@ -322,8 +333,9 @@ operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
     dx_[i] -= op.t;
   }
 
-  // Compute value
-  val_ -= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() -= x.val();
 
   return *this;
 }
@@ -334,6 +346,8 @@ inline Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
+  x.cache();
+
   T xval = x.val();
 
 #ifdef SACADO_DEBUG
@@ -361,7 +375,9 @@ operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
   }
  
   // Compute value
-  val_ *= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ *= xval;
 
   return *this;
 }
@@ -372,6 +388,8 @@ inline Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
+  x.cache();
+
   T xval = x.val();
 
 #ifdef SACADO_DEBUG
@@ -401,7 +419,9 @@ operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
   }
 
   // Compute value
-  val_ /= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ /= xval;
 
   return *this;
 }

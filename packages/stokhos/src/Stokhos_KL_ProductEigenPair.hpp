@@ -55,14 +55,16 @@ namespace Stokhos {
       ProductEigenPair(
 	const Teuchos::Array< OneDEigenPair<value_type> >& eig_pairs_) 
 	: eig_val(1.0), eig_pairs(eig_pairs_) {
-	for (std::size_t i=0; i<eig_pairs_.size(); i++)
+	std::size_t sz = eig_pairs.size();
+	for (std::size_t i=0; i<sz; i++)
 	  eig_val *= eig_pairs[i].eig_val;
       }
 
       //! Evaluate eigenfunction at a given point
       value_type evalEigenfunction(const Teuchos::Array<value_type>& x) const {
 	value_type result = 1.0;
-	for (std::size_t i=0; i<eig_pairs.size(); i++)
+	std::size_t sz = eig_pairs.size();
+	for (std::size_t i=0; i<sz; i++)
 	  result *= eig_pairs[i].eig_func->evaluate(x[i]);
 	return result;
       }
@@ -70,7 +72,8 @@ namespace Stokhos {
       //! Print eigenpair
       void print(std::ostream& os) const {
 	os << eig_val << ", ";
-	for (std::size_t i=0; i<eig_pairs.size()-1; i++) {
+	std::size_t sz = eig_pairs.size();
+	for (std::size_t i=0; i<sz-1; i++) {
 	  os << "(";
 	  eig_pairs[i].eig_func->print(os);
 	  os << ") * ";

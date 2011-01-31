@@ -384,9 +384,24 @@
       <Email address="trikota-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Intrepid">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Sacado" type="LR"/>
+    <Dependency name="Epetra" type="TO"/>
+    <Dependency name="Zoltan" type="ITO"/>
+    <Dependency name="Shards" type="LR"/>
+    <Dependency name="Triutils" type="ITO"/>
+    <Dependency name="EpetraExt" type="TO"/>
+    <Dependency name="Amesos" type="TO"/>
+    <Dependency name="Pamgen" type="TO"/>
+    <EmailAddresses>
+      <Email address="intrepid-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="STK">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="LO"/>
+    <Dependency name="Sacado" type="LO"/>
     <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="LO"/>
@@ -403,22 +418,9 @@
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="ILO"/>
     <Dependency name="FEI" type="LO"/>
+    <Dependency name="Intrepid" type="LO"/>
     <EmailAddresses>
       <Email address="stk-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
-  <SubProject name="Intrepid">
-    <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="Sacado" type="LR"/>
-    <Dependency name="Epetra" type="TO"/>
-    <Dependency name="Zoltan" type="ITO"/>
-    <Dependency name="Shards" type="LR"/>
-    <Dependency name="Triutils" type="ITO"/>
-    <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Amesos" type="TO"/>
-    <Dependency name="Pamgen" type="TO"/>
-    <EmailAddresses>
-      <Email address="intrepid-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Phalanx">
@@ -606,7 +608,7 @@
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
     <Dependency name="Thyra" type="ILO"/>
-    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="Isorropia" type="LO"/>
     <Dependency name="AztecOO" type="TO"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="ILO"/>

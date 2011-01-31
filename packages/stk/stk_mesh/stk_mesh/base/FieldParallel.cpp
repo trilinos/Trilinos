@@ -313,18 +313,16 @@ void communicate_field_data(
 void communicate_field_data_verify_read( CommAll & sparse )
 {
   std::ostringstream msg ;
-  int flag = 0 ;
+  int error = 0 ;
   for ( unsigned p = 0 ; p < sparse.parallel_size() ; ++p ) {
     if ( sparse.recv_buffer( p ).remaining() ) {
       msg << "P" << sparse.parallel_rank()
           << " Unread data from P" << p << std::endl ;
-      flag = 1 ;
+      error = 1 ;
     }
   }
-  all_reduce( sparse.parallel() , ReduceSum<1>( & flag ) );
-  if ( flag ) {
-    throw std::runtime_error( msg.str() );
-  }
+  all_reduce( sparse.parallel() , ReduceSum<1>( & error ) );
+  ThrowErrorMsgIf( error, msg.str() );
 }
 
 //----------------------------------------------------------------------

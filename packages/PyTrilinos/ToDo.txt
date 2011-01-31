@@ -3,15 +3,11 @@ PyTrilinos To Do List
 =====================
 
 * General
-  - Any package with Directors should get %feature("director:except") ...
-    and catch(Swig::DirectorException &e) ...
-  - Developers Manual
-  - Can I get PyTrilinos to configure and build if Teuchos is
-    disabled?
-  - Port to cygwin (2251)
+  - Automate documentation
+  - Trilinos 10.6 website/documentation
+  - Move all compiled C++ code into PyTrilinos namespace
 
 * Teuchos
-  - Teuchos::RCP/python-ref-count synchronization
   - Unit tests
   - Examples
 
@@ -20,7 +16,14 @@ PyTrilinos To Do List
 
 * EpetraExt
   - exEpetraExt_IO_XML.py in parallel? (3742)
+  - Install PHDF5
+  - Test parallel HDF5 interface
   - Other classes
+  - Unit tests
+  - Examples
+
+* Isorropia
+  - Create new wrappers
   - Unit tests
   - Examples
 
@@ -30,6 +33,11 @@ PyTrilinos To Do List
 
 * Anasazi
   - Pure numpy interface
+  - Unit tests
+  - Examples
+
+* Pliris
+  - Address precision issue
   - Unit tests
   - Examples
 
@@ -47,12 +55,44 @@ PyTrilinos To Do List
   - Unit tests
   - Examples
 
+* Tpetra
+  - Write un-templated numpy-typed classes to encapsuate Tpetra
+    classes
+  - Write typemaps to treat new classes like Tpetra classes
+  - Create new wrappers
+  - Unit tests
+  - Examples
+
 * Thyra (with Ross Bartlett)
   - Re-enable wrappers (2329)
   - Unit tests
   - Examples
 
 * Belos
+  - Create new wrappers
+  - Pure numpy interface
+  - Unit tests
+  - Examples
+
+* Rythmos
+  - Create new wrappers
+  - Pure numpy interface
+  - Unit tests
+  - Examples
+
+* Meros
+  - Create new wrappers
+  - Pure numpy interface
+  - Unit tests
+  - Examples
+
+* Stratimikos
+  - Create new wrappers
+  - Pure numpy interface
+  - Unit tests
+  - Examples
+
+* MOOCHO
   - Create new wrappers
   - Pure numpy interface
   - Unit tests

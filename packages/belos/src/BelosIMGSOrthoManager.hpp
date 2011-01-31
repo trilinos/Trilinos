@@ -69,6 +69,137 @@
 
 namespace Belos {
 
+  /// \brief Default parameters for IMGSOrthoManager
+  ///
+  /// \warning This function is not reentrant.
+  template<class ScalarType>
+  Teuchos::RCP<const Teuchos::ParameterList> 
+  getDefaultImgsParameters()
+  {
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+    // This part makes this class method non-reentrant.
+    static Teuchos::RCP<Teuchos::ParameterList> params;
+    if (! params.is_null())
+      return params;
+
+    // Default parameter values for IMGS orthogonalization.
+    // Documentation will be embedded in the parameter list.
+    const int defaultMaxNumOrthogPasses = 2;
+    const magnitude_type eps = STM::eps();
+    const magnitude_type defaultBlkTol = magnitude_type(10) * STM::squareroot(eps);
+    const magnitude_type defaultSingTol = magnitude_type(10) * eps;
+
+    params = Teuchos::parameterList();
+    params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
+		 "Maximum number of orthogonalization passes "
+		 "(includes the first).  Default is 2, since "
+		 "\"twice is enough\" for Krylov methods.");
+    params->set ("blkTol", defaultBlkTol, 
+		 "Block reorthogonalization threshhold.");
+    params->set ("singTol", defaultSingTol, 
+		 "Singular block detection threshold.");
+    return params;
+  }
+
+  /// \brief "Fast" parameters for IMGSOrthoManager
+  ///
+  /// \warning This function is not reentrant.
+  template<class ScalarType>
+  Teuchos::RCP<const Teuchos::ParameterList> 
+  getFastImgsParameters()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::ScalarTraits;
+    typedef typename ScalarTraits<ScalarType>::magnitudeType magnitude_type;
+    typedef ScalarTraits<magnitude_type> STM;
+
+    // This part makes this class method non-reentrant.
+    static RCP<ParameterList> params;
+    if (params.is_null())
+      {
+	RCP<const ParameterList> defaultParams = getDefaultImgsParameters<ScalarType>();
+	// Start with a clone of the default parameters
+	params = rcp (new ParameterList (*defaultParams));
+
+	const int maxBlkOrtho = 1;
+	params->set ("maxNumOrthogPasses", maxBlkOrtho);
+
+	const magnitude_type blkTol = STM::zero();
+	params->set ("blkTol", blkTol);
+
+	const magnitude_type singTol = STM::zero();
+	params->set ("singTol", singTol);
+      }
+    return params;
+  }
+
+  /// \brief Read IMGS options from the given parameter list
+  ///
+  /// Try to read IMGS options from the given parameter list.
+  /// Silently substitute in defaults if the parameters don't exist or
+  /// have invalid values.
+  template<class ScalarType>
+  void
+  readImgsParameters (const Teuchos::RCP<const Teuchos::ParameterList>& params,
+		      int& maxNumOrthogPasses,
+		      typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& blkTol,
+		      typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& singTol)
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
+    const magnitude_type zero = Teuchos::ScalarTraits<magnitude_type>::zero();
+    RCP<const ParameterList> defaultParams = getDefaultImgsParameters<ScalarType>();
+
+    // Using temporary variables and fetching all values before
+    // setting the output arguments ensures the strong exception
+    // guarantee for this function: if an exception is thrown, no
+    // externally visible side effects (in this case, setting the
+    // output arguments) have taken place.
+    int _maxNumOrthogPasses;
+    magnitude_type _blkTol, _singTol;
+    if (params.is_null())
+      {
+	_maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+	_blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	_singTol = defaultParams->get<magnitude_type> ("singTol");
+      }
+    else
+      {
+	try {
+	  _maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
+	  if (_maxNumOrthogPasses < 1)
+	    _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+	} catch (Teuchos::Exceptions::InvalidParameter&) {
+	  _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+	}
+
+	try {
+	  _blkTol = params->get<magnitude_type> ("blkTol");
+	  if (_blkTol < zero)
+	    _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	} catch (Teuchos::Exceptions::InvalidParameter&) {
+	  _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	}
+
+	try {
+	  _singTol = params->get<magnitude_type> ("singTol");
+	  if (_singTol < zero)
+	    _singTol = defaultParams->get<magnitude_type> ("singTol");
+	} catch (Teuchos::Exceptions::InvalidParameter&) {
+	  _singTol = defaultParams->get<magnitude_type> ("singTol");
+	}
+      }
+    maxNumOrthogPasses = _maxNumOrthogPasses;
+    blkTol = _blkTol;
+    singTol = _singTol;
+  }
+
+
   template<class ScalarType, class MV, class OP>
   class IMGSOrthoManager : public MatOrthoManager<ScalarType,MV,OP> {
 
@@ -171,14 +302,14 @@ namespace Belos {
     */
     void project ( MV &X, Teuchos::RCP<MV> MX, 
                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                   Teuchos::Array<Teuchos::RCP<const MV> > Q) const;
+                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
 
     /*! \brief This method calls project(X,Teuchos::null,C,Q); see documentation for that function.
     */
     void project ( MV &X, 
                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                   Teuchos::Array<Teuchos::RCP<const MV> > Q) const {
+                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
       project(X,Teuchos::null,C,Q);
     }
 
@@ -237,11 +368,20 @@ namespace Belos {
        If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
-     @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
-       and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i<\tt> or <tt>C[i]</tt> is a null
-       pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
+     @param C [out] The coefficients of the original \c X in the \c
+     *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a
+     non-null pointer and \c *C[i] matches the dimensions of \c X and
+     \c *Q[i], then the coefficients computed during the
+     orthogonalization routine will be stored in the matrix \c
+     *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not
+     match the dimensions of \c X and \c *Q[i], then *C[i] will first
+     be resized to the correct size.  This will destroy the original
+     contents of the matrix.  (This is a change from previous
+     behavior, in which a std::invalid_argument exception was thrown
+     if *C[i] was of the wrong size.)  Otherwise, if <tt>C.size() <
+     i<\tt> or <tt>C[i]</tt> is a null pointer, then the
+     orthogonalization manager will declare storage for the
+     coefficients and the user will not have access to them.
 
      @param B [out] The coefficients of the original \c X with respect to the computed basis. The first rows in \c B
             corresponding to the valid columns in \c X will be upper triangular.
@@ -254,14 +394,14 @@ namespace Belos {
     int projectAndNormalize ( MV &X, Teuchos::RCP<MV> MX, 
                               Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                               Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                              Teuchos::Array<Teuchos::RCP<const MV> > Q) const;
+                              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
     /*! \brief This method calls projectAndNormalize(X,Teuchos::null,C,B,Q); see documentation for that function.
     */
     int projectAndNormalize ( MV &X, 
                               Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                               Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                              Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
+                              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const {
       return projectAndNormalize(X,Teuchos::null,C,B,Q);
     }
 
@@ -337,17 +477,30 @@ namespace Belos {
     //! Routine to compute the block orthogonalization
     bool blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX, 
 		     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-		     Teuchos::Array<Teuchos::RCP<const MV> > Q) const;
+		     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
     //! Routine to compute the block orthogonalization
     bool blkOrtho ( MV &X, Teuchos::RCP<MV> MX, 
 		    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-		    Teuchos::Array<Teuchos::RCP<const MV> > Q) const;
+		    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
+    /// Project X against QQ and normalize X, one vector at a time
+    ///
+    /// \note QQ is called QQ, rather than Q, because we convert it
+    ///   internally from an ArrayView to an Array (named Q inside).
+    ///   This is because the C++ compiler doesn't know how to do type
+    ///   inference (Array has a constructor that takes an ArrayView
+    ///   input).  This routine wants an Array rather than an
+    ///   ArrayView internally, because it likes to add (via
+    ///   push_back()) and remove (via resize()) elements to the Q
+    ///   array.  Remember that Arrays can be passed by value, just
+    ///   like std::vector objects, so this routine can add whatever
+    ///   it likes to the Q array without changing it from the
+    ///   caller's perspective.
     int blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX, 
 		       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
 		       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-		       Teuchos::Array<Teuchos::RCP<const MV> > Q) const;    
+		       Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const;    
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -413,7 +566,16 @@ namespace Belos {
                                     MV &X, Teuchos::RCP<MV> MX, 
                                     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                    Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
+                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const 
+  {
+    using Teuchos::Array;
+    using Teuchos::null;
+    using Teuchos::is_null;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::SerialDenseMatrix;
+    typedef SerialDenseMatrix< int, ScalarType > serial_dense_matrix_type;
+    typedef typename Array< RCP< const MV > >::size_type size_type;
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
@@ -422,17 +584,42 @@ namespace Belos {
     ScalarType    ONE  = SCT::one();
     ScalarType    ZERO  = SCT::zero();
 
-    int nq = Q.length();
+    int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
     int rank = xc;
 
-    /* if the user doesn't want to store the coefficienets, 
-     * allocate some local memory for them 
-     */
-    if ( B == Teuchos::null ) {
-      B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
+    // If the user doesn't want to store the normalization
+    // coefficients, allocate some local memory for them.  This will
+    // go away at the end of this method.
+    if (is_null (B)) {
+      B = rcp (new serial_dense_matrix_type (xc, xc));
     }
+    // Likewise, if the user doesn't want to store the projection
+    // coefficients, allocate some local memory for them.  Also make
+    // sure that all the entries of C are the right size.  We're going
+    // to overwrite them anyway, so we don't have to worry about the
+    // contents (other than to resize them if they are the wrong
+    // size).
+    if (C.size() < nq)
+      C.resize (nq);
+    for (size_type k = 0; k < nq; ++k)
+      {
+	const int numRows = MVT::GetNumberVecs (*Q[k]);
+	const int numCols = xc; // Number of vectors in X
+	
+	if (is_null (C[k]))
+	  C[k] = rcp (new serial_dense_matrix_type (numRows, numCols));
+	else if (C[k]->numRows() != numRows || C[k]->numCols() != numCols)
+	  {
+	    int err = C[k]->reshape (numRows, numCols);
+	    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, 
+			       "IMGS orthogonalization: failed to reshape "
+			       "C[" << k << "] (the array of block "
+			       "coefficients resulting from projecting X "
+			       "against Q[1:" << nq << "]).");
+	  }
+      }
 
     /******   DO NOT MODIFY *MX IF _hasOp == false   ******/
     if (this->_hasOp) {
@@ -484,7 +671,7 @@ namespace Belos {
     if (xc == 1) {
 
       // Use the cheaper block orthogonalization.
-      // NOTE: Don't check for dependencies because the update has one std::vector.
+      // NOTE: Don't check for dependencies because the update has one vector.
       dep_flg = blkOrtho1( X, MX, C, Q );
 
       // Normalize the new block X
@@ -513,7 +700,8 @@ namespace Belos {
       dep_flg = blkOrtho( X, MX, C, Q );
 
       // If a dependency has been detected in this block, then perform
-      // the more expensive single-std::vector orthogonalization.
+      // the more expensive nonblock (single vector at a time)
+      // orthogonalization.
       if (dep_flg) {
         rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
@@ -528,7 +716,8 @@ namespace Belos {
         rank = findBasis( X, MX, B, false );
         if (rank < xc) {
 	  // A dependency was found during orthonormalization of X,
-	  // rerun orthogonalization using more expensive single-std::vector orthogonalization.
+	  // rerun orthogonalization using more expensive single-
+	  // vector orthogonalization.
 	  rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
 	  // Copy tmpX back into X.
@@ -572,7 +761,7 @@ namespace Belos {
   void IMGSOrthoManager<ScalarType, MV, OP>::project(
                           MV &X, Teuchos::RCP<MV> MX, 
                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                          Teuchos::Array<Teuchos::RCP<const MV> > Q) const {
+                          Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
     // For the inner product defined by the operator Op or the identity (Op == 0)
     //   -> Orthogonalize X against each Q[i]
     // Modify MX accordingly
@@ -583,7 +772,7 @@ namespace Belos {
     //
     // X  : Vectors to be transformed
     //
-    // MX : Image of the block std::vector X by the mass matrix
+    // MX : Image of the block of vectors X by the mass matrix
     //
     // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independently.
     //
@@ -594,7 +783,7 @@ namespace Belos {
     
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
-    int nq = Q.length();
+    int nq = Q.size();
     std::vector<int> qcs(nq);
     // short-circuit
     if (nq == 0 || xc == 0 || xr == 0) {
@@ -741,13 +930,13 @@ namespace Belos {
       int numX = j;
       bool addVec = false;
 
-      // Get a view of the std::vector currently being worked on.
+      // Get a view of the vector currently being worked on.
       std::vector<int> index(1);
       index[0] = numX;
       Teuchos::RCP<MV> Xj = MVT::CloneViewNonConst( X, index );
       Teuchos::RCP<MV> MXj;
       if ((this->_hasOp)) {
-        // MXj is a view of the current std::vector in MX
+        // MXj is a view of the current vector in MX
         MXj = MVT::CloneViewNonConst( *MX, index );
       }
       else {
@@ -762,7 +951,7 @@ namespace Belos {
 	
       std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
       //
-      // Save old MXj std::vector and compute Op-norm
+      // Save old MXj vector and compute Op-norm
       //
       Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
       MVT::MvDot( *Xj, *MXj, oldDot );
@@ -822,14 +1011,14 @@ namespace Belos {
 	// Compute Op-norm with old MXj
       MVT::MvDot( *Xj, *oldMXj, newDot );
       
-      // Check to see if the new std::vector is dependent.
+      // Check to see if the new vector is dependent.
       if (completeBasis) {
 	//
 	// We need a complete basis, so add random vectors if necessary
 	//
 	if ( SCT::magnitude(newDot[0]) < SCT::magnitude(sing_tol_*oldDot[0]) ) {
 	  
-	  // Add a random std::vector and orthogonalize it against previous vectors in block.
+	  // Add a random vector and orthogonalize it against previous vectors in block.
 	  addVec = true;
 #ifdef ORTHO_DEBUG
 	  std::cout << "Belos::IMGSOrthoManager::findBasis() --> Random for column " << numX << std::endl;
@@ -888,7 +1077,7 @@ namespace Belos {
 	  MVT::MvDot( *tempXj, *tempMXj, newDot );
 	  //
 	  if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
-	    // Copy std::vector into current column of _basisvecs
+	    // Copy vector into current column of _basisvecs
 	    MVT::MvAddMv( ONE, *tempXj, ZERO, *tempXj, *Xj );
 	    if (this->_hasOp) {
 	      MVT::MvAddMv( ONE, *tempMXj, ZERO, *tempMXj, *MXj );
@@ -921,7 +1110,7 @@ namespace Belos {
         }
       }
       
-      // If we've added a random std::vector, enter a zero in the j'th diagonal element.
+      // If we've added a random vector, enter a zero in the j'th diagonal element.
       if (addVec) {
 	(*B)(j,j) = ZERO;
       }
@@ -929,7 +1118,7 @@ namespace Belos {
 	(*B)(j,j) = diag;
       }
       
-      // Save the coefficients, if we are working on the original std::vector and not a randomly generated one
+      // Save the coefficients, if we are working on the original vector and not a randomly generated one
       if (!addVec) {
 	for (int i=0; i<numX; i++) {
 	  (*B)(i,j) = product(i);
@@ -947,9 +1136,9 @@ namespace Belos {
   bool 
   IMGSOrthoManager<ScalarType, MV, OP>::blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX, 
 						    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-						    Teuchos::Array<Teuchos::RCP<const MV> > Q) const
+						    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
-    int nq = Q.length();
+    int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
     const ScalarType ONE  = SCT::one();
 
@@ -1058,9 +1247,9 @@ namespace Belos {
   bool 
   IMGSOrthoManager<ScalarType, MV, OP>::blkOrtho ( MV &X, Teuchos::RCP<MV> MX, 
 						   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-						   Teuchos::Array<Teuchos::RCP<const MV> > Q) const
+						   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
-    int nq = Q.length();
+    int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
     bool dep_flg = false;
     const ScalarType ONE  = SCT::one();
@@ -1179,19 +1368,19 @@ namespace Belos {
     return dep_flg;
   }
   
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Routine to compute the block orthogonalization using single-std::vector orthogonalization
   template<class ScalarType, class MV, class OP>
   int
   IMGSOrthoManager<ScalarType, MV, OP>::blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX, 
 						       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
 						       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-						       Teuchos::Array<Teuchos::RCP<const MV> > Q) const
+						       Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const
   {
+    Teuchos::Array<Teuchos::RCP<const MV> > Q (QQ);
+
     const ScalarType ONE  = SCT::one();
     const ScalarType ZERO  = SCT::zero();
     
-    int nq = Q.length();
+    int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
     std::vector<int> indX( 1 );
     std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
@@ -1206,7 +1395,7 @@ namespace Belos {
     Teuchos::RCP<MV> Xj, MXj;
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lastC;
 
-    // Perform the Gram-Schmidt transformation for each std::vector in the block of vectors.
+    // Perform the Gram-Schmidt transformation for each vector in the block of vectors.
     for (int j=0; j<xc; j++) {
       
       bool dep_flg = false;
@@ -1225,7 +1414,7 @@ namespace Belos {
 	qcs.push_back( MVT::GetNumberVecs( *lastQ ) );
       }
       
-      // Get a view of the current std::vector in X to orthogonalize.
+      // Get a view of the current vector in X to orthogonalize.
       indX[0] = j;
       Xj = MVT::CloneViewNonConst( X, indX );
       if (this->_hasOp) {
@@ -1238,11 +1427,11 @@ namespace Belos {
       // Compute the initial Op-norms
       MVT::MvDot( *Xj, *MXj, oldDot );
       
-      Teuchos::Array<Teuchos::RCP<MV> > MQ(Q.length());
+      Teuchos::Array<Teuchos::RCP<MV> > MQ(Q.size());
       Teuchos::RCP<const MV> tempQ;
 
       // Define the product Q^T * (Op*X)
-      for (int i=0; i<Q.length(); i++) {
+      for (int i=0; i<Q.size(); i++) {
 
 	// Perform MGS one vector at a time
 	for (int ii=0; ii<qcs[i]; ii++) {
@@ -1277,7 +1466,7 @@ namespace Belos {
       // Do any additional steps of modified Gram-Schmidt orthogonalization 
       for (int num_ortho_steps=1; num_ortho_steps < max_ortho_steps_; ++num_ortho_steps) {
 	
-	for (int i=0; i<Q.length(); i++) {
+	for (int i=0; i<Q.size(); i++) {
 	  Teuchos::SerialDenseMatrix<int,ScalarType> C2( qcs[i], 1 );
 	  
 	  // Perform MGS one vector at a time
@@ -1308,7 +1497,7 @@ namespace Belos {
 	      OPT::Apply( *(this->_Op), *Xj, *MXj);
 	    }
 	  }
-	} // for (int i=0; i<Q.length(); i++)
+	} // for (int i=0; i<Q.size(); i++)
 	
       } // for (int num_ortho_steps=1; num_ortho_steps < max_ortho_steps_; ++num_ortho_steps)
       
@@ -1317,7 +1506,7 @@ namespace Belos {
 	dep_flg = true;
       }
       
-      // Normalize the new std::vector if it's not dependent
+      // Normalize the new vector if it's not dependent
       if (!dep_flg) {
 	ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 	
@@ -1331,7 +1520,7 @@ namespace Belos {
 	(*B)(j,j) = diag;
       }
       else {
-	// Create a random std::vector and orthogonalize it against all previous columns of Q.
+	// Create a random vector and orthogonalize it against all previous columns of Q.
 	Teuchos::RCP<MV> tempXj = MVT::Clone( X, 1 );
 	Teuchos::RCP<MV> tempMXj;
 	MVT::MvRandom( *tempXj );
@@ -1346,7 +1535,7 @@ namespace Belos {
 	//
 	for (int num_orth=0; num_orth<max_ortho_steps_; num_orth++) {
 	  
-	  for (int i=0; i<Q.length(); i++) {
+	  for (int i=0; i<Q.size(); i++) {
 	    Teuchos::SerialDenseMatrix<int,ScalarType> product( qcs[i], 1 );
 
 	    // Perform MGS one vector at a time
@@ -1379,14 +1568,14 @@ namespace Belos {
 	// Compute the Op-norms after the correction step.
 	MVT::MvDot( *tempXj, *tempMXj, newDot );
 	
-	// Copy std::vector into current column of Xj
+	// Copy vector into current column of Xj
 	if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
 	  ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 	  
 	  // Enter value on diagonal of B.
 	  (*B)(j,j) = ZERO;
 	  
-	  // Copy std::vector into current column of _basisvecs
+	  // Copy vector into current column of _basisvecs
 	  MVT::MvAddMv( ONE/diag, *tempXj, ZERO, *tempXj, *Xj );
 	  if (this->_hasOp) {
 	    MVT::MvAddMv( ONE/diag, *tempMXj, ZERO, *tempMXj, *MXj );

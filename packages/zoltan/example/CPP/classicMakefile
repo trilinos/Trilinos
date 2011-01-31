@@ -1,11 +1,24 @@
 ##
-## a basic makefile to build examples
+## a basic makefile to build examples 
 ##
 
-## Location of zoltan library, also location of Zoltan_config.h if
-## using the autoconf build harness
+##
+## The default type for a Zoltan global ID is "int".  This can be changed
+## with compile-time flags like:
+##
+##   -DZOLTAN_ID_TYPE_LONG_LONG
+##
+## See src/include/zoltan_types.h for the valid id type macros.  If Zoltan was compiled
+## with one of these flags, then these examples need to be compiled with the same flag.
+##
+ID_TYPE_FLAG=-DZOLTAN_ID_TYPE_LONG_LONG
+##
 
-BLD=../../../../build/packages/zoltan/src
+
+## Location of zoltan library, also location of Zoltan_config.h if
+## using the autoconf build
+
+BLD=../../build_both/src
 
 ##
 ## Location of zoltan "src" directory (for header files)
@@ -18,63 +31,47 @@ SRC=../../src
 ZOLTAN_INCLUDE=-I$(SRC)/include
 
 ##
+## For an autoconf build, the location of Zoltan_config.h
+##
+ZOLTAN_CONFIG_INCLUDE=-I$(BLD)/include
+
+##
 ## Headers for zoltan utilities, not often used by applications
-## Needed for use of Zoltan_Hash in simpleGRAPH.cpp
+## Needed for use of Zoltan_Hash in simpleGRAPH.c
 ##
 
 ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
                     -I$(SRC)/par \
                     -I$(SRC)/order \
+                    -I$(SRC)/tpls \
                     -I$(SRC)/lb \
                     -I$(SRC)/params \
                     -I$(SRC)/Utilities/shared
 
 ##
-## If Zoltan was built with ParMETIS, provide the information required
-## to link with the ParMETIS library.
+## If Zoltan was built with a third party library, provide the information required
+## to link with that library.
 ##
 
-PAR_LIB_DIR=-L/home/lafisk/system/parmetis/ParMetis-3.1.1
-PAR_LIBS=-lparmetis -lmetis
+SCOTCH=/home/lriesen/system/scotch_5.1.10a-32
+PARMETIS=/home/lafisk/system/parmetis/ParMetis-3.1
 
-##
-## Trilinos library - graphHier uses epetra
-##
-TRILINOS_LIB_DIR=-L/home/lafisk/system/parmetis/ParMetis-3.1.1
-TRILINOS_LIBS=-ltrilinos
+TPL_LIB_DIR=-L$(PARMETIS) -L$(SCOTCH)/lib
+TPL_INCLUDE=-I$(PARMETIS) -I$(SCOTCH)/include
+TPL_LIBS=-lparmetis -lmetis -lptscotch -lscotch -lptscotcherr -lscotcherr
 
-
-##
-## C compiler
-##
-CC=mpicc
-
-##
-## C++ compiler
-##
 CXX=mpicxx
 
-# MPI include and library options if needed
-MPI_INCLUDE=
-MPI_LIBS=
+CXXFLAGS =$(ID_TYPE_FLAG)
 
+EXAMPLE_NAMES = exampleBLOCK graphHier.cpp
 
-CFLAGS=-g -Wall
-CXXFLAGS=-g -Wall
-
-CPP_EXAMPLES = exampleBLOCK graphHier.cpp
-
-all:   $(C_EXAMPLES) $(CPP_EXAMPLES)
-
-%: %.c
-	$(CC) $(CFLAGS) $(PAR_LIB_DIR)  \
-        -I$(BLD) $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
-        -o $@ $< $(BLD)/libzoltan.a $(PAR_LIBS) -lm $(MPI_LIBS)
+all:   $(EXAMPLE_NAMES)
 
 %: %.cpp
-	$(CXX) $(CFLAGS) $(CXXFLAGS) $(PAR_LIB_DIR)  \
-        -I$(BLD) $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
-        -o $@ $< $(BLD)/libzoltan.a $(PAR_LIBS) -lm $(MPI_LIBS)
+	$(CXX) $(CXXFLAGS) $(TPL_LIB_DIR)  \
+        -I$(BLD)/include $(TPL_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
+        -o $@ $< $(BLD)/libzoltan.a $(TPL_LIBS) -lm
 
 clean:
-	@rm -rf $(all)
+	@rm -rf  $(EXAMPLE_NAMES)

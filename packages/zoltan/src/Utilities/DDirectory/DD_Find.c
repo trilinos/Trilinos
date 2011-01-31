@@ -57,7 +57,7 @@ int Zoltan_DD_GetLocalKeys(Zoltan_DD_Directory *dd,
 
 
 static int DD_Find_Local (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
- ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR user, int *partition, int *owner) ;
+ ZOLTAN_ID_PTR lid, char *user, int *partition, int *owner) ;
 
 
 
@@ -67,7 +67,7 @@ int Zoltan_DD_Find (
  Zoltan_DD_Directory *dd, /* contains directory state information        */
  ZOLTAN_ID_PTR gid,       /* Incoming list of GIDs to get owners proc    */
  ZOLTAN_ID_PTR lid,       /* Outgoing corresponding list of LIDs         */
- ZOLTAN_ID_PTR data,      /* Outgoing optional corresponding user data   */
+ char *data,              /* Outgoing optional corresponding user data   */
  int *partition,          /* Outgoing optional partition information     */
  int  count,              /* Count of GIDs in above list (in)            */
  int *owner)              /* Outgoing optional list of data owners       */
@@ -162,7 +162,7 @@ int Zoltan_DD_Find (
    for (i = 0; i < nrec; i++)  {
       ptr = (DD_Find_Msg*) (rbuff + i*dd->find_msg_size);
 
-      err = DD_Find_Local (dd, ptr->id, ptr->id, ptr->id + dd->max_id_length,
+      err = DD_Find_Local (dd, ptr->id, ptr->id, (char *)(ptr->id + dd->max_id_length), 
        &ptr->partition, &ptr->proc);
       if (err == ZOLTAN_WARN)
           ++errcount;
@@ -189,8 +189,7 @@ int Zoltan_DD_Find (
       if (lid) 
          ZOLTAN_SET_ID(dd->lid_length,lid+ptr->index*dd->lid_length,ptr->id);
       if (data)
-         ZOLTAN_SET_ID(dd->user_data_length, data + ptr->index
-          * dd->user_data_length, ptr->id + dd->max_id_length);
+         memcpy(data + ptr->index * dd->user_data_length, ptr->id + dd->max_id_length, dd->user_data_length);
    }
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill return lists");
@@ -233,7 +232,7 @@ fini:
 static int DD_Find_Local (Zoltan_DD_Directory *dd,
  ZOLTAN_ID_PTR gid,         /* incoming GID to locate (in)            */
  ZOLTAN_ID_PTR lid,         /* gid's LID (out)                        */
- ZOLTAN_ID_PTR user,        /* gid's user data (out)                  */
+ char *user,        /* gid's user data (out)                  */
  int *partition,            /* gid's partition number (out)           */
  int *owner)                /* gid's owner (processor number) (out)   */
    {
@@ -257,8 +256,7 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
       if (ZOLTAN_EQ_ID (dd->gid_length, gid, ptr->gid) == TRUE)  { 
          /* matching global ID found! Return gid's information */
          if (lid) ZOLTAN_SET_ID(dd->lid_length, lid, ptr->gid + dd->gid_length);
-         if (user) ZOLTAN_SET_ID(dd->user_data_length, user,ptr->gid 
-                   + (dd->gid_length + dd->lid_length));
+         if (user) memcpy(user, ptr->gid + (dd->gid_length + dd->lid_length),  dd->user_data_length);
 
          if (owner)     *owner     = ptr->owner;
          if (partition) *partition = ptr->partition;

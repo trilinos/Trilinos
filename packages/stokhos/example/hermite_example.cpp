@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
     // Quadrature method
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-        Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+      Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
 
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
@@ -112,6 +112,8 @@ int main(int argc, char **argv)
     // Check the answer
     if (std::abs(vp - vp2) < 1e-2)
       std::cout << "\nExample Passed!" << std::endl;
+
+    Teuchos::TimeMonitor::summarize(std::cout);
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

@@ -9,31 +9,12 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <cppunit/TestCase.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
 
 #include <iostream>
 #include <stdexcept>
 #include <stk_util/environment/LogControl.hpp>
 
-class UnitTestLogControl : public CppUnit::TestCase {
-private:
-  CPPUNIT_TEST_SUITE(UnitTestLogControl);
-  CPPUNIT_TEST(testUnit);
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-  void setUp()
-  {}
-
-  void tearDown()
-  {}
-
-  void testUnit();
-};
-
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 namespace {
 
@@ -41,8 +22,7 @@ std::ostringstream os;
 
 } // namespace <empty>
 
-
-void UnitTestLogControl::testUnit()
+STKUNIT_UNIT_TEST(UnitTestLogControl, UnitTest)
 {
   stk::RuleMap rule_map;
 
@@ -224,7 +204,6 @@ void UnitTestLogControl::testUnit()
     "    Running nonlinear 9\n"
     "      Work count 899\n";
   
-  CPPUNIT_ASSERT_EQUAL(result, os.str());
+  STKUNIT_ASSERT_EQUAL(result, os.str());
 }
 
-CPPUNIT_TEST_SUITE_REGISTRATION(UnitTestLogControl);

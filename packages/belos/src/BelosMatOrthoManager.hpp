@@ -169,32 +169,72 @@ namespace Belos {
 
     /*! \brief Provides the norm induced by innerProd().
      */
-    void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > normvec ) const {
+    void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >& normvec ) const {
       norm(X,Teuchos::null,normvec);
     }
 
-    /*! \brief Provides the norm induced by innerProd().
-     *  The method has the options of exploiting a caller-provided \c MX.
-     */
-    void norm( const MV& X, Teuchos::RCP<const MV> MX, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > normvec ) const {
-
+    /// \brief Compute norm of each column of X
+    ///
+    /// Compute the norm of each column of X; where the norm is that
+    /// induced by innerProd().  If you already have MX = M*X (where M
+    /// is the operator defining the inner product), you may pass it in
+    /// to avoid applying the operator again.
+    ///
+    /// \param X [in] Multivector for which to compute the norm of
+    ///   each column
+    /// \param MX [in] If not null and the inner product operator M is
+    ///   not the identity, MX is assumed to be M*X (the result of
+    ///   applying the operator M to X).  MX may be null, in which
+    ///   case if M is not the identity, it is applied to X.
+    /// \param normvec [out] On output, normvec[j] is the norm of
+    ///   column j of X.  normvec is resized if it has fewer entries
+    ///   than the number of columns in X.
+    ///
+    void 
+    norm (const MV& X, 
+	  Teuchos::RCP<const MV> MX, 
+	  std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec) const 
+    {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
       typedef OperatorTraits<ScalarType,MV,OP>  OPT;
-      
+
+      const int numColsX = MVT::GetNumberVecs(X);
       if (!_hasOp) {
-        MX = Teuchos::rcp(&X,false);
+	// X == MX, since the operator M is the identity.
+        MX = Teuchos::rcp(&X, false);
       }
-      else if (MX == Teuchos::null) {
-        Teuchos::RCP<MV> R = MVT::Clone(X,MVT::GetNumberVecs(X));
+      else if (MX.is_null()) {
+	// The caller didn't give us a previously computed MX, so
+	// apply the operator.  We assign to MX only after applying
+	// the operator, so that if the application fails, MX won't be
+	// modified.
+        Teuchos::RCP<MV> R = MVT::Clone(X, numColsX);
         OPT::Apply(*_Op,X,*R);
         MX = R;
+      } 
+      else {
+	// The caller gave us a previously computed MX.  Make sure
+	// that it has at least as many columns as X.
+	const int numColsMX = MVT::GetNumberVecs(*MX);
+	TEST_FOR_EXCEPTION(numColsMX < numColsX, std::invalid_argument,
+			   "MatOrthoManager::norm(X, MX, normvec): "
+			   "MX has fewer columns than X: "
+			   "MX has " << numColsMX << " columns, "
+			   "and X has " << numColsX << " columns.");
       }
+
+      // Make sure that normvec has enough entries to hold the norms
+      // of all the columns of X.  std::vector<T>::size_type is
+      // unsigned, so do the appropriate cast to avoid signed/unsigned
+      // comparisons that trigger compiler warnings.
+      if (normvec.size() < static_cast<size_t>(numColsX))
+	normvec.resize (numColsX);
 
       Teuchos::SerialDenseMatrix<int,ScalarType> z(1,1);
       Teuchos::RCP<const MV> Xi, MXi;
       std::vector<int> ind(1);
-      for (int i=0; i<MVT::GetNumberVecs(X); i++) {
+      for (int i = 0; i < numColsX; ++i) {
         ind[0] = i;
         Xi = MVT::CloneView(X,ind);
         MXi = MVT::CloneView(*MX,ind);
@@ -227,7 +267,7 @@ namespace Belos {
     */
     virtual void project ( MV &X, Teuchos::RCP<MV> MX, 
                            Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RCP<const MV> > Q) const = 0;
+                           Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
 
 
     
@@ -235,7 +275,7 @@ namespace Belos {
     */
     virtual void project ( MV &X, 
                            Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RCP<const MV> > Q) const {
+                           Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
       project(X,Teuchos::null,C,Q);
     }
 
@@ -308,14 +348,14 @@ namespace Belos {
     virtual int projectAndNormalize ( MV &X, Teuchos::RCP<MV> MX, 
                                       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::Array<Teuchos::RCP<const MV> > Q ) const = 0;
+                                      Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const = 0;
 
     /*! \brief This method calls projectAndNormalize(X,Teuchos::null,C,B,Q); see documentation for that function.
     */
     virtual int projectAndNormalize ( MV &X, 
                                       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
+                                      Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const {
       return projectAndNormalize(X,Teuchos::null,C,B,Q);
     }
 

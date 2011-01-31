@@ -6,8 +6,9 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stk_mesh/base/DataTraits.hpp>
+
+#include <stk_util/environment/ReportHandler.hpp>
 
 namespace stk {
 namespace mesh {
@@ -81,25 +82,25 @@ public:
   }  
 
   void print( std::ostream & s , const void * v , std::size_t n ) const
-  { throw_not_supported( "print" ); }
+  { ThrowErrorMsg( "not supported" ); }
 
   void sum( void * , const void * , std::size_t ) const
-  { throw_not_supported( "sum" ); }
+  { ThrowErrorMsg( "not supported" ); }
  
   void max( void * , const void * , std::size_t ) const
-  { throw_not_supported( "max" ); }
+  { ThrowErrorMsg( "not supported" ); }
  
   void min( void * , const void * , std::size_t ) const
-  { throw_not_supported( "min" ); }
+  { ThrowErrorMsg( "not supported" ); }
  
   void bit_and( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
  
   void bit_or( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
  
   void bit_xor( void * , const void * , std::size_t ) const
-  { throw_not_supported( "bit_and" ); }
+  { ThrowErrorMsg( "not supported" ); }
 };
 
 }

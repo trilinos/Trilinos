@@ -105,19 +105,16 @@ void BucketImpl::update_state()
 
 Bucket * BucketImpl::last_bucket_in_family()
 {
-  static const char method[] = "stk::mesh::impl::BucketImpl::last_bucket_in_family" ;
-
   Bucket * last = last_bucket_in_family_impl();
 
-  if ( NULL == last || 0 == last->size() ) {
-    throw std::logic_error( std::string(method) );
-  }
+  ThrowRequireMsg( NULL != last, "Last is NULL");
+  ThrowRequireMsg( last->size() != 0, "Last bucket is empty");
 
   return last ;
 }
+
 Bucket * BucketImpl::last_bucket_in_family_impl()
 {
-
   bool this_is_first_bucket_in_family = (bucket_counter() == 0);
 
   Bucket * last = NULL;
@@ -181,8 +178,6 @@ void BucketImpl::zero_fields( unsigned i_dst )
 
 void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src )
 {
-  static const char method[] = "stk::mesh::impl::BucketImpl::replace_fields" ;
-
   const std::vector<FieldBase*> & field_set =
     m_mesh.mesh_meta_data().get_fields();
 
@@ -196,16 +191,11 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
 
     if ( i->m_size ) {
       if ( j->m_size ) {
-        if ( i->m_size == j->m_size ) {
-          memory_copy( d + i->m_base + i->m_size * i_dst ,
-                       s + j->m_base + j->m_size * i_src , i->m_size );
-        }
-        else {
-          std::ostringstream msg ;
-          msg << method ;
-          msg << " FAILED WITH INCOMPATIBLE FIELD SIZES" ;
-          throw std::runtime_error( msg.str() );
-        }
+        ThrowErrorMsgIf( i->m_size != j->m_size,
+            "Incompatible field sizes: " << i->m_size << " != " << j->m_size );
+
+        memory_copy( d + i->m_base + i->m_size * i_dst ,
+                     s + j->m_base + j->m_size * i_src , i->m_size );
       }
       else {
         memory_zero( d + i->m_base + i->m_size * i_dst , i->m_size );
@@ -213,8 +203,6 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
     }
   }
 }
-
-
 
 } // namespace impl
 } // namespace mesh

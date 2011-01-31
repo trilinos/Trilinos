@@ -66,6 +66,7 @@
 #define DTRMV_F77   F77_BLAS_MANGLE(strmv,STRMV)
 #define DGEMM_F77   F77_BLAS_MANGLE(sgemm,SGEMM)
 #define DSYMM_F77   F77_BLAS_MANGLE(ssymm,SSYMM)
+#define DSYRK_F77   F77_BLAS_MANGLE(ssyrk,SSYRK)
 #define DTRMM_F77   F77_BLAS_MANGLE(strmm,STRMM)
 #define DTRSM_F77   F77_BLAS_MANGLE(strsm,STRSM)
  
@@ -85,6 +86,7 @@
 #define ZTRMV_F77   F77_BLAS_MANGLE(ctrmv,CTRMV)
 #define ZGEMM_F77   F77_BLAS_MANGLE(cgemm,CGEMM)
 #define ZSYMM_F77   F77_BLAS_MANGLE(csymm,CSYMM)
+#define ZSYRK_F77   F77_BLAS_MANGLE(csyrk,CSYRK)
 #define ZTRMM_F77   F77_BLAS_MANGLE(ctrmm,CTRMM)
 #define ZTRSM_F77   F77_BLAS_MANGLE(ctrsm,CTRSM)
 
@@ -109,6 +111,7 @@
 #define DTRMV_F77   F77_BLAS_MANGLE(dtrmv,DTRMV)
 #define DGEMM_F77   F77_BLAS_MANGLE(dgemm,DGEMM)
 #define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
+#define DSYRK_F77   F77_BLAS_MANGLE(dsyrk,DSYRK)
 #define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
 #define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
 
@@ -128,6 +131,7 @@
 #define ZTRMV_F77   F77_BLAS_MANGLE(ztrmv,ZTRMV)
 #define ZGEMM_F77   F77_BLAS_MANGLE(zgemm,ZGEMM)
 #define ZSYMM_F77   F77_BLAS_MANGLE(zsymm,ZSYMM)
+#define ZSYRK_F77   F77_BLAS_MANGLE(zsyrk,ZSYRK)
 #define ZTRMM_F77   F77_BLAS_MANGLE(ztrmm,ZTRMM)
 #define ZTRSM_F77   F77_BLAS_MANGLE(ztrsm,ZTRSM)
 
@@ -152,6 +156,7 @@
 #define DTRMV_F77   F77_BLAS_MANGLE(dtrmv,DTRMV)
 #define DGEMM_F77   F77_BLAS_MANGLE(dgemm,DGEMM)
 #define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
+#define DSYRK_F77   F77_BLAS_MANGLE(dsyrk,DSYRK)
 #define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
 #define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
 
@@ -171,6 +176,7 @@
 #define ZTRMV_F77   F77_BLAS_MANGLE(ztrmv,ZTRMV)
 #define ZGEMM_F77   F77_BLAS_MANGLE(zgemm,ZGEMM)
 #define ZSYMM_F77   F77_BLAS_MANGLE(zsymm,ZSYMM)
+#define ZSYRK_F77   F77_BLAS_MANGLE(zsyrk,ZSYRK)
 #define ZTRMM_F77   F77_BLAS_MANGLE(ztrmm,ZTRMM)
 #define ZTRSM_F77   F77_BLAS_MANGLE(ztrsm,ZTRSM)
 
@@ -232,6 +238,7 @@
 #define DTRMV_F77   F77_BLAS_MANGLE(dtrmv,DTRMV)
 #define DGEMM_F77   F77_BLAS_MANGLE(dgemm,DGEMM) 
 #define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
+#define DSYRK_F77   F77_BLAS_MANGLE(dsyrk,DSYRK)
 #define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
 #define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
 
@@ -251,6 +258,7 @@
 #define ZTRMV_F77   F77_BLAS_MANGLE(ztrmv,ZTRMV)
 #define ZGEMM_F77   F77_BLAS_MANGLE(zgemm,ZGEMM)
 #define ZSYMM_F77   F77_BLAS_MANGLE(zsymm,ZSYMM)
+#define ZSYRK_F77   F77_BLAS_MANGLE(zsyrk,ZSYRK)
 #define ZTRMM_F77   F77_BLAS_MANGLE(ztrmm,ZTRMM)
 #define ZTRSM_F77   F77_BLAS_MANGLE(ztrsm,ZTRSM)
 
@@ -276,6 +284,7 @@
 #define STRMV_F77   F77_BLAS_MANGLE(strmv,STRMV)
 #define SGEMM_F77   F77_BLAS_MANGLE(sgemm,SGEMM)
 #define SSYMM_F77   F77_BLAS_MANGLE(ssymm,SSYMM)
+#define SSYRK_F77   F77_BLAS_MANGLE(ssyrk,SSYRK)
 #define STRMM_F77   F77_BLAS_MANGLE(strmm,STRMM)
 #define STRSM_F77   F77_BLAS_MANGLE(strsm,STRSM)
 
@@ -295,6 +304,7 @@
 #define CTRMV_F77   F77_BLAS_MANGLE(ctrmv,CTRMV)
 #define CGEMM_F77   F77_BLAS_MANGLE(cgemm,CGEMM)
 #define CSYMM_F77   F77_BLAS_MANGLE(csymm,CSYMM)
+#define CSYRK_F77   F77_BLAS_MANGLE(csyrk,CSYRK)
 #define CTRMM_F77   F77_BLAS_MANGLE(ctrmm,CTRMM)
 #define CTRSM_F77   F77_BLAS_MANGLE(ctrsm,CTRSM)
 
@@ -412,6 +422,9 @@ void PREFIX DGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int *
 void PREFIX DSYMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * n,
                 const double *alpha, const double *a, const int *lda, 
                 const double *b, const int *ldb, const double *beta, double *c, const int *ldc);
+void PREFIX DSYRK_F77(Teuchos_fcd, Teuchos_fcd, const int *n, const int * k,
+                const double *alpha, const double *a, const int *lda, 
+                const double *beta, double *c, const int *ldc);
 void PREFIX DTRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,  
                 const int *m, const int *n, const double *alpha, const double *a, const int * lda, double *b, const int *ldb);
 void PREFIX DTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
@@ -427,6 +440,9 @@ void PREFIX ZGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int *
 void PREFIX ZSYMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * n,
                 const std::complex<double> *alpha, const std::complex<double> *a, const int *lda, 
                 const std::complex<double> *b, const int *ldb, const std::complex<double> *beta, std::complex<double> *c, const int *ldc);
+void PREFIX ZSYRK_F77(Teuchos_fcd, Teuchos_fcd, const int *n, const int * k,
+                const std::complex<double> *alpha, const std::complex<double> *a, const int *lda, 
+                const std::complex<double> *beta, std::complex<double> *c, const int *ldc);
 void PREFIX ZTRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,  
                 const int *m, const int *n, const std::complex<double> *alpha, const std::complex<double> *a, const int * lda, std::complex<double> *b, const int *ldb);
 void PREFIX ZTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
@@ -442,6 +458,9 @@ void PREFIX SGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int *
 void PREFIX SSYMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * n,
                 const float *alpha, const float *a, const int *lda, 
                 const float *b, const int *ldb, const float *beta, float *c, const int *ldc);
+void PREFIX SSYRK_F77(Teuchos_fcd, Teuchos_fcd, const int *n, const int * k,
+                const float *alpha, const float *a, const int *lda, 
+                const float *beta, float *c, const int *ldc);
 void PREFIX STRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
                 const int *m, const int *n, const float *alpha, const float *a, const int * lda, float *b, const int *ldb);
 void PREFIX STRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
@@ -460,6 +479,9 @@ void PREFIX CSYMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * n,
                 const std::complex<float> *b, const int *ldb, const std::complex<float> *beta, std::complex<float> *c, const int *ldc);
 void PREFIX CTRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
                 const int *m, const int *n, const std::complex<float> *alpha, const std::complex<float> *a, const int * lda, std::complex<float> *b, const int *ldb);
+void PREFIX CSYRK_F77(Teuchos_fcd, Teuchos_fcd, const int *n, const int * k,
+                const std::complex<float> *alpha, const std::complex<float> *a, const int *lda, 
+                const std::complex<float> *beta, std::complex<float> *c, const int *ldc);
 void PREFIX CTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
                 const int *m, const int *n, const std::complex<float> *alpha, const std::complex<float> *a, const int *
                 lda, std::complex<float> *b, const int *ldb);

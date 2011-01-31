@@ -67,7 +67,10 @@ namespace Intrepid {
     /** \brief Array to store the multi-indexed quantity 
     */
     Teuchos::ArrayRCP<Scalar> data_;
-    
+
+    typedef typename Teuchos::ArrayRCP<Scalar>::iterator data_ptr_t;
+    data_ptr_t data_ptr_;    
+
     /**\brief Array to store dimensions (dimensions) for the multi-indices. Admissible range (dimension)
      for  the k-th index is <var>0 <= i_k < dimensions_[k]</var>. Size of this array defines the rank of 
      the multi-indexed quantity, i.e., the number of its indices.  
@@ -102,6 +105,7 @@ namespace Intrepid {
     FieldContainer() : dim0_(0), dim1_(0), dim2_(0), dim3_(0), dim4_(0) 
     {
       data_.resize(0);
+      data_ptr_ = Teuchos::NullIteratorTraits<data_ptr_t>::getNull();
       dimensions_.resize(0);
     } ;
     

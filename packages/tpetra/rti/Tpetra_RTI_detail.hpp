@@ -42,29 +42,60 @@ namespace Tpetra {
     //! Internal detail for Tpetra::RTI. Methods and class here are not guaranteed to be backwards compatible.
     namespace detail {
 
+      //! Utility base class for kernels used to define Tpetra::Operator objects.
+      template <class S>
+      class StdOpKernel
+      {
+        protected:
+          S _alpha, _beta;
+          S       * _vec_inout;
+          const S * _vec_in2;
+        public:
+          inline StdOpKernel() : _alpha(ScalarTraits<S>::one()), _beta(ScalarTraits<S>::zero()) {}
+          inline void setData(S * vec_inout, const S * vec_in2)   { _vec_inout = vec_inout; _vec_in2 = vec_in2; }
+          inline void setAlphaBeta(const S &alpha, const S &beta) { _alpha = alpha; _beta = beta; }
+      };
+
       //! adapter class between kernels for Tpetra::RTI::unary_transform and Tpetra::RTI::detail::unary_transform
       template <class OP, class S>
-      class RTIUnaryFunctorAdapter {
+      class UnaryFunctorAdapter {
         protected:
           OP   _op;
           S  * _vec;
         public:
-          RTIUnaryFunctorAdapter(OP op) : _op(op) {}
+          UnaryFunctorAdapter(OP op) : _op(op) {}
           inline void setData(S *vec)                    { _vec = vec;             }
           inline void execute(int i)                     { _vec[i] = _op(_vec[i]); }
       };
 
       //! adapter class between kernels for Tpetra::RTI::binary_transform and Tpetra::RTI::detail::binary_transform
       template <class OP, class S1, class S2>
-      class RTIBinaryFunctorAdapter {
+      class BinaryFunctorAdapter {
         protected:
           OP         _op;
           S1       * _vec_inout;
           const S2 * _vec_in2;
         public:
-          RTIBinaryFunctorAdapter(OP op) : _op(op)    {}
-          inline void setData(S1 *vec_inout, const S2 *vec_in2) { _vec_inout = vec_inout; _vec_in2 = vec_in2;       }
-          inline void execute(int i)                         { _vec_inout[i] = _op(_vec_inout[i], _vec_in2[i]); }
+          BinaryFunctorAdapter(OP op) : _op(op)    {}
+          inline void setData(S1 *vec_inout, const S2 *vec_in2) { _vec_inout = vec_inout; _vec_in2 = vec_in2;   }
+          inline void execute(int i)                            { _vec_inout[i] = _op(_vec_inout[i], _vec_in2[i]); }
+      };
+
+      //! adapter class between binary functors and BinaryOp
+      template <class OP, class S>
+      class BinaryFunctorAdapterWithAlphaBeta : public StdOpKernel<S> {
+        protected:
+          OP        _op;
+          S       * _vec_inout;
+          const S * _vec_in2;
+        public:
+          BinaryFunctorAdapterWithAlphaBeta(OP op) : _op(op)  {}
+          inline void setData(S *vec_inout, const S *vec_in2) { _vec_inout = vec_inout; _vec_in2 = vec_in2;   }
+          inline void execute(int i) 
+          { 
+            S res = _op(_vec_inout[i], _vec_in2[i]); 
+            _vec_inout[i] = this->_alpha * res + this->_beta * _vec_inout[i];
+          }
       };
 
       //! adapter class between kernels for Tpetra::RTI::binary_transform and Tpetra::RTI::detail::binary_transform

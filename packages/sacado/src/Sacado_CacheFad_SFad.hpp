@@ -92,13 +92,14 @@ namespace Sacado {
       //@{
 
       //! Default constructor
-      Expr() : val_( T(0.)) { ss_array<T>::zero(dx_, Num); }
+      Expr() : val_( T(0.)), update_val_(true) { ss_array<T>::zero(dx_, Num); }
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      Expr(const T & x) : val_(x)  { ss_array<T>::zero(dx_, Num); }
+      Expr(const T & x) : val_(x), update_val_(true)  { 
+	ss_array<T>::zero(dx_, Num); }
 
       //! Constructor with size \c sz and value \c x
       /*!
@@ -141,6 +142,15 @@ namespace Sacado {
 
       //! Zero out the derivative array
       void zero() { ss_array<T>::zero(dx_, Num); }
+
+      //! Set whether this Fad object should update values
+      void setUpdateValue(bool update_val) { update_val_ = update_val; }
+
+      //! Return whether this Fad object has an updated value
+      bool updateValue() const { return update_val_; }
+
+      //! Cache values
+      void cache() const {}
 
       //@}
 
@@ -254,6 +264,9 @@ namespace Sacado {
 
       //! Derivatives
       T dx_[Num];
+
+      //! Update value
+      bool update_val_;
 
     }; // class Expr<SFadExprTag>
 

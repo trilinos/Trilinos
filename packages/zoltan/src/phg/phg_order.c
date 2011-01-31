@@ -32,6 +32,7 @@ int Zoltan_PHG_Vertex_Visit_Order(
   int *ldegree=NULL, *gdegree=NULL; /* local/global degree */
   int *lpins=NULL, *gpins=NULL; /* local/global sum of pins */
   char *yo= "Zoltan_PHG_Vertex_Visit_Order";
+  int ierr = ZOLTAN_OK;
 
   /* Start with linear order. */
   for (i=0; i<hg->nVtx; i++)
@@ -61,6 +62,8 @@ int Zoltan_PHG_Vertex_Visit_Order(
       else {
         /* Sort based on first component of multidimensional weight */
         tmpvwgt = (float *) ZOLTAN_MALLOC(hg->nVtx * sizeof(float));
+        if (hg->nVtx && !tmpvwgt) MEMORY_ERROR;
+
         for (i = 0; i < hg->nVtx; i++)
           tmpvwgt[i] = hg->vwgt[i*hg->VtxWeightDim];
       } 
@@ -116,8 +119,8 @@ int Zoltan_PHG_Vertex_Visit_Order(
 
     /* add more cases here */
   }
-
-  return ZOLTAN_OK;
+End:
+  return ierr;
 }
 
 #ifdef __cplusplus

@@ -40,14 +40,14 @@ struct FieldRestriction {
     return *this ;
   }
 
-  FieldRestriction( unsigned rank , unsigned ordinal)
-    : key( EntityKey(rank, ordinal))
+  FieldRestriction( EntityRank input_rank , EntityId input_ordinal)
+    : key( EntityKey(input_rank, input_ordinal))
   {
     Copy< MaximumFieldDimension >( stride , size_type(0) );
   }
 
-  unsigned type()    const { return entity_rank( key ); }
-  unsigned ordinal() const { return entity_id( key ); }
+  EntityRank type()    const { return entity_rank( key ); }
+  EntityId ordinal() const { return entity_id( key ); }
 };
 
 typedef std::vector<FieldRestriction> FieldRestrictionVector;

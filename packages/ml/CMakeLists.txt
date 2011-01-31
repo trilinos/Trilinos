@@ -101,6 +101,11 @@ ADD_OPTION_AND_DEFINE(TPL_ENABLE_MATLAB
   "Enable Matlab Functionality."
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TekoSmoothers
+  HAVE_ML_TekoSmoothers
+  "Enable Teko Smoothing Functionality."
+  OFF )
+
 
 #
 # C) Add the libraries, tests, and examples

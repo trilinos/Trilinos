@@ -307,7 +307,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 	 << "symmetric       = " << symmetric << endl
 	 << "PreviousA       = " << PreviousA << endl;
 
-  int ierr = 0, i, j, forierr = 0;
+  int ierr = 0, forierr = 0;
   int MyPID = Comm.MyPID();
   if (MyPID < 3) NumMyElements++;
   if (NumMyElements<2) NumMyElements = 2; // This value must be greater than one on each processor
@@ -330,7 +330,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   }
 
   ElementSizeList[0] = MaxSize;
-  for (i=1; i<NumMyElements-1; i++) {
+  for (int i=1; i<NumMyElements-1; i++) {
     int curSize = MinSize + (int) (DSizeRange * fabs(randvec[i]) + .99);
     ElementSizeList[i] = EPETRA_MAX(MinSize, EPETRA_MIN(MaxSize, curSize));
   }
@@ -362,7 +362,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 
   // We are building a block tridiagonal matrix
 
-  for (i=0; i<NumMyElements; i++)
+  for (int i=0; i<NumMyElements; i++)
     if (MyGlobalElements[i]==0 || MyGlobalElements[i] == NumGlobalElements-1)
       NumNz[i] = 2;
     else
@@ -442,8 +442,8 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
       int ColDim = MinSize+kc;
       Epetra_SerialDenseMatrix * curmat = &(BlockEntries[kr][kc]);
       curmat->Shape(RowDim,ColDim);
-      for (j=0; j < ColDim; j++)
-	for (i=0; i < RowDim; i++) {
+      for (int j=0; j < ColDim; j++)
+	for (int i=0; i < RowDim; i++) {
 	  BlockEntries[kr][kc][j][i] = -1.0;
 	  if (i==j && kr==kc) BlockEntries[kr][kc][j][i] = 9.0;
 	  else BlockEntries[kr][kc][j][i] = -1.0;
@@ -463,7 +463,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 
 
 
-  for (i=0; i<NumMyElements; i++) {
+  for (int i=0; i<NumMyElements; i++) {
     int CurRow = MyGlobalElements[i];
     if ( HaveColMap ) { 
       assert ( i == rowmap->LID( CurRow ) ) ; 
@@ -540,7 +540,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
       }
     }
     forierr = 0;
-    for (j=0; j < NumEntries; j++) {
+    for (int j=0; j < NumEntries; j++) {
       Epetra_SerialDenseMatrix * AD = &(BlockEntries[RowDim][ColDims[j]]);
       NumMyNonzeros += AD->M() * AD->N();	  
       forierr += !(A->SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0);
@@ -589,10 +589,10 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
       assert( i < NumMyElements ) ;
       assert( j < A->NumGlobalBlockCols() ) ;
       int CurRow = MyGlobalElements[i];
-      int Indices[1] ; 
-      Indices[0] = j ; 
+      int IndicesL[1] ; 
+      IndicesL[0] = j ; 
       Epetra_SerialDenseMatrix * AD = &(BlockEntries[0][0]);
-      EPETRA_TEST_ERR(!(A->BeginInsertGlobalValues( CurRow, 1, Indices)==0),ierr);
+      EPETRA_TEST_ERR(!(A->BeginInsertGlobalValues( CurRow, 1, IndicesL)==0),ierr);
 
       if ( CurRow < j-1 || CurRow > j+1 ) {
 	OffDiagonalBlockAdded = true ; 
@@ -652,17 +652,17 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   forierr = 0;
   if ( ! ExtraBlocks ) {
     if ( FixedNumEntries ) 
-      for (i=0; i<NumMyElements; i++) forierr += !(A->NumGlobalBlockEntries(MyGlobalElements[i])==3);
+      for (int i=0; i<NumMyElements; i++) forierr += !(A->NumGlobalBlockEntries(MyGlobalElements[i])==3);
     else
-      for (i=0; i<NumMyElements; i++) forierr += !(A->NumGlobalBlockEntries(MyGlobalElements[i])==NumNz[i]);
+      for (int i=0; i<NumMyElements; i++) forierr += !(A->NumGlobalBlockEntries(MyGlobalElements[i])==NumNz[i]);
   }
   EPETRA_TEST_ERR(forierr,ierr);
   forierr = 0;
   if ( ! ExtraBlocks ) 
     if ( FixedNumEntries ) 
-      for (i=0; i<NumMyElements; i++) forierr += !(A->NumMyBlockEntries(i)==3);
+      for (int i=0; i<NumMyElements; i++) forierr += !(A->NumMyBlockEntries(i)==3);
     else
-      for (i=0; i<NumMyElements; i++) forierr += !(A->NumMyBlockEntries(i)==NumNz[i]);
+      for (int i=0; i<NumMyElements; i++) forierr += !(A->NumMyBlockEntries(i)==NumNz[i]);
   EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
@@ -750,7 +750,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
     A->ExtractGlobalBlockRowPointers(0, numvals, RowDim, numvals, Rowinds, 
 				    Rowvals); // Get A[0,:]
 
-    for (i=0; i<numvals; i++) {
+    for (int i=0; i<numvals; i++) {
       if (Rowinds[i] == 0) {
 	//	Rowvals[i]->A()[0] *= 10.0; // Multiply first diag value by 10.0
 	Rowvals[i]->A()[0] += 1000.0; // Add 1000 to first diag value
@@ -983,10 +983,9 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   {
     // Add  rows one-at-a-time
 
-    int NumEntries;
-    int NumMyNonzeros = 0, NumMyEquations = 0;
+    NumMyNonzeros = NumMyEquations = 0;
     
-    for (i=0; i<NumMyElements; i++) {
+    for (int i=0; i<NumMyElements; i++) {
       int CurRow = MyGlobalElements[i];
       int RowDim = ElementSizeList[i]-MinSize;
       NumMyEquations += BlockEntries[RowDim][RowDim].M();
@@ -1023,7 +1022,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
       EPETRA_TEST_ERR((A->IndicesAreGlobal()),ierr);
       EPETRA_TEST_ERR(!(A->BeginReplaceGlobalValues(CurRow, NumEntries, Indices)==0),ierr);
       forierr = 0;
-      for (j=0; j < NumEntries; j++) {
+      for (int j=0; j < NumEntries; j++) {
 	Epetra_SerialDenseMatrix * AD = &(BlockEntries[RowDim][ColDims[j]]);
 	NumMyNonzeros += AD->M() * AD->N();	  
 	forierr += !(A->SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0);
@@ -1041,10 +1040,9 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   if ( ! ExtraBlocks )   {
     // Add  rows one-at-a-time
 
-    int NumEntries;
-    int NumMyNonzeros = 0, NumMyEquations = 0;
+    NumMyNonzeros = NumMyEquations = 0;
     
-    for (i=0; i<NumMyElements; i++) {
+    for (int i=0; i<NumMyElements; i++) {
       int CurRow = MyGlobalElements[i];
       int RowDim = ElementSizeList[i]-MinSize;
       NumMyEquations += BlockEntries[RowDim][RowDim].M();
@@ -1085,7 +1083,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 	EPETRA_TEST_ERR(!(A->BeginSumIntoGlobalValues(CurRow, NumEntries, Indices)==0),ierr);
       }
       forierr = 0;
-      for (j=0; j < NumEntries; j++) {
+      for (int j=0; j < NumEntries; j++) {
 	Epetra_SerialDenseMatrix * AD = &(BlockEntries[RowDim][ColDims[j]]);
 	NumMyNonzeros += AD->M() * AD->N();	  
 	//  This has nothing to do with insertlocal, but that is a convenient bool to key on 
@@ -1131,7 +1129,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   // Test diagonal replacement and extraction methods
 
   forierr = 0;
-  for (i=0; i<NumMyEquations1; i++) checkDiag[i]=two1;
+  for (int i=0; i<NumMyEquations1; i++) checkDiag[i]=two1;
   EPETRA_TEST_ERR(forierr,ierr);
   
   EPETRA_TEST_ERR(!(B->ReplaceDiagonalValues(checkDiag)==0),ierr);
@@ -1140,7 +1138,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   EPETRA_TEST_ERR(!(B->ExtractDiagonalCopy(checkDiag1)==0),ierr);
   
   forierr = 0;
-  for (i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==checkDiag1[i]);
+  for (int i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==checkDiag1[i]);
   EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nDiagonal extraction and replacement OK.\n\n" << endl;
@@ -1327,7 +1325,7 @@ int main(int argc, char *argv[])
     // We are building a tridiagonal matrix where each row has (-1 2 -1)
     // So we need 2 off-diagonal terms (except for the first and last equation)
     
-    for (i=0; i<NumMyElements1; i++)
+    for (int i=0; i<NumMyElements1; i++)
       if (MyGlobalElements1[i]==0 || MyGlobalElements1[i] == NumGlobalElements1-1)
 	NumNz1[i] = 1;
       else
@@ -1347,7 +1345,7 @@ int main(int argc, char *argv[])
     int NumEntries1;
 
     forierr = 0;
-    for (i=0; i<NumMyElements1; i++)
+    for (int i=0; i<NumMyElements1; i++)
       {
 	if (MyGlobalElements1[i]==0)
 	  {
@@ -1537,7 +1535,6 @@ int check(Epetra_VbrMatrix& A,
   EPETRA_TEST_ERR(A.MyLRID(NumMyBlockRows),ierr);
 
     
-  int i, j;
   int MaxNumBlockEntries = A.MaxNumBlockEntries();
 
   // Pointer Extraction approach
@@ -1562,7 +1559,7 @@ int check(Epetra_VbrMatrix& A,
   int MaxColDim = A.MaxColDim();
   int MyCopySizeOfValues = MaxRowDim*MaxColDim;
   double ** MyCopyValuesPointers = new double*[MaxNumBlockEntries];
-  for (i=0; i<MaxNumBlockEntries; i++)
+  for (int i=0; i<MaxNumBlockEntries; i++)
     MyCopyValuesPointers[i] = new double[MaxRowDim*MaxColDim];
 
   //   Global Index
@@ -1575,7 +1572,7 @@ int check(Epetra_VbrMatrix& A,
   int GlobalMaxColDim = A.GlobalMaxColDim();
   int GlobalCopySizeOfValues = GlobalMaxRowDim*GlobalMaxColDim;
   double ** GlobalCopyValuesPointers = new double*[MaxNumBlockEntries];
-  for (i=0; i<MaxNumBlockEntries; i++)
+  for (int i=0; i<MaxNumBlockEntries; i++)
     GlobalCopyValuesPointers[i] = new double[GlobalMaxRowDim*GlobalMaxColDim];
 
   // View Extraction approaches
@@ -1593,7 +1590,7 @@ int check(Epetra_VbrMatrix& A,
 
   // For each row, test six approaches to extracting data from a given local index matrix
   forierr = 0;
-  for (i=0; i<NumMyBlockRows; i++) {
+  for (int i=0; i<NumMyBlockRows; i++) {
     int MyRow = i;
     int GlobalRow = A.GRID(i);
     // Get a copy of block indices in local index space, pointers to everything else
@@ -1610,7 +1607,7 @@ int check(Epetra_VbrMatrix& A,
 				 MyCopyNumBlockEntries, MyCopyBlockIndices,
 				 MyCopyColDims), ierr);
     // Copy Values
-    for (j=0; j<MyCopyNumBlockEntries; j++) {
+    for (int j=0; j<MyCopyNumBlockEntries; j++) {
       EPETRA_TEST_ERR( A.ExtractEntryCopy(MyCopySizeOfValues, MyCopyValuesPointers[j], MaxRowDim, false), ierr) ;
       MyCopyLDAs[j] = MaxRowDim;
     }
@@ -1620,7 +1617,7 @@ int check(Epetra_VbrMatrix& A,
 				    GlobalCopyNumBlockEntries, GlobalCopyBlockIndices,
 				    GlobalCopyColDims), ierr ) ;
     // Copy Values
-    for (j=0; j<GlobalCopyNumBlockEntries; j++) {
+    for (int j=0; j<GlobalCopyNumBlockEntries; j++) {
       EPETRA_TEST_ERR( A.ExtractEntryCopy(GlobalCopySizeOfValues, GlobalCopyValuesPointers[j], GlobalMaxRowDim, false), ierr );
       GlobalCopyLDAs[j] = GlobalMaxRowDim;
     }
@@ -1629,7 +1626,7 @@ int check(Epetra_VbrMatrix& A,
     EPETRA_TEST_ERR( A.BeginExtractMyBlockRowView(MyRow, MyView1RowDim, 
 				 MyView1NumBlockEntries, MyView1BlockIndices), ierr ) ;
     // Set pointers to values
-    for (j=0; j<MyView1NumBlockEntries; j++) 
+    for (int j=0; j<MyView1NumBlockEntries; j++) 
       EPETRA_TEST_ERR ( A.ExtractEntryView(MyView1ValuesPointers[j]), ierr ) ;
 
 
@@ -1643,7 +1640,7 @@ int check(Epetra_VbrMatrix& A,
     forierr += !(MyPointersNumBlockEntries==GlobalCopyNumBlockEntries);
     forierr += !(MyPointersNumBlockEntries==MyView1NumBlockEntries);
     forierr += !(MyPointersNumBlockEntries==MyView2NumBlockEntries);
-    for (j=1; j<MyPointersNumBlockEntries; j++) {
+    for (int j=1; j<MyPointersNumBlockEntries; j++) {
       forierr += !(MyCopyBlockIndices[j-1]<MyCopyBlockIndices[j]);
       forierr += !(MyView1BlockIndices[j-1]<MyView1BlockIndices[j]);
       forierr += !(MyView2BlockIndices[j-1]<MyView2BlockIndices[j]);
@@ -1697,12 +1694,12 @@ int check(Epetra_VbrMatrix& A,
   delete [] MyCopyBlockIndices;
   delete [] MyCopyColDims;
   delete [] MyCopyLDAs;
-  for (i=0; i<MaxNumBlockEntries; i++) delete [] MyCopyValuesPointers[i];
+  for (int i=0; i<MaxNumBlockEntries; i++) delete [] MyCopyValuesPointers[i];
   delete [] MyCopyValuesPointers;
   delete [] GlobalCopyBlockIndices;
   delete [] GlobalCopyColDims;
   delete [] GlobalCopyLDAs;
-  for (i=0; i<MaxNumBlockEntries; i++) delete [] GlobalCopyValuesPointers[i];
+  for (int i=0; i<MaxNumBlockEntries; i++) delete [] GlobalCopyValuesPointers[i];
   delete [] GlobalCopyValuesPointers;
   delete [] MyView1ValuesPointers;
   if (verbose) cout << "\n\nRows sorted check OK" << endl<< endl;
@@ -1714,7 +1711,7 @@ int check(Epetra_VbrMatrix& A,
 int CompareValues(double * A, int LDA, int NumRowsA, int NumColsA, 
 		  double * B, int LDB, int NumRowsB, int NumColsB) {
   
-  int i, j, ierr = 0, forierr = 0;
+  int ierr = 0, forierr = 0;
   double * ptr1 = B;
   double * ptr2;
   
@@ -1723,10 +1720,10 @@ int CompareValues(double * A, int LDA, int NumRowsA, int NumColsA,
  
 
   forierr = 0;
-  for (j=0; j<NumColsA; j++) {
+  for (int j=0; j<NumColsA; j++) {
     ptr1 = B + j*LDB;
     ptr2 = A + j*LDA;
-    for (i=0; i<NumRowsA; i++) forierr += (*ptr1++ != *ptr2++);
+    for (int i=0; i<NumRowsA; i++) forierr += (*ptr1++ != *ptr2++);
   }
   EPETRA_TEST_ERR(forierr,ierr);
   return ierr;
@@ -1741,7 +1738,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   int myLastRow = myFirstRow+2;
   int numMyRows = myLastRow - myFirstRow + 1;
   int numGlobalRows = numProcs*numMyRows;
-  int i,j, ierr;
+  int ierr;
 
   //We'll set up a matrix which is globally block-diagonal, i.e., on each
   //processor the list of columns == list of rows.
@@ -1751,7 +1748,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   int* myCols = new int[numCols];
 
   int col = myFirstRow;
-  for(i=0; i<numCols; ++i) {
+  for(int i=0; i<numCols; ++i) {
     myCols[i] = col++;
     if (col > myLastRow) col = myFirstRow;
   }
@@ -1771,7 +1768,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   x.PutScalar(1.0);
 
   double* coef = new double[elemSize*elemSize];
-  for(i=0; i<elemSize*elemSize; ++i) {
+  for(int i=0; i<elemSize*elemSize; ++i) {
     coef[i] = 0.5;
   }
 
@@ -1779,10 +1776,10 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   //FillComplete, which internally calls MergeRedundantEntries, the
   //matrix should contain 1.0 in each entry.
 
-  for(i=myFirstRow; i<=myLastRow; ++i) {
+  for(int i=myFirstRow; i<=myLastRow; ++i) {
     EPETRA_TEST_ERR( A.BeginInsertGlobalValues(i, numCols, myCols), ierr);
 
-    for(j=0; j<numCols; ++j) {
+    for(int j=0; j<numCols; ++j) {
       EPETRA_TEST_ERR( A.SubmitBlockEntry(coef, elemSize,
 					  elemSize, elemSize), ierr);
     }
@@ -1811,7 +1808,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   Epetra_SerialDenseMatrix** Values;
   Epetra_VbrMatrix Aview(View, map, numMyRows);
 
-  for(i=myFirstRow; i<=myLastRow; ++i) {
+  for(int i=myFirstRow; i<=myLastRow; ++i) {
     BlockIndices[i-myFirstRow] = new int[numCols];
     EPETRA_TEST_ERR( A.ExtractGlobalBlockRowPointers(i, numCols,
 						     RowDim, numBlockEntries,
@@ -1823,7 +1820,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 
     if (numMyRows != numBlockEntries) return(-1);
     if (RowDim != elemSize) return(-2);
-    for(j=0; j<numBlockEntries; ++j) {
+    for(int j=0; j<numBlockEntries; ++j) {
       if (Values[j]->A()[0] != 1.0) {
 	cout << "Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
 	     << " should be 1.0" << endl;
@@ -1844,7 +1841,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   //So the test appears to have passed for the original matrix A. Now check the
   //values of our second "view" of the matrix, 'Aview'.
 
-  for(i=myFirstRow; i<=myLastRow; ++i) {
+  for(int i=myFirstRow; i<=myLastRow; ++i) {
     EPETRA_TEST_ERR( Aview.ExtractGlobalBlockRowPointers(i, numMyRows,
 							 RowDim, numBlockEntries,
 							 BlockIndices[i-myFirstRow],
@@ -1852,7 +1849,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 
     if (numMyRows != numBlockEntries) return(-1);
     if (RowDim != elemSize) return(-2);
-    for(j=0; j<numBlockEntries; ++j) {
+    for(int j=0; j<numBlockEntries; ++j) {
       if (Values[j]->A()[0] != 1.0) {
 	cout << "Aview: Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
 	     << " should be 1.0" << endl;
@@ -1884,13 +1881,13 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
   int myLastRow = myFirstRow+2;
   int numMyRows = myLastRow - myFirstRow + 1;
   int numGlobalRows = numProcs*numMyRows;
-  int i,j, ierr;
+  int ierr;
 
   int numCols = numMyRows;
   int* myCols = new int[numCols];
 
   int col = myFirstRow;
-  for(i=0; i<numCols; ++i) {
+  for(int i=0; i<numCols; ++i) {
     myCols[i] = col++;
     if (col > myLastRow) col = myFirstRow;
   }
@@ -1905,7 +1902,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
 
   double* coef = new double[elemSize*elemSize];
 
-  for(i=myFirstRow; i<=myLastRow; ++i) {
+  for(int i=myFirstRow; i<=myLastRow; ++i) {
     int myPointRow = i*elemSize;
 
     //The coefficients need to be laid out in column-major order. i.e., the
@@ -1919,7 +1916,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
 
     EPETRA_TEST_ERR( A.BeginInsertGlobalValues(i, numCols, myCols), ierr);
 
-    for(j=0; j<numCols; ++j) {
+    for(int j=0; j<numCols; ++j) {
       EPETRA_TEST_ERR( A.SubmitBlockEntry(coef, elemSize,
 					  elemSize, elemSize), ierr);
     }
@@ -1938,7 +1935,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
   int* indices = new int[len];
   int RowDim, numBlockEntries;
 
-  for(i=myFirstRow; i<=myLastRow; ++i) {
+  for(int i=myFirstRow; i<=myLastRow; ++i) {
     EPETRA_TEST_ERR( A.ExtractGlobalBlockRowPointers(i, numMyRows,
 						     RowDim, numBlockEntries,
 						     indices,
@@ -1947,8 +1944,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
     if (RowDim != elemSize) return(-2);
 
     int myPointRow = i*elemSize - myFirstRow*elemSize;
-    int ii,jj;
-    for(ii=0; ii<elemSize; ++ii) {
+    for(int ii=0; ii<elemSize; ++ii) {
       EPETRA_TEST_ERR( A.ExtractMyRowCopy(myPointRow+ii, len,
 					  checkLen, values, indices), ierr);
       if (len != checkLen) return(-3);
@@ -1956,7 +1952,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
       double val = (i*elemSize+ii)*1.0;
       double blockvalue = blockEntries[0]->A()[ii];
 
-      for(jj=0; jj<len; ++jj) {
+      for(int jj=0; jj<len; ++jj) {
 	if (values[jj] != val) return(-4);
 	if (values[jj] != blockvalue) return(-5);
       }
@@ -1978,7 +1974,7 @@ int checkMatvecSameVectors(Epetra_Comm& comm, bool verbose)
   int myLastRow = myFirstRow+2;
   int numMyRows = myLastRow - myFirstRow + 1;
   int numGlobalRows = numProcs*numMyRows;
-  int i,ierr;
+  int ierr;
 
   int elemSize = 2;
   int num_off_diagonals = 1;
@@ -1993,7 +1989,7 @@ int checkMatvecSameVectors(Epetra_Comm& comm, bool verbose)
   int* rowlengths = matdata.rowlengths();
   int** colindices = matdata.colindices();
 
-  for(i=myFirstRow; i<=myLastRow; ++i) {
+  for(int i=myFirstRow; i<=myLastRow; ++i) {
 
     EPETRA_TEST_ERR( A.BeginInsertGlobalValues(i, rowlengths[i],
                                                colindices[i]), ierr);
@@ -2018,7 +2014,7 @@ int checkMatvecSameVectors(Epetra_Comm& comm, bool verbose)
   double* xptr = x.Values();
   double* yptr = y.Values();
 
-  for(i=0; i<numMyRows; ++i) {
+  for(int i=0; i<numMyRows; ++i) {
     if (xptr[i] != yptr[i]) {
       return(-1);
     }
@@ -2035,7 +2031,7 @@ int checkEarlyDelete(Epetra_Comm& comm, bool verbose)
   int myLastRow = myFirstRow+2;
   int numMyRows = myLastRow - myFirstRow + 1;
   int numGlobalRows = numProcs*numMyRows;
-  int i,ierr;
+  int ierr;
 
   int elemSize = 2;
   int num_off_diagonals = 1;
@@ -2050,7 +2046,7 @@ int checkEarlyDelete(Epetra_Comm& comm, bool verbose)
   int* rowlengths = matdata.rowlengths();
   int** colindices = matdata.colindices();
 
-  for(i=myFirstRow; i<=myLastRow; ++i) {
+  for(int i=myFirstRow; i<=myLastRow; ++i) {
 
     EPETRA_TEST_ERR( A->BeginInsertGlobalValues(i, rowlengths[i],
                                                colindices[i]), ierr);
@@ -2074,7 +2070,7 @@ int checkEarlyDelete(Epetra_Comm& comm, bool verbose)
 
   delete A;
 
-  for(i=myFirstRow; i<=myLastRow; ++i) {
+  for(int i=myFirstRow; i<=myLastRow; ++i) {
 
     EPETRA_TEST_ERR( B.BeginReplaceGlobalValues(i, rowlengths[i],
                                                colindices[i]), ierr);

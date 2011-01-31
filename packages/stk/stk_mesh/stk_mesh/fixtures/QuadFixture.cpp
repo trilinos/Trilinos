@@ -8,6 +8,8 @@
 
 #include <algorithm>
 
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 
 #include <stk_mesh/base/FieldData.hpp>
@@ -16,7 +18,6 @@
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
@@ -24,53 +25,73 @@ namespace stk {
 namespace mesh {
 namespace fixtures {
 
-QuadFixture::~QuadFixture()
-{}
-
 QuadFixture::QuadFixture( stk::ParallelMachine pm ,
-                        unsigned nx , unsigned ny )
-  : spatial_dimension(2),
-    meta_data( TopologicalMetaData::entity_rank_names(spatial_dimension) ),
-    bulk_data( meta_data , pm ),
-    top_data( meta_data, spatial_dimension ),
-    quad_part( top_data.declare_part<shards::Quadrilateral<4> >("quad_part" ) ),
-    coord_field( meta_data.declare_field<CoordFieldType>("Coordinates") ),
-    coord_gather_field( meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
-    NX( nx ),
-    NY( ny )
+                          unsigned nx , unsigned ny )
+  : m_spatial_dimension(2),
+    m_meta_data( fem::entity_rank_names(m_spatial_dimension) ),
+    m_bulk_data( m_meta_data , pm ),
+    m_fem(m_meta_data, m_spatial_dimension),
+    m_quad_part( declare_part<shards::Quadrilateral<4> >(m_meta_data, "quad_part" ) ),
+    m_coord_field( m_meta_data.declare_field<CoordFieldType>("Coordinates") ),
+    m_coord_gather_field( m_meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
+    m_nx( nx ),
+    m_ny( ny )
 {
   typedef shards::Quadrilateral<4> Quad4 ;
-  enum { SpatialDim = 2 };
-  enum { NodesPerElem = Quad4::node_count };
+  const unsigned nodes_per_elem = Quad4::node_count;
 
   //put coord-field on all nodes:
   put_field(
-      coord_field,
-      top_data.node_rank,
-      meta_data.universal_part(),
-      SpatialDim
+      m_coord_field,
+      fem::NODE_RANK,
+      m_meta_data.universal_part(),
+      m_spatial_dimension
       );
 
   //put coord-gather-field on all elements:
   put_field(
-      coord_gather_field,
-      top_data.element_rank,
-      meta_data.universal_part(),
-      NodesPerElem
+      m_coord_gather_field,
+      fem::element_rank(m_fem),
+      m_meta_data.universal_part(),
+      nodes_per_elem
       );
 
   // Field relation so coord-gather-field on elements points
   // to coord-field of the element's nodes
-  meta_data.declare_field_relation( coord_gather_field, element_node_stencil<Quad4>, coord_field);
-
+  m_meta_data.declare_field_relation(
+      m_coord_gather_field,
+      fem::element_node_stencil<Quad4, 2>,
+      m_coord_field
+      );
 }
+
+void QuadFixture::node_x_y( EntityId entity_id, unsigned &x , unsigned &y ) const
+{
+  entity_id -= 1;
+
+  x = entity_id % (m_nx+1);
+  entity_id /= (m_nx+1);
+
+  y = entity_id;
+}
+
+void QuadFixture::elem_x_y( EntityId entity_id, unsigned &x , unsigned &y ) const
+{
+  entity_id -= 1;
+
+  x = entity_id % m_nx;
+  entity_id /= m_nx;
+
+  y = entity_id;
+}
+
 
 void QuadFixture::generate_mesh() {
   std::vector<EntityId> element_ids_on_this_processor;
 
-  const unsigned p_size = bulk_data.parallel_size();
-  const unsigned p_rank = bulk_data.parallel_rank();
-  const unsigned num_elems = NX * NY;
+  const unsigned p_size = m_bulk_data.parallel_size();
+  const unsigned p_rank = m_bulk_data.parallel_rank();
+  const unsigned num_elems = m_nx * m_ny;
 
   const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
   const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
@@ -94,43 +115,45 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
     element_ids_on_this_processor.erase(ib, ie);
   }
 
-  bulk_data.modification_begin();
+  m_bulk_data.modification_begin();
 
   {
-    std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
-    const std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
+    // Declare the elements that belong on this process
+
+    std::vector<EntityId>::const_iterator ib = element_ids_on_this_processor.begin();
+    const std::vector<EntityId>::const_iterator ie = element_ids_on_this_processor.end();
     for (; ib != ie; ++ib) {
       EntityId entity_id = *ib;
       unsigned ix = 0, iy = 0;
-      elem_ix_iy(entity_id, ix, iy);
+      elem_x_y(entity_id, ix, iy);
 
-      stk::mesh::EntityId elem_node[4] ;
+      stk::mesh::EntityId elem_nodes[4] ;
 
-      elem_node[0] = node_id( ix   , iy );
-      elem_node[1] = node_id( ix+1 , iy );
-      elem_node[2] = node_id( ix+1 , iy+1 );
-      elem_node[3] = node_id( ix   , iy+1 );
+      elem_nodes[0] = node_id( ix   , iy );
+      elem_nodes[1] = node_id( ix+1 , iy );
+      elem_nodes[2] = node_id( ix+1 , iy+1 );
+      elem_nodes[3] = node_id( ix   , iy+1 );
 
-      stk::mesh::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
+      stk::mesh::declare_element( m_bulk_data, m_quad_part, elem_id( ix , iy ) , elem_nodes);
       for (unsigned i = 0; i<4; ++i) {
-        stk::mesh::Entity * const node =
-          bulk_data.get_entity( top_data.node_rank , elem_node[i] );
+        stk::mesh::Entity * const node = m_bulk_data.get_entity( fem::NODE_RANK , elem_nodes[i] );
 
-        if ( node != NULL) {
+        ThrowRequireMsg( node != NULL,
+          "This process should know about the nodes that make up its element");
 
-          unsigned nx = 0, ny = 0;
-          node_ix_iy(elem_node[i], nx, ny);
+        // Compute and assign coordinates to the node
+        unsigned nx = 0, ny = 0;
+        node_x_y(elem_nodes[i], nx, ny);
 
-          Scalar * data = stk::mesh::field_data( coord_field , *node );
+        Scalar * data = stk::mesh::field_data( m_coord_field , *node );
 
-          data[0] = nx ;
-          data[1] = ny ;
-        }
+        data[0] = nx ;
+        data[1] = ny ;
       }
     }
   }
 
-  bulk_data.modification_end();
+  m_bulk_data.modification_end();
 
 }
 

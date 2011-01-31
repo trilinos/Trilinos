@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include <math.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
@@ -57,10 +58,11 @@ int ierr = ZOLTAN_OK;
 
 ZOLTAN_COMM_OBJ *plan=NULL;
 
-int *sendIntBuf = NULL;
-int *recvIntBuf = NULL;
+ZOLTAN_GNO_TYPE *sendGnoBuf = NULL, *recvGnoBuf = NULL;
+ZOLTAN_ID_TYPE *sendIdBuf = NULL, *recvIdBuf = NULL;
+
 int *procBuf= NULL;
-int *edgeBuf= NULL;
+ZOLTAN_GNO_TYPE *edgeBuf= NULL;
 int *pinIdx = NULL;
 
 float *gid_weights = NULL;
@@ -87,8 +89,12 @@ float *src, *dest;
 float *fromwgt, *towgt;
 
 float weight_val;
-int index;
-int gnos[2];
+intptr_t index, iptr;   /* integers the same size as a pointer */
+ZOLTAN_GNO_TYPE gnos[2];
+ZOLTAN_GNO_TYPE tmpgno;
+MPI_Datatype zoltan_gno_mpi_type;
+
+int gno_size_for_dd;
 
 ZOLTAN_ID_PTR fromID, toID;
 
@@ -102,6 +108,7 @@ phg_GID_lookup       *lookup_myObjs = NULL;
 phg_GID_lookup       *lookup_myHshEdges = NULL;
 phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   /* Use the graph or hypergraph query functions to build the hypergraph.
    *
@@ -119,6 +126,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+  gno_size_for_dd = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
 
   /* initialize temporary search structures */
 
@@ -182,7 +190,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
   if (zhg->nObj){
     /* Zoltan internal hypergraph will use sequential global numbers */
-    zhg->objGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * zhg->nObj);
+    zhg->objGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * zhg->nObj);
     if (!zhg->objGNO) MEMORY_ERROR;
   }
 
@@ -225,7 +233,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     if (myHshVtxs.size > 0){
       myHshVtxs.vtxGID = ZOLTAN_MALLOC_GID_ARRAY(zz, myHshVtxs.size);
       myHshVtxs.vtxOwner = (int *)ZOLTAN_MALLOC(sizeof(int) * myHshVtxs.size);
-      myHshVtxs.vtxGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * myHshVtxs.size);
+      myHshVtxs.vtxGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * myHshVtxs.size);
 
       if (!myHshVtxs.vtxGID || !myHshVtxs.vtxOwner || !myHshVtxs.vtxGNO) {
         MEMORY_ERROR;
@@ -240,7 +248,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     }
 
     msg_tag--;
-    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)zhg->objGNO, sizeof(int), (char *)myHshVtxs.vtxGNO);
+    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)zhg->objGNO, sizeof(ZOLTAN_GNO_TYPE), (char *)myHshVtxs.vtxGNO);
 
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       goto End;
@@ -319,36 +327,31 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
     /* send edge size and edge GID together */
 
-    if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "BAD CODING ASSUMPTION"); 
-      exit(1);
-    }
-
     cnt = 1 + gid_size;
 
     if (nRequests > 0){
-      recvIntBuf = (int *)ZOLTAN_MALLOC(cnt * sizeof(int) * nRequests);
-      if (!recvIntBuf) MEMORY_ERROR;
+      recvIdBuf = (ZOLTAN_ID_TYPE *)ZOLTAN_MALLOC(cnt * sizeof(ZOLTAN_ID_TYPE) * nRequests);
+      if (!recvIdBuf) MEMORY_ERROR;
     }
     if (myPins.nHedges > 0){
-      sendIntBuf = (int *)ZOLTAN_MALLOC(cnt * sizeof(int) * myPins.nHedges);
-      if (!sendIntBuf) MEMORY_ERROR;
+      sendIdBuf = (ZOLTAN_ID_TYPE *)ZOLTAN_MALLOC(cnt * sizeof(ZOLTAN_ID_TYPE) * myPins.nHedges);
+      if (!sendIdBuf) MEMORY_ERROR;
 
       for (i=0, j=0, k=0; i < myPins.nHedges; i++, j+= cnt, k += gid_size){
 
-        sendIntBuf[j] = myPins.esizes[i];
-        ZOLTAN_SET_GID(zz, sendIntBuf + j + 1, myPins.edgeGID + k);
+        sendIdBuf[j] = (ZOLTAN_ID_TYPE)myPins.esizes[i];
+        ZOLTAN_SET_GID(zz, sendIdBuf + j + 1, myPins.edgeGID + k);
       }
     }
 
     msg_tag--;
-    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)sendIntBuf, sizeof(int) * cnt, (char *)recvIntBuf);
+    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)sendIdBuf, sizeof(ZOLTAN_ID_TYPE) * cnt, (char *)recvIdBuf);
 
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       goto End;
     }
 
-    ZOLTAN_FREE(&sendIntBuf);
+    ZOLTAN_FREE(&sendIdBuf);
 
     if (nRequests > 0){
       global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, nRequests);
@@ -357,9 +360,9 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (!global_ids || !gid_buf) MEMORY_ERROR;
 
       for (i=0, j=0, k=0; i < nRequests; i++, j+= cnt, k += gid_size){
-        ZOLTAN_SET_GID(zz, global_ids + k, recvIntBuf + j + 1);
+        ZOLTAN_SET_GID(zz, global_ids + k, recvIdBuf + j + 1);
         if (i){
-          recvIntBuf[i] = recvIntBuf[j];  /* edge size */
+          recvIdBuf[i] = recvIdBuf[j];  /* edge size */
         }
       }
       /* need to save a copy of original global_ids array */
@@ -380,14 +383,14 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
     if (zhg->nHedges > 0){
       zhg->Esize  = (int *)ZOLTAN_CALLOC(zhg->nHedges , sizeof(int));
-      zhg->edgeGNO = (int *)ZOLTAN_MALLOC(zhg->nHedges * sizeof(int));
+      zhg->edgeGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(zhg->nHedges * sizeof(ZOLTAN_GNO_TYPE));
       if (!zhg->Esize || !zhg->edgeGNO) MEMORY_ERROR;
     }
 
     for (i=0; i<nRequests; i++){
       j = phg_lookup_GID(lookup_myHshEdges, gid_buf + (i*gid_size));
       if (j < 0) FATAL_ERROR("Invalid global edge ID received");
-      zhg->Esize[j] += recvIntBuf[i];
+      zhg->Esize[j] += (int)recvIdBuf[i];
     }
 
     for (j=0; j < zhg->nHedges; j++){
@@ -396,21 +399,23 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
 #ifdef CEDRIC_2D_PARTITIONS
     if (hgp->keep_tree) {
-      int offset;
-      int *egno = NULL;
-      MPI_Scan(&zhg->nHedges, &offset, 1, MPI_INT, MPI_SUM, zz->Communicator);
+      ZOLTAN_GNO_TYPE offset;
+      ZOLTAN_GNO_TYPE *egno = NULL;
+      MPI_Scan(&zhg->nHedges, &offset, 1, zoltan_gno_mpi_type, MPI_SUM, zz->Communicator);
       offset -= zhg->nHedges;
 #ifdef CEDRIC_PRINT
       for (j=0; j < zhg->nHedges; j++){
-	fprintf (stderr, "EDGEGID %d\t%d\n", global_ids[j], offset + j);
+	fprintf (stderr, "EDGEGID " ZOLTAN_ID_SPEC "\t%zd\n", global_ids[j], offset + j);
       }
 #endif /* CEDRIC_PRINT */
 
-      egno = (int*)ZOLTAN_MALLOC(zhg->nHedges*sizeof(int));
+      egno = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(zhg->nHedges*sizeof(ZOLTAN_GNO_TYPE));
+      if (zhg->nHedges && !egno) MEMORY_ERROR;
+
       for (j=0; j < zhg->nHedges; j++){
 	egno[j] = j + offset;
       }
-      Zoltan_DD_Create (&zhg->ddHedge, zz->Communicator, 1, zz->Num_GID,
+      Zoltan_DD_Create (&zhg->ddHedge, zz->Communicator, gno_size_for_dd, zz->Num_GID,
 			0, zhg->nHedges, 0);
       Zoltan_DD_Update (zhg->ddHedge, (ZOLTAN_ID_PTR) egno, global_ids, NULL,
 			  NULL, zhg->nHedges);
@@ -429,7 +434,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (!pin_gid_buf) MEMORY_ERROR;
       myHshEdges.pinGID = ZOLTAN_MALLOC_GID_ARRAY(zz, zhg->nPins);
       if (!myHshEdges.pinGID) MEMORY_ERROR;
-      zhg->pinGNO = (int *)ZOLTAN_MALLOC(zhg->nPins * sizeof(int));
+      zhg->pinGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(zhg->nPins * sizeof(ZOLTAN_GNO_TYPE));
       if (!zhg->pinGNO) MEMORY_ERROR;
       zhg->Pin_Procs = (int *)ZOLTAN_MALLOC(zhg->nPins * sizeof(int));
       if (!zhg->Pin_Procs) MEMORY_ERROR;
@@ -468,16 +473,16 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
       toID = myHshEdges.pinGID + (pinIdx[j] * gid_size);
 
-      for (k=0; k < recvIntBuf[i]; k++){
+      for (k=0; k < recvIdBuf[i]; k++){
         ZOLTAN_SET_GID(zz, toID , fromID);
         toID += gid_size;
         fromID += gid_size;
       }
 
-      pinIdx[j] += recvIntBuf[i];
+      pinIdx[j] += (int)recvIdBuf[i];
     }
 
-    ZOLTAN_FREE(&recvIntBuf);
+    ZOLTAN_FREE(&recvIdBuf);
     ZOLTAN_FREE(&pinIdx);
     ZOLTAN_FREE(&pin_gid_buf);
     ZOLTAN_FREE(&gid_buf);
@@ -500,8 +505,8 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     if (nRequests){
       gid_buf = ZOLTAN_MALLOC_GID_ARRAY(zz, nRequests);
       if (!gid_buf) MEMORY_ERROR;
-      sendIntBuf = (int *)ZOLTAN_MALLOC(nRequests * sizeof(int) * 2);
-      if (!sendIntBuf) MEMORY_ERROR;
+      sendGnoBuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(nRequests * sizeof(ZOLTAN_GNO_TYPE) * 2);
+      if (!sendGnoBuf) MEMORY_ERROR;
     }
 
     msg_tag--;
@@ -516,8 +521,8 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       j = phg_lookup_GID(lookup_myHshVtxs, gid_buf + ( i * gid_size));
       if (j < 0) FATAL_ERROR("Unexpected vertex GID received");
 
-      sendIntBuf[2*i] = myHshVtxs.vtxOwner[j];
-      sendIntBuf[2*i + 1] = myHshVtxs.vtxGNO[j];
+      sendGnoBuf[2*i] = (ZOLTAN_GNO_TYPE)myHshVtxs.vtxOwner[j];
+      sendGnoBuf[2*i + 1] = myHshVtxs.vtxGNO[j];
     }
 
     ZOLTAN_FREE(&gid_buf);
@@ -525,37 +530,37 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     phg_free_GID_lookup_table(&lookup_myHshVtxs);
 
     if (zhg->nPins > 0){
-      recvIntBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * 2 * zhg->nPins);
-      if (!recvIntBuf) MEMORY_ERROR;
+      recvGnoBuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * 2 * zhg->nPins);
+      if (!recvGnoBuf) MEMORY_ERROR;
     }
 
     msg_tag--;
-    ierr = Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *)sendIntBuf, 
-                  sizeof(int) * 2, NULL, (char *)recvIntBuf);
+    ierr = Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *)sendGnoBuf, 
+                     sizeof(ZOLTAN_GNO_TYPE) * 2, NULL, (char *)recvGnoBuf);
 
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       goto End;
     }
 
     Zoltan_Comm_Destroy(&plan);
-    ZOLTAN_FREE(&sendIntBuf);
+    ZOLTAN_FREE(&sendGnoBuf);
 
     for (i =0; i < zhg->nPins; i++){
-      zhg->Pin_Procs[i] = recvIntBuf[2*i];
-      zhg->pinGNO[i] = recvIntBuf[2*i + 1];
+      zhg->Pin_Procs[i] = (int)recvGnoBuf[2*i];
+      zhg->pinGNO[i] = recvGnoBuf[2*i + 1];
     }
 
-    ZOLTAN_FREE(&recvIntBuf);
+    ZOLTAN_FREE(&recvGnoBuf);
 
     if (need_pin_weights){
 
       /* Send to vertex owner the number of edges containing that vertex */
 
-      map1 = Zoltan_Map_Create(zz, 0, 1, 0, zhg->nObj);
+      map1 = Zoltan_Map_Create(zz, 0, sizeof(ZOLTAN_GNO_TYPE), 0, zhg->nObj);
       if (map1 == NULL) goto End;
 
-      for (i=0; i < zhg->nObj; i++){
-        ierr = Zoltan_Map_Add(zz, map1, zhg->objGNO + i, i);
+      for (iptr=0; iptr < zhg->nObj; iptr++){
+        ierr = Zoltan_Map_Add(zz, map1, (char *)(zhg->objGNO + iptr), iptr + 1);
         if (ierr != ZOLTAN_OK) goto End;
       }
 
@@ -567,12 +572,12 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       }
 
       if (nRequests){
-        recvIntBuf = (int *)ZOLTAN_MALLOC(nRequests * sizeof(int));
-        if (!recvIntBuf) MEMORY_ERROR;
+        recvGnoBuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(nRequests * sizeof(ZOLTAN_GNO_TYPE));
+        if (!recvGnoBuf) MEMORY_ERROR;
       }
 
       msg_tag--;
-      ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)zhg->pinGNO, sizeof(int), (char *)recvIntBuf);
+      ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)zhg->pinGNO, sizeof(ZOLTAN_GNO_TYPE), (char *)recvGnoBuf);
 
       if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
         goto End;
@@ -584,14 +589,15 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (zhg->nObj && !zhg->numHEdges) MEMORY_ERROR;
 
       for (i=0; i < nRequests; i++){
-        ierr = Zoltan_Map_Find(zz, map1, recvIntBuf + i, &index);
+        ierr = Zoltan_Map_Find(zz, map1, (char *)(recvGnoBuf + i), &iptr);
         if (ierr != ZOLTAN_OK) goto End;
-        if (index == ZOLTAN_NOT_FOUND) FATAL_ERROR("Unexpected vertex global number received");
+        if (iptr == ZOLTAN_NOT_FOUND) FATAL_ERROR("Unexpected vertex global number received");
 
+        index = iptr - 1;
         zhg->numHEdges[index]++;
       }
 
-      ZOLTAN_FREE(&recvIntBuf);
+      ZOLTAN_FREE(&recvGnoBuf);
 
       Zoltan_Map_Destroy(zz, &map1);
     }
@@ -739,7 +745,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
     /* Convert the application's vertex GIDs to our vertex global numbers. */
 
-    zhg->pinGNO = (int *)ZOLTAN_CALLOC(sizeof(int) , zhg->nPins);
+    zhg->pinGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_CALLOC(sizeof(ZOLTAN_GNO_TYPE) , zhg->nPins);
     if (zhg->nPins && !zhg->pinGNO) MEMORY_ERROR;
 
     ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, zhg->pinGNO, zhg->nPins, randomizeInitDist,
@@ -762,8 +768,8 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     if (nRequests > 0){
       gid_buf = ZOLTAN_MALLOC_GID_ARRAY(zz, nRequests);
       if (!gid_buf) MEMORY_ERROR;
-      sendIntBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * nRequests);
-      if (!sendIntBuf) MEMORY_ERROR;
+      sendGnoBuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * nRequests);
+      if (!sendGnoBuf) MEMORY_ERROR;
     }
   
     msg_tag--;
@@ -781,7 +787,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     for (i=0; i<nRequests; i++){
       j = phg_lookup_GID(lookup_myObjs, gid_buf + ( i * gid_size));
       if (j < 0) FATAL_ERROR("Unexpected vertex GID received");
-      sendIntBuf[i] = zhg->objGNO[j];
+      sendGnoBuf[i] = zhg->objGNO[j];
       zhg->numHEdges[j]++;  /* number of edges this vertex is in, in original graph */
     }
 
@@ -791,14 +797,14 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
   
     msg_tag--;
   
-    ierr = Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *)sendIntBuf, sizeof(int),
+    ierr = Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *)sendGnoBuf, sizeof(ZOLTAN_GNO_TYPE),
                   NULL, (char *)zhg->pinGNO);
   
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       goto End;
     }
 
-    ZOLTAN_FREE(&sendIntBuf);
+    ZOLTAN_FREE(&sendGnoBuf);
     Zoltan_Comm_Destroy(&plan);
 
     /*
@@ -811,14 +817,14 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
     /* Create a lookup object for all vertex pairs in graph */
 
-    map2 = Zoltan_Map_Create(zz, 0, 2, 1, zhg->nPins);
+    map2 = Zoltan_Map_Create(zz, 0, 2 * sizeof(ZOLTAN_GNO_TYPE), 1, zhg->nPins);
     if (map2 == NULL) goto End;
 
-    for (i=0, k=0; i < zhg->nObj; i++){
-      for (j=0; j < zhg->Esize[i]; j++, k++){
+    for (i=0, iptr=0; i < zhg->nObj; i++){
+      for (j=0; j < zhg->Esize[i]; j++, iptr++){
          gnos[0] = zhg->objGNO[i];
-         gnos[1] = zhg->pinGNO[k];
-         ierr = Zoltan_Map_Add(zz, map2, gnos, k);
+         gnos[1] = zhg->pinGNO[iptr];
+         ierr = Zoltan_Map_Add(zz, map2, (char *)gnos, iptr + 1);
          if (ierr != ZOLTAN_OK) goto End;
       }
     }
@@ -852,11 +858,13 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
            cnt++;
          }
          else{
-           ierr = Zoltan_Map_Find(zz, map2, gnos, &index);
+           ierr = Zoltan_Map_Find(zz, map2, (char *)gnos, &iptr);
            if (ierr != ZOLTAN_OK) goto End;
-           if (index != ZOLTAN_NOT_FOUND){
+
+           if (iptr != ZOLTAN_NOT_FOUND){
              if (ew_dim){
                /* this proc provided weights for [v0,v1] and [v1, v0] */
+               index = iptr - 1;
                dest = wgts + k * ew_dim; 
                src = zhg->Ewgt + index * ew_dim;
                for (dim = 0; dim < ew_dim; dim++){
@@ -874,8 +882,8 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     }
 
     if (cnt > 0){
-      sendIntBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * 2 * cnt);
-      if (!sendIntBuf) MEMORY_ERROR;
+      sendGnoBuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * 2 * cnt);
+      if (!sendGnoBuf) MEMORY_ERROR;
       procBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * cnt);
       if (!procBuf) MEMORY_ERROR;
       cnt = 0;
@@ -884,8 +892,8 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
         for (j=0; j < zhg->Esize[i]; j++, k++){
            if (zhg->Pin_Procs[k] != zz->Proc){
              procBuf[cnt] = zhg->Pin_Procs[k];
-             sendIntBuf[2*cnt] = zhg->pinGNO[k];
-             sendIntBuf[2*cnt + 1] = zhg->objGNO[i];
+             sendGnoBuf[2*cnt] = zhg->pinGNO[k];
+             sendGnoBuf[2*cnt + 1] = zhg->objGNO[i];
              cnt++;
            }
         }
@@ -904,27 +912,30 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     if (nRequests > 0){
       sendFloatBuf = (float *) ZOLTAN_CALLOC(sizeof(float) , nRequests * ew_dim);
       if (ew_dim && !sendFloatBuf) MEMORY_ERROR;
-      recvIntBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * 2 * nRequests);
-      if (!recvIntBuf) MEMORY_ERROR;
+      recvGnoBuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * 2 * nRequests);
+      if (!recvGnoBuf) MEMORY_ERROR;
     }
 
     msg_tag--;
-    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)sendIntBuf, sizeof(int) * 2, (char *)recvIntBuf);
+    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)sendGnoBuf, sizeof(ZOLTAN_GNO_TYPE) * 2, (char *)recvGnoBuf);
   
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       goto End;
     }
 
-    ZOLTAN_FREE(&sendIntBuf);
+    ZOLTAN_FREE(&sendGnoBuf);
   
     nEdge = 0;
     for (i=0; i<nRequests; i++){
-      gnos[0] = recvIntBuf[i*2];
-      gnos[1] = recvIntBuf[i*2 + 1];
+      gnos[0] = recvGnoBuf[i*2];
+      gnos[1] = recvGnoBuf[i*2 + 1];
 
-      ierr = Zoltan_Map_Find(zz, map2, gnos, &index);
+      ierr = Zoltan_Map_Find(zz, map2, (char *)gnos, &iptr);
       if (ierr != ZOLTAN_OK) goto End;
-      if (index != ZOLTAN_NOT_FOUND){
+
+      index = iptr - 1;
+
+      if (iptr != ZOLTAN_NOT_FOUND){
         if (ew_dim){
           dest = sendFloatBuf + i * ew_dim; 
           src = zhg->Ewgt + index * ew_dim;
@@ -943,7 +954,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     }
 
     Zoltan_Map_Destroy(zz, &map2);
-    ZOLTAN_FREE(&recvIntBuf);
+    ZOLTAN_FREE(&recvGnoBuf);
 
     if (ew_dim){
 
@@ -1019,14 +1030,14 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       zhg->nHedges = zhg->nObj;
       zhg->nPins = zhg->nPins + zhg->nObj;
 
-      zhg->edgeGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * zhg->nObj);
+      zhg->edgeGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * zhg->nObj);
       if (zhg->nObj && !zhg->edgeGNO) MEMORY_ERROR;
 
       wgts = (float *)ZOLTAN_MALLOC(sizeof(float) * ew_dim * zhg->nHedges);
       if (zhg->nHedges && ew_dim && !wgts) MEMORY_ERROR;
       procBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * zhg->nPins);
       if (zhg->nPins && !procBuf) MEMORY_ERROR;
-      edgeBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * zhg->nPins);
+      edgeBuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * zhg->nPins);
       if (zhg->nPins && !edgeBuf) MEMORY_ERROR;
 
       k = 0;  /* index into new pin arrays */
@@ -1086,7 +1097,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
       cnt = 0;       /* actual number of hyperedges */
 
-      edgeBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * nEdge * 2);    /* pin gno */
+      edgeBuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * nEdge * 2);    /* pin gno */
       procBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * nEdge * 2);    /* pin proc */
 
       if (nEdge && (!edgeBuf || !procBuf)) MEMORY_ERROR;
@@ -1147,16 +1158,16 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
           ZOLTAN_FREE(&wgts);
         }
   
-        zhg->edgeGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * cnt);
+        zhg->edgeGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * cnt);
         if (!zhg->edgeGNO) MEMORY_ERROR;
         zhg->Esize = (int *)ZOLTAN_MALLOC(sizeof(int) * cnt);
         if (!zhg->Esize) MEMORY_ERROR;
-        zhg->pinGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * cnt * 2);
+        zhg->pinGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * cnt * 2);
         if (!zhg->pinGNO) MEMORY_ERROR;
         zhg->Pin_Procs = (int *)ZOLTAN_MALLOC(sizeof(int) * cnt * 2);
         if (!zhg->Pin_Procs) MEMORY_ERROR;
   
-        memcpy(zhg->pinGNO, edgeBuf, 2 * cnt * sizeof(int));
+        memcpy(zhg->pinGNO, edgeBuf, 2 * cnt * sizeof(ZOLTAN_GNO_TYPE));
   
         memcpy(zhg->Pin_Procs, procBuf, 2 * cnt * sizeof(int));
   
@@ -1189,7 +1200,8 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
   /* Set global number of pins                                                  */
   /******************************************************************************/
 
-  rc = MPI_Allreduce(&zhg->nPins, &zhg->globalPins, 1, MPI_INT, MPI_SUM, comm);
+  tmpgno = (ZOLTAN_GNO_TYPE)zhg->nPins;
+  rc = MPI_Allreduce(&tmpgno, &zhg->globalPins, 1, zoltan_gno_mpi_type, MPI_SUM, comm);
   CHECK_FOR_MPI_ERROR(rc);
 
   /***********************************************************************/
@@ -1275,8 +1287,10 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
 End:
 
-  ZOLTAN_FREE(&sendIntBuf);
-  ZOLTAN_FREE(&recvIntBuf);
+  ZOLTAN_FREE(&sendGnoBuf);
+  ZOLTAN_FREE(&recvGnoBuf);
+  ZOLTAN_FREE(&sendIdBuf);
+  ZOLTAN_FREE(&recvIdBuf);
   ZOLTAN_FREE(&pinIdx);
 
   ZOLTAN_FREE(&gid_weights);
@@ -1301,21 +1315,29 @@ End:
   phg_free_GID_lookup_table(&lookup_myHshVtxs);
   phg_free_GID_lookup_table(&lookup_myObjs);
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
+
   return ierr;
 }
 
 /*****************************************************************************/
 
-int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, int *gnos, int len, int randomize,
-          int *numGlobalObjects)
+int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, ZOLTAN_GNO_TYPE *gnos, int len, int randomize,
+          ZOLTAN_GNO_TYPE *numGlobalObjects)
 {
   static char *yo = "Zoltan_PHG_GIDs_to_global_number";
   int ierr = ZOLTAN_OK;
-  int *gtotal = NULL;
+  ZOLTAN_GNO_TYPE *gtotal = NULL;
   int nProc = zz->Num_Proc;
-  int *mycnt = NULL, *gcnt = NULL;
+  ZOLTAN_GNO_TYPE *mycnt = NULL, *gcnt = NULL;
+  ZOLTAN_GNO_TYPE tmp;
   int i, rc;
   MPI_Comm comm = zz->Communicator;
+  MPI_Datatype zoltan_gno_mpi_type;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   /* The application uses global IDs which are unique but arbitrary.  Zoltan_PHG will
    * use global numbers which are consecutive integers beginning with zero.  Convert
@@ -1324,8 +1346,7 @@ int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, int *gnos, int len, int randomize,
   
   if (randomize) {
     /* Randomize the global numbers */
-    int tmp;
-    gtotal = (int *) ZOLTAN_CALLOC(3*nProc+1, sizeof(int));
+    gtotal = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC(3*nProc+1, sizeof(ZOLTAN_GNO_TYPE));
     if (!gtotal) MEMORY_ERROR;
 
     mycnt  = gtotal + nProc + 1;
@@ -1335,14 +1356,14 @@ int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, int *gnos, int len, int randomize,
     /* Count how many local vtxs selected processor bin */
     Zoltan_Srand(Zoltan_Rand(NULL)+zz->Proc, NULL);
     for (i = 0; i < len; i++) {
-      gnos[i] = Zoltan_Rand_InRange(NULL, nProc);
+      gnos[i] = (ZOLTAN_GNO_TYPE)Zoltan_Rand_InRange(NULL, nProc);
       mycnt[gnos[i]]++;
     }
     /* Compute prefix of mycnt */
-    rc = MPI_Scan(mycnt, gcnt, nProc, MPI_INT, MPI_SUM, comm);
+    rc = MPI_Scan(mycnt, gcnt, nProc, zoltan_gno_mpi_type, MPI_SUM, comm);
     CHECK_FOR_MPI_ERROR(rc);
 
-    rc = MPI_Allreduce(mycnt, gtotal, nProc, MPI_INT, MPI_SUM, comm);
+    rc = MPI_Allreduce(mycnt, gtotal, nProc, zoltan_gno_mpi_type, MPI_SUM, comm);
     CHECK_FOR_MPI_ERROR(rc);
 
     /* Compute first gno for vertices going to each target bin */
@@ -1357,30 +1378,31 @@ int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, int *gnos, int len, int randomize,
     /* Assign gnos sequential from gcnt[bin]. */
     for (i=0; i< len; i++) {
       tmp = gnos[i];
-      gnos[i] = gtotal[tmp] + gcnt[tmp];
+      gnos[i] = (ZOLTAN_GNO_TYPE)(gtotal[tmp] + gcnt[tmp]);
       gcnt[tmp]++;
     }
   }
   else {
     /* Linearly order the input vertices */
-    gtotal = (int *) ZOLTAN_MALLOC((nProc+1) * sizeof(int));
+    gtotal = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC((nProc+1) * sizeof(ZOLTAN_GNO_TYPE));
     if (!gtotal) MEMORY_ERROR;
 
     /* Construct gtotal[i] = the number of vertices on all procs < i. */
     /* Scan to compute partial sums of the number of objs */
 
-    rc = MPI_Scan(&len, gtotal, 1, MPI_INT, MPI_SUM, comm);
+    tmp = (ZOLTAN_GNO_TYPE)len;
+    rc = MPI_Scan(&tmp, gtotal, 1, zoltan_gno_mpi_type, MPI_SUM, comm);
     CHECK_FOR_MPI_ERROR(rc);
 
     /* Gather data from all procs */
 
-    rc = MPI_Allgather (&(gtotal[0]), 1, MPI_INT, &(gtotal[1]), 1, MPI_INT, comm);
+    rc = MPI_Allgather (&(gtotal[0]), 1, zoltan_gno_mpi_type, &(gtotal[1]), 1, zoltan_gno_mpi_type, comm);
     CHECK_FOR_MPI_ERROR(rc);
     gtotal[0] = 0;
     *numGlobalObjects = gtotal[nProc];
 
     for (i=0; i< len; i++) {
-      gnos[i] =  gtotal[zz->Proc]+i;
+      gnos[i] =  (ZOLTAN_GNO_TYPE)gtotal[zz->Proc]+i;
     }
   }
 
@@ -1388,6 +1410,7 @@ End:
 
   ZOLTAN_FREE(&gtotal);
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 /*****************************************************************************/
@@ -1539,6 +1562,7 @@ int numGID = zz->Num_GID;
   ierr = ZOLTAN_OK;
 
   if (num_pins == 0){
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ierr;
   }
 
@@ -1555,6 +1579,7 @@ int numGID = zz->Num_GID;
     (struct _hash_node **)ZOLTAN_CALLOC(ht_size, sizeof(struct _hash_node *));
 
   if (!hash_table){
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -1702,6 +1727,8 @@ float *gewgts = NULL, *wgt_ptr = NULL;
 int sumNumEntries, temp;
 int *numEdges = NULL;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   *tot_nbors = 0;
   *num_nbors = NULL;
   *nbor_GIDs = NULL;
@@ -1716,6 +1743,7 @@ int *numEdges = NULL;
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                        "Error returned from Zoltan_Get_Num_Edges_Per_Obj");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -1730,6 +1758,7 @@ int *numEdges = NULL;
   if (!nbor_gids || !nbor_procs || (ew_dim && !gewgts)){
     Zoltan_Multifree(__FILE__, __LINE__, 3, &nbor_gids, &nbor_procs, &gewgts);
     ZOLTAN_FREE(&num_nbors);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -1779,6 +1808,7 @@ End:
   *nbor_Procs = nbor_procs;
   *edgeWeights = gewgts;
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 /*****************************************************************************/

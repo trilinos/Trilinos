@@ -15,7 +15,7 @@ LOCAInterface::
       
 bool LOCAInterface::
 computeF(const Epetra_Vector& x, Epetra_Vector& f, 
-    NOX::Epetra::Interface::Required::FillType F)
+	 const NOX::Epetra::Interface::Required::FillType F)
 {
   problem->ComputeF(x,f);
   return true;

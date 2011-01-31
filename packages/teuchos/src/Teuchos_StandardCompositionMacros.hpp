@@ -75,7 +75,7 @@ private: \
 public: \
   typedef Teuchos::RCP< TYPE > NAME ## _ptr_t
 
-/** \breif Macro that adds <<std comp>> members for a composition association.
+/** \brief Macro that adds <<std comp>> members for a composition association.
  *
  * This form is for when the object being held will have non-const attributes
  * irrespective of the const of <tt>this</tt>.

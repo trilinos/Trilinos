@@ -2,7 +2,6 @@ Decomposition Method 	= hypergraph
 zoltan parameters	= phg_coarsening_limit=2
 zoltan parameters	= obj_weight_dim=1
 zoltan parameters	= final_output=1
-zoltan parameters       = phg_from_graph_method=neighbors
 File Type		= Chaco
 File Name		= vwgt
 Parallel Disk Info	= number=0

@@ -38,6 +38,13 @@ if(RUN_REGULAR_TESTS)
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
+    MPI_OPT_ZOLTAN_C_64
+    ctest_linux_nightly_mpi_opt_zoltan_c64_godel.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 240
+  )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_DEBUG_ICPC
     ctest_linux_nightly_serial_debug_icpc_godel.cmake
     RUN_SERIAL

@@ -19,71 +19,94 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 namespace stk {
 namespace mesh {
 namespace fixtures {
 
-class QuadFixture {
-
-public:
+/**
+ * An 2-dimensional X*Y quad fixture.
+ *
+ * A coordinate field will be added to all nodes, a coordinate-gather field
+ * will be added to all elements.
+ */
+class QuadFixture
+{
+ public:
   typedef int Scalar ;
   typedef Field<Scalar, Cartesian>    CoordFieldType;
   typedef Field<Scalar*,ElementNode>  CoordGatherFieldType;
 
+  /**
+   * Set up meta data to support this fixture. Meta data is left uncommitted
+   * to allow additional modifications by the client.
+   */
   QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny );
 
-  ~QuadFixture();
+  ~QuadFixture() {}
 
-  const unsigned         spatial_dimension;
-  stk::mesh::MetaData    meta_data ;
-  stk::mesh::BulkData    bulk_data ;
-  stk::mesh::TopologicalMetaData top_data;
-  stk::mesh::Part      & quad_part ;
-  CoordFieldType       & coord_field ;
-  CoordGatherFieldType & coord_gather_field ;
-  const unsigned         NX ;
-  const unsigned         NY ;
+  const unsigned                m_spatial_dimension;
+  MetaData                      m_meta_data ;
+  BulkData                      m_bulk_data ;
+  DefaultFEM                    m_fem;
+  Part &                        m_quad_part ;
+  CoordFieldType &              m_coord_field ;
+  CoordGatherFieldType &        m_coord_gather_field ;
+  const unsigned                m_nx ;
+  const unsigned                m_ny ;
 
-  stk::mesh::EntityId node_id( unsigned ix , unsigned iy ) const
-    { return 1 + ix + ( NX + 1 ) * iy ; }
+  /**
+   * Thinking in terms of rows and columns of nodes, get the id of the node in
+   * the (x, y) position.
+   */
+  EntityId node_id( unsigned x , unsigned y ) const
+    { return 1 + x + ( m_nx + 1 ) * y ; }
 
-  stk::mesh::EntityId elem_id( unsigned ix , unsigned iy ) const
-    { return 1 + ix + NX * iy ; }
+  /**
+   * Thinking in terms of rows and columns of elements, get the id of the
+   * element in the (x, y) position.
+   */
+  EntityId elem_id( unsigned x , unsigned y ) const
+    { return 1 + x + m_nx * y ; }
 
-  stk::mesh::Entity * node( unsigned ix , unsigned iy ) const
-    { return bulk_data.get_entity( top_data.node_rank , node_id(ix,iy) ); }
+  /**
+   * Thinking in terms of rows and columns of nodes, get the node in
+   * the (x, y) position. Return NULL if this process doesn't know about
+   * this node.
+   */
+  Entity * node( unsigned x , unsigned y ) const
+  { return m_bulk_data.get_entity( fem::NODE_RANK , node_id(x, y) ); }
 
-  void node_ix_iy( EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
-    entity_id -= 1;
+  /**
+   * Thinking in terms of rows and columns of elements, get the element in
+   * the (x, y) position. Return NULL if this process doesn't know about
+   * this element.
+   */
+  Entity * elem( unsigned x , unsigned y ) const
+  { return m_bulk_data.get_entity( fem::element_rank(m_fem), elem_id(x, y)); }
 
-    ix = entity_id % (NX+1);
-    entity_id /= (NX+1);
+  /**
+   * Thinking in terms of a 2D grid of nodes, compute the (x, y) position
+   * of a node given it's id.
+   */
+  void node_x_y( EntityId entity_id, unsigned &x , unsigned &y ) const;
 
-    iy = entity_id;
-  }
+  /**
+   * Thinking in terms of a 2D grid of elements, compute the (x, y) position
+   * of an element given it's id.
+   */
+  void elem_x_y( EntityId entity_id, unsigned &x , unsigned &y ) const;
 
-  void elem_ix_iy( EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
-    entity_id -= 1;
-
-    ix = entity_id % NX;
-    entity_id /= NX;
-
-    iy = entity_id;
-  }
-
-  stk::mesh::Entity * elem( unsigned ix , unsigned iy ) const
-    { return bulk_data.get_entity( top_data.element_rank , elem_id(ix,iy) ); }
-
-  void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
-
+  /**
+   * Create the mesh (into m_bulk_data).
+   */
   void generate_mesh();
 
-private:
+ private:
+  void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
 
   QuadFixture();
   QuadFixture( const QuadFixture & );

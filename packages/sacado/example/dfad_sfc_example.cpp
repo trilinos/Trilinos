@@ -138,7 +138,7 @@ int main(int argc, char **argv)
   if (std::fabs(r - r_ad)       < tol &&
       std::fabs(drda - drda_ad) < tol &&
       std::fabs(drdb - drdb_ad) < tol &&
-      (fc.totalFlopCount == 48 || fc.totalFlopCount == 51)) {
+      (fc.totalFlopCount == 40)) {
     std::cout << "\nExample passed!" << std::endl;
     return 0;
   }

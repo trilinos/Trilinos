@@ -519,13 +519,24 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
 {
   *ierr = ZOLTAN_OK;
   int ngids = 0;
+  int *ibuf;
 
   //M.M.W. need to add hierarchical support
 
   if ((input_type_ == geometric_input_) || (input_type_ == hgraph_input_) || (input_type_ == graph_input_) || (input_type_==simple_input_)) 
   {
     ngids = rowMap_->NumMyElements();
-    rowMap_->MyGlobalElements( ((int *) global_ids) );
+
+    if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
+      ibuf = rowMap_->MyGlobalElements();
+
+      for (int i=0; i < ngids; i++){
+        global_ids[i] = (ZOLTAN_ID_TYPE)ibuf[i];
+      }
+    }
+    else{
+      rowMap_->MyGlobalElements( ((int *) global_ids) );
+    }
   }
   else if(input_type_ == hgraph2d_finegrain_input_)
   {
@@ -552,9 +563,9 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
 
         for(int colIndx=0; colIndx<rowSize; colIndx++)
         {
-          global_ids[ngids] = rowMap_->GID(rowNum);
+          global_ids[ngids] = (ZOLTAN_ID_TYPE)rowMap_->GID(rowNum);
           ngids++;
-          global_ids[ngids]= colMap_->GID(tmprowCols[colIndx]);
+          global_ids[ngids]= (ZOLTAN_ID_TYPE)colMap_->GID(tmprowCols[colIndx]);
           ngids++;
         }
 
@@ -577,9 +588,9 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
 
         for(int colIndx=0;colIndx<rowSize;colIndx++)
         {
-          global_ids[ngids] = rowMap_->GID(rowNum);
+          global_ids[ngids] = (ZOLTAN_ID_TYPE)rowMap_->GID(rowNum);
           ngids++;
-          global_ids[ngids]= colMap_->GID(tmprowCols[colIndx]);
+          global_ids[ngids]= (ZOLTAN_ID_TYPE)colMap_->GID(tmprowCols[colIndx]);
           ngids++;
         }
 
@@ -602,7 +613,7 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
   }
 
   for (int i=0; i<ngids; i++){
-    local_ids[i] = i;
+    local_ids[i] = (ZOLTAN_ID_TYPE)i;
   }
 
   if (weight_dim >= 1) // Note we only supply 1-D weights
@@ -669,7 +680,7 @@ void QueryObject::My_Number_Edges_Multi(int num_gid_entries, int num_lid_entries
 
   if (!haveGraph_){
     for (int i=0; i<num_obj; i++){
-      rc = matrix_->NumMyRowEntries(local_ids[i], num_indices);
+      rc = matrix_->NumMyRowEntries((int)local_ids[i], num_indices);
       if (rc != 0){
 	*ierr = ZOLTAN_FATAL;
 	std::cout << "Proc:" << myProc_ << " Error: ";
@@ -678,7 +689,7 @@ void QueryObject::My_Number_Edges_Multi(int num_gid_entries, int num_lid_entries
       }
       num_edges[i] = num_indices;
       if (graph_self_edges_.size() > 0){
-	std::set<int>::iterator it = graph_self_edges_.find(global_ids[i]);
+	std::set<int>::iterator it = graph_self_edges_.find((int)global_ids[i]);
 	if (it != graph_self_edges_.end()){
 	  num_edges[i]--;
 	}
@@ -687,7 +698,7 @@ void QueryObject::My_Number_Edges_Multi(int num_gid_entries, int num_lid_entries
   }
   else{
     for (int i=0; i<num_obj; i++){
-      num_edges[i] = graph_->NumMyIndices(local_ids[i]);
+      num_edges[i] = graph_->NumMyIndices((int)local_ids[i]);
       if (num_edges[i] < 0){
 	*ierr = ZOLTAN_FATAL;
 	std::cout << "Proc:" << myProc_ << " Error: ";
@@ -695,7 +706,7 @@ void QueryObject::My_Number_Edges_Multi(int num_gid_entries, int num_lid_entries
 	return;
       }
       if (graph_self_edges_.size() > 0){
-	std::set<int>::iterator it = graph_self_edges_.find(global_ids[i]);
+	std::set<int>::iterator it = graph_self_edges_.find((int)global_ids[i]);
 	if (it != graph_self_edges_.end()){
 	  num_edges[i]--;
 	}
@@ -753,17 +764,17 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
 
     int self_edge = 0;
     if (graph_self_edges_.size() > 0){
-      std::set<int>::iterator it = graph_self_edges_.find(global_ids[i]);
+      std::set<int>::iterator it = graph_self_edges_.find((int)global_ids[i]);
       if (it != graph_self_edges_.end()){
 	self_edge = 1;
       }
     }
 
     if (!haveGraph_){
-      rc = matrix_->ExtractMyRowCopy(local_ids[i], tmpSize, num_indices, tmp, gids);
+      rc = matrix_->ExtractMyRowCopy((int)local_ids[i], tmpSize, num_indices, tmp, gids);
     }
     else{
-      rc = graph_->ExtractMyRowCopy(local_ids[i], tmpSize,  num_indices, gids);
+      rc = graph_->ExtractMyRowCopy((int)local_ids[i], tmpSize,  num_indices, gids);
     }
 
     if ((rc < 0) || (num_indices != (num_edges[i] + self_edge))){
@@ -778,7 +789,7 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
     }
 
     if (use_weights){
-      rc = costs_->getGraphEdgeWeights(global_ids[i], wgtMap);
+      rc = costs_->getGraphEdgeWeights((int)global_ids[i], wgtMap);
       if (rc != num_edges[i]){
 	*ierr = ZOLTAN_FATAL;
 	std::cout << "Proc:" << myProc_ << " Error: ";
@@ -790,7 +801,7 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
 
       if (self_edge && (gids[j] == (int)global_ids[i])) continue;  // skip self edge
 
-      *nborID++ = gids[j];                   // Global ID of neighbor
+      *nborID++ = (ZOLTAN_ID_TYPE)gids[j];                   // Global ID of neighbor
 
       procIter = procmap_.find(gids[j]);
       if (procIter == procmap_.end()){
@@ -881,14 +892,17 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   }
   /////////////////////////////////////////////////////
 
+  int maxrow = 0;
+
   if (haveGraph_)
   {
     npins = graph_->NumMyNonzeros();
+    maxrow = graph_->MaxNumIndices();
   }
   else
   {
     npins = matrix_->NumMyNonzeros();
-    int maxrow = matrix_->MaxNumEntries();
+    maxrow = matrix_->MaxNumEntries();
     if (maxrow > 0){
       tmp = new double [maxrow];
       if (!tmp){
@@ -909,38 +923,81 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   }
 
   int pin_start_pos = 0;
-  int *gids = (int *)pin_GID;
+  unsigned int *gids = NULL;
+
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(unsigned int)){
+    gids = new unsigned int [maxrow];
+    if (maxrow && !gids){
+      *ierr = ZOLTAN_MEMERR;
+      return;
+    }
+  }
+  else{
+    gids = (unsigned int *)pin_GID;
+  }
 
   for (int i=0; i<num_row_or_col; i++){ 
-    vtxedge_GID[i] = rowMap_->GID(i);
+    vtxedge_GID[i] = (ZOLTAN_ID_TYPE)rowMap_->GID(i);
     vtxedge_ptr[i] = pin_start_pos;
 
-    if (haveGraph_){
-      rc = graph_->ExtractMyRowCopy(i, npins, num_indices, gids + pin_start_pos);
+    if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
+      if (haveGraph_){
+        rc = graph_->ExtractMyRowCopy(i, maxrow, num_indices, (int *)gids);
+      }
+      else{
+        rc = matrix_->ExtractMyRowCopy(i, maxrow, num_indices, tmp,  (int *)gids);
+      }
+      if (rc == 0){
+        for (int j=pin_start_pos, count=0; count < num_indices; j++, count++){
+          pin_GID[j] = (ZOLTAN_ID_TYPE)colMap_->GID(gids[count]);
+          if (pin_GID[i] < base_){
+     	    *ierr = ZOLTAN_FATAL;
+    	    std::cout << "Proc:" << myProc_ << " Error: ";
+    	    std::cout << "QueryObject::My_HG_CS, local ID not in column map" << std::endl;
+    	    return;
+          }
+        }
+      }
+      else{
+        *ierr = ZOLTAN_FATAL;
+        std::cout << "Proc:" << myProc_ << " Error: ";
+        std::cout << "QueryObject::My_HG_CS, extracting row" << std::endl;
+        break;
+      }
     }
     else{
-      rc = matrix_->ExtractMyRowCopy(i, npins, num_indices, tmp, gids + pin_start_pos);
-    }
+      if (haveGraph_){
+        rc = graph_->ExtractMyRowCopy(i, npins, num_indices,(int *)gids + pin_start_pos);
+      }
+      else{
+        rc = matrix_->ExtractMyRowCopy(i, npins, num_indices, tmp, (int *)gids + pin_start_pos);
+      }
 
-    if (rc != 0){
-      *ierr = ZOLTAN_FATAL;
-      std::cout << "Proc:" << myProc_ << " Error: ";
-      std::cout << "QueryObject::My_HG_CS, extracting row" << std::endl;
-      break;
-    }
-
-    for (int i=pin_start_pos; i<pin_start_pos+num_indices; i++){
-      gids[i] = colMap_->GID(gids[i]); // convert to global IDs
-      if (gids[i] < base_){
-	*ierr = ZOLTAN_FATAL;
-	std::cout << "Proc:" << myProc_ << " Error: ";
-	std::cout << "QueryObject::My_HG_CS, local ID not in column map" << std::endl;
-	break;
+      if (rc == 0){
+        for (int i=pin_start_pos; i<pin_start_pos+num_indices; i++){
+          gids[i] = (unsigned int)colMap_->GID(gids[i]); // convert to global IDs
+          if (gids[i] < base_){
+     	    *ierr = ZOLTAN_FATAL;
+    	    std::cout << "Proc:" << myProc_ << " Error: ";
+    	    std::cout << "QueryObject::My_HG_CS, local ID not in column map" << std::endl;
+    	    return;
+          }
+        }
+      }
+      else{
+        *ierr = ZOLTAN_FATAL;
+        std::cout << "Proc:" << myProc_ << " Error: ";
+        std::cout << "QueryObject::My_HG_CS, extracting row" << std::endl;
+        break;
       }
     }
 
     pin_start_pos += num_indices;
     npins -= num_indices;
+  }
+
+  if (gids && (gids != (unsigned int *)pin_GID)){
+    delete [] gids;
   }
 
   if (tmp)
@@ -1054,16 +1111,16 @@ void QueryObject::My_FGHG_CS (int num_gid_entries, int num_nonzeros, int num_pin
 
       for(int indx=0; indx<num_indices; indx++)
       {
-        vtx_GID[2*nzindx] = rowMap_->GID(rowi);
-        vtx_GID[2*nzindx+1] = colMap_->GID(tmprowCols[indx]);
+        vtx_GID[2*nzindx] = (ZOLTAN_ID_TYPE)rowMap_->GID(rowi);
+        vtx_GID[2*nzindx+1] = (ZOLTAN_ID_TYPE)colMap_->GID(tmprowCols[indx]);
 
         // First pin for vertex (row pin)
         pin_GID[4*nzindx] = 0;
-        pin_GID[4*nzindx+1] = rowMap_->GID(rowi);
+        pin_GID[4*nzindx+1] = (ZOLTAN_ID_TYPE)rowMap_->GID(rowi);
 
         // Second pin for vertex (column pin)
         pin_GID[4*nzindx+2] = 1;
-        pin_GID[4*nzindx+3] = colMap_->GID(tmprowCols[indx]);
+        pin_GID[4*nzindx+3] = (ZOLTAN_ID_TYPE)colMap_->GID(tmprowCols[indx]);
 
         nzindx++;
         vtx_ptr[nzindx]= 2*nzindx;
@@ -1109,11 +1166,26 @@ void QueryObject::My_HG_Edge_Weights(
 
   if (num_lid_entries > 0){
     for (int i=0; i<num_edges; i++){
-      edge_LID[i] = i;
+      edge_LID[i] = (ZOLTAN_ID_TYPE)i;
     }
   }
 
-  costs_->getHypergraphEdgeWeights(num_edges, (int *)edge_GID, edge_weights);
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
+    int *ibuf = new int [num_edges];
+    if (num_edges && !ibuf){
+      *ierr = ZOLTAN_MEMERR;
+      return;
+    }
+    costs_->getHypergraphEdgeWeights(num_edges, ibuf, edge_weights);
+    for (int i=0; i < num_edges; i++){
+      edge_GID[i] = (ZOLTAN_ID_TYPE)ibuf[i];
+    }
+    delete [] ibuf;
+    ibuf = NULL;
+  }
+  else{
+    costs_->getHypergraphEdgeWeights(num_edges, (int *)edge_GID, edge_weights);
+  }
 }
 
 // member geometric query functions

@@ -40,6 +40,13 @@ Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >
 Stokhos::QuadratureFactory<ordinal_type, value_type>::
 create(Teuchos::ParameterList& sgParams)
 {
+  // Check if quadrature is already there
+  Teuchos::ParameterList& quadParams = sgParams.sublist("Quadrature");
+  Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > quad = 
+    quadParams.template get< Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > >("Stochastic Galerkin Quadrature", Teuchos::null);
+  if (quad != Teuchos::null)
+    return quad;
+
   // Get basis
   Teuchos::ParameterList& basisParams = sgParams.sublist("Basis");
   Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > basis;
@@ -50,12 +57,18 @@ create(Teuchos::ParameterList& sgParams)
   Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > product_basis = Teuchos::rcp_dynamic_cast<const Stokhos::ProductBasis<ordinal_type,value_type> >(basis, true);
 
   // Create quadrature
-  Teuchos::ParameterList& quadParams = sgParams.sublist("Quadrature");
   std::string quad_type = quadParams.get("Type", "Tensor Product");
-  Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > quad;
-  if (quad_type == "Tensor Product")
-    quad = 
-      Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(product_basis));
+  if (quad_type == "Tensor Product") {
+    if (quadParams.isType<ordinal_type>("Quadrature Order")) {
+      ordinal_type order = quadParams.get<ordinal_type>("Quadrature Order");
+      quad = 
+	Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(product_basis, order));
+    }
+    else {
+      quad = 
+	Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(product_basis));
+    }
+  }
   else if (quad_type == "Sparse Grid") {
 #ifdef HAVE_STOKHOS_DAKOTA
     if (quadParams.isType<ordinal_type>("Sparse Grid Level")) {

@@ -12,15 +12,17 @@
 //----------------------------------------------------------------------
 
 #include <iosfwd>
+
 #include <stk_util/util/SameType.hpp>
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Property.hpp>
-#include <stk_mesh/baseImpl/PartRepository.hpp>
 
+#include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 
@@ -36,6 +38,9 @@ namespace mesh {
 std::ostream &
 print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey & key);
 
+std::string
+print_entity_key( const MetaData & meta_data, const EntityKey & key );
+
 //----------------------------------------------------------------------
 /** \brief  The manager of an integrated collection of
  *          \ref stk::mesh::Part "parts" and
@@ -46,6 +51,17 @@ print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey
 class MetaData {
 public:
 
+  /** \} */
+  //------------------------------------
+  /** \name  Meta data manager construction and destruction
+   *  \{
+   */
+
+  /** \brief  Construct a meta data manager to own parts and fields.  */
+  explicit MetaData( const std::vector<std::string>& entity_rank_names );
+
+  /** \brief  Construct a meta data manager to own parts and fields.  */
+  MetaData();
 
   //------------------------------------
   /** \name Predefined Parts
@@ -149,13 +165,22 @@ public:
   /** \brief Query entity-type names
    *
    */
+  void set_entity_rank_names(const std::vector<std::string> &entity_rank_names);
+  
+  EntityRank entity_rank( const std::string &name ) const;
+  
   const std::vector<std::string> & entity_rank_names() const
     { return m_entity_rank_names ; }
 
   std::vector<std::string>::size_type entity_rank_count() const
     { return m_entity_rank_names.size(); }
 
-  const std::string & entity_rank_name( unsigned ) const ;
+  const std::string & entity_rank_name( EntityRank entity_rank ) const ;
+
+  /**
+   * Return true if rank is valid.
+   */
+  bool check_rank(EntityRank rank) const;
 
   /** \} */
   //------------------------------------
@@ -276,15 +301,6 @@ public:
   /** \brief  Put a property on the given part */
   void put_property( PropertyBase & property, Part & part);
 
-  /** \} */
-  //------------------------------------
-  /** \name  Meta data manager construction and destruction
-   *  \{
-   */
-
-  /** \brief  Construct a meta data manager to own parts and fields.  */
-  explicit MetaData( const std::vector<std::string>& entity_rank_names );
-
   /** \brief  Commit the part and field declarations so that the
    *          meta data manager can be used to create
    *          \ref stk::mesh::BulkData "mesh bulk data".
@@ -306,19 +322,6 @@ public:
   /** \} */
   //------------------------------------
 
-  /** \name  Frequently asserted conditions.
-   * \{
-   */
-  void assert_committed( const char * ) const ;
-
-  void assert_not_committed( const char * ) const ;
-
-  void assert_same_mesh_meta_data( const char * , const MetaData & ) const ;
-
-  void assert_entity_rank( const char * , unsigned ) const ;
-
-  /** \} */
-  //------------------------------------
   /** \name  Field declaration with weak type information;
    *         direct use in application code is strongly discouraged.
    *  \{
@@ -335,13 +338,11 @@ public:
   /** \brief  Declare a field restriction via runtime type information.
    */
   void declare_field_restriction( FieldBase      & arg_field ,
-                                  unsigned         arg_entity_rank ,
+                                  EntityRank       arg_entity_rank ,
                                   const Part     & arg_part ,
                                   const unsigned * arg_stride );
   /** \} */
 private:
-
-  MetaData();                                  ///< \brief  Not allowed
   MetaData( const MetaData & );                ///< \brief  Not allowed
   MetaData & operator = ( const MetaData & );  ///< \brief  Not allowed
 
@@ -360,6 +361,20 @@ private:
   std::vector< PropertyBase* > m_properties ;
   std::vector< std::string >   m_entity_rank_names ;
 
+  /** \name  Invariants/preconditions for MetaData.
+   * \{
+   */
+  void require_committed() const ;
+
+  void require_not_committed() const ;
+
+  void require_same_mesh_meta_data( const MetaData & rhs ) const ;
+
+  void require_valid_entity_rank( EntityRank rank) const ;
+
+  void require_not_relation_target( const Part * const part ) const ;
+  /** \} */
+  //------------------------------------
 
   Property<void> * get_property_base( const std::string & ,
                                       const std::type_info & ,
@@ -388,8 +403,10 @@ field_type & put_field( field_type & field ,
                         EntityRank  entity_rank ,
                         const Part & part );
 
-/** \brief  Declare a  field to exist
- *          for a given entity type and Part.
+/** \brief Declare a field to exist for a given entity type and Part. The
+ *         extra unsigned arguments specify the size of a dimension. So,
+ *         put_field( field, rank, part, 3, 3 ) would create a 3x3 2D field.
+ *         Fields of up to seven dimensions are supported.
  */
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -693,7 +710,7 @@ inline
 const T *
 MetaData::declare_attribute_with_delete( const T * a )
 {
-  assert_not_committed( "stk::mesh::MetaData::declare_attribute_with_delete" );
+  require_not_committed();
   return m_attributes.insert_with_delete( a );
 }
 
@@ -708,7 +725,7 @@ inline
 const T *
 MetaData::declare_attribute_no_delete( const T * attribute )
 {
-  assert_not_committed( "stk::mesh::MetaData::declare_attribute_no_delete" );
+  require_not_committed();
   return m_attributes.insert_no_delete( attribute );
 }
 
@@ -725,7 +742,7 @@ inline
 const T *
 MetaData::declare_attribute_with_delete( Part & part , const T * attribute )
 {
-  assert_not_committed( "stk::mesh::MetaData::declare_attribute_with_delete" );
+  require_not_committed();
   return m_part_repo.declare_attribute_with_delete( part, attribute );
 }
 
@@ -734,7 +751,7 @@ inline
 const T *
 MetaData::declare_attribute_no_delete( Part & part , const T * attribute )
 {
-  assert_not_committed( "stk::mesh::MetaData::declare_attribute_no_delete" );
+  require_not_committed();
   return m_part_repo.declare_attribute_no_delete( part, attribute );
 }
 
@@ -743,7 +760,7 @@ inline
 const T *
 MetaData::declare_attribute_with_delete( FieldBase & field , const T * attribute )
 {
-  assert_not_committed( "stk::mesh::MetaData::declare_attribute_with_delete" );
+  require_not_committed();
   return m_field_repo.declare_attribute_with_delete(field, attribute);
 }
 
@@ -752,7 +769,7 @@ inline
 const T *
 MetaData::declare_attribute_no_delete( FieldBase & field , const T * attribute )
 {
-  assert_not_committed( "stk::mesh::MetaData::declare_attribute_no_delete" );
+  require_not_committed();
   return m_field_repo.declare_attribute_no_delete(field, attribute);
 }
 
@@ -813,6 +830,12 @@ inline
 void MetaData::put_property( PropertyBase & property , Part & part )
 {
   property.add_property( part.mesh_meta_data_ordinal() );
+}
+
+inline
+bool MetaData::check_rank(EntityRank rank) const
+{
+  return rank < m_entity_rank_names.size();
 }
 
 } // namespace mesh

@@ -26,7 +26,7 @@ namespace mesh {
  *  - having the first four values correspond to the topological
  *    entity types.
  */
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 enum EntityRankEnum {
   Node                = 0 ,
   Edge                = 1 ,
@@ -39,10 +39,10 @@ enum EntityRankEnum {
 };
 
 /** \brief  Finite element entity-type names */
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const std::vector<std::string> & fem_entity_rank_names();
 
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 inline
 EntityRankEnum fem_entity_rank( int t )
 { return 0 <= t && t < EntityRankEnd ? EntityRankEnum(t) : EntityRankUndefined ; }

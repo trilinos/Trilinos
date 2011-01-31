@@ -4,6 +4,26 @@ Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
 
+Trilinos 10.8:
+--------------
+
+
+(*) Added automatic stack tracing info for exception messages, segfaults, and
+aborts.  Thanks to the work of Ondrej Certik we now have built-in support for
+generating strack traces when using g++ when uncaught exceptions are
+encountered or when a segfault or about occurs.  See the Doxygen documentation
+for more details for how your project can take advantage of this feature.
+
+
+
+Trilinos 10.6:
+--------------
+
+
+Nothing to report.
+
+
+
 Trilinos 10.4:
 --------------
 

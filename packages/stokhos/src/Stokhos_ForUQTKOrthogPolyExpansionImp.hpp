@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -59,13 +57,12 @@ ForUQTKOrthogPolyExpansion(
   const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_,
   EXPANSION_METHOD method_,
   value_type rtol_) :
-  basis(basis_),
-  Cijk(Cijk_),
+  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>(basis_, Cijk_),
   rtol(rtol_),
   method(method_)
 {
-  order = basis->order();
-  dim = basis->dimension();
+  order = this->basis->order();
+  dim = this->basis->dimension();
   int nup;
   UQ_PREP_F77(&order, &dim, &nup);
   sz = nup+1;
@@ -74,49 +71,10 @@ ForUQTKOrthogPolyExpansion(
 template <typename ordinal_type, typename value_type> 
 void
 Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-unaryMinus(
-  Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-  const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
-{
-  ordinal_type pc = a.size();
-  if (c.size() != pc)
-    c.resize(pc);
-
-  value_type* cc = c.coeff();
-  const value_type* ca = a.coeff();
-
-  for (ordinal_type i=0; i<pc; i++)
-    cc[i] = -ca[i];
-}
-
-template <typename ordinal_type, typename value_type> 
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-	  const value_type& val)
-{
-  c[0] += val;
-}
-
-template <typename ordinal_type, typename value_type> 
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-	   const value_type& val)
-{
-  c[0] -= val;
-}
-
-template <typename ordinal_type, typename value_type> 
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
 timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	   const value_type& val)
 {
-  ordinal_type pc = c.size();
-  value_type* cc = c.coeff();
-  for (ordinal_type i=0; i<pc; i++)
-    cc[i] *= val;
+  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::timesEqual(c,val);
 }
 
 template <typename ordinal_type, typename value_type> 
@@ -125,44 +83,7 @@ Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
 divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	    const value_type& val)
 {
-  ordinal_type pc = c.size();
-  value_type* cc = c.coeff();
-  for (ordinal_type i=0; i<pc; i++)
-    cc[i] /= val;
-}
-
-template <typename ordinal_type, typename value_type> 
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-plusEqual(
-  Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-  const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& x)
-{
-  ordinal_type xp = x.size();
-  if (c.size() < xp)
-    c.resize(xp);
-
-  value_type* cc = c.coeff();
-  const value_type* xc = x.coeff();
-  for (ordinal_type i=0; i<xp; i++)
-    cc[i] += xc[i];
-}
-
-template <typename ordinal_type, typename value_type> 
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-minusEqual(
-  Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-  const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& x)
-{
-  ordinal_type xp = x.size();
-  if (c.size() < xp)
-    c.resize(xp);
-
-  value_type* cc = c.coeff();
-  const value_type* xc = x.coeff();
-  for (ordinal_type i=0; i<xp; i++)
-    cc[i] -= xc[i];
+  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::divideEqual(c,val);
 }
 
 template <typename ordinal_type, typename value_type> 
@@ -261,144 +182,6 @@ divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
-{
-  ordinal_type pa = a.size();
-  ordinal_type pb = b.size();
-  ordinal_type pc = pa > pb ? pa : pb;
-  if (c.size() != pc)
-    c.resize(pc);
-
-  const value_type* ca = a.coeff();
-  const value_type* cb = b.coeff();
-  value_type* cc = c.coeff();
-
-  if (pa > pb) {
-    for (ordinal_type i=0; i<pb; i++)
-      cc[i] = ca[i] + cb[i];
-    for (ordinal_type i=pb; i<pc; i++)
-      cc[i] = ca[i];
-  }
-  else {
-    for (ordinal_type i=0; i<pa; i++)
-      cc[i] = ca[i] + cb[i];
-    for (ordinal_type i=pa; i<pc; i++)
-      cc[i] = cb[i];
-  }
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-     const value_type& a, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
-{
-  ordinal_type pc = b.size();
-  if (c.size() != pc)
-    c.resize(pc);
-
-  const value_type* cb = b.coeff();
-  value_type* cc = c.coeff();
-
-  cc[0] = a + cb[0];
-  for (ordinal_type i=1; i<pc; i++)
-    cc[i] = cb[i];
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-     const value_type& b)
-{
-  ordinal_type pc = a.size();
-  if (c.size() != pc)
-    c.resize(pc);
-
-  const value_type* ca = a.coeff();
-  value_type* cc = c.coeff();
-
-  cc[0] = ca[0] + b;
-  for (ordinal_type i=1; i<pc; i++)
-    cc[i] = ca[i];
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
-{
-  ordinal_type pa = a.size();
-  ordinal_type pb = b.size();
-  ordinal_type pc = pa > pb ? pa : pb;
-  if (c.size() != pc)
-    c.resize(pc);
-
-  const value_type* ca = a.coeff();
-  const value_type* cb = b.coeff();
-  value_type* cc = c.coeff();
-
-  if (pa > pb) {
-    for (ordinal_type i=0; i<pb; i++)
-      cc[i] = ca[i] - cb[i];
-    for (ordinal_type i=pb; i<pc; i++)
-      cc[i] = ca[i];
-  }
-  else {
-    for (ordinal_type i=0; i<pa; i++)
-      cc[i] = ca[i] - cb[i];
-    for (ordinal_type i=pa; i<pc; i++)
-      cc[i] = -cb[i];
-  }
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const value_type& a, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
-{
-  ordinal_type pc = b.size();
-  if (c.size() != pc)
-    c.resize(pc);
-
-  const value_type* cb = b.coeff();
-  value_type* cc = c.coeff();
-
-  cc[0] = a - cb[0];
-  for (ordinal_type i=1; i<pc; i++)
-    cc[i] = -cb[i];
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-      const value_type& b)
-{
-  ordinal_type pc = a.size();
-  if (c.size() != pc)
-    c.resize(pc);
-
-  const value_type* ca = a.coeff();
-  value_type* cc = c.coeff();
-
-  cc[0] = ca[0] - b;
-  for (ordinal_type i=1; i<pc; i++)
-    cc[i] = ca[i];
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
 times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
@@ -451,15 +234,7 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
       const value_type& a, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
-  ordinal_type pc = b.size();
-  if (c.size() != pc)
-    c.resize(pc);
-
-  const value_type* cb = b.coeff();
-  value_type* cc = c.coeff();
-
-  for (ordinal_type i=0; i<pc; i++)
-    cc[i] = a*cb[i];
+  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::times(c,a,b);
 }
 
 template <typename ordinal_type, typename value_type>
@@ -469,15 +244,7 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
       const value_type& b)
 {
-  ordinal_type pc = a.size();
-  if (c.size() != pc)
-    c.resize(pc);
-
-  const value_type* ca = a.coeff();
-  value_type* cc = c.coeff();
-
-  for (ordinal_type i=0; i<pc; i++)
-    cc[i] = ca[i]*b;
+  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::times(c,a,b);
 }
 
 template <typename ordinal_type, typename value_type>
@@ -563,15 +330,7 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
        const value_type& b)
 {
-  ordinal_type pc = a.size();
-  if (c.size() != pc)
-    c.resize(pc);
-
-  const value_type* ca = a.coeff();
-  value_type* cc = c.coeff();
-
-  for (ordinal_type i=0; i<pc; i++)
-    cc[i] = ca[i]/b;
+  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::divide(c,a,b);
 }
 
 template <typename ordinal_type, typename value_type>
@@ -859,7 +618,7 @@ tanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& t,
     timesEqual(s, -1.0);
     exp(s, s);
     exp(c, a);
-    minus(t, c, s);
+    this->minus(t, c, s);
     plusEqual(c, s);
     divideEqual(t, c);
   }
@@ -1024,114 +783,4 @@ atanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::atanh()" 
 		       << ":  Method not implemented!");
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-fabs(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
-{
-  if (a[0] >= 0)
-    c = a;
-  else
-    unaryMinus(c,a);
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-abs(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
-{
-  if (a[0] >= 0)
-    c = a;
-  else
-    unaryMinus(c,a);
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-max(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
-{
-  if (a[0] >= b[0])
-    c = a;
-  else
-    c = b;
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-max(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-    const value_type& a, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
-{
-  if (a >= b[0]) {
-    c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
-    c[0] = a;
-  }
-  else
-    c = b;
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-max(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-    const value_type& b)
-{
-  if (a[0] >= b)
-    c = a;
-  else {
-    c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
-    c[0] = b;
-  }
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-min(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
-{
-  if (a[0] <= b[0])
-    c = a;
-  else
-    c = b;
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-min(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-    const value_type& a, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
-{
-  if (a <= b[0]) {
-    c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
-    c[0] = a;
-  }
-  else
-    c = b;
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
-min(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-    const value_type& b)
-{
-  if (a[0] <= b)
-    c = a;
-  else {
-    c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
-    c[0] = b;
-  }
 }

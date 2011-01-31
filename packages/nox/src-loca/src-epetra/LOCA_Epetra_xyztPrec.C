@@ -511,7 +511,7 @@ OperatorRangeMap () const
 
 bool LOCA::Epetra::xyztPrec::
 computeF(const Epetra_Vector&, Epetra_Vector&, 
-	 NOX::Epetra::Interface::Required::FillType)
+	 const NOX::Epetra::Interface::Required::FillType)
 {
   //cout << "LOCA::Epetra::xyztPrec::computeF called." << endl;
   return false;

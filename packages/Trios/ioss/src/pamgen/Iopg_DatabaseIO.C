@@ -137,7 +137,11 @@ namespace Iopg {
     spatialDimension(3), nodeCount(0),
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),
-    sequentialNG2L(false), sequentialEG2L(false)
+    nodeCmapIds(NULL), nodeCmapNodeCnts(NULL),
+    elemCmapIds(NULL), elemCmapElemCnts(NULL),
+    commsetNodeCount(0), commsetElemCount(0),
+    sequentialNG2L(false), sequentialEG2L(false),
+    blockAdjacenciesCalculated(false)
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;

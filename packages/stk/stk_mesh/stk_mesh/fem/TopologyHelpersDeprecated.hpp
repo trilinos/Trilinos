@@ -11,6 +11,9 @@
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
+#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/FEMInterface.hpp>
+
 // Migration to new Finite Element Mesh Cell Topology
 //
 // To turn off all the deprecated code:
@@ -23,8 +26,8 @@
 //   *  Instantiate a TopologicalMetaData with MetaData and the spatial dimension
 //   *  Call TopologicalMetaData.declare_part<shards::CELL_TOPOLOGY>("name")
 //      which will declare the part and set the cell topology.
-// Wherever you call get_cell_topology(...):
-//   *  Call the static function:  TopologicalMetaData::get_cell_topology(...)
+// Wherever you call get_cell_topology(...).getTopologyData():
+//   *  Call the static function:  TopologicalMetaData::get_cell_topology(...).getTopologyData()
 // Wherever you #include<stk_mesh/fem/FieldDeclarations.hpp>,
 //   *  Copy these functions out into your own application and stop #including this file
 // Wherever you #include<stk_mesh/fem/FieldTraits.hpp> (note:  fem, NOT base):
@@ -67,10 +70,7 @@
 #include <stdexcept>
 #include <Shards_CellTopologyTraits.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-
 
 namespace stk {
 namespace mesh {
@@ -84,47 +84,52 @@ namespace mesh {
 /** \brief Attach a CellTopology to a Part.
  *  There is at most one cell topology allowed.
  */
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 void set_cell_topology_deprecated( Part & , const CellTopologyData * singleton );
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 void set_cell_topology( Part & , const CellTopologyData * singleton );
 
 /** \brief  Attach a CellTopology to a Part.
  *  There is at most one element topology allowed.
  */
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 template< class Traits >
 void set_cell_topology_deprecated( Part & p )
 { return set_cell_topology_deprecated( p , shards::getCellTopologyData<Traits>() ); }
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 template< class Traits >
 void set_cell_topology( Part & p )
 { return set_cell_topology( p , shards::getCellTopologyData<Traits>() ); }
 
 /** \brief  The the CellTopology attached to the Part, if any */
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology_deprecated( const Part & );
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology( const Part & );
 
 /** \brief  The the CellTopology attached to at most one Part of the Bucket */
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology_deprecated( const Bucket & );
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology( const Bucket & );
 
 /** \brief  The the CellTopology attached to at most one Part of the Entity */
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology_deprecated( const Entity & );
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology( const Entity & );
 
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
 inline
 EntityRank element_rank_deprecated(const MetaData & meta)
 {
-  const TopologicalMetaData * top_data = meta.get_attribute< TopologicalMetaData >();
-  return (top_data == NULL) ? (stk::mesh::Element) : (top_data->element_rank);
+  const fem::FEMInterface* fem = meta.get_attribute<fem::FEMInterface>();
+  if (fem) {
+    return fem::element_rank(*fem);
+  }
+  else {
+    return stk::mesh::Element;
+  }
 }
 
 /** \} */

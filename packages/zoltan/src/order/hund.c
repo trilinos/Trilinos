@@ -40,7 +40,7 @@ int Zoltan_CColAMD(
   );
 #else /* SIMPLE_HUND */
 static int
-HUND_Order_simple(ZZ* zz, int num_local_gid, int* part, int numParts, int* sizeParts, int* dperm); /* result is stored into a DD */
+HUND_Order_simple(ZZ* zz, int num_local_gid, ZOLTAN_ID_TYPE * part, int numParts, int* sizeParts, ZOLTAN_ID_TYPE* dperm); /* result is stored into a DD */
 #endif
 
 int Zoltan_HUND(
@@ -49,7 +49,7 @@ int Zoltan_HUND(
   int num_obj,		/* Number of objects to order */
   ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
                         /* The application must allocate enough space */
-  int *rank,            /* rank[i] is the rank of gids[i] */
+  ZOLTAN_ID_TYPE *rank,  /* rank[i] is the rank of gids[i] */
   int *iperm            /* iperm[rank[i]]=i, only for sequential ordering */
 )
 {
@@ -59,8 +59,8 @@ int Zoltan_HUND(
   int numGidEntries, numLidEntries;
   int numImport;
   int numExport;
-  int *part = NULL;
-  int *dperm = NULL;
+  ZOLTAN_ID_TYPE *part = NULL;
+  ZOLTAN_ID_TYPE *dperm = NULL;
   Zoltan_PHG_LB_Data *data = NULL;
   ZOLTAN_ID_PTR local_gid;
   int num_local_gid;
@@ -138,12 +138,12 @@ int Zoltan_HUND(
   ierr = Zoltan_DD_GetLocalKeys(data->ddHedge, &local_gid, &num_local_gid);
   CHECK_IERR;
 
-  part = (int*) ZOLTAN_MALLOC(num_local_gid*sizeof(int));
+  part = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(num_local_gid*sizeof(ZOLTAN_ID_TYPE));
   if (num_local_gid && part == NULL) MEMORY_ERROR;
 
-  Zoltan_DD_Find (data->ddHedge, local_gid, (ZOLTAN_ID_PTR)part, NULL, NULL, num_local_gid, NULL);
+  Zoltan_DD_Find (data->ddHedge, local_gid, part, NULL, NULL, num_local_gid, NULL);
 
-  dperm = (int*) ZOLTAN_MALLOC(num_local_gid*sizeof(int));
+  dperm = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(num_local_gid*sizeof(ZOLTAN_ID_TYPE));
   if (num_local_gid && dperm == NULL) MEMORY_ERROR;
 
   ierr = HUND_Order_simple(zz,  num_local_gid, part, data->numParts, data->sizeParts, dperm);
@@ -157,7 +157,7 @@ int Zoltan_HUND(
   ZOLTAN_FREE(&dperm);
   ZOLTAN_FREE(&part);
   ZOLTAN_FREE(&local_gid);
-  Zoltan_DD_Find (data->ddHedge, gids, (ZOLTAN_ID_PTR)rank, NULL, NULL, num_obj, NULL);
+  Zoltan_DD_Find (data->ddHedge, gids, rank, NULL, NULL, num_obj, NULL);
 
   Zoltan_DD_Destroy(&data->ddHedge);
 
@@ -174,7 +174,7 @@ int Zoltan_HUND(
 
 #ifdef SIMPLE_HUND
 static int
-HUND_Order_simple(ZZ* zz, int num_local_gid, int* part, int numParts, int* sizeParts, int* dperm) /* result is stored into a DD */
+HUND_Order_simple(ZZ* zz, int num_local_gid, ZOLTAN_ID_TYPE * part, int numParts, int* sizeParts, ZOLTAN_ID_TYPE* dperm) /* result is stored into a DD */
 {
   char *yo = "HUND_Order_simple";
   int ierr = ZOLTAN_OK;

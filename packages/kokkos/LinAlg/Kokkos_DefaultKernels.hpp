@@ -55,9 +55,9 @@ namespace Kokkos {
   class SerialNode;
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar,Ordinal,SerialNode> {
-    typedef DefaultDeviceSparseOps<void  ,Ordinal,SerialNode>     SparseOps;
-    typedef DefaultBlockSparseOps <Scalar,Ordinal,ThrustGPUNode>  BlockSparseOps;
-    typedef DefaultRelaxation     <Scalar,Ordinal,ThrustGPUNode>  Relaxations;
+    typedef DefaultDeviceSparseOps<void  ,Ordinal,SerialNode>       SparseOps;
+    typedef DefaultBlockSparseOps <Scalar,Ordinal,SerialNode>  BlockSparseOps;
+    typedef DefaultRelaxation     <Scalar,Ordinal,SerialNode>     Relaxations;
   };
 #endif
 

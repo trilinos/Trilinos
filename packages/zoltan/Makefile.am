@@ -23,6 +23,7 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 ZOLTAN_TESTS = \
     test/test_zoltan \
+    test/runtests \
     test/ctest_zoltan.pl \
     test/ch_simple \
     test/hg_simple 
@@ -146,11 +147,12 @@ ZOLTAN_DOCS = \
 ZOLTAN_SAMPLE = \
        SampleConfigurationScripts/mac_osX_no_fortran \
        SampleConfigurationScripts/linux_with_purify_zoltan_only \
-       SampleConfigurationScripts/mac_osX_zoltan_and_isorropia \
-       SampleConfigurationScripts/linux_zoltan_and_isorropia \
        SampleConfigurationScripts/mac_osX_zoltan_only \
        SampleConfigurationScripts/linux_zoltan_only \
-       SampleConfigurationScripts/mac_osX_zoltan_thru_trilinos 
+       SampleConfigurationScripts/linux_trilinos_runtests        \
+       SampleConfigurationScripts/linux_zoltan_dist  \
+       SampleConfigurationScripts/mac_osX_zoltan_dist
+
 
 ZOLTAN_CMAKE = \
        CMakeLists.txt \
@@ -164,6 +166,7 @@ ZOLTAN_CMAKE = \
        cmake/Zoltan_config.h.in
 
 EXTRA_DIST = config/generate-makeoptions.pl \
+       README.html README.txt \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl \
        config/token-replace.pl \
@@ -265,7 +268,7 @@ else
 SIMPI_SUBDIR=siMPI
 endif
 
-SUBDIRS = $(SIMPI_SUBDIR) src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = $(SIMPI_SUBDIR) src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) test/Large_Data
 
 ## #######################################################################
 ## The below targets allow you to use the new

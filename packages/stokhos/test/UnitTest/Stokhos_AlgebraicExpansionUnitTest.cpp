@@ -46,8 +46,8 @@ namespace AlgebraicExpansionUnitTest {
     OrdinalType sz;
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
-    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    Teuchos::RCP< Stokhos::AlgebraicOrthogPolyExpansion<OrdinalType,ValueType> > exp;
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk, Cijk_linear;
+    Teuchos::RCP< Stokhos::AlgebraicOrthogPolyExpansion<OrdinalType,ValueType> > exp, exp_linear;
     Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> > qexp;
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> x, y, u, u2, cx, cu, cu2, sx, su, su2;
     ValueType a;
@@ -75,10 +75,13 @@ namespace AlgebraicExpansionUnitTest {
 
       // Triple product tensor
       Cijk = basis->computeTripleProductTensor(basis->size());
+      Cijk_linear = basis->computeTripleProductTensor(basis->dimension()+1);
       
       // Algebraic expansion
       exp = 
 	Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk));
+      exp_linear = 
+	Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk_linear));
 
       // Quadrature expansion
       qexp = 
@@ -685,6 +688,22 @@ namespace AlgebraicExpansionUnitTest {
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesLSLinear ) {
+    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
+    setup.qexp->sin(v, setup.x);
+    setup.exp_linear->times(setup.u, setup.sx, v);
+    setup.computePCE2<TimesFunc>(setup.u2, setup.sx, v);
+    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
+				   setup.rtol, setup.atol, out);
+  }
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesRSLinear ) {
+    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
+    setup.qexp->sin(v, setup.x);
+    setup.exp_linear->times(setup.u, v, setup.sx);
+    setup.computePCE2<TimesFunc>(setup.u2, v, setup.sx);
+    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
+				   setup.rtol, setup.atol, out);
+  }
   TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesLSRC ) {
     setup.exp->times(setup.su, setup.sx, setup.a);
     setup.computePCE2RC<TimesFunc>(setup.su2, setup.sx, setup.a);
@@ -905,6 +924,13 @@ namespace AlgebraicExpansionUnitTest {
     setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2<TimesFunc>(setup.u2, setup.u, setup.sx);
     setup.exp->timesEqual(setup.u, setup.sx);
+    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
+  				   setup.rtol, setup.atol, out);
+  }
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesEqualSLinear ) {
+    setup.qexp->cos(setup.u, setup.x);
+    setup.computePCE2<TimesFunc>(setup.u2, setup.u, setup.sx);
+    setup.exp_linear->timesEqual(setup.u, setup.sx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }

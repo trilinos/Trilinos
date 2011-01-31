@@ -14,8 +14,13 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 #include <stk_mesh/fem/FieldDeclarations.hpp>
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 namespace stk {
   namespace mesh {
@@ -63,6 +68,9 @@ namespace stk {
 	void turn( double turn_angle ) const ;
 
 	stk::mesh::MetaData & m_mesh_meta_data ;
+#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+        stk::mesh::DefaultFEM m_topo_data;
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 	stk::mesh::BulkData * m_mesh ;
 	stk::mesh::Part & m_gear ;
 	stk::mesh::Part & m_surf ;

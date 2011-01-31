@@ -27,160 +27,243 @@
 // @HEADER
 
 #include "Teuchos_XMLParameterListReader.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "Teuchos_StrUtils.hpp"
+#include "Teuchos_ParameterEntryXMLConverterDB.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_DependencyXMLConverterDB.hpp"
 
-using namespace Teuchos;
+
+namespace Teuchos {
+
 
 XMLParameterListReader::XMLParameterListReader()
 {;}
 
-ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) const
+RCP<ParameterList> XMLParameterListReader::toParameterList(
+  const XMLObject& xml, RCP<DependencySheet> depSheet) const 
 {
-  TEST_FOR_EXCEPTION(xml.getTag() != "ParameterList", std::runtime_error,
-                     "XMLParameterListReader expected tag ParameterList, found "
-                     << xml.getTag());
-
-  ParameterList rtn;
+  TEST_FOR_EXCEPTION(
+    xml.getTag() 
+    != 
+    XMLParameterListWriter::getParameterListTagName(), 
+    BadXMLParameterListRootElementException,
+    "XMLParameterListReader expected tag " << 
+    XMLParameterListWriter::getParameterListTagName()
+    <<", found " << xml.getTag());
+  RCP<ParameterList> rtn = rcp(new ParameterList);
+  IDtoValidatorMap validatorIDsMap;
+  int validatorsIndex = 
+    xml.findFirstChild(XMLParameterListWriter::getValidatorsTagName());
+  if(validatorsIndex != -1){
+    convertValidators(xml.getChild(validatorsIndex), validatorIDsMap);
+  }
+  EntryIDsMap entryIDsMap; 
+  convertParameterList(xml, rtn, entryIDsMap, validatorIDsMap);
   
-  if (xml.hasAttribute("name"))
-    {
-      rtn.setName(xml.getAttribute("name"));
-    }
-
-  for (int i=0; i<xml.numChildren(); i++)
-    {
-      XMLObject child = xml.getChild(i);
-
-      TEST_FOR_EXCEPTION( (child.getTag() != "ParameterList" 
-                           && child.getTag() != "Parameter"), 
-                         std::runtime_error,
-                         "XMLParameterListReader expected tag "
-                         "ParameterList or Parameter, found "
-                         << child.getTag());
-
-      if (child.getTag()=="ParameterList")
-        {
-          const std::string& name = child.getRequired("name");
-
-          ParameterList sublist = toParameterList(child);
-          sublist.setName(name);
-
-          rtn.set(name, sublist);
-        }
-      else
-        {
-          const std::string& name = child.getRequired("name");
-          const std::string& type = child.getRequired("type");
-          
-          bool isDefault = false;
-          bool isUsed = false;
-          if (child.hasAttribute("isDefault")) 
-          {
-            isDefault = child.getRequiredBool("isDefault");
-          }
-          if (child.hasAttribute("isUsed")) 
-          {
-            isUsed = child.getRequiredBool("isUsed");
-          }
-
-          // setValue assigns isUsed to false
-          // getValue assigns isUsed to true
-
-          ParameterEntry entry;
-          if (type=="double" || type=="float")
-            {
-              entry.setValue<double>(child.getRequiredDouble("value"), 
-                                     isDefault);
-              if (isUsed) {
-                double tmp = entry.getValue<double>(&tmp);
-              }
-            }
-          else if (type=="short")
-            {
-              entry.setValue<short>(child.getRequiredInt("value"), 
-                                  isDefault);
-              if (isUsed) {
-                short tmp = entry.getValue<short>(&tmp);
-              }
-            }
-          else if (type=="int")
-            {
-              entry.setValue<int>(child.getRequiredInt("value"), 
-                                  isDefault);
-              if (isUsed) {
-                int tmp = entry.getValue<int>(&tmp);
-              }
-            }
-          else if (type=="bool")
-            {
-              entry.setValue<bool>(child.getRequiredBool("value"), 
-                                   isDefault);
-              if (isUsed) {
-                bool tmp = entry.getValue<bool>(&tmp);
-              }
-            }
-          else if (type=="string")
-            {
-              entry.setValue<std::string>(child.getRequired("value"), 
-                                     isDefault);
-              if (isUsed) {
-                std::string tmp = entry.getValue<std::string>(&tmp);
-              }
-            }
-					else if (type=="Array int")
-						{
-							entry.setValue<Array<int> >(Teuchos::fromStringToArray<int>(child.getRequired("value")),
-																			isDefault);
-							if (isUsed) {
-								Array<int> tmp = entry.getValue<Array<int> >(&tmp);
-							}
-						}
-					else if (type=="Array short")
-						{
-							entry.setValue<Array<short> >(Teuchos::fromStringToArray<short>(child.getRequired("value")),
-																			isDefault);
-							if (isUsed) {
-								Array<short> tmp = entry.getValue<Array<short> >(&tmp);
-							}
-						}
-					else if (type=="Array float")
-						{
-							entry.setValue<Array<float> >(Teuchos::fromStringToArray<float>(child.getRequired("value")),
-																			isDefault);
-							if (isUsed) {
-								Array<float> tmp = entry.getValue<Array<float> >(&tmp);
-							}
-						}
-					else if (type=="Array double")
-						{
-							entry.setValue<Array<double> >(Teuchos::fromStringToArray<double>(child.getRequired("value")),
-																			isDefault);
-							if (isUsed) {
-								Array<double> tmp = entry.getValue<Array<double> >(&tmp);
-							}
-						}
-					else if (type=="Array string")
-						{
-							entry.setValue<Array<std::string> >(Teuchos::fromStringToArray<std::string>(child.getRequired("value")),
-																			isDefault);
-							if (isUsed) {
-								Array<std::string> tmp = entry.getValue<Array<std::string> >(&tmp);
-							}
-						}
-          else 
-            {
-              entry.setValue<std::string>(child.getRequired("value"), 
-                                   isDefault);
-              if (isUsed) {
-                std::string tmp = entry.getValue<std::string>(&tmp);
-              }
-            }
-          rtn.setEntry(name, entry);
-        }
-                         
-    }
-
+  int dependencyIndex = xml.findFirstChild(
+    XMLParameterListWriter::getDependenciesTagName());
+  if(dependencyIndex != -1){
+    convertDependencies(
+      depSheet, 
+      xml.getChild(dependencyIndex), 
+      entryIDsMap,
+      validatorIDsMap);
+  }
   return rtn;
-                     
 }
+
+
+ParameterList 
+XMLParameterListReader::toParameterList(const XMLObject& xml) const
+{
+  TEST_FOR_EXCEPTION(
+    xml.getTag() 
+    != 
+    XMLParameterListWriter::getParameterListTagName(), 
+    BadXMLParameterListRootElementException,
+    "XMLParameterListReader expected tag " << 
+    XMLParameterListWriter::getParameterListTagName()
+    <<", found " << xml.getTag());
+  RCP<ParameterList> rtn = rcp(new ParameterList);
+  IDtoValidatorMap validatorIDsMap;
+  int validatorsIndex = 
+    xml.findFirstChild(XMLParameterListWriter::getValidatorsTagName());
+  if(validatorsIndex != -1){
+    convertValidators(xml.getChild(validatorsIndex), validatorIDsMap);
+  }
+  EntryIDsMap entryIDsMap; 
+  convertParameterList(xml, rtn, entryIDsMap, validatorIDsMap);
+  ParameterList toReturn = ParameterList(*rtn);
+  return toReturn;
+}
+
+
+void XMLParameterListReader::convertValidators(
+  const XMLObject& xml, IDtoValidatorMap& validatorIDsMap) const
+{
+  std::set<const XMLObject*> validatorsWithPrototypes;
+  for (int i=0; i<xml.numChildren(); ++i){
+    if (xml.getChild(i).hasAttribute(
+      ValidatorXMLConverter::getPrototypeIdAttributeName()))
+    {
+      validatorsWithPrototypes.insert(&xml.getChild(i));
+    }
+    else{
+      RCP<ParameterEntryValidator> insertedValidator = 
+        ValidatorXMLConverterDB::convertXML(
+          xml.getChild(i), validatorIDsMap);
+      ParameterEntryValidator::ValidatorID xmlID = 
+        xml.getChild(i).getRequired<ParameterEntryValidator::ValidatorID>(
+        ValidatorXMLConverter::getIdAttributeName());
+      testForDuplicateValidatorIDs(xmlID, validatorIDsMap);
+      validatorIDsMap.insert(IDtoValidatorMap::IDValidatorPair(
+       xmlID,
+       insertedValidator));
+    }
+  }
+
+  for (
+    std::set<const XMLObject*>::const_iterator it = 
+      validatorsWithPrototypes.begin();
+    it!=validatorsWithPrototypes.end();
+    ++it)
+  {
+    RCP<ParameterEntryValidator> insertedValidator =
+      ValidatorXMLConverterDB::convertXML(*(*it), validatorIDsMap);
+    ParameterEntryValidator::ValidatorID xmlID = 
+      (*it)->getRequired<ParameterEntryValidator::ValidatorID>(
+         ValidatorXMLConverter::getIdAttributeName());
+    testForDuplicateValidatorIDs(xmlID, validatorIDsMap);
+    validatorIDsMap.insert(IDtoValidatorMap::IDValidatorPair(
+      xmlID, insertedValidator));
+  }
+}
+
+      
+void
+XMLParameterListReader::convertParameterList(const XMLObject& xml, 
+  RCP<ParameterList> parentList,
+  EntryIDsMap& entryIDsMap, const IDtoValidatorMap& validatorIDsMap) const
+{
+  TEST_FOR_EXCEPTION(
+    xml.getTag() != XMLParameterListWriter::getParameterListTagName(), 
+    BadParameterListElementException,
+    "XMLParameterListReader expected tag " << 
+    XMLParameterListWriter::getParameterListTagName()
+    <<", found the tag "
+    << xml.getTag());
+        
+  if(xml.hasAttribute(XMLParameterListWriter::getNameAttributeName())){
+    parentList->setName(
+      xml.getRequired(XMLParameterListWriter::getNameAttributeName()));
+  }
+
+  for (int i=0; i<xml.numChildren(); i++) {
+
+      XMLObject child = xml.getChild(i);
+      
+      TEST_FOR_EXCEPTION(
+        child.getTag() != XMLParameterListWriter::getParameterListTagName() 
+        &&
+        child.getTag() != ParameterEntry::getTagName()
+        &&
+        child.getTag() != XMLParameterListWriter::getValidatorsTagName()
+        &&
+        child.getTag() != XMLParameterListWriter::getDependenciesTagName(),
+        BadParameterListElementException,
+        "XMLParameterListReader expected tag "
+        << XMLParameterListWriter::getParameterListTagName() << " or "
+        << ParameterEntry::getTagName() << ", but found "
+        << child.getTag() << " tag.");
+
+
+      if(
+        child.getTag() == XMLParameterListWriter::getParameterListTagName() 
+        || 
+        child.getTag() == ParameterEntry::getTagName()
+        )
+      {
+        TEST_FOR_EXCEPTION(
+          !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()),
+          NoNameAttributeExecption,
+          "All child nodes of a ParameterList must have a name attribute!" <<
+          std::endl << std::endl);
+
+        const std::string& name =
+          child.getRequired(XMLParameterListWriter::getNameAttributeName());
+        
+        if (child.getTag()==XMLParameterListWriter::getParameterListTagName()) {
+          RCP<ParameterList> newList = sublist(parentList, name);
+            convertParameterList(child, newList, entryIDsMap, validatorIDsMap);
+        }
+        else if (child.getTag() == ParameterEntry::getTagName()) {
+          parentList->setEntry(
+            name, ParameterEntryXMLConverterDB::convertXML(child));
+          if(child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){
+            IDtoValidatorMap::const_iterator result = validatorIDsMap.find(
+              child.getRequired<ParameterEntryValidator::ValidatorID>(
+                ValidatorXMLConverter::getIdAttributeName()));
+            TEST_FOR_EXCEPTION(result == validatorIDsMap.end(), 
+              MissingValidatorDefinitionException,
+              "Could not find validator with id: "
+              << child.getRequired(
+                ValidatorXMLConverter::getIdAttributeName())
+              << std::endl << 
+              "Bad Parameter: " << name << std::endl << std::endl);
+            parentList->getEntryRCP(name)->setValidator(result->second);
+        }  
+      } 
+      if(child.hasAttribute(ParameterEntryXMLConverter::getIdAttributeName())){
+        insertEntryIntoMap(child, parentList->getEntryRCP(name), entryIDsMap);
+      }
+    }  
+  }
+}
+
+void XMLParameterListReader::testForDuplicateValidatorIDs(
+  ParameterEntryValidator::ValidatorID potentialNewID,
+  const IDtoValidatorMap& currentMap) const
+{
+  TEST_FOR_EXCEPTION(currentMap.find(potentialNewID) != currentMap.end(),
+  DuplicateValidatorIDsException,
+  "Validators with duplicate ids found!" << std::endl <<
+  "Bad ID: " << potentialNewID);
+}
+
+void XMLParameterListReader::convertDependencies(
+  RCP<DependencySheet> depSheet, 
+  const XMLObject& xml, 
+  const EntryIDsMap& entryIDsMap,
+  const IDtoValidatorMap& validatorIDsMap) const
+{
+  for(int i = 0; i < xml.numChildren(); ++i){
+    RCP<Dependency> currentDep = DependencyXMLConverterDB::convertXML(
+      xml.getChild(i), 
+      entryIDsMap, 
+      validatorIDsMap);
+    depSheet->addDependency(currentDep);
+  }
+}
+
+void XMLParameterListReader::insertEntryIntoMap(
+  const XMLObject& xmlObj,
+  RCP<ParameterEntry> entryToInsert,
+  EntryIDsMap& entryIDsMap) const
+{
+  if(xmlObj.hasAttribute(ParameterEntryXMLConverter::getIdAttributeName()))
+  {
+     ParameterEntry::ParameterEntryID xmlID = 
+       xmlObj.getRequired<ParameterEntry::ParameterEntryID>(
+          ParameterEntryXMLConverter::getIdAttributeName());
+     TEST_FOR_EXCEPTION(entryIDsMap.find(xmlID) != entryIDsMap.end(),
+        DuplicateParameterIDsException,
+       "Parameters/ParameterList with duplicate ids found!" << std::endl <<
+       "Bad ID: " << xmlID << std::endl << std::endl);
+     entryIDsMap.insert(EntryIDsMap::value_type(xmlID, entryToInsert));
+  }
+}
+
+
+} // namespace Teuchos
+

@@ -2,6 +2,10 @@ ADD_SUBDIRECTORY(StridedSolve)
 ADD_SUBDIRECTORY(AddMultiplyPrecs)
 ADD_SUBDIRECTORY(BuildPreconditioner)
 
+IF (ML_ENABLE_TekoSmoothers)
+   ADD_SUBDIRECTORY(ML-Teko-Coupling)
+ENDIF()
+
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(example_copyfiles

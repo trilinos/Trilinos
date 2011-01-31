@@ -1389,7 +1389,9 @@ def checkinTest(inOptions):
       "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
       "-DTrilinos_ENABLE_DEBUG:BOOL=ON",
       "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
-      "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+      "-DTrilinos_ENABLE_DEBUG_SYMBOLS:BOOL=ON",
+      "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON",
+      "-DTeuchos_ENABLE_DEFAULT_STACKTRACE:BOOL=OFF"
     ]
     )
 
@@ -1858,11 +1860,16 @@ def checkinTest(inOptions):
         print "\nExplanation: In order to push, the local repo needs to be up-to-date\n" \
           "with the global repo or the push will not be allowed.  Therefore, a pull\n" \
           "before the push must be performed if there are updates in the global reop\n" \
-          "regardless if --pull was specified or not.  Also, a rebase must be done in\n" \
+          "regardless if --pull was specified or not.  Also, a rebase might be done in\n" \
           "order to get a linear history required by the hooks in the main repository.\n"
 
+        doFinalRebase = inOptions.rebase
+        if not doFinalRebase:
+          print "Skipping the final rebase on request! (see --no-rebase option)"
+
         (update2Rtn, update2Time) = \
-          executePull(inOptions, baseTestDir, getFinalPullOutputFileName(), None, True)
+          executePull(inOptions, baseTestDir, getFinalPullOutputFileName(), None,
+            doFinalRebase )
 
         if update2Rtn == 0:
           print "\nFinal update passed!\n"

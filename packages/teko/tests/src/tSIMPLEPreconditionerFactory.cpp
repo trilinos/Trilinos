@@ -57,7 +57,6 @@
 // Epetra includes
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
-// #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 
 // Thyra includes
@@ -78,8 +77,6 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 
 #include <vector>
-
-#include "mpi.h"
 
 // This whole test rig is based on inverting the matrix
 // 
@@ -105,7 +102,6 @@ void tSIMPLEPreconditionerFactory::initializeTest()
    tolerance_ = 1.0e-13;
 
    comm=GetComm();
-   // TEUCHOS_ASSERT(dynamic_cast<const Epetra_MpiComm*>(&*comm));//haq
 
    const RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,*comm));
 

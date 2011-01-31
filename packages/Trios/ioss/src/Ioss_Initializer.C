@@ -58,11 +58,13 @@
 #include <Ioss_TriShell6.h>
 #include <Ioss_Tri3.h>
 #include <Ioss_Tri4.h>
+#include <Ioss_Tri4a.h>
 #include <Ioss_Tri6.h>
 #include <Ioss_Unknown.h>
 #include <Ioss_Wedge6.h>
 #include <Ioss_Wedge15.h>
 #include <Ioss_Tet4.h>
+#include <Ioss_Tet7.h>
 #include <Ioss_Tet8.h>
 #include <Ioss_Tet10.h>
 #include <Ioss_Super.h>
@@ -101,11 +103,13 @@ Ioss::Initializer::Initializer()
   Ioss::Shell9::factory();
 
   Ioss::Tet4::factory();
+  Ioss::Tet7::factory();
   Ioss::Tet8::factory();
   Ioss::Tet10::factory();
 
   Ioss::Tri3::factory();
   Ioss::Tri4::factory();
+  Ioss::Tri4a::factory();
   Ioss::Tri6::factory();
 
   Ioss::TriShell3::factory();

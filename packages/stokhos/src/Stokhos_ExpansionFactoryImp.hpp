@@ -35,13 +35,19 @@
 #include "Stokhos_AlgebraicOrthogPolyExpansion.hpp"
 #include "Stokhos_QuadOrthogPolyExpansion.hpp"
 #include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
-#include "Stokhos_DerivOrthogPolyExpansion.hpp"
+//#include "Stokhos_DerivOrthogPolyExpansion.hpp"
 
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP<Stokhos::OrthogPolyExpansion<ordinal_type, value_type> >
 Stokhos::ExpansionFactory<ordinal_type, value_type>::
 create(Teuchos::ParameterList& sgParams)
 {
+  // Check if expansion is already there
+  Teuchos::ParameterList& expParams = sgParams.sublist("Expansion");
+  Teuchos::RCP< Stokhos::OrthogPolyExpansion<ordinal_type,value_type> > expansion = expParams.template get< Teuchos::RCP< Stokhos::OrthogPolyExpansion<ordinal_type,value_type> > >("Stochastic Galerkin Expansion", Teuchos::null);
+  if (expansion != Teuchos::null)
+    return expansion;
+
   // Get basis
   Teuchos::ParameterList& basisParams = sgParams.sublist("Basis");
   Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > basis;
@@ -74,9 +80,7 @@ create(Teuchos::ParameterList& sgParams)
   }
 
   // Create expansion
-  Teuchos::ParameterList& expParams = sgParams.sublist("Expansion");
   std::string exp_type = expParams.get("Type", "Algebraic");
-  Teuchos::RCP< Stokhos::OrthogPolyExpansion<ordinal_type,value_type> > expansion;
   if (exp_type == "Algebraic")
     expansion = 
       Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk));
@@ -108,6 +112,7 @@ create(Teuchos::ParameterList& sgParams)
 		       "ForUQTK expansion requires ForUQTK!" << std::endl);
 #endif
   }
+  /*
   else if (exp_type == "Derivative") {
     Teuchos::RCP<const Stokhos::DerivBasis<ordinal_type,value_type> > deriv_basis = Teuchos::rcp_dynamic_cast<const Stokhos::DerivBasis<ordinal_type,value_type> >(basis, true);
     Teuchos::RCP<Teuchos::SerialDenseMatrix<ordinal_type,value_type> > Bij;
@@ -129,6 +134,7 @@ create(Teuchos::ParameterList& sgParams)
 		   Stokhos::DerivOrthogPolyExpansion<ordinal_type,value_type>(
 		     deriv_basis, Bij, Cijk, Dijk));
   }
+  */
   else
     TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << 

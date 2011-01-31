@@ -19,7 +19,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
@@ -27,76 +27,89 @@ namespace stk {
 namespace mesh {
 namespace fixtures {
 
+/**
+ * A 3-dimensional X*Y*Z hex fixture.
+ *
+ * A coordinate field will be added to all nodes, a coordinate-gather field
+ * will be added to all elements.
+ */
 class HexFixture
 {
-public:
+ public:
+  typedef double                     Scalar ;
+  typedef Field<Scalar, Cartesian>   CoordFieldType;
+  typedef Field<Scalar*,ElementNode> CoordGatherFieldType;
 
-  typedef double Scalar ;
-  typedef Field<Scalar, Cartesian>     CoordFieldType;
-  typedef Field<Scalar*,ElementNode>   CoordGatherFieldType;
-
+  /**
+   * Set up meta data to support this fixture. Meta data is left uncommitted
+   * to allow additional modifications by the client.
+   */
   HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz);
 
-  ~HexFixture();
+  const int                     m_spatial_dimension;
+  const unsigned                m_nx;
+  const unsigned                m_ny;
+  const unsigned                m_nz;
+  MetaData                      m_meta_data;
+  BulkData                      m_bulk_data;
+  DefaultFEM                    m_fem;
+  Part &                        m_hex_part;
+  CoordFieldType &              m_coord_field ;
+  CoordGatherFieldType &        m_coord_gather_field ;
 
-  const int spatial_dimension;
-  const unsigned NX;
-  const unsigned NY;
-  const unsigned NZ;
-
-  MetaData  meta_data;
-  BulkData  bulk_data;
-  TopologicalMetaData top_data;
-
-  Part    & hex_part;
-
-  CoordFieldType       & coord_field ;
-  CoordGatherFieldType & coord_gather_field ;
-
-  EntityId node_id( unsigned ix , unsigned iy , unsigned iz ) const  {
-    return 1 + ix + ( NX + 1 ) * ( iy + ( NY + 1 ) * iz );
+  /**
+   * Thinking in terms of a 3D grid of nodes, get the id of the node in
+   * the (x, y, z) position.
+   */
+  EntityId node_id( unsigned x , unsigned y , unsigned z ) const  {
+    return 1 + x + ( m_nx + 1 ) * ( y + ( m_ny + 1 ) * z );
   }
 
-  EntityId elem_id( unsigned ix , unsigned iy , unsigned iz ) const  {
-    return 1 + ix + NX * ( iy + NY * iz );
+  /**
+   * Thinking in terms of a 3D grid of elements, get the id of the
+   * element in the (x, y, z) position.
+   */
+  EntityId elem_id( unsigned x , unsigned y , unsigned z ) const  {
+    return 1 + x + m_nx * ( y + m_ny * z );
   }
 
-  void node_ix_iy_iz( EntityId entity_id, unsigned &ix , unsigned &iy , unsigned &iz ) const  {
-    entity_id -= 1;
-
-    ix = entity_id % (NX+1);
-    entity_id /= (NX+1);
-
-    iy = entity_id % (NY+1);
-    entity_id /= (NY+1);
-
-    iz = entity_id;
+  /**
+   * Thinking in terms of a 3D grid of nodes, get the node in the (x, y, z)
+   * position. Return NULL if this process doesn't know about this node.
+   */
+  Entity * node( unsigned x , unsigned y , unsigned z ) const {
+    return m_bulk_data.get_entity( fem::NODE_RANK , node_id(x, y, z) );
   }
 
-  void elem_ix_iy_iz( EntityId entity_id, unsigned &ix , unsigned &iy , unsigned &iz ) const  {
-    entity_id -= 1;
-
-    ix = entity_id % NX;
-    entity_id /= NX;
-
-    iy = entity_id % NY;
-    entity_id /= NY;
-
-    iz = entity_id;
+  /**
+   * Thinking in terms of a 3D grid of elements, get the elements in the
+   * (x, y, z) position. Return NULL if this process doesn't know about this
+   * element.
+   */
+  Entity * elem( unsigned x , unsigned y , unsigned z ) const {
+    return m_bulk_data.get_entity( fem::element_rank(m_fem), elem_id(x, y, z) );
   }
 
-  Entity * node( unsigned ix , unsigned iy , unsigned iz ) const {
-    return bulk_data.get_entity( top_data.node_rank , node_id(ix,iy,iz) );
-  }
+  /**
+   * Thinking in terms of a 3D grid of nodes, compute the (x, y, z) position
+   * of a node given it's id.
+   */
+  void node_x_y_z( EntityId entity_id, unsigned &x , unsigned &y , unsigned &z ) const;
 
-  Entity * elem( unsigned ix , unsigned iy , unsigned iz ) const {
-    return bulk_data.get_entity( top_data.element_rank , elem_id(ix,iy,iz) );
-  }
+  /**
+   * Thinking in terms of a 3D grid of elements, compute the (x, y, z) position
+   * of an element given it's id.
+   */
+  void elem_x_y_z( EntityId entity_id, unsigned &x , unsigned &y , unsigned &z ) const;
+
+  /**
+   * Create the mesh (into m_bulk_data).
+   */
+  void generate_mesh();
 
   void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
 
-  void generate_mesh();
-private:
+ private:
 
   HexFixture();
   HexFixture( const HexFixture &);

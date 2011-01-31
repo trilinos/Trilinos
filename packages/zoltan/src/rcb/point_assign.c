@@ -26,7 +26,7 @@ extern "C" {
 
 int Zoltan_RB_Point_Assign(
 ZZ       *zz,                   /* The Zoltan structure */
-double   *coords,               /* vector of point coordinates */
+double   *coords,
 int      *proc,                 /* processor that point lands in;
                                    if NULL, processor info is not returned. */
 int      *part                  /* partition that point lands in; 
@@ -49,7 +49,6 @@ int      *part                  /* partition that point lands in;
      double cnew[3];
      double *c = coords;
 
-
      if (zz->LB.Data_Structure == NULL) {
         ZOLTAN_PRINT_ERROR(-1, yo, 
                    "No Decomposition Data available; use KEEP_CUTS parameter.");
@@ -68,7 +67,7 @@ int      *part                  /* partition that point lands in;
         }
 
         if (rcb->Tran.Target_Dim > 0){  /* degenerate geometry */
-          Zoltan_Transform_Point(coords, rcb->Tran.Transformation, 
+          Zoltan_Transform_Point(c, rcb->Tran.Transformation, 
             rcb->Tran.Permutation, rcb->Num_Dim, rcb->Tran.Target_Dim, cnew);
           c = cnew;
         }
@@ -92,7 +91,7 @@ int      *part                  /* partition that point lands in;
         }
 
         if (rib->Tran.Target_Dim > 0){ /* degenerate geometry */
-          Zoltan_Transform_Point(coords, rib->Tran.Transformation, 
+          Zoltan_Transform_Point(c, rib->Tran.Transformation, 
             rib->Tran.Permutation, rib->Num_Geom, rib->Tran.Target_Dim, cnew);
           c = cnew;
           num_geom = rib->Tran.Target_Dim;

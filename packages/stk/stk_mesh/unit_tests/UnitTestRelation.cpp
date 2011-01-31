@@ -24,8 +24,7 @@
 #include <stk_mesh/base/Ghosting.hpp>
 
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>
 #include <stk_mesh/fixtures/RingFixture.hpp>
@@ -35,15 +34,17 @@
 #include <Shards_BasicTopologies.hpp>
 
 using stk::mesh::Entity;
+using stk::mesh::EntityRank;
 using stk::mesh::Part;
 using stk::mesh::Relation;
 using stk::mesh::Selector;
 using stk::mesh::EntityId;
 using stk::mesh::MetaData;
+using stk::mesh::DefaultFEM;
 using stk::mesh::Ghosting;
-using stk::mesh::TopologicalMetaData;
 using stk::mesh::fixtures::BoxFixture;
 using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fem::NODE_RANK;
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 {
@@ -70,8 +71,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   MetaData& meta  = fixture1.meta_data();
   MetaData& meta2 = fixture2.meta_data();
   const int spatial_dimension = 3;
-  TopologicalMetaData top( meta, spatial_dimension );
-  TopologicalMetaData top2( meta2, spatial_dimension );
+  const EntityRank element_rank = stk::mesh::fem::element_rank(fixture1.fem());
 
   stk::mesh::BulkData& bulk  = fixture1.bulk_data();
   stk::mesh::BulkData& bulk2 = fixture2.bulk_data();
@@ -89,11 +89,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   Part & universal2 = meta2.universal_part ();
   Part & owned      = meta.locally_owned_part ();
 
-  stk::mesh::put_field ( temperature , top.node_rank , universal );
-  stk::mesh::put_field ( volume , top.element_rank , universal );
+  stk::mesh::put_field ( temperature , NODE_RANK , universal );
+  stk::mesh::put_field ( volume , element_rank  , universal );
   meta.commit();
-  stk::mesh::put_field ( temperature2 , top2.node_rank , universal2 );
-  stk::mesh::put_field ( volume2 , top2.element_rank , universal2 );
+  stk::mesh::put_field ( temperature2 , NODE_RANK , universal2 );
+  stk::mesh::put_field ( volume2 , element_rank  , universal2 );
+
   meta2.commit();
 
   bulk.modification_begin();
@@ -111,7 +112,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 
     // Test for coverage of comm_procs in EntityComm.cpp
     stk::mesh::EntityVector nodes;
-    stk::mesh::get_entities(bulk, top.node_rank, nodes);
+    stk::mesh::get_entities(bulk, NODE_RANK, nodes);
     std::vector<unsigned> procs ;
     STKUNIT_ASSERT(!nodes.empty());
     stk::mesh::comm_procs( gg, *nodes.front() , procs );  
@@ -192,7 +193,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   const unsigned p_size = stk::parallel_machine_size( pm );
 
   const unsigned nLocalEdge = nPerProc ;
-  MetaData meta3( TopologicalMetaData::entity_rank_names(spatial_dimension) );
+  MetaData meta3( stk::mesh::fem::entity_rank_names(spatial_dimension) );
 
   meta3.commit();
 

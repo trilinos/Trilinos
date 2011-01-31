@@ -45,7 +45,7 @@
 #ifdef EPETRA_MPI
 #include <time.h>
 #endif
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #include <omp.h>
 #endif
 
@@ -90,7 +90,7 @@ double Epetra_Time::WallTime(void) const
 
 #else
 
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
        return(omp_get_wtime());
 #else
 #if ICL || defined(_WIN32)
@@ -121,7 +121,7 @@ double Epetra_Time::WallTime(void) const
 
 #endif // ICL || WIN32
 
-#endif // Epetra_HAVE_OMP
+#endif // EPETRA_HAVE_OMP
 #endif // EPETRA_MPI
 
 }

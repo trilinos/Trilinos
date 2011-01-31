@@ -82,9 +82,15 @@ namespace Sacado {							\
       template <int Arg>						\
       bool isActive() const { return expr.template isActive<Arg>(); }	\
 									\
-      value_type val() const {						\
+      bool updateValue() const { return expr.updateValue(); }		\
+									\
+      void cache() const {						\
+	expr.cache();							\
         v = expr.val();							\
 	PARTIAL;							\
+      }									\
+									\
+      value_type val() const {						\
 	return VALUE;							\
       }									\
 									\
@@ -263,10 +269,19 @@ namespace Sacado {							\
 	  return expr2.template isActive<Arg-num_args1>();		\
       }									\
 									\
-      value_type val() const {						\
-      	v1 = expr1.val();						\
+      bool updateValue() const {					\
+	return expr1.updateValue() && expr2.updateValue();		\
+      }									\
+									\
+      void cache() const {						\
+	expr1.cache();							\
+	expr2.cache();							\
+        v1 = expr1.val();						\
 	v2 = expr2.val();						\
 	PARTIAL;							\
+      }									\
+									\
+      value_type val() const {						\
 	return VALUE;							\
       }									\
 									\
@@ -379,9 +394,9 @@ FAD_BINARYOP_MACRO(atan2,
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
 		   value_type c=std::pow(v1,v2); a=c*v2/v1; b=c*std::log(v1),
-		   c,
-		   bar*a,
-		   bar*b)
+		   std::pow(v1,v2),
+		   v1 == 0 ? value_type(0) : value_type(bar*a),
+		   v1 == 0 ? value_type(0) : value_type(bar*b))
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
 		   ;,

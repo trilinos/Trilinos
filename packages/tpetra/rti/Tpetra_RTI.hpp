@@ -34,6 +34,9 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 
+#include "Tpetra_Operator.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Export.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_RTI_detail.hpp"
 
@@ -98,19 +101,19 @@ namespace Tpetra {
     //! \brief Transform values of \c vec_inout using via operator \c op.
     /** For each element <tt>vec_inout[i]</tt>, assign <tt>vec_inout[i] = op( vec_inout[i] )</tt>
         
-        Calls Tpetra::RTI::detail::unary_transform via the Tpetra::RTI::detail::RTIUnaryFunctorAdapter.
+        Calls Tpetra::RTI::detail::unary_transform via the Tpetra::RTI::detail::UnaryFunctorAdapter.
       */
     template <class S, class LO, class GO, class Node, class OP>
     void unary_transform(Vector<S,LO,GO,Node> &vec_inout, OP op) 
     {
-      Tpetra::RTI::detail::RTIUnaryFunctorAdapter<OP,S> Adapter_op(op);
+      Tpetra::RTI::detail::UnaryFunctorAdapter<OP,S> Adapter_op(op);
       Tpetra::RTI::detail::unary_transform(vec_inout, Adapter_op);
     }
 
     //! \brief Transform values of \c vec_inout using \c vec_inout, \c vec_in2 and operator \c op.
     /** For each element <tt>vec_inout[i]</tt>, assign <tt>vec_inout[i] = op( vec_inout[i], vec_in2[i] )</tt>
         
-        Calls Tpetra::RTI::detail::binary_transform via the Tpetra::RTI::detail::RTIBinaryFunctorAdapter.
+        Calls Tpetra::RTI::detail::binary_transform via the Tpetra::RTI::detail::BinaryFunctorAdapter.
       */
     template <class S1, class S2, class LO, class GO, class Node, class OP>
     void binary_transform(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, OP op) 
@@ -119,7 +122,7 @@ namespace Tpetra {
       TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
           "Tpetra::RTI::binary_transform(vec_inout,vec_in2): vec_in2 and vec_inout must have the same local length.");
 #endif
-      Tpetra::RTI::detail::RTIBinaryFunctorAdapter<OP,S1,S2> adapter_op(op);
+      Tpetra::RTI::detail::BinaryFunctorAdapter<OP,S1,S2> adapter_op(op);
       Tpetra::RTI::detail::binary_transform(vec_inout, vec_in2, adapter_op);
     }
 
@@ -160,8 +163,8 @@ namespace Tpetra {
       return Tpetra::RTI::detail::transform_reduce(vec_inout, vec_in2, adapter_op);
     }
 
-
   } // end of namespace RTI
+
 } // end of namespace Tpetra
 
 #endif // TPETRA_RTI_HPP

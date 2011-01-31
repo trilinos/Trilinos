@@ -44,8 +44,8 @@
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 //=============================================================================
-Epetra_IntVector::Epetra_IntVector(const Epetra_BlockMap& Map, bool zeroOut)
-  : Epetra_DistObject(Map, "Epetra::IntVector"),
+Epetra_IntVector::Epetra_IntVector(const Epetra_BlockMap& map, bool zeroOut)
+  : Epetra_DistObject(map, "Epetra::IntVector"),
     Values_(0),
     UserAllocated_(false),
     Allocated_(false)
@@ -64,8 +64,8 @@ Epetra_IntVector::Epetra_IntVector(const Epetra_IntVector& Source)
   DoCopy(Source.Values_);
 }
 //=============================================================================
-Epetra_IntVector::Epetra_IntVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, int *V)
-  : Epetra_DistObject(Map, "Epetra::IntVector"),
+Epetra_IntVector::Epetra_IntVector(Epetra_DataAccess CV, const Epetra_BlockMap& map, int *V)
+  : Epetra_DistObject(map, "Epetra::IntVector"),
     Values_(0),
     UserAllocated_(false),
     Allocated_(false)
@@ -194,7 +194,7 @@ void Epetra_IntVector::Print(ostream& os) const {
       int NumMyElements1 =Map(). NumMyElements();
       int MaxElementSize1 = Map().MaxElementSize();
       int * MyGlobalElements1 = Map().MyGlobalElements();
-      int * FirstPointInElementList1;
+      int * FirstPointInElementList1=0;
       if (MaxElementSize1!=1) FirstPointInElementList1 = Map().FirstPointInElementList();
 
       if (MyPID==0) {

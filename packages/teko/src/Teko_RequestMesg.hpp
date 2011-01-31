@@ -88,8 +88,8 @@ public:
    { return tag_; }
 
    //! Get parameter list for this request
-   const Teuchos::ParameterList & getParameterList() const
-   { return *paramList_; }
+   const Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const
+   { return paramList_.getConst(); }
    
 protected:
    std::string name_;

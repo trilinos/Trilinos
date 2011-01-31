@@ -31,6 +31,9 @@
 #include <iostream>
 #include "TriKota_Driver.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 using namespace std;
 using namespace Dakota;
@@ -41,7 +44,7 @@ TriKota::Driver::Driver(const char* dakota_in,
                                const char* dakota_out,
                                const char* dakota_err,
                                const char* dakota_restart_out)
- :  parallel_lib(), problem_db(parallel_lib)
+ :  parallel_lib(), problem_db(parallel_lib), rank_zero(true)
 {
 
   Teuchos::RCP<Teuchos::FancyOStream>
@@ -55,14 +58,22 @@ TriKota::Driver::Driver(const char* dakota_in,
 
   // instantiate the strategy
   selected_strategy = Strategy(problem_db);
+
+  Model& first_model = *(problem_db.model_list().begin());
+  analysis_comm =
+     first_model.parallel_configuration_iterator()->ea_parallel_level().server_intra_communicator();
+
+#ifdef HAVE_MPI
+  // Here we are determining the global rank, not the analysis rank
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if (rank==0) rank_zero = true;
+  else         rank_zero = false;
+#endif
 }
 
 MPI_Comm TriKota::Driver::getAnalysisComm()
 {
-  Model& first_model = *(problem_db.model_list().begin());
-  MPI_Comm analysis_comm =
-     first_model.parallel_configuration_iterator()->ea_parallel_level().server_intra_communicator();
-
   return analysis_comm;
 }
 
@@ -85,5 +96,7 @@ void TriKota::Driver::run(Dakota::DirectApplicInterface* appInterface)
 
 const Dakota::Variables TriKota::Driver::getFinalSolution() const
 {
+  if (!rank_zero)
+    throw std::logic_error("getFinalSolution can only be called for rank==0 as of Nov 2010.");
   return selected_strategy.variables_results();
 }

@@ -128,6 +128,40 @@ int fei_solve(int & status, fei::LinearSystem &fei_ls, const Teuchos::ParameterL
                   );
 }
 
+double compute_residual_norm2(fei::LinearSystem& fei_ls, fei::Vector& r)
+{
+  fei::SharedPtr<fei::Matrix> A = fei_ls.getMatrix();
+  fei::SharedPtr<fei::Vector> x = fei_ls.getSolutionVector();
+  fei::SharedPtr<fei::Vector> b = fei_ls.getRHS();
+
+  //form r = A*x
+  A->multiply(x.get(), &r);
+  //form r = b - r   (i.e., r = b - A*x)
+  r.update(1, b.get(), -1);
+
+//!!!!!! fix this !!!!!!!!!
+//terrible data copy. fei::Vector should provide a norm operation instead
+//of making me roll my own here...
+
+  std::vector<int> indices;
+  r.getVectorSpace()->getIndices_Owned(indices);
+  std::vector<double> coefs(indices.size());
+  r.copyOut(indices.size(), &indices[0], &coefs[0]);
+  double local_sum = 0;
+  for(size_t i=0; i<indices.size(); ++i) {
+    local_sum += coefs[i]*coefs[i];
+  }
+#ifdef HAVE_MPI
+  MPI_Comm comm = r.getVectorSpace()->getCommunicator();
+  double global_sum = 0;
+  int num_doubles = 1;
+  MPI_Allreduce(&local_sum, &global_sum, num_doubles, MPI_DOUBLE, MPI_SUM, comm);
+#else
+  double global_sum = local_sum;
+#endif
+  return std::sqrt(global_sum);
+}
+
 void copy_vector_to_mesh( fei::Vector & vec,
                           const DofMapper & dof,
                           stk::mesh::BulkData & mesh_bulk_data

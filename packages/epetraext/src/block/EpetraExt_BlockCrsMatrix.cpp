@@ -64,6 +64,20 @@ BlockCrsMatrix::BlockCrsMatrix(
 
 //==============================================================================
 BlockCrsMatrix::BlockCrsMatrix(
+        const Epetra_CrsGraph & BaseGraph,
+        const Epetra_CrsGraph & LocalBlockGraph,
+        const Epetra_Comm & GlobalComm  ) 
+  : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, LocalBlockGraph, GlobalComm )) ),
+    BaseGraph_( BaseGraph ),
+    RowStencil_( ),
+    RowIndices_( ),
+    Offset_(BlockUtility::CalculateOffset(BaseGraph.RowMap()))
+{
+  BlockUtility::GenerateRowStencil(LocalBlockGraph, RowIndices_, RowStencil_);
+}
+
+//==============================================================================
+BlockCrsMatrix::BlockCrsMatrix(
         const Epetra_RowMatrix & BaseMatrix,
         const vector< vector<int> > & RowStencil,
         const vector<int> & RowIndices,
@@ -131,6 +145,43 @@ void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Ro
 {
   int RowOffset = RowIndices_[Row] * Offset_;
   int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+
+//  const Epetra_CrsGraph & BaseGraph = BaseMatrix.Graph();
+  const Epetra_BlockMap & BaseMap = BaseMatrix.RowMatrixRowMap();
+  const Epetra_BlockMap & BaseColMap = BaseMatrix.RowMatrixColMap();
+
+  // This routine copies entries of a BaseMatrix into big  BlockCrsMatrix
+  // It performs the following operation on the global IDs row-by-row
+  // this->val[i+rowOffset][j+ColOffset] = BaseMatrix.val[i][j]
+
+  int MaxIndices = BaseMatrix.MaxNumEntries();
+  vector<int> Indices(MaxIndices);
+  vector<double> Values(MaxIndices);
+  int NumIndices;
+  int ierr=0;
+
+  for (int i=0; i<BaseMap.NumMyElements(); i++) {
+    BaseMatrix.ExtractMyRowCopy( i, MaxIndices, NumIndices, &Values[0], &Indices[0] );
+
+    // Convert to BlockMatrix Global numbering scheme
+    for( int l = 0; l < NumIndices; ++l ) {
+       Indices[l] = ColOffset +  BaseColMap.GID(Indices[l]);
+       Values[l] *= alpha;
+    }
+
+    int BaseRow = BaseMap.GID(i);
+    ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices, &Values[0], &Indices[0]); 
+    if (ierr != 0) cout << "WARNING BlockCrsMatrix::SumIntoBlock SumIntoGlobalValues err = " << ierr <<
+	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << endl;
+
+  }
+}
+
+//==============================================================================
+  void BlockCrsMatrix::SumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col)
+{
+  int RowOffset = Row * Offset_;
+  int ColOffset = Col * Offset_;
 
 //  const Epetra_CrsGraph & BaseGraph = BaseMatrix.Graph();
   const Epetra_BlockMap & BaseMap = BaseMatrix.RowMatrixRowMap();

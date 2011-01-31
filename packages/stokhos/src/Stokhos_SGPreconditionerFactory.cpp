@@ -48,7 +48,10 @@ SGPreconditionerFactory(const Teuchos::RCP<Teuchos::ParameterList>& params_) :
 
 Teuchos::RCP<Stokhos::SGPreconditioner> 
 Stokhos::SGPreconditionerFactory::
-build(const Teuchos::RCP<const Epetra_Map>& base_map,
+build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+      const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk,
+      const Teuchos::RCP<const Epetra_Map>& base_map,
       const Teuchos::RCP<const Epetra_Map>& sg_map)
 {
   Teuchos::RCP<Stokhos::SGPreconditioner> sg_prec;
@@ -57,26 +60,34 @@ build(const Teuchos::RCP<const Epetra_Map>& base_map,
     Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory = 
       buildMeanPreconditionerFactory();
     sg_prec = Teuchos::rcp(new Stokhos::MeanBasedPreconditioner(
-			     base_map, sg_map, prec_factory, params));
+			     sg_comm, sg_basis, epetraCijk, 
+			     base_map, sg_map, prec_factory, 
+			     params));
   }
   else if (prec_method == "Approximate Gauss-Seidel") {
     Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory = 
       buildMeanPreconditionerFactory();
     sg_prec = Teuchos::rcp(new Stokhos::ApproxGaussSeidelPreconditioner(
-			     base_map, sg_map, prec_factory, params));
+			     sg_comm, sg_basis, epetraCijk, 
+			     base_map, sg_map, prec_factory, 
+			     params));
   }
   else if (prec_method == "Approximate Jacobi") {
     Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory = 
       buildMeanPreconditionerFactory();
     sg_prec = Teuchos::rcp(new Stokhos::ApproxJacobiPreconditioner(
-			     base_map, sg_map, prec_factory, params));
+			     sg_comm, sg_basis, epetraCijk, 
+			     base_map, sg_map, prec_factory, 
+			     params));
   }
 #ifdef HAVE_STOKHOS_NOX
   else if (prec_method == "Gauss-Seidel") {
     Teuchos::RCP<NOX::Epetra::LinearSystem> det_solver = 
       params->get< Teuchos::RCP<NOX::Epetra::LinearSystem> >("Deterministic Solver");
     sg_prec = Teuchos::rcp(new Stokhos::GaussSeidelPreconditioner(
-			     base_map, sg_map, det_solver, params));
+			     sg_comm, sg_basis, epetraCijk, 
+			     base_map, sg_map, det_solver, 
+			     params));
   }
 #endif
   else if (prec_method == "Kronecker Product") {
@@ -89,8 +100,8 @@ build(const Teuchos::RCP<const Epetra_Map>& base_map,
     Teuchos::RCP<Stokhos::PreconditionerFactory> G_prec_factory = 
       buildPreconditionerFactory(G_prec_name, G_prec_params);
     sg_prec = Teuchos::rcp(new Stokhos::KroneckerProductPreconditioner(
-			     base_map, sg_map, mean_prec_factory, 
-			     G_prec_factory, params));
+			     sg_comm, sg_basis, epetraCijk, base_map, sg_map, 
+			     mean_prec_factory, G_prec_factory, params));
   }
   else if (prec_method == "Fully Assembled") {
      std::string prec_name = 

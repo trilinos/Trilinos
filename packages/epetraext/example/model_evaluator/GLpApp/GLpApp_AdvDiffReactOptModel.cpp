@@ -107,7 +107,9 @@ AdvDiffReactOptModel::AdvDiffReactOptModel(
       const int numBndyNodes        = map_p_bar_->NumMyElements();
       const int *bndyNodeGlobalIDs  = map_p_bar_->MyGlobalElements();
       for( int i = 0; i < numBndyNodes; ++i ) {
+#ifdef GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
         const int global_id = bndyNodeGlobalIDs[i];
+#endif
         const int local_id = overlapmap.LID(bndyNodeGlobalIDs[i]);
         const double x = ipcoords(local_id,0), y = ipcoords(local_id,1);
         double z = -1.0, L = -1.0;
@@ -141,8 +143,8 @@ AdvDiffReactOptModel::AdvDiffReactOptModel(
             ,Thyra::create_VectorSpace(Teuchos::rcp(new Epetra_Map(*map_p_[p_bndy_idx])))
             ),
           thyra_fact_R;
-        sillyModifiedGramSchmidt(&*thyra_B_bar,&thyra_fact_R);
-        Thyra::scale(double(numBndyNodes)/double(np_),&*thyra_B_bar); // Each row should sum to around one!
+        Thyra::sillyModifiedGramSchmidt(thyra_B_bar.ptr(), Teuchos::outArg(thyra_fact_R));
+        Thyra::scale(double(numBndyNodes)/double(np_),  thyra_B_bar.ptr()); // Each row should sum to around one!
         // We just discard the "R" factory thyra_fact_R ...
 #else // HAVE_THYRA_EPETRAEXT
         TEST_FOR_EXCEPTION(
@@ -589,9 +591,9 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
         Teuchos::RefCountPtr<Thyra::VectorBase<double> >
           thyra_etaVec = Thyra::create_Vector(etaVec,space_p_bar);
         for( int i = 0; i < map_p_bar_->NumGlobalElements(); ++i ) {
-          Thyra::assign(&*thyra_etaVec,0.0);
-          Thyra::set_ele(i,1.0,&*thyra_etaVec);
-          dat_B->Multiply(false,*etaVec,*(*DfDp_mv)(i));
+          Thyra::assign(thyra_etaVec.ptr(), 0.0);
+          Thyra::set_ele(i, 1.0, thyra_etaVec.ptr());
+          dat_B->Multiply(false, *etaVec, *(*DfDp_mv)(i));
         };
       }
     }

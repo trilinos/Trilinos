@@ -42,15 +42,25 @@ PACKAGE_ADD_TEST(
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )
 
+SET(TEST_DRIVER_DATA_FILES
+  lsc_B_2.mm
+  lsc_Bt_2.mm
+  lsc_F_2.mm
+  lsc_Qu_2.mm
+  lsc_exact_2.mm
+  lsc_rhs.mm
+  )
+
+IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+  SET(TEST_DRIVER_DATA_FILES
+    ${TEST_DRIVER_DATA_FILES}
+    nsjac.mm
+    nsjac_1.mm  
+    )
+ENDIF()
+
 PACKAGE_COPY_FILES_TO_BINARY_DIR(testdriver_copyfiles
-  SOURCE_FILES lsc_B_2.mm
-     lsc_Bt_2.mm
-     lsc_F_2.mm
-     lsc_Qu_2.mm
-     lsc_exact_2.mm
-     lsc_rhs.mm
-     nsjac.mm
-     nsjac_1.mm
+  SOURCE_FILES ${TEST_DRIVER_DATA_FILES}
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
   EXEDEPS testdriver

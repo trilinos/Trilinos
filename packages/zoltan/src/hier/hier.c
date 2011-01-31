@@ -27,6 +27,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 static PARAM_VARS graph_type_params[] = {
   { "GRAPH_PACKAGE", NULL, "STRING", 0 },
@@ -261,10 +262,6 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
 				     int *nbor_procs,
 				     int wgt_dim, float *ewgts, int *ierr);
 static int find_needed_gno_procs(HierPartParams *);
-/*static int process_import_gids(HierPartParams *hpp, int count,
-			       indextype * gids);
-static int process_export_gids(HierPartParams *hpp, int count,
-			       indextype * gids);*/
 static int Zoltan_Hier_Obj_Size_Fn(void *data, 
 				   int num_gid_entries, int num_lid_entries, 
 				   ZOLTAN_ID_TYPE * global_id, 
@@ -293,7 +290,7 @@ static void Zoltan_Hier_Check_Data(HierPartParams *, int *);
 /* for debugging of internal GIDs for small meshes.  define only if 
    the number of objects is small and debugging sanity checks are desired */
 #if 0
-#define HIER_CHECK_GNO_RANGE(x) {if ((x)<0 || (x)>hpp->vtxdist[hpp->origzz->Num_Proc]) printf("[%d] suspicious GID %d on line %d\n", hpp->origzz->Proc, (x), __LINE__);}
+#define HIER_CHECK_GNO_RANGE(x) {if ((x)<0 || (x)>hpp->vtxdist[hpp->origzz->Num_Proc]) printf("[%d] suspicious GNO %ld on line %d\n", hpp->origzz->Proc, (x), __LINE__);}
 #else
 #define HIER_CHECK_GNO_RANGE(x)
 #endif
@@ -507,7 +504,7 @@ int Zoltan_Hier(
   int hier_num_export_objs=0;
   ZOLTAN_ID_TYPE * hier_export_gids=NULL, *hier_export_lids=NULL;
   int *hier_export_procs=NULL, *hier_export_to_part=NULL;
-  int graph_type = 0;
+  int gno_size_for_dd, graph_type = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -540,6 +537,8 @@ int Zoltan_Hier(
   hpp.hier_comm = MPI_COMM_NULL;
   hpp.spec = NULL;
   hpp.gen_files = 0;
+
+  gno_size_for_dd = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
 
   /* Cannot currently do hierarchical balancing for num_parts != num_procs */
   if ((zz->Num_Proc != zz->LB.Num_Global_Parts) ||
@@ -649,12 +648,8 @@ int Zoltan_Hier(
      location as determined by the gid value (index into global
      ordering) and the vtxdist array */
 
-  if (sizeof(indextype) != sizeof(ZOLTAN_ID_TYPE)){
-    /* ERROR - we use the DD for our global numbers, it thinks they're ZOLTAN_ID_TYPEs */
-    ZOLTAN_HIER_ERROR(ierr, "sizeof(indextype) != sizeof(ZOLTAN_ID_TYPE)/");
-  }
+  ierr = Zoltan_DD_Create(&hpp.dd, zz->Communicator, gno_size_for_dd, 0, 0, 0, 0);
 
-  ierr = Zoltan_DD_Create(&hpp.dd, zz->Communicator, 1, 0, 0, 0, 0);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_HIER_ERROR(ierr, "Zoltan_DD_Create returned error.");
   }
@@ -676,10 +671,11 @@ int Zoltan_Hier(
     graph_type |= (1 << NO_GRAPH);
   ierr = Zoltan_Build_Graph(zz, &graph_type,
 			    hpp.checks, hpp.init_num_obj,
-			    hpp.global_ids, hpp.local_ids,       /* ZOLTAN_ID_TYPEs */
+			    hpp.global_ids, hpp.local_ids,       /* input ZOLTAN_ID_TYPEs */
 			    hpp.obj_wgt_dim, &hpp.edge_wgt_dim,
-			    &hpp.vtxdist, &hpp.xadj, &hpp.adjncy,  /* indextypes */
+			    &hpp.vtxdist, &hpp.xadj, &hpp.adjncy, /* internal ZOLTAN_GNO_TYPEs */
 			    &hpp.ewgts, &hpp.adjproc);
+
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
     ZOLTAN_HIER_ERROR(ierr, "Zoltan_Build_Graph returned error.");
   }
@@ -760,7 +756,7 @@ int Zoltan_Hier(
 	if (hpp.migrated[i99]) printf("E");	
       }
       for (i99=0; i99<hpp.num_migrated_in_gnos; i99++) {
-	printf(" %dI", hpp.migrated_in_gnos[i99]);
+	printf(ZOLTAN_GNO_SPEC "I", hpp.migrated_in_gnos[i99]);
       }
       printf("\n");
     }
@@ -953,8 +949,13 @@ int Zoltan_Hier(
     /* processing of output arrays is done by migration callbacks 
        except in the last round when we need to call just the
        mid-migrate function explicitly */
+
+    /* If hpp.num_parts == 1, then we didn't call Zoltan_LB_Partition, which is
+     *   is going to call Zoltan_Migrate which will call Mid_Migrate.  Mid_Migrate
+     *   does global communication, so all procs need to call it.
+     */
        
-    if (hpp.level == last_level) {
+    if ((hpp.level == last_level) || (hpp.num_parts == 1)) {
       Zoltan_Hier_Mid_Migrate_Fn((void *)&hpp, hier_num_gid_entries,
 				 hier_num_lid_entries,
 				 hier_num_import_objs,
@@ -1021,7 +1022,7 @@ int Zoltan_Hier(
   /* allocate export arrays and gnos_of_interest array to find
      destination procs */
   if (*num_exp > 0) {
-    hpp.gnos_of_interest = (indextype *)ZOLTAN_MALLOC(*num_exp * sizeof(indextype));
+    hpp.gnos_of_interest = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(*num_exp * sizeof(ZOLTAN_GNO_TYPE));
     if (!hpp.gnos_of_interest) {
       ZOLTAN_HIER_ERROR(ZOLTAN_MEMERR, "Out of memory");
     }
@@ -1056,7 +1057,7 @@ int Zoltan_Hier(
 
   }
   /* query the DD for procs - should put them right where we need them */
-  ierr = Zoltan_DD_Find(hpp.dd, (ZOLTAN_ID_PTR)hpp.gnos_of_interest, NULL, NULL, NULL, 
+  ierr = Zoltan_DD_Find(hpp.dd, (ZOLTAN_ID_PTR)hpp.gnos_of_interest, NULL, NULL, NULL,   
 			*num_exp, *exp_procs);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
     ZOLTAN_HIER_ERROR(ierr, "Zoltan_DD_Find returned error");
@@ -1117,12 +1118,11 @@ End:
 static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
 
 char *yo = "Zoltan_Hier_Initialize_Params";
-int assist, i, j;
+int assist, i=0, j, len;
 int num_cpus, num_siblings;
-char *c=NULL;
 char platform[MAX_PARAM_STRING_LEN+1];
 char topology[MAX_PARAM_STRING_LEN+1];
-char *msg=NULL, *pnames=NULL;
+char *msg=NULL, *pnames=NULL, *c=NULL;
 div_t result;
 
   Zoltan_Bind_Param(Hier_params, "HIER_DEBUG_LEVEL", (void *) &hpp->output_level);
@@ -1177,8 +1177,11 @@ div_t result;
     return ZOLTAN_OK;
 
   if (platform[0]){ 
-    c = platform;
-    while (*c != 0) *c++ = tolower(*c);
+    len = strlen(platform);
+    for (i=0; i < len; i++){
+      if (isupper((int)platform[i]))
+        platform[i] = (char)tolower((int)platform[i]);
+    }
 
     for (i=0; i < ZOLTAN_HIER_LAST_PLATFORM; i++){
       if (strcmp(platform, zoltan_hier_platform_specs[i].platform_name)) continue;
@@ -1316,7 +1319,7 @@ div_t result;
 
 /* do a binary search on the migrated in array and return the index
    into that array of the given gno */
-static int migrated_in_index_of_gno(HierPartParams *hpp, indextype gno) {
+static int migrated_in_index_of_gno(HierPartParams *hpp, ZOLTAN_GNO_TYPE gno) {
   int low, mid, high;
 
   HIER_CHECK_GNO_RANGE(gno);
@@ -1350,16 +1353,16 @@ static int migrated_in_index_of_gno(HierPartParams *hpp, indextype gno) {
 /* now, the wgts array has obj_wgt_dim entries for vertex
    weights followed by edge_wgt_dim edge weights for each adjacent edge
    and the coords array has ndims entries for geometric coordinates */
-struct HierGIDInfo {
+struct HierGNOInfo {
   float *wgts;
   double *coords;
   int num_adj;
-  indextype *adj;
+  ZOLTAN_GNO_TYPE *adj;
 };
 
-/* free a HierGIDInfo structure */
+/* free a HierGNOInfo structure */
 static void free_hier_mig_data(void *voiddata) {
-  struct HierGIDInfo *data = (struct HierGIDInfo *)voiddata;
+  struct HierGNOInfo *data = (struct HierGNOInfo *)voiddata;
   if (data->wgts) ZOLTAN_FREE(&data->wgts);
   if (data->coords) ZOLTAN_FREE(&data->coords);
   if (data->adj) ZOLTAN_FREE(&data->adj);
@@ -1371,8 +1374,8 @@ static void free_hier_mig_data(void *voiddata) {
    function and we no one unauthorized will get their hands on a
    pointer that could go stale */
 static void get_hier_mig_adj_info(void *voiddata, int *count, 
-				  indextype **edgelist) {
-  struct HierGIDInfo *data = (struct HierGIDInfo *)voiddata;
+				  ZOLTAN_GNO_TYPE **edgelist) {
+  struct HierGNOInfo *data = (struct HierGNOInfo *)voiddata;
   
   *count = data->num_adj;
   *edgelist = data->adj;
@@ -1380,35 +1383,35 @@ static void get_hier_mig_adj_info(void *voiddata, int *count,
 
 /* get vertex weights from an element of the migrated list */
 static float *get_hier_mig_vwgts(void *voiddata) {
-  struct HierGIDInfo *data = (struct HierGIDInfo *)voiddata;
+  struct HierGNOInfo *data = (struct HierGNOInfo *)voiddata;
 
   return data->wgts;
 }
 
 /* get geometric coordinates an element of the migrated list */
 static double *get_hier_mig_coords(void *voiddata, HierPartParams *hpp) {
-  struct HierGIDInfo *data = (struct HierGIDInfo *)voiddata;
+  struct HierGNOInfo *data = (struct HierGNOInfo *)voiddata;
 
   return data->coords;
 }
 
 /* get number of adjacencies of an element of the migrated list */
 static int get_hier_mig_num_adj(void *voiddata) {
-  struct HierGIDInfo *data = (struct HierGIDInfo *)voiddata;
+  struct HierGNOInfo *data = (struct HierGNOInfo *)voiddata;
 
   return data->num_adj;
 }
 
-/* get adjacent gid list from an element of the migrated list */
-static indextype *get_hier_mig_adj(void *voiddata) {
-  struct HierGIDInfo *data = (struct HierGIDInfo *)voiddata;
+/* get adjacent gno list from an element of the migrated list */
+static ZOLTAN_GNO_TYPE *get_hier_mig_adj(void *voiddata) {
+  struct HierGNOInfo *data = (struct HierGNOInfo *)voiddata;
 
   return data->adj;
 }
 
 /* get ith adjacent gid from an element of the migrated list */
-static indextype get_hier_mig_ith_adj(void *voiddata, int adj_index) {
-  struct HierGIDInfo *data = (struct HierGIDInfo *)voiddata;
+static ZOLTAN_GNO_TYPE get_hier_mig_ith_adj(void *voiddata, int adj_index) {
+  struct HierGNOInfo *data = (struct HierGNOInfo *)voiddata;
 
   return data->adj[adj_index];
 }
@@ -1416,7 +1419,7 @@ static indextype get_hier_mig_ith_adj(void *voiddata, int adj_index) {
 /* get edge weights of ith adjacent gid from an element of the migrated list */
 static void get_hier_mig_ith_adj_wgts(void *voiddata, HierPartParams *hpp, 
 				      int adj_index, float *weights) {
-  struct HierGIDInfo *data = (struct HierGIDInfo *)voiddata;
+  struct HierGNOInfo *data = (struct HierGNOInfo *)voiddata;
   int i;
 
   for (i=0; i<hpp->edge_wgt_dim; i++) {
@@ -1428,13 +1431,13 @@ static void get_hier_mig_ith_adj_wgts(void *voiddata, HierPartParams *hpp,
 /* get list of edge weights of adjacent gids from an element of the
    migrated list */
 static float *get_hier_mig_adj_wgts(void *voiddata, HierPartParams *hpp) {
-  struct HierGIDInfo *data = (struct HierGIDInfo *)voiddata;
+  struct HierGNOInfo *data = (struct HierGNOInfo *)voiddata;
 
   return &(data->wgts[hpp->obj_wgt_dim]);
 }
 
 /* is a gno located here? */
-static int is_gno_local(HierPartParams *hpp, indextype gno) {
+static int is_gno_local(HierPartParams *hpp, ZOLTAN_GNO_TYPE gno) {
 
   /* to be local it must be either
      1) in our range of original gnos and not migrated
@@ -1462,7 +1465,7 @@ static int is_gno_local(HierPartParams *hpp, indextype gno) {
 /* it might be more efficient to make a big unsorted array with duplicates 
    then remove duplicates and sort */
 static void insert_unique_gnos_of_interest(HierPartParams *hpp,
-					   indextype gno) {
+					   ZOLTAN_GNO_TYPE gno) {
   int low, mid, high, index;
 
   HIER_CHECK_GNO_RANGE(gno);
@@ -1472,8 +1475,8 @@ static void insert_unique_gnos_of_interest(HierPartParams *hpp,
     /* reasonable increment? */
     hpp->allocsize_gnos_of_interest += hpp->hier_num_obj + 1;
     hpp->gnos_of_interest = 
-      (indextype *)ZOLTAN_REALLOC(hpp->gnos_of_interest, 
-				    sizeof(indextype)* hpp->allocsize_gnos_of_interest);
+      (ZOLTAN_GNO_TYPE *)ZOLTAN_REALLOC(hpp->gnos_of_interest, 
+          sizeof(ZOLTAN_GNO_TYPE)* hpp->allocsize_gnos_of_interest);
   }
 
   /* find it (or not) */
@@ -1507,17 +1510,17 @@ static void insert_unique_gnos_of_interest(HierPartParams *hpp,
 /* request locations of migrated gids of interest to graph callbacks */
 static int find_needed_gno_procs(HierPartParams *hpp) {
   int i, adjindex;
-  indextype adjgid;
+  ZOLTAN_GNO_TYPE adjgid;
   int ierr=ZOLTAN_OK;
   int numadj;
-  indextype *adjlist;
+  ZOLTAN_GNO_TYPE *adjlist;
   char *yo = "find_needed_gno_procs";
 
   if (hpp->hier_num_obj) {
     /* build a list of remote gids whose locations we will need later */
     hpp->allocsize_gnos_of_interest = hpp->hier_num_obj; /* initial estimate */
     hpp->gnos_of_interest = 
-      (indextype *)ZOLTAN_MALLOC(sizeof(indextype)*
+      (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE)*
 				   hpp->allocsize_gnos_of_interest);
     if (!hpp->gnos_of_interest) {
       ierr = ZOLTAN_MEMERR; 
@@ -1576,10 +1579,10 @@ static int find_needed_gno_procs(HierPartParams *hpp) {
   /* note that hpp->gnos_of_interest_procs will be NULL if this proc
      has no gids of interest */
   if (hpp->output_level >= HIER_DEBUG_ALL) {
-    printf("[%d] calling DD_Find on %d GIDs\n", hpp->origzz->Proc,
+    printf("[%d] calling DD_Find on %d GNOs\n", hpp->origzz->Proc,
 	   hpp->num_gnos_of_interest);
     for (i=0; i<hpp->num_gnos_of_interest; i++) {
-      printf("[%d] DD_Find slot %d GID %d\n",
+      printf("[%d] DD_Find slot %d GNO " ZOLTAN_GNO_SPEC "\n",
 	     hpp->origzz->Proc, i, hpp->gnos_of_interest[i]);
     }
   }
@@ -1592,10 +1595,10 @@ static int find_needed_gno_procs(HierPartParams *hpp) {
     goto End;
   }
   if (hpp->output_level >= HIER_DEBUG_ALL) {
-    printf("[%d] DD_Find on %d GIDs returned\n", hpp->origzz->Proc,
+    printf("[%d] DD_Find on %d GNOs returned\n", hpp->origzz->Proc,
 	   hpp->num_gnos_of_interest);
     for (i=0; i<hpp->num_gnos_of_interest; i++) {
-      printf("[%d] DD_Find slot %d GID %d proc %d\n",
+      printf("[%d] DD_Find slot %d GNO " ZOLTAN_GNO_SPEC " proc %d\n",
 	     hpp->origzz->Proc, i, hpp->gnos_of_interest[i],
 	     hpp->gnos_of_interest_procs[i]);
     }
@@ -1608,7 +1611,7 @@ static int find_needed_gno_procs(HierPartParams *hpp) {
 
 /* look up the proc of a gid in the gnos_of_interest.  Return proc if
    found, return -1 otherwise */
-static int gno_of_interest_proc(HierPartParams *hpp, indextype gno) {
+static int gno_of_interest_proc(HierPartParams *hpp, ZOLTAN_GNO_TYPE gno) {
   int high, low, mid;
 
   HIER_CHECK_GNO_RANGE(gno);
@@ -1642,14 +1645,14 @@ static int gno_of_interest_proc(HierPartParams *hpp, indextype gno) {
 /* helper function to look up local_index of a gid */
 /* return index into local arrays if gid is in the local range and has
    not been migrated, return -1 otherwise */
-static int get_local_index(HierPartParams *hpp, indextype gno) {
+static int get_local_index(HierPartParams *hpp, ZOLTAN_GNO_TYPE gno) {
 
   HIER_CHECK_GNO_RANGE(gno);
   if ((gno >= hpp->vtxdist[hpp->origzz->Proc]) &&
       (gno < hpp->vtxdist[hpp->origzz->Proc+1])) {
     /* it's in our range, just check that it hasn't been migrated */
     if (!hpp->migrated[gno - hpp->vtxdist[hpp->origzz->Proc]]) {
-      return gno - hpp->vtxdist[hpp->origzz->Proc];
+      return (int)(gno - hpp->vtxdist[hpp->origzz->Proc]);
     }
   }
 
@@ -1659,12 +1662,12 @@ static int get_local_index(HierPartParams *hpp, indextype gno) {
 
 /* return index into local arrays if gno is in the local range even if
    it has been migrated, return -1 otherwise */
-static int get_starting_local_index(HierPartParams *hpp, indextype gno) {
+static int get_starting_local_index(HierPartParams *hpp, ZOLTAN_GNO_TYPE gno) {
 
   HIER_CHECK_GNO_RANGE(gno);
   if ((gno >= hpp->vtxdist[hpp->origzz->Proc]) &&
       (gno < hpp->vtxdist[hpp->origzz->Proc+1])) {
-    return gno - hpp->vtxdist[hpp->origzz->Proc];
+    return (int)(gno - hpp->vtxdist[hpp->origzz->Proc]);
   }
   
   /* it didn't start here */
@@ -1674,7 +1677,7 @@ static int get_starting_local_index(HierPartParams *hpp, indextype gno) {
 /* helper function to determine current proc assignment of a gno - gno
    must either be local or be in the gnos_of_interest as computed by
    find_needed_gno_procs */
-static int current_proc_of_gno(HierPartParams *hpp, indextype gno) {
+static int current_proc_of_gno(HierPartParams *hpp, ZOLTAN_GNO_TYPE gno) {
   int proc;
   int dd_proc;
   char msg[64];
@@ -1703,7 +1706,7 @@ static int current_proc_of_gno(HierPartParams *hpp, indextype gno) {
     }
   }
   /* should never get here */
-  sprintf(msg, "GNO %d not found", gno);
+  sprintf(msg, "GNO " ZOLTAN_GNO_SPEC " not found", gno);
   ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, "current_proc_of_gno", msg);
   return -1;	       
 }
@@ -1798,7 +1801,7 @@ static void Zoltan_Hier_Geom_Fn(void *data, int num_gid_entries,
   int i;
   double *coord_ptr;
 
-  HIER_CHECK_GNO_RANGE((index_type)gid);
+  HIER_CHECK_GNO_RANGE((ZOLTAN_GNO_TYPE)gid);
 
   /* everything is OK unless we don't find it */
   *ierr = ZOLTAN_OK;
@@ -1812,7 +1815,7 @@ static void Zoltan_Hier_Geom_Fn(void *data, int num_gid_entries,
   }
 
   /* check for an object that started locally */
-  local_index = get_local_index(hpp, (indextype)gid);
+  local_index = get_local_index(hpp, (ZOLTAN_GNO_TYPE)gid);
   if (local_index != -1) {
     for (i=0; i<hpp->ndims; i++) {
       coord[i] = hpp->geom_vec[hpp->ndims*local_index+i];
@@ -1821,7 +1824,7 @@ static void Zoltan_Hier_Geom_Fn(void *data, int num_gid_entries,
   }
 
   /* check for an object that has been migrated in in a previous step */
-  local_index = migrated_in_index_of_gno(hpp, (indextype)gid);
+  local_index = migrated_in_index_of_gno(hpp, (ZOLTAN_GNO_TYPE)gid);
   if (local_index != -1) {
     coord_ptr = get_hier_mig_coords(hpp->migrated_in_data[local_index], hpp);
     for (i=0; i<hpp->ndims; i++) {
@@ -1844,9 +1847,12 @@ static int Zoltan_Hier_Num_Edges_Fn(void *data, int num_gid_entries,
   int local_index;
   char *yo = "Zoltan_Hier_Num_Edges_Fn";
   int edge, count_edges, edge_proc_orig_rank, num_adj; 
-  indextype next_adj;
+  ZOLTAN_GNO_TYPE next_adj;
+  ZOLTAN_GNO_TYPE gno;
 
-  HIER_CHECK_GNO_RANGE((indextype)gid);
+  gno = (ZOLTAN_GNO_TYPE)gid;
+
+  HIER_CHECK_GNO_RANGE(gno);
 
   /* everything is OK unless we don't find it */
   *ierr = ZOLTAN_OK;
@@ -1860,7 +1866,7 @@ static int Zoltan_Hier_Num_Edges_Fn(void *data, int num_gid_entries,
   }
 
   /* check for an object that started locally */
-  local_index = get_local_index(hpp, (indextype)gid);
+  local_index = get_local_index(hpp, gno);
   if (local_index != -1) {
     /* need to be careful that the edges are to objects located on a
        proc in the current hierzz->Comm communicator */
@@ -1877,7 +1883,7 @@ static int Zoltan_Hier_Num_Edges_Fn(void *data, int num_gid_entries,
   }
 
   /* check for an object that has been migrated in in a previous step */
-  local_index = migrated_in_index_of_gno(hpp, (indextype)gid);
+  local_index = migrated_in_index_of_gno(hpp, gno);
   if (local_index != -1) {
     count_edges = 0;
     num_adj = get_hier_mig_num_adj(hpp->migrated_in_data[local_index]);
@@ -1907,10 +1913,12 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
   ZOLTAN_ID_TYPE gid = global_id[0];
   int local_index, offset, nadj;
   int i, j, edge, edge_proc_orig_rank, edge_proc_hier_rank, num_adj;
-  indextype next_adj;
+  ZOLTAN_GNO_TYPE next_adj, gno;
   char *yo = "Zoltan_Hier_Edge_List_Fn";
 
-  HIER_CHECK_GNO_RANGE((indextype)gid);
+  gno = (ZOLTAN_GNO_TYPE)gid;
+
+  HIER_CHECK_GNO_RANGE(gno);
 
   /* everything is OK unless we don't find it */
   *ierr = ZOLTAN_OK;
@@ -1924,7 +1932,7 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
   }
   
   /* check for an object that started locally */
-  local_index = get_local_index(hpp, (indextype)gid);
+  local_index = get_local_index(hpp, gno);
   if (local_index != -1) {
     edge = 0;
     offset = hpp->xadj[local_index];
@@ -1950,7 +1958,7 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
   /* check for an object that has been migrated in in a previous step */
   /* it would be nice to factor out some code common to this and the 
      loop above */
-  local_index = migrated_in_index_of_gno(hpp, (indextype)gid);
+  local_index = migrated_in_index_of_gno(hpp, gno);
   if (local_index != -1) {
     edge = 0;
     num_adj = get_hier_mig_num_adj(hpp->migrated_in_data[local_index]);
@@ -1979,7 +1987,7 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
 /* migration helpers */
 
 /* find the number of edges of a gid that we know is local */
-static int num_graph_edges_of_gno(HierPartParams *hpp, indextype gno,
+static int num_graph_edges_of_gno(HierPartParams *hpp, ZOLTAN_GNO_TYPE gno,
 				  int *count) {
   int local_index;
   char *yo = "num_graph_edges_of_gno";
@@ -2003,7 +2011,7 @@ static int num_graph_edges_of_gno(HierPartParams *hpp, indextype gno,
     return ZOLTAN_OK;
   }
 
-  sprintf(msg, "could not find gno %d\n", gno);
+  sprintf(msg, "could not find gno " ZOLTAN_GNO_SPEC "\n", gno);
   ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, msg);
   return ZOLTAN_FATAL;
 }
@@ -2016,10 +2024,10 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
   int nreturn=0;
   int *proclist=NULL;
   int proc;
-  indextype *sendbuf=NULL, *recvbuf=NULL;
+  ZOLTAN_GNO_TYPE *sendbuf=NULL, *recvbuf=NULL;
   int local_index;
   int *owners=NULL;
-  ZOLTAN_ID_TYPE *ddlookup=NULL;
+  ZOLTAN_GNO_TYPE *ddlookup=NULL;
   char msg[256];
 
   if (hpp->output_level >= HIER_DEBUG_ALL) {
@@ -2074,19 +2082,19 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
 
   /* allocate space for the information we'll send and receive */
   if (hpp->num_migrated_in_gnos) {
-    sendbuf = (indextype *)ZOLTAN_MALLOC(2*hpp->num_migrated_in_gnos*sizeof(indextype));
+    sendbuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(2*hpp->num_migrated_in_gnos*sizeof(ZOLTAN_GNO_TYPE));
     for (i=0; i<hpp->num_migrated_in_gnos; i++) {
       sendbuf[2*i] = hpp->migrated_in_gnos[i];
-      sendbuf[2*i+1] = (indextype)hpp->origzz->Proc;  /* assumes proc ID can fit in an indextype */
+      sendbuf[2*i+1] = (ZOLTAN_GNO_TYPE)hpp->origzz->Proc;  /* assumes proc ID can fit in an ZOLTAN_GNO_TYPE */
     }
   }
 
   if (nreturn) {
-    recvbuf = (indextype *)ZOLTAN_MALLOC(2*nreturn*sizeof(indextype));
+    recvbuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(2*nreturn*sizeof(ZOLTAN_GNO_TYPE));
   }
 
   /* do the communication */
-  *ierr = Zoltan_Comm_Do(plan, 0, (char *)sendbuf, 2*sizeof(indextype), 
+  *ierr = Zoltan_Comm_Do(plan, 0, (char *)sendbuf, 2*sizeof(ZOLTAN_GNO_TYPE), 
 			 (char *)recvbuf);
 
   /* check to make sure each received gid lives here, and that we know
@@ -2117,7 +2125,7 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
      we're in the loop */
   for (i=0; i<hpp->init_num_obj; i++) {
     if (hpp->migrated[i] == 1) {
-      sprintf(msg, "gid %d at pos %d marked as migrated, not reported back!",
+      sprintf(msg, "gid " ZOLTAN_GNO_SPEC " at pos %d marked as migrated, not reported back!",
 	      hpp->vtxdist[hpp->origzz->Proc]+i, i);
       ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, msg);
       *ierr = ZOLTAN_FATAL;
@@ -2129,18 +2137,18 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
   /* check that the information we received about current locations is
      consistent with what is in the DD */
   if (nreturn) {
-    ddlookup = (ZOLTAN_ID_TYPE *)ZOLTAN_MALLOC(nreturn*sizeof(ZOLTAN_ID_TYPE));
+    ddlookup = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(nreturn*sizeof(ZOLTAN_GNO_TYPE));   
     owners = (int *)ZOLTAN_MALLOC(nreturn*sizeof(int));
     for (i=0; i<nreturn; i++) {
       ddlookup[i]=(ZOLTAN_ID_TYPE)recvbuf[2*i];
     }
   }
 
-  *ierr = Zoltan_DD_Find(hpp->dd, ddlookup, NULL, NULL, NULL, nreturn, owners);
+  *ierr = Zoltan_DD_Find(hpp->dd, (ZOLTAN_ID_TYPE *)ddlookup, NULL, NULL, NULL, nreturn, owners);
 
   for (i=0; i<nreturn; i++) {
     if (owners[i] != (int)recvbuf[2*i+1]) {
-      sprintf(msg, "Owner mismatch for GID %d: DD has %d, msg came from %d\n",
+      sprintf(msg, "Owner mismatch for GNO " ZOLTAN_GNO_SPEC ": DD has %d, msg came from " ZOLTAN_GNO_SPEC "\n",
 	      recvbuf[2*i], owners[i], recvbuf[2*i+1]);
       ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, msg);
       *ierr = ZOLTAN_FATAL;
@@ -2166,11 +2174,14 @@ static int Zoltan_Hier_Obj_Size_Fn(void *data,
 				   ZOLTAN_ID_TYPE  * local_id, int *ierr) {
   HierPartParams *hpp = (HierPartParams *)data;
   ZOLTAN_ID_TYPE gid = global_id[0];
+  ZOLTAN_GNO_TYPE gno;
   char *yo = "Zoltan_Hier_Obj_Size_Fn";
   int num_bytes = 0;
   int num_edges;
 
-  HIER_CHECK_GNO_RANGE((indextype)gid);
+  gno = (ZOLTAN_GNO_TYPE)gid;
+
+  HIER_CHECK_GNO_RANGE(gno);
 
   /* everything is OK unless we don't find it */
   *ierr = ZOLTAN_OK;
@@ -2182,19 +2193,19 @@ static int Zoltan_Hier_Obj_Size_Fn(void *data,
   num_bytes += hpp->ndims*sizeof(double);
   /* adjacent edges */
   if (hpp->use_graph) {
-    *ierr = num_graph_edges_of_gno(hpp, (indextype)gid, &num_edges);
+    *ierr = num_graph_edges_of_gno(hpp, gno, &num_edges);
     if (*ierr == ZOLTAN_FATAL) {
       ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, 
 			 "num_graph_edges_of_gno returned error");
       return 0;
     }
     /* 1 int for edge count, 1 int and 1 float per edge */
-    num_bytes += sizeof(int) + num_edges*(sizeof(indextype)+ hpp->edge_wgt_dim*sizeof(float));
+    num_bytes += sizeof(int) + num_edges*(sizeof(ZOLTAN_GNO_TYPE)+ hpp->edge_wgt_dim*sizeof(float));
   }
 
   /*
-  printf("[%d] pack size of GID %d is %d with %d edges, %d obj_wgt_dim, %d ndims, %d edge_wgt_dim\n", 
-	 hpp->origzz->Proc, gid, num_bytes, num_edges, hpp->obj_wgt_dim, 
+  printf("[%d] pack size of GID " ZOLTAN_GNO_SPEC " is %d with %d edges, %d obj_wgt_dim, %d ndims, %d edge_wgt_dim\n", 
+	 hpp->origzz->Proc, gno, num_bytes, num_edges, hpp->obj_wgt_dim, 
 	 hpp->ndims,  hpp->edge_wgt_dim);
   */
 
@@ -2221,26 +2232,29 @@ static void Zoltan_Hier_Pack_Obj_Fn(void *data,
   float *vwgts = NULL;
   double *coords = NULL;
   int num_adj = 0;
-  indextype *adj = NULL;
+  ZOLTAN_GNO_TYPE *adj = NULL;
+  ZOLTAN_GNO_TYPE gno;
   float *ewgts = NULL;
   float *buf_float_ptr;
-  indextype * buf_gno_ptr;
+  ZOLTAN_GNO_TYPE * buf_gno_ptr;
   double *buf_double_ptr;
   int *buf_int_ptr;
   int buf_index, i;
+ 
+  gno = (ZOLTAN_GNO_TYPE)gid;
 
-  HIER_CHECK_GNO_RANGE((indextype)gid);
+  HIER_CHECK_GNO_RANGE(gno);
 
   if (hpp->output_level >= HIER_DEBUG_ALL) {
-    printf("[%d] packing GID %d to send to %d, size=%d\n", hpp->origzz->Proc, 
-	   gid, dest_proc, size);
+    printf("[%d] packing GID " ZOLTAN_GNO_SPEC " to send to %d, size=%d\n", hpp->origzz->Proc, 
+	   gno, dest_proc, size);
   }
 
   /* assume failure -- set to OK when we find the gid */
   *ierr = ZOLTAN_FATAL;
 
   /* check for an object that started locally */
-  local_index = get_local_index(hpp, (indextype)gid);
+  local_index = get_local_index(hpp, gno);
   if (local_index != -1) {
     *ierr = ZOLTAN_OK;
     if (hpp->obj_wgt_dim) {
@@ -2259,7 +2273,7 @@ static void Zoltan_Hier_Pack_Obj_Fn(void *data,
   }
   else {
     /* check for an object that has been migrated in in a previous step */
-    local_index = migrated_in_index_of_gno(hpp, (indextype)gid);
+    local_index = migrated_in_index_of_gno(hpp, gno);
     if (local_index != -1) {
       *ierr = ZOLTAN_OK;
       if (hpp->obj_wgt_dim) {
@@ -2313,7 +2327,7 @@ static void Zoltan_Hier_Pack_Obj_Fn(void *data,
     }
 
     if (hpp->use_graph) {
-      buf_gno_ptr = (indextype *)&buf_double_ptr[buf_index];
+      buf_gno_ptr = (ZOLTAN_GNO_TYPE *)&buf_double_ptr[buf_index];
       buf_index = 0;
 
       /* pack in adjacent GIDs */
@@ -2349,21 +2363,21 @@ static void Zoltan_Hier_Unpack_Obj_Fn(void *data,
 				      int size, char *buf, int *ierr) {
 
   HierPartParams *hpp = (HierPartParams *)data;
-  ZOLTAN_ID_TYPE gid = global_id[0];
   int local_index;
   float *buf_float_ptr;
-  indextype * buf_gno_ptr;
+  ZOLTAN_GNO_TYPE * buf_gno_ptr;
+  ZOLTAN_GNO_TYPE gno;
   double *buf_double_ptr;
   int *buf_int_ptr;
   int buf_index, i;
-  struct HierGIDInfo *info = NULL;
+  struct HierGNOInfo *info = NULL;
   char *yo = "Zoltan_Hier_Unpack_Obj_Fn";
 
-  HIER_CHECK_GNO_RANGE((indextype)gid);
-
   if (hpp->output_level >= HIER_DEBUG_ALL) {
-    printf("[%d] unpacking GID %d\n", hpp->origzz->Proc, gid);
+    printf("[%d] unpacking GID " ZOLTAN_ID_SPEC "\n", hpp->origzz->Proc, global_id[0]);
   }
+
+  gno = (ZOLTAN_GNO_TYPE)global_id[0];
 
   /* everything is OK unless we don't find it */
   *ierr = ZOLTAN_OK;
@@ -2371,16 +2385,16 @@ static void Zoltan_Hier_Unpack_Obj_Fn(void *data,
   /* is this an object returning home to where it started?  If so, we
      can ignore the buffer.  The mid-migration callback should have
      already unmarked its migrated flag */
-  if (get_starting_local_index(hpp, (indextype)gid) != -1) {
+  if (get_starting_local_index(hpp, gno) != -1) {
     if (hpp->output_level >= HIER_DEBUG_ALL) {
-      printf("[%d] GID %d returns home, no unpack needed\n",
-	     hpp->origzz->Proc, gid);
+      printf("[%d] GID " ZOLTAN_GNO_SPEC " returns home, no unpack needed\n",
+	     hpp->origzz->Proc, gno);
     }
     return;
   }
 
   /* find the slot for our gid in the migrated_in array */
-  local_index = migrated_in_index_of_gno(hpp, (indextype)gid);
+  local_index = migrated_in_index_of_gno(hpp, gno);
   if (local_index != -1) {
     if (hpp->migrated_in_data[local_index]) {
       *ierr = ZOLTAN_FATAL;
@@ -2389,15 +2403,15 @@ static void Zoltan_Hier_Unpack_Obj_Fn(void *data,
       return;
     }
 
-    /* allocate a struct HierGIDInfo to hold GID info */
-    info = (struct HierGIDInfo *)ZOLTAN_MALLOC(sizeof(struct HierGIDInfo));
+    /* allocate a struct HierGNOInfo to hold GID info */
+    info = (struct HierGNOInfo *)ZOLTAN_MALLOC(sizeof(struct HierGNOInfo));
     if (!info) {
       *ierr = ZOLTAN_MEMERR;
       ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory.");
       goto End;
     }
     if (hpp->output_level >= HIER_DEBUG_ALL) {
-      printf("[%d] unpacking GID %d into slot %d\n", hpp->origzz->Proc, gid,
+      printf("[%d] unpacking GID " ZOLTAN_GNO_SPEC " into slot %d\n", hpp->origzz->Proc, gno,
 	     local_index);
     }
     hpp->migrated_in_data[local_index] = (void *)info;
@@ -2463,10 +2477,10 @@ static void Zoltan_Hier_Unpack_Obj_Fn(void *data,
     else info->coords = NULL;
 
     /* adjacent gids? */
-    buf_gno_ptr = (indextype *)&buf_double_ptr[buf_index];
+    buf_gno_ptr = (ZOLTAN_GNO_TYPE *)&buf_double_ptr[buf_index];
     buf_index = 0;
     if (info->num_adj) {
-      info->adj = (indextype *)ZOLTAN_MALLOC(info->num_adj*sizeof(indextype));
+      info->adj = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(info->num_adj*sizeof(ZOLTAN_GNO_TYPE));
       if (!info->adj) {
 	*ierr = ZOLTAN_MEMERR;
 	ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory.");
@@ -2506,14 +2520,14 @@ static int next_insert_index(HierPartParams *hpp, int start) {
    int.  This could be moved somewhere else if it is more generally
    useful */
 static int sort_gno_ptrs(
-indextype * vals_sort,	/* values to be sorted */
+ZOLTAN_GNO_TYPE * vals_sort,	/* values to be sorted */
 void    **vals_other,		/* other array to be reordered w/ sort */
 int       nvals)		/* length of these two arrays */
 {
-  indextype temp_int;	/* swapping value */
+  ZOLTAN_GNO_TYPE temp_int;	/* swapping value */
   void     *temp_ptr;		/* swapping value */
   int       lo, hi;		/* counters from bottom and top of array */
-  indextype pivot;		/* value to partition with */
+  ZOLTAN_GNO_TYPE pivot;		/* value to partition with */
   
   if (nvals <= 1) return(ZOLTAN_OK);
   
@@ -2575,7 +2589,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
   /*int export_partition_change_only;*/
   int import_partition_change_only;
   int insert_index = 0, trail_index;
-  ZOLTAN_ID_TYPE * dd_updates=NULL;
+  ZOLTAN_GNO_TYPE * dd_updates=NULL;
   int remove_count = 0, update_count = 0;
   int last_level, idx;
 
@@ -2601,12 +2615,12 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
   removed_from_migrated_in = 0;
   /*export_partition_change_only = 0;*/
   for (i=0; i<num_export; i++) {
-    HIER_CHECK_GNO_RANGE((indextype)export_gids[i]);
+    HIER_CHECK_GNO_RANGE((ZOLTAN_GNO_TYPE)export_gids[i]);
     /* is this just a partition reassignment and not a real migration? */
     if (export_procs[i] == hpp->hierzz->Proc) {
       /*export_partition_change_only++;*/
       if (hpp->output_level >= HIER_DEBUG_ALL) {
-	printf("[%d] mid-migrate exporting GID %d - partition change only\n", 
+	printf("[%d] mid-migrate exporting GID " ZOLTAN_ID_SPEC " - partition change only\n", 
 	       hpp->origzz->Proc, export_gids[i]);
       }
       /* skip to next export */
@@ -2614,18 +2628,18 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     }
 
     /* see if the exported GID is originally local */
-    local_index = get_local_index(hpp,(indextype)export_gids[i]);
+    local_index = get_local_index(hpp,(ZOLTAN_GNO_TYPE)export_gids[i]);
     if (local_index != -1) {
       /* it started here, so we just need to mark it as migrated */
       if (hpp->output_level >= HIER_DEBUG_ALL) {
-	printf("[%d] mid-migrate exporting GID %d to %d, started here\n", 
+	printf("[%d] mid-migrate exporting GID " ZOLTAN_ID_SPEC " to %d, started here\n", 
 	       hpp->origzz->Proc, export_gids[i], export_procs[i]);
       }
       hpp->migrated[local_index] = 1;
     }
     else {
       if (!last_level) {
-	local_index = migrated_in_index_of_gno(hpp, (indextype)export_gids[i]);
+	local_index = migrated_in_index_of_gno(hpp, (ZOLTAN_GNO_TYPE)export_gids[i]);
 	if (local_index != -1) {
 	  /* it's in our migrated in arrays, so we can get rid of it.
 	     To do so, we tag the entry by freeing the migrated_in_data
@@ -2634,7 +2648,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 	     loop to make sure the binary search for
 	     migrated_in_index_of_gno doesn't break */
 	  if (hpp->output_level >= HIER_DEBUG_ALL) {
-	    printf("[%d] mid-migrate exporting GID %d to %d, was imported and was in slot %d\n",
+	    printf("[%d] mid-migrate exporting GID " ZOLTAN_ID_SPEC " to %d, was imported and was in slot %d\n",
 		   hpp->origzz->Proc, export_gids[i], export_procs[i],
 		   local_index);
 	  }
@@ -2658,19 +2672,19 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
   add_to_migrated_in = 0;
   import_partition_change_only = 0;
   for (i=0; i<num_import; i++) {
-    HIER_CHECK_GNO_RANGE((indextype)import_gids[i]);
+    HIER_CHECK_GNO_RANGE((ZOLTAN_GNO_TYPE)import_gids[i]);
     /* check for a partition change only */
     if (import_procs[i] == hpp->hierzz->Proc) {
       import_partition_change_only++;
       if (hpp->output_level >= HIER_DEBUG_ALL) {
-	printf("[%d] mid-migrate importing GID %d - partition change only\n", 
+	printf("[%d] mid-migrate importing GID " ZOLTAN_ID_SPEC " - partition change only\n", 
 	       hpp->origzz->Proc, import_gids[i]);
       }
       /* skip to next import */
       continue;
     }
     if (!last_level) {
-      local_index = get_starting_local_index(hpp, (indextype)import_gids[i]);
+      local_index = get_starting_local_index(hpp, (ZOLTAN_GNO_TYPE)import_gids[i]);
       if (local_index == -1) add_to_migrated_in++;
     }
   }
@@ -2685,15 +2699,15 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 	removed_from_migrated_in + add_to_migrated_in;
       if (hpp->migrated_in_gnos) {
 	hpp->migrated_in_gnos = 
-	  (indextype *)ZOLTAN_REALLOC(hpp->migrated_in_gnos,
-					sizeof(indextype)* hpp->alloc_migrated_in_gnos);
+	  (ZOLTAN_GNO_TYPE *)ZOLTAN_REALLOC(hpp->migrated_in_gnos,
+					sizeof(ZOLTAN_GNO_TYPE)* hpp->alloc_migrated_in_gnos);
 	hpp->migrated_in_data = 
 	  (void **)ZOLTAN_REALLOC(hpp->migrated_in_data,
 				  sizeof(void *)*hpp->alloc_migrated_in_gnos);
       }
       else {
 	hpp->migrated_in_gnos =
-	  (indextype *)ZOLTAN_MALLOC(sizeof(indextype)*
+	  (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE)*
 				       hpp->alloc_migrated_in_gnos);
 	hpp->migrated_in_data = 
 	  (void **)ZOLTAN_MALLOC(sizeof(void *)*hpp->alloc_migrated_in_gnos);
@@ -2715,7 +2729,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 
   if (num_import - import_partition_change_only) {
     dd_updates = 
-      (ZOLTAN_ID_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_ID_TYPE)*
+      (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE)*
 				   (num_import-import_partition_change_only));
     if (!dd_updates) {
       *ierr = ZOLTAN_MEMERR;
@@ -2733,30 +2747,30 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     if (import_procs[i] == hpp->hierzz->Proc) {
       continue;
     }
-    local_index = get_starting_local_index(hpp, (indextype)import_gids[i]);
+    local_index = get_starting_local_index(hpp, (ZOLTAN_GNO_TYPE)import_gids[i]);
     /* did it start its life here? */
     if (local_index != -1) {
       if (hpp->output_level >= HIER_DEBUG_ALL) {
-	printf("[%d] mid-migrate importing GID %d from %d, started here\n",
+	printf("[%d] mid-migrate importing GID " ZOLTAN_ID_SPEC " from %d, started here\n",
 	       hpp->origzz->Proc, import_gids[i], import_procs[i]);
       }
       hpp->migrated[local_index] = 0;
       /* remove from DD - it's back home */
 
-      dd_updates[--idx] = import_gids[i];
+      dd_updates[--idx] = (ZOLTAN_GNO_TYPE)import_gids[i];
    
       remove_count++;
     }
     else {
       /* update location in the DD */
-      dd_updates[update_count] = import_gids[i];
+      dd_updates[update_count] = (ZOLTAN_GNO_TYPE)import_gids[i];
       update_count++;
       if (!last_level) {
 	/* put gid in the next open slot in the migrated_in array */
 	insert_index = next_insert_index(hpp, insert_index);
-	hpp->migrated_in_gnos[insert_index] = (indextype)import_gids[i];
+	hpp->migrated_in_gnos[insert_index] = (ZOLTAN_GNO_TYPE)import_gids[i];
 	if (hpp->output_level >= HIER_DEBUG_ALL) {
-	  printf("[%d] mid-migrate importing GID %d from %d, new arrival into slot %d\n",
+	  printf("[%d] mid-migrate importing GID " ZOLTAN_ID_SPEC " from %d, new arrival into slot %d\n",
 		 hpp->origzz->Proc, import_gids[i], import_procs[i], insert_index);
 	}
       }
@@ -2768,12 +2782,12 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     printf("[%d] calling DD_Remove on %d GIDs\n", hpp->origzz->Proc, 
 	   remove_count);
     for (i=0; i<remove_count; i++) {
-      printf("[%d] DD_Remove slot %d GID %d\n",
+      printf("[%d] DD_Remove slot %d GID " ZOLTAN_GNO_SPEC "\n",
 	     hpp->origzz->Proc, i, dd_updates[update_count+i]);
     }
   }
   *ierr = Zoltan_DD_Remove(hpp->dd, 
-			   (remove_count ? &(dd_updates[idx]) : NULL),
+			   (ZOLTAN_ID_PTR)(remove_count ? &(dd_updates[idx]) : NULL),
 			   remove_count);
   if (*ierr != ZOLTAN_OK  && *ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, 
@@ -2785,11 +2799,11 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     printf("[%d] calling DD_Update on %d GIDs\n", hpp->origzz->Proc, 
 	   update_count);
     for (i=0; i<update_count; i++) {
-      printf("[%d] DD_Update slot %d GID %d\n",
+      printf("[%d] DD_Update slot %d GID " ZOLTAN_GNO_SPEC "\n",
 	     hpp->origzz->Proc, i, dd_updates[i]);
     }
   }
-  *ierr = Zoltan_DD_Update(hpp->dd, (update_count ? dd_updates : NULL), 
+  *ierr = Zoltan_DD_Update(hpp->dd, (ZOLTAN_ID_PTR)(update_count ? dd_updates : NULL),
 			   NULL, NULL, NULL, update_count);
   if (*ierr != ZOLTAN_OK  && *ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, 
@@ -2816,7 +2830,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 	if (hpp->migrated_in_data[trail_index]) {
 	  insert_index = next_insert_index(hpp, insert_index);
 	  if (hpp->output_level >= HIER_DEBUG_ALL ) {
-	    printf("[%d] backfill from trail=%d to insert=%d, GID %d, data=%p\n",
+	    printf("[%d] backfill from trail=%d to insert=%d, GID " ZOLTAN_GNO_SPEC ", data=%p\n",
 		   hpp->origzz->Proc, trail_index, insert_index, 
 		   hpp->migrated_in_gnos[trail_index], 
 		   hpp->migrated_in_data[trail_index]);
@@ -2838,7 +2852,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     
     if (hpp->output_level >= HIER_DEBUG_ALL) {
       for (i=0; i<hpp->num_migrated_in_gnos; i++) { 
-	printf("[%d] GID %d in slot %d unsorted\n", hpp->origzz->Proc, 
+	printf("[%d] GID " ZOLTAN_GNO_SPEC " in slot %d unsorted\n", hpp->origzz->Proc, 
 	       hpp->migrated_in_gnos[i], i);
       }
     }
@@ -2855,7 +2869,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     }
     if (hpp->output_level >= HIER_DEBUG_ALL) {
       for (i=0; i<hpp->num_migrated_in_gnos; i++) { 
-	printf("[%d] GID %d in slot %d sorted\n", hpp->origzz->Proc,
+	printf("[%d] GID " ZOLTAN_GNO_SPEC " in slot %d sorted\n", hpp->origzz->Proc,
 	       hpp->migrated_in_gnos[i], i);
       }
     }

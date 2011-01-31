@@ -26,11 +26,7 @@ void * local_malloc( size_t n )
 {
   void * const ptr = std::malloc( n );
 
-  if ( NULL == ptr ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::impl::BucketImpl::declare_bucket FAILED malloc( " << n << " )" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( NULL == ptr, "malloc of size " << n << " failed" );
 
   return ptr ;
 }
@@ -63,7 +59,7 @@ const FieldBase::Restriction & empty_field_restriction()
 }
 
 const FieldBase::Restriction & dimension( const FieldBase & field ,
-                                          unsigned etype ,
+                                          EntityRank erank ,
                                           const unsigned num_part_ord ,
                                           const unsigned part_ord[] ,
                                           const char * const method )
@@ -77,7 +73,7 @@ const FieldBase::Restriction & dimension( const FieldBase & field ,
 
   for ( unsigned i = 0 ; i < num_part_ord && iend != ibeg ; ++i ) {
 
-    const EntityKey key = EntityKey(etype,part_ord[i]);
+    const EntityKey key(erank,part_ord[i]);
 
     ibeg = std::lower_bound( ibeg , iend , key , FieldRestrictionLess() );
 
@@ -98,7 +94,7 @@ const FieldBase::Restriction & dimension( const FieldBase & field ,
         msg << "] and Part[" << p_new.name() ;
         msg << "]" ;
 
-        throw std::runtime_error( msg.str() );
+        ThrowErrorMsg( msg.str() );
       }
     }
   }
@@ -156,40 +152,35 @@ BucketRepository::~BucketRepository()
 
 void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * bucket_to_be_deleted )
 {
-  static const char method[] = "stk::mesh::impl::BucketRepository::destroy_bucket" ;
+  ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(entity_rank),
+                  "Entity rank " << entity_rank << " is invalid");
 
-  m_mesh.mesh_meta_data().assert_entity_rank( method, entity_rank );
   std::vector<Bucket *> & bucket_set = m_buckets[entity_rank];
 
+  // Get the first bucket in the same family as the bucket being deleted
   Bucket * const first = bucket_to_be_deleted->m_bucketImpl.first_bucket_in_family();
 
-  if ( 0 != bucket_to_be_deleted->size() || bucket_to_be_deleted != first->m_bucketImpl.get_bucket_family_pointer() ) {
-    throw std::logic_error(std::string(method));
-  }
+  ThrowRequireMsg( bucket_to_be_deleted->size() == 0,
+      "Destroying non-empty bucket " << *(bucket_to_be_deleted->key()) );
+
+  ThrowRequireMsg( bucket_to_be_deleted == first->m_bucketImpl.get_bucket_family_pointer(),
+                   "Destroying bucket family") ;
 
   std::vector<Bucket*>::iterator ik = lower_bound(bucket_set, bucket_to_be_deleted->key());
-
-  if ( ik == bucket_set.end() ) {
-    throw std::logic_error(std::string(method));
-  }
-
-  if ( bucket_to_be_deleted != *ik ) {
-    throw std::logic_error(std::string(method));
-  }
+  ThrowRequireMsg( ik != bucket_set.end() && bucket_to_be_deleted == *ik,
+      "Bucket not found in bucket set for entity rank " << entity_rank );
 
   ik = bucket_set.erase( ik );
 
   if ( first != bucket_to_be_deleted ) {
 
-    if ( ik == bucket_set.begin() ) {
-      throw std::logic_error(std::string(method));
-    }
+    ThrowRequireMsg( ik != bucket_set.begin(),
+                     "Where did first bucket go?" );
 
     first->m_bucketImpl.set_last_bucket_in_family( *--ik );
 
-    if ( 0 == first->m_bucketImpl.get_bucket_family_pointer()->size() ) {
-      throw std::logic_error(std::string(method));
-    }
+    ThrowRequireMsg ( first->m_bucketImpl.get_bucket_family_pointer()->size() != 0,
+                      "TODO: Explain" );
   }
 
   destroy_bucket( bucket_to_be_deleted );
@@ -251,10 +242,8 @@ BucketRepository::declare_nil_bucket()
     new_key[0] = 1 ; // part_count + 1
     new_key[1] = 0 ; // family_count
 
-    const unsigned bad_entity_rank = ~0u ;
-
     Bucket * bucket =
-      new( alloc_ptr ) Bucket( m_mesh , bad_entity_rank , new_key ,
+      new( alloc_ptr ) Bucket( m_mesh , InvalidEntityRank , new_key ,
                               alloc_size , 0 , field_map , NULL );
 
     bucket->m_bucketImpl.set_bucket_family_pointer( bucket );
@@ -265,6 +254,28 @@ BucketRepository::declare_nil_bucket()
   }
 }
 
+
+/** 11/9/10 Discussion between Kendall, Alan, Todd:
+ *  Kendall is confused about why presto would run faster simply by removing
+ *  several fields that are not even used.  We considered this and posed the
+ *  following possibility.  The current bucket allocation system guarantees
+ *  that all the fields for a bucket are layed out contiguously in memory so
+ *  that they can be accessed in a fast cache-friendly manner.  This also
+ *  guarantees means that if a field is allocated but not used, it will still
+ *  be chopped up and carried around in the bucket field data as part of the
+ *  contiguous block of memory and that it will have to be skipped over as the
+ *  computations progress over that block of data.  This would result in cache
+ *  misses and reduced performance.  When they're removed, it makes sense that
+ *  the performance might get better.
+ *  
+ *  This leads to the idea that maybe we should test this in a use-case or
+ *  performance test case and that we should include this in the performance
+ *  comparison of the up-and-coming pluggable data module for the Bucket memory
+ *  allocation.
+ *
+ *  It may be that a flat-array style data allocation for field data would
+ *  eliminate this issue.
+ **/
 
 //----------------------------------------------------------------------
 // The input part ordinals are complete and contain all supersets.
@@ -283,7 +294,9 @@ BucketRepository::declare_bucket(
   const unsigned max = ~(0u);
   const size_t   num_fields = field_set.size();
 
-  m_mesh.mesh_meta_data().assert_entity_rank( method, arg_entity_rank );
+  ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank),
+                  "Entity rank " << arg_entity_rank << " is invalid");
+
   std::vector<Bucket *> & bucket_set = m_buckets[ arg_entity_rank ];
 
   //----------------------------------
@@ -336,9 +349,8 @@ BucketRepository::declare_bucket(
   }
   else { // Last bucket present, can it hold one more entity?
 
-    if ( 0 == last_bucket->size() ) {
-      throw std::logic_error( std::string(method) );
-    }
+    ThrowRequireMsg( last_bucket->size() != 0,
+                     "Last bucket should not be empty.");
 
     field_map = last_bucket->m_bucketImpl.get_field_map();
 
@@ -354,10 +366,7 @@ BucketRepository::declare_bucket(
     }
     else {
       // ERROR insane number of buckets!
-      std::string msg ;
-      msg.append( method );
-      msg.append( " FAILED due to insanely large number of buckets" );
-      throw std::logic_error( msg );
+      ThrowRequireMsg( false, "Insanely large number of buckets" );
     }
   }
 
@@ -490,9 +499,8 @@ void BucketRepository::update_field_data_states() const
 
 const std::vector<Bucket*> & BucketRepository::buckets( unsigned type ) const
 {
-  static const char method[]= "stk::mesh::impl::BucketRepository::buckets" ;
-
-  m_mesh.mesh_meta_data().assert_entity_rank( method , type );
+  ThrowRequireMsg( m_mesh.mesh_meta_data().check_rank(type),
+                   "Invalid entity rank " << type );
 
   return m_buckets[ type ];
 }
@@ -608,12 +616,9 @@ void BucketRepository::internal_sort_bucket_entities()
 
 void BucketRepository::remove_entity( Bucket * k , unsigned i )
 {
+  ThrowRequireMsg( k != m_nil_bucket, "Cannot remove entity from nil_bucket" );
 
-  if ( k == m_nil_bucket) {
-    throw std::logic_error("BucketRepository::remove_entity: Cannot remove entity from nil_bucket");
-  }
-
-  const unsigned entity_rank = k->entity_rank();
+  const EntityRank entity_rank = k->entity_rank();
 
   // Last bucket in the family of buckets with the same parts.
   // The last bucket is the only non-full bucket in the family.
@@ -651,17 +656,17 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
 void BucketRepository::internal_propagate_relocation( Entity & entity )
 {
-  const unsigned etype = entity.entity_rank();
+  const EntityRank erank = entity.entity_rank();
   PairIterRelation rel = entity.relations();
 
   for ( ; ! rel.empty() ; ++rel ) {
-    const unsigned rel_type = rel->entity_rank();
-    if ( rel_type < etype ) {
+    const EntityRank rel_rank = rel->entity_rank();
+    if ( rel_rank < erank ) {
       Entity & e_to = * rel->entity();
 
       set_field_relations( entity, e_to, rel->identifier() );
     }
-    else if ( etype < rel_type ) {
+    else if ( erank < rel_rank ) {
       Entity & e_from = * rel->entity();
 
       set_field_relations( e_from, entity, rel->identifier() );

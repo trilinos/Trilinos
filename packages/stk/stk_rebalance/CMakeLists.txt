@@ -1,5 +1,7 @@
 
 ADD_SUBDIRECTORY(stk_rebalance)
+ADD_SUBDIRECTORY(stk_rebalance_utils)
 
 PACKAGE_ADD_TEST_DIRECTORIES(unit_tests)
+PACKAGE_ADD_TEST_DIRECTORIES(use_cases)
 

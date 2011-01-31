@@ -97,9 +97,9 @@ void TimeMonitor::summarize(
     for (int i=names.length()-1; i>=0; i--)  {
       cls--; nms--; tms--;
       if (calls[i]<0.1) {
-        calls.erase(cls);
-        names.erase(nms);
-        timings.erase(tms);
+        cls = calls.erase(cls);
+        nms = names.erase(nms);
+        tms = timings.erase(tms);
       }
     }
   }

@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <iostream>
 #include <sstream>
 
@@ -17,8 +16,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
-
-#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <stk_mesh/fixtures/RingFixture.hpp>
 
@@ -65,13 +62,13 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   Part & part_owns   = meta.locally_owned_part();
   Part & part_shared = meta.globally_shared_part();
 
-  Part & part_A_0 = meta.declare_part( std::string("A_0"), 0 /*entity_rank*/);
-  Part & part_A_1 = meta.declare_part( std::string("A_1"), 1 /*entity_rank*/);
-  Part & part_A_2 = meta.declare_part( std::string("A_2"), 2 /*entity_rank*/);
-  Part & part_A_3 = meta.declare_part( std::string("A_3"), 3 /*entity_rank*/);
+  Part & part_A_0 = declare_part(meta,  std::string("A_0"), 0 /*entity_rank*/);
+  Part & part_A_1 = declare_part(meta,  std::string("A_1"), 1 /*entity_rank*/);
+  Part & part_A_2 = declare_part(meta,  std::string("A_2"), 2 /*entity_rank*/);
+  Part & part_A_3 = declare_part(meta,  std::string("A_3"), 3 /*entity_rank*/);
 
-  Part & part_B_0 = meta.declare_part( std::string("B_0"), 0 /*entity_rank*/);
-  Part & part_B_2 = meta.declare_part( std::string("B_2"), 2 /*entity_rank*/);
+  Part & part_B_0 = declare_part(meta,  std::string("B_0"), 0 /*entity_rank*/);
+  Part & part_B_2 = declare_part(meta,  std::string("B_2"), 2 /*entity_rank*/);
 
   meta.commit();
   bulk.modification_begin();
@@ -379,12 +376,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
   bulk.modification_begin();
   ring_mesh.generate_mesh( );
   STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk,
-                                                         false /* no aura */));
+                                                          false /* no aura */));
 
   bulk.modification_begin();
   ring_mesh.fixup_node_ownership();
   STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk,
-                                                         false /* no aura */));
+                                                          false /* no aura */));
 
   Part & part_owns = ring_mesh.m_meta_data.locally_owned_part();
   Part & part_univ = ring_mesh.m_meta_data.universal_part();

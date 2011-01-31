@@ -190,8 +190,6 @@ static RCP< OrthoManager<scalar_type,MV> >
 getOrthoManager (const std::string& ortho, 
 		 const RCP< sparse_matrix_type >& M)
 {
-  ParameterList tsqrParams;
-
   if (ortho == "SVQB") {
     return rcp (new SVQBOrthoManager< scalar_type, MV, OP >(M));
   }
@@ -202,7 +200,11 @@ getOrthoManager (const std::string& ortho,
     return rcp (new ICGSOrthoManager< scalar_type, MV, OP >(M));
   }
   else if (ortho == "TSQR" || ortho == "Tsqr" || ortho == "tsqr") {
-    return rcp (new TsqrMatOrthoManager< scalar_type, MV, OP > (tsqrParams, M));
+    typedef TsqrMatOrthoManager<scalar_type, MV, OP> ortho_type;
+    const std::string label("Anasazi");
+    Teuchos::RCP<const Teuchos::ParameterList> params = 
+      ortho_type::getDefaultParameters();
+    return rcp (new ortho_type (params, label, M));
   }
   else {
     TEST_FOR_EXCEPTION( true, std::invalid_argument, 
@@ -494,6 +496,7 @@ main (int argc, char *argv[])
       MVT::MvRandom(*X2);
       debugOut << "done." << endl
 	       << "Calling projectAndNormalize(X2,X1)... " << endl;
+
       // The projectAndNormalize() interface also differs between 
       // Anasazi and Belos.  Anasazi's projectAndNormalize() puts 
       // the multivector and the array of multivectors first, and

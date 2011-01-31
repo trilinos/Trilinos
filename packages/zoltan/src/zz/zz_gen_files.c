@@ -27,16 +27,16 @@ extern "C" {
 
 /* Temporary prototypes. These functions are HG routines
    currently not compiled into Zoltan, but duplicated in this file. */
-static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
+static ZOLTAN_GNO_TYPE Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
                    ZOLTAN_ID_PTR *edgeIds, ZOLTAN_ID_PTR *vtxIds, 
                    int *nEwgts, ZOLTAN_ID_PTR *eWgtIds, float **eWgts);
 static int turn_off_reduce_dimensions(ZZ *zz);
-static int merge_gids(ZZ *zz, ZOLTAN_ID_PTR *merged_egids, int size_merged,
-           ZOLTAN_ID_PTR idbuf, int numIds, void *htptr, int htSize);
+static ZOLTAN_GNO_TYPE merge_gids(ZZ *zz, ZOLTAN_ID_PTR *merged_egids, ZOLTAN_GNO_TYPE size_merged,
+           ZOLTAN_ID_PTR idbuf, ZOLTAN_GNO_TYPE numIds, void *htptr, ZOLTAN_GNO_TYPE htSize);
 static int augment_search_structure(ZZ *zz, void *htptr,
-     int maxEdges, ZOLTAN_ID_PTR merged_egids, int size_merged, 
-     int prev_size_merged);
-static int fan_in_edge_global_ids(ZZ *zz, int numEdges, ZOLTAN_ID_PTR egids);
+     ZOLTAN_GNO_TYPE maxEdges, ZOLTAN_ID_PTR merged_egids, ZOLTAN_GNO_TYPE size_merged, 
+     ZOLTAN_GNO_TYPE prev_size_merged);
+static ZOLTAN_GNO_TYPE fan_in_edge_global_ids(ZZ *zz, int numEdges, ZOLTAN_ID_PTR egids);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -73,31 +73,44 @@ int gen_geom, int gen_graph, int gen_hg)
  */
 
   int error=ZOLTAN_OK;
-  ZOLTAN_ID_PTR local_ids = NULL;
-  ZOLTAN_ID_PTR global_ids = NULL;
+
   FILE *fp;
   char full_fname[256];
-  int *vtxdist, *xadj, *adjncy, *part, *adjproc, *edgeSize;
-  float *float_vwgt, *ewgts, *eWgts, *wptr;
-  double *xyz;
+  int *xadj, *part, *adjproc, *edgeSize;
+
   int i, j, k, num_obj, num_geom, num_edges, reduce;
-  int glob_nvtxs, glob_edges=0, glob_hedges=0, glob_pins, glob_ewgts;
-  int minid, maxid, minEdgeId, maxEdgeId, minVtxId, maxVtxId;
   int numPins, edgeOffset=0, vtxOffset=0;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
   int have_pin_callbacks=0;
   int nEdges=0, nEwgts=0;
-  ZOLTAN_ID_PTR edgeIds, vtxIds, eWgtIds, eptr, vptr;
   int lenGID = zz->Num_GID;
+
+  ZOLTAN_ID_PTR local_ids=NULL, global_ids=NULL;
+  ZOLTAN_ID_PTR edgeIds, vtxIds, eWgtIds, eptr, vptr;
+  ZOLTAN_ID_TYPE minid, maxid, minEdgeId, maxEdgeId, minVtxId, maxVtxId;
+
+  ZOLTAN_GNO_TYPE *vtxdist, *adjncy;
+  ZOLTAN_GNO_TYPE glob_edges=0, glob_hedges=0;
+  ZOLTAN_GNO_TYPE glob_nvtxs, glob_pins, glob_ewgts;
+  ZOLTAN_GNO_TYPE gno_val;
+
+  MPI_Datatype zoltan_gno_mpi_type;
+
+  float *float_vwgt, *ewgts, *eWgts, *wptr;
+  double *xyz;
 
   char *yo = "Zoltan_Generate_Files";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  vtxdist = xadj = adjncy = part = edgeSize = NULL;
+  vtxdist = adjncy = NULL;
+  xadj = NULL;
+  part = edgeSize = NULL;
   adjproc = NULL;
   float_vwgt = ewgts = eWgts = NULL;
   xyz = NULL;
@@ -130,8 +143,8 @@ int gen_geom, int gen_graph, int gen_hg)
   }
   else{
     /* Compute global number of vertices. */
-    MPI_Allreduce(&num_obj, &glob_nvtxs, 1, MPI_INT, MPI_SUM, 
-                  zz->Communicator);  
+    gno_val = (ZOLTAN_GNO_TYPE)num_obj;
+    MPI_Allreduce(&gno_val, &glob_nvtxs, 1, zoltan_gno_mpi_type, MPI_SUM, zz->Communicator);  
   }
 
   /* Local number of edges. */
@@ -139,9 +152,10 @@ int gen_geom, int gen_graph, int gen_hg)
     num_edges = 0;
   else
     num_edges = xadj[num_obj];
+
   /* Compute global number of edges. */
-  MPI_Reduce(&num_edges, &glob_edges, 1, MPI_INT, MPI_SUM, 0, 
-      zz->Communicator);  
+  gno_val = (ZOLTAN_GNO_TYPE)num_edges;
+  MPI_Reduce(&gno_val, &glob_edges, 1, zoltan_gno_mpi_type, MPI_SUM, 0, zz->Communicator);  
   /* Assume no self-edges! */
   glob_edges /= 2;
 
@@ -181,36 +195,37 @@ int gen_geom, int gen_graph, int gen_hg)
 
       /* Get the global number of pins for process 0. 
        */
-      MPI_Reduce(&numPins, &glob_pins, 1, MPI_INT, MPI_SUM, 0, 
-          zz->Communicator);  
+      gno_val = (ZOLTAN_GNO_TYPE)numPins;
+      MPI_Reduce(&gno_val, &glob_pins, 1, zoltan_gno_mpi_type, MPI_SUM, 0, zz->Communicator);
 
       /* Get the global number of edges that weights were
        * provided for.  More than one process may supply
        * weights for a given edge.
        */
-      MPI_Reduce(&nEwgts, &glob_ewgts, 1, MPI_INT, MPI_SUM, 0, 
-          zz->Communicator);  
+      gno_val = (ZOLTAN_GNO_TYPE)nEwgts;
+      MPI_Reduce(&nEwgts, &glob_ewgts, 1, zoltan_gno_mpi_type, MPI_SUM, 0, zz->Communicator);
 
       /* We assume the Edge IDs and Vertex IDs are integers and
        * are contiguous.  Figure out what the lowest ID is.
        * Matrix Market files are one-based so we may adjust IDs.
        */
-      minid = glob_hedges * 10;
+      minid = glob_hedges;
       maxid = 0;
       for (i=0; i<nEdges; i++){
         if (edgeIds[i*lenGID] < minid) minid = edgeIds[i*lenGID];
         if (edgeIds[i*lenGID] > maxid) maxid = edgeIds[i*lenGID];
       }
-      MPI_Allreduce(&minid, &minEdgeId, 1, MPI_INT, MPI_MIN, zz->Communicator);  
-      MPI_Allreduce(&maxid, &maxEdgeId, 1, MPI_INT, MPI_MAX, zz->Communicator);  
-      minid = glob_nvtxs * 10;
+      MPI_Allreduce(&minid, &minEdgeId, 1, ZOLTAN_ID_MPI_TYPE, MPI_MIN, zz->Communicator);
+      MPI_Allreduce(&maxid, &maxEdgeId, 1, ZOLTAN_ID_MPI_TYPE, MPI_MAX, zz->Communicator);
+
+      minid = glob_nvtxs;
       maxid = 0;
       for (i=0; i<num_obj; i++){
         if (global_ids[i*lenGID] < minid) minid = global_ids[i*lenGID];
         if (global_ids[i*lenGID] > maxid) maxid = global_ids[i*lenGID];
       }
-      MPI_Allreduce(&minid, &minVtxId, 1, MPI_INT, MPI_MIN, zz->Communicator);  
-      MPI_Allreduce(&maxid, &maxVtxId, 1, MPI_INT, MPI_MAX, zz->Communicator);  
+      MPI_Allreduce(&minid, &minVtxId, 1, ZOLTAN_ID_MPI_TYPE, MPI_MIN, zz->Communicator);
+      MPI_Allreduce(&maxid, &maxVtxId, 1, ZOLTAN_ID_MPI_TYPE, MPI_MAX, zz->Communicator);
 
       if ( ((maxVtxId - minVtxId + 1) != glob_nvtxs) ||
            ((maxEdgeId - minEdgeId + 1) != glob_hedges)){
@@ -220,8 +235,8 @@ int gen_geom, int gen_graph, int gen_hg)
         goto End;
       }
 
-      edgeOffset = 1 - minEdgeId;
-      vtxOffset = 1 - minVtxId;
+      edgeOffset = 1 - (int)minEdgeId;
+      vtxOffset = 1 - (int)minVtxId;
     }
   }
 
@@ -273,9 +288,10 @@ int gen_geom, int gen_graph, int gen_hg)
     error = ZOLTAN_FATAL;
     goto End;
   }
+
   for (i=0; i<num_obj; i++)
     fprintf(fp, "%d\n", part[i]);
-    /* fprintf(fp, "%d\n", zz->Proc); */
+  fflush(fp);
   fclose(fp);
 
   /* Write geometry to file, if applicable. */
@@ -295,6 +311,7 @@ int gen_geom, int gen_graph, int gen_hg)
         fprintf(fp, "%f ", xyz[i*num_geom + j]);
       fprintf(fp, "\n");
     }
+    fflush(fp);
     fclose(fp);
   }
 
@@ -315,7 +332,7 @@ int gen_geom, int gen_graph, int gen_hg)
     /* If proc 0, write first line. */
     if (zz->Proc == 0){
       fprintf(fp, "%% First line: #vertices #edges weight_flag\n");
-      fprintf(fp, "%d %d %1d%1d%1d", glob_nvtxs, glob_edges, 
+      fprintf(fp, ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC " %1d%1d%1d", glob_nvtxs, glob_edges, 
         print_vtx_num, (zz->Obj_Weight_Dim>0), (zz->Edge_Weight_Dim>0));
       if (zz->Obj_Weight_Dim>1 || zz->Edge_Weight_Dim>1)
         fprintf(fp, " %d %d", zz->Obj_Weight_Dim, zz->Edge_Weight_Dim);
@@ -327,7 +344,7 @@ int gen_geom, int gen_graph, int gen_hg)
     for (i=0; i<num_obj; i++){
       /* Print vertex number at beginning of line? */
       if (print_vtx_num){
-        fprintf(fp, "%d ", vtxdist[zz->Proc]+base_index+i);
+        fprintf(fp, ZOLTAN_GNO_SPEC " ", vtxdist[zz->Proc]+base_index+i);
       }
       /* First print object (vertex) weight, if any. */
       for (k=0; k<zz->Obj_Weight_Dim; k++)
@@ -335,7 +352,7 @@ int gen_geom, int gen_graph, int gen_hg)
       if (gen_graph){
         /* If graph, then print neighbor list */
         for (j=xadj[i]; j<xadj[i+1]; j++){
-          fprintf(fp, "%d ", adjncy[j]+base_index);
+          fprintf(fp, ZOLTAN_GNO_SPEC " ", adjncy[j]+base_index);
           /* Also print edge weight, if any. */
           for (k=0; k<zz->Edge_Weight_Dim; k++)
             fprintf(fp, "%f ", ewgts[j*(zz->Edge_Weight_Dim)+k]);
@@ -343,6 +360,7 @@ int gen_geom, int gen_graph, int gen_hg)
       }
       fprintf(fp, "\n");
     }
+    fflush(fp);
     fclose(fp);
   }
 
@@ -395,7 +413,8 @@ int gen_geom, int gen_graph, int gen_hg)
       fprintf(fp, 
         "%%#rows #columns #pins #procs dim-vertex-weights "
         "#edge-weight-entries dim-edge-weights\n%%\n");
-      fprintf(fp, "%d %d %d %d %d %d %d\n", 
+      fprintf(fp, ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC 
+                  " %d %d " ZOLTAN_GNO_SPEC " %d\n", 
         glob_hedges, glob_nvtxs, glob_pins, 
         zz->Num_Proc,
         zz->Obj_Weight_Dim, glob_ewgts, zz->Edge_Weight_Dim);
@@ -413,7 +432,7 @@ int gen_geom, int gen_graph, int gen_hg)
     fseek(fp, 0, SEEK_END);
     for (i=0; i<nEdges; i++){
       for (j=0; j<edgeSize[i]; j++){
-        fprintf(fp, "%d %d 1.0 %d\n",
+        fprintf(fp, ZOLTAN_ID_SPEC " " ZOLTAN_ID_SPEC " 1.0 %d\n",
                 eptr[0] + edgeOffset, vptr[0] + vtxOffset, zz->Proc);
         vptr += lenGID;
       }
@@ -439,7 +458,7 @@ int gen_geom, int gen_graph, int gen_hg)
     }
 
     for (i=0; i<num_obj; i++){
-      fprintf(fp, "%d ",  vptr[0] + vtxOffset);
+      fprintf(fp, ZOLTAN_ID_SPEC " ",  vptr[0] + vtxOffset);
       for (j=0; j<zz->Obj_Weight_Dim; j++){
         fprintf(fp, "%f ", *wptr++);
       }
@@ -468,7 +487,7 @@ int gen_geom, int gen_graph, int gen_hg)
       }
 
       for (i=0; i<nEwgts; i++){
-        fprintf(fp, "%d ",  eptr[0] + edgeOffset);
+        fprintf(fp, ZOLTAN_ID_SPEC " ",  eptr[0] + edgeOffset);
         for (j=0; j<zz->Edge_Weight_Dim; j++){
           fprintf(fp, "%f ", *wptr++);
         }
@@ -481,6 +500,7 @@ int gen_geom, int gen_graph, int gen_hg)
     }
 
     fclose(fp);
+    MPI_Barrier(zz->Communicator);
   }
 
 End:
@@ -525,7 +545,7 @@ static int turn_off_reduce_dimensions(ZZ *zz)
   return reduce;
 }
 
-static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
+static ZOLTAN_GNO_TYPE Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
             ZOLTAN_ID_PTR *edgeIds, ZOLTAN_ID_PTR *vtxIds, 
             int *nEwgts, ZOLTAN_ID_PTR *eWgtIds, float **eWgts)
 {
@@ -537,7 +557,7 @@ static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
   int dim = zz->Edge_Weight_Dim;
   int ew_num_edges = 0;
   int ierr = ZOLTAN_OK;
-  int globalNumEdges = -1;
+  ZOLTAN_GNO_TYPE globalNumEdges = -1;
   int numEdges = 0;
   int *esize=NULL;
 
@@ -613,22 +633,26 @@ End:
   return globalNumEdges;
 }
 
-static int fan_in_edge_global_ids(ZZ *zz, int numEdges, ZOLTAN_ID_PTR egids)
+static ZOLTAN_GNO_TYPE fan_in_edge_global_ids(ZZ *zz, int numEdges, ZOLTAN_ID_PTR egids)
 {
-int maxEdges, size_merged;
+ZOLTAN_GNO_TYPE maxEdges, size_merged, prev_size_merged;
 int lenGID = zz->Num_GID;
 struct _gidht{
   int gidIdx;
   struct _gidht *next;
 } *gidNode, *gidNext;
 struct _gidht **ht=NULL;
-int proc, myrank, nprocs, nbits, mask, i, prev_size_merged, numIds;
+int proc, myrank, nprocs, mask, i;
+unsigned int nbits;
 ZOLTAN_ID_PTR merged_egids, idbuf;
-int allEdges;
-int idbufSize = 0;
+ZOLTAN_GNO_TYPE allEdges, numIds, nEdges;
+ZOLTAN_GNO_TYPE idbufSize = 0;
 int gidTag = 0x1000;  /* any reason tags should not be these values? */
 int sizeTag = 0x1001;
 MPI_Status stat;
+MPI_Datatype zoltan_gno_mpi_type;
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   merged_egids = idbuf = NULL;
 
@@ -645,7 +669,9 @@ MPI_Status stat;
    * in a debugging mode, so hopefully this won't be a problem.
    */
 
-  MPI_Allreduce(&numEdges, &maxEdges, 1, MPI_INT, MPI_MAX, zz->Communicator);  
+  nEdges = (ZOLTAN_GNO_TYPE)numEdges;
+
+  MPI_Allreduce(&nEdges, &maxEdges, 1, zoltan_gno_mpi_type, MPI_MAX, zz->Communicator);  
 
   if (maxEdges == 0){
     return 0;
@@ -659,9 +685,9 @@ MPI_Status stat;
   ht = (struct _gidht **)ZOLTAN_CALLOC(sizeof(struct _gidht *), maxEdges);
   prev_size_merged = 0;
 
-  merged_egids = ZOLTAN_MALLOC_GID_ARRAY(zz, numEdges);
-  ZOLTAN_COPY_GID_ARRAY(merged_egids, egids, zz, numEdges);
-  size_merged = numEdges;
+  merged_egids = ZOLTAN_MALLOC_GID_ARRAY(zz, nEdges);
+  ZOLTAN_COPY_GID_ARRAY(merged_egids, egids, zz, nEdges);
+  size_merged = nEdges;
 
   /* Do the fan in (bit switching logarithmic fan-in) */
 
@@ -682,15 +708,14 @@ MPI_Status stat;
 
     if (proc < nprocs){
       if (proc < myrank){
-        MPI_Send(&size_merged, 1, MPI_INT, proc, sizeTag, zz->Communicator);
+        MPI_Send(&size_merged, 1, zoltan_gno_mpi_type, proc, sizeTag, zz->Communicator);
         if (size_merged > 0){
-          MPI_Send(merged_egids, size_merged * lenGID, MPI_INT,
-                 proc, gidTag, zz->Communicator);
+          MPI_Send(merged_egids, size_merged * lenGID, ZOLTAN_ID_MPI_TYPE, proc, gidTag, zz->Communicator);
         }
       }
  
       else{
-        MPI_Recv(&numIds, 1, MPI_INT, proc, sizeTag, zz->Communicator, &stat);
+        MPI_Recv(&numIds, 1, zoltan_gno_mpi_type, proc, sizeTag, zz->Communicator, &stat);
 
         if (numIds > 0){
 
@@ -698,16 +723,13 @@ MPI_Status stat;
             idbuf = ZOLTAN_REALLOC_GID_ARRAY(zz, idbuf, numIds);
             idbufSize = numIds;
           }
-          MPI_Recv(idbuf, numIds * lenGID, MPI_INT, 
-                   proc, gidTag, zz->Communicator, &stat);
+          MPI_Recv(idbuf, numIds * lenGID, ZOLTAN_ID_MPI_TYPE, proc, gidTag, zz->Communicator, &stat);
 
-          augment_search_structure(zz, ht, maxEdges,
-            merged_egids, size_merged, prev_size_merged);
+          augment_search_structure(zz, ht, maxEdges, merged_egids, size_merged, prev_size_merged);
 
           prev_size_merged = size_merged;
 
-          size_merged = merge_gids(zz, &merged_egids, size_merged,
-                         idbuf, numIds, ht, maxEdges);
+          size_merged = merge_gids(zz, &merged_egids, size_merged, idbuf, numIds, ht, maxEdges);
         }
       }
     }
@@ -735,13 +757,13 @@ MPI_Status stat;
     allEdges = size_merged;
   }
 
-  MPI_Bcast(&allEdges, 1, MPI_INT, 0, zz->Communicator);
+  MPI_Bcast(&allEdges, 1, zoltan_gno_mpi_type, 0, zz->Communicator);
 
   return allEdges;
 }
 static int augment_search_structure(ZZ *zz, void *htptr,
-     int maxEdges, ZOLTAN_ID_PTR merged_egids, int size_merged, 
-     int prev_size_merged)
+     ZOLTAN_GNO_TYPE maxEdges, ZOLTAN_ID_PTR merged_egids, ZOLTAN_GNO_TYPE size_merged, 
+     ZOLTAN_GNO_TYPE prev_size_merged)
 {
 struct _gidht{
   int gidIdx;
@@ -749,7 +771,8 @@ struct _gidht{
 } *gidNode;
 struct _gidht **ht=NULL;
 int lenGID = zz->Num_GID;
-int i, j;
+int j;
+ZOLTAN_GNO_TYPE i;
 ZOLTAN_ID_PTR eptr;
 
   if (prev_size_merged == size_merged) return ZOLTAN_OK;
@@ -760,7 +783,7 @@ ZOLTAN_ID_PTR eptr;
 
   for (i=prev_size_merged; i<size_merged; i++){
 
-    j = Zoltan_Hash(eptr, lenGID, maxEdges);
+    j = Zoltan_Hash(eptr, lenGID, (int)maxEdges);
 
     gidNode = (struct _gidht *)ZOLTAN_MALLOC(sizeof(struct _gidht));
     gidNode->gidIdx = i;
@@ -773,15 +796,16 @@ ZOLTAN_ID_PTR eptr;
 
   return ZOLTAN_OK;
 }
-static int merge_gids(ZZ *zz, ZOLTAN_ID_PTR *merged_egids, int size_merged,
-           ZOLTAN_ID_PTR idbuf, int numIds, void *htptr, int htSize)
+static ZOLTAN_GNO_TYPE merge_gids(ZZ *zz, ZOLTAN_ID_PTR *merged_egids, ZOLTAN_GNO_TYPE size_merged,
+           ZOLTAN_ID_PTR idbuf, ZOLTAN_GNO_TYPE numIds, void *htptr, ZOLTAN_GNO_TYPE htSize)
 {
 struct _gidht{
   int gidIdx;
   struct _gidht *next;
 } *gidNode;
 struct _gidht **ht=NULL;
-int numMerged, i, j;
+ZOLTAN_GNO_TYPE numMerged, i;
+int j;
 int lenGID = zz->Num_GID;
 ZOLTAN_ID_PTR newIds, mergedPtr, inPtr;
 
@@ -799,7 +823,7 @@ ZOLTAN_ID_PTR newIds, mergedPtr, inPtr;
 
   for (i=0; i<numIds; i++){
 
-    j = Zoltan_Hash(inPtr, lenGID, htSize);
+    j = Zoltan_Hash(inPtr, lenGID, (int)htSize);
 
     gidNode = ht[j];
     while (gidNode){

@@ -83,7 +83,6 @@ char *yo = "Zoltan_HG_PaToH";
   if (hgp->patoh_alloc_pool1>0)
     pargs.MemMul_Pins = hgp->patoh_alloc_pool1; 
 
-    
   PaToH_Alloc(&pargs, hg->nVtx, hg->nEdge, hg->VtxWeightDim, 
               ivwgts, iewgts, hg->hindex, hg->hvertex);
 

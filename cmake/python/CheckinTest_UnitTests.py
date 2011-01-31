@@ -291,6 +291,13 @@ g_cmndinterceptsFinalPushNoAppendTestResultsPasses = \
   "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
+g_cmndinterceptsFinalPushNoRebasePasses = \
+  "IT: eg pull; 0; 'final eg pull only passed'\n" \
+  +g_cmnginterceptsEgLogCmnds+ \
+  "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
+  "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
+  "IT: eg push; 0; 'push passes'\n"
+
 g_cmndinterceptsSendBuildTestCaseEmail = \
   "IT: mailx -s .*; 0; 'Do not really sending build/test case email'\n"
 
@@ -836,6 +843,41 @@ class test_checkin_test(unittest.TestCase):
       +"1) SERIAL_RELEASE => passed: passed=100,notpassed=0\n" \
       +g_expectedCommonOptionsSummary \
       +"Skipping appending test results on request (--no-append-test-results)!\n" \
+      +"=> A PUSH IS READY TO BE PERFORMED!\n" \
+      +"^DID PUSH: Trilinos:\n" \
+      )
+
+
+  def test_do_all_no_rebase_push_pass(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_no_rebase_push_pass",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --do-all --no-rebase --push",
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsFinalPushNoRebasePasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      g_expectedRegexUpdateWithBuildCasePasses \
+      +g_expectedRegexConfigPasses \
+      +g_expectedRegexBuildPasses \
+      +g_expectedRegexTestPasses \
+      +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
+      +"1) SERIAL_RELEASE => passed: passed=100,notpassed=0\n" \
+      +g_expectedCommonOptionsSummary \
+      +"Skipping the final rebase on request! (see --no-rebase option)\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"^DID PUSH: Trilinos:\n" \
       )

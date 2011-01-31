@@ -323,22 +323,29 @@ namespace Sacado {
 	const SimpleFad<ValueT>& b) {
       int sz = a.size() >= b.size() ? a.size() : b.size();
       SimpleFad<ValueT> c(sz, std::pow(a.val(), b.val()));
+      typedef typename SimpleFad<ValueT>::value_type value_type;
       if (a.hasFastAccess() && b.hasFastAccess()) {
-	ValueT t1 = c.val()*b.val()/a.val();
-	ValueT t2 = c.val()*std::log(a.val());
-	for (int i=0; i<sz; i++)
-	  c.fastAccessDx(i) = 
-	    a.fastAccessDx(i)*t1 + b.fastAccessDx(i)*t2;
+	if (a.val() != value_type(0)) {
+	  ValueT t1 = c.val()*b.val()/a.val();
+	  ValueT t2 = c.val()*std::log(a.val());
+	  for (int i=0; i<sz; i++)
+	    c.fastAccessDx(i) = 
+	      a.fastAccessDx(i)*t1 + b.fastAccessDx(i)*t2;
+	}
       }
       else if (a.hasFastAccess()) {
-	ValueT t1 = c.val()*b.val()/a.val();
-	for (int i=0; i<sz; i++)
-	  c.fastAccessDx(i) = a.fastAccessDx(i)*t1;
+	if (a.val() != value_type(0)) {
+	  ValueT t1 = c.val()*b.val()/a.val();
+	  for (int i=0; i<sz; i++)
+	    c.fastAccessDx(i) = a.fastAccessDx(i)*t1;
+	}
       }
       else if (b.hasFastAccess()) {
-	ValueT t2 = c.val()*std::log(a.val());
-	for (int i=0; i<sz; i++)
-	  c.fastAccessDx(i) = b.fastAccessDx(i)*t2;
+	if (a.val() != value_type(0)) {
+	  ValueT t2 = c.val()*std::log(a.val());
+	  for (int i=0; i<sz; i++)
+	    c.fastAccessDx(i) = b.fastAccessDx(i)*t2;
+	}
       }
 
       return c;
@@ -348,16 +355,24 @@ namespace Sacado {
     SimpleFad<ValueT>
     pow(const typename SimpleFad<ValueT>::value_type& a, 
 	const SimpleFad<ValueT>& b) {
+      typedef typename SimpleFad<ValueT>::value_type value_type;
       ValueT t = std::pow(a,b.val());
-      return SimpleFad<ValueT>(b, t, t*std::log(a));
+      if (a != value_type(0))
+	return SimpleFad<ValueT>(b, t, t*std::log(a));
+      else
+	return SimpleFad<ValueT>(b, t, value_type(0));
     }
 
     template <typename ValueT>
     SimpleFad<ValueT>
     pow(const SimpleFad<ValueT>& a, 
 	const typename SimpleFad<ValueT>::value_type& b) {
+      typedef typename SimpleFad<ValueT>::value_type value_type;
       ValueT t = std::pow(a.val(),b);
-      return SimpleFad<ValueT>(a, t, t*b/a.val());
+      if (a.val() != value_type(0))
+	return SimpleFad<ValueT>(a, t, t*b/a.val());
+      else
+	return SimpleFad<ValueT>(a, t, value_type(0));
     }
 
     template <typename ValueT>

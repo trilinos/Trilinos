@@ -48,18 +48,13 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
+#include "BelosOrthoManagerFactory.hpp"
 
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 
 #include "BelosGCRODRIter.hpp"
 #include "BelosBlockFGmresIter.hpp"
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
-#ifdef HAVE_BELOS_TSQR
-#  include "BelosTsqrOrthoManager.hpp"
-#endif // HAVE_BELOS_TSQR
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -147,61 +142,10 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-
-    /// \class ValidOrthoNames
-    /// \brief Enumeration of valid orthogonalization managers
-    ///
-    /// Encapsulates the list of valid orthogonalization manager names.
-    class ValidOrthoNames {
-    public:
-      ValidOrthoNames();
-
-      /// Return true if the given orthogonalization method name is
-      /// accepted by this solver manager, else return false.
-      ///
-      /// \param name [in] Candidate orthogonalization method name
-      bool isValidName (const std::string& name) const;
-
-      /// Check whether the given orthogonalization method name is
-      /// accepted by this solver manager.  If so, do nothing.
-      /// Otherwise, throw an std::invalid_argument with an informative
-      /// error message.
-      ///
-      /// \param name [in] Candidate orthogonalization method name
-      void checkValidName (const std::string& name) const;
-
-      /// Print to the given ostream a neatly formatted list of valid
-      /// orthogonalization method names accepted by this solver
-      /// manager.
-      ///
-      /// \param out [out] Output stream to which to print the list
-      void
-      printValidList (std::ostream& out) const;
-
-      /// Return a neatly formatted string of the list of valid
-      /// orthogonalization method names accepted by this solver
-      /// manager.
-      std::string validList () const;
-
-    private:
-      /// List of orthogonalization manager names accepted by this
-      /// solver.
-      std::vector< std::string > validNames_;
-
-      /// Number of orthogonalization manager names accepted by this
-      /// solver.
-      static const int numValidOrthoNames() {
-#ifdef HAVE_BELOS_TSQR
-	return 4;
-#else 
-	return 3;
-#endif // HAVE_BELOS_TSQR
-      }      
-    };
+    typedef OrthoManagerFactory<ScalarType, MV, OP> ortho_factory_type;
 
     
   public:
-    
     //! @name Constructors/Destructor
     //@{ 
    
@@ -214,18 +158,59 @@ namespace Belos {
  
     /*! \brief Basic constructor for GCRODRSolMgr.
      *
-     * This constructor accepts the LinearProblem to be solved in addition
-     * to a parameter list of options for the solver manager. These options include the following:
-     *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. 25
-     *   - "Num Recycled Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 5
-     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 300
-     *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-     *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS, ICGS, IMGS, TSQR (if built with TSQR support). Default: "DGKS".
-     *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
-     *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
-     *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8.
+     * This constructor accepts the LinearProblem to be solved in
+     * addition to a parameter list of options for the solver manager.
+     * Some of the more important options include the following:
+     * - "Num Blocks": an \c int specifying the number of blocks
+     *   allocated for the Krylov basis. Default: 50.
+     * - "Num Recycled Blocks": an \c int specifying the number of
+     *   blocks allocated for the Krylov basis. Default: 5.
+     * - "Maximum Iterations": an \c int specifying the maximum number
+     *   of iterations the underlying solver is allowed to
+     *   perform. Default: 5000.
+     * - "Maximum Restarts": an \c int specifying the maximum number
+     *   of restarts the underlying solver is allowed to
+     *   perform. Default: 100.
+     * - "Orthogonalization": an \c std::string specifying the desired
+     *   orthogonalization. Currently supported values: "DGKS",
+     *   "ICGS", "IMGS", and "TSQR" (if Belos was built with TSQR
+     *   support). Default: "DGKS".
+     * - "Orthogonalization Parameters": a ParameterList or
+     *   RCP<(const) ParameterList> of parameters specific to the type
+     *   of orthogonalization used. Defaults are set automatically.
+     * - "Verbosity": a sum of MsgType specifying the
+     *   verbosity. Default: Belos::Errors.
+     * - "Output Style": a OutputType specifying the style of
+     *   output. Default: Belos::General.
+     * - "Convergence Tolerance": a \c MagnitudeType specifying the
+     *   level that residual norms must reach to decide
+     *   convergence. Default: 1e-8.
+     * 
+     * Other supported options:
+
+     * - "Output Frequency": an int specifying how often (in terms of
+     *   number of iterations) convergence information should be
+     *   output to the output stream. Default: -1 (means never output
+     *   convergence information).
+     * - "Output Stream": a reference-counted pointer to the output
+     *   stream where all solver output is sent. Default stream is
+     *   std::cout (stdout, in C terms). For stderr, supply
+     *   Teuchos::rcp(&std::cerr, false).
+     * - "Implicit Residual Scaling": the type of scaling used in the
+     *   implicit residual convergence test. Default: "Norm of
+     *   Preconditioned Initial Residual".
+     * - "Explicit Residual Scaling": the type of scaling used in the
+     *   explicit residual convergence test. Default: "Norm of Initial
+     *   Residual".
+     * - "Timer Label": the string to use as a prefix for the timer
+     *   labels. Default: "Belos"
+     * - "Orthogonalization Constant": a \c MagnitudeType
+     *   corresponding to the "depTol" parameter of DGKS
+     *   orthogonalization. Ignored unless DGKS orthogonalization is
+     *   used. DGKS decides the default value.
      */
-    GCRODRSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, const Teuchos::RCP<Teuchos::ParameterList> &pl );
+    GCRODRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+		  const Teuchos::RCP<Teuchos::ParameterList> &pl);
     
     //! Destructor.
     virtual ~GCRODRSolMgr() {};
@@ -372,10 +357,6 @@ namespace Belos {
 	TEST_FOR_EXCEPTION( true ,std::logic_error,"Belos::GCRODRSolMgr(): Invalid residual scaling type.");
     }
 
-    // Object that validates the orthogonalization manager name
-    // specified by the user.
-    ValidOrthoNames orthoNameValidator_;
-
     // Lapack interface
     Teuchos::LAPACK<int,ScalarType> lapack;
 
@@ -393,7 +374,13 @@ namespace Belos {
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
-    // Orthogonalization manager.
+    /// Factory that knows how to instantiate MatOrthoManager
+    /// subclasses on demand, given their name.
+    ortho_factory_type orthoFactory_;
+
+    /// Orthogonalization manager.  It is created by the
+    /// OrthoManagerFactory instance, and may be changed if the
+    /// parameters to this solver manager are changed.
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
     
     // Current parameter list.
@@ -473,7 +460,7 @@ template<class ScalarType, class MV, class OP>
 const typename GCRODRSolMgr<ScalarType,MV,OP>::MagnitudeType GCRODRSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
-const typename GCRODRSolMgr<ScalarType,MV,OP>::MagnitudeType GCRODRSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
+const typename GCRODRSolMgr<ScalarType,MV,OP>::MagnitudeType GCRODRSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = 0.0;
 
 template<class ScalarType, class MV, class OP>
 const int GCRODRSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 100;
@@ -640,61 +627,129 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
     }
   }
 
-  // Check if the orthogonalization changed.
-  if (params->isParameter("Orthogonalization")) {
-    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    // Make sure the orthogonalization manager name is valid.  If not,
-    // throw an informative exception.
-    orthoNameValidator_.checkValidName (tempOrthoType);
-
-    if (tempOrthoType != orthoType_) {
-      orthoType_ = tempOrthoType;
-      // Create orthogonalization manager
-      if (orthoType_ == "DGKS") {
-	if (orthoKappa_ <= 0) {
-	  // Use default value of kappa (orthogonalization constant
-	  // for DGKS).
-	  ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+  // Getting default values for the orthogonalization manager
+  // parameters ("Orthogonalization Parameters") requires knowing the
+  // orthogonalization manager name ("Orthogonalization").  Save this
+  // for later, and also record whether it's different than before.
+  bool changedOrthoType = false;
+  if (params->isParameter("Orthogonalization")) 
+    {
+      const std::string& tempOrthoType = 
+	params->get("Orthogonalization", orthoType_default_);
+      // Ensure that the specified orthogonalization type is valid.
+      if (! orthoFactory_.isValidName (tempOrthoType))
+	{
+	  std::ostringstream os;
+	  os << "Belos::GCRODRSolMgr: Invalid orthogonalization type \"" 
+	     << tempOrthoType << "\".  The following are valid options "
+	     << "for the \"Orthogonalization\" type parameter: ";
+	  orthoFactory_.printValidNames (os);
+	  throw std::invalid_argument (os.str());
 	}
-	else {
-	  ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-	  // Use the user-specified value of kappa (orthogonalization
-	  // constant for DGKS).
-	  Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+      if (tempOrthoType != orthoType_)
+	{
+	  changedOrthoType = true;
+	  orthoType_ = tempOrthoType;
+	  // Update parameter in our list.
+	  params_->set("Orthogonalization", orthoType_);
 	}
-      }
-      else if (orthoType_ == "ICGS") {
-	ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      } 
-      else if (orthoType_ == "IMGS") {
-	ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      } 
-#ifdef HAVE_BELOS_TSQR
-      else if (orthoType_ == "TSQR") {
-        ortho_ = Teuchos::rcp( new TsqrMatOrthoManager< ScalarType, MV, OP > );
-      } 
-#endif // HAVE_BELOS_TSQR
-      else {
-	std::ostringstream os;
-	os << "Belos::GCRODRSolMgr: Should never get here!  Orthogonalization "
-	  "manager \"" << orthoType_ << "\" is not supported";
-	throw std::logic_error (os.str());
-      }
-    }  
-  }
+    }
 
-  // Check which orthogonalization constant to use.
-  if (params->isParameter("Orthogonalization Constant")) {
-    orthoKappa_ = params->get("Orthogonalization Constant",orthoKappa_default_);
+  // If any parameters are supplied for the orthogonalization
+  // manager, extract those.  Otherwise, the orthogonalization
+  // manager factory will supply default values.
+  //
+  // NOTE (mfh 12 Jan 2011) For the sake of backwards
+  // compatibility, if params has an "Orthogonalization Constant"
+  // parameter and the DGKS orthogonalization manager is to be
+  // used, the value of this parameter will override DGKS's
+  // "depTol" parameter.
+  //
+  // Users may supply the orthogonalization manager parameters
+  // either as a sublist, or as an RCP.  We test for both.
+  Teuchos::RCP<const Teuchos::ParameterList> orthoParams;
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
 
+    bool gotOrthoParams = false;
+    try { // Could it be an RCP?
+      orthoParams = params->get< RCP<const ParameterList> >("Orthogonalization Parameters");
+      gotOrthoParams = true;
+    } catch (Teuchos::Exceptions::InvalidParameter&) {
+    }
+    if (! gotOrthoParams) {
+      try { // Could it be a sublist?
+	const ParameterList& _orthoParams = 
+	  params->sublist("Orthogonalization Parameters");
+	// A deep copy is the only safe way to ensure that
+	// orthoParams doesn't "go away," since params doesn't
+	// belong to the solution manager and may fall out of
+	// scope.
+	orthoParams = rcp (new ParameterList (_orthoParams));
+	gotOrthoParams = true;
+      } catch (Teuchos::Exceptions::InvalidParameter&) {
+      }
+    }
+    if (! gotOrthoParams)
+      orthoParams = orthoFactory_.getDefaultParameters (orthoType_);
     // Update parameter in our list.
-    params_->set("Orthogonalization Constant",orthoKappa_);
-    if (orthoType_=="DGKS") {
-      if (orthoKappa_ > 0 && ortho_ != Teuchos::null) {
-	Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-      }
-    } 
+    params_->set("Orthogonalization Parameters", orthoParams);
   }
+
+  // Check if the desired orthogonalization method changed.  If so,
+  // instantiate a new MatOrthoManager subclass instance corresponding
+  // to the desired orthogonalization method.  Fetch and set any
+  // parameters which that subclass needs.
+  //
+  // FIXME (mfh 12 Jan 2011) We only instantiate a new MatOrthoManager
+  // subclass if the orthogonalization method name is different than
+  // before.  Thus, for some orthogonalization managers, changes to
+  // their parameters may not get propagated, if the manager type
+  // itself didn't change.  The one exception is the "depTol"
+  // (a.k.a. orthoKappa or "Orthogonalization Constant") parameter of
+  // DGKS; changes to that _do_ get propagated down to the DGKS
+  // instance.  The most general way to fix this bug is to supply each
+  // orthogonalization manager class with a setParameters() method
+  // that takes a parameter list input, and changes the parameters as
+  // appropriate.
+  if (changedOrthoType)
+    {
+      // Create orthogonalization manager.
+      ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, Teuchos::null, 
+						  label_, orthoParams);
+    }
+
+  // The DGKS orthogonalization accepts a "Orthogonalization Constant"
+  // parameter (also called kappa in the code, but not in the
+  // parameter list).  If its value is provided in the given parameter
+  // list, and its value is positive, use it.  Ignore negative values.
+  //
+  // NOTE (mfh 12 Jan 2011) This overrides the "depTol" parameter that
+  // may have been specified in "Orthogonalization Parameters".  We
+  // retain this behavior for backwards compatibility.
+  bool gotValidOrthoKappa = false;
+  if (params->isParameter("Orthogonalization Constant"))
+    {
+      const MagnitudeType orthoKappa = 
+	params->get("Orthogonalization Constant", orthoKappa_default_);
+      if (orthoKappa > 0)
+	{
+	  orthoKappa_ = orthoKappa;
+	  gotValidOrthoKappa = true;
+	  // Update parameter in our list.
+	  params_->set("Orthogonalization Constant", orthoKappa_);
+	  // Only DGKS currently accepts this parameter.
+	  if (orthoType_ == "DGKS" && ! ortho_.is_null())
+	    {
+	      using Teuchos::rcp_dynamic_cast;
+	      typedef DGKSOrthoManager< ScalarType, MV, OP > ortho_man_type;
+	      // This cast should always succeed; it's a bug otherwise.
+	      rcp_dynamic_cast< ortho_man_type >(ortho_)->setDepTol (orthoKappa_);
+	    }
+	}
+    }
 
   // Check for a change in verbosity level
   if (params->isParameter("Verbosity")) {
@@ -848,40 +903,26 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
   outputTest_->setSolverDesc( solverDesc );
 
   // Create orthogonalization manager if we need to.
-  if (ortho_ == Teuchos::null) {
-    // Make sure the orthogonalization manager name is valid.  If not,
-    // throw an informative exception.
-    orthoNameValidator_.checkValidName (orthoType_);
-
-    if (orthoType_ == "DGKS") {
-      if (orthoKappa_ <= 0) {
-	// Use the default value of the orthogonalization constant kappa.
-	ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      }
-      else {
-	ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-	// Use the user-specified value of the orthogonalization constant kappa.
-	Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-      }
+  if (ortho_.is_null())
+    {
+      // We've already checked that the specified orthogonalization
+      // type is valid.  Create orthogonalization manager.
+      ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, Teuchos::null, 
+						  label_, orthoParams);
+      // DGKS has a valid default value of the "Orthogonalization
+      // Constant" (a.k.a. "depTol", orthoKappa) parameter, so only
+      // change it if params has that parameter and its value is
+      // valid.  We've already checked for that above.
+      if (orthoType_ == "DGKS" && gotValidOrthoKappa && orthoKappa_ > 0)
+	{
+	  using Teuchos::rcp_dynamic_cast;
+	  typedef DGKSOrthoManager< ScalarType, MV, OP > ortho_man_type;
+	  // Use the user-specified value of the orthogonalization
+	  // constant kappa.  This cast should always succeed; it's a
+	  // bug otherwise.
+	  rcp_dynamic_cast< ortho_man_type >(ortho_)->setDepTol (orthoKappa_);
+	}
     }
-    else if (orthoType_=="ICGS") {
-      ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-    } 
-    else if (orthoType_=="IMGS") {
-      ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-    } 
-#ifdef HAVE_BELOS_TSQR
-    else if (orthoType_=="TSQR") {
-      ortho_ = Teuchos::rcp( new TsqrMatOrthoManager< ScalarType, MV, OP > );
-    }
-#endif // HAVE_BELOS_TSQR
-    else {
-      std::ostringstream os;
-      os << "Belos::GCRODRSolMgr: Should never get here!  Orthogonalization "
-	"manager \"" << orthoType_ << "\" is not supported";
-      throw std::logic_error (os.str());
-    }  
-  }
 
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
@@ -942,11 +983,25 @@ Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getVa
       "The string to use as a prefix for the timer labels.");
     //  pl->set("Restart Timers", restartTimers_);
     pl->set("Orthogonalization", orthoType_default_,
-	    "The type of orthogonalization to use: " + 
-	    orthoNameValidator_.validList());
-    pl->set("Orthogonalization Constant",orthoKappa_default_,
-      "The constant used by DGKS orthogonalization to determine\n"
-      "whether another step of classical Gram-Schmidt is necessary.");
+	    "The type of orthogonalization to use.  Valid options: " + 
+	    orthoFactory_.validNamesString());
+    {
+      // We have to help out the C++ compiler's type inference a bit here.
+      typedef Teuchos::RCP<const Teuchos::ParameterList> const_plist_ptr;
+#if 0
+      const_plist_ptr orthoParams = 
+	orthoFactory_.getDefaultParameters (orthoType_default_);
+#else
+      const_plist_ptr orthoParams;
+#endif // 0
+      pl->set< const_plist_ptr > ("Orthogonalization Parameters", orthoParams,
+				  "Parameters specific to the type of "
+				  "orthogonalization used.");
+    }
+    pl->set("Orthogonalization Constant", orthoKappa_default_,
+	    "When using DGKS orthogonalization: the \"depTol\" constant, used "
+	    "to determine whether another step of classical Gram-Schmidt is "
+	    "necessary.  Otherwise ignored.");
     validPL = pl;
   }
   return validPL;
@@ -2049,59 +2104,6 @@ std::string GCRODRSolMgr<ScalarType,MV,OP>::description() const {
   return oss.str();
 }
 
-template<class ScalarType, class MV, class OP>
-GCRODRSolMgr< ScalarType, MV, OP >::ValidOrthoNames::ValidOrthoNames ()
-  : validNames_ (numValidOrthoNames()) {
-  validNames_[0] = "DGKS";
-  validNames_[1] = "ICGS";
-  validNames_[2] = "IMGS";
-#ifdef HAVE_BELOS_TSQR
-  validNames_[3] = "TSQR";
-#endif // HAVE_BELOS_TSQR
-}
-
-template<class ScalarType, class MV, class OP>
-bool
-GCRODRSolMgr< ScalarType, MV, OP >::ValidOrthoNames::isValidName (const std::string& name) const {
-  return (std::find (validNames_.begin(), validNames_.end(), name) != validNames_.end());
-}
-
-template<class ScalarType, class MV, class OP>
-void
-GCRODRSolMgr< ScalarType, MV, OP >::ValidOrthoNames::checkValidName (const std::string& name) const {
-  if (! isValidName (name))
-    {
-      std::ostringstream os;
-      os << "Belos::GCRODRSolMgr: Name of orthogonalization manager "
-	"(\"Orthogonalization\" parameter) must be one of the following: ";
-      printValidList (os);
-      throw std::invalid_argument (os.str());
-    }
-}
-
-
-template<class ScalarType, class MV, class OP>
-void
-GCRODRSolMgr< ScalarType, MV, OP >::ValidOrthoNames::printValidList (std::ostream& out) const {
-  const int numValid = ValidOrthoNames::numValidOrthoNames();
-  for (int k = 0; k < numValid; ++k)
-    {
-      out << "\"" << validNames_[k] << "\"";
-      // Format the list of valid names nicely.
-      if (k < numValid - 1)
-	out << ", ";
-      if (k == numValid - 2)
-	out << " or ";
-    }
-}
-
-template<class ScalarType, class MV, class OP>
-std::string
-GCRODRSolMgr< ScalarType, MV, OP >::ValidOrthoNames::validList () const {
-  std::ostringstream os;
-  printValidList (os);
-  return os.str();
-}
 
 } // end Belos namespace
 

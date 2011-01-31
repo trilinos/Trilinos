@@ -28,7 +28,6 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
-
 std::string Teuchos::getVerbosityLevelParameterValueName(
   const EVerbosityLevel verbLevel
   )
@@ -104,30 +103,26 @@ namespace Teuchos {
 
 
 AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator()
-  :preferredType_(PREFER_DOUBLE),
-   acceptedTypes_(AcceptedTypes())
+  : preferredType_(PREFER_DOUBLE), acceptedTypes_(AcceptedTypes())
 {
   finishInitialization();
 }
 
 
 AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
-  EPreferredType const preferredType,
-  AcceptedTypes const& acceptedTypes
+  EPreferredType const preferredType, AcceptedTypes const& acceptedTypes
   )
-  :preferredType_(preferredType),
-   acceptedTypes_(acceptedTypes)
+  : preferredType_(preferredType), acceptedTypes_(acceptedTypes)
 {
   finishInitialization();
 }
-
 
 //  Local non-virtual validated lookup functions
 
 
 int AnyNumberParameterEntryValidator::getInt(
-  const ParameterEntry &entry, const std::string &paramName
-  ,const std::string &sublistName, const bool activeQuery
+  const ParameterEntry &entry, const std::string &paramName,
+  const std::string &sublistName, const bool activeQuery
   ) const
 {
   const any &anyValue = entry.getAny(activeQuery);
@@ -143,8 +138,8 @@ int AnyNumberParameterEntryValidator::getInt(
 
 
 double AnyNumberParameterEntryValidator::getDouble(
-  const ParameterEntry &entry, const std::string &paramName
-  ,const std::string &sublistName, const bool activeQuery
+  const ParameterEntry &entry, const std::string &paramName,
+  const std::string &sublistName, const bool activeQuery
   ) const
 {
   const any &anyValue = entry.getAny(activeQuery);
@@ -160,8 +155,8 @@ double AnyNumberParameterEntryValidator::getDouble(
 
 
 std::string AnyNumberParameterEntryValidator::getString(
-  const ParameterEntry &entry, const std::string &paramName
-  ,const std::string &sublistName, const bool activeQuery
+  const ParameterEntry &entry, const std::string &paramName,
+  const std::string &sublistName, const bool activeQuery
   ) const
 {
   const any &anyValue = entry.getAny(activeQuery);
@@ -177,8 +172,8 @@ std::string AnyNumberParameterEntryValidator::getString(
 
 
 int AnyNumberParameterEntryValidator::getInt(
-  ParameterList &paramList, const std::string &paramName
-  ,const int defaultValue
+  ParameterList &paramList, const std::string &paramName,
+  const int defaultValue
   ) const
 {
   const ParameterEntry *entry = paramList.getEntryPtr(paramName);
@@ -188,8 +183,8 @@ int AnyNumberParameterEntryValidator::getInt(
 
 
 double AnyNumberParameterEntryValidator::getDouble(
-  ParameterList &paramList, const std::string &paramName
-  ,const double defaultValue
+  ParameterList &paramList, const std::string &paramName,
+  const double defaultValue
   ) const
 {
   const ParameterEntry *entry = paramList.getEntryPtr(paramName);
@@ -199,8 +194,8 @@ double AnyNumberParameterEntryValidator::getDouble(
 
 
 std::string AnyNumberParameterEntryValidator::getString(
-  ParameterList &paramList, const std::string &paramName
-  ,const std::string &defaultValue
+  ParameterList &paramList, const std::string &paramName,
+  const std::string &defaultValue
   ) const
 {
   const ParameterEntry *entry = paramList.getEntryPtr(paramName);
@@ -208,13 +203,44 @@ std::string AnyNumberParameterEntryValidator::getString(
   return paramList.get(paramName,defaultValue);
 }
 
+
+bool AnyNumberParameterEntryValidator::isDoubleAllowed() const
+{
+  return acceptedTypes_.allowDouble();
+}
+
+
+bool AnyNumberParameterEntryValidator::isIntAllowed() const
+{
+  return acceptedTypes_.allowInt();
+}
+
   
+bool AnyNumberParameterEntryValidator::isStringAllowed() const
+{
+  return acceptedTypes_.allowString();
+}
+
+
+AnyNumberParameterEntryValidator::EPreferredType
+AnyNumberParameterEntryValidator::getPreferredType() const
+{
+  return preferredType_;
+}
+
+
 // Overridden from ParameterEntryValidator
 
 
+const std::string AnyNumberParameterEntryValidator::getXMLTypeName() const
+{
+  return "anynumberValidator";
+}
+
+
 void AnyNumberParameterEntryValidator::printDoc(
-  std::string         const& docString
-  ,std::ostream            & out
+  std::string  const & docString,
+  std::ostream & out
   ) const
 {
   StrUtils::printLines(out,"# ",docString);
@@ -222,7 +248,7 @@ void AnyNumberParameterEntryValidator::printDoc(
 }
 
 
-RCP<const Array<std::string> >
+ParameterEntryValidator::ValidStringsList
 AnyNumberParameterEntryValidator::validStringValues() const
 {
   return null;
@@ -230,9 +256,9 @@ AnyNumberParameterEntryValidator::validStringValues() const
 
 
 void AnyNumberParameterEntryValidator::validate(
-  ParameterEntry  const& entry
-  ,std::string    const& paramName
-  ,std::string    const& sublistName
+  ParameterEntry const& entry,
+  std::string const& paramName,
+  std::string const& sublistName
   ) const
 {
   // Validate (any of the get functions will do!)
@@ -299,9 +325,9 @@ void AnyNumberParameterEntryValidator::finishInitialization()
 
 
 void AnyNumberParameterEntryValidator::throwTypeError(
-  ParameterEntry  const& entry
-  ,std::string    const& paramName
-  ,std::string    const& sublistName
+  ParameterEntry const& entry,
+  std::string const& paramName,
+  std::string const& sublistName
   ) const
 {
   const std::string &entryName = entry.getAny(false).typeName();
@@ -316,10 +342,175 @@ void AnyNumberParameterEntryValidator::throwTypeError(
 }
 
 
+FileNameValidator::FileNameValidator(bool mustAlreadyExist)
+  : ParameterEntryValidator(), mustAlreadyExist_(mustAlreadyExist)
+{}
+
+bool FileNameValidator::fileMustExist() const
+{
+  return mustAlreadyExist_;
+}
+
+
+bool FileNameValidator::setFileMustExist(bool shouldFileExist)
+{
+  this->mustAlreadyExist_ = shouldFileExist;
+  return mustAlreadyExist_;
+}
+
+
+ParameterEntryValidator::ValidStringsList
+FileNameValidator::validStringValues() const
+{
+  return null;
+}
+
+
+void FileNameValidator::validate(ParameterEntry const &entry, std::string const &paramName,
+  std::string const &sublistName) const
+{
+  const std::string &entryName = entry.getAny(false).typeName();
+  any anyValue = entry.getAny(true);
+  TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
+    Exceptions::InvalidParameterType,
+    "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+    " parameter in the \"" << sublistName << 
+    "\" sublist didn't quite work out." << std::endl << std::endl <<
+    "No need to fret though. I'm sure it's just a small mistake. "
+    "Maybe the information below "
+    "can help you figure out what went wrong." << std::endl << std::endl <<
+    "Error: The value that you entered was the wrong type." << std::endl <<
+    "Parameter: " << paramName << std::endl << 
+    "Type specified: " << entryName << std::endl <<
+    "Type accepted: " << typeid(std::string).name() << 
+    std::endl << std::endl);
+  if(mustAlreadyExist_){
+    std::string fileName = getValue<std::string>(entry);
+    TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
+      Exceptions::InvalidParameterValue,
+      "Aww shoot! Sorry bud, but it looks like the \"" 
+      << paramName << "\"" <<
+      " parameter in the \"" << sublistName << 
+      "\" sublist didn't quite work out." << std::endl << 
+      "No need to fret though. I'm sure it's just a small mistake. " <<
+      "Maybe the information below "<<
+      "can help you figure out what went wrong." << 
+      std::endl << std::endl <<
+      "Error: The file must already exists. The value you entered does " <<
+      "not corresspond to an existing file name." << std::endl <<
+      "Parameter: " << paramName << std::endl <<
+      "File name specified: " << fileName << std::endl << std::endl);
+  }
+}
+
+
+const std::string FileNameValidator::getXMLTypeName() const
+{
+  return "filenameValidator";
+}
+
+
+void FileNameValidator::printDoc(
+  std::string const &docString, std::ostream &out) const
+{
+  StrUtils::printLines(out,"# ",docString);
+  out << "#  Validator Used: " << std::endl;
+  out << "#  FileName Validator" << std::endl;
+}
+
+StringValidator::StringValidator()
+  : ParameterEntryValidator(), validStrings_(NULL)
+{}
+
+StringValidator::StringValidator(const Array<std::string>& validStrings):
+  ParameterEntryValidator(),
+  validStrings_(rcp(new Array<std::string>(validStrings)))
+{}
+
+ParameterEntryValidator::ValidStringsList
+StringValidator::setValidStrings(const Array<std::string>& validStrings)
+{
+  validStrings_ = rcp(new Array<std::string>(validStrings));
+  return validStrings_;
+}
+
+
+ParameterEntryValidator::ValidStringsList
+StringValidator::validStringValues() const
+{
+  return validStrings_;
+}
+
+
+void StringValidator::validate(
+  ParameterEntry const &entry, std::string const &paramName,
+  std::string const &sublistName) const
+{
+  any anyValue = entry.getAny(true);
+  const std::string &entryName = entry.getAny(false).typeName();
+  TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string)) ,
+    Exceptions::InvalidParameterType,
+    "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+    " parameter in the \"" << sublistName << 
+    "\" sublist didn't quite work out." << std::endl <<
+    "No need to fret though. I'm sure it's just a small mistake. " <<
+    "Maybe the information below "<<
+    "can help you figure out what went wrong." << std::endl << std::endl <<
+    "Error: The value that you entered was the wrong type." <<
+    "Parameter: " << paramName << std::endl <<
+    "Type specified: " << entryName << std::endl <<
+    "Type accepted: " << Teuchos::TypeNameTraits<std::string>::name() <<
+    std::endl);
+  if(!validStrings_.is_null()){
+    Array<std::string>::const_iterator
+      it = std::find(validStrings_->begin(),
+      validStrings_->end(), getValue<std::string>(entry));
+    TEST_FOR_EXCEPTION(it == validStrings_->end(),
+      Exceptions::InvalidParameterValue,
+      "Aww shoot! Sorry bud, but it looks like the \""
+      << paramName << "\"" <<
+      " parameter in the \"" << sublistName << 
+      "\" sublist didn't quite work out." << std::endl <<
+      "No need to fret though. I'm sure it's just a small mistake. "
+      "Maybe the information below "
+      "can help you figure out what went wrong." <<
+      std::endl << std::endl <<
+      "Error: The value that was entered doesn't fall with in "
+      "the range set by the validator." <<
+      "Parameter: " << paramName << std::endl <<
+      "Acceptable Values: " << validStrings_ << std::endl <<
+      "Value entered: " << getValue<std::string>(entry) << std::endl <<
+      std::endl);
+  }
+}
+
+
+const std::string StringValidator::getXMLTypeName() const
+{
+  return "stringValidator";
+}
+
+
+void StringValidator::printDoc(std::string const &docString,
+  std::ostream &out) const
+{
+  Teuchos::StrUtils::printLines(out,"# ",docString);
+  out << "#  Validator Used: " << std::endl;
+  out << "#  String Validator" << std::endl;
+}
+
+
 } // namespace Teuchos
 
 
 // Nonmmeber helper functions
+
+Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
+Teuchos::anyNumberParameterEntryValidator()
+{
+  return rcp(new AnyNumberParameterEntryValidator());
+}
+
 
 Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
 Teuchos::anyNumberParameterEntryValidator(
@@ -333,7 +524,6 @@ Teuchos::anyNumberParameterEntryValidator(
       )
     );
 }
-
 
 void Teuchos::setIntParameter(
   std::string const& paramName,
@@ -441,4 +631,5 @@ std::string Teuchos::getNumericStringParameter(
   const AnyNumberParameterEntryValidator myAnyNumValidator;
   return myAnyNumValidator.getString(entry,paramName,paramList.name());
 }
+
 

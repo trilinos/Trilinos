@@ -49,23 +49,22 @@
 extern "C" {
 
 #include <MFPrint.h>
-#include <MFError.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
-void MFSetError(int,char*,char*,int,char*);
-void MFLOCAFreeData(void *data);
+void MFLOCAFreeData(void *data,MFErrorHandler);
 
-int MFProjectLOCA(int,int,MFNVector,MFNKMatrix,MFNVector,void*,int*);
-int MFTangentLOCA(int,int,MFNVector,MFNKMatrix,void*);
-double MFScaleLOCA(int,int,MFNVector,MFNKMatrix,void*);
+int MFProjectLOCA(int,int,MFNVector,MFNKMatrix,MFNVector,void*,int*,
+		  MFErrorHandler);
+int MFTangentLOCA(int,int,MFNVector,MFNKMatrix,void*,MFErrorHandler);
+double MFScaleLOCA(int,int,MFNVector,MFNKMatrix,void*,MFErrorHandler);
 
-int MFLOCAProjectToSave(MFNVector,double*,void*);
-int MFLOCAProjectToDraw(MFNVector,double*,void*);
-int MFLOCAProjectForBB(MFNVector,double*,void*);
+int MFLOCAProjectToSave(MFNVector,double*,void*,MFErrorHandler);
+int MFLOCAProjectToDraw(MFNVector,double*,void*,MFErrorHandler);
+int MFLOCAProjectForBB(MFNVector,double*,void*,MFErrorHandler);
 
-double MFPrintMetricLOCA(double*,double*);
+double MFPrintMetricLOCA(double*,double*,MFErrorHandler);
 
 LOCAData::LOCAData(
      const Teuchos::RCP<LOCA::GlobalData>& global_data,
@@ -98,6 +97,7 @@ LOCAData::LOCAData(
 						 15));
   aggressiveness = stepperList->get("Aggressiveness", 0.0);
   solutionMax = stepperList->get("Max Solution Component", 1.0e16);
+  mfErrorHandler = MFCreateErrorHandler();
 }
 
 MFImplicitMF MFIMFCreateLOCA(LOCAData* data)
@@ -105,40 +105,40 @@ MFImplicitMF MFIMFCreateLOCA(LOCAData* data)
   MFImplicitMF loca;
   MFNSpace space;
 
-  loca=MFIMFCreateBaseClass(-1, data->np, "LOCA");
+  loca=MFIMFCreateBaseClass(-1, data->np, "LOCA", data->mfErrorHandler);
 
   space=MFCreateLOCANSpace(data);
-  MFIMFSetSpace(loca,space);
-  MFFreeNSpace(space);
+  MFIMFSetSpace(loca,space, data->mfErrorHandler);
+  MFFreeNSpace(space, data->mfErrorHandler);
 
-  MFIMFSetData(loca,(void*)data);
+  MFIMFSetData(loca,(void*)data, data->mfErrorHandler);
   data->space=space;
-  MFRefNSpace(space);
-  MFIMFSetFreeData(loca,MFLOCAFreeData);
-  MFIMFSetProject(loca,MFProjectLOCA);
-  MFIMFSetTangent(loca,MFTangentLOCA);
-  MFIMFSetScale(loca,MFScaleLOCA);
-  MFIMFSetProjectForSave(loca,MFLOCAProjectToDraw);
-  MFIMFSetProjectForDraw(loca,MFLOCAProjectToDraw);
-  MFIMFSetProjectForBB(loca,MFLOCAProjectToDraw);
+  MFRefNSpace(space, data->mfErrorHandler);
+  MFIMFSetFreeData(loca,MFLOCAFreeData, data->mfErrorHandler);
+  MFIMFSetProject(loca,MFProjectLOCA, data->mfErrorHandler);
+  MFIMFSetTangent(loca,MFTangentLOCA, data->mfErrorHandler);
+  MFIMFSetScale(loca,MFScaleLOCA, data->mfErrorHandler);
+  MFIMFSetProjectForSave(loca,MFLOCAProjectToDraw, data->mfErrorHandler);
+  MFIMFSetProjectForDraw(loca,MFLOCAProjectToDraw, data->mfErrorHandler);
+  MFIMFSetProjectForBB(loca,MFLOCAProjectToDraw, data->mfErrorHandler);
 
   return loca;
  }
 
-void MFLOCAFreeData(void *d)
+void MFLOCAFreeData(void *d, MFErrorHandler err)
  {
     LOCAData* data = (LOCAData *)d;
     delete data;
  }
 
-int MFLOCAProjectToDraw(MFNVector u, double *x, void *d)
+int MFLOCAProjectToDraw(MFNVector u, double *x, void *d, MFErrorHandler err)
  {
   LOCAData* data = (LOCAData *)d; 
 
   if(x==(double*)NULL)
     return data->grp->projectToDrawDimension();
 
-  LOCANVectorData* v_data = (LOCANVectorData *)MFNVectorGetData(u);
+  LOCANVectorData* v_data = (LOCANVectorData *)MFNVectorGetData(u, err);
 
   data->grp->projectToDraw(*(v_data->u_ptr), x);
 
@@ -146,7 +146,7 @@ int MFLOCAProjectToDraw(MFNVector u, double *x, void *d)
  }
 
 int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
-		  void *d,int *index)
+		  void *d,int *index, MFErrorHandler err)
 {
   static int stepNumber = 1;
   int i;
@@ -154,13 +154,13 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
 
   LOCAData* data = (LOCAData *)d;
   for (i=0; i<k; i++) {
-    MFNVector tmp =  MFMColumn(mPhi,i);
-    LOCANVectorData* tmp2_data = (LOCANVectorData *) MFNVectorGetData(tmp);
+    MFNVector tmp =  MFMColumn(mPhi,i, err);
+    LOCANVectorData* tmp2_data = (LOCANVectorData *) MFNVectorGetData(tmp, err);
     data->grp->setPredictorTangentDirection(*(tmp2_data->u_ptr), i);
-    MFFreeNVector(tmp);
+    MFFreeNVector(tmp, err);
   }
   
-  LOCANVectorData* u0_data = (LOCANVectorData *) MFNVectorGetData(vu0);
+  LOCANVectorData* u0_data = (LOCANVectorData *) MFNVectorGetData(vu0, err);
   data->grp->setPrevX(*(u0_data->u_ptr));
   data->grp->setX(*(u0_data->u_ptr));
   for (i=0; i<k; i++) {
@@ -217,7 +217,7 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
     return 0;
   }
   else {
-    LOCANVectorData* u_data = (LOCANVectorData *) MFNVectorGetData(vu);
+    LOCANVectorData* u_data = (LOCANVectorData *) MFNVectorGetData(vu, err);
      
     *(Teuchos::rcp_dynamic_cast<NOX::Abstract::Group>(data->grp)) = 
       data->solver->getSolutionGroup();
@@ -250,11 +250,12 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
 }
 
 
-int MFTangentLOCA(int n,int k,MFNVector vu,MFNKMatrix mPhi,void *d)
+int MFTangentLOCA(int n,int k,MFNVector vu,MFNKMatrix mPhi,void *d, 
+		  MFErrorHandler err)
 {
    LOCAData* data = (LOCAData *)d;
 
-   LOCANVectorData* u0_data = (LOCANVectorData *) MFNVectorGetData(vu);
+   LOCANVectorData* u0_data = (LOCANVectorData *) MFNVectorGetData(vu, err);
    data->grp->setX(*(u0_data->u_ptr));
    data->grp->computePredictor();
 
@@ -264,17 +265,18 @@ int MFTangentLOCA(int n,int k,MFNVector vu,MFNKMatrix mPhi,void *d)
    for (int i=0; i<k; i++) {
      Teuchos::RCP<LMCEV> t = 
        Teuchos::rcp_dynamic_cast<LMCEV>(pred[i].clone());
-     MFNVector tmp =  MFCreateLOCANVectorWithData(t);
-     MFMSetColumn(mPhi, i, tmp);
-     MFFreeNVector(tmp);
+     MFNVector tmp =  MFCreateLOCANVectorWithData(t,err);
+     MFMSetColumn(mPhi, i, tmp, err);
+     MFFreeNVector(tmp, err);
    }
 
-   MFGramSchmidt(data->space,mPhi);
+   MFGramSchmidt(data->space,mPhi, err);
 
    return 1;
 }
 
-double MFScaleLOCA(int n,int k,MFNVector u,MFNKMatrix Phi,void *d)
+double MFScaleLOCA(int n,int k,MFNVector u,MFNKMatrix Phi,void *d, 
+		   MFErrorHandler err)
 {
   LOCAData* data = (LOCAData *)d;
   if (data->radius < 0.0) {
@@ -285,10 +287,10 @@ double MFScaleLOCA(int n,int k,MFNVector u,MFNKMatrix Phi,void *d)
     for (int i=0; i<k; i++) {
       double dpidsj = 0.0;
       for (int j=0; j<k; j++) {
-	MFNVector tmp =  MFMColumn(Phi,j);
-	LOCANVectorData* tmp2_data = (LOCANVectorData *) MFNVectorGetData(tmp);
+	MFNVector tmp =  MFMColumn(Phi,j, err);
+	LOCANVectorData* tmp2_data = (LOCANVectorData *) MFNVectorGetData(tmp, err);
 	dpidsj += fabs(tmp2_data->u_ptr->getScalar(i));
-	MFFreeNVector(tmp);
+	MFFreeNVector(tmp, err);
       }
       data->radius += it->initialStepSize / dpidsj;
       data->minRadius += it->minStepSize / dpidsj;

@@ -10,10 +10,13 @@
 #define stk_search_util_stk_mesh_CreateBoundingBox_hpp
 #include <vector>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/base/Field.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 
+typedef stk::mesh::Field<double, stk::mesh::Cartesian> CartesianField ;
 typedef stk::search::ident::IdentProc<stk::mesh::EntityKey, unsigned> IdentProc;
 typedef stk::search::box::AxisAlignedBoundingBox<IdentProc, double, 3> AxisAlignedBoundingBox3D;
 typedef stk::search::box::PointBoundingBox<IdentProc, double, 3> PointBoundingBox3D;
@@ -51,14 +54,14 @@ struct NoOp : public Op
 };
 
 void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRank type,
-                             stk::mesh::VectorField *coordinates,
+                             CartesianField *coordinates,
                              std::vector<AxisAlignedBoundingBox3D> &box_vector,
 			     bool use_universal_part = false,
 			     const Op &op = NoOp());
 
 
 void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank type,
-                         stk::mesh::VectorField *coordinates,
+                         CartesianField *coordinates,
                          std::vector<PointBoundingBox3D> &box_vector,
                          bool use_universal_part = false);
 

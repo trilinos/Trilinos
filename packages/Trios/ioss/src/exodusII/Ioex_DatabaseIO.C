@@ -1091,54 +1091,9 @@ namespace Ioex {
       Ioss::ElementBlock *block = NULL;
       std::string block_name = get_entity_name(get_file_pointer(), EX_ELEM_BLOCK, id, "block");
 
-      Ioss::Utils::fixup_name(element_type); // Convert to lowercase; replace spaces with '_'
-      std::string type = std::string(element_type);
-      std::string save_type = type;
-
-      // Fixup an exodusII kluge/ambiguity.
-      // The element block type does not fully define the element. For
-      // example, a block of type 'triangle' may have either 3 or 6
-      // nodes.  To fix this, check the block type name and see if it
-      // ends with a number.  If it does, assume it is OK; if not, append
-      // the 'nodes_per_element'.
-      if (!isdigit(*(type.rbegin()))) {
-	if (my_node_count[iblk] > 1) {
-	  type += Ioss::Utils::to_string(my_node_count[iblk]);
-	}
-      }
-
-      // Fixup an exodusII kludge.  For triangular elements, the same
-      // name is used for 2D elements and 3D shell elements.  Convert
-      // to unambiguous names for the IO Subsystem.  The 2D name
-      // stays the same, the 3D name becomes 'trishell#'
-      if (spatialDimension == 3) {
-	if      (type == "triangle3") type = "trishell3";
-	else if (type == "triangle6") type = "trishell6";
-	else if (type == "tri3")      type = "trishell3";
-	else if (type == "tri6")      type = "trishell6";
-      }
-
-      if (spatialDimension == 2) {
-	if (type == "shell2")
-	  type = "shellline2d2";
-	else if (type == "rod2" || type == "bar2" || type == "truss2")
-	  type = "rod2d2";
-	else if (type == "shell3")
-	  type = "shellline2d3";
-	else if (type == "bar3"  || type == "rod3"  || type == "truss3")
-	  type = "rod2d3";
-      }
-
-      if (std::strncmp(type.c_str(), "super", 5) == 0) {
-	// A super element can have a varying number of nodes.  Create
-	// an IO element type for this super element just so the IO
-	// system can read a mesh containing super elements.  This
-	// allows the "omit volume" command to be used in the Sierra
-	// applications to skip creating a corresponding element block
-	// in the application.
-	type = "super" + Ioss::Utils::to_string(my_node_count[iblk]);
-      }
-      
+      std::string save_type = element_type;
+      std::string type = Ioss::Utils::fixup_element_type(element_type, my_node_count[iblk],
+							 spatialDimension);
       if (local_element_count[iblk] == 0 && type == "") {
 	// For an empty block, exodusII does not store the element
 	// type information and returns "NULL" If there are no
@@ -1164,33 +1119,32 @@ namespace Ioex {
 	
 	// If there are no elements on any processor for this block and
 	// we have no idea what the topology type is, skip it...
-	if (global_element_count[iblk] == 0)
+	if (global_element_count[iblk] == 0) {
 	  continue;
+	}
       }
       
       block = new Ioss::ElementBlock(this, block_name, type,
 				     local_element_count[iblk],
 				     attributes[iblk]);
 
-      // 	if (block->topology()->spatial_dimension() != spatialDimension) {
-      // 	  std::ostringstream errmsg;
-      // 	  errmsg << "ERROR: Element Block '" << block_name << "' is using a '"
-      // 		 << type << "' element. This is a "
-      // 		 << block->topology()->spatial_dimension()
-      // 		 << "D element being used in a "
-      // 		 << spatialDimension << "D mesh.";
-      // 	    IOSS_ERROR(errmsg);
-      // 	}
-
       block->property_add(Ioss::Property("id", id));
       
       // Maintain block order on output database...
       block->property_add(Ioss::Property("original_block_order", used_blocks++));
       
-      if (block->get_property("topology_type").get_string() != save_type
-	  && save_type != "null" && save_type != "") {
-	// Maintain original element type on output database if possible.
-	block->property_add(Ioss::Property("original_element_type", save_type));
+      if (save_type != "null" && save_type != "") {
+	if (block->property_exists("original_element_type")) {
+	  if (block->get_property("original_element_type").get_string() != save_type) {
+	    block->property_erase("original_element_type");
+	    block->property_add(Ioss::Property("original_element_type", save_type));
+	  }
+	} else {
+	  if (block->get_property("topology_type").get_string() != save_type) {
+	    // Maintain original element type on output database if possible.
+	    block->property_add(Ioss::Property("original_element_type", save_type));
+	  }
+	}
       }
       
       block->property_add(Ioss::Property("global_entity_count", global_element_count[iblk]));
@@ -1222,7 +1176,9 @@ namespace Ioex {
 	add_map_fields(get_file_pointer(), block, local_element_count[iblk]);
       }
     }
+    elementBlockCount = used_blocks;
     assert(elementCount == offset);
+    assert(elementBlockCount == (int)get_region()->get_element_blocks().size());
   }
 
   void DatabaseIO::get_block_adjacencies(const Ioss::ElementBlock *eb,
@@ -5660,15 +5616,6 @@ namespace Ioex {
 	else {
 	  unknown_attributes = attribute_count;
 	}
-
-	if (unknown_attributes > 0 && myProcessor == 0) {
-	  IOSS_WARNING << "For element block '" << block->name()
-		       << "' of type '" << type << "' there were "
-		       << unknown_attributes << " attributes that are not known to the IO Subsystem "
-		       << "in addition to the " << attribute_count - unknown_attributes
-		       << " that were known. The extra attributes can be accessed as the last "
-		       << unknown_attributes << " components of the field named 'attribute'";
-	}
       }
 
       // Always create a field called "attribute" containing data
@@ -5752,11 +5699,11 @@ namespace {
       }
     }
     
-    if (component_sum > attribute_count) {
+    if (component_sum != attribute_count) {
       std::ostringstream errmsg;
-      std::cerr << "INTERNAL ERROR: Block '" << block->name() << "' is supposed to have " << attribute_count
-		<< " attributes, but " << component_sum << " attributes were counted.\n"
-		<< "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
+      std::cerr << "ERROR: Block '" << block->name() << "' is supposed to have " << attribute_count
+		<< " attributes, but" << component_sum << " attributes were defined.\n"
+		<< "Error detected in the Ioex::DatabaseIO function 'check_attribute_index_error'. Please report.\n";
       IOSS_ERROR(errmsg);
     }
 

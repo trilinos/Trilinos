@@ -25,7 +25,7 @@ class  LOCAInterface :
       
       // Compute and return F
       bool computeF(const Epetra_Vector& x, Epetra_Vector& f, 
-	  NOX::Epetra::Interface::Required::FillType F);
+		    const NOX::Epetra::Interface::Required::FillType F);
     
       // Compute an explicit Jacobian
       bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);

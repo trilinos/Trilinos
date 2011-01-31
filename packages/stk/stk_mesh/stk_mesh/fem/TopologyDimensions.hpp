@@ -14,16 +14,16 @@
 #ifndef stk_mesh_TopologyDimensions_hpp
 #define stk_mesh_TopologyDimensions_hpp
 
-// #include <stk_util/mdarray/Array.hpp>
 #include <Shards_Array.hpp>
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+
 #include <stk_mesh/fem/Stencils.hpp>
+#include <stk_mesh/fem/FEMInterface.hpp>
 
 namespace stk {
 namespace mesh {
-
 
 //----------------------------------------------------------------------
 /** \ingroup stk_mesh_field_dimension_tags
@@ -84,7 +84,13 @@ declare_element_node_pointer_field(
   for ( unsigned i = 0 ; i < num_states ; ++i ) {
     FieldState state = (FieldState) i;
     md.declare_field_relation(
-      f.field_of_state( state ) , & element_node_stencil<void> , node_field.field_of_state( state ) );
+      f.field_of_state( state ) ,
+#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      fem::get_element_node_stencil(fem::get_fem_interface(md).get_spatial_dimension()) ,
+#else
+      & element_node_stencil<void>,
+#endif
+      node_field.field_of_state( state ) );
   }
   
   return f ;
@@ -108,7 +114,13 @@ declare_element_node_lock_field(
   for ( unsigned i = 0 ; i < num_states ; ++i ) {
     FieldState state = (FieldState) i;
     md.declare_field_relation(
-      f.field_of_state( state ) , & element_node_stencil<void> , node_field.field_of_state( state ) );
+      f.field_of_state( state ) ,
+#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      fem::get_element_node_stencil(fem::get_fem_interface(md).get_spatial_dimension()) ,
+#else
+      & element_node_stencil<void>,
+#endif
+      node_field.field_of_state( state ) );
   }
   
   return f ;

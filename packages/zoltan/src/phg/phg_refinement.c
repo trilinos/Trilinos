@@ -88,7 +88,8 @@ static int refine_no (ZZ *zz,     /* Zoltan data structure */
 int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
  int *part, int **cut, double *gain, HEAP *heap)
 {
-int i, j, edge, v;
+int i, j;
+int v, edge;
 
   gain[vertex] = 0.0;
   part[vertex] = dest;
@@ -534,7 +535,6 @@ static int refine_fm2 (ZZ *zz,
     int do_timing = (hgp->use_timers > 2);
     int detail_timing = (hgp->use_timers > 3);
 
-    
     ZOLTAN_TRACE_ENTER(zz, yo);
 
     if (p != 2) {
@@ -551,8 +551,10 @@ static int refine_fm2 (ZZ *zz,
 
 
 #ifdef USE_SERIAL_REFINEMENT_ON_ONE_PROC
-    if (hgc->nProc==1) /* only one proc? use serial code */
+    if (hgc->nProc==1){ /* only one proc? use serial code */
+        ZOLTAN_TRACE_EXIT(zz, yo);
         return serial_fm2 (zz, hg, p, part_sizes, part, hgp, bal_tol);
+    }
 #endif
 
     if (do_timing) { 
@@ -680,8 +682,9 @@ static int refine_fm2 (ZZ *zz,
     if (detail_timing)         
         ZOLTAN_TIMER_START(zz->ZTime, timer->rfpins, hgc->Communicator);                        
     for (i = 0; i < hg->nEdge; ++i)
-        for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
+        for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j){
             ++(lpins[part[hg->hvertex[j]]][i]);
+        }
     if (detail_timing)         
         ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfpins, hgc->Communicator);                    
     

@@ -133,6 +133,12 @@ using std::string;
 %fragment("NumPy_Fragments");
 
 // General exception handling
+%feature("director:except")
+{
+  if ($error != NULL) {
+    throw Swig::DirectorMethodException();
+  }
+}
 %exception
 {
   try
@@ -150,6 +156,10 @@ using std::string;
     SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
+  catch (Swig::DirectorException & e)
+  {
+    SWIG_fail;
+  }
   catch(...)
   {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");

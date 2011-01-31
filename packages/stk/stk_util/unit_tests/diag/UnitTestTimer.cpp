@@ -6,11 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cppunit/TestCase.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
-
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -20,31 +15,11 @@
 
 #include <mpi.h>
 
-// #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Writer.hpp>
 
-// using namespace use_case;
-
-
-class UnitTestTimer : public CppUnit::TestCase {
-private:
-  CPPUNIT_TEST_SUITE(UnitTestTimer);
-  CPPUNIT_TEST(testUnit);
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-  void setUp()
-  {}
-  
-  void tearDown()
-  {}
-
-  void testUnit();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(UnitTestTimer);
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 enum {
   TIMER_DOMAIN		= 0x00001000,		///< Enable domain timers
@@ -167,9 +142,7 @@ struct Object
 
 } // namespace <empty>
 
-
-void
-UnitTestTimer::testUnit()
+STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
 {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -194,7 +167,7 @@ UnitTestTimer::testUnit()
     
     stk::diag::MetricTraits<stk::diag::WallTime>::Type lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    CPPUNIT_ASSERT(lap_time >= 1.0);
+    STKUNIT_ASSERT(lap_time >= 1.0);
 
     ::sleep(1);
 
@@ -202,7 +175,7 @@ UnitTestTimer::testUnit()
     
     lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    CPPUNIT_ASSERT(lap_time >= 2.0);
+    STKUNIT_ASSERT(lap_time >= 2.0);
   }
 
   // 
@@ -216,7 +189,7 @@ UnitTestTimer::testUnit()
 
     stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = run_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    CPPUNIT_ASSERT(lap_count == 100);
+    STKUNIT_ASSERT(lap_count == 100);
   }
 
   // Create second timer set
@@ -245,7 +218,7 @@ UnitTestTimer::testUnit()
 
     stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = run_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    CPPUNIT_ASSERT(lap_count == 200);
+    STKUNIT_ASSERT(lap_count == 200);
   }
 
   // Create root object
@@ -254,7 +227,7 @@ UnitTestTimer::testUnit()
   {
     stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = root_object.m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    CPPUNIT_ASSERT(lap_count == 0);
+    STKUNIT_ASSERT(lap_count == 0);
   }
 
   // Create object
@@ -267,7 +240,7 @@ UnitTestTimer::testUnit()
 
     stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = time_object.m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    CPPUNIT_ASSERT(lap_count == 100);
+    STKUNIT_ASSERT(lap_count == 100);
   }
 
   // Create object tree
@@ -294,7 +267,7 @@ UnitTestTimer::testUnit()
     for (size_t j = 0; j < object_vector.size(); ++j) 
       lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
 
-    CPPUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(0));
+    STKUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(0));
 
     for (size_t j = 0; j < object_vector.size(); ++j) 
       object_vector[j].run();
@@ -305,7 +278,7 @@ UnitTestTimer::testUnit()
     for (size_t j = 0; j < object_vector.size(); ++j) 
       lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
 
-    CPPUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(object_vector.size()));
+    STKUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(object_vector.size()));
 
     for (size_t i = 1; i < 100; ++i) 
       for (size_t j = 0; j < object_vector.size(); ++j) 
@@ -317,7 +290,7 @@ UnitTestTimer::testUnit()
     for (size_t j = 0; j < object_vector.size(); ++j) 
       lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    CPPUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(100*object_vector.size()));
+    STKUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(100*object_vector.size()));
 
     stk::diag::printTimersTable(strout, unitTestTimer(), stk::diag::METRICS_ALL, true);
 

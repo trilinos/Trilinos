@@ -1,0 +1,7 @@
+INCLUDE(TPLDeclareLibraries)
+
+TPL_DECLARE_LIBRARIES( BinUtils
+  REQUIRED_HEADERS link.h bfd.h
+  REQUIRED_LIBS_NAMES bfd iberty
+  MUST_FIND_ALL_LIBS
+  )

@@ -35,3 +35,9 @@ PACKAGE_ADD_EXECUTABLE(
   DEPLIBS isorropia_test_utils
   COMM serial mpi
   )
+PACKAGE_ADD_EXECUTABLE(
+  redist_map
+  SOURCES redist_map.cpp
+  DEPLIBS isorropia_test_utils
+  COMM serial mpi
+  )

@@ -31,11 +31,12 @@
 
 namespace Teuchos {
 
+
 /*
 TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityDifferentNames ) {
   // Lists with different names should not be equal
-  Teuchos::ParameterList A("Tom");
-  Teuchos::ParameterList B("Bob");
+  ParameterList A("Tom");
+  ParameterList B("Bob");
   TEST_ASSERT( A != B );
   A.set("Hello","World");
   B.set("Hello","World");
@@ -43,8 +44,8 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityDifferentNames ) {
 }
 
 TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentNames ) {
-  Teuchos::ParameterList A("Julie");
-  Teuchos::ParameterList B("Shannon");
+  ParameterList A("Julie");
+  ParameterList B("Shannon");
   TEST_ASSERT( !haveSameValues(A,B) );
   A.set("Hello","World");
   B.set("Hello","World");
@@ -52,10 +53,12 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentNames ) {
 }
 */
 
-TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityWithEmpty ) {
+
+TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityWithEmpty )
+{
   // An empty list should not be equal to a full list
-  Teuchos::ParameterList A;
-  Teuchos::ParameterList B;
+  ParameterList A;
+  ParameterList B;
   TEST_ASSERT( A == B );
   A.set("Hello","World");
   TEST_ASSERT( A != B );
@@ -64,25 +67,29 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityWithEmpty ) {
 }
 
 
-TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityDifferentSublistNames ) {
+TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityDifferentSublistNames )
+{
   // Sublists with different names should not be equal
-  Teuchos::ParameterList A;
-  Teuchos::ParameterList B;
+  ParameterList A;
+  ParameterList B;
   A.sublist("Bob");
   B.sublist("Tom");
   TEST_ASSERT( A != B );
 }
 
 
-TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityDifferentLengths ) {
-  Teuchos::ParameterList A;
-  Teuchos::ParameterList B;
+TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityDifferentLengths )
+{
+  ParameterList A;
+  ParameterList B;
   A.set("A","a");
   A.set("B","b");
   A.set("C","c");
+  A.print();
 
   B.set("A","a");
   B.set("B","b");
+  B.print();
 
   TEST_ASSERT( A != B );
 
@@ -91,9 +98,10 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityDifferentLengths ) {
 }
 
 
-TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesWithEmpty ) {
-  Teuchos::ParameterList A;
-  Teuchos::ParameterList B;
+TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesWithEmpty )
+{
+  ParameterList A;
+  ParameterList B;
   TEST_ASSERT( haveSameValues(A,B) );
   A.set("Hello","World");
   TEST_ASSERT( !haveSameValues(A,B) );
@@ -102,14 +110,14 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesWithEmpty ) {
 }
 
 
-TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentSublistNames ) {
-  Teuchos::ParameterList A;
-  Teuchos::ParameterList B;
+TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentSublistNames )
+{
+  ParameterList A;
+  ParameterList B;
   A.sublist("Smith").set("People",4);
   B.sublist("Jones").set("People",4);
   TEST_ASSERT( !haveSameValues(A,B) ); // sublist names matter
 }
-
 
 
 } // namespace Teuchos

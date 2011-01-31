@@ -1,0 +1,2 @@
+dot  -Tpdf $1.dot > $1.pdf
+kpdf $1.pdf

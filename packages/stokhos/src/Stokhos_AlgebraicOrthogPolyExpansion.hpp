@@ -31,7 +31,7 @@
 #ifndef STOKHOS_ALGEBRAICORTHOGPOLYEXPANSION_HPP
 #define STOKHOS_ALGEBRAICORTHOGPOLYEXPANSION_HPP
 
-#include "Stokhos_OrthogPolyExpansion.hpp"
+#include "Stokhos_OrthogPolyExpansionBase.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -47,10 +47,11 @@ namespace Stokhos {
    */
   template <typename ordinal_type, typename value_type> 
   class AlgebraicOrthogPolyExpansion : 
-    public OrthogPolyExpansion<ordinal_type, value_type> {
+    public OrthogPolyExpansionBase<ordinal_type, value_type, 
+				   Stokhos::StandardStorage<ordinal_type, value_type> > {
   public:
 
-    typedef Stokhos::StandardStorage<ordinal_type, value_type>  node_type;
+    typedef Stokhos::StandardStorage<ordinal_type, value_type> node_type;
 
     //! Constructor
     AlgebraicOrthogPolyExpansion(
@@ -59,76 +60,15 @@ namespace Stokhos {
 
     //! Destructor
     virtual ~AlgebraicOrthogPolyExpansion() {}
-
-    //! Get expansion size
-    ordinal_type size() const { return sz; }
-
-    //! Get basis
-    Teuchos::RCP< const OrthogPolyBasis<ordinal_type, value_type> > 
-    getBasis() const {return basis; }
-
-    //! Get triple product
-    virtual Teuchos::RCP<const Sparse3Tensor<ordinal_type, value_type> >
-    getTripleProduct() const { return Cijk; }
  
     // Operations
-    void unaryMinus(
-      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
-
-    void plusEqual(
-      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const value_type& x);
-    void minusEqual(
-      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const value_type& x);
-    void timesEqual(
+    void divideEqual(
       OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
       const value_type& x);
     void divideEqual(
       OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const value_type& x);
-
-    void plusEqual(
-      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
-    void minusEqual(
-      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
-    void timesEqual(
-      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
-    void divideEqual(
-      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
       const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
 
-    void plus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-              const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-              const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void plus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-              const value_type& a, 
-              const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void plus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-              const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-              const value_type& b);
-    void minus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-               const OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
-               const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void minus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-               const value_type& a, 
-               const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void minus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-               const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-               const value_type& b);
-    void times(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-               const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-               const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void times(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-               const value_type& a, 
-               const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void times(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-               const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-               const value_type& b);
     void divide(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
                 const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
                 const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
@@ -189,28 +129,6 @@ namespace Stokhos {
                const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
     void atanh(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
                const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
-    void abs(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-             const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
-    void fabs(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-              const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
-    void max(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-             const OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
-             const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void max(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-             const value_type& a, 
-             const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void max(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-             const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-             const value_type& b);
-    void min(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-             const OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
-             const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void min(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-             const value_type& a, 
-             const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void min(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-             const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-             const value_type& b);
 
   private:
 
@@ -222,14 +140,8 @@ namespace Stokhos {
 
   protected:
 
-     //! Basis
-    Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> > basis;
-
-    //! Triple-product tensor
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk;
-
-    //! Expansions size
-    ordinal_type sz;
+    //! Short-hand for Cijk
+    typedef typename OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::Cijk_type Cijk_type;
     
   }; // class AlgebraicOrthogPolyExpansion
 

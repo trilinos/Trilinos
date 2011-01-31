@@ -59,6 +59,15 @@
 /* Define if want to build zoltan-tests */
 #undef HAVE_ZOLTAN_TESTS
 
+/* software host will be cygwin */
+#undef HOST_CYGWIN
+
+/* software host will be linux */
+#undef HOST_LINUX
+
+/* software host will be solaris */
+#undef HOST_SOLARIS
+
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
 
@@ -76,3 +85,12 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* define if ZOLTAN_ID_TYPE is unsigned int */
+#undef UNSIGNED_INT_GLOBAL_IDS
+
+/* define if ZOLTAN_ID_TYPE is unsigned long */
+#undef UNSIGNED_LONG_GLOBAL_IDS
+
+/* define if ZOLTAN_ID_TYPE is unsigned long long */
+#undef UNSIGNED_LONG_LONG_GLOBAL_IDS

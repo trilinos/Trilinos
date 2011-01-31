@@ -49,6 +49,13 @@ void clean_string(
 
 extern
 int in_list(
+  const ZOLTAN_ID_TYPE  search,	/* The value to search for */
+  const int  count,	/* Number of elements in vector to search */
+  ZOLTAN_ID_TYPE       *vector	/* The vector to search */
+);
+
+extern
+int in_list2(
   const int  search,	/* The value to search for */
   const int  count,	/* Number of elements in vector to search */
   int       *vector	/* The vector to search */
@@ -81,7 +88,8 @@ void sort_index (
   int indx[]
 );
 
-extern void sort2_index(int n, int ra[], int sa[], int indx[]);
+extern void sort_id_type_index ( int n, ZOLTAN_ID_TYPE ra[], ZOLTAN_ID_TYPE indx[]);
+extern void sort2_index(int n, ZOLTAN_ID_TYPE ra[], ZOLTAN_ID_TYPE sa[], int indx[]);
 extern void safe_free(void **ptr);
 
 #ifdef __cplusplus

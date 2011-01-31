@@ -41,7 +41,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 #
 
 PACKAGE_ADD_LIBRARY(
-  tepetraext
+  tpetraext
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS tpetra

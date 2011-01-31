@@ -391,6 +391,13 @@ ZOLTAN_ID_PTR gid;
 
   if (error == ZOLTAN_FATAL || error == ZOLTAN_MEMERR){
     sprintf(msg, "Partitioning routine returned code %d.", error);
+
+#ifdef HOST_LINUX
+    if ((error == ZOLTAN_MEMERR) && (Zoltan_Memory_Get_Debug() > 0)){
+      Zoltan_write_linux_meminfo(0, "State of /proc/meminfo after malloc failure\n", 0);
+    }
+#endif
+
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     goto End;
   }

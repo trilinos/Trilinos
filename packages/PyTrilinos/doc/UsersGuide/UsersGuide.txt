@@ -1,0 +1,24 @@
+=======================
+ PyTrilinos Users Guide
+=======================
+
+:Author:       Bill Spotz
+:Contact:      wfspotz@sandia.gov
+:Organization: Sandia National Laboratories
+:Date:         31 December 2010
+:Copyright:    Sandia Corporation, 2010
+
+:Abstract: PyTrilinos is a python interface to selected Trilinos
+    packages.  The Trilinos Project is a collection of over 30
+    software packages written primarily in C++ that provide linear,
+    nonlinear, and eigen solvers, along with preconditioners and
+    supporting utilities, that are object-oriented, parallel and
+    serial, for sparse and dense problems.  PyTrilinos is one of those
+    packages, and provides python interfaces to the most popular and
+    important Trilinos packages.  This Guide provides information for
+    users just getting started with PyTrilinos.
+
+.. contents::
+
+.. include:: Prerequisites.txt
+.. include:: BuildingAndInstalling.txt

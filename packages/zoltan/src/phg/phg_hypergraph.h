@@ -52,7 +52,7 @@ typedef struct {
   /* physical coordinates of each vertex, optional */
   int nDim;         /* number of coordinate dimensions for a vertex */
   double *coor;     /* |V| long by CoordinateDim */
-  int  *esize;      /* global edge size; nEdge long */
+  ZOLTAN_GNO_TYPE *esize;      /* global edge size; nEdge long */
 
   /* arrays to look up vertices given a hyperedge */
   int *hindex;      /* length nEdge+1 index into hvertex, last is nPins */
@@ -90,9 +90,9 @@ typedef struct {
                      (set in phg_build)
                      UVCUVC: I included here because nProc_x, nProc_y was here
                      for convenience.  */
-  int *dist_x;    /* distributions of vertices to processor columns. Vertices
-                   * dist_x[n] to dist_x[n+1]-1 are stored in col block n */
-  int *dist_y;    /* distribution of hyperedges to processor rows as above */    
+  ZOLTAN_GNO_TYPE *dist_x;    /* distributions of vertices to processor columns. Vertices
+                               * dist_x[n] to dist_x[n+1]-1 are stored in col block n */
+  ZOLTAN_GNO_TYPE *dist_y;    /* distribution of hyperedges to processor rows as above */    
 } HGraph;
 
 
@@ -141,19 +141,19 @@ typedef struct {
 
 struct Zoltan_HGraph {
   int nObj;                 /* Number of on-processor objects. */
-  int globalObj;            /* Global number of objects over all procs. */
+  ZOLTAN_GNO_TYPE globalObj;       /* Global number of objects over all procs. */
   int objWeightDim;         /* Number of weights per object (incl ADD_OBJ_WEIGHT) */
   float *objWeight;         /* weight */
-  int *objGNO;              /* object global number */
+  ZOLTAN_GNO_TYPE *objGNO;   /* object global number */
   ZOLTAN_ID_PTR objGID;     /* user's object global ID */
   ZOLTAN_ID_PTR objLID;     /* user's object local ID */
   int *numHEdges;           /* number of hyperedges containing object */
 
-  int *fixed;               /* vertex assignments for fixed vertices */
+  int *fixed;               /* size nObj, part assignments for fixed vertices */
 
   int GnRepartVtx;          /* Global number of repartition vtxs added for
                                LB_APPROACH=repartition. */
-  int GnRepartEdge;         /* Global number of repartition edges added for
+  ZOLTAN_GNO_TYPE GnRepartEdge;  /* Global number of repartition edges added for
                                LB_APPROACH=repartition. */
 
   int *Input_Parts;         /* Initial partition #s for on-processor objects */
@@ -166,18 +166,18 @@ struct Zoltan_HGraph {
      it includes only removed edges when Zoltan_PHG uses ZHG.
    */
   int nHedges;              /* # of hyperedges */
-  int globalHedges;         /* global number of hyperedges listed here */
-  int *edgeGNO;             /* edge global number */
+  ZOLTAN_GNO_TYPE globalHedges;    /* global number of hyperedges listed here */
+  ZOLTAN_GNO_TYPE *edgeGNO;        /* edge global number */
   int *Esize;               /* number of vertices in hyperedge */
   int edgeWeightDim;        /* Number of weights stored for each hyperedge */
   float *Ewgt;              /* Edge weights for each hyperedge */
-  int *pinGNO;             /* pin global number NEW */
+  ZOLTAN_GNO_TYPE *pinGNO;        /* pin global number NEW */
   int *Pin_Procs;           /* Process owning each pin  */
   int nPins;                /* total number of pins in listed edges */
-  int globalPins;           /* global number of pins */
+  ZOLTAN_GNO_TYPE globalPins;  /* global number of pins */
 
-  int nRecv_GNOs;           /* Number of GNOs in Recv_GNOs. */
-  int *Recv_GNOs;           /* Vertex GNOs of vtxs in 2D decomposition
+  int nRecv_GNOs;              /* Number of GNOs in Recv_GNOs. */
+  ZOLTAN_GNO_TYPE *Recv_GNOs;  /* Vertex GNOs of vtxs in 2D decomposition
                                received from other processors in row.
                                Used to fill buffer for Comm_Do_Reverse
                                with VtxPlan in building return lists. */

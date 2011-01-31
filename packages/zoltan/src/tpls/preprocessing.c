@@ -50,7 +50,7 @@ static int Zoltan_Preprocess_Add_Weight (ZZ*, ZOLTAN_Third_Graph * gr,
 static int
 Zoltan_Preprocess_Scale_Weights (ZOLTAN_Third_Graph *gr, float *flt_wgt, weighttype** rnd_wgt,
 				 int number, int ndim, int mode, ZZ* zz,
-				 char * name, int offset);
+				 char * name, indextype offset);
 static int
 Zoltan_Preprocess_Extract_Geom (ZZ *zz,
 				ZOLTAN_ID_PTR *global_ids,
@@ -70,7 +70,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
 				 ZOLTAN_Third_Geom *geo,
 				 ZOLTAN_Third_Vsize *vsp);
 
-static int scale_round_weights(float *fwgts, indextype *iwgts, int n, int dim,
+static int scale_round_weights(float *fwgts, weighttype *iwgts, int n, int dim,
 			       int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
 
 
@@ -93,22 +93,58 @@ int Zoltan_Preprocess_Graph(
 )
 {
   static char *yo = "Zoltan_Preprocess_Graph";
+  ZOLTAN_GNO_TYPE tmp_gno;
+  ZOLTAN_GNO_TYPE *gno_ptr1=NULL, *gno_ptr2=NULL;
+  int *int_ptr=NULL;
 
   int ierr;
   float *float_vwgt=NULL, *float_ewgts=NULL;
   char msg[256];
   ZG *graph = &(gr->graph);
-  int local;
+  int i, j, local;
   int *input_part = NULL;
+  ZOLTAN_GNO_TYPE *sum, nobj;
+  MPI_Datatype zoltan_gno_mpi_type;
 
   char add_obj_weight[MAX_PARAM_STRING_LEN+1];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+
+  if (zz->Debug_Level > 0 && zz->Debug_Proc == zz->Proc){
+    printf("Third party library index type is %ld-byte integer\n",sizeof(indextype));
+#ifdef TPL_INTEGRAL_WEIGHT
+    printf("Third party library weight type is %ld-byte integer\n",sizeof(weighttype));
+#else
+    printf("Third party library weight type is %ld-byte floating point value\n",sizeof(weighttype));
+#endif    
+
+#if __parmetis__ + __metis__ + __ptscotch__ + __scotch__ > 1
+    printf("Zoltan was compiled with support for: ");
+#if __parmetis__ == 1
+    printf("ParMetis ");
+#endif
+#if __metis__ == 1
+    printf("Metis ");
+#endif
+#if __scotch__ == 1
+    printf("Scotch ");
+#endif
+#if __ptscotch__ == 1
+    printf("PT-Scotch ");
+#endif
+    printf("\n");
+#endif
+
+    fflush(stdout);
+  }
+
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  gr->vtxdist = gr->xadj = gr->adjncy = NULL;
+  gr->xadj = NULL;
+  gr->vtxdist = gr->adjncy = NULL;
   gr->vwgt = gr->ewgts = NULL;
   float_vwgt = float_ewgts = NULL;
 
@@ -161,48 +197,136 @@ int Zoltan_Preprocess_Graph(
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
 
-  input_part = NULL;
-
   /* Build Graph for third party library data structures, or just get vtxdist. */
 
   if (gr->get_data) {
     ZOLTAN_FREE(&float_vwgt);
-    ZOLTAN_FREE(&input_part);
     ZOLTAN_FREE(global_ids);
     ZOLTAN_FREE(local_ids);
     local = IS_LOCAL_GRAPH(gr->graph_type);
 
     ierr = Zoltan_ZG_Build (zz, graph, local); /* Normal graph */
     CHECK_IERR;
-    ierr = Zoltan_ZG_Export (zz, graph,
-			     &gr->num_obj, &gr->num_obj, &gr->obj_wgt_dim, &gr->edge_wgt_dim,
-			     &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
-			     &float_ewgts, NULL);
-    /* Find info about the graph according to the distribution */
-    if (prt)
-      ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, &prt->input_part);
-    else
-      ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, NULL);
 
-/*     /\* Just to try *\/ */
-/*     if (prt) { */
-/*       prt->input_part = (int *)ZOLTAN_CALLOC(gr->num_obj, sizeof(int)); */
-/*     } */
+    ierr = Zoltan_ZG_Export (zz, graph,
+			     &tmp_gno, &gr->num_obj, &gr->obj_wgt_dim, &gr->edge_wgt_dim,
+                             &gno_ptr1, &int_ptr, &gno_ptr2,          /* vtxdist, xadj, adjncy */
+                             &gr->adjproc,
+			     &float_ewgts, NULL);
+
+
+    FIELD_DO_NOT_FREE_WHEN_DONE(graph->mtx.delete_flag, FIELD_PINWGT);   /* its pointer is in float_ewgts */
+
+    if (sizeof(indextype) != sizeof(int)){
+
+      /* Zoltan uses data type int , third party library uses indextype */
+
+      j = gr->num_obj + 1;
+      gr->xadj = (indextype *)ZOLTAN_MALLOC(sizeof(indextype) * j);
+      if (!gr->xadj)
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+
+      for (i=0; i < j; i++)
+        gr->xadj[i] = (indextype)int_ptr[i];
+
+    }
+    else{
+      gr->xadj = (indextype *)int_ptr;
+      FIELD_DO_NOT_FREE_WHEN_DONE(graph->mtx.delete_flag, FIELD_YSTART);
+    }
+
+    if (sizeof(indextype) != sizeof(ZOLTAN_GNO_TYPE)){
+
+      /* Zoltan uses data type ZOLTAN_GNO_TYPE, third party library uses indextype */
+      
+      j = zz->Num_Proc + 1;
+      gr->vtxdist = (indextype *)ZOLTAN_MALLOC(sizeof(indextype) * j);
+      if (!gr->vtxdist)
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+
+      for (i=0; i < j; i++)
+        gr->vtxdist[i] = (indextype)gno_ptr1[i];
+
+
+
+      j = (int)gr->xadj[gr->num_obj];
+      gr->adjncy = (indextype *)ZOLTAN_MALLOC(sizeof(indextype) * j);
+      if (j && !gr->adjncy)
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+
+      for (i=0; i < j; i++)
+        gr->adjncy[i] = (indextype)gno_ptr2[i];
+
+    }
+    else{
+      gr->vtxdist = (indextype *)gno_ptr1;
+      gr->adjncy= (indextype *)gno_ptr2;
+      FIELD_DO_NOT_FREE_WHEN_DONE(graph->mtx.delete_flag, FIELD_DIST_Y);
+      FIELD_DO_NOT_FREE_WHEN_DONE(graph->mtx.delete_flag, FIELD_PINGNO);
+    }
+
+    /* Find info about the graph according to the distribution */
+
+    /* Confusing: Here global_ids is set to point in to graph->mtx.mtx.yGID but below ... */
+
+    if (prt){
+
+      input_part = NULL;
+
+      ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, (int **)&input_part);
+
+      if (sizeof(indextype) != sizeof(int)){
+
+        /* Zoltan query function gets int data type, but TPL structures store indextype */
+
+        prt->input_part = (indextype *) ZOLTAN_MALLOC(sizeof(indextype) * gr->num_obj);
+        if (gr->num_obj > 0 && !prt->input_part)
+          ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+
+        for (i=0; i < gr->num_obj; i++){
+          prt->input_part[i] = (indextype)input_part[i];
+        }
+        ZOLTAN_FREE(&input_part);
+      }
+      else{
+        prt->input_part = (indextype *)input_part;
+      }
+    }
+    else{
+      ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, NULL);
+    }
+
+    FIELD_DO_NOT_FREE_WHEN_DONE(graph->mtx.delete_flag, FIELD_YGID); 
 
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Build_Graph returned error.");
+      ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Preprocess_Graph returned error.");
     }
   }
   else{ /* Only geometry */
-    int i;
+
+    /* Confusing: Here global_ids will point to memory allocated by Zoltan_Get_Obj_List */
+
+    input_part = NULL;
+
     ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
 			       gr->obj_wgt_dim, &float_vwgt, &input_part);
     CHECK_IERR;
-    gr->graph.mtx.mtx.yGID = *global_ids; /* KDD NEEDED TO PREVENT MEMORY LEAK 
-                                                 FOR PARTGEOM METHOD */
 
     if (prt) {
-      prt->input_part = input_part;
+      if (sizeof(indextype) != sizeof(int)){
+        /* Zoltan query function gets int data type, but TPL structures store indextype */
+        prt->input_part = (indextype *) ZOLTAN_MALLOC(gr->num_obj*sizeof(indextype));
+        if (gr->num_obj > 0 && prt->input_part == NULL) 
+          ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+
+        for (i=0; i < gr->num_obj; i++){
+          prt->input_part[i] = (indextype)input_part[i];
+        }
+        ZOLTAN_FREE(&input_part);
+      }
+      else{
+        prt->input_part = (indextype *)input_part;
+      }
     }
     else if (input_part) { /* Ordering, dont need part */
       ZOLTAN_FREE(&input_part);
@@ -213,15 +337,20 @@ int Zoltan_Preprocess_Graph(
     }
 
     /* No graph but still needs vtxdist*/
-    gr->vtxdist = (int*) ZOLTAN_MALLOC ((zz->Num_Proc+1)*sizeof(int));
+    gr->vtxdist = (indextype*) ZOLTAN_MALLOC ((zz->Num_Proc+1)*sizeof(indextype));
     if (gr->vtxdist == NULL)
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
 
     gr->vtxdist[0] = 0;
-    MPI_Allgather(&gr->num_obj, 1, MPI_INT, gr->vtxdist+1, 1, MPI_INT, zz->Communicator);
+
+    sum = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * zz->Num_Proc);
+    nobj = (ZOLTAN_GNO_TYPE )gr->num_obj;
+    MPI_Allgather(&nobj, 1, zoltan_gno_mpi_type, sum, 1, zoltan_gno_mpi_type, zz->Communicator);
+
     for (i=1 ; i <= zz->Num_Proc ; ++i) {
-      gr->vtxdist[i] += gr->vtxdist[i-1];
+      gr->vtxdist[i] = (gr->vtxdist[i-1] + (indextype)sum[i-1]);
     }
+    ZOLTAN_FREE(&sum);
   }
 
   if (prt) {
@@ -262,7 +391,7 @@ int Zoltan_Preprocess_Graph(
 
   /* Get edge weights if needed */
   if (gr->get_data)
-    gr->num_edges = gr->xadj[gr->num_obj];
+    gr->num_edges = (int)gr->xadj[gr->num_obj];
   else {
     gr->num_edges = 0;
     gr->edge_wgt_dim = 0;
@@ -332,7 +461,6 @@ int Zoltan_Preprocess_Graph(
 
     ierr = Zoltan_Verify_Graph(zz->Communicator, gr->vtxdist, gr->xadj, gr->adjncy, gr->vwgt,
 	      gr->ewgts, gr->obj_wgt_dim, gr->edge_wgt_dim, gr->graph_type, gr->check_graph, flag);
-
   }
 
  End:
@@ -405,7 +533,7 @@ Zoltan_Preprocess_Add_Weight (ZZ *zz,
 static int
 Zoltan_Preprocess_Scale_Weights (ZOLTAN_Third_Graph *gr, float *flt_wgt, weighttype** rnd_wgt,
 				 int number, int ndim, int mode, ZZ* zz,
-				 char * name, int offset)
+				 char * name, indextype offset)
 {
   static char * yo = "Zoltan_Preprocess_Scale_Weights";
   int ierr = ZOLTAN_OK;
@@ -420,7 +548,7 @@ Zoltan_Preprocess_Scale_Weights (ZOLTAN_Third_Graph *gr, float *flt_wgt, weightt
     for (i99=0; i99 < (number <3 ? number : 3); i99++){
       for (k=0; k<gr->obj_wgt_dim; k++)
 	sprintf(msg+10*k, "%.9f ", flt_wgt[i99*gr->obj_wgt_dim+k]);
-      printf("[%1d] Debug: before scaling weights for %s %d = %s\n",
+      printf("[%1d] Debug: before scaling weights for %s " TPL_IDX_SPEC " = %s\n",
 	     zz->Proc, name, offset+i99, msg);
     }
   }
@@ -442,8 +570,8 @@ Zoltan_Preprocess_Scale_Weights (ZOLTAN_Third_Graph *gr, float *flt_wgt, weightt
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
     for (i99=0; i99 < (number < 3 ? number : 3); i99++){
       for (k=0; k<gr->obj_wgt_dim; k++)
-	sprintf(msg+10*k, "%9d ", (*rnd_wgt)[i99*gr->obj_wgt_dim+k]);
-      printf("[%1d] Debug: scaled weights for %s %d = %s\n",
+	sprintf(msg+10*k, TPL_WGT_SPEC " ", (*rnd_wgt)[i99*gr->obj_wgt_dim+k]);
+      printf("[%1d] Debug: scaled weights for %s " TPL_IDX_SPEC " = %s\n",
 	     zz->Proc, name, offset+i99, msg);
     }
   }
@@ -500,6 +628,7 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
   int num_lid_entries = zz->Num_LID;
   int ierr= ZOLTAN_OK;
   int i;
+  int *buf = NULL;
 
   if (gr->obj_wgt_dim)
     vsp->vsize_malloc = 0;
@@ -515,16 +644,36 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
       /* Not enough space */
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
+
   if (zz->Get_Obj_Size_Multi) {
+
+    if (sizeof(indextype) == sizeof(int) ){
+      buf = (int *)ZOLTAN_MALLOC(sizeof(int) * gr->num_obj);
+      if (gr->num_obj && !buf){
+        ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+      }
+    }
+    else {
+      buf = (int *)vsp->vsize;
+    }
+
     zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data,
 			   num_gid_entries, num_lid_entries, gr->num_obj,
-			   *global_ids, *local_ids, vsp->vsize, &ierr);
+			   *global_ids, *local_ids, buf, &ierr);
+
+    if (sizeof(indextype) == sizeof(int) ){
+      for (i=0; i < gr->num_obj; i++){
+        vsp->vsize[i] = (indextype)buf[i];
+      }
+      ZOLTAN_FREE(&buf);
+    }
+
   }
   else if (zz->Get_Obj_Size) {
     ZOLTAN_ID_PTR lid;
     for (i=0; i<gr->num_obj; i++){
       lid = (num_lid_entries ? &((*local_ids)[i*num_lid_entries]) : NULL);
-      vsp->vsize[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data,
+      vsp->vsize[i] = (indextype)zz->Get_Obj_Size(zz->Get_Obj_Size_Data,
 				  num_gid_entries, num_lid_entries,
 				  &((*global_ids)[i*num_gid_entries]),
 				  lid, &ierr);
@@ -636,7 +785,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
  * rounding to zero weights.
  */
 
-static int scale_round_weights(float *fwgts, indextype *iwgts, int n, int dim,
+static int scale_round_weights(float *fwgts, weighttype *iwgts, int n, int dim,
 		 int mode, int max_wgt_sum, int debug_level, MPI_Comm comm)
 {
   int i, j, tmp, ierr, proc;
@@ -651,7 +800,7 @@ static int scale_round_weights(float *fwgts, indextype *iwgts, int n, int dim,
   if (mode == 0) {
     /* No scaling; just convert to int */
     for (i=0; i<n*dim; i++){
-      iwgts[i] = (int) ceil((double) fwgts[i]);
+      iwgts[i] = (weighttype) ceil((double) fwgts[i]);
     }
   }
   else{
@@ -744,7 +893,7 @@ static int scale_round_weights(float *fwgts, indextype *iwgts, int n, int dim,
       /* Convert weights to positive integers using the computed scale factor */
       for (i=0; i<n; i++){
 	for (j=0; j<dim; j++){
-	  iwgts[i*dim+j] = (int) ceil((double) fwgts[i*dim+j]*scale[j]);
+	  iwgts[i*dim+j] = (weighttype) ceil((double) fwgts[i*dim+j]*scale[j]);
 	}
       }
 
@@ -802,7 +951,7 @@ give_proc (indextype vertex, const indextype *vtxdist, int numProc, int *myproc)
     return (*myproc);
   }
 
-  currentproc = vertex / (vtxdist[1]-vtxdist[0]);  /* Assume that vertices are balanced */
+  currentproc = (int)(vertex / (vtxdist[1]-vtxdist[0]));  /* Assume that vertices are balanced */
 
   if (currentproc >= numProc)
     currentproc = numProc - 1;

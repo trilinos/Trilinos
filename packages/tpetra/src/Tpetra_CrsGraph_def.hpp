@@ -34,8 +34,10 @@
 #include <Kokkos_NodeTrace.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_NullIteratorTraits.hpp>
+#include <Teuchos_as.hpp>
 #include <algorithm>
 #include <string>
+#include <utility>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_CrsGraph_decl.hpp"
@@ -880,22 +882,39 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <ELocalGlobal lg>
+  template <ELocalGlobal lg, ELocalGlobal I>
   size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::insertIndices(RowInfo rowinfo, const SLocalGlobalViews &newInds)
   {
     Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg; (void)cta_lg;
     size_t numNewInds = 0;
     if (lg == GlobalIndices) {
       ArrayView<const GlobalOrdinal> new_ginds = newInds.ginds;
-      ArrayView<GlobalOrdinal> gind_view = getGlobalViewNonConst(rowinfo);
       numNewInds = new_ginds.size();
-      std::copy(new_ginds.begin(), new_ginds.end(), gind_view.begin()+rowinfo.numEntries);
+      if (I == GlobalIndices) {
+        ArrayView<GlobalOrdinal> gind_view = getGlobalViewNonConst(rowinfo);
+        std::copy(new_ginds.begin(), new_ginds.end(), gind_view.begin()+rowinfo.numEntries);
+      }
+      else if (I == LocalIndices) {
+        ArrayView<LocalOrdinal> lind_view = getLocalViewNonConst(rowinfo);
+        typename ArrayView<const GlobalOrdinal>::iterator         in = new_ginds.begin();
+        const typename ArrayView<const GlobalOrdinal>::iterator stop = new_ginds.end();
+        typename ArrayView<LocalOrdinal>::iterator out = lind_view.begin()+rowinfo.numEntries;
+        while (in != stop) {
+          (*out++) = colMap_->getLocalElement(*in++);
+        }
+      }
     }
     else if (lg == LocalIndices) {
       ArrayView<const LocalOrdinal> new_linds = newInds.linds;
-      ArrayView<LocalOrdinal> lind_view = getLocalViewNonConst(rowinfo);
       numNewInds = new_linds.size();
-      std::copy(new_linds.begin(), new_linds.end(), lind_view.begin()+rowinfo.numEntries);
+      if (I == LocalIndices) {
+        ArrayView<LocalOrdinal> lind_view = getLocalViewNonConst(rowinfo);
+        std::copy(new_linds.begin(), new_linds.end(), lind_view.begin()+rowinfo.numEntries);
+      }
+      else if (I == GlobalIndices) {
+        // not needed yet
+        TEST_FOR_EXCEPT(true);
+      }
     }
     if (getProfileType() == StaticProfile) {
       rowEnds_[rowinfo.localRow] += numNewInds;
@@ -913,10 +932,10 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <ELocalGlobal lg, class IterO, class IterN>
+  template <ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::insertIndicesAndValues(RowInfo rowinfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals)
   {
-    size_t numNewInds = insertIndices<lg>(rowinfo,newInds);
+    size_t numNewInds = insertIndices<lg,I>(rowinfo,newInds);
     std::copy( newVals, newVals + numNewInds, rowVals + rowinfo.numEntries );
   }
 
@@ -1108,7 +1127,7 @@ namespace Tpetra {
     bool found = true;
     // get a view of the row, if it wasn't passed by the caller
     ArrayView<const GlobalOrdinal> rowinds = getGlobalView(rowinfo);
-    IT rptr, locptr;
+    IT rptr, locptr = Teuchos::NullIteratorTraits<IT>::getNull();
     rptr = rowinds.begin();
     if (isSorted()) {
       // binary search
@@ -1483,7 +1502,7 @@ namespace Tpetra {
       }
       SLocalGlobalViews inds_view;
       inds_view.linds = f_inds(0,numFilteredEntries);
-      insertIndices<LocalIndices>(rowInfo, inds_view);
+      insertIndices<LocalIndices,LocalIndices>(rowInfo, inds_view);
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION_CLASS_FUNC(indicesAreAllocated() == false || isLocallyIndexed() == false, std::logic_error,
@@ -1536,7 +1555,7 @@ namespace Tpetra {
           // update allocation only as much as necessary
           rowInfo = updateAlloc<GlobalIndices>(rowInfo, newNumEntries);
         }
-        insertIndices<GlobalIndices>(rowInfo, inds_view);
+        insertIndices<GlobalIndices,GlobalIndices>(rowInfo, inds_view);
 #ifdef HAVE_TPETRA_DEBUG
         {
           const size_t chkNewNumEntries = getNumEntriesInLocalRow(myRow);
@@ -1658,7 +1677,8 @@ namespace Tpetra {
            nlr != NLRs.end(); ++nlr, ++id) {
         NLR2Id[*nlr] = *id;
         localNeighbors[*id] = 1;
-        IdsAndRows.push_back(make_pair<int,GlobalOrdinal>(*id,*nlr));
+        // IdsAndRows.push_back(make_pair<int,GlobalOrdinal>(*id,*nlr));
+        IdsAndRows.push_back(make_pair(*id,*nlr));
       }
       for (int j=0; j<numImages; ++j) {
         if (localNeighbors[j]) {
@@ -2385,7 +2405,7 @@ namespace Tpetra {
     for (size_t dec=10; dec<getGlobalNumRows(); dec *= 10) {
       ++width;
     }
-    width = std::max<size_t>(width,11) + 2;
+    width = std::max<size_t>(width,Teuchos::as<size_t>(11)) + 2;
     Teuchos::OSTab tab(out);
     //    none: print nothing
     //     low: print O(1) info from node 0

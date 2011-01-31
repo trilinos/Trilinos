@@ -6,40 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cppunit/TestCase.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
-
 #include <iostream>
 #include <stdexcept>
 
 #include <mpi.h>
 
-// #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/util/Marshal.hpp>
 
-// using namespace use_case;
-
-
-class UnitTestMarshal : public CppUnit::TestCase {
-private:
-  CPPUNIT_TEST_SUITE(UnitTestMarshal);
-  CPPUNIT_TEST(testUnit);
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-  void setUp()
-  {}
-  
-  void tearDown()
-  {}
-
-  void testUnit();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(UnitTestMarshal);
-
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 struct S1
 {
@@ -110,12 +84,10 @@ test(const T &t_in)
   T t_out;
   min >> t_out;
 
-  CPPUNIT_ASSERT_EQUAL(t_in, t_out);
+  STKUNIT_ASSERT_EQUAL(t_in, t_out);
 }
 
-
-void
-UnitTestMarshal::testUnit()
+STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 {
   // Marshal/Unmarshal POD
   {
@@ -148,11 +120,11 @@ UnitTestMarshal::testUnit()
 
     min >> s_in >> i_in;
 
-    CPPUNIT_ASSERT_EQUAL(min.size(), mout.size());
-    CPPUNIT_ASSERT(mout);
-    CPPUNIT_ASSERT(min);
-    CPPUNIT_ASSERT_EQUAL(s_in, s_out);
-    CPPUNIT_ASSERT_EQUAL(i_in, i_out);
+    STKUNIT_ASSERT_EQUAL(min.size(), mout.size());
+    STKUNIT_ASSERT(mout);
+    STKUNIT_ASSERT(min);
+    STKUNIT_ASSERT_EQUAL(s_in, s_out);
+    STKUNIT_ASSERT_EQUAL(i_in, i_out);
   }
 
   // Marshal/Unmarshal locally defined class/struct
@@ -166,8 +138,8 @@ UnitTestMarshal::testUnit()
 
     min >> s_in;
 
-    CPPUNIT_ASSERT_EQUAL(s_in.m_string, s_out.m_string);
-    CPPUNIT_ASSERT_EQUAL(s_in.m_int, s_out.m_int);
+    STKUNIT_ASSERT_EQUAL(s_in.m_string, s_out.m_string);
+    STKUNIT_ASSERT_EQUAL(s_in.m_int, s_out.m_int);
   }
 
   // Marshal/Unmarshal std::vector of S2's (uses the stk namespace operator>> and operator<<)
@@ -184,7 +156,7 @@ UnitTestMarshal::testUnit()
     
     min >> v_in;
 
-    CPPUNIT_ASSERT_EQUAL(v_in[0].m_string, v_out[0].m_string);
+    STKUNIT_ASSERT_EQUAL(v_in[0].m_string, v_out[0].m_string);
   }
 
   // Marshal/Unmarshal error from type mismatch
@@ -200,7 +172,7 @@ UnitTestMarshal::testUnit()
     std::string s_in;
     double x_in;
 
-    CPPUNIT_ASSERT_THROW(min >> s_in >> x_in, std::runtime_error);
+    STKUNIT_ASSERT_THROW(min >> s_in >> x_in, std::runtime_error);
   }
   
   // Marshal error for STL container mismatch
@@ -215,7 +187,7 @@ UnitTestMarshal::testUnit()
     stk::Marshal min(mout.str());
     std::list<S1> v_in;
     
-    CPPUNIT_ASSERT_THROW(min >> v_in, std::runtime_error);
+    STKUNIT_ASSERT_THROW(min >> v_in, std::runtime_error);
   }
   
   // Marshal error for STL container mismatch
@@ -230,7 +202,7 @@ UnitTestMarshal::testUnit()
     stk::Marshal min(mout.str());
     std::vector<S1> v_in;
     
-    CPPUNIT_ASSERT_THROW(min >> v_in, std::runtime_error);
+    STKUNIT_ASSERT_THROW(min >> v_in, std::runtime_error);
   }
   
   // Marshal without error for STL container mismatch
@@ -245,6 +217,6 @@ UnitTestMarshal::testUnit()
     stk::Marshal min(mout.str());
     std::list<S1> v_in;
     
-    CPPUNIT_ASSERT_NO_THROW(min >> v_in);
+    STKUNIT_ASSERT_NO_THROW(min >> v_in);
   }
 }

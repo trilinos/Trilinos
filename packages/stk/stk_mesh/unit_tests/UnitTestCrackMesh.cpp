@@ -6,66 +6,77 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stdexcept>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
+using stk::mesh::fem::NODE_RANK;
+
 //----------------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy )
+STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy2D )
 {
+  // In 2D, build a fresh 3x3 mesh each loop iteration, destroying a different
+  // single element each time.
+
   stk::ParallelMachine pm = MPI_COMM_WORLD ;
   const unsigned p_rank = stk::parallel_machine_rank( pm );
 
-  const unsigned nx = 3 , ny = 3 , nz = 3 ;
+  const unsigned nx = 3 , ny = 3 ;
 
-  // In 2D, build a fresh 3x3 mesh each loop iteration, destroying a different
-  // single element each time.
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
   for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
     stk::mesh::fixtures::QuadFixture fixture( pm , nx , ny );
-    fixture.meta_data.commit();
+    fixture.m_meta_data.commit();
     fixture.generate_mesh();
 
-    fixture.bulk_data.modification_begin();
+    fixture.m_bulk_data.modification_begin();
 
     stk::mesh::Entity * elem = fixture.elem( ix , iy );
 
     if ( elem && p_rank == elem->owner_rank() ) {
       stk::mesh::Entity * tmp = elem ;
-      fixture.bulk_data.destroy_entity( tmp );
+      fixture.m_bulk_data.destroy_entity( tmp );
     }
 
-    fixture.bulk_data.modification_end();
+    fixture.m_bulk_data.modification_end();
 
     if ( elem ) {
       STKUNIT_EXPECT_TRUE ( elem->log_query() == stk::mesh::EntityLogDeleted );
     }
   }
   }
+}
 
+STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy3D )
+{
   // In 3D, build a 3x3x3 mesh each loop iteration, destroying a different
   // single element each time.
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD ;
+  const unsigned p_rank = stk::parallel_machine_rank( pm );
+
+  const unsigned nx = 3 , ny = 3 , nz = 3 ;
+
   for ( unsigned iz = 0 ; iz < nz ; ++iz ) {
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
   for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
     stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-    fixture.meta_data.commit();
+    fixture.m_meta_data.commit();
     fixture.generate_mesh();
 
-    fixture.bulk_data.modification_begin();
+    fixture.m_bulk_data.modification_begin();
 
     stk::mesh::Entity * elem = fixture.elem( ix , iy , iz );
 
     if ( elem && p_rank == elem->owner_rank() ) {
       stk::mesh::Entity * tmp = elem ;
-      fixture.bulk_data.destroy_entity( tmp );
+      fixture.m_bulk_data.destroy_entity( tmp );
     }
 
-    fixture.bulk_data.modification_end();
+    fixture.m_bulk_data.modification_end();
 
     if ( elem ) {
       STKUNIT_EXPECT_TRUE ( elem->log_query() == stk::mesh::EntityLogDeleted );
@@ -85,10 +96,10 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   // Make the hex fixture
 
   stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2,2,2 );
-  fixture.meta_data.commit();
+  fixture.m_meta_data.commit();
   fixture.generate_mesh();
 
-  stk::mesh::BulkData & mesh = fixture.bulk_data;
+  stk::mesh::BulkData & mesh = fixture.m_bulk_data;
 
   // Hardwire which entities are being modified. Note that not every
   // process will know about these entities
@@ -124,8 +135,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
     const stk::mesh::PartVector no_parts;
 
     // create a new node
-    stk::mesh::Entity & new_node =
-      mesh.declare_entity(fixture.top_data.node_rank, new_node_id, no_parts);
+    stk::mesh::Entity & new_node = mesh.declare_entity(NODE_RANK, new_node_id, no_parts);
 
     // destroy right_element's relation to old_node, replace with a
     // relation to new node

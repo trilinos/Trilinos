@@ -712,15 +712,37 @@ color(Teuchos::ParameterList& zoltanParamList,
 
   precompute();
 
-
   //Generate Load Balance
   int  num_gid_entries = 1;
 
-
   // Use ColMap to have directly answers for columns !
   properties.resize(num_obj_);
-  int err = zz_->Color(num_gid_entries, num_obj_,
- 		      (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements(), &properties[0]);
+
+  // TODO64 - This only works if the global IDs fit in an int.
+
+  ZOLTAN_ID_TYPE *gids=NULL;
+
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
+    gids = new ZOLTAN_ID_TYPE [num_obj_];
+    if (num_obj_ && ! gids){
+      throw Isorropia::Exception("Out of memory in ZoltanLibClass::color()");
+      return -1;
+    }
+
+    int *intIds = queryObject_->RowMap().MyGlobalElements();
+    for (int i=0; i < num_obj_; i++){
+      gids[i] = (ZOLTAN_ID_TYPE)intIds[i];
+    } 
+  }
+  else{
+    gids = (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements();
+  }
+
+  int err = zz_->Color(num_gid_entries, num_obj_, gids, &properties[0]);
+
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
+    delete [] gids;
+  }
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing coloring with Zoltan");
@@ -743,8 +765,32 @@ order(Teuchos::ParameterList& zoltanParamList,
   int num_gid_entries = 1;
 
   properties.resize(num_obj_);
-  int err = zz_->Order(num_gid_entries, num_obj_,
-		       (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements(), &properties[0], NULL);
+
+  // TODO64 - This only works if the global IDs fit in an int.
+
+  ZOLTAN_ID_TYPE *gids=NULL;
+
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
+    gids = new ZOLTAN_ID_TYPE [num_obj_];
+    if (num_obj_ && ! gids){
+      throw Isorropia::Exception("Out of memory in ZoltanLibClass::order()");
+      return -1;
+    }
+
+    int *intIds = queryObject_->RowMap().MyGlobalElements();
+    for (int i=0; i < num_obj_; i++){
+      gids[i] = (ZOLTAN_ID_TYPE)intIds[i];
+    } 
+  }
+  else{
+    gids = (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements();
+  }
+
+  int err = zz_->Order(num_gid_entries, num_obj_, gids, &properties[0], NULL);
+
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
+    delete [] gids;
+  }
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing ordering with Zoltan");

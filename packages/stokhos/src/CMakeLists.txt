@@ -65,6 +65,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_BasisFactory.hpp
   Stokhos_BasisFactoryImp.hpp
+  Stokhos_SparseArray.hpp
   Stokhos_Sparse3Tensor.hpp
   Stokhos_Sparse3TensorImp.hpp
   Stokhos_Dense3Tensor.hpp
@@ -85,6 +86,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_OrthogPolyApprox.hpp
   Stokhos_OrthogPolyApproxImp.hpp
   Stokhos_OrthogPolyExpansion.hpp
+  Stokhos_OrthogPolyExpansionBase.hpp
+  Stokhos_OrthogPolyExpansionBaseImp.hpp
   Stokhos_ConstantOrthogPolyExpansion.hpp
   Stokhos_ConstantOrthogPolyExpansionImp.hpp
   Stokhos_AlgebraicOrthogPolyExpansion.hpp
@@ -99,6 +102,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_ExpansionFactoryImp.hpp
   Stokhos_StieltjesGramSchmidtBuilder.hpp
   Stokhos_StieltjesGramSchmidtBuilderImp.hpp
+  Stokhos_EpetraSparse3Tensor.hpp
+  Stokhos_ParallelData.hpp
   Stokhos_SGOperator.hpp
   Stokhos_MatrixFreeOperator.hpp
   Stokhos_KLMatrixFreeOperator.hpp
@@ -140,6 +145,8 @@ SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
   Stokhos_SparseGridQuadrature.cpp
   Stokhos_AnisoSparseGridQuadrature.cpp
+  Stokhos_EpetraSparse3Tensor.cpp
+  Stokhos_ParallelData.cpp
   Stokhos_MatrixFreeOperator.cpp
   Stokhos_KLMatrixFreeOperator.cpp
   Stokhos_KLReducedMatrixFreeOperator.cpp
@@ -177,6 +184,10 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_ETPCE_OrthogPolyImp.hpp
     sacado/Sacado_ETPCE_OrthogPolyTraits.hpp
     sacado/Sacado_ETPCE_OrthogPolyOps.hpp
+    )
+  SET(SOURCES ${SOURCES}
+    sacado/Sacado_PCE_OrthogPoly.cpp
+    sacado/Sacado_ETPCE_OrthogPoly.cpp
     )
 ENDIF()
 

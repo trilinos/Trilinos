@@ -276,12 +276,12 @@ static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
    unsigned int start[2], startbits=0;
    unsigned int intersect_hi, intersect_lo;
    double t;
-   int level, quadrant, i;                    /* loop counters */
+   unsigned i, level, quadrant;                    /* loop counters */
    static const unsigned int *dk[]
     = {data2d,  data2d  +4, data2d  +8, data2d  +12};
    static const unsigned int *st[]
     = {state2d, state2d +4, state2d +8, state2d +12};
-   static const int MAXLEVEL = 28;  /* only 56 significant bits, 28 per dimension */
+   static const unsigned int MAXLEVEL = 28;  /* only 56 significant bits, 28 per dimension */
 
    /* convert floating normalized, intersected query box corners to integers */
    qlox = (unsigned int) (lquerybox[0] * (double) IMAX);
@@ -404,7 +404,7 @@ static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
    unsigned int start[2], startbits = 0;
    unsigned int intersect_hi, intersect_lo;
    double t;
-   int level, quadrant, i;
+   unsigned i, quadrant, level;
    static const unsigned int *dk[] =
       {data3d,      data3d +8,   data3d +16,  data3d +24,
        data3d +32,  data3d +40,  data3d +48,  data3d +56,
@@ -421,7 +421,7 @@ static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
        state3d +128, state3d +136, state3d +144, state3d +152,
        state3d +160, state3d +168, state3d +176, state3d +184};
 
-   static const int MAXLEVEL = 18;  /* only 56 significant bits, 18 per dimension */
+   static const unsigned int MAXLEVEL = 18;  /* only 56 significant bits, 18 per dimension */
 
    /* convert floating query box corners to integers */
    qlox = (unsigned int) (lquerybox[0] * (double) IMAX);

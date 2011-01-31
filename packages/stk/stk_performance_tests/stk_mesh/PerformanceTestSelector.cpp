@@ -14,7 +14,7 @@
 
 namespace {
 
-  using stk::mesh::fixtures::VariableSelectorFixture ;
+using stk::mesh::fixtures::VariableSelectorFixture ;
 
 }
 

@@ -285,8 +285,9 @@ int Zoltan_HG_Create_Mirror (
 )
 {
   int inlength, outlength;   /* input/output array lengths */
-  int *index, *data;         /* pointers to input information */
-  int *outindex, *outdata;
+  int *index;         /* pointers to input information */
+  int *outindex;
+  int *data, *outdata;
   char *yo = "Zoltan_HG_Create_Mirror";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -504,7 +505,7 @@ char *yo = "Zoltan_HG_Print";
   /* Print Vertex Info */
   fprintf(fp, "%s Vertices:  (edges)\n", str);
   for (i = 0; i < hg->nVtx; i++) {
-    fprintf(fp, "%d (%d) in part %d:  ", 
+    fprintf(fp, "%d (" ZOLTAN_GNO_SPEC ") in part %d:  ", 
             i, VTX_LNO_TO_GNO(hg, i), (parts ? parts[i] : -1));
     fprintf(fp, "(");
     for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)
@@ -516,7 +517,7 @@ char *yo = "Zoltan_HG_Print";
     for (j = 0; j < num_vwgt; j++) sum[j] = 0;
     fprintf(fp, "%s Vertices: [weights])\n", str);
     for (i = 0; i < hg->nVtx; i++) {
-      fprintf(fp, "%d (%d):  [", i, VTX_LNO_TO_GNO(hg, i));
+      fprintf(fp, "%d (" ZOLTAN_GNO_SPEC "):  [", i, VTX_LNO_TO_GNO(hg, i));
       for (j = 0; j < num_vwgt; j++) {
         fprintf(fp, "%f ", hg->vwgt[i*num_vwgt + j]);
         sum[j] += hg->vwgt[i*num_vwgt + j];
@@ -531,7 +532,7 @@ char *yo = "Zoltan_HG_Print";
   /* Print Hyperedge Info */
   fprintf(fp, "%s Hyperedges:  (vertices)\n", str);
   for (i = 0; i < hg->nEdge; i++) {
-    fprintf(fp, "%d (%d):  ", i, EDGE_LNO_TO_GNO(hg, i));
+    fprintf(fp, "%d (" ZOLTAN_GNO_SPEC "):  ", i, EDGE_LNO_TO_GNO(hg, i));
     fprintf(fp, "(");
     for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
       fprintf(fp, "%d ", hg->hvertex[j]);
@@ -542,7 +543,7 @@ char *yo = "Zoltan_HG_Print";
     for (j = 0; j < num_ewgt; j++) sum[j] = 0;
     fprintf(fp, "%s Hyperedge Weights:  [weights]\n", str);
     for (i = 0; i < hg->nEdge; i++) {
-      fprintf(fp, "%d (%d):  ", i, EDGE_LNO_TO_GNO(hg, i));
+      fprintf(fp, "%d (" ZOLTAN_GNO_SPEC "):  ", i, EDGE_LNO_TO_GNO(hg, i));
       fprintf(fp, "[");
       for (j = 0; j < num_ewgt; j++) {
         fprintf(fp, "%f ", hg->ewgt[i*num_ewgt + j]);
@@ -574,6 +575,7 @@ void Zoltan_HG_HGraph_Print(
  * Lots of output; synchronized across processors, so is a bottleneck.
  */
   int i;
+int p;
   int num_gid = zz->Num_GID;
   int num_lid = zz->Num_LID;
   char *yo = "Zoltan_HG_HGraph_Print";
@@ -583,7 +585,12 @@ void Zoltan_HG_HGraph_Print(
     return;
   }
 
+#if 0
   Zoltan_Print_Sync_Start (zz->Communicator, 1);
+#else
+for (p=0; p < zz->Num_Proc; p++){
+  if (p == zz->Proc){
+#endif
 
   /* Print Vertex Info */
   fprintf (fp, "%s Proc %d\n", yo, zz->Proc);
@@ -597,7 +604,19 @@ void Zoltan_HG_HGraph_Print(
   }
   Zoltan_HG_Print(zz, hg, parts, fp, "Build");
   fflush(fp);
+
+#if 0
   Zoltan_Print_Sync_End(zz->Communicator, 1);
+#else
+  }
+  MPI_Barrier(zz->Communicator);
+  MPI_Barrier(zz->Communicator);
+  MPI_Barrier(zz->Communicator);
+}
+MPI_Barrier(zz->Communicator);
+MPI_Barrier(zz->Communicator);
+MPI_Barrier(zz->Communicator);
+#endif
 }
 
 /****************************************************************************/

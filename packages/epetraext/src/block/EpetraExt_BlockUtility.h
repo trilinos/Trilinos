@@ -50,7 +50,25 @@ class BlockUtility {
 	\param In
 	RowIndices - Defines the indices for local block rows
   */
+  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const int*  RowIndices, int num_indices, const Epetra_Comm & GlobalComm );
+
+  /*! Creates a BlockMap object
+    
+	\param In
+	BaseMap - Map determining individual block structure, can be distrib. over subset of proc.'s
+	\param In
+	RowIndices - Defines the indices for local block rows
+  */
   static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+
+  /*! Creates a BlockMap object
+    
+	\param In
+	BaseMap - Map determining individual block structure, can be distrib. over subset of proc.'s
+	\param In
+	RowIndices - Defines the indices for local block rows
+  */
+  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const Epetra_BlockMap& BlockMap, const Epetra_Comm & GlobalComm );
 
   //! BlockCrsMatrix constuctor
   /*! Creates a BlockGraph object
@@ -66,6 +84,12 @@ class BlockUtility {
 
   // Nearly identical version yet using RowMatrix interface instead of CrsGraph
   static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_RowMatrix & BaseMatrix, const std::vector< std::vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+
+  //! Generate global block graph using base graph and local block graph
+  static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const Epetra_CrsGraph& LocalBlockGraph, const Epetra_Comm & GlobalComm );
+
+  //! Generate stencil arrays from a local block graph
+  static void GenerateRowStencil(const Epetra_CrsGraph& LocalBlockGraph, std::vector<int> RowIndices, std::vector< std::vector<int> >& RowStencil);
 
   //! Routine for calculating Offset for creating unique global IDs for Block representation
   static int CalculateOffset(const Epetra_BlockMap & BaseMap);
