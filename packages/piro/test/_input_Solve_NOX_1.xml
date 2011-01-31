@@ -1,8 +1,7 @@
 <ParameterList>
   <Parameter name="Piro Solver" type="string" value="NOX"/>
   <Parameter name="Compute Sensitivities" type="bool" value="1"/>
-  <Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/>
-  <Parameter name="Matrix-Free Perturbation" type="double" value="1.0e-7"/>
+  <Parameter name="Jacobian Operator" type="string" value="Have Jacobian"/>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation"/>
     <ParameterList name="Constraints"/>
@@ -72,7 +71,7 @@
                 </ParameterList>
               </ParameterList>
             </ParameterList>
-            <Parameter name="Preconditioner Type" type="string" value="None"/>
+            <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
             <ParameterList name="Preconditioner Types">
               <ParameterList name="Ifpack">
                 <Parameter name="Overlap" type="int" value="1"/>
