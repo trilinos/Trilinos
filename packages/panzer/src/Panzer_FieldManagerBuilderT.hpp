@@ -103,7 +103,6 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
      
     // build the setup data using passed in information
     Traits::SetupData setupData;
-    setupData.globalIndexer_ = dofMngr_;
     setupData.worksets_ = volume_worksets.find(blockId)->second;
     fm->postRegistrationSetup(setupData);
 
@@ -181,7 +180,6 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
 
       // Setup the fieldmanager
       Traits::SetupData setupData;
-      setupData.globalIndexer_ = dofMngr_;
       Teuchos::RCP<std::vector<panzer::Workset> > worksets = 
 	Teuchos::rcp(new(std::vector<panzer::Workset>));
       worksets->push_back(wkst->second);
