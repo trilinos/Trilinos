@@ -247,8 +247,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          evaluator = la_factory->buildGather<EvalType>(gatherParams);
 
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<GatherSolution_Epetra<EvalType,panzer::Traits> > gatherSolutionEval 
-               = rcp_dynamic_cast<GatherSolution_Epetra<EvalType,panzer::Traits> >(evaluator);
+         RCP<GatherSolution_Epetra<EvalType,panzer::Traits,short,int> > gatherSolutionEval 
+               = rcp_dynamic_cast<GatherSolution_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
          TEST_ASSERT(gatherSolutionEval!=Teuchos::null);
    
          const std::vector<RCP<PHX::FieldTag> > & fields = gatherSolutionEval->evaluatedFields();
@@ -270,8 +270,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
          out << "SCATTER RES NAME: \"" << evaluator->getName() << "\"" << std::endl;
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits> > scatterResidual 
-               = rcp_dynamic_cast<ScatterResidual_Epetra<EvalType,panzer::Traits> >(evaluator);
+         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits,short,int> > scatterResidual 
+               = rcp_dynamic_cast<ScatterResidual_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
@@ -296,8 +296,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
          out << "SCATTER DIRICHLET RES NAME: \"" << evaluator->getName() << "\"" << std::endl;
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits> > scatterResidual 
-               = rcp_dynamic_cast<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits> >(evaluator);
+         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,short,int> > scatterResidual 
+               = rcp_dynamic_cast<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
@@ -326,8 +326,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          evaluator = la_factory->buildGather<EvalType>(gatherParams);
 
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<GatherSolution_Epetra<EvalType,panzer::Traits> > gatherSolutionEval 
-               = rcp_dynamic_cast<GatherSolution_Epetra<EvalType,panzer::Traits> >(evaluator);
+         RCP<GatherSolution_Epetra<EvalType,panzer::Traits,short,int> > gatherSolutionEval 
+               = rcp_dynamic_cast<GatherSolution_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
          TEST_ASSERT(gatherSolutionEval!=Teuchos::null);
    
          const std::vector<RCP<PHX::FieldTag> > & fields = gatherSolutionEval->evaluatedFields();
@@ -348,8 +348,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          evaluator = la_factory->buildScatter<EvalType>(scatterParams);
 
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits> > scatterResidual 
-               = rcp_dynamic_cast<ScatterResidual_Epetra<EvalType,panzer::Traits> >(evaluator);
+         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits,short,int> > scatterResidual 
+               = rcp_dynamic_cast<ScatterResidual_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
@@ -374,8 +374,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
          out << "SCATTER DIRICHLET RES NAME: \"" << evaluator->getName() << "\"" << std::endl;
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits> > scatterResidual 
-               = rcp_dynamic_cast<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits> >(evaluator);
+         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,short,int> > scatterResidual 
+               = rcp_dynamic_cast<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();

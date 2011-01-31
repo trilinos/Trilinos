@@ -27,7 +27,7 @@ class UniqueGlobalIndexer;
     names vector.
 
 */
-template<typename EvalT, typename Traits> class ScatterDirichletResidual_Epetra;
+template<typename EvalT, typename Traits,typename LO,typename GO> class ScatterDirichletResidual_Epetra;
 
 // **************************************************************
 // **************************************************************
@@ -39,16 +39,18 @@ template<typename EvalT, typename Traits> class ScatterDirichletResidual_Epetra;
 // **************************************************************
 // Residual 
 // **************************************************************
-template<typename Traits>
-class ScatterDirichletResidual_Epetra<panzer::Traits::Residual,Traits>
+template<typename Traits,typename LO,typename GO>
+class ScatterDirichletResidual_Epetra<panzer::Traits::Residual,Traits,LO,GO>
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,
     public panzer::CloneableEvaluator  {
   
 public:
-  ScatterDirichletResidual_Epetra() {}
+  ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer)
+     : globalIndexer_(indexer) {}
   
-  ScatterDirichletResidual_Epetra(const Teuchos::ParameterList& p);
+  ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
+                                  const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -56,7 +58,7 @@ public:
   void evaluateFields(typename Traits::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<panzer::Traits::Residual,Traits>(pl)); }
+  { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<panzer::Traits::Residual,Traits,LO,GO>(globalIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
@@ -69,7 +71,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<panzer::UniqueGlobalIndexer<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > globalIndexer_;
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   // This maps the scattered field names to the DOF manager field
@@ -82,21 +84,25 @@ private:
 
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
+
+  ScatterDirichletResidual_Epetra() {}
 };
 
 // **************************************************************
 // Jacobian
 // **************************************************************
-template<typename Traits>
-class ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian,Traits>
+template<typename Traits,typename LO,typename GO>
+class ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian,Traits,LO,GO>
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>,
     public panzer::CloneableEvaluator  {
   
 public:
-  ScatterDirichletResidual_Epetra() {}
+  ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer)
+     : globalIndexer_(indexer) {}
   
-  ScatterDirichletResidual_Epetra(const Teuchos::ParameterList& p);
+  ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
+                                  const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -104,7 +110,7 @@ public:
   void evaluateFields(typename Traits::EvalData workset);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian,Traits>(pl)); }
+  { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian,Traits,LO,GO>(globalIndexer_,pl)); }
   
 private:
 
@@ -118,7 +124,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<panzer::UniqueGlobalIndexer<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > globalIndexer_;
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   // This maps the scattered field names to the DOF manager field
@@ -132,6 +138,8 @@ private:
 
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
+
+  ScatterDirichletResidual_Epetra();
 };
 
 }

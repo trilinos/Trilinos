@@ -19,9 +19,11 @@
 // Specialization: Residual
 // **********************************************************************
 
-template<typename Traits>
-panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits>::
-ScatterResidual_Epetra(const Teuchos::ParameterList& p)
+template<typename Traits,typename LO,typename GO>
+panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
+ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                       const Teuchos::ParameterList& p)
+  : globalIndexer_(indexer) 
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -53,12 +55,12 @@ ScatterResidual_Epetra(const Teuchos::ParameterList& p)
 }
 
 // **********************************************************************
-template<typename Traits> 
-void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits>::
+template<typename Traits,typename LO,typename GO> 
+void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  globalIndexer_ = d.globalIndexer_;
+  // globalIndexer_ = d.globalIndexer_;
 
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -73,8 +75,8 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits>
-void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits>::
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<typename Traits::GlobalOrdinal> GIDs;
@@ -123,9 +125,11 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template<typename Traits>
-panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits>::
-ScatterResidual_Epetra(const Teuchos::ParameterList& p)
+template<typename Traits,typename LO,typename GO>
+panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
+ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
+                       const Teuchos::ParameterList& p)
+   : globalIndexer_(indexer)
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -157,12 +161,12 @@ ScatterResidual_Epetra(const Teuchos::ParameterList& p)
 }
 
 // **********************************************************************
-template<typename Traits> 
-void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits>::
+template<typename Traits,typename LO,typename GO> 
+void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
-  globalIndexer_ = d.globalIndexer_;
+  // globalIndexer_ = d.globalIndexer_;
 
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -177,8 +181,8 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits>
-void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits>::
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<typename Traits::GlobalOrdinal> GIDs;

@@ -26,7 +26,7 @@ class UniqueGlobalIndexer; //forward declaration
     and that the nmber of dofs is equal to the size of the solution
     names vector.
 */
-template<typename EvalT, typename Traits> class GatherSolution_Epetra;
+template<typename EvalT, typename Traits,typename LO,typename GO> class GatherSolution_Epetra;
 
 // **************************************************************
 // **************************************************************
@@ -38,8 +38,8 @@ template<typename EvalT, typename Traits> class GatherSolution_Epetra;
 // **************************************************************
 // Residual 
 // **************************************************************
-template<typename Traits>
-class GatherSolution_Epetra<panzer::Traits::Residual,Traits>
+template<typename Traits,typename LO,typename GO>
+class GatherSolution_Epetra<panzer::Traits::Residual,Traits,LO,GO>
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,
     public panzer::CloneableEvaluator  {
@@ -47,9 +47,11 @@ class GatherSolution_Epetra<panzer::Traits::Residual,Traits>
   
 public:
   
-  GatherSolution_Epetra() {}
+  GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
+     globalIndexer_(indexer) {}
 
-  GatherSolution_Epetra(const Teuchos::ParameterList& p);
+  GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                        const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -57,7 +59,7 @@ public:
   void evaluateFields(typename Traits::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Residual,Traits>(pl)); }
+  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Residual,Traits,LO,GO>(globalIndexer_,pl)); }
   
 private:
 
@@ -65,25 +67,29 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<panzer::UniqueGlobalIndexer<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > globalIndexer_;
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
+
+  GatherSolution_Epetra();
 };
 
 // **************************************************************
 // Jacobian
 // **************************************************************
-template<typename Traits>
-class GatherSolution_Epetra<panzer::Traits::Jacobian,Traits>
+template<typename Traits,typename LO,typename GO>
+class GatherSolution_Epetra<panzer::Traits::Jacobian,Traits,LO,GO>
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>,
     public panzer::CloneableEvaluator  {
   
 public:
-  GatherSolution_Epetra() {}
+  GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
+     globalIndexer_(indexer) {}
   
-  GatherSolution_Epetra(const Teuchos::ParameterList& p);
+  GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                        const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -91,7 +97,7 @@ public:
   void evaluateFields(typename Traits::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Jacobian,Traits>(pl)); }
+  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Jacobian,Traits,LO,GO>(globalIndexer_,pl)); }
   
 private:
 
@@ -99,10 +105,12 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<panzer::UniqueGlobalIndexer<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > globalIndexer_;
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
+
+  GatherSolution_Epetra();
 };
 
 }

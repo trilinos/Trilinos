@@ -243,7 +243,7 @@ int main(int argc,char * argv[])
    RCP<Thyra::LinearOpWithSolveBase<double> > lows = Thyra::linearOpWithSolve(*lowsFactory, th_A.getConst());
    Thyra::solve<double>(*lows, Thyra::NOTRANS, *th_f, th_x.ptr());
 
-   {
+   if(false) {
       EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*container->A);
       EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*container->x);
       EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*container->f);

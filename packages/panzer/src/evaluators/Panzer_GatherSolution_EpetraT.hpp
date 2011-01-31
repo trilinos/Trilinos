@@ -14,9 +14,12 @@
 // Specialization: Residual
 // **********************************************************************
 
-template<typename Traits>
-panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits>::
-GatherSolution_Epetra(const Teuchos::ParameterList& p)
+template<typename Traits,typename LO,typename GO>
+panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
+GatherSolution_Epetra(
+  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  const Teuchos::ParameterList& p)
+   : globalIndexer_(indexer)
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -35,12 +38,12 @@ GatherSolution_Epetra(const Teuchos::ParameterList& p)
 }
 
 // **********************************************************************
-template<typename Traits> 
-void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits>::
+template<typename Traits,typename LO,typename GO> 
+void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  globalIndexer_ = d.globalIndexer_;
+  // globalIndexer_ = d.globalIndexer_;
 
   fieldIds_.resize(gatherFields_.size());
 
@@ -55,8 +58,8 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits>
-void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits>::
+template<typename Traits,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<typename Traits::GlobalOrdinal> GIDs;
@@ -105,9 +108,12 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template<typename Traits>
-panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits>::
-GatherSolution_Epetra(const Teuchos::ParameterList& p)
+template<typename Traits,typename LO,typename GO>
+panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
+GatherSolution_Epetra(
+  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  const Teuchos::ParameterList& p)
+   : globalIndexer_(indexer)
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -126,12 +132,12 @@ GatherSolution_Epetra(const Teuchos::ParameterList& p)
 }
 
 // **********************************************************************
-template<typename Traits> 
-void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits>::
+template<typename Traits,typename LO,typename GO> 
+void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  globalIndexer_ = d.globalIndexer_;
+  // globalIndexer_ = d.globalIndexer_;
 
   fieldIds_.resize(gatherFields_.size());
 
@@ -146,8 +152,8 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits>
-void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits>::
+template<typename Traits,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<typename Traits::GlobalOrdinal> GIDs;

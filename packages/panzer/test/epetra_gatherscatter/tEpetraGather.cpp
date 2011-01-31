@@ -46,7 +46,7 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
 
    // test residual gather evaluator
    {
-      panzer::GatherSolution_Epetra<Residual,panzer::Traits> gatherResidual(gatherParams);
+      panzer::GatherSolution_Epetra<Residual,panzer::Traits,int,int> gatherResidual(Teuchos::null,gatherParams);
 
       const std::vector<RCP<PHX::FieldTag> > & fields = gatherResidual.evaluatedFields();
       TEST_EQUALITY(fields.size(),2);
@@ -63,7 +63,7 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
 
    // test jacobian gather evaluator
    {
-      panzer::GatherSolution_Epetra<Jacobian,panzer::Traits> gatherJacobian(gatherParams);
+      panzer::GatherSolution_Epetra<Jacobian,panzer::Traits,int,int> gatherJacobian(Teuchos::null,gatherParams);
 
       const std::vector<RCP<PHX::FieldTag> > & fields = gatherJacobian.evaluatedFields();
       TEST_EQUALITY(fields.size(),2);
