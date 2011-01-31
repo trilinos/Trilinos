@@ -74,6 +74,9 @@ panzer::ModelEvaluator_Epetra::createInArgs() const
   InArgsSetup inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(IN_ARG_x,true);
+  inArgs.setSupports(IN_ARG_x_dot,true);
+  inArgs.setSupports(IN_ARG_alpha,true);
+  inArgs.setSupports(IN_ARG_beta,true);
   return inArgs;
 }
 
@@ -103,6 +106,9 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
   // Get the input arguments
   //
   const Epetra_Vector& x = *inArgs.get_x();
+  const Epetra_Vector& x_dot = *inArgs.get_x_dot();
+  ae_inargs_->alpha = inArgs.get_alpha();
+  ae_inargs_->beta = inArgs.get_beta();
 
   //
   // Get the output arguments
@@ -110,28 +116,40 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
   Epetra_Vector* f_out = outArgs.get_f().get();
   Epetra_Operator* W_out = outArgs.get_W().get();
 
-  // move global solution to ghosted solution
+  // move global solution and time derivative to ghosted solution
   RCP<Epetra_Import> importer = lof_->getGhostedImport();
   ghostedContainer_->x->Import(x,*importer,Insert);
-  // ae_inargs_.x->Import(x, *importer, Insert);
+  ghostedContainer_->dxdt->Import(x_dot,*importer,Insert);
 
-  if(f_out) {
+  if (f_out && W_out) {
+    ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(*ae_inargs_);
+
+    // move ghosted residual and Jacobian to global versions
+    RCP<Epetra_Export> exporter = lof_->getGhostedExport();
+
+    f_out->PutScalar(0.0);
+    f_out->Export(*ghostedContainer_->f, *exporter, Add);
+
+    Epetra_CrsMatrix& J = dynamic_cast<Epetra_CrsMatrix&>(*W_out);
+    J.PutScalar(0.0);
+    J.Export(*ghostedContainer_->A, *exporter, Add);
+  }
+  else if(f_out && !W_out) {
     ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluate(*ae_inargs_);
 
     // move ghosted residual to global residual
     RCP<Epetra_Export> exporter = lof_->getGhostedExport();
     f_out->PutScalar(0.0);
-    // f_out->Export(*ae_inargs_.f, *exporter, Add);
     f_out->Export(*ghostedContainer_->f, *exporter, Add);
   }
-  if(W_out) {
+  else if(!f_out && W_out) {
     ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(*ae_inargs_);
 
     // move ghosted Jacobian to global Jacobian
     RCP<Epetra_Export> exporter = lof_->getGhostedExport();
     Epetra_CrsMatrix& J = dynamic_cast<Epetra_CrsMatrix&>(*W_out);
     J.PutScalar(0.0);
-    // J.Export(*ae_inargs_.j, *exporter, Add);
     J.Export(*ghostedContainer_->A, *exporter, Add);
   }
+
 }

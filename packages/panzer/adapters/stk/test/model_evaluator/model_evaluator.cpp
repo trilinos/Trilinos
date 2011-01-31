@@ -24,6 +24,7 @@ using Teuchos::rcp;
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ModelEvaluator.hpp"
+#include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -129,26 +130,54 @@ namespace panzer {
     fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,*linObjFactory);
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,*linObjFactory);
 
-    panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
-    ae_tm.buildObjects(builder);
-
-    // RCP<Epetra_Map> ghosted_map = linObjFactory.getGhostedMap();
-    // RCP<Epetra_CrsGraph> ghosted_graph = linObjFactory.getGhostedGraph();
-    
-    panzer::AssemblyEngineInArgs input(
-             linObjFactory->buildGhostedLinearObjContainer(),
-             linObjFactory->buildLinearObjContainer());
-
-    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
-
     typedef double ScalarT;
     typedef std::size_t LO;
     typedef std::size_t GO;
     typedef Kokkos::DefaultNode::DefaultNodeType NODE;
     
     panzer::ModelEvaluator<ScalarT,LO,GO,NODE> model;
+
+    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
+      Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
+
+    RCP<panzer::ModelEvaluator_Epetra> me;
+    {
+      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof));
+
+      EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
+      EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
+      
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x));
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot));
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_alpha));
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_beta));
+      TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_f));
+      TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_W));
+
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
+      
+      
+      RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+      RCP<Epetra_Vector> x_dot = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+      x->Update(1.0, *(me->get_x_init()), 0.0);
+      x_dot->PutScalar(0.0);
+      in_args.set_x(x);
+      in_args.set_x_dot(x_dot);
+      in_args.set_alpha(0.0);
+      in_args.set_beta(1.0);
+      
+      RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+      RCP<Epetra_Operator> J_tmp = me->create_W();
+      RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(J_tmp);
+      TEST_ASSERT(!Teuchos::is_null(J));
+      out_args.set_f(f);
+      out_args.set_W(J);
+
+      me->evalModel(in_args, out_args);
+
+    }
+
   }
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
