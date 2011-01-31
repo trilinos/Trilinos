@@ -54,9 +54,11 @@ These parameters are described below.
 <td NOSAVE><a NAME="COLORING_PROBLEM"></a>&nbsp;&nbsp;<i>COLORING_PROBLEM</i></td>
 
 <td>
-The specific coloring problem to be solved. Supported values 
-include "DISTANCE-1" (the standard vertex coloring problem) 
-and "DISTANCE-2" (useful for Jacobian coloring). 
+The specific coloring problem to be solved. Supported values include
+"DISTANCE-1" (the standard vertex coloring problem), "DISTANCE-2"
+(useful for Jacobian coloring) and "BIPARTITE" and "PARTIAL-DISTANCE-2".
+When called with "BIPARTITE" or "PARTIAL-DISTANCE-2", only the objects
+listed in <i>global_ids</i> are colored.
 </td>
 </tr>
 
@@ -82,12 +84,19 @@ such restriction.
 <tr VALIGN=TOP NOSAVE>
 <td NOSAVE><a NAME="COLOR_ORDER"></a><i>&nbsp;&nbsp;COLOR_ORDER</i></td>
 
-<td>Valid values are "I" (internal first), "B" (boundary first) and "U" (unordered). If
-"I" is selected, each processor colors its internal objects
-before boundary objects. If "B" is selected, each processor colors its
-boundary objects first. If "U" is selected, there is no such
-distinction between internal and boundary objects. "U" is not
-implemented for distance-2 coloring. </td> 
+<td>Valid values are "I" (internal first), "B" (boundary first) and
+  "U" (unordered), "N" (natural), "L" (largest degree first), "S"
+  (smallest degree last). If "I" is selected, each processor colors
+  its internal objects before boundary objects. If "B" is selected,
+  each processor colors its boundary objects first. If "U" is
+  selected, there is no such distinction between internal and boundary
+  objects. "N" is equivalent to "U". If "L" is selected, the objects
+  are sorted according to their number of neighbors so that the object
+  with larger number of neighbors are colored first. If "S" is
+  selected, the order is dynamically constructed; the object with
+  smallest number of neighbor will be colored last and is (virtually)
+  removed from the graph. <!--"U" is not implemented for distance-2
+  coloring. (Erik: I think it works now)--> </td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -113,7 +122,7 @@ the object that is being colored. </td>
 <tr VALIGN=TOP>
 <td></td>
 
-<td><i>DISTANCE</i> = 1</td>
+<td><i>COLORING_PROBLEM</i> = DISTANCE-1</td>
 </tr>
 
 <tr VALIGN=TOP>
