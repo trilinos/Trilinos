@@ -152,5 +152,31 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   H.SetSmoothers();
 } //SetSmoothers
 
+TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  out << "version: " << MueLu::Version() << std::endl;
+
+  RCP<Level> levelOne = rcp(new Level() );
+  levelOne->SetLevelID(1);
+  RCP<CrsOperator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(99);
+  levelOne->SetA(A);
+
+  Hierarchy H;
+  H.SetLevel(levelOne);
+
+  Teuchos::ParameterList  ifpackList;
+  ifpackList.set("relaxation: type", "Gauss-Seidel");
+  ifpackList.set("relaxation: sweeps", (LO) 1);
+  ifpackList.set("relaxation: damping factor", (SC) 1.0);
+  RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  SmootherFactory SmooFactory(smoother);
+
+  H.SetCoarsestSolver(SmooFactory);
+
+} //SetCoarsestSolver
+
 }//namespace <anonymous>
 

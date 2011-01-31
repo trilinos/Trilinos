@@ -196,16 +196,15 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        return status;
      } //FillHierarchy
 
-     void SetCoarsetSolver(SmootherFactory const& smooFact) {
+     //! @brief Set solve method for coarsest method.
+     void SetCoarsestSolver(SmootherFactory const &smooFact) {
        RCP<SmootherPrototype> preSmoo;
        RCP<SmootherPrototype> postSmoo;
        LO clevel = GetNumberOfLevels();
 
-       if (smooFact != Teuchos::null) {
-         smooFact.Build(Levels_[clevel],preSmoo,postSmoo);
-         if (preSmoo != Teuchos::null) Levels_[clevel]->SetPreSmoother(preSmoo);
-         if (postSmoo != Teuchos::null) Levels_[clevel]->SetPostSmoother(preSmoo);
-       }
+       smooFact.Build(Levels_[clevel-1],preSmoo,postSmoo);
+       if (preSmoo != Teuchos::null) Levels_[clevel]->SetPreSmoother(preSmoo);
+       if (postSmoo != Teuchos::null) Levels_[clevel]->SetPostSmoother(preSmoo);
      }
 
      /*! @brief Construct smoothers on all levels but the coarsest.

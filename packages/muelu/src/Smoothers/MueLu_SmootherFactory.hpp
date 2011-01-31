@@ -124,7 +124,7 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
         the Setup() phase is also done only once when parameters
         don't change the result of the setup computation.
     */
-    void Build(RCP<Level> level, RCP<SmootherPrototype> preSmoo, RCP<SmootherPrototype> postSmoo) {
+    void Build(RCP<Level> level, RCP<SmootherPrototype> preSmoo, RCP<SmootherPrototype> postSmoo) const {
       if (level == Teuchos::null)
         throw(Exceptions::RuntimeError("Bad level"));
       
