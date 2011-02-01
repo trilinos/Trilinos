@@ -11,8 +11,11 @@
 
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
+
 #include <stk_util/util/Bootstrap.hpp>
 #include <stk_util/util/IndentStreambuf.hpp>
+
+#include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
@@ -551,6 +554,20 @@ UseCaseEnvironment::~UseCaseEnvironment()
   if (m_need_to_finalize) {
     stk::parallel_machine_finalize();
   }
+}
+
+bool print_status(stk::ParallelMachine comm, bool success)
+{
+  int error_flag = success ? 0 : 1;
+  stk::all_reduce( comm , stk::ReduceMax<1>( & error_flag ) );
+  bool all_success = !error_flag;
+
+  int rank = stk::parallel_machine_rank(comm);
+  if (rank == 0) {
+    std::cout << ( all_success ? "STK_USECASE_PASS" : "Use case failed.") << std::endl;
+  }
+
+  return all_success;
 }
 
 } // namespace use_case

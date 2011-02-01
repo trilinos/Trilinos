@@ -15,6 +15,8 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/use_cases/UseCaseEnvironment.hpp>
+
 #include <stk_rebalance/Rebalance.hpp>
 
 void printStatus(bool status)
@@ -64,14 +66,8 @@ int main ( int argc, char * argv[] )
     status = status && local_status;
   }
 
-  int return_code = -1;
-  if (status) {
-    return_code = 0;
-    std::cout << "End Result: TEST PASSED" << std::endl;
-  }
-  else {
-    std::cout << "End Result: TEST FAILED" << std::endl;
-  }
+  bool collective_result = use_case::print_status(parallel_machine, status);
+  int return_code = collective_result ? 0 : -1;
 
   stk::parallel_machine_finalize();
 
