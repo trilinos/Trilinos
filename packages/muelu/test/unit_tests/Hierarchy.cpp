@@ -150,6 +150,21 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   Hierarchy H;
   H.SetLevel(levelOne);
   H.SetSmoothers();
+
+  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(),"Ifpack: Gauss-Seidel", out, success);
+  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPostSmoother()->GetType(),"Ifpack: Gauss-Seidel", out, success);
+
+
+  Teuchos::ParameterList  ifpackList;
+  ifpackList.set("relaxation: type", "Jacobi");
+  ifpackList.set("relaxation: sweeps", (LO) 1);
+  ifpackList.set("relaxation: damping factor", (SC) 1.0);
+  RCP<SmootherPrototype>  smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto) );
+  H.SetSmoothers(smooFactory);
+  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(),"Ifpack: Jacobi", out, success);
+  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPostSmoother()->GetType(),"Ifpack: Jacobi", out, success);
+
 } //SetSmoothers
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
@@ -175,6 +190,15 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
   SmootherFactory SmooFactory(smoother);
 
   H.SetCoarsestSolver(SmooFactory);
+
+  RCP<SmootherPrototype>  preSmoo,postSmoo;
+
+  preSmoo = levelOne->GetPreSmoother();
+  TEUCHOS_TEST_INEQUALITY(preSmoo, Teuchos::null, out, success);
+  TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
+  postSmoo = levelOne->GetPostSmoother();
+  TEUCHOS_TEST_INEQUALITY(postSmoo, Teuchos::null, out, success);
+  TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
 
 } //SetCoarsestSolver
 

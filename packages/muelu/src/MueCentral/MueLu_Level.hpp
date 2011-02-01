@@ -41,7 +41,6 @@ namespace MueLu {
     Teuchos::RCP<Operator> P_;             // prolongator operator
     Teuchos::RCP<SmootherPrototype> PreSmoother_;   // smoother operator
     Teuchos::RCP<SmootherPrototype> PostSmoother_;  // smoother operator
-    Teuchos::RCP<SmootherPrototype> CoarsestSolver_;  // coarsest solve operator (if null, defaults to direct)
     mutable int levelID_;                  // id number associated with level
 
   protected:
@@ -114,11 +113,6 @@ namespace MueLu {
       PostSmoother_ = postSmoo;
     }
 
-    //! @brief Set coarsest solver.
-    void SetCoarsestSolver(Teuchos::RCP<SmootherPrototype> &coarseSolver) {
-      CoarsestSolver_ = coarseSolver;
-    }
-
     //@}
 
     //@{
@@ -185,9 +179,6 @@ namespace MueLu {
 
         Does not throw exception if solver is null.
     */
-    Teuchos::RCP<SmootherPrototype> GetCoarsestSolver() const {
-      return CoarsestSolver_;
-    }
 
     //@}
 

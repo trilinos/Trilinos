@@ -29,8 +29,8 @@ class Level;
 
   private:
 
-    //! Ifpack-specified key phrase that denote smoother type
-    std::string type_;
+    //! Ifpack-specific key phrase that denote smoother type (not to be confused with SmootherBase::Type_)
+    std::string ifpackType_;
     //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;
     RCP<Ifpack_Preconditioner> prec_;
@@ -80,10 +80,16 @@ class Level;
                 - <tt>fact: level-of-fill</tt>
     */
     IfpackSmoother(std::string const & type, Teuchos::ParameterList & list)
-      : type_(type), list_(list), out_(this->getOStream())
+      : ifpackType_(type), list_(list), out_(this->getOStream())
     {
       MueLu_cout(Teuchos::VERB_HIGH) << "Instantiating a new smoother" << std::endl;
       overlap_ = list.get("Overlap",(LO) 0);
+      std::string label;
+      if (type == "point relaxation stand-alone")
+        label = "Ifpack: " + list.get("relaxation: type","unknown relaxation");
+      else
+        label = "Ifpack: " + type;
+      SmootherBase::SetType(label);
     }
 
     //! Destructor
@@ -114,7 +120,7 @@ class Level;
       A_ = level.GetA();
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       Ifpack factory;
-      prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
+      prec_ = rcp(factory.Create(ifpackType_, &(*epA), overlap_));
       prec_->SetParameters(list_);
       prec_->Compute();
     }
@@ -149,9 +155,12 @@ class Level;
     void CopyParameters(RCP<SmootherPrototype> source)
     {
       RCP<IfpackSmoother> ifpackSmoo = rcp_dynamic_cast<IfpackSmoother>(source);
-      type_ = ifpackSmoo->type_;
+      //TODO check if dynamic cast fails
+      ifpackType_ = ifpackSmoo->ifpackType_;
       prec_ = ifpackSmoo->prec_;
       A_ = ifpackSmoo->A_;
+      overlap_ = ifpackSmoo->overlap_;
+      list_ = ifpackSmoo->list_;
     }
 
   }; //class IfpackSmoother

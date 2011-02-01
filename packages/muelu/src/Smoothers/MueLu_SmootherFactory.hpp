@@ -124,7 +124,7 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
         the Setup() phase is also done only once when parameters
         don't change the result of the setup computation.
     */
-    void Build(RCP<Level> level, RCP<SmootherPrototype> preSmoo, RCP<SmootherPrototype> postSmoo) const {
+    void Build(RCP<Level> level, RCP<SmootherPrototype> &preSmoo, RCP<SmootherPrototype> &postSmoo) const {
       if (level == Teuchos::null)
         throw(Exceptions::RuntimeError("Bad level"));
       
@@ -137,9 +137,11 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
       }
 
       // Is post-smoother of the same type as pre-smoother ?
-      if (PostSmootherPrototype_ != Teuchos::null) {
+      if (PostSmootherPrototype_ != Teuchos::null)
+      {
         if (PreSmootherPrototype_ != Teuchos::null &&
             PreSmootherPrototype_->GetType() == PostSmootherPrototype_->GetType())
+        {
           // YES: post-smoother == pre-smoother 
           // => copy the pre-smoother to avoid the setup phase of the post-smoother.
           postSmoo = preSmoo->Copy();
@@ -156,11 +158,12 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
           postSmoo->Setup(*level);
 
           // TODO: if CopyParameters do not exist, do setup twice.
-      } else {
-        // NO: post-smoother != pre-smoother 
-        // Copy the prototype and run the setup phase.
-        postSmoo = PostSmootherPrototype_->Copy();
-        postSmoo->Setup(*level);
+        } else {
+          // NO: post-smoother != pre-smoother 
+          // Copy the prototype and run the setup phase.
+          postSmoo = PostSmootherPrototype_->Copy();
+          postSmoo->Setup(*level);
+        }
       }
 
     } //Build()

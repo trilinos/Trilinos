@@ -205,9 +205,9 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      void SetCoarsestSolver(SmootherFactory const &smooFact) {
        RCP<SmootherPrototype> preSmoo;
        RCP<SmootherPrototype> postSmoo;
-       LO clevel = GetNumberOfLevels();
+       LO clevel = GetNumberOfLevels()-1;
 
-       smooFact.Build(Levels_[clevel-1],preSmoo,postSmoo);
+       smooFact.Build(Levels_[clevel],preSmoo,postSmoo);
        if (preSmoo != Teuchos::null) Levels_[clevel]->SetPreSmoother(preSmoo);
        if (postSmoo != Teuchos::null) Levels_[clevel]->SetPostSmoother(preSmoo);
      }

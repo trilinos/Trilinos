@@ -108,12 +108,21 @@ TEUCHOS_UNIT_TEST(SmootherFactory, Build)
   out << "version: " << MueLu::Version() << std::endl;
   out << "Testing SmootherFactory::Build method" << std::endl;
 
-  Teuchos::ParameterList  ifpackList;
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-  RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smoother) );
+  //pre-smoother prototype
+  Teuchos::ParameterList  ifpackList1;
+  ifpackList1.set("relaxation: type", "Gauss-Seidel");
+  ifpackList1.set("relaxation: sweeps", (LO) 1);
+  ifpackList1.set("relaxation: damping factor", (SC) 1.0);
+  RCP<SmootherPrototype>  smooProto1 = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList1) );
+
+  //post-smoother prototype
+  Teuchos::ParameterList  ifpackList2;
+  ifpackList2.set("relaxation: type", "Jacobi");
+  ifpackList2.set("relaxation: sweeps", (LO) 1);
+  ifpackList2.set("relaxation: damping factor", (SC) 1.0);
+  RCP<SmootherPrototype>  smooProto2 = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList2) );
+  //RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto1,smooProto2) );
+  RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto1) );
 
   RCP<Level> aLevel = rcp(new Level() );
   aLevel->SetLevelID(1);
@@ -126,7 +135,17 @@ TEUCHOS_UNIT_TEST(SmootherFactory, Build)
   TEST_THROW(smooFactory->Build(aLevel,preSmoo,postSmoo),std::logic_error);
 
   aLevel->SetA(A);
+
+  //same prototype for pre and post smoothers
   smooFactory->Build(aLevel,preSmoo,postSmoo);
+  TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel",out,success);
+  TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel",out,success);
+
+  //different prototypes for pre and post smoothers
+  smooFactory = rcp(new SmootherFactory(smooProto1,smooProto2) );
+  smooFactory->Build(aLevel,preSmoo,postSmoo);
+  TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel",out,success);
+  TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Jacobi",out,success);
 }
 
 }//namespace <anonymous>
