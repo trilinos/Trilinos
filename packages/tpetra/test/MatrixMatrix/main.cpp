@@ -26,8 +26,6 @@ int run_test(RCP<const Comm<Ordinal> > Comm,
   bool result_mtx_to_file=false,
   bool verbose=false);
 
-template<class Ordinal>
-int simple_add_test(RCP<const Comm<Ordinal> > Comm, bool verbose);
 
 template<class CommOrdinal>
 int two_proc_test(RCP<const Comm<CommOrdinal> > Comm,
@@ -52,32 +50,24 @@ create_crsmatrix(
   bool symmetric);
 
 template<class Ordinal>
-int simple_add_test(RCP<const Comm<Ordinal> > Comm, bool verbose){
-  int localProc = Comm->getRank();
-  RCP<CrsMatrix<double,int> > A = null;
-  RCP<CrsMatrix<double,int> > B = null;
-  RCP<CrsMatrix<double,int> > C = null;
-
-  if (localProc == 0 && verbose) {
-    std::cout << "Before reading" << std::endl;
-  }
-  Utils::readHBMatrix("matrices/addA3.hb", Comm, Kokkos::DefaultNode::getDefaultNode(), A);
-  Utils::readHBMatrix("matrices/addB3.hb", Comm, Kokkos::DefaultNode::getDefaultNode(), B);
-  Utils::readHBMatrix("matrices/addC3.hb", Comm, Kokkos::DefaultNode::getDefaultNode(), C);
-  if (localProc == 0 && verbose) {
-    std::cout << "after reading" << std::endl;
-  }
-
+int add_test(
+    RCP<CrsMatrix<double,int> > A,
+    RCP<CrsMatrix<double,int> > B,
+    RCP<CrsMatrix<double,int> > C,
+    bool AT,
+    bool BT,
+    double epsilon,
+    RCP<const Comm<Ordinal> > comm,
+    bool verbose)
+{
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
-
-  
 
   MatrixMatrix<
     double, 
     int,
     int,
     DNode,
-    typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
   Add(A, false, 1.0, B, 1.0);
 
   MatrixMatrix<
@@ -85,31 +75,29 @@ int simple_add_test(RCP<const Comm<Ordinal> > Comm, bool verbose){
     int,
     int,
     DNode,
-    typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
   Add(C, false, -1.0, B, 1.0);
 
+  int localProc = comm->getRank();
   double calculated_euc_norm = B->getEuclideanNorm();
   double c_euc_norm = C->getEuclideanNorm();
   double resultVal = calculated_euc_norm/c_euc_norm;
-
-  int return_code =0;
-  if (resultVal < defaultEpsilon) {
+  if (resultVal < epsilon) {
     if (localProc == 0 && verbose) {
       std::cout << "Test Passed" << std::endl;
-      std::cout << "||(A+B)-C||/||C|| " << resultVal << std::endl;
+      std::cout << "||(A+B)-C||/||C|| " << resultVal << std::endl <<std::endl;
     }
+    return 0;
   }
   else {
-    return_code = -1;
     if (localProc == 0) {
-      std::cout << "Test Failed: ||(A+B)-C||/||C|| " << resultVal << std::endl;
+      std::cout << "Test Failed: ||(A+B)-C||/||C|| " << resultVal <<std::endl << std::endl;
     }
+    return -1;
   }
 
-  return(return_code);
-
-
 }
+
 
 template<class Ordinal>
 int test_find_rows(RCP<const Comm<Ordinal> > Comm)
@@ -168,183 +156,27 @@ int test_find_rows(RCP<const Comm<Ordinal> > Comm)
   return(0);
 }
 
-/*int expand_name_list(const char* newname,
-                     const char**& names,
-                     int& alloc_len,
-                     int& num_names)
-{
-  int offset = num_names;
-  if (offset >= alloc_len) {
-    int alloc_increment = 8;
-    const char** newlist = new const char*[alloc_len+alloc_increment];
-    for(int i=0; i<offset; ++i) {
-      newlist[i] = names[i];
-    }
-    delete [] names;
-    names = newlist;
-    alloc_len += alloc_increment;
-    for(int i=offset; i<alloc_len; ++i) {
-      names[i] = NULL;
-    }
-  }
-
-  names[offset] = newname;
-  ++num_names;
-  return(0);
-}
 
 template<class Ordinal>
-int broadcast_name(RCP<const Comm<Ordinal> > Comm, const char*& name)
+int multiply_test(
+  RCP<CrsMatrix<double, int> > A,
+  RCP<CrsMatrix<double, int> > B,
+  RCP<CrsMatrix<double, int> > C_check,
+  bool AT,
+  bool BT,
+  double epsilon,
+  RCP<const Comm<Ordinal> > comm,
+  bool verbose)
 {
-  if (Comm->getSize() < 2) return(0);
-
-  Ordinal len;
-  int localProc = Comm->getRank();
-  if (localProc == 0) {
-    len = (Ordinal)strlen(name)+1;
-    
-    //MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	Teuchos::broadcast(*Comm, 0, 1, &len);
-    //MPI_Bcast((void*)name, len, MPI_CHAR, 0, MPI_COMM_WORLD);
-	Comm->broadcast(0, len, (char*)name);
-
-  }
-  else {
-    //MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	Teuchos::broadcast(*Comm, 0, 1, &len);
-    name = new char[len];
-    //MPI_Bcast((void*)name, len, MPI_CHAR, 0, MPI_COMM_WORLD);
-	Comm->broadcast(0, len, (char*)name);
-  }
-
-  return(0);
-}
-
-template<class Odrinal>
-int read_input_file(RCP<const Comm<Odrinal> > Comm,
-                    const char* input_file_name,
-                    const char**& filenames,
-                    int& numfiles,
-                    int& numfilenames_allocated)
-{
-  int local_err = 0, global_err = 0;
-  std::ifstream* infile = NULL;
-  int pathlen = path != 0 ? (int)strlen(path): 0;
-
-  if (Comm->getRank() == 0) {
-    char* full_name = NULL;
-    int filenamelen = input_file_name != 0 ? (int)strlen(input_file_name) : 0;
-
-    full_name = new char[pathlen+filenamelen+2];
-    if (path != 0) {
-      sprintf(full_name, "%s/%s",path,input_file_name);
-    }
-    else {
-      sprintf(full_name, "%s", input_file_name);
-    }
-
-    infile = new std::ifstream(full_name);
-    if (!(*infile)) {
-      local_err = -1;
-      delete infile;
-    }
-    delete [] full_name;
-  }
-
-  Teuchos::reduceAll(*Comm, Teuchos::REDUCE_SUM, 1, &local_err, &global_err);
-  if (global_err != 0) {
-    return(global_err);
-  }
-
-
-  if (Comm->getRank() == 0) {
-    int linelen = 512;
-    char* line = NULL;
-
-    std::ifstream& ifile = *infile;
-    while(!ifile.eof()) {
-      line = new char[pathlen+1+linelen];
-      if (pathlen>0) {
-        sprintf(line,"%s/",path);
-        ifile.getline(&(line[pathlen+1]), linelen);
-      }
-      else {
-        ifile.getline(line, linelen);
-      }
-
-      if (ifile.fail()) {
-	delete [] line;
-        break;
-      }
-      if (strchr(line, '#') == NULL) {
-        expand_name_list(line, filenames, numfilenames_allocated, numfiles);
-      }
-      else {
-        delete [] line;
-      }
-    }
-
-    Teuchos::broadcast(*Comm, 0, 1, &numfiles);
-    for(int i=0; i<numfiles; ++i) {
-      broadcast_name(Comm, filenames[i]);
-    }
-
-    delete infile;
-  }
-  else {
-    Teuchos::broadcast(*Comm, 1, &numfiles);
-    filenames = new const char*[numfiles];
-    numfilenames_allocated = numfiles;
-    for(int i=0; i<numfiles; ++i) {
-      broadcast_name(Comm, filenames[i]);
-    }
-  }
-  
-  return(0);
-}
-*/
-
-template<class Ordinal>
-int run_test(RCP<const Comm<Ordinal> > Comm,
-             Teuchos::ParameterList matrixSystem,
-             bool result_mtx_to_file,
-             bool verbose)
-{
-  std::string A_file = matrixSystem.get<std::string>("A");
-  std::string B_file = matrixSystem.get<std::string>("B");
-  std::string C_file = matrixSystem.get<std::string>("C");
-  bool AT = matrixSystem.get<bool>("TransA");
-  bool BT = matrixSystem.get<bool>("TransB");
-  double epsilon = matrixSystem.get<double>("epsilon", defaultEpsilon);
-
-
-  int localProc = Comm->getRank();
-
-  if (localProc == 0 && verbose) {
-    std::cout << "Testing C=A"<<AT<<"*B"<<BT<< "; A:" << A_file
-              << ", B:" << B_file << ", C:" << C_file << std::endl;
-  }
-
-  RCP<CrsMatrix<double,int> > A = null;
-  RCP<CrsMatrix<double,int> > B = null;
-  RCP<CrsMatrix<double,int> > C = null;
-  RCP<CrsMatrix<double,int> > C_check = null;
-
-/*
-  Utils::readMatrixMarketMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A);
-  Utils::readMatrixMarketMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B);
-  Utils::readMatrixMarketMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);*/
-  Utils::readHBMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A);
-  Utils::readHBMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B);
-  Utils::readHBMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
-
 
   /*RCP<Teuchos::basic_FancyOStream<char> > outstream = 
     Teuchos::getFancyOStream(rcpFromRef(std::cout));
   B->describe(*outstream, Teuchos::VERB_EXTREME);*/
+  int localProc = comm->getRank();
+  RCP<CrsMatrix<double,int> > computedC = null;
   RCP<const Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
 
-  C = rcp( new CrsMatrix<double,int>(rowmap, 1));
+  computedC = rcp( new CrsMatrix<double,int>(rowmap, 1));
 
   RCP<const CrsMatrix<double,int> > constA = A;
   RCP<const CrsMatrix<double,int> > constB = B;
@@ -357,7 +189,7 @@ int run_test(RCP<const Comm<Ordinal> > Comm,
     int,
     DNode,
     typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Multiply(constA, AT, constB, BT, C);
+  Multiply(constA, AT, constB, BT, computedC);
 
 //  std::cout << "A: " << *A << std::endl << "B: "<<*B<<std::endl<<"C: "<<*C<<std::endl;
   //if (result_mtx_to_file) {
@@ -365,7 +197,6 @@ int run_test(RCP<const Comm<Ordinal> > Comm,
   //}
 
   
-  double c_euc_norm = C_check->getEuclideanNorm();
 
   MatrixMatrix<
     double, 
@@ -373,27 +204,79 @@ int run_test(RCP<const Comm<Ordinal> > Comm,
     int,
     DNode,
     typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Add(C, false, -1.0, C_check, 1.0);
+  Add(C_check, false, -1.0, computedC, 1.0);
 
   double c_check_euc_norm = C_check->getEuclideanNorm();
+  double c_euc_norm = computedC->getEuclideanNorm();
 
-  double diff_result = c_check_euc_norm/c_euc_norm;
+  double diff_result = c_euc_norm/c_check_euc_norm;
 
   int return_code =0;
   if (diff_result < epsilon) {
     if (localProc == 0 && verbose) {
       std::cout << "Test Passed" << std::endl;
-      std::cout << "||A*B-C||/||C|| " << diff_result << std::endl;
+      std::cout << "||A*B-C||/||C|| " << diff_result << std::endl << std::endl;
     }
   }
   else {
     return_code = -1;
     if (localProc == 0) {
-      std::cout << "Test Failed: ||A*B-C||/||C|| " << diff_result << std::endl;
+      std::cout << "Test Failed: ||A*B-C||/||C|| " << diff_result << std::endl << std::endl;
     }
   }
 
   return(return_code);
+
+}
+
+template<class Ordinal>
+int run_test(RCP<const Comm<Ordinal> > comm,
+             Teuchos::ParameterList matrixSystem,
+             bool result_mtx_to_file,
+             bool verbose)
+{
+  std::string A_file = matrixSystem.get<std::string>("A");
+  std::string B_file = matrixSystem.get<std::string>("B");
+  std::string C_file = matrixSystem.get<std::string>("C");
+  bool AT = matrixSystem.get<bool>("TransA");
+  bool BT = matrixSystem.get<bool>("TransB");
+  double epsilon = matrixSystem.get<double>("epsilon", defaultEpsilon);
+  std::string op = matrixSystem.get<std::string>("op");
+
+
+  int localProc = comm->getRank();
+
+
+  RCP<CrsMatrix<double,int> > A = null;
+  RCP<CrsMatrix<double,int> > B = null;
+  RCP<CrsMatrix<double,int> > C_check = null;
+
+  Utils::readHBMatrix(A_file, comm, Kokkos::DefaultNode::getDefaultNode(), A);
+  Utils::readHBMatrix(B_file, comm, Kokkos::DefaultNode::getDefaultNode(), B);
+  Utils::readHBMatrix(C_file, comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
+
+  if(op == "multiply"){
+    if(localProc == 0 && verbose){
+      std::cout << "Running multiply test for " << matrixSystem.name() << 
+        std::endl;
+    }
+    return multiply_test(A,B,C_check,AT,BT,epsilon,comm,verbose);
+  }
+  else if(op == "add"){
+    if(localProc == 0 && verbose){
+      std::cout << "Running add test for " << matrixSystem.name() << 
+        std::endl;
+    }
+    return add_test(A,B,C_check,AT,BT,epsilon,comm,verbose);
+  }
+  else{
+    if(localProc == 0 && verbose){
+      std::cout<< "Unrecognize matrix operation: " << op << ".";
+    }
+    return -1;
+  }
+
+
 }
 
 template<class Ordinal>
@@ -693,22 +576,22 @@ int main(int argc, char* argv[]) {
   clp.setOption("v", "not-verbose", &verbose, "Whether or not to use verbose output");
   clp.parse(argc, argv);
 
+
+  int localProc = comm->getRank();
+
   int err = Tpetra::two_proc_test(comm, verbose);
   if (err != 0) {
-    std::cerr << "two_proc_test returned err=="<<err<<std::endl;
+    if (localProc == 0 && verbose) {
+      std::cerr << "two_proc_test returned err=="<<err<<std::endl;
+    }
     return(err);
   }
-
-  err = Tpetra::simple_add_test(comm, verbose);
-  if(err != 0){
-    std::cerr << "two_proc_test returned err=="<<err<<std::endl;
-    return(err);
-  }
-
 
   err = Tpetra::test_find_rows(comm);
   if (err != 0 && comm->getRank() ==0) {
-    std::cerr << "test_find_rows returned err=="<<err<<std::endl;
+    if (localProc == 0 && verbose) {
+      std::cerr << "test_find_rows returned err=="<<err<<std::endl;
+    }
     return(err);
   } 
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems = 
@@ -736,25 +619,6 @@ int main(int argc, char* argv[]) {
       err = -1;
     }
 
-  }
-
-/**
- * Makes sure the multiply doesn't work if given bad matrices
- */
-  Teuchos::ParameterList wrongList;
-  wrongList.set("A", "matrices/wrong_m.hb");
-  wrongList.set("B", "matrices/wrong_tce.hb");
-  wrongList.set("C", "matrices/wrong_d.hb");
-  wrongList.set("TransA", false);
-  wrongList.set("TransB", true);
-  if(
-    Tpetra::run_test<int>(
-      comm, 
-      wrongList, 
-      write_result_hb, 
-      verbose) == 0 )
-  {
-    err = -1;
   }
 
 

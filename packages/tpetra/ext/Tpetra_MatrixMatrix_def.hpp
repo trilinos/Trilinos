@@ -1280,24 +1280,14 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
     Aprime = A;
   }
 
-  /*size_t MaxNumEntries = std::max(
-    A->getNodeMaxNumRowEntries(), 
-    B->getNodeMaxNumRowEntries() );*/
-  //int A_NumEntries, B_NumEntries;
-  //size_t A_NumEntries, B_NumEntries;
-  //int * A_Indices = new int[MaxNumEntries];
   size_t A_NumEntries;
   Array<GlobalOrdinal> A_Indices(Aprime->getGlobalMaxNumRowEntries());
-  //double * A_Values = new double[MaxNumEntries];
   Array<Scalar> A_Values(Aprime->getGlobalMaxNumRowEntries());
-  //int* B_Indices;
-  //double* B_Values;
   ArrayView<const GlobalOrdinal> B_Indices;
   ArrayView<const Scalar> B_Values;
 
   size_t NumMyRows = B->getNodeNumRows();
   GlobalOrdinal Row;
-  //int ierr = 0;
 
   if( scalarB != ScalarTraits<Scalar>::zero() &&
     scalarB != ScalarTraits<Scalar>::one())
@@ -1305,8 +1295,7 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
     B->scale(scalarB);
   }
   
-  if( scalarA  )
-  {
+  if( scalarA != ScalarTraits<Scalar>::zero()){
     //Loop over B's rows and sum into
     for( 
       size_t i = OrdinalTraits<size_t>::zero(); 
@@ -1315,6 +1304,8 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
     {
 	    Row = B->getRowMap()->getGlobalElement(i);
       A_NumEntries = Aprime->getNumEntriesInGlobalRow(Row);
+      A_Indices.resize(A_NumEntries);
+      A_Values.resize(A_NumEntries);
 	    Aprime->getGlobalRowCopy(Row, A_Indices(), A_Values(), A_NumEntries);
       if (scalarA != ScalarTraits<Scalar>::one()) {
         for( 
@@ -1325,18 +1316,14 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
           A_Values[j] *= scalarA;
         }
       } 
-      ///if( B->isFillComplete() ) {//Sum In Values
+      if( B->isFillComplete() ) {//Sum In Values
         B->sumIntoGlobalValues( Row, A_Indices, A_Values );
-      //}
-      //else {
-        //B->insertGlobalValues( Row, A_Indices, A_Values);
-      //}
+      }
+      else {
+        B->insertGlobalValues( Row, A_Indices, A_Values);
+      }
     }
   }
-  else {
-      B->scale(scalarB);
-  }
-//  return(ierr);
 }
 
 // CGB: check this...
@@ -1365,26 +1352,30 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
     "they are required to be true. (Result matrix C should be an empty pointer)" << std::endl);
 
 
-  RCP<CrsMatrix_t > Aprime = null;
-  RCP<CrsMatrix_t > Bprime = null;
+  RCP<const CrsMatrix_t > Aprime = null;
+  RCP<const CrsMatrix_t > Bprime = null;
 
 
   //explicit tranpose A formed as necessary
   if( transposeA ) {
+    RCP<CrsMatrix_t> aTrans = null;
 	RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
-    theTransposer.createTranspose(DoOptimizeStorage, Aprime);
+    theTransposer.createTranspose(DoOptimizeStorage, aTrans);
+    Aprime = aTrans;
   }
   else{
-    Aprime = Teuchos::rcp_const_cast<CrsMatrix_t >(A);
+    Aprime = A;
   }
 
   //explicit tranpose B formed as necessary
   if( transposeB ) {
+    RCP<CrsMatrix_t> bTrans = null;
 	RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(B);
-    theTransposer.createTranspose(DoOptimizeStorage, Bprime);
+    theTransposer.createTranspose(DoOptimizeStorage, bTrans);
+    Bprime = bTrans;
   }
   else{
-    Bprime = Teuchos::rcp_const_cast<CrsMatrix_t >(B);
+    Bprime = B;
   }
 
   // allocate or zero the new matrix

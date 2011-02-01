@@ -1,12 +1,14 @@
 <ParameterList>
-	<ParameterList name="matrixsystem1">
+	<ParameterList name="cdt_system">
+    <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/cdt_m.hb" type="string"/>
 		<Parameter name="B" value="matrices/cdt_tce.hb" type="string"/>
 		<Parameter name="C" value="matrices/cdt_d.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
 	</ParameterList>
-	<ParameterList name="matrixsystem2">
+	<ParameterList name="synthetic1">
+    <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/gen1a.hb" type="string"/>
 		<Parameter name="B" value="matrices/gen1b.hb" type="string"/>
 		<Parameter name="C" value="matrices/gen1c.hb" type="string"/>
@@ -14,12 +16,37 @@
 		<Parameter name="TransB" value="false" type="bool"/>
 		<Parameter name="epsilon" value=".000001" type="double"/>
 	</ParameterList>
-	<ParameterList name="matrixsystem3">
+	<ParameterList name="synthetic2">
+    <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/gen2a.hb" type="string"/>
 		<Parameter name="B" value="matrices/gen2b.hb" type="string"/>
 		<Parameter name="C" value="matrices/gen2c.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 		<Parameter name="epsilon" value=".0001" type="double"/>
+	</ParameterList>
+	<ParameterList name="1x4add">
+    <Parameter name="op" value="add" type="string"/>
+		<Parameter name="A" value="matrices/addA.hb" type="string"/>
+		<Parameter name="B" value="matrices/addB.hb" type="string"/>
+		<Parameter name="C" value="matrices/addC.hb" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
+	<ParameterList name="2x4add">
+    <Parameter name="op" value="add" type="string"/>
+		<Parameter name="A" value="matrices/add2x4A.hb" type="string"/>
+		<Parameter name="B" value="matrices/add2x4B.hb" type="string"/>
+		<Parameter name="C" value="matrices/add2x4C.hb" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
+	<ParameterList name="bigadd">
+    <Parameter name="op" value="add" type="string"/>
+		<Parameter name="A" value="matrices/bigAddA.hb" type="string"/>
+		<Parameter name="B" value="matrices/bigAddB.hb" type="string"/>
+		<Parameter name="C" value="matrices/bigAddC.hb" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
 </ParameterList>
