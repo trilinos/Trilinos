@@ -13,6 +13,7 @@
 #include "MueLu_RAPFactory.hpp"
 //#include "MueLu_GaussSeidel.hpp"
 #include "MueLu_IfpackSmoother.hpp"
+#include "MueLu_GenericPRFactory.hpp"
 
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
@@ -46,6 +47,7 @@ int main(int argc, char *argv[]) {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   LO numThreads=1;
+  LO its=10;
   GO nx=9;
   GO ny=9;
   GO nz=9;
@@ -58,6 +60,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("nz",&nz,"mesh points in z-direction.");
   cmdp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Star2D, Laplace3D, Identity");
   cmdp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
+  cmdp.setOption("its",&its,"number of multigrid cycles");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return EXIT_FAILURE;
   }
@@ -69,11 +72,13 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList pl;
   pl.set("Num Threads",numThreads);
 
-  GO numGlobalElements = nx*ny;
-  if (nx*ny - (nx*ny/3)*3 != 0)
-    throw(std::logic_error("problem size must be divisible by 3"));
+  GO numGlobalElements = nx;
+  if (matrixType == "Laplace2D" || matrixType == "Star2D")
+    numGlobalElements *= ny;
   if (matrixType == "Laplace3D")
     numGlobalElements *= nz;
+  if (numGlobalElements - (numGlobalElements/3)*3 != 0)
+    throw(MueLu::Exceptions::RuntimeError("problem size must be divisible by 3"));
   LO indexBase = 0;
 
   RCP<const Map > map;
@@ -86,7 +91,6 @@ int main(int argc, char *argv[]) {
 
   RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>(matrixType,map,matrixList); //TODO: Operator vs. CrsOperator
 
-  //RCP<Vector> nullSpace = VectorFactory::Build(map);
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
   RCP<Epetra_MultiVector> foo = Utils::MV2NonConstEpetraMV(nullSpace);
@@ -101,21 +105,14 @@ int main(int argc, char *argv[]) {
 
   Finest->SetA(Op);
   Finest->Save("Nullspace",nullSpace);
-
-  Teuchos::RCP< Operator > cOp = Finest->GetA();
-  //GO nFineDofs = cOp->getGlobalNumRows();
-  //prolongator is nFineDofs by nCoarseDofs
-  //Teuchos::RCP<Cthulhu::CrsOperator> Ptent = Teuchos::rcp( new Cthulhu::CrsOperator(cOp->Rowmap(), 2) );
-  Teuchos::RCP< Operator > Ptent = Teuchos::rcp( new CrsOperator(cOp->getRowMap(), 2) );
-
-
-
+  Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
+                                          //FIXME is implemented
 
   Finest->Save("NullSpace",nullSpace);
   H.SetLevel(Finest);
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
-  RCP<TransPFactory>      Rfact = rcp( new TransPFactory() );
+  RCP<GenericPRFactory>   PRfact = rcp( new GenericPRFactory(Pfact));
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   Teuchos::ParameterList  ifpackList;
   ifpackList.set("relaxation: type", "Gauss-Seidel");
@@ -123,13 +120,21 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
 
-  //RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("IC",ifpackList) );
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smoother) );
-  //RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(Teuchos::null,Teuchos::null) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  //H.FillHierarchy(Pfact,Rfact,Acfact);
-  H.FullPopulate(Pfact,Rfact,Acfact,SmooFact,0,maxLevels);
+  Teuchos::ParameterList status;
+  status = H.FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+  std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
+  std::cout << status << std::endl;
+
+  //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
+  ifpackList.set("relaxation: type", "Gauss-Seidel");
+  ifpackList.set("relaxation: sweeps", (LO) 50);
+  ifpackList.set("relaxation: damping factor", (SC) 1.0);
+  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  SmootherFactory coarseSolve(smoother);
+  H.SetCoarsestSolver(coarseSolve);
 
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
@@ -139,13 +144,15 @@ int main(int argc, char *argv[]) {
   X->randomize();
   Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-  //double n;
-  //epX->Norm2(&n);
-  //std::cout << "||X_true|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
+  epX->Norm2(&n);
+  std::cout << "||X_true|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
 
   X->putScalar( (SC) 0.0);
 
-  H.Iterate(RHS,1,X);
+  H.Iterate(RHS,its,X);
+
+  epX->Norm2(&n);
+  std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
 
 
 #endif // HAVE_MUELU_IFPACK
