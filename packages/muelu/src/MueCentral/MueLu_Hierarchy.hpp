@@ -277,10 +277,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      {
        Teuchos::Array<Magnitude> norms(1);
        Teuchos::OSTab tab(*out_);
-       *out_ << "Hierarchy::Iterate()" << std::endl;
 
-           *out_ << "Levels_ size = " << Levels_.size() << std::endl;
-           *out_ << "startLevel = " << startLevel << std::endl;
 
        for (LO i=0; i<nIts; i++) {
 
@@ -289,48 +286,30 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          RCP<SmootherPrototype> postSmoo = Fine->GetPostSmoother();
 
          X->norm2(norms);
-         *out_ << " level " << startLevel << ": ||X_init|| = " << norms<< std::endl;
-         GimmeNorm(rhs,"rhs coming into Iterate");
 
          //If on the coarse level, do either smoothing (if defined) or a direct solve.
          if (startLevel == Levels_.size()-1) //FIXME is this right?
          {
            //FIXME no coarse direct solver right now, just smooth
-           //if (preSmoo != Teuchos::null) preSmoo->Apply(X, rhs, InitialGuessIsZero);
-           GimmeNorm(X,"||X|| before ''direct solve''");
-           GimmeNorm(rhs,"||rhs|| before ''direct solve''");
            bool emptySolve=true;
            if (preSmoo != Teuchos::null) {preSmoo->Apply(X, rhs, false); emptySolve=false;}
            if (postSmoo != Teuchos::null) {postSmoo->Apply(X, rhs, false); emptySolve=false;}
            if (emptySolve==true)
              *out_ << "WARNING:  no coarse grid solve!!" << std::endl;
-           GimmeNorm(X,"||X|| after ''direct solve''");
          } else {
            //on an intermediate level
-           *out_ << "on intermediate level" << std::endl;
            RCP<Level> Coarse = Levels_[startLevel+1];
            if (preSmoo != Teuchos::null)
              preSmoo->Apply(X, rhs, false);
-             //preSmoo->Apply(X, rhs, InitialGuessIsZero);
 
            RCP<MultiVector> residual = Utils::Residual(*(Fine->GetA()),*X,*rhs);
-           *out_ << "   intermediate ||r||" << " = " << Utils::ResidualNorm(*(Fine->GetA()),*X,*rhs) << std::endl;
            RCP<Operator> R = Coarse->GetR();
-           RCP<const Epetra_CrsMatrix> epR = Utils::Op2EpetraCrs(R);
-           //*out_ << "epR\n========\n" << *epR << std::endl;
-           //*out_ << *residual << std::endl;
-           //RCP<const Epetra_MultiVector> epResidual = Utils::MV2EpetraMV(residual);
-           //*out_ << "epResidual\n========\n" << *epResidual << std::endl;
            RCP<MultiVector> coarseRhs = MultiVectorFactory::Build(R->getRowMap(),X->getNumVectors());
            R->multiply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
-           //RCP<Epetra_MultiVector> epCoarseRhs = Utils::MV2NonConstEpetraMV(coarseRhs);
-           //*out_ << "epCoarseRhs before multiply\n=====================\n" << *epCoarseRhs << std::endl;
-           //TODO try multiplying the Epetra R time the residual ..
-           //epR->Multiply(false,*epResidual,*epCoarseRhs);
-           //*out_ << "epCoarseRhs\n========\n" << *epCoarseRhs << std::endl;
+
            RCP<MultiVector> coarseX = MultiVectorFactory::Build(R->getRowMap(),X->getNumVectors());
            coarseX->putScalar(0.);
-           *out_ << "   ||coarseRhs||" << " = " << Utils::ResidualNorm(*(Coarse->GetA()),*coarseX,*coarseRhs) << std::endl;
+
            Iterate(coarseRhs,1,coarseX,true,Cycle,startLevel+1);
            //                           ^^ zero initial guess
            if (Cycle>1)
@@ -341,25 +320,16 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRowMap(),X->getNumVectors());
            P->multiply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
            correction->norm2(norms);
-           *out_ << "||correction||" << " = " << norms << std::endl;
 
            X->update(1.0,*correction,1.0);
 
            if (postSmoo != Teuchos::null) {
              X->norm2(norms);
-             *out_ << " level " << startLevel << ": before postsmoother, ||X_init|| = " << norms<< std::endl;
              postSmoo->Apply(X, rhs, false);
-             *out_ << "here" << std::endl;
            }
          }
 
-             *out_ << "here 2" << std::endl;
-         if (Fine->GetLevelID() == 1) {
-           *out_ << "||r||_" << i << " = " << Utils::ResidualNorm(*(Fine->GetA()),*X,*rhs) << std::endl;
-         }
-
        } //for (LO i=0; i<nIts; i++)
-             *out_ << "here 3" << std::endl;
 
      } //Iterate()
 
