@@ -55,6 +55,7 @@
 #include <stdexcept>
 
 namespace MatrixMarket {
+
   namespace Raw {
 
     /// \class Element
@@ -114,7 +115,48 @@ namespace MatrixMarket {
     //! Print out an Element to the given output stream
     template<class Scalar, class Ordinal>
     std::ostream& 
-    operator<< (std::ostream& out, const Element<Scalar, Ordinal>& elt) {
+    operator<< (std::ostream& out, const Element<Scalar, Ordinal>& elt) 
+    {
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      // Non-Ordinal types are floating-point types.  In order not to
+      // lose information when we print a floating-point type, we have
+      // to set the number of digits to print.  C++ standard behavior
+      // in the default locale seems to be to print only five decimal
+      // digits after the decimal point; this does not suffice for
+      // double precision.  We solve the problem of how many digits to
+      // print more generally below.  It's a rough solution so please
+      // feel free to audit and revise it.
+      //
+      // FIXME (mfh 01 Feb 2011) 
+      // This really calls for the following approach:
+      //
+      // Guy L. Steele and Jon L. White, "How to print floating-point
+      // numbers accurately", 20 Years of the ACM/SIGPLAN Conference
+      // on Programming Language Design and Implementation
+      // (1979-1999): A Selection, 2003.
+      if (! STS::isOrdinal)
+	{
+	  // std::scientific, std::fixed, and default are the three
+	  // output states for floating-point numbers.  A reasonable
+	  // user-defined floating-point type should respect these
+	  // flags; hopefully it does.
+	  out << std::scientific;
+
+	  // Decimal output is standard for Matrix Market format.
+	  out << std::setbase (10);
+
+	  // Compute the number of decimal digits required for expressing
+	  // a Scalar, by comparing with IEEE 754 double precision (16
+	  // decimal digits, 53 binary digits).  This would be easier if
+	  // Teuchos exposed std::numeric_limits<T>::digits10, alas.
+	  const double numDigitsAsDouble = 
+	    16 * ((double) STS::t() / (double) Teuchos::ScalarTraits<double>::t());
+	  // Adding 0.5 and truncating is a portable "floor".
+	  const int numDigits = static_cast<int> (numDigitsAsDouble + 0.5);
+
+	  // Precision to which a Scalar should be written.
+	  out << std::setprecision (numDigits);
+	}
       out << elt.rowIndex() << " " << elt.colIndex() << " " << elt.value();
       return out;
     }
