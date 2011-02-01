@@ -42,11 +42,17 @@
 #ifndef __MatrixMarket_raw_hpp
 #define __MatrixMarket_raw_hpp
 
+#include "MatrixMarket_Banner.hpp"
+#include "MatrixMarket_CoordDataReader.hpp"
 #include "MatrixMarket_util.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
+
 #include <algorithm>
-#include <vector>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <iterator>
+#include <vector>
+#include <stdexcept>
 
 namespace MatrixMarket {
   namespace Raw {
@@ -58,6 +64,10 @@ namespace MatrixMarket {
     template<class Scalar, class Ordinal>
     class Element {
     public:
+      //! Default constructor: an invalid structural nonzero element
+      Element () : rowIndex_ (-1), colIndex_ (-1), value_ (0) {}
+
+      //! A structural nonzero element at (i,j) with value Aij
       Element (const Ordinal i, const Ordinal j, const Scalar& Aij) :
 	rowIndex_ (i), colIndex_ (j), value_ (Aij) {}
 
@@ -102,9 +112,11 @@ namespace MatrixMarket {
     };
 
     //! Print out an Element to the given output stream
+    template<class Scalar, class Ordinal>
     std::ostream& 
     operator<< (std::ostream& out, const Element<Scalar, Ordinal>& elt) {
       out << elt.rowIndex() << " " << elt.colIndex() << " " << elt.value();
+      return out;
     }
 
     template<class Scalar, class Ordinal>
@@ -113,13 +125,14 @@ namespace MatrixMarket {
       typedef Ordinal index_type;
       typedef Scalar value_type;
       typedef Element<Scalar, Ordinal> element_type;
+      typedef typename std::vector<element_type>::size_type size_type;
 
       Adder () : numRows_(0), numCols_(0), numNonzeros_(0) {}
 
       //! Add an element to the sparse matrix at location (i,j) (one-based indexing).
       void operator() (const Ordinal i, const Ordinal j, const Scalar& Aij) {
 	// i and j are 1-based
-	elts_.push_back (Element (i-1, j-1, Aij));
+	elts_.push_back (element_type (i-1, j-1, Aij));
 	// Keep track of the rightmost column containing a nonzero,
 	// and the bottommost row containing a nonzero.  This gives us
 	// a lower bound for the dimensions of the matrix, and a check
@@ -145,7 +158,8 @@ namespace MatrixMarket {
 	else
 	  std::sort (elts_.begin(), elts_.end());
 	// Print out the results, delimited by newlines.
-	std::copy (elts_.begin(), elts_.end(), std::ostream_iterator (out, "\n"));
+	typedef std::ostream_iterator<element_type> iter_type;
+	std::copy (elts_.begin(), elts_.end(), iter_type (out, "\n"));
       }
 
       /// \brief Merge duplicate elements 
@@ -156,11 +170,10 @@ namespace MatrixMarket {
       /// "unique" (meaning "nonduplicate") elements.
       ///
       /// \return (# unique elements, # removed elements)
-      std::pair<std::vector<element_type>::size_type, std::vector<element_type>::size_type>
+      std::pair<size_type, size_type>
       merge (const bool replace=false) 
       {
-	typedef std::vector<element_type>::iterator iter_type;
-	typedef std::vector<element_type>::size_type size_type;
+	typedef typename std::vector<element_type>::iterator iter_type;
 
 	// Start with a sorted container.  It may be sorted already,
 	// but we just do the extra work.
@@ -212,26 +225,36 @@ namespace MatrixMarket {
     public:
       static void
       readFile (const std::string& filename,
-		const bool tolerant=false)
+		const bool tolerant=false,
+		const bool debug=false)
       {
 	std::ifstream in (filename.c_str());
-	return read (in, tolerant);
+	TEST_FOR_EXCEPTION(!in, std::runtime_error,
+			   "Failed to open input file \"" + filename + "\".");
+	return read (in, tolerant, debug);
       }
       
       static void
-      read (const std::istream& in,	
-	    const bool tolerant=false)
+      read (std::istream& in,	
+	    const bool tolerant=false,
+	    const bool debug=false)
       {
+	using std::cerr;
+	using std::cout;
+	using std::endl;
 	typedef Teuchos::ScalarTraits<Scalar> STS;
 
-	const Ordinal numRows, numCols, numNonzeros;
+	TEST_FOR_EXCEPTION(!in, std::invalid_argument,
+			   "Input stream appears to be in an invalid state.");
+
+	Ordinal numRows, numCols, numNonzeros;
 	bool success = true;
 	std::string line;
-	if (! in.getline(line))
+	if (! getline (in, line))
 	  throw std::invalid_argument ("Failed to get first (banner) line");
 
 	Banner banner (line, tolerant);
-	if (matrixType() != "coordinate")
+	if (banner.matrixType() != "coordinate")
 	  throw std::invalid_argument ("Matrix Market input file must contain a "
 				       "\"coordinate\"-format sparse matrix in "
 				       "order to create a sparse matrix object "
@@ -250,36 +273,49 @@ namespace MatrixMarket {
 	// of nonzeros.
 	success = readCoordinateDimensions (in, numRows, numCols, numNonzeros, 
 					    lineNumber, tolerant);
+	if (success && debug)
+	  {
+	    cout << "Dimensions of matrix: " << numRows << " x " << numCols 
+		 << ", with " << numNonzeros << " reported structural "
+	      "nonzeros." << endl;
+	  }
 	TEST_FOR_EXCEPTION(! success, std::invalid_argument,
 			   "Error reading Matrix Market sparse matrix "
 			   "file: failed to read coordinate dimensions.");
 	// Read the sparse matrix entries
-	std::pair<bool, std::vector<size_t> > results;	    
 	typedef Adder<Scalar, Ordinal> raw_adder_type;
 	typedef SymmetrizingAdder<raw_adder_type> adder_type;
 	raw_adder_type rawAdder;
 	adder_type adder (rawAdder, banner.symmType());
-
-	if (banner.dataType() == "real")
-	  results = readRealCoordinateData (in, adder, lineNumber, tolerant);
-	else if (banner.dataType() == "complex")
-	  {
-	    TEST_FOR_EXCEPTION(! STS::isComplex, std::invalid_argument,
-			       "The Matrix Market sparse matrix file contains "
-			       "complex-valued data, but you are trying to read"
-			       " the data into a sparse matrix of real values.");
-	    results = readComplexCoordinateData (in, adder, lineNumber, tolerant);
-	  }
-	else
-	  throw std::logic_error ("Should never get here!");
+	TEST_FOR_EXCEPTION(banner.dataType() == "complex" && ! STS::isComplex,
+			   std::invalid_argument,
+			   "The Matrix Market sparse matrix file contains "
+			   "complex-valued data, but you are trying to read"
+			   " the data into a sparse matrix of real values.");
+	typedef CoordDataReader<adder_type, Ordinal, Scalar, STS::isComplex> reader_type;
+	reader_type reader (adder);
+	std::pair<bool, std::vector<size_t> > results = 
+	  reader.read (in, lineNumber, tolerant, debug);
+	if (results.first)
+	  cout << "Matrix Market file successfully read" << endl;
+	else 
+	  cout << "Failed to read Matrix Market file" << endl;
 
 	// In tolerant mode, report any bad line number(s)
-	if (tolerant && ! results.first)
-	  reportBadness (std::cerr, results);
-
+	if (! results.first)
+	  {
+	    reportBadness (std::cerr, results);
+	    if (! tolerant)
+	      throw std::invalid_argument("Invalid Matrix Market file");
+	  }
 	// We're done reading in the sparse matrix.  Now print out the
 	// nonzero entry/ies.
-	rawAdder.print (std::cout);
+	if (debug)
+	  {
+	    const bool doMerge = false;
+	    const bool replace = false;
+	    rawAdder.print (std::cout, doMerge, replace);
+	  }
 	std::cout << std::endl;
       }
 

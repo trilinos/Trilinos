@@ -42,6 +42,7 @@
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_split.hpp"
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 
@@ -149,7 +150,7 @@ namespace MatrixMarket {
 
   Banner::Banner (const std::string& line, const bool tolerant)
   {
-    size_t start, end;
+    size_t start;
 
     if (line.empty())
       {
@@ -214,6 +215,15 @@ namespace MatrixMarket {
     //
     // After extracting the %%, search for the five tokens.
     std::vector<std::string> tokens = split (line, " \t", 2);
+    if (false)
+      {
+	using std::cerr;
+	using std::endl;
+	cerr << "Tokens on banner line:" << endl;
+	for (std::vector<std::string>::size_type k = 0; k < tokens.size(); ++k)
+	  cerr << tokens[k] << " ";
+	cerr << endl;
+      }
     const int numTokens = tokens.size();
     if (numTokens < 1)
       {

@@ -50,14 +50,15 @@ namespace MatrixMarket {
   bool 
   checkCommentLine (const std::string& line, 
 		    size_t& start, 
-		    size_t& end, 
+		    size_t& size,
 		    const size_t lineNumber,
 		    const bool tolerant)
   {
+    // In tolerant mode, empty lines are considered comment lines.
     if (line.empty()) 
       {
 	if (tolerant)
-	  return false;
+	  return true;
 	else
 	  {
 	    std::ostringstream os;
@@ -65,38 +66,36 @@ namespace MatrixMarket {
 	    throw std::invalid_argument (os.str());
 	  }
       }
-    start = 0;
-    end = 0;
-
     // The line of comments or data "starts" after any whitespace
     // characters.  Whitespace-only lines are considered "empty."
     start = line.find_first_not_of (" \t");
-    if (start == std::string::npos) 
+    if (start == std::string::npos)
       { // It's a whitespace-only line
 	if (tolerant)
-	  return false; 
+	  return true;
 	else
 	  {
 	    std::ostringstream os;
 	    os << "Line " << lineNumber << " contains only whitespace";
 	    throw std::invalid_argument (os.str());
 	  }
-      }	  
-    // Position of the first comment character, if any.
-    const size_t commentPos = line.find("%", start);
-    // Does the line start, possibly after whitespace, with a comment
-    // character?  If so, then it's a comment.  Otherwise it's not.
-    // If not, return in [start,end] the (inclusive) range of
-    // characters containing non-comment data.
-    if (commentPos == start)
-      {
-	end = std::string::npos;
-	return true;
       }
-    else
-      {
-	// [start,start+end-1] is the valid range of data
-	end = commentPos - start + 1;
+    // Position of the first comment character, if any.
+    const size_t commentPos = line.find_first_of("%#", start);
+    if (commentPos == std::string::npos)
+      { // There are no comment characters in the line.
+	// line.substr(start,npos) gives the substring of line
+	// containing valid data.
+	size = std::string::npos;
+	return false;
+      }
+    else 
+      { // [start, start+size-1] is the (inclusive) range of
+	// characters (if any) between the first nonwhitespace
+	// character, and the first comment character.
+	size = commentPos - start;
+	// It's not a "comment line," because there could be valid
+	// data before the first comment character.
 	return false;
       }
   }

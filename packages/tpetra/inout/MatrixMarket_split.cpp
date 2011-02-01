@@ -117,7 +117,7 @@ namespace MatrixMarket {
     std::vector<std::string>
     split (const std::string& str, const std::string& delimiters, const size_t start)
     {
-      size_t curStart = 0;
+      size_t curStart = start;
       size_t size = str.size();
       std::vector<std::string> tokens;
       while (true) 
