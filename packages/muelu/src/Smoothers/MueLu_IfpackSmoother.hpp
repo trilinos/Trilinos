@@ -133,8 +133,6 @@ class Level;
       ifpackList.set("relaxation: zero starting solution", InitialGuessIsZero);
       prec_->SetParameters(ifpackList);
 
-      Teuchos::OSTab tab(out_);
-      MueLu_cout(Teuchos::VERB_HIGH) << "IfpackSmoother::Apply()" << std::endl;
       RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(x);
       RCP<const Epetra_MultiVector> epRhs = Utils::MV2NonConstEpetraMV(rhs);
 
