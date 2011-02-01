@@ -116,6 +116,91 @@ namespace MatrixMarket {
 	}
       return std::make_pair (allSucceeded, badLineNumbers);
     }
+
+    bool
+    readDimensions (std::istream& in, 
+		    Ordinal& numRows, 
+		    Ordinal& numCols,
+		    Ordinal& numNonzeros,
+		    const size_t lineNumber,
+		    const bool tolerant = false)
+    {
+      Ordinal __numRows, __numCols, __numNonzeros;
+      std::string line;
+
+      if (! getline(in, line))
+	{
+	  if (tolerant)
+	    return false;
+	  std::ostringstream os;
+	  os << "Failed to read line " << lineNumber << " from input stream"
+	    "; it should contains coordinate matrix dimensions.";
+	  throw std::invalid_argument (os.str());
+	}
+      // Read in <numRows> <numCols> <numNonzeros> from input line
+      std::istringstream istr (line);
+
+      if (istr.eof() || istr.fail())
+	{
+	  if (tolerant)
+	    return false;
+	  std::ostringstream os;
+	  os << "Unable to read any data from line " << lineNumber 
+	     << " of input; it should contain coordinate matrix dimensions.";
+	  throw std::invalid_argument(os.str());
+	}
+      istr >> __numRows;
+      if (istr.fail())
+	{
+	  if (tolerant)
+	    return false;
+	  std::ostringstream os;
+	  os << "Failed to get number of rows from line " << lineNumber << " of input";
+	  throw std::invalid_argument(os.str());
+	}
+      else if (istr.eof())
+	{
+	  if (tolerant)
+	    return false;
+	  std::ostringstream os;
+	  os << "No more data after number of rows on line " << lineNumber << " of input";
+	  throw std::invalid_argument(os.str());
+	}
+      istr >> __numCols;
+      if (istr.fail())
+	{
+	  if (tolerant)
+	    return false;
+	  std::ostringstream os;
+	  os << "Failed to get number of columns from line " << lineNumber << " of input";
+	  throw std::invalid_argument(os.str());
+	}
+      else if (istr.eof())
+	{
+	  if (tolerant)
+	    return false;
+	  std::ostringstream os;
+	  os << "No more data after number of columns on line " << lineNumber << " of input";
+	  throw std::invalid_argument(os.str());
+	}
+      istr >> __numNonzeros;
+      if (istr.fail())
+	{
+	  if (tolerant)
+	    return false;
+	  std::ostringstream os;
+	  os << "Failed to get number of nonzeros from line " << lineNumber << " of input";
+	  throw std::invalid_argument(os.str());
+	}
+      // It would be nice to validate the read-in data further.  The
+      // only thing we can do now is test if it's negative.  However,
+      // we don't know syntactically whether Ordinal is a signed or
+      // unsigned type.
+      numRows = __numRows;
+      numCols = __numCols;
+      numNonzeros = __numNonzeros;
+      return true;
+    }
   };
 
 

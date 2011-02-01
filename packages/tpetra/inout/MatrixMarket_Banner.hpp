@@ -114,6 +114,23 @@ namespace MatrixMarket {
 
     std::string objectType_, matrixType_, dataType_, symmType_;
   };
+
+  /// Print out the "banner" of the Matrix Market file
+  ///
+  /// This function may be used to generate Matrix Market output
+  /// files, since it prints the banner (first line of the Matrix
+  /// Market file) in the canonical format.  However, we don't promise
+  /// that it prints out in exactly the same format in which it was
+  /// read in, especially (but not only) if it was read in "tolerant"
+  /// mode.
+  ///
+  /// \note We don't print the endline at the end of the banner line.
+  ///
+  /// \param out [out] The output stream to which to print
+  /// \param banner [in] The Matrix Market banner to print
+  ///
+  /// \return The output stream \c out
+  std::ostream& operator<< (std::ostream& out, const Banner& banner);
 } // namespace MatrixMarket
 
 #endif // __MatrixMarket_Banner_hpp

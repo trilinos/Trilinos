@@ -267,12 +267,37 @@ namespace MatrixMarket {
 	  throw std::invalid_argument ("Only real or complex data types (no "
 				       "pattern or integer matrices) are "
 				       "currently supported");
+	if (debug)
+	  {
+	    cout << "Banner line:" << endl
+		 << banner << endl;
+	  }
 	// The rest of the file starts at line 2, after the banner line.
 	size_t lineNumber = 2;
-	// Read in the dimensions of the sparse matrix and the number
-	// of nonzeros.
-	success = readCoordinateDimensions (in, numRows, numCols, numNonzeros, 
-					    lineNumber, tolerant);
+
+	// Make an "Adder" that knows how to add sparse matrix entries,
+	// given a line of data from the file.
+	typedef Adder<Scalar, Ordinal> raw_adder_type;
+	// SymmetrizingAdder "advices" (yes, I'm using that as a verb)
+	// the original Adder, so that additional entries are filled
+	// in symmetrically, if the Matrix Market banner line
+	// specified a symmetry type other than "general".
+	typedef SymmetrizingAdder<raw_adder_type> adder_type;
+	raw_adder_type rawAdder;
+	adder_type adder (rawAdder, banner.symmType());
+	TEST_FOR_EXCEPTION(banner.dataType() == "complex" && ! STS::isComplex,
+			   std::invalid_argument,
+			   "The Matrix Market sparse matrix file contains "
+			   "complex-valued data, but you are trying to read"
+			   " the data into a sparse matrix of real values.");
+	// Make a reader that knows how to read "coordinate" format
+	// sparse matrix data.
+	typedef CoordDataReader<adder_type, Ordinal, Scalar, STS::isComplex> reader_type;
+	reader_type reader (adder);
+
+	// Read in the dimensions of the sparse matrix (number of rows
+	// and columns) and the number of nonzeros.
+	success = reader.readDimensions (in, numRows, numCols, numNonzeros, lineNumber, tolerant);
 	if (success && debug)
 	  {
 	    cout << "Dimensions of matrix: " << numRows << " x " << numCols 
@@ -282,18 +307,9 @@ namespace MatrixMarket {
 	TEST_FOR_EXCEPTION(! success, std::invalid_argument,
 			   "Error reading Matrix Market sparse matrix "
 			   "file: failed to read coordinate dimensions.");
+	lineNumber++;
+
 	// Read the sparse matrix entries
-	typedef Adder<Scalar, Ordinal> raw_adder_type;
-	typedef SymmetrizingAdder<raw_adder_type> adder_type;
-	raw_adder_type rawAdder;
-	adder_type adder (rawAdder, banner.symmType());
-	TEST_FOR_EXCEPTION(banner.dataType() == "complex" && ! STS::isComplex,
-			   std::invalid_argument,
-			   "The Matrix Market sparse matrix file contains "
-			   "complex-valued data, but you are trying to read"
-			   " the data into a sparse matrix of real values.");
-	typedef CoordDataReader<adder_type, Ordinal, Scalar, STS::isComplex> reader_type;
-	reader_type reader (adder);
 	std::pair<bool, std::vector<size_t> > results = 
 	  reader.read (in, lineNumber, tolerant, debug);
 	if (results.first)

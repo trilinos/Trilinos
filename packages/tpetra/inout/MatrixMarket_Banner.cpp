@@ -262,5 +262,17 @@ namespace MatrixMarket {
     if (numTokens >= 5)
       symmType_ = validateSymmType (tokens[4], tolerant);
   }
+
+  std::ostream& 
+  operator<< (std::ostream& out, const Banner& banner) 
+  {
+    out << "%%MatrixMarket" 
+	<< " " << banner.objectType()
+	<< " " << banner.matrixType()
+	<< " " << banner.dataType()
+	<< " " << banner.symmType();
+    return out;
+  }
+
 } // namespace MatrixMarket
 
