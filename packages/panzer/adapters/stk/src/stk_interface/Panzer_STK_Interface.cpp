@@ -360,6 +360,11 @@ const double * STK_Interface::getNodeCoordinates(stk::mesh::EntityId nodeId) con
    return stk::mesh::field_data(*coordinatesField_,*node);
 }
 
+const double * STK_Interface::getNodeCoordinates(stk::mesh::Entity * node) const
+{
+   return stk::mesh::field_data(*coordinatesField_,*node);
+}
+
 void STK_Interface::getSubcellIndices(unsigned entityRank,stk::mesh::EntityId elementId,
                                       std::vector<stk::mesh::EntityId> & subcellIds) const                       
 {

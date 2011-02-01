@@ -22,6 +22,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/stk_interface)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/evaluators)
 
 # FAD
 APPEND_SET(HEADERS
@@ -36,6 +37,8 @@ APPEND_SET(HEADERS
   stk_interface/Panzer_STK_SquareQuadMeshFactory.hpp
   stk_interface/Panzer_STK_ExodusReaderFactory.hpp
   stk_interface/Panzer_STK_CubeHexMeshFactory.hpp
+  evaluators/Panzer_STK_GatherFields.hpp
+  evaluators/Panzer_STK_GatherFieldsT.hpp
   ) 
 
 APPEND_SET(SOURCES

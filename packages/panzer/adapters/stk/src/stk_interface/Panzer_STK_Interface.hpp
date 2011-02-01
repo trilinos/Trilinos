@@ -45,6 +45,11 @@ buildElementDescriptor(stk::mesh::EntityId elmtId,std::vector<stk::mesh::EntityI
 
 class STK_Interface {
 public:
+   typedef stk::mesh::Field<double> SolutionFieldType;
+   typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+   typedef stk::mesh::Field<int> ProcIdFieldType;
+   typedef stk::mesh::Field<std::size_t> LocalIdFieldType;
+
    STK_Interface();
 
    /** Default constructor
@@ -104,6 +109,10 @@ public:
    /** Look up a global node and get the coordinate.
      */
    const double * getNodeCoordinates(stk::mesh::EntityId nodeId) const;
+
+   /** Look up a global node and get the coordinate.
+     */
+   const double * getNodeCoordinates(stk::mesh::Entity * node) const;
 
    /** Get subcell global IDs
      */
@@ -298,11 +307,6 @@ protected:
      */
    void buildMaxEntityIds();
 
-   typedef stk::mesh::Field<double> SolutionFieldType;
-   typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
-   typedef stk::mesh::Field<int> ProcIdFieldType;
-   typedef stk::mesh::Field<std::size_t> LocalIdFieldType;
-
    Teuchos::RCP<stk::mesh::MetaData> metaData_;
    Teuchos::RCP<stk::mesh::BulkData> bulkData_;
 
@@ -370,7 +374,7 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
       stk::mesh::Entity * element = elements[localId];
 
       // loop over nodes set solution values
-      stk::mesh::PairIterRelation relations = element->relations(stk::mesh::Node);
+      stk::mesh::PairIterRelation relations = element->relations(getNodeRank());
       for(std::size_t i=0;i<relations.size();++i) {
          stk::mesh::Entity * node = relations[i].entity();
 
