@@ -191,6 +191,23 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
     
   }
 }
+
+//=======================================================================
+//=======================================================================
+template<typename LO, typename GO>
+void panzer::FieldManagerBuilder<LO,GO>::
+writeGraphvizDependencyFiles(std::string filename_prefix,
+			     const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const
+{  
+  std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
+  int index = 0;
+  for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr,++index) {
+    std::string blockId = (*blkItr)->elementBlockID();
+    phx_volume_field_managers_[index]->writeGraphvizFile(filename_prefix+blockId);
+  }
+
+}
+
 //=======================================================================
 //=======================================================================
 template<typename LO, typename GO>
