@@ -87,7 +87,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Flux Name", prefix+"GRAD_TEMPERATURE");
     p.set("Basis", this->m_basis);
     p.set("IR", this->m_int_rule);
-    p.set("Multiplier", -diffusion_coefficient);
+    p.set("Multiplier", diffusion_coefficient);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_GradBasisDotVector<EvalT,panzer::Traits>(p));

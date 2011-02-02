@@ -5,19 +5,32 @@
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
+#include "Epetra_LocalMap.h"
 
 panzer::ModelEvaluator_Epetra::
-ModelEvaluator_Epetra(Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb,
-		      Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof) : 
+ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+		      const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
+		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+		      bool is_transient) : 
   fmb_(fmb),
-  lof_(lof)
+  lof_(lof),
+  p_names_(p_names),
+  is_transient_(is_transient)
 {
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
   map_x_ = lof->getMap();
   x0_ = rcp(new Epetra_Vector(*map_x_));
-  p_  = rcp(new Epetra_Vector(*map_x_));
+  
+  for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::const_iterator p = p_names_.begin(); 
+       p != p_names_.end(); ++p) {
+    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap((*p)->size(), 0, map_x_->Comm())) ;
+    p_map_.push_back(local_map);
+    RCP<Epetra_Vector> ep_vec = rcp(new Epetra_Vector(*local_map));
+    ep_vec->PutScalar(0.0);
+    p_init_.push_back(ep_vec);
+  }
 
   // Initialize the graph for W CrsMatrix object
   W_graph_ = lof->getGraph();
@@ -31,13 +44,6 @@ ModelEvaluator_Epetra(Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb,
   // for convenience save the container objects
   ghostedContainer_ = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->ghostedContainer_);
   container_ = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->container_);
-
-/*
-  ae_inargs_.x = rcp(new Epetra_Vector(*(lof->getGhostedMap())));
-  ae_inargs_.dxdt = rcp(new Epetra_Vector(*(lof->getGhostedMap())));
-  ae_inargs_.f = rcp(new Epetra_Vector(*(lof->getGhostedMap())));
-  ae_inargs_.j = rcp(new Epetra_CrsMatrix(View, *(lof->getGhostedGraph())));
-*/
 
   isInitialized_ = true;
 }
@@ -68,6 +74,24 @@ panzer::ModelEvaluator_Epetra::create_W() const
   return Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
 }
 
+Teuchos::RCP<const Epetra_Map> 
+panzer::ModelEvaluator_Epetra::get_p_map(int l) const
+{
+  return p_map_[l];
+}
+
+Teuchos::RCP<const Teuchos::Array<std::string> > 
+panzer::ModelEvaluator_Epetra::get_p_names(int l) const
+{
+  return p_names_[l];
+}
+
+Teuchos::RCP<const Epetra_Vector> 
+panzer::ModelEvaluator_Epetra::get_p_init(int l) const
+{
+  return p_init_[l];
+}
+
 EpetraExt::ModelEvaluator::InArgs
 panzer::ModelEvaluator_Epetra::createInArgs() const
 {
@@ -75,8 +99,10 @@ panzer::ModelEvaluator_Epetra::createInArgs() const
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(IN_ARG_x,true);
   inArgs.setSupports(IN_ARG_x_dot,true);
+  inArgs.setSupports(IN_ARG_t,true);
   inArgs.setSupports(IN_ARG_alpha,true);
   inArgs.setSupports(IN_ARG_beta,true);
+  inArgs.set_Np(p_init_.size());
   return inArgs;
 }
 
@@ -85,6 +111,7 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
 {
   OutArgsSetup outArgs;
   outArgs.setModelEvalDescription(this->description());
+  outArgs.set_Np_Ng(0, 0);
   outArgs.setSupports(OUT_ARG_f,true);
   outArgs.setSupports(OUT_ARG_W,true);
   outArgs.set_W_properties(
@@ -105,51 +132,83 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
   //
   // Get the input arguments
   //
-  const Epetra_Vector& x = *inArgs.get_x();
-  const Epetra_Vector& x_dot = *inArgs.get_x_dot();
+  const RCP<const Epetra_Vector> x = inArgs.get_x();
+  const RCP<const Epetra_Vector> x_dot = inArgs.get_x_dot();
   ae_inargs_->alpha = inArgs.get_alpha();
   ae_inargs_->beta = inArgs.get_beta();
 
   //
   // Get the output arguments
   //
-  Epetra_Vector* f_out = outArgs.get_f().get();
-  Epetra_Operator* W_out = outArgs.get_W().get();
+  const RCP<Epetra_Vector> f_out = outArgs.get_f();
+  const RCP<Epetra_Operator> W_out = outArgs.get_W();
 
-  // move global solution and time derivative to ghosted solution
-  RCP<Epetra_Import> importer = lof_->getGhostedImport();
-  ghostedContainer_->x->Import(x,*importer,Insert);
-  ghostedContainer_->dxdt->Import(x_dot,*importer,Insert);
+  // zero out global container objects
+  const RCP<panzer::EpetraLinearObjContainer> epGlobalContainer = 
+    Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->container_);
+  TEUCHOS_ASSERT(!Teuchos::is_null(epGlobalContainer));
+  epGlobalContainer->x = Teuchos::null;
+  epGlobalContainer->dxdt = Teuchos::null;
+  epGlobalContainer->f = Teuchos::null;
+  epGlobalContainer->A = Teuchos::null;
 
-  if (f_out && W_out) {
+  // Zero values in ghosted container objects
+  const RCP<panzer::EpetraLinearObjContainer> epGhostedContainer = 
+    Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->ghostedContainer_);
+
+  // Set the solution vector (currently all targets require solution).
+  // In the future we may move these into the individual cases below.
+  epGlobalContainer->x = Teuchos::rcp_const_cast<Epetra_Vector>(x);
+  if (is_transient_)
+    epGlobalContainer->dxdt = Teuchos::rcp_const_cast<Epetra_Vector>(x_dot);
+  
+  if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
+    //std::cout << "F AND J" << std::endl;
+
+    // Set the targets
+    epGlobalContainer->f = f_out;
+    epGlobalContainer->A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out);
+
+    // Zero values in ghosted container objects
+    epGhostedContainer->f->PutScalar(0.0);
+    epGhostedContainer->A->PutScalar(0.0);
+
     ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(*ae_inargs_);
-
-    // move ghosted residual and Jacobian to global versions
-    RCP<Epetra_Export> exporter = lof_->getGhostedExport();
-
-    f_out->PutScalar(0.0);
-    f_out->Export(*ghostedContainer_->f, *exporter, Add);
-
-    Epetra_CrsMatrix& J = dynamic_cast<Epetra_CrsMatrix&>(*W_out);
-    J.PutScalar(0.0);
-    J.Export(*ghostedContainer_->A, *exporter, Add);
+    
+    //f_out->Print(std::cout);
+    //Epetra_CrsMatrix& J = dynamic_cast<Epetra_CrsMatrix&>(*W_out);
+    //J.Print(std::cout);
   }
-  else if(f_out && !W_out) {
+  else if(!Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
+    //std::cout << "F only" << std::endl;
+
+    epGlobalContainer->f = f_out;
+
+    // Zero values in ghosted container objects
+    epGhostedContainer->f->PutScalar(0.0);
+
     ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluate(*ae_inargs_);
 
-    // move ghosted residual to global residual
-    RCP<Epetra_Export> exporter = lof_->getGhostedExport();
-    f_out->PutScalar(0.0);
-    f_out->Export(*ghostedContainer_->f, *exporter, Add);
+    f_out->Update(1.0, *(container_->f), 0.0);
+
+    //f_out->Print(std::cout);
   }
-  else if(!f_out && W_out) {
+  else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
+    //std::cout << "J only" << std::endl;
+
+    if (Teuchos::is_null(dummy_f_))
+      dummy_f_ = Teuchos::rcp(new Epetra_Vector(*(this->get_f_map())));
+
+    epGlobalContainer->f = dummy_f_;
+    epGlobalContainer->A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out);
+
+    // Zero values in ghosted container objects
+    epGhostedContainer->A->PutScalar(0.0);
+
     ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(*ae_inargs_);
 
-    // move ghosted Jacobian to global Jacobian
-    RCP<Epetra_Export> exporter = lof_->getGhostedExport();
-    Epetra_CrsMatrix& J = dynamic_cast<Epetra_CrsMatrix&>(*W_out);
-    J.PutScalar(0.0);
-    J.Export(*ghostedContainer_->A, *exporter, Add);
+    //Epetra_CrsMatrix& J = dynamic_cast<Epetra_CrsMatrix&>(*W_out);
+    //J.Print(std::cout);
   }
 
 }

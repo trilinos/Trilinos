@@ -22,6 +22,9 @@ template <typename EvalT,typename LO,typename GO>
 void panzer::AssemblyEngine<EvalT,LO,GO>::
 evaluate(const panzer::AssemblyEngineInArgs& in)
 {
+  // Push solution, x and dxdt into ghosted domain
+  m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_);
+
   // *********************
   // Volumetric fill
   // *********************

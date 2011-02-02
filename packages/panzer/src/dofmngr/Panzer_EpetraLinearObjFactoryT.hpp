@@ -57,11 +57,18 @@ template <typename Traits,typename LocalOrdinalT>
 void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostContainer(const LinearObjContainer & in,
                                                                           LinearObjContainer & out) const
 {
-   const EpetraLinearObjContainer & e_in = Teuchos::dyn_cast<const EpetraLinearObjContainer>(in); 
-   EpetraLinearObjContainer & e_out = Teuchos::dyn_cast<EpetraLinearObjContainer>(out); 
+  using Teuchos::is_null;
 
-   globalToGhostEpetraVector(*e_in.x,*e_out.x);
-   globalToGhostEpetraVector(*e_in.dxdt,*e_out.dxdt);
+  const EpetraLinearObjContainer & e_in = Teuchos::dyn_cast<const EpetraLinearObjContainer>(in); 
+  EpetraLinearObjContainer & e_out = Teuchos::dyn_cast<EpetraLinearObjContainer>(out); 
+  
+  // Operations occur if the GLOBAL container has the correct targets!
+  // Users set the GLOBAL continer arguments
+  if ( !is_null(e_in.x) )
+    globalToGhostEpetraVector(*e_in.x,*e_out.x);
+  
+  if ( !is_null(e_in.dxdt) )
+    globalToGhostEpetraVector(*e_in.dxdt,*e_out.dxdt);
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -71,9 +78,13 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalContainer(const 
    const EpetraLinearObjContainer & e_in = Teuchos::dyn_cast<const EpetraLinearObjContainer>(in); 
    EpetraLinearObjContainer & e_out = Teuchos::dyn_cast<EpetraLinearObjContainer>(out); 
 
-   globalToGhostEpetraVector(*e_in.f,*e_out.f);
-   globalToGhostEpetraVector(*e_in.dxdt,*e_out.dxdt);
-   ghostToGlobalEpetraMatrix(*e_in.A,*e_out.A);
+  // Operations occur if the GLOBAL container has the correct targets!
+  // Users set the GLOBAL continer arguments
+   if ( !is_null(e_out.f) )
+     ghostToGlobalEpetraVector(*e_in.f,*e_out.f);
+
+   if ( !is_null(e_out.A) )
+     ghostToGlobalEpetraMatrix(*e_in.A,*e_out.A);
 }
 
 template <typename Traits,typename LocalOrdinalT>
