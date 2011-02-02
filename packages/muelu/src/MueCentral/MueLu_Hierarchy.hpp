@@ -213,15 +213,25 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        return status;
      } //FillHierarchy
 
-     //! @brief Set solve method for coarsest method.
-     void SetCoarsestSolver(SmootherFactory const &smooFact) {
+     /*! @brief Set solve method for coarsest method.
+
+         @param smooFact  fully constructed SmootherFactory 
+         @param pop       whether to use pre,post, or both pre and post smoothing 
+
+         Note: Whether the SmootherFactory builds both a pre- and post-smoother can be also be
+         controlled by SmootherFactory::SetSmootherPrototypes. This approach is a bit cumbersome,
+         however.
+     */
+     void SetCoarsestSolver(SmootherFactory const &smooFact, PreOrPost const &pop = BOTH) {
        RCP<SmootherPrototype> preSmoo;
        RCP<SmootherPrototype> postSmoo;
        LO clevel = GetNumberOfLevels()-1;
 
        smooFact.Build(Levels_[clevel],preSmoo,postSmoo);
-       if (preSmoo != Teuchos::null) Levels_[clevel]->SetPreSmoother(preSmoo);
-       if (postSmoo != Teuchos::null) Levels_[clevel]->SetPostSmoother(preSmoo);
+       if (pop == PRE)       postSmoo = Teuchos::null;
+       else if (pop == POST) preSmoo  = Teuchos::null;
+       Levels_[clevel]->SetPreSmoother(preSmoo);
+       Levels_[clevel]->SetPostSmoother(postSmoo);
      }
 
      /*! @brief Construct smoothers on all levels but the coarsest.
@@ -275,15 +285,14 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
      } //SetSmoothers()
 
-     /*!
-       @brief Apply the multigrid preconditioner.
-     */
-
-         typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
-
+//         typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+//FIXME delete this macro
 #define GimmeNorm(someVec,someLabel) {(someVec)->norm2(norms); \
          *out_ << someLabel << " = " << norms<< std::endl;}
 
+     /*!
+       @brief Apply the multigrid preconditioner.
+     */
      void Iterate(RCP<MultiVector> const &rhs, LO nIts, RCP<MultiVector> &X,
                   bool const &InitialGuessIsZero=false, CycleType const &Cycle=VCYCLE, LO const &startLevel=0)
      {
@@ -310,7 +319,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          //If on the coarse level, do either smoothing (if defined) or a direct solve.
          if (startLevel == Levels_.size()-1) //FIXME is this right?
          {
-           //FIXME no coarse direct solver right now, just smooth
            bool emptySolve=true;
            if (preSmoo != Teuchos::null) {preSmoo->Apply(X, rhs, false); emptySolve=false;}
            if (postSmoo != Teuchos::null) {postSmoo->Apply(X, rhs, false); emptySolve=false;}
@@ -331,10 +339,10 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            coarseX->putScalar(0.);
 
            Iterate(coarseRhs,1,coarseX,true,Cycle,startLevel+1);
-           //                           ^^ zero initial guess
+                                     // ^^ zero initial guess
            if (Cycle>1)
              Iterate(coarseRhs,1,coarseX,false,Cycle,startLevel+1);
-             //                           ^^ nonzero initial guess
+                                     // ^^ nonzero initial guess
      
            RCP<Operator> P = Coarse->GetP();
            RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRowMap(),X->getNumVectors());

@@ -66,10 +66,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  std::cout << "#threads = " << numThreads << std::endl;
-  std::cout << "problem size = " << nx*ny << std::endl;
-  std::cout << "matrix type = " << matrixType << std::endl;
-
   Teuchos::ParameterList pl;
   pl.set("Num Threads",numThreads);
 
@@ -81,6 +77,10 @@ int main(int argc, char *argv[]) {
   if (numGlobalElements - (numGlobalElements/3)*3 != 0)
     throw(MueLu::Exceptions::RuntimeError("problem size must be divisible by 3"));
   LO indexBase = 0;
+
+  std::cout << "#threads = " << numThreads << std::endl;
+  std::cout << "problem size = " << numGlobalelements << std::endl;
+  std::cout << "matrix type = " << matrixType << std::endl;
 
   RCP<const Map > map;
   map = rcp( new MyMap(numGlobalElements, indexBase, comm) );
@@ -119,25 +119,22 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: type", "Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherPrototype>  smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
 
-  RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smoother) );
+  RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
   status = H.FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
   std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
-  std::cout << status << std::endl;
+  status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
 
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
   Teuchos::ParameterList amesosList;
   amesosList.set("PrintTiming",true);
-  amesosList.set("OutputLevel",1);
   RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
-  RCP<SmootherPrototype> nullProto;
-  SmootherFactory coarseSolveFact(coarseProto,nullProto);
-  coarseSolveFact.SetSmootherPrototypes(coarseProto,nullProto);
-  H.SetCoarsestSolver(coarseSolveFact);
+  SmootherFactory coarseSolveFact(coarseProto);
+  H.SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);

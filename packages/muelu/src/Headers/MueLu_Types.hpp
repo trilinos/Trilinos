@@ -5,5 +5,11 @@ namespace MueLu {
     VCYCLE,
     WCYCLE
   };
+
+  enum PreOrPost {
+    PRE,
+    POST,
+    BOTH
+  };
 }
 #endif //ifndef MUELU_TYPES_HPP

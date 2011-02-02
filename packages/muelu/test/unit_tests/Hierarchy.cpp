@@ -204,6 +204,20 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
   TEUCHOS_TEST_INEQUALITY(postSmoo, Teuchos::null, out, success);
   TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
 
+  H.SetCoarsestSolver(SmooFactory,MueLu::PRE);
+  preSmoo = levelOne->GetPreSmoother();
+  TEUCHOS_TEST_INEQUALITY(preSmoo, Teuchos::null, out, success);
+  TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
+  postSmoo = levelOne->GetPostSmoother();
+  TEUCHOS_TEST_EQUALITY(postSmoo, Teuchos::null, out, success);
+
+  H.SetCoarsestSolver(SmooFactory,MueLu::POST);
+  preSmoo = levelOne->GetPreSmoother();
+  TEUCHOS_TEST_EQUALITY(preSmoo, Teuchos::null, out, success);
+  postSmoo = levelOne->GetPostSmoother();
+  TEUCHOS_TEST_INEQUALITY(postSmoo, Teuchos::null, out, success);
+  TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
+
 } //SetCoarsestSolver
 
 TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
