@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 
   X->putScalar( (SC) 0.0);
 
-  H.IsStandAlone(true);
+  H.PrintResidualHistory(true);
   H.Iterate(RHS,its,X);
 
   epX->Norm2(&n);
