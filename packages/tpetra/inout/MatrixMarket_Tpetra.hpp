@@ -42,6 +42,7 @@
 #ifndef __MatrixMarket_Tpetra_hpp
 #define __MatrixMarket_Tpetra_hpp
 
+#include "Tpetra_CrsMatrix.hpp"
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
 #include "MatrixMarket_util.hpp"
@@ -93,7 +94,7 @@ namespace MatrixMarket {
       ///   would be, for a Tpetra::CrsMatrix.)
       Adder (const Teuchos::RCP<sparse_matrix_type>& pMatrix) :
 	pMatrix_ (pMatrix), 
-	myRank_ (Teuchos::rank (pMatrix->getComm()))
+	myRank_ (Teuchos::rank (*(pMatrix->getComm())))
       {}
 
       //! Set entry (i,j) of the sparse matrix to Aij
@@ -149,9 +150,9 @@ namespace MatrixMarket {
       /// don't have a notion of distribution.
       typedef typename SparseMatrixType::global_ordinal_type global_ordinal_type;
       typedef typename SparseMatrixType::node_type node_type;
-
-      typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-      typedef Teuchos::RCP<map_type> map_ptr;
+      // Prefix :: says look for Tpetra::Map, not MatrixMarket::Tpetra::Map
+      typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+      typedef Teuchos::RCP<const map_type> map_ptr;
 
     private:
       /// Read in the Banner line from the given input stream
@@ -176,10 +177,10 @@ namespace MatrixMarket {
 	RCP<Banner> pBanner;
 	if (myRank == 0)
 	  {
-	    typedef Teuchos::ScalarTraits<Scalar> STS;
+	    typedef Teuchos::ScalarTraits<scalar_type> STS;
 
 	    std::string line;
-	    if (! in.getline(line))
+	    if (! getline(in, line))
 	      throw std::invalid_argument ("Failed to get first (banner) line");
 	    else
 	      lineNumber++;
@@ -192,7 +193,7 @@ namespace MatrixMarket {
 					   "object from it.");
 	    else if (! STS::isComplex && pBanner->dataType() == "complex")
 	      throw std::invalid_argument ("Matrix Market file contains complex-"
-					   "valued data, but your chosen Scalar "
+					   "valued data, but your chosen scalar "
 					   "type is real.");
 	    else if (pBanner->dataType() != "real" && pBanner->dataType() != "complex")
 	      throw std::invalid_argument ("Only real or complex data types (no "
@@ -213,7 +214,7 @@ namespace MatrixMarket {
       readCoordDims (std::istream& in,
 		     size_t& lineNumber,
 		     const Teuchos::RCP<const Banner>& pBanner,
-		     const Teuchos::RCP<const comm_type>& pComm,
+		     const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
 		     const bool tolerant = false) // ignored except on Rank 0
       {
 	// Packed coordinate matrix dimensions (numRows, numCols,
@@ -239,41 +240,36 @@ namespace MatrixMarket {
 	    success = readCoordinateDimensions (in, numRows, numCols, 
 						numNonzeros, lineNumber, 
 						tolerant);
+	    // Pack up the data into a Tuple so we can send them with
+	    // one broadcast instead of three.
+	    dims[0] = numRows;
+	    dims[1] = numCols;
+	    dims[2] = numNonzeros;
+	    lineNumber++;
 	  }
-	lineNumber++;
 	// Only Rank 0 did the reading, so it decides success.
-	Teuchos::broadcast (*pComm, 0, &success);
+	//
+	// FIXME (mfh 02 Feb 2011) Teuchos::broadcast doesn't know how
+	// to send bools.  For now, we convert to/from int instead,
+	// using the usual "true is 1, false is 0" encoding.
+	{
+	  int __success = success ? 1 : 0; // only matters on MPI Rank 0
+	  Teuchos::broadcast (*pComm, 0, &__success);
+	  success = (__success == 1);
+	}
 	if (success)
-	  {
-	    // Broadcast (numRows, numCols, numNonzeros) from Rank 0
-	    // to all the other MPI ranks.  We gather them up into an
-	    // Tuple so we can send them with one broadcast instead of
-	    // three.
-	    if (Teuchos::rank(*pComm) == 0)
-	      {
-		dims[0] = numRows;
-		dims[1] = numCols;
-		dims[2] = numNonzeros;
-	      }
-	    Teuchos::broadcast (*pComm, 0, dims);
-	    if (Teuchos::rank(*pComm) != 0)
-	      {
-		numRows = dims[0];
-		numCols = dims[1];
-		numNonzeros = dims[2];
-	      }
-	  }
+	  // Broadcast (numRows, numCols, numNonzeros) from Rank 0
+	  // to all the other MPI ranks.  
+	  Teuchos::broadcast (*pComm, 0, dims);
 	else
-	  {
-	    // Perhaps in tolerant mode, we could set all the
-	    // dimensions to zero for now, and deduce correct
-	    // dimensions by reading all of the file's entries and
-	    // computing the max(row index) and max(column index).
-	    // However, for now we just error out in that case.
-	    throw std::invalid_argument ("Error reading Matrix Market sparse "
-					 "matrix: failed to read coordinate "
-					 "matrix dimensions.");
-	  }
+	  // Perhaps in tolerant mode, we could set all the
+	  // dimensions to zero for now, and deduce correct
+	  // dimensions by reading all of the file's entries and
+	  // computing the max(row index) and max(column index).
+	  // However, for now we just error out in that case.
+	  throw std::invalid_argument ("Error reading Matrix Market sparse "
+				       "matrix: failed to read coordinate "
+				       "matrix dimensions.");
 	return dims;
       }
 
@@ -326,10 +322,7 @@ namespace MatrixMarket {
       {
 	using Teuchos::RCP;
 	using Teuchos::rcp;
-	typedef typename sparse_matrix_type::local_ordinal_type local_ordinal_type;
-	typedef typename sparse_matrix_type::global_ordinal_type global_ordinal_type;
-	typedef typename sparse_matrix_type::node_type node_type;	
-	typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+	using ::Tpetra::GloballyDistributed;
 
 	const global_ordinal_type numRows = dims[0];
 	const global_ordinal_type numCols = dims[1];
@@ -340,20 +333,23 @@ namespace MatrixMarket {
 	// because we are using a block row distribution, regardless
 	// of whether or not the matrix is square.  The row Map is
 	// always 1-1.
-	RCP<map_type> pRangeMap (new map_type (numRows, 0, pComm, 
-					       Tpetra::GloballyDistributed, 
-					       pNode));
+	RCP<const map_type> pRangeMap = 
+	  rcp (new map_type (numRows, 0, pComm, GloballyDistributed, pNode));
 	// Map to represent the domain of the sparse matrix.  We only
 	// need this if the matrix is not square (numRows != numCols).
-	RCP<map_type> pDomainMap (new map_type (numCols, 0, pComm, 
-						Tpetra::GloballyDistributed, 
-						pNode));
+	RCP<const map_type> pDomainMap =
+	  rcp (new map_type (numRows, 0, pComm, GloballyDistributed, pNode));
+
 	// (Column) Map to represent the set of columns owned by this
 	// MPI rank.  This stays null if the matrix is square, since
 	// we can use the default in that case.  The column Map is
 	// _not_ 1-1 unless there is only 1 MPI rank.
-	RCP<map_type> pColMap;
-	if (numRows != numCols)
+	RCP<const map_type> pColMap;
+	if (numRows != numCols) {
+	  using ::Tpetra::createContigMapWithNode;
+	  typedef local_ordinal_type LO;
+	  typedef global_ordinal_type GO;
+	  typedef node_type NT;
 	  // Since we're setting up a block row distribution, each MPI
 	  // rank owns all the columns: the local number of elements
 	  // is the same as the global number of elements.
@@ -361,7 +357,9 @@ namespace MatrixMarket {
 	  // FIXME (mfh 01 Feb 2011) Should check that casting numCols
 	  // to size_t (the second argument) doesn't overflow.  It
 	  // probably doesn't for the usual global_ordinal_type types.
-	  pColMap = Tpetra::createContigMapWithNode (numCols, numCols, pComm, pNode);
+	  pColMap = createContigMapWithNode<LO, GO, NT> (numCols, numCols, 
+							 pComm, pNode);
+	}
 
 	// Set up the sparse matrix.  The range Map is the same as the
 	// row Map in this case, but the column Map may be different
@@ -377,17 +375,23 @@ namespace MatrixMarket {
 
 	return MatrixTriple (pDomainMap, pRangeMap, pMatrix);
       }
+      
+      /// Type of object that adds entries to the sparse matrix, with
+      /// optional symmetrization depending on the Matrix Market
+      /// banner line information.
+      typedef SymmetrizingAdder<Adder<sparse_matrix_type> > adder_type;
 
       /// Return an Adder object that optionally symmetrizes the
       /// entries of the sparse matrix.
       /// 
+      /// \param pComm [in] Communicator (across whose MPI ranks 
+      ///   the sparse matrix will be distributed)
       /// \param banner [in, nonnull and valid on Rank 0 only]
       /// \param triple [in/out, all MPI ranks]
       ///
       /// \return adder object [nonnull and valid on Rank 0 only]
       ///
       /// \note To be called only on MPI Rank 0
-      typedef adder_type SymmetrizingAdder<Adder<sparse_matrix_type> >;
       static Teuchos::RCP<adder_type>
       makeAdder (const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
 		 Teuchos::RCP<const Banner>& pBanner, 
@@ -397,7 +401,8 @@ namespace MatrixMarket {
 	  {
 	    using Teuchos::RCP;
 	    using Teuchos::rcp;
-	    typedef raw_adder_type Adder<sparse_matrix_type>;
+	    typedef Adder<sparse_matrix_type> raw_adder_type;
+
 	    RCP<raw_adder_type> pRaw (new raw_adder_type (triple.pMatrix));
 	    return rcp (new adder_type (pRaw, pBanner->symmType()));
 	  }
@@ -414,7 +419,7 @@ namespace MatrixMarket {
       completeMatrix (const MatrixTriple& triple)
       {
 	triple.pMatrix->fillComplete (triple.pDomainMap, triple.pRangeMap);
-	return pMatrix;
+	return triple.pMatrix;
       }
 
     public:
@@ -423,22 +428,24 @@ namespace MatrixMarket {
       readFile (const std::string& filename,
 		const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
 		const Teuchos::RCP<node_type>& pNode,
-		const bool tolerant=false)
+		const bool tolerant=false,
+		const bool debug=false)
       {
 	std::ifstream in (filename.c_str());
-	return read (in, pComm, tolerant);
+	return read (in, pComm, pNode, tolerant, debug);
       }
       
       static Teuchos::RCP<sparse_matrix_type>
       read (std::istream& in,	
 	    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
 	    const Teuchos::RCP<node_type>& pNode,
-	    const bool tolerant=false)
+	    const bool tolerant=false,
+	    const bool debug=false)
       {
 	using Teuchos::RCP;
 	using Teuchos::rcp;
 	using Teuchos::Tuple;
-	typedef Teuchos::ScalarTraits<Scalar> STS;
+	typedef Teuchos::ScalarTraits<scalar_type> STS;
 	const int myRank = Teuchos::rank (*pComm);
 
 	// I _could_ write this as a giant one-liner pipe, to please
@@ -457,7 +464,6 @@ namespace MatrixMarket {
 	bool readSuccess = false;
 	if (myRank == 0)
 	  {
-	    std::pair<bool, std::vector<size_t> > results;	    
 	    // Reader for "coordinate" format sparse matrix data.
 	    typedef CoordDataReader<adder_type, global_ordinal_type, scalar_type, STS::isComplex> reader_type;
 	    reader_type reader (*pAdder);
@@ -468,12 +474,19 @@ namespace MatrixMarket {
 
 	    readSuccess = results.first;
 	  }
-	// The broadcast of success serves as a barrier.  Note that
-	// Tpetra::CrsMatrix::fillComplete() only starts with a
-	// barrier in debug mode, so we need some kind of barrier or
-	// synchronization beforehand.
-	Teuchos::broadcast (*pComm, 0, &readSuccess);
-
+	// The broadcast of readSuccess from MPI Rank 0 serves as a
+	// barrier.  Note that Tpetra::CrsMatrix::fillComplete() only
+	// starts with a barrier in debug mode, so we need some kind
+	// of barrier or synchronization beforehand.
+	//
+	// FIXME (mfh 02 Feb 2011) Teuchos::broadcast doesn't know how
+	// to send bools.  For now, we convert to/from int instead,
+	// using the usual "true is 1, false is 0" encoding.
+	{
+	  int __readSuccess = readSuccess ? 1 : 0; // only matters on MPI Rank 0
+	  Teuchos::broadcast (*pComm, 0, &__readSuccess);
+	  readSuccess = (__readSuccess == 1);
+	}
 	// TODO (mfh 01 Feb 2011)
 	//
 	// In tolerant mode, given a "verbose" flag, report / log any
@@ -493,3 +506,4 @@ namespace MatrixMarket {
   } // namespace Tpetra
 } // namespace MatrixMarket
 
+#endif // __MatrixMarket_Tpetra_hpp
