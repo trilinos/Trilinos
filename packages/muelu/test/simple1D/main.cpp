@@ -14,6 +14,7 @@
 //#include "MueLu_GaussSeidel.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_GenericPRFactory.hpp"
+#include "MueLu_AmesosSmoother.hpp"
 
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
@@ -129,12 +130,14 @@ int main(int argc, char *argv[]) {
   std::cout << status << std::endl;
 
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-  ifpackList.set("relaxation: sweeps", (LO) 50);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-  SmootherFactory coarseSolve(smoother);
-  H.SetCoarsestSolver(coarseSolve);
+  Teuchos::ParameterList amesosList;
+  amesosList.set("PrintTiming",true);
+  amesosList.set("OutputLevel",1);
+  RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
+  RCP<SmootherPrototype> nullProto;
+  SmootherFactory coarseSolveFact(coarseProto,nullProto);
+  coarseSolveFact.SetSmootherPrototypes(coarseProto,nullProto);
+  H.SetCoarsestSolver(coarseSolveFact);
 
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
@@ -149,6 +152,7 @@ int main(int argc, char *argv[]) {
 
   X->putScalar( (SC) 0.0);
 
+  H.IsStandAlone(true);
   H.Iterate(RHS,its,X);
 
   epX->Norm2(&n);
