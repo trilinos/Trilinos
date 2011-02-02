@@ -26,6 +26,7 @@ DEST_FILES
 cdt_d.hb cdt_m.hb cdt_tce.hb
 gen1a.hb gen1b.hb gen1c.hb
 gen2a.hb gen2b.hb gen2c.hb
+gen3a.hb gen3b.hb gen3c.hb
 addA.hb addB.hb addC.hb
 add2x4A.hb add2x4B.hb add2x4C.hb
 bigAddA.hb bigAddB.hb bigAddC.hb

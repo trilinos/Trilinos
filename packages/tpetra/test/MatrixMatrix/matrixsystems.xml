@@ -25,14 +25,15 @@
 		<Parameter name="TransB" value="false" type="bool"/>
 		<Parameter name="epsilon" value=".00000001" type="double"/>
 	</ParameterList>
-	<ParameterList name="1x4add">
-    <Parameter name="op" value="add" type="string"/>
-		<Parameter name="A" value="matrices/addA.hb" type="string"/>
-		<Parameter name="B" value="matrices/addB.hb" type="string"/>
-		<Parameter name="C" value="matrices/addC.hb" type="string"/>
+  <ParameterList name="synthetic3">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/gen3a.hb" type="string"/>
+		<Parameter name="B" value="matrices/gen3b.hb" type="string"/>
+		<Parameter name="C" value="matrices/gen3c.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
-	</ParameterList>
+		<Parameter name="epsilon" value=".00000001" type="double"/>
+  </ParameterList>
 	<ParameterList name="2x4add">
     <Parameter name="op" value="add" type="string"/>
 		<Parameter name="A" value="matrices/add2x4A.hb" type="string"/>
