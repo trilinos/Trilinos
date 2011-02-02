@@ -81,6 +81,10 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 
   out << "Providing no factories to FillHierarchy." << std::endl;
   H.FillHierarchy();
+
+  bool ToF = H.PrintResidualHistory();
+  H.PrintResidualHistory(!ToF);
+  TEUCHOS_TEST_INEQUALITY(H.PrintResidualHistory(), ToF, out, success);
 } //FillHierarchy_NoFactoriesGiven
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)

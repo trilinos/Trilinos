@@ -36,6 +36,8 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
     //! vector of Level objects
     std::vector<Teuchos::RCP<Level> > Levels_;
+    //! print residual history during iteration
+    bool printResidualHistory_;
 
   protected:
     Teuchos::RCP<Teuchos::FancyOStream> out_;
@@ -46,7 +48,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
   //@{
 
     //! Default constructor.
-    Hierarchy() : out_(this->getOStream()) {}
+    Hierarchy() : printResidualHistory_(false), out_(this->getOStream()) {}
 
     //! Copy constructor.
     Hierarchy(Hierarchy const &inHierarchy) {
@@ -74,6 +76,16 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
      LO GetNumberOfLevels() {
        return Levels_.size();
+     }
+
+     //! Indicate whether to print residual history
+     void PrintResidualHistory(bool value) {
+       printResidualHistory_ = value;
+     }
+
+     //! Retrieve whether to print residual history
+     bool PrintResidualHistory() {
+       return printResidualHistory_;
      }
 
    //@}
@@ -275,17 +287,25 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      void Iterate(RCP<MultiVector> const &rhs, LO nIts, RCP<MultiVector> &X,
                   bool const &InitialGuessIsZero=false, CycleType const &Cycle=VCYCLE, LO const &startLevel=0)
      {
-       Teuchos::Array<Magnitude> norms(1);
-       Teuchos::OSTab tab(*out_);
-
+       //Teuchos::Array<Magnitude> norms(1);
+       //Teuchos::OSTab tab(*out_);
 
        for (LO i=0; i<nIts; i++) {
 
          RCP<Level> Fine = Levels_[startLevel];
+
+         if (printResidualHistory_ && startLevel==0) {
+           *out_ << "iter:    "
+                 << std::setiosflags(ios::left)
+                 << std::setprecision(3) << i;
+           *out_ << "           residual = "
+                 << std::setprecision(10) << Utils::ResidualNorm(*(Fine->GetA()),*X,*rhs)
+                 << std::endl;
+         }
          RCP<SmootherPrototype> preSmoo = Fine->GetPreSmoother();
          RCP<SmootherPrototype> postSmoo = Fine->GetPostSmoother();
 
-         X->norm2(norms);
+         //X->norm2(norms);
 
          //If on the coarse level, do either smoothing (if defined) or a direct solve.
          if (startLevel == Levels_.size()-1) //FIXME is this right?
@@ -319,12 +339,12 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            RCP<Operator> P = Coarse->GetP();
            RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRowMap(),X->getNumVectors());
            P->multiply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
-           correction->norm2(norms);
+           //correction->norm2(norms);
 
            X->update(1.0,*correction,1.0);
 
            if (postSmoo != Teuchos::null) {
-             X->norm2(norms);
+             //X->norm2(norms);
              postSmoo->Apply(X, rhs, false);
            }
          }
