@@ -284,8 +284,11 @@ namespace MatrixMarket {
 	using std::cerr;
 	using std::cout;
 	using std::endl;
+	using Teuchos::RCP;
 	typedef Teuchos::ScalarTraits<Scalar> STS;
 
+	// FIXME (mfh 01 Feb 2011) What about MPI?  Should only do
+	// this on Rank 0.
 	TEST_FOR_EXCEPTION(!in, std::invalid_argument,
 			   "Input stream appears to be in an invalid state.");
 
@@ -325,7 +328,7 @@ namespace MatrixMarket {
 	// in symmetrically, if the Matrix Market banner line
 	// specified a symmetry type other than "general".
 	typedef SymmetrizingAdder<raw_adder_type> adder_type;
-	raw_adder_type rawAdder;
+	RCP<raw_adder_type> rawAdder (new raw_adder_type);
 	adder_type adder (rawAdder, banner.symmType());
 	TEST_FOR_EXCEPTION(banner.dataType() == "complex" && ! STS::isComplex,
 			   std::invalid_argument,
@@ -372,7 +375,7 @@ namespace MatrixMarket {
 	  {
 	    const bool doMerge = false;
 	    const bool replace = false;
-	    rawAdder.print (std::cout, doMerge, replace);
+	    rawAdder->print (std::cout, doMerge, replace);
 	  }
 	std::cout << std::endl;
       }

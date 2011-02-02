@@ -42,6 +42,7 @@
 #ifndef __MatrixMarket_util_hpp
 #define __MatrixMarket_util_hpp
 
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <string>
 
@@ -74,7 +75,8 @@ namespace MatrixMarket {
     typedef typename AdderType::index_type index_type;
     typedef typename AdderType::value_type value_type;
     
-    SymmetrizingAdder (AdderType& adder, const std::string& symmType) :
+    SymmetrizingAdder (const Teuchos::RCP<AdderType>& adder, 
+		       const std::string& symmType) :
       adder_ (adder),
       symmetrize_ (needsSymmetrization (symmType)),
       conjugate_ (isConj (symmType)),
@@ -82,17 +84,19 @@ namespace MatrixMarket {
     {}
     
     void operator() (const index_type i, const index_type j, const value_type& Aij) {
-      adder_ (i, j, Aij);
+      AdderType& theAdder = *adder_;
+
+      theAdder (i, j, Aij);
       if (symmetrize_ && i != j) {
 	typedef Teuchos::ScalarTraits<value_type> STS;
 	const value_type Aji = skew_ ? 
 	  -(conjugate_ ? STS::conjugate(Aij) : Aij) : 
 	  +(conjugate_ ? STS::conjugate(Aij) : Aij);
-	adder_ (j, i, Aji);
+	theAdder (j, i, Aji);
       }
     }
   private:
-    AdderType& adder_;
+    Teuchos::RCP<AdderType> adder_;
     bool symmetrize_, conjugate_, skew_;
   };
 } // namespace MatrixMarket
