@@ -24,6 +24,7 @@ SmootherFactory.cpp
 IfpackSmoother.cpp
 Needs.cpp
 GenericPRFactory.cpp
+Amesos.cpp
 )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
