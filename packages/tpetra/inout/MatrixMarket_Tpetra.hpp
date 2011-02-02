@@ -334,11 +334,15 @@ namespace MatrixMarket {
 	// of whether or not the matrix is square.  The row Map is
 	// always 1-1.
 	RCP<const map_type> pRangeMap = 
-	  rcp (new map_type (numRows, 0, pComm, GloballyDistributed, pNode));
+	  rcp (new map_type (static_cast<::Tpetra::global_size_t>(numRows), 
+			     static_cast<global_ordinal_type>(0), 
+			     pComm, GloballyDistributed, pNode));
 	// Map to represent the domain of the sparse matrix.  We only
 	// need this if the matrix is not square (numRows != numCols).
 	RCP<const map_type> pDomainMap =
-	  rcp (new map_type (numRows, 0, pComm, GloballyDistributed, pNode));
+	  rcp (new map_type (static_cast<::Tpetra::global_size_t>(numRows), 
+			     static_cast<global_ordinal_type>(0), 
+			     pComm, GloballyDistributed, pNode));
 
 	// (Column) Map to represent the set of columns owned by this
 	// MPI rank.  This stays null if the matrix is square, since
