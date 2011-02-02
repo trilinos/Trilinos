@@ -169,7 +169,7 @@ namespace panzer {
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,*linObjFactory);
 
     // Print Phalanx DAGs
-    fmb->writeGraphvizDependencyFiles("Panzer_", physicsBlocks);
+    fmb->writeVolumeGraphvizDependencyFiles("Panzer_", physicsBlocks);
 
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 

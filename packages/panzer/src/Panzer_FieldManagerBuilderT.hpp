@@ -196,8 +196,8 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
 //=======================================================================
 template<typename LO, typename GO>
 void panzer::FieldManagerBuilder<LO,GO>::
-writeGraphvizDependencyFiles(std::string filename_prefix,
-			     const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const
+writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
+				   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const
 {  
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
   int index = 0;

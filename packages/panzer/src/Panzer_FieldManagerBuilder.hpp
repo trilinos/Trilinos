@@ -113,8 +113,8 @@ namespace panzer {
                               const panzer::BCStrategyFactory& bc_factory,
                               const LinearObjFactory<panzer::Traits> & lo_factory);
 
-    void writeGraphvizDependencyFiles(std::string filename_prefix,
-				      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const;
+    void writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
+					    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const;
 
   private:
 
