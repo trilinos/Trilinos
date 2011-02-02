@@ -3,18 +3,36 @@
 #
 @INCLUDE_PATH          = $(TRILINOS_HOME)/packages
 @INCLUDE               = common/Doxyfile
-#@INCLUDE               = $(TRILINOS_HOME)/packages/common/Doxyfile
+
+# other Trilinos packages to which the MueLu doxygen should hyperlink
+TAGFILES += \
+  $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/ifpack/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/teuchos/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/muelu-cthulhu.tag=$(TRILINOS_HOME)/MueLu/muelu/cthulhu/doc/html 
+
 #
 # Package options
 #
-OUTPUT_LANGUAGE        = English
+PROJECT_NAME           = "MueLu"
 PROJECT_NUMBER         = "Version of the Day"
+OUTPUT_DIRECTORY       = .
+OUTPUT_LANGUAGE        = English
 #
 # What and how documentation is extracted
 #
+IGNORE_PREFIX          = 
+INPUT_FILTER           = 
+IMAGE_PATH             = 
+EXAMPLE_PATTERNS       =
+EXAMPLE_PATH           = ../examples
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+RECURSIVE              = YES
 SUBGROUPING            = NO
-EXTRACT_ALL            = NO
-EXTRACT_PRIVATE        = NO
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
 EXTRACT_STATIC         = YES
 EXTRACT_LOCAL_CLASSES  = NO
 HIDE_UNDOC_MEMBERS     = YES
@@ -22,7 +40,6 @@ HIDE_UNDOC_CLASSES     = YES
 BRIEF_MEMBER_DESC      = YES
 REPEAT_BRIEF           = YES
 ALWAYS_DETAILED_SEC    = YES
-#DETAILS_AT_TOP         = YES
 DETAILS_AT_TOP         = NO
 FULL_PATH_NAMES        = NO
 STRIP_FROM_PATH        = 
@@ -85,3 +102,9 @@ GENERATE_LATEX         = NO
 GENERATE_RTF           = NO
 GENERATE_MAN           = NO
 GENERATE_XML           = NO
+#
+# Links to other packages
+#
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO
+GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/muelu.tag
