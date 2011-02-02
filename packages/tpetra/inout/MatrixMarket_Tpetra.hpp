@@ -322,7 +322,11 @@ namespace MatrixMarket {
       {
 	using Teuchos::RCP;
 	using Teuchos::rcp;
-	using ::Tpetra::GloballyDistributed;
+	using ::Tpetra::createUniformContigMapWithNode;
+	using ::Tpetra::createContigMapWithNode;
+	typedef local_ordinal_type LO;
+	typedef global_ordinal_type GO;
+	typedef node_type NT;
 
 	const global_ordinal_type numRows = dims[0];
 	const global_ordinal_type numCols = dims[1];
@@ -334,36 +338,27 @@ namespace MatrixMarket {
 	// of whether or not the matrix is square.  The row Map is
 	// always 1-1.
 	RCP<const map_type> pRangeMap = 
-	  rcp (new map_type (static_cast< ::Tpetra::global_size_t > (numRows), 
-			     static_cast<global_ordinal_type> (0), 
-			     pComm, GloballyDistributed, pNode));
+	  createUniformContigMapWithNode<LO, GO, NT> (numRows, pComm, pNode);
+
 	// Map to represent the domain of the sparse matrix.  We only
 	// need this if the matrix is not square (numRows != numCols).
 	RCP<const map_type> pDomainMap =
-	  rcp (new map_type (static_cast< ::Tpetra::global_size_t > (numRows), 
-			     static_cast<global_ordinal_type> (0), 
-			     pComm, GloballyDistributed, pNode));
+	  createUniformContigMapWithNode<LO, GO, NT> (numCols, pComm, pNode);
 
 	// (Column) Map to represent the set of columns owned by this
-	// MPI rank.  This stays null if the matrix is square, since
-	// we can use the default in that case.  The column Map is
-	// _not_ 1-1 unless there is only 1 MPI rank.
-	RCP<const map_type> pColMap;
-	if (numRows != numCols) {
-	  using ::Tpetra::createContigMapWithNode;
-	  typedef local_ordinal_type LO;
-	  typedef global_ordinal_type GO;
-	  typedef node_type NT;
-	  // Since we're setting up a block row distribution, each MPI
-	  // rank owns all the columns: the local number of elements
-	  // is the same as the global number of elements.
-	  //
-	  // FIXME (mfh 01 Feb 2011) Should check that casting numCols
-	  // to size_t (the second argument) doesn't overflow.  It
-	  // probably doesn't for the usual global_ordinal_type types.
-	  pColMap = createContigMapWithNode<LO, GO, NT> (numCols, numCols, 
-							 pComm, pNode);
-	}
+	// MPI rank.  We don't need this if the matrix is square,
+	// since we can use the default in that case.  The column Map
+	// is _not_ 1-1 unless there is only 1 MPI rank.
+	//
+	// Since we're setting up a block row distribution, each MPI
+	// rank owns all the columns: the local number of elements
+	// is the same as the global number of elements.
+	//
+	// FIXME (mfh 01 Feb 2011) Should check that casting numCols
+	// to size_t (the second argument) doesn't overflow.  It
+	// probably doesn't for the usual global_ordinal_type types.
+	RCP<const map_type> pColMap = 
+	  createContigMapWithNode<LO, GO, NT> (numCols, numCols, pComm, pNode);
 
 	// Set up the sparse matrix.  The range Map is the same as the
 	// row Map in this case, but the column Map may be different
