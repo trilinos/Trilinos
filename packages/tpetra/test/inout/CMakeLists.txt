@@ -25,5 +25,5 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ARGS ""
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetrainout tpetratestlib
+  DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetra tpetrainout tpetratestlib
   )
