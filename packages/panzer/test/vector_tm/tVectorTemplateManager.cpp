@@ -181,6 +181,24 @@ TEUCHOS_UNIT_TEST(tVectorTemplateManager, test)
       TEST_ASSERT(std::equal(truthVector.begin(),truthVector.end(),
                              testVector.begin()));
    }
+
+   {
+      VectorTM::iterator itr = vectorTM.begin();
+      for(;itr!=vectorTM.end();itr++) {
+         std::vector<Teuchos::RCP<BaseClass> > & v = *itr;
+
+         TEST_EQUALITY(v.size(),4);
+      }
+   }
+
+   {
+      VectorTM::const_iterator itr = constVectorTM.begin();
+      for(;itr!=constVectorTM.end();itr++) {
+         const std::vector<Teuchos::RCP<BaseClass> > & v = *itr;
+
+         TEST_EQUALITY(v.size(),4);
+      }
+   }
 }
 
 }
