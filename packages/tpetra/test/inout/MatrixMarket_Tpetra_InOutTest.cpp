@@ -28,7 +28,13 @@
 
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
-#include <Kokkos_DefaultNode.hpp>
+
+#include <Kokkos_ConfigDefs.hpp>
+#include <Kokkos_SerialNode.hpp>
+#if defined(HAVE_KOKKOS_TBB)
+#  include <Kokkos_TBBNode.hpp>
+#endif // defined(HAVE_KOKKOS_TBB)
+
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
