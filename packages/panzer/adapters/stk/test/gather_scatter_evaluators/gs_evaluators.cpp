@@ -18,6 +18,7 @@ using Teuchos::rcp;
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_Basis.hpp"
+#include "Panzer_AuxiliaryEvaluator_TemplateManager.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
@@ -26,6 +27,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_GatherFields.hpp"
 #include "Panzer_STKConnManager.hpp"
+#include "Panzer_STK_AuxiliaryVariables.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
@@ -35,6 +37,8 @@ using Teuchos::rcp;
 #include "Teuchos_OpaqueWrapper.hpp"
 
 #include <cstdio> // for get char
+#include <vector>
+#include <string>
 
 namespace panzer {
 
@@ -53,6 +57,29 @@ namespace panzer {
          getchar();
       comm->barrier();
    }
+
+  class DogBuilder {
+     Teuchos::RCP<panzer_stk::STK_Interface> mesh_;
+     Teuchos::RCP<panzer::Basis> basis_;
+  public:
+     DogBuilder(const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
+                const Teuchos::RCP<panzer::Basis> & basis) 
+        : mesh_(mesh), basis_(basis) {}
+ 
+ 
+     template <typename EvalT>
+     Teuchos::RCP<panzer::Base> build() const
+     {
+        Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>);
+        fieldNames->push_back("dog");
+
+        Teuchos::ParameterList pl;
+        pl.set<Teuchos::RCP<std::vector<std::string> > >("Field Names",fieldNames);
+        pl.set("Basis",basis_);
+  
+        return Teuchos::rcp(new panzer_stk::AuxiliaryVariables<EvalT>(mesh_,pl));
+     }
+  };
 
   Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize);
 
@@ -134,7 +161,12 @@ namespace panzer {
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,*linObjFactory);
+    const DogBuilder db(mesh,linBasis);
+    std::map<std::string,Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > auxEval;
+    auxEval["eblock-0_0"] = Teuchos::rcp(new panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits>);
+    auxEval["eblock-0_0"]->buildAndPushBackObjects(db);
+ 
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,*linObjFactory,auxEval);
 
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,*linObjFactory);
 

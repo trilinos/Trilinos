@@ -12,6 +12,15 @@
 
 namespace panzer_stk {
 
+/** This class is a gather operation from the mesh. It
+  * takes a set of field names and basis objects and
+  * then reads them in from the mesh object.
+  *
+  * The constructor takes a STK_Interface RCP and parameter list
+  * that is required to contain the following two fields
+  * "Field Names" of type <code>Teuchos::RCP<std::vector<std::string> ></code>
+  * and "Basis" of type <code>Teuchos::RCP<panzer::Basis></code>.
+  */
 template<typename EvalT, typename Traits> class GatherFields;
 
 // **************************************************************
@@ -32,7 +41,7 @@ class GatherFields<panzer::Traits::Residual,Traits>
   
 public:
   
-  GatherFields(const Teuchos::RCP<const STK_Interface> & mesh,const Teuchos::ParameterList& p);
+  GatherFields(const Teuchos::RCP<const STK_Interface> & mesh,const Teuchos::ParameterList & p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);

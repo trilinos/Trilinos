@@ -77,7 +77,9 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
                                                                        // element block -> vector of worksets
                                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
                                             const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
-                                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory)
+                                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
+                                            const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > 
+                                               * auxManger)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
