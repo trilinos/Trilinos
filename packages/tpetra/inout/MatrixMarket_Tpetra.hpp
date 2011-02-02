@@ -124,6 +124,16 @@ namespace MatrixMarket {
     };
 
 
+    /// \class Reader
+    /// \author Mark Hoemmen
+    /// \brief Tpetra::CrsMatrix Matrix Market sparse matrix reader.
+    ///
+    /// The readFile() and read() class methods read in a Matrix
+    /// Market "coordinate" format sparse matrix file resp. input
+    /// stream (valid on MPI Rank 0), and return a Tpetra::CrsMatrix
+    /// sparse matrix (SparseMatrixType) distributed in block row
+    /// fashion over all the MPI ranks represented in the given
+    /// communicator.
     template<class SparseMatrixType>
     class Reader {
     public:
