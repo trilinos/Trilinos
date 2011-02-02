@@ -18,86 +18,7 @@ RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > find_row_containing_cols(
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap);
 }*/
 
-static const double defaultEpsilon = 1e-7;
-
-template<class Ordinal>
-int run_test(RCP<const Comm<Ordinal> > Comm,
-  Teuchos::ParameterList matrixSystem,
-  bool result_mtx_to_file=false,
-  bool verbose=false);
-
-
-template<class CommOrdinal>
-int two_proc_test(RCP<const Comm<CommOrdinal> > Comm,
-  bool verbose=false);
-
-template<class Ordinal>
-int test_find_rows(RCP<const Comm<Ordinal> > Comm);
-
-template<
-  class Scalar,
-  class LocalOrdinal,
-  class GlobalOrdinal,
-  class Node,
-  class SpMatVec,
-  class SpMatSlv,
-  class CommOrdinal>
-RCP<CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > 
-create_crsmatrix(
-  RCP<const Comm<CommOrdinal> > comm,
-  size_t local_n,
-  bool callFillComplete,
-  bool symmetric);
-
-template<class Ordinal>
-int add_test(
-    RCP<CrsMatrix<double,int> > A,
-    RCP<CrsMatrix<double,int> > B,
-    RCP<CrsMatrix<double,int> > C,
-    bool AT,
-    bool BT,
-    double epsilon,
-    RCP<const Comm<Ordinal> > comm,
-    bool verbose)
-{
-  typedef Kokkos::DefaultNode::DefaultNodeType DNode;
-
-  MatrixMatrix<
-    double, 
-    int,
-    int,
-    DNode,
-    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Add(A, false, 1.0, B, 1.0);
-
-  MatrixMatrix<
-    double, 
-    int,
-    int,
-    DNode,
-    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Add(C, false, -1.0, B, 1.0);
-
-  int localProc = comm->getRank();
-  double calculated_euc_norm = B->getEuclideanNorm();
-  double c_euc_norm = C->getEuclideanNorm();
-  double resultVal = calculated_euc_norm/c_euc_norm;
-  if (resultVal < epsilon) {
-    if (localProc == 0 && verbose) {
-      std::cout << "Test Passed" << std::endl;
-      std::cout << "||(A+B)-C||/||C|| " << resultVal << std::endl <<std::endl;
-    }
-    return 0;
-  }
-  else {
-    if (localProc == 0) {
-      std::cout << "Test Failed: ||(A+B)-C||/||C|| " << resultVal <<std::endl << std::endl;
-    }
-    return -1;
-  }
-
-}
-
+static const double defaultEpsilon = 1e-10;
 
 template<class Ordinal>
 int test_find_rows(RCP<const Comm<Ordinal> > Comm)
@@ -155,6 +76,90 @@ int test_find_rows(RCP<const Comm<Ordinal> > Comm)
 
   return(0);
 }
+
+template<class Ordinal>
+int add_test(
+    RCP<CrsMatrix<double,int> > A,
+    RCP<CrsMatrix<double,int> > B,
+    RCP<CrsMatrix<double,int> > C,
+    bool AT,
+    bool BT,
+    double epsilon,
+    RCP<const Comm<Ordinal> > comm,
+    bool verbose)
+{
+  typedef Kokkos::DefaultNode::DefaultNodeType DNode;
+
+  int localProc = comm->getRank();
+
+  RCP<CrsMatrix<double,int> > computedC = null;
+  RCP<const Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+
+  computedC = rcp( new CrsMatrix<double,int>(rowmap, 1));
+
+  MatrixMatrix<
+    double, 
+    int,
+    int,
+    DNode,
+    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+  Add(A, false, 1.0, B, false, 1.0, computedC);
+
+  computedC->fillComplete(C->getDomainMap(), C->getRangeMap());
+
+  MatrixMatrix<
+    double, 
+    int,
+    int,
+    DNode,
+    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+  Add(C, false, -1.0, computedC, 1.0);
+
+  double calculated_euc_norm = computedC->getEuclideanNorm();
+  double c_euc_norm = C->getEuclideanNorm();
+  double resultVal1 = calculated_euc_norm/c_euc_norm;
+
+  MatrixMatrix<
+    double, 
+    int,
+    int,
+    DNode,
+    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+  Add(A, false, 1.0, B, 1.0);
+
+  MatrixMatrix<
+    double, 
+    int,
+    int,
+    DNode,
+    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+  Add(C, false, -1.0, B, 1.0);
+
+  calculated_euc_norm = B->getEuclideanNorm();
+  double resultVal2 = calculated_euc_norm/c_euc_norm;
+
+
+
+  if (resultVal1 < epsilon && resultVal2 < epsilon) {
+    if (localProc == 0 && verbose) {
+      std::cout << "Test Passed" << std::endl;
+      std::cout << "||(A+B)-C||/||C|| " << resultVal1 <<std::endl ;
+      std::cout << "||(A+B)-C||/||C|| " << resultVal2 <<std::endl << std::endl;
+    }
+    return 0;
+  }
+  else {
+    if (localProc == 0) {
+      std::cout << "Test Failed: " << std::endl;
+      std::cout << "||(A+B)-C||/||C|| " << resultVal1 <<std::endl ;
+      std::cout << "||(A+B)-C||/||C|| " << resultVal2 <<std::endl << std::endl;
+    }
+    return -1;
+  }
+
+}
+
+
 
 
 template<class Ordinal>

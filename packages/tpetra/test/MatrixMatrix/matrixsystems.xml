@@ -48,5 +48,6 @@
 		<Parameter name="C" value="matrices/bigAddC.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
+		<Parameter name="epsilon" value=".00000001" type="double"/>
 	</ParameterList>
 </ParameterList>

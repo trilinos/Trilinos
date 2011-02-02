@@ -1347,7 +1347,7 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
   //A and B should already be Filled. C should be an empty pointer.
 
 
-  TEST_FOR_EXCEPTION(!A.isFillComplete() || !B.isFillComplete(), std::runtime_error,
+  TEST_FOR_EXCEPTION(!A->isFillComplete() || !B->isFillComplete(), std::runtime_error,
     "EpetraExt::MatrixMatrix::Add ERROR, input matrix A.Filled() or B.Filled() is false,"
     "they are required to be true. (Result matrix C should be an empty pointer)" << std::endl);
 
@@ -1384,30 +1384,26 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
   else
      C = rcp(new CrsMatrix_t(Aprime->getRowMap(), null));
 
-  // build arrays  for easy resuse
-  int ierr = 0;
-  //Epetra_CrsMatrix * Mat[] = { Aprime,Bprime};
-  Array<CrsMatrix_t > Mat = 
-    Teuchos::tuple<CrsMatrix_t >(Aprime, Bprime);
-  //double scalar[] = { scalarA, scalarB};
+  Array<RCP<const CrsMatrix_t> > Mat = 
+    Teuchos::tuple<RCP<const CrsMatrix_t> >(Aprime, Bprime);
   Array<Scalar> scalar = Teuchos::tuple<Scalar>(scalarA, scalarB);
 
   // do a loop over each matrix to add: A reordering might be more efficient
   for(int k=0;k<2;k++) {
-    size_t MaxNumEntries = Mat[k]->getNodeMaxNumRowEntries();
     size_t NumEntries;
-    Array<LocalOrdinal> Indices;
+    Array<GlobalOrdinal> Indices;
     Array<Scalar> Values;
    
      size_t NumMyRows = Mat[k]->getNodeNumRows();
      GlobalOrdinal Row;
-     int ierr = 0;
    
      //Loop over rows and sum into C
      for( size_t i = OrdinalTraits<size_t>::zero(); i < NumMyRows; ++i ) {
         Row = Mat[k]->getRowMap()->getGlobalElement(i);
-		Mat[k]->extractGlobalRowCopy(Row, Indices, Values);
-		NumEntries = Indices.size();
+        NumEntries = Mat[k]->getNumEntriesInGlobalRow(Row);
+        Indices.resize(NumEntries);
+        Values.resize(NumEntries);
+		    Mat[k]->getGlobalRowCopy(Row, Indices(), Values(), NumEntries);
    
         if( scalar[k] != ScalarTraits<Scalar>::one() )
            for( size_t j = OrdinalTraits<size_t>::zero(); j < NumEntries; ++j ) Values[j] *= scalar[k];
@@ -1419,11 +1415,10 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
         }
      }
   }
-//  return(ierr);
 }
 
 
-}
+} //End namespace Tpetra
 
 template<class Scalar, class LocalOrdinal>
 Scalar Tpetra::MMdetails::sparsedot(

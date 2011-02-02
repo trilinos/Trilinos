@@ -2045,6 +2045,10 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Scalar CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getEuclideanNorm() const{
+
+  TEST_FOR_EXCEPTION(!isLocallyIndexed(), std::runtime_error, "Matrix must " <<
+    "be locally indexed in order for the Euclidean norm to be calculated.");
+
   Scalar localTotal = Teuchos::ScalarTraits<Scalar>::zero();
   Teuchos::ArrayView<const LocalOrdinal> currentRowIndices;
   Teuchos::ArrayView<const Scalar> currentRowValues;
