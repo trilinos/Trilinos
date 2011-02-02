@@ -114,7 +114,7 @@ Piro::NOXSolver<Scalar>::get_g_space(int j) const
                      j << std::endl);
 
   if      (j < num_g) return model->get_g_space(j);
-  else if (j == num_g) return model->get_x_space();
+  else return model->get_x_space(); // j == num_g
 }
 
 template<typename Scalar>
