@@ -70,6 +70,7 @@ APPEND_SET(HEADERS
   Panzer_ModelFactory.hpp
   Panzer_ModelFactory_TemplateManager.hpp
   Panzer_ParameterList_ObjectBuilders.hpp
+  Panzer_PauseToAttach.hpp
   Panzer_PhysicsBlock.hpp
   Panzer_Version.hpp
   Panzer_Workset.hpp
