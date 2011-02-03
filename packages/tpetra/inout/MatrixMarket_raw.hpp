@@ -285,6 +285,7 @@ namespace MatrixMarket {
 	using std::cout;
 	using std::endl;
 	using Teuchos::RCP;
+	using Teuchos::Tuple;
 	typedef Teuchos::ScalarTraits<Scalar> STS;
 
 	// FIXME (mfh 01 Feb 2011) What about MPI?  Should only do
@@ -292,8 +293,6 @@ namespace MatrixMarket {
 	TEST_FOR_EXCEPTION(!in, std::invalid_argument,
 			   "Input stream appears to be in an invalid state.");
 
-	Ordinal numRows, numCols, numNonzeros;
-	bool success = true;
 	std::string line;
 	if (! getline (in, line))
 	  throw std::invalid_argument ("Failed to get first (banner) line");
@@ -340,21 +339,28 @@ namespace MatrixMarket {
 	typedef CoordDataReader<adder_type, Ordinal, Scalar, STS::isComplex> reader_type;
 	reader_type reader (adder);
 
-	// Read in the dimensions of the sparse matrix (number of rows
-	// and columns) and the number of nonzeros.
-	success = reader.readDimensions (in, numRows, numCols, numNonzeros, lineNumber, tolerant);
-	if (success && debug)
+	// Read in the dimensions of the sparse matrix:
+	// (# rows, # columns, # structural nonzeros).
+	// The second element of the pair tells us whether the values
+	// were gotten successfully.
+	std::pair<Teuchos::Tuple<Ordinal, 3>, bool> dims = 
+	  reader.readDimensions (in, lineNumber, tolerant);
+	TEST_FOR_EXCEPTION(! dims.second, std::invalid_argument,
+			   "Error reading Matrix Market sparse matrix "
+			   "file: failed to read coordinate dimensions.");
+	if (debug)
 	  {
+	    const Ordinal numRows = dims.first[0];
+	    const Ordinal numCols = dims.first[1];
+	    const Ordinal numNonzeros = dims.first[2];
 	    cout << "Dimensions of matrix: " << numRows << " x " << numCols 
 		 << ", with " << numNonzeros << " reported structural "
 	      "nonzeros." << endl;
 	  }
-	TEST_FOR_EXCEPTION(! success, std::invalid_argument,
-			   "Error reading Matrix Market sparse matrix "
-			   "file: failed to read coordinate dimensions.");
-	lineNumber++;
 
-	// Read the sparse matrix entries
+	// Read the sparse matrix entries.  "results" just tells us if
+	// and where there were any bad lines of input.  The actual
+	// sparse matrix entries are stored in the Adder object.
 	std::pair<bool, std::vector<size_t> > results = 
 	  reader.read (in, lineNumber, tolerant, debug);
 	if (results.first)

@@ -43,6 +43,7 @@
 #define __MatrixMarket_CoordDataReader_hpp
 
 #include "MatrixMarket_generic.hpp"
+#include "Teuchos_Tuple.hpp"
 
 namespace MatrixMarket {
 
@@ -117,89 +118,134 @@ namespace MatrixMarket {
       return std::make_pair (allSucceeded, badLineNumbers);
     }
 
-    bool
+    /// Read (numRows, numCols, numNonzeros) from the given input
+    /// stream.  Return ((numRows, numCols, numNonzeros), success).
+    /// In tolerant mode, success may be false, meaning that the
+    /// read-in triple may not be valid.
+    std::pair<Teuchos::Tuple<Ordinal, 3>, bool>
     readDimensions (std::istream& in, 
-		    Ordinal& numRows, 
-		    Ordinal& numCols,
-		    Ordinal& numNonzeros,
-		    const size_t lineNumber,
+		    size_t& lineNumber,
 		    const bool tolerant = false)
     {
-      Ordinal __numRows, __numCols, __numNonzeros;
-      std::string line;
+      Teuchos::Tuple<Ordinal, 3> dims;
+      // Fill in (numRows, numCols, numNonzeros) with reasonable
+      // defaults.  If we don't succeed in reading all the data
+      // from the current line of the input stream, the remaining
+      // values not read will be these default values.
+      dims[0] = 0;
+      dims[1] = 0;
+      dims[2] = 0;
 
+      // Fetch the current line of text from the input stream.
+      std::string line;
       if (! getline(in, line))
 	{
 	  if (tolerant)
-	    return false;
+	    return std::make_pair (dims, false);
 	  std::ostringstream os;
-	  os << "Failed to read line " << lineNumber << " from input stream"
-	    "; it should contains coordinate matrix dimensions.";
+	  os << "Failed to read line " << lineNumber << " from input "
+	    "stream; the line should contain the coordinate matrix "
+	     << "dimensions \"<numRows> <numCols> <numNonzeros>\".";
 	  throw std::invalid_argument (os.str());
 	}
+      else 
+	lineNumber++; // We did actually read a line
+      //
       // Read in <numRows> <numCols> <numNonzeros> from input line
+      //
       std::istringstream istr (line);
-
+      // Does line contain anything at all?  Can we safely read from
+      // the input stream wrapping the line?
       if (istr.eof() || istr.fail())
 	{
 	  if (tolerant)
-	    return false;
+	    return std::make_pair (dims, false);
 	  std::ostringstream os;
 	  os << "Unable to read any data from line " << lineNumber 
-	     << " of input; it should contain coordinate matrix dimensions.";
+	     << " of input; the line should contain the coordinate matrix "
+	     << "dimensions \"<numRows> <numCols> <numNonzeros>\".";
 	  throw std::invalid_argument(os.str());
 	}
-      istr >> __numRows;
-      if (istr.fail())
+
+      // Read in <numRows>
+      {
+	Ordinal __numRows = 0;
+	istr >> __numRows;
+	if (istr.fail())
+	  {
+	    if (tolerant)
+	      return std::make_pair (dims, false);
+	    std::ostringstream os;
+	    os << "Failed to get number of rows from line " << lineNumber 
+	       << " of input; the line should contain the coordinate matrix "
+	       << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
+	    throw std::invalid_argument(os.str());
+	  }
+	else // Capture the validly read result before checking for eof.
+	  dims[0] = __numRows;
+      }
+      // There should be two more things to read.
+      if (istr.eof())
 	{
 	  if (tolerant)
-	    return false;
+	    return std::make_pair (dims, false);
 	  std::ostringstream os;
-	  os << "Failed to get number of rows from line " << lineNumber << " of input";
+	  os << "No more data after number of rows on line " << lineNumber
+	     << " of input; the line should contain the coordinate matrix "
+	     << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
 	  throw std::invalid_argument(os.str());
 	}
-      else if (istr.eof())
+      // Read in <numCols>
+      {
+	Ordinal __numCols = 0;
+	istr >> __numCols;
+	if (istr.fail())
+	  {
+	    if (tolerant)
+	      return std::make_pair (dims, false);
+	    std::ostringstream os;
+	    os << "Failed to get number of columns from line " << lineNumber 
+	       << " of input; the line should contain the coordinate matrix "
+	       << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
+	    throw std::invalid_argument(os.str());
+	  }
+	else // Capture the validly read result before checking for eof.
+	  dims[1] = __numCols;
+      }
+      // There should be one more thing to read.
+      if (istr.eof())
 	{
 	  if (tolerant)
-	    return false;
+	    return std::make_pair (dims, false);
 	  std::ostringstream os;
-	  os << "No more data after number of rows on line " << lineNumber << " of input";
+	  os << "No more data after number of columns on line " << lineNumber
+	     << " of input; the line should contain the coordinate matrix "
+	     << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
 	  throw std::invalid_argument(os.str());
 	}
-      istr >> __numCols;
-      if (istr.fail())
-	{
-	  if (tolerant)
-	    return false;
-	  std::ostringstream os;
-	  os << "Failed to get number of columns from line " << lineNumber << " of input";
-	  throw std::invalid_argument(os.str());
-	}
-      else if (istr.eof())
-	{
-	  if (tolerant)
-	    return false;
-	  std::ostringstream os;
-	  os << "No more data after number of columns on line " << lineNumber << " of input";
-	  throw std::invalid_argument(os.str());
-	}
-      istr >> __numNonzeros;
-      if (istr.fail())
-	{
-	  if (tolerant)
-	    return false;
-	  std::ostringstream os;
-	  os << "Failed to get number of nonzeros from line " << lineNumber << " of input";
-	  throw std::invalid_argument(os.str());
-	}
+      // Read in <numNonzeros>
+      {
+	Ordinal __numNonzeros = 0;
+	istr >> __numNonzeros;
+	if (istr.fail())
+	  {
+	    if (tolerant)
+	      return std::make_pair (dims, false);
+	    std::ostringstream os;
+	    os << "Failed to get number of (structural) nonzeros from line " 
+	       << lineNumber 
+	       << " of input; the line should contain the coordinate matrix "
+	       << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
+	    throw std::invalid_argument(os.str());
+	  }
+	else // Capture the validly read result
+	  dims[2] = __numNonzeros;
+      }
       // It would be nice to validate the read-in data further.  The
       // only thing we can do now is test if it's negative.  However,
       // we don't know syntactically whether Ordinal is a signed or
-      // unsigned type.
-      numRows = __numRows;
-      numCols = __numCols;
-      numNonzeros = __numNonzeros;
-      return true;
+      // unsigned type, so we shouldn't even test for negativity.
+      return std::make_pair (dims, true);
     }
   };
 
