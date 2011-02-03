@@ -26,6 +26,7 @@ using Teuchos::rcp;
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
+#include "Panzer_PauseToAttach.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -44,30 +45,17 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-   void pause_to_attach()
-   {
-      MPI_Comm mpicomm = MPI_COMM_WORLD;
-      Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(
-            Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
-      Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-      out.setShowProcRank(true);
-      out.setOutputToRootOnly(-1);
-
-      out << "PID = " << getpid();
-
-      if (comm->getRank() == 0)
-         getchar();
-      comm->barrier();
-   }
-
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  TEUCHOS_UNIT_TEST(solver, basic)
+  // *****************************************************************
+  // NOX Test
+  // *****************************************************************
+  TEUCHOS_UNIT_TEST(solver, NOX_steady_state)
   {
     using Teuchos::RCP;
   
-    // pause_to_attach();
+    // pauseToAttach();
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
@@ -319,10 +307,214 @@ namespace panzer {
       ep_me->evalModel(in_args, out_args);
       //Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(J)->Print(std::cout);
     }
-
     
   }
 
+  // *****************************************************************
+  // Rythmos Test
+  // *****************************************************************
+  TEUCHOS_UNIT_TEST(solver, Rythmos_transient)
+  {
+    using Teuchos::RCP;
+    
+    // pause_to_attach();
+
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Blocks",1);
+    pl->set("Y Blocks",1);
+    pl->set("X Elements",20);
+    pl->set("Y Elements",20);
+    
+    panzer_stk::SquareQuadMeshFactory mesh_factory;
+    mesh_factory.setParameterList(pl);
+    //RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = 
+      mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
+
+    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+
+    panzer::InputPhysicsBlock ipb;
+    std::vector<panzer::BC> bcs;
+    testInitialzation(ipb, bcs);
+
+    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
+      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+
+    // build physics blocks
+    //////////////////////////////////////////////////////////////
+    user_app::MyFactory eqset_factory;
+    user_app::BCFactory bc_factory;
+    const std::size_t workset_size = 20;
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+
+    {
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+      //block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+      
+      std::map<std::string,panzer::InputPhysicsBlock> 
+        physics_id_to_input_physics_blocks;
+      physics_id_to_input_physics_blocks["test physics"] = ipb;
+  
+      fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
+                              physics_id_to_input_physics_blocks,
+                              Teuchos::as<int>(mesh->getDimension()),
+			      workset_size,
+                              eqset_factory,
+                              physicsBlocks);
+    }
+
+   // finish building mesh, set required field variables and mesh bulk data
+   ////////////////////////////////////////////////////////////////////////
+
+   {
+      std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
+      for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
+         Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
+         const std::vector<StrBasisPair> & blockFields = pb->getProvidedDOFs();
+
+         // insert all fields into a set
+         std::set<StrBasisPair,StrBasisComp> fieldNames;
+         fieldNames.insert(blockFields.begin(),blockFields.end());
+
+         // add basis to DOF manager: block specific
+         std::set<StrBasisPair>::const_iterator fieldItr;
+         for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
+
+            mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
+         }
+      }
+
+      mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+   }
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
+      volume_worksets = panzer_stk::buildWorksets(*mesh,ipb, workset_size);
+
+    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
+       = panzer_stk::buildBCWorksets(*mesh,ipb,bcs);
+
+    // build DOF Manager
+    /////////////////////////////////////////////////////////////
+ 
+    // build the connection manager 
+    const Teuchos::RCP<panzer::ConnManager<int,int> > 
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+
+    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+         = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
+
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm,dofManager));
+
+    // setup field manager build
+    /////////////////////////////////////////////////////////////
+ 
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,*linObjFactory);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,*linObjFactory);
+
+    // Print Phalanx DAGs
+    fmb->writeVolumeGraphvizDependencyFiles("Panzer_", physicsBlocks);
+
+    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
+      Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
+    
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    {
+      Teuchos::RCP<Teuchos::Array<std::string> > p_0 = Teuchos::rcp(new Teuchos::Array<std::string>);
+      p_0->push_back("viscosity");
+      p_names.push_back(p_0);
+    }
+    bool is_transient = false;
+    RCP<panzer::ModelEvaluator_Epetra> ep_me = 
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names,
+						     is_transient));
+
+    // Get solver params from input file
+    RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
+    Teuchos::updateParametersFromXmlFile("solver_rythmos.xml", piro_params.get());
+    
+    // Build stratimikos solver
+    std::string& solver = piro_params->get("Piro Solver","NOX");
+    RCP<Teuchos::ParameterList> stratParams;
+    
+    if (solver=="NOX" || solver=="LOCA") {
+      stratParams = Teuchos::rcp(&(piro_params->sublist("NOX").sublist("Direction").
+				   sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
+    }
+    else if (solver=="Rythmos") {
+      stratParams = Teuchos::rcp(&(piro_params->sublist("Rythmos").sublist("Stratimikos")),false);
+    }
+    
+    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+    linearSolverBuilder.setParameterList(stratParams);
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+      createLinearSolveStrategy(linearSolverBuilder);
+
+    // Build Thyra Model Evluator
+    RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me = 
+      Thyra::epetraModelEvaluator(ep_me,lowsFactory);
+    
+    RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
+    if (solver=="NOX") {
+      piro = rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
+    }
+    else if (solver=="Rythmos") {
+      piro = rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me));
+    }
+    else {
+      TEST_FOR_EXCEPTION(true, std::logic_error,
+			 "Error: Unknown Piro Solver : " << solver);
+    }
+    
+    // Now the (somewhat cumbersome) setting of inputs and outputs
+    Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
+    const Thyra::ModelEvaluatorBase::InArgs<double> inArgsNominal = piro->getNominalValues();
+    int num_p = inArgs.Np();     // Number of *vectors* of parameters
+    assert (num_p == 1);  // Logic needs to be generalized -- hardwire to 1 p vector in model
+    RCP<Thyra::VectorBase<double> > p1 = Thyra::createMember(*piro->get_p_space(0));
+    Thyra::copy(*inArgsNominal.get_p(0), p1.ptr());
+    //int numParams = p1->space()->dim(); // Number of parameters in p1 vector
+      
+    inArgs.set_p(0,p1);
+
+    // Set output arguments to evalModel call
+    Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
+    int num_g = outArgs.Ng(); // Number of *vectors* of responses
+    assert (num_g == 1);
+
+    //RCP<Thyra::MultiVectorBase<double> > dgdp =
+    //Thyra::createMembers(*thyra_me->get_x_space(),numParams);
+    //if (computeSens) outArgs.set_DgDp(0, 0, dgdp);
+    
+    // Solution vector is returned as extra respons vector
+    RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*thyra_me->get_x_space());
+    outArgs.set_g(0,gx);
+
+    // Now, solve the problem and return the responses
+    piro->evalModel(inArgs, outArgs);
+
+    //std::cout << *gx << std::endl;
+
+    // Export solution to ghosted vector for exodus output
+    RCP<Epetra_Vector> solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap()), gx);
+    Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap()));
+    RCP<Epetra_Import> importer = ep_lof->getGhostedImport();
+    ghosted_solution.PutScalar(0.0);
+    ghosted_solution.Import(*solution,*importer,Insert);
+
+    write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
+			ghosted_solution);
+    mesh->writeToExodus("output.exo");
+    
+  }
+
+  // *****************************************************************
+  // Support functions
+  // *****************************************************************
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
@@ -392,5 +584,5 @@ namespace panzer {
       //bcs.push_back(bc);
     }
   }
-
+  
 }
