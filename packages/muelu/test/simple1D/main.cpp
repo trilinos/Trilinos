@@ -78,8 +78,14 @@ int main(int argc, char *argv[]) {
     throw(MueLu::Exceptions::RuntimeError("problem size must be divisible by 3"));
   LO indexBase = 0;
 
+  if (numGlobalElements == 9) {
+    //Nice size for 1D and perfect aggregation. (6561=3^8)
+    nx = 6561;
+    numGlobalElements = nx;
+  }
+
   std::cout << "#threads = " << numThreads << std::endl;
-  std::cout << "problem size = " << numGlobalelements << std::endl;
+  std::cout << "problem size = " << numGlobalElements << std::endl;
   std::cout << "matrix type = " << matrixType << std::endl;
 
   RCP<const Map > map;
