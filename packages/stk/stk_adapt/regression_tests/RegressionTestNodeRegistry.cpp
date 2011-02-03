@@ -379,6 +379,9 @@ namespace stk
 #if NODE_REGISTRY_MAP_TYPE_STD
                           expectedId= 38u;
 #endif
+#if NODE_REGISTRY_MAP_TYPE_GOOGLE
+                          expectedId= 39u;
+#endif
                           
                           if (p_rank==1) EXPECT_EQ(nodeIds_onSE_1[0], expectedId); 
                           if (p_rank==2) EXPECT_EQ(nodeIds_onSE_1[0], 41u);

@@ -67,7 +67,7 @@ namespace stk {
           //TEST_geom_volume(run_environment.m_comm);
     
           result = RUN_ALL_TESTS(); 
-          std::cout << "stk::percept: result = " << result << std::endl;
+          //std::cout << "stk::percept: result = " << result << std::endl;
         }
         catch ( const std::exception * X ) {
           std::cout << "  unexpected exception POINTER: " << X->what() << std::endl;
@@ -98,7 +98,7 @@ namespace stk {
 int main(int argc, char **argv) { 
 
   int success = stk::percept::unit_tests::utest_main(argc, argv);
-  std::cout << "stk::percept: success = " << success << std::endl;
+  //std::cout << "stk::percept: success = " << success << std::endl;
   return success;
 }
 #endif

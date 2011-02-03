@@ -114,10 +114,17 @@ namespace stk
       }
 #endif
 
-      Teuchos::HashPair<Key, Value> operator*() { return m_ht->data()[m_bucket][m_item_in_bucket]; }
+      Teuchos::HashPair<Key, Value> operator*() { 
+
+        VERIFY_OP_ON( ((m_item_in_bucket == 0 && m_bucket == num_buckets()) || (m_bucket < num_buckets() && m_item_in_bucket < num_in_bucket(m_bucket)) ) , == , true, "operator* 1");
+
+
+        return m_ht->data()[m_bucket][m_item_in_bucket]; 
+      }
     
       bool operator==(const HT_Iterator& iter)
       {
+        VERIFY_OP_ON( ((m_item_in_bucket == 0 && m_bucket == num_buckets()) || (m_bucket < num_buckets() && m_item_in_bucket < num_in_bucket(m_bucket)) ) , == , true, "operator== 1");
         if (m_bucket == iter.m_bucket && m_item_in_bucket == iter.m_item_in_bucket)
           return true;
         return false;

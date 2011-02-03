@@ -473,6 +473,21 @@ namespace stk {
       return m_spatialDim;
     }
 
+    int PerceptMesh::
+    getNumberElements()
+    {
+      std::vector<unsigned> count ;
+      mesh::Selector selector(getMetaData()->universal_part());
+      count_entities( selector, *getBulkData(), count );
+      return count[ mesh::Element ];
+//         std::cout << " Node = " << count[ mesh::Node ] ;
+//         std::cout << " Edge = " << count[ mesh::Edge ] ;
+//         std::cout << " Face = " << count[ mesh::Face ] ;
+//         std::cout << " Elem = " << count[ mesh::Element ] ;
+//         std::cout << " }" << std::endl ;
+//         std::cout.flush();
+      }
+
     //========================================================================================================================
     /// low-level interfaces
 

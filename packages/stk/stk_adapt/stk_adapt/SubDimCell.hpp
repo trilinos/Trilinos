@@ -116,11 +116,15 @@ namespace stk {
 
       typedef SubDimCell<T,N> VAL;
       
-      SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
+      //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
+      SubDimCell() : base_type(), m_hash(0u) {}
+      SubDimCell(unsigned n) : base_type(), m_hash(0u) {}
+
       
       // behaves like std::set
       void insert(T val) 
       {
+
         bool found = false;
         for (size_type i = 0; i < base_type::size(); i++)
           {

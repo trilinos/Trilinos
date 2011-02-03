@@ -1110,7 +1110,11 @@ namespace stk {
               
 
               if (!nodeIds_onSE[0]) {
-                std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " << std::endl;
+                std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " 
+                          << " element= " << element
+                          << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
+                          << " iSubDimOrd = " << iSubDimOrd
+                          <<  std::endl;
                 throw std::logic_error("UniformRefiner logic error");
               }
               //new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd].resize(
