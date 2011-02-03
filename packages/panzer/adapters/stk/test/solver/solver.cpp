@@ -27,6 +27,7 @@ using Teuchos::rcp;
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_PauseToAttach.hpp"
+#include "Panzer_STK_RythmosObserver_Epetra.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -388,6 +389,8 @@ namespace panzer {
       mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
 
+   mesh->setupTransientExodusFile("transient.exo"); 
+   
     // build worksets
     //////////////////////////////////////////////////////////////
     std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
@@ -428,10 +431,9 @@ namespace panzer {
       p_0->push_back("viscosity");
       p_names.push_back(p_0);
     }
-    bool is_transient = false;
+    bool is_transient = true;
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names,
-						     is_transient));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb, ep_lof, p_names, is_transient));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
@@ -463,7 +465,9 @@ namespace panzer {
       piro = rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
     }
     else if (solver=="Rythmos") {
-      piro = rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me));
+      RCP<panzer_stk::RythmosObserver_Epetra> observer = 
+	Teuchos::rcp(new panzer_stk::RythmosObserver_Epetra(mesh, dofManager, ep_lof));
+      piro = rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer));
     }
     else {
       TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -508,7 +512,6 @@ namespace panzer {
 
     write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
 			ghosted_solution);
-    mesh->writeToExodus("output.exo");
     
   }
 

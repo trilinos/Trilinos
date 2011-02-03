@@ -34,6 +34,7 @@ APPEND_SET(HEADERS
   Panzer_STK_SetupUtilitiesT.hpp
   Panzer_STK_AuxiliaryVariables.hpp
   Panzer_STK_AuxiliaryVariablesT.hpp
+  Panzer_STK_RythmosObserver_Epetra.hpp
   stk_interface/Panzer_STK_Interface.hpp
   stk_interface/Panzer_STK_MeshFactory.hpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.hpp
@@ -41,6 +42,7 @@ APPEND_SET(HEADERS
   stk_interface/Panzer_STK_CubeHexMeshFactory.hpp
   evaluators/Panzer_STK_GatherFields.hpp
   evaluators/Panzer_STK_GatherFieldsT.hpp
+  write_solution_data.hpp
   ) 
 
 APPEND_SET(SOURCES
@@ -51,6 +53,7 @@ APPEND_SET(SOURCES
   stk_interface/Panzer_STK_SquareQuadMeshFactory.cpp
   stk_interface/Panzer_STK_ExodusReaderFactory.cpp
   stk_interface/Panzer_STK_CubeHexMeshFactory.cpp
+  write_solution_data.cpp
   )
 
 #
