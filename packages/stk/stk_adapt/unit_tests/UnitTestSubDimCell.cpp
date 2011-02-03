@@ -15,7 +15,7 @@
 
 #include <stk_percept/Hashtable.hpp>
 
-#define USE_SPARSEHASH 1
+#define USE_SPARSEHASH 0
 #if USE_SPARSEHASH
 #include <google/sparse_hash_map>
 #include <google/dense_hash_map>
