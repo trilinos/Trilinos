@@ -31,6 +31,7 @@
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
 
+#define NOMALLOC_ARRAY_CHECK_SIZES
 #include <stk_percept/NoMallocArray.hpp>
 
 #include <stk_util/environment/CPUTime.hpp>
@@ -62,6 +63,15 @@ namespace Teuchos
      return (int)x;
    }
 
+  typedef stk::percept::NoMallocArray<int, 3> NMA1;
+
+  template <> 
+  inline
+  int hashCode(const NMA1& x)
+   {
+     return (int)(x.m_data[0] + x.m_data[1] + x.m_data[2]);
+   }
+
 }
 
 namespace stk
@@ -72,6 +82,42 @@ namespace stk
     {
 
 #define EXTRA_PRINT 0
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+#if 0
+      TEST(unit_tests_percept, hashtable_1)
+      {
+        typedef NoMallocArray<int, 3> NMA;
+        typedef percept::Hashtable<NMA, int> HTII;
+        HTII ht;
+        std::cout << "HTII start " << std::endl;
+        NMA nma;
+        nma.insert(1); nma.insert(2); nma.insert(3);
+        NMA nma1;
+        nma1.insert(1); nma1.insert(2); nma1.insert(4);
+        ht.put(nma,-2);
+        ht[nma1] = -1;
+
+        std::cout << "ht[1]= " << ht[nma] << std::endl;
+          std::cout << "ht[3]= " << ht.get(nma1) << std::endl;
+
+        HTII::iterator it = ht.begin();
+        std::cout << "here 2 " << std::endl;
+
+        std::cout << "here 2 it=" << (*it).first() << " " << (*it).second() << std::endl;
+
+        for ( ; it != ht.end(); ++it)
+          {
+            NMA& key = (*it).first();
+            int val = (*it).second();
+            std::cout << "key= " << key << " val= " << val << std::endl;
+            //std::cout << "here" << std::endl;
+          }
+
+      }
+#endif
 
       //======================================================================================================================
       //======================================================================================================================
@@ -123,7 +169,7 @@ namespace stk
 
         bool got_it = false;
         try {
-          NoMallocArray<unsigned, 4> nma1(5);
+          NoMallocArray<unsigned, 4> nma1(5, 0u);
         }
         catch (std::runtime_error& e)
           {
@@ -134,9 +180,12 @@ namespace stk
             EXPECT_TRUE(false);
           }
 
-        NoMallocArray<unsigned, 4> nma2(4);
-        EXPECT_TRUE(nma.size() == 0u);
+        NoMallocArray<unsigned, 4> nma2(4u, 0u);
+        std::cout << "nma.size()= " << nma2.size() << std::endl;
+        EXPECT_TRUE(nma2.size() == 4u);
 
+        nma2.resize(0u);
+        EXPECT_TRUE(nma2.size() == 0u);
         nma2.insert(0u);
         nma2.insert(1u);
         nma2.insert(2u);

@@ -147,6 +147,9 @@ namespace stk {
       int
       getSpatialDim(); 
 
+      int 
+      getNumberElements();
+
       //========================================================================================================================
       /// low-level interfaces
       /// Create a Mesh object that doesn't own its constituent MetaData and BulkData, pointers to which are adopted

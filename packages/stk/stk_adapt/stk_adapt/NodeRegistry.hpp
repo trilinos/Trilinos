@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <limits>
 #include <cmath>
 #include <utility>
 #include <math.h>
@@ -16,6 +17,8 @@
 #include <Shards_CellTopologyData.h>
 
 #include <stk_percept/stk_mesh.hpp>
+
+#include <stk_percept/NoMallocArray.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/Teuchos_My_Hashtable.hpp>
@@ -33,6 +36,7 @@
 #define NODE_REGISTRY_MAP_TYPE_STD 0
 #define NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE 0
 #define NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE 0
+#define NODE_REGISTRY_MAP_TYPE_GOOGLE 0
 
 /// current best is STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO 1, DO_REHASH 1
 #define STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO 1
@@ -55,6 +59,13 @@
 
 #if NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE
 #include <Teuchos_Hashtable.hpp>
+#endif
+
+
+
+#if NODE_REGISTRY_MAP_TYPE_GOOGLE
+#include <google/sparse_hash_map>
+#include <google/dense_hash_map>
 #endif
 
 
@@ -81,6 +92,8 @@ namespace stk {
     //typedef EntityId NodeIdsOnSubDimEntityType;
     //typedef std::vector<EntityId> NodeIdsOnSubDimEntityType;
 
+#define NODE_IDS_OLD 1
+#if NODE_IDS_OLD
     struct NodeIdsOnSubDimEntityType : public std::vector<EntityId> 
     {
       typedef std::vector<EntityId> base_type;
@@ -104,12 +117,49 @@ namespace stk {
           }
       }
     };
+#else
+
+
+#define MAX_NEW_NODE_ON_FACE 27u
+    class NodeIdsOnSubDimEntityType : public stk::percept::NoMallocArray<EntityId, MAX_NEW_NODE_ON_FACE>
+    {
+    public:
+      typedef  stk::percept::NoMallocArray<EntityId, MAX_NEW_NODE_ON_FACE> base_type;
+
+      explicit NodeIdsOnSubDimEntityType()  : base_type() {}
+
+      NodeIdsOnSubDimEntityType(unsigned sz ) : base_type(sz,0) {}
+
+      NodeIdsOnSubDimEntityType(unsigned sz, EntityId id ) : base_type(sz,id) {}
+
+      void pack(CommBuffer& buff) 
+      { 
+        buff.pack< unsigned > ( this->size() );
+        for (unsigned ii = 0; ii < this->size(); ii++)
+          {
+            buff.pack<EntityId>( (*this)[ii] );
+          }
+      }
+      void unpack(CommBuffer& buff) 
+      { 
+        unsigned sz;
+        buff.unpack< unsigned > ( sz );
+        this->resize( sz );
+        for (unsigned ii = 0; ii < this->size(); ii++)
+          {
+            buff.unpack<EntityId>( (*this)[ii] );
+          }
+      }
+    };
+#endif
 
     inline std::ostream &operator<<(std::ostream& out, const boost::array<EntityId, 1>& arr)
     {
       out << arr[0];
       return out;
     }
+
+
     struct NodeIdsOnSubDimEntityType1 : public boost::array<EntityId, 1>
     {
       typedef boost::array<EntityId,1> base_type;
@@ -185,15 +235,36 @@ namespace stk {
     /// map of the node ids on a sub-dim entity to the data on the sub-dim entity
 
 #if NODE_REGISTRY_MAP_TYPE_BOOST
-#ifdef STK_HAVE_TBB
+#  ifdef STK_HAVE_TBB
     typedef tbb::scalable_allocator<std::pair<SubDimCell_EntityId const, SubDimCellData> > RegistryAllocator;
     typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4>, RegistryAllocator > SubDimCellToDataMap;
-#else
+#  else
 
     typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4> > SubDimCellToDataMap;
     typedef boost::unordered_map<EntityId, EntityPtr > EntityRepo;
 
+#  endif
 #endif
+
+#if NODE_REGISTRY_MAP_TYPE_GOOGLE
+
+    //         typedef google::sparse_hash_map<unsigned, unsigned *> google_sparse_map_type;
+    //         google_sparse_map_type google_sparse_map1(init_capacity);
+    //         google_sparse_map1.set_empty_key(2*N);
+
+#  ifdef STK_HAVE_TBB
+
+    typedef tbb::scalable_allocator<std::pair<SubDimCell_EntityId const, SubDimCellData> > RegistryAllocator;
+    typedef google::sparse_hash_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4>, RegistryAllocator > SubDimCellToDataMap;
+    typedef google::sparse_hash_map<EntityId, EntityPtr > EntityRepo;
+
+#  else
+
+    typedef google::sparse_hash_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4> > SubDimCellToDataMap;
+    //typedef google::sparse_hash_map<EntityId, EntityPtr > EntityRepo;
+    typedef boost::unordered_map<EntityId, EntityPtr > EntityRepo;
+
+#  endif
 #endif
 
 #if NODE_REGISTRY_MAP_TYPE_TR1
@@ -280,9 +351,24 @@ namespace stk {
     public:
       //========================================================================================================================
       // high-level interface
-      NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), m_comm_all(eMesh.getBulkData()->parallel()), m_gee_cnt(0), m_gen_cnt(0),
+      //NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), m_comm_all(eMesh.getBulkData()->parallel()), m_gee_cnt(0), m_gen_cnt(0),
+      //m_entity_repo(stk::mesh::EntityRankEnd)
+
+      NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), m_comm_all(eMesh.getBulkData()->parallel()),
+                                                  // why does this cause failures? 
+                                                  //m_cell_2_data_map(eMesh.getNumberElements()*8u),
+                                                  m_gee_cnt(0), m_gen_cnt(0),
                                                   m_entity_repo(stk::mesh::EntityRankEnd)
       {
+#if NODE_REGISTRY_MAP_TYPE_GOOGLE
+        //SubDimCell_EntityId empty_key;
+        //empty_key.insert( std::numeric_limits<EntityId>::max() );
+        //m_cell_2_data_map.set_empty_key(empty_key);
+
+        SubDimCell_EntityId deleted_key;
+        deleted_key.insert( std::numeric_limits<EntityId>::max() - 1u ); 
+        m_cell_2_data_map.set_deleted_key(deleted_key);
+#endif
       }
 
       void initialize() //stk::CommAll& comm_all)
@@ -388,8 +474,11 @@ namespace stk {
         SubDimCell_EntityId subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
         
+#if NODE_IDS_OLD
         static SubDimCellData empty_SubDimCellData;
-
+#else
+        static SubDimCellData empty_SubDimCellData(MAX_NEW_NODE_ON_FACE,0u);
+#endif
         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
 
         // if empty or if my id is the smallest, make this element the owner

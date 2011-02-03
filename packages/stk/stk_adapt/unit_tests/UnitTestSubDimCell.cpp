@@ -15,6 +15,12 @@
 
 #include <stk_percept/Hashtable.hpp>
 
+#define USE_SPARSEHASH 1
+#if USE_SPARSEHASH
+#include <google/sparse_hash_map>
+#include <google/dense_hash_map>
+#endif
+
 namespace Teuchos
 {
   template <> 
@@ -34,7 +40,89 @@ namespace stk
     {
       using namespace std;
 
-      TEST(SubDimCell, test0)
+#define OUT(expr) cout << QUOTE(expr) " = " << expr << endl
+
+#if USE_SPARSEHASH
+
+      TEST(SubDimCell, test_google_dense_hash_map)
+      {
+        google::dense_hash_map<SubDimCell<int>, int, my_hash<int, 4>, my_equal_to<int, 4> > map_;
+
+        SubDimCell<int> empty_key;
+        empty_key.insert( std::numeric_limits<int>::max() );
+        map_.set_empty_key(empty_key);
+
+        SubDimCell<int> deleted_key;
+        deleted_key.insert( std::numeric_limits<int>::max()-1 );
+        map_.set_deleted_key(deleted_key);
+
+        //percept::Hashtable<SubDimCell<int>, int, less<int> >::iterator map_it;
+        SubDimCell<int> set1;
+        SubDimCell<int> set2;
+        SubDimCell<int> set3;
+
+        set1.insert(1);  set1.insert(2);  set1.insert(3); 
+        set2.insert(3);  set2.insert(1);  set2.insert(2); 
+        set3.insert(4);  set3.insert(1);  set3.insert(2);
+        typedef pair<SubDimCell<int>::iterator, bool> result_type;
+
+        std::ostringstream strs1;
+        strs1 << set1;
+
+        map_[set1] = 1;
+        map_[set2] = 2;
+        map_[set3] = 3;
+
+        cout << "map_[set1]= " << map_[set1] << endl;
+        cout << "map_[set2]= " << map_[set2] << endl;
+        cout << "map_[set3]= " << map_[set3] << endl;
+
+        EXPECT_EQ(map_[set1], map_[set2]);
+        EXPECT_TRUE(set1 == set2);
+
+        cout << "set1 = " << endl;
+        for (SubDimCell<int>::iterator si1 = set1.begin(); si1 != set1.end(); si1++)
+          {
+            cout <<  *si1 << " ";
+          }
+        cout << endl;
+        cout << "set2 = " << endl;
+        for (SubDimCell<int>::iterator si2 = set2.begin(); si2 != set2.end(); si2++)
+          {
+            cout <<  *si2 << " ";
+          }
+        cout << endl;
+        cout << "set3 = " << endl;
+        for (SubDimCell<int>::iterator si3 = set3.begin(); si3 != set3.end(); si3++)
+          {
+            cout <<  *si3 << " ";
+          }
+        cout << endl;
+
+        //#define QUOTE(expr) #expr
+        struct less<SubDimCell<int> > less_set;
+        OUT(less_set(set1,set2));
+        OUT(less_set(set2,set1));
+        OUT(less_set(set1,set3));
+        OUT(less_set(set3,set1));
+
+        copy(set1.begin(), set1.end(), ostream_iterator<int>(cout, " "));
+        cout << endl;
+        //cout << set1 << endl;
+        cout << set1 << endl;
+        vector<int> aaa1(3);
+        aaa1[0] = 0;
+        aaa1[1] = 1;
+        aaa1[2] = 2;
+        cout << aaa1 << endl;
+        //aaa(cout, aaa1);
+        //cout << map_ << endl;
+
+        map_.clear();
+      }
+#endif
+
+      TEST(SubDimCell, test_percept_hashtable)
       {
         percept::Hashtable<SubDimCell<int>, int> map_;
         //percept::Hashtable<SubDimCell<int>, int, less<int> >::iterator map_it;
@@ -81,7 +169,6 @@ namespace stk
         cout << endl;
 
         //#define QUOTE(expr) #expr
-#define OUT(expr) cout << QUOTE(expr) " = " << expr << endl
         struct less<SubDimCell<int> > less_set;
         OUT(less_set(set1,set2));
         OUT(less_set(set2,set1));
@@ -149,7 +236,6 @@ namespace stk
         cout << endl;
 
         //#define QUOTE(expr) #expr
-#define OUT(expr) cout << QUOTE(expr) " = " << expr << endl
         struct less<SubDimCell<int> > less_set;
         OUT(less_set(set1,set2));
         OUT(less_set(set2,set1));

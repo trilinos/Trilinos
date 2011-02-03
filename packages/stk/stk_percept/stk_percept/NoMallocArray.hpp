@@ -7,7 +7,7 @@
 namespace stk {
   namespace percept {
 
-    // patterned after boos::array
+    // patterned after boost::array
 
     template<class T, std::size_t N>
     class NoMallocArray {
@@ -24,20 +24,25 @@ namespace stk {
       typedef std::size_t    size_type;
       typedef std::ptrdiff_t difference_type;
 
-    private:
-      size_type m_current_max_size;
-      size_type m_size;
+    public:
+      size_type m_size;  // 0...N-1
       T m_data[N];    // fixed-size array of elements of type T
 
     public:
 
-      NoMallocArray(size_type n=N) : m_current_max_size(n), m_size(0) 
+      explicit NoMallocArray() : m_size(0u) {}
+
+      NoMallocArray(size_type sz, const T& val) :  m_size(sz) 
       {
-        if (n > N) throw std::runtime_error("error n > N");
-        for (size_type i = 0; i < N; i++)
+#ifdef NOMALLOC_ARRAY_CHECK_SIZES
+#endif
+#if 1
+        if (sz > N) throw std::runtime_error("error n > N");
+        for (size_type i = 0; i < sz; i++)
           {
-            m_data[i] = 0.0;
+            m_data[i] = val;
           }
+#endif
       }
 
       void clear() { m_size=0; }
@@ -48,6 +53,10 @@ namespace stk {
       iterator end() { return m_data+m_size; }
       const_iterator end() const { return m_data+m_size; }
 
+      void resize(size_type n) {
+        if (n > N) throw std::runtime_error("error n > N");
+        m_size=n;
+      }
       // reverse iterator support
       typedef std::reverse_iterator<iterator> reverse_iterator;
       typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
@@ -103,15 +112,15 @@ namespace stk {
 
       void insert(T val) 
       {
-        VERIFY_OP(m_size, < ,  m_current_max_size, "out of bounds");
+        VERIFY_OP(m_size, < ,  N, "out of bounds");
         (*this)[m_size] = val;
         m_size++;
-        //if (m_size > m_current_max_size) throw std::runtime_error("m_size");
+        //if (m_size > m_capacity) throw std::runtime_error("m_size");
         //std::sort( begin(), end() );
       }
 
       bool empty() { return m_size == 0; }
-      size_type max_size() { return m_current_max_size; }
+      size_type max_size() { return N; }
       size_type max_capacity() { return N; }
       
 
@@ -146,6 +155,17 @@ namespace stk {
         return *this;
       }
 
+#if 0
+      bool operator== (const NoMallocArray<T,N>& rhs) const {
+        for (size_type i = 0; i < size(); i++)
+          {
+            if (m_data[i] != rhs.m_data[i])
+              return false;
+          }
+        return true;
+      }
+#endif
+
       // assign one value to all elements
       void assign (const T& value)
       {
@@ -159,6 +179,13 @@ namespace stk {
         }
       }
     };
+
+    template<class T, std::size_t N>
+    inline std::ostream &operator<<(std::ostream& out, const NoMallocArray<T,N>& arr)
+    {
+      out << arr[0];
+      return out;
+    }
 
   }
 }
