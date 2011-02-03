@@ -2,7 +2,7 @@
 # Include the global look and feel options
 #
 @INCLUDE_PATH          = $(TRILINOS_HOME)/packages
-@INCLUDE               = common/Doxyfile
+@INCLUDE               = $(TRILINOS_HOME)/packages/common/Doxyfile
 
 # other Trilinos packages to which the MueLu doxygen should hyperlink
 TAGFILES += \
