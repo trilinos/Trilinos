@@ -8,6 +8,7 @@ using Teuchos::rcp;
 
 #include "Kokkos_DefaultNode.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
@@ -28,9 +29,6 @@ using Teuchos::rcp;
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
-
-#include "Teuchos_DefaultMpiComm.hpp"
-#include "Teuchos_OpaqueWrapper.hpp"
 
 #include <cstdio> // for get char
 
@@ -251,8 +249,6 @@ namespace panzer {
 
     //std::cout << *gx << std::endl;
 
-    
-
     // Export solution to ghosted vector for exodus output
     RCP<Epetra_Vector> solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap()), gx);
     Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap()));
@@ -264,6 +260,44 @@ namespace panzer {
 			ghosted_solution);
     mesh->writeToExodus("output.exo");
 
+    // Test solution values on left, middle, and right side of mesh.
+    // Note that this is based on the exact 20x20 test mesh on 4
+    // processes.  It will fail on more or less processes due to
+    // global node re-numbering.
+    {
+      Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm = DefaultComm<Ordinal>::getComm();
+
+      if (Teuchos::size(*comm) == 4) {
+	
+	const int gid_left = 0;
+	const int gid_middle = 225;
+	const int gid_right = 340;
+	const int lid_left = solution->Map().LID(gid_left);
+	const int lid_middle = solution->Map().LID(gid_middle);
+	const int lid_right = solution->Map().LID(gid_right);
+	
+	//solution->Print(std::cout);
+	
+	if (lid_left != -1) {
+	  double left_value = (*solution)[lid_left];
+	  TEST_FLOATING_EQUALITY(left_value, 1.0, 1.0e-9);
+	}
+	
+	if (lid_middle != -1) {
+	  double middle_value = (*solution)[lid_middle];
+	  TEST_FLOATING_EQUALITY(middle_value, 1.625, 1.0e-9);
+	}
+	
+	if (lid_right != -1) {
+	  double right_value = (*solution)[lid_right];
+	  TEST_FLOATING_EQUALITY(right_value, 2.0, 1.0e-9);
+	}
+	
+	int globalSuccess_int = -1;
+	Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+	TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+      }
+    }
 
     // This is for debugging and to test the evaluation of the
     // residual and JAcobian at the same time.  Currently NOX
