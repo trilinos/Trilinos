@@ -25,9 +25,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
-#include "Panzer_STK_GatherFields.hpp"
 #include "Panzer_STKConnManager.hpp"
-#include "Panzer_STK_AuxiliaryVariables.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
@@ -42,66 +40,63 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-   void pause_to_attach()
-   {
-      MPI_Comm mpicomm = MPI_COMM_WORLD;
-      Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(
-            Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
-      Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-      out.setShowProcRank(true);
-      out.setOutputToRootOnly(-1);
+  std::size_t globalCount;
 
-      out << "PID = " << getpid();
+  // The count evaluator to test
+  /////////////////////////////////////////////////////////////
 
-      if (comm->getRank() == 0)
-         getchar();
-      comm->barrier();
-   }
+  PHX_EVALUATOR_CLASS(CountEval)
+  PHX_EVALUATOR_CLASS_END
+  PHX_EVALUATOR_CTOR(CountEval,p) 
+  {
+     PHX::Tag<ScalarT> dummyField("CountEval-Dummy",Teuchos::rcp(new PHX::MDALayout<Dummy>(0)));
+     addEvaluatedField(dummyField);
+  }
+  PHX_POST_REGISTRATION_SETUP(CountEval,sd,fm) {}
+  PHX_EVALUATE_FIELDS(CountEval,workset) { globalCount++; }
 
-  class DogBuilder {
-     Teuchos::RCP<panzer_stk::STK_Interface> mesh_;
-     Teuchos::RCP<panzer::Basis> basis_;
+  // The Auxiliary evaluator factor and its builder
+  /////////////////////////////////////////////////////////////
+  template <typename EvalT>
+  class CountAux : public panzer::AuxiliaryEvaluator_Factory<EvalT> {
   public:
-     DogBuilder(const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
-                const Teuchos::RCP<panzer::Basis> & basis) 
-        : mesh_(mesh), basis_(basis) {}
- 
- 
-     template <typename EvalT>
-     Teuchos::RCP<panzer::AuxiliaryEvaluator_FactoryBase> build() const
+     void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits> & fm) const
      {
-        Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>);
-        fieldNames->push_back("dog");
-
         Teuchos::ParameterList pl;
-        pl.set<Teuchos::RCP<std::vector<std::string> > >("Field Names",fieldNames);
-        pl.set("Basis",basis_);
-  
-        return Teuchos::rcp(new panzer_stk::AuxiliaryVariables<EvalT>(mesh_,pl));
+        Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op =
+           Teuchos::rcp(new CountEval<EvalT,panzer::Traits>(pl));
+        fm.template registerEvaluator<EvalT>(op);
+
+        for(std::vector<Teuchos::RCP<PHX::FieldTag> >::const_iterator itr=op->evaluatedFields().begin();
+           itr!=op->evaluatedFields().end();++itr)
+           fm.requireField<EvalT>(**itr);
      }
   };
 
-  Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize);
+  class CountBuilder {
+  public:
+     template <typename EvalT>
+     Teuchos::RCP<panzer::AuxiliaryEvaluator_FactoryBase> build() const
+     { return Teuchos::rcp(new CountAux<EvalT>); }
+  };
+
+  // some declares
+  /////////////////////////////////////////////////////////////
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
 
-  TEUCHOS_UNIT_TEST(gs_evaluators, gather_constr)
+  // the test
+  /////////////////////////////////////////////////////////////
+
+  TEUCHOS_UNIT_TEST(AuxEvals, implementation)
   {
     const std::size_t workset_size = 20;
-    Teuchos::RCP<panzer::Basis> linBasis = buildLinearBasis(workset_size);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(10,10);
 
-    Teuchos::RCP<std::vector<std::string> > fieldNames
-        = Teuchos::rcp(new std::vector<std::string>);
-    fieldNames->push_back("dog");
-
-    Teuchos::ParameterList pl;
-    pl.set("Basis",linBasis);
-    pl.set("Field Names",fieldNames);
-
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
+    globalCount = 0;
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
@@ -159,10 +154,10 @@ namespace panzer {
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
-    const DogBuilder db(mesh,linBasis);
+    CountBuilder cb;
     std::map<std::string,Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > auxEval;
     auxEval["eblock-0_0"] = Teuchos::rcp(new panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits>);
-    auxEval["eblock-0_0"]->buildAndPushBackObjects(db);
+    auxEval["eblock-0_0"]->buildAndPushBackObjects(cb);
  
     fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,*linObjFactory,auxEval);
 
@@ -179,14 +174,12 @@ namespace panzer {
              linObjFactory->buildLinearObjContainer());
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
-  }
 
-  Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize)
-  {
-     panzer::CellData cellData(worksetSize,2);
-     panzer::IntegrationRule intRule(1,cellData);
-
-     return Teuchos::rcp(new panzer::Basis("Q1",intRule)); 
+    TEST_ASSERT(globalCount>0);
+    TEST_EQUALITY(globalCount,2*volume_worksets["eblock-0_0"]->size());
+       // globalCount is equal to the number of times CountEval is run.
+       // this only the number of worksets in the 0,0 element block and 
+       // the number of times evaluate is called-in this case twice
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
