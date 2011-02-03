@@ -45,7 +45,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     ctest_linux_nightly_serial_development_opt_pgi_10.1_trilinos-test.cmake 
     CTEST_INSTALLER_TYPE dev
     RUN_SERIAL
-    TIMEOUT_MINUTES 300
+    TIMEOUT_MINUTES 360
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -53,7 +53,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     ctest_linux_nightly_serial_development_opt_pgi_11.1_trilinos-test.cmake
     CTEST_INSTALLER_TYPE dev
     RUN_SERIAL
-    TIMEOUT_MINUTES 300
+    TIMEOUT_MINUTES 360
   )
 
 ELSE()
