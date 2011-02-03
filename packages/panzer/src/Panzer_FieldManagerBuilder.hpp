@@ -106,7 +106,7 @@ namespace panzer {
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
                                   const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > 
                                      & auxManager)
-    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,lo_factory,&auxManager); }
+    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,lo_factory,Teuchos::rcpFromRef(auxManager)); }
 
     /** Setup the volume field managers. This uses the passed in <code>dofManager</code>
       * and sets it for permenant use.
@@ -116,7 +116,7 @@ namespace panzer {
                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                                   const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                   const LinearObjFactory<panzer::Traits> & lo_factory)
-    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,lo_factory,0); }
+    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,lo_factory,Teuchos::null); }
 
     /** Build the BC field managers.
       */
@@ -137,8 +137,8 @@ namespace panzer {
                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                                   const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
-                                  const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > 
-                                     * auxManger);
+                                  const Teuchos::RCP<const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > >
+                                     & auxManger);
 
     //! Phalanx volume field managers for each element block.
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >

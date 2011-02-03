@@ -20,7 +20,7 @@ AuxiliaryVariables<EvalT>::AuxiliaryVariables(const Teuchos::RCP<const STK_Inter
 }
 
 template <typename EvalT>
-void AuxiliaryVariables<EvalT>::buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits> & fm)
+void AuxiliaryVariables<EvalT>::buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits> & fm) const
 {
    Teuchos::ParameterList pl;
    pl.set("Basis",basis_);
@@ -30,6 +30,12 @@ void AuxiliaryVariables<EvalT>::buildAndRegisterEvaluators(PHX::FieldManager<pan
       Teuchos::rcp(new panzer_stk::GatherFields<EvalT,panzer::Traits>(mesh_,pl));
 
    fm.template registerEvaluator<EvalT>(op);
+
+   for(std::vector<Teuchos::RCP<PHX::FieldTag> >::const_iterator itr=op->evaluatedFields().begin();
+       itr!=op->evaluatedFields().end();++itr) {
+      fm.requireField<EvalT>(**itr);
+   }
+       
 }
 
 }

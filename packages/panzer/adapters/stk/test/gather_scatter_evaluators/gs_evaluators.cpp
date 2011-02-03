@@ -68,7 +68,7 @@ namespace panzer {
  
  
      template <typename EvalT>
-     Teuchos::RCP<panzer::Base> build() const
+     Teuchos::RCP<panzer::AuxiliaryEvaluator_FactoryBase> build() const
      {
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>);
         fieldNames->push_back("dog");
@@ -169,6 +169,8 @@ namespace panzer {
     fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,*linObjFactory,auxEval);
 
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,*linObjFactory);
+
+    fmb->writeVolumeGraphvizDependencyFiles("field_manager",physicsBlocks);
 
     panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
     panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);

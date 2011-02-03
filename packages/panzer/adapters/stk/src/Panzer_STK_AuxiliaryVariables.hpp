@@ -21,7 +21,7 @@ public:
    
    virtual ~AuxiliaryVariables() {}
 
-   virtual void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits> & fm);
+   virtual void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits> & fm) const;
 
 private:
    Teuchos::RCP<panzer::Basis> basis_;

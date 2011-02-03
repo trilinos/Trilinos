@@ -16,7 +16,7 @@ namespace panzer {
 template <typename Traits>
 class AuxiliaryEvaluator_TemplateManager : 
    public VectorTemplateManager<typename Traits::EvalTypes,
-                                panzer::Base,
+                                panzer::AuxiliaryEvaluator_FactoryBase,
                                 panzer::AuxiliaryEvaluator_Factory<_> > {
 public:
    AuxiliaryEvaluator_TemplateManager() {}

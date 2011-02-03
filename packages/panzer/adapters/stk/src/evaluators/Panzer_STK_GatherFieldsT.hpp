@@ -15,6 +15,8 @@ panzer_stk::GatherFields<panzer::Traits::Residual, Traits>::
 { 
   using panzer::Cell;
   using panzer::NODE;
+ 
+  mesh_ = mesh;
 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
@@ -68,7 +70,7 @@ evaluateFields(typename Traits::EvalData workset)
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          VariableField * field = stkFields_[fieldIndex];
 
-         std::size_t basisCnt = gatherFields_[fieldIndex].dimension(2);
+         std::size_t basisCnt = gatherFields_[fieldIndex].dimension(1);
 
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<basisCnt;basis++) {
