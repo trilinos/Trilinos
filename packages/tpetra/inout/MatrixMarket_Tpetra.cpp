@@ -41,3 +41,19 @@
 
 #include "MatrixMarket_Tpetra.hpp"
 
+#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+
+// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
+
+#include <Kokkos_SerialNode.hpp>
+#if defined(HAVE_KOKKOS_TBB)
+#  include <Kokkos_TBBNode.hpp>
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+#  include <Kokkos_TPINode.hpp>
+#endif
+#if defined(HAVE_KOKKOS_THRUST)
+#  include <Kokkos_ThrustGPUNode.hpp>
+#endif
+
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

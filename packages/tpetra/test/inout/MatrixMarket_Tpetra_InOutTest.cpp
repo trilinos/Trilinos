@@ -31,6 +31,7 @@
 
 #include <Kokkos_ConfigDefs.hpp>
 #include <Kokkos_SerialNode.hpp>
+
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>
 #endif // defined(HAVE_KOKKOS_TBB)
@@ -110,11 +111,11 @@ namespace MatrixMarket {
       typedef double scalar_type;
       typedef int local_ordinal_type;
       typedef size_t global_ordinal_type;
-#if defined(HAVE_KOKKOS_TBB)
-      typedef Kokkos::TBBNode node_type;
-#else
+// #if defined(HAVE_KOKKOS_TBB)
+//       typedef Kokkos::TBBNode node_type;
+// #else
       typedef Kokkos::SerialNode node_type;
-#endif // defined(HAVE_KOKKOS_TBB)
+// #endif // defined(HAVE_KOKKOS_TBB)
 
       typedef ::Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
       const int myRank = Teuchos::rank (*pComm);
