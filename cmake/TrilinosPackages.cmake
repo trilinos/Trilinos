@@ -79,7 +79,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Belos                 belos                          PS
   Ifpack2               ifpack2                        PS
   Stratimikos           stratimikos                    PS
-  Meros                 meros                          SS
+  Meros                 meros                          EX # no longer released
   FEI                   fei                            PS
   Anasazi               anasazi                        PS
   Teko                  teko                           SS
