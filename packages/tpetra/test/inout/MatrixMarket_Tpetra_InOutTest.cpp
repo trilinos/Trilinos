@@ -110,7 +110,8 @@ namespace MatrixMarket {
 
       typedef double scalar_type;
       typedef int local_ordinal_type;
-      typedef size_t global_ordinal_type;
+      typedef int global_ordinal_type;
+      // typedef size_t global_ordinal_type;
 // #if defined(HAVE_KOKKOS_TBB)
 //       typedef Kokkos::TBBNode node_type;
 // #else
