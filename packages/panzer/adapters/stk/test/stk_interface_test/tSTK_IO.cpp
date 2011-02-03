@@ -25,6 +25,7 @@ void buildLocalIds(const STK_Interface & mesh,
                    std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds); 
 
 void assignBlock(FieldContainer & block,FieldContainer & vertices, double (* func)(double,double));
+void assignBlock(FieldContainer & block,FieldContainer & vertices, double val);
 
 double xval(double x,double y) { return x; }
 double yval(double x,double y) { return y; }
@@ -62,6 +63,54 @@ TEUCHOS_UNIT_TEST(tSTK_IO, fields)
    mesh->writeToExodus("output.exo");
 }
 
+TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
+{
+   RCP<STK_Interface> mesh = buildMesh(20,20);
+
+   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds; 
+   buildLocalIds(*mesh,localIds);
+
+   FieldContainer vert0, vert1;
+   out << "get vertices" << std::endl;
+   mesh->getElementVertices(*localIds["eblock-0_0"],vert0);
+   mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
+
+   FieldContainer ublock0, tblock0, tblock1;
+   ublock0.resize(localIds["eblock-0_0"]->size(),4);
+   tblock0.resize(localIds["eblock-0_0"]->size(),4);
+   tblock1.resize(localIds["eblock-1_0"]->size(),4);
+
+   mesh->setupTransientExodusFile("transient.exo");
+
+   out << "assigning 3.0" << std::endl;
+   {
+      assignBlock(ublock0,vert0,1.0);
+      assignBlock(tblock0,vert0,2.0);
+      assignBlock(tblock1,vert1,3.0);
+
+      mesh->setSolutionFieldData("u","eblock-0_0",*localIds["eblock-0_0"],ublock0);
+      mesh->setSolutionFieldData("T","eblock-0_0",*localIds["eblock-0_0"],tblock0);
+      mesh->setSolutionFieldData("T","eblock-1_0",*localIds["eblock-1_0"],tblock1);
+   }
+
+   out << "write to exodus: 3.0" << std::endl;
+   mesh->writeToExodus(3.0);
+
+   out << "assigning 4.5" << std::endl;
+   {
+      assignBlock(ublock0,vert0,6.0);
+      assignBlock(tblock0,vert0,7.0);
+      assignBlock(tblock1,vert1,8.0);
+
+      mesh->setSolutionFieldData("u","eblock-0_0",*localIds["eblock-0_0"],ublock0);
+      mesh->setSolutionFieldData("T","eblock-0_0",*localIds["eblock-0_0"],tblock0);
+      mesh->setSolutionFieldData("T","eblock-1_0",*localIds["eblock-1_0"],tblock1);
+   }
+
+   out << "write to exodus: 4.5" << std::endl;
+   mesh->writeToExodus(4.5);
+}
+
 RCP<STK_Interface> buildMesh(int xElements,int yElements)
 {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
@@ -79,7 +128,6 @@ RCP<STK_Interface> buildMesh(int xElements,int yElements)
     mesh->addSolutionField("T","eblock-1_0");
  
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
-
 
     return mesh;
 }
@@ -107,6 +155,21 @@ void buildLocalIds(const STK_Interface & mesh,
          localBlockIds.push_back(mesh.elementLocalId(*itr));
 
       std::sort(localBlockIds.begin(),localBlockIds.end());
+   }
+}
+
+void assignBlock(FieldContainer & block,FieldContainer & vertices, double val)
+{
+   TEUCHOS_ASSERT(block.dimension(0)==vertices.dimension(0));
+   TEUCHOS_ASSERT(block.dimension(1)==vertices.dimension(1));
+
+   std::size_t cellCnt = block.dimension(0); 
+   std::size_t nodeCnt = block.dimension(1); 
+
+   for(std::size_t cell=0;cell<cellCnt;cell++) {
+      for(std::size_t node=0;node<nodeCnt;node++) {
+         block(cell,node) = val;
+      }
    }
 }
 

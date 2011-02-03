@@ -19,6 +19,10 @@
 
 #include <Panzer_STK_config.hpp>
 
+#ifdef HAVE_IOSS
+#include <stk_io/util/UseCase_mesh.hpp>
+#endif
+
 namespace panzer_stk {
 
 /** Pure virtial base class that builds a basic element. To be
@@ -149,9 +153,22 @@ public:
    // Utility functions
    //////////////////////////////////////////
 
-   /** Write this mesh to exodus
+   /** Write this mesh to exodus. This is a one shot function
+     * that will write to a particular exodus output file.
      */
    void writeToExodus(const std::string & filename);
+
+   /** This simply sets up a transient exodus file for writing.
+     * No work is performed at this stage. This is used
+     * in combination with <code>writeToExodus(double timestep)</code>.
+     */
+   void setupTransientExodusFile(const std::string & filename);
+
+   /** Write this timestep to the exodus file specified in the
+     * <code>setupTransientExodusFile</code>. This uses the
+     * current state of the STK fields as the time step.
+     */
+   void writeToExodus(double timestep);
 
    // Accessor functions
    //////////////////////////////////////////
@@ -341,6 +358,11 @@ protected:
    std::size_t currentLocalId_;
 
    Teuchos::RCP<stk::mesh::DefaultFEM> femPtr_;
+
+#ifdef HAVE_IOSS
+   // I/O support
+   Teuchos::RCP<stk::io::util::MeshData> meshData_;
+#endif
 
    // uses lazy evaluation
    mutable Teuchos::RCP<std::vector<stk::mesh::Entity*> > orderedElementVector_;
