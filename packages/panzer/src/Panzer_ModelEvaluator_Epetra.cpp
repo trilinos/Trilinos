@@ -111,7 +111,7 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
 {
   OutArgsSetup outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(0, 0);
+  outArgs.set_Np_Ng(p_init_.size(), 0);
   outArgs.setSupports(OUT_ARG_f,true);
   outArgs.setSupports(OUT_ARG_W,true);
   outArgs.set_W_properties(
