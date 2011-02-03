@@ -174,14 +174,11 @@ int multiply_test(
   bool verbose)
 {
 
-  /*RCP<Teuchos::basic_FancyOStream<char> > outstream = 
-    Teuchos::getFancyOStream(rcpFromRef(std::cout));
-  B->describe(*outstream, Teuchos::VERB_EXTREME);*/
   int localProc = comm->getRank();
   RCP<CrsMatrix<double,int> > computedC = null;
-  RCP<const Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+  //RCP<const Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
 
-  computedC = rcp( new CrsMatrix<double,int>(rowmap, 1));
+  computedC = rcp( new CrsMatrix<double,int>(C_check->getRowMap(), 1));
 
   RCP<const CrsMatrix<double,int> > constA = A;
   RCP<const CrsMatrix<double,int> > constB = B;
