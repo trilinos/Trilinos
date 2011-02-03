@@ -46,59 +46,62 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <string>
 
-namespace MatrixMarket {
+namespace Tpetra {
+  namespace MatrixMarket {
 
-  static bool isSkew (const std::string& symmType) {
-    return symmType.size() >= 4 && symmType.substr(0,4) == "skew";
-  }
-  static bool isConj (const std::string& symmType) {
-    return std::string::npos != symmType.find ("hermitian");
-  }
-  static bool needsSymmetrization (const std::string& symmType) {
-    return symmType != "general";
-  }
-
-  /// \class SymmetrizingAdder
-  /// \author Mark Hoemmen
-  /// \brief Adds entries with optional symmetry to a sparse matrix
-  ///
-  /// This class wraps any existing class (AdderType) that defines the
-  /// index_type and value_type typedefs, and a "void operator()
-  /// (const index_type, const index_type, const value_type&)" (that
-  /// conceptually adds an entry to a sparse matrix).  Given the
-  /// Matrix Market symmetry type, this class' corresponding
-  /// operator() may invoke AdderType's operator() twice, in order to
-  /// add entry (j,i) if entry (i,j) is to be added.
-  template<class AdderType>
-  class SymmetrizingAdder {
-  public:
-    typedef typename AdderType::index_type index_type;
-    typedef typename AdderType::value_type value_type;
-    
-    SymmetrizingAdder (const Teuchos::RCP<AdderType>& adder, 
-		       const std::string& symmType) :
-      adder_ (adder),
-      symmetrize_ (needsSymmetrization (symmType)),
-      conjugate_ (isConj (symmType)),
-      skew_ (isSkew (symmType))
-    {}
-    
-    void operator() (const index_type i, const index_type j, const value_type& Aij) {
-      AdderType& theAdder = *adder_;
-
-      theAdder (i, j, Aij);
-      if (symmetrize_ && i != j) {
-	typedef Teuchos::ScalarTraits<value_type> STS;
-	const value_type Aji = skew_ ? 
-	  -(conjugate_ ? STS::conjugate(Aij) : Aij) : 
-	  +(conjugate_ ? STS::conjugate(Aij) : Aij);
-	theAdder (j, i, Aji);
-      }
+    static bool isSkew (const std::string& symmType) {
+      return symmType.size() >= 4 && symmType.substr(0,4) == "skew";
     }
-  private:
-    Teuchos::RCP<AdderType> adder_;
-    bool symmetrize_, conjugate_, skew_;
-  };
-} // namespace MatrixMarket
+    static bool isConj (const std::string& symmType) {
+      return std::string::npos != symmType.find ("hermitian");
+    }
+    static bool needsSymmetrization (const std::string& symmType) {
+      return symmType != "general";
+    }
+
+    /// \class SymmetrizingAdder
+    /// \author Mark Hoemmen
+    /// \brief Adds entries with optional symmetry to a sparse matrix
+    ///
+    /// This class wraps any existing class (AdderType) that defines the
+    /// index_type and value_type typedefs, and a "void operator()
+    /// (const index_type, const index_type, const value_type&)" (that
+    /// conceptually adds an entry to a sparse matrix).  Given the
+    /// Matrix Market symmetry type, this class' corresponding
+    /// operator() may invoke AdderType's operator() twice, in order to
+    /// add entry (j,i) if entry (i,j) is to be added.
+    template<class AdderType>
+    class SymmetrizingAdder {
+    public:
+      typedef typename AdderType::index_type index_type;
+      typedef typename AdderType::value_type value_type;
+    
+      SymmetrizingAdder (const Teuchos::RCP<AdderType>& adder, 
+			 const std::string& symmType) :
+	adder_ (adder),
+	symmetrize_ (needsSymmetrization (symmType)),
+	conjugate_ (isConj (symmType)),
+	skew_ (isSkew (symmType))
+      {}
+    
+      void operator() (const index_type i, const index_type j, const value_type& Aij) {
+	AdderType& theAdder = *adder_;
+
+	theAdder (i, j, Aij);
+	if (symmetrize_ && i != j) {
+	  typedef Teuchos::ScalarTraits<value_type> STS;
+	  const value_type Aji = skew_ ? 
+	    -(conjugate_ ? STS::conjugate(Aij) : Aij) : 
+	    +(conjugate_ ? STS::conjugate(Aij) : Aij);
+	  theAdder (j, i, Aji);
+	}
+      }
+    private:
+      Teuchos::RCP<AdderType> adder_;
+      bool symmetrize_, conjugate_, skew_;
+    };
+
+  } // namespace MatrixMarket
+} // namespace Tpetra
 
 #endif // __MatrixMarket_util_hpp

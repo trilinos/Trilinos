@@ -46,91 +46,94 @@
 #include <ostream>
 #include <string>
 
-namespace MatrixMarket {
+namespace Tpetra {
+  namespace MatrixMarket {
 
-  /// \class Banner
-  /// \author Mark Hoemmen
-  /// \brief Parse a Matrix Market banner line
-  ///
-  /// The first line of a Matrix Market - format file, the "banner
-  /// line," contains information for interpreting the rest of the
-  /// file.  This class parses the first line, canonicalizes the
-  /// information therein, and stores it for later use.
-  class Banner {
-  public:
-    /// Constructor
+    /// \class Banner
+    /// \author Mark Hoemmen
+    /// \brief Parse a Matrix Market banner line
     ///
-    /// \param line [in] The banner line to parse
-    /// \param tolerant [in] Whether to parse tolerantly.
-    ///   If false, we adhere strictly to the Matrix Market
-    ///   standard.  If true, we allow all kinds of divergence
-    ///   therefrom (including an entirely empty banner line,
-    ///   for which we fill in some sensible defaults).
-    Banner (const std::string& line, const bool tolerant=false);
+    /// The first line of a Matrix Market - format file, the "banner
+    /// line," contains information for interpreting the rest of the
+    /// file.  This class parses the first line, canonicalizes the
+    /// information therein, and stores it for later use.
+    class Banner {
+    public:
+      /// Constructor
+      ///
+      /// \param line [in] The banner line to parse
+      /// \param tolerant [in] Whether to parse tolerantly.
+      ///   If false, we adhere strictly to the Matrix Market
+      ///   standard.  If true, we allow all kinds of divergence
+      ///   therefrom (including an entirely empty banner line,
+      ///   for which we fill in some sensible defaults).
+      Banner (const std::string& line, const bool tolerant=false);
 
-    //! The object type (currently just "matrix")
-    const std::string& objectType() const { return objectType_; }
+      //! The object type (currently just "matrix")
+      const std::string& objectType() const { return objectType_; }
 
-    /// \brief Storage type of the matrix
+      /// \brief Storage type of the matrix
+      ///
+      /// "coordinate" means a sparse matrix, stored as (i,j,Aij)
+      /// triples with one-based indices i and j.  "array" means a dense
+      /// matrix, stored in column-major order with one entry per line.
+      const std::string& matrixType() const { return matrixType_; }
+
+      /// \brief Data type of matrix entries
+      ///
+      /// Data type of the matrix entries: "real", "complex", "integer",
+      /// or "pattern".
+      const std::string& dataType() const { return dataType_; }
+
+      /// \brief Symmetric storage type
+      ///
+      /// Describes whether and how symmetry is exploited when storing
+      /// the matrix.  "general" means nonsymmetric: all the matrix
+      /// entries are stored.  "symmetric", "skew-symmetric", and
+      /// "hermitian" have their usual mathematical meaning, and also
+      /// mean that only the upper or lower triangle (including the
+      /// diagonal) of the matrix is stored.  There's no way to tell
+      /// from the banner whether the upper or lower triangle is stored;
+      /// you have to examine the matrix entries.  
+      ///
+      /// \note An error condition is possible for sparse matrices
+      /// (matrixType() == "coordinate"): If only the upper or lower
+      /// triangle is supposed to be there, and entries from both the
+      /// upper and lower triangle are stored, the resulting matrix is
+      /// undefined.  Users may choose to interpret this case as they
+      /// wish (for example, exclusively, or additively).
+      const std::string& symmType() const { return symmType_; }
+
+    private:
+      static std::string validateObjectType (const std::string& objectType, const bool tolerant=false);
+      static std::string validateMatrixType (const std::string& matrixType, const bool tolerant=false);
+      static std::string validateDataType (const std::string& dataType, const bool tolerant=false);
+      static std::string validateSymmType (const std::string& symmType, const bool tolerant=false);
+
+      //! Set the last \c howMany member data to default values
+      void setDefaults (const int howMany);
+
+      std::string objectType_, matrixType_, dataType_, symmType_;
+    };
+
+    /// Print out the "banner" of the Matrix Market file
     ///
-    /// "coordinate" means a sparse matrix, stored as (i,j,Aij)
-    /// triples with one-based indices i and j.  "array" means a dense
-    /// matrix, stored in column-major order with one entry per line.
-    const std::string& matrixType() const { return matrixType_; }
-
-    /// \brief Data type of matrix entries
+    /// This function may be used to generate Matrix Market output
+    /// files, since it prints the banner (first line of the Matrix
+    /// Market file) in the canonical format.  However, we don't promise
+    /// that it prints out in exactly the same format in which it was
+    /// read in, especially (but not only) if it was read in "tolerant"
+    /// mode.
     ///
-    /// Data type of the matrix entries: "real", "complex", "integer",
-    /// or "pattern".
-    const std::string& dataType() const { return dataType_; }
-
-    /// \brief Symmetric storage type
+    /// \note We don't print the endline at the end of the banner line.
     ///
-    /// Describes whether and how symmetry is exploited when storing
-    /// the matrix.  "general" means nonsymmetric: all the matrix
-    /// entries are stored.  "symmetric", "skew-symmetric", and
-    /// "hermitian" have their usual mathematical meaning, and also
-    /// mean that only the upper or lower triangle (including the
-    /// diagonal) of the matrix is stored.  There's no way to tell
-    /// from the banner whether the upper or lower triangle is stored;
-    /// you have to examine the matrix entries.  
+    /// \param out [out] The output stream to which to print
+    /// \param banner [in] The Matrix Market banner to print
     ///
-    /// \note An error condition is possible for sparse matrices
-    /// (matrixType() == "coordinate"): If only the upper or lower
-    /// triangle is supposed to be there, and entries from both the
-    /// upper and lower triangle are stored, the resulting matrix is
-    /// undefined.  Users may choose to interpret this case as they
-    /// wish (for example, exclusively, or additively).
-    const std::string& symmType() const { return symmType_; }
+    /// \return The output stream \c out
+    std::ostream& operator<< (std::ostream& out, const Banner& banner);
 
-  private:
-    static std::string validateObjectType (const std::string& objectType, const bool tolerant=false);
-    static std::string validateMatrixType (const std::string& matrixType, const bool tolerant=false);
-    static std::string validateDataType (const std::string& dataType, const bool tolerant=false);
-    static std::string validateSymmType (const std::string& symmType, const bool tolerant=false);
-
-    //! Set the last \c howMany member data to default values
-    void setDefaults (const int howMany);
-
-    std::string objectType_, matrixType_, dataType_, symmType_;
-  };
-
-  /// Print out the "banner" of the Matrix Market file
-  ///
-  /// This function may be used to generate Matrix Market output
-  /// files, since it prints the banner (first line of the Matrix
-  /// Market file) in the canonical format.  However, we don't promise
-  /// that it prints out in exactly the same format in which it was
-  /// read in, especially (but not only) if it was read in "tolerant"
-  /// mode.
-  ///
-  /// \note We don't print the endline at the end of the banner line.
-  ///
-  /// \param out [out] The output stream to which to print
-  /// \param banner [in] The Matrix Market banner to print
-  ///
-  /// \return The output stream \c out
-  std::ostream& operator<< (std::ostream& out, const Banner& banner);
-} // namespace MatrixMarket
+  } // namespace MatrixMarket
+} // namespace Tpetra
 
 #endif // __MatrixMarket_Banner_hpp

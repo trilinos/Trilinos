@@ -45,37 +45,42 @@
 #include <string>
 #include <vector>
 
-namespace MatrixMarket {
-  namespace details {
+namespace Tpetra {
+  namespace MatrixMarket {
+    namespace details {
 
-    //! Trim whitespace from both sides of \c in
-    std::string 
-    trim (const std::string& in);
+      //! Trim whitespace from both sides of \c in
+      std::string 
+      trim (const std::string& in);
 
-    //! Return lowercase version of \c in
-    std::string 
-    lowercase (const std::string& in);
+      //! Return lowercase version of \c in
+      std::string 
+      lowercase (const std::string& in);
 
-    //! Trim whitespace from both sides, and make lowercase
-    std::string 
-    trim_and_lowercase (const std::string& in);
+      //! Trim whitespace from both sides, and make lowercase
+      std::string 
+      trim_and_lowercase (const std::string& in);
 
-    /// \brief Split \c str using the given set of delimiters
-    ///
-    /// Split the string \c str, optionally starting at position \c
-    /// start, into zero or more tokens separated by one or more of the
-    /// given delimiter characters in \c delimiters.
-    ///
-    /// \param str [in] String to split into tokens
-    /// \param delimiters [in] Array of one or more delimiter character(s)
-    /// \param start [in] Position in \c str where the search should begin.
-    ///   Defaults to zero.
-    ///
-    /// \return Vector of zero or more tokens, none of which contain any
-    ///   of the delimiter character(s)
-    std::vector<std::string>
-    split (const std::string& str, const std::string& delimiters, const size_t start=0);
-  } // namespace details
-} // namespace MatrixMarket
+      /// \brief Split \c str using the given set of delimiters
+      ///
+      /// Split the string \c str, optionally starting at position \c
+      /// start, into zero or more tokens separated by one or more of the
+      /// given delimiter characters in \c delimiters.
+      ///
+      /// \param str [in] String to split into tokens
+      /// \param delimiters [in] Array of one or more delimiter character(s)
+      /// \param start [in] Position in \c str where the search should begin.
+      ///   Defaults to zero.
+      ///
+      /// \return Vector of zero or more tokens, none of which contain any
+      ///   of the delimiter character(s)
+      std::vector<std::string>
+      split (const std::string& str, 
+	     const std::string& delimiters, 
+	     const size_t start=0);
+
+    } // namespace details
+  } // namespace MatrixMarket
+} // namespace Tpetra
 
 #endif // __MatrixMarket_split_hpp

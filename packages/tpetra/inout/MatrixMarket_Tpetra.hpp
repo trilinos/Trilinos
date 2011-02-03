@@ -55,8 +55,8 @@
 #include <vector>
 #include <stdexcept>
 
-namespace MatrixMarket {
-  namespace Tpetra {
+namespace Tpetra {
+  namespace MatrixMarket {
 
     /// \class Adder
     /// \author Mark Hoemmen
@@ -150,8 +150,7 @@ namespace MatrixMarket {
       /// don't have a notion of distribution.
       typedef typename SparseMatrixType::global_ordinal_type global_ordinal_type;
       typedef typename SparseMatrixType::node_type node_type;
-      // Prefix :: says look for Tpetra::Map, not MatrixMarket::Tpetra::Map
-      typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+      typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
       typedef Teuchos::RCP<const map_type> map_ptr;
 
     private:
@@ -322,8 +321,8 @@ namespace MatrixMarket {
       {
 	using Teuchos::RCP;
 	using Teuchos::rcp;
-	using ::Tpetra::createUniformContigMapWithNode;
-	using ::Tpetra::createContigMapWithNode;
+	// using Tpetra::createUniformContigMapWithNode;
+	// using Tpetra::createContigMapWithNode;
 	typedef local_ordinal_type LO;
 	typedef global_ordinal_type GO;
 	typedef node_type NT;
@@ -502,7 +501,7 @@ namespace MatrixMarket {
       }
     };
     
-  } // namespace Tpetra
-} // namespace MatrixMarket
+  } // namespace MatrixMarket
+} // namespace Tpetra
 
 #endif // __MatrixMarket_Tpetra_hpp

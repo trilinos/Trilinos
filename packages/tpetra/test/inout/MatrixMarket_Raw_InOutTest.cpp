@@ -37,38 +37,40 @@
 
 using std::endl;
 
-namespace MatrixMarket {
-  namespace Test {
+namespace Tpetra {
+  namespace MatrixMarket {
+    namespace Test {
 
-    /// \fn getNode
-    /// \brief Return an RCP to a Kokkos Node
-    ///
-    template<class NodeType>
-    Teuchos::RCP<NodeType>
-    getNode() {
-      throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
-    }
+      /// \fn getNode
+      /// \brief Return an RCP to a Kokkos Node
+      ///
+      template<class NodeType>
+      Teuchos::RCP<NodeType>
+      getNode() {
+	throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
+      }
 
-    template<>
-    Teuchos::RCP<Kokkos::SerialNode>
-    getNode() {
-      Teuchos::ParameterList defaultParams;
-      return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
-    }
+      template<>
+      Teuchos::RCP<Kokkos::SerialNode>
+      getNode() {
+	Teuchos::ParameterList defaultParams;
+	return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
+      }
 
 #if defined(HAVE_KOKKOS_TBB)
-    template<>
-    Teuchos::RCP<Kokkos::TBBNode>
-    getNode() {
-      // "Num Threads" specifies the number of threads.  Defaults to an
-      // automatically chosen value.
-      Teuchos::ParameterList defaultParams;
-      return Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
-    }
+      template<>
+      Teuchos::RCP<Kokkos::TBBNode>
+      getNode() {
+	// "Num Threads" specifies the number of threads.  Defaults to an
+	// automatically chosen value.
+	Teuchos::ParameterList defaultParams;
+	return Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
+      }
 #endif // defined(HAVE_KOKKOS_TBB)
 
-  } // namespace Test
-} // namespace MatrixMarket
+    } // namespace Test
+  } // namespace MatrixMarket
+} // namespace Tpetra
 
 
 /// \fn main
@@ -126,9 +128,11 @@ main (int argc, char *argv[])
   // filename is specified, the test passes trivially.
   if (filename != "")
     {
+      using Tpetra::MatrixMarket::Raw::Reader;
+
       typedef double scalar_type;
       typedef int ordinal_type;
-      typedef MatrixMarket::Raw::Reader<scalar_type, ordinal_type> reader_type;
+      typedef Reader<scalar_type, ordinal_type> reader_type;
       reader_type::readFile (filename, tolerant, debug);
     }
 

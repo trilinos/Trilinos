@@ -43,104 +43,105 @@
 
 using std::endl;
 
-namespace MatrixMarket {
-  namespace Test {
+namespace Tpetra {
+  namespace MatrixMarket {
+    namespace Test {
 
-    /// \fn getNode
-    /// \brief Return an RCP to a Kokkos Node
-    ///
-    template<class NodeType>
-    Teuchos::RCP<NodeType>
-    getNode() {
-      throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
-    }
+      /// \fn getNode
+      /// \brief Return an RCP to a Kokkos Node
+      ///
+      template<class NodeType>
+      Teuchos::RCP<NodeType>
+      getNode() {
+	throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
+      }
 
-    template<>
-    Teuchos::RCP<Kokkos::SerialNode>
-    getNode() {
-      Teuchos::ParameterList defaultParams;
-      return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
-    }
+      template<>
+      Teuchos::RCP<Kokkos::SerialNode>
+      getNode() {
+	Teuchos::ParameterList defaultParams;
+	return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
+      }
 
 #if defined(HAVE_KOKKOS_TBB)
-    template<>
-    Teuchos::RCP<Kokkos::TBBNode>
-    getNode() {
-      // "Num Threads" specifies the number of threads.  Defaults to an
-      // automatically chosen value.
-      Teuchos::ParameterList defaultParams;
-      return Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
-    }
+      template<>
+      Teuchos::RCP<Kokkos::TBBNode>
+      getNode() {
+	// "Num Threads" specifies the number of threads.  Defaults to an
+	// automatically chosen value.
+	Teuchos::ParameterList defaultParams;
+	return Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
+      }
 #endif // defined(HAVE_KOKKOS_TBB)
 
-    /// Test MatrixMarket::Tpetra::Reader::readFile()
-    ///
-    /// \param filename [in] Name of the Matrix Market format sparse
-    ///   matrix file to read (on MPI Rank 0 only)
-    /// \param pComm [in] Communicator, over whose MPI ranks to
-    ///   distribute the returned Tpetra::CrsMatrix.
-    /// \param tolerant [in] Whether or not to parse the file 
-    ///   tolerantly
-    ///
-    /// \return Tpetra::CrsMatrix read in from the file 
-    template<class SparseMatrixType>
-    Teuchos::RCP<SparseMatrixType>
-    readFile (const std::string& filename,
-	      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
-	      const bool tolerant,
-	      const bool debug)
-    {
-      typedef typename SparseMatrixType::node_type node_type;
-      Teuchos::RCP<node_type> pNode = getNode<node_type>();
+      /// Test Tpetra::MatrixMarket::Reader::readFile()
+      ///
+      /// \param filename [in] Name of the Matrix Market format sparse
+      ///   matrix file to read (on MPI Rank 0 only)
+      /// \param pComm [in] Communicator, over whose MPI ranks to
+      ///   distribute the returned Tpetra::CrsMatrix.
+      /// \param tolerant [in] Whether or not to parse the file 
+      ///   tolerantly
+      ///
+      /// \return Tpetra::CrsMatrix read in from the file 
+      template<class SparseMatrixType>
+      Teuchos::RCP<SparseMatrixType>
+      readFile (const std::string& filename,
+		const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
+		const bool tolerant,
+		const bool debug)
+      {
+	typedef typename SparseMatrixType::node_type node_type;
+	Teuchos::RCP<node_type> pNode = getNode<node_type>();
       
-      typedef MatrixMarket::Tpetra::Reader<SparseMatrixType> reader_type;
-      return reader_type::readFile (filename, pComm, pNode, tolerant, debug);
-    }
+	typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
+	return reader_type::readFile (filename, pComm, pNode, tolerant, debug);
+      }
 
-    void
-    testReadFile (const std::string& filename, 
-		  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-		  const bool tolerant, 
-		  const bool verbose,
-		  const bool debug)
-    {
-      using Teuchos::RCP;
-      using std::cout;
-      using std::endl;
+      void
+      testReadFile (const std::string& filename, 
+		    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+		    const bool tolerant, 
+		    const bool verbose,
+		    const bool debug)
+      {
+	using Teuchos::RCP;
+	using std::cout;
+	using std::endl;
 
-      typedef double scalar_type;
-      typedef int local_ordinal_type;
-      typedef int global_ordinal_type;
-      // typedef size_t global_ordinal_type;
-// #if defined(HAVE_KOKKOS_TBB)
-//       typedef Kokkos::TBBNode node_type;
-// #else
-      typedef Kokkos::SerialNode node_type;
-// #endif // defined(HAVE_KOKKOS_TBB)
+	typedef double scalar_type;
+	typedef int local_ordinal_type;
+	typedef int global_ordinal_type;
+	// typedef size_t global_ordinal_type;
+	// #if defined(HAVE_KOKKOS_TBB)
+	//       typedef Kokkos::TBBNode node_type;
+	// #else
+	typedef Kokkos::SerialNode node_type;
+	// #endif // defined(HAVE_KOKKOS_TBB)
 
-      typedef ::Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
-      const int myRank = Teuchos::rank (*pComm);
-      if (verbose && myRank == 0)
-	cout << "About to read Matrix Market file \"" << filename << "\":" << endl;
+	typedef CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
+	const int myRank = Teuchos::rank (*pComm);
+	if (verbose && myRank == 0)
+	  cout << "About to read Matrix Market file \"" << filename << "\":" << endl;
 
-      // Read the sparse matrix from the given Matrix Market file.
-      // This routine acts like an MPI barrier.
-      RCP<sparse_matrix_type> pMatrix = 
-	readFile<sparse_matrix_type> (filename, pComm, tolerant, debug);
-      if (! pMatrix.is_null())
-	{
-	  if (verbose && myRank == 0)
-	    cout << "Successfully read Matrix Market file \"" << filename << "\"." << endl;
-	}
-      else 
-	{
-	  if (verbose && myRank == 0)
-	    cout << "Failed to read Matrix Market file \"" << filename << "\"." << endl;
-	}
-    }
-  } // namespace Test
-} // namespace MatrixMarket
-
+	// Read the sparse matrix from the given Matrix Market file.
+	// This routine acts like an MPI barrier.
+	RCP<sparse_matrix_type> pMatrix = 
+	  readFile<sparse_matrix_type> (filename, pComm, tolerant, debug);
+	if (! pMatrix.is_null())
+	  {
+	    if (verbose && myRank == 0)
+	      cout << "Successfully read Matrix Market file \"" << filename << "\"." << endl;
+	  }
+	else 
+	  {
+	    if (verbose && myRank == 0)
+	      cout << "Failed to read Matrix Market file \"" << filename << "\"." << endl;
+	  }
+      }
+    } // namespace Test
+  } // namespace MatrixMarket
+} // namespace Tpetra
 
 /// \fn main
 /// \brief Benchmark driver
@@ -193,7 +194,10 @@ main (int argc, char *argv[])
   // filename is specified, we don't invoke the test and report a
   // "TEST PASSED" message.
   if (filename != "")
-    MatrixMarket::Test::testReadFile (filename, pComm, tolerant, verbose, debug);
+    {
+      using Tpetra::MatrixMarket::Test::testReadFile;
+      testReadFile (filename, pComm, tolerant, verbose, debug);
+    }
 
   // Only Rank 0 gets to write to cout.
   if (Teuchos::rank(*pComm) == 0)
