@@ -364,7 +364,7 @@ namespace stk {
                   vector<NeededEntityType> needed_entity_ranks;
                   m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
-                  num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, needed_entity_ranks);
+                  num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, needed_entity_ranks, false, false);
                 }
             }
           m_nodeRegistry->endCheckForRemote();                /**/   TRACE_PRINT("UniformRefiner: endCheckForRemote (top-level rank)... ");
@@ -407,7 +407,7 @@ namespace stk {
                   vector<NeededEntityType> needed_entity_ranks;
                   m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
-                  num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, needed_entity_ranks);
+                  num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, needed_entity_ranks, false, false);
                 }
             }
 
@@ -584,7 +584,9 @@ namespace stk {
     unsigned UniformRefiner::
     doForAllElements(EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
                      vector< ColorerSetType >& elementColors, vector<NeededEntityType>& needed_entity_ranks,
-                     bool only_count)
+                     bool only_count, bool doAllElements)
+    //bool only_count=false, bool doAllElements=true);
+
     {
       EXCEPTWATCH;
       unsigned num_elem = 0;
@@ -612,7 +614,7 @@ namespace stk {
               if (!elementIsGhost) 
                 ++num_elem;
 
-              if (!only_count)
+              if (!only_count && (doAllElements || elementIsGhost))
                 {
                   m_nodeRegistry->doForAllSubEntities(function, element, needed_entity_ranks);
                 }
