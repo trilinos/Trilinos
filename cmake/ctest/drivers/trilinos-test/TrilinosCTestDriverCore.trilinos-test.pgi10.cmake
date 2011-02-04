@@ -28,7 +28,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_BUILD_TYPE:STRING=RELEASE"
     "-DMEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
-    "-DMesquite_ENABLE_TESTS:BOOL=ON"
+     "-DMesquite_ENABLE_TESTS:BOOL=ON"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     )
 
@@ -39,7 +39,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       )
   ENDIF()
 
-  SET_DEFAULT(COMPILER_VERSION "PGI-10.1")
+  SET_DEFAULT(COMPILER_VERSION "PGI-10.9")
   
   IF (COMM_TYPE STREQUAL MPI)
   
@@ -57,10 +57,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/pgi/linux86-64/10.1/bin/pgCC"
-      "-DCMAKE_C_COMPILER:FILEPATH=/home/trilinos/pgi/linux86-64/10.1/bin/pgcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/pgi/linux86-64/10.1/bin/pgf90"
-      "-DTrilinos_EXTRA_LINK_FLAGS:STRING='-L/home/trilinos/pgi/linux86-64/10.1/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/4.1.2 -lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl  -lnspgc -lpgc  -lrt -lpthread  -lm -lgcc -lc -lgcc'"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/pgi10.9/linux86-64/10.9/bin/pgCC"
+      "-DCMAKE_C_COMPILER:FILEPATH=/home/trilinos/pgi10.9/linux86-64/10.9/bin/pgcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/pgi10.9/linux86-64/10.9/bin/pgf90"
+      "-DTrilinos_EXTRA_LINK_FLAGS:STRING='-L/home/trilinos/pgi10.9/linux86-64/10.9/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/4.1.2 -lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl  -lnspgc -lpgc  -lrt -lpthread  -lm -lgcc -lc -lgcc'"
       "-DTrilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=ON"
       )
 
