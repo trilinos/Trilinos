@@ -69,6 +69,9 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
       workset.ghostedLinContainer = in.ghostedContainer_;
       workset.linContainer = in.container_;
+      workset.alpha = in.alpha;
+      workset.beta = in.beta;
+      workset.time = in.time;
 
 	fm->template evaluateFields<EvalT>(workset);
     }
@@ -160,6 +163,9 @@ evaluateBCs(const panzer::BCType bc_type,
 	  // We have one workset per face
           workset.ghostedLinContainer = in.ghostedContainer_;
           workset.linContainer = in.container_;
+	  workset.alpha = in.alpha;
+	  workset.beta = in.beta;
+	  workset.time = in.time;
 	  
 	  local_side_fm.template evaluateFields<EvalT>(workset);
 	  

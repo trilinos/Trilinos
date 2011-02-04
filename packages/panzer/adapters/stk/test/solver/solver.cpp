@@ -167,10 +167,8 @@ namespace panzer {
       p_0->push_back("viscosity");
       p_names.push_back(p_0);
     }
-    bool is_transient = false;
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names,
-						     is_transient));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
@@ -431,9 +429,8 @@ namespace panzer {
       p_0->push_back("viscosity");
       p_names.push_back(p_0);
     }
-    bool is_transient = true;
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb, ep_lof, p_names, is_transient));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb, ep_lof, p_names));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));

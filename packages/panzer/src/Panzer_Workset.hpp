@@ -40,6 +40,9 @@ namespace panzer {
     
     Teuchos::RCP<panzer::LinearObjContainer> ghostedLinContainer;
     Teuchos::RCP<panzer::LinearObjContainer> linContainer;
+    double alpha;
+    double beta;
+    double time;
   };
 
 } // namespace panzer

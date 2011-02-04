@@ -143,7 +143,7 @@ namespace panzer {
     RCP<panzer::ModelEvaluator_Epetra> me;
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof,p_names,false));
+      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof,p_names));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();

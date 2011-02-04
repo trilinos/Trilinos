@@ -10,12 +10,10 @@
 panzer::ModelEvaluator_Epetra::
 ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
 		      const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
-		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
-		      bool is_transient) : 
+		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names) : 
   fmb_(fmb),
   lof_(lof),
-  p_names_(p_names),
-  is_transient_(is_transient)
+  p_names_(p_names)
 {
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -129,6 +127,12 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
 {
   using Teuchos::dyn_cast;
   using Teuchos::rcp_dynamic_cast;
+  
+  // Transient or steady-state evaluation is determined by the x_dot
+  // vector.  If this RCP is null, then we are doing a steady-state
+  // fill.
+  bool is_transient = !Teuchos::is_null(inArgs.get_x_dot());
+
   //
   // Get the input arguments
   //
@@ -136,14 +140,17 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
   const RCP<const Epetra_Vector> x_dot = inArgs.get_x_dot();
   ae_inargs_->alpha = inArgs.get_alpha();
   ae_inargs_->beta = inArgs.get_beta();
+  if (is_transient)
+    ae_inargs_->time = inArgs.get_t();
+
 
   //
   // Get the output arguments
   //
   const RCP<Epetra_Vector> f_out = outArgs.get_f();
   const RCP<Epetra_Operator> W_out = outArgs.get_W();
-
-  // zero out global container objects
+  
+  // Zero out global container objects
   const RCP<panzer::EpetraLinearObjContainer> epGlobalContainer = 
     Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->container_);
   TEUCHOS_ASSERT(!Teuchos::is_null(epGlobalContainer));
@@ -152,19 +159,26 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
   epGlobalContainer->f = Teuchos::null;
   epGlobalContainer->A = Teuchos::null;
 
-  // Zero values in ghosted container objects
+  // Ghosted container objects are zeroed out below only if needed for
+  // a particular calculation.  This makes it more efficient thatn
+  // zeroing out all objects in the container here.
   const RCP<panzer::EpetraLinearObjContainer> epGhostedContainer = 
     Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->ghostedContainer_);
-
+  
   // Set the solution vector (currently all targets require solution).
   // In the future we may move these into the individual cases below.
+  // A very subtle (and fragile) point: A non-null pointer in global
+  // container triggers export operations during fill.  Also, the
+  // introduction of the container is forcing us to cast away const on
+  // arguments that should be const.  Another reason to redesign
+  // LinearObjContainer layers.
   epGlobalContainer->x = Teuchos::rcp_const_cast<Epetra_Vector>(x);
-  if (is_transient_)
+  if (is_transient)
     epGlobalContainer->dxdt = Teuchos::rcp_const_cast<Epetra_Vector>(x_dot);
   
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
     //std::cout << "F AND J" << std::endl;
-
+    
     // Set the targets
     epGlobalContainer->f = f_out;
     epGlobalContainer->A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out);

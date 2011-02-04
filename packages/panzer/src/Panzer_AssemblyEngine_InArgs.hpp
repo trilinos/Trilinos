@@ -17,16 +17,15 @@ namespace panzer {
     AssemblyEngineInArgs(const Teuchos::RCP<panzer::LinearObjContainer> & ghostedContainer,
                          const Teuchos::RCP<panzer::LinearObjContainer> & container)
        : ghostedContainer_(ghostedContainer), container_(container)
-    {
-    }
+    { }
 
     Teuchos::RCP<panzer::LinearObjContainer> ghostedContainer_;
     Teuchos::RCP<panzer::LinearObjContainer> container_;
 
     double alpha;
     double beta;
+    double time;
 
-  private:
   };
 
 }

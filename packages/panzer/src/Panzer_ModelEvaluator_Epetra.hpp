@@ -23,8 +23,7 @@ namespace panzer {
     
     ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
 			  const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
-			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
-			  bool is_transient);
+			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names);
     
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -61,7 +60,6 @@ namespace panzer {
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb_;
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof_;
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
-    bool is_transient_;
 
     mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm_;
     mutable Teuchos::RCP<panzer::AssemblyEngineInArgs> ae_inargs_;
