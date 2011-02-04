@@ -633,6 +633,10 @@ namespace stk {
         static SubDimCellData empty_SubDimCellData;
         static CommDataType buffer_entry;
 
+        bool isGhost = m_eMesh.isGhostElement(element);
+
+        if (!isGhost) return true;
+
         SubDimCell_EntityId subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
 
@@ -641,9 +645,6 @@ namespace stk {
         unsigned proc_rank = comm_all.parallel_rank();
         unsigned owner_proc_rank = element.owner_rank();
 
-        bool isGhost = m_eMesh.isGhostElement(element);
-
-        // if (!isGhost) return true;
 
 #if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
