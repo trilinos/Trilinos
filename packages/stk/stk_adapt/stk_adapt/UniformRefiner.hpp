@@ -85,7 +85,7 @@ namespace stk {
 
       unsigned
       doForAllElements(EntityRank rank, NodeRegistry::ElementFunctionPrototype function, vector< ColorerSetType >& elementColors, vector<NeededEntityType>& needed_entity_ranks,
-                       bool only_count=false);
+                       bool only_count=false, bool doAllElements=true);
 
       void 
       createElementsAndNodesAndConnectLocal(unsigned irank,  UniformRefinerPatternBase* breakPattern, 
