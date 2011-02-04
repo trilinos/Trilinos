@@ -135,16 +135,30 @@ namespace stk
         set3.insert(4);  set3.insert(1);  set3.insert(2);
         typedef pair<SubDimCell<int>::iterator, bool> result_type;
 
+        cout << "set1 = " << set1 << " hashCode(set1) = " << Teuchos::hashCode(set1) << endl;
+        cout << "set2 = " << set2 << " hashCode(set2) = " << Teuchos::hashCode(set2) << endl;
+        cout << "set3 = " << set3 << " hashCode(set3) = " << Teuchos::hashCode(set3) << endl;
+
         std::ostringstream strs1;
         strs1 << set1;
 
+#if 0
         map_[set1] = 1;
         map_[set2] = 2;
         map_[set3] = 3;
+#else
+        map_.put(set1, 1, true);
+        map_.put(set2, 2, true);
+        map_.put(set3, 3, true);
+        cout << "map_= " << map_ << endl;
+#endif
+         cout << "map_[set1]= " << map_[set1] << endl;
+         cout << "map_[set2]= " << map_[set2] << endl;
+         cout << "map_[set3]= " << map_[set3] << endl;
 
-        cout << "map_[set1]= " << map_[set1] << endl;
-        cout << "map_[set2]= " << map_[set2] << endl;
-        cout << "map_[set3]= " << map_[set3] << endl;
+        cout << "map_.contains(set1) = " << map_.containsKey(set1, true)  << endl;
+        cout << "map_.contains(set2) = " << map_.containsKey(set2, true)  << endl;
+        cout << "map_.contains(set3) = " << map_.containsKey(set3, true)  << endl;
 
         EXPECT_EQ(map_[set1], map_[set2]);
         EXPECT_TRUE(set1 == set2);
@@ -185,7 +199,7 @@ namespace stk
         aaa1[2] = 2;
         cout << aaa1 << endl;
         //aaa(cout, aaa1);
-        //cout << map_ << endl;
+        cout << map_ << endl;
       }
 
       

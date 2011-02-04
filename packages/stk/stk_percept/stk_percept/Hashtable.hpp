@@ -1,3 +1,4 @@
+
 #ifndef stk_percept_hashtable_hpp
 #define  stk_percept_hashtable_hpp
 
@@ -27,12 +28,12 @@ namespace stk
       int num_buckets() 
       { 
         VERIFY_OP_ON(m_ht, !=, 0, "000");
-        return m_ht->data().size(); 
+        return m_ht->getData().size(); 
       }
       int num_in_bucket(int bucket) 
       { 
         VERIFY_OP_ON(m_ht, !=, 0, "001");
-        return m_ht->data()[bucket].size(); 
+        return m_ht->getData()[bucket].size(); 
       }
     public:
 
@@ -119,7 +120,7 @@ namespace stk
         VERIFY_OP_ON( ((m_item_in_bucket == 0 && m_bucket == num_buckets()) || (m_bucket < num_buckets() && m_item_in_bucket < num_in_bucket(m_bucket)) ) , == , true, "operator* 1");
 
 
-        return m_ht->data()[m_bucket][m_item_in_bucket]; 
+        return m_ht->getData()[m_bucket][m_item_in_bucket]; 
       }
     
       bool operator==(const HT_Iterator& iter)
