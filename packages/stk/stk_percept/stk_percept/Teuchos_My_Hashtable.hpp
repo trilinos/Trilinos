@@ -78,19 +78,20 @@ namespace Teuchos
       inline Teuchos_Hashtable(int capacity=101, double rehashDensity = 0.8);
 
       //! Check for the presence of a key
-      inline bool containsKey(const Key& key) const ;
+      inline bool containsKey(const Key& key, bool debug=false) const ;
 
       inline Value& operator[](const Key& key) 
       { 
         int hashCodeOfKey = hashCode(key);
         int index = hashCodeOfKey % capacity_;
 
-        
+        //if (index < data_.size())
         {
-          TEST_FOR_EXCEPTION(index >= data_.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
+          //TEST_FOR_EXCEPTION(index >= data_.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
           //VERIFY_OP_ON(index, <,  data_.size(), std::runtime_error, "100" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_));
+          TEST_FOR_EXCEPTION(index >= data_.capacity(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
           Array<HashPair<Key, Value> >& candidates = data_[index];
-      
+          //TEST_FOR_EXCEPTION(index >= data_.size() && candidates.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );      
           for (int i=0; i<candidates.length(); i++)
             {
               HashPair<Key, Value>& c = candidates[i];
@@ -116,10 +117,11 @@ namespace Teuchos
               index = hashCodeOfKey % capacity_;
             }
       
-          //TEST_FOR_EXCEPTION(index < data_.size(), std::runtime_error, "2");
-          TEST_FOR_EXCEPTION(index >= data_.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
+          //TEST_FOR_EXCEPTION(index >= data_.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
+          TEST_FOR_EXCEPTION(index >= data_.capacity(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
 
           Array<HashPair<Key, Value> > & data_ref = data_[index];
+          //TEST_FOR_EXCEPTION(index >= data_.size() && data_ref.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
 
           int length = data_ref.length();
           data_ref.append(HashPair<Key, Value>(key, default_value_));
@@ -136,7 +138,7 @@ namespace Teuchos
       inline const Value& get(const Key& key) const ;
 
       //! Put a new (key, value) pair in the table.
-      inline void put(const Key& key, const Value& value);
+      inline void put(const Key& key, const Value& value, bool debug = false);
 
       //! Remove from the table the element given by key.
       inline void remove(const Key& key);
@@ -160,9 +162,10 @@ namespace Teuchos
       inline std::string toString() const ;
 
       //! direct access to the data array (could be avoided with a friend statement)
-      inline Array<Array<HashPair<Key, Value> > >& data() { return data_; }
+      inline Array<Array<HashPair<Key, Value> > >& getData() { return data_; }
 
-      
+      inline void clear() { data_.clear() ; }
+
     private:
 
       inline void rehash();
@@ -180,6 +183,9 @@ namespace Teuchos
       mutable size_t nHits_;
       mutable double avgDegeneracy_;
       double rehashDensity_;
+
+      bool debug_;
+
     };
 
   template<class Key, class Value>
@@ -194,16 +200,33 @@ namespace Teuchos
   template<class Key, class Value> inline
     Teuchos_Hashtable<Key, Value>::Teuchos_Hashtable(int capacity, double rehashDensity)
     : data_(), count_(0), capacity_(HashUtils::nextPrime(capacity)),
-    nHits_(0), avgDegeneracy_(0), rehashDensity_(rehashDensity)
+      nHits_(0), avgDegeneracy_(0), rehashDensity_(rehashDensity),  debug_(false)
+
     {
       data_.resize(capacity_);
     }
 
   template<class Key, class Value> inline
-    bool Teuchos_Hashtable<Key, Value>::containsKey(const Key& key) const
+  bool Teuchos_Hashtable<Key, Value>::containsKey(const Key& key, bool debug) const
     {
+      int hashCodeOfKey = hashCode(key);
+      int index = hashCodeOfKey % capacity_;
+      if (debug)
+        {
+          std::cout << "Teuchos_Hashtable::containsKey index= " << index << " capacity_= " << capacity_ 
+                    << " hashCodeOfKey= " << hashCodeOfKey
+                    << std::endl;
+        }
       const Array<HashPair<Key, Value> >& candidates
-        = data_[hashCode(key) % capacity_];
+        = data_[index];
+
+      if (debug)
+        {
+          std::cout << "Teuchos_Hashtable::containsKey index= " << index << " capacity_= " << capacity_ 
+                    << " candidates.length()= " << candidates.length()
+                    << " hashCodeOfKey= " << hashCodeOfKey
+                    << std::endl;
+        } 
       
       for (int i=0; i<candidates.length(); i++)
         {
@@ -219,7 +242,7 @@ namespace Teuchos
     }
 
   template<class Key, class Value> inline
-    void Teuchos_Hashtable<Key, Value>::put(const Key& key, const Value& value)
+  void Teuchos_Hashtable<Key, Value>::put(const Key& key, const Value& value, bool debug)
     {
       int index = hashCode(key) % capacity_;
       
@@ -230,6 +253,8 @@ namespace Teuchos
         {
           if (local[i].key_ == key)
             {
+              if (debug)
+                std::cout << "debug tmp Teuchos_Hashtable::put found key=true" << std::endl;
               local[i].value_ = value;
               return;
             }
@@ -237,10 +262,14 @@ namespace Teuchos
       
       // no duplicate key, so increment element count by one.
       count_++;
+              if (debug)
+                std::cout << "debug tmp Teuchos_Hashtable::put  count_ = " << count_ << std::endl;
       
       // check for need to resize.
       if ((double) count_ > rehashDensity_ * (double) capacity_)
         {
+              if (debug)
+                std::cout << "debug tmp Teuchos_Hashtable::put  rehash = " << count_ << std::endl;
           capacity_ = HashUtils::nextPrime(capacity_+1);
           rehash();
           // recaluate index
@@ -248,6 +277,9 @@ namespace Teuchos
         }
       
       data_[index].append(HashPair<Key, Value>(key, value));
+
+              if (debug)
+                std::cout << "debug tmp Teuchos_Hashtable::put  data_.size() = " << data_.size() << std::endl;
     }
 
 
@@ -314,7 +346,7 @@ namespace Teuchos
       Array<Value> values;
       h.arrayify(keys, values);
 
-      std::string rtn = "[";
+      std::string rtn = "keys.length = " + Teuchos::toString((int)keys.length()) + " [";
       for (int i=0; i<keys.length(); i++)
         {
           rtn += "{" + Teuchos::toString(keys[i]) + ", " + Teuchos::toString(values[i])

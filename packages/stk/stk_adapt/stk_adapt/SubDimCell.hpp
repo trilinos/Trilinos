@@ -140,6 +140,18 @@ namespace stk {
             base_type::insert(val);
             std::sort( base_type::begin(), base_type::end() );
           }
+        m_hash = hashCode();
+      }
+
+      int hashCode()
+      {
+        std::size_t sum = 0;
+
+        for (typename base_type::const_iterator i = this->begin(); i != this->end(); i++)
+          {
+            sum += static_cast<std::size_t>(*i);
+          }
+        return sum;
       }
 
       unsigned getHash() const
@@ -218,7 +230,6 @@ namespace stk {
       inline std::size_t
       operator()(const _Tp& x) const
       {
-
         if (x.getHash())
           {
             return x.getHash();
@@ -297,7 +308,7 @@ namespace stk {
     template<class T, std::size_t N>
     std::ostream& operator<<(std::ostream& out, const SubDimCell<T,N>& c)
     {
-      out << "SubDimCell size= " << c.size() << " vals= ";
+      out << "SubDimCell size= " << c.size() << " vals= {";
       //for (unsigned i = 0; i < c.size(); i++)
       typename  SubDimCell<T,N>::const_iterator i = c.begin();
         //for (unsigned i = 0; i < x.size(); i++)
@@ -307,6 +318,7 @@ namespace stk {
             out << *i << " ";
             //out << c[i] << " ";
         }
+        out << "}";
       return out;
     }
 
