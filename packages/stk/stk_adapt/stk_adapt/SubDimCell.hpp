@@ -50,11 +50,11 @@ namespace stk {
       SubDimCell(unsigned num_ids, Ids *ids) : SubDimCellBaseClass(ids, ids+num_ids), m_hash(0u)
       {
       }
-      unsigned getHash() const
+      inline unsigned getHash() const
       {
         return m_hash;
       }
-      void setHash(std::size_t hash)
+      inline void setHash(std::size_t hash)
       {
         m_hash = hash;
       }
@@ -124,7 +124,6 @@ namespace stk {
       // behaves like std::set
       void insert(T val) 
       {
-
         bool found = false;
         for (size_type i = 0; i < base_type::size(); i++)
           {
@@ -154,11 +153,11 @@ namespace stk {
         return sum;
       }
 
-      unsigned getHash() const
+      inline unsigned getHash() const
       {
         return m_hash;
       }
-      void setHash(std::size_t hash)
+      inline void setHash(std::size_t hash)
       {
         m_hash = hash;
       }
@@ -168,6 +167,7 @@ namespace stk {
         base_type::clear();
       }
 
+      inline
       bool operator==(const VAL& rhs) const
       {
         if (base_type::size() != rhs.size())
@@ -250,6 +250,19 @@ namespace stk {
     };
 
     template<class T, std::size_t N>
+    struct my_fast_hash : public std::unary_function< SubDimCell<T,N>, std::size_t>
+    {
+      typedef SubDimCell<T,N> _Tp ;
+
+      inline std::size_t
+      operator()(const _Tp& x) const
+      {
+        return x.getHash();
+      }
+
+    };
+
+    template<class T, std::size_t N>
     struct my_equal_to :  public std::binary_function<SubDimCell<T,N>,  
                                                       SubDimCell<T,N>, bool>
     {
@@ -268,6 +281,30 @@ namespace stk {
             if (*ix != *iy) return false;
           }
         return true;
+      }
+    };
+
+    template<class T, std::size_t N>
+    struct my_fast_equal_to :  public std::binary_function<SubDimCell<T,N>,  
+                                                           SubDimCell<T,N>, bool>
+    {
+      typedef SubDimCell<T,N> _Tp ;
+      inline bool
+      operator()(const _Tp& x, const _Tp& y) const
+      {
+#if 0
+        return x == y;
+#else
+        if (x.size() != y.size()) return false;
+        if (x.getHash() != y.getHash()) return false;
+        typename  _Tp::const_iterator ix = x.begin();
+        typename  _Tp::const_iterator iy = y.begin();
+        for (ix = x.begin(), iy = y.begin(); ix != x.end(); ix++, iy++)
+          {
+            if (*ix != *iy) return false;
+          }
+        return true;
+#endif
       }
     };
 

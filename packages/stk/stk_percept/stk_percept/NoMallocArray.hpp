@@ -108,7 +108,7 @@ namespace stk {
         return m_data[m_size-1]; 
       }
 
-      size_type size() const { return m_size;}
+      inline size_type size() const { return m_size;}
 
       void insert(T val) 
       {
