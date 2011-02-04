@@ -12,3 +12,25 @@ namespace Teuchos
 
 }
 #endif
+
+namespace stk {
+  namespace adapt {
+
+#if !NODE_REGISTRY_MAP_ACCESSORS_INLINED
+    SubDimCellData& NodeRegistry::getFromMap(SubDimCell_EntityId& subDimEntity)
+      {
+        //ftest(subDimEntity);
+        return m_cell_2_data_map[subDimEntity];
+      }
+    void NodeRegistry::putInMap(SubDimCell_EntityId& subDimEntity, SubDimCellData& data)
+      {
+        //m_cell_2_data_map.insert(std::subDimEntity, data);
+        //SubDimCellData& dataInMap = m_cell_2_data_map[subDimEntity];
+        //dataInMap = data;
+        //ftest(subDimEntity);
+        m_cell_2_data_map[subDimEntity] = data;
+      }
+#endif
+
+  }
+}

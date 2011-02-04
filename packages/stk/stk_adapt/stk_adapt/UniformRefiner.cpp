@@ -595,6 +595,10 @@ namespace stk {
               std::cout << "tmp doForAllElements elementColors size = 0!!!" << std::endl;
               continue;
             }
+
+          //Entity* first_element_p = *(elementColors[icolor].begin());
+          //const CellTopologyData * const cell_topo_data = get_cell_topology(*first_element_p);
+
           // do in threaded mode FIXME
           for (ColorerSetType::iterator iele = elementColors[icolor].begin();
                iele !=  elementColors[icolor].end(); 

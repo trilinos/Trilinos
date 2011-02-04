@@ -40,7 +40,7 @@
 
 /// current best is STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO 1, DO_REHASH 1
 #define STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO 1
-#define STK_ADAPT_NODEREGISTRY_DO_REHASH 0
+#define STK_ADAPT_NODEREGISTRY_DO_REHASH 1
 
 #if NODE_REGISTRY_MAP_TYPE_BOOST
 #include <boost/unordered_map.hpp>
@@ -236,12 +236,30 @@ namespace stk {
 
 #if NODE_REGISTRY_MAP_TYPE_BOOST
 #  ifdef STK_HAVE_TBB
+//     typedef tbb::scalable_allocator<std::pair<SubDimCell_EntityId const, SubDimCellData> > RegistryAllocator;
+//     typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4>, RegistryAllocator > SubDimCellToDataMap;
     typedef tbb::scalable_allocator<std::pair<SubDimCell_EntityId const, SubDimCellData> > RegistryAllocator;
-    typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4>, RegistryAllocator > SubDimCellToDataMap;
+    typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_fast_hash<EntityId,4>, my_fast_equal_to<EntityId,4>, RegistryAllocator > SubDimCellToDataMap;
 #  else
 
-    typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4> > SubDimCellToDataMap;
+//     typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4> > SubDimCellToDataMap;
+//     typedef boost::unordered_map<EntityId, EntityPtr > EntityRepo;
+
+    typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_fast_hash<EntityId,4>, my_fast_equal_to<EntityId,4> > SubDimCellToDataMap;
     typedef boost::unordered_map<EntityId, EntityPtr > EntityRepo;
+
+    typedef boost::tuple<const Entity *, EntityRank, unsigned> ElementSideTuple;
+
+    struct my_tuple_hash : public std::unary_function< ElementSideTuple, std::size_t>
+    {
+      inline std::size_t
+      operator()(const ElementSideTuple& x) const
+      {
+        return std::size_t(x.get<0>())+std::size_t(x.get<1>())+std::size_t(x.get<2>());
+      }
+    };
+
+    typedef boost::unordered_map<ElementSideTuple, SubDimCellData, my_tuple_hash > ElementSideMap;
 
 #  endif
 #endif
@@ -391,6 +409,8 @@ namespace stk {
       void //NodeRegistry::
       endRegistration()
       {
+        //putInESMap();
+
         m_eMesh.getBulkData()->modification_begin();  
         this->createNewNodesInParallel(); 
         m_nodes_to_ghost.resize(0);
@@ -398,7 +418,6 @@ namespace stk {
 #if STK_ADAPT_NODEREGISTRY_DO_REHASH
         m_cell_2_data_map.rehash(m_cell_2_data_map.size());
 #endif
-
       }
       
       void //NodeRegistry::
@@ -467,6 +486,97 @@ namespace stk {
         m_eMesh.getBulkData()->modification_end();  
       }
 
+      void putInESMap()
+      {
+        BulkData& bulkData = *m_eMesh.getBulkData();
+
+        const vector<Bucket*> & buckets = bulkData.buckets( mesh::Element );
+        for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+          {
+            //if (select_owned(**k))  // this is where we do part selection
+            {
+              Bucket & bucket = **k ;
+              const unsigned num_elements_in_bucket = bucket.size();
+                
+              for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                {
+                  Entity& element = bucket[iElement];
+
+                  const CellTopologyData * const cell_topo_data = get_cell_topology(element);
+                
+                  CellTopology cell_topo(cell_topo_data);
+
+                  for (unsigned ineed_ent=0; ineed_ent <= mesh::Element; ineed_ent++)
+                    {
+                      unsigned numSubDimNeededEntities = 0;
+                      EntityRank needed_entity_rank = ineed_ent;
+
+                      if (needed_entity_rank == Edge)
+                        {
+                          numSubDimNeededEntities = cell_topo_data->edge_count;
+                        }
+                      else if (needed_entity_rank == Face)
+                        {
+                          numSubDimNeededEntities = cell_topo_data->side_count;
+                        }
+                      else if (needed_entity_rank == mesh::Element)
+                        {
+                          numSubDimNeededEntities = 1;
+                        }
+
+                      for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
+                        {
+                          /// note: at this level of granularity we can do single edge refinement, hanging nodes, etc.
+                          SubDimCell_EntityId subDimEntity;
+                          getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
+                          SubDimCellData& data = getFromMap(subDimEntity);
+                          putInESMap(element, needed_entity_rank, iSubDimOrd, data);
+                        } // iSubDimOrd
+                    } // ineed_ent
+
+                }
+            }
+          }
+      }
+
+      void putInESMap(const Entity& element, EntityRank& needed_entity_rank, unsigned iSubDimOrd, SubDimCellData& data) 
+      {
+        ElementSideTuple est(&element, needed_entity_rank, iSubDimOrd);
+        m_element_side_map[est] = data;
+        // m_element_side_map[needed_entity_rank][iSubDimOrd][&element] = data;
+      }
+
+      SubDimCellData& getFromESMap(const Entity& element, EntityRank& needed_entity_rank, unsigned iSubDimOrd)
+      {
+        ElementSideTuple est(&element, needed_entity_rank, iSubDimOrd);
+        //retrun m_element_side_map[needed_entity_rank][iSubDimOrd][&element];
+        return m_element_side_map[est];
+      }
+
+      SubDimCellData& getFromESMap1(SubDimCell_EntityId& subDimEntity, const Entity& element, EntityRank& needed_entity_rank, unsigned iSubDimOrd)
+      {
+#if 0
+        return getFromMap(subDimEntity);
+#else
+        static SubDimCellData empty_SubDimCellData;
+        //ElementSideTuple est(&element, needed_entity_rank, iSubDimOrd);
+        SubDimCellData& get1 = getFromESMap(element, needed_entity_rank, iSubDimOrd);
+        if (get1 == empty_SubDimCellData)
+          {
+            SubDimCellData& get2 = getFromMap(subDimEntity);
+            if (get2 == empty_SubDimCellData)
+               return get2;
+             else
+               putInESMap(element, needed_entity_rank, iSubDimOrd, get2);
+             return get2;
+          }
+        else
+          {
+            return get1;
+          }
+#endif
+      }
+
       /// Register the need for a new node on the sub-dimensional entity @param subDimEntity on element @param element.
       /// If the element is a ghost element, the entity is still registered: the locality/ownership of the new entity
       /// can be determined by the locality of the element (ghost or not).
@@ -486,38 +596,26 @@ namespace stk {
         SubDimCellData *nid1 = &empty_SubDimCellData;
         if (!is_empty) nid1 = &m_cell_2_data_map[subDimEntity];
         SubDimCellData& nodeId_elementOwnderId = *nid1;
-
-// #if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
-//         std::cout << "tmp: dump 0 is_empty: " << is_empty << " containsKey= " << containsKey << std::endl;
-//             std::cout << m_cell_2_data_map << std::endl;
-//             exit(123);
-// #endif
-
 #else
-        SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
+        //SubDimCellData& nodeId_elementOwnderId = getFromESMap1(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
+        SubDimCellData& nodeId_elementOwnderId = getFromMap(subDimEntity);
         bool is_empty = (nodeId_elementOwnderId == empty_SubDimCellData);
 #endif
 
         // if empty or if my id is the smallest, make this element the owner
         if (is_empty || element.identifier() < nodeId_elementOwnderId.get<OWNING_ELEMENT_ID>() )
           {
-            //!NodeIdsOnSubDimEntityType nids(1u, 0u);
-            NodeIdsOnSubDimEntityType nids(needed_entity_rank.second, 0u);
+            //NodeIdsOnSubDimEntityType nids(needed_entity_rank.second, 0u);
+
 #if NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE || NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
-            if (!element.identifier())
-              {
-                std::cout << "tmp error: eid=0" << std::endl;
-              }
+            NodeIdsOnSubDimEntityType nids(needed_entity_rank.second, 0u);
             m_cell_2_data_map.put(subDimEntity, SubDimCellData(nids, element.identifier()) );
-
-#if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
-//             std::cout << "tmp: dump 1: is_empty= " << is_empty << std::endl;
-//             std::cout << m_cell_2_data_map << std::endl;
-//             exit(123);
-#endif
-
 #else
-            m_cell_2_data_map[subDimEntity] = SubDimCellData(nids, element.identifier());
+            //m_cell_2_data_map[subDimEntity] = SubDimCellData(nids, element.identifier());
+            SubDimCellData data(NodeIdsOnSubDimEntityType(needed_entity_rank.second, 0u), element.identifier());
+            putInMap(subDimEntity,  data);
+            //SubDimCellData& dataRef = getFromMap(subDimEntity);
+            //putInESMap(element, needed_entity_rank.first, iSubDimOrd, data);
 #endif
 
             return true;
@@ -545,18 +643,16 @@ namespace stk {
 
         bool isGhost = m_eMesh.isGhostElement(element);
 
+        // if (!isGhost) return true;
+
 #if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
-//         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
-//         SubDimCellData& nodeId_elementOwnderId = (is_empty ? empty_SubDimCellData : m_cell_2_data_map.get(subDimEntity) );
-        //bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
-        //SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
         SubDimCellData *nid1 = &empty_SubDimCellData;
         if (!is_empty) nid1 = &m_cell_2_data_map[subDimEntity];
         SubDimCellData& nodeId_elementOwnderId = *nid1;
-
 #else
-        SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
+        SubDimCellData& nodeId_elementOwnderId = getFromMap(subDimEntity);
+        //SubDimCellData& nodeId_elementOwnderId = getFromESMap1(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
         bool is_empty = (nodeId_elementOwnderId == empty_SubDimCellData);
 #endif
 
@@ -710,17 +806,13 @@ namespace stk {
         static  SubDimCellData empty_SubDimCellData;
 
 #if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
-        //bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
-        //SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
-//         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
-//         SubDimCellData& nodeId_elementOwnderId = (is_empty ? empty_SubDimCellData : m_cell_2_data_map.get(subDimEntity) );
         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
         SubDimCellData *nid1 = &empty_SubDimCellData;
         if (!is_empty) nid1 = const_cast<SubDimCellData *>(&m_cell_2_data_map.get(subDimEntity));
         SubDimCellData& nodeId_elementOwnderId = *nid1;
-
 #else
-        SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
+        //SubDimCellData& nodeId_elementOwnderId = getFromESMap1(subDimEntity, element, needed_entity_rank, iSubDimOrd);
+        SubDimCellData& nodeId_elementOwnderId = getFromMap(subDimEntity);
         bool is_empty = (nodeId_elementOwnderId == empty_SubDimCellData);
 #endif
 
@@ -775,17 +867,13 @@ namespace stk {
         static SubDimCellData empty_SubDimCellData;
 
 #if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
-//         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
-//         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
-//         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
-//         SubDimCellData& nodeId_elementOwnderId = (is_empty ? empty_SubDimCellData : m_cell_2_data_map.get(subDimEntity) );
         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
         SubDimCellData *nid1 = &empty_SubDimCellData;
         if (!is_empty) nid1 = &m_cell_2_data_map[subDimEntity];
         SubDimCellData& nodeId_elementOwnderId = *nid1;
-
 #else
-        SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
+        //SubDimCellData& nodeId_elementOwnderId = getFromESMap1(subDimEntity, element, needed_entity_rank, iSubDimOrd);
+        SubDimCellData& nodeId_elementOwnderId = getFromMap(subDimEntity);
         bool is_empty = (nodeId_elementOwnderId == empty_SubDimCellData);
 #endif
 
@@ -1102,16 +1190,13 @@ namespace stk {
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static  SubDimCellData empty_SubDimCellData;
 #if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
-//         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
-//         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
-//         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
-//         SubDimCellData& nodeId_elementOwnderId = (is_empty ? empty_SubDimCellData : m_cell_2_data_map.get(subDimEntity) );
         bool is_empty = !m_cell_2_data_map.containsKey(subDimEntity);
         SubDimCellData *nid1 = &empty_SubDimCellData;
         if (!is_empty) nid1 = &m_cell_2_data_map[subDimEntity];
         SubDimCellData& nodeId_elementOwnderId = *nid1;
 #else
-        SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
+        //SubDimCellData& nodeId_elementOwnderId = getFromESMap1(subDimEntity, element, needed_entity_rank, iSubDimOrd);
+        SubDimCellData& nodeId_elementOwnderId = getFromMap(subDimEntity);
         bool is_empty = (nodeId_elementOwnderId == empty_SubDimCellData);
 #endif
 
@@ -1366,6 +1451,25 @@ namespace stk {
       {
         return m_cell_2_data_map[subDimEntity];
       }
+
+
+#define NODE_REGISTRY_MAP_ACCESSORS_INLINED 0
+      SubDimCellData& getFromMap(SubDimCell_EntityId& subDimEntity)
+#if NODE_REGISTRY_MAP_ACCESSORS_INLINED
+        {
+          return m_cell_2_data_map[subDimEntity];
+        }
+#else
+      ;
+#endif
+      void putInMap(SubDimCell_EntityId& subDimEntity, SubDimCellData& data)
+#if NODE_REGISTRY_MAP_ACCESSORS_INLINED
+      {
+        m_cell_2_data_map[subDimEntity] = data;
+      }
+#else
+      ;
+#endif
 
       typedef bool (NodeRegistry::*ElementFunctionPrototype)( const Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd);
 
@@ -1726,12 +1830,6 @@ namespace stk {
       /// after registering all needed nodes, this method is used to request new nodes on this processor
       void createNewNodesInParallel()
       {
-        //FIXME
-#if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
-//         std::cout << "tmp: dump: " << std::endl;
-//         std::cout << m_cell_2_data_map << std::endl;
-#endif
-
         unsigned num_nodes_needed = local_size();
         //std::cout << "P["<< m_eMesh.getRank() << "] num_nodes_needed= " << num_nodes_needed << std::endl;
         // FIXME
@@ -1827,14 +1925,18 @@ namespace stk {
       percept::PerceptMesh& m_eMesh;
       stk::CommAll m_comm_all;
       SubDimCellToDataMap m_cell_2_data_map;
+      ElementSideMap m_element_side_map;
+
 #if NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE
       //TSubDimCellToDataMap m_cell_2_data_map_t;
 #endif
 
       vector<EntityProc> m_nodes_to_ghost;
+
     public:
       int m_gee_cnt;
       int m_gen_cnt;
+      //const CellTopologyData * const m_cell_topo_data;
       std::vector<EntityRepo> m_entity_repo;
     };
 
