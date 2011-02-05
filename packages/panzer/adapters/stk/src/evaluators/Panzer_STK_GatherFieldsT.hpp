@@ -32,7 +32,7 @@ panzer_stk::GatherFields<panzer::Traits::Residual, Traits>::
     this->addEvaluatedField(gatherFields_[fd]);
   }
 
-  this->setName("Gather STK Fields");
+  this->setName("STK-Gather Fields");
 }
 
 // **********************************************************************

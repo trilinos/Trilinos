@@ -31,11 +31,10 @@ void AuxiliaryVariables<EvalT>::buildAndRegisterEvaluators(PHX::FieldManager<pan
 
    fm.template registerEvaluator<EvalT>(op);
 
-   for(std::vector<Teuchos::RCP<PHX::FieldTag> >::const_iterator itr=op->evaluatedFields().begin();
-       itr!=op->evaluatedFields().end();++itr) {
-      fm.requireField<EvalT>(**itr);
-   }
-       
+//   for(std::vector<Teuchos::RCP<PHX::FieldTag> >::const_iterator itr=op->evaluatedFields().begin();
+//       itr!=op->evaluatedFields().end();++itr) {
+//      fm.requireField<EvalT>(**itr);
+//   }
 }
 
 }

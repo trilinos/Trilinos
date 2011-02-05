@@ -11,8 +11,15 @@ SET(UNIT_TEST_DRIVER
   ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  gs_evaluators 
+  gs_evaluators
   SOURCES gs_evaluators.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  scatter_field_evaluator 
+  SOURCES scatter_field_evaluator.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
