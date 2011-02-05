@@ -11,11 +11,28 @@ specific unit test suites.
 */
 
 #include <Teuchos_UnitTestRepository.hpp>
+#include "Teuchos_StaticSetupMacro.hpp"
+#include "Cthulhu_Parameters.hpp"
+//#include "Cthulhu_Parameters.hpp"
+
 //#include <Teuchos_GlobalMPISession.hpp>
+
+#ifdef THIS_DOESNT_WORK_RIGHT_NOW
+namespace {
+  TEUCHOS_STATIC_SETUP()
+  {
+    Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+    clp.addOutputSetupOptions(true);
+    Cthulhu::Parameters cthulhuParameters(clp);
+  }
+} //anonymous namespace
+#endif
 
 int main( int argc, char* argv[] )
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  //Teuchos::CommandLineProcessor cmdp(false);
+  //Cthulhu::Parameters cthulhuParameters(cmdp);
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   return ret;

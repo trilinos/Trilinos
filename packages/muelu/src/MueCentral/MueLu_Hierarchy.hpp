@@ -106,7 +106,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      Teuchos::ParameterList FullPopulate(Teuchos::RCP<PRFactory> PRFact=Teuchos::null,
                        Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
                        Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
-                       int startLevel=0, int numDesiredLevels=10 )
+                       int const &startLevel=0, int const &numDesiredLevels=10 )
      {
        Teuchos::OSTab tab(out_);
        MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::FullPopulate()" << std::endl;
@@ -126,13 +126,13 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          ifpackList.set("relaxation: damping factor", (double) 1.0);
          ifpackList.set("relaxation: zero starting solution", false);
          RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-         RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smoother) );
+         SmooFact = rcp( new SmootherFactory(smoother) );
 //FIXME #endif
        }
 
        Teuchos::ParameterList status;
        status = FillHierarchy(*PRFact,*AcFact,startLevel,numDesiredLevels /*,status*/);
-       SetSmoothers(SmooFact,startLevel,numDesiredLevels);
+       SetSmoothers(*SmooFact,startLevel,numDesiredLevels);
        return status;
 
      } //FullPopulate()
@@ -185,7 +185,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        while (i < startLevel + numDesiredLevels - 1)
        {
          if ( (i+1) >= (int) Levels_.size() || Levels_[i+1] == Teuchos::null ) {
-           Teuchos::OSTab tab(out_);
+           Teuchos::OSTab tab2(out_);
            Levels_.push_back( Levels_[i]->Build(*out_) );
          }
          Levels_[i+1]->SetLevelID(i+1);
@@ -235,6 +235,26 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      }
 
      /*! @brief Construct smoothers on all levels but the coarsest.
+
+       Defaults to using smoother factory that generates Gauss-Seidel smoothers.
+     */
+     void SetSmoothers()
+     {
+       Teuchos::ParameterList  ifpackList;
+//FIXME #ifdef we're using tpetra
+//FIXME    throw(Exceptions::NotImplemented("No default smoother is defined"));
+//FIXME #else we're using epetra
+       ifpackList.set("relaxation: type", "Gauss-Seidel");
+       ifpackList.set("relaxation: sweeps", (int) 1);
+       ifpackList.set("relaxation: damping factor", (double) 1.0);
+       ifpackList.set("relaxation: zero starting solution", false);
+       RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+       SmootherFactory smooFact(smoother);
+//FIXME #endif
+       SetSmoothers(smooFact);
+     }
+
+     /*! @brief Construct smoothers on all levels but the coarsest.
        TODO need to check whether using Tpetra or Epetra
 
         Invoke a set of factories to construct smoothers within 
@@ -245,23 +265,11 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
         to define a smoother for the last level. Otherwise, a direct solve is
         assumed
      */
-     void SetSmoothers(RCP<SmootherFactory> smooFact=Teuchos::null, LO startLevel=0, LO numDesiredLevels=-1)
+     void SetSmoothers(SmootherFactory const &smooFact, LO const &startLevel=0, LO numDesiredLevels=-1)
      {
        Teuchos::OSTab tab(out_);
        MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::SetSmoothers()" << std::endl;
-       if (smooFact == Teuchos::null) {
-//FIXME #ifdef we're using tpetra
-//FIXME    throw(Exceptions::NotImplemented("No default smoother is defined"));
-//FIXME #else we're using epetra
-         Teuchos::ParameterList  ifpackList;
-         ifpackList.set("relaxation: type", "Gauss-Seidel");
-         ifpackList.set("relaxation: sweeps", (int) 1);
-         ifpackList.set("relaxation: damping factor", (double) 1.0);
-         ifpackList.set("relaxation: zero starting solution", false);
-         RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-         smooFact = rcp( new SmootherFactory(smoother) );
-//FIXME #endif
-       }
+
        if (numDesiredLevels == -1)
          numDesiredLevels = GetNumberOfLevels()-startLevel;
        LO lastLevel = startLevel + numDesiredLevels - 1;
@@ -278,7 +286,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
        for (int i=startLevel; i<=lastLevel; i++) {
          Teuchos::RCP<SmootherPrototype> preSm, postSm;
-         smooFact->Build(Levels_[i], preSm, postSm);
+         smooFact.Build(Levels_[i], preSm, postSm);
          if (preSm != Teuchos::null) Levels_[i]->SetPreSmoother(preSm);
          if (postSm != Teuchos::null) Levels_[i]->SetPostSmoother(postSm);
        }

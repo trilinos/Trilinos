@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   RCP<SmootherPrototype>  smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
   RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto) );
-  H.SetSmoothers(smooFactory);
+  H.SetSmoothers(*smooFactory);
   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(),"Ifpack: Jacobi", out, success);
   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPostSmoother()->GetType(),"Ifpack: Jacobi", out, success);
 

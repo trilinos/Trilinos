@@ -21,7 +21,7 @@ class PRFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,N
 
   protected:
 
-     GO maxCoarseSize_;
+     Cthulhu::global_size_t maxCoarseSize_;
      bool reUseGraph_;
      bool reUseAggregates_;
 
