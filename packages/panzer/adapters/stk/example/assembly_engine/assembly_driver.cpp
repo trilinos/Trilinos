@@ -38,7 +38,7 @@ using Teuchos::rcp;
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 
-#include "write_solution_data.hpp"
+#include "Panzer_STK_Utilities.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
@@ -254,7 +254,7 @@ int main(int argc,char * argv[])
    // redistribute solution vector
    linObjFactory->globalToGhostContainer(*container,*ghostCont);
 
-   write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ghostCont->x);
+   panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ghostCont->x);
    mesh->writeToExodus("output.exo");
 
    return 0;
