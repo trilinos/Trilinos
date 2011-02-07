@@ -166,7 +166,7 @@ EntityRank MetaData::entity_rank( const std::string &name ) const
 Part * MetaData::get_part( const std::string & p_name ,
                            const char * required_by ) const
 {
-  const PartVector & all_parts = m_universal_part->subsets();
+  const PartVector & all_parts = m_part_repo.get_all_parts();
 
   Part * const p = find( all_parts , p_name );
 
@@ -221,7 +221,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
 
   // The new superset / subset relationship can cause a
   // field restriction to become incompatible or redundant.
-  m_field_repo.verify_and_clean_restrictions(method, m_part_repo.all_parts());
+  m_field_repo.verify_and_clean_restrictions(method, m_part_repo.get_all_parts());
 }
 
 void MetaData::declare_part_relation(
@@ -288,7 +288,7 @@ void MetaData::declare_field_restriction(
       arg_field,
       arg_entity_rank,
       arg_part,
-      m_part_repo.all_parts(),
+      m_part_repo.get_all_parts(),
       arg_stride
       );
 }

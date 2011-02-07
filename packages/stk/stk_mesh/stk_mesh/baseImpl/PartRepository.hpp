@@ -29,7 +29,7 @@ public:
 
   Part * universal_part() const;
 
-  const PartVector & all_parts() const;
+  const PartVector & get_all_parts() const;
 
   Part * declare_part( const std::string & arg_name , EntityRank arg_rank );
   Part * declare_part( const PartVector & part_intersect );
@@ -51,6 +51,7 @@ private:
 
   MetaData * m_meta_data;
   Part * m_universal_part;
+  PartVector m_all_parts;
 };
 
 template<class T>
