@@ -95,6 +95,8 @@ type(PARIO_INFO) :: pio_info
 !/***************************** BEGIN EXECUTION ******************************/
 
   run_zoltan = .true.
+  num_gid_entries = 1
+  num_lid_entries = 1
   nullify(zz_obj, zz_obj_copy, import_gids, import_lids, import_procs, &
     import_to_part, export_gids, export_lids, export_procs, export_to_part)
 

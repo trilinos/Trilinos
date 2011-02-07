@@ -15,7 +15,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     ctest_linux_nightly_serial_development_opt_gcc_4.5.1_trilinos-test.cmake
     CTEST_INSTALLER_TYPE dev
     RUN_SERIAL
-    TIMEOUT_MINUTES 240
+    TIMEOUT_MINUTES 210
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -45,7 +45,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     ctest_linux_nightly_serial_development_opt_pgi_10.9_trilinos-test.cmake 
     CTEST_INSTALLER_TYPE dev
     RUN_SERIAL
-    TIMEOUT_MINUTES 420
+    TIMEOUT_MINUTES 450
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -53,7 +53,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     ctest_linux_nightly_serial_development_opt_pgi_11.1_trilinos-test.cmake
     CTEST_INSTALLER_TYPE dev
     RUN_SERIAL
-    TIMEOUT_MINUTES 420
+    TIMEOUT_MINUTES 450
   )
 
 ELSE()
