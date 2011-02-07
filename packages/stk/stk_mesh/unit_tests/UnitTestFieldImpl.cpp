@@ -347,7 +347,6 @@ void UnitTestFieldImpl::testFieldRestriction()
   stk::mesh::MetaData m( dummy_names );
 
   impl::PartRepository partRepo( &m );
-  Part & universal = * partRepo.universal_part();
 
   Part & pA = * partRepo.declare_part( std::string("A") , 0 );
   Part & pB = * partRepo.declare_part( std::string("B") , 0 );
@@ -408,8 +407,8 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   // Verify and clean out any redundant restructions:
 
-  f2->m_impl.verify_and_clean_restrictions( method , universal.subsets() );
-  f3->m_impl.verify_and_clean_restrictions( method , universal.subsets() );
+  f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
+  f3->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
 
   STKUNIT_ASSERT( f3->restrictions().size() == 4 );
 
@@ -423,7 +422,7 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   STKUNIT_ASSERT( f2->restrictions().size() == 2 );
 
-  f2->m_impl.verify_and_clean_restrictions( method , universal.subsets() );
+  f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
 
   STKUNIT_ASSERT( f2->restrictions().size() == 1 );
 
@@ -442,11 +441,11 @@ void UnitTestFieldImpl::testFieldRestriction()
   // this error condition.
   {
     f2->m_impl.insert_restriction( method , 0 , pB , stride + 1 );
-    f2->m_impl.verify_and_clean_restrictions( method , universal.subsets() );
+    f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
     partRepo.declare_subset( pD, pB );
     bool caught = false ;
     try {
-      f2->m_impl.verify_and_clean_restrictions( method , universal.subsets() );
+      f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
     }
     catch( const std::exception & x ) {
       caught = true ;

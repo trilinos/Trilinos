@@ -46,8 +46,7 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   m.commit();
 
   STKUNIT_ASSERT(  universal.supersets().empty() );
-  STKUNIT_ASSERT( 1u ==  universal.subsets().size() );
-  STKUNIT_ASSERT_EQUAL(  universal.subsets()[0] , &  universal );
+  STKUNIT_ASSERT( 1u ==  partRepo.get_all_parts().size() );
 
   //--------------------------------------------------------------------
   // Test multiple part creation
@@ -66,8 +65,8 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   parts[99] =  partRepo.declare_part( "Part_99" , 1 );
 
   STKUNIT_ASSERT(  universal.supersets().empty() );
-  STKUNIT_ASSERT( NPARTS ==  universal.subsets().size() );
-  STKUNIT_ASSERT_EQUAL(  universal.subsets()[0] , &  universal );
+  STKUNIT_ASSERT( NPARTS ==  partRepo.get_all_parts().size() );
+  STKUNIT_ASSERT_EQUAL(  partRepo.get_all_parts()[0] , &  universal );
 
   for ( unsigned i = 1 ; i < NPARTS ; ++i ) {
     STKUNIT_ASSERT( parts[i]->subsets().empty() );
@@ -75,7 +74,7 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
     STKUNIT_ASSERT( parts[i]->mesh_meta_data_ordinal() == i );
     STKUNIT_ASSERT( 1u == parts[i]->supersets().size() );
     STKUNIT_ASSERT( &  universal == parts[i]->supersets()[0] );
-    STKUNIT_ASSERT_EQUAL( parts[i] ,  universal.subsets()[i] );
+    STKUNIT_ASSERT_EQUAL( parts[i] ,  universal.subsets()[i-1] );
     STKUNIT_ASSERT_EQUAL( parts[i] , find(  universal.subsets() , parts[i]->name() ) );
   }
 

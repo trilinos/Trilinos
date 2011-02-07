@@ -103,7 +103,7 @@ public:
   Part & get_part( unsigned ord ) const ;
 
   /** \brief  Query all parts of the mesh ordered by the parts' ordinal. */
-  const PartVector & get_parts() const { return m_universal_part->subsets(); }
+  const PartVector & get_parts() const { return m_part_repo.get_all_parts(); }
 
   /** \brief  Declare a part of the given name and entity rank
    *          Redeclaration returns the previously declared part.
@@ -486,7 +486,7 @@ namespace mesh {
 
 inline
 Part & MetaData::get_part( unsigned ord ) const
-{ return * m_universal_part->subsets()[ord] ; }
+{ return * m_part_repo.get_all_parts()[ord] ; }
 
 template< class field_type >
 inline
