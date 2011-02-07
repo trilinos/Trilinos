@@ -156,7 +156,7 @@ namespace panzer {
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,*linObjFactory);
 
     // Print Phalanx DAGs
-    fmb->writeVolumeGraphvizDependencyFiles("Panzer_", physicsBlocks);
+    fmb->writeVolumeGraphvizDependencyFiles("Panzer_Steady-State_", physicsBlocks);
 
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
@@ -245,7 +245,7 @@ namespace panzer {
 
     write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
 			ghosted_solution);
-    mesh->writeToExodus("output.exo");
+    mesh->writeToExodus("steady-state.exo");
 
     // Test solution values on left, middle, and right side of mesh.
     // Note that this is based on the exact 20x20 test mesh on 4
@@ -418,7 +418,7 @@ namespace panzer {
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,*linObjFactory);
 
     // Print Phalanx DAGs
-    fmb->writeVolumeGraphvizDependencyFiles("Panzer_", physicsBlocks);
+    fmb->writeVolumeGraphvizDependencyFiles("Panzer_Transient_", physicsBlocks);
 
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 

@@ -1,2 +1,2 @@
 #/bin/bash
-rm -rf core output.exo* transient.exo* Panzer_eblock*
+rm -rf steady-state.exo* transient.exo* Panzer_Steady* Panzer_Transient*
