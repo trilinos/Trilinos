@@ -3,11 +3,16 @@
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
- * CVS File Information :
- *    $RCSfile$
- *    $Author$
- *    $Date$
- *    $Revision$
+ * KDD:  2/7/11
+ * KDD:  This interface uses pointer aliasing to translate C pointers to 
+ * KDD:  something that F90 can store and return.  It worked fine until 
+ * KDD:  gcc 4.5, where compiler optimizations removed assignment 
+ * KDD:  statements in Zfw_Set_Fn (assignments to the Fortran callbacks), 
+ * KDD:  causing segmentation faults when Zoltan attempted to call those
+ * KDD:  callbakcs.  This problem was fixed by declaring all Zoltan_Structs
+ * KDD:  using this aliasing to be "volatile".  A better fix would use the
+ * KDD:  F90 "C_PTR" type in fwrap.f90.  We can do that fix as time permits.
+ * KDD:  See Bugzilla bug 5077 for more info.
  ****************************************************************************/
 
 
@@ -99,7 +104,7 @@ void Zfw_Get_Address_struct(int *addr,
 /*****************************************************************************/
 int Zfw_Get_Wgt_Dim(int *addr_lb, int *nbytes)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
    return lb->Obj_Weight_Dim;
 }
@@ -107,7 +112,7 @@ int Zfw_Get_Wgt_Dim(int *addr_lb, int *nbytes)
 /*****************************************************************************/
 int Zfw_Get_Comm_Dim(int *addr_lb, int *nbytes)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
    return lb->Edge_Weight_Dim;
 }
@@ -776,7 +781,7 @@ int Zfw_Initialize1(int *argc, int *argv, int *starts, float *ver)
 /*****************************************************************************/
 void Zfw_Create(int *f_communicator, int *addr_lb, int *nbytes)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    MPI_Comm c_communicator;
    c_communicator = Zoltan_comm_f2c(f_communicator);
    lb = Zoltan_Create(c_communicator);
@@ -787,7 +792,7 @@ void Zfw_Create(int *f_communicator, int *addr_lb, int *nbytes)
 /*****************************************************************************/
 void Zfw_Copy(int *addr_lb1, int *addr_lb2, int *nbytes)
 {
-   struct Zoltan_Struct *in, *out;
+   volatile struct Zoltan_Struct *in, *out;
 
    ADDR_TO_LB(addr_lb1, in);
 
@@ -800,7 +805,7 @@ void Zfw_Copy(int *addr_lb1, int *addr_lb2, int *nbytes)
 /*****************************************************************************/
 int Zfw_Copy_To(int *addr_lb1, int *addr_lb2, int *nbytes)
 {
-   struct Zoltan_Struct *to, *from;
+   volatile struct Zoltan_Struct *to, *from;
    ADDR_TO_LB(addr_lb1, to);
    ADDR_TO_LB(addr_lb2, from);
    return Zoltan_Copy_To(to, from);
@@ -809,7 +814,7 @@ int Zfw_Copy_To(int *addr_lb1, int *addr_lb2, int *nbytes)
 /*****************************************************************************/
 void Zfw_Destroy(int *addr_lb, int *nbytes)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
    Zoltan_Destroy(&lb);
 }
@@ -830,7 +835,7 @@ void Zfw_Memory_Stats()
 int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                void *data)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
    switch(*type) {
    case ZOLTAN_PART_MULTI_FN_TYPE:
@@ -1250,7 +1255,7 @@ int Zfw_Set_FnBs(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
 int Zfw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
                    int *param_name_len, int *int_new_value, int *new_value_len)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    char *param_name, *new_value;
    int i, result;
    param_name = (char *)ZOLTAN_MALLOC(*param_name_len+1);
@@ -1271,7 +1276,7 @@ int Zfw_Set_Param_Vec(int *addr_lb, int *nbytes, int *int_param_name,
                    int *param_name_len, int *int_new_value, int *new_value_len,
                    int index)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    char *param_name, *new_value;
    int i, result;
    param_name = (char *)ZOLTAN_MALLOC(*param_name_len+1);
@@ -1314,7 +1319,7 @@ int Zfw_LB_Partition(int *addr_lb, int *nbytes, int *changes,
 #endif
 )
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
 #if defined (PGI) || defined (FUJITSU)
 #define F90LB_TEMP 3
 #else
@@ -1373,7 +1378,7 @@ int Zfw_LB_Eval(int *addr_lb, int *nbytes, int *print_stats)
  * KDD of Zoltan_LB_Eval in the F90 interface yet.  For now, we'll only
  * KDD print stats.
  */
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
    Zoltan_Current = lb;
 
@@ -1384,7 +1389,7 @@ int Zfw_LB_Eval(int *addr_lb, int *nbytes, int *print_stats)
 int Zfw_LB_Set_Part_Sizes(int *addr_lb, int *nbytes, int *global_part, int *len,
                           int *partids, int *wgtidx, float *partsizes)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_LB_Set_Part_Sizes(lb, *global_part, *len, partids, wgtidx,
@@ -1394,7 +1399,7 @@ int Zfw_LB_Set_Part_Sizes(int *addr_lb, int *nbytes, int *global_part, int *len,
 /*****************************************************************************/
 int Zfw_LB_Point_Assign(int *addr_lb, int *nbytes, double *coords, int *proc)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_LB_Point_Assign(lb, coords, proc);
@@ -1404,7 +1409,7 @@ int Zfw_LB_Point_Assign(int *addr_lb, int *nbytes, double *coords, int *proc)
 int Zfw_LB_Point_PP_Assign(int *addr_lb, int *nbytes, double *coords, int *proc,
                            int *part)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_LB_Point_PP_Assign(lb, coords, proc, part);
@@ -1415,7 +1420,7 @@ int Zfw_LB_Box_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
                      double *zmin, double *xmax, double *ymax, double *zmax,
                      int *procs, int *numprocs)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_LB_Box_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax, 
@@ -1427,7 +1432,7 @@ int Zfw_LB_Box_PP_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
                      double *zmin, double *xmax, double *ymax, double *zmax,
                      int *procs, int *numprocs, int *parts, int *numparts)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_LB_Box_PP_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax,
@@ -1456,7 +1461,7 @@ int Zfw_Invert_Lists(int *addr_lb, int *nbytes,
 #endif
 )
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
 #if defined (PGI) || defined(FUJITSU)
 #define F90LB_TEMP 3
 #else
@@ -1517,7 +1522,7 @@ int Zfw_Compute_Destinations(int *addr_lb, int *nbytes,
 #endif
 )
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
 #if defined (PGI) || defined(FUJITSU)
 #define F90LB_TEMP 3
 #else
@@ -1565,7 +1570,7 @@ int Zfw_Migrate(int *addr_lb, int *nbytes,
  ZOLTAN_ID_PTR export_global_ids, ZOLTAN_ID_PTR export_local_ids,
  int *export_procs, int *export_to_part)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
 
    Zoltan_Current = lb;
@@ -1584,7 +1589,7 @@ int Zfw_Help_Migrate(int *addr_lb, int *nbytes,
  ZOLTAN_ID_PTR export_global_ids, ZOLTAN_ID_PTR export_local_ids,
  int *export_procs)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
 
    Zoltan_Current = lb;
@@ -1602,7 +1607,7 @@ int Zfw_Order(
  ZOLTAN_ID_PTR gids, 
  ZOLTAN_ID_PTR perm)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    int ierr;
    ADDR_TO_LB(addr_lb, lb);
 
@@ -1620,7 +1625,7 @@ int Zfw_Color(
  ZOLTAN_ID_PTR gids,
  int *color_exp)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    int ierr;
    ADDR_TO_LB(addr_lb, lb);
 
@@ -1638,7 +1643,7 @@ int Zfw_Color_Test(
  ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
  int *color_exp)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    int ierr;
    ADDR_TO_LB(addr_lb, lb);
 
@@ -1653,7 +1658,7 @@ int Zfw_Generate_Files(int *addr_lb, int *nbytes, int *int_filename,
                    int *filename_len, int *base_index, int *gen_geom,
                    int *gen_graph, int *gen_hg)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    char *filename;
    int i, result;
    filename = (char *)ZOLTAN_MALLOC(*filename_len+1);
@@ -1673,7 +1678,7 @@ int Zfw_RCB_Box(int *addr_lb, int *nbytes, int *part, int *ndim,
                 double *xmin, double *ymin, double *zmin, 
                 double *xmax, double *ymax, double *zmax)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_RCB_Box(lb, *part, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
@@ -1694,7 +1699,7 @@ void Zfw_Reftree_Get_Child_Order(
   int *order, 
   int *ierr)
 {
-   struct Zoltan_Struct *lb;
+   volatile struct Zoltan_Struct *lb;
    ADDR_TO_LB(addr_lb, lb);
 
    Zoltan_Reftree_Get_Child_Order(lb,order,ierr);
