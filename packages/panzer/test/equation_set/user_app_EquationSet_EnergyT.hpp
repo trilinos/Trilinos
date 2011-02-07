@@ -33,6 +33,9 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
   this->m_dof_gradient_names = Teuchos::rcp(new std::vector<std::string>);
   this->m_dof_gradient_names->push_back(this->m_eqset_prefix+"GRAD_TEMPERATURE");
 
+  this->m_dof_time_derivative_names = Teuchos::rcp(new std::vector<std::string>);
+  this->m_dof_time_derivative_names->push_back(this->m_eqset_prefix+"DOT_TEMPERATURE");
+
   this->m_residual_names = Teuchos::rcp(new std::vector<std::string>);
   this->m_residual_names->push_back(this->m_eqset_prefix+"RESIDUAL_TEMPERATURE");
 

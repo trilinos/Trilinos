@@ -112,6 +112,37 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     }
   }
 
+  // **************************
+  // Time derivative terms
+  // **************************
+
+  // Gather of time derivative terms
+  {
+    ParameterList p("Gather");
+    p.set("Basis", m_basis);
+    p.set("DOF Names", m_dof_time_derivative_names);
+    p.set("Use Time Derivative Solution Vector", true);
+    
+    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
+    //   rcp(new panzer::GatherSolution_Epetra<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
+  }
+  
+  // Time derivative of DOFs: Scalar value @ basis --> Scalar value @ IP 
+  for (std::vector<std::string>::const_iterator dof_name = this->m_dof_time_derivative_names->begin();
+       dof_name != this->m_dof_time_derivative_names->end(); ++dof_name) {
+    ParameterList p;
+    p.set("Name", *dof_name);
+    p.set("Basis", this->m_basis); 
+    p.set("IR", this->m_int_rule);
+    
+    RCP< PHX::Evaluator<panzer::Traits> > op = 
+      rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
+  }
+
 }
 
 // ***********************************************************************

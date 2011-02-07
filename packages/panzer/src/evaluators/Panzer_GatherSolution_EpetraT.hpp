@@ -19,7 +19,8 @@ panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 GatherSolution_Epetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-   : globalIndexer_(indexer)
+  : globalIndexer_(indexer),
+    useTimeDerivativeSolutionVector_(false)
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -33,6 +34,9 @@ GatherSolution_Epetra(
       PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addEvaluatedField(gatherFields_[fd]);
   }
+
+  if (p.isType<bool>("Use Time Derivative Solution Vector"))
+    useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
 
   this->setName("Gather Solution");
 }
@@ -71,7 +75,11 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<panzer::EpetraLinearObjContainer> epetraContainer 
          = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(workset.ghostedLinContainer);
-   Teuchos::RCP<Epetra_Vector> x = epetraContainer->x; 
+   Teuchos::RCP<Epetra_Vector> x;
+   if (useTimeDerivativeSolutionVector_)
+     x = epetraContainer->dxdt;
+   else
+     x = epetraContainer->x; 
  
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -113,7 +121,8 @@ panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 GatherSolution_Epetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-   : globalIndexer_(indexer)
+  : globalIndexer_(indexer),
+    useTimeDerivativeSolutionVector_(false)
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -127,6 +136,9 @@ GatherSolution_Epetra(
     gatherFields_[fd] = f;
     this->addEvaluatedField(gatherFields_[fd]);
   }
+
+  if (p.isType<bool>("Use Time Derivative Solution Vector"))
+    useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
 
   this->setName("Gather Solution");
 }
@@ -165,7 +177,11 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
          = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
-   Teuchos::RCP<Epetra_Vector> x = epetraContainer->x; 
+   Teuchos::RCP<Epetra_Vector> x;
+   if (useTimeDerivativeSolutionVector_)
+     x = epetraContainer->dxdt;
+   else
+     x = epetraContainer->x;
  
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the

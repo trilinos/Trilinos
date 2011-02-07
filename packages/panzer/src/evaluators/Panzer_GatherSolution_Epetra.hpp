@@ -72,6 +72,8 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
+  bool useTimeDerivativeSolutionVector_;
+
   GatherSolution_Epetra();
 };
 
@@ -109,6 +111,8 @@ private:
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
+
+  bool useTimeDerivativeSolutionVector_;
 
   GatherSolution_Epetra();
 };
