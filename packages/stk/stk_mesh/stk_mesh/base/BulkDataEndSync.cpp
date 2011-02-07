@@ -627,8 +627,9 @@ void BulkData::internal_resolve_parallel_create()
   shared_part.push_back( & m_mesh_meta_data.globally_shared_part() );
   owned_part.push_back(  & m_mesh_meta_data.locally_owned_part() );
 
+  std::vector<Entity*>::const_reverse_iterator iend = shared_modified.rend();
   for ( std::vector<Entity*>::const_reverse_iterator
-        i = shared_modified.rbegin() ; i != shared_modified.rend() ; ++i) {
+        i = shared_modified.rbegin() ; i != iend ; ++i) {
 
     Entity * entity = *i ;
 
