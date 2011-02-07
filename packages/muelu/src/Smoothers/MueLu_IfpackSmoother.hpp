@@ -78,6 +78,8 @@ class Level;
             - <tt>type</tt> = <tt>ILU</tt>
             - parameter list options
                 - <tt>fact: level-of-fill</tt>
+
+        See also Ifpack_PointRelaxation, Ifpack_Chebyshev, Ifpack_ILU.
     */
     IfpackSmoother(std::string const & type, Teuchos::ParameterList & list)
       : ifpackType_(type), list_(list), out_(this->getOStream())
@@ -99,6 +101,8 @@ class Level;
     //! @name Set/Get methods
 
     //@{
+
+    //! @brief Set the number of smoothing sweeps.
     void SetNIts(LO const &nIts) {
       if (!SmootherPrototype::IsSetup()) //FIXME precond doesn't have to be setup
         throw(Exceptions::RuntimeError("Call Setup before setting sweeps"));
@@ -106,6 +110,7 @@ class Level;
       prec_->SetParameters(list_);
     }
 
+    //! @brief Get the number of smoothing sweeps.
     LO GetNIts() {
       if (list_.isParameter("relaxation: sweeps") == false)
         throw(Exceptions::RuntimeError("number of iterations is not set"));
@@ -113,6 +118,14 @@ class Level;
     }
     //@}
 
+    //! @name Computational methods.
+    //@{
+
+    /*! @brief Set up the smoother.
+
+        This creates the underlying Ifpack smoother object, copies any parameter list options
+        supplied to the constructor to the Ifpack object, and computes the preconditioner.
+    */
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "IfpackSmoother::Setup()" << std::endl;
@@ -125,7 +138,16 @@ class Level;
       prec_->Compute();
     }
 
-    void Apply(RCP<MultiVector> x, RCP<MultiVector> const rhs, bool InitialGuessIsZero=false)
+
+    /*! @brief Apply the preconditioner.
+
+        Solves the linear system <tt>AX=B</tt> using the constructed smoother.
+
+        @param X initial guess
+        @param B right-hand side
+        @param InitialGuessIsZero (optional) If false, some work can be avoided.  Whether this actually saves any work depends on the underlying Ifpack implementation.
+    */
+    void Apply(RCP<MultiVector> X, RCP<MultiVector> const B, bool InitialGuessIsZero=false)
     {
       if (!SmootherPrototype::IsSetup())
         throw(Exceptions::RuntimeError("Setup has not been called"));
@@ -133,11 +155,16 @@ class Level;
       ifpackList.set("relaxation: zero starting solution", InitialGuessIsZero);
       prec_->SetParameters(ifpackList);
 
-      RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(x);
-      RCP<const Epetra_MultiVector> epRhs = Utils::MV2NonConstEpetraMV(rhs);
+      RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
+      RCP<const Epetra_MultiVector> epB = Utils::MV2NonConstEpetraMV(B);
 
-      prec_->ApplyInverse(*epRhs,*epX);
+      prec_->ApplyInverse(*epB,*epX);
     }
+
+    //@}
+
+    //! @name Utilities
+    //@{
 
     void Print(std::string prefix) {
       Teuchos::OSTab tab(out_);
@@ -160,6 +187,8 @@ class Level;
       overlap_ = ifpackSmoo->overlap_;
       list_ = ifpackSmoo->list_;
     }
+
+    //@}
 
   }; //class IfpackSmoother
 

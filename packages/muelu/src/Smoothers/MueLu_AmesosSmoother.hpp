@@ -19,8 +19,8 @@ class Level;
   @class AmesosSmoother
   @brief Class that encapsulates Amesos direct solvers.
 
-  This class creates an Amesos preconditioner factory.  The factory creates a direct solver based on the
-  type and ParameterList passed into the constructor.  See the constructor for more information.
+  This class creates an Amesos preconditioner factory.  The factory is capable of generating direct solvers
+  based on the type and ParameterList passed into the constructor.  See the constructor for more information.
 */
 
   template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -52,8 +52,28 @@ class Level;
 
     /*! @brief Constructor
 
+        Creates a MueLu interface to the direct solvers in the Amesos package.  The options are those specified in
+        the Amesos user's manual.
+
+        @param type solver type
+        @param list options for the particular solver type
+
+        Here is how to select the more commonly used direct solvers:
+
+        - KLU (serial sparse direct solver)
+            - <tt>type</tt> = <tt>Amesos-KLU</tt>
+            - parameter list options
+                - none required
+
+        - SuperLU (serial sparse super-nodal direct solver)
+            - <tt>type</tt> = <tt>Amesos-SuperLU</tt>
+            - parameter list options
+                - none required
+
+        See also Amesos_Klu and Amesos_Superlu.
+
     */
-    AmesosSmoother(std::string const & type, Teuchos::ParameterList & list)
+    AmesosSmoother(std::string const & type, Teuchos::ParameterList const & list)
       : amesosType_(type), list_(list), out_(this->getOStream())
     {
       MueLu_cout(Teuchos::VERB_HIGH) << "Instantiating a new Amesos smoother" << std::endl;
@@ -65,17 +85,28 @@ class Level;
     //@}
 
     //! @name Set/Get methods
-
     //@{
+
+    //! @brief This has no effect and will throw an error.
     void SetNIts(LO const &nIts) {
       throw(Exceptions::RuntimeError("Only one iteration of Amesos solve is supported."));
     }
 
+    //! @brief Returns 1.
     LO GetNIts() {
       return 1;
     }
     //@}
 
+    //! @name Setup and Apply methods.
+    //@{
+
+
+    /*! @brief Set up the direct solver.
+
+       This creates the underlying Amesos solver object according to the parameter list options passed into the
+       AmesosSmoother constructor.  This includes doing a numeric factorization of the matrix.
+    */
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "AmesosSmoother::Setup()" << std::endl;
@@ -100,19 +131,31 @@ class Level;
       }
     }
 
-    void Apply(RCP<MultiVector> x, RCP<MultiVector> const rhs, bool InitialGuessIsZero=false)
+    /*! @brief Apply the direct solver.
+
+        Solves the linear system <tt>AX=B</tt> using the constructed solver.
+
+        @param X initial guess
+        @param B right-hand side
+        @param InitialGuessIsZero This option has no effect.
+    */
+    void Apply(RCP<MultiVector> X, RCP<MultiVector> const B, bool InitialGuessIsZero=false)
     {
       if (!SmootherPrototype::IsSetup())
         throw(Exceptions::RuntimeError("Setup has not been called"));
 
-      RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(x);
-      RCP<Epetra_MultiVector> epRhs = Utils::MV2NonConstEpetraMV(rhs);//FIXME Amesos wants a nonconst rhs!
+      RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
+      RCP<Epetra_MultiVector> epB = Utils::MV2NonConstEpetraMV(B);//FIXME Amesos wants a nonconst B!
 
       AmesosLinearProblem->SetLHS(&*epX); //FIXME RCP probably has a safer way to do this
-      AmesosLinearProblem->SetRHS(&*epRhs); //FIXME RCP probably has a safer way to do this
+      AmesosLinearProblem->SetRHS(&*epB); //FIXME RCP probably has a safer way to do this
 
       prec_->Solve();
     }
+    //@}
+
+    //! @name Utilities.
+    //@{
 
     void Print(std::string prefix) {
       throw(Exceptions::NotImplemented("AmesosSmoother::Print is not implemented"));
@@ -132,6 +175,7 @@ class Level;
       A_ = amesosSmoo->A_;
       list_ = amesosSmoo->list_;
     }
+    //@}
 
   }; //class AmesosSmoother
 

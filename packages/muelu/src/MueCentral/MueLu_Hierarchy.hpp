@@ -21,8 +21,8 @@ namespace MueLu {
   Allows users to manually populate operators at different levels within 
   a multigrid method and push them into the hierarchy via SetLevel() 
   and/or to supply factories for automatically generating prolongators, 
-  restrictors, and coarse level discretizations.  Additionally contains 
-  a V-cycle apply method.
+  restrictors, and coarse level discretizations.  Additionally, this class contains 
+  an apply method that supports V and W cycles.
 */
 template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
@@ -78,12 +78,12 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        return Levels_.size();
      }
 
-     //! Indicate whether to print residual history
+     //! Indicate whether to print residual history to a FancyOStream.
      void PrintResidualHistory(bool value) {
        printResidualHistory_ = value;
      }
 
-     //! Retrieve whether to print residual history
+     //! If this returns true, the residual history will print to a FancyOStream.
      bool PrintResidualHistory() {
        return printResidualHistory_;
      }
@@ -137,11 +137,15 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
      } //FullPopulate()
 
-     /*! @brief Populate hierarchy with A's, R's, and P's.
 
-         Prolongator factory defaults to SaPFactory.
+     /*! @brief Populate hierarchy with A's, R's, and P's using default factories.
+
+       The prolongator factory defaults to Smoothed Aggregation, and the coarse matrix factory defaults
+       to the Galerkin product.
+
+       @return  List containing starting and ending level numbers, operator complexity, \#nonzeros in the fine
+       matrix, and the sum of nonzeros all matrices (including the fine).
      */
-
      Teuchos::ParameterList FillHierarchy() {
        RCP<SaPFactory> PFact = rcp(new SaPFactory());
        RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact));
@@ -151,6 +155,14 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        return status;
      } //FillHierarchy()
 
+     /*! @brief Populate hierarchy with A's, R's, and P's.
+
+         Populate hierarchy with provided PRFactory.  The coarse matrix factory defaults
+         to the Galerkin product.
+
+       @return  List containing starting and ending level numbers, operator complexity, \#nonzeros in the fine
+       matrix, and the sum of nonzeros all matrices (including the fine).
+     */
      Teuchos::ParameterList FillHierarchy(PRFactory const &PRFact) {
        RAPFactory AcFact;
        Teuchos::ParameterList status;
@@ -168,6 +180,9 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          restriction, and coarse level discretizations in this
          order) a multigrid Hierarchy starting with information on 'startLevel' 
          and continuing for at most 'numDesiredLevels'. 
+
+         @return  List containing starting and ending level numbers, operator complexity, \#nonzeros in the fine
+         matrix, and the sum of nonzeros all matrices (including the fine).
      */
      Teuchos::ParameterList FillHierarchy(PRFactory const &PRFact,
                         OperatorFactory const &AcFact,
@@ -213,7 +228,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        return status;
      } //FillHierarchy
 
-     /*! @brief Set solve method for coarsest method.
+     /*! @brief Set solve method for coarsest level.
 
          @param smooFact  fully constructed SmootherFactory 
          @param pop       whether to use pre,post, or both pre and post smoothing 
@@ -236,7 +251,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
      /*! @brief Construct smoothers on all levels but the coarsest.
 
-       Defaults to using smoother factory that generates Gauss-Seidel smoothers.
+       Defaults to using IfpackSmoother factory that generates Gauss-Seidel smoothers.
      */
      void SetSmoothers()
      {
@@ -300,8 +315,17 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
      /*!
        @brief Apply the multigrid preconditioner.
+
+       In theory, more general cycle types than just V- and W-cycles are possible.  However,
+       the enumerated type CycleType would have to be extended.
+
+       @param B right-hand side of linear problem
+       @param nIts number of multigrid cycles to perform
+       @param X initial and final (approximate) solution of linear problem
+       @param InitialGuessIsZero Currently does nothing. FIXME
+       @param Cycle Supports VCYCLE and WCYCLE types.
      */
-     void Iterate(RCP<MultiVector> const &rhs, LO nIts, RCP<MultiVector> &X,
+     void Iterate(RCP<MultiVector> const &B, LO nIts, RCP<MultiVector> &X,
                   bool const &InitialGuessIsZero=false, CycleType const &Cycle=VCYCLE, LO const &startLevel=0)
      {
        //Teuchos::Array<Magnitude> norms(1);
@@ -316,7 +340,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                  << std::setiosflags(ios::left)
                  << std::setprecision(3) << i;
            *out_ << "           residual = "
-                 << std::setprecision(10) << Utils::ResidualNorm(*(Fine->GetA()),*X,*rhs)
+                 << std::setprecision(10) << Utils::ResidualNorm(*(Fine->GetA()),*X,*B)
                  << std::endl;
          }
          RCP<SmootherPrototype> preSmoo = Fine->GetPreSmoother();
@@ -328,17 +352,17 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          if (startLevel == Levels_.size()-1) //FIXME is this right?
          {
            bool emptySolve=true;
-           if (preSmoo != Teuchos::null) {preSmoo->Apply(X, rhs, false); emptySolve=false;}
-           if (postSmoo != Teuchos::null) {postSmoo->Apply(X, rhs, false); emptySolve=false;}
+           if (preSmoo != Teuchos::null) {preSmoo->Apply(X, B, false); emptySolve=false;}
+           if (postSmoo != Teuchos::null) {postSmoo->Apply(X, B, false); emptySolve=false;}
            if (emptySolve==true)
              *out_ << "WARNING:  no coarse grid solve!!" << std::endl;
          } else {
            //on an intermediate level
            RCP<Level> Coarse = Levels_[startLevel+1];
            if (preSmoo != Teuchos::null)
-             preSmoo->Apply(X, rhs, false);
+             preSmoo->Apply(X, B, false);
 
-           RCP<MultiVector> residual = Utils::Residual(*(Fine->GetA()),*X,*rhs);
+           RCP<MultiVector> residual = Utils::Residual(*(Fine->GetA()),*X,*B);
            RCP<Operator> R = Coarse->GetR();
            RCP<MultiVector> coarseRhs = MultiVectorFactory::Build(R->getRowMap(),X->getNumVectors());
            R->multiply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
@@ -361,7 +385,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
            if (postSmoo != Teuchos::null) {
              //X->norm2(norms);
-             postSmoo->Apply(X, rhs, false);
+             postSmoo->Apply(X, B, false);
            }
          }
 
