@@ -9,6 +9,11 @@ static void gather_in_block(const std::string & blockId, const panzer::DOFManage
                             const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
                             std::map<std::string,Intrepid::FieldContainer<double> > & fc);
 
+void scatter_to_vector(const std::string & blockId, const panzer::DOFManager<int,int> & dofMngr,
+                       const std::map<std::string,Intrepid::FieldContainer<double> > & fc,
+                       const std::vector<std::size_t> & localCellIds,
+                       Epetra_Vector & x);
+
 static void build_local_ids(const panzer_stk::STK_Interface & mesh,
                             std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds);
 
@@ -36,7 +41,7 @@ void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk:
       // get all solution data for this block
       gather_in_block(blockId,dofMngr,x,localCellIds,data);
 
-      // write out to stick mesh
+      // write out to stk mesh
       std::map<std::string,FieldContainer>::iterator dataItr;
       for(dataItr=data.begin();dataItr!=data.end();++dataItr) 
          mesh.setSolutionFieldData(dataItr->first,blockId,localCellIds,dataItr->second);
@@ -45,10 +50,36 @@ void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk:
 
 void read_solution_data(const panzer::DOFManager<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_MultiVector & x)
 {
+   read_solution_data(dofMngr,mesh,*x(0));
 }
 
 void read_solution_data(const panzer::DOFManager<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_Vector & x)
 {
+   typedef Intrepid::FieldContainer<double> FieldContainer;
+
+   // get local IDs
+   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds;
+   build_local_ids(mesh,localIds);
+
+   // loop over all element blocks
+   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > >::const_iterator itr;
+   for(itr=localIds.begin();itr!=localIds.end();++itr) {
+      std::string blockId = itr->first;
+      const std::vector<std::size_t> & localCellIds = *(itr->second);
+
+      std::map<std::string,FieldContainer> data;
+      const std::set<int> & fieldNums = dofMngr.getFields(blockId);
+
+      // write out to stk mesh
+      std::set<int>::const_iterator fieldItr;
+      for(fieldItr=fieldNums.begin();fieldItr!=fieldNums.end();++fieldItr) {
+         std::string fieldStr = dofMngr.getFieldString(*fieldItr);
+         mesh.getSolutionFieldData(fieldStr,blockId,localCellIds,data[fieldStr]);
+      }
+
+      // get all solution data for this block
+      scatter_to_vector(blockId,dofMngr,data,localCellIds,x);
+   }
 }
 
 void gather_in_block(const std::string & blockId, const panzer::DOFManager<int,int> & dofMngr,
@@ -82,6 +113,42 @@ void gather_in_block(const std::string & blockId, const panzer::DOFManager<int,i
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
             fc[fieldStr](worksetCellIndex,basis) = x[lid];
+         }
+      }
+   }
+}
+
+void scatter_to_vector(const std::string & blockId, const panzer::DOFManager<int,int> & dofMngr,
+                       const std::map<std::string,Intrepid::FieldContainer<double> > & fc,
+                       const std::vector<std::size_t> & localCellIds,
+                       Epetra_Vector & x)
+{
+   
+   std::map<std::string,Intrepid::FieldContainer<double> >::const_iterator fieldItr;
+   for(fieldItr=fc.begin();fieldItr!=fc.end();++fieldItr) {
+      std::string fieldStr = fieldItr->first;
+      int fieldNum = dofMngr.getFieldNum(fieldStr);
+      const Intrepid::FieldContainer<double> & data = fieldItr->second; 
+
+      // gather operation for each cell in workset
+      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+         std::vector<int> GIDs, LIDs;
+         std::size_t cellLocalId = localCellIds[worksetCellIndex];
+      
+         dofMngr.getElementGIDs(cellLocalId,GIDs);
+      
+         // caculate the local IDs for this element
+         LIDs.resize(GIDs.size());
+         for(std::size_t i=0;i<GIDs.size();i++)
+            LIDs[i] = x.Map().LID(GIDs[i]);
+   
+         const std::vector<int> & elmtOffset = dofMngr.getGIDFieldOffsets(blockId,fieldNum);
+   
+         // loop over basis functions and fill the fields
+         for(int basis=0;basis<data.dimension(1);basis++) {
+            int offset = elmtOffset[basis];
+            int lid = LIDs[offset];
+            x[lid] = data(worksetCellIndex,basis);
          }
       }
    }

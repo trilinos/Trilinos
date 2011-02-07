@@ -431,6 +431,8 @@ void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std
 {
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
+   solutionValues.resize(localElementIds.size(),elements[localElementIds[0]]->relations(getNodeRank()).size());
+
    // SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(fieldName); // if no blockId is specified you can get the field like this!
    SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
 
