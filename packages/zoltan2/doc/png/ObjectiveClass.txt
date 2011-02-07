@@ -1,37 +1,97 @@
 'plantUML input file
 'Class diagram for Objective
 '
-
 @startuml
 
 class "Objective<LNO, GNO, AppGID>" as Objective
 
+note right of Objective
+  There is also a get_ method for every
+  set_ method. 
+end note
+
 class Objective{
 IdentifierMap<LNO, GNO, AppGID> gid
-vector<float> vertexWeights
-vector<float> partSizes
-vector<GNO> fixedVertices
+Teuchos::MultiVector<float, LNO, GNO> vertex_weights
+Teuchos::MultiVector<float, LNO, GNO> edge_weights
+std::string ScotchStrategy
 
-virtual void setVertexWeights() 
-virtual void getVertexWeights() 
-virtual void setPartSizes() 
-virtual void getPartSizes() 
-virtual void setFixedVertices() 
-virtual void getFixedVertices() 
-virtual void minimizeNumberOfNeighbors()
-virtual void minimizeCutWeight()
-virtual void migrationBalanceTradeoff()
+'()===================================()
+()=======GENERAL METHODS=============()
+'()===================================()
+createLegacyZoltanParameterList()
+setGlobal(ON/OFF)
+setLocal(ON/OFF)
+setColor(ON/OFF)
+setOrder(ON/OFF)
+setPartition(ON/OFF)
+setInitialMapping(map)
+setStartFromPreviousSolution(ON/OFF)
+setMaximizeOverlapWithPreviousSolution(ON/OFF)
+setRandomizeInput(ON/OFF)
+setSymmetrizeInput(how, weight op)
+setUseThirdPartyLibrary(library name, library parameters)
 
-virtual void etc()
+'()===================================()
+()=====PARTITIONING RELATED==========()
+'()===================================()
+
+setGlobalNumberOfParts(number)
+setLocalNumberOfParts(number)
+setPartSizes(list)
+
+setImbalanceIntolerance(number)
+
+setGeometricPartitioning(ON/OFF)
+setRectilinearRegions(ON/OFF)
+setGeometricallyOrientedRegions(ON/OFF)
+setDegenerateRatio(factor)
+setMaximumAspectRatio(number)
+setLockCutDirection(ON/OFF)
+setMakeCutsAwayFromVertices(ON/OFF)
+
+setFixedVertices(ids)
+
+setMigrationCommunicationTradeoff(number)
+
+'()===================================()
+()=====GRAPH/HG PARTITIONING RELATED==========()
+'()===================================()
+
+setEdgeWeights(dim, weights)
+setUnitVertexWeights(ON/OFF)
+setHyperedgeSizeVertexWeights(ON/OFF)
+setVertexWeights(list)
+setHyperedgeWeights(dim, weights)
+setMultipleWeightsAreComparable(ON/OFF)
+setMultipleWeightsMinimizeTotal(ON/OFF)
+setMultipleWeightsMinimizeWorst(ON/OFF)
+setMinimizeHyperedgeNumberOfParts(ON/OFF)
+setMinimizeNumberOfCutHyperedges(ON/OFF)
+setRemoveDenseHyperedges(factor)
+
+'()===================================()
+()=====MATRIX PARTITIONING RELATED==========()
+'()===================================()
+
+setBalanceMatrixRows(ON/OFF)
+setBalanceMatrixNonZeros(ON/OFF)
+setMinimizeBlockMatrixBorderSize(ON/OFF)
+
+'()===================================()
+()=========COLORING RELATED==========()
+'()===================================()
+
+setColorCommType()
+setColorDistance()
+setColorMethod()
+setColorOrder()
+setColorSuperstepSize()
+
+
 }
 
-note  "The Objective describes\nthe problem to be solved." as N1
 
-note left of Objective: Fixed vertices are really a\nconstraint. If we have\nmany problem characteristics\nlike this, it may add clarity\nto have a Constraint class.
-
-Objective <|-- "PartitioningObjective<>"
-Objective <|-- "ColoringObjective<>"
-Objective <|-- "OrderingObjective<>"
 
 @enduml
 

@@ -4,8 +4,6 @@
 
 @startuml
 
-note "A Zoltan Problem has\nan input, parameters\nand an objective.\nIt can compute\na solution, evaluate\nthe quality of a\nsolution, and\nreturn the solution." as N1
-
 class "Problem<Scalar, LNO, GNO, AppGID>" as Problem
 class "OrderingProblem<>" as OrderingProblem
 class "PartitioningProblem<>" as PartitioningProblem
@@ -14,6 +12,7 @@ class "ColoringProblem<>" as ColoringProblem
 class Problem{
 InputAdapter &input
 Teuchos::ParameterList &params
+Teuchos::ParameterList &legacyZoltanParams
 Objective &object
 
 virtual void setParameters()
@@ -26,47 +25,56 @@ virtual void getMapping()
 }
 
 class ColoringProblem{
-ColoringObjective  objective;
 void solve()
-void colorInput() { solve(); }
+void doColoring() { solve(); }
 void evaluate()
 void getMapping()
 void getColors() { getMapping(); }
-void transform()
-void schedule() {transform();}
 void getNumberOfColors()
 }
 
+note bottom of PartitioningProblem
+In addition to getParts(), getExportList(),
+and getImportList(), another 
+solution type has been proposed: 
+an iterator over IDs in a partition
+end note
+
 class PartitioningProblem{
-PartitioningObjective  objective;
 void solve()
-void partitionInput() { solve(); }
+void doPartitioning() { solve(); }
 void evaluate()
 void getMapping()
 void getParts() { getMapping(); }
-void transform()
-void redistribute() {transform();}
-void point_assign()
+void getExportList()
+void getImportList()
+void pointAssign()
 void boxAssign()
 void getRcbBox()
 void getRcbTree()
 }
 
+
+' NEW FUNCTIONALITY  getRcbTree
+
+note bottom of OrderingProblem
+In addition to getOrder(), another
+solution type has been proposed: 
+an iterator over the graph vertices
+end note
+
 class OrderingProblem{
-OrderingObjective  objective;
 void solve()
-void orderInput() { solve(); }
+void doOrdering() { solve(); }
 void evaluate()
 void getMapping()
 void getOrder() { getMapping(); }
-void transform()
-void permute() { transform(); }
 void getNumberOfBlocks()
 void getBlockBounds()
 void getBlockSize()
 void getBlockParent()
 void getNumberOfLeaves()
-void getLeaves()
+void getBlockLeaves()
 }
 
 Problem <|-- ColoringProblem
