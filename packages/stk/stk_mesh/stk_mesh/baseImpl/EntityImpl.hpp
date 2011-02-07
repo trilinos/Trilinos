@@ -40,7 +40,7 @@ public:
   PairIterEntityComm sharing() const ;
   PairIterEntityComm comm( const Ghosting & sub ) const ;
   Bucket & bucket() const {
-    ThrowRequire(m_bucket); //don't want to return a reference to a null bucket
+    ThrowAssert(m_bucket); //don't want to return a reference to a null bucket
     return *m_bucket ;
   }
   Bucket* bucket_ptr() const {
