@@ -16,6 +16,7 @@ ADD_SUBDIRECTORIES(
   BlockMap
   BlockMultiVector
   VbrMatrix
+  inout
   )
 
 IF (Tpetra_ENABLE_BUGTESTS)

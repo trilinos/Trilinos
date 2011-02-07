@@ -184,14 +184,18 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
     for (int p=1; p < Teuchos::size(*comm); ++p) {
       size_t numRowsForP;
       Teuchos::receive(*comm,p,&numRowsForP);
-      Teuchos::send<int,size_t>(*comm,numRowsForP,nnzPerRow(numRowsAlreadyDistributed,numRowsForP).getRawPtr(),p);
-      numRowsAlreadyDistributed += numRowsForP;
+      if (numRowsForP) {
+        Teuchos::send<int,size_t>(*comm,numRowsForP,nnzPerRow(numRowsAlreadyDistributed,numRowsForP).getRawPtr(),p);
+        numRowsAlreadyDistributed += numRowsForP;
+      }
     }
   }
   else {
     const size_t numMyRows = rowMap->getNodeNumElements();
     Teuchos::send(*comm,numMyRows,0);
-    Teuchos::receive<int,size_t>(*comm,0,numMyRows,myNNZ(0,numMyRows).getRawPtr());
+    if (numMyRows) {
+      Teuchos::receive<int,size_t>(*comm,0,numMyRows,myNNZ(0,numMyRows).getRawPtr());
+    }
   }
   nnzPerRow = Teuchos::null;
   // create column map

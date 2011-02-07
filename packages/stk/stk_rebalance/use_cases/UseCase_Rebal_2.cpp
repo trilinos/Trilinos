@@ -216,19 +216,11 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
   Teuchos::ParameterList emptyList;
   stk::rebalance::Zoltan zoltan_partition(pm, fixture.m_spatial_dimension, emptyList);
 
-  // Force a rebalance by using imbalance_threshold < 1.0
-  double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, imbalance_threshold);
-  // Coordinates are passed to support geometric-based load balancing algorithms
-  if( do_rebal )
-    stk::rebalance::rebalance(bulk, meta.universal_part(), &fixture.m_coord_field, &weight_field, zoltan_partition);
+  stk::rebalance::rebalance(bulk, meta.universal_part(), &fixture.m_coord_field, &weight_field, zoltan_partition);
 
-  if( 3 == p_size ) // Zoltan does not do so well for 3 procs
-    imbalance_threshold = 1.45;
-  else // ... but does pretty well for 2 and 4 procs
-    imbalance_threshold = 1.1;
-
-  do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, imbalance_threshold);
+  const double imbalance_threshold = ( 3 == p_size )? 1.45 // Zoltan does not do so well for 3 procs
+                                                    : 1.1; // ... but does pretty well for 2 and 4 procs
+  const bool do_rebal = imbalance_threshold < stk::rebalance::check_balance(bulk, &weight_field, element_rank);
 
   if( 0 == p_rank )
     std::cerr << std::endl 

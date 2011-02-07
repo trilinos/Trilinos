@@ -19,6 +19,8 @@
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
 
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
+
 //----------------------------------------------------------------------
 
 using namespace stk::mesh::fixtures;
@@ -92,15 +94,10 @@ bool test_unequal_weights( stk::ParallelMachine pm )
 
   stk::mesh::Selector selector(meta.universal_part());
 
-  // Force a rebalance by using imbalance_threshold < 1.0
-  double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, imbalance_threshold);
-  // Coordinates are passed to support geometric-based load balancing algorithms
-  if( do_rebal )
-    stk::rebalance::rebalance(bulk, selector, &fixture.m_coord_field, &weight_field, zoltan_partition);
+  stk::rebalance::rebalance(bulk, selector, &fixture.m_coord_field, &weight_field, zoltan_partition);
 
-  imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, imbalance_threshold);
+  const double imbalance_threshold = stk::rebalance::check_balance(bulk, &weight_field, element_rank);
+  const bool do_rebal = 1.5 < imbalance_threshold;
 
   if( 0 == p_rank )
     std::cerr << std::endl 
