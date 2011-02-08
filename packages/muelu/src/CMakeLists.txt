@@ -46,7 +46,7 @@ APPEND_SET(HEADERS
   Smoothers/MueLu_SmootherBase.hpp
   Smoothers/MueLu_SmootherFactoryBase.hpp
   Smoothers/MueLu_SmootherFactory.hpp
-  Smoothers/MueLu_Smoother.hpp
+#  Smoothers/MueLu_Smoother.hpp
   Smoothers/MueLu_IfpackSmoother.hpp
   Smoothers/MueLu_AmesosSmoother.hpp
   Graph/MueLu_AggAlgorithm.hpp
