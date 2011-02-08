@@ -70,7 +70,7 @@ TEUCHOS_UNIT_TEST(Amesos, NotSetup)
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
 
   //try applying without setting up
-  TEST_THROW( smoother->Apply(X,RHS) , MueLu::Exceptions::RuntimeError );
+  TEST_THROW( smoother->Apply(*X,*RHS) , MueLu::Exceptions::RuntimeError );
   TEST_THROW( smoother->SetNIts(5), MueLu::Exceptions::RuntimeError );
 
 }
@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST(Amesos, KLUSolve)
   res = Utils::ResidualNorm(*Op,*X,*RHS);
   out << "||initial residual|| = " << res[0] << std::endl;
 
-  smoother->Apply(X,RHS);
+  smoother->Apply(*X,*RHS);
   res = Utils::ResidualNorm(*Op,*X,*RHS);
   out << "||final residual|| = " << res[0] << std::endl;
   TEUCHOS_TEST_EQUALITY(res[0] < 1e-12,true,out,success)

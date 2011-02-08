@@ -81,6 +81,12 @@ namespace MueLu {
       return *epVec;
     } //MV2EpetraMV
 
+    static Epetra_MultiVector const& MV2EpetraMV(MultiVector const &Vec) {
+      EpetraMultiVector const &tmpVec = dynamic_cast<EpetraMultiVector const&>(Vec);
+      RCP<Epetra_MultiVector const> epVec = tmpVec.getEpetra_MultiVector();
+      return *epVec;
+    } //MV2EpetraMV
+
     //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Cthulhu::Operator.
    static RCP<const Epetra_CrsMatrix> Op2EpetraCrs(RCP<Operator> Op) {
       RCP<const Epetra_CrsMatrix> A;

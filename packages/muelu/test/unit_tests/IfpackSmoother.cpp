@@ -70,7 +70,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, NotSetup)
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
 
   //try applying without setting up
-  TEST_THROW( smoother->Apply(X,RHS) , MueLu::Exceptions::RuntimeError );
+  TEST_THROW( smoother->Apply(*X,*RHS) , MueLu::Exceptions::RuntimeError );
   TEST_THROW( smoother->SetNIts(5), MueLu::Exceptions::RuntimeError );
 
 }
@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
   X->putScalar( (SC) 0.0);
 
   out << "Applying one GS sweep" << std::endl;
-  smoother->Apply(X,RHS);
+  smoother->Apply(*X,*RHS);
   Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms;
   norms = Utils::ResidualNorm(*Op,*X,*RHS);
   TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],6.04555396884098,1e-12,out,success)
@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
   TEUCHOS_TEST_EQUALITY(smoother->GetNIts(),50,out,success);
   out << "Applying " << numIts << " GS sweeps" << std::endl;
   X->putScalar( (SC) 0.0);
-  smoother->Apply(X,RHS);
+  smoother->Apply(*X,*RHS);
   norms = Utils::ResidualNorm(*Op,*X,*RHS);
   TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],0.00912675857196253,1e-12,out,success)
 

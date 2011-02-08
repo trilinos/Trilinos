@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   X->putScalar( (SC) 0.0);
 
   H.PrintResidualHistory(true);
-  H.Iterate(RHS,its,X);
+  H.Iterate(*RHS,its,*X);
 
   epX->Norm2(&n);
   std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;

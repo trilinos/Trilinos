@@ -37,7 +37,8 @@ class SmootherBase : public Needs {
     //@{
 
     //! Apply smoother.
-    virtual void Apply(RCP<MultiVector> x, RCP<MultiVector> const rhs, bool InitialGuessIsZero) = 0;
+    //virtual void Apply(RCP<MultiVector> x, RCP<MultiVector> const rhs, bool InitialGuessIsZero) = 0;
+    virtual void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero) = 0;
 
     //@}
 

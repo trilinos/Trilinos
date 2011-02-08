@@ -139,20 +139,18 @@ class Level;
         @param B right-hand side
         @param InitialGuessIsZero This option has no effect.
     */
-    void Apply(RCP<MultiVector> X, RCP<MultiVector> const B, bool InitialGuessIsZero=false)
+    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false)
     {
       if (!SmootherPrototype::IsSetup())
         throw(Exceptions::RuntimeError("Setup has not been called"));
 
-      //RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
-      //RCP<Epetra_MultiVector> epB = Utils::MV2NonConstEpetraMV(B);//FIXME Amesos wants a nonconst B!
-      //AmesosLinearProblem->SetLHS(&*epX); //FIXME RCP probably has a safer way to do this
-      //AmesosLinearProblem->SetRHS(&*epB); //FIXME RCP probably has a safer way to do this
-
-      Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(*X);
-      Epetra_MultiVector &epB = Utils::MV2NonConstEpetraMV(*B);
-      AmesosLinearProblem->SetLHS(&epX); //FIXME RCP probably has a safer way to do this
-      AmesosLinearProblem->SetRHS(&epB); //FIXME RCP probably has a safer way to do this
+      Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
+      Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
+      //Epetra_LinearProblem takes the right-hand side as a non-const pointer.
+      //I think this const_cast is safe because Amesos won't modify the rhs.
+      Epetra_MultiVector &nonconstB = const_cast<Epetra_MultiVector&>(epB);
+      AmesosLinearProblem->SetLHS(&epX);
+      AmesosLinearProblem->SetRHS(&nonconstB);
 
       prec_->Solve();
 

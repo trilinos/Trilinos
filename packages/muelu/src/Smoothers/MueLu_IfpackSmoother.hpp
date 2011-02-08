@@ -147,7 +147,7 @@ class Level;
         @param B right-hand side
         @param InitialGuessIsZero (optional) If false, some work can be avoided.  Whether this actually saves any work depends on the underlying Ifpack implementation.
     */
-    void Apply(RCP<MultiVector> X, RCP<MultiVector> const B, bool InitialGuessIsZero=false)
+    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false)
     {
       if (!SmootherPrototype::IsSetup())
         throw(Exceptions::RuntimeError("Setup has not been called"));
@@ -155,12 +155,9 @@ class Level;
       ifpackList.set("relaxation: zero starting solution", InitialGuessIsZero);
       prec_->SetParameters(ifpackList);
 
-      //RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
-      //RCP<const Epetra_MultiVector> epB = Utils::MV2NonConstEpetraMV(B);
-      Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(*X);
-      Epetra_MultiVector const &epB = Utils::MV2NonConstEpetraMV(*B);
+      Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
+      Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
 
-      //prec_->ApplyInverse(*epB,*epX);
       prec_->ApplyInverse(epB,epX);
     }
 

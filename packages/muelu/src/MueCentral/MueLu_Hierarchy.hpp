@@ -325,7 +325,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        @param InitialGuessIsZero Currently does nothing. FIXME
        @param Cycle Supports VCYCLE and WCYCLE types.
      */
-     void Iterate(RCP<MultiVector> const &B, LO nIts, RCP<MultiVector> &X,
+     void Iterate(MultiVector const &B, LO nIts, MultiVector &X,
                   bool const &InitialGuessIsZero=false, CycleType const &Cycle=VCYCLE, LO const &startLevel=0)
      {
        //Teuchos::Array<Magnitude> norms(1);
@@ -340,13 +340,13 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                  << std::setiosflags(ios::left)
                  << std::setprecision(3) << i;
            *out_ << "           residual = "
-                 << std::setprecision(10) << Utils::ResidualNorm(*(Fine->GetA()),*X,*B)
+                 << std::setprecision(10) << Utils::ResidualNorm(*(Fine->GetA()),X,B)
                  << std::endl;
          }
          RCP<SmootherPrototype> preSmoo = Fine->GetPreSmoother();
          RCP<SmootherPrototype> postSmoo = Fine->GetPostSmoother();
 
-         //X->norm2(norms);
+         //X.norm2(norms);
 
          //If on the coarse level, do either smoothing (if defined) or a direct solve.
          if (startLevel == Levels_.size()-1) //FIXME is this right?
@@ -362,29 +362,29 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            if (preSmoo != Teuchos::null)
              preSmoo->Apply(X, B, false);
 
-           RCP<MultiVector> residual = Utils::Residual(*(Fine->GetA()),*X,*B);
+           RCP<MultiVector> residual = Utils::Residual(*(Fine->GetA()),X,B);
            RCP<Operator> R = Coarse->GetR();
-           RCP<MultiVector> coarseRhs = MultiVectorFactory::Build(R->getRowMap(),X->getNumVectors());
+           RCP<MultiVector> coarseRhs = MultiVectorFactory::Build(R->getRowMap(),X.getNumVectors());
            R->multiply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
 
-           RCP<MultiVector> coarseX = MultiVectorFactory::Build(R->getRowMap(),X->getNumVectors());
+           RCP<MultiVector> coarseX = MultiVectorFactory::Build(R->getRowMap(),X.getNumVectors());
            coarseX->putScalar(0.);
 
-           Iterate(coarseRhs,1,coarseX,true,Cycle,startLevel+1);
+           Iterate(*coarseRhs,1,*coarseX,true,Cycle,startLevel+1);
                                      // ^^ zero initial guess
            if (Cycle>1)
-             Iterate(coarseRhs,1,coarseX,false,Cycle,startLevel+1);
+             Iterate(*coarseRhs,1,*coarseX,false,Cycle,startLevel+1);
                                      // ^^ nonzero initial guess
      
            RCP<Operator> P = Coarse->GetP();
-           RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRowMap(),X->getNumVectors());
+           RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRowMap(),X.getNumVectors());
            P->multiply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
            //correction->norm2(norms);
 
-           X->update(1.0,*correction,1.0);
+           X.update(1.0,*correction,1.0);
 
            if (postSmoo != Teuchos::null) {
-             //X->norm2(norms);
+             //X.norm2(norms);
              postSmoo->Apply(X, B, false);
            }
          }
