@@ -64,8 +64,7 @@ ReorderedMappingStrategy::ReorderedMappingStrategy(const BlockReorderManager & b
 }
 
 void ReorderedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
-                                                 const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X,
-                                                 const Teko::Epetra::EpetraOperatorWrapper & eow) const
+                                                 const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X) const
 {
    using Teuchos::ptr_const_cast;
    using Teuchos::rcp_const_cast;
@@ -75,19 +74,18 @@ void ReorderedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
    RCP<Thyra::MultiVectorBase<double> > flat_X = buildFlatMultiVector(reorderManager_,prod_X);
 
    // now use the underlying mapping strategy to copy the flat vector 
-   mapStrategy_->copyEpetraIntoThyra(X,flat_X.ptr(),eow);
+   mapStrategy_->copyEpetraIntoThyra(X,flat_X.ptr());
 }
 
 void ReorderedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyra_Y,
-                                                 Epetra_MultiVector& Y,
-                                                 const Teko::Epetra::EpetraOperatorWrapper & eow) const
+                                                 Epetra_MultiVector& Y) const 
 {
    // first flatten the vector: notice this just works on the block structure
    RCP<const Thyra::ProductMultiVectorBase<double> > prod_Y = rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<double> >(rcpFromRef(*thyra_Y));
    RCP<const Thyra::MultiVectorBase<double> > flat_Y = buildFlatMultiVector(reorderManager_,prod_Y);
 
    // now use the underlying mapping strategy to copy the flat vector 
-   mapStrategy_->copyThyraIntoEpetra(flat_Y,Y,eow);
+   mapStrategy_->copyThyraIntoEpetra(flat_Y,Y);
 }
 
 } // end namespace Epetra

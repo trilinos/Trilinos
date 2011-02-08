@@ -63,13 +63,13 @@ void MLLinearOp::implicitApply(const BlockedMultiVector & x, BlockedMultiVector 
 
    // initialize Epetra vectors
    eY_->PutScalar(0.0);
-   mappingStrategy_->copyThyraIntoEpetra(x, *eX_,*Amat_);
+   mappingStrategy_->copyThyraIntoEpetra(x, *eX_);
 
    // run multigrid
    mlPrecOp_->ApplyInverse(*eX_,*eY_);
 
    // fill thyra vectors
-   mappingStrategy_->copyEpetraIntoThyra(*eY_, yCopy.ptr(),*Amat_);
+   mappingStrategy_->copyEpetraIntoThyra(*eY_, yCopy.ptr());
 
    // scale result by alpha
    if(beta!=0)
