@@ -456,6 +456,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
         }
       }
 
+      // The rest of this code is just error handling
       if ( bad_key || bad_own || bad_comm || bad_part || bad_rel ) {
         error_log << "P" << p_rank << ": " ;
         print_entity_key( error_log , meta, entity.key() );

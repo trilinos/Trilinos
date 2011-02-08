@@ -90,7 +90,7 @@ bool insert( PartVector & v , Part & part )
 
   const bool new_member = i == e || *i != & part ;
 
-  if ( new_member ) { Part * const tmp = & part ; v.insert( i , tmp ); }
+  if ( new_member ) { v.insert( i , &part ); }
   return new_member ;
 }
 

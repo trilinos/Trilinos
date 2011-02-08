@@ -188,45 +188,52 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
   // When removing a relationship may need to
   // remove part membership and set field relation pointer to NULL
 
-  PartVector del , keep ;
+  if ( parallel_size() < 2 || e_to.sharing().empty() ) {
 
-  for ( PairIterRelation i = e_to.relations() ; i.first != i.second ; ++(i.first) ) {
+    //------------------------------
+    // 'keep' contains the parts deduced from kept relations
+    // 'del'  contains the parts deduced from deleted relations
+    //        that are not in 'keep'
+    // Only remove these part memberships the entity is not shared.
+    // If the entity is shared then wait until modificaton_end_synchronize.
+    //------------------------------
 
-    if ( !( i.first->entity() == & e_from )  &&
-        ( e_to.entity_rank() < i.first->entity_rank() ) )
-    {
-      induced_part_membership( * i.first->entity(), del, e_to.entity_rank(),
-                               i.first->identifier(), keep );
+    PartVector del, keep, empty;
+
+    for ( PairIterRelation i = e_to.relations() ; i.first != i.second ; ++(i.first) ) {
+      if ( !( i.first->entity() == & e_from )  &&
+           ( e_to.entity_rank() < i.first->entity_rank() ) )
+      {
+        induced_part_membership( * i.first->entity(), empty, e_to.entity_rank(),
+                                 i.first->identifier(), keep );
+      }
+    }
+
+    for ( PairIterRelation i = e_from.relations() ; i.first != i.second ; ++(i.first) ) {
+      if ( i.first->entity() == & e_to ) {
+        induced_part_membership( e_from, keep, e_to.entity_rank(),
+                                 i.first->identifier(), del );
+        clear_field_relations( e_from , e_to.entity_rank() ,
+                               i.first->identifier() );
+      }
+    }
+
+    if ( !del.empty() ) {
+      internal_change_entity_parts( e_to , empty , del );
     }
   }
-
-  for ( PairIterRelation i = e_from.relations() ; i.first != i.second ; ++(i.first) ) {
-    if ( i.first->entity() == & e_to ) {
-
-      induced_part_membership( e_from, keep, e_to.entity_rank(),
-                               i.first->identifier(), del );
-
-      clear_field_relations( e_from , e_to.entity_rank() ,
-                             i.first->identifier() );
+  else {
+    // Just clear the field, part membership will be handled by modification end
+    for ( PairIterRelation i = e_from.relations() ; i.first != i.second ; ++(i.first) ) {
+      if ( i.first->entity() == & e_to ) {
+        clear_field_relations( e_from , e_to.entity_rank() ,
+                               i.first->identifier() );
+      }
     }
-  }
-
-  //------------------------------
-  // 'keep' contains the parts deduced from kept relations
-  // 'del'  contains the parts deduced from deleted relations
-  //        that are not in 'keep'
-  // Only remove these part memberships the entity is not shared.
-  // If the entity is shared then wait until modificaton_end_synchronize.
-  //------------------------------
-
-  if ( ! del.empty() && (parallel_size() < 2 || e_to.sharing().empty()) ) {
-    PartVector add ;
-    internal_change_entity_parts( e_to , add , del );
   }
 
   //delete relations from the entities
   m_entity_repo.destroy_relation( e_from, e_to);
-
 }
 
 //----------------------------------------------------------------------
