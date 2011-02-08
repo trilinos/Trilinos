@@ -128,5 +128,68 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
 
 }
 
+TEUCHOS_UNIT_TEST(IfpackSmoother, Chebyshev)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  out << "version: " << MueLu::Version() << std::endl;
+
+  RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  RCP<CrsOperator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(125);
+
+  Teuchos::ParameterList  ifpackList;
+  ifpackList.set("chebyshev: degree", (int) 1);
+  ifpackList.set("chebyshev: max eigenvalue", (double) 2.0);
+  ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
+  ifpackList.set("chebyshev: zero starting solution", false);
+  RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("Chebyshev",ifpackList) );
+  Level aLevel;
+  aLevel.SetA(Op);
+
+  RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getDomainMap(),1);
+  RHS->putScalar( (SC) 0.0);
+
+  smoother->Setup(aLevel);
+
+  RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
+  epX->SetSeed(846930886);
+  X->randomize();
+  double n;
+  epX->Norm2(&n);
+  X->scale(1/n);
+  epX->Norm2(&n);
+  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
+  //Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+
+  int numIts = 1;
+  out << "Applying degree " << numIts << " Chebyshev smoother" << std::endl;
+  smoother->SetNIts(numIts);
+  smoother->Apply(*X,*RHS);
+  epX->Norm2(&n);
+  out << "||X_1|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << n << std::endl;
+  TEUCHOS_TEST_EQUALITY(n<0.7,true,out,success);  //FIXME should calculate reduction analytically
+
+  numIts = 10;
+  smoother->SetNIts(numIts);
+  TEUCHOS_TEST_EQUALITY(smoother->GetNIts(),10,out,success);
+  out << "Applying degree " << numIts << " Chebyshev smoother" << std::endl;
+  epX->SetSeed(846930886);
+  X->randomize();
+  epX->Norm2(&n);
+  X->scale(1/n);
+  epX->Norm2(&n);
+  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << n << std::endl;
+  smoother->Apply(*X,*RHS);
+  epX->Norm2(&n);
+  out << "||X_" << std::setprecision(2) << numIts << "|| = " << std::setiosflags(ios::fixed) <<
+std::setprecision(20) << n << std::endl;
+  TEUCHOS_TEST_EQUALITY(n<0.25,true,out,success);  //FIXME should calculate reduction analytically
+
+}
+
 }//namespace <anonymous>
 
