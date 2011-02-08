@@ -76,7 +76,6 @@ class Level;
     AmesosSmoother(std::string const & type, Teuchos::ParameterList const & list)
       : amesosType_(type), list_(list), out_(this->getOStream())
     {
-      MueLu_cout(Teuchos::VERB_HIGH) << "Instantiating a new Amesos smoother" << std::endl;
       SmootherBase::SetType(type);
     }
 
@@ -109,7 +108,7 @@ class Level;
     */
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
-      MueLu_cout(Teuchos::VERB_HIGH) << "AmesosSmoother::Setup()" << std::endl;
+      //MueLu_cout(Teuchos::VERB_HIGH) << "AmesosSmoother::Setup()" << std::endl;
       SmootherPrototype::IsSetup(true);
       A_ = level.GetA();
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);

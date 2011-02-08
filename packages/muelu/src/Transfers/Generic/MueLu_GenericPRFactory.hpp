@@ -44,8 +44,8 @@ class GenericPRFactory : public PRFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
     */
     GenericPRFactory(RCP<PFactory> PFact=Teuchos::null, RCP<RFactory> RFact=Teuchos::null)
     {
-      Teuchos::OSTab tab(this->out_);
-      MueLu_cout(Teuchos::VERB_HIGH) << "GenericPRFactory: Instantiating a new factory" << std::endl;
+      //Teuchos::OSTab tab(this->out_);
+      //MueLu_cout(Teuchos::VERB_HIGH) << "GenericPRFactory: Instantiating a new factory" << std::endl;
 
       if (PFact != Teuchos::null)
         PFact_ = PFact;

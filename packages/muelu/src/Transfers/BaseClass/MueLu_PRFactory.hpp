@@ -32,8 +32,8 @@ class PRFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,N
     //! Constructor.
     PRFactory() : maxCoarseSize_(50), reUseGraph_(false), reUseAggregates_(false)
     {
-      Teuchos::OSTab tab(this->out_);
-      MueLu_cout(Teuchos::VERB_HIGH) << "PRFactory: Instantiating a new factory" << std::endl;
+      //Teuchos::OSTab tab(this->out_);
+      //MueLu_cout(Teuchos::VERB_HIGH) << "PRFactory: Instantiating a new factory" << std::endl;
     }
 
     //! Destructor.

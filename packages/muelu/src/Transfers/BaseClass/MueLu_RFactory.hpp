@@ -34,8 +34,8 @@ class RFactory : public Teuchos::VerboseObject<RFactory<ScalarType,LocalOrdinal,
     //! Constructor.
     RFactory() : out_(this->getOStream())
     {
-      Teuchos::OSTab tab(this->out_);
-      MueLu_cout(Teuchos::VERB_HIGH) << "RFactory: Instantiating a new factory" << std::endl;
+      //Teuchos::OSTab tab(this->out_);
+      //MueLu_cout(Teuchos::VERB_HIGH) << "RFactory: Instantiating a new factory" << std::endl;
     }
 
     //! Destructor.

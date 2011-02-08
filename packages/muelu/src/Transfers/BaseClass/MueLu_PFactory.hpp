@@ -37,8 +37,8 @@ class PFactory : public Teuchos::VerboseObject<PFactory<ScalarType,LocalOrdinal,
     //! Constructor.
     PFactory() : reUseGraph_(false), reUseAggregates_(false), out_(this->getOStream())
     {
-      Teuchos::OSTab tab(this->out_);
-      MueLu_cout(Teuchos::VERB_HIGH) << "PFactory: Instantiating a new factory" << std::endl;
+      //Teuchos::OSTab tab(this->out_);
+      //MueLu_cout(Teuchos::VERB_HIGH) << "PFactory: Instantiating a new factory" << std::endl;
     }
 
     //! Destructor.

@@ -108,9 +108,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                        Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
                        int const &startLevel=0, int const &numDesiredLevels=10 )
      {
-       Teuchos::OSTab tab(out_);
-       MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::FullPopulate()" << std::endl;
-
        if (PRFact == Teuchos::null) {
          RCP<SaPFactory> SaPFact = rcp( new SaPFactory() );
          PRFact = rcp( new GenericPRFactory(SaPFact));
@@ -188,8 +185,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                         OperatorFactory const &AcFact,
                         int startLevel=0, int numDesiredLevels=10 )
      {
-       Teuchos::OSTab tab(out_);
-       MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::FillHierachy()" << std::endl;
 
        RCP<Operator> A = Levels_[startLevel]->GetA();
        Cthulhu::global_size_t fineNnz = A->getGlobalNumEntries();
@@ -200,7 +195,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        while (i < startLevel + numDesiredLevels - 1)
        {
          if ( (i+1) >= (int) Levels_.size() || Levels_[i+1] == Teuchos::null ) {
-           Teuchos::OSTab tab2(out_);
            Levels_.push_back( Levels_[i]->Build(*out_) );
          }
          Levels_[i+1]->SetLevelID(i+1);
@@ -282,9 +276,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      */
      void SetSmoothers(SmootherFactory const &smooFact, LO const &startLevel=0, LO numDesiredLevels=-1)
      {
-       Teuchos::OSTab tab(out_);
-       MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::SetSmoothers()" << std::endl;
-
        if (numDesiredLevels == -1)
          numDesiredLevels = GetNumberOfLevels()-startLevel;
        LO lastLevel = startLevel + numDesiredLevels - 1;

@@ -52,12 +52,12 @@ namespace MueLu {
     //! @name Constructors / Destructors
     Level() : A_(0), R_(0), P_(0), levelID_(-1), out_(this->getOStream())
     {
-      Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Instantiating new uninitialized Level" << std::endl;
+      //Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Instantiating new uninitialized Level" << std::endl;
     }
 
     //! Copy constructor.
     Level(Level const &Source) : out_(this->getOStream()) {
-      Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Copy constructing existing Level" << std::endl;
+      //Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Copy constructing existing Level" << std::endl;
       A_ = Source.A_;
       R_ = Source.R_;
       P_ = Source.P_;
@@ -69,7 +69,6 @@ namespace MueLu {
     //! @name Build methods
     //! Builds a new Level object.
     static Teuchos::RCP<Level> Build(std::ostream &os) {
-      os << "Building a Level" << std::endl;
       return Teuchos::rcp( new Level() );
     }
     //@}

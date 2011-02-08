@@ -67,8 +67,8 @@ class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, L
     {
       PFactory::reUseGraph_=false;
       PFactory::reUseAggregates_=false;
-      Teuchos::OSTab tab(this->out_);
-      MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Instantiating a new factory" << std::endl;
+      //Teuchos::OSTab tab(this->out_);
+      //MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Instantiating a new factory" << std::endl;
     }
 
     //! Destructor.
@@ -87,8 +87,6 @@ class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, L
     */
     bool BuildP(Level &fineLevel, Level &coarseLevel) const {
       Teuchos::OSTab tab(this->out_);
-      MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Building a prolongator" << std::endl;
-
 
       RCP<Operator> finalP;
 

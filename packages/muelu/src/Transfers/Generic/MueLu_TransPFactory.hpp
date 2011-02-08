@@ -31,8 +31,8 @@ namespace MueLu {
 
     //! Constructor.
     TransPFactory() {
-      Teuchos::OSTab tab(this->out_);
-      MueLu_cout(Teuchos::VERB_HIGH) << "TransPFactory: Instantiating a new factory" << std::endl;
+      //Teuchos::OSTab tab(this->out_);
+      //MueLu_cout(Teuchos::VERB_HIGH) << "TransPFactory: Instantiating a new factory" << std::endl;
     }
 
     //! Destructor.
@@ -43,7 +43,6 @@ namespace MueLu {
     //@{
     bool BuildR(Level & fineLevel, Level & coarseLevel) {
       Teuchos::OSTab tab(this->out_);
-      MueLu_cout(Teuchos::VERB_HIGH) << "TransPFactory: Building a restriction operator" << std::endl;
       Teuchos::ParameterList matrixList;
       RCP<Operator> P = coarseLevel.GetP();
       //doesn't work -- bug in EpetraExt?
