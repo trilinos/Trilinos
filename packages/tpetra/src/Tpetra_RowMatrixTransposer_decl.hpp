@@ -66,7 +66,7 @@ class RowMatrixTransposer {
     \return Pointer to a Tpetra_CrsMatrixTransposer object.
 
   */ 
-  RowMatrixTransposer(const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix);
+  RowMatrixTransposer(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix);
 
   //! Tpetra_CrsMatrixTransposer destructor.
   
@@ -90,12 +90,12 @@ class RowMatrixTransposer {
 	
  private: 
 	//The original matrix to be transposed.
-	const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix_;
+	const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix_;
 	//The matrix in which the result of the tranpose is placed.
-	Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > transposeMatrix_;
+	RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > transposeMatrix_;
 	//Whether or not to optimize the storage of the transpose matrix.
 	OptimizeOption optimizeTranspose_;	
-	const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+	const RCP<const Teuchos::Comm<int> > comm_;
 	GlobalOrdinal indexBase_;
 };
 

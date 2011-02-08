@@ -57,34 +57,8 @@ namespace Tpetra {
       a usage example.
    */
   
-template <
-  class Scalar, 
-  class LocalOrdinal  = int, 
-  class GlobalOrdinal = LocalOrdinal, 
-  class Node = Kokkos::DefaultNode::DefaultNodeType, 
-  class SpMatOps = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
-class MatrixMatrix {
-public:
+namespace MatrixMatrix {
 
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node, SpMatOps> 
-      CrsGraph_t;
-    typedef CrsMatrix<
-      Scalar, 
-      LocalOrdinal,
-      GlobalOrdinal,
-      Node,
-      SpMatOps> CrsMatrix_t;
-
-    typedef CrsMatrixStruct<
-      Scalar, 
-      LocalOrdinal,
-      GlobalOrdinal,
-      Node,
-      SpMatOps> CrsMatrixStruct_t;
-
-    /** destructor */
-  virtual ~MatrixMatrix(){}
 
     /** Given CrsMatrix objects A, B and C, form the product C = A*B.
   In a parallel setting, A and B need not have matching distributions,
@@ -111,12 +85,17 @@ public:
              B are not already Filled, or if errors occur in putting values
              into C, etc.
      */
-static void Multiply(
-  Teuchos::RCP<const CrsMatrix_t > A,
+template <class Scalar, 
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node,
+           class SpMatOps >
+void Multiply(
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
   bool transposeA,
-  Teuchos::RCP<const CrsMatrix_t > B,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
   bool transposeB,
-  Teuchos::RCP<CrsMatrix_t > C,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C,
   bool call_FillComplete_on_result=true);
 
     /** Given CrsMatrix objects A and B, form the sum B = a*A + b*B
@@ -134,12 +113,17 @@ static void Multiply(
              not already Filled, or if errors occur in putting values
              into B, etc.
      */
-  static void Add(
-    RCP<const CrsMatrix_t > A,
-    bool transposeA,
-    Scalar scalarA,
-    RCP<CrsMatrix_t > B,
-    Scalar scalarB );
+template <class Scalar, 
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class SpMatOps >
+void Add(
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
+  bool transposeA,
+  Scalar scalarA,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
+  Scalar scalarB );
 
     /** Given CrsMatrix objects A and B, form the sum C = a*A + b*B
 
@@ -159,82 +143,108 @@ static void Multiply(
              not already Filled, or if errors occur in putting values
              into C, etc.
      */
-  static void Add(
-    RCP<const CrsMatrix_t > A,
-    bool transposeA,
-    Scalar scalarA,
-    RCP<const CrsMatrix_t > B,
-    bool transposeB,
-    Scalar scalarB,
-    RCP<CrsMatrix_t > C);
+template <class Scalar, 
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class SpMatOps>
+void Add(
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
+  bool transposeA,
+  Scalar scalarA,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
+  bool transposeB,
+  Scalar scalarB,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C);
+} //End Namespace MatrixMatrxix
 
-  static Teuchos::RCP<const Map_t >
-  find_rows_containing_cols(
-    Teuchos::RCP<const CrsMatrix_t > M,
-    Teuchos::RCP<const Map_t > colmap);
+namespace MMdetails{
 
-private:
+template<class Scalar, 
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node, 
+         class SpMatOps>
+RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap);
 
-static void mult_A_B(
-  Teuchos::RCP<CrsMatrixStruct_t >& Aview, 
-  Teuchos::RCP<CrsMatrixStruct_t >& Bview,
+
+template<class Scalar, 
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node, 
+         class SpMatOps>
+void mult_A_B(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview, 
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
   
-static void mult_A_Btrans(
-  const Teuchos::RCP<const CrsMatrixStruct_t> & Aview, 
-  const Teuchos::RCP<const CrsMatrixStruct_t> & Bview,
+template<class Scalar,
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node,
+         class SpMatOps>
+void mult_A_Btrans(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
+  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C);
+
+template<class Scalar,
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node,
+         class SpMatOps>
+void mult_Atrans_B(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
+  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C);
+
+template<class Scalar,
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node,
+         class SpMatOps>
+void mult_Atrans_Btrans(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
 
-static void mult_Atrans_B(
-  Teuchos::RCP<CrsMatrixStruct_t >& Aview, 
-  Teuchos::RCP<CrsMatrixStruct_t >& Bview,
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>&  C);
+template<class Scalar,
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node,
+         class SpMatOps>
+void import_and_extract_views(
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview);
 
-static void mult_Atrans_Btrans(
-  Teuchos::RCP<CrsMatrixStruct_t >& Aview, 
-  Teuchos::RCP<CrsMatrixStruct_t >& Bview,
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
-
-static void import_and_extract_views(
-  Teuchos::RCP<const CrsMatrix_t >& M,
-  Teuchos::RCP<const Map_t >& targetMap,
-  Teuchos::RCP<CrsMatrixStruct_t >& Mview);
-
-template<class Ordinal>
-static void distribute_list(
-  const Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm,
+template<class Ordinal,
+         class GlobalOrdinal>
+void distribute_list(
+  RCP<const Comm<Ordinal> > comm,
   size_t lenSendList,
-  const Teuchos::Array<GlobalOrdinal>& sendList,
+  const Array<GlobalOrdinal>& sendList,
   size_t& maxSendLen,
-  Teuchos::Array<GlobalOrdinal>& recvList);
+  Array<GlobalOrdinal>& recvList);
 
-static
-Teuchos::RCP<const Map_t > 
-create_map_from_imported_rows(
-  Teuchos::RCP<const Map_t > map,
-  size_t totalNumSend,
-  const Teuchos::ArrayView<const GlobalOrdinal> &sendRows,
-  int numProcs,
-  const Teuchos::ArrayView<const size_t> &numSendPerProc);
+template<class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node>
+RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > create_map_from_imported_rows(
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map,
+  const size_t totalNumSend,
+  const ArrayView<const GlobalOrdinal> &sendRows,
+  const int numProcs,
+  const ArrayView<const size_t> &numSendPerProc);
 
-static 
-Teuchos::RCP<const Map_t > 
-form_map_union(
-  Teuchos::RCP<const Map_t > map1,
-  Teuchos::RCP<const Map_t > map2);
-  
-};//class MatrixMatrix
-
-
-// CGB: If it isn't for public consumption, then hide it in a different namespace.
-namespace MMdebug {
-
-    RCP<Teuchos::FancyOStream> debug_stream;
-    Teuchos::EVerbosityLevel   debug_level;
-
-}
-
-namespace MMdetails {
+template<class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node>
+RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > form_map_union(
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map1,
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map2);
 
   /**
    * Method for internal use... sparsedot forms a dot-product between two
@@ -245,7 +255,19 @@ namespace MMdetails {
   Scalar sparsedot(const Teuchos::ArrayView<const Scalar> &u, const Teuchos::ArrayView<const LocalOrdinal> &u_ind, 
                    const Teuchos::ArrayView<const Scalar> &v, const Teuchos::ArrayView<const LocalOrdinal> &v_ind);
   
-} // end of MMdetails namespace
+}//end namespace MMdetails
+
+
+// CGB: If it isn't for public consumption, then hide it in a different namespace.
+namespace MMdebug {
+
+    RCP<Teuchos::FancyOStream> debug_stream;
+    Teuchos::EVerbosityLevel   debug_level;
+
+}
+
+
+  
 
 } // end of Tpetra namespace
 

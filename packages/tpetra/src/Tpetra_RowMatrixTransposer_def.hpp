@@ -35,8 +35,8 @@
 namespace Tpetra {
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::RowMatrixTransposer(const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix)
-  : origMatrix_(origMatrix), comm_(origMatrix->getComm()), indexBase_(origMatrix_->getIndexBase()) {}
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::RowMatrixTransposer(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix)
+  : origMatrix_(origMatrix), comm_(origMatrix.getComm()), indexBase_(origMatrix_.getIndexBase()) {}
 
 template<class Scalar, 
   class LocalOrdinal, 
@@ -52,10 +52,8 @@ template<class Scalar,
   class SpMatOps>
 void 
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (const OptimizeOption optimizeTranspose, 
-    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > &transposeMatrix/*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
+    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > &transposeMatrix/*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
 {
-  using Teuchos::RCP;
-  using Teuchos::Array;
 
   optimizeTranspose_ = optimizeTranspose;
   const size_t LST0 = Teuchos::OrdinalTraits<size_t>::zero();
@@ -80,7 +78,7 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
   // loop over all column indices, counting the number of non-zeros per column
   {
     const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &graph = 
-      *origMatrix_->getCrsGraph();
+      *origMatrix_.getCrsGraph();
     ArrayView<const LocalOrdinal> indices;
     for (LocalOrdinal r=LO0; (size_t)r<numMyRows;++r) {
       graph.getLocalRowView(r, indices);
@@ -104,13 +102,13 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
   // get local views, add the entries to the transposed arrays. 
   // indices are translated to global indices
   {
-    const Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap = *origMatrix_->getRowMap();
+    const Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap = *origMatrix_.getRowMap();
     ArrayView<const LocalOrdinal> indices;
     ArrayView<const Scalar> values;
     // clear these and use them for offsets into the current row
     std::fill( transNumNz.begin(), transNumNz.end(), 0 );
     for (LocalOrdinal lrow=LO0; (size_t)lrow<numMyRows; ++lrow) {
-      origMatrix_->getLocalRowView(lrow,indices,values);
+      origMatrix_.getLocalRowView(lrow,indices,values);
       const GlobalOrdinal grow = rowMap.getGlobalElement(lrow);
       for (size_t nnz=LO0; nnz<(size_t)indices.size(); ++nnz) {
         const LocalOrdinal transRow = indices[nnz];
@@ -123,7 +121,7 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
   }
 
   // we already have the matrix data, organized by row. too bad.
-  const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transRowMap = origMatrix_->getColMap();
+  const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transRowMap = origMatrix_.getColMap();
   transposeMatrix_ = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(transRowMap, transNumNz, Tpetra::StaticProfile));
   for (size_t c = GST0; c<numMyCols; ++c) {
     transposeMatrix_->insertGlobalValues(transRowMap->getGlobalElement(c), transIndices[c](), transValues[c]());
@@ -131,7 +129,7 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
 
   // const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > domain_map = origMatrix_->getDomainMap();
   // const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > range_map  = origMatrix_->getRangeMap();
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > origRowMap = origMatrix_->getRowMap();
+  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > origRowMap = origMatrix_.getRowMap();
 
   RCP<Teuchos::FancyOStream> out_all = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out_all->setOutputToRootOnly(-1);

@@ -106,7 +106,7 @@ template <class Scalar,
 	class SpMatOps= typename Kokkos::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
 class CrsWrapper_CrsMatrix : public CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>{
  public:
-  CrsWrapper_CrsMatrix(Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps > >& crsmatrix);
+  CrsWrapper_CrsMatrix(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps >& crsmatrix);
   virtual ~CrsWrapper_CrsMatrix();
 
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > getRowMap() const;
@@ -117,7 +117,7 @@ class CrsWrapper_CrsMatrix : public CrsWrapper<Scalar, LocalOrdinal, GlobalOrdin
   void sumIntoGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values);
 
  private:
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >& crsmat_;
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& crsmat_;
 };
 
 template<class Scalar,
@@ -142,13 +142,13 @@ class CrsWrapper_GraphBuilder : public CrsWrapper<Scalar, LocalOrdinal, GlobalOr
 
  private:
   std::map<GlobalOrdinal,std::set<GlobalOrdinal>*> graph_;
-  const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rowmap_;
+  const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rowmap_;
   global_size_t max_row_length_;
 };
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>& graphbuilder,
-                              Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >& C);
+                              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C);
 
 
 

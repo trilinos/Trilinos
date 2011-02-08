@@ -84,7 +84,7 @@ int dumpCrsMatrixStruct(const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdina
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
-CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::CrsWrapper_CrsMatrix(Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >& crsmatrix)
+CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::CrsWrapper_CrsMatrix(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& crsmatrix)
  : crsmat_(crsmatrix)
 {
 }
@@ -98,31 +98,27 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
 CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::getRowMap() const
 {
-  return crsmat_->getRowMap();
+  return crsmat_.getRowMap();
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 bool CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::isFillComplete()
 {
-  return crsmat_->isFillComplete();
+  return crsmat_.isFillComplete();
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 void
 CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::insertGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values)
 {
-  crsmat_->insertGlobalValues(globalRow, indices, values);
+  crsmat_.insertGlobalValues(globalRow, indices, values);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 void 
 CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::sumIntoGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values)
 {
-/*  std::cout << "summing" << std::endl;
-  std::cout << "  indices: " << indices << std::endl;
-  std::cout << "  values: " << values << std::endl;*/
-
-  crsmat_->sumIntoGlobalValues(globalRow, indices, values);
+  crsmat_.sumIntoGlobalValues(globalRow, indices, values);
 }
 
 
@@ -200,7 +196,7 @@ CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_graph()
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node> & graphbuilder,
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >& C)
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C)
 {
   global_size_t max_row_length = graphbuilder.get_max_row_length();
   if (max_row_length < 1) return;
@@ -221,7 +217,7 @@ void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, Globa
     // "copy" entries out of set into contiguous array storage
     const size_t num_entries = std::copy(cols.begin(), cols.end(), indices.begin()) - indices.begin();
     // insert zeros into the result matrix at the appropriate locations
-    C->insertGlobalValues(row, indices(0,num_entries), zeros(0,num_entries));
+    C.insertGlobalValues(row, indices(0,num_entries), zeros(0,num_entries));
   }
 }
 

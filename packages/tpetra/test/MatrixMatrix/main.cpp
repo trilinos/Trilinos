@@ -29,8 +29,7 @@ int test_find_rows(RCP<const Comm<Ordinal> > Comm)
   global_size_t numglobalrows = numprocs*numlocalrows;
   RCP<Map<int> > rowmap = 
     rcp(new Map<int>(numglobalrows, 0, Comm));
-  RCP<CrsMatrix<double, int> > matrix = 
-    rcp(new CrsMatrix<double, int>(rowmap, numglobalrows));
+  CrsMatrix<double, int> matrix(rowmap, numglobalrows);
 
   Array<int> cols(numglobalrows);
   Array<double> vals(numglobalrows);
@@ -45,23 +44,17 @@ int test_find_rows(RCP<const Comm<Ordinal> > Comm)
 
   for(int i=0; i<numlocalrows; ++i) {
     Array<int> row(1,localproc*numlocalrows+i);
-    matrix->insertGlobalValues(
+    matrix.insertGlobalValues(
       row[0], row.view(0,1),  vals.view(i,1) );
   }
 
-  matrix->fillComplete();
+  matrix.fillComplete();
 
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
+  typedef typename Kokkos::DefaultKernels<double, int, DNode>::SparseOps SpMatOps;
 
   RCP<const Map<int> > map_rows = 
-    MatrixMatrix<
-      double, 
-      int,
-      int,
-      DNode,
-      typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps
-      >::find_rows_containing_cols(
-      matrix.getConst(), colmap);
+    MMdetails::find_rows_containing_cols<double, int, int, DNode, SpMatOps>(matrix, colmap);
 
   if (map_rows->getNodeNumElements() != numglobalrows) {
     if(localproc ==0){
@@ -97,43 +90,19 @@ int add_test(
 
   computedC = rcp( new CrsMatrix<double,int>(rowmap, 1));
 
-  MatrixMatrix<
-    double, 
-    int,
-    int,
-    DNode,
-    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Add(A, false, 1.0, B, false, 1.0, computedC);
+  MatrixMatrix::Add(*A, false, 1.0, *B, false, 1.0, *computedC);
 
   computedC->fillComplete(C->getDomainMap(), C->getRangeMap());
 
-  MatrixMatrix<
-    double, 
-    int,
-    int,
-    DNode,
-    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Add(C, false, -1.0, computedC, 1.0);
+  MatrixMatrix::Add(*C, false, -1.0, *computedC, 1.0);
 
   double calculated_euc_norm = computedC->getEuclideanNorm();
   double c_euc_norm = C->getEuclideanNorm();
   double resultVal1 = calculated_euc_norm/c_euc_norm;
 
-  MatrixMatrix<
-    double, 
-    int,
-    int,
-    DNode,
-    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Add(A, false, 1.0, B, 1.0);
+  MatrixMatrix::Add(*A, false, 1.0, *B, 1.0);
 
-  MatrixMatrix<
-    double, 
-    int,
-    int,
-    DNode,
-    Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Add(C, false, -1.0, B, 1.0);
+  MatrixMatrix::Add(*C, false, -1.0, *B, 1.0);
 
   calculated_euc_norm = B->getEuclideanNorm();
   double resultVal2 = calculated_euc_norm/c_euc_norm;
@@ -185,13 +154,7 @@ int multiply_test(
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
 
 
-  MatrixMatrix<
-    double, 
-    int,
-    int,
-    DNode,
-    typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Multiply(constA, AT, constB, BT, computedC);
+  MatrixMatrix::Multiply(*constA, AT, *constB, BT, *computedC);
 
 //  std::cout << "A: " << *A << std::endl << "B: "<<*B<<std::endl<<"C: "<<*C<<std::endl;
   //if (result_mtx_to_file) {
@@ -200,13 +163,7 @@ int multiply_test(
 
   
 
-  MatrixMatrix<
-    double, 
-    int,
-    int,
-    DNode,
-    typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
-  Add(C_check, false, -1.0, computedC, 1.0);
+  MatrixMatrix::Add(*C_check, false, -1.0, *computedC, 1.0);
 
   double c_check_euc_norm = C_check->getEuclideanNorm();
   double c_euc_norm = computedC->getEuclideanNorm();
@@ -289,7 +246,6 @@ int two_proc_test(RCP<const Comm<Ordinal> > Comm,
   typedef CrsMatrix<double,int>                          CrsMatrix;
   typedef typename CrsMatrix::mat_vec_type                       MatVec;
   typedef typename CrsMatrix::node_type                          DNode;
-  typedef MatrixMatrix< double, int, int, DNode, MatVec> MatMat;
 
   (void)verbose;
   int thisproc = Comm->getRank();
@@ -337,7 +293,7 @@ int two_proc_test(RCP<const Comm<Ordinal> > Comm,
   A->fillComplete(domainmap, rowmap);
   // A->describe(*out, Teuchos::VERB_EXTREME);
 
-  MatMat::Multiply(A, false, A, true, C);
+  MatrixMatrix::Multiply(*A, false, *A, true, *C);
   C->describe(*out, Teuchos::VERB_EXTREME);
 
   if (C->getGlobalNumEntries() != 4) {
