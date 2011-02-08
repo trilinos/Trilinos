@@ -1,0 +1,13 @@
+
+host_test.exe : \
+		Kokkos_test_hex_grad.hpp	\
+		Kokkos_test_mdarray_host.cpp	\
+		../src/Kokkos_MDArrayViewRawData.hpp	\
+		../src/Kokkos_HostMDArrayView.hpp	\
+		../src/Kokkos_HostMap.hpp	\
+		../src/Kokkos_HostDevice.hpp	\
+		../src/Kokkos_HostDevice.cpp
+	g++ -g -I. -I../src Kokkos_test_mdarray_host.cpp ../src/Kokkos_HostDevice.cpp -o host_test.exe
+
+#	purify g++ -g -I. -I../src Kokkos_test_mdarray_host.cpp ../src/Kokkos_HostDevice.cpp -o host_test.exe
+
