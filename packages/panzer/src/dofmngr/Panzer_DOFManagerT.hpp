@@ -123,10 +123,12 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::string & st
    std::map<std::string,int>::const_iterator itr = fieldStrToInt_.find(str);
 
    // return based on what was found
-   if(itr==fieldStrToInt_.end())
-      return -1;
-   else
+   if(itr==fieldStrToInt_.end()) {
+      TEUCHOS_ASSERT(false); // return -1; // incorrect field name
+   }
+   else {
       return itr->second;
+   }
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
