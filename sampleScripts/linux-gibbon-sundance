@@ -121,7 +121,7 @@ TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
 #
 # ---------------------------------------------------------------------------
 # Argument parsing logic.
-TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,moocho,stokhos,no-moocho,no-stokhos,explicit,no-explicit,lax,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
+TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,lib64,stokhos,no-stokhos,explicit,no-explicit,lax,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -142,12 +142,9 @@ while true ; do
       --opt) BUILD_TYPE=RELEASE; 
              OPT_STR="-finline-functions -funroll-loops"; shift;;
       --lax) PARANOID_COMPILER=OFF; shift;;
-      --g77) FORTRAN_LIBS="-lg2c"; shift;;
       --lib64) LIB_PATH="${COMPILER_ROOT}/lib;${COMPILER_ROOT}/lib64"; shift;;
       --exodus) HAVE_EXODUS=ON; shift;;
       --no-exodus) HAVE_EXODUS=OFF; shift;;
-      --meros) ENABLE_MEROS=ON; shift;;
-      --moocho) ENABLE_MOOCHO=ON; shift;;
       --stokhos) ENABLE_STOKHOS=ON; shift;;
       --no-moocho) ENABLE_MOOCHO=OFF; shift;;
       --no-stokhos) ENABLE_STOKHOS=OFF; shift;;
@@ -181,11 +178,10 @@ while true ; do
             echo "--lax            turn off paranoid compiler flags (necessary for python wrappers)"
             echo "--g77            use g77 instead of gfortran (default: off)"
             echo "--lib64          include lib64 in search path (default: off)"
-            echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: on)"
+            echo "--exodus         enable ExodusII readers (requires NetCDF TPL. Default: enabled)"
             echo "--no-exodus      disable ExodusII readers"
-            echo "--meros          enable Meros block preconditioners (default: off)"
-            echo "--sundance-moocho enable Moocho optimizer (default: on)"
-            echo "--sundance-stokhos enable Stokhos PCE (default: on)"
+            echo "--stokhos        enable Stokhos PCE (default: enabled)"
+            echo "--no-stokhos     disable Stokhos PCE (default: enabled)"
             echo "--explicit       enable explicit template instantiation (default: on)"
             echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"
             echo "--extra-cxxflags <f>   extra C++ flags (default: none)" 
@@ -231,7 +227,6 @@ ${ECHO} cmake \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=${VERBOSE_CONFIGURE} \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
--D Sundance_ENABLE_MOOCHO:BOOL=${ENABLE_MOOCHO} \
 -D Sundance_ENABLE_Stokhos:BOOL=${ENABLE_STOKHOS} \
 -D Sundance_ENABLE_EXTERNAL_CHACO:BOOL=${HAVE_CHACO} \
 -D Teuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON \
