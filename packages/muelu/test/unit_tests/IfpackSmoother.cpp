@@ -75,7 +75,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, NotSetup)
 
 }
 
-TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
+TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidel)
 {
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
@@ -84,7 +84,10 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  //FIXME this will probably fail in parallel b/c it becomes block Jacobi
+
   out << "version: " << MueLu::Version() << std::endl;
+  out << "Tests interface to Ifpack's Gauss-Seidel preconditioner." << std::endl;
 
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
@@ -126,7 +129,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidelApply)
   norms = Utils::ResidualNorm(*Op,*X,*RHS);
   TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],0.00912675857196253,1e-12,out,success)
 
-}
+} //GaussSeidel
 
 TEUCHOS_UNIT_TEST(IfpackSmoother, Chebyshev)
 {
@@ -134,6 +137,8 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, Chebyshev)
   using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
+
+  out << "Tests interface to Ifpack's Chebyshev preconditioner." << std::endl;
 
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
@@ -189,7 +194,57 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, Chebyshev)
 std::setprecision(20) << n << std::endl;
   TEUCHOS_TEST_EQUALITY(n<0.25,true,out,success);  //FIXME should calculate reduction analytically
 
-}
+} //Chebyshev
+
+TEUCHOS_UNIT_TEST(IfpackSmoother, ILU)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  //FIXME this will probably fail in parallel b/c it becomes block Jacobi
+
+  out << "version: " << MueLu::Version() << std::endl;
+
+  out << "Tests interface to Ifpack's ILU(0) preconditioner." << std::endl;
+
+  RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  RCP<CrsOperator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(125);
+
+  Teuchos::ParameterList  ifpackList;
+  RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("ILU",ifpackList) );
+  Level aLevel;
+  aLevel.SetA(Op);
+
+  RCP<MultiVector> Xtrue = MultiVectorFactory::Build(Op->getDomainMap(),1);
+  RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getDomainMap(),1);
+
+  smoother->Setup(aLevel);
+
+  RCP<Epetra_MultiVector> epXtrue = Utils::MV2NonConstEpetraMV(Xtrue);
+  epXtrue->SetSeed(846930886);
+  Xtrue->randomize();
+  double n;
+  epXtrue->Norm2(&n);
+  Xtrue->scale(1/n);
+  Op->multiply(*Xtrue,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  RCP<Epetra_MultiVector> epRHS = Utils::MV2NonConstEpetraMV(RHS);
+  epRHS->Norm2(&n);
+  out << "||RHS|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
+  X->putScalar( (SC) 0.0);
+
+
+  smoother->Apply(*X,*RHS);
+  RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
+  epX->Norm2(&n);
+  out << "||X_final|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << n << std::endl;
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms;
+  norms = Utils::ResidualNorm(*Op,*X,*RHS);
+  out << "||residual|| = " << norms[0] << std::endl;
+  TEUCHOS_TEST_EQUALITY(norms[0]<1e-10,true,out,success)
+
+} //ILU
 
 }//namespace <anonymous>
 

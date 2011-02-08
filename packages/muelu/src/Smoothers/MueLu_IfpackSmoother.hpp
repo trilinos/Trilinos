@@ -106,6 +106,9 @@ class Level;
 
        If the smoother is relaxation, this sets the number of sweeps.
        If the smoother is Chebyshev, this sets the polynomial degree.
+
+       Note:  This can be called after the preconditioner is set up, i.e., after
+       calling IfpackSmoother::Setup().
     */
     void SetNIts(LO const &nIts) {
       if (!SmootherPrototype::IsSetup()) //FIXME precond doesn't have to be setup
@@ -115,7 +118,11 @@ class Level;
       prec_->SetParameters(list_);
     }
 
-    //! @brief Get the number of smoothing sweeps.
+    /*! @brief Get the number of smoothing sweeps.
+
+       If the smoother is relaxation, this returns the number of sweeps.
+       If the smoother is Chebyshev, this returns the polynomial degree.
+    */
     LO GetNIts() {
       if (ifpackType_ == "point relaxation stand-alone")
       {
