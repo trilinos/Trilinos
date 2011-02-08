@@ -10,6 +10,7 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
@@ -268,5 +269,89 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
   H.FullPopulate(PRFact,AcFact,SmooFact,0,2);
 
 } //FullPopulate
+
+TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  out << "version: " << MueLu::Version() << std::endl;
+
+  //matrix
+  RCP<CrsOperator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(6561);
+  RCP<const Map > map = Op->getRowMap();
+
+  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
+  nullSpace->putScalar( (SC) 1.0);
+  RCP<Epetra_MultiVector> foo = Utils::MV2NonConstEpetraMV(nullSpace);
+  double n;
+  foo->Norm1(&n);
+
+  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
+  H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  RCP<MueLu::Level<SC,LO,GO,NO,LMO> > Finest = rcp( new MueLu::Level<SC,LO,GO,NO,LMO>() );
+  Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
+  Finest->SetA(Op);
+  Finest->Save("Nullspace",nullSpace);
+  Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
+                                          //FIXME is implemented
+
+  Finest->Save("NullSpace",nullSpace);
+  H.SetLevel(Finest);
+
+  RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
+  RCP<GenericPRFactory>   PRfact = rcp( new GenericPRFactory(Pfact));
+  RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
+  Teuchos::ParameterList  ifpackList;
+  ifpackList.set("relaxation: type", "Gauss-Seidel");
+  ifpackList.set("relaxation: sweeps", (LO) 2);
+  ifpackList.set("relaxation: damping factor", (SC) 1.0);
+  RCP<SmootherPrototype>  smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+
+  RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
+  Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+  Teuchos::ParameterList status;
+  int maxLevels = 5;
+  status = H.FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+  out  << "======================\n Multigrid statistics \n======================" << std::endl;
+  status.print(out,Teuchos::ParameterList::PrintOptions().indent(2));
+
+  //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
+  Teuchos::ParameterList amesosList;
+  RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
+  SmootherFactory coarseSolveFact(coarseProto);
+  H.SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+
+  RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
+
+  RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
+  epX->SetSeed(846930886);
+  X->randomize();
+  //Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+  epX->Norm2(&n);
+  X->scale(1/n);
+  epX->Norm2(&n);
+  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
+
+  RHS->putScalar( (SC) 0.0);
+
+  H.PrintResidualHistory(false);
+  int iterations=10;
+  H.Iterate(*RHS,iterations,*X);
+
+  epX->Norm2(&n);
+  out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(ios::fixed) <<
+std::setprecision(10) << n << std::endl;
+
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms;
+  norms = Utils::ResidualNorm(*Op,*X,*RHS);
+  out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
+  TEUCHOS_TEST_EQUALITY(norms[0]<1e-10, true, out, success);
+
+} //Iterate
 
 }//namespace <anonymous>
