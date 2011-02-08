@@ -158,7 +158,7 @@ class Level;
       //RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
       //RCP<const Epetra_MultiVector> epB = Utils::MV2NonConstEpetraMV(B);
       Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(*X);
-      const Epetra_MultiVector epB = Utils::MV2NonConstEpetraMV(*B);
+      Epetra_MultiVector const &epB = Utils::MV2NonConstEpetraMV(*B);
 
       //prec_->ApplyInverse(*epB,*epX);
       prec_->ApplyInverse(epB,epX);

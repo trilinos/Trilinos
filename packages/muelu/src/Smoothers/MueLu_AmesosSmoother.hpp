@@ -144,13 +144,21 @@ class Level;
       if (!SmootherPrototype::IsSetup())
         throw(Exceptions::RuntimeError("Setup has not been called"));
 
-      RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
-      RCP<Epetra_MultiVector> epB = Utils::MV2NonConstEpetraMV(B);//FIXME Amesos wants a nonconst B!
+      //RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
+      //RCP<Epetra_MultiVector> epB = Utils::MV2NonConstEpetraMV(B);//FIXME Amesos wants a nonconst B!
+      //AmesosLinearProblem->SetLHS(&*epX); //FIXME RCP probably has a safer way to do this
+      //AmesosLinearProblem->SetRHS(&*epB); //FIXME RCP probably has a safer way to do this
 
-      AmesosLinearProblem->SetLHS(&*epX); //FIXME RCP probably has a safer way to do this
-      AmesosLinearProblem->SetRHS(&*epB); //FIXME RCP probably has a safer way to do this
+      Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(*X);
+      Epetra_MultiVector &epB = Utils::MV2NonConstEpetraMV(*B);
+      AmesosLinearProblem->SetLHS(&epX); //FIXME RCP probably has a safer way to do this
+      AmesosLinearProblem->SetRHS(&epB); //FIXME RCP probably has a safer way to do this
 
       prec_->Solve();
+
+      // Don't keep pointers to our vectors in the Epetra_LinearProblem.
+      AmesosLinearProblem->SetLHS(0);
+      AmesosLinearProblem->SetRHS(0);
     }
     //@}
 
