@@ -29,7 +29,7 @@ operator << ( std::ostream & s , const Relation & rel )
   Entity * const e = rel.entity();
 
   if ( e ) {
-    const MetaData & meta_data = e->bucket().mesh().mesh_meta_data();
+    const MetaData & meta_data = MetaData::get(*e);
 
     s << meta_data.entity_rank_name( rel.entity_rank() );
     s << "[" << rel.identifier() << "]->" ;
@@ -157,7 +157,7 @@ void get_entities_through_relations(
  */
 bool membership_is_induced( const Part & part , unsigned entity_rank )
 {
-  const MetaData & meta = part.mesh_meta_data();
+  const MetaData & meta = MetaData::get(part);
 
   const bool induced_by_type =
      entity_rank < part.primary_entity_rank() &&
@@ -214,13 +214,13 @@ void induced_part_membership( const Entity     & entity_from ,
                                     PartVector & entity_to_parts )
 {
   const Bucket   & bucket_from    = entity_from.bucket();
-  const BulkData & mesh           = bucket_from.mesh();
+  const BulkData & mesh           = BulkData::get(bucket_from);
   const unsigned local_proc_rank  = mesh.parallel_rank();
   const unsigned entity_rank_from = entity_from.entity_rank();
 
   if ( entity_rank_to < entity_rank_from &&
        local_proc_rank == entity_from.owner_rank() ) {
-    const MetaData   & meta        = mesh.mesh_meta_data();
+    const MetaData   & meta        = MetaData::get(mesh);
     const PartVector & all_parts   = meta.get_parts();
 
     const std::pair<const unsigned *, const unsigned *>

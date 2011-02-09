@@ -732,7 +732,7 @@ void print_comm_list( const BulkData & mesh , bool doit )
       Entity & entity = **i ;
       msg << "P" << mesh.parallel_rank() << ": " ;
 
-      print_entity_key( msg , mesh.mesh_meta_data() , entity.key() );
+      print_entity_key( msg , MetaData::get(mesh) , entity.key() );
 
       msg << " owner(" << entity.owner_rank() << ")" ;
 

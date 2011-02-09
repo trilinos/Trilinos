@@ -175,7 +175,7 @@ void unpack_entity_info(
   for ( unsigned i = 0 ; i < nparts ; ++i ) {
     unsigned part_ordinal = ~0u ;
     buf.unpack<unsigned>( part_ordinal );
-    parts[i] = & mesh.mesh_meta_data().get_part( part_ordinal );
+    parts[i] = & MetaData::get(mesh).get_part( part_ordinal );
   }
 
   buf.unpack( nrel );
@@ -203,8 +203,8 @@ void unpack_entity_info(
 void pack_field_values( CommBuffer & buf , Entity & entity )
 {
   const Bucket   & bucket = entity.bucket();
-  const BulkData & mesh   = bucket.mesh();
-  const MetaData & mesh_meta_data = mesh.mesh_meta_data();
+  const BulkData & mesh   = BulkData::get(bucket);
+  const MetaData & mesh_meta_data = MetaData::get(mesh);
 
   const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields();
 
@@ -231,8 +231,8 @@ bool unpack_field_values(
   CommBuffer & buf , Entity & entity , std::ostream & error_msg )
 {
   const Bucket   & bucket = entity.bucket();
-  const BulkData & mesh   = bucket.mesh();
-  const MetaData & mesh_meta_data = mesh.mesh_meta_data();
+  const BulkData & mesh   = BulkData::get(bucket);
+  const MetaData & mesh_meta_data = MetaData::get(mesh);
 
   const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields();
 

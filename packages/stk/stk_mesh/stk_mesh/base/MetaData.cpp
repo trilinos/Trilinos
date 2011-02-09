@@ -22,12 +22,29 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
+#include <stk_mesh/base/BulkData.hpp>
+
 
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 
 namespace stk {
 namespace mesh {
 
+MetaData & MetaData::get( const BulkData & bulk_data) {
+  return bulk_data.meta_data();
+}
+
+MetaData & MetaData::get( const Bucket & bucket) {
+  return MetaData::get(BulkData::get(bucket));
+}
+
+MetaData & MetaData::get( const Entity & entity) {
+  return MetaData::get(BulkData::get(entity));
+}
+
+MetaData & MetaData::get( const Ghosting & ghost) {
+  return MetaData::get(BulkData::get(ghost));
+}
 //----------------------------------------------------------------------
 
 std::ostream &
@@ -133,7 +150,7 @@ MetaData::MetaData()
 
 //----------------------------------------------------------------------
 
-void MetaData::set_entity_rank_names(const std::vector<std::string> &entity_rank_names) 
+void MetaData::set_entity_rank_names(const std::vector<std::string> &entity_rank_names)
 {
   ThrowErrorMsgIf( entity_rank_names.empty(), "entity ranks empty" );
 
@@ -212,8 +229,8 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
   static const char method[] = "stk::mesh::MetaData::declare_part_subset" ;
 
   require_not_committed();
-  require_same_mesh_meta_data( superset.mesh_meta_data() );
-  require_same_mesh_meta_data( subset.mesh_meta_data() );
+  require_same_mesh_meta_data( MetaData::get(superset) );
+  require_same_mesh_meta_data( MetaData::get(subset) );
   require_not_relation_target( &superset );
   require_not_relation_target( &subset );
 
@@ -280,8 +297,8 @@ void MetaData::declare_field_restriction(
     "std::mesh::MetaData::declare_field_restriction" ;
 
   require_not_committed();
-  require_same_mesh_meta_data( arg_field.mesh_meta_data() );
-  require_same_mesh_meta_data( arg_part.mesh_meta_data() );
+  require_same_mesh_meta_data( MetaData::get(arg_field) );
+  require_same_mesh_meta_data( MetaData::get(arg_part) );
 
   m_field_repo.declare_field_restriction(
       method,

@@ -268,7 +268,7 @@ public:
   /** \brief  Query the stride of this field data specified by FieldBase */
   const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & field ) const
   { return m_bucketImpl.field_data_stride(field); }
-  
+
   /** \brief  Query the location of this field data specified by FieldBase and Entity */
   unsigned char * field_data_location( const FieldBase & field, const Entity & entity ) const
   { return m_bucketImpl.field_data_location(field,entity); }
@@ -324,6 +324,10 @@ public:
   unsigned allocation_size() const { return m_bucketImpl.allocation_size() ; }
 
 private:
+  /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
+   *          that owns this bucket.
+   */
+  BulkData & bulk_data() const { return m_bucketImpl.mesh(); }
 
   ~Bucket();
   Bucket();
@@ -338,6 +342,7 @@ private:
           impl::BucketImpl::DataMap * arg_field_map ,
           Entity         ** arg_entity_array );
 
+  friend class ::stk::mesh::BulkData;
 };
 
 

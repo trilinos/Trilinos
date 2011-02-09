@@ -38,7 +38,7 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
 {
   parts.clear();
 
-  const stk::mesh::PartVector& all_parts = mesh.mesh_meta_data().get_parts();
+  const stk::mesh::PartVector& all_parts = MetaData::get(mesh).get_parts();
 
   stk::mesh::PartVector::const_iterator
     iter = all_parts.begin(),
@@ -84,9 +84,9 @@ Entity & declare_element( BulkData & mesh ,
   PartVector add( 1 ); add[0] = & part ;
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const EntityRank entity_rank = element_rank_deprecated(part.mesh_meta_data());
+  const EntityRank entity_rank = element_rank_deprecated(MetaData::get(part));
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const EntityRank entity_rank = fem::get_entity_rank(part.mesh_meta_data(), top);
+  const EntityRank entity_rank = fem::get_entity_rank(MetaData::get(part), top);
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   Entity & elem = mesh.declare_entity( entity_rank, elem_id, add );
@@ -124,7 +124,7 @@ Entity & declare_element( BulkData & mesh ,
   PartVector add( 1 ); add[0] = & part ;
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const EntityRank entity_rank = element_rank_deprecated(part.mesh_meta_data());
+  const EntityRank entity_rank = element_rank_deprecated(MetaData::get(part));
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const EntityRank entity_rank = top->dimension;
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS

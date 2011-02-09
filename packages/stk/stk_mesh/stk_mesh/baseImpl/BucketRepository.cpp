@@ -83,8 +83,8 @@ const FieldBase::Restriction & dimension( const FieldBase & field ,
       if ( Compare< MaximumFieldDimension >::
              not_equal( ibeg->stride , dim->stride ) ) {
 
-        Part & p_old = field.mesh_meta_data().get_part( ibeg->ordinal() );
-        Part & p_new = field.mesh_meta_data().get_part( dim->ordinal() );
+        Part & p_old = MetaData::get(field).get_part( ibeg->ordinal() );
+        Part & p_new = MetaData::get(field).get_part( dim->ordinal() );
 
         std::ostringstream msg ;
         msg << method ;
@@ -152,7 +152,7 @@ BucketRepository::~BucketRepository()
 
 void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * bucket_to_be_deleted )
 {
-  ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(entity_rank),
+  ThrowRequireMsg(MetaData::get(m_mesh).check_rank(entity_rank),
                   "Entity rank " << entity_rank << " is invalid");
 
   std::vector<Bucket *> & bucket_set = m_buckets[entity_rank];
@@ -200,7 +200,7 @@ void
 BucketRepository::declare_nil_bucket()
 {
   if (m_nil_bucket == NULL) {
-    unsigned field_count = m_mesh.mesh_meta_data().get_fields().size();
+    unsigned field_count = MetaData::get(m_mesh).get_fields().size();
 
     //----------------------------------
     // Field map gives NULL for all field data.
@@ -267,7 +267,7 @@ BucketRepository::declare_nil_bucket()
  *  computations progress over that block of data.  This would result in cache
  *  misses and reduced performance.  When they're removed, it makes sense that
  *  the performance might get better.
- *  
+ *
  *  This leads to the idea that maybe we should test this in a use-case or
  *  performance test case and that we should include this in the performance
  *  comparison of the up-and-coming pluggable data module for the Bucket memory
@@ -294,7 +294,7 @@ BucketRepository::declare_bucket(
   const unsigned max = ~(0u);
   const size_t   num_fields = field_set.size();
 
-  ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank),
+  ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
                   "Entity rank " << arg_entity_rank << " is invalid");
 
   std::vector<Bucket *> & bucket_set = m_buckets[ arg_entity_rank ];
@@ -499,7 +499,7 @@ void BucketRepository::update_field_data_states() const
 
 const std::vector<Bucket*> & BucketRepository::buckets( unsigned type ) const
 {
-  ThrowRequireMsg( m_mesh.mesh_meta_data().check_rank(type),
+  ThrowRequireMsg( MetaData::get(m_mesh).check_rank(type),
                    "Invalid entity rank " << type );
 
   return m_buckets[ type ];
@@ -531,7 +531,7 @@ void BucketRepository::internal_sort_bucket_entities()
 
         b_scratch = declare_bucket( entity_rank ,
             part_count , part_ord ,
-            m_mesh.mesh_meta_data().get_fields() );
+            MetaData::get(m_mesh).get_fields() );
 
         ik_vacant = b_scratch ;
         ie_vacant = 0 ;

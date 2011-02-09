@@ -95,6 +95,12 @@ public:
 
 private:
 
+  /** \brief  The \ref stk::mesh::MetaData "meta data manager"
+   *          that owns the PartRepository which created this part.
+   */
+  MetaData & meta_data() const { return m_partImpl.mesh_meta_data(); }
+
+
   impl::PartImpl m_partImpl;
 
   /* \brief  A part is owned by a PartRepository, as such only the owning
@@ -104,6 +110,7 @@ private:
    *         friend.
    */
   friend class ::stk::mesh::impl::PartRepository ;
+  friend class ::stk::mesh::MetaData ;
 
 #ifndef DOXYGEN_COMPILE
 

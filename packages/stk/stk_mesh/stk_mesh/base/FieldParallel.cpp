@@ -28,7 +28,7 @@ void communicate_field_data(
 {
   if ( fields.empty() ) { return; }
 
-  const BulkData & mesh = ghosts.mesh();
+  const BulkData & mesh = BulkData::get(ghosts);
   const unsigned parallel_size = mesh.parallel_size();
   const unsigned parallel_rank = mesh.parallel_rank();
 
@@ -91,7 +91,7 @@ void communicate_field_data(
         if ( size ) {
           unsigned char * ptr =
             reinterpret_cast<unsigned char *>(field_data( f , e ));
-        
+
           for ( PairIterEntityComm ec = e.comm() ; ! ec.empty() ; ++ec ) {
 
             if ( ghosts.ordinal() == ec->ghost_id ) {
@@ -123,7 +123,7 @@ void communicate_field_data(
         if ( size ) {
           unsigned char * ptr =
             reinterpret_cast<unsigned char *>(field_data( f , e ));
-        
+
           for ( PairIterEntityComm ec = e.comm() ; ! ec.empty() ; ++ec ) {
 
             if ( ghosts.ordinal() == ec->ghost_id ) {
@@ -172,7 +172,7 @@ void communicate_field_data(
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
         e_size += field_data_size( f , e );
-      } 
+      }
       send_size[ p ] += e_size ;
     }
   }
@@ -186,7 +186,7 @@ void communicate_field_data(
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
         e_size += field_data_size( f , e );
-      } 
+      }
       recv_size[ p ] += e_size ;
     }
   }
@@ -286,7 +286,7 @@ void communicate_field_data(
   }
 
   // Pack for send:
- 
+
   for ( j = 0 ; j < field_count ; ++j ) {
     const FieldBase & f = * fields[j] ;
     for ( std::vector<Entity*>::const_iterator

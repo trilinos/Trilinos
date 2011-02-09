@@ -31,7 +31,7 @@ void set_field_relations( Entity & e_from ,
                           const unsigned ident )
 {
   const std::vector<FieldRelation> & field_rels =
-    e_from.bucket().mesh().mesh_meta_data().get_field_relations();
+    MetaData::get(e_from).get_field_relations();
 
   for ( std::vector<FieldRelation>::const_iterator
         j = field_rels.begin() ; j != field_rels.end() ; ++j ) {
@@ -68,8 +68,8 @@ void assert_valid_relation( const char action[] ,
                             const Entity   & e_from ,
                             const Entity   & e_to )
 {
-  const bool error_mesh_from = & mesh != & e_from.bucket().mesh();
-  const bool error_mesh_to   = & mesh != & e_to.bucket().mesh();
+  const bool error_mesh_from = & mesh != & BulkData::get(e_from);
+  const bool error_mesh_to   = & mesh != & BulkData::get(e_to);
   const bool error_type      = e_from.entity_rank() <= e_to.entity_rank();
   const bool error_nil_from  = EntityLogDeleted == e_from.log_query();
   const bool error_nil_to    = EntityLogDeleted == e_to.log_query();
@@ -100,7 +100,7 @@ void clear_field_relations( Entity & e_from ,
 
 {
   const std::vector<FieldRelation> & field_rels =
-    e_from.bucket().mesh().mesh_meta_data().get_field_relations();
+    MetaData::get(e_from).get_field_relations();
 
   for ( std::vector<FieldRelation>::const_iterator
         j = field_rels.begin() ; j != field_rels.end() ; ++j ) {

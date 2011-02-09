@@ -141,7 +141,7 @@ inline
 Field<Type,T1,T2,T3,T4,T5,T6,T7> &
 put_field_on_all_nodes( Field<Type,T1,T2,T3,T4,T5,T6,T7> & f )
 {
-  MetaData & md = f.mesh_meta_data();
+  MetaData & md = MetaData::get(f);
   put_field( f, Node, md.universal_part() );
   return f ;
 }
@@ -153,7 +153,7 @@ Field<Type,T1,T2,T3,T4,T5,T6,T7> &
 put_field_on_all_nodes( Field<Type,T1,T2,T3,T4,T5,T6,T7> & f ,
                         unsigned n1 )
 {
-  MetaData & md = f.mesh_meta_data();
+  MetaData & md = MetaData::get(f);
   put_field( f, Node, md.universal_part(), n1 );
   return f ;
 }
@@ -165,7 +165,7 @@ Field<Type,T1,T2,T3,T4,T5,T6,T7> &
 put_field_on_all_nodes( Field<Type,T1,T2,T3,T4,T5,T6,T7> & f ,
                         unsigned n1 , unsigned n2 )
 {
-  MetaData & md = f.mesh_meta_data();
+  MetaData & md = MetaData::get(f);
   put_field( f, Node, md.universal_part(), n1, n2 );
   return f ;
 }
@@ -177,7 +177,7 @@ Field<Type,T1,T2,T3,T4,T5,T6,T7> &
 put_field_on_all_nodes( Field<Type,T1,T2,T3,T4,T5,T6,T7> & f ,
                         unsigned n1 , unsigned n2 , unsigned n3 )
 {
-  MetaData & md = f.mesh_meta_data();
+  MetaData & md = MetaData::get(f);
   put_field( f, Node, md.universal_part(), n1, n2, n3 );
   return f ;
 }
@@ -189,7 +189,7 @@ Field<Type,T1,T2,T3,T4,T5,T6,T7> &
 put_field_on_all_nodes( Field<Type,T1,T2,T3,T4,T5,T6,T7> & f ,
                         unsigned n1 , unsigned n2 , unsigned n3 , unsigned n4 )
 {
-  MetaData & md = f.mesh_meta_data();
+  MetaData & md = MetaData::get(f);
   put_field( f, Node, md.universal_part(), n1, n2, n3, n4 );
   return f ;
 }
@@ -202,7 +202,7 @@ put_field_on_all_nodes( Field<Type,T1,T2,T3,T4,T5,T6,T7> & f ,
                         unsigned n1 , unsigned n2 , unsigned n3 , unsigned n4 ,
                         unsigned n5 )
 {
-  MetaData & md = f.mesh_meta_data();
+  MetaData & md = MetaData::get(f);
   put_field( f, Node, md.universal_part(), n1, n2, n3, n4, n5 );
   return f ;
 }
@@ -215,7 +215,7 @@ put_field_on_all_nodes( Field<Type,T1,T2,T3,T4,T5,T6,T7> & f ,
                         unsigned n1 , unsigned n2 , unsigned n3 , unsigned n4 ,
                         unsigned n5 , unsigned n6 )
 {
-  MetaData & md = f.mesh_meta_data();
+  MetaData & md = MetaData::get(f);
   put_field( f, Node, md.universal_part(), n1, n2, n3, n4, n5, n6 );
   return f ;
 }
@@ -228,7 +228,7 @@ put_field_on_all_nodes( Field<Type,T1,T2,T3,T4,T5,T6,T7> & f ,
                         unsigned n1 , unsigned n2 , unsigned n3 , unsigned n4 ,
                         unsigned n5 , unsigned n6 , unsigned n7 )
 {
-  MetaData & md = f.mesh_meta_data();
+  MetaData & md = MetaData::get(f);
   put_field( f, Node, md.universal_part(), n1, n2, n3, n4, n5, n6, n7 );
   return f ;
 }
@@ -295,18 +295,18 @@ put_field_on_elements( Field<Type,T1,T2> & f , Part & p ,
 template< typename Type >
 inline
 Field<Type> & put_field_on_all_elements( Field<Type> & f )
-{ put_field_on_elements( f , f.mesh_meta_data().universal_part() );  return f ; }
+{ put_field_on_elements( f , MetaData::get(f).universal_part() );  return f ; }
 
 template< typename Type , class T1 >
 inline
 Field<Type,T1> & put_field_on_all_elements( Field<Type,T1> & f , unsigned n1 )
-{ put_field_on_elements( f , f.mesh_meta_data().universal_part() , n1 );  return f ; }
+{ put_field_on_elements( f , MetaData::get(f).universal_part() , n1 );  return f ; }
 
 template< typename Type , class T1 , class T2 >
 inline
 Field<Type,T1,T2> & put_field_on_all_elements( Field<Type,T1,T2> & f ,
                                 unsigned n1 , unsigned n2 )
-{ put_field_on_elements( f , f.mesh_meta_data().universal_part() , n1 , n2 );  return f ; }
+{ put_field_on_elements( f , MetaData::get(f).universal_part() , n1 , n2 );  return f ; }
 
 //----------------------------------------------------------------------
 

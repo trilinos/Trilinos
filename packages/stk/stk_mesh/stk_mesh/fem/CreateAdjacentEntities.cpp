@@ -112,7 +112,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
   const EntityRank side_rank = fem::side_rank(fem_interface);
   const EntityRank edge_rank = fem::edge_rank(fem_interface);
 
-  Selector select_owned = mesh.mesh_meta_data().locally_owned_part();
+  Selector select_owned = MetaData::get(mesh).locally_owned_part();
 
 
   BucketVector element_buckets;
@@ -207,7 +207,7 @@ void request_entities(
    std::vector<size_t> & entities_to_request,
    std::vector< EntityVector > & requested_entities)
 {
-  const size_t num_ranks = mesh.mesh_meta_data().entity_rank_count();
+  const size_t num_ranks = MetaData::get(mesh).entity_rank_count();
 
   requested_entities.clear();
   requested_entities.resize(num_ranks);
@@ -234,9 +234,9 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
   const EntityRank side_rank = fem::side_rank(fem_interface);
   const EntityRank edge_rank = fem::edge_rank(fem_interface);
 
-  const size_t num_ranks = mesh.mesh_meta_data().entity_rank_count();
+  const size_t num_ranks = MetaData::get(mesh).entity_rank_count();
 
-  Selector select_owned = mesh.mesh_meta_data().locally_owned_part();
+  Selector select_owned = MetaData::get(mesh).locally_owned_part();
 
   BucketVector element_buckets;
 
@@ -339,7 +339,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
                 PartVector empty_remove_parts;
 
                 PartVector add_parts = arg_add_parts;
-                add_parts.push_back( & fem::get_part( mesh.mesh_meta_data(), topo.getTopology(subcell_rank,subcell_id)));
+                add_parts.push_back( & fem::get_part( MetaData::get(mesh), topo.getTopology(subcell_rank,subcell_id)));
 
                 mesh.change_entity_parts(subcell, add_parts, empty_remove_parts);
 
@@ -361,7 +361,7 @@ void complete_connectivity( BulkData & mesh ) {
   const EntityRank side_rank = fem::side_rank(fem_interface);
   const EntityRank edge_rank = fem::edge_rank(fem_interface);
 
-  Selector select_owned_or_shared = mesh.mesh_meta_data().locally_owned_part() | mesh.mesh_meta_data().globally_shared_part();
+  Selector select_owned_or_shared = MetaData::get(mesh).locally_owned_part() | MetaData::get(mesh).globally_shared_part();
 
   BucketVector element_buckets;
 
@@ -455,7 +455,7 @@ void create_adjacent_entities( BulkData & mesh, PartVector & arg_add_parts)
   complete_connectivity(mesh);
 
 
-  const size_t num_ranks = mesh.mesh_meta_data().entity_rank_count();
+  const size_t num_ranks = MetaData::get(mesh).entity_rank_count();
   std::vector<size_t> entities_to_request(num_ranks, 0);
 
   internal_count_entities_to_create( mesh, entities_to_request);

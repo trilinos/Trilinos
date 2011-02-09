@@ -38,7 +38,7 @@ void print_entity_status( std::ostream & os , stk::mesh::BulkData & mesh , unsig
   for ( std::vector< stk::mesh::Entity * >::iterator
         i = entities.begin() ; i != entities.end() ; ++i ) {
     stk::mesh::Entity & e = **i ;
-    stk::mesh::print_entity_key( os , mesh.mesh_meta_data() , e.key() );
+    stk::mesh::print_entity_key( os , stk::mesh::MetaData::get(mesh) , e.key() );
     if ( stk::mesh::in_receive_ghost( e ) ) {
       os << " IS GHOST" ;
     }

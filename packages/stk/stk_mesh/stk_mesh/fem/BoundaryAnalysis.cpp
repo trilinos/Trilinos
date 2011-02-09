@@ -133,8 +133,8 @@ void boundary_analysis(const BulkData& bulk_data,
                        EntityRank closure_rank,
                        EntitySideVector& boundary)
 {
-  const Selector locally_used = bulk_data.mesh_meta_data().locally_owned_part()
-                              | bulk_data.mesh_meta_data().globally_shared_part();
+  const Selector locally_used = MetaData::get(bulk_data).locally_owned_part()
+                              | MetaData::get(bulk_data).globally_shared_part();
 
   // find an iterator that points to the last item in the closure that is of a
   // lower-order than the closure_rank
