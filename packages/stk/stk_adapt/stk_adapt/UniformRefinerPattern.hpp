@@ -184,7 +184,7 @@ namespace stk {
 
       /// utilities
       /// ---------
-      
+
       /// sets the needed number of nodes on each sub-entity to 1 - this is just a helper - in general, edges and faces have 1 new node
       /// for linear elements, and multiple new nodes in the case of quadratic elements
       void setToOne(std::vector<NeededEntityType>& needed_entities)
@@ -514,7 +514,7 @@ namespace stk {
             topoDim = 1;
           }
 
-        if (cell_topo_key == s_shell_tri_3_key || cell_topo_key == s_shell_tri_6_key || 
+        if (cell_topo_key == s_shell_tri_3_key || cell_topo_key == s_shell_tri_6_key ||
             cell_topo_key == s_shell_quad_4_key || cell_topo_key == s_shell_quad_9_key)
           {
             topoDim = 2;
@@ -539,7 +539,7 @@ namespace stk {
             }
           {
             const stk::mesh::FieldBase::Restriction & r =
-              field->restriction(fr_type, field->mesh_meta_data().universal_part());
+              field->restriction(fr_type, MetaData::get(*field).universal_part());
             fieldStride = r.stride[0];
             if (EXTRA_PRINT_URP_IF) std::cout << "tmp stride = " <<  r.stride[0] << " fieldStride= " << fieldStride
                              << " fr_type= " << fr_type << " mesh::Element= " << mesh::Element<< std::endl;
@@ -634,7 +634,7 @@ namespace stk {
       }
 
       enum { NumNewElements_Enrich = 1 };
-      
+
       void
       genericEnrich_createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                                       Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
@@ -835,7 +835,7 @@ namespace stk {
           }
 
         int perm = -1;
-        
+
         /// for tri or quad faces we search for the min node, then look at its two neighbors along edges
         ///   - if the first edge is the next node in line (in terms of its id) we use the ordering as 0,1,2,3
         ///   else it is flipped and we reverse the ordering
@@ -846,7 +846,7 @@ namespace stk {
             // quad or tri
             if (0 && num_subcell_verts==3)
               {
-                std::cout << "tmp b4 element 1= " << element << " cell_topo= " << cell_topo.getName() 
+                std::cout << "tmp b4 element 1= " << element << " cell_topo= " << cell_topo.getName()
                           << " rank_of_subcell= " << rank_of_subcell << std::endl;
                 std::cout << "tmp b4 vector_sdcell_global_baseline= " << vector_sdcell_global_baseline << std::endl;
                 std::cout << "tmp b4 subCell_from_element = " << subCell_from_element << std::endl;
@@ -884,7 +884,7 @@ namespace stk {
               {
                 for (int iv = 0; iv < num_subcell_verts; iv++)
                   {
-                    vector_sdcell_global_baseline[(num_subcell_verts - iv) % num_subcell_verts] = 
+                    vector_sdcell_global_baseline[(num_subcell_verts - iv) % num_subcell_verts] =
                       subCell_from_element[(j0 + iv) % num_subcell_verts];
                   }
               }
@@ -1003,7 +1003,7 @@ namespace stk {
         //bool homogeneous_child = ref_topo.homogeneous_child();
         //VERIFY_OP(homogeneous_child, ==, true, "genericRefine_createNewElements homogeneous_child");
 
-        RefTopoX& ref_topo_x = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;  
+        RefTopoX& ref_topo_x = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;
 
         for (unsigned iChild = 0; iChild < num_child; iChild++)
           {
@@ -1023,7 +1023,7 @@ namespace stk {
                 unsigned ordinal_of_node_on_subcell = ref_topo_x[childNodeIdx].ordinal_of_node_on_subcell;
                 unsigned num_nodes_on_subcell       = ref_topo_x[childNodeIdx].num_nodes_on_subcell;
 
-                bool usePerm = true;  
+                bool usePerm = true;
 
                 // only need permuation for quadratic elements
                 if (num_nodes_on_subcell == 1)
@@ -1033,7 +1033,7 @@ namespace stk {
                 if (usePerm)
                   {
                     int perm_ord = getPermutation(FromTopology::vertex_count, element, cell_topo, rank_of_subcell, ordinal_of_subcell);
-                      
+
                     if (perm_ord < 0)
                       throw std::logic_error("permutation < 0 ");
                     //std::cout << "tmp 0 " << perm_ord << " rank_of_subcell= " << rank_of_subcell << " ordinal_of_subcell= " << ordinal_of_subcell <<  std::endl;
@@ -1134,7 +1134,7 @@ namespace stk {
 
             // CHECK
             change_entity_parts(eMesh, element, newElement);
-            
+
             for (int inode=0; inode < ToTopology::node_count; inode++)
               {
                 mesh::EntityId eid = elems[iChild][inode];
@@ -1148,7 +1148,7 @@ namespace stk {
                 //mesh::Entity& node = eMesh.createOrGetNode(eid);
                 mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_createOrGetNode);
-               
+
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_declare_relation);
                 eMesh.getBulkData()->declare_relation(newElement, node, inode);
                 //register_relation(newElement, node, inode);
@@ -1355,12 +1355,12 @@ namespace stk {
       {
         static int face_interior_inverse_map[] = { -1, /* 0 */
                                                         -1, -2, -3, -4, -5, -6, -7, 8, -9, -10,
-                                                        -11, -12, -13, -14, -15, -16, 
+                                                        -11, -12, -13, -14, -15, -16,
                                                         4, 5, 6, 7, // -17, -18, -19, -20
                                                         0, 1, 2, 3 }; //-21, -22, -23, -24};
 
         /*
-        static int face_interior_map[] = {21, 22, 23, 24, 
+        static int face_interior_map[] = {21, 22, 23, 24,
                                                17, 18, 19, 20,
                                                8 };
         */

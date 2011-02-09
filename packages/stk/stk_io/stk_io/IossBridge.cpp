@@ -331,7 +331,7 @@ namespace stk {
 
     stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
     {
-      if (part.mesh_meta_data().universal_part() == part) {
+      if (mesh::MetaData::get(part).universal_part() == part) {
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 	return stk::mesh::Node;
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
@@ -421,7 +421,7 @@ namespace stk {
       fem.set_spatial_dimension(spatial_dimension);
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
     }
-    
+
     void get_io_field_type(const stk::mesh::FieldBase *field, int num_comp, std::pair<std::string, Ioss::Field::BasicType> *result)
     {
       const std::string invalid("invalid");
@@ -514,7 +514,7 @@ namespace stk {
       }
 
       IOPartAttribute * const attr = new IOPartAttribute();
-      mesh::MetaData & meta = part.mesh_meta_data();
+      mesh::MetaData & meta = mesh::MetaData::get(part);
       meta.declare_attribute_with_delete( part , attr );
     }
 
@@ -550,7 +550,7 @@ namespace stk {
 	// exist on.  There may be a problem if we start using element
 	// sets ..., but wait until we get to that point; current code
 	// works with current entity set.
-	if (part_type != node_rank(part.mesh_meta_data()) || part == universal) {
+	if (part_type != node_rank(mesh::MetaData::get(part)) || part == universal) {
 	  return true;
 	}
 
@@ -715,7 +715,7 @@ namespace stk {
 			 const Ioss::Field::RoleType filter_role,
 			 bool add_all)
     {
-      stk::mesh::MetaData & meta = part.mesh_meta_data();
+      stk::mesh::MetaData & meta = mesh::MetaData::get(part);
       stk::mesh::Part &universal = meta.universal_part();
 
       const std::vector<mesh::FieldBase*> &fields = meta.get_fields();
@@ -751,7 +751,7 @@ namespace stk {
 			  stk::mesh::Part &part,
 			  stk::mesh::EntityRank part_type)
     {
-      stk::mesh::MetaData &meta = part.mesh_meta_data();
+      stk::mesh::MetaData &meta = mesh::MetaData::get(part);
 
       Ioss::NameList names;
       entity->field_describe(role, &names);
@@ -860,8 +860,8 @@ namespace stk {
 				  stk::mesh::EntityRank type,
 				  size_t ef_count, int spatial_dimension)
       {
-        const stk::mesh::EntityRank siderank = side_rank(part.mesh_meta_data());
-        const stk::mesh::EntityRank edgerank = edge_rank(part.mesh_meta_data());
+        const stk::mesh::EntityRank siderank = side_rank(mesh::MetaData::get(part));
+        const stk::mesh::EntityRank edgerank = edge_rank(mesh::MetaData::get(part));
 	ThrowRequire(type == siderank || type == edgerank);
 
 	const CellTopologyData *const ef_topology = stk::io::get_cell_topology(part);
@@ -921,7 +921,7 @@ namespace stk {
 				   stk::mesh::EntityRank type,
 				   int spatial_dimension)
       {
-	mesh::MetaData & meta = part.mesh_meta_data();
+	mesh::MetaData & meta = mesh::MetaData::get(part);
 	assert(type == face_rank(meta) || type == edge_rank(meta));
 
 	const stk::mesh::PartVector &blocks = part.subsets();
@@ -950,7 +950,7 @@ namespace stk {
       {
 	//--------------------------------
 	// Set the spatial dimension:
-	mesh::MetaData &meta = part.mesh_meta_data();
+	mesh::MetaData & meta = mesh::MetaData::get(part);
 
 	/// \todo REFACTOR The coordinate field would typically be
 	  /// stored by the app and wouldn't need to be accessed via
@@ -987,7 +987,7 @@ namespace stk {
 				Ioss::Region &io_region)
       {
 
-	mesh::MetaData & meta = part.mesh_meta_data();
+	mesh::MetaData & meta = mesh::MetaData::get(part);
         const stk::mesh::EntityRank elem_rank = element_rank(meta);
 
 	const CellTopologyData * const cell_top = stk::io::get_cell_topology( part );
@@ -1020,7 +1020,7 @@ namespace stk {
 			   const stk::mesh::BulkData &bulk,
 			   Ioss::Region &io_region)
       {
-        const stk::mesh::EntityRank fa_rank = face_rank(part.mesh_meta_data());
+        const stk::mesh::EntityRank fa_rank = face_rank(mesh::MetaData::get(part));
 
 	bool create_faceset = true;
 	if (part.subsets().empty()) {
@@ -1032,7 +1032,7 @@ namespace stk {
 	    if (is_part_io_part(*supersets[i]) && supersets[i]->primary_entity_rank() == fa_rank) {
 	      create_faceset = false;
 	      break;
-	    }	      
+	    }
 	  }
 	}
 	if (create_faceset) {
@@ -1048,7 +1048,7 @@ namespace stk {
 			   const stk::mesh::BulkData &bulk,
 			   Ioss::Region &io_region)
       {
-        const stk::mesh::EntityRank edge_rank = stk::io::edge_rank(part.mesh_meta_data());
+        const stk::mesh::EntityRank edge_rank = stk::io::edge_rank(mesh::MetaData::get(part));
 
 	bool create_edgeset = true;
 	if (part.subsets().empty()) {
@@ -1060,7 +1060,7 @@ namespace stk {
 	    if (is_part_io_part(*supersets[i]) && supersets[i]->primary_entity_rank() == edge_rank) {
 	      create_edgeset = false;
 	      break;
-	    }	      
+	    }
 	  }
 	}
 	if (create_edgeset) {
@@ -1076,7 +1076,7 @@ namespace stk {
 			   const stk::mesh::BulkData &bulk,
 			   Ioss::Region &io_region)
       {
-	mesh::MetaData & meta = part.mesh_meta_data();
+	mesh::MetaData & meta = mesh::MetaData::get(part);
 
         mesh::Selector selector = ( meta.locally_owned_part() | meta.globally_shared_part() ) & part;
 
@@ -1093,7 +1093,7 @@ namespace stk {
 			  const mesh::BulkData &bulk_data,
 			  const Ioss::Region *input_region)
     {
-      const mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
+      const mesh::MetaData & meta_data = mesh::MetaData::get(bulk_data);
 
       const stk::mesh::EntityRank no_rank = node_rank(meta_data);
       const stk::mesh::EntityRank el_rank = element_rank(meta_data);
@@ -1139,7 +1139,7 @@ namespace stk {
 			  const stk::mesh::BulkData &bulk,
 			  std::vector<mesh::Entity*> &entities)
       {
-	mesh::MetaData & meta = part.mesh_meta_data();
+	mesh::MetaData & meta = mesh::MetaData::get(part);
 	mesh::EntityRank type = part_primary_entity_rank(part);
 	if (invalid_rank(type))
 	  type = node_rank(meta);
@@ -1153,7 +1153,7 @@ namespace stk {
 				    mesh::Part * const part ,
 				    const mesh::BulkData & bulk_data )
       {
-	const mesh::MetaData & meta_data = part->mesh_meta_data();
+	const mesh::MetaData & meta_data = mesh::MetaData::get(*part);
 
 	std::vector<mesh::Entity *> sides ;
 	size_t num_sides = get_entities(*part, bulk_data, sides);
@@ -1251,7 +1251,7 @@ namespace stk {
 	  /// stored by the app and wouldn't need to be accessed via
 	  /// string lookup.  App infrastructure is not shown here, so
 	  /// lookup by string for the example.
-	  const stk::mesh::MetaData & meta_data = bulk.mesh_meta_data();
+	  const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	  mesh::Field<double, mesh::Cartesian> *coord_field =
 	    meta_data.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
 	  assert(coord_field != NULL);
@@ -1261,7 +1261,7 @@ namespace stk {
       void output_element_block(Ioss::ElementBlock *block,
 				const stk::mesh::BulkData &bulk)
       {
-	const stk::mesh::MetaData & meta_data = bulk.mesh_meta_data();
+	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	const std::string& name = block->name();
 	mesh::Part* part = meta_data.get_part(name);
 
@@ -1321,7 +1321,7 @@ namespace stk {
 
       void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk)
       {
-	const stk::mesh::MetaData & meta_data = bulk.mesh_meta_data();
+	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	const std::string& name = ns->name();
 	stk::mesh::Part* part = meta_data.get_part(name);
 	assert(part != NULL);
@@ -1354,7 +1354,7 @@ namespace stk {
       void output_face_set(Ioss::FaceSet *fs,
 			   const stk::mesh::BulkData &bulk)
       {
-	const stk::mesh::MetaData & meta_data = bulk.mesh_meta_data();
+	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	size_t block_count = fs->block_count();
 	for (size_t i=0; i < block_count; i++) {
 	  Ioss::EntityBlock *block = fs->get_block(i);
@@ -1368,7 +1368,7 @@ namespace stk {
       void output_edge_set(Ioss::EdgeSet *es,
 			   const stk::mesh::BulkData &bulk)
       {
-	const stk::mesh::MetaData & meta_data = bulk.mesh_meta_data();
+	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	size_t block_count = es->block_count();
 	for (size_t i=0; i < block_count; i++) {
 	  Ioss::EntityBlock *block = es->get_block(i);
@@ -1383,7 +1383,7 @@ namespace stk {
     void write_output_db(Ioss::Region& io_region,
 			 const stk::mesh::BulkData& bulk)
     {
-      const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+	    const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
 
       io_region.begin_mode( Ioss::STATE_MODEL );
 
@@ -1435,7 +1435,7 @@ namespace stk {
     void set_distribution_factor_field(stk::mesh::Part &p,
 				       const stk::mesh::Field<double, stk::mesh::ElementNode> &df_field)
     {
-      stk::mesh::MetaData &m = p.mesh_meta_data();
+      stk::mesh::MetaData &m = mesh::MetaData::get(p);
       m.declare_attribute_no_delete(p,&df_field);
     }
 
@@ -1447,7 +1447,7 @@ namespace stk {
     void set_field_role(stk::mesh::FieldBase &f, const Ioss::Field::RoleType &role)
     {
       Ioss::Field::RoleType *my_role = new Ioss::Field::RoleType(role);
-      stk::mesh::MetaData &m = f.mesh_meta_data();
+      stk::mesh::MetaData &m = mesh::MetaData::get(f);
       const Ioss::Field::RoleType *check = m.declare_attribute_with_delete(f, my_role);
       if ( check != my_role ) {
         if (*check != *my_role) {

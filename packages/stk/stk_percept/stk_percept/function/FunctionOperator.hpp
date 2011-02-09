@@ -18,7 +18,7 @@ namespace stk
   {
     //class FunctionWithIntrepidRequest;
 
-    /** 
+    /**
      */
     class FunctionOperator
     {
@@ -30,7 +30,7 @@ namespace stk
       {
         if (!part)
           {
-            m_part = &bulkData.mesh_meta_data().universal_part();
+            m_part = &stk::mesh::MetaData::get(bulkData).universal_part();
           }
       }
       virtual ~FunctionOperator() {}

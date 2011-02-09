@@ -113,7 +113,7 @@ namespace {
 			      stk::mesh::BulkData & bulk)
   {
     assert(io->type() == Ioss::FACESET || io->type() == Ioss::EDGESET);
-    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
     size_t block_count = io->block_count();
     for (size_t i=0; i < block_count; i++) {
@@ -490,7 +490,7 @@ namespace stk {
 	Ioss::NodeBlock *nb = node_blocks[0];
 
 	std::vector<stk::mesh::Entity*> nodes;
-	const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 	stk::io::get_entity_list(nb, node_rank(meta), bulk, nodes);
 
 	/// \todo REFACTOR Application would probably store this field
@@ -532,7 +532,7 @@ namespace stk {
 
 	  if (stk::io::include_entity(entity)) {
 	    const std::string &name = entity->name();
-	    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 	    stk::mesh::Part* const part = meta.get_part(name);
 	    assert(part != NULL);
 
@@ -650,7 +650,7 @@ namespace stk {
 
 	  if (stk::io::include_entity(entity)) {
 	    const std::string & name = entity->name();
-	    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 	    stk::mesh::Part* const part = meta.get_part(name);
 	    assert(part != NULL);
 	    stk::mesh::PartVector add_parts( 1 , part );
@@ -721,7 +721,7 @@ namespace stk {
 	std::vector<stk::mesh::Entity*> entities;
 	stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
-	stk::mesh::MetaData & meta = part.mesh_meta_data();
+  stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
 	const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
 	std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
@@ -755,7 +755,7 @@ namespace stk {
       {
 	region.begin_state(step);
 	// Special processing for nodeblock (all nodes in model)...
-	const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
 
 	put_field_data(bulk, meta.universal_part(), node_rank(meta),
 		       region.get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
@@ -809,7 +809,7 @@ namespace stk {
 	}
 
 	if (mesh_data.m_generateSkinFaces) {
-	  const stk::mesh::MetaData &meta_data = bulk_data.mesh_meta_data();
+    const stk::mesh::MetaData & meta_data = stk::mesh::MetaData::get(bulk_data);
 	  stk::mesh::Part* const skin_part = meta_data.get_part("skin");
 	  stk::io::util::generate_sides(bulk_data, *skin_part, true);
 	}
@@ -992,11 +992,12 @@ namespace {
       if ( p_rank == 0 ) {
 	std::cout << "N_GEARS Meshing completed and verified" << std::endl ;
 
+  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
 	std::cout << "N_GEARS Global Counts { "
-                  << " Node = " << counts[ stk::io::node_rank(mesh.mesh_meta_data())]
-                  << " Edge = " << counts[ stk::io::edge_rank(mesh.mesh_meta_data())]
-                  << " Face = " << counts[ stk::io::face_rank(mesh.mesh_meta_data())]
-                  << " Elem = " << counts[ stk::io::element_rank(mesh.mesh_meta_data())] << std::endl;
+                  << " Node = " << counts[ stk::io::node_rank(meta)]
+                  << " Edge = " << counts[ stk::io::edge_rank(meta)]
+                  << " Face = " << counts[ stk::io::face_rank(meta)]
+                  << " Elem = " << counts[ stk::io::element_rank(meta)] << std::endl;
       }
     }
   }
