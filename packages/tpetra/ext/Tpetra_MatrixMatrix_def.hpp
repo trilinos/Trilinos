@@ -296,7 +296,7 @@ void Add(
   //
   //This method forms the matrix-matrix sum B = scalarA * op(A) + scalarB * B, where
 
-  //Convience typedefs
+  //Convience typedef
   typedef CrsMatrix<
     Scalar, 
     LocalOrdinal,
@@ -310,7 +310,7 @@ void Add(
   //sum.
 
   TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix A.isFillComplete() is false, it is required to be true. (Result matrix B is not required to be isFillComplete()).");
+    "MatrixMatrix::Add ERROR, input matrix A.isFillComplete() is false; it is required to be true. (Result matrix B is not required to be isFillComplete()).");
 
   //explicit tranpose A formed as necessary
   RCP<const CrsMatrix_t> Aprime = null;
@@ -322,8 +322,11 @@ void Add(
     Aprime = transposeResult;
   }
   else{
-    Aprime = A;
+    Aprime = rcpFromRef(A);
   }
+  /*else{
+    Aprime = A;
+  }*/
 
   size_t A_NumEntries;
   Array<GlobalOrdinal> A_Indices(Aprime->getGlobalMaxNumRowEntries());
@@ -384,7 +387,7 @@ void Add(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
   bool transposeB,
   Scalar scalarB,
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C)
+  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > C)
 {
   //
   //This method forms the matrix-matrix sum C = scalarA * op(A) + scalarB * op(B), where
@@ -405,37 +408,37 @@ void Add(
     "they are required to be true. (Result matrix C should be an empty pointer)" << std::endl);
 
 
-  const CrsMatrix_t Aprime;
-  const CrsMatrix_t Bprime;
+  RCP<const CrsMatrix_t> Aprime = null;
+  RCP<const CrsMatrix_t> Bprime = null;
 
 
   //explicit tranpose A formed as necessary
   if( transposeA ) {
-    RCP<CrsMatrix_t> aTrans = null;
-	RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
+    RCP<CrsMatrix_t> aTrans;
+	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
     theTransposer.createTranspose(DoOptimizeStorage, aTrans);
     Aprime = aTrans;
   }
   else{
-    Aprime = A;
+    Aprime = rcpFromRef(A);
   }
 
   //explicit tranpose B formed as necessary
   if( transposeB ) {
     RCP<CrsMatrix_t> bTrans = null;
-	RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(B);
+	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(B);
     theTransposer.createTranspose(DoOptimizeStorage, bTrans);
     Bprime = bTrans;
   }
   else{
-    Bprime = B;
+    Bprime = rcpFromRef(B);
   }
 
   // allocate or zero the new matrix
-  if(C != NULL)
-     C.setAllToScalar(ScalarTraits<Scalar>::zero());
+  if(C != null)
+     C->setAllToScalar(ScalarTraits<Scalar>::zero());
   else
-     C = new CrsMatrix_t(Aprime->getRowMap(), null);
+    C = rcp(new CrsMatrix_t(Aprime->getRowMap(), null));
 
   Array<RCP<const CrsMatrix_t> > Mat = 
     Teuchos::tuple<RCP<const CrsMatrix_t> >(Aprime, Bprime);
@@ -461,10 +464,10 @@ void Add(
         if( scalar[k] != ScalarTraits<Scalar>::one() )
            for( size_t j = OrdinalTraits<size_t>::zero(); j < NumEntries; ++j ) Values[j] *= scalar[k];
    
-        if(C.isFillComplete()) { // Sum in values
-           C.sumIntoGlobalValues( Row, Indices, Values);
+        if(C->isFillComplete()) { // Sum in values
+           C->sumIntoGlobalValues( Row, Indices, Values);
         } else { // just add it to the unfilled CRS Matrix
-           C.insertGlobalValues( Row, Indices, Values);
+           C->insertGlobalValues( Row, Indices, Values);
         }
      }
   }

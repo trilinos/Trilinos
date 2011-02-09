@@ -90,7 +90,7 @@ int add_test(
 
   computedC = rcp( new CrsMatrix<double,int>(rowmap, 1));
 
-  MatrixMatrix::Add(*A, false, 1.0, *B, false, 1.0, *computedC);
+  MatrixMatrix::Add(*A, false, 1.0, *B, false, 1.0, computedC);
 
   computedC->fillComplete(C->getDomainMap(), C->getRangeMap());
 

@@ -59,10 +59,8 @@ int main(int argc, char* argv[]){
 	}
 
 	// Create a Tpetra::Matrix using the Map, with a static allocation dictated by NumNz
-	Teuchos::RCP< Tpetra::CrsMatrix<Scalar,Ordinal> > A;
-	A = Teuchos::rcp( new Tpetra::CrsMatrix<Scalar,Ordinal>(map, NumNz, Tpetra::StaticProfile) );
-	Teuchos::RCP< Tpetra::CrsMatrix<Scalar,Ordinal> > AT;
-	AT = Teuchos::rcp( new Tpetra::CrsMatrix<Scalar,Ordinal>(map, NumNz, Tpetra::StaticProfile) );
+	Tpetra::CrsMatrix<Scalar,Ordinal>  A (map, NumNz, Tpetra::StaticProfile);
+	Tpetra::CrsMatrix<Scalar,Ordinal>  AT(map, NumNz, Tpetra::StaticProfile);
 	Teuchos::RCP< Tpetra::CrsMatrix<Scalar,Ordinal> > TestMatrix = Teuchos::null;
 
 	// We are done with NumNZ
@@ -75,17 +73,17 @@ int main(int argc, char* argv[]){
 	const Scalar three = static_cast<Scalar>(3.0);
 	for (size_t i=0; i<numMyElements; i++) {
 		if (myGlobalElements[i] == 0) {
-			A->insertGlobalValues( myGlobalElements[i],
+			A.insertGlobalValues( myGlobalElements[i],
 			Teuchos::tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
 			Teuchos::tuple<Scalar> ( two, negOne ) );
 		}
 		else if (static_cast<global_size_t>(myGlobalElements[i]) == numGlobalElements-1) {
-			A->insertGlobalValues( myGlobalElements[i],
+			A.insertGlobalValues( myGlobalElements[i],
 			Teuchos::tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
 			Teuchos::tuple<Scalar> ( negOne, two ) );
 		}
 		else {
-			A->insertGlobalValues( myGlobalElements[i],
+			A.insertGlobalValues( myGlobalElements[i],
 			Teuchos::tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
 			Teuchos::tuple<Scalar> ( three, two, negOne ) );
 		}
@@ -116,13 +114,13 @@ int main(int argc, char* argv[]){
 	}*/
 	
 	// Finish up
-	A->fillComplete(Tpetra::DoOptimizeStorage);
-	AT->fillComplete(Tpetra::DoOptimizeStorage);
+	A.fillComplete(Tpetra::DoOptimizeStorage);
+	AT.fillComplete(Tpetra::DoOptimizeStorage);
 	
 	//	A->describe(*out, Teuchos::VERB_EXTREME); 
 //		AT->describe(*out, Teuchos::VERB_EXTREME); 
 	Tpetra::RowMatrixTransposer<Scalar, Ordinal> transposer = Tpetra::RowMatrixTransposer<Scalar, Ordinal>(A);
-	Teuchos::RCP<Tpetra::Map<Ordinal> > tMap = Teuchos::rcp(new Tpetra::Map<Ordinal>(4, 0, comm));
+	/*Teuchos::RCP<Tpetra::Map<Ordinal> > tMap = Teuchos::rcp(new Tpetra::Map<Ordinal>(4, 0, comm));*/
 	transposer.createTranspose(Tpetra::DoOptimizeStorage, TestMatrix/*, tMap*/);
 
 //	if (verbose) {

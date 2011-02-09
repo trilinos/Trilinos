@@ -52,7 +52,7 @@ template<class Scalar,
   class SpMatOps>
 void 
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (const OptimizeOption optimizeTranspose, 
-    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > &transposeMatrix/*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
+    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > transposeMatrix/*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
 {
 
   optimizeTranspose_ = optimizeTranspose;
@@ -68,8 +68,8 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
   //   tRowMap = transposeRowMap;
   // }
 
-  size_t numMyRows = origMatrix_->getNodeNumRows();
-  size_t numMyCols = origMatrix_->getNodeNumCols();
+  size_t numMyRows = origMatrix_.getNodeNumRows();
+  size_t numMyCols = origMatrix_.getNodeNumCols();
   ArrayRCP<size_t> transNumNz = Teuchos::ArrayRCP<size_t>(numMyCols);
   std::fill(transNumNz.begin(), transNumNz.end(), LST0);
   Array<Array<GlobalOrdinal> > transIndices(numMyCols);
