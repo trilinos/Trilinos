@@ -92,13 +92,13 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
 {
   bool result = true ;
 
-  const MetaData & S = M.mesh_meta_data();
+  const MetaData & S = MetaData::get(M);
   Part & owns_part = S.locally_owned_part();
   Part & shares_part = S.globally_shared_part();
 
   const unsigned p_rank = M.parallel_rank();
 
-  const size_t EntityRankEnd = M.mesh_meta_data().entity_rank_count();
+  const size_t EntityRankEnd = MetaData::get(M).entity_rank_count();
 
   size_t comm_count = 0 ;
 
@@ -209,7 +209,7 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
         if ( ! this_result ) {
           result = false ;
           error_log << "P" << M.parallel_rank() << ": " ;
-          print_entity_key( error_log , M.mesh_meta_data(), entity.key() );
+          print_entity_key( error_log , MetaData::get(M), entity.key() );
           error_log << " ERROR: owner(" << p_owner
                     << ") owns(" << has_owns_part
                     << ") shares(" << has_shares_part
@@ -234,7 +234,7 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
     const PairIterEntityComm ec = (*i)->comm();
 
     if ( ec.empty() ) {
-      print_entity_key( error_log , M.mesh_meta_data(), (*i)->key() );
+      print_entity_key( error_log , MetaData::get(M), (*i)->key() );
       error_log << " ERROR: in entity_comm but has no comm info" << std::endl ;
       result = false ;
     }
@@ -348,7 +348,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
                               const BulkData & mesh ,
                               std::ostream & error_log )
 {
-  const MetaData & meta = mesh.mesh_meta_data();
+  const MetaData & meta = MetaData::get(mesh);
   Part * const       owns_part   = & meta.locally_owned_part();
   Part * const       shares_part = & meta.globally_shared_part();
   const PartVector & mesh_parts  = meta.get_parts();

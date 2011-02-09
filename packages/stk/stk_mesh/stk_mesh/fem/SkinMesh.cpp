@@ -288,7 +288,7 @@ void skin_mesh( BulkData & mesh, EntityRank element_rank, Part * skin_part) {
   EntityVector owned_elements;
 
   // select owned
-  Selector owned = mesh.mesh_meta_data().locally_owned_part();
+  Selector owned = MetaData::get(mesh).locally_owned_part();
   get_selected_entities( owned,
                          mesh.buckets(element_rank),
                          owned_elements);
@@ -323,7 +323,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
   mesh.modification_begin();
 
   // formulate request ids for the new sides
-  std::vector<size_t> requests(mesh.mesh_meta_data().entity_rank_count(), 0);
+  std::vector<size_t> requests(MetaData::get(mesh).entity_rank_count(), 0);
   requests[element_rank -1] = num_sides_to_create;
 
   // create the new sides
@@ -360,7 +360,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
 
       PartVector add_parts ;
       {
-        Part * topo_part = & fem::get_part(mesh.mesh_meta_data(), side_key.first);
+        Part * topo_part = & fem::get_part(MetaData::get(mesh), side_key.first);
         add_parts.push_back( topo_part);
         if (skin_part) {
           add_parts.push_back(skin_part);
@@ -437,7 +437,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
 
       PartVector add_parts ;
       {
-        Part * topo_part = & fem::get_part(mesh.mesh_meta_data(), side_key.first);
+        Part * topo_part = & fem::get_part(MetaData::get(mesh), side_key.first);
         add_parts.push_back( topo_part);
         if (skin_part) {
           add_parts.push_back(skin_part);

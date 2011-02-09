@@ -31,7 +31,7 @@ Entity::~Entity()
 
 std::string print_entity_key(const Entity& entity)
 {
-  return print_entity_key(entity.bucket().mesh().mesh_meta_data(),
+  return print_entity_key(MetaData::get(entity),
                           entity.key());
 }
 

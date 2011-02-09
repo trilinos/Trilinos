@@ -43,12 +43,11 @@ namespace impl {
  *          anonymous multi-dimension.
  */
 class FieldBase {
-public:
+  public:
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
    */
   MetaData & mesh_meta_data() const { return m_impl.meta_data(); }
-
   /** \brief  Internally generated ordinal of this field that is unique
    *          within the owning \ref stk::mesh::MetaData "meta data manager".
    */
@@ -124,6 +123,12 @@ public:
 
 private:
 
+  /** \brief  The \ref stk::mesh::MetaData "meta data manager"
+   *          that owns this field
+   */
+  MetaData & meta_data() const { return m_impl.meta_data(); }
+
+  friend class ::stk::mesh::MetaData ;
   friend class ::stk::mesh::impl::FieldRepository ;
   friend class ::stk::mesh::impl::FieldBaseImpl ;
 

@@ -30,7 +30,7 @@ using stk::mesh::fem::NODE_RANK;
 
 unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank )
 {
-  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
 
   stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
@@ -113,7 +113,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     stk::mesh::MetaData & meta = fixture.m_meta_data;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
-    stk::mesh::fem::FEMInterface &fem = fixture.m_fem;    
+    stk::mesh::fem::FEMInterface &fem = fixture.m_fem;
     const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
     const stk::mesh::EntityRank side_rank    = stk::mesh::fem::side_rank(fem);
 

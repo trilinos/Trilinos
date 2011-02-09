@@ -147,7 +147,7 @@ void BulkData::change_ghosting(
 
   require_ok_to_modify();
 
-  const bool ok_mesh  = & ghosts.mesh() == this ;
+  const bool ok_mesh  = & BulkData::get(ghosts) == this ;
   const bool ok_ghost = 1 < ghosts.ordinal();
   bool ok_add    = true ;
   bool ok_remove = true ;
@@ -615,7 +615,7 @@ void comm_sync_send_recv(
         //  Add it to my send list.
         ThrowRequireMsg( e != NULL,
             "Unknown entity key: " <<
-            mesh.mesh_meta_data().entity_rank_name(entity_key.rank()) <<
+            MetaData::get(mesh).entity_rank_name(entity_key.rank()) <<
             "[" << entity_key.id() << "]");
         EntityProc tmp( e , proc );
         new_send.insert( tmp );

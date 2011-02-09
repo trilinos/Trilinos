@@ -159,7 +159,7 @@ bool EntityImpl::marked_for_destruction() const {
       "Inconsistent destruction state; " <<
       "destroyed entities should be in the nil bucket and vice versa.\n" <<
       "Problem is with entity: " <<
-      print_entity_key( bucket().mesh().mesh_meta_data(), key() ) <<
+      print_entity_key( MetaData::get( bucket() ), key() ) <<
       "\nWas in nil bucket: " << (bucket().capacity() == 0) << ", " <<
       "was in destroyed state: " << (m_mod_log == EntityLogDeleted) );
 
@@ -179,7 +179,7 @@ void EntityImpl::log_resurrect()
 {
   ThrowErrorMsgIf( EntityLogDeleted != m_mod_log,
       "Trying to resurrect non-deleted entity: " <<
-      print_entity_key( bucket().mesh().mesh_meta_data(), key() ) );
+      print_entity_key( MetaData::get( bucket() ), key() ) );
 
   m_mod_log = EntityLogModified;
   m_bucket = NULL;
@@ -236,7 +236,7 @@ bool EntityImpl::declare_relation( Entity & e_to,
                                    unsigned sync_count,
                                    bool is_converse )
 {
-  const MetaData & meta_data = bucket().mesh().mesh_meta_data();
+  const MetaData & meta_data = MetaData::get( bucket() );
 
   const Relation new_relation( e_to , local_id );
 

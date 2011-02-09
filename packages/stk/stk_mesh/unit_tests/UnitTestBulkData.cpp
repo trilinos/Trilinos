@@ -45,7 +45,7 @@ void donate_one_element( BulkData & mesh , bool aura )
 {
   const unsigned p_rank = mesh.parallel_rank();
 
-  Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
+  Selector select_owned( MetaData::get(mesh).locally_owned_part() );
 
   std::vector<unsigned> before_count ;
   std::vector<unsigned> after_count ;
@@ -114,8 +114,8 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
 {
   const unsigned p_rank = mesh.parallel_rank();
 
-  const Selector select_used = mesh.mesh_meta_data().locally_owned_part() |
-                               mesh.mesh_meta_data().globally_shared_part() ;
+  const Selector select_used = MetaData::get(mesh).locally_owned_part() |
+                               MetaData::get(mesh).globally_shared_part() ;
 
   std::vector<unsigned> before_count ;
   std::vector<unsigned> after_count ;

@@ -25,7 +25,7 @@ namespace {
 
 unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank)
 {
-  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
 
   stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 

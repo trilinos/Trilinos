@@ -15,7 +15,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Property.hpp>
+#include <stk_mesh/base/PropertyBase.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>

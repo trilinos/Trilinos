@@ -18,14 +18,6 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-namespace {
-
-const MetaData & metadata_from_entity(const Entity *e) {
-  return e->bucket().mesh().mesh_meta_data();
-}
-
-}
-
 EntityRepository::~EntityRepository() {
   try {
     while ( ! m_entities.empty() ) {
@@ -41,7 +33,7 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
                    entity_id(i->first) << ", value was NULL");
 
   ThrowErrorMsgIf( i->first != i->second->key(),
-    "Key " << print_entity_key(metadata_from_entity(i->second), i->first) <<
+    "Key " << print_entity_key(MetaData::get( *i->second ), i->first) <<
     " != " << print_entity_key(i->second));
 
   delete i->second ;

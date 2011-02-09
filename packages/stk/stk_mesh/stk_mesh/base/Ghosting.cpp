@@ -14,7 +14,7 @@
 namespace stk {
 namespace mesh {
 
-void Ghosting::send_list( std::vector< EntityProc > & v ) const 
+void Ghosting::send_list( std::vector< EntityProc > & v ) const
 {
   for ( std::vector<Entity*>::const_iterator
         i =  m_mesh.entity_comm().begin() ;
@@ -30,7 +30,7 @@ void Ghosting::send_list( std::vector< EntityProc > & v ) const
   }
 }
 
-void Ghosting::receive_list( std::vector< Entity * > & v ) const 
+void Ghosting::receive_list( std::vector< Entity * > & v ) const
 {
   for ( std::vector<Entity*>::const_iterator
         i =  m_mesh.entity_comm().begin() ;
@@ -61,7 +61,7 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
       for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           out << "    ";
-          print_entity_key( out, m_mesh.mesh_meta_data(), entity->key() );
+          print_entity_key( out, MetaData::get(m_mesh), entity->key() );
           out << ", sending ghost to " << ec->proc << ", status is: "
               << entity->log_query() << "\n";
         }
@@ -78,7 +78,7 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
       for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           out << "    ";
-          print_entity_key( out, m_mesh.mesh_meta_data(), entity->key() );
+          print_entity_key( out, MetaData::get(m_mesh), entity->key() );
           out << ", owner of ghost is " << entity->owner_rank()
               << ", status is: " << entity->log_query() << "\n";
         }

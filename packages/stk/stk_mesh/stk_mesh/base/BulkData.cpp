@@ -66,7 +66,7 @@ convert_entity_keys_to_spans( const MetaData & meta )
 
 //----------------------------------------------------------------------
 
-BulkData::BulkData( const MetaData & mesh_meta_data ,
+BulkData::BulkData( MetaData & mesh_meta_data ,
                     ParallelMachine parallel ,
                     unsigned bucket_max_size )
   : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),

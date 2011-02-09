@@ -34,7 +34,7 @@ FEMInterface &
 get_fem_interface(
   const BulkData &      bulk_data)
 {
-  return get_fem_interface(bulk_data.mesh_meta_data());
+  return get_fem_interface(MetaData::get(bulk_data));
 }
 
 
@@ -42,7 +42,7 @@ FEMInterface &
 get_fem_interface(
   const Part &        part)
 {
-  return get_fem_interface(part.mesh_meta_data());
+  return get_fem_interface(MetaData::get(part));
 }
 
 
@@ -50,7 +50,7 @@ FEMInterface &
 get_fem_interface(
   const Bucket &      bucket)
 {
-  return get_fem_interface(bucket.mesh().mesh_meta_data());
+  return get_fem_interface(MetaData::get(bucket));
 }
 
 
@@ -58,17 +58,17 @@ FEMInterface &
 get_fem_interface(
   const Entity &      entity)
 {
-  return get_fem_interface(entity.bucket().mesh().mesh_meta_data());
+  return get_fem_interface(MetaData::get(entity));
 }
 
 
 void
 set_spatial_dimension(
-  const MetaData &      meta_data, 
+  const MetaData &      meta_data,
   size_t                spatial_dimension)
 {
   FEMInterface &fem = get_fem_interface(meta_data);
-  
+
   fem.set_spatial_dimension(spatial_dimension);
 }
 
@@ -90,7 +90,7 @@ set_cell_topology(
   Part &                part,
   CellTopology          cell_topology)
 {
-  FEMInterface &fem = get_fem_interface(part.mesh_meta_data());
+  FEMInterface &fem = get_fem_interface(MetaData::get(part));
 
   fem.set_cell_topology(part, cell_topology);
 }
@@ -108,7 +108,7 @@ CellTopology
 get_cell_topology(
   const Part &          part )
 {
-  FEMInterface &fem = get_fem_interface(part.mesh_meta_data());
+  FEMInterface &fem = get_fem_interface(MetaData::get(part));
 
   CellTopology cell_topology(fem.get_cell_topology( part ));
 
@@ -137,8 +137,8 @@ CellTopology
 get_cell_topology(
   const Bucket &                bucket)
 {
-  const BulkData   & bulk_data = bucket.mesh();
-  const MetaData   & meta_data = bulk_data.mesh_meta_data();
+  const BulkData   & bulk_data = BulkData::get(bucket);
+  const MetaData   & meta_data = MetaData::get(bulk_data);
   const PartVector & all_parts = meta_data.get_parts();
 
   FEMInterface &fem = get_fem_interface(meta_data);

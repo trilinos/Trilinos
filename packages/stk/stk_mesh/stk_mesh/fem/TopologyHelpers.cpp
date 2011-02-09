@@ -47,7 +47,7 @@ void verify_declare_element_side(
     ( elem_top && local_side_id < elem_top->side_count )
     ? elem_top->side[ local_side_id ].topology : NULL ;
 
-  ThrowErrorMsgIf( &mesh != & (elem.bucket().mesh()),
+  ThrowErrorMsgIf( &mesh != & BulkData::get(elem),
     "For elem " << print_entity_key(elem) <<
     ", Bulkdata for 'elem' and mesh are different");
 
@@ -70,7 +70,7 @@ Entity & declare_element_side(
   const unsigned local_side_id ,
   Part * part )
 {
-  BulkData & mesh = side.bucket().mesh();
+  BulkData & mesh = BulkData::get(side);
 
   verify_declare_element_side(mesh, elem, local_side_id);
 

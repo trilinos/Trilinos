@@ -45,6 +45,10 @@ namespace mesh {
 class BulkData {
 public:
 
+  inline static BulkData & get( const Bucket & bucket);
+  inline static BulkData & get( const Entity & entity);
+  inline static BulkData & get( const Ghosting & ghost);
+
   enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
 
   ~BulkData();
@@ -56,7 +60,7 @@ public:
    *  - The maximum number of entities per bucket may be supplied.
    *  - The bulk data is in the synchronized or "locked" state.
    */
-  BulkData( const MetaData & mesh_meta_data ,
+  BulkData( MetaData & mesh_meta_data ,
       ParallelMachine parallel ,
       unsigned bucket_max_size = 1000 );
 
@@ -357,6 +361,9 @@ public:
 
 private:
 
+  /** \brief  The meta data manager for this bulk data manager. */
+  MetaData & meta_data() const { return m_mesh_meta_data ; }
+
 #ifndef DOXYGEN_COMPILE
 
   BulkData();
@@ -371,7 +378,7 @@ private:
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
 
   // Other information:
-  const MetaData &   m_mesh_meta_data ;
+  MetaData &   m_mesh_meta_data ;
   ParallelMachine    m_parallel_machine ;
   unsigned           m_parallel_size ;
   unsigned           m_parallel_rank ;
@@ -436,8 +443,21 @@ private:
 
   // FIXME: Remove this friend once unit-testing has been refactored
   friend class UnitTestModificationEndWrapper;
+  friend class ::stk::mesh::MetaData;
 #endif /* DOXYGEN_COMPILE */
 };
+
+BulkData & BulkData::get( const Bucket & bucket) {
+  return bucket.bulk_data();
+}
+
+BulkData & BulkData::get( const Entity & entity) {
+  return BulkData::get(entity.bucket());
+}
+
+BulkData & BulkData::get( const Ghosting & ghost) {
+  return ghost.bulk_data();
+}
 
 /** \} */
 

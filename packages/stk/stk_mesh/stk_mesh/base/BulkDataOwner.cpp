@@ -149,7 +149,7 @@ void clean_and_verify_parallel_change(
   const BulkData & mesh ,
   std::vector<EntityProc> & local_change )
 {
-  const MetaData      & meta   = mesh.mesh_meta_data() ;
+  const MetaData      & meta   = MetaData::get(mesh);
   const unsigned        p_rank = mesh.parallel_rank();
   const unsigned        p_size = mesh.parallel_size();
   const ParallelMachine p_comm = mesh.parallel();
