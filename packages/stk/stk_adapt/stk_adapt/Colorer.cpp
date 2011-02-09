@@ -125,8 +125,9 @@ namespace stk {
                                 all_elements.insert(element.identifier());
                                 for (unsigned inode=0; inode < num_node; inode++)
                                   {
-                                    Entity & node = *elem_nodes[ inode ].entity();
-                                    node_colors[icolor].insert(node.identifier());
+                                    //Entity & node = *elem_nodes[ inode ].entity();
+                                    //node_colors[icolor].insert(node.identifier());
+                                    node_colors[icolor].insert(node_ids[inode]);
                                   }
                               }
                           }  // elements in bucket
