@@ -36,8 +36,8 @@ namespace stk
     {
     public:
 
-      IntegratedOp(Function& integrand,  TurboOption turboOpt=TURBO_NONE, FieldBase *field=0) : 
-        m_nDOFs(1), m_accumulation_buffer(), m_count_elems(0), m_is_field(false), m_integrand(integrand), m_turboOpt(turboOpt) 
+      IntegratedOp(Function& integrand,  TurboOption turboOpt=TURBO_NONE, FieldBase *field=0) :
+        m_nDOFs(1), m_accumulation_buffer(), m_count_elems(0), m_is_field(false), m_integrand(integrand), m_turboOpt(turboOpt)
       {
         if (typeid(integrand) == typeid(FieldFunction))
           {
@@ -45,7 +45,7 @@ namespace stk
           }
         if (field)
           {
-            const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, field->mesh_meta_data().universal_part());
+            const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
             unsigned stride = r.stride[0] ;
             m_nDOFs = stride;
           }
@@ -92,7 +92,7 @@ namespace stk
         const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(bucket_or_element);
         CellTopology cell_topo(cell_topo_data);
 
-        VectorFieldType& coord_field = *(bulkData.mesh_meta_data()).get_field<VectorFieldType>("coordinates");
+        VectorFieldType& coord_field = *(MetaData::get(bulkData)).get_field<VectorFieldType>("coordinates");
 
         // FIXME for fields not on a Node
         unsigned nDOF = m_nDOFs;
@@ -106,7 +106,7 @@ namespace stk
         // FIXME
         im.m_DOFs_Tag.num = m_nDOFs;
         // FIXME
-                         
+
         IM::Jacobian              J  (im);
         IM::JacobianDet          dJ  (im);
         IM::CubaturePoints       xi  (im);
@@ -115,8 +115,8 @@ namespace stk
         IM::PhysicalCoords       pc  (im);
         IM::IntegrandValues      iv  (im);
         IM::IntegrandValuesDOF  ivD  (im);
-        IM::Integral             Io  (im); 
-        IM::Bases                Nb  (im); 
+        IM::Integral             Io  (im);
+        IM::Bases                Nb  (im);
 
         IM::WeightedMeasure wXdJ  (im);
         IM::FieldValues       fv  (im);
@@ -184,13 +184,13 @@ namespace stk
 
         if (m_turboOpt == TURBO_ELEMENT || m_turboOpt == TURBO_BUCKET)
           {
-            m_integrand(pc_mda, iv_mda, bucket_or_element, xi_mda);   
+            m_integrand(pc_mda, iv_mda, bucket_or_element, xi_mda);
           }
         else
           {
             m_integrand(pc_mda, iv_mda);
           }
-        
+
         // now, copy from the results to an array that Intrepid::integrate will like
 
 #endif
@@ -205,7 +205,7 @@ namespace stk
             //optional design:
             //
             //  Io(integrand(pc_mda, v), wXdJ(w, dJ(J(xi, c, cell_topo)), COMP_BLAS);
-        
+
             for (unsigned iCell = 0; iCell < nCells; iCell++)
               {
 //                 if (Util::getFlag(0))
@@ -231,7 +231,7 @@ namespace stk
       TurboOption m_turboOpt;
     };
 
-    //template<> 
+    //template<>
 
 
     bool IntegratedOp::operator()(const stk::mesh::Bucket& bucket,  stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)

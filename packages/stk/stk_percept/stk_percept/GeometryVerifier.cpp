@@ -57,7 +57,7 @@ namespace stk
       std::vector<double> histogram_ranges;
       bool notInitialized;
 
-      minMaxAve() : min(std::numeric_limits<double>::max()), max(std::numeric_limits<double>::min()), ave(0), sum(0), numAve(0), 
+      minMaxAve() : min(std::numeric_limits<double>::max()), max(std::numeric_limits<double>::min()), ave(0), sum(0), numAve(0),
                     min_i(0), max_i(0),
                     n_histogram_ranges(10),
                     histogram_ranges(n_histogram_ranges),
@@ -100,7 +100,7 @@ namespace stk
         all_reduce( mesh.parallel() , ReduceSum<1>( & ave ) );
         all_reduce( mesh.parallel() , ReduceSum<1>( & sum ) );
 
-        // if this proc doesn't have the max then reset the local max_i to 0, do ReduceMax, thereby picking up 
+        // if this proc doesn't have the max then reset the local max_i to 0, do ReduceMax, thereby picking up
         //   the value from the proc that does own the actual max_i
         if (std::fabs(max-max_local) > 1.e-10)
           {
@@ -131,8 +131,8 @@ namespace stk
             histogram_ranges[i] = (double(i)/double(n_histogram_ranges-1))*(max-min);
           }
       }
-      
-      
+
+
     };
 
 
@@ -160,30 +160,30 @@ namespace stk
     double GeometryVerifier::getEquiVol(CellTopology& cell_topo)
     {
       double volEqui = 1.0;
-      switch(cell_topo.getKey() ) 
+      switch(cell_topo.getKey() )
         {
-      
+
           // Tet cells
         case shards::Tetrahedron<4>::key:
         case shards::Tetrahedron<8>::key:
         case shards::Tetrahedron<10>::key:
           volEqui = std::sqrt(2.)/12.;
           break;
-        
+
           // Hex cells
         case shards::Hexahedron<8>::key:
         case shards::Hexahedron<20>::key:
         case shards::Hexahedron<27>::key:
           volEqui = 1.0;
           break;
-        
+
           // Pyramid cells
         case shards::Pyramid<5>::key:
         case shards::Pyramid<13>::key:
         case shards::Pyramid<14>::key:
           volEqui = std::sqrt(2.)/6.;
           break;
-        
+
           // Wedge cells
         case shards::Wedge<6>::key:
         case shards::Wedge<15>::key:
@@ -196,18 +196,18 @@ namespace stk
         case shards::Triangle<6>::key:
           volEqui = std::sqrt(3.)/4.;
           break;
-                  
+
         case shards::Quadrilateral<4>::key:
         case shards::Quadrilateral<8>::key:
         case shards::Quadrilateral<9>::key:
           volEqui = 1.0;
-          break;        
+          break;
 
         case shards::ShellTriangle<3>::key:
         case shards::ShellTriangle<6>::key:
           volEqui = std::sqrt(3.)/4.;
           break;
-        
+
         case shards::ShellQuadrilateral<4>::key:
         case shards::ShellQuadrilateral<8>::key:
         case shards::ShellQuadrilateral<9>::key:
@@ -219,7 +219,7 @@ namespace stk
         case shards::Beam<2>::key:
         case shards::Beam<3>::key:
           volEqui = 1.0;
-          break;        
+          break;
 
         default:
           break;
@@ -232,13 +232,13 @@ namespace stk
      */
     bool GeometryVerifier::isGeometryBad(stk::mesh::BulkData& bulk, bool printTable) //, stk::mesh::Part& mesh_part )
     {
-      const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+      const stk::mesh::MetaData& meta = MetaData::get(bulk);
       const unsigned p_rank = bulk.parallel_rank();
 
       unsigned foundBad=0;
       jac_data_map jac_data;
 
-      
+
       stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
         meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >("coordinates");
 
@@ -246,7 +246,7 @@ namespace stk
 
       const std::vector<mesh::Bucket*> & buckets = bulk.buckets( stk::mesh::Element );
 
-      for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik ) 
+      for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
         {
           if ( select_owned( **ik ) ) {
 
@@ -259,7 +259,7 @@ namespace stk
 
       for (unsigned ipass = 0; ipass < 1; ipass++)
         {
-          for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik ) 
+          for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
             {
               if ( select_owned( **ik ) ) {
 
@@ -301,7 +301,7 @@ namespace stk
               FieldContainer<double> elem_min_edge_length(number_elems);
               FieldContainer<double> elem_max_edge_length(number_elems);
               PerceptMesh::findMinMaxEdgeLength(bucket, *coord_field, elem_min_edge_length, elem_max_edge_length);
-          
+
               /// note: we're using cubature here instead of explicitly specifying some reference points
               ///  the idea is that we'll get a good estimate of the Jacobian's sign by testing it at all the
               ///  cubature points
@@ -340,7 +340,7 @@ namespace stk
               onesLeft.initialize(1.0);
 
               FieldContainer<double> volume(numCells);
-      
+
               // compute weighted measure
               FunctionSpaceTools::computeCellMeasure<double>(weightedMeasure, jacobian_det, cub_weights);
               if (0 && numCells == 27)
@@ -380,11 +380,11 @@ namespace stk
                       double quality_measure_1 = (cellVolNotZero < 0? -1.0 : 1.0) * min_edge_length / pow(fabs(cellVolNotZero), 1./(double(spaceDim)));
                       if (0 && iCubPt==0)
                         {
-                          std::cout << "quality_measure_1= " << quality_measure_1 << " cellVolNotZero= " << cellVolNotZero << " cellVolActual= " 
-                                    << cellVolActual << " volEqui= " << volEqui << " min_edge_length= " << min_edge_length 
+                          std::cout << "quality_measure_1= " << quality_measure_1 << " cellVolNotZero= " << cellVolNotZero << " cellVolActual= "
+                                    << cellVolActual << " volEqui= " << volEqui << " min_edge_length= " << min_edge_length
                                     << " max_edge_length= " << max_edge_length << std::endl;
                         }
-                    
+
                       double quality_measure_2 = min_edge_length / max_edge_lengthNotZero;
 
                       if (ipass == 0)
@@ -423,9 +423,9 @@ namespace stk
               }
 
             } // buckets
-          
+
           // setup the histogram ranges and counts
-          
+
         } // ipass
 
       for (jac_data_map::iterator itMap = jac_data.begin(); itMap != jac_data.end(); itMap++)
@@ -446,17 +446,17 @@ namespace stk
         }
       table.setTitle("Jacobian and Quality Table\n");
 
-      table << "|" << "Element Type" << "|" 
-            << "Min JacDet" << "|" << "Id" << "|" 
-            << "Max JacDet" << "|" << "Id" << "|" 
-            << "Ave JacDet" << "|" 
-            << "Sum JacDet" << "|" 
-            << "Min QM1" << "|" << "Id" << "|" 
-            << "Max QM1" << "|" << "Id" << "|" 
-            << "Ave QM1" << "|" 
-            << "Min QM2" << "|" << "Id" << "|" 
-            << "Max QM2" << "|" << "Id" << "|" 
-            << "Ave QM2" << "|" 
+      table << "|" << "Element Type" << "|"
+            << "Min JacDet" << "|" << "Id" << "|"
+            << "Max JacDet" << "|" << "Id" << "|"
+            << "Ave JacDet" << "|"
+            << "Sum JacDet" << "|"
+            << "Min QM1" << "|" << "Id" << "|"
+            << "Max QM1" << "|" << "Id" << "|"
+            << "Ave QM1" << "|"
+            << "Min QM2" << "|" << "Id" << "|"
+            << "Max QM2" << "|" << "Id" << "|"
+            << "Ave QM2" << "|"
             << stk::end_header;
 
       for (jac_data_map::iterator itMap = jac_data.begin(); itMap != jac_data.end(); itMap++)
@@ -466,23 +466,23 @@ namespace stk
               std::cout << "P[" << p_rank << "] nele = " << itMap->second.numEle << std::endl;
             }
 
-          table << "|" << itMap->first << "|" 
-                << itMap->second.jac.min << "|" 
-                << itMap->second.jac.min_i << "|" 
-                << itMap->second.jac.max << "|" 
-                << itMap->second.jac.max_i << "|" 
-                << itMap->second.jac.ave << "|" 
-                << itMap->second.jac.sum << "|" 
-                << itMap->second.QM_1.min << "|" 
-                << itMap->second.QM_1.min_i << "|" 
-                << itMap->second.QM_1.max << "|" 
-                << itMap->second.QM_1.max_i << "|" 
-                << itMap->second.QM_1.ave << "|" 
-                << itMap->second.QM_2.min << "|" 
-                << itMap->second.QM_2.min_i << "|" 
-                << itMap->second.QM_2.max << "|" 
-                << itMap->second.QM_2.max_i << "|" 
-                << itMap->second.QM_2.ave << "|" 
+          table << "|" << itMap->first << "|"
+                << itMap->second.jac.min << "|"
+                << itMap->second.jac.min_i << "|"
+                << itMap->second.jac.max << "|"
+                << itMap->second.jac.max_i << "|"
+                << itMap->second.jac.ave << "|"
+                << itMap->second.jac.sum << "|"
+                << itMap->second.QM_1.min << "|"
+                << itMap->second.QM_1.min_i << "|"
+                << itMap->second.QM_1.max << "|"
+                << itMap->second.QM_1.max_i << "|"
+                << itMap->second.QM_1.ave << "|"
+                << itMap->second.QM_2.min << "|"
+                << itMap->second.QM_2.min_i << "|"
+                << itMap->second.QM_2.max << "|"
+                << itMap->second.QM_2.max_i << "|"
+                << itMap->second.QM_2.ave << "|"
                 << stk::end_row;
         }
 
@@ -492,7 +492,7 @@ namespace stk
           std::cout << "P[" << p_rank << "] " << table;
           //std::cout << table;
         }
-      
+
       return (foundBad > 0);
     }
 

@@ -151,12 +151,12 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
 
   reset_dest_proc_data();
 
-  stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data_.mesh_meta_data());
+  stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data_));
   const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
   const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
 
   // Select active ghosted side faces.
-  stk::mesh::Selector selector(!bulk_data_.mesh_meta_data().locally_owned_part() &
+  stk::mesh::Selector selector(!stk::mesh::MetaData::get(bulk_data_).locally_owned_part() &
                                 stk::mesh::selectIntersection(surfaces_));
 
   mesh::EntityVector sides;
@@ -276,9 +276,9 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   const stk::mesh::PartVector surfaces(1, &side_part);
   {
     const stk::mesh::PartVector empty_remove_parts;
-    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
+    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
     const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-    stk::mesh::Selector selector(bulk_data.mesh_meta_data().locally_owned_part());
+    stk::mesh::Selector selector( stk::mesh::MetaData::get(bulk_data).locally_owned_part());
     mesh::EntityVector sides;
     mesh::get_selected_entities(selector, bulk_data.buckets(side_rank), sides);
 
@@ -316,7 +316,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     std::cout <<" Number on Boundary:     :"<<nboundary <<std::endl;
     std::cout <<" Number Adjancent:       :"<<nadj      <<std::endl;
     {
-      stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
+      stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
       const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
       const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
       const mesh::Entity *s = bulk_data.get_entity(side_rank,7);
@@ -338,7 +338,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
       }
     }
   }
-  
+
   const double imbalance_threshold = 1.5;
   bool do_rebal = imbalance_threshold < stk::rebalance::check_balance(bulk_data, NULL, element_rank);
 
@@ -358,7 +358,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     std::cout << std::endl
      << "Use Case 4: imbalance_threshold after rebalance 2 = " << imbalance_threshold <<", "<<do_rebal << std::endl;
   {
-    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
+    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
     const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
     const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
     mesh::Entity *s = bulk_data.get_entity(side_rank,7);

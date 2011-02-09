@@ -7,7 +7,7 @@ namespace stk
   namespace percept
   {
     using namespace interface_table;
-    
+
     TopologyVerifier::TopologyVerifier()
     {
       build_invalid_edge_sets();
@@ -43,7 +43,7 @@ namespace stk
                           m_invalid_edge_set[ielt].insert(edge);
                         }
                     }
-              
+
                   // remove the actual valid edges so only invalid remain
                   unsigned edge_count = topos[ielt]->edge_count;
                   for (unsigned ie = 0; ie < edge_count; ie++)
@@ -92,11 +92,11 @@ namespace stk
     /**
      * Algorithm:
      *   1. for each element, loop over its edges, for each edge's node, loop over elements attached to node
-     *   1a.   for each neighboring element, check if current edge is invalid 
+     *   1a.   for each neighboring element, check if current edge is invalid
      */
     bool TopologyVerifier::isTopologyBad(stk::mesh::BulkData& bulk) //, stk::mesh::Part& mesh_part )
     {
-      const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+      const stk::mesh::MetaData& meta = MetaData::get(bulk);
 
       stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
         meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >("coordinates");
@@ -105,7 +105,7 @@ namespace stk
 
       const std::vector<mesh::Bucket*> & buckets = bulk.buckets( stk::mesh::Element );
 
-      for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik ) 
+      for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
         {
           // if ( select_owned( **ik ) ) {...
 
@@ -151,7 +151,7 @@ namespace stk
 
               for (unsigned iedgeOrd = 0; iedgeOrd < cell_topo->edge_count; iedgeOrd++)
                 {
-                  //const CellTopologyData_Subcell& edge = 
+                  //const CellTopologyData_Subcell& edge =
 
                   unsigned in0 = cell_topo->edge[iedgeOrd].node[0];
                   unsigned in1 = cell_topo->edge[iedgeOrd].node[1];
@@ -162,7 +162,7 @@ namespace stk
                 }
               for (unsigned iedgeOrd = 0; iedgeOrd < cell_topo->edge_count; iedgeOrd++)
                 {
-                  //const CellTopologyData_Subcell& edge = 
+                  //const CellTopologyData_Subcell& edge =
 
                   unsigned in0 = cell_topo->edge[iedgeOrd].node[0];
                   unsigned in1 = cell_topo->edge[iedgeOrd].node[1];
@@ -187,7 +187,7 @@ namespace stk
                         {
                           mesh::Entity & elemOnNode = *node_elems[iele].entity();
                           const mesh::PairIterRelation elemOnNode_nodes = elemOnNode.relations( mesh::Node );
-                    
+
                           const CellTopologyData * const local_cell_topo = stk::mesh::get_cell_topology(elemOnNode);
                           int local_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(local_cell_topo->name);
                           //if (1) { std::cout << "shardsId= " << shardsId << " name= " << cell_topo->name <<  std::endl; }

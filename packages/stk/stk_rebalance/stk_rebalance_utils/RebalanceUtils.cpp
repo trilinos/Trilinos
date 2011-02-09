@@ -18,7 +18,7 @@
 
 //----------------------------------------------------------------------
 
-double stk::rebalance::check_balance(mesh::BulkData &    bulk_data, 
+double stk::rebalance::check_balance(mesh::BulkData &    bulk_data,
                                       const mesh::Field<double> * load_measure,
                                       const stk::mesh::EntityRank rank,
                                       const mesh::Selector *selector)
@@ -26,7 +26,7 @@ double stk::rebalance::check_balance(mesh::BulkData &    bulk_data,
   const ParallelMachine    &comm = bulk_data.parallel();
   double my_load = 0.0;
 
-  const mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
+  const mesh::MetaData & meta_data = stk::mesh::MetaData::get(bulk_data);
 
   mesh::EntityVector local_elems;
   if (selector) {
@@ -48,7 +48,7 @@ double stk::rebalance::check_balance(mesh::BulkData &    bulk_data,
       my_load += *load_val;
     } else {
       my_load += 1;
-    }   
+    }
   }
 
   double max_load = my_load;
@@ -67,7 +67,7 @@ double stk::rebalance::check_balance(mesh::BulkData &    bulk_data,
 
 
 bool stk::rebalance::verify_dependent_ownership( const stk::mesh::EntityRank & parent_rank,
-                                                 stk::mesh::EntityVector & entities, 
+                                                 stk::mesh::EntityVector & entities,
                                                  stk::mesh::DefaultFEM & fem )
 {
   bool is_with_elem = true;
@@ -80,7 +80,7 @@ bool stk::rebalance::verify_dependent_ownership( const stk::mesh::EntityRank & p
     const stk::mesh::PairIterRelation rel = entity->relations( parent_rank );
     const unsigned num_elems = rel.size();
 
-    for ( unsigned j = 0 ; j < num_elems ; ++j ) 
+    for ( unsigned j = 0 ; j < num_elems ; ++j )
     {
       stk::mesh::Entity & elem = * rel[j].entity();
       if( owner_proc == elem.owner_rank() )

@@ -683,7 +683,7 @@ namespace stk_example_io {
      * (and others) somewhere after the declaration instead of
      * looking it up each time it is needed.
      */
-    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
     stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
       meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
@@ -701,7 +701,7 @@ namespace stk_example_io {
 
       if (stk::io::include_entity(entity)) {
         const std::string &name = entity->name();
-        const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+        const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
         stk::mesh::Part* const part = meta.get_part(name);
         assert(part != NULL);
 
@@ -757,7 +757,7 @@ namespace stk_example_io {
 
       if (stk::io::include_entity(entity)) {
         const std::string & name = entity->name();
-        const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+        const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
         stk::mesh::Part* const part = meta.get_part(name);
         assert(part != NULL);
         stk::mesh::PartVector add_parts( 1 , part );
@@ -792,7 +792,7 @@ namespace stk_example_io {
                               stk::mesh::BulkData & bulk)
   {
     assert(io->type() == Ioss::FACESET || io->type() == Ioss::EDGESET);
-    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
     int block_count = io->block_count();
     for (int i=0; i < block_count; i++) {
@@ -881,7 +881,7 @@ namespace stk_example_io {
     std::vector<stk::mesh::Entity*> entities;
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
-    stk::mesh::MetaData & meta = part.mesh_meta_data();
+    stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
     stk::mesh::Part &universal = meta.universal_part();
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
@@ -901,7 +901,7 @@ namespace stk_example_io {
     region.begin_state(step);
 
     // Special processing for nodeblock (all nodes in model)...
-    const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+    const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
 
     // ??? Get field data from nodeblock...
     get_field_data(bulk, meta.universal_part(), stk::mesh::Node,
@@ -950,7 +950,7 @@ namespace stk_example_io {
     std::vector<stk::mesh::Entity*> entities;
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
-    stk::mesh::MetaData & meta = part.mesh_meta_data();
+    stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
     stk::mesh::Part &universal = meta.universal_part();
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
@@ -969,7 +969,7 @@ namespace stk_example_io {
   {
     region.begin_state(step);
     // Special processing for nodeblock (all nodes in model)...
-    const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+    const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
 
     put_field_data(bulk, meta.universal_part(), stk::mesh::Node,
                    region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
@@ -1017,7 +1017,7 @@ namespace stk_example_io {
                const VectorFieldType & coord_field ,
                const VectorFieldType & elem_centroid_field )
   {
-    const mesh::MetaData & meta_data = M.mesh_meta_data();
+    const mesh::MetaData & meta_data = stk::mesh::MetaData::get(M);
 
     // Get vector of buckets ( entities and field data)
     // for which the sides are all locally owned.

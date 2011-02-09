@@ -81,7 +81,7 @@ void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRa
   // 'type' of 'Node' will search for a nodeset, not all nodes in
   // the model.
 
-  const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
+  const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const stk::mesh::EntityRank side_rank = stk::mesh::Face;
 #else
@@ -123,7 +123,7 @@ void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank 
   // the model.
 
   // The box for this case is the centroid of each entity in the mesh...
-  const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
+  const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const stk::mesh::EntityRank side_rank = stk::mesh::Face;
@@ -210,7 +210,7 @@ void build_node_axis_bbox(stk::mesh::Part &part,
                           std::vector<AxisAlignedBoundingBox3D> &box_vector,
                           const stk::search_util::Op &op)
 {
-  const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
+  const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
 
   std::vector<stk::mesh::Entity *> entities;
   stk::mesh::Selector selector = part & ( meta_data.locally_owned_part() | meta_data.globally_shared_part() );
@@ -238,7 +238,7 @@ void build_axis_bbox(stk::mesh::Part &part,
                      std::vector<AxisAlignedBoundingBox3D> &box_vector,
                      const stk::search_util::Op &op)
 {
-  const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
+  const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const cell_topo = stk::mesh::get_cell_topology(part);
@@ -299,7 +299,7 @@ void build_node_cent_bbox(stk::mesh::Part &part,
                           CartesianField *coordinates,
                           std::vector<PointBoundingBox3D> &box_vector)
 {
-  const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
+  const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
 
   std::vector<stk::mesh::Entity *> entities;
   stk::mesh::Selector selector = part & ( meta_data.locally_owned_part() | meta_data.globally_shared_part() );
@@ -325,7 +325,7 @@ void build_cent_bbox(stk::mesh::Part &part,
                      CartesianField *coordinates,
                      std::vector<PointBoundingBox3D> &box_vector)
 {
-  const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
+  const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
 
   std::vector<stk::mesh::Entity *> entities;
   stk::mesh::Selector selector = part & ( meta_data.locally_owned_part() | meta_data.globally_shared_part() );

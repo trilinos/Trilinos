@@ -11,20 +11,20 @@ namespace stk
   {
     //========================================================================================================================
     // high-level interface
-    FieldFunction::FieldFunction(const char *name, mesh::FieldBase *field, PerceptMesh& mesh, 
+    FieldFunction::FieldFunction(const char *name, mesh::FieldBase *field, PerceptMesh& mesh,
                   int domain_dimension,
                   int codomain_dimension,
                   SearchType searchType,
                   unsigned integration_order) :
 
       Function(name, Dimensions(domain_dimension), Dimensions(codomain_dimension), integration_order),
-      m_my_field(field), m_bulkData(mesh.getBulkData()), 
+      m_my_field(field), m_bulkData(mesh.getBulkData()),
       m_cachedElement(0), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType)
                                 //, m_parallelEval(true)
     {
     }
-    
+
     bool FieldFunction::m_parallelEval=true;
 
     mesh::FieldBase *FieldFunction::getField() {return m_my_field; }
@@ -32,7 +32,7 @@ namespace stk
     void FieldFunction::interpolateFrom(Function& function)
     {
       EXCEPTWATCH;
-      mesh::MetaData& metaData = m_my_field->mesh_meta_data();
+      mesh::MetaData& metaData = MetaData::get(*m_my_field);
       mesh::BulkData& bulkData = *m_bulkData;
 
       PerceptMesh meshUtil(&metaData, &bulkData);
@@ -50,11 +50,11 @@ namespace stk
     typedef mesh::Field<double, mesh::Cartesian>    VectorFieldType ;
 
 
-    FieldFunction::FieldFunction(const char *name, mesh::FieldBase *field, mesh::BulkData *bulk, 
+    FieldFunction::FieldFunction(const char *name, mesh::FieldBase *field, mesh::BulkData *bulk,
                                  Dimensions domain_dimensions,
                                  Dimensions codomain_dimensions,
                                  SearchType searchType,
-                                 unsigned integration_order) : 
+                                 unsigned integration_order) :
       Function(name, domain_dimensions, codomain_dimensions, integration_order),
       m_my_field(field), m_bulkData(bulk), m_cachedElement(0), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType)
@@ -66,7 +66,7 @@ namespace stk
                                  Dimensions domain_dimensions,
                                  Dimensions codomain_dimensions,
                                  SearchType searchType,
-                                 unsigned integration_order) : 
+                                 unsigned integration_order) :
       Function(name, domain_dimensions, codomain_dimensions, integration_order),
       m_my_field(field), m_bulkData(eMesh.getBulkData()), m_cachedElement(0), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType)
@@ -81,7 +81,7 @@ namespace stk
 
     mesh::BulkData *FieldFunction::getBulkData() {return m_bulkData; }
 
-    
+
 
     /** Evaluate the function at this input point (or points) returning value(s) in output_field_values
      *
@@ -158,7 +158,7 @@ namespace stk
       int rankInput = input_phy_points.rank();
       switch(rankInput)
         {
-        case 1: 
+        case 1:
           numInputPoints = 1;
           break;
         case 2:
@@ -168,7 +168,7 @@ namespace stk
           numInputPoints = input_phy_points.dimension(1);
           break;
         }
-          
+
 
       // FIXME for tensor valued fields
       int nDOF = last_dimension(output_field_values_local);
@@ -303,14 +303,14 @@ namespace stk
 #if 0
                   if (Util::getFlag(9828)) std::cout <<  "P[" << Util::getRank() << "] ofv.size= " << output_field_values.size() << std::endl;
                   if (Util::getFlag(9828)) std::cout <<  "P[" << Util::getRank() << "] ofv_l.size= " << output_field_values_local.size() << std::endl;
-                  if (1 && Util::getFlag(9828)) std::cout <<  "P[" << Util::getRank() << "] ofv= " 
-                                                     << output_field_values[0] << " " 
-                                                     << output_field_values[1] << " " 
-                                                     << output_field_values[2] << " " 
-                                                     << " ofv_local= " 
-                                                     << output_field_values_local[0] << " " 
-                                                     << output_field_values_local[1] << " " 
-                                                     << output_field_values_local[2] << " " 
+                  if (1 && Util::getFlag(9828)) std::cout <<  "P[" << Util::getRank() << "] ofv= "
+                                                     << output_field_values[0] << " "
+                                                     << output_field_values[1] << " "
+                                                     << output_field_values[2] << " "
+                                                     << " ofv_local= "
+                                                     << output_field_values_local[0] << " "
+                                                     << output_field_values_local[1] << " "
+                                                     << output_field_values_local[2] << " "
                                                      << std::endl;
 #endif
                 }
@@ -332,14 +332,14 @@ namespace stk
      */
 
     void FieldFunction::operator()(MDArray& input_phy_points, MDArray& output_field_values,
-                                   const stk::mesh::Entity& element, const MDArray& parametric_coordinates, double time_value_optional) 
+                                   const stk::mesh::Entity& element, const MDArray& parametric_coordinates, double time_value_optional)
     {
       EXCEPTWATCH;
       helper(input_phy_points, output_field_values, element, parametric_coordinates, time_value_optional);
     }
 
     void FieldFunction::operator()(MDArray& input_phy_points, MDArray& output_field_values,
-                                   const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates, double time_value_optional) 
+                                   const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates, double time_value_optional)
     {
       EXCEPTWATCH;
 #ifndef NDEBUG

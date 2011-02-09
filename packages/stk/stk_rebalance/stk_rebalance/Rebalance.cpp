@@ -48,11 +48,11 @@ bool balance_comm_spec_domain( Partition * partition,
 }
 
 
-/* 
+/*
  * Traversing the migrating elements in reverse order produces a simplistic
  * attempt at lowest-rank element proc greedy partitioning of dependents
- * which seems to often work in practice.  Some logic could be added here 
- * as needed to enforce more deterministic dependent partitions. 
+ * which seems to often work in practice.  Some logic could be added here
+ * as needed to enforce more deterministic dependent partitions.
  */
 
 void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
@@ -62,7 +62,7 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
                                    const stk::mesh::EntityRank rank)
 {
 
-  stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
+  stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
   const stk::mesh::EntityRank element_rank = (rank != stk::mesh::InvalidEntityRank) ? rank :
                                              stk::mesh::fem::element_rank(fem);
 
@@ -83,10 +83,10 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
   // TODO: Determine if this "dumb" greedy approach is adequate and the cost/benefit
   //       of doing something more sophisticated
 
-  // This reverse traversal of elements overwrites assignment of procs for 
-  // dependents resulting in the last assignment winning.  
+  // This reverse traversal of elements overwrites assignment of procs for
+  // dependents resulting in the last assignment winning.
 
-  // For all dep-rank entities related to migrating elements, pack their info in to 
+  // For all dep-rank entities related to migrating elements, pack their info in to
   // dep_entity_procs.
   std::map<mesh::EntityId, unsigned> dep_entity_procs;
   mesh::EntityVector::reverse_iterator r_iter = owned_moving_elems.rbegin(),
@@ -127,7 +127,7 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
 
   if(rebalancingHasOccurred && partition->partition_dependents_needed() )
   {
-    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
+    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
 
     const stk::mesh::EntityRank node_rank = stk::mesh::fem::node_rank(fem);
     const stk::mesh::EntityRank edge_rank = stk::mesh::fem::edge_rank(fem);
@@ -147,7 +147,7 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
       rebalance_dependent_entities( bulk_data, partition, cons_rank, cs_elem, rank );
   }
 
-  if ( rebalancingHasOccurred ) 
+  if ( rebalancingHasOccurred )
   {
     bulk_data.modification_begin();
     bulk_data.change_entity_owner( cs_elem );
@@ -177,12 +177,12 @@ bool stk::rebalance::rebalance(mesh::BulkData   & bulk_data  ,
   mesh::get_selected_entities(selector,
                               bulk_data.buckets(element_rank),
                               entities);
-  
+
   for (mesh::EntityVector::iterator iA = entities.begin() ; iA != entities.end() ; ++iA ) {
     if(rebal_elem_weight_ref)
     {
       double * const w = mesh::field_data( *rebal_elem_weight_ref, **iA );
-      ThrowRequireMsg( NULL != w, 
+      ThrowRequireMsg( NULL != w,
         "Rebalance weight field is not defined on entities but should be defined on all entities.");
       // Should this be a throw instead???
       if ( *w <= 0.0 ) {

@@ -50,7 +50,7 @@ namespace stk
 {
   namespace percept
   {
-  
+
     IM_SHARDS_ARRAY_DIM_TAG_IMPLEMENTATION( Elements_Tag )
     IM_SHARDS_ARRAY_DIM_TAG_IMPLEMENTATION( Cub_Points_Tag )
     IM_SHARDS_ARRAY_DIM_TAG_IMPLEMENTATION( NodesPerElem_Tag )
@@ -78,16 +78,16 @@ namespace stk
     IntrepidManager::CubaturePoints::CubaturePoints(IM& im) : BaseType( NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag) ), m_im(im)
     {
     }
-    
+
 #if 1
     //using BaseBaseType::operator();
 
-    double& IntrepidManager::CubaturePoints::operator()(int i1, int i2, int i3) 
-    { 
+    double& IntrepidManager::CubaturePoints::operator()(int i1, int i2, int i3)
+    {
       throw std::runtime_error("CubaturePoints:: operator()(int i1, int i2, int i3) not implemented");
       return m_dummy;
     }
-    const double& IntrepidManager::CubaturePoints::operator()(int i1, int i2, int i3) const { 
+    const double& IntrepidManager::CubaturePoints::operator()(int i1, int i2, int i3) const {
       throw std::runtime_error("CubaturePoints:: operator()(int i1, int i2, int i3) not implemented");
       return m_dummy;
     }
@@ -114,7 +114,7 @@ namespace stk
     }
 
 #if 0
-    void 
+    void
     IntrepidManager::CellWorkSet::
     operator()(BulkData& bulkData, Bucket& bucket)
     {
@@ -130,7 +130,7 @@ namespace stk
     {
     }
 
-    void 
+    void
     IntrepidManager::PhysicalCoords::
     operator()(CellWorkSet& c, CubaturePoints& xi)
     {
@@ -143,17 +143,17 @@ namespace stk
 
     //double m_dummy;
 #if 0
-    double& 
+    double&
     IntrepidManager::PhysicalCoords::
-    operator()(int i1, int i2, int i3) 
-    { 
+    operator()(int i1, int i2, int i3)
+    {
       throw std::runtime_error("PhysicalCoords:: operator()(int i1, int i2, int i3) not implemented");
       return m_dummy;
     }
-    const double& 
+    const double&
     IntrepidManager::PhysicalCoords::
 
-    operator()(int i1, int i2, int i3) const { 
+    operator()(int i1, int i2, int i3) const {
       throw std::runtime_error("PhysicalCoords:: operator()(int i1, int i2, int i3) not implemented");
       return m_dummy;
     }
@@ -174,7 +174,7 @@ namespace stk
     {
 
     }
-    void 
+    void
     IntrepidManager::Jacobian::
 
     operator()(CubaturePoints& xi, CellWorkSet& c, CellTopology& topo)
@@ -214,7 +214,7 @@ namespace stk
     {
     }
 
-    void 
+    void
     IntrepidManager::JacobianDet::
     operator()(Jacobian& jac)
     {
@@ -245,7 +245,7 @@ namespace stk
     IntegrandValuesDOF(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag))
     {
     }
-    void 
+    void
     IntrepidManager::IntegrandValuesDOF::
     copyFrom(MDArray& mda)
     {
@@ -260,13 +260,13 @@ namespace stk
     IntegrandValues(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag))
     {
     }
-    void 
+    void
     IntrepidManager::IntegrandValues::
     copyFrom(MDArray& mda)
     {
       copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
     }
-    void 
+    void
     IntrepidManager::IntegrandValues::
     copyFrom(IntrepidManager& im, MDArray& mda, int iDof)
     {
@@ -291,7 +291,7 @@ namespace stk
     /// wXdOmega: ([C], [P])
     /// iv:       ([C], [P], [DOF])
     /// this:     ([C], [DOF])
-    void 
+    void
     IntrepidManager::IntegralDOF::
     operator()(IntegrandValuesDOF& iv, WeightedMeasure& wXdOmega, int comp_type)
     {
@@ -325,7 +325,7 @@ namespace stk
     /// wXdOmega: ([C], [P])
     /// iv:       ([C], [P])
     /// this:     ([C])
-    void 
+    void
     IntrepidManager::Integral::
     operator()(IntegrandValues& iv, WeightedMeasure& wXdOmega, int comp_type)
     {
@@ -346,14 +346,14 @@ namespace stk
     IntrepidManager::Bases::
     Bases(IM& im) : BaseType(NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Cub_Points_Tag)), m_cb(ComputeBases()) {}
 
-    void 
+    void
     IntrepidManager::Bases::
     operator()(const stk::mesh::Entity& element, const MDArray& parametric_coordinates)
     {
       m_cb.getBases(element, parametric_coordinates, *this);
     }
 
-    void 
+    void
     IntrepidManager::Bases::
     operator()(const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates)
     {
@@ -363,7 +363,7 @@ namespace stk
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
-    /// ([C],[P],[DOF]): evaluated field values at each integration point in each cell: 
+    /// ([C],[P],[DOF]): evaluated field values at each integration point in each cell:
     IntrepidManager::FieldValues::
     FieldValues(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag)) {}
 
@@ -383,7 +383,7 @@ namespace stk
     //------------------------------------------------------------------------------------------------------------------------
 
     IntrepidManager::IntrepidManager(Elements_Tag el, Cub_Points_Tag ct, NodesPerElem_Tag nc, Spatial_Dim_Tag st,
-                                     DOFs_Tag dt) : 
+                                     DOFs_Tag dt) :
       m_Elements_Tag(el.num), m_Cub_Points_Tag(ct.num), m_NodesPerElem_Tag(nc.num), m_Spatial_Dim_Tag(st.num),  m_DOFs_Tag(dt.num),
       m_topo(0)
     {
@@ -413,7 +413,7 @@ namespace stk
     {
       typedef IntrepidManager IM;
       IntrepidManager im(Elements_Tag(1), Cub_Points_Tag(4), NodesPerElem_Tag(4), Spatial_Dim_Tag(3), DOFs_Tag(1));
-                         
+
       CellTopology* topo=0;
 
       IM::Jacobian          J  (im);
@@ -436,11 +436,11 @@ namespace stk
 #endif
 
 #if 0
-      IM::GradField gradP("pressure");  
+      IM::GradField gradP("pressure");
       IM::TransformedGradField tgradP(gradP);
       IM::WeightedTransformedGrad wtgradP(tgradP);
 
-      IM::GradField gradN_i("basis");  
+      IM::GradField gradN_i("basis");
       IM::TransformedGradField tgradN_i(gradN_i);
       IM::WeightedTransformedGrad wtgradN_i(tgradN_i);
       IM::StiffnessMatrix K;
@@ -470,7 +470,7 @@ namespace stk
       //Step 7: Apply function space tools
 
       wXdOmega = w * dJ;
-        
+
       tgradN_i = Ji * gradN_i;
 
       wXdOmegaTGradN_i = wXdOmega * tgradN_i;
@@ -486,7 +486,7 @@ namespace stk
       found_it = 0;
 
       // FIXME consider caching the coords_field in FieldFunction
-      const mesh::MetaData& metaData = bulkData.mesh_meta_data();
+      const mesh::MetaData& metaData = MetaData::get(bulkData);
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       const mesh::Bucket & bucket = element.bucket();
@@ -514,7 +514,7 @@ namespace stk
                 }
             }
         }
-        
+
       // FIXME for multiple points
       if (input_phy_points.rank() == 1)
         {
@@ -532,7 +532,7 @@ namespace stk
           VERIFY_1("IsInElement::isInElement bad rank of found_parametric_coordinates");
         }
       VERIFY_OP(found_parametric_coordinates.dimension(0), == , 1, "IsInElement::isInElement bad found_parametric_coordinates 1st dim");
-      VERIFY_OP(found_parametric_coordinates.dimension(1), == , (int)cellDim, 
+      VERIFY_OP(found_parametric_coordinates.dimension(1), == , (int)cellDim,
                 "IsInElement::isInElement bad found_parametric_coordinates 2nd dim");
 
       unsigned cellOrd = 0;  // FIXME
@@ -589,7 +589,7 @@ namespace stk
       FieldContainer<double> weightedMeasure(numCells, numCubPoints);
       FieldContainer<double> onesLeft(numCells,  numCubPoints);
       FieldContainer<double> volume(numCells);
-      
+
       // compute weighted measure
       FunctionSpaceTools::computeCellMeasure<double>(weightedMeasure, jacobian_det, cub_weights);
 
