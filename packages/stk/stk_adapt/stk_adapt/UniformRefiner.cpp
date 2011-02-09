@@ -930,11 +930,26 @@ namespace stk {
 #endif
 
       const vector<Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
-      std::set<Entity *> elements_to_be_destroyed;
 
+      elements_to_be_destroyed_type elements_to_be_destroyed;
+
+#if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
+      unsigned nel = 0u;
       for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
-          //if (!toPartSelector(**k)) 
+          if (removePartSelector(**k)) 
+            {
+              Bucket & bucket = **k ;
+              const unsigned num_elements_in_bucket = bucket.size();
+
+              nel += num_elements_in_bucket;
+            }
+        }
+      elements_to_be_destroyed.reserve(nel);
+#endif
+      
+      for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        {
           if (removePartSelector(**k)) 
             {
               Bucket & bucket = **k ;
@@ -958,14 +973,23 @@ namespace stk {
 
                   if (!m_eMesh.isGhostElement(element))
                     {
+#if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
+                      elements_to_be_destroyed.push_back(element_p);
+#else
                       elements_to_be_destroyed.insert(element_p);
+#endif
                       //std::cout << "tmp removing elem = " << *element_p << std::endl;
                     }
                 }
             }
         }
+      removeOldElements(elements_to_be_destroyed);
 
-      for (std::set<Entity *>::iterator itbd = elements_to_be_destroyed.begin(); itbd != elements_to_be_destroyed.end();  itbd++)
+    }
+
+    void UniformRefiner::removeOldElements(elements_to_be_destroyed_type& elements_to_be_destroyed)
+    {
+      for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed.begin(); itbd != elements_to_be_destroyed.end();  ++itbd)
         {
           Entity *element_p = *itbd;
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )

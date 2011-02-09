@@ -54,25 +54,25 @@ namespace stk {
 #endif
 
 #if STK_ADAPT_COLORER_SET_TYPE_BOOST
-#if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
+#  if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
     typedef boost::unordered_set<ColorerStoredEntity> ColorerSetType;
-#endif
+#  endif
     typedef boost::unordered_set<EntityId> ColorerNodeSetType;
     typedef boost::unordered_set<EntityId> ColorerElementSetType;
 #endif
 
 #if STK_ADAPT_COLORER_SET_TYPE_TR1
-#if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
+#  if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
     typedef tr1::unordered_set<ColorerStoredEntity> ColorerSetType;
-#endif
+#  endif
     typedef tr1::unordered_set<EntityId> ColorerNodeSetType;
     typedef tr1::unordered_set<EntityId> ColorerElementSetType;
 #endif
 
 #if STK_ADAPT_COLORER_SET_TYPE_STD
-#if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
+#  if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
     typedef std::set<ColorerStoredEntity> ColorerSetType;
-#endif
+#  endif
     typedef std::set<EntityId> ColorerNodeSetType;
     typedef std::set<EntityId> ColorerElementSetType;
 #endif
