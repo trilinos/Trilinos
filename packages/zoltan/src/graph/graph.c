@@ -39,7 +39,18 @@ static PARAM_VARS ZG_params[] = {
 
 /* This function needs a distribution : rows then cols to work properly */
 int
-Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
+Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local,
+  int request_GNOs,                /* Input:  Flag indicating calling code 
+                                              needs translation of extra GIDs
+                                              to GNOs; partial 2D coloring
+                                              needs this feature. */
+  int num_requested,               /* Input:  Local # of GIDs needing 
+                                              translation to GNOs. */
+  ZOLTAN_ID_PTR requested_GIDs,    /* Input:  Calling code requests the 
+                                              GNOs for these GIDs */
+  ZOLTAN_GNO_TYPE *requested_GNOs  /* Output: Return GNOs of 
+                                              the requested GIDs.  */
+)
 {
   static char *yo = "Zoltan_ZG_Build";
   int ierr = ZOLTAN_OK;
@@ -110,7 +121,8 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
   times[1] = Zoltan_Time(zz->Timer);
 #endif
 
-  ierr = Zoltan_Matrix_Build(zz, &opt, &graph->mtx.mtx);
+  ierr = Zoltan_Matrix_Build(zz, &opt, &graph->mtx.mtx, request_GNOs,
+                             num_requested, requested_GIDs, requested_GNOs);
   CHECK_IERR;
 
 #ifdef CC_TIMERS

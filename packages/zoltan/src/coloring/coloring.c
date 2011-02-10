@@ -175,6 +175,18 @@ int Zoltan_Color(
 
   int nobj=0;
 
+  int request_GNOs = 0;                    /* Flag indicating calling code 
+                                              needs translation of extra GIDs
+                                              to GNOs; partial 2D coloring
+                                              needs this feature. */
+  int num_requested = 0;                   /* Local # of GIDs needing 
+                                              translation to GNOs. */
+  ZOLTAN_ID_PTR requested_GIDs = NULL;     /* Calling code requests the 
+                                              GNOs for these GIDs */
+  ZOLTAN_GNO_TYPE *requested_GNOs = NULL;  /* Return GNOs of 
+                                              the requested GIDs.  */
+
+
 #ifdef _DEBUG_TIMES  
   double times[6]={0.,0.,0.,0.,0.,0.}, rtimes[6]; /* Used for timing measurements */
   double gtimes[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
@@ -215,7 +227,7 @@ int Zoltan_Color(
       coloring_problem = '1';
   else if (!strcasecmp(coloring_problemStr, "distance-2"))
       coloring_problem = '2';
-  else if (!strcasecmp(coloring_problemStr, "partial distance-2")
+  else if (!strcasecmp(coloring_problemStr, "partial-distance-2")
       || !strcasecmp(coloring_problemStr, "bipartite"))
       coloring_problem = 'P';
   else {
@@ -274,7 +286,22 @@ int Zoltan_Color(
 #ifdef _DEBUG_TIMES
   times[1] = Zoltan_Time(zz->Timer);
 #endif
-  ierr =  Zoltan_ZG_Build (zz, &graph, 0);
+
+  if (coloring_problem == 'P') {
+    /* Partial distance-2 coloring requires additional translate of input
+     * GIDs to GNOs, using same mapping as in graph.  Pass additional arguments
+     * to Zoltan_ZG_Build. 
+     */
+    request_GNOs = 1;
+    num_requested = num_req_objs;
+    requested_GIDs = req_objs;
+    requested_GNOs = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(num_requested *
+                                                       sizeof(ZOLTAN_GNO_TYPE));
+  }
+
+  ierr =  Zoltan_ZG_Build (zz, &graph, 0, request_GNOs, num_requested,
+                           requested_GIDs, requested_GNOs);
+
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
 
@@ -398,6 +425,7 @@ int Zoltan_Color(
  End:
   /* First, free graph */
   Zoltan_ZG_Free (&graph);
+  ZOLTAN_FREE(&requested_GNOs);
   ZOLTAN_FREE(&adjproc);
   ZOLTAN_FREE(&color);
   Zoltan_G2LHash_Destroy(&hash);

@@ -74,6 +74,16 @@ int Zoltan_Color_Test(
   ZOLTAN_GNO_TYPE gvtx;                         /* number of global vertices */
   ZOLTAN_GNO_TYPE *vtxdist=NULL, *adjncy=NULL;
   ZG graph;
+  int request_GNOs = 0;                    /* Flag indicating calling code 
+                                              needs translation of extra GIDs
+                                              to GNOs; partial 2D coloring
+                                              needs this feature. */
+  int num_requested = 0;                   /* Local # of GIDs needing 
+                                              translation to GNOs. */
+  ZOLTAN_ID_PTR requested_GIDs = NULL;     /* Calling code requests the 
+                                              GNOs for these GIDs */
+  ZOLTAN_GNO_TYPE *requested_GNOs = NULL;  /* Return GNOs of 
+                                              the requested GIDs.  */
 
   memset (&graph, 0, sizeof(ZG));
 
@@ -94,7 +104,7 @@ int Zoltan_Color_Test(
       coloring_problem = '1';
   else if (!strcasecmp(coloring_problemStr, "distance-2"))
       coloring_problem = '2';
-  else if (!strcasecmp(coloring_problemStr, "partial distance-2")
+  else if (!strcasecmp(coloring_problemStr, "partial-distance-2")
       || !strcasecmp(coloring_problemStr, "bipartite"))
       coloring_problem = 'P';
   else {
@@ -146,7 +156,20 @@ int Zoltan_Color_Test(
       ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Color argument is NULL. Please give colors of local vertices.");
 
 
-  Zoltan_ZG_Build (zz, &graph, 0);
+  if (coloring_problem == 'P') {
+    /* Partial distance-2 coloring requires additional translate of input
+     * GIDs to GNOs, using same mapping as in graph.  Pass additional arguments
+     * to Zoltan_ZG_Build. 
+     */
+    request_GNOs = 1;
+    num_requested = num_obj;
+    requested_GIDs = global_ids;
+    requested_GNOs = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(num_requested *
+                                                       sizeof(ZOLTAN_GNO_TYPE));
+  }
+
+  Zoltan_ZG_Build (zz, &graph, 0, request_GNOs, num_requested, 
+                   requested_GIDs, requested_GNOs);
 
   Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, 
@@ -247,6 +270,7 @@ int Zoltan_Color_Test(
   ZOLTAN_FREE(&adjproc);
   ZOLTAN_FREE(&color);
   ZOLTAN_FREE(&reccnt);
+  ZOLTAN_FREE(&requested_GNOs);
 
   return ierr;
 }
