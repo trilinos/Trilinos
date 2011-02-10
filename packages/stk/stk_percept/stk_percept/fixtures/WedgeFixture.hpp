@@ -41,9 +41,11 @@ namespace stk {
 
       class WedgeFixture
       {
+        SweepMesher m_sweepMesher;
+
       public:
 
-        static void createMesh(stk::ParallelMachine parallel_machine, 
+        mesh::BulkData * createMesh(stk::ParallelMachine parallel_machine, 
                         unsigned n_nodes_x, unsigned n_nodes_y, unsigned n_nodes_z,
                         double xmin, double xmax,
                         double ymin, double ymax,
@@ -69,8 +71,8 @@ namespace stk {
             }
 
           // line2 mesh
-          SweepMesher tp2;
-          tp2 = SweepMesher();
+          SweepMesher& tp2 = m_sweepMesher;
+          //tp2 = SweepMesher();
 
           //tp2.initNodes(coordsLine.begin(), n_nodes_x);
           tp2.initNodes(&coordsLine[0], n_nodes_x);
@@ -111,9 +113,25 @@ namespace stk {
 
           if(verbose) std::cout << "after sweep for wedge \n";
           tp2.dump();
-          tp2.stkMeshCreate(parallel_machine);
-          tp2.writeSTKMesh(output_filename.c_str());
+          if (output_filename.length())
+            {
+              tp2.stkMeshCreate(parallel_machine);
+              tp2.writeSTKMesh(output_filename.c_str());
+            }
+          else
+            {
+              tp2.stkMeshCreateMetaNoCommit(parallel_machine);
+            }
+          return tp2.getBulkData();
 
+        }
+
+        //stk::mesh::BulkData* 
+        void
+        createBulkAfterMetaCommit(stk::ParallelMachine parallel_machine)
+        {
+          m_sweepMesher.stkMeshCreateBulkAfterMetaCommit(parallel_machine);
+          //return m_sweepMesher.getBulkData();
         }
 
         void createFixedSizeMesh(stk::ParallelMachine parallel_machine, std::string output_filename)

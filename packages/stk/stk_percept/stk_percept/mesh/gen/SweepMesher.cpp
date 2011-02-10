@@ -505,6 +505,13 @@ namespace stk
     /// based on UseCase_3 in stk_mesh/use_cases - creates nodes and elements in stk::mesh database
     void SweepMesher::stkMeshCreate(stk::ParallelMachine& comm)
     {
+      stkMeshCreateMetaNoCommit(comm);
+      m_metaData->commit();
+      stkMeshCreateBulkAfterMetaCommit(comm);
+    }
+
+    void SweepMesher::stkMeshCreateMetaNoCommit(stk::ParallelMachine& comm)
+    {
       m_metaData = new MetaData(fem_entity_rank_names());
       m_bulkData = new BulkData( *m_metaData , comm );
       m_parts.resize(NUM_ELEM_TYPES);
@@ -518,12 +525,7 @@ namespace stk
         }
       m_coordinates_field = &m_metaData->declare_field< VectorFieldType >( "coordinates" );
 
-      //m_centroid_field(m_metaData.declare_field< VectorFieldType >( "centroid" )),
-      //m_temperature_field(m_metaData.declare_field< ScalarFieldType >( "temperature" )),
-      //m_volume_field(m_metaData.declare_field< ScalarFieldType >( "volume" )),
-
       m_element_node_coordinates_field = &m_metaData->declare_field< ElementNodePointerFieldType >( "elem_node_coord" );
-
 
       // set cell topology
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
@@ -531,7 +533,7 @@ namespace stk
           if (m_elems[ieletype].size() > 0)
             {
               m_elemInfo[ieletype].setCellTopoFptr(*m_parts[ieletype]);
-	      stk::io::put_io_part_attribute(*m_parts[ieletype]);
+              stk::io::put_io_part_attribute(*m_parts[ieletype]);
             }
         }
 
@@ -539,12 +541,6 @@ namespace stk
       Part & universal = m_metaData->universal_part();
 
       put_field( *m_coordinates_field , stk::mesh::Node , universal );
-      //put_field( m_centroid_field , Element , universal );
-      //put_field( m_temperature_field, Node, universal );
-      //put_field( m_volume_field, Element, m_block_hex );
-      //put_field( m_volume_field, Element, m_block_wedge );
-      //put_field( m_volume_field, Element, m_block_tet );
-      //put_field( m_volume_field, Element, m_block_pyramid );
   
       m_metaData->declare_field_relation(
                                          *m_element_node_coordinates_field ,
@@ -565,7 +561,10 @@ namespace stk
               put_field( *m_element_node_coordinates_field, Element, *m_parts[ieletype], m_elemInfo[ieletype].node_count);
             }
         }
-      m_metaData->commit();
+    }
+
+    void SweepMesher::stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine& comm)
+    {
 
       //stk::mesh::BulkData & bulkData = modifiableBulkData();
       stk::mesh::BulkData & bulkData = *m_bulkData;
@@ -609,6 +608,7 @@ namespace stk
 
       bulkData.modification_end();
     }
+
 
     void SweepMesher::dumpSTK()
     {

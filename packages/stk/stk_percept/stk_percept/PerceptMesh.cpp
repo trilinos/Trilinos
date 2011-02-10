@@ -503,9 +503,9 @@ namespace stk {
         }
     }
 
-    PerceptMesh::PerceptMesh(stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) :
-        m_metaData(metaData),
-        m_bulkData(bulkData),
+    PerceptMesh::PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) :
+      m_metaData(const_cast<mesh::MetaData *>(metaData)),
+      m_bulkData(bulkData),
         m_fixture(NULL),
         m_iossRegion(NULL),
         m_coordinatesField(NULL),
@@ -1579,7 +1579,7 @@ namespace stk {
       m_basisTable[shards::getCellTopologyData<Tetrahedron<10> >()-> key]  = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C2_FEM<double, MDArray >() );
 
       m_basisTable[shards::getCellTopologyData<Wedge<6> >()-> key]         = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C1_FEM<double, MDArray >() );
-      m_basisTable[shards::getCellTopologyData<Wedge<18> >()-> key]        = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C2_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<Wedge<15> >()-> key]        = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C2_FEM<double, MDArray >() );
 
 
       // Shells

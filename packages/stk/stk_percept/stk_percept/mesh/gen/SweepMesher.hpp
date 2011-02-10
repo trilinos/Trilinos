@@ -591,6 +591,9 @@ namespace stk
       /// create a std::mesh representation of this
       void stkMeshCreate(stk::ParallelMachine& );
 
+      void stkMeshCreateMetaNoCommit(stk::ParallelMachine& );
+      void stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine& );
+
       void stkMeshCreate_UseCase_3(stk::ParallelMachine& );
 
       void writeSTKMesh(const char* filename);

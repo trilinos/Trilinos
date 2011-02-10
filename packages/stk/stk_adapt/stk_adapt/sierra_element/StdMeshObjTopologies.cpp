@@ -2419,6 +2419,7 @@ namespace stk {
       /* %TRACE[NONE]% */  /* %TRACE% */
       static MeshObjTopology wedge6(shards::getCellTopologyData<shards::Wedge<6> >());
       static MeshObjTopology wedge15(shards::getCellTopologyData<shards::Wedge<15> >());
+      static MeshObjTopology wedge18(shards::getCellTopologyData<shards::Wedge<18> >());
 
       static bool first = true ;
 
