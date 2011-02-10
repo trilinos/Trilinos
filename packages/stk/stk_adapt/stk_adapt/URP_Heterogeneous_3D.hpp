@@ -40,6 +40,8 @@ namespace stk {
 
         // list all types of known break patterns to be used here
         m_bp.resize(0);
+
+        // refine
         m_bp.push_back(  new UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,    8, SierraPort > (eMesh, block_names) );
         m_bp.push_back(  new UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort > (eMesh, block_names) );
         m_bp.push_back(  new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort > (eMesh, block_names) );
@@ -60,25 +62,7 @@ namespace stk {
       {
         EXCEPTWATCH;
 
-        //bp.resize( m_bp.size() );
         bp = m_bp;
-
-#if 0
-#if FACE_BREAKER_HETERO_3D
-        bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
-#else
-        bp = std::vector<UniformRefinerPatternBase *>(3u, 0);   // FIXME
-#endif
-
-        bp[0] = m_bp[0];
-        bp[1] = m_bp[1];
-        bp[2] = m_bp[2];
-
-#if FACE_BREAKER_HETERO_3D
-        bp[1] = m_face_breaker;
-#endif
-#endif
-
       }
 
       virtual void doBreak() 

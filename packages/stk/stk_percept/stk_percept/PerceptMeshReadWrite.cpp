@@ -57,7 +57,7 @@ namespace stk {
         std::string name = entity->name();
         if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
           {
-            //std::cout << "tmp found orig" << std::endl;
+            //std::cout << "tmp found omitted part= " << name << std::endl;
             if ( entity->property_exists(std::string("omitted") ) )
               {
                 entity->property_erase(std::string("omitted"));
