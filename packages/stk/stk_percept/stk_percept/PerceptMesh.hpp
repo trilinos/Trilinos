@@ -154,7 +154,7 @@ namespace stk {
       /// low-level interfaces
       /// Create a Mesh object that doesn't own its constituent MetaData and BulkData, pointers to which are adopted
       /// by this constructor.
-      PerceptMesh(stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
+      PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
 
       ~PerceptMesh() ;
       void init (stk::ParallelMachine comm);

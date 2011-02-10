@@ -1,5 +1,5 @@
-#ifndef STK_PERCEPT_GENERATED_REFINEMENT_TABLES_HPP
-#define STK_PERCEPT_GENERATED_REFINEMENT_TABLES_HPP
+#ifndef STK_ADAPT_GENERATED_REFINEMENT_TABLES_HPP
+#define STK_ADAPT_GENERATED_REFINEMENT_TABLES_HPP
 /**  New ref topo info 
  *  ------------------
  *
@@ -14,6 +14,11 @@
  *     unsigned num_nodes_on_subcell;          // how many nodes exist on the subcell                                                       
  *     double parametric_coordinates[3];
  *   };
+ *       
+ * Bootstrapping this file: to create this file, run the regression test RegressionTestUniformRefiner.cpp :: generate_tables after putting in
+ *   a dummy entry in ./sierra_element/GeneratedRefinementTable.hpp.  The run will produce a local file, generated_refinement_tables.hpp 
+ *   which can be checked against the gold copy of GeneratedRefinementTable.hpp, then copied over it.  Add a call below to generate the 
+ *   actual new table data. 
  */
 
 
@@ -55,6 +60,16 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Triangle<3>  > :: refineme
 
 };
 
+template<> RefTopoX RefinementTopologyExtra< shards:: ShellTriangle<3>  > :: refinement_topology = {
+  {	0,	0,	0,	0,	1,	{0,	0,	0} },
+  {	1,	0,	1,	0,	1,	{1,	0,	0} },
+  {	2,	0,	2,	0,	1,	{0,	1,	0} },
+  {	3,	1,	0,	0,	1,	{0.5,	0,	0} },
+  {	4,	1,	1,	0,	1,	{0.5,	0.5,	0} },
+  {	5,	1,	2,	0,	1,	{0,	0.5,	0} } 
+
+};
+
 template<> RefTopoX RefinementTopologyExtra< shards:: ShellQuadrilateral<4>  > :: refinement_topology = {
   {	0,	0,	0,	0,	1,	{-1,	-1,	0} },
   {	1,	0,	1,	0,	1,	{1,	-1,	0} },
@@ -65,16 +80,6 @@ template<> RefTopoX RefinementTopologyExtra< shards:: ShellQuadrilateral<4>  > :
   {	6,	1,	2,	0,	1,	{0,	1,	0} },
   {	7,	1,	3,	0,	1,	{-1,	0,	0} },
   {	8,	2,	0,	0,	1,	{0,	0,	0} } 
-
-};
-
-template<> RefTopoX RefinementTopologyExtra< shards:: ShellTriangle<3>  > :: refinement_topology = {
-  {	0,	0,	0,	0,	1,	{0,	0,	0} },
-  {	1,	0,	1,	0,	1,	{1,	0,	0} },
-  {	2,	0,	2,	0,	1,	{0,	1,	0} },
-  {	3,	1,	0,	0,	1,	{0.5,	0,	0} },
-  {	4,	1,	1,	0,	1,	{0.5,	0.5,	0} },
-  {	5,	1,	2,	0,	1,	{0,	0.5,	0} } 
 
 };
 
@@ -145,6 +150,71 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Wedge<6>  > :: refinement_
 
 };
 
+// FIXME - Sierra doesn't support Wedge<18> refinement yet - have to add the tables in StdMeshObjTopologies first
+template<> RefTopoX RefinementTopologyExtra< shards:: Wedge<18>  > :: refinement_topology = {
+};
+
+template<> RefTopoX RefinementTopologyExtra< shards:: Wedge<15>  > :: refinement_topology = {
+  {	0,	0,	0,	0,	1,	{0,	0,	-1} },
+  {	1,	0,	1,	0,	1,	{1,	0,	-1} },
+  {	2,	0,	2,	0,	1,	{0,	1,	-1} },
+  {	3,	0,	3,	0,	1,	{0,	0,	1} },
+  {	4,	0,	4,	0,	1,	{1,	0,	1} },
+  {	5,	0,	5,	0,	1,	{0,	1,	1} },
+  {	6,	1,	0,	2,	3,	{0.5,	0,	-1} },
+  {	7,	1,	1,	2,	3,	{0.5,	0.5,	-1} },
+  {	8,	1,	2,	2,	3,	{0,	0.5,	-1} },
+  {	9,	1,	6,	2,	3,	{0,	0,	0} },
+  {	10,	1,	7,	2,	3,	{1,	0,	0} },
+  {	11,	1,	8,	2,	3,	{0,	1,	0} },
+  {	12,	1,	3,	2,	3,	{0.5,	0,	1} },
+  {	13,	1,	4,	2,	3,	{0.5,	0.5,	1} },
+  {	14,	1,	5,	2,	3,	{0,	0.5,	1} },
+  {	15,	2,	0,	0,	5,	{0.5,	0,	0} },
+  {	16,	2,	1,	0,	5,	{0.5,	0.5,	0} },
+  {	17,	2,	2,	0,	5,	{0,	0.5,	0} },
+  {	18,	1,	0,	0,	3,	{0.25,	0,	-1} },
+  {	19,	1,	0,	1,	3,	{0.75,	0,	-1} },
+  {	20,	1,	1,	0,	3,	{0.75,	0.25,	-1} },
+  {	21,	1,	1,	1,	3,	{0.25,	0.75,	-1} },
+  {	22,	1,	2,	0,	3,	{0,	0.75,	-1} },
+  {	23,	1,	2,	1,	3,	{0,	0.25,	-1} },
+  {	24,	2,	0,	4,	5,	{0.25,	0,	0} },
+  {	25,	2,	0,	2,	5,	{0.75,	0,	0} },
+  {	26,	2,	1,	4,	5,	{0.75,	0.25,	0} },
+  {	27,	2,	1,	2,	5,	{0.25,	0.75,	0} },
+  {	28,	2,	2,	3,	5,	{0,	0.75,	0} },
+  {	29,	2,	2,	1,	5,	{0,	0.25,	0} },
+  {	30,	1,	3,	0,	3,	{0.25,	0,	1} },
+  {	31,	1,	3,	1,	3,	{0.75,	0,	1} },
+  {	32,	1,	4,	0,	3,	{0.75,	0.25,	1} },
+  {	33,	1,	4,	1,	3,	{0.25,	0.75,	1} },
+  {	34,	1,	5,	0,	3,	{0,	0.75,	1} },
+  {	35,	1,	5,	1,	3,	{0,	0.25,	1} },
+  {	36,	2,	3,	1,	3,	{0.25,	0.5,	-1} },
+  {	37,	2,	3,	0,	3,	{0.25,	0.25,	-1} },
+  {	38,	2,	3,	2,	3,	{0.5,	0.25,	-1} },
+  {	39,	3,	0,	0,	3,	{0.25,	0.5,	0} },
+  {	40,	3,	0,	1,	3,	{0.25,	0.25,	0} },
+  {	41,	3,	0,	2,	3,	{0.5,	0.25,	0} },
+  {	42,	2,	4,	2,	3,	{0.25,	0.5,	1} },
+  {	43,	2,	4,	0,	3,	{0.25,	0.25,	1} },
+  {	44,	2,	4,	1,	3,	{0.5,	0.25,	1} },
+  {	45,	1,	6,	0,	3,	{0,	0,	-0.5} },
+  {	46,	2,	0,	1,	5,	{0.5,	0,	-0.5} },
+  {	47,	1,	7,	0,	3,	{1,	0,	-0.5} },
+  {	48,	2,	1,	1,	5,	{0.5,	0.5,	-0.5} },
+  {	49,	1,	8,	0,	3,	{0,	1,	-0.5} },
+  {	50,	2,	2,	4,	5,	{0,	0.5,	-0.5} },
+  {	51,	1,	6,	1,	3,	{0,	0,	0.5} },
+  {	52,	2,	0,	3,	5,	{0.5,	0,	0.5} },
+  {	53,	1,	7,	1,	3,	{1,	0,	0.5} },
+  {	54,	2,	1,	3,	5,	{0.5,	0.5,	0.5} },
+  {	55,	1,	8,	1,	3,	{0,	1,	0.5} },
+  {	56,	2,	2,	2,	5,	{0,	0.5,	0.5} } 
+
+};
+
 template<> RefTopoX RefinementTopologyExtra< shards:: Line<3>  > :: refinement_topology = {
   {	0,	0,	0,	0,	1,	{-1,	0,	0} },
   {	1,	0,	1,	0,	1,	{1,	0,	0} },
@@ -153,7 +223,6 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Line<3>  > :: refinement_t
   {	4,	1,	0,	1,	3,	{0.5,	0,	0} } 
 
 };
-
 
 template<> RefTopoX RefinementTopologyExtra< shards:: Triangle<6>  > :: refinement_topology = {
   {	0,	0,	0,	0,	1,	{0,	0,	0} },

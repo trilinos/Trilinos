@@ -716,23 +716,33 @@ namespace stk {
                 for (unsigned i_face = 0; i_face < n_faces; i_face++)
                   {
                     // FIXME assumes face is quadrilateral
-                    unsigned face_ord = 0;
-                    if (toTopoKey == topo_key_quad9)
-                      face_ord = 8;
-                    else
-                      face_ord = cell_topo_data_toTopo->side[i_face].node[8];
+                    shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getTopology( 2, i_face));
+                    if (0)
+                      std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << FACE_N(i_face) << " for i_face = " << i_face 
+                                << " face_topo.getNodeCount()= " << face_topo.getNodeCount()
+                                << std::endl;
+                    if (face_topo.getNodeCount() == 4 || toTopoKey == topo_key_quad9)
+                      {                      
+                        unsigned face_ord = 0;
+                        if (toTopoKey == topo_key_quad9)
+                          face_ord = 8;
+                        else
+                          {
+                            face_ord = cell_topo_data_toTopo->side[i_face].node[8];
+                          }
 
-                    unsigned inode = FACE_N(i_face);
+                        unsigned inode = FACE_N(i_face);
+                        
+                        //std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << inode << " for i_face = " << i_face << " face_ord= " << face_ord << std::endl;
 
-                    //std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << inode << " for i_face = " << i_face << " face_ord= " << face_ord << std::endl;
+                        if (!inode)
+                          {
+                            std::cout << "P[" << eMesh.getRank() << "] inode = 0 for i_face = " << i_face << " face_ord= " << face_ord << std::endl;
+                            //throw std::logic_error("UniformRefinerPatternBase::genericEnrich_createNewElements bad entity id = 0 ");
+                          }
 
-                    if (!inode)
-                      {
-                        std::cout << "P[" << eMesh.getRank() << "] inode = 0 for i_face = " << i_face << " face_ord= " << face_ord << std::endl;
-                        //throw std::logic_error("UniformRefinerPatternBase::genericEnrich_createNewElements bad entity id = 0 ");
+                        EN[face_ord] = inode;
                       }
-
-                    EN[face_ord] = inode;
                   }
               }
             else if (needed_entities[i_need].first == Element)
@@ -949,6 +959,16 @@ namespace stk {
 
         unsigned cellDimension = cell_topo.getDimension();
 
+        // FIXME
+        if (0)
+        {
+          int nface = new_sub_entity_nodes[2].size();
+          std::cout << "tmp nface= " << nface << " cellDimension= " << cellDimension << std::endl;
+          for (int iface = 0; iface < nface; iface++)
+            {
+              std::cout << "tmp iface= " << iface << " vec= " << new_sub_entity_nodes[2][iface] << std::endl;
+            }
+        }
 
         unsigned n_edges = cell_topo_data->edge_count;
         if (n_edges == 0) n_edges = 1; // 1D edge has one "edge"
@@ -1051,6 +1071,7 @@ namespace stk {
                   case 0:
                     inode = VERT_N(ordinal_of_subcell);
                     break;
+
                   case 1:
                     if (usePerm) // FIXME
                       if (num_nodes_on_subcell > 1)
@@ -1061,6 +1082,7 @@ namespace stk {
                       inode = EDGE_N_Q(ordinal_of_subcell, ordinal_of_node_on_subcell);
 
                     break;
+
                   case 2:
                     //if (m_primaryEntityRank == mesh::Face)
                     if (cellDimension == 2)
@@ -1090,6 +1112,7 @@ namespace stk {
                             if (num_nodes_on_subcell > 1)
                               {
                                 inode = NN_Q_P(mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell, perm_array);
+                                //std::cout << "tmp  pa = " << (usePerm ? perm_array[ordinal_of_node_on_subcell] : ordinal_of_node_on_subcell) << std::endl;
                               }
                             else
                               {
@@ -1110,11 +1133,14 @@ namespace stk {
                     throw std::logic_error("UniformRefinerPattern logic error");
                   }
 
-                if (0) std::cout << "tmp 2.1 " << inode << " " << jNode << " rank_of_subcell= " << rank_of_subcell
+                if (0) std::cout << "tmp 2.1 " << inode << " " << jNode 
+                                 << " usePerm = " << usePerm
+                                 << " childNodeIdx= " << childNodeIdx
+                                 << " rank_of_subcell= " << rank_of_subcell
                                  << " ordinal_of_subcell = " << ordinal_of_subcell
                                  << " ordinal_of_node_on_subcell = " << ordinal_of_node_on_subcell
+                                 << " num_nodes_on_subcell = " << num_nodes_on_subcell
                                  << std::endl;
-
                 EN[jNode] = inode;
               }
           }
@@ -1124,15 +1150,12 @@ namespace stk {
           {
             Entity& newElement = *(*element_pool);
 
-            // FIXME
             if (m_primaryEntityRank == Element &&  proc_rank_field)
               {
-                //exit(1);  // FIXME FIXME FIXME CHECK
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
               }
 
-            // CHECK
             change_entity_parts(eMesh, element, newElement);
 
             for (int inode=0; inode < ToTopology::node_count; inode++)
@@ -1140,12 +1163,16 @@ namespace stk {
                 mesh::EntityId eid = elems[iChild][inode];
                 if (!eid)
                   {
-                    std::cout << "P[" << eMesh.getRank() << "] eid = 0 for inode = " << inode << std::endl;
+                    std::cout << "P[" << eMesh.getRank() << "] eid = 0 for inode = " << inode << " iChild = " << iChild << std::endl;
+                    std::cout << "elems[iChild] = " ;
+                    for (int in=0; in < ToTopology::node_count; in++)
+                      {
+                        std::cout << "in= " << in << " elems= " << elems[iChild][in] << std::endl;
+                      }
                     throw std::logic_error("UniformRefinerPatternBase::genericRefine_createNewElements bad entity id = 0 ");
                   }
 
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_createOrGetNode);
-                //mesh::Entity& node = eMesh.createOrGetNode(eid);
                 mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_createOrGetNode);
 
@@ -1302,6 +1329,25 @@ namespace stk {
        *   |         |         |
        * 16*    *  17*    *    *11
        *   |   21    |   22    |
+       *   |         |         |
+       *   o----*----o----*----o
+       *  0     9    4   10     1
+       *
+       *
+       * After refinement:
+       *
+       *  3    14    6   13     2   CHILD 8-Node Quadrilateral Object Nodes
+       *   o----*----o----*----o    (new nodes = *)
+       *   |         |         |
+       *   |         |         |
+       * 15*         *19       *12    This case is so similar to the full quadratic case we just re-use the node numbering and
+       *   |         |         |         go ahead and generate 9 nodes per face, which is 4 more than we need, but we drop them later.
+       *   |        8|    18   |
+       * 7 o----*----o----*----o 5
+       *   |   20    |         |
+       *   |         |         |
+       * 16*       17*         *11
+       *   |         |         |
        *   |         |         |
        *   o----*----o----*----o
        *  0     9    4   10     1
@@ -2197,7 +2243,10 @@ namespace stk {
 #include "UniformRefinerPattern_Quad9_Quad9_4_sierra.hpp"
 #include "UniformRefinerPattern_Hex27_Hex27_8_sierra.hpp"
 #include "UniformRefinerPattern_Tet10_Tet10_8_sierra.hpp"
+#include "UniformRefinerPattern_Wedge15_Wedge15_8_sierra.hpp"
+#include "UniformRefinerPattern_Wedge18_Wedge18_8_sierra.hpp"
 
+#include "URP_Heterogeneous_QuadraticRefine_3D.hpp"
 
 // enrich
 // line2-line3
@@ -2208,6 +2257,7 @@ namespace stk {
 #include "UniformRefinerPattern_Hex8_Hex27_1_sierra.hpp"
 #include "UniformRefinerPattern_Hex8_Hex20_1_sierra.hpp"
 #include "UniformRefinerPattern_Wedge6_Wedge15_1_sierra.hpp"
+#include "UniformRefinerPattern_Wedge6_Wedge18_1_sierra.hpp"
 
 #include "URP_Heterogeneous_Enrich_3D.hpp"
 
@@ -2241,7 +2291,9 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Triangle<6>,      shards::Triangle<6>,      4, SierraPort >            Tri6_Tri6_4;
     typedef  UniformRefinerPattern<shards::Quadrilateral<9>, shards::Quadrilateral<9>, 4, SierraPort >            Quad9_Quad9_4;
     typedef  UniformRefinerPattern<shards::Hexahedron<27>,   shards::Hexahedron<27>,   8, SierraPort >            Hex27_Hex27_8;
-    typedef  UniformRefinerPattern<shards::Tetrahedron<10>,  shards::Tetrahedron<10>,   8, SierraPort >           Tet10_Tet10_8;
+    typedef  UniformRefinerPattern<shards::Tetrahedron<10>,  shards::Tetrahedron<10>,  8, SierraPort >            Tet10_Tet10_8;
+    typedef  UniformRefinerPattern<shards::Wedge<15>,        shards::Wedge<15>,        8, SierraPort >            Wedge15_Wedge15_8;
+    typedef  UniformRefinerPattern<shards::Wedge<18>,        shards::Wedge<18>,        8, SierraPort >            Wedge18_Wedge18_8;
 
     // enrich
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<9>, 1, SierraPort >            Quad4_Quad9_1;
@@ -2251,6 +2303,7 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<27>,   1, SierraPort >            Hex8_Hex27_1;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<20>,   1, SierraPort >            Hex8_Hex20_1;
     typedef  UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<15>,        1, SierraPort >            Wedge6_Wedge15_1;
+    typedef  UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<18>,        1, SierraPort >            Wedge6_Wedge18_1;
 
     // convert
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>,      2 >                        Quad4_Tri3_2;
