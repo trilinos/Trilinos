@@ -1943,6 +1943,25 @@ namespace stk {
       virtual ~URP() {}
 
 
+      const CellTopologyData * get_effective_topo(mesh::Part& part)
+      {
+        const CellTopologyData * part_cell_topo_data = stk::mesh::get_cell_topology(part);
+
+        // check subsets
+        if (!part_cell_topo_data)
+          {
+            const mesh::PartVector subsets = part.subsets();
+            for (unsigned i_subset = 0; i_subset < subsets.size(); i_subset++)
+              {
+                mesh::Part& subset = *subsets[i_subset];
+                part_cell_topo_data = stk::mesh::get_cell_topology(subset);
+                if (part_cell_topo_data) 
+                  return part_cell_topo_data;
+              }
+          }
+        return part_cell_topo_data;
+      }
+
       void setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology=true)
       {
         EXCEPTWATCH;
@@ -1954,6 +1973,15 @@ namespace stk {
         m_fromParts.resize(0);
         m_toParts.resize(0);
 
+        if (0)
+          {
+            mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+            for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
+              {
+                mesh::Part *  part = *i_part ;
+                std::cout << "tmp 0 setNeededParts: part = " << part->name() << std::endl;
+              }
+          }
 
         for (unsigned irank = 0; irank < mesh::EntityRankEnd; irank++)
           {
@@ -1995,7 +2023,6 @@ namespace stk {
                 if (part->name()[0] == '{')
                   continue;
 
-
                 bool doThisPart = (block_names.size() == 0);
                 for (unsigned ib = 0; ib < block_names.size(); ib++)
                   {
@@ -2005,10 +2032,39 @@ namespace stk {
                         break;
                       }
                   }
+                bool isOldElementsPart = ( (part->name()).find(m_oldElementsPartName) != std::string::npos);
                 doThisPart = doThisPart && ( part->primary_entity_rank() == m_primaryEntityRank );
+                doThisPart = doThisPart && !isOldElementsPart;
 
-                //                 std::cout << "setNeededParts:: part name= " << part->name() << " doThisPart= " << doThisPart
-                //                           << "  part->primary_entity_rank() = " <<  part->primary_entity_rank() << std::endl;
+                if (!isOldElementsPart)
+                  {
+                    //const CellTopologyData * const part_cell_topo_data = stk::mesh::get_cell_topology(*part);
+                    const CellTopologyData * part_cell_topo_data = get_effective_topo(*part);
+                    
+                    if (!part_cell_topo_data)
+                      {
+                        //std::cout << "cell topo is null for part = " << part->name() << std::endl;
+                        //throw std::runtime_error("cell topo is null");
+                        doThisPart = false;
+
+                      }
+                    else
+                      {
+                        shards::CellTopology topo(part_cell_topo_data);
+                        unsigned my_cellTopoKey = getFromTypeKey();
+                        doThisPart = doThisPart && (topo.getKey() == my_cellTopoKey);
+
+                        if (0)
+                          std::cout << "tmp setNeededParts:: "
+                                    << " part name= " << part->name() 
+                                    << " doThisPart= " << doThisPart
+                                    << " part->primary_entity_rank() = " <<  part->primary_entity_rank() 
+                                    << " my_cellTopoKey= " << my_cellTopoKey
+                                    << " topo.getKey() = " << topo.getKey()
+                                    << " topo.getName() = " << topo.getName()
+                                    << std::endl;
+                      }
+                  }
 
                 if (doThisPart)
                   {
@@ -2019,7 +2075,6 @@ namespace stk {
                     case mesh::Face:
                       {
                         mesh::Part *  block_to=0;
-                        //mesh::Part* block_to = 0;
                         if (sameTopology)
                           {
                             block_to = part;
@@ -2027,13 +2082,14 @@ namespace stk {
                         else
                           {
                             block_to = &eMesh.getMetaData()->declare_part(part->name() + m_appendConvertString, part->primary_entity_rank());
+                            if (0) std::cout << "tmp setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
                             mesh::set_cell_topology< ToTopology  >( *block_to );
                             stk::io::put_io_part_attribute(*block_to);
                           }
 
-                        if (0) std::cout << "tmp setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
 
-                        if (!(part->name() == m_oldElementsPartName+toString(m_primaryEntityRank)))
+                        if (!((part->name()).find(m_oldElementsPartName) != std::string::npos))
+                          //if (!(part->name() == m_oldElementsPartName+toString(m_primaryEntityRank)))
                           {
                             if (0) std::cout << "tmp setNeededParts:: fromPart = " << part->name() << " toPart = " << block_to->name() << std::endl;
                             m_fromParts.push_back(part);
@@ -2047,20 +2103,26 @@ namespace stk {
           }
         fixSubsets(eMesh, sameTopology);
 
-        eMesh.getMetaData()->declare_part(m_oldElementsPartName+toString(m_primaryEntityRank), m_primaryEntityRank);
+
+        {
+          mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+          std::string oldPartName = m_oldElementsPartName+toString(m_primaryEntityRank);
+          bool foundOldPart = false;
+          for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
+            {
+              mesh::Part *  part = *i_part ;
+              if (oldPartName == part->name())
+                {
+                  foundOldPart = true;
+                  break;
+                }
+            }
+
+          if (!foundOldPart)
+            eMesh.getMetaData()->declare_part(oldPartName, m_primaryEntityRank);
+        }
 
 
-#if 0
-        if (m_primaryEntityRank == mesh::Element)
-          {
-            //mesh::Part& oldElementsPart =
-            eMesh.getMetaData()->declare_part(m_oldElementsPartName+toString(mesh::Element), mesh::Element);
-            eMesh.getMetaData()->declare_part(m_oldElementsPartName+toString(mesh::Edge), mesh::Edge);
-            //mesh::Part& oldElementsPart = eMesh.getMetaData()->declare_part(m_oldElementsPartName);
-            //mesh::set_cell_topology< FromTopology  >( oldElementsPart );
-            //stk::io::put_io_part_attribute( oldElementsPart );
-          }
-#endif
       }
 
       void change_entity_parts(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement)
@@ -2146,6 +2208,8 @@ namespace stk {
 #include "UniformRefinerPattern_Hex8_Hex27_1_sierra.hpp"
 #include "UniformRefinerPattern_Hex8_Hex20_1_sierra.hpp"
 #include "UniformRefinerPattern_Wedge6_Wedge15_1_sierra.hpp"
+
+#include "URP_Heterogeneous_Enrich_3D.hpp"
 
 // convert topology
 #include "UniformRefinerPattern_Quad4_Tri3_6.hpp"

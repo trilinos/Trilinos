@@ -275,7 +275,6 @@ namespace stk {
 
       for (unsigned irank = 0; irank < ranks.size(); irank++)
         {
-          //if (ranks[irank] == ranks[0])  //! color all elements of all types
           {
             EXCEPTWATCH;
             unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
@@ -435,7 +434,6 @@ namespace stk {
       for (unsigned irank = 0; irank < ranks.size(); irank++)
         {
           EXCEPTWATCH;
-
 
           unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
           if (TRACE_STAGE_PRINT) 
@@ -1065,9 +1063,18 @@ namespace stk {
 
         }
 
-
+      // Renames as follows:
+      //   originalPartName -> originalPartName_uo_1000    The original part holds the elements to be converted, and is renamed to be the "old" part
+      //   originalPartName_urpconv -> originalPartName    The new part has the same name as the original part with urpconv appended, which
+      //                                                      is then changed back to the original part name
+      //
+      // So, after the renaming, the original part name holds the new elements, and the original elements are 
+      //   in the part with the original name appended with _uo_1000.  These parts are ignored on subsequent input.
+      //
       for (unsigned i_part = 0; i_part < toParts.size(); i_part++)
         {
+          if (0) std::cout << "tmp before: fromPartName= " << fromParts[i_part]->name() << " toPartName= " << toParts[i_part]->name() << std::endl;
+
           std::string * toPartName_p = const_cast<std::string *> (&toParts[i_part]->name());
 
           std::string toPartName = toParts[i_part]->name();
@@ -1085,9 +1092,12 @@ namespace stk {
           *toPartName_p = fromPartName;
           *fromPartName_p = fromPartName + breakPattern->getAppendOriginalString();
 
-          //           std::cout << "P[" << m_eMesh.getRank() << "] fromPartName: " << fromPartName << " part= " << toParts[i_part]->name() 
-          //                     << " old part name = " << fromPart->name()
-          //                     << std::endl;
+          if (0) std::cout << "tmp  after: fromPartName= " << fromParts[i_part]->name() << " toPartName= " << toParts[i_part]->name() << std::endl;
+
+          if (0)
+            std::cout << "tmp P[" << m_eMesh.getRank() << "] fromPartName: " << fromPartName << " part= " << toParts[i_part]->name() 
+                      << " old part name = " << fromPart->name()
+                      << std::endl;
         }
     }
 

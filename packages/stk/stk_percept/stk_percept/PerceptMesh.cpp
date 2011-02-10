@@ -240,51 +240,53 @@ namespace stk {
         std::cout.flush();
       }
 
+      // Parts information
       const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
-
       unsigned nparts = parts.size();
-      if (printInfo) std::cout << "P[" << p_rank << "] info>    Number of parts = " << nparts << std::endl;
-      for (unsigned ipart=0; ipart < nparts; ipart++)
+      if (printInfo) 
         {
-          Part& part = *parts[ipart];
-          const CellTopologyData *const topology = stk::mesh::get_cell_topology(part);
-          std::string subsets = "{";
-          const stk::mesh::PartVector &part_subsets = part.subsets();
-          if (part_subsets.size() > 0) {
-            for (size_t j = 0; j < part_subsets.size(); j++)
-              {
-                mesh::Part & efb_part = *part_subsets[j];
-                subsets += efb_part.name()+(j != part_subsets.size()-1?" , ":"");
+          std::cout << "P[" << p_rank << "] info>    Number of parts = " << nparts << std::endl;
+          std::cout << "\nP[" << p_rank << "] info>    Part subset info: \n" << std::endl;
+          for (unsigned ipart=0; ipart < nparts; ipart++)
+            {
+              Part& part = *parts[ipart];
+              const CellTopologyData *const topology = stk::mesh::get_cell_topology(part);
+              std::string subsets = "{";
+              const stk::mesh::PartVector &part_subsets = part.subsets();
+              if (part_subsets.size() > 0) {
+                for (size_t j = 0; j < part_subsets.size(); j++) 
+                  {
+                    mesh::Part & efb_part = *part_subsets[j];
+                    subsets += efb_part.name()+(j != part_subsets.size()-1?" , ":"");
+                  }
               }
-          }
-          subsets += "}";
-          std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name()
-                    << " topology = " << (topology?CellTopology(topology).getName():"null")
-                    << " subsets = " << subsets
-                    << std::endl;
-        }
+              subsets += "}";
+              std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() 
+                        << " topology = " << (topology?CellTopology(topology).getName():"null")
+                        << " subsets = " << subsets
+                        << std::endl;
+            }
 
-      for (unsigned ipart=0; ipart < nparts; ipart++)
-        {
-          Part& part = *parts[ipart];
-          {
-            std::vector<unsigned> count ;
-            mesh::Selector selector(part);
-            count_entities( selector, *eMesh.getBulkData(), count );
+          std::cout << "\nP[" << p_rank << "] info>     Part Uses information: \n" << std::endl;
+          for (unsigned ipart=0; ipart < nparts; ipart++)
+            {
+              Part& part = *parts[ipart];
+              {
+                std::vector<unsigned> count ;
+                mesh::Selector selector(part);
+                count_entities( selector, *eMesh.getBulkData(), count );
 
-            std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() ;
-            std::cout <<  " : Uses {" ;
-            std::cout << " Node = " << count[ mesh::Node ] ;
-            std::cout << " Edge = " << count[ mesh::Edge ] ;
-            std::cout << " Face = " << count[ mesh::Face ] ;
-            std::cout << " Elem = " << count[ mesh::Element ] ;
-            std::cout << " }" << std::endl ;
-            std::cout.flush();
-          }
+                std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() ;
+                std::cout <<  " : Uses {" ;
+                std::cout << " Node = " << count[ mesh::Node ] ;
+                std::cout << " Edge = " << count[ mesh::Edge ] ;
+                std::cout << " Face = " << count[ mesh::Face ] ;
+                std::cout << " Elem = " << count[ mesh::Element ] ;
+                std::cout << " }" << std::endl ;
+                std::cout.flush();
+              }
+            }
         }
-      // here's where we can add parts
-      // ...
-      // ... then we would have to commit the metaData
 
       const FieldVector & fields =  metaData.get_fields();
       unsigned nfields = fields.size();
@@ -465,11 +467,11 @@ namespace stk {
     int PerceptMesh::
     getSpatialDim()
     {
-// #ifndef NDEBUG
-//       const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getMetaData()->universal_part());
-//       unsigned dataStride = r.stride[0] ;
-//       VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::getSpatialDim() bad spatial dim");
-// #endif
+      // #ifndef NDEBUG
+      //       const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getMetaData()->universal_part());
+      //       unsigned dataStride = r.stride[0] ;
+      //       VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::getSpatialDim() bad spatial dim");
+      // #endif
       return m_spatialDim;
     }
 
@@ -480,12 +482,12 @@ namespace stk {
       mesh::Selector selector(getMetaData()->universal_part());
       count_entities( selector, *getBulkData(), count );
       return count[ mesh::Element ];
-//         std::cout << " Node = " << count[ mesh::Node ] ;
-//         std::cout << " Edge = " << count[ mesh::Edge ] ;
-//         std::cout << " Face = " << count[ mesh::Face ] ;
-//         std::cout << " Elem = " << count[ mesh::Element ] ;
-//         std::cout << " }" << std::endl ;
-//         std::cout.flush();
+      //         std::cout << " Node = " << count[ mesh::Node ] ;
+      //         std::cout << " Edge = " << count[ mesh::Edge ] ;
+      //         std::cout << " Face = " << count[ mesh::Face ] ;
+      //         std::cout << " Elem = " << count[ mesh::Element ] ;
+      //         std::cout << " }" << std::endl ;
+      //         std::cout.flush();
       }
 
     //========================================================================================================================

@@ -93,17 +93,21 @@ namespace stk {
                               std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
                                         << " elementId = " << element.identifier() << " element = " << element << std::endl;
 
-                            if (contains(all_elements, element.identifier()))
+                            EntityId elem_id = element.identifier();
+                            if (contains(all_elements, elem_id))
                               continue;
 
                             const PairIterRelation elem_nodes = element.relations( mesh::Node );  //! check for reference
                             unsigned num_node = elem_nodes.size(); 
                             bool none_in_this_color = true;
+                            static std::vector<EntityId> node_ids(100);
+                            node_ids.reserve(num_node);
                             for (unsigned inode=0; inode < num_node; inode++)
                               {
                                 Entity & node = *elem_nodes[ inode ].entity();
-
-                                if (contains(node_colors[icolor], node.identifier()))
+                                EntityId nid = node.identifier();
+                                node_ids[inode] = nid;
+                                if (contains(node_colors[icolor], nid))
                                   {
                                     none_in_this_color = false;
                                     break;
@@ -122,11 +126,9 @@ namespace stk {
 #else
                                 m_element_colors[icolor].insert(&element);
 #endif
-                                all_elements.insert(element.identifier());
+                                all_elements.insert(elem_id);
                                 for (unsigned inode=0; inode < num_node; inode++)
                                   {
-                                    //Entity & node = *elem_nodes[ inode ].entity();
-                                    //node_colors[icolor].insert(node.identifier());
                                     node_colors[icolor].insert(node_ids[inode]);
                                   }
                               }
@@ -137,7 +139,6 @@ namespace stk {
             } // irank
           if (0 == num_colored_this_pass)
             {
-              //std::cout << "tmp break" << std::endl;
               break;
             }
           ++ncolor;
