@@ -43,10 +43,10 @@ extern "C" {
 static int D1coloring(ZZ *zz, char coloring_problem, char coloring_order, char coloring_method, char comm_pattern, int ss,
 		      int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color);
 static int D2coloring(ZZ *zz, char coloring_problem, char coloring_order, char coloring_method, char comm_pattern, int ss,
-		      int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color, int *partialD2);
+		      int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color, char *partialD2);
 
 static int ReorderGraph(ZZ *, char, int, int *, int **, int *,
-			int *, int *, int *, int *, int *partialD2, int *nintvisit, int *nboundvisit);
+			int *, int *, int *, int *, char *partialD2, int *nintvisit, int *nboundvisit);
 static int PickColor(ZZ *, char, int, int, int *, int *);
 static int InternalColoring(ZZ *zz, char coloring_problem, int *nColor,
 			    int nVtx, int *visit, int * xadj, int *adj,
@@ -192,7 +192,7 @@ int Zoltan_Color(
   double gtimes[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
   char *timenames[6]= {"", "setup", "graph build", "renumber", "color", "clean up"};
 #endif
-  int *partialD2 = NULL;       /* binary array showing which vertices to be colored */ /* DBDB: temporary. This array should be allocated outside Zoltan_Color */
+  char *partialD2 = NULL;       /* binary array showing which vertices to be colored */ 
   ZG graph;
 
   memset (&graph, 0, sizeof(ZG));
@@ -308,7 +308,7 @@ int Zoltan_Color(
   ierr = Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, 
                     &vtxdist, &xadj, &adjncy, &adjproc,
-		     NULL, &partialD2);
+		     NULL, NULL);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
@@ -348,14 +348,13 @@ int Zoltan_Color(
       MEMORY_ERROR;
 
   if (coloring_problem == 'P') {
-    /* CC: Partial D2 is already allocated through ZG_Export */
-#if 0
-      if (nvtx && !(partialD2 = (int *) ZOLTAN_CALLOC(nvtx, sizeof(int))))
+      if (nvtx && !(partialD2 = (char *) ZOLTAN_CALLOC(nvtx, sizeof(char))))
 	  MEMORY_ERROR;
-      for (i=0; i<nvtx; i++)
-	  partialD2[i] = 1; /* UVCUVC: TODO CHECK: We need to fill this from fixed vertex function
-			     1: indicates vertex needs to be colored, 0 means don't color  */
-#endif /* CC: Not needed I think */
+      for (i=0; i<num_req_objs; ++i) {
+          int gno=requested_GNOs[i];
+          if (hash.base>=gno && gno<=hash.baseend) /* local vertex */
+              partialD2[gno-hash.base] = 1;           
+      } 
   }
 
 #ifdef _DEBUG_TIMES
@@ -428,6 +427,7 @@ int Zoltan_Color(
   ZOLTAN_FREE(&requested_GNOs);
   ZOLTAN_FREE(&adjproc);
   ZOLTAN_FREE(&color);
+  ZOLTAN_FREE(&partialD2);
   Zoltan_G2LHash_Destroy(&hash);
 
   return ierr;
@@ -910,7 +910,7 @@ static int D2coloring(
     int *adjproc,
     int *color,        /* return array to store colors of local and D1
 			  neighbor vertices */
-    int *partialD2     /* binary array showing which vertices will be colored */
+    char *partialD2     /* binary array showing which vertices will be colored */
 )
 {
     static char *yo = "D2coloring";
@@ -1331,7 +1331,7 @@ static int ReorderGraph(
     int *nbound,      /* Out: Number of boundary vertices */
     int *isbound,     /* Out: Indicates if a vertex is on the boundary */
     int *visit,       /* Out: Visit order */
-    int *partialD2,   /* In: binary array showing which vertices will be colored */
+    char *partialD2,   /* In: binary array showing which vertices will be colored */
     int *nintvisit,   /* Out: Number of internal vertices to be colored */
     int *nboundvisit  /* Out: Number of boundary vertices to be colored */
 )
