@@ -378,7 +378,7 @@ namespace Cthulhu {
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
       CTHULHU_DEBUG_ME;
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+      vec_->Print(out);
     }
 
     //@}
