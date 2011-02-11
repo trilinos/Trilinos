@@ -81,7 +81,6 @@ using Thyra::DefaultPreconditioner;
   */
 class PreconditionerFactory 
    : public virtual Thyra::PreconditionerFactoryBase<double>, public RequestHandlerContainer
-   // , public RequestHandler {
    {
 public:
 

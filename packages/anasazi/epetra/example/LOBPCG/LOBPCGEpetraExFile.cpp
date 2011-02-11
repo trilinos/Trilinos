@@ -40,7 +40,6 @@ int main(int argc, char *argv[]) {
   int blockSize = 5;
   int maxIterations = 1000;
   double tol = 1.0e-8;
-  double locking_tol = tol/10;
   bool verbose=false, locking=false, fullOrtho=true;
   std::string k_filename = "";
   std::string m_filename = "";
@@ -50,7 +49,6 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("blocksize",&blockSize,"Block size used in LOBPCG.");
   cmdp.setOption("maxiters",&maxIterations,"Maximum number of iterations used in LOBPCG.");
   cmdp.setOption("tol",&tol,"Convergence tolerance requested for computed eigenvalues.");
-  cmdp.setOption("lockingtol",&locking_tol,"Locking tolerance requested for computed eigenvalues.");
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("locking","nolocking",&locking,"Use locking of converged eigenvalues.");
   cmdp.setOption("fullortho","nofullortho",&fullOrtho,"Use full orthogonalization.");

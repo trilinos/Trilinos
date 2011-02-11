@@ -174,13 +174,19 @@ int Zoltan_Color(
   struct Zoltan_DD_Struct *dd_color;  /* DDirectory for colors */
 
   int nobj=0;
+  ZOLTAN_ID_PTR requested_GIDs = NULL;     /* Calling code requests the 
+                                              GNOs for these GIDs */
+  ZOLTAN_GNO_TYPE *requested_GNOs = NULL;  /* Return GNOs of 
+                                              the requested GIDs.  */
+
 
 #ifdef _DEBUG_TIMES  
   double times[6]={0.,0.,0.,0.,0.,0.}, rtimes[6]; /* Used for timing measurements */
   double gtimes[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
   char *timenames[6]= {"", "setup", "graph build", "renumber", "color", "clean up"};
 #endif
-  int *partialD2 = NULL;       /* binary array showing which vertices to be colored */ /* DBDB: temporary. This array should be allocated outside Zoltan_Color */
+  int *partialD2 = NULL;       /* binary array showing which vertices to be colored */
+  ZOLTAN_GNO_TYPE *local_GNOs = NULL;
   ZG graph;
 
   memset (&graph, 0, sizeof(ZG));
@@ -215,7 +221,7 @@ int Zoltan_Color(
       coloring_problem = '1';
   else if (!strcasecmp(coloring_problemStr, "distance-2"))
       coloring_problem = '2';
-  else if (!strcasecmp(coloring_problemStr, "partial distance-2")
+  else if (!strcasecmp(coloring_problemStr, "partial-distance-2")
       || !strcasecmp(coloring_problemStr, "bipartite"))
       coloring_problem = 'P';
   else {
@@ -274,20 +280,31 @@ int Zoltan_Color(
 #ifdef _DEBUG_TIMES
   times[1] = Zoltan_Time(zz->Timer);
 #endif
-  ierr =  Zoltan_ZG_Build (zz, &graph, 0);
+
+  requested_GNOs = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(num_req_objs *
+                                                       sizeof(ZOLTAN_GNO_TYPE));
+
+  ierr =  Zoltan_ZG_Build (zz, &graph, 0, 1, num_req_objs,
+                           req_objs, requested_GNOs);
+
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
 
   ierr = Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, 
                     &vtxdist, &xadj, &adjncy, &adjproc,
-		     NULL, &partialD2);
+		     NULL, NULL);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
 #ifdef _DEBUG_TIMES
   times[2] = Zoltan_Time(zz->Timer);
 #endif
+
+  if (nvtx && !(local_GNOs = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nvtx * sizeof(ZOLTAN_GNO_TYPE))))
+      MEMORY_ERROR;
+  for (i=0; i<nvtx; ++i)
+      local_GNOs[i] = i+vtxdist[zz->Proc];
 
 
   /* CREATE THE HASH TABLE */
@@ -300,12 +317,12 @@ int Zoltan_Color(
    *    create a "local ID" for each neighbor if it's not mine */
 
   if (sizeof(ZOLTAN_GNO_TYPE) ==          /* size of global id */
-      sizeof(int)){                       /* size of local id */
+      sizeof(int)) {                       /* size of local id */
 
     for (i=0; i<xadj[nvtx]; ++i)
         adjncy[i] = (ZOLTAN_GNO_TYPE)Zoltan_G2LHash_Insert(&hash, adjncy[i]);
   }
-  else{
+  else {
     itmp = (int *)adjncy;
     for (i=0; i<xadj[nvtx]; ++i){
         lno = Zoltan_G2LHash_Insert(&hash, adjncy[i]);
@@ -321,14 +338,33 @@ int Zoltan_Color(
       MEMORY_ERROR;
 
   if (coloring_problem == 'P') {
-    /* CC: Partial D2 is already allocated through ZG_Export */
-#if 0
-      if (nvtx && !(partialD2 = (int *) ZOLTAN_CALLOC(nvtx, sizeof(int))))
+      int sz=(nvtx>num_req_objs) ? nvtx : num_req_objs;
+
+      if (sz && !(partialD2 = (int *) ZOLTAN_CALLOC(sz, sizeof(int))))
 	  MEMORY_ERROR;
-      for (i=0; i<nvtx; i++)
-	  partialD2[i] = 1; /* UVCUVC: TODO CHECK: We need to fill this from fixed vertex function
-			     1: indicates vertex needs to be colored, 0 means don't color  */
-#endif /* CC: Not needed I think */
+
+      ierr = Zoltan_DD_Create (&dd_color, zz->Communicator, 
+                               sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, 0, 0);
+      if (ierr != ZOLTAN_OK)
+          ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
+      /* Put req obs with 1 but first inialize the rest with 0 */
+      ierr = Zoltan_DD_Update (dd_color, local_GNOs, NULL,
+                               NULL, partialD2, nvtx);
+      if (ierr != ZOLTAN_OK)
+          ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
+      for (i=0; i<num_req_objs; ++i)
+          partialD2[i] = 1;
+      ierr = Zoltan_DD_Update (dd_color, requested_GNOs, NULL,
+                               NULL, partialD2, num_req_objs);
+      if (ierr != ZOLTAN_OK)
+          ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
+      /* Get requested colors from the DDirectory. */
+      ierr = Zoltan_DD_Find (dd_color, local_GNOs, NULL, NULL,
+                             partialD2, nvtx, NULL);
+      if (ierr != ZOLTAN_OK)
+          ZOLTAN_COLOR_ERROR(ierr, "Cannot find object in DDirectory.");
+      /* Free DDirectory */
+      Zoltan_DD_Destroy(&dd_color);
   }
 
 #ifdef _DEBUG_TIMES
@@ -343,36 +379,18 @@ int Zoltan_Color(
   times[4] = Zoltan_Time(zz->Timer);
 #endif
 
-  /* Insert colors into a DDirectory by GIDs. */
-  /* OLD: Zoltan_ZG_Register (zz, &graph, color); */
-  /* First get global ids again. */ 
-  {
-     /* Dummy arrays that we don't really need */
-     ZOLTAN_ID_PTR my_lids = NULL;
-     float *wgts = NULL;
-     int *parts = NULL;
-
-     Zoltan_Get_Obj_List(zz, &nobj, &my_global_ids, &my_lids, 0, &wgts, &parts);
-     
-     ZOLTAN_FREE(&my_lids); 
-     ZOLTAN_FREE(&wgts); 
-     ZOLTAN_FREE(&parts); 
-   }
-
    ierr = Zoltan_DD_Create (&dd_color, zz->Communicator, 
-            num_gid_entries, 0, 0, 0, 0);
+                            sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, 0, 0);
    if (ierr != ZOLTAN_OK)
-     ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
+       ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
    /* Put color in part field. */
-   /* Number is nobj, not nvtx because nvtx is after symmetrization */
-   ierr = Zoltan_DD_Update (dd_color, my_global_ids, NULL,
-            NULL, color, nobj);
+   ierr = Zoltan_DD_Update (dd_color, local_GNOs, NULL,
+                            NULL, color, nvtx);
    if (ierr != ZOLTAN_OK)
-     ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
+       ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
 
    /* Get requested colors from the DDirectory. */
-   /* OLD: Zoltan_ZG_Query(zz, &graph, global_ids, num_obj, color_exp); */
-   ierr = Zoltan_DD_Find (dd_color, req_objs, NULL, NULL,
+   ierr = Zoltan_DD_Find (dd_color, requested_GNOs, NULL, NULL,
             color_exp, num_req_objs, NULL);
    if (ierr != ZOLTAN_OK)
      ZOLTAN_COLOR_ERROR(ierr, "Cannot find object in DDirectory.");
@@ -398,8 +416,11 @@ int Zoltan_Color(
  End:
   /* First, free graph */
   Zoltan_ZG_Free (&graph);
+  ZOLTAN_FREE(&requested_GNOs);
   ZOLTAN_FREE(&adjproc);
   ZOLTAN_FREE(&color);
+  ZOLTAN_FREE(&partialD2);
+  ZOLTAN_FREE(&local_GNOs);
   Zoltan_G2LHash_Destroy(&hash);
 
   return ierr;
@@ -1155,9 +1176,9 @@ static int D2coloring(
     }
     else if (coloring_order=='B')
 	nConflict = nboundvisit;
-    else if (coloring_order=='N' || coloring_order=='L' || coloring_order=='S') {
+    else if (coloring_order=='U' || coloring_order=='N' || coloring_order=='L' || coloring_order=='S') {
         nConflict = nvtx;
-        if (coloring_order=='N') {
+        if (coloring_order=='U' || coloring_order=='N') {
             for (i=0; i<nvtx; i++)
                 visit[i] = i;
         }   
@@ -1171,15 +1192,6 @@ static int D2coloring(
             InternalColoring(zz, coloring_problem, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxcolor, coloring_method);
     }
 
-/*
-    else if (coloring_order == 'U') { ** not implemented **
-	nConflict = nvtx;
-	for (i=0; i<nvtx; i++)
-	    visit[i] = i;
-	if (zz->Num_Proc==1)
-	    InternalColoring(zz, coloring_problem, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxcolor, coloring_method);
-    }
-*/
 
     if (get_times) times[3] = Zoltan_Time(zz->Timer);
 
@@ -1960,7 +1972,7 @@ static int D2ParallelColoring (
     n = 0;
     for (i = 0; i < nvtx; ++i) {
 	int u = visit[i];
-	if (coloring_problem != 'P' && confChk[u] == sncnt) { /* add boundary vertices of this round into confChk */
+	if (/*coloring_problem != 'P' && */confChk[u] == sncnt) { /* add boundary vertices of this round into confChk */
 	    confChk[u] = -2;
 	    wset[(*wsize)++] = u;
 	}
@@ -2161,12 +2173,12 @@ static int D2DetectConflicts(ZZ *zz, char coloring_problem, G2LHash *hash, int n
     for (i = 0; i < wsize; i++) {
 	int x, v, cw, cx, px, pv, gv, gx;
 	w = wset[i];
-	if (coloring_problem != 'P') {
+/*	if (coloring_problem != 'P') { */
 	    cw = color[w];
 	    seen[cw] = w;
 	    where[cw] = w;
 	    pwhere[cw] = zz->Proc;
-	}
+/*	}*/
 	for (j = xadj[w]; j < xadj[w+1]; j++) {
 	    x = adj[j];
 	    px = adjproc[j];

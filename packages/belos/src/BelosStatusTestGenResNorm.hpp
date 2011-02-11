@@ -279,21 +279,29 @@ class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
     oss << ((resnormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
     oss << ((restype_==Explicit) ? " Exp" : " Imp");
     oss << " Res Vec) ";
+
+    // If there is no residual scaling, return current string.
     if (scaletype_!=None)
+    {
+      // Insert division sign.
       oss << "/ ";
-    if (scaletype_==UserProvided)
-      oss << " (User Scale)";
-    else {
-      oss << "(";
-      oss << ((scalenormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
-      if (scaletype_==NormOfInitRes)
-        oss << " Res0";
-      else if (scaletype_==NormOfPrecInitRes)
-        oss << " Prec Res0";
-      else
-        oss << " RHS ";
-      oss << ")";
-    }
+
+      // Determine output string for scaling, if there is any.
+      if (scaletype_==UserProvided)
+        oss << " (User Scale)";
+      else {
+        oss << "(";
+        oss << ((scalenormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
+        if (scaletype_==NormOfInitRes)
+          oss << " Res0";
+        else if (scaletype_==NormOfPrecInitRes)
+          oss << " Prec Res0";
+        else
+          oss << " RHS ";
+        oss << ")";
+      }
+    }  
+
     return oss.str();
   }
 
@@ -645,26 +653,26 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( It
       RCP<const MV> rhs = lp.getRHS();
       numrhs_ = MVT::GetNumberVecs( *rhs );
       scalevector_.resize( numrhs_ );
-      resvector_.resize( numrhs_ ); 
-      testvector_.resize( numrhs_ );
       MVT::MvNorm( *rhs, scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
       RCP<const MV> init_res = lp.getInitResVec();
       numrhs_ = MVT::GetNumberVecs( *init_res );
       scalevector_.resize( numrhs_ );
-      resvector_.resize( numrhs_ ); 
-      testvector_.resize( numrhs_ );
       MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfPrecInitRes) {
       RCP<const MV> init_res = lp.getInitPrecResVec();
       numrhs_ = MVT::GetNumberVecs( *init_res );
       scalevector_.resize( numrhs_ );
-      resvector_.resize( numrhs_ ); 
-      testvector_.resize( numrhs_ );
       MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
     }
+    else {
+      numrhs_ = MVT::GetNumberVecs( *(lp.getRHS()) );
+    }
+
+    resvector_.resize( numrhs_ ); 
+    testvector_.resize( numrhs_ );
 
     curLSNum_ = lp.getLSNumber();
     curLSIdx_ = lp.getLSIndex();

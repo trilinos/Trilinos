@@ -23,6 +23,15 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
 )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  MatrixMatrix_TwoProcUnitTest
+  SOURCES 
+    TwoProc_UnitTest.cpp
+    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM mpi
+  NUM_MPI_PROCS 2
+)
+
 #PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
 #DEST_FILES
 #A.hb B.hb C.hb

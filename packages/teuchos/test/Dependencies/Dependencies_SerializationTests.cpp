@@ -35,7 +35,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DependencyXMLConverterDB.hpp"
 #include "Teuchos_StandardDependencyXMLConverters.hpp"
-#include "Teuchos_ParameterList.cpp"
+#include "Teuchos_ParameterList.hpp"
 
 
 namespace Teuchos{

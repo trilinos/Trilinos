@@ -124,7 +124,7 @@ int main(int argc, char* argv[]){
 	transposer.createTranspose(Tpetra::DoOptimizeStorage, TestMatrix/*, tMap*/);
 
 //	if (verbose) {
-	TestMatrix->describe(*out, Teuchos::VERB_EXTREME); 
+//	TestMatrix->describe(*out, Teuchos::VERB_EXTREME); 
 	//}
 	
 

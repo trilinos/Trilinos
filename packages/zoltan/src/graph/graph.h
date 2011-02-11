@@ -30,7 +30,8 @@ typedef struct ZG_ {
 } ZG;
 
 int
-Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local);
+Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local, int, int, ZOLTAN_ID_PTR,
+                 ZOLTAN_GNO_TYPE *);
 
 int
 Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, ZOLTAN_GNO_TYPE *gvtx, int *nvtx, int *obj_wgt_dim, int *edge_wgt_dim,

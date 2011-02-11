@@ -95,7 +95,7 @@ public:
    * \return XML representation of the condition.
    */
   static XMLObject convertCondition(
-    const RCP<const Condition> condition,
+    RCP<const Condition> condition,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap);
 
   /**

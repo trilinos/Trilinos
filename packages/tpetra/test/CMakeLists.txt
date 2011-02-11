@@ -18,7 +18,7 @@ ADD_SUBDIRECTORIES(
   VbrMatrix
   RowMatrixTransposer
   MatrixMatrix
-#  IOTests
+  inout
   )
 
 IF (Tpetra_ENABLE_BUGTESTS)

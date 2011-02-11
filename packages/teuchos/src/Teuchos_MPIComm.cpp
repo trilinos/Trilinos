@@ -34,15 +34,18 @@ using namespace Teuchos;
 
 namespace Teuchos
 {
-	const int MPIComm::INT = 1;
-	const int MPIComm::FLOAT = 2;
-	const int MPIComm::DOUBLE = 3;
-	const int MPIComm::CHAR = 4;
+const int MPIComm::INT = 1;
+const int MPIComm::FLOAT = 2;
+const int MPIComm::DOUBLE = 3;
+const int MPIComm::DOUBLE_INT = 4;
+const int MPIComm::CHAR = 5;
 
-	const int MPIComm::SUM = 5;
-	const int MPIComm::MIN = 6;
-	const int MPIComm::MAX = 7;
-	const int MPIComm::PROD = 8;
+const int MPIComm::SUM = 6;
+const int MPIComm::MIN = 7;
+const int MPIComm::MAX = 8;
+const int MPIComm::MINLOC = 8;
+const int MPIComm::MAXLOC = 10;
+const int MPIComm::PROD = 11;
 }
 
 

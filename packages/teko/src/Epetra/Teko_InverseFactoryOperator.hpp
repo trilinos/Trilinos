@@ -122,7 +122,6 @@ protected:
    InverseFactoryOperator(); 
    InverseFactoryOperator(const InverseFactoryOperator &); 
 
-   // Teuchos::RCP<const BlockPreconditionerFactory> preconFactory_;
    Teuchos::RCP<Teko::InverseFactory> inverseFactory_;
    Teko::ModifiableLinearOp invOperator_;
    bool firstBuildComplete_;

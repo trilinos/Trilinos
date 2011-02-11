@@ -96,7 +96,7 @@ TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,che
 eval set -- "$TEMP"
 
 while true ; do
-  case "$1" in 
+    case "$1" in 
       --python) PY_SUNDANCE=ON; 
                 PARANOID_COMPILER=OFF; 
                 PYTHON_INC_STRING="-I${PYTHON_INC_PATH}";
@@ -116,7 +116,6 @@ while true ; do
       --lib64) LIB_PATH="${COMPILER_ROOT}/lib;${COMPILER_ROOT}/lib64"; shift;;
       --exodus) HAVE_EXODUS=ON; shift;;
       --no-exodus) HAVE_EXODUS=OFF; shift;;
-      --meros) ENABLE_MEROS=ON; shift;;
       --explicit) EXPLICIT_TEMPLATES=ON; shift;;
       --no-explicit) EXPLICIT_TEMPLATES=OFF; shift;;
       --src)
@@ -130,7 +129,7 @@ while true ; do
       --data)
             TRILINOS_DATA_DIR="$2"; shift 2;;
       --ordinal)
-            ORDINAL="$2"; shift 2;;
+            ORDINAL_TYPE="$2"; shift 2;;
       --prefix)
             INSTALL_PREFIX="$2"; shift 2;;
       --help)
@@ -151,7 +150,6 @@ while true ; do
             echo "--lib64          include lib64 in search path (default: off)"
             echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: on)"
             echo "--no-exodus      disable ExodusII readers"
-            echo "--meros          enable Meros block preconditioners (default: off)"
             echo "--explicit       enable explicit template instantiation (default: on)"
             echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"
             echo "--extra-cxxflags <f>   extra C++ flags (default: none)" 
@@ -165,7 +163,7 @@ while true ; do
             shift
             ;;
       --) shift; break;;
-  esac
+   esac
 done
 
 # ---------------------------------------------------------------------------
@@ -188,6 +186,7 @@ ${ECHO} cmake \
 -D LAPACK_LIBRARY_DIRS:FILEPATH=${LIB_PATH} \
 -D Trilinos_EXTRA_LINK_FLAGS:STRING=${FORTRAN_LIBS} \
 -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
 -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=${PARANOID_COMPILER} \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=${CHECK_STL} \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
@@ -203,7 +202,7 @@ ${ECHO} cmake \
 -D Trios_ENABLE_EXAMPLES:BOOL=OFF \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
--D Teuchos_ORDINAL_TYPE:STRING=${ORDINAL} \
+-D Teuchos_ORDINAL_TYPE:STRING=${ORDINAL_TYPE} \
 -D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
 -D NOX_ENABLE_LOCA:BOOL=OFF \
 -D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PREFIX} \
