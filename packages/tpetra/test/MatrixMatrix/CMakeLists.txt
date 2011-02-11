@@ -7,9 +7,18 @@ INCLUDE(PackageCopyFilesToBinaryDir)
 	#COMM serial mpi
 #)
 
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  #MatrixMatrix_test
+  #SOURCES main.cpp
+  #ARGS "--matnames-file=\"matrixsystems.xml\" --v"
+  #COMM serial mpi
+#)
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  MatrixMatrix_test
-  SOURCES main.cpp
+  MatrixMatrix_UnitTests
+  SOURCES 
+    MatrixMatrix_UnitTests.cpp
+    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
   COMM serial mpi
 )
@@ -31,13 +40,15 @@ add2x4A.hb add2x4B.hb add2x4C.hb
 bigAddA.hb bigAddB.hb bigAddC.hb
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix/matrices
 DEST_DIR ${PACKAGE_BINARY_DIR}/test/MatrixMatrix/matrices
-EXEDEPS MatrixMatrix_test
+EXEDEPS MatrixMatrix_UnitTests
 )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraMatMatSystemFileCopy
 DEST_FILES
 matrixsystems.xml
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix
-EXEDEPS MatrixMatrix_test
+EXEDEPS MatrixMatrix_UnitTests
 )
+
+
 
