@@ -136,8 +136,9 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
   RCP<Teuchos::FancyOStream> out_root = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out_root->setOutputToRootOnly(0);
 
-  *out_root << "transpose before fillComplete()" << std::endl;
-  transposeMatrix_->describe(*out_all, Teuchos::VERB_EXTREME);
+  //*out_root << "transpose before fillComplete()" << std::endl;
+  //transposeMatrix_->describe(*out_all, Teuchos::VERB_EXTREME);
+
 
   // for now, we don't care about the domain/range maps, as we won't be applying this matrix as an operator
   transposeMatrix_->fillComplete(transRowMap, origRowMap, optimizeTranspose_);
