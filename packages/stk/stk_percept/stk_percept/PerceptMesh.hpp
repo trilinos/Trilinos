@@ -29,7 +29,7 @@
 #include <stk_io/IossBridge.hpp>
 
 #include <Intrepid_FieldContainer.hpp>
-//#include <Intrepid_Basis.hpp>
+
 
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
@@ -42,6 +42,10 @@
 #include <stk_percept/function/BucketOp.hpp>
 
 #include <stk_percept/SameRankRelation.hpp>
+
+// FIXME
+
+#include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
 
 //using namespace Intrepid;
 

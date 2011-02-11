@@ -34,7 +34,6 @@ namespace stk {
         Elem::StdMeshObjTopologies::bootstrap();
 
 #if FACE_BREAKER_W15_W15_8
-
         m_face_breaker =  new UniformRefinerPattern<shards::Quadrilateral<8>, shards::Quadrilateral<8>, 4, SierraPort > (eMesh, block_names) ;
         m_face_breaker_tri = new UniformRefinerPattern<shards::Triangle<6>, shards::Triangle<6>, 4, SierraPort > (eMesh, block_names);
 #endif
@@ -60,6 +59,7 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         // FIXME need to take into account the mixed topology nature of the faces
+
         needed_entities.resize(3);
 
         needed_entities[0] = NeededEntityType(stk::mesh::Edge, 3u);
