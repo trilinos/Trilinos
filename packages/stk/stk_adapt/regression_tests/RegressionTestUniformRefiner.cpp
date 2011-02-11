@@ -69,6 +69,7 @@ namespace stk
       //======================================================================================================================
 
 
+
       //======================================================================================================================
       //======================================================================================================================
       //===================== Table generation
@@ -204,10 +205,6 @@ namespace stk
 
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
-
-        // exit(1); Can't do this, breaks MPI due to lack of finalize call
-        //return;
-
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
         // this case can't be load balanced (I presume there are too few elements)
@@ -291,7 +288,6 @@ namespace stk
         //     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>,      4, Specialization >        Quad4_Tri3_4;
         //     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Tetrahedron<4>,  24 >                        Hex8_Tet4_24;
 
-        //exit(1);
       }
 
       //======================================================================================================================
@@ -468,7 +464,6 @@ namespace stk
             eMesh.open("./input_files/break_test/quad/sidesets/quad_sidesets.e");
             eMesh.commit();
             eMesh.printInfo("quad mesh");
-            exit(1);
           }
 
         if (p_size == 1 || p_size == 2)
@@ -1008,8 +1003,6 @@ namespace stk
               em1.saveAs("./output_files/quad_fixture_quad9_quad9_1.e");
 
             }
-            //exit(123);
-
             // end_demo
           }
       }
@@ -1079,7 +1072,6 @@ namespace stk
 
             //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
             //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
-            //             exit(1);
 
             //fixture.meta_data.commit();
             eMesh.commit();
@@ -1102,7 +1094,6 @@ namespace stk
                 percept::PerceptMesh e1;
                 e1.openReadOnly("./input_files/quad_fixture_tri3_1.e");
                 e1.printInfo("after read", 3);
-                exit(1);
               }
             // end_demo
           }
@@ -1141,7 +1132,6 @@ namespace stk
 
             //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
             //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
-            //             exit(1);
 
             //fixture.meta_data.commit();
             eMesh.commit();
@@ -1164,7 +1154,6 @@ namespace stk
                 percept::PerceptMesh e1;
                 e1.openReadOnly("./input_files/quad_fixture_tri3_1.e");
                 e1.printInfo("after read", 3);
-                exit(1);
               }
             // end_demo
           }
@@ -1774,7 +1763,6 @@ namespace stk
         unsigned p_size = eMesh.getParallelSize();
         if (p_size == 1)
           {
-
             //         void createMesh(stk::ParallelMachine parallel_machine,
             //                         unsigned n_nodes_x, unsigned n_nodes_y, unsigned n_nodes_z,
             //                         double xmin, double xmax,
@@ -1807,6 +1795,68 @@ namespace stk
 
             eMesh.saveAs("./output_files/swept-wedge_enrich_1.e");
             eMesh.saveAs("./input_files/swept-wedge_enrich_refine_0.e");
+
+          }
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, wedge6_enrich_refine)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+        //if (1) return; //FIXME - Intrepid doesn't have a wedge<15> basis
+
+        // start_demo_regr_uniformRefiner_wedge6_enrich_refine
+
+        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD );
+
+        if (p_size == 1)
+          {
+            PerceptMesh eMesh;
+            percept::WedgeFixture wedgeFixture;
+
+            wedgeFixture.createMesh(MPI_COMM_WORLD,
+                                              2, 2, 2,
+                                              0, 1,
+                                              0, 1,
+                                              0, 1,
+                                              std::string("tmp-swept-wedge_enrich_0.e") );
+
+            eMesh.open("tmp-swept-wedge_enrich_0.e");
+
+            Wedge6_Wedge15_1 break_wedge(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            eMesh.commit();
+            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            breaker.doBreak();
+            eMesh.saveAs("./input_files/swept-wedge_enrich_refine_0.e");
+          }
+
+        percept::PerceptMesh eMesh;
+
+        if (p_size == 1)
+          {
+            PerceptMesh eMesh;
+
+            eMesh.open("./input_files/swept-wedge_enrich_refine_0.e");
+
+            Wedge15_Wedge15_8 break_wedge(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+
+            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            eMesh.saveAs("./output_files/swept-wedge_enrich_refine_1.e");
 
           }
       }
@@ -2098,41 +2148,7 @@ namespace stk
           }
       }
 
-      //======================================================================================================================
-      //======================================================================================================================
-      //======================================================================================================================
-
-      TEST(regr_uniformRefiner, wedge6_enrich_refine)
-      {
-        EXCEPTWATCH;
-        MPI_Barrier( MPI_COMM_WORLD );
-        if (1) return; //FIXME - Intrepid doesn't have a wedge<15> basis
-
-        // start_demo_regr_uniformRefiner_wedge6_enrich_refine
-
-        percept::PerceptMesh eMesh;
-
-        unsigned p_size = eMesh.getParallelSize();
-        if (p_size == 1)
-          {
-            PerceptMesh eMesh;
-            eMesh.open("./input_files/swept-wedge_enrich_refine_0.e");
-
-            Wedge15_Wedge15_8 break_wedge(eMesh);
-
-            int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
-
-            eMesh.commit();
-
-            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
-            breaker.setIgnoreSideSets(true);
-            breaker.doBreak();
-
-            eMesh.saveAs("./output_files/swept-wedge_enrich_refine_1.e");
-
-          }
-      }
+      //here
 
       //======================================================================================================================
       //======================================================================================================================

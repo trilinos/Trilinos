@@ -249,11 +249,12 @@ namespace stk {
 
       enum
         {
-          fromTopoKey    = FromTopology::key,
-          toTopoKey      = ToTopology::key,
-          topo_key_hex27 = shards::Hexahedron<27>::key,
-          topo_key_quad9 = shards::Quadrilateral<9>::key,
-          centroid_node  = (toTopoKey == topo_key_quad9 ? 8 :
+          fromTopoKey      = FromTopology::key,
+          toTopoKey        = ToTopology::key,
+          topo_key_hex27   = shards::Hexahedron<27>::key,
+          topo_key_quad9   = shards::Quadrilateral<9>::key,
+          topo_key_wedge15 = shards::Wedge<15>::key,
+          centroid_node    = (toTopoKey == topo_key_quad9 ? 8 :
                             (toTopoKey == topo_key_hex27 ? 20 : 0)
                             )
         };
@@ -486,10 +487,45 @@ namespace stk {
           }
       }
 
+      void interpolateIntrepid(percept::PerceptMesh& eMesh, FieldBase* field, CellTopology& cell_topo,
+                               MDArray& output_pts, Entity& element, MDArray& input_param_coords, double time_val=0.0)
+      {
+        int fieldStride = output_pts.dimension(1);
+        unsigned *null_u = 0;
+
+        mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
+        MDArray basis_val(elem_nodes.size(), 1);
+        //std::cout << "tmp fieldStride= " << fieldStride << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
+
+        PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
+        basis->getValues(basis_val, input_param_coords, OPERATOR_VALUE);
+        if (0)
+          std::cout << "\n tmp input_param_coords= " 
+                    << input_param_coords(0,0) << " "
+                    << input_param_coords(0,1) << " "
+                    << input_param_coords(0,2) << " " << std::endl;
+
+        for (int i_stride=0; i_stride < fieldStride; i_stride++)
+          {
+            output_pts(0, i_stride) = 0.0;
+          }
+        for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
+          {
+            //std::cout << "tmp basis_val[" << i_node <<"]= " << basis_val(i_node,0) << std::endl;
+            Entity *node = elem_nodes[i_node].entity();
+            double *f_data = eMesh.field_data(field, *node, null_u);
+            for (int i_stride=0; i_stride < fieldStride; i_stride++)
+              {
+                output_pts(0, i_stride) += f_data[i_stride]*basis_val(i_node, 0);
+              }
+          }
+      }
+
       /// helpers for interpolating fields, coordinates
       /// ------------------------------------------------------------------------------------------------------------------------
-      //void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement,  refined_element_type& child_nodes,
 #define EXTRA_PRINT_URP_IF 0
+
+      /// This version uses Intrepid for interpolation
       void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement,  const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x, FieldBase *field)
       {
@@ -498,6 +534,7 @@ namespace stk {
         unsigned *null_u = 0;
 
         CellTopology cell_topo(get_cell_topology(element));
+
 
         // FIXME - need topo dimensions here
         int topoDim = cell_topo.getDimension();
@@ -509,6 +546,7 @@ namespace stk {
         static unsigned s_shell_tri_6_key = shards::getCellTopologyData<ShellTriangle<6> >()-> key;
         static unsigned s_shell_quad_4_key = shards::getCellTopologyData<ShellQuadrilateral<4> >()-> key;
         static unsigned s_shell_quad_9_key = shards::getCellTopologyData<ShellQuadrilateral<9> >()-> key;
+
         if (cell_topo_key == s_shell_line_2_key || cell_topo_key == s_shell_line_3_key)
           {
             topoDim = 1;
@@ -558,6 +596,46 @@ namespace stk {
 
         if (EXTRA_PRINT_URP_IF) std::cout << "tmp field = " << field->name() << " topoDim= " << topoDim << " fieldStride= " << fieldStride << std::endl;
 
+        if (0)
+          {
+            static bool entered = false;
+            if (!entered)
+              {
+                entered = true;
+                mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
+
+                PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
+                MDArray output_tmp(elem_nodes.size(), 1);
+                MDArray input_param_coords_tmp(1, topoDim);
+
+                for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
+                  {
+                    double *param_coord = ref_topo_x[i_node].parametric_coordinates;
+                    for (int ip=0; ip < topoDim; ip++)
+                      {
+                        input_param_coords_tmp(0, ip) = param_coord[ip];
+                      }
+
+                    basis->getValues(output_tmp, input_param_coords_tmp, OPERATOR_VALUE);
+                    bool found = false;
+                    for (unsigned ii=0; ii < elem_nodes.size(); ii++)
+                      {
+                        if (fabs(output_tmp(ii, 0)-((ii == i_node)? 1.0 : 0.0)) > 1.e-6)
+                          {
+                            found = true;
+                            std::cout << "tmp i_node= " << i_node << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
+                            std::cout << "fabs(output_tmp(ii, 0)-1.0) > 1.e-6) = " << output_tmp(ii,0) << std::endl;
+                            std::cout << "ii = " << ii << " i_node= " << i_node << std::endl;
+                            std::cout << "input_param_coords= " 
+                                      << input_param_coords << "  " << std::endl;
+                            std::cout << "output_tmp= " << output_tmp << std::endl;
+                          }
+                      }
+                    if (found) throw std::runtime_error("error in Intrepid");
+                  }
+              }
+          }
+
         mesh::PairIterRelation new_elem_nodes = newElement.relations(mesh::Node);
         for (unsigned i_new_node = 0; i_new_node < new_elem_nodes.size(); i_new_node++)
           {
@@ -572,21 +650,41 @@ namespace stk {
               }
             if (EXTRA_PRINT_URP_IF) std::cout << "tmp input_param_coords= " << input_param_coords << " cell_topo= " << cell_topo << std::endl;
 
+
             double time_val=0.0;
 
             /// unfortunately, Intrepid doesn't support a quadratic Line<3> element
 
-            if (cell_topo.getDimension() == 1 && cell_topo.getNodeCount() == 3)  // Line<3> element
+            if (toTopoKey == topo_key_wedge15)
               {
-                interpolateLine3(eMesh, field, output_pts, element, input_param_coords, time_val);
+                //std::cout << "tmp here 1 i_new_node= " << i_new_node << " base element= " << std::endl;
+                if ( EXTRA_PRINT_URP_IF) Util::printEntity(std::cout, element, eMesh.getCoordinatesField() );
+
+                interpolateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
+                if (0)
+                  {
+                    std::cout << "tmp input_param_coords= " 
+                              << input_param_coords(0,0) << " "
+                              << input_param_coords(0,1) << " "
+                              << input_param_coords(0,2) << " ";
+                    std::cout << "output_pts= " 
+                              << output_pts(0,0) << " "
+                              << output_pts(0,1) << " "
+                              << output_pts(0,2) << " "
+                              << std::endl;
+                  }
               }
             else
               {
-                if (EXTRA_PRINT_URP_IF) std::cout << "tmp here3= " <<  std::endl;
-                field_func(input_pts, output_pts, element, input_param_coords, time_val);
-                if (EXTRA_PRINT_URP_IF) std::cout << "tmp here3a= " <<  std::endl;
+                if (cell_topo.getDimension() == 1 && cell_topo.getNodeCount() == 3)  // Line<3> element
+                  {
+                    interpolateLine3(eMesh, field, output_pts, element, input_param_coords, time_val);
+                  }
+                else
+                  {
+                    field_func(input_pts, output_pts, element, input_param_coords, time_val);
+                  }
               }
-            if (EXTRA_PRINT_URP_IF) std::cout << "tmp here4= " <<  std::endl;
 
             Entity *new_node = new_elem_nodes[i_new_node].entity();
 
@@ -595,7 +693,6 @@ namespace stk {
               for (int ifd=0; ifd < fieldStride; ifd++)
                 {
                   f_data_new[ifd] = output_pts(0, ifd);
-                if (EXTRA_PRINT_URP_IF) std::cout << "tmp here5= " <<  std::endl;
                 }
             }
           }
@@ -603,7 +700,7 @@ namespace stk {
       }
 
       /// do interpolation for all fields
-      //     void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement, refined_element_type& child_nodes,
+      /// This version uses Intrepid 
       void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement, const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x)
       {
@@ -955,6 +1052,10 @@ namespace stk {
         CellTopology cell_topo(cell_topo_data);
         bool linearElement = Util::isLinearElement(cell_topo);
 
+        // SPECIAL CASE ALERT  FIXME
+        //if (toTopoKey == topo_key_wedge15)
+        //  linearElement = true;
+        
         const mesh::PairIterRelation elem_nodes = element.relations(Node);
 
         unsigned cellDimension = cell_topo.getDimension();
@@ -1111,8 +1212,30 @@ namespace stk {
                           {
                             if (num_nodes_on_subcell > 1)
                               {
+                                if (0)
+                                  {
+                                    std::cout << "tmp num_nodes_on_subcell= " << num_nodes_on_subcell << std::endl;
+                                    std::cout << "tmp ordinal_of_subcell= " << ordinal_of_subcell 
+                                              << " ordinal_of_node_on_subcell= " << ordinal_of_node_on_subcell << std::endl;
+                                    
+                                    for (unsigned ii=0; ii < num_nodes_on_subcell; ii++)
+                                      {
+                                        std::cout << "tmp pa[ii]= " << perm_array[ii] << std::endl;
+                                      }
+                                  
+                                    std::cout << "tmp new_sub_entity_nodes.size() = " 
+                                              << new_sub_entity_nodes.size() << std::endl;
+                                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " 
+                                              << new_sub_entity_nodes[mesh::Face].size() << std::endl;
+                                    std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
+                                              << new_sub_entity_nodes[mesh::Face][ordinal_of_subcell].size() << std::endl;
+
+                                    std::cout << "tmp new_sub_entity_nodes = \n" 
+                                              << new_sub_entity_nodes << std::endl;
+
+                                    std::cout << "tmp  pa = " << (usePerm ? perm_array[ordinal_of_node_on_subcell] : ordinal_of_node_on_subcell) << std::endl;
+                                  }
                                 inode = NN_Q_P(mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell, perm_array);
-                                //std::cout << "tmp  pa = " << (usePerm ? perm_array[ordinal_of_node_on_subcell] : ordinal_of_node_on_subcell) << std::endl;
                               }
                             else
                               {
@@ -1400,10 +1523,10 @@ namespace stk {
       static unsigned renumber_quad_face_interior_nodes(unsigned original_node)
       {
         static int face_interior_inverse_map[] = { -1, /* 0 */
-                                                        -1, -2, -3, -4, -5, -6, -7, 8, -9, -10,
-                                                        -11, -12, -13, -14, -15, -16,
-                                                        4, 5, 6, 7, // -17, -18, -19, -20
-                                                        0, 1, 2, 3 }; //-21, -22, -23, -24};
+                                                   -1, -2, -3, -4, -5, -6, -7, 8, -9, -10,
+                                                   -11, -12, -13, -14, -15, -16, 
+                                                   4, 5, 6, 7, // -17, -18, -19, -20
+                                                   0, 1, 2, 3 }; //-21, -22, -23, -24};
 
         /*
         static int face_interior_map[] = {21, 22, 23, 24,
@@ -1413,6 +1536,26 @@ namespace stk {
         if (original_node >= 25) throw std::logic_error("renumber_quad_face_interior_nodes 1");
         int val = face_interior_inverse_map[original_node];
         if (val < 0) throw std::logic_error("renumber_quad_face_interior_nodes 2");
+        return (unsigned)val;
+      }
+
+      // not used (yet)
+      static unsigned renumber_quad_face_interior_nodes_quad8(unsigned original_node)
+      {
+        static int face_interior_inverse_map[] = { -1, /* 0 */
+                                                   -1, -2, -3, -4, -5, -6, -7, 8, -9, -10,
+                                                   -11, -12, -13, -14, -15, -16, 
+                                                   0, 1, 2, 3 // -17, -18, -19, -20
+        }; 
+
+        /*
+        static int face_interior_map[] = {21, 22, 23, 24, 
+                                               17, 18, 19, 20,
+                                               8 };
+        */
+        if (original_node >= 21) throw std::logic_error("renumber_quad_face_interior_nodes_quad8 1");
+        int val = face_interior_inverse_map[original_node];
+        if (val < 0) throw std::logic_error("renumber_quad_face_interior_nodes_quad8 2");
         return (unsigned)val;
       }
 
@@ -1505,7 +1648,7 @@ namespace stk {
                 ++i_ord;
               }
             return false;
-          }
+          }  // cell dim == 2
 
         unsigned n_faces = cell_topo.getFaceCount();
 
