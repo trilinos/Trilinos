@@ -56,9 +56,11 @@ These parameters are described below.
 <td>
 The specific coloring problem to be solved. Supported values include
 "DISTANCE-1" (the standard vertex coloring problem), "DISTANCE-2"
-(useful for Jacobian coloring) and "BIPARTITE" and "PARTIAL-DISTANCE-2".
-When called with "BIPARTITE" or "PARTIAL-DISTANCE-2", only the objects
-listed in <i>global_ids</i> are colored.
+(useful for Jacobian coloring) and "PARTIAL-DISTANCE-2".  
+When called with "PARTIAL-DISTANCE-2", only the objects
+listed in <i>global_ids</i> (paramter of <b><a
+href="ug_interface_color.html#Zoltan_Color">Zoltan_Color</a></b>
+function) are colored. "BIPARTITE" is an alternative name for "PARTIAL-DISTANCE-2".
 </td>
 </tr>
 
@@ -94,9 +96,9 @@ such restriction.
   are sorted according to their number of neighbors so that the object
   with larger number of neighbors are colored first. If "S" is
   selected, the order is dynamically constructed; the object with
-  smallest number of neighbor will be colored last and is (virtually)
-  removed from the graph. <!--"U" is not implemented for distance-2
-  coloring. (Erik: I think it works now)--> </td>
+  smallest number of neighbors will be colored last and is
+  temporarily removed from the graph. This process repeats itself
+  until all objects are ordered. </td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
