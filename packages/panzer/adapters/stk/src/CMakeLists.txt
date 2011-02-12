@@ -42,7 +42,7 @@ APPEND_SET(HEADERS
   stk_interface/Panzer_STK_CubeHexMeshFactory.hpp
   evaluators/Panzer_STK_GatherFields.hpp
   evaluators/Panzer_STK_GatherFieldsT.hpp
-  write_solution_data.hpp
+  Panzer_STK_Utilities.hpp
   ) 
 
 APPEND_SET(SOURCES
@@ -53,7 +53,7 @@ APPEND_SET(SOURCES
   stk_interface/Panzer_STK_SquareQuadMeshFactory.cpp
   stk_interface/Panzer_STK_ExodusReaderFactory.cpp
   stk_interface/Panzer_STK_CubeHexMeshFactory.cpp
-  write_solution_data.cpp
+  Panzer_STK_Utilities.cpp
   )
 
 #

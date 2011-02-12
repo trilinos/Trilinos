@@ -282,6 +282,24 @@ public:
    void setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
                              const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
 
+   /** Reads a particular field into an array. Notice this is setup to work with
+     * the worksets associated with Panzer.
+     *
+     * \param[in] fieldName Name of field to be filled
+     * \param[in] blockId Name of block this set of elements belongs to
+     * \param[in] localElementIds Local element IDs for this set of solution values
+     * \param[in] solutionValues An two dimensional array object sized by (Cells,Basis Count)
+     *
+     * \note The block ID is not strictly needed in this context. However forcing the
+     *       user to provide it does permit an additional level of safety. The implicit
+     *       assumption is that the elements being retrieved are part of the specified block.
+     *       This prevents the need to perform a null pointer check on the field data, because
+     *       the STK_Interface construction of the fields should force it to be nonnull...
+     */
+   template <typename ArrayT>
+   void getSolutionFieldData(const std::string & fieldName,const std::string & blockId,
+                             const std::vector<std::size_t> & localElementIds,ArrayT & solutionValues) const;
+
    /** Get vertices associated with a number of elements of the same geometry.
      *
      * \param[in] localIds Element local IDs to construct vertices
@@ -403,6 +421,33 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
          double * solnData = stk::mesh::field_data(*field,*node);
          // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
          solnData[0] = solutionValues(cell,i);
+      }
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std::string & blockId,
+                                         const std::vector<std::size_t> & localElementIds,ArrayT & solutionValues) const
+{
+   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+
+   solutionValues.resize(localElementIds.size(),elements[localElementIds[0]]->relations(getNodeRank()).size());
+
+   // SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(fieldName); // if no blockId is specified you can get the field like this!
+   SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
+
+   for(std::size_t cell=0;cell<localElementIds.size();cell++) {
+      std::size_t localId = localElementIds[cell];
+      stk::mesh::Entity * element = elements[localId];
+
+      // loop over nodes set solution values
+      stk::mesh::PairIterRelation relations = element->relations(getNodeRank());
+      for(std::size_t i=0;i<relations.size();++i) {
+         stk::mesh::Entity * node = relations[i].entity();
+
+         double * solnData = stk::mesh::field_data(*field,*node);
+         // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
+         solutionValues(cell,i) = solnData[0]; 
       }
    }
 }

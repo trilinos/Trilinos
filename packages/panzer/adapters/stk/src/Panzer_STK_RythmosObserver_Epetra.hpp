@@ -11,7 +11,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 
-#include "write_solution_data.hpp"
+#include "Panzer_STK_Utilities.hpp"
 
 namespace panzer_stk {
 

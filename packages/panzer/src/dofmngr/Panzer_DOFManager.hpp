@@ -278,6 +278,9 @@ public:
      */
    virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
 
+   const std::set<int> & getFields(const std::string & blockId) const
+   { return blockToField_.find(blockId)->second; }
+
 protected:
    /** Build the default field ordering: simply uses ordering
      * imposed by <code>fieldStrToInt_</code> (alphabetical on field name)

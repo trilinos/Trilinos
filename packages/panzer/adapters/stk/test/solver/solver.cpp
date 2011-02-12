@@ -42,7 +42,7 @@ using Teuchos::rcp;
 #include "Piro_NOXSolver.hpp"
 #include "Piro_RythmosSolver.hpp"
 
-#include "write_solution_data.hpp"
+#include "Panzer_STK_Utilities.hpp"
 
 namespace panzer {
 
@@ -243,9 +243,9 @@ namespace panzer {
     ghosted_solution.PutScalar(0.0);
     ghosted_solution.Import(*solution,*importer,Insert);
 
-    write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
-			ghosted_solution);
-    mesh->writeToExodus("steady-state.exo");
+    panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
+	    		            ghosted_solution);
+    mesh->writeToExodus("output.exo");
 
     // Test solution values on left, middle, and right side of mesh.
     // Note that this is based on the exact 20x20 test mesh on 4
@@ -509,8 +509,8 @@ namespace panzer {
     ghosted_solution.PutScalar(0.0);
     ghosted_solution.Import(*solution,*importer,Insert);
 
-    write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
-			ghosted_solution);
+    panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
+			            ghosted_solution);
     
   }
 
