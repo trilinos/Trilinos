@@ -246,4 +246,12 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
     //J.Print(std::cout);
   }
 
+  // Holding a rcp to f produces a seg fault in Rythmos when the next
+  // f comes in and the resulting dtor is called.  Need to discuss
+  // with Ross.  Clearing all references here works!
+  epGlobalContainer->x = Teuchos::null;
+  epGlobalContainer->dxdt = Teuchos::null;
+  epGlobalContainer->f = Teuchos::null;
+  epGlobalContainer->A = Teuchos::null;
+
 }
