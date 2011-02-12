@@ -205,7 +205,7 @@ int Zoltan_Preprocess_Graph(
     ZOLTAN_FREE(local_ids);
     local = IS_LOCAL_GRAPH(gr->graph_type);
 
-    ierr = Zoltan_ZG_Build (zz, graph, local); /* Normal graph */
+    ierr = Zoltan_ZG_Build (zz, graph, local, 0,0,NULL,NULL); /* Normal graph */
     CHECK_IERR;
 
     ierr = Zoltan_ZG_Export (zz, graph,

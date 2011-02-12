@@ -232,11 +232,6 @@ void test_hex_grad()
   coord = map.template create_labeled_mdarray<Scalar>( 3 , 8 , "coord" );
   grad  = map.template create_labeled_mdarray<Scalar>( 3 , 8 , "grad" );
 
-  // Potential alternative API for allocating array:
-  //
-  // coord.allocate( 3 , 8 , map , "coord" );
-  // grad.allocate(  3 , 8 , map , "grad" );
-
   // Create additional views and then destroy them for testing
   {
     Kokkos::MDArrayView< Scalar , DeviceMap > tmp1 = coord ;

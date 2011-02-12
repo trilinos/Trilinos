@@ -40,7 +40,7 @@ int Zoltan_Build_Graph(ZZ *zz, int *graph_type, int check_graph,
   ZG graph;
 
   local = IS_LOCAL_GRAPH(*graph_type);
-  ierr = Zoltan_ZG_Build (zz, &graph, local); /* Normal graph */
+  ierr = Zoltan_ZG_Build (zz, &graph, local, 0,0,NULL,NULL); /* Normal graph */
   ierr = Zoltan_ZG_Export (zz, &graph,
 			   &glb_obj, &my_num_obj, &my_obj_wgt_dim, edge_wgt_dim,
 			   vtxdist, xadj, adjncy, adjproc,
