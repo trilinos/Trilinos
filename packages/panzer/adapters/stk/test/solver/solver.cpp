@@ -168,7 +168,7 @@ namespace panzer {
       p_names.push_back(p_0);
     }
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names, false));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
@@ -335,6 +335,12 @@ namespace panzer {
     panzer::InputPhysicsBlock ipb;
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
+    
+    // Enable transient support in equation set.  This is an
+    // application specific implementation detail.
+    for (std::vector<panzer::InputEquationSet>::iterator eq_set = ipb.eq_sets.begin();
+	 eq_set != ipb.eq_sets.end(); ++eq_set)
+      eq_set->params.set<bool>("Build Transient Support", true);
 
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
@@ -430,7 +436,7 @@ namespace panzer {
       p_names.push_back(p_0);
     }
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb, ep_lof, p_names));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb, ep_lof, p_names, true));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
@@ -486,10 +492,6 @@ namespace panzer {
     Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
     int num_g = outArgs.Ng(); // Number of *vectors* of responses
     assert (num_g == 1);
-
-    //RCP<Thyra::MultiVectorBase<double> > dgdp =
-    //Thyra::createMembers(*thyra_me->get_x_space(),numParams);
-    //if (computeSens) outArgs.set_DgDp(0, 0, dgdp);
     
     // Solution vector is returned as extra respons vector
     RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*thyra_me->get_x_space());

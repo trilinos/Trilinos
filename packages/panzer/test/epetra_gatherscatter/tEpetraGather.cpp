@@ -42,6 +42,7 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
    // build gather parameter list
    Teuchos::ParameterList gatherParams;
    gatherParams.set<RCP<std::vector<std::string> > >("DOF Names",dofNames);
+   gatherParams.set<RCP<std::vector<std::string> > >("Indexer Names",dofNames);
    gatherParams.set<RCP<panzer::Basis> >("Basis",basis);
 
    // test residual gather evaluator

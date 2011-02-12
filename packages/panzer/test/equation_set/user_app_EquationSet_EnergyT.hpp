@@ -20,9 +20,13 @@ template <typename EvalT>
 user_app::EquationSet_Energy<EvalT>::
 EquationSet_Energy(const panzer::InputEquationSet& ies,
 		   const panzer::CellData& cell_data) :
-  panzer::EquationSet_DefaultImpl<EvalT>(ies, cell_data)
+  panzer::EquationSet_DefaultImpl<EvalT>(ies, cell_data),
+  m_build_transient_support(false)
 {
   this->m_eqset_prefix = ies.prefix;
+
+  if (ies.params.isType<bool>("Build Transient Support"))
+    m_build_transient_support = ies.params.get<bool>("Build Transient Support");
 
   // ********************
   // Assemble DOF names and Residual names
@@ -34,7 +38,8 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
   this->m_dof_gradient_names->push_back(this->m_eqset_prefix+"GRAD_TEMPERATURE");
 
   this->m_dof_time_derivative_names = Teuchos::rcp(new std::vector<std::string>);
-  this->m_dof_time_derivative_names->push_back(this->m_eqset_prefix+"DOT_TEMPERATURE");
+  if (m_build_transient_support)
+    this->m_dof_time_derivative_names->push_back(this->m_eqset_prefix+"DOT_TEMPERATURE");
 
   this->m_residual_names = Teuchos::rcp(new std::vector<std::string>);
   this->m_residual_names->push_back(this->m_eqset_prefix+"RESIDUAL_TEMPERATURE");
@@ -77,8 +82,18 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // ********************
 
   // Transient Operator
-  {
-    //! \todo Transients
+  if (m_build_transient_support) {
+    ParameterList p("Transient Residual");
+    p.set("Residual Name", prefix+"RESIDUAL_TEMPERATURE_TRANSIENT_OP");
+    p.set("Value Name", prefix+"DOT_TEMPERATURE");
+    p.set("Basis", this->m_basis);
+    p.set("IR", this->m_int_rule);
+    p.set("Multiplier", 1.0);
+    
+    RCP< PHX::Evaluator<panzer::Traits> > op = 
+      rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
   }
 
   // Diffusion Operator
@@ -217,9 +232,13 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
     RCP<std::vector<std::string> > sum_names = 
       rcp(new std::vector<std::string>);
+
     sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_DIFFUSION_OP");
     sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_SOURCE_OP");
     sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_CONVECTION_OP");
+    if (m_build_transient_support)
+      sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_TRANSIENT_OP");
+
     p.set("Values Names", sum_names);
     p.set("Data Layout", this->m_basis->functional);
 

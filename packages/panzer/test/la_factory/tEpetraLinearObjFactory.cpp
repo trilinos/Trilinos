@@ -170,6 +170,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
       // build gather parameter list
       gatherParams.set<RCP<std::vector<std::string> > >("DOF Names",dofNames);
+      gatherParams.set<RCP<std::vector<std::string> > >("Indexer Names",dofNames);
       gatherParams.set<RCP<panzer::Basis> >("Basis",basis);
    }
 

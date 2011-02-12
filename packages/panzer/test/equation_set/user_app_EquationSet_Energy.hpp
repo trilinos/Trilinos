@@ -22,6 +22,8 @@ namespace user_app {
     
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm, const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const;
 
+    bool m_build_transient_support;
+
   };
 
 }

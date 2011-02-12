@@ -140,10 +140,11 @@ namespace panzer {
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
 
-    RCP<panzer::ModelEvaluator_Epetra> me;
+    // Test a transient me
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof,p_names));
+      bool build_transient_support = true;
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof,p_names,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -177,6 +178,40 @@ namespace panzer {
 
       me->evalModel(in_args, out_args);
 
+    }
+
+    // Test a steady-state me
+    {
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      bool build_transient_support = false;
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof,p_names,build_transient_support));
+
+      EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
+      EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
+      
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_alpha));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_beta));
+      TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_f));
+      TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_W));
+
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
+      
+      
+      RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+      x->Update(1.0, *(me->get_x_init()), 0.0);
+      in_args.set_x(x);
+      
+      RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+      RCP<Epetra_Operator> J_tmp = me->create_W();
+      RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(J_tmp);
+      TEST_ASSERT(!Teuchos::is_null(J));
+      out_args.set_f(f);
+      out_args.set_W(J);
+
+      me->evalModel(in_args, out_args);
     }
 
   }

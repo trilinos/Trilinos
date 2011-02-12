@@ -127,6 +127,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     ParameterList p("BC Gather");
     p.set("Basis", basis);
     p.set("DOF Names", field_names);
+    p.set("Indexer Names", field_names);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
       // rcp(new panzer::GatherSolution_Epetra<EvalT,panzer::Traits>(p));

@@ -72,6 +72,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
+  Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
 
   GatherSolution_Epetra();
@@ -112,6 +113,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
+  Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
 
   GatherSolution_Epetra();

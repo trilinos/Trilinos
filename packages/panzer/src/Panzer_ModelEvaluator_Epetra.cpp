@@ -10,10 +10,12 @@
 panzer::ModelEvaluator_Epetra::
 ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
 		      const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
-		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names) : 
+		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+		      bool build_transient_support) : 
   fmb_(fmb),
   lof_(lof),
-  p_names_(p_names)
+  p_names_(p_names),
+  build_transient_support_(build_transient_support)
 {
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -96,10 +98,12 @@ panzer::ModelEvaluator_Epetra::createInArgs() const
   InArgsSetup inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(IN_ARG_x,true);
-  inArgs.setSupports(IN_ARG_x_dot,true);
-  inArgs.setSupports(IN_ARG_t,true);
-  inArgs.setSupports(IN_ARG_alpha,true);
-  inArgs.setSupports(IN_ARG_beta,true);
+  if (build_transient_support_) {
+    inArgs.setSupports(IN_ARG_x_dot,true);
+    inArgs.setSupports(IN_ARG_t,true);
+    inArgs.setSupports(IN_ARG_alpha,true);
+    inArgs.setSupports(IN_ARG_beta,true);
+  }
   inArgs.set_Np(p_init_.size());
   return inArgs;
 }
@@ -131,18 +135,35 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
   // Transient or steady-state evaluation is determined by the x_dot
   // vector.  If this RCP is null, then we are doing a steady-state
   // fill.
-  bool is_transient = !Teuchos::is_null(inArgs.get_x_dot());
+  bool is_transient = false;
+  if (inArgs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot ))
+    is_transient = !Teuchos::is_null(inArgs.get_x_dot());
+
+  // Make sure construction built in transient support
+  TEST_FOR_EXCEPTION(is_transient && !build_transient_support_, std::runtime_error,
+		     "ModelEvaluator was not built with transient support enabled!");
+
+//   if (is_transient)
+//     cout << "ME:evalModel() is transient (x_dot is non-null)!" << endl;
+//   else 
+//     cout << "ME:evalModel() is steady-state (x_dot is null)!" << endl;
 
   //
   // Get the input arguments
   //
   const RCP<const Epetra_Vector> x = inArgs.get_x();
-  const RCP<const Epetra_Vector> x_dot = inArgs.get_x_dot();
-  ae_inargs_->alpha = inArgs.get_alpha();
-  ae_inargs_->beta = inArgs.get_beta();
-  if (is_transient)
+  RCP<const Epetra_Vector> x_dot;
+  ae_inargs_->alpha = 0.0;
+  ae_inargs_->beta = 1.0;
+  if (is_transient) {
+    x_dot = inArgs.get_x_dot();
+    ae_inargs_->alpha = inArgs.get_alpha();
+    ae_inargs_->beta = inArgs.get_beta();
     ae_inargs_->time = inArgs.get_t();
-
+  }
+  
+//   cout << "ME: alpha = " << ae_inargs_->alpha << endl;
+//   cout << "ME: beta = " << ae_inargs_->beta << endl;
 
   //
   // Get the output arguments

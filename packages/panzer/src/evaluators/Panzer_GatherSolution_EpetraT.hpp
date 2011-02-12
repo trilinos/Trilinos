@@ -25,6 +25,8 @@ GatherSolution_Epetra(
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
 
+  indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
+
   Teuchos::RCP<panzer::Basis> basis = 
     p.get< Teuchos::RCP<panzer::Basis> >("Basis");
 
@@ -48,17 +50,21 @@ postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
+  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
-    std::string fieldName = gatherFields_[fd].fieldTag().name();
+    //std::string fieldName = gatherFields_[fd].fieldTag().name();
+    const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
   }
+
+  indexerNames_ = Teuchos::null;  // Don't need this anymore
 }
 
 // **********************************************************************
@@ -127,6 +133,8 @@ GatherSolution_Epetra(
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
 
+  indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
+
   Teuchos::RCP<PHX::DataLayout> dl = 
     p.get< Teuchos::RCP<panzer::Basis> >("Basis")->functional;
 
@@ -150,17 +158,21 @@ postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
+  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
-    std::string fieldName = gatherFields_[fd].fieldTag().name();
+    //std::string fieldName = gatherFields_[fd].fieldTag().name();
+    const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
   }
+
+  indexerNames_ = Teuchos::null;  // Don't need this anymore
 }
 
 // **********************************************************************
@@ -178,11 +190,16 @@ evaluateFields(typename Traits::EvalData workset)
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
          = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_Vector> x;
-   if (useTimeDerivativeSolutionVector_)
+   double seed_value = 0.0;
+   if (useTimeDerivativeSolutionVector_) {
      x = epetraContainer->dxdt;
-   else
+     seed_value = workset.alpha;
+   }
+   else {
      x = epetraContainer->x;
- 
+     seed_value = workset.beta;
+   }
+
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
@@ -212,7 +229,7 @@ evaluateFields(typename Traits::EvalData workset)
 
             // set the value and seed the FAD object
             (gatherFields_[fieldIndex])(worksetCellIndex,basis) = Sacado::Fad::DFad<double>(GIDs.size(), (*x)[lid]);
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(offset) = 1.0;
+            (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
          }
       }
    }
