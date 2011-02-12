@@ -3,7 +3,6 @@
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/cdt_m.hb" type="string"/>
 		<Parameter name="B" value="matrices/cdt_tce.hb" type="string"/>
-		<Parameter name="C" value="matrices/cdt_d.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
 	</ParameterList>
@@ -11,7 +10,6 @@
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/gen1a.hb" type="string"/>
 		<Parameter name="B" value="matrices/gen1b.hb" type="string"/>
-		<Parameter name="C" value="matrices/gen1c.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 		<Parameter name="epsilon" value=".00000001" type="double"/>
@@ -20,7 +18,6 @@
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/gen2a.hb" type="string"/>
 		<Parameter name="B" value="matrices/gen2b.hb" type="string"/>
-		<Parameter name="C" value="matrices/gen2c.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 		<Parameter name="epsilon" value=".00000001" type="double"/>
@@ -29,7 +26,6 @@
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/gen3a.hb" type="string"/>
 		<Parameter name="B" value="matrices/gen3b.hb" type="string"/>
-		<Parameter name="C" value="matrices/gen3c.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 		<Parameter name="epsilon" value=".00000001" type="double"/>

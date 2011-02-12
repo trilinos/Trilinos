@@ -1,10 +1,13 @@
 #include "Tpetra_MatrixMatrix.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
+#include <cmath>
 
 namespace Tpetra{
 
@@ -36,7 +39,6 @@ int add_test(
 {
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
 
-  //int localProc = comm->getRank();
 
   RCP<CrsMatrix<double,int> > computedC = null;
   RCP<const Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
@@ -60,24 +62,7 @@ int add_test(
   calculated_euc_norm = B->getEuclideanNorm();
   double resultVal2 = calculated_euc_norm/c_euc_norm;
 
-
-
-  if (resultVal1 < epsilon && resultVal2 < epsilon) {
-/*    if (localProc == 0 && verbose) {
-      std::cout << "Test Passed" << std::endl;
-      std::cout << "||(A+B)-C||/||C|| " << resultVal1 <<std::endl ;
-      std::cout << "||(A+B)-C||/||C|| " << resultVal2 <<std::endl << std::endl;
-    }*/
-    return 0;
-  }
-  else {
-    /*if (localProc == 0) {
-      std::cout << "Test Failed: " << std::endl;
-      std::cout << "||(A+B)-C||/||C|| " << resultVal1 <<std::endl ;
-      std::cout << "||(A+B)-C||/||C|| " << resultVal2 <<std::endl << std::endl;
-    }*/
-    return -1;
-  }
+  return (resultVal1 < epsilon && resultVal2 < epsilon) ? 0 : 1;
 
 }
 
@@ -85,56 +70,48 @@ template<class Ordinal>
 int multiply_test(
   RCP<CrsMatrix<double, int> > A,
   RCP<CrsMatrix<double, int> > B,
-  RCP<CrsMatrix<double, int> > C_check,
   bool AT,
   bool BT,
   double epsilon,
   RCP<const Comm<Ordinal> > comm,
-  bool verbose)
+  bool verbose,
+  std::ostream& out)
 {
 
-  //int localProc = comm->getRank();
-  RCP<CrsMatrix<double,int> > computedC = null;
-  //RCP<const Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
-
-  computedC = rcp( new CrsMatrix<double,int>(C_check->getRowMap(), 1));
-
-  RCP<const CrsMatrix<double,int> > constA = A;
-  RCP<const CrsMatrix<double,int> > constB = B;
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
+  typedef CrsMatrix<double,int> CrsMatrix_t;
+  typedef Map<int, int> Map_t;
+  typedef Vector<double> Vector_t;
+  typedef CrsMatrixMultiplyOp<double> CrsMatrixMultiplyOp_t;
+  RCP<const Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+
+  RCP<CrsMatrix_t> computedC = rcp( new CrsMatrix_t(rowmap, 1));
+
+  MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC);
+
+  RCP<Vector_t> randomVector1 = rcp(new Vector_t(computedC->getGraph()->getImporter()->getSourceMap(), true));
+  randomVector1->randomize();
+  RCP<Vector_t> y1 = rcp(new Vector_t(computedC->getRowMap(), true));
+  CrsMatrixMultiplyOp_t cTimesVOp(computedC);
+  cTimesVOp.apply(*randomVector1, *y1);
 
 
-  MatrixMatrix::Multiply(*constA, AT, *constB, BT, *computedC);
+  RCP<Vector_t> intermediatVector = rcp(new Vector_t(A->getGraph()->getImporter()->getSourceMap(), true));
+  CrsMatrixMultiplyOp_t bTimesVOp(B);
+  bTimesVOp.apply(*randomVector1,*intermediatVector);
 
-//  std::cout << "A: " << *A << std::endl << "B: "<<*B<<std::endl<<"C: "<<*C<<std::endl;
-  //if (result_mtx_to_file) {
-   // EpetraExt::RowMatrixToMatrixMarketFile("result.mtx", *C);
-  //}
 
-  
+  RCP<Vector_t> y2 = rcp(new Vector_t(A->getRowMap(), true));
+  CrsMatrixMultiplyOp_t aTimesVOp(A);
+  aTimesVOp.apply(*intermediatVector, *y2);
 
-  MatrixMatrix::Add(*C_check, false, -1.0, *computedC, 1.0);
 
-  double c_check_euc_norm = C_check->getEuclideanNorm();
-  double c_euc_norm = computedC->getEuclideanNorm();
 
-  double diff_result = c_euc_norm/c_check_euc_norm;
+  double diff_result = y1->norm2()-y2->norm2();
 
-  int return_code =0;
-  if (diff_result < epsilon) {
-/*    if (localProc == 0 && verbose) {
-      std::cout << "Test Passed" << std::endl;
-      std::cout << "||A*B-C||/||C|| " << diff_result << std::endl << std::endl;
-    }*/
-  }
-  else {
-    return_code = -1;
-    /*if (localProc == 0) {
-      std::cout << "Test Failed: ||A*B-C||/||C|| " << diff_result << std::endl << std::endl;
-    }*/
-  }
 
-  return(return_code);
+  out << "Difference in norms: " << abs(diff_result);
+  return abs(diff_result)<epsilon ? 0 : -1;
 
 }
 
@@ -148,42 +125,31 @@ int run_test(RCP<const Comm<Ordinal> > comm,
 {
   std::string A_file = matrixSystem.get<std::string>("A");
   std::string B_file = matrixSystem.get<std::string>("B");
-  std::string C_file = matrixSystem.get<std::string>("C");
   bool AT = matrixSystem.get<bool>("TransA");
   bool BT = matrixSystem.get<bool>("TransB");
   double epsilon = matrixSystem.get<double>("epsilon", defaultEpsilon);
   std::string op = matrixSystem.get<std::string>("op");
 
 
-  int localProc = comm->getRank();
-
-
   RCP<CrsMatrix<double,int> > A = null;
   RCP<CrsMatrix<double,int> > B = null;
-  RCP<CrsMatrix<double,int> > C_check = null;
 
   Utils::readHBMatrix(A_file, comm, Kokkos::DefaultNode::getDefaultNode(), A);
   Utils::readHBMatrix(B_file, comm, Kokkos::DefaultNode::getDefaultNode(), B);
-  Utils::readHBMatrix(C_file, comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
 
   if(op == "multiply"){
-    if(localProc == 0 && verbose){
-      out << "Running multiply test for " << matrixSystem.name() << 
-        std::endl;
-    }
-    return multiply_test(A,B,C_check,AT,BT,epsilon,comm,verbose);
+    out << "Running multiply test for " << matrixSystem.name() << std::endl;
+    return multiply_test(A,B,AT,BT,epsilon,comm,verbose, out);
   }
   else if(op == "add"){
-    if(localProc == 0 && verbose){
-      out << "Running add test for " << matrixSystem.name() << 
-        std::endl;
-    }
+    std::string C_file = matrixSystem.get<std::string>("C");
+    RCP<CrsMatrix<double,int> > C_check = null;
+    Utils::readHBMatrix(C_file, comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
+    out << "Running add test for " << matrixSystem.name() << std::endl;
     return add_test(A,B,C_check,AT,BT,epsilon,comm,verbose);
   }
   else{
-    if(localProc == 0 && verbose){
-      out << "Unrecognize matrix operation: " << op << ".";
-    }
+    out << "Unrecognize matrix operation: " << op << ".";
     return -1;
   }
 
@@ -227,15 +193,6 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, test_find_rows){
   RCP<const Map<int> > map_rows = 
     MMdetails::find_rows_containing_cols<double, int, int, DNode, SpMatOps>(matrix, colmap);
 
-  /*if (map_rows->getNodeNumElements() != numglobalrows) {
-    if(localproc ==0){
-      std::cout << "Error in test_find_rows" << std::endl <<
-      "Num elements found: " << map_rows->getNodeNumElements() << 
-      std::endl <<
-      "Num global rows: " << numglobalrows << std::endl;
-    }
-    return(-1);
-  }*/
   TEST_EQUALITY(map_rows->getNodeNumElements(), numglobalrows);
 
 }
