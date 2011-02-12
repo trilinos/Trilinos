@@ -143,7 +143,8 @@ template<class Ordinal>
 int run_test(RCP<const Comm<Ordinal> > comm,
              Teuchos::ParameterList matrixSystem,
              bool result_mtx_to_file,
-             bool verbose)
+             bool verbose,
+             std::ostream& out)
 {
   std::string A_file = matrixSystem.get<std::string>("A");
   std::string B_file = matrixSystem.get<std::string>("B");
@@ -167,21 +168,21 @@ int run_test(RCP<const Comm<Ordinal> > comm,
 
   if(op == "multiply"){
     if(localProc == 0 && verbose){
-      std::cout << "Running multiply test for " << matrixSystem.name() << 
+      out << "Running multiply test for " << matrixSystem.name() << 
         std::endl;
     }
     return multiply_test(A,B,C_check,AT,BT,epsilon,comm,verbose);
   }
   else if(op == "add"){
     if(localProc == 0 && verbose){
-      std::cout << "Running add test for " << matrixSystem.name() << 
+      out << "Running add test for " << matrixSystem.name() << 
         std::endl;
     }
     return add_test(A,B,C_check,AT,BT,epsilon,comm,verbose);
   }
   else{
     if(localProc == 0 && verbose){
-      std::cout<< "Unrecognize matrix operation: " << op << ".";
+      out << "Unrecognize matrix operation: " << op << ".";
     }
     return -1;
   }
@@ -262,7 +263,8 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       comm, 
       matrixSystems->sublist(it->first), 
       write_result_hb, 
-      verbose), 0);
+      verbose,
+      out), 0);
   }
 }
 
