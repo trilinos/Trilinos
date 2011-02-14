@@ -43,9 +43,6 @@
 
 #include <stk_percept/SameRankRelation.hpp>
 
-// FIXME
-
-#include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
 
 //using namespace Intrepid;
 

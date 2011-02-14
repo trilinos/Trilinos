@@ -150,7 +150,6 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Wedge<6>  > :: refinement_
 
 };
 
-// FIXME - Sierra doesn't support Wedge<18> refinement yet - have to add the tables in StdMeshObjTopologies first
 template<> RefTopoX RefinementTopologyExtra< shards:: Wedge<18>  > :: refinement_topology = {
 };
 
@@ -240,6 +239,31 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Triangle<6>  > :: refineme
   {	12,	2,	0,	0,	3,	{0.25,	0.25,	0} },
   {	13,	2,	0,	1,	3,	{0.5,	0.25,	0} },
   {	14,	2,	0,	2,	3,	{0.25,	0.5,	0} } 
+
+};
+
+template<> RefTopoX RefinementTopologyExtra< shards:: Quadrilateral<8>  > :: refinement_topology = {
+  {	0,	0,	0,	0,	1,	{-1,	-1,	0} },
+  {	1,	0,	1,	0,	1,	{1,	-1,	0} },
+  {	2,	0,	2,	0,	1,	{1,	1,	0} },
+  {	3,	0,	3,	0,	1,	{-1,	1,	0} },
+  {	4,	1,	0,	2,	3,	{0,	-1,	0} },
+  {	5,	1,	1,	2,	3,	{1,	0,	0} },
+  {	6,	1,	2,	2,	3,	{0,	1,	0} },
+  {	7,	1,	3,	2,	3,	{-1,	0,	0} },
+  {	8,	2,	0,	0,	5,	{0,	0,	0} },
+  {	9,	1,	0,	0,	3,	{-0.5,	-1,	0} },
+  {	10,	1,	0,	1,	3,	{0.5,	-1,	0} },
+  {	11,	1,	1,	0,	3,	{1,	-0.5,	0} },
+  {	12,	1,	1,	1,	3,	{1,	0.5,	0} },
+  {	13,	1,	2,	0,	3,	{0.5,	1,	0} },
+  {	14,	1,	2,	1,	3,	{-0.5,	1,	0} },
+  {	15,	1,	3,	0,	3,	{-1,	0.5,	0} },
+  {	16,	1,	3,	1,	3,	{-1,	-0.5,	0} },
+  {	17,	2,	0,	1,	5,	{0,	-0.5,	0} },
+  {	18,	2,	0,	2,	5,	{0.5,	0,	0} },
+  {	19,	2,	0,	3,	5,	{0,	0.5,	0} },
+  {	20,	2,	0,	4,	5,	{-0.5,	0,	0} } 
 
 };
 

@@ -70,6 +70,7 @@ namespace stk
 
 
 
+
       //======================================================================================================================
       //======================================================================================================================
       //===================== Table generation
@@ -132,6 +133,7 @@ namespace stk
 
             Line3_Line3_2            :: printRefinementTopoX_Table(file);
             Tri6_Tri6_4              :: printRefinementTopoX_Table(file);
+            Quad8_Quad8_4            :: printRefinementTopoX_Table(file);
             Quad9_Quad9_4            :: printRefinementTopoX_Table(file);
             Hex27_Hex27_8            :: printRefinementTopoX_Table(file);
             Tet10_Tet10_8            :: printRefinementTopoX_Table(file);
@@ -328,6 +330,7 @@ namespace stk
 
             //eMesh.saveAs("./output_files/break_test/quad/square/square_quad4_out.e");
             eMesh.saveAs("./output_files/square_quad4_out.e");
+            // end_demo
           }
       }
 
@@ -368,6 +371,7 @@ namespace stk
 
             //eMesh.saveAs("./input_files/break_test/quad/square/square_quad4_out.e");
             eMesh.saveAs("./output_files/square_quad4_tri3_4_out.e");
+            // end_demo
           }
       }
 
@@ -868,10 +872,44 @@ namespace stk
 
             breaker.doBreak();
             eMesh.saveAs("./output_files/quad_fixture_quad8_1.e");
+            eMesh.saveAs("./input_files/quad_fixture_quad8_quad8_0.e");
 
             // end_demo
           }
       }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, break_quad8_to_quad8)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size == 1 || p_size == 3)
+        if (p_size <= 3)
+          {
+            percept::PerceptMesh eMesh;
+            eMesh.open("./input_files/quad_fixture_quad8_quad8_0.e");
+
+            Quad8_Quad8_4 break_quad8_to_quad8_4(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+
+            UniformRefiner breaker(eMesh, break_quad8_to_quad8_4, proc_rank_field);
+            breaker.setIgnoreSideSets(false);
+
+            breaker.doBreak();
+            eMesh.saveAs("./output_files/quad_fixture_quad8_quad8_1.e");
+
+          }
+      }
+
 
       //======================================================================================================================
       //======================================================================================================================
@@ -1179,6 +1217,7 @@ namespace stk
             eMesh.openReadOnly("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4.e");
 
             eMesh.saveAs("./output_files/cylinder_tet4_0.e");
+            // end_demo
 
           }
       }
@@ -1217,6 +1256,7 @@ namespace stk
 
             breaker.doBreak();
             eMesh.saveAs("./output_files/cylinder_tet4_2.e");
+            // end_demo
 
           }
       }
@@ -1252,6 +1292,7 @@ namespace stk
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
             eMesh.saveAs("./output_files/cylinder_tet10_1.e");
+            // end_demo
 
 
           }
@@ -1291,6 +1332,7 @@ namespace stk
             breaker.doBreak();
             eMesh.saveAs("./input_files/cylinder_tet10_1.e");
             eMesh.printInfo("cylinder_tet10_1");
+            // end_demo
 
           }
 
@@ -1320,6 +1362,7 @@ namespace stk
               }
             
             eMesh.saveAs("./output_files/cylinder_tet10_tet10_"+toString(numRefines)+".e");
+            // end_demo
 
 
           }
@@ -1722,11 +1765,11 @@ namespace stk
             percept::WedgeFixture wedgeFixture;
 
             wedgeFixture.createMesh(MPI_COMM_WORLD,
-                                              4, 3, 2,
-                                              0, 1,
-                                              0, 1,
-                                              0, 1,
-                                              std::string("swept-wedge_0.e") );
+                                    4, 3, 2,
+                                    0, 1,
+                                    0, 1,
+                                    0, 1,
+                                    std::string("swept-wedge_0.e") );
 
             eMesh.open("swept-wedge_0.e");
 
@@ -1745,6 +1788,8 @@ namespace stk
             eMesh.saveAs("./output_files/swept-wedge_1.e");
 
           }
+        // end_demo
+        
       }
 
       //======================================================================================================================
@@ -1773,11 +1818,11 @@ namespace stk
             percept::WedgeFixture wedgeFixture;
 
             wedgeFixture.createMesh(MPI_COMM_WORLD,
-                                              4, 3, 2,
-                                              0, 1,
-                                              0, 1,
-                                              0, 1,
-                                              std::string("swept-wedge_enrich_0.e") );
+                                    4, 3, 2,
+                                    0, 1,
+                                    0, 1,
+                                    0, 1,
+                                    std::string("swept-wedge_enrich_0.e") );
 
             eMesh.open("swept-wedge_enrich_0.e");
 
@@ -1797,6 +1842,7 @@ namespace stk
             eMesh.saveAs("./input_files/swept-wedge_enrich_refine_0.e");
 
           }
+        // end_demo
       }
 
       //======================================================================================================================
@@ -1819,11 +1865,11 @@ namespace stk
             percept::WedgeFixture wedgeFixture;
 
             wedgeFixture.createMesh(MPI_COMM_WORLD,
-                                              2, 2, 2,
-                                              0, 1,
-                                              0, 1,
-                                              0, 1,
-                                              std::string("tmp-swept-wedge_enrich_0.e") );
+                                    2, 2, 2,
+                                    0, 1,
+                                    0, 1,
+                                    0, 1,
+                                    std::string("tmp-swept-wedge_enrich_0.e") );
 
             eMesh.open("tmp-swept-wedge_enrich_0.e");
 
@@ -1859,6 +1905,8 @@ namespace stk
             eMesh.saveAs("./output_files/swept-wedge_enrich_refine_1.e");
 
           }
+        // end_demo
+
       }
 
 
@@ -1933,6 +1981,7 @@ namespace stk
                 eMesh1.close();
               }
           }
+        // end_demo
       }
 
       //======================================================================================================================
@@ -2104,6 +2153,7 @@ namespace stk
                 eMesh1.close();
               }
           }
+        // end_demo
       }
 
       //======================================================================================================================
@@ -2146,6 +2196,7 @@ namespace stk
                 eMesh1.close();
               }
           }
+        // end_demo
       }
 
       //here
@@ -2207,6 +2258,7 @@ namespace stk
             //eMesh.saveAs("./output_files/swept-wedge6_18_enrich_0.e");
             //eMesh.saveAs("./input_files/swept-wedge6_18_enrich_refine_0.e");
           }
+        // end_demo
       }
 
       //======================================================================================================================
@@ -2242,6 +2294,8 @@ namespace stk
 
             eMesh.saveAs("./output_files/swept-wedge_enrich_refine_1.e");
           }
+        // end_demo
+
       }
 
     }//    namespace regression_tests
