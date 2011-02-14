@@ -46,72 +46,72 @@ namespace Intrepid {
   }
   
   
-template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::initializeTags() {
+  template<class Scalar, class ArrayScalar>
+  void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::initializeTags() {
   
-  // Basis-dependent intializations
-  int tagSize  = 4;        // size of DoF tag
-  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
-  int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-  int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+    // Basis-dependent intializations
+    int tagSize  = 4;        // size of DoF tag
+    int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+    int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+    int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
-  // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-  int tags[]  = { 0, 0, 0, 1,
-                  0, 1, 0, 1,
-                  0, 2, 0, 1,
-                  0, 3, 0, 1,
-                  0, 4, 0, 1,
-                  0, 5, 0, 1,
-                  1, 0, 0, 1,
-                  1, 1, 0, 1,
-                  1, 2, 0, 1,
-                  1, 6, 0, 1,
-                  1, 7, 0, 1,
-                  1, 8, 0, 1,
-                  1, 3, 0, 1,
-                  1, 4, 0, 1,
-                  1, 5, 0, 1
-                  // ,2, 0, 0, 1,
-                  //  2, 1, 0, 1,
-                  //  2, 2, 0, 1
-  };
+    // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
+    int tags[]  = { 0, 0, 0, 1,
+                    0, 1, 0, 1,
+                    0, 2, 0, 1,
+                    0, 3, 0, 1,
+                    0, 4, 0, 1,
+                    0, 5, 0, 1,
+                    1, 0, 0, 1,
+                    1, 1, 0, 1,
+                    1, 2, 0, 1,
+                    1, 6, 0, 1,
+                    1, 7, 0, 1,
+                    1, 8, 0, 1,
+                    1, 3, 0, 1,
+                    1, 4, 0, 1,
+                    1, 5, 0, 1
+                    // ,2, 0, 0, 1,
+                    //  2, 1, 0, 1,
+                    //  2, 2, 0, 1
+    };
   
-  // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-  Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
-                              this -> ordinalToTag_,
-                              tags,
-                              this -> basisCardinality_,
-                              tagSize,
-                              posScDim,
-                              posScOrd,
-                              posDfOrd);
-}
+    // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
+    Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
+                                this -> ordinalToTag_,
+                                tags,
+                                this -> basisCardinality_,
+                                tagSize,
+                                posScDim,
+                                posScOrd,
+                                posDfOrd);
+  }
 
 
 
-template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &    outputValues,
-                                                             const ArrayScalar &  inputPoints,
-                                                             const EOperator      operatorType) const {
+  template<class Scalar, class ArrayScalar>
+  void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &    outputValues,
+                                                                            const ArrayScalar &  inputPoints,
+                                                                            const EOperator      operatorType) const {
   
-  // Verify arguments
-  //#ifdef HAVE_INTREPID_DEBUG
-  Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-                                                      inputPoints,
-                                                      operatorType,
-                                                      this -> getBaseCellTopology(),
-                                                      this -> getCardinality() );
-  //#endif
+    // Verify arguments
+    //#ifdef HAVE_INTREPID_DEBUG
+    Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
+                                                        inputPoints,
+                                                        operatorType,
+                                                        this -> getBaseCellTopology(),
+                                                        this -> getCardinality() );
+    //#endif
   
-  // Number of evaluation points = dim 0 of inputPoints
-  int dim0 = inputPoints.dimension(0);  
+    // Number of evaluation points = dim 0 of inputPoints
+    int dim0 = inputPoints.dimension(0);  
   
-  // Temporaries: (x,y,z) coordinates of the evaluation point
-  Scalar x = 0.0;                                    
-  Scalar y = 0.0;   
-  Scalar z = 0.0;
+    // Temporaries: (x,y,z) coordinates of the evaluation point
+    Scalar x = 0.0;                                    
+    Scalar y = 0.0;   
+    Scalar z = 0.0;
   
-  switch (operatorType) {
+    switch (operatorType) {
     
     case OPERATOR_VALUE:
       for (int i0 = 0; i0 < dim0; i0++) {
@@ -120,6 +120,7 @@ void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayS
         z = inputPoints(i0, 2);
         
         // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
+        //
         // triangle C2
         //         outputValues(0, i0) = (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
         //         outputValues(1, i0) = x*(2.0*x - 1.0);
@@ -129,32 +130,41 @@ void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayS
         //         outputValues(4, i0) =  4.0*x*y;
         //         outputValues(5, i0) = -4.0*y*(x + y - 1.0);
 
-        
         double z0 = (1.0 - z)/2.0;
         double z1 = (1.0 + z)/2.0;
         double zq0 = (-z)*z0;
         double zq1 = ( z)*z1;
         double zqh = 4.0*z0*z1;
 
+        //--- 0,1,2
         outputValues(0, i0) = zq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
         outputValues(1, i0) = zq0* x*(2.0*x - 1.0);
         outputValues(2, i0) = zq0* y*(2.0*y - 1.0);
 
+        //--- 3,4,5
+        // same as 0,1,2 with zq1 for zq0
         outputValues(3, i0) = zq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
         outputValues(4, i0) = zq1* x*(2.0*x - 1.0);
         outputValues(5, i0) = zq1* y*(2.0*y - 1.0);
 
+        //--- 6,7,8
         outputValues(6, i0) = z0* (-4.0*x*(x + y - 1.0));
         outputValues(7, i0) = z0* ( 4.0*x*y);
         outputValues(8, i0) = z0* (-4.0*y*(x + y - 1.0));
 
+
+        //--- 9,10,11
+        // same as 0,1,2 with zqh for zq0
         outputValues(9, i0)  = zqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
         outputValues(10, i0) = zqh* x*(2.0*x - 1.0);
         outputValues(11, i0) = zqh* y*(2.0*y - 1.0);
 
+        //--- 12,13,14
+        // same as 6,7,8 with z1 for z0
         outputValues(12, i0) = z1* (-4.0*x*(x + y - 1.0));
         outputValues(13, i0) = z1* ( 4.0*x*y);
         outputValues(14, i0) = z1* (-4.0*y*(x + y - 1.0));
+
       }
       break;
       
@@ -166,77 +176,92 @@ void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayS
         z = inputPoints(i0,2);
         
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        outputValues(0, i0, 0) = ((-3 + 4*x + 4*y)*(-1 + z)*z)/2.;
-        outputValues(0, i0, 1) = ((-3 + 4*x + 4*y)*(-1 + z)*z)/2.;
-        outputValues(0, i0, 2) = ((-1 + x + y)*(-1 + 2*x + 2*y)*(-1 + 2*z))/2.;
+        double z0 = (1.0 - z)/2.0;
+        double z1 = (1.0 + z)/2.0;
+        double zq0 = (-z)*z0;
+        double zq1 = ( z)*z1;
+        double zqh = 4.0*z0*z1;
+
+        double dz0 = -0.5;
+        double dz1 = 0.5; 
+        double dzq0 = (-1.0)*z0 + (-z)*dz0;
+        double dzq1 = ( 1.0)*z1 + ( z)*dz1;
+        double dzqh = 4.0*(dz0*z1 + z0*dz1);
         
-        outputValues(1, i0, 0) = ((-1 + 4*x)*(-1 + z)*z)/2.;
-        outputValues(1, i0, 1) = 0.;
-        outputValues(1, i0, 2) = (x*(-1 + 2*x)*(-1 + 2*z))/2.;
-        
-        outputValues(2, i0, 0) = 0.;
-        outputValues(2, i0, 1) = ((-1 + 4*y)*(-1 + z)*z)/2.;
-        outputValues(2, i0, 2) = (y*(-1 + 2*y)*(-1 + 2*z))/2.;
-        
-        outputValues(3, i0, 0) = ((-3 + 4*x + 4*y)*z*(1 + z))/2.; 
-        outputValues(3, i0, 1) = ((-3 + 4*x + 4*y)*z*(1 + z))/2.;  
-        outputValues(3, i0, 2) = ((-1 + x + y)*(-1 + 2*x + 2*y)*(1 + 2*z))/2.;
-        
-        outputValues(4, i0, 0) = ((-1 + 4*x)*z*(1 + z))/2.;
-        outputValues(4, i0, 1) = 0.;
-        outputValues(4, i0, 2) = (x*(-1 + 2*x)*(1 + 2*z))/2.;
-        
-        outputValues(5, i0, 0) = 0.;
-        outputValues(5, i0, 1) = ((-1 + 4*y)*z*(1 + z))/2.; 
-        outputValues(5, i0, 2) = (y*(-1 + 2*y)*(1 + 2*z))/2.;
-        
-        outputValues(6, i0, 0) = -2*(-1 + 2*x + y)*(-1 + z)*z;
-        outputValues(6, i0, 1) = -2*x*(-1 + z)*z;
-        outputValues(6, i0, 2) = 2*x*(-1 + x + y)*(1 - 2*z);   
-        
-        outputValues(7, i0, 0) = 2*y*(-1 + z)*z;
-        outputValues(7, i0, 1) = 2*x*(-1 + z)*z;
-        outputValues(7, i0, 2) = 2*x*y*(-1 + 2*z);   
-        
-        outputValues(8, i0, 0) = -2*y*(-1 + z)*z;
-        outputValues(8, i0, 1) = -2*(-1 + x + 2*y)*(-1 + z)*z;
-        outputValues(8, i0, 2) = 2*y*(-1 + x + y)*(1 - 2*z);   
-        
-        outputValues(9, i0, 0) = -(-3 + 4*x + 4*y)*(-1 + z*z);
-        outputValues(9, i0, 1) = -(-3 + 4*x + 4*y)*(-1 + z*z);   
-        outputValues(9, i0, 2) = -2*(1 + 2*x*x - 3*y + 2*y*y + x*(-3 + 4*y))*z;   
-        
-        outputValues(10,i0, 0) = -(-1 + 4*x)*(-1 + z*z);
-        outputValues(10,i0, 1) =  0;
-        outputValues(10,i0, 2) =  2*(1 - 2*x)*x*z;   
-        
-        outputValues(11,i0, 0) =  0;
-        outputValues(11,i0, 1) =  -(-1 + 4*y)*(-1 + z*z);
-        outputValues(11,i0, 2) =  2*(1 - 2*y)*y*z;   
-        
-        outputValues(12,i0, 0) = -2*(-1 + 2*x + y)*z*(1 + z);
-        outputValues(12,i0, 1) = -2*x*z*(1 + z);
-        outputValues(12,i0, 2) = -2*x*(-1 + x + y)*(1 + 2*z);   
-        
-        outputValues(13,i0, 0) =  2*y*z*(1 + z);
-        outputValues(13,i0, 1) =  2*x*z*(1 + z);
-        outputValues(13,i0, 2) =  2*x*y*(1 + 2*z);   
-        
-        outputValues(14,i0, 0) = -2*y*z*(1 + z);
-        outputValues(14,i0, 1) = -2*(-1 + x + 2*y)*z*(1 + z);
-        outputValues(14,i0, 2) = -2*y*(-1 + x + y)*(1 + 2*z);   
-        
-//         outputValues(15,i0, 0) =  4*(-1 + 2*x + y)*(-1 + z*z);
-//         outputValues(15,i0, 1) =  4*x*(-1 + z)*(1 + z);
-//         outputValues(15,i0, 2) =  8*x*(-1 + x + y)*z;   
-        
-//         outputValues(16,i0, 0) = -4*y*(-1 + z)*(1 + z);
-//         outputValues(16,i0, 1) = -4*x*(-1 + z)*(1 + z);
-//         outputValues(16,i0, 2) = -8*x*y*z;   
-        
-//         outputValues(17,i0, 0) =  4*y*(-1 + z)*(1 + z);
-//         outputValues(17,i0, 1) =  4*(-1 + x + 2*y)*(-1 + z*z);
-//         outputValues(17,i0, 2) =  8*y*(-1 + x + y)*z;
+        //outputValues(0, i0) = zq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        outputValues(0, i0, 0) = zq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        outputValues(0, i0, 1) = zq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        outputValues(0, i0, 2) = dzq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+
+        //outputValues(1, i0) = zq0* x*(2.0*x - 1.0);
+        outputValues(1, i0, 0) = zq0* ( 4.0*x - 1.0 );
+        outputValues(1, i0, 1) = 0.0;
+        outputValues(1, i0, 2) = dzq0* x*(2.0*x - 1.0);
+
+        //outputValues(2, i0) = zq0* y*(2.0*y - 1.0);
+        outputValues(2, i0, 0) = 0.0;
+        outputValues(2, i0, 1) = zq0* (4.0*y - 1.0);
+        outputValues(2, i0, 2) = dzq0* y*(2.0*y - 1.0);
+
+        //outputValues(3, i0) = zq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        outputValues(3, i0, 0) = zq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        outputValues(3, i0, 1) = zq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        outputValues(3, i0, 2) = dzq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+
+        //outputValues(4, i0) = zq1* x*(2.0*x - 1.0);
+        outputValues(4, i0, 0) = zq1* ( 4.0*x - 1.0);
+        outputValues(4, i0, 1) = 0.0;
+        outputValues(4, i0, 2) = dzq1* x*(2.0*x - 1.0);
+
+        //outputValues(5, i0) = zq1* y*(2.0*y - 1.0);
+        outputValues(5, i0, 0) = 0.0;
+        outputValues(5, i0, 1) = zq1* (4.0*y - 1.0);
+        outputValues(5, i0, 2) = dzq1* y*(2.0*y - 1.0);
+
+        //outputValues(6, i0) = z0* (-4.0*x*(x + y - 1.0));
+        outputValues(6, i0, 0) = z0* (-4.0*(2.0*x + y - 1.0) );
+        outputValues(6, i0, 1) = z0* (-4.0*x*(1.0));
+        outputValues(6, i0, 2) = dz0* (-4.0*x*(x + y - 1.0));
+
+        //outputValues(7, i0) = z0* ( 4.0*x*y);
+        outputValues(7, i0, 0) = z0* ( 4.0*y);
+        outputValues(7, i0, 1) = z0* ( 4.0*x);
+        outputValues(7, i0, 2) = dz0* ( 4.0*x*y);
+
+        //outputValues(8, i0) = z0* (-4.0*y*(x + y - 1.0));
+        outputValues(8, i0, 0) = z0* (-4.0*y*(1.0));
+        outputValues(8, i0, 1) = z0* (-4.0*(x + 2.0*y - 1.0));
+        outputValues(8, i0, 2) = dz0* (-4.0*y*(x + y - 1.0));
+
+        //outputValues(9, i0) = zqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        outputValues(9, i0, 0) = zqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        outputValues(9, i0, 1) = zqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        outputValues(9, i0, 2) = dzqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+
+        //outputValues(10, i0) = zqh* x*(2.0*x - 1.0);
+        outputValues(10, i0, 0) = zqh* ( 1.0*(2.0*x - 1.0) + x*(2.0) );
+        outputValues(10, i0, 1) = 0.0;
+        outputValues(10, i0, 2) = dzqh* x*(2.0*x - 1.0);
+
+        //outputValues(11, i0) = zqh* y*(2.0*y - 1.0);
+        outputValues(11, i0, 0) = 0.0;
+        outputValues(11, i0, 1) = zqh* (4.0*y - 1.0);
+        outputValues(11, i0, 2) = dzqh* y*(2.0*y - 1.0);
+
+        //outputValues(12, i0) = z1* (-4.0*x*(x + y - 1.0));
+        outputValues(12, i0, 0) = z1* (-4.0*(2.0*x + y - 1.0));
+        outputValues(12, i0, 1) = z1* (-4.0*x*(1.0));
+        outputValues(12, i0, 2) = dz1* (-4.0*x*(x + y - 1.0));
+
+        //outputValues(13, i0) = z1* ( 4.0*x*y);
+        outputValues(13, i0, 0) = z1* ( 4.0*y);
+        outputValues(13, i0, 1) = z1* ( 4.0*x);
+        outputValues(13, i0, 2) = dz1* ( 4.0*x*y);
+
+        //outputValues(14, i0) = z1* (-4.0*y*(x + y - 1.0));
+        outputValues(14, i0, 0) = z1* (-4.0*y*(1.0));
+        outputValues(14, i0, 1) = z1* (-4.0*(x + 2.0*y - 1.0));
+        outputValues(14, i0, 2) = dz1* (-4.0*y*(x + y - 1.0));
         
       }
       break;
@@ -256,133 +281,241 @@ void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayS
         x = inputPoints(i0,0);
         y = inputPoints(i0,1);
         z = inputPoints(i0,2);
-        
-        outputValues(0, i0, 0) =  2.*(-1. + z)*z;     
-        outputValues(0, i0, 1) =  2.*(-1. + z)*z;     
-        outputValues(0, i0, 2) =  ((-3. + 4.*x + 4.*y)*(-1. + 2.*z))/2.;       
-        outputValues(0, i0, 3) =  2.*(-1. + z)*z;     
-        outputValues(0, i0, 4) =  ((-3. + 4.*x + 4.*y)*(-1. + 2.*z))/2.;      
-        outputValues(0, i0, 5) =  (-1. + x + y)*(-1. + 2.*x + 2.*y);     
-        
-        outputValues(1, i0, 0) =  2.*(-1. + z)*z;      
-        outputValues(1, i0, 1) =  0.;     
-        outputValues(1, i0, 2) =  ((-1. + 4.*x)*(-1. + 2.*z))/2.;     
-        outputValues(1, i0, 3) =  0.;     
-        outputValues(1, i0, 4) =  0.;     
-        outputValues(1, i0, 5) =  x*(-1. + 2.*x);     
-        
-        outputValues(2, i0, 0) =  0.;     
-        outputValues(2, i0, 1) =  0.;     
-        outputValues(2, i0, 2) =  0.;     
-        outputValues(2, i0, 3) =  2.*(-1. + z)*z;      
-        outputValues(2, i0, 4) =  ((-1. + 4.*y)*(-1. + 2.*z))/2.;     
-        outputValues(2, i0, 5) =  y*(-1. + 2.*y);     
-        
-        outputValues(3, i0, 0) =  2.*z*(1. + z); 
-        outputValues(3, i0, 1) =  2.*z*(1. + z);
-        outputValues(3, i0, 2) =  ((-3. + 4.*x + 4.*y)*(1. + 2.*z))/2.;  
-        outputValues(3, i0, 3) =  2.*z*(1. + z);
-        outputValues(3, i0, 4) =  ((-3. + 4.*x + 4.*y)*(1. + 2.*z))/2.;
-        outputValues(3, i0, 5) =  (-1. + x + y)*(-1. + 2.*x + 2.*y);
-        
-        outputValues(4, i0, 0) =  2.*z*(1. + z);
-        outputValues(4, i0, 1) =  0.; 
-        outputValues(4, i0, 2) =  ((-1. + 4.*x)*(1. + 2.*z))/2.;;
-        outputValues(4, i0, 3) =  0.;
-        outputValues(4, i0, 4) =  0.;
-        outputValues(4, i0, 5) =  x*(-1. + 2.*x);
-        
-        outputValues(5, i0, 0) =  0.;
-        outputValues(5, i0, 1) =  0.;
-        outputValues(5, i0, 2) =  0.;
-        outputValues(5, i0, 3) =  2.*z*(1. + z);
-        outputValues(5, i0, 4) =  ((-1. + 4.*y)*(1. + 2.*z))/2.;
-        outputValues(5, i0, 5) =  y*(-1. + 2.*y);         
-        
-        outputValues(6, i0, 0) = -4.*(-1. + z)*z;
-        outputValues(6, i0, 1) = -2.*(-1. + z)*z;
-        outputValues(6, i0, 2) = -2.*(-1. + 2.*x + y)*(-1. + 2.*z);
-        outputValues(6, i0, 3) =  0.;
-        outputValues(6, i0, 4) =  x*(2. - 4.*z);     
-        outputValues(6, i0, 5) = -4.*x*(-1. + x + y);     
-        
-        outputValues(7, i0, 0) =  0.;
-        outputValues(7, i0, 1) =  2.*(-1. + z)*z;
-        outputValues(7, i0, 2) =  2.*y*(-1. + 2.*z);
-        outputValues(7, i0, 3) =  0.;
-        outputValues(7, i0, 4) =  2.*x*(-1. + 2.*z);
-        outputValues(7, i0, 5) =  4.*x*y;     
-        
-        outputValues(8, i0, 0) =  0.;
-        outputValues(8, i0, 1) = -2.*(-1. + z)*z;
-        outputValues(8, i0, 2) =  y*(2. - 4.*z);
-        outputValues(8, i0, 3) = -4.*(-1. + z)*z;
-        outputValues(8, i0, 4) = -2.*(-1. + x + 2.*y)*(-1. + 2.*z);     
-        outputValues(8, i0, 5) = -4.*y*(-1. + x + y);
 
-        outputValues(9, i0, 0) =  4. - 4.*z*z;
-        outputValues(9, i0, 1) =  4. - 4.*z*z;
-        outputValues(9, i0, 2) = -2.*(-3. + 4.*x + 4.*y)*z;     
-        outputValues(9, i0, 3) =  4. - 4.*z*z;
-        outputValues(9, i0, 4) = -2.*(-3. + 4.*x + 4.*y)*z;
-        outputValues(9, i0, 5) = -2.*(-1. + x + y)*(-1. + 2.*x + 2.*y);     
-         
-        outputValues(10,i0, 0) =  4. - 4.*z*z;
-        outputValues(10,i0, 1) =  0.;
-        outputValues(10,i0, 2) =  (2. - 8.*x)*z;
-        outputValues(10,i0, 3) =  0.;
-        outputValues(10,i0, 4) =  0.;
-        outputValues(10,i0, 5) = -2.*x*(-1. + 2.*x);     
+        double z0 = (1.0 - z)/2.0;
+        double z1 = (1.0 + z)/2.0;
+        double zq0 = (-z)*z0;
+        double zq1 = ( z)*z1;
+        double zqh = 4.0*z0*z1;
+
+        double dz0 = -0.5;
+        double dz1 = 0.5; 
+        double dzq0 = (-1.0)*z0 + (-z)*dz0;
+        double dzq1 = ( 1.0)*z1 + ( z)*dz1;
+        double dzqh = 4.0*(dz0*z1 + z0*dz1);
+
+        double d2z0 = 0.0;
+        double d2z1 = 0.0;
+        double d2zq0 = (-1.0)*dz0 + (-1.0)*dz0;
+        double d2zq1 = ( 1.0)*dz1 + ( 1.0)*dz1;
+        double d2zqh = 8.0*( dz0*dz1);
         
-        outputValues(11,i0, 0) =  0.;
-        outputValues(11,i0, 1) =  0.;
-        outputValues(11,i0, 2) =  0.;
-        outputValues(11,i0, 3) =  4. - 4.*z*z;
-        outputValues(11,i0, 4) =  (2. - 8.*y)*z;
-        outputValues(11,i0, 5) = -2.*y*(-1. + 2.*y);     
+        //---- 0,1,2
+        //outputValues(0, i0) = zq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        //         outputValues(0, i0, 0) = zq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(0, i0, 1) = zq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(0, i0, 2) = dzq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        outputValues(0, i0, 0) = zq0* ( 4.0 );
+        outputValues(0, i0, 1) = zq0* ( 4.0 );
+        outputValues(0, i0, 2) = dzq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(0, i0, 3) = zq0* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+        outputValues(0, i0, 4) = dzq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(0, i0, 5) = d2zq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+
+        //outputValues(1, i0) = zq0* x*(2.0*x - 1.0);
+        //         outputValues(1, i0, 0) = zq0* ( 4.0*x - 1.0 );
+        //         outputValues(1, i0, 1) = 0.0;
+        //         outputValues(1, i0, 2) = dzq0* x*(2.0*x - 1.0);
+        outputValues(1, i0, 0) = zq0* ( 4.0 );
+        outputValues(1, i0, 1) = 0.0;
+        outputValues(1, i0, 2) = dzq0* ( 4.0*x - 1.0 );
+
+        outputValues(1, i0, 3) = 0.0;
+        outputValues(1, i0, 4) = 0.0;
+
+        outputValues(1, i0, 5) = d2zq0* x*(2.0*x - 1.0);
+
+        //outputValues(2, i0) = zq0* y*(2.0*y - 1.0);
+        //         outputValues(2, i0, 0) = 0.0;
+        //         outputValues(2, i0, 1) = zq0* (4.0*y - 1.0);
+        //         outputValues(2, i0, 2) = dzq0* y*(2.0*y - 1.0);
+
+        outputValues(2, i0, 0) = 0.0;
+        outputValues(2, i0, 1) = 0.0;
+        outputValues(2, i0, 2) = 0.0;
+
+        outputValues(2, i0, 3) = zq0* (4.0);
+        outputValues(2, i0, 4) = dzq0* (4.0*y - 1.0);
+
+        outputValues(2, i0, 5) = d2zq0* y*(2.0*y - 1.0);
+
+        //---- 3,4,5
+        // same as 0,1,2 with zq1 for zq0
+        //outputValues(3, i0) = zq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        //         outputValues(3, i0, 0) = zq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(3, i0, 1) = zq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(3, i0, 2) = dzq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        outputValues(3, i0, 0) = zq1* ( 4.0 );
+        outputValues(3, i0, 1) = zq1* ( 4.0 );
+        outputValues(3, i0, 2) = dzq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(3, i0, 3) = zq1* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+        outputValues(3, i0, 4) = dzq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(3, i0, 5) = d2zq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+
+        //outputValues(4, i0) = zq1* x*(2.0*x - 1.0);
+        //         outputValues(4, i0, 0) = zq1* ( 4.0*x - 1.0 );
+        //         outputValues(4, i0, 1) = 0.0;
+        //         outputValues(4, i0, 2) = dzq1* x*(2.0*x - 1.0);
+        outputValues(4, i0, 0) = zq1* ( 4.0 );
+        outputValues(4, i0, 1) = 0.0;
+        outputValues(4, i0, 2) = dzq1* ( 4.0*x - 1.0 );
+
+        outputValues(4, i0, 3) = 0.0;
+        outputValues(4, i0, 4) = 0.0;
+
+        outputValues(4, i0, 5) = d2zq1* x*(2.0*x - 1.0);
+
+        //outputValues(5, i0) = zq1* y*(2.0*y - 1.0);
+        //         outputValues(5, i0, 0) = 0.0;
+        //         outputValues(5, i0, 1) = zq1* (4.0*y - 1.0);
+        //         outputValues(5, i0, 2) = dzq1* y*(2.0*y - 1.0);
+
+        outputValues(5, i0, 0) = 0.0;
+        outputValues(5, i0, 1) = 0.0;
+        outputValues(5, i0, 2) = 0.0;
+
+        outputValues(5, i0, 3) = zq1* (4.0);
+        outputValues(5, i0, 4) = dzq1* (4.0*y - 1.0);
+
+        outputValues(5, i0, 5) = d2zq1* y*(2.0*y - 1.0);
+
+
+        //--- 6,7,8
+        //outputValues(6, i0) = z0* (-4.0*x*(x + y - 1.0));
+        //         outputValues(6, i0, 0) = z0* (-4.0*(2.0*x + y - 1.0) );
+        //         outputValues(6, i0, 1) = z0* (-4.0*x*(1.0));
+        //         outputValues(6, i0, 2) = dz0* (-4.0*x*(x + y - 1.0));
         
-        outputValues(12,i0, 0) = -4.*z*(1. + z);
-        outputValues(12,i0, 1) = -2.*z*(1. + z);
-        outputValues(12,i0, 2) = -2.*(-1. + 2.*x + y)*(1. + 2.*z);
-        outputValues(12,i0, 3) =  0.;
-        outputValues(12,i0, 4) = -2.*(x + 2.*x*z);     
-        outputValues(12,i0, 5) = -4.*x*(-1. + x + y);     
+        outputValues(6, i0, 0) = z0* (-8.0);
+        outputValues(6, i0, 1) = z0* (-4.0);
+        outputValues(6, i0, 2) = dz0* (-4.0*(2.0*x + y - 1.0) );
+
+        outputValues(6, i0, 3) = 0.0;
+        outputValues(6, i0, 4) = dz0* (-4.0*x*(1.0));
+
+        outputValues(6, i0, 5) = d2z0* (-4.0*x*(x + y - 1.0));
+
+        //outputValues(7, i0) = z0* ( 4.0*x*y);
+        //         outputValues(7, i0, 0) = z0* ( 4.0*y);
+        //         outputValues(7, i0, 1) = z0* ( 4.0*x);
+        //         outputValues(7, i0, 2) = dz0* ( 4.0*x*y);
+
+        outputValues(7, i0, 0) = 0.0;
+        outputValues(7, i0, 1) = z0* ( 4.0 );
+        outputValues(7, i0, 2) = dz0* ( 4.0*y);
+
+        outputValues(7, i0, 3) = 0.0;
+        outputValues(7, i0, 4) = dz0* ( 4.0*x);
+
+        outputValues(7, i0, 5) = d2z0* ( 4.0*x*y);
+
+        //outputValues(8, i0) = z0* (-4.0*y*(x + y - 1.0));
+        //         outputValues(8, i0, 0) = z0* (-4.0*y*(1.0));
+        //         outputValues(8, i0, 1) = z0* (-4.0*(x + 2.0*y - 1.0));
+        //         outputValues(8, i0, 2) = dz0* (-4.0*y*(x + y - 1.0));
+
+        outputValues(8, i0, 0) = 0.0;
+        outputValues(8, i0, 1) = z0* (-4.0);
+        outputValues(8, i0, 2) = dz0* (-4.0*y*(1.0));
+
+        outputValues(8, i0, 3) = z0* (-8.0);
+        outputValues(8, i0, 4) = dz0* (-4.0*(x + 2.0*y - 1.0));
+
+        outputValues(8, i0, 5) = d2z0* (-4.0*y*(x + y - 1.0));
+
+        //---- 9,10,11
+        // same as 0,1,2 with zqh for zq0
+
+        //outputValues(9, i0) = zqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        //         outputValues(9, i0, 0) = zqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(9, i0, 1) = zqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(9, i0, 2) = dzqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+
+        outputValues(9, i0, 0) = zqh* ( 4.0 );
+        outputValues(9, i0, 1) = zqh* ( 4.0 );
+        outputValues(9, i0, 2) = dzqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(9, i0, 3) = zqh* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+        outputValues(9, i0, 4) = dzqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(9, i0, 5) = d2zqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+
+        //outputValues(10, i0) = zqh* x*(2.0*x - 1.0);
+        //         outputValues(10, i0, 0) = zqh* ( 4.0*x - 1.0 );
+        //         outputValues(10, i0, 1) = 0.0;
+        //         outputValues(10, i0, 2) = dzqh* x*(2.0*x - 1.0);
+        outputValues(10, i0, 0) = zqh* ( 4.0 );
+        outputValues(10, i0, 1) = 0.0;
+        outputValues(10, i0, 2) = dzqh* ( 4.0*x - 1.0 );
+
+        outputValues(10, i0, 3) = 0.0;
+        outputValues(10, i0, 4) = 0.0;
+
+        outputValues(10, i0, 5) = d2zqh* x*(2.0*x - 1.0);
+
+        //outputValues(11, i0) = zqh* y*(2.0*y - 1.0);
+        //         outputValues(11, i0, 0) = 0.0;
+        //         outputValues(11, i0, 1) = zqh* (4.0*y - 1.0);
+        //         outputValues(11, i0, 2) = dzqh* y*(2.0*y - 1.0);
+
+        outputValues(11, i0, 0) = 0.0;
+        outputValues(11, i0, 1) = 0.0;
+        outputValues(11, i0, 2) = 0.0;
+
+        outputValues(11, i0, 3) = zqh* (4.0);
+        outputValues(11, i0, 4) = dzqh* (4.0*y - 1.0);
+
+        outputValues(11, i0, 5) = d2zqh* y*(2.0*y - 1.0);
+
+        //--- 12,13,14
+        // same as 6,7,8 with z1 for z0
+        //outputValues(12, i0) = z1* (-4.0*x*(x + y - 1.0));
+        //         outputValues(12, i0, 0) = z1* (-4.0*(2.0*x + y - 1.0) );
+        //         outputValues(12, i0, 1) = z1* (-4.0*x*(1.0));
+        //         outputValues(12, i0, 2) = dz1* (-4.0*x*(x + y - 1.0));
         
-        outputValues(13,i0, 0) =  0.;
-        outputValues(13,i0, 1) =  2.*z*(1. + z);
-        outputValues(13,i0, 2) =  2.*(y + 2.*y*z);
-        outputValues(13,i0, 3) =  0.;
-        outputValues(13,i0, 4) =  2.*(x + 2.*x*z);
-        outputValues(13,i0, 5) =  4.*x*y;     
-        
-        outputValues(14,i0, 0) =  0.;
-        outputValues(14,i0, 1) = -2.*z*(1. + z);
-        outputValues(14,i0, 2) = -2.*(y + 2.*y*z);
-        outputValues(14,i0, 3) = -4.*z*(1. + z);
-        outputValues(14,i0, 4) = -2.*(-1. + x + 2.*y)*(1. + 2.*z);     
-        outputValues(14,i0, 5) = -4.*y*(-1. + x + y);     
-        
-//         outputValues(15,i0, 0) =  8.*(-1. + z*z);
-//         outputValues(15,i0, 1) =  4.*(-1. + z*z);
-//         outputValues(15,i0, 2) =  8.*(-1. + 2.*x + y)*z;
-//         outputValues(15,i0, 3) =  0.;     
-//         outputValues(15,i0, 4) =  8.*x*z;
-//         outputValues(15,i0, 5) =  8.*x*(-1. + x + y);     
-        
-//         outputValues(16,i0, 0) =  0.;
-//         outputValues(16,i0, 1) =  4. - 4.*z*z;
-//         outputValues(16,i0, 2) = -8.*y*z;
-//         outputValues(16,i0, 3) =  0.;
-//         outputValues(16,i0, 4) = -8.*x*z;
-//         outputValues(16,i0, 5) = -8.*x*y;     
-         
-        
-//         outputValues(17,i0, 0) =  0.;
-//         outputValues(17,i0, 1) =  4.*(-1. + z*z);
-//         outputValues(17,i0, 2) =  8.*y*z;
-//         outputValues(17,i0, 3) =  8.*(-1. + z*z);
-//         outputValues(17,i0, 4) =  8.*(-1. + x + 2.*y)*z;     
-//         outputValues(17,i0, 5) =  8.*y*(-1. + x + y);
+        outputValues(12, i0, 0) = z1* (-8.0);
+        outputValues(12, i0, 1) = z1* (-4.0);
+        outputValues(12, i0, 2) = dz1* (-4.0*(2.0*x + y - 1.0) );
+
+        outputValues(12, i0, 3) = 0.0;
+        outputValues(12, i0, 4) = dz1* (-4.0*x*(1.0));
+
+        outputValues(12, i0, 5) = d2z1* (-4.0*x*(x + y - 1.0));
+
+        //outputValues(13, i0) = z1* ( 4.0*x*y);
+        //         outputValues(13, i0, 0) = z1* ( 4.0*y);
+        //         outputValues(13, i0, 1) = z1* ( 4.0*x);
+        //         outputValues(13, i0, 2) = dz1* ( 4.0*x*y);
+
+        outputValues(13, i0, 0) = 0.0;
+        outputValues(13, i0, 1) = z1* ( 4.0 );
+        outputValues(13, i0, 2) = dz1* ( 4.0*y);
+
+        outputValues(13, i0, 3) = 0.0;
+        outputValues(13, i0, 4) = dz1* ( 4.0*x);
+
+        outputValues(13, i0, 5) = d2z1* ( 4.0*x*y);
+
+        //outputValues(14, i0) = z1* (-4.0*y*(x + y - 1.0));
+        //         outputValues(14, i0, 0) = z1* (-4.0*y*(1.0));
+        //         outputValues(14, i0, 1) = z1* (-4.0*(x + 2.0*y - 1.0));
+        //         outputValues(14, i0, 2) = dz1* (-4.0*y*(x + y - 1.0));
+
+        outputValues(14, i0, 0) = 0.0;
+        outputValues(14, i0, 1) = z1* (-4.0);
+        outputValues(14, i0, 2) = dz1* (-4.0*y*(1.0));
+
+        outputValues(14, i0, 3) = z1* (-8.0);
+        outputValues(14, i0, 4) = dz1* (-4.0*(x + 2.0*y - 1.0));
+
+        outputValues(14, i0, 5) = d2z1* (-4.0*y*(x + y - 1.0));
+
+
       }
       break;
       
@@ -392,203 +525,537 @@ void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayS
         y = inputPoints(i0,1);
         z = inputPoints(i0,2);
 
-        outputValues(0, i0, 0) =  0.;
-        outputValues(0, i0, 1) =  0.;
-        outputValues(0, i0, 2) = -2. + 4.*z;
-        outputValues(0, i0, 3) =  0.;
-        outputValues(0, i0, 4) = -2. + 4.*z;
-        outputValues(0, i0, 5) = -3. + 4.*x + 4.*y;
-        outputValues(0, i0, 6) =  0.;
-        outputValues(0, i0, 7) = -2. + 4.*z;
-        outputValues(0, i0, 8) = -3. + 4.*x + 4.*y;
-        outputValues(0, i0, 9) =  0.;  
-          
-        outputValues(1, i0, 0) =  0.;
-        outputValues(1, i0, 1) =  0.;
-        outputValues(1, i0, 2) = -2. + 4.*z;
-        outputValues(1, i0, 3) =  0.;
-        outputValues(1, i0, 4) =  0.;
-        outputValues(1, i0, 5) = -1 + 4.*x;
-        outputValues(1, i0, 6) =  0.;
-        outputValues(1, i0, 7) =  0.;
-        outputValues(1, i0, 8) =  0.;
-        outputValues(1, i0, 9) =  0.;  
+        // 1st
+        // x
+        // y
+        // z
+
+        // 2nd
+        // xx, xy, xz
+        //     yy, yz
+        //         zz
+
+        // 3rd
+        // xxx, xxy, [xxz],z, (2)
+        // xyy, [xyz],z, (4)
+        // xzz
+
+        //  yyy, [yyz],z (7)
+        //  yzz
+
+        //  zzz
+
+
+        // 4th
+        // xxxx, xxxy, xxxz
+        // xxyy, xxyz
+        // xxzz, (5)
+
+        // xyyy, xyyz,
+        // xyzz, (8)
+
+        // xzzz
+
+        //  yyyy, yyyz,
+        //  yyzz, (12)
+
+        //  yzzz
+
+        //  zzzz
+
+        double z0 = (1.0 - z)/2.0;
+        double z1 = (1.0 + z)/2.0;
+        //double zq0 = (-z)*z0;
+        //double zq1 = ( z)*z1;
+        //double zqh = 4.0*z0*z1;
+
+        double dz0 = -0.5;
+        double dz1 = 0.5; 
+        double dzq0 = (-1.0)*z0 + (-z)*dz0;
+        double dzq1 = ( 1.0)*z1 + ( z)*dz1;
+        double dzqh = 4.0*(dz0*z1 + z0*dz1);
+
+        double d2z0 = 0.0;
+        double d2z1 = 0.0;
+        double d2zq0 = (-1.0)*dz0 + (-1.0)*dz0;
+        double d2zq1 = ( 1.0)*dz1 + ( 1.0)*dz1;
+        double d2zqh = 8.0*( dz0*dz1);
+
+        double d3z0 = 0.0;
+        double d3z1 = 0.0;
+        double d3zq0 = 0.0;
+        double d3zq1 = 0.0;
+        double d3zqh = 0.0;
         
-        outputValues(2, i0, 0) =  0.;
-        outputValues(2, i0, 1) =  0.;
-        outputValues(2, i0, 2) =  0.;
-        outputValues(2, i0, 3) =  0.;
-        outputValues(2, i0, 4) =  0.;
-        outputValues(2, i0, 5) =  0.;
-        outputValues(2, i0, 6) =  0.;
-        outputValues(2, i0, 7) = -2. + 4.*z;
-        outputValues(2, i0, 8) = -1 + 4.*y;
-        outputValues(2, i0, 9) =  0.;  
+        //---- 0,1,2
+        //outputValues(0, i0) = zq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        //         outputValues(0, i0, 0) = zq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(0, i0, 1) = zq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(0, i0, 2) = dzq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        //         outputValues(0, i0, 0) = zq0* ( 4.0 );
+        //         outputValues(0, i0, 1) = zq0* ( 4.0 );
+        //         outputValues(0, i0, 2) = dzq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        //         outputValues(0, i0, 3) = zq0* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+        //         outputValues(0, i0, 4) = dzq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        //         outputValues(0, i0, 5) = d2zq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        outputValues(0, i0, 0) = 0.0;
+        outputValues(0, i0, 1) = 0.0;
+        outputValues(0, i0, 2) = dzq0* ( 4.0 );
+
+        outputValues(0, i0, 3) = 0.0;
+        outputValues(0, i0, 4) = dzq0* ( 4.0 );
+
+        outputValues(0, i0, 5) = d2zq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(0, i0, 6) = 0.0;
+        outputValues(0, i0, 7) = dzq0* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+
+        outputValues(0, i0, 8) = d2zq0* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(0, i0, 9) = d3zq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+
+
+        //outputValues(1, i0) = zq0* x*(2.0*x - 1.0);
+        //         outputValues(1, i0, 0) = zq0* ( 4.0*x - 1.0 );
+        //         outputValues(1, i0, 1) = 0.0;
+        //         outputValues(1, i0, 2) = dzq0* x*(2.0*x - 1.0);
+        //         outputValues(1, i0, 0) = zq0* ( 4.0 );
+        //         outputValues(1, i0, 1) = 0.0;
+        //         outputValues(1, i0, 2) = dzq0* ( 4.0*x - 1.0 );
+
+        //         outputValues(1, i0, 3) = 0.0;
+        //         outputValues(1, i0, 4) = 0.0;
+
+        //         outputValues(1, i0, 5) = d2zq0* x*(2.0*x - 1.0);
+
+        outputValues(1, i0, 0) = 0.0;
+        outputValues(1, i0, 1) = 0.0;
+        outputValues(1, i0, 2) = dzq0* ( 4.0 );
+
+        outputValues(1, i0, 3) = 0.0;
+        outputValues(1, i0, 4) = 0.0;
+
+        outputValues(1, i0, 5) = d2zq0* ( 4.0*x - 1.0 );
+
+
+        outputValues(1, i0, 6) = 0.0;
+        outputValues(1, i0, 7) = 0.0;
+
+        outputValues(1, i0, 8) = 0.0;
+
+        outputValues(1, i0, 9) = d3zq0* x*(2.0*x - 1.0);
+
+        //outputValues(2, i0) = zq0* y*(2.0*y - 1.0);
+        //         outputValues(2, i0, 0) = 0.0;
+        //         outputValues(2, i0, 1) = zq0* (4.0*y - 1.0);
+        //         outputValues(2, i0, 2) = dzq0* y*(2.0*y - 1.0);
+
+        //         outputValues(2, i0, 0) = 0.0;
+        //         outputValues(2, i0, 1) = 0.0;
+        //         outputValues(2, i0, 2) = 0.0;
+
+        //         outputValues(2, i0, 3) = zq0* (4.0);
+        //         outputValues(2, i0, 4) = dzq0* (4.0*y - 1.0);
+
+        //         outputValues(2, i0, 5) = d2zq0* y*(2.0*y - 1.0);
+
+        outputValues(2, i0, 0) = 0.0;
+        outputValues(2, i0, 1) = 0.0;
+        outputValues(2, i0, 2) = 0.0;
+
+        outputValues(2, i0, 3) = 0.0;
+        outputValues(2, i0, 4) = 0.0;
+
+        outputValues(2, i0, 5) = 0.0;
+
+
+        outputValues(2, i0, 6) = 0.0;
+        outputValues(2, i0, 7) = dzq0* (4.0);
+
+        outputValues(2, i0, 8) = d2zq0* (4.0*y - 1.0);
+
+        outputValues(2, i0, 9) = d3zq0* y*(2.0*y - 1.0);
+
+        //---- 3,4,5
+        // same as 0,1,2 with zq1 for zq0
+        //outputValues(3, i0) = zq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        //         outputValues(3, i0, 0) = zq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(3, i0, 1) = zq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(3, i0, 2) = dzq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        //         outputValues(3, i0, 0) = zq1* ( 4.0 );
+        //         outputValues(3, i0, 1) = zq1* ( 4.0 );
+        //         outputValues(3, i0, 2) = dzq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        //         outputValues(3, i0, 3) = zq1* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+        //         outputValues(3, i0, 4) = dzq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        //         outputValues(3, i0, 5) = d2zq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        outputValues(3, i0, 0) = 0.0;
+        outputValues(3, i0, 1) = 0.0;
+        outputValues(3, i0, 2) = dzq1* ( 4.0 );
+
+        outputValues(3, i0, 3) = 0.0;
+        outputValues(3, i0, 4) = dzq1* ( 4.0 );
+
+        outputValues(3, i0, 5) = d2zq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(3, i0, 6) = 0.0;
+        outputValues(3, i0, 7) = dzq1* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+
+        outputValues(3, i0, 8) = d2zq1* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(3, i0, 9) = d3zq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+
+
+        //outputValues(4, i0) = zq1* x*(2.0*x - 1.0);
+        //         outputValues(4, i0, 0) = zq1* ( 4.0*x - 1.0 );
+        //         outputValues(4, i0, 1) = 0.0;
+        //         outputValues(4, i0, 2) = dzq1* x*(2.0*x - 1.0);
+        //         outputValues(4, i0, 0) = zq1* ( 4.0 );
+        //         outputValues(4, i0, 1) = 0.0;
+        //         outputValues(4, i0, 2) = dzq1* ( 4.0*x - 1.0 );
+
+        //         outputValues(4, i0, 3) = 0.0;
+        //         outputValues(4, i0, 4) = 0.0;
+
+        //         outputValues(4, i0, 5) = d2zq1* x*(2.0*x - 1.0);
+
+        outputValues(4, i0, 0) = 0.0;
+        outputValues(4, i0, 1) = 0.0;
+        outputValues(4, i0, 2) = dzq1* ( 4.0 );
+
+        outputValues(4, i0, 3) = 0.0;
+        outputValues(4, i0, 4) = 0.0;
+
+        outputValues(4, i0, 5) = d2zq1* ( 4.0*x - 1.0 );
+
+
+        outputValues(4, i0, 6) = 0.0;
+        outputValues(4, i0, 7) = 0.0;
+
+        outputValues(4, i0, 8) = 0.0;
+
+        outputValues(4, i0, 9) = d3zq1* x*(2.0*x - 1.0);
+
+        //outputValues(5, i0) = zq1* y*(2.0*y - 1.0);
+        //         outputValues(5, i0, 0) = 0.0;
+        //         outputValues(5, i0, 1) = zq1* (4.0*y - 1.0);
+        //         outputValues(5, i0, 2) = dzq1* y*(2.0*y - 1.0);
+
+        //         outputValues(5, i0, 0) = 0.0;
+        //         outputValues(5, i0, 1) = 0.0;
+        //         outputValues(5, i0, 2) = 0.0;
+
+        //         outputValues(5, i0, 3) = zq1* (4.0);
+        //         outputValues(5, i0, 4) = dzq1* (4.0*y - 1.0);
+
+        //         outputValues(5, i0, 5) = d2zq1* y*(2.0*y - 1.0);
+
+        outputValues(5, i0, 0) = 0.0;
+        outputValues(5, i0, 1) = 0.0;
+        outputValues(5, i0, 2) = 0.0;
+
+        outputValues(5, i0, 3) = 0.0;
+        outputValues(5, i0, 4) = 0.0;
+
+        outputValues(5, i0, 5) = 0.0;
+
+
+        outputValues(5, i0, 6) = 0.0;
+        outputValues(5, i0, 7) = dzq1* (4.0);
+
+        outputValues(5, i0, 8) = d2zq1* (4.0*y - 1.0);
+
+        outputValues(5, i0, 9) = d3zq1* y*(2.0*y - 1.0);
+
+
+
+        //--- 6,7,8
+        //outputValues(6, i0) = z0* (-4.0*x*(x + y - 1.0));
+        //         outputValues(6, i0, 0) = z0* (-4.0*(2.0*x + y - 1.0) );
+        //         outputValues(6, i0, 1) = z0* (-4.0*x*(1.0));
+        //         outputValues(6, i0, 2) = dz0* (-4.0*x*(x + y - 1.0));
         
-        outputValues(3, i0, 0) =  0.;
-        outputValues(3, i0, 1) =  0.;
-        outputValues(3, i0, 2) =  2. + 4.*z;
-        outputValues(3, i0, 3) =  0.;
-        outputValues(3, i0, 4) =  2. + 4.*z;
-        outputValues(3, i0, 5) = -3. + 4.*x + 4.*y;
-        outputValues(3, i0, 6) =  0.;
-        outputValues(3, i0, 7) =  2. + 4.*z;
-        outputValues(3, i0, 8) = -3. + 4.*x + 4.*y;
-        outputValues(3, i0, 9) =  0.;  
+        //         outputValues(6, i0, 0) = z0* (-8.0);
+        //         outputValues(6, i0, 1) = z0* (-4.0);
+        //         outputValues(6, i0, 2) = dz0* (-4.0*(2.0*x + y - 1.0) );
+
+        //         outputValues(6, i0, 3) = 0.0;
+        //         outputValues(6, i0, 4) = dz0* (-4.0*x*(1.0));
+
+        //         outputValues(6, i0, 5) = d2z0* (-4.0*x*(x + y - 1.0));
+
+        outputValues(6, i0, 0) = 0.0;
+        outputValues(6, i0, 1) = 0.0;
+        outputValues(6, i0, 2) = dz0* (-8.0);
+
+        outputValues(6, i0, 3) = 0.0;
+        outputValues(6, i0, 4) = dz0* (-4.0);
+
+        outputValues(6, i0, 5) = d2z0* (-4.0*(2.0*x + y - 1.0) );
+
+
+        outputValues(6, i0, 6) = 0.0;
+        outputValues(6, i0, 7) = 0.0;
+
+        outputValues(6, i0, 8) = d2z0* (-4.0*x*(1.0));
+
+        outputValues(6, i0, 9) = d3z0* (-4.0*x*(x + y - 1.0));
+
+        //outputValues(7, i0) = z0* ( 4.0*x*y);
+        //         outputValues(7, i0, 0) = z0* ( 4.0*y);
+        //         outputValues(7, i0, 1) = z0* ( 4.0*x);
+        //         outputValues(7, i0, 2) = dz0* ( 4.0*x*y);
+
+        //         outputValues(7, i0, 0) = 0.0;
+        //         outputValues(7, i0, 1) = z0* ( 4.0 );
+        //         outputValues(7, i0, 2) = dz0* ( 4.0*y);
+
+        //         outputValues(7, i0, 3) = 0.0;
+        //         outputValues(7, i0, 4) = dz0* ( 4.0*x);
+
+        //         outputValues(7, i0, 5) = d2z0* ( 4.0*x*y);
+
+        outputValues(7, i0, 0) = 0.0;
+        outputValues(7, i0, 1) = 0.0;
+        outputValues(7, i0, 2) = 0.0;
+
+        outputValues(7, i0, 3) = 0.0;
+        outputValues(7, i0, 4) = dz0* ( 4.0 );
+
+        outputValues(7, i0, 5) = d2z0* ( 4.0*y);
+
+
+        outputValues(7, i0, 6) = 0.0;
+        outputValues(7, i0, 7) = 0.0;
+
+        outputValues(7, i0, 8) = d2z0* ( 4.0*x);
+
+        outputValues(7, i0, 9) = d3z0* ( 4.0*x*y);
+
+        //outputValues(8, i0) = z0* (-4.0*y*(x + y - 1.0));
+        //         outputValues(8, i0, 0) = z0* (-4.0*y*(1.0));
+        //         outputValues(8, i0, 1) = z0* (-4.0*(x + 2.0*y - 1.0));
+        //         outputValues(8, i0, 2) = dz0* (-4.0*y*(x + y - 1.0));
+
+        //         outputValues(8, i0, 0) = 0.0;
+        //         outputValues(8, i0, 1) = z0* (-4.0);
+        //         outputValues(8, i0, 2) = dz0* (-4.0*y*(1.0));
+
+        //         outputValues(8, i0, 3) = z0* (-8.0);
+        //         outputValues(8, i0, 4) = dz0* (-4.0*(x + 2.0*y - 1.0));
+
+        //         outputValues(8, i0, 5) = d2z0* (-4.0*y*(x + y - 1.0));
+
+        outputValues(8, i0, 0) = 0.0;
+        outputValues(8, i0, 1) = 0.0;
+        outputValues(8, i0, 2) = 0.0;
+
+        outputValues(8, i0, 3) = 0.0;
+        outputValues(8, i0, 4) = dz0* (-4.0);
+
+        outputValues(8, i0, 5) = d2z0* (-4.0*y*(1.0));
+
+
+        outputValues(8, i0, 6) = 0.0;
+        outputValues(8, i0, 7) = dz0* (-8.0);
+
+        outputValues(8, i0, 8) = d2z0* (-4.0*(x + 2.0*y - 1.0));
+
+        outputValues(8, i0, 9) = d3z0* (-4.0*y*(x + y - 1.0));
+
+        //---- 9,10,11
+        // same as 0,1,2 with zqh for zq0
+
+        //outputValues(9, i0) = zqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        //         outputValues(9, i0, 0) = zqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(9, i0, 1) = zqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+        //         outputValues(9, i0, 2) = dzqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        //         outputValues(9, i0, 0) = zqh* ( 4.0 );
+        //         outputValues(9, i0, 1) = zqh* ( 4.0 );
+        //         outputValues(9, i0, 2) = dzqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        //         outputValues(9, i0, 3) = zqh* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+        //         outputValues(9, i0, 4) = dzqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        //         outputValues(9, i0, 5) = d2zqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+        outputValues(9, i0, 0) = 0.0;
+        outputValues(9, i0, 1) = 0.0;
+        outputValues(9, i0, 2) = dzqh* ( 4.0 );
+
+        outputValues(9, i0, 3) = 0.0;
+        outputValues(9, i0, 4) = dzqh* ( 4.0 );
+
+        outputValues(9, i0, 5) = d2zqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(9, i0, 6) = 0.0;
+        outputValues(9, i0, 7) = dzqh* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+
+        outputValues(9, i0, 8) = d2zqh* ( (1.0)*(2.0*x + 2.0*y - 1.0) + (x + y - 1.0)*(2.0) );
+
+        outputValues(9, i0, 9) = d3zqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+
+
+        //outputValues(10, i0) = zqh* x*(2.0*x - 1.0);
+        //         outputValues(10, i0, 0) = zqh* ( 4.0*x - 1.0 );
+        //         outputValues(10, i0, 1) = 0.0;
+        //         outputValues(10, i0, 2) = dzqh* x*(2.0*x - 1.0);
+        //         outputValues(10, i0, 0) = zqh* ( 4.0 );
+        //         outputValues(10, i0, 1) = 0.0;
+        //         outputValues(10, i0, 2) = dzqh* ( 4.0*x - 1.0 );
+
+        //         outputValues(10, i0, 3) = 0.0;
+        //         outputValues(10, i0, 4) = 0.0;
+
+        //         outputValues(10, i0, 5) = d2zqh* x*(2.0*x - 1.0);
+
+        outputValues(10, i0, 0) = 0.0;
+        outputValues(10, i0, 1) = 0.0;
+        outputValues(10, i0, 2) = dzqh* ( 4.0 );
+
+        outputValues(10, i0, 3) = 0.0;
+        outputValues(10, i0, 4) = 0.0;
+
+        outputValues(10, i0, 5) = d2zqh* ( 4.0*x - 1.0 );
+
+
+        outputValues(10, i0, 6) = 0.0;
+        outputValues(10, i0, 7) = 0.0;
+
+        outputValues(10, i0, 8) = 0.0;
+
+        outputValues(10, i0, 9) = d3zqh* x*(2.0*x - 1.0);
+
+        //outputValues(11, i0) = zqh* y*(2.0*y - 1.0);
+        //         outputValues(11, i0, 0) = 0.0;
+        //         outputValues(11, i0, 1) = zqh* (4.0*y - 1.0);
+        //         outputValues(11, i0, 2) = dzqh* y*(2.0*y - 1.0);
+
+        //         outputValues(11, i0, 0) = 0.0;
+        //         outputValues(11, i0, 1) = 0.0;
+        //         outputValues(11, i0, 2) = 0.0;
+
+        //         outputValues(11, i0, 3) = zqh* (4.0);
+        //         outputValues(11, i0, 4) = dzqh* (4.0*y - 1.0);
+
+        //         outputValues(11, i0, 5) = d2zqh* y*(2.0*y - 1.0);
+
+        outputValues(11, i0, 0) = 0.0;
+        outputValues(11, i0, 1) = 0.0;
+        outputValues(11, i0, 2) = 0.0;
+
+        outputValues(11, i0, 3) = 0.0;
+        outputValues(11, i0, 4) = 0.0;
+
+        outputValues(11, i0, 5) = 0.0;
+
+
+        outputValues(11, i0, 6) = 0.0;
+        outputValues(11, i0, 7) = dzqh* (4.0);
+
+        outputValues(11, i0, 8) = d2zqh* (4.0*y - 1.0);
+
+        outputValues(11, i0, 9) = d3zqh* y*(2.0*y - 1.0);
+
+
+        //--- 12,13,14
+        // same as 6,7,8 with z1 for z0
+
+        //outputValues(12, i0) = z1* (-4.0*x*(x + y - 1.0));
+        //         outputValues(12, i0, 0) = z1* (-4.0*(2.0*x + y - 1.0) );
+        //         outputValues(12, i0, 1) = z1* (-4.0*x*(1.0));
+        //         outputValues(12, i0, 2) = dz1* (-4.0*x*(x + y - 1.0));
         
-        outputValues(4, i0, 0) =  0.;
-        outputValues(4, i0, 1) =  0.;
-        outputValues(4, i0, 2) =  2. + 4.*z;
-        outputValues(4, i0, 3) =  0.;
-        outputValues(4, i0, 4) =  0.;
-        outputValues(4, i0, 5) = -1 + 4.*x;
-        outputValues(4, i0, 6) =  0.;
-        outputValues(4, i0, 7) =  0.;
-        outputValues(4, i0, 8) =  0.;
-        outputValues(4, i0, 9) =  0.;  
-        
-        outputValues(5, i0, 0) =  0.;
-        outputValues(5, i0, 1) =  0.;
-        outputValues(5, i0, 2) =  0.;
-        outputValues(5, i0, 3) =  0.;
-        outputValues(5, i0, 4) =  0.;
-        outputValues(5, i0, 5) =  0.;
-        outputValues(5, i0, 6) =  0.;
-        outputValues(5, i0, 7) =  2. + 4.*z;
-        outputValues(5, i0, 8) = -1 + 4.*y;
-        outputValues(5, i0, 9) =  0.;  
-        
-        outputValues(6, i0, 0) =  0.;
-        outputValues(6, i0, 1) =  0.;
-        outputValues(6, i0, 2) =  4. - 8.*z;
-        outputValues(6, i0, 3) =  0.;
-        outputValues(6, i0, 4) =  2. - 4.*z;
-        outputValues(6, i0, 5) = -4.*(-1 + 2*x + y);
-        outputValues(6, i0, 6) =  0.;
-        outputValues(6, i0, 7) =  0.;
-        outputValues(6, i0, 8) = -4.*x;
-        outputValues(6, i0, 9) =  0.;  
-        
-        outputValues(7, i0, 0) =  0.;
-        outputValues(7, i0, 1) =  0.;
-        outputValues(7, i0, 2) =  0.;
-        outputValues(7, i0, 3) =  0.;
-        outputValues(7, i0, 4) = -2. + 4.*z;
-        outputValues(7, i0, 5) =  4.*y;
-        outputValues(7, i0, 6) =  0.;
-        outputValues(7, i0, 7) =  0.;
-        outputValues(7, i0, 8) =  4.*x;
-        outputValues(7, i0, 9) =  0.;  
-        
-        outputValues(8, i0, 0) =  0.;
-        outputValues(8, i0, 1) =  0.;
-        outputValues(8, i0, 2) =  0.;
-        outputValues(8, i0, 3) =  0.;
-        outputValues(8, i0, 4) =  2. - 4.*z;
-        outputValues(8, i0, 5) = -4.*y;
-        outputValues(8, i0, 6) =  0.;
-        outputValues(8, i0, 7) =  4. - 8.*z;
-        outputValues(8, i0, 8) = -4.*(-1 + x + 2*y);
-        outputValues(8, i0, 9) =  0.;  
-        
-        outputValues(9, i0, 0) =  0.;
-        outputValues(9, i0, 1) =  0.;
-        outputValues(9, i0, 2) = -8.*z;
-        outputValues(9, i0, 3) =  0.;
-        outputValues(9, i0, 4) = -8.*z;
-        outputValues(9, i0, 5) =  6. - 8.*x - 8.*y;
-        outputValues(9, i0, 6) =  0.;
-        outputValues(9, i0, 7) = -8.*z;
-        outputValues(9, i0, 8) =  6. - 8.*x - 8.*y;
-        outputValues(9, i0, 9) =  0.;  
-        
-        outputValues(10,i0, 0) =  0.;
-        outputValues(10,i0, 1) =  0.;
-        outputValues(10,i0, 2) = -8.*z;
-        outputValues(10,i0, 3) =  0.;
-        outputValues(10,i0, 4) =  0.;
-        outputValues(10,i0, 5) =  2. - 8.*x;
-        outputValues(10,i0, 6) =  0.;
-        outputValues(10,i0, 7) =  0.;
-        outputValues(10,i0, 8) =  0.;
-        outputValues(10,i0, 9) =  0.;  
-        
-        outputValues(11,i0, 0) =  0.;
-        outputValues(11,i0, 1) =  0.;
-        outputValues(11,i0, 2) =  0.;
-        outputValues(11,i0, 3) =  0.;
-        outputValues(11,i0, 4) =  0.;
-        outputValues(11,i0, 5) =  0.;
-        outputValues(11,i0, 6) =  0.;
-        outputValues(11,i0, 7) = -8.*z;
-        outputValues(11,i0, 8) =  2. - 8.*y;
-        outputValues(11,i0, 9) =  0.;  
-        
-        outputValues(12,i0, 0) =  0.;
-        outputValues(12,i0, 1) =  0.;
-        outputValues(12,i0, 2) = -4. - 8.*z;
-        outputValues(12,i0, 3) =  0.;
-        outputValues(12,i0, 4) = -2. - 4.*z;
-        outputValues(12,i0, 5) = -4.*(-1 + 2*x + y);
-        outputValues(12,i0, 6) =  0.;
-        outputValues(12,i0, 7) =  0.;
-        outputValues(12,i0, 8) = -4.*x;
-        outputValues(12,i0, 9) =  0.;  
-        
-        outputValues(13,i0, 0) =  0.;
-        outputValues(13,i0, 1) =  0.;
-        outputValues(13,i0, 2) =  0.;
-        outputValues(13,i0, 3) =  0.;
-        outputValues(13,i0, 4) =  2. + 4.*z;
-        outputValues(13,i0, 5) =  4.*y;
-        outputValues(13,i0, 6) =  0.;
-        outputValues(13,i0, 7) =  0.;
-        outputValues(13,i0, 8) =  4.*x;
-        outputValues(13,i0, 9) =  0.;  
-        
-        outputValues(14,i0, 0) =  0.;
-        outputValues(14,i0, 1) =  0.;
-        outputValues(14,i0, 2) =  0.;
-        outputValues(14,i0, 3) =  0.;
-        outputValues(14,i0, 4) = -2. - 4.*z;
-        outputValues(14,i0, 5) = -4.*y;
-        outputValues(14,i0, 6) =  0.;
-        outputValues(14,i0, 7) = -4. - 8.*z;
-        outputValues(14,i0, 8) = -4.*(-1 + x + 2*y);
-        outputValues(14,i0, 9) =  0.;  
-        
-//         outputValues(15,i0, 0) =  0.;
-//         outputValues(15,i0, 1) =  0.;
-//         outputValues(15,i0, 2) =  16.*z;
-//         outputValues(15,i0, 3) =  0.;
-//         outputValues(15,i0, 4) =  8.*z;
-//         outputValues(15,i0, 5) =  8.*(-1 + 2*x + y);
-//         outputValues(15,i0, 6) =  0.;
-//         outputValues(15,i0, 7) =  0.;
-//         outputValues(15,i0, 8) =  8.*x;
-//         outputValues(15,i0, 9) =  0.;  
-        
-//         outputValues(16,i0, 0) =  0.;
-//         outputValues(16,i0, 1) =  0.;
-//         outputValues(16,i0, 2) =  0.;
-//         outputValues(16,i0, 3) =  0.;
-//         outputValues(16,i0, 4) = -8.*z;
-//         outputValues(16,i0, 5) = -8.*y;
-//         outputValues(16,i0, 6) =  0.;
-//         outputValues(16,i0, 7) =  0.;
-//         outputValues(16,i0, 8) = -8.*x;
-//         outputValues(16,i0, 9) =  0.;  
-        
-//         outputValues(17,i0, 0) =  0.;
-//         outputValues(17,i0, 1) =  0.;
-//         outputValues(17,i0, 2) =  0.;
-//         outputValues(17,i0, 3) =  0.;
-//         outputValues(17,i0, 4) =  8.*z;
-//         outputValues(17,i0, 5) =  8.*y;
-//         outputValues(17,i0, 6) =  0.;
-//         outputValues(17,i0, 7) =  16.*z;
-//         outputValues(17,i0, 8) =  8.*(-1 + x + 2*y);
-//         outputValues(17,i0, 9) =  0.;
+        //         outputValues(12, i0, 0) = z1* (-8.0);
+        //         outputValues(12, i0, 1) = z1* (-4.0);
+        //         outputValues(12, i0, 2) = dz1* (-4.0*(2.0*x + y - 1.0) );
+
+        //         outputValues(12, i0, 3) = 0.0;
+        //         outputValues(12, i0, 4) = dz1* (-4.0*x*(1.0));
+
+        //         outputValues(12, i0, 5) = d2z1* (-4.0*x*(x + y - 1.0));
+
+        outputValues(12, i0, 0) = 0.0;
+        outputValues(12, i0, 1) = 0.0;
+        outputValues(12, i0, 2) = dz1* (-8.0);
+
+        outputValues(12, i0, 3) = 0.0;
+        outputValues(12, i0, 4) = dz1* (-4.0);
+
+        outputValues(12, i0, 5) = d2z1* (-4.0*(2.0*x + y - 1.0) );
+
+
+        outputValues(12, i0, 6) = 0.0;
+        outputValues(12, i0, 7) = 0.0;
+
+        outputValues(12, i0, 8) = d2z1* (-4.0*x*(1.0));
+
+        outputValues(12, i0, 9) = d3z1* (-4.0*x*(x + y - 1.0));
+
+        //outputValues(13, i0) = z1* ( 4.0*x*y);
+        //         outputValues(13, i0, 0) = z1* ( 4.0*y);
+        //         outputValues(13, i0, 1) = z1* ( 4.0*x);
+        //         outputValues(13, i0, 2) = dz1* ( 4.0*x*y);
+
+        //         outputValues(13, i0, 0) = 0.0;
+        //         outputValues(13, i0, 1) = z1* ( 4.0 );
+        //         outputValues(13, i0, 2) = dz1* ( 4.0*y);
+
+        //         outputValues(13, i0, 3) = 0.0;
+        //         outputValues(13, i0, 4) = dz1* ( 4.0*x);
+
+        //         outputValues(13, i0, 5) = d2z1* ( 4.0*x*y);
+
+        outputValues(13, i0, 0) = 0.0;
+        outputValues(13, i0, 1) = 0.0;
+        outputValues(13, i0, 2) = 0.0;
+
+        outputValues(13, i0, 3) = 0.0;
+        outputValues(13, i0, 4) = dz1* ( 4.0 );
+
+        outputValues(13, i0, 5) = d2z1* ( 4.0*y);
+
+
+        outputValues(13, i0, 6) = 0.0;
+        outputValues(13, i0, 7) = 0.0;
+
+        outputValues(13, i0, 8) = d2z1* ( 4.0*x);
+
+        outputValues(13, i0, 9) = d3z1* ( 4.0*x*y);
+
+        //outputValues(14, i0) = z1* (-4.0*y*(x + y - 1.0));
+        //         outputValues(14, i0, 0) = z1* (-4.0*y*(1.0));
+        //         outputValues(14, i0, 1) = z1* (-4.0*(x + 2.0*y - 1.0));
+        //         outputValues(14, i0, 2) = dz1* (-4.0*y*(x + y - 1.0));
+
+        //         outputValues(14, i0, 0) = 0.0;
+        //         outputValues(14, i0, 1) = z1* (-4.0);
+        //         outputValues(14, i0, 2) = dz1* (-4.0*y*(1.0));
+
+        //         outputValues(14, i0, 3) = z1* (-8.0);
+        //         outputValues(14, i0, 4) = dz1* (-4.0*(x + 2.0*y - 1.0));
+
+        //         outputValues(14, i0, 5) = d2z1* (-4.0*y*(x + y - 1.0));
+
+        outputValues(14, i0, 0) = 0.0;
+        outputValues(14, i0, 1) = 0.0;
+        outputValues(14, i0, 2) = 0.0;
+
+        outputValues(14, i0, 3) = 0.0;
+        outputValues(14, i0, 4) = dz1* (-4.0);
+
+        outputValues(14, i0, 5) = d2z1* (-4.0*y*(1.0));
+
+
+        outputValues(14, i0, 6) = 0.0;
+        outputValues(14, i0, 7) = dz1* (-8.0);
+
+        outputValues(14, i0, 8) = d2z1* (-4.0*(x + 2.0*y - 1.0));
+
+        outputValues(14, i0, 9) = d3z1* (-4.0*y*(x + y - 1.0));
+
         
       }
       break;
@@ -606,55 +1073,117 @@ void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayS
         }    
         
         for (int i0 = 0; i0 < dim0; i0++) {
-          
-          outputValues(0, i0, 5) = 4.;
-          outputValues(0, i0, 8) = 4.;
-          outputValues(0, i0,12) = 4.;
-          
-          outputValues(1, i0, 5) = 4.;
-          
-          outputValues(2, i0,12) = 4.;
-          
-          outputValues(3, i0, 5) = 4.;
-          outputValues(3, i0, 8) = 4.;
-          outputValues(3, i0,12) = 4.;
-          
-          outputValues(4, i0, 5) = 4.0;
-          
-          outputValues(5, i0,12) = 4.0;
-          
-          outputValues(6, i0, 5) =-8.;
-          outputValues(6, i0, 8) =-4.;
-          
-          outputValues(7, i0, 8) = 4.;
-          
-          outputValues(8, i0, 8) =-4.;
-          outputValues(8, i0,12) =-8.;
-          
-          outputValues(9, i0, 5) =-8.;
-          outputValues(9, i0, 8) =-8.;
-          outputValues(9, i0,12) =-8.;
-          
-          outputValues(10,i0, 5) =-8.;
-          
-          outputValues(11,i0,12) =-8.;
-          
-          outputValues(12,i0, 5) =-8.;
-          outputValues(12,i0, 8) =-4.;
-          
-          outputValues(13,i0, 8) = 4.;
-          
-          outputValues(14,i0, 8) =-4;
-          outputValues(14,i0,12) =-8.;
-          
-//           outputValues(15,i0, 5) =16.;
-//           outputValues(15,i0, 8) = 8.;
-          
-//           outputValues(16,i0, 8) =-8.;
-          
-          
-//           outputValues(17,i0, 8) = 8.;
-//           outputValues(17,i0,12) =16.;   
+
+          //double z0 = (1.0 - z)/2.0;
+          //double z1 = (1.0 + z)/2.0;
+          //double zq0 = (-z)*z0;
+          //double zq1 = ( z)*z1;
+          //double zqh = 4.0*z0*z1;
+
+          double dz0 = -0.5;
+          double dz1 = 0.5; 
+          //double dzq0 = (-1.0)*z0 + (-z)*dz0;
+          //double dzq1 = ( 1.0)*z1 + ( z)*dz1;
+          //double dzqh = 4.0*(dz0*z1 + z0*dz1);
+
+          double d2z0 = 0.0;
+          double d2z1 = 0.0;
+          double d2zq0 = (-1.0)*dz0 + (-1.0)*dz0;
+          double d2zq1 = ( 1.0)*dz1 + ( 1.0)*dz1;
+          double d2zqh = 8.0*( dz0*dz1);
+
+          //           double d3z0 = 0.0;
+          //           double d3z1 = 0.0;
+          //           double d3zq0 = 0.0;
+          //           double d3zq1 = 0.0;
+          //           double d3zqh = 0.0;
+        
+          //        (2,4,7)-->(5,8,12)
+
+          //---- 0,1,2
+          //outputValues(0, i0) = zq0* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+          outputValues(0, i0, 5) = d2zq0* ( 4.0 );
+          outputValues(0, i0, 8) = d2zq0* ( 4.0 );
+          outputValues(0, i0, 12) = d2zq0* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+
+          //outputValues(1, i0) = zq0* x*(2.0*x - 1.0);
+          outputValues(1, i0, 5) = d2zq0* ( 4.0 );
+          outputValues(1, i0, 8) = 0.0;
+          outputValues(1, i0, 12) = 0.0;
+
+          //outputValues(2, i0) = zq0* y*(2.0*y - 1.0);
+          outputValues(2, i0, 5) = 0.0;
+          outputValues(2, i0, 8) = 0.0;
+          outputValues(2, i0, 12) = d2zq0* (4.0);
+
+          //---- 3,4,5
+          // same as 0,1,2 with zq1 for zq0
+          //outputValues(3, i0) = zq1* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+          outputValues(3, i0, 5) = d2zq1* ( 4.0 );
+          outputValues(3, i0, 8) = d2zq1* ( 4.0 );
+          outputValues(3, i0, 12) = d2zq1* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+
+          //outputValues(4, i0) = zq1* x*(2.0*x - 1.0);
+          outputValues(4, i0, 5) = d2zq1* ( 4.0 );
+          outputValues(4, i0, 8) = 0.0;
+          outputValues(4, i0, 12) = 0.0;
+
+          //outputValues(5, i0) = zq1* y*(2.0*y - 1.0);
+          outputValues(5, i0, 5) = 0.0;
+          outputValues(5, i0, 8) = 0.0;
+          outputValues(5, i0, 12) = d2zq1* (4.0);
+
+          //--- 6,7,8
+          //outputValues(6, i0) = z0* (-4.0*x*(x + y - 1.0));
+          outputValues(6, i0, 5) = d2z0* (-8.0);
+          outputValues(6, i0, 8) = d2z0* (-4.0);
+          outputValues(6, i0, 12) = 0.0;
+
+          //outputValues(7, i0) = z0* ( 4.0*x*y);
+          outputValues(7, i0, 5) = 0.0;
+          outputValues(7, i0, 8) = d2z0* ( 4.0 );
+          outputValues(7, i0, 12) = 0.0;
+
+          //outputValues(8, i0) = z0* (-4.0*y*(x + y - 1.0));
+          outputValues(8, i0, 5) = 0.0;
+          outputValues(8, i0, 8) = d2z0* (-4.0);
+          outputValues(8, i0, 12) = d2z0* (-8.0);
+
+          //---- 9,10,11
+          // same as 0,1,2 with zqh for zq0
+          //outputValues(9, i0) = zqh* (x + y - 1.0)*(2.0*x + 2.0*y - 1.0);
+          outputValues(9, i0, 5) = d2zqh* ( 4.0 );
+          outputValues(9, i0, 8) = d2zqh* ( 4.0 );
+          outputValues(9, i0, 12) = d2zqh* ( (1.0)*( 2.0) + (1.0)*(2.0) );
+
+          //outputValues(10, i0) = zqh* x*(2.0*x - 1.0);
+          outputValues(10, i0, 5) = d2zqh* ( 4.0 );
+          outputValues(10, i0, 8) = 0.0;
+          outputValues(10, i0, 12) = 0.0;
+
+          //outputValues(11, i0) = zqh* y*(2.0*y - 1.0);
+          outputValues(11, i0, 5) = 0.0;
+          outputValues(11, i0, 8) = 0.0;
+          outputValues(11, i0, 12) = d2zqh* (4.0);
+
+          //--- 12,13,14
+          // same as 6,7,8 with z1 for z0
+
+          //outputValues(12, i0) = z1* (-4.0*x*(x + y - 1.0));
+          outputValues(12, i0, 5) = d2z1* (-8.0);
+          outputValues(12, i0, 8) = d2z1* (-4.0);
+          outputValues(12, i0, 12) = 0.0;
+
+          //outputValues(13, i0) = z1* ( 4.0*x*y);
+          outputValues(13, i0, 5) = 0.0;
+          outputValues(13, i0, 8) = d2z1* ( 4.0 );
+          outputValues(13, i0, 12) = 0.0;
+
+          //outputValues(14, i0) = z1* (-4.0*y*(x + y - 1.0));
+          outputValues(14, i0, 5) = 0.0;
+          outputValues(14, i0, 8) = d2z1* (-4.0);
+          outputValues(14, i0, 12) = d2z1* (-8.0);
+
         }
       }
       break;
@@ -682,17 +1211,17 @@ void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayS
     default:
       TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_WEDGE_C2_Serendipity_FEM): Invalid operator type");
+    }
   }
-}
 
 
   
-template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&       outputValues,
-                                                             const ArrayScalar &    inputPoints,
-                                                             const ArrayScalar &    cellVertices,
-                                                             const EOperator        operatorType) const {
-  TEST_FOR_EXCEPTION( (true), std::logic_error,
-                      ">>> ERROR (Basis_HGRAD_WEDGE_C2_Serendipity_FEM): FEM Basis calling an FVD member function");
-}
+  template<class Scalar, class ArrayScalar>
+  void Basis_HGRAD_WEDGE_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&       outputValues,
+                                                                            const ArrayScalar &    inputPoints,
+                                                                            const ArrayScalar &    cellVertices,
+                                                                            const EOperator        operatorType) const {
+    TEST_FOR_EXCEPTION( (true), std::logic_error,
+                        ">>> ERROR (Basis_HGRAD_WEDGE_C2_Serendipity_FEM): FEM Basis calling an FVD member function");
+  }
 }// namespace Intrepid

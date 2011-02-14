@@ -192,8 +192,11 @@ namespace stk {
 
                   Scalar * data = stk::mesh::field_data( coord_field , *node );
 
-                  data[0] = nx ;
-                  data[1] = ny ;
+                   data[0] = nx ;
+                   data[1] = ny ;
+//                  data[0] = -1 + 2.0*((double)nx) / ((double)NX) ;
+//                  data[1] = -1 + 2.0*((double)ny) / ((double)NY) ;
+
                 }
               }
             }
