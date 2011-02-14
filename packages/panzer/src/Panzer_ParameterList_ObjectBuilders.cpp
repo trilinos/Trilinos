@@ -5,7 +5,7 @@
 
 namespace panzer {
   
-  void buildInputPhysicsBlocks(std::vector<panzer::InputPhysicsBlock>& ipb,
+  void buildInputPhysicsBlocks(std::map<std::string,panzer::InputPhysicsBlock>& ipb,
 			       const Teuchos::ParameterList& p)
   {
     using std::string;
@@ -32,12 +32,14 @@ namespace panzer {
       
       const ParameterList& block_list = p.sublist(*block); 
       int num_eqsets = block_list.get<int>("Number of Equation Sets");
+      ipb[*block].physics_block_id = *block;
 
       for (int set=0; set < num_eqsets; ++set) {
 	std::ostringstream set_name;
 	set_name << "EQ " << set;
 	const ParameterList& set_list = block_list.sublist(set_name.str());
 	panzer::InputEquationSet ies(set_list);
+	ipb[*block].eq_sets.push_back(ies);
       }
     }
 
@@ -55,6 +57,16 @@ namespace panzer {
       const ParameterList& bc_list = p.sublist(bc_name.str());
       panzer::BC bc(bc_list);
       bcs.push_back(bc);
+    }
+  }
+
+  void buildBlockIdToPhysicsIdMap(std::map<std::string,std::string>& b_to_p,
+				  const Teuchos::ParameterList& p)
+  {
+    for (Teuchos::ParameterList::ConstIterator entry = p.begin();
+	 entry != p.end(); ++entry) {
+      std::string dummy_type;
+      b_to_p[entry->first] = entry->second.getValue(&dummy_type);
     }
   }
 
