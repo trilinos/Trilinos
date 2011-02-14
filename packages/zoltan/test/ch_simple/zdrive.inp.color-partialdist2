@@ -1,0 +1,13 @@
+Decomposition Method = none
+Zoltan Parameters = comm_pattern=S
+Zoltan Parameters = coloring_order=N
+Zoltan Parameters = coloring_method=F
+Zoltan Parameters = superstep_size=100
+Zoltan Parameters = coloring_problem=partial-distance-2
+Zoltan Parameters = GRAPH_SYMMETRIZE=BIPARTITE
+File Type = Chaco
+File Name = simple
+Parallel Disk Info = number=0
+zdrive action = 5
+
+

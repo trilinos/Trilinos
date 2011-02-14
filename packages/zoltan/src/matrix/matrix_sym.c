@@ -136,6 +136,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
     /* Associate all the data with our xyGNO */
     Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (char *)ypid, ybipart,
 		      matrix->nY);
+    ZOLTAN_FREE(&yGNO);
   }
 
  End:
