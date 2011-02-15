@@ -33,9 +33,12 @@
 #include "Piro_Epetra_MatrixFreeDecorator.hpp"
 #include "NOX_Epetra_LinearSystem_Stratimikos.H"
 
-Piro::Epetra::NOXSolver::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams_,
-			   Teuchos::RCP<EpetraExt::ModelEvaluator> model_,
-			   Teuchos::RCP<NOX::Epetra::Observer> observer_
+Piro::Epetra::NOXSolver::NOXSolver(
+  Teuchos::RCP<Teuchos::ParameterList> piroParams_,
+  Teuchos::RCP<EpetraExt::ModelEvaluator> model_,
+  Teuchos::RCP<NOX::Epetra::Observer> observer_,
+  Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> custom_interface,
+  Teuchos::RCP<NOX::Epetra::LinearSystem> custom_linsys
 ) :
   piroParams(piroParams_),
   model(model_),
@@ -81,8 +84,10 @@ Piro::Epetra::NOXSolver::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> piroPara
   currentSolution = Teuchos::rcp(new NOX::Epetra::Vector(*u));
 
   // Create NOX interface from model evaluator
-  interface = Teuchos::rcp(
-	       new NOX::Epetra::ModelEvaluatorInterface(model));
+  if (custom_interface != Teuchos::null)
+    interface = custom_interface;
+  else
+    interface = Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(model));
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
 
   // Create the Jacobian matrix (unless flag is set to do it numerically)
@@ -115,16 +120,22 @@ Piro::Epetra::NOXSolver::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> piroPara
     WPrec = model->create_WPrec(); 
 
   // Create the linear system
-  Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> linsys;
-  if (WPrec != Teuchos::null) {
-    Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface;
-    linsys = Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
-                      noxstratlsParams, iJac, A, iPrec, WPrec->PrecOp,
-                      *currentSolution, WPrec->isAlreadyInverted));
-  }
+  Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
+  if (custom_linsys != Teuchos::null)
+    linsys = custom_linsys;
   else {
-    linsys = Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
-                          noxstratlsParams, iJac, A, *currentSolution));
+    if (WPrec != Teuchos::null) {
+      Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface;
+      linsys = Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+			      printParams,
+			      noxstratlsParams, iJac, A, iPrec, WPrec->PrecOp,
+			      *currentSolution, WPrec->isAlreadyInverted));
+    }
+    else {
+      linsys = Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+			      printParams,
+			      noxstratlsParams, iJac, A, *currentSolution));
+    }
   }
 
   // Build NOX group
