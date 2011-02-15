@@ -3216,31 +3216,38 @@ int SNL_FEI_Structure::getEqnNumbers(int numIDs,
 
     int fieldSize = getFieldSize(fieldID);
     if (fieldSize < 0) {
-	ERReturn(-1);
+      ERReturn(-1);
     }
 
     int offset = 0;
     for(int i=0; i<numIDs; ++i) {
-	NodeDescriptor* node = NULL;
+      NodeDescriptor* node = NULL;
 
-	if ( nodeDatabase_->getNodeWithID(IDs[i], node) != 0 ) {
-	    // FEI_CERR << "SNL_FEI_Structure::getEqnNumbers: ERROR getting node " << IDs[i] << FEI_ENDL;
-	    for(int ii=0; ii<fieldSize; ii++) {
-		eqnNumbers[offset++] = -1;
-	    }
-	    continue;
-	    // ERReturn(-1);
-	}
+      if ( nodeDatabase_->getNodeWithID(IDs[i], node) != 0 ) {
+        // FEI_CERR << "SNL_FEI_Structure::getEqnNumbers: ERROR getting node " << IDs[i] << FEI_ENDL;
+        for(int ii=0; ii<fieldSize; ii++) {
+          eqnNumbers[offset++] = -1;
+        }
+        continue;
+        // ERReturn(-1);
+      }
 
-	int nodeFieldEqnNumber = -1;
+      int nodeFieldEqnNumber = -1;
 
-	if ( !node->getFieldEqnNumber(fieldID, nodeFieldEqnNumber) ) {
-	    ERReturn(-1);
-	}
-
-	for(int ii=0; ii<fieldSize; ii++) {
-	    eqnNumbers[offset++] = nodeFieldEqnNumber + ii;
-	}
+      if ( !node->getFieldEqnNumber(fieldID, nodeFieldEqnNumber) ) {
+        //if we didn't find a field eqn-number, set eqnNumbers to -1. These
+        //positions will then be skipped by code that passes the data on down to
+        //underlying solver objects.
+        for(int ii=0; ii<fieldSize; ii++) {
+          eqnNumbers[offset++] = -1;
+        }
+      }
+      else {
+        //else we did find valid eqn-numbers...
+        for(int ii=0; ii<fieldSize; ii++) {
+          eqnNumbers[offset++] = nodeFieldEqnNumber + ii;
+        }
+      }
     }
 
     numEqns = fieldSize*numIDs;

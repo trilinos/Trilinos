@@ -2558,6 +2558,7 @@ int FEDataFilter::assembleRHS(int numValues,
 
   for(int i = 0; i < numValues; i++) {
     int eqn = indices[i];
+    if (eqn < 0) continue;
 
     CHK_ERR( giveToRHS(1, &(coefs[i]), &eqn, mode ) );
   }
