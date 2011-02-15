@@ -1,3 +1,4 @@
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <cstdlib>
@@ -443,19 +444,30 @@ get_heap_info(
 
           const mesh::PairIterRelation elem_nodes = entity.relations( mesh::Node );
           unsigned num_node = elem_nodes.size();
+          std::vector<double> min(fieldStride, 1e+30);
+          std::vector<double> max(fieldStride, -1e+30);
           for (unsigned inode=0; inode < num_node; inode++)
             {
               mesh::Entity & node = * elem_nodes[ inode ].entity();
 
-              out << " id= " << node.identifier() << " ";
+              out << "inode= " << inode << " id= " << node.identifier() << " ";
               double *f_data = PerceptMesh::field_data(field, node);
               out << " data = " ;
               for (int ifd=0; ifd < fieldStride; ifd++)
                 {
+                  min[ifd] = std::min(f_data[ifd], min[ifd]);
+                  max[ifd] = std::max(f_data[ifd], max[ifd]);
                   out << f_data[ifd] << " ";
                 }
               out << std::endl;
             }
+          out << " min= " << min << std::endl;
+          out << " max= " << max << std::endl;
+          for (int ifd=0; ifd < fieldStride; ifd++)
+            {
+              max[ifd] = max[ifd] - min[ifd];
+            }
+          out << " max-min= " << max << std::endl;
 
         }
     }

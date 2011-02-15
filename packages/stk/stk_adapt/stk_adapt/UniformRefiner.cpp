@@ -494,6 +494,12 @@ namespace stk {
           /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
           ///  Global node loop operations:  this is where we perform ops like adding new nodes to the right parts, interpolating fields, etc.
           /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          if (0)
+            {
+              std::cout << "tmp dumpElements 1 " << std::endl;
+              m_eMesh.dumpElements();
+            }
+
           /**/                                                TRACE_PRINT("UniformRefiner: addToExistingParts [etc.]... ");
 #if !STK_ADAPT_URP_LOCAL_NODE_COMPS
           {
@@ -508,6 +514,12 @@ namespace stk {
           }
 #endif
           /**/                                                TRACE_PRINT("UniformRefiner: addToExistingParts [etc.] ...done ");
+
+          if (0)
+            {
+              std::cout << "tmp dumpElements 2 " << std::endl;
+              m_eMesh.dumpElements();
+            }
 
           // this is for testing removing old elements as early as possible for memory reasons
           // FIXME - remove old elements on the fly?
@@ -538,6 +550,12 @@ namespace stk {
 
         } // irank
 
+          if (0)
+            {
+              std::cout << "tmp dumpElements 3 " << std::endl;
+              m_eMesh.dumpElements();
+
+            }
 
       if (m_doRemove)
         {
@@ -573,7 +591,12 @@ namespace stk {
 
       /**/                                                TRACE_PRINT( "UniformRefiner:doBreak ... done");
 
+      if (0)
+        {
+          std::cout << "tmp dumpElements 4 " << std::endl;
+              m_eMesh.dumpElements();
 
+        }
       //std::cout << "tmp m_nodeRegistry.m_gee_cnt= " << m_nodeRegistry->m_gee_cnt << std::endl;
       //std::cout << "tmp m_nodeRegistry.m_gen_cnt= " << m_nodeRegistry->m_gen_cnt << std::endl;
 
@@ -1174,8 +1197,6 @@ namespace stk {
         }
       return false;
     }
-
-
 
 
   } // namespace adapt

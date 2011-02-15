@@ -152,6 +152,8 @@ namespace stk {
       void 
       trace_print(std::string msg);
 
+      //void dumpElements();
+
     private:
       percept::PerceptMesh& m_eMesh;
 

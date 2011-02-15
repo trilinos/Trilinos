@@ -20,6 +20,7 @@
 
 #include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
 #include <stk_percept/Intrepid_HGRAD_QUAD_C2_Serendipity_FEM.hpp>
+#include <stk_percept/Intrepid_HGRAD_HEX_C2_Serendipity_FEM.hpp>
 
 namespace stk {
   namespace percept {
@@ -1378,6 +1379,42 @@ namespace stk {
 
     }
 
+    void PerceptMesh::
+    dumpElements()
+    {
+      const PartVector & parts = getMetaData()->get_parts();
+      unsigned nparts = parts.size();
+
+      for (unsigned ipart=0; ipart < nparts; ipart++)
+        {
+          Part& part = *parts[ipart];
+          mesh::Selector selector(part);
+
+          if (part.name()[0] == '{' || (part.name().find("oldElem") != std::string::npos) )
+            continue;
+
+          std::cout << "tmp UniformRefiner::dumpElements: part = " << part.name() << std::endl;
+          const std::vector<Bucket*> & buckets = getBulkData()->buckets( mesh::Element );
+
+          for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            {
+              if (selector(**k))
+              {
+                Bucket & bucket = **k ;
+                const unsigned num_elements_in_bucket = bucket.size();
+
+                for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                  {
+                    Entity& element = bucket[iElement];
+
+                    std::cout << "tmp UniformRefiner::dumpElements: newElement: " << element << std::endl;
+                    Util::printEntity(std::cout, element, getCoordinatesField() );
+                  }
+              }
+            }
+        }
+    }
+
     /** \brief Loop over all buckets and apply \param bucketOp passing in the argument \param field to \param bucketOp */
     void PerceptMesh::bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field, stk::mesh::Part *part)
     {
@@ -1577,6 +1614,7 @@ namespace stk {
       m_basisTable[shards::getCellTopologyData<Quadrilateral<9> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_FEM<double, MDArray >() );
 
       m_basisTable[shards::getCellTopologyData<Hexahedron<8> >()-> key]    = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<Hexahedron<20> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM<double, MDArray >() );
       m_basisTable[shards::getCellTopologyData<Hexahedron<27> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_FEM<double, MDArray >() );
 
       m_basisTable[shards::getCellTopologyData<Tetrahedron<4> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C1_FEM<double, MDArray >() );

@@ -1582,6 +1582,36 @@ namespace stk {
             { child_0 , child_1 , child_2 , child_3 ,
               child_4 , child_5 , child_6 , child_7  };
 
+          // for hex20 elements:
+          static const UInt hex20_child_0[] = { 0, 8, 21, 11, 12, 25, 20, 23,
+                                                27, 60, 67, 34, 35, 59, 79, 74, 51, 75, 77, 58 , EUA };
+
+          static const UInt hex20_child_1[] = { 8, 1, 9, 21, 25, 13, 24, 20,
+                                                28, 29, 68, 60, 59, 36, 69, 79, 52, 53, 78, 75 , EUA };
+
+          static const UInt hex20_child_2[] = { 21, 9, 2, 10, 20, 24, 14, 26,
+                                                68, 30, 31, 61, 79, 69, 37, 62, 78, 54, 55, 76 , EUA };
+
+          static const UInt hex20_child_3[] = { 11, 21, 10, 3, 23, 20, 26, 15,
+                                                67, 61, 32, 33, 74, 79, 62, 38, 77, 76, 56, 57 , EUA };
+
+          static const UInt hex20_child_4[] = { 12, 25, 20, 23, 4, 16, 22, 19,
+                                                51, 75, 77, 58, 39, 66, 80, 73, 43, 65, 72, 50 , EUA };
+
+          static const UInt hex20_child_5[] = { 25, 13, 24, 20, 16, 5, 17, 22,
+                                                52, 53, 78, 75, 66, 40, 70, 80, 44, 45, 71, 65 , EUA };
+
+          static const UInt hex20_child_6[] = { 20, 24, 14, 26, 22, 17, 6, 18,
+                                                78, 54, 55, 76, 80, 70, 41, 63, 71, 46, 47, 64 , EUA };
+
+          static const UInt hex20_child_7[] = { 23, 20, 26, 15, 19, 22, 18, 7,
+                                                77, 76, 56, 57, 73, 80, 63, 42, 72, 64, 48, 49 , EUA };
+
+          
+          static const UInt * hex20_child_node_table[]  =
+            { hex20_child_0 , hex20_child_1 , hex20_child_2 , hex20_child_3 ,
+              hex20_child_4 , hex20_child_5 , hex20_child_6 , hex20_child_7  };
+
 
 
           // Edge topology and node tables including edges' child-nodes
@@ -1642,8 +1672,38 @@ namespace stk {
           static const UInt * face_table[]  =
             { face_0 , face_1 , face_2 , face_3 , face_4 , face_5 };
 
+
+          // for hex20 elements
+          static const UInt hex20_face_0[] = { 0, 1, 5, 4,   8, 13, 16, 12,  25,
+                                         27, 28, 36, 40, 44, 43, 39, 35,
+                                         59, 52, 66, 51, EUA};
+
+          static const UInt hex20_face_1[] = { 1, 2, 6, 5,   9, 14, 17, 13,  24,
+                                         29, 30, 37, 41, 46, 45, 40, 36,
+                                         69, 54, 70, 53,  EUA};
+
+          static const UInt hex20_face_2[] = { 2, 3, 7, 6,  10, 15, 18, 14,  26,
+                                         31, 32, 38, 42, 48, 47, 41, 37,
+                                         62, 56, 63, 55,  EUA};
+
+          static const UInt hex20_face_3[] = { 0, 4, 7, 3, 12, 19, 15, 11,  23,
+                                         35, 39, 50, 49, 42, 38, 33, 34,
+                                         58, 73, 57, 74, EUA};
+
+          static const UInt hex20_face_4[] = { 0, 3, 2, 1,   11, 10, 9, 8,   21,
+                                         34, 33, 32, 31, 30, 29, 28, 27,
+                                         67, 61, 68, 60,  EUA};
+
+          static const UInt hex20_face_5[] = { 4, 5, 6, 7,  16, 17, 18, 19,  22,
+                                         43, 44, 45, 46, 47, 48, 49, 50,
+                                         65, 71, 64, 72,  EUA};
+
+          static const UInt * hex20_face_table[]  =
+            { hex20_face_0 , hex20_face_1 , hex20_face_2 , hex20_face_3 , hex20_face_4 , hex20_face_5 };
+
+
           static RefinementTopology hex8_refinement(&hex8, 8, hex8_child, 27, child_node_table, 12, edge_table, 6, face_table, 0, NULL, NULL, true);
-          static RefinementTopology hex20_refinement(&hex20, 8, hex20_child, 81, child_node_table, 12, edge_table, 6, face_table, 0, NULL, NULL, true);
+          static RefinementTopology hex20_refinement(&hex20, 8, hex20_child, 81, hex20_child_node_table, 12, edge_table, 6, hex20_face_table, 0, NULL, NULL, true);
           static RefinementTopology hex27_refinement(&hex27, 8, hex27_child, 125, child_node_table, 12, edge_table, 6, face_table, 0, NULL, NULL, true);
         }
       }
