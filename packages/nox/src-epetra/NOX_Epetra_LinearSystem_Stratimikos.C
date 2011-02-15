@@ -379,8 +379,24 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   postfixName += ".mm";
   if (p.get("Write Linear System", false)) {
     std::string lhsFileName = prefixName + "_LHS_" + postfixName;
+    std::string rhsFileName = prefixName + "_RHS_" + postfixName;
+    std::string jacFileName = prefixName + "_Jacobian_" + postfixName;
     EpetraExt::MultiVectorToMatrixMarketFile(lhsFileName.c_str(), 
-					   result.getEpetraVector());
+					     result.getEpetraVector());
+    EpetraExt::MultiVectorToMatrixMarketFile(rhsFileName.c_str(), 
+					     input.getEpetraVector());
+
+    Epetra_RowMatrix* printMatrix = NULL;
+    printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()); 
+    if (printMatrix == NULL) {
+      cout << "Error: NOX::Epetra::LinearSystemAztecOO::applyJacobianInverse() - "
+	   << "Could not cast the Jacobian operator to an Epetra_RowMatrix!"
+	   << "Please set the \"Write Linear System\" parameter to false."
+	   << endl;
+      throw "NOX Error";
+    }
+    EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix, 
+					   "test matrix", "Jacobian XXX");
   }
 #endif
 #endif
