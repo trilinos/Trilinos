@@ -185,6 +185,7 @@ namespace Cthulhu {
       // get a internodal communicator from the Platform
       const int myImageID = comm->getRank();
       
+      global_size_t global_sum;
       { // begin scoping block
         // for communicating failures 
         int localChecks[2], globalChecks[2];
@@ -195,7 +196,6 @@ namespace Cthulhu {
            + validate it against the sum of the local sizes, and
            + ensure that it is the same on all nodes
         */
-        global_size_t global_sum;
         Teuchos::reduceAll<int,global_size_t>(*comm,Teuchos::REDUCE_SUM,
                                               Teuchos::as<global_size_t>(numLocalElements),outArg(global_sum));
         /* there are three errors we should be detecting:
@@ -258,6 +258,11 @@ namespace Cthulhu {
           }
         }
         
+      }
+
+      // set numGlobalElements
+      if (numGlobalElements == GSTI) {
+        numGlobalElements = global_sum;
       }
 
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, numLocalElements, indexBase, *Teuchos2Epetra_Comm(comm))))));
