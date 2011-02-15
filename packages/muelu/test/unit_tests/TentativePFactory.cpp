@@ -52,25 +52,54 @@ TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentativeWithQR)
 
   Level fineLevel;
   fineLevel.SetLevelID(1);
-  RCP<CrsOperator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(12);
+  RCP<CrsOperator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(36);
   fineLevel.SetA(A);
 
   Level coarseLevel;
 
-  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),1);
-  nullSpace->putScalar( (SC) 1.0);
-  fineLevel.Save("Nullspace",nullSpace);
-  fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
-                                  //FIXME is implemented
+  // first iteration calls LAPACK QR
+  // second iteration (with only one NS vector) exercises manual orthogonalization
+  for (LO NSdim = 2; NSdim >= 1; --NSdim) {
+    //RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),1);
+    //nullSpace->putScalar( (SC) 1.0);
+    // create 3 nullspace vectors
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    nullSpace->randomize();
+    fineLevel.Save("Nullspace",nullSpace);
+    fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
+                                    //FIXME is implemented
+  
+    TentativePFactory::MakeTentativeWithQR(fineLevel,coarseLevel);
 
-  TentativePFactory::MakeTentativeWithQR(fineLevel,coarseLevel);
+    RCP<Operator> Ptent; 
+    coarseLevel.Examine("Ptent",Ptent);
+    //Ptent->describe(out,Teuchos::VERB_EXTREME);
 
-  RCP<MultiVector> coarseNullSpace; 
-  coarseLevel.Examine("Nullspace",coarseNullSpace);
-  out << *coarseNullSpace << std::endl;
+    RCP<MultiVector> coarseNullSpace; 
+    coarseLevel.Examine("Nullspace",coarseNullSpace);
+    //out << *coarseNullSpace << std::endl;
 
+    //check interpolation
+    RCP<MultiVector> PtN = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    Ptent->multiply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
 
-}
+    RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    diff->putScalar(0.0);
+
+    //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
+    diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
+
+    //out << *diff << std::endl;
+
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
+    diff->norm2(norms);
+    for (LO i=0; i<NSdim; ++i) {
+      out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
+      TEUCHOS_TEST_EQUALITY(norms[i]<1e-12, true, out, success);
+    }
+  } //for (LO NSdim = 1; NSdim <= 2; ++NSdim)
+
+} //MakeTentativeWithQR
 
 
 }//namespace <anonymous>

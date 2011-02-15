@@ -8,6 +8,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_PFactory.hpp"
 #include "Cthulhu_MultiVectorFactory.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 //FIXME this is a complete hack ... I am not proud
 #include "./ml_lapack.h"
@@ -150,6 +151,8 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       return Ptent;
     } //MakeTentative()
 
+typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+
     /*! @brief Make tentative prolongator with QR.
         FIXME once completed, this should replace MakeTentative
         FIXME I make no attempt to detect if the aggregate is too small to support the NS
@@ -169,8 +172,7 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
       Teuchos::RCP< Operator > fineA = fineLevel.GetA();
       GO nFineDofs = fineA->getGlobalNumRows();
-      GO nCoarseDofs = nFineDofs/3; //FIXME this should come from aggregation information
-      if (nCoarseDofs*3 != nFineDofs)
+      if ((nFineDofs/3)*3 != nFineDofs)
         throw(Exceptions::NotImplemented("MakeTentative: currently #fine DOFS must be a multiple of 3"));
 
       GO numAggs = nFineDofs / 3;  //FIXME  should come from aggregate class:
@@ -183,6 +185,8 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       else {
         throw(Exceptions::NotImplemented("MakeTentativeWithQR:  nullspace generation not implemented yet"));
       }
+      const size_t NSDim = fineNullspace->getNumVectors();
+      GO nCoarseDofs = numAggs*NSDim;
       // Create array of aggregate sizes.
       // TODO Should this come from aggregate class?
       ArrayRCP<GO> aggSizes(numAggs);
@@ -208,31 +212,28 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
         *a2r = ArrayRCP<GO>(aggSizes[t++]);
       for (GO i=0; i<nFineDofs; ++i) {
         GO myAgg = i/3; //TODO use aggregate class
-        printf("i=%d, myAgg = %d, numDofs[myAgg] = %d\n",i,myAgg, numDofs[myAgg]);
         aggToRowMap[myAgg][ numDofs[myAgg] ] = i;
         ++(numDofs[myAgg]);
       }
-//#ifdef MUELU_IN_PROGRESS
       // Allocate workspace for LAPACK QR routines.
-      const size_t fineNSDim = fineNullspace->getNumVectors();
-      ArrayRCP<SC> localQR(maxAggSize*fineNSDim);  // The submatrix of the nullspace to be orthogonalized.
-      LO      workSize = fineNSDim;            // Length of work. Must be at least dimension of nullspace.
+      ArrayRCP<SC> localQR(maxAggSize*NSDim);  // The submatrix of the nullspace to be orthogonalized.
+      LO      workSize = NSDim;            // Length of work. Must be at least dimension of nullspace.
                                             // QR may calculate better value, returned in work[0].
       ArrayRCP<SC> work(workSize);          // (in/out) work vector FIXME this should be min(M,N) where B=MxN
-      ArrayRCP<SC> tau(fineNSDim);          // (out) scalar factors of elementary reflectors, input to DORGQR
+      ArrayRCP<SC> tau(NSDim);          // (out) scalar factors of elementary reflectors, input to DORGQR
       LO      info;                         // (out) =0: success; =i, i<0: i-th argument has illegal value
 
       // Pull out the nullspace vectors so that we can have random access.
       // (Question -- do we have to do this?)
-      ArrayRCP< ArrayRCP<const SC> > fineNS(fineNSDim);
-      for (size_t i=0; i<fineNSDim; ++i)
+      ArrayRCP< ArrayRCP<const SC> > fineNS(NSDim);
+      for (size_t i=0; i<NSDim; ++i)
         fineNS[i] = fineNullspace->getData(i);
 
       //Allocate storage for the coarse nullspace.
       //FIXME create coarseMap here of size nCoarseDofs...
 
       //FIXME FIXME  FIXME  FIXME  FIXME  FIXME  FIXME 
-      LO indexBase=0;
+      LO indexBase=0; //TODO make this the same as fineA
       //FIXME this doesn't work for some reason
       //RCP<const Map > coarseMap = rcp( new Cthulhu::EpetraMap(Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(), nCoarseDofs,indexBase,fineA->getRowMap()->getComm()) );
 
@@ -240,10 +241,9 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       //FIXME call to work.
       RCP<const Map > coarseMap = rcp( new Cthulhu::EpetraMap(nCoarseDofs,indexBase,fineA->getRowMap()->getComm()) );
       //FIXME FIXME  FIXME  FIXME  FIXME  FIXME  FIXME 
-      RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap,fineNSDim);
-      const size_t coarseNSDim = coarseNullspace->getNumVectors();
-      ArrayRCP< ArrayRCP<SC> > coarseNS(coarseNSDim);
-      for (size_t i=0; i<coarseNSDim; ++i)
+      RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
+      ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);
+      for (size_t i=0; i<NSDim; ++i)
         coarseNS[i] = coarseNullspace->getDataNonConst(i);
 
       //Allocate temporary storage for the tentative prolongator.
@@ -251,11 +251,14 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       // FIXME we should be able to allocate something other than a CRS matrix
       ArrayRCP<GO> rowPtr(nFineDofs+1);
       for (GO i=0; i<=nFineDofs; ++i)
-        rowPtr[i] = i*fineNSDim;
-      ArrayRCP<GO> colPtr(nFineDofs*fineNSDim,0);
-      ArrayRCP<SC> valPtr(nFineDofs*fineNSDim,0.);
+        rowPtr[i] = i*NSDim;
+      ArrayRCP<GO> colPtr(nFineDofs*NSDim,0);
+      ArrayRCP<SC> valPtr(nFineDofs*NSDim,0.);
 
-      RCP<Operator> Ptent = rcp(new CrsOperator(fineA->getDomainMap(), fineNSDim));
+      RCP<Operator> Ptentative = rcp(new CrsOperator(fineA->getDomainMap(), NSDim));
+
+      //used in the case of just one nullspace vector
+      Teuchos::Array<Magnitude> norms(1);
 
       //TODO I wonder if it's more efficient to extract the nullspace in aggregate order all at once,
       //TODO instead of one aggregate at a time.
@@ -264,17 +267,11 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       //*****************************************************************
       for (LO agg=0; agg<numAggs; ++agg)
       {
-        //FIXME
-        //FIXME ML has a check to see if NS is dimension 1.  If so, it does a short circuit
-        //FIXME instead of calling DGEQRF_F77.
-        //FIXME We probably need such a check here.
-        //FIXME
-
         LO myAggSize = aggSizes[agg];
 
         // For each aggregate, extract the corresponding piece of the nullspace and put it in the flat array,
         // "localQR" (in column major format) for the QR routine.
-           for (size_t j=0; j<fineNSDim; ++j) {
+           for (size_t j=0; j<NSDim; ++j) {
              for (LO k=0; k<myAggSize; ++k) {
                 //aggToRowMap[agg][k] is the kth DOF in the ith aggregate
                 //fineNS[j][n] is the nth entry in the jth NS vector
@@ -282,9 +279,19 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
              } //for (LO k=0 ...
            } //for (LO j=0 ...
 
-        int intFineNSDim = fineNSDim;
-        DGEQRF_F77( &myAggSize, &intFineNSDim, localQR.getRawPtr(), &myAggSize,
-                    tau.getRawPtr(), work.getRawPtr(), &workSize, &info );
+        int intFineNSDim = NSDim;
+
+        if (NSDim == 1) {
+          //only one nullspace vector, so normalize by hand
+          fineNullspace->norm2(norms);
+          tau[0] = localQR[0];
+          localQR[0] = norms[0];
+        } else {
+          //Perform the QR.  Upon return, R is stored explicitly, Q is stored implicitly as product
+          //of reflection matrices.
+          DGEQRF_F77( &myAggSize, &intFineNSDim, localQR.getRawPtr(), &myAggSize,
+                      tau.getRawPtr(), work.getRawPtr(), &workSize, &info );
+        }
 
         if (info != 0) {
           std::ostringstream buf;
@@ -302,18 +309,27 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
           workSize = (int) work[0]; //TODO huh, think about this -- should it ever shrink?
 
         // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
-        for (size_t j=0; j<fineNSDim; ++j) {
-          for (LO i=j; i<myAggSize; ++i) {
-            coarseNS[j][i] = localQR[ myAggSize*j + i ];
+        // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be opposite intuition.
+        Cthulhu::global_size_t offset=agg*NSDim;
+        for (size_t j=0; j<NSDim; ++j) {
+          for (size_t k=0; k<=j; ++k) {
+            coarseNS[j][offset+k] = localQR[ myAggSize*j + k ];
           }
         }
 
-        // Extract Q, the tentative prolongator.  This requires calling a second LAPACK routine.
+        // Calculate Q, the tentative prolongator, explicitly.  This requires calling a second LAPACK routine.
 
-        //FIXME ML has another check here to see if have only one NS vector
-
-        DORGQR_F77( &myAggSize, &intFineNSDim, &intFineNSDim, localQR.getRawPtr(),
-                    &myAggSize, tau.getRawPtr(), work.getRawPtr(), &workSize, &info );
+        if (NSDim == 1) {
+          //again, only one nullspace vector, so calculate Q by hand
+          norms[0] = localQR[0];
+          localQR[0] = tau[0];
+          norms[0] = 1. / norms[0];
+          for (LO i=0; i<myAggSize; ++i)
+            localQR[i] *= norms[0];
+        } else {
+          DORGQR_F77( &myAggSize, &intFineNSDim, &intFineNSDim, localQR.getRawPtr(),
+                      &myAggSize, tau.getRawPtr(), work.getRawPtr(), &workSize, &info );
+        }
 
         if (info != 0) {
           std::ostringstream buf;
@@ -335,9 +351,9 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
         //in a CSR format.  This saves the entire Q factor as if it were dense.
         GO index;
         for (GO j=0; j<myAggSize; ++j) {
-          for (size_t k=0; k<fineNSDim; ++k) {
-            index = rowPtr[aggToRowMap[agg][j]+k];
-            colPtr[index] = agg * fineNSDim + k;
+          for (size_t k=0; k<NSDim; ++k) {
+            index = rowPtr[aggToRowMap[agg][j]]+k;
+            colPtr[index] = agg * NSDim + k;
             valPtr[index] = localQR[k*myAggSize+j];
           }
         }
@@ -367,28 +383,26 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       } //for (GO i=0...
 
       //Insert into the final tentative prolongator matrix.
-      //FIXME I don't know how to efficiently insert data into a matrix.
-      //FIXME In Epetra, you can use Views of data pointers.  In Tpetra, I don't know whether this can be done.
-      //FIXME So for right now, I just insert row by row.
+      //TODO I don't know how to efficiently insert data into a matrix.
+      //TODO In Epetra, you can use Views of data pointers.  In Tpetra, I don't know whether this can be done.
+      //TODO So for right now, I just insert row by row.
+      RCP<const Map> fineRowMap = fineA->getRowMap();
+      for (GO i=0; i<nFineDofs; ++i)
+      {
+        //j=rowPtr[i], j1 = rowPtr[i+1]
+        //columns are in colPtr[j] ... colPtr[j1]-1
+        //values are in valPtr[j] ... valPtr[j1]-1
+        GO start = rowPtr[i];
+        GO nnz = rowPtr[i+1] - rowPtr[i];
+        Ptentative->insertGlobalValues(fineRowMap->getGlobalElement(i),
+                                      colPtr.view(start,nnz),
+                                      valPtr.view(start,nnz));
+      }
 
+      Ptentative->fillComplete(coarseMap,fineA->getRangeMap());
 
-      //TODO insert the data into Ptent ...
-      //TODO save the coarse NS in the coarse Level
       coarseLevel.Save("Nullspace",coarseNullspace);
-
-      /*
-        allocate lapack work vectors (DONE)
-        get the fine nullspace NS (DONE)
-        for each aggregate
-
-           load the corresponding part of the NS in column major format into a 1D array (DONE)
-           
-           do the QR on this array (DONE)
-
-           move Q to Ptent
-           move R to coarse NS (DONE)
-      */
-//#endif //ifdef MUELU_IN_PROGRESS
+      coarseLevel.Save("Ptent",Ptentative);
 
     } //MakeTentativeWithQR()
 
