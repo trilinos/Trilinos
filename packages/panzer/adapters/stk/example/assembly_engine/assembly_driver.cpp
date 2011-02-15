@@ -113,6 +113,7 @@ int main(int argc,char * argv[])
    panzer::InputPhysicsBlock ipb;
    std::vector<panzer::BC> bcs;
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+   std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
    {
       std::map<std::string,panzer::InputPhysicsBlock> physics_id_to_input_physics_blocks;
       std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -130,6 +131,11 @@ int main(int argc,char * argv[])
                              base_cell_dimension, workset_size,
 	                     eqset_factory,
                              physicsBlocks);
+
+      for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
+	   block != block_ids_to_physics_ids.end(); ++block)
+	eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
+
    }
 
    // finish building mesh, set required field variables and mesh bulk data
@@ -163,14 +169,14 @@ int main(int argc,char * argv[])
    // build worksets
    out << "BUILD WORKSETS" << std::endl;
    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-         volume_worksets = panzer_stk::buildWorksets(*mesh, ipb, workset_size);
+         volume_worksets = panzer_stk::buildWorksets(*mesh, eb_id_to_ipb, workset_size);
 
    out << "block count = " << volume_worksets.size() << std::endl;
    out << "workset count = " << volume_worksets["eblock-0_0"]->size() << std::endl;
    
    out << "BUILD BC WORKSETS" << std::endl;
    std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> 
-         bc_worksets = panzer_stk::buildBCWorksets(*mesh,ipb,bcs);
+         bc_worksets = panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
 
    // build DOF Manager
    /////////////////////////////////////////////////////////////

@@ -79,20 +79,13 @@ namespace panzer {
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
 
-    // build worksets
-    //////////////////////////////////////////////////////////////
-    const std::size_t workset_size = 20;
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-      volume_worksets = panzer_stk::buildWorksets(*mesh,ipb, workset_size);
-
-    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
-       = panzer_stk::buildBCWorksets(*mesh,ipb,bcs);
-
     // build physics blocks
     //////////////////////////////////////////////////////////////
+    const std::size_t workset_size = 20;
     user_app::MyFactory eqset_factory;
     user_app::BCFactory bc_factory;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
 
     {
       std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -102,12 +95,24 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
+       for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
+	    block != block_ids_to_physics_ids.end(); ++block)
+	 eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
+
       fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
                               physics_id_to_input_physics_blocks,
                               Teuchos::as<int>(mesh->getDimension()), workset_size,
                               eqset_factory,
                               physicsBlocks);
     }
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
+      volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
+
+    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
+       = panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
 
    // build DOF Manager
    /////////////////////////////////////////////////////////////

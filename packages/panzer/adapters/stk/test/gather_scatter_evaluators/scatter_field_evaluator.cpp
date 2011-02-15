@@ -107,8 +107,11 @@ namespace panzer {
 
     // build worksets
     //////////////////////////////////////////////////////////////
+    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
+    eb_id_to_ipb["eblock-0_0"] = ipb;
+    
     std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-      volume_worksets = panzer_stk::buildWorksets(*mesh,ipb, workset_size);
+      volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
 
     panzer::Traits::SetupData sd;
     sd.worksets_ = volume_worksets["eblock-0_0"];

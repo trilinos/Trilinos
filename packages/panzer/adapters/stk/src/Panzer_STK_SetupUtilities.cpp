@@ -1,12 +1,12 @@
 #include "Panzer_STK_SetupUtilities.hpp"
-
 #include "Panzer_Workset_Builder.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace panzer_stk { 
 
 std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
 buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::InputPhysicsBlock & ipb, 
+              const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb, 
               const std::size_t workset_size)
 {
   using namespace workset_utils;
@@ -25,6 +25,14 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 
     getIdsAndVertices(mesh, element_blocks[i], local_cell_ids, 
 				cell_vertex_coordinates);
+
+    std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_iterator = 
+      eb_to_ipb.find(element_blocks[i]);
+    
+    TEST_FOR_EXCEPTION(ipb_iterator == eb_to_ipb.end(), std::logic_error,
+		       "Could not find input physics block corresponding to region");
+
+    const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
 
     // only build workset if there are elements to worry about
     // this may be processor dependent, so an element block
@@ -45,7 +53,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 
 const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::InputPhysicsBlock & ipb,
+                const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb,
                 const std::vector<panzer::BC> & bcs) 
 {
   using namespace workset_utils;
@@ -78,6 +86,14 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
 	
 	local_cell_ids.push_back(mesh.elementLocalId(element));
     }
+
+    std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_iterator = 
+      eb_to_ipb.find(bc->elementBlockID());
+    
+    TEST_FOR_EXCEPTION(ipb_iterator == eb_to_ipb.end(), std::logic_error,
+		       "Could not find input physics block corresponding to region");
+
+    const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
 
     // only build workset if there are elements to worry about
     // this may be processor dependent, so a defined boundary
