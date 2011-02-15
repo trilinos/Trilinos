@@ -151,16 +151,13 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       return Ptent;
     } //MakeTentative()
 
-typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
     /*! @brief Make tentative prolongator with QR.
         FIXME once completed, this should replace MakeTentative
         FIXME I make no attempt to detect if the aggregate is too small to support the NS
-
-        Assumptions I'm making right now:
-        
-        - perfect aggregates of size 3
-
+        FIXME This needs to use Jeremie's Aggregate class.
+        FIXME Aggregates of size 3 are hard-wired in. (AFAIK, no assumptions of size 3, however.)
     */
     //FIXME return Operator instead of void
     //static RCP<Operator> MakeTentativeWithQR(Level &fineLevel, Level &coarseLevel)
@@ -216,12 +213,13 @@ typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
         ++(numDofs[myAgg]);
       }
       // Allocate workspace for LAPACK QR routines.
-      ArrayRCP<SC> localQR(maxAggSize*NSDim);  // The submatrix of the nullspace to be orthogonalized.
-      LO      workSize = NSDim;            // Length of work. Must be at least dimension of nullspace.
-                                            // QR may calculate better value, returned in work[0].
-      ArrayRCP<SC> work(workSize);          // (in/out) work vector FIXME this should be min(M,N) where B=MxN
-      ArrayRCP<SC> tau(NSDim);          // (out) scalar factors of elementary reflectors, input to DORGQR
-      LO      info;                         // (out) =0: success; =i, i<0: i-th argument has illegal value
+      ArrayRCP<SC> localQR(maxAggSize*NSDim); // The submatrix of the nullspace to be orthogonalized.
+      LO           workSize = NSDim;          // Length of work. Must be at least dimension of nullspace.
+                                              // LAPACK may calculate better value, returned in work[0].
+      ArrayRCP<SC> work(workSize);            // (in/out) work vector
+                                              // FIXME DGEQRF documentation says this should be min(M,N) where B=MxN
+      ArrayRCP<SC> tau(NSDim);                // (out) scalar factors of elementary reflectors, input to DORGQR
+      LO           info=0;                      // (out) =0: success; =i, i<0: i-th argument has illegal value
 
       // Pull out the nullspace vectors so that we can have random access.
       // (Question -- do we have to do this?)
@@ -230,25 +228,19 @@ typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
         fineNS[i] = fineNullspace->getData(i);
 
       //Allocate storage for the coarse nullspace.
-      //FIXME create coarseMap here of size nCoarseDofs...
+      LO indexBase=fineA->getRowMap()->getIndexBase();
+      //FIXME We shouldn't rely explicitly on EpetraMap
+      RCP<const Map > coarseMap = rcp( new Cthulhu::EpetraMap(Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(),
+                                                              nCoarseDofs,indexBase,fineA->getRowMap()->getComm())       );
 
-      //FIXME FIXME  FIXME  FIXME  FIXME  FIXME  FIXME 
-      LO indexBase=0; //TODO make this the same as fineA
-      //FIXME this doesn't work for some reason
-      //RCP<const Map > coarseMap = rcp( new Cthulhu::EpetraMap(Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(), nCoarseDofs,indexBase,fineA->getRowMap()->getComm()) );
-
-      //FIXME this will fail in parallel, because nCoarseDofs is a local value, and I can't get the above
-      //FIXME call to work.
-      RCP<const Map > coarseMap = rcp( new Cthulhu::EpetraMap(nCoarseDofs,indexBase,fineA->getRowMap()->getComm()) );
-      //FIXME FIXME  FIXME  FIXME  FIXME  FIXME  FIXME 
       RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
       ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);
       for (size_t i=0; i<NSDim; ++i)
         coarseNS[i] = coarseNullspace->getDataNonConst(i);
 
       //Allocate temporary storage for the tentative prolongator.
-      // FIXME Right now, this is stored as a point matrix.
-      // FIXME we should be able to allocate something other than a CRS matrix
+      // TODO Right now, this is stored as a point matrix.
+      // TODO we should be able to allocate something other than a CRS matrix
       ArrayRCP<GO> rowPtr(nFineDofs+1);
       for (GO i=0; i<=nFineDofs; ++i)
         rowPtr[i] = i*NSDim;
@@ -260,8 +252,8 @@ typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
       //used in the case of just one nullspace vector
       Teuchos::Array<Magnitude> norms(1);
 
-      //TODO I wonder if it's more efficient to extract the nullspace in aggregate order all at once,
-      //TODO instead of one aggregate at a time.
+      //TODO Is it more efficient to extract the nullspace in aggregate order all at once,
+      //TODO instead of one aggregate at a time?
       //*****************************************************************
       //Loop over all aggregates and calculate local QR decompositions.
       //*****************************************************************
@@ -309,7 +301,7 @@ typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
           workSize = (int) work[0]; //TODO huh, think about this -- should it ever shrink?
 
         // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
-        // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be opposite intuition.
+        // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
         Cthulhu::global_size_t offset=agg*NSDim;
         for (size_t j=0; j<NSDim; ++j) {
           for (size_t k=0; k<=j; ++k) {
