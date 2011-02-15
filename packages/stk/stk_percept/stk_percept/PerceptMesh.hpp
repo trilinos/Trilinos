@@ -163,6 +163,7 @@ namespace stk {
 
       /// reads the given file into a temporary model and prints info about it
       void dump(const std::string& file="");
+      void dumpElements();
 
       unsigned getRank() { return getBulkData()->parallel_rank(); }
       unsigned getParallelSize() { return getBulkData()->parallel_size(); }

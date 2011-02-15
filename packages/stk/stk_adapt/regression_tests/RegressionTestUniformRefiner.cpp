@@ -59,6 +59,13 @@ namespace stk
 
 #define EXTRA_PRINT 0
 
+      static void output_draw(std::string filename, std::string toFile)
+      {
+        std::ofstream file(filename.c_str());
+        file << toFile;
+      }
+
+
 
       //======================================================================================================================
       //======================================================================================================================
@@ -69,7 +76,138 @@ namespace stk
       //======================================================================================================================
 
 
+#if 1
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+      TEST(unit_uniformRefiner, draw1)
+      {
+        //std::cout << Quad4_Quad4_4::draw() << std::endl;
+        std::string dir = "./";
+        output_draw(dir+"quad4.dot", Quad4_Quad4_4::draw(true) );
+        output_draw(dir+"tet4.dot",  Tet4_Tet4_8::draw() );
+        output_draw(dir+"hex8.dot",  Hex8_Hex8_8::draw(true) );
+        output_draw(dir+"hex27.dot",  Hex27_Hex27_8::draw(true, true) );
+        output_draw(dir+"hex20.dot",  Hex20_Hex20_8::draw(true, true) );
+        output_draw(dir+"wedge6.dot",  Wedge6_Wedge6_8::draw() );
 
+        output_draw(dir+"quad9.dot", Quad9_Quad9_4::draw(true, true));
+      }
+
+      TEST(regr_uniformRefiner, hex8_hex20_1_1)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        // start_demo_uniformRefiner_hex8_hex20_1_1
+
+        percept::PerceptMesh eMesh;
+
+        unsigned p_size = eMesh.getParallelSize();
+
+        std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
+        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+
+        Hex8_Hex20_1 break_hex_to_hex(eMesh);
+
+        int scalarDimension = 0; // a scalar
+        FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+        eMesh.commit();
+        eMesh.printInfo();
+        eMesh.saveAs(std::string("./output_files/")+std::string("hex8_hex20_cube1x1x")+toString(p_size)+std::string("-orig.e"));
+
+        UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+        breaker.setRemoveOldElements(true);
+
+        breaker.doBreak();
+
+        eMesh.saveAs(std::string("./output_files/")+std::string("hex8_hex20_cube1x1x")+toString(p_size)+std::string(".e"));
+        eMesh.saveAs(std::string("./input_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
+
+        // end_demo
+
+      }
+
+      TEST(regr_uniformRefiner, hex20_hex20_1)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        // start_demo_uniformRefiner_hex20_hex20_1
+
+        percept::PerceptMesh eMesh;
+
+        unsigned p_size = eMesh.getParallelSize();
+
+        if (p_size <= 3)
+          {
+            eMesh.open(std::string("./input_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
+
+            Hex20_Hex20_8 break_hex_to_hex(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+            eMesh.saveAs(std::string("./output_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
+
+            UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+            breaker.setRemoveOldElements(true);
+
+            breaker.doBreak();
+
+            eMesh.saveAs(std::string("./output_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_1.e"));
+          }
+
+        // end_demo
+
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, hex20_hex20_1_2)
+      {
+        EXCEPTWATCH;
+        if (1) return;
+
+
+        // start_demo_uniformRefiner_hex20_hex20_1_2
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size == 1 || p_size == 3)
+          {
+            percept::PerceptMesh eMesh;
+
+            eMesh.open("./input_files/cylinder_hex20_hex20_0.e");
+
+            Hex20_Hex20_8 break_hex_to_hex(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+            eMesh.saveAs("./output_files/cylinder_hex20_hex20_0.e");
+
+            UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            eMesh.saveAs("./output_files/cylinder_hex20_hex20_1.e");
+
+
+            // end_demo
+          }
+        exit(123);
+
+      }
+
+#endif
 
       //======================================================================================================================
       //======================================================================================================================
@@ -136,6 +274,7 @@ namespace stk
             Quad8_Quad8_4            :: printRefinementTopoX_Table(file);
             Quad9_Quad9_4            :: printRefinementTopoX_Table(file);
             Hex27_Hex27_8            :: printRefinementTopoX_Table(file);
+            Hex20_Hex20_8            :: printRefinementTopoX_Table(file);
             Tet10_Tet10_8            :: printRefinementTopoX_Table(file);
 #endif
             file << "#endif" << std::endl;
@@ -256,12 +395,6 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      static void output_draw(std::string filename, std::string toFile)
-      {
-        std::ofstream file(filename.c_str());
-        file << toFile;
-      }
-
       TEST(unit_uniformRefiner, draw)
       {
         //std::cout << Quad4_Quad4_4::draw() << std::endl;
@@ -270,6 +403,9 @@ namespace stk
         output_draw(dir+"tet4.dot",  Tet4_Tet4_8::draw() );
         output_draw(dir+"hex8.dot",  Hex8_Hex8_8::draw(true) );
         output_draw(dir+"wedge6.dot",  Wedge6_Wedge6_8::draw() );
+
+        output_draw(dir+"quad9.dot", Quad9_Quad9_4::draw(true));
+
         // refine
 #if 0
         std::cout << Line2_Line2_2::draw() << std::endl;
@@ -1534,6 +1670,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
+#if 0
       TEST(regr_uniformRefiner, hex8_hex20_1_1)
       {
         EXCEPTWATCH;
@@ -1563,11 +1700,14 @@ namespace stk
         breaker.doBreak();
 
         eMesh.saveAs(std::string("./output_files/")+std::string("hex8_hex20_cube1x1x")+toString(p_size)+std::string(".e"));
+        eMesh.saveAs(std::string("./input_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
+
 
         // end_demo
 
       }
 
+#endif
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
@@ -1601,6 +1741,7 @@ namespace stk
             breaker.doBreak();
 
             eMesh.saveAs("./output_files/cylinder_hex20_1.e");
+            eMesh.saveAs("./input_files/cylinder_hex20_hex20_0.e");
 
 
             // end_demo
@@ -1779,8 +1920,6 @@ namespace stk
             FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
 
             eMesh.commit();
-            //eMesh.printInfo();
-            //eMesh.saveAs("./output_files/cylinder_hex20_0.e");
 
             UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
@@ -1832,8 +1971,6 @@ namespace stk
             FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
 
             eMesh.commit();
-            //eMesh.printInfo();
-            //eMesh.saveAs("./output_files/cylinder_hex20_0.e");
 
             UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();

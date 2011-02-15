@@ -68,7 +68,8 @@ namespace stk {
       {
         needed_entities.resize(2);
         needed_entities[0] = NeededEntityType(stk::mesh::Edge, 3u);
-        needed_entities[1] = NeededEntityType( (m_eMesh.getSpatialDim() == 2 ? stk::mesh::Element : stk::mesh::Face), 5u);
+        //needed_entities[1] = NeededEntityType( (m_eMesh.getSpatialDim() == 2 ? stk::mesh::Element : stk::mesh::Face), 5u);
+        needed_entities[1] = NeededEntityType( (m_eMesh.getSpatialDim() == 2 ? stk::mesh::Element : stk::mesh::Face), 9u);
       }
 
       virtual unsigned getNumNewElemPerElem() { return 4; }
