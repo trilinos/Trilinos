@@ -43,7 +43,7 @@ TEUCHOS_UNIT_TEST(TentativePFactory, SetGetMethods)
 //TODO test BuildP
 //TODO test MakeTentative
 
-TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentativeWithQR)
+TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentative)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -69,7 +69,7 @@ TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentativeWithQR)
     fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                     //FIXME is implemented
   
-    TentativePFactory::MakeTentativeWithQR(fineLevel,coarseLevel);
+    TentativePFactory::MakeTentative(fineLevel,coarseLevel);
 
     RCP<Operator> Ptent; 
     coarseLevel.Examine("Ptent",Ptent);
@@ -99,7 +99,7 @@ TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentativeWithQR)
     }
   } //for (LO NSdim = 1; NSdim <= 2; ++NSdim)
 
-} //MakeTentativeWithQR
+} //MakeTentative
 
 
 }//namespace <anonymous>

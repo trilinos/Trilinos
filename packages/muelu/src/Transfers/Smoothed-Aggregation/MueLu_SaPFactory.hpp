@@ -108,7 +108,11 @@ class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, L
         std::cout << "nullspace generation not implemented yet" << std::endl;
       }
 
-      RCP<Operator> Ptent = TentativePFactory::MakeTentative(fineLevel);
+      coarseLevel.Request("Ptent");
+      coarseLevel.Request("Nullspace");
+      TentativePFactory::MakeTentative(fineLevel,coarseLevel);
+      RCP<Operator> Ptent;
+      coarseLevel.CheckOut("Ptent",Ptent);
       RCP<MultiVector> coarseNullspace;
       if (reUsePtent_) {
         try {

@@ -9,25 +9,7 @@
 #include "MueLu_PFactory.hpp"
 #include "Cthulhu_MultiVectorFactory.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-
-//FIXME this is a complete hack ... I am not proud
-#include "./ml_lapack.h"
-
-//FIXME these should be added to the Teuchos BLAS wrappers
-#if defined(INTEL_CXML)
-#  define BLAS_PREFIX __stdcall
-#else
-#  define BLAS_PREFIX
-#endif
-#define DGEQRF_F77  F77_BLAS_MANGLE(dgeqrf,DGEQRF)
-#define DORGQR_F77  F77_BLAS_MANGLE(dorgqr,DORGQR)
-
-void BLAS_PREFIX DGEQRF_F77(int *, int *, double *, int *,
-                 double *, double *, int *, int *);
-
-void BLAS_PREFIX DORGQR_F77(int *m, int *n, int *k, double * a,
-                 int *lda, double *tau, double *work, int *lwork,
-                 int *info);
+#include "Teuchos_LAPACK.hpp"
 
 namespace MueLu {
 
@@ -106,11 +88,12 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
                 this.GetOutputLevel(), Specs, ...
                 this.ReUseAggregates(), this.ReUseGraph());
 */
-      RCP<Operator> Ptent = MakeTentative(fineLevel);
-      if (coarseLevel.IsRequested("Ptent"))
-        coarseLevel.Save("Ptent",Ptent);
-      coarseLevel.SetP(Ptent);
+      coarseLevel.Request("Ptent");
+      MakeTentative(fineLevel,coarseLevel);
       //coarseLevel.Save("nullspace",cnull);
+      RCP<Operator> Ptent;
+      coarseLevel.CheckOut("Ptent",Ptent);
+      coarseLevel.SetP(Ptent);
 
       return true;
     }
@@ -118,12 +101,12 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
     //! @name Static methods.
     //@{
-    /*! @brief Make tenative prolongator.
+    /*! @brief Make tentative prolongator.
         TODO this signature does not match MueMat
     */
-    static RCP<Operator> MakeTentative(Level const &currentLevel)
+    static void MakeTentativeOldVersion(Level const &fineLevel, Level &coarseLevel)
     {
-      Teuchos::RCP< Operator > Op = currentLevel.GetA();
+      Teuchos::RCP< Operator > Op = fineLevel.GetA();
       GO nFineDofs = Op->getGlobalNumRows();
       GO nCoarseDofs = nFineDofs/3;
       if (nCoarseDofs*3 != nFineDofs)
@@ -148,7 +131,7 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 #endif
 
       //MatrixPrint(Op);
-      return Ptent;
+      coarseLevel.Save("Ptent",Ptent);
     } //MakeTentative()
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
@@ -161,7 +144,7 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
     */
     //FIXME return Operator instead of void
     //static RCP<Operator> MakeTentativeWithQR(Level &fineLevel, Level &coarseLevel)
-    static void MakeTentativeWithQR(Level &fineLevel, Level &coarseLevel)
+    static void MakeTentative(Level &fineLevel, Level &coarseLevel)
     {
       using Teuchos::ArrayRCP;
 
@@ -180,7 +163,11 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       if (fineLevel.IsSaved("Nullspace"))
         fineLevel.CheckOut("Nullspace",fineNullspace);
       else {
-        throw(Exceptions::NotImplemented("MakeTentativeWithQR:  nullspace generation not implemented yet"));
+        //throw(Exceptions::NotImplemented("MakeTentativeWithQR:  nullspace generation not implemented yet"));
+        //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
+        fineNullspace = MultiVectorFactory::Build(fineA->getDomainMap(),1);
+        fineNullspace->putScalar(1.0);
+        fineLevel.Save("Nullspace",fineNullspace);
       }
       const size_t NSDim = fineNullspace->getNumVectors();
       GO nCoarseDofs = numAggs*NSDim;
@@ -252,6 +239,8 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       //used in the case of just one nullspace vector
       Teuchos::Array<Magnitude> norms(1);
 
+      Teuchos::LAPACK<LO,SC> lapack;
+
       //TODO Is it more efficient to extract the nullspace in aggregate order all at once,
       //TODO instead of one aggregate at a time?
       //*****************************************************************
@@ -281,8 +270,8 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
         } else {
           //Perform the QR.  Upon return, R is stored explicitly, Q is stored implicitly as product
           //of reflection matrices.
-          DGEQRF_F77( &myAggSize, &intFineNSDim, localQR.getRawPtr(), &myAggSize,
-                      tau.getRawPtr(), work.getRawPtr(), &workSize, &info );
+          lapack.GEQRF( myAggSize, intFineNSDim, localQR.getRawPtr(), myAggSize,
+                      tau.getRawPtr(), work.getRawPtr(), workSize, &info );
         }
 
         if (info != 0) {
@@ -319,8 +308,8 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
           for (LO i=0; i<myAggSize; ++i)
             localQR[i] *= norms[0];
         } else {
-          DORGQR_F77( &myAggSize, &intFineNSDim, &intFineNSDim, localQR.getRawPtr(),
-                      &myAggSize, tau.getRawPtr(), work.getRawPtr(), &workSize, &info );
+          lapack.ORGQR( myAggSize, intFineNSDim, intFineNSDim, localQR.getRawPtr(),
+                        myAggSize, tau.getRawPtr(), work.getRawPtr(), workSize, &info );
         }
 
         if (info != 0) {
