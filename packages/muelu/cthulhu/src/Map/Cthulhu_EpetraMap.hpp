@@ -265,7 +265,7 @@ namespace Cthulhu {
         numGlobalElements = global_sum;
       }
 
-      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, numLocalElements, indexBase, *Teuchos2Epetra_Comm(comm))))));
+      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, numLocalElements, 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
     }
         
     /** \brief EpetraMap constructor with user-defined non-contiguous (arbitrary) distribution.
