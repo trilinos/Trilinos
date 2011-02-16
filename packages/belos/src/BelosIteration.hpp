@@ -49,9 +49,11 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 
+#include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+
 
 namespace Belos {
 
