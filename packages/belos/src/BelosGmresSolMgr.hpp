@@ -46,7 +46,10 @@
 /// \author Mark Hoemmen
 /// \brief Solver manager for CA-GMRES and standard GMRES.
 
+#include <BelosOutputManager.hpp>
 #include <BelosSolverManager.hpp>
+#include <BelosStatusTestGenResNorm.hpp>
+#include <BelosStatusTestOutputFactory.hpp>
 #include <BelosOrthoManagerFactory.hpp>
 //#include <Teuchos_ScalarTraits.hpp>
 
@@ -85,13 +88,14 @@ namespace Belos {
     /// \brief Preferred constructor.
     ///
     /// \param problem [in/out] The linear problem to solve.
-    /// \param params [in] Parameters for the solve.
-    GmresSolMgr (const Teuchos::RCP<LinearProblem<Scalar,MV,OP>& problem,
-		 const Teuchos::RCP<const Teuchos::ParameterList>& params) : 
-      problem_ (validatedProblem (problem)),
-      params_ (params.is_null() ? getDefaultParameters() : params)
+    /// \param params [in] Parameters for the solve.  This is 
+    ///   a pointer to nonconst only because the SolutionManager
+    ///   interface demands it (more or less...).
+    GmresSolMgr (const Teuchos::RCP<LinearProblem<Scalar,MV,OP> >& problem,
+		 const Teuchos::RCP<Teuchos::ParameterList>& params) : 
+      problem_ (validatedProblem (problem))
     { 
-      setParameters (params_);
+      setParameters (params);
     }
 
     //! Destructor, defined virtual for safe inheritance.
@@ -198,21 +202,45 @@ namespace Belos {
 
     /// \brief Reset the solver manager.
     ///
-    /// "Reset" in this context means that the solver should prepare
-    /// for the next call to \c solve() by resetting certain aspects
-    /// of the iterative solver strategy.
+    /// "Reset" with type = Belos::Problem means the following:
+    /// - Tell the LinearProblem instance to recompute initial
+    ///   residual(s) (both left-preconditioned, if applicable, and
+    ///   unpreconditioned) with its stored current approximate
+    ///   solution
+    /// - Restart GMRES, using the newly (re)computed residual
+    ///   vector(s).
     ///
-    /// \param type [in] The type of reset to perform.
-    /// 
-    void reset (const ResetType type) {
-      if (type == Belos::Problem)
-	// TODO (mfh 15 Feb 2011) Restart GMRES, etc.
-	;
-      else if (type == Belos::RecycleSubspace)
+    /// This method does not currently support values of type for
+    /// which (type & Belos::RecycleSubspace) != 0.
+    ///
+    /// \param type [in] The type of reset to perform.  Only type =
+    ///   Belos::Problem is currently supported.
+    void 
+    reset (const ResetType type) 
+    {
+      if ((type & Belos::RecycleSubspace) != 0)
 	// TODO (mfh 15 Feb 2011) Do we want to support recycling GMRES here?
 	throw std::invalid_argument ("This version of the GMRES solution "
 				     "manager does not currently support "
 				     "Krylov subspace recycling.");
+      else if ((type & Belos::Problem) != 0)
+	{ // Invalidate the current approximate solution, recheck
+	  // validity of the linear poblem to solve, and recompute the
+	  // initial residual(s) (both left-preconditioned (if
+	  // applicable) and unpreconditioned).
+	  if (! problem_.is_null())
+	    (void) problem_->setProblem();
+	    
+	  // TODO (mfh 15 Feb 2011) Restart GMRES, etc.
+	}
+      else
+	{
+	  std::ostringstream os;
+	  os << "GmresSolMgr::reset(): Invalid ResetType argument type = " 
+	     << type << ".  Currently, this method only accepts accept type = "
+	    "Belos::Problem (== " << Belos::Problem << ").";
+	  throw std::invalid_argument (os.str());
+	}
     }
     //@}
 
@@ -232,9 +260,9 @@ namespace Belos {
     ///   (the linear problem was not thusly solved).
     ReturnType solve() {
       // Reset the status test output.
-      outputTest_->reset();
+      outTest_->reset();
       // Reset the number of calls about which the status test output knows.
-      outputTest_->resetNumCalls();
+      outTest_->resetNumCalls();
 
 
       // TODO (mfh 15 Feb 2011) This method should of course invoke
@@ -265,7 +293,7 @@ namespace Belos {
     Teuchos::RCP<StatusTest<Scalar,MV,OP> > userStatusTest_;
 
     //! "Status test" that outputs intermediate iteration results.
-    Teuchos::RCP<StatusTestOutput<Scalar,MV,OP> > outputTest_;
+    Teuchos::RCP<StatusTestOutput<Scalar,MV,OP> > outTest_;
 
     //! The orthogonalization method to use for GMRES.
     Teuchos::RCP<Belos::OrthoManager<Scalar, MV> > orthoMan_;
@@ -279,7 +307,7 @@ namespace Belos {
     static Teuchos::RCP<LinearProblem<Scalar, MV, OP> >
     validatedProblem (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem)
     {
-      const int numRHS = MVT::GetNumberVecs (problem.getRHS());
+      const int numRHS = MVT::GetNumberVecs (*(problem->getRHS()));
       TEST_FOR_EXCEPTION(! problem.is_null() && numRHS != 1,
 			 std::invalid_argument,
 			 "Currently, GmresSolMgr only knows how to solve linear "
@@ -416,7 +444,7 @@ namespace Belos {
   {
     using Teuchos::RCP;
 
-    TEST_FOR_EXCEPTIION(outMan.is_null(), std::logic_error,
+    TEST_FOR_EXCEPTION(outMan.is_null(), std::logic_error,
 			"Construction / reinitialization of the output status "
 			"test depends on the OutputManager being initialized, "
 			"but it has not yet been initialized.");
@@ -483,8 +511,8 @@ namespace Belos {
     // norm to determine if convergence was achieved.  It is less
     // expensive than the "explicit" residual test.
     RCP<res_norm_test> implicitTest (new res_norm_test (convTol, defQuorum));
-    implicitTest->defineScaleForm (stringToScaleType (implicitScaleType, 
-						      Belos::TwoNorm));
+    implicitTest->defineScaleForm (stringToScaleType (implicitScaleType), 
+				   Belos::TwoNorm);
     implicitTest->setShowMaxResNormOnly (showMaxResNormOnly);
 
     // If there's a left preconditioner, create a combined status
@@ -492,13 +520,13 @@ namespace Belos {
     // residual norm, requiring that both have converged to within
     // the specified tolerance.  Otherwise, we only perform the
     // "implicit" test.
-    RCP<res_norm_type> explicitTest;
+    RCP<res_norm_test> explicitTest;
     if (haveLeftPreconditioner) // ! problem_->getLeftPrec().is_null()
       {
 	explicitTest = rcp (new res_norm_test (convTol, defQuorum));
 	explicitTest->defineResForm (res_norm_test::Explicit, Belos::TwoNorm);
-	explicitTest->defineScaleForm (stringToScaleType (explicitScaleType, 
-							  Belos::TwoNorm));
+	explicitTest->defineScaleForm (stringToScaleType (explicitScaleType),
+				       Belos::TwoNorm);
 	explicitTest->setShowMaxResNormOnly (showMaxResNormOnly);
       }
     // The "final" convergence test: 
@@ -539,6 +567,7 @@ namespace Belos {
     if (defaultParams.is_null())
       {
 	RCP<ParameterList> params = parameterList();
+	params->setName ("GmresSolMgr");
 	//
 	// The OutputManager only depends on the verbosity and the
 	// output stream.
@@ -632,11 +661,33 @@ namespace Belos {
   setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     using Teuchos::Exceptions::InvalidParameter;
+    using Teuchos::null;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
+    using Teuchos::rcp;
 
     RCP<const ParameterList> defaultParams = getDefaultParameters();
-    RCP<ParameterList> actualParams = Teuchos::parameterList();
+    RCP<ParameterList> actualParams;
+    if (params.is_null())
+      actualParams = rcp(*defaultParams);
+    else
+      { // Make a deep copy of the given parameter list.  This ensures
+	// that the solver's behavior won't change, even if users
+	// modify params later on.  Users _must_ invoke
+	// setParameters() in order to change the solver's behavior.
+	actualParams = rcp(*params);
+	// Fill in default values for parameters that aren't provided,
+	// and make sure that all the provided parameters' values are
+	// correct.
+	actualParams->validateParametersAndSetDefaults (*defaultParams);
+      }
+
+    // Use the given name if one was provided, otherwise name the
+    // parameter list appropriately.
+    if (params.is_null() || params->name() == "" || params->name() == "ANONYMOUS")
+      actualParams->setName (defaultParams->name());
+    else
+      actualParams->setName (params->name());
 
     // Changing certain parameters may require resetting the solver.
     // Of course we have to (re)set the solver if there's no linear
@@ -699,7 +750,7 @@ namespace Belos {
       // we later get a problem to solve, just rebuild the stopping
       // criterion.
       const bool haveLeftPrecond = problem_.is_null() || 
-	! problem_.getLeftPrec().is_null();
+	! problem_->getLeftPrec().is_null();
       statusTest_ = initStatusTest (convTol, maxIters, haveLeftPrecond, 
 				    implicitScaleType, explicitScaleType);
     }
@@ -744,9 +795,9 @@ namespace Belos {
 
       int outFreq;
       try {
-	outFreq = params->get<OutputType> ("Output Frequency");
+	outFreq = params->get<int> ("Output Frequency");
       } catch (InvalidParameter&) {
-	outFreq = defaultParams->get<OutputType> ("Output Frequency");
+	outFreq = defaultParams->get<int> ("Output Frequency");
       }
       // TODO (mfh 15 Feb 2011) Validate first.
       actualParams->set ("Output Frequency", outFreq);
@@ -786,20 +837,23 @@ namespace Belos {
       // Get the parameters for that orthogonalization method.
       RCP<const ParameterList> orthoParams;
       try {
-	orthoParams = params->get<RCP<const ParameterList> > ("Orthogonalization");
+	orthoParams = params->get<RCP<const ParameterList> > ("Orthogonalization Parameters");
       } catch (InvalidParameter&) {
-	orthoParams = defaultParams->get<RCP<const ParameterList> > ("Orthogonalization");
+	orthoParams = defaultParams->get<RCP<const ParameterList> > ("Orthogonalization Parameters");
       }
       
       // (Re)instantiate the orthogonalization manager.
       //
       // TODO (mfh 15 Feb 2011) Set the orthogonalization timer label
       // appropriately.
-      orthoMan_ = makeOrthoManager (orthoType, Teuchos::null, 
-				    "Orthogonalization", orthoParams);
+      {
+	// Set the timer label for orthogonalization
+	std::ostringstream os; 
+	os << "Orthogonalization (method \"" << orthoType << "\")";
+	orthoMan_ = factory.makeOrthoManager (orthoType, null, os.str(),
+					      orthoParams);
+      }
     }
-
-
     // TODO (mfh 15 Feb 2011) Validate the other new parameters.
 
     // Note that the parameter list we store contains the actual
@@ -837,7 +891,7 @@ namespace Belos {
     // we later get a problem to solve, just rebuild the stopping
     // criterion.
     const bool haveLeftPrecond = problem_.is_null() || 
-      ! problem_.getLeftPrec().is_null();
+      ! problem_->getLeftPrec().is_null();
     statusTest_ = initStatusTest (convTol, maxIters, haveLeftPrecond, 
 				  implicitScaleType, explicitScaleType,
 				  userConvTest);
