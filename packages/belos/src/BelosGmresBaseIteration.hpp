@@ -47,7 +47,7 @@
 ///
 
 #include "BelosIteration.hpp"
-#include "BelosGmresBase.hpp"
+#include "BelosGmresBaseFactory.hpp"
 
 namespace Belos {
 
@@ -309,7 +309,6 @@ namespace Belos {
   GmresBaseIteration<Scalar,MV,OP>::initialize ()
   {
     throw std::logic_error("GmresBaseIteration::initialize() is not implemented yet.");
-#if 0
     if (! initialized_)
       {
 	// TODO (mfh 30 Dec 2010)
@@ -330,7 +329,6 @@ namespace Belos {
 	impl_ = factory_type::create (lp_, ortho_, params_);
 	initialized_ = true;
       }
-#endif // 0
   }
 
 
