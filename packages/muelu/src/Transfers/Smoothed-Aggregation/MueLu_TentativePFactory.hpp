@@ -71,25 +71,8 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
     //@{
     bool BuildP(Level & fineLevel, Level & coarseLevel) const {
 
-      //TODO get or generate fine grid nullspace here
-      RCP<MultiVector> fineNullspace;
-      if (fineLevel.IsSaved("Nullspace"))
-        fineLevel.CheckOut("Nullspace",fineNullspace);
-      else {
-        //TODO add this functionality
-        //throw(Exceptions::NotImplemented("TenativePFactory.BuildP():  nullspace generation not implemented
-        //yet"));
-        std::cout << "nullspace generation not implemented yet" << std::endl;
-      }
-/*
-       //TODO build aggregates
-            % 1) build aggregates
-            AggInfo = TentativePFactory.BuildAggregates(FineLevel, CoarseLevel,...
-                this.CoalesceFact_, this.AggFact_, ...
-                this.GetOutputLevel(), Specs, ...
-                this.ReUseAggregates(), this.ReUseGraph());
-*/
       coarseLevel.Request("Ptent");
+      fineLevel.Request("Nullspace");
       MakeTentative(fineLevel,coarseLevel);
       //coarseLevel.Save("nullspace",cnull);
       RCP<Operator> Ptent;
