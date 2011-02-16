@@ -305,6 +305,8 @@ namespace Belos {
   void
   GmresBaseIteration<Scalar,MV,OP>::initialize ()
   {
+    throw std::logic_error("GmresBaseIteration::initialize() is not implemented yet.");
+#if 0
     if (! initialized_)
       {
 	// TODO (mfh 30 Dec 2010)
@@ -324,6 +326,7 @@ namespace Belos {
 	typedef GmresBaseFactory<Scalar, MV, OP> factory_type;
 	impl_ = factory_type::create (lp_, ortho_, params_);
 	initialized_ = true;
+#endif // 0
       }
   }
 

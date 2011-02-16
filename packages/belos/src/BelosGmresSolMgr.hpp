@@ -573,8 +573,11 @@ namespace Belos {
 	// output stream.
 	//
 	// Only display errors by default.
+	//
+	// FIXME (mfh 16 Feb 2011) Annoyingly, I have to write this as
+	// an int and not a MsgType, otherwise it's saved as a string.
 	MsgType defaultVerbosity = Belos::Errors;
-	params->set ("Verbosity", static_cast<MsgType>(defaultVerbosity),
+	params->set ("Verbosity", static_cast<int>(defaultVerbosity),
 		     "What type(s) of solver information should be written "
 		     "to the output stream.");
 	// Output goes to std::cout by default.
@@ -587,9 +590,14 @@ namespace Belos {
 	// StatusTestOutputFactory) depends on the output style and
 	// frequency.
 	//
+	// FIXME (mfh 16 Feb 2011) Annoyingly, even when I insist (via
+	// a cast to OutputType) that the value has type OutputType,
+	// it's stored in the XML file as a Teuchos::any, and read
+	// back in as a string.  Thus, I cast to int instead.
+	//
 	// Default output style.
 	OutputType defaultOutputStyle = Belos::General;
-	params->set ("Output Style", (OutputType) defaultOutputStyle,
+	params->set ("Output Style", (int) defaultOutputStyle,
 		     "What style is used for the solver information written "
 		     "to the output stream.");
 	// Output frequency level refers to the number of iterations
@@ -612,7 +620,9 @@ namespace Belos {
 	OrthoManagerFactory<Scalar, MV, OP> orthoFactory;
 	RCP<const ParameterList> defaultOrthoParams = 
 	  orthoFactory.getDefaultParameters (defaultOrthoType);
-	params->set ("Orthogonalization Parameters", defaultOrthoParams);
+	// Storing the ParameterList as a sublist, rather than as an
+	// RCP, ensures correct input and output.
+	params->set ("Orthogonalization Parameters", *defaultOrthoParams);
 
 	// Maximum number of iterations.
 	const int defaultMaxIters = 1000;
@@ -661,6 +671,7 @@ namespace Belos {
   setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     using Teuchos::Exceptions::InvalidParameter;
+    using Teuchos::Exceptions::InvalidParameterType;
     using Teuchos::null;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
@@ -669,17 +680,45 @@ namespace Belos {
     RCP<const ParameterList> defaultParams = getDefaultParameters();
     RCP<ParameterList> actualParams;
     if (params.is_null())
-      actualParams = rcp(*defaultParams);
+      actualParams = rcp(new ParameterList (*defaultParams));
     else
       { // Make a deep copy of the given parameter list.  This ensures
 	// that the solver's behavior won't change, even if users
 	// modify params later on.  Users _must_ invoke
 	// setParameters() in order to change the solver's behavior.
-	actualParams = rcp(*params);
+	actualParams = rcp(new ParameterList (*params));
+
 	// Fill in default values for parameters that aren't provided,
 	// and make sure that all the provided parameters' values are
 	// correct.
-	actualParams->validateParametersAndSetDefaults (*defaultParams);
+	//
+	// FIXME (mfh 16 Feb 2011) Reading the output stream (which
+	// has type RCP<std::ostream>) from a ParameterList may be
+	// impossible if the ParameterList was read in from a file.
+	// We hackishly test for this by catching
+	// InvalidParameterType, setting the output stream in
+	// actualParams to its default value, and redoing the
+	// validation.  This is a hack because we don't know whether
+	// the "Output Stream" parameter really caused that exception
+	// to be thrown.
+	bool success = false;
+	try {
+	  actualParams->validateParametersAndSetDefaults (*defaultParams);
+	  success = true;
+	} catch (InvalidParameterType&) {
+	  success = false;
+	}
+	if (! success)
+	  {
+	    RCP<std::ostream> outStream = 
+	      defaultParams->get<RCP<std::ostream> > ("Output Stream");
+	    actualParams->set ("Output Stream", outStream, 
+			       "A reference-counted pointer to the output "
+			       "stream where all solver output is sent.");
+	    // Retry the validation.
+	    actualParams->validateParametersAndSetDefaults (*defaultParams);
+	    success = true;
+	  }
       }
 
     // Use the given name if one was provided, otherwise name the
@@ -697,53 +736,29 @@ namespace Belos {
 
     // Initialize the stopping criteria.
     {
-      magnitude_type convTol;
-      try {
-	convTol = params->get<magnitude_type> ("Convergence Tolerance");
-      } catch (InvalidParameter&) {
-	convTol = defaultParams->get<magnitude_type> ("Convergence Tolerance");
-      }
-      // Validate first, before storing the value.
-      TEST_FOR_EXCEPTION(convTol < SMT::zero(), 
-			 std::invalid_argument,
+      const magnitude_type convTol = 
+	actualParams->get<magnitude_type> ("Convergence Tolerance");
+      TEST_FOR_EXCEPTION(convTol < SMT::zero(), std::invalid_argument,
 			 "Convergence tolerance " << convTol 
 			 << " is negative.");
-      actualParams->set ("Convergence Tolerance", convTol);
 
-      int maxIters;
-      try {
-	maxIters = params->get<int> ("Maximum Iterations");
-      } catch (InvalidParameter&) {
-	maxIters = defaultParams->get<int> ("Maximum Iterations");
-      }
-      TEST_FOR_EXCEPTION(maxIters < 0,
-			 std::invalid_argument,
+      const int maxIters = actualParams->get<int> ("Maximum Iterations");
+      TEST_FOR_EXCEPTION(maxIters < 0, std::invalid_argument,
 			 "Maximum number of iterations " << maxIters 
 			 << " is negative.");
-      actualParams->set ("Maximum Iterations", maxIters);
       // Changing the maximum number of iterations requires
       // resetting the solver, since GMRES usually preallocates this
       // number of vectors.  (Yay for short-circuiting OR!)
       needToResetSolver = params_.is_null() ||
 	params_->get<int> ("Maximum Iterations") != maxIters;
 
-      std::string implicitScaleType;
-      try {
-	implicitScaleType = params->get<std::string> ("Implicit Residual Scaling");
-      } catch (InvalidParameter&) {
-	implicitScaleType = defaultParams->get<std::string> ("Implicit Residual Scaling");
-      }
-      // TODO (mfh 15 Feb 2011) Validate first.
-      actualParams->set ("Implicit Residual Scaling", implicitScaleType);
+      // TODO (mfh 15 Feb 2011) Validate.
+      const std::string implicitScaleType = 
+	actualParams->get<std::string> ("Implicit Residual Scaling");
 
-      std::string explicitScaleType;
-      try {
-	explicitScaleType = params->get<std::string> ("Explicit Residual Scaling");
-      } catch (InvalidParameter&) {
-	explicitScaleType = defaultParams->get<std::string> ("Explicit Residual Scaling");
-      }
-      // TODO (mfh 15 Feb 2011) Validate first.
-      actualParams->set ("Explicit Residual Scaling", explicitScaleType);
+      // TODO (mfh 15 Feb 2011) Validate.
+      const std::string explicitScaleType = 
+	actualParams->get<std::string> ("Explicit Residual Scaling");
 
       // If we don't have a problem to solve yet, do both an
       // implicit and an explicit convergence test by default.  When
@@ -757,25 +772,34 @@ namespace Belos {
 
     // Initialize the OutputManager.
     {
-      MsgType verbosity;
-      try {
-	verbosity = params->get<MsgType> ("Verbosity");
-	// TODO (mfh 15 Feb 2011) Validate verbosity; MsgType is
-	// really just an int, so it might have an invalid value.
-	// (C++ typedefs don't have a nice type theory.)
-      } catch (InvalidParameter&) {
-	verbosity = defaultParams->get<MsgType> ("Verbosity");
-      }
-      // TODO (mfh 15 Feb 2011) Validate first.
-      actualParams->set ("Verbosity", (MsgType) verbosity);
+      // FIXME (mfh 16 Feb 2011) Annoyingly, I have to read this back
+      // in as an int rather than a Belos::MsgType.
+      //
+      // TODO (mfh 15 Feb 2011) Validate verbosity; MsgType is really
+      // just an int, so it might have an invalid value.  (C++
+      // typedefs don't have a nice type theory.)
+      const MsgType verbosity = (MsgType) actualParams->get<int> ("Verbosity");
 
+      // Reading the output stream from a ParameterList can be tricky
+      // if the ParameterList was read in from a file.  Serialization
+      // of pointers to arbitrary data is very, very difficult, and
+      // ParameterList doesn't try.  If the XML file shows the type as
+      // "any", the get() call below may throw InvalidParameterType.
+      // In that case, we set the outStream to point to std::cout, as
+      // a reasonable default.
       RCP<std::ostream> outStream;
       try {
-	outStream = params->get<RCP<std::ostream> > ("Output Stream");
-      } catch (InvalidParameter&) {
-	outStream = defaultParams->get<RCP<std::ostream> > ("Output Stream");
+	outStream = actualParams->get<RCP<std::ostream> > ("Output Stream");
+      } catch (InvalidParameterType&) {
+	outStream = Teuchos::rcpFromRef (std::cout);
       }
-      actualParams->set ("OutputStream", outStream);
+	
+      // Sanity check
+      //
+      // FIXME (mfh 16 Feb 2011) Should this be a "black hole" stream
+      // on procs other than Proc 0?
+      if (outStream.is_null())
+	outStream = Teuchos::rcpFromRef (std::cout);
 
       // This will do the right thing whether or not outMan_ has
       // previously been initialized (== is not null).
@@ -784,23 +808,15 @@ namespace Belos {
 
     // Initialize the "output status test."
     {
-      OutputType outStyle;
-      try {
-	outStyle = params->get<OutputType> ("Output Style");
-      } catch (InvalidParameter&) {
-	outStyle = defaultParams->get<OutputType> ("Output Style");
-      }
-      // TODO (mfh 15 Feb 2011) Validate first.
-      actualParams->set ("Output Style", (OutputType) outStyle);
+      // FIXME (mfh 16 Feb 2011) Annoyingly, I have to read this back
+      // in as an int rather than a Belos::OutputType.
+      //
+      // TODO (mfh 15 Feb 2011) Validate.
+      const OutputType outStyle = 
+	(OutputType) actualParams->get<int> ("Output Style");
 
-      int outFreq;
-      try {
-	outFreq = params->get<int> ("Output Frequency");
-      } catch (InvalidParameter&) {
-	outFreq = defaultParams->get<int> ("Output Frequency");
-      }
-      // TODO (mfh 15 Feb 2011) Validate first.
-      actualParams->set ("Output Frequency", outFreq);
+      // TODO (mfh 15 Feb 2011) Validate.
+      const int outFreq = actualParams->get<int> ("Output Frequency");
 
       // TODO (mfh 15 Feb 2011) Set the solver description according
       // to the specific kind of GMRES (CA-GMRES, standard GMRES,
@@ -817,13 +833,12 @@ namespace Belos {
       OrthoManagerFactory<Scalar, MV, OP> factory;
       
       // Get the orthogonalization method name.
-      std::string orthoType;
-      try {
-	orthoType = params->get<std::string> ("Orthogonalization");
-      } catch (InvalidParameter&) {
-	orthoType = defaultParams->get<std::string> ("Orthogonalization");
-      }
-      // Validate the orthogonalization type.
+      const std::string orthoType = 
+	actualParams->get<std::string> ("Orthogonalization");
+      // Validate the orthogonalization method name.
+      //
+      // TODO (mfh 16 Feb 2011) Encode the validator in the default
+      // parameter list.
       if (! factory.isValidName (orthoType))
 	{
 	  std::ostringstream os;
@@ -833,25 +848,24 @@ namespace Belos {
 	  os << ".";
 	  throw std::invalid_argument (os.str());
 	}
-
       // Get the parameters for that orthogonalization method.
-      RCP<const ParameterList> orthoParams;
-      try {
-	orthoParams = params->get<RCP<const ParameterList> > ("Orthogonalization Parameters");
-      } catch (InvalidParameter&) {
-	orthoParams = defaultParams->get<RCP<const ParameterList> > ("Orthogonalization Parameters");
-      }
-      
-      // (Re)instantiate the orthogonalization manager.
       //
-      // TODO (mfh 15 Feb 2011) Set the orthogonalization timer label
-      // appropriately.
+      // FIXME (mfh 16 Feb 2011) Extraction via reference is
+      // legitimate only if we know that the whole parameter list
+      // won't go away.  Some OrthoManager subclasses might not copy
+      // their input parameter lists deeply.
+      const ParameterList& orthoParams = 
+	actualParams->sublist ("Orthogonalization Parameters");
+      
+      // (Re)instantiate the orthogonalization manager.  Don't bother
+      // caching this, since it's too much of a pain to check whether
+      // any of the parameters have changed.
       {
 	// Set the timer label for orthogonalization
 	std::ostringstream os; 
 	os << "Orthogonalization (method \"" << orthoType << "\")";
 	orthoMan_ = factory.makeOrthoManager (orthoType, null, os.str(),
-					      orthoParams);
+					      Teuchos::rcpFromRef (orthoParams));
       }
     }
     // TODO (mfh 15 Feb 2011) Validate the other new parameters.
