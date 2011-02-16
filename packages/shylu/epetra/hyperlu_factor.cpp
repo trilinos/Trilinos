@@ -217,8 +217,8 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
                 int gcid;
                 for (int j = 0 ; j < NumEntries ; j++)
                 { // O(nnz) ! Careful what you do inside
-                    gcid = A->GCID(Ai[j]); 
-                    if (gvals[gcid] == 1) 
+                    gcid = A->GCID(Ai[j]);
+                    if (gvals[gcid] == 1)
                     {
                         dcnt++;
                     }

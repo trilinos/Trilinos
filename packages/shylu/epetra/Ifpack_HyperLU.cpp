@@ -27,8 +27,8 @@ void Ifpack_HyperLU::Destroy()
     if (IsInitialized_)
     {
         //delete A_;
-        delete partitioner_;
-        delete rd_;
+        //delete partitioner_;
+        //delete rd_;
     }
     if (IsComputed_)
     {
@@ -49,16 +49,19 @@ int Ifpack_HyperLU::Initialize()
     else 
         IsParallel_ = false;
 
+    // TODO:
+    // Need to enable partitioning here in Initialize once moving to Belos
+
     // Cannot call this method , need the partitioner around TODO : Can we 
     // avoid this
     //A_ = balanceAndRedistribute(A_, List_);
 
     // ==================== Symbolic factorization =========================
     // 1. Partition and redistribute [
-    partitioner_ = new Isorropia::Epetra::Partitioner(A_, List_, false);
-    partitioner_->partition();
+    //partitioner_ = new Isorropia::Epetra::Partitioner(A_, List_, false);
+    //partitioner_->partition();
 
-    rd_ = new Isorropia::Epetra::Redistributor(partitioner_);
+    //rd_ = new Isorropia::Epetra::Redistributor(partitioner_);
     //Epetra_CrsMatrix *newA;
     //rd_->redistribute(*A_, newA);
     //A_ = newA;

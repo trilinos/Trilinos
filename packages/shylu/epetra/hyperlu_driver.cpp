@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
     Epetra_MultiVector b(vecMap, 1, false);
     b.PutScalar(1.0); // TODO : Accept it as input
 
+    // Partition the matrix with hypergraph partitioning and redisstribute
     Isorropia::Epetra::Partitioner *partitioner = new
                             Isorropia::Epetra::Partitioner(A, isoList, false);
     partitioner->partition();
@@ -118,7 +119,6 @@ int main(int argc, char *argv[])
     rd.redistribute(b, newB);
 
     Epetra_LinearProblem problem(A, newX, newB);
-    //Epetra_LinearProblem problem(A, &x, &b);
 
     AztecOO solver(problem);
 
@@ -160,8 +160,6 @@ int main(int argc, char *argv[])
     // compute ||Ax - b||
     double Norm;
     Epetra_MultiVector Ax(vecMap, 1);
-    //A->Multiply(false, x, Ax);
-    //Ax.Update(1.0, b, -1.0);
 
     Epetra_MultiVector *newAx; 
     rd.redistribute(Ax, newAx);
