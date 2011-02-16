@@ -275,7 +275,7 @@ namespace stk
 
       TEST(SubDimCell, test2)
       {
-        if (1) return;
+#if 0
         map<SubDimCell<int>, int> map_;
         map<SubDimCell<int>, int, less<int> >::iterator map_it;
         SubDimCell<int> set1;
@@ -335,6 +335,7 @@ namespace stk
         cout << aaa1 << endl;
         //aaa(cout, aaa1);
         //cout << map_ << endl;
+#endif
       }
 
     }

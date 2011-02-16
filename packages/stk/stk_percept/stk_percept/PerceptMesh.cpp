@@ -720,15 +720,15 @@ namespace stk {
       else
         {
           stk::mesh::PartVector empty ;
-          stk::mesh::Entity & node = getBulkData()->declare_entity( stk::mesh::Node, node_id, empty );
+          stk::mesh::Entity & node_0 = getBulkData()->declare_entity( stk::mesh::Node, node_id, empty );
 
-          double * const coord = stk::mesh::field_data( *getCoordinatesField() , node );
+          double * const coord = stk::mesh::field_data( *getCoordinatesField() , node_0 );
 
           coord[0] = coord_in[0];
           coord[1] = coord_in[1];
           coord[2] = coord_in[2];
 
-          return node;
+          return node_0;
         }
     }
 

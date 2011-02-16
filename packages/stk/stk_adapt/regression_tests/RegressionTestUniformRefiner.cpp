@@ -1981,8 +1981,6 @@ namespace stk
 
         if (p_size == 1)
           {
-            PerceptMesh eMesh;
-
             eMesh.open("./input_files/swept-wedge_enrich_refine_0.e");
 
             Wedge15_Wedge15_8 break_wedge(eMesh);
@@ -2361,9 +2359,9 @@ namespace stk
 
       TEST(regr_uniformRefiner, wedge6_18_enrich_refine)
       {
+#if 0
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
-        if (1) return; // FIXME Ioss doesn't support Wedge18 elements
 
         // start_demo_regr_uniformRefiner_wedge6_18_enrich_refine
 
@@ -2372,7 +2370,6 @@ namespace stk
         unsigned p_size = eMesh.getParallelSize();
         if (p_size == 1)
           {
-            PerceptMesh eMesh;
             eMesh.open("./input_files/swept-wedge_enrich_refine_0.e");
 
             Wedge15_Wedge15_8 break_wedge(eMesh);
@@ -2389,7 +2386,7 @@ namespace stk
             eMesh.saveAs("./output_files/swept-wedge_enrich_refine_1.e");
           }
         // end_demo
-
+#endif
       }
 
     }//    namespace regression_tests

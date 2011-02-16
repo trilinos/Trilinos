@@ -481,9 +481,9 @@ namespace stk
             for (unsigned isd = 0; isd < 12; isd++)
               {
                 nodeRegistry.makeCentroid(element_local, needed_entity_rank.first, isd);
-                NodeIdsOnSubDimEntityType nodeIds_onSE_0 = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, isd);
+                NodeIdsOnSubDimEntityType nodeIds_onSE_0_loc = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, isd);
                 
-                Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_0[0]);
+                Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_0_loc[0]);
 
                 unsigned edge_ord = 8u + isd; 
                 //unsigned n_edge_ord = cell_topo_data->edge[isd].topology->node_count;
