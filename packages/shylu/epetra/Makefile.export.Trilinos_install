@@ -15,7 +15,7 @@ Trilinos_CXX_COMPILER=/usr/local/bin/mpicxx
 
 Trilinos_C_COMPILER=/usr/local/bin/mpicc
 
-Trilinos_Fortran_COMPILER=/usr/local/bin/mpif77
+Trilinos_Fortran_COMPILER=/usr/local/bin/mpif90
 
 ## ---------------------------------------------------------------------------
 ## Compiler flags used by Trilinos build
@@ -44,25 +44,25 @@ Trilinos_AR=/usr/bin/ar
 ## ---------------------------------------------------------------------------
 
 ## The project version number
-Trilinos_VERSION=10.5
+Trilinos_VERSION=10.7
 
 ## The project include file directories.
-Trilinos_INCLUDE_DIRS= -I/home/srajama/proj/Trilinos/couplings_build/include
+Trilinos_INCLUDE_DIRS= -I/home/srajama/proj/Trilinos/Trilinos_HyperLU/tc_build/include
 
 ## The project library directories.
-Trilinos_LIBRARY_DIRS= -L/home/srajama/proj/Trilinos/couplings_build/lib
+Trilinos_LIBRARY_DIRS= -L/home/srajama/proj/Trilinos/Trilinos_HyperLU/tc_build/lib
 
 ## The project libraries.
 Trilinos_LIBRARIES= -ltrilinoscouplings -lintrepid -lml -lifpack -lpamgen_extras -lpamgen -lamesos -laztecoo -lisorropia -lepetraext -ltriutils -lshards -lzoltan -lepetra -lsacado -lteuchos
 
 ## The project tpl include paths
-Trilinos_TPL_INCLUDE_DIRS=
+Trilinos_TPL_INCLUDE_DIRS= -I/usr/include
 
 ## The project tpl library paths
 Trilinos_TPL_LIBRARY_DIRS=
 
 ## The project tpl libraries
-Trilinos_TPL_LIBRARIES= /home/srajama/lapack/lapack-3.2.1/lapack_LINUX.a /home/srajama/lapack/lapack-3.2.1/blas_LINUX.a
+Trilinos_TPL_LIBRARIES= /home/srajama/lapack/lapack-3.2.1/lapack_LINUX.a /home/srajama/lapack/lapack-3.2.1/blas_LINUX.a /usr/lib64/libpthread.so
 
 ## ---------------------------------------------------------------------------
 ## MPI specific variables
@@ -85,5 +85,5 @@ Trilinos_MPI_EXEC_NUMPROCS_FLAG=-np
 Trilinos_PACKAGE_LIST= TrilinosCouplings Intrepid ML Ifpack Pamgen Amesos AztecOO Isorropia EpetraExt Triutils Shards Zoltan Epetra Sacado Teuchos
 
 ## The TPLs enabled for this project
-Trilinos_TPL_LIST= LAPACK BLAS MPI
+Trilinos_TPL_LIST= LAPACK BLAS MPI Pthread
 
