@@ -110,6 +110,11 @@ public:
    // Methods to interrogate the mesh topology and structure
    //////////////////////////////////////////
 
+   /** Grab the coordinates field 
+     */
+   const VectorFieldType & getCoordinatesField() const
+   { return *coordinatesField_; }
+
    /** Look up a global node and get the coordinate.
      */
    const double * getNodeCoordinates(stk::mesh::EntityId nodeId) const;
