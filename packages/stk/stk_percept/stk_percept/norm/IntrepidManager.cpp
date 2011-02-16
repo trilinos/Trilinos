@@ -343,8 +343,15 @@ namespace stk
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C],[B],[P]), or ([C],[B],[P],[D]) for GRAD
+    static ComputeBases s_compute_bases;
+
     IntrepidManager::Bases::
-    Bases(IM& im) : BaseType(NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Cub_Points_Tag)), m_cb(ComputeBases()) {}
+    Bases(IM& im) : BaseType(NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Cub_Points_Tag))
+                  , m_cb(ComputeBases()) 
+         //, m_cb(new ComputeBases()) 
+    {
+      //m_cb =&s_compute_bases;
+    }
 
     void
     IntrepidManager::Bases::

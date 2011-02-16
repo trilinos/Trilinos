@@ -25,9 +25,6 @@
 
 #include <map>
 
-#include <tr1/unordered_map>
-
-
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
 
@@ -289,8 +286,9 @@ namespace stk
 
       TEST(time_maps, compare_different_maps)
       {
+#if DO_TEST_TIME_MAPS
+
         EXCEPTWATCH;
-        if (!DO_TEST_TIME_MAPS) return;
 
         unsigned N = 10000000; // 10M
         //unsigned N = 100000; // 100K
@@ -375,6 +373,8 @@ namespace stk
         }
 
         //doTest(boost_map, N, niter);
+
+#endif
 
       }
 

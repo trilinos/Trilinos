@@ -29,11 +29,10 @@ namespace stk
       //typedef Intrepid::Basis<double, MDArray > IntrepidBasisType;
       unsigned m_cached_topo_key;
       //IntrepidBasisType *m_cached_basis;
-      PerceptMesh::BasisTypeRCP m_cached_basis;
+      //PerceptMesh::BasisTypeRCP m_cached_basis;
+      PerceptMesh::BasisType* m_cached_basis;
     public:
       ComputeBases() : m_cached_topo_key(0), m_cached_basis(0) {}
-      //virtual ~ComputeBases() {}
-      // ~ComputeBases() {}
 
       // [P] = 1 (or numInterpPoints)
       // [C] = numCells
@@ -81,10 +80,12 @@ namespace stk
           }
 
         // map cell topology to a basis
-        PerceptMesh::BasisTypeRCP basis;
+        PerceptMesh::BasisType *basis;
+        //PerceptMesh::BasisTypeRCP basis;
         if (m_cached_topo_key != bucket_cell_topo_data->key)
           {
-            basis = PerceptMesh::getBasis(topo);
+            PerceptMesh::BasisTypeRCP basisRCP = PerceptMesh::getBasis(topo);
+            basis = basisRCP.get();
             m_cached_basis = basis;
             m_cached_topo_key = bucket_cell_topo_data->key;
           }
