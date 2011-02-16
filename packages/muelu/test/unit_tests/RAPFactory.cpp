@@ -1,5 +1,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+
+#include "Cthulhu_DefaultPlatform.hpp"
 
 #define HAVE_CTHULHU_EPETRA
 #define CTHULHU_USE_EPETRA
@@ -28,7 +29,7 @@ Teuchos::RCP<const Teuchos::Comm<int> > getDefaultComm()
 {
   Teuchos::RCP<const Teuchos::Comm<int> > ret;
   if (testMpi) {
-    ret = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    ret = Cthulhu::DefaultPlatform::getDefaultPlatform().getComm();
   }
   else {
     ret = Teuchos::rcp(new Teuchos::SerialComm<int>());
