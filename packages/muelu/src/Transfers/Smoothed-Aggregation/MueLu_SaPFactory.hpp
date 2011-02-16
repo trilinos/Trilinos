@@ -3,10 +3,6 @@
 
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
-#ifdef HAVE_MUELU_EPETRA
-#include <Cthulhu_EpetraMap.hpp>
-#include <Cthulhu_EpetraCrsMatrix.hpp>
-#endif
 #include <Cthulhu_CrsOperator.hpp>
 #include <Cthulhu.hpp>
 #include <Cthulhu_Vector.hpp>

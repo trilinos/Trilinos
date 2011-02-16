@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "Cthulhu_Map.hpp"
+#include "Cthulhu_MapFactory.hpp"
 #include "Cthulhu.hpp"
 #include "MueLu_OperatorFactory.hpp"
 #include "MueLu_Level.hpp"
@@ -138,14 +139,9 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
         Indices[0] = i / 3;
         Ptent->insertGlobalValues(i,iv,av);
       }
-      //TODO replace this with a factory or something else
-#ifdef HAVE_CTHULHU_EPETRA
-      RCP<Map> domainMap = rcp( new Cthulhu::EpetraMap(nCoarseDofs,Op->getRowMap()->getIndexBase(),Op->getRowMap()->getComm()) );
 
+      RCP<Map> domainMap = MapFactory::Build(Op->getRowMap()->lib(), nCoarseDofs, Op->getRowMap()->getIndexBase(), Op->getRowMap()->getComm());
       Ptent->fillComplete(domainMap, Op->getRowMap());
-#else
-#warning
-#endif
 
       //MatrixPrint(Op);
       return Ptent;
@@ -229,9 +225,8 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
       //Allocate storage for the coarse nullspace.
       LO indexBase=fineA->getRowMap()->getIndexBase();
-      //FIXME We shouldn't rely explicitly on EpetraMap
-      RCP<const Map > coarseMap = rcp( new Cthulhu::EpetraMap(Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(),
-                                                              nCoarseDofs,indexBase,fineA->getRowMap()->getComm())       );
+
+      RCP<const Map > coarseMap = MapFactory::Build(fineA->getRowMap()->lib(), Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(), nCoarseDofs, indexBase, fineA->getRowMap()->getComm());
 
       RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
       ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);
