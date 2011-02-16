@@ -340,7 +340,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          //X.norm2(norms);
 
          //If on the coarse level, do either smoothing (if defined) or a direct solve.
-         if (startLevel == Levels_.size()-1) //FIXME is this right?
+         if (startLevel == ((LO)Levels_.size())-1) //FIXME is this right?
          {
            bool emptySolve=true;
            if (preSmoo != Teuchos::null) {preSmoo->Apply(X, B, false); emptySolve=false;}
