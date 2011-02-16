@@ -242,9 +242,10 @@ namespace MueLu {
       Teuchos::ArrayView<const LO> cols;
       Teuchos::ArrayView<const SC> vals;
       //for (size_t i=0; i<A->getNodeNumRows(); ++i) {
-      for (size_t i=0; i<rowmap->getNodeNumElements(); ++i) {
+      LO rowmapLocalSize = (LO) rowmap->getNodeNumElements();
+      for (LO i=0; i<rowmapLocalSize; ++i) {
         A->getLocalRowView(i,cols,vals);
-        for (size_t j=0; j<cols.size(); j++) {
+        for (LO j=0; j<cols.size(); ++j) {
           //TODO this will break down if diagonal entry is not present
           if (cols[j] == i) {
             diag[i] = 1 / vals[j];
