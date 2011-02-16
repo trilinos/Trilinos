@@ -46,6 +46,8 @@
 /// \author Mark Hoemmen
 /// \brief Solver manager for CA-GMRES and standard GMRES.
 
+#include <BelosGmresBaseIteration.hpp>
+
 #include <BelosOutputManager.hpp>
 #include <BelosSolverManager.hpp>
 #include <BelosStatusTestGenResNorm.hpp>

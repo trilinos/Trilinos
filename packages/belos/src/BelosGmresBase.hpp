@@ -165,6 +165,8 @@ namespace Belos {
     typedef Teuchos::SerialDenseVector<int,Scalar> vec_type;
     typedef Teuchos::BLAS<int, scalar_type> blas_type;
     typedef MultiVecTraits<scalar_type, MV> MVT;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
   public:
     /// \brief Constructor
@@ -573,7 +575,7 @@ namespace Belos {
 			   const Teuchos::RCP<mat_type>& C_V,
 			   const Teuchos::RCP<mat_type>& B_V,
 			   const Teuchos::RCP<MV>& Z_cur,
-			   const Teuchos::RCP<mat_type>& C_Z
+			   const Teuchos::RCP<mat_type>& C_Z,
 			   const Teuchos::RCP<mat_type>& B_Z) {}
     //@}
 
@@ -643,10 +645,10 @@ namespace Belos {
     //@{
 
     //! The linear problem to solve
-    Teuchos::RCP< LinearProblem<Scalar, MV, OP> > lp_;
+    Teuchos::RCP<LinearProblem<Scalar, MV, OP> > lp_;
 
     //! Orthogonalization manager
-    Teuchos::RCP< const OrthoManager<Scalar, MV> > ortho_;
+    Teuchos::RCP<const OrthoManager<Scalar, MV> > ortho_;
 
     /// \brief "Native" residual vector
     ///
@@ -722,6 +724,9 @@ namespace Belos {
     /// with the QR factorization of H_.
     Teuchos::RCP<Teuchos::SerialDenseVector<int, Scalar> > z_;
 
+    Teuchos::Array<magnitude_type> theCosines_;
+    Teuchos::Array<scalar_type> theSines_;
+
     /// \brief The initial residual norm
     ///
     /// GMRES makes use of the initial residual norm for solving the
@@ -733,7 +738,7 @@ namespace Belos {
     magnitude_type initialResidualNorm_;
 
     /// Last column of H_ for which the QR factorization (implicitly
-    /// stored in theCosines, theSines, and R_) has been computed.
+    /// stored in theCosines_, theSines_, and R_) has been computed.
     /// Should be initialized to -1 (which means the 0th column of H_
     /// will be the first to be updated).
     int lastUpdatedCol_;
@@ -895,7 +900,7 @@ namespace Belos {
   {
     using Teuchos::Range1D;
     using Teuchos::RCP;
-    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    const Scalar one = STS::one();
     const int m = getNumIters();
 
     if (m == 0) // No iterations completed means no error (yet)
@@ -927,10 +932,14 @@ namespace Belos {
       }
     // Compute and return the Frobenius norm of the above (either AZ
     // or AV, depending on whether we are performing Flexible GMRES).
+    //
+    // FIXME (mfh 16 Feb 2011) This computation might overflow for
+    // unjustifiable reasons.  I should really include intermediate
+    // scaling.
     magnitude_type result (0);
-    for (k = 0; k < m; ++k)
+    for (int k = 0; k < m; ++k)
       result += norms[k];
-    return Teuchos::ScalarTraits<magnitude_type>::squareroot(result);
+    return STM::squareroot(result);
   }
 
 
@@ -946,7 +955,7 @@ namespace Belos {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar zero = STS::zero();
     const bool haveLeftPrec = ! is_null (lp_->getLeftPrec());
     const bool haveRightPrec = ! is_null (lp_->getRightPrec());
     
@@ -957,7 +966,7 @@ namespace Belos {
 		       "Our Arnoldi/GMRES implementation only works for "
 		       "single-vector problems, but the supplied initial "
 		       "guess has " << MVT::GetNumberVecs(*x0) << " columns.");
-    xUpdate_ = MVT::Clone (x0, 1);
+    xUpdate_ = MVT::Clone (*x0, 1);
     MVT::MvInit (*xUpdate_, zero);
 
     // (Left preconditioned, if applicable) "exact" residual vector.
@@ -967,27 +976,27 @@ namespace Belos {
 		       "Our Arnoldi/GMRES implementation only works for "
 		       "single-vector problems, but the supplied initial "
 		       "residual vector has " 
-		       << MVT::GetNumberVecs(*r0_) << " columns.");
+		       << MVT::GetNumberVecs(*r0) << " columns.");
     // If left preconditioning is used, then the "native" residual
     // vector is in the same space as the preconditioned "exact"
     // residual vector.  Otherwise, it is in the same space as the
     // right-hand side b and the unpreconditioned "exact" residual
     // vector.
-    nativeResVec_ = MVT::CloneCopy (r0);
+    nativeResVec_ = MVT::CloneCopy (*r0);
 
     // If left preconditioning is used, then the V_ vectors are in the
     // same space as the preconditioned "exact" residual vector.
     // Otherwise they are in the same space as the right-hand side b
     // and the unpreconditioned "exact" residual vector.
-    V_ = MVT::Clone (r0, maxIterCount+1);
+    V_ = MVT::Clone (*r0, maxIterCount+1);
 
     // The Z_ vectors, if we need them, are always in the same space
     // as the initial solution guess (x0).  Even if the caller asks
     // for the flexible option, we don't allocate space for Z_ unless
     // the caller specifies a right preconditioner.
-    Z_ = (flexible && haveRightPrec) ? MVT::Clone(x0, maxIterCount+1) : null;
+    Z_ = (flexible && haveRightPrec) ? MVT::Clone(*x0, maxIterCount+1) : null;
 
-    // These matrices and vectors encode the small dense projected
+    // These (small dense) matrices and vectors encode the projected
     // least-squares problem.
     H_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
     R_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
@@ -1014,8 +1023,8 @@ namespace Belos {
   Teuchos::RCP<MV> 
   GmresBase<Scalar, MV, OP>::currentNativeResidualVector ()
   {
-    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    const Scalar zero = STS::zero();
+    const Scalar one = STS::one();
     using Teuchos::is_null;
     using Teuchos::Range1D;
     using Teuchos::RCP;
@@ -1044,18 +1053,18 @@ namespace Belos {
 			   "H only has " << H_->numCols() << " columns, but "
 			   << (curNumIters_+1) << " columns are required.  "
 			   "This likely indicates a bug in Belos.");
-	TEST_FOR_EXCEPTION(y_->length() < curNumIters_, std::logic_error,
-			   "y only has " << y_->length() << " entries, but "
-			   curNumIters_ << " entries are required.  "
-			   "This likely indicates a bug in Belos.");
+	// TEST_FOR_EXCEPTION(y_->length() < curNumIters_, std::logic_error,
+	// 		   "y only has " << y_->length() << " entries, but "
+	// 		   curNumIters_ << " entries are required.  "
+	// 		   "This likely indicates a bug in Belos.");
 	RCP<const MV> V_view = MVT::CloneView (*V_, Range1D(0, curNumIters_));
 	const mat_type H_view (Teuchos::View, *H_, curNumIters_+1, curNumIters_);
 	// SerialDenseVector doesn't have a nice subview copy constructor.
 	const vec_type y_view (Teuchos::View, y_->values(), curNumIters_);
-	vec_type H_times_y (numIters+1, 1);
+	vec_type H_times_y (curNumIters_+1, 1);
 	{
 	  const int err = 
-	    H_times_y.multiply (Teuchos::NOTRANS, Teuchos::NOTRANS, 
+	    H_times_y.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS, 
 				one, H_view, y_view, zero);
 	  TEST_FOR_EXCEPTION(err != 0, std::logic_error,
 			     "In GMRES, when computing the current native resi"
@@ -1064,11 +1073,12 @@ namespace Belos {
 			     " a Belos bug.");
 	}
 	// nativeResVec_ := V * (H * y) - r0 (where we stored r0 in nativeResVec_)
-	MVT::MvTimesMatAddMv (one, V, H_times_y, -one, nativeResVec_);
+	MVT::MvTimesMatAddMv (one, *V_, H_times_y, -one, nativeResVec_);
       }
     return nativeResVec_;
   }
 
+  template<class Scalar, class MV, class OP>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   GmresBase<Scalar, MV, OP>::currentNativeResidualNorm ()
   {
@@ -1081,7 +1091,8 @@ namespace Belos {
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   GmresBase<Scalar, MV, OP>::updateProjectedLeastSquaresProblem()
   {
-    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const scalar_type zero = STS::zero();
+    const scalar_type one = STS::one();
     const int startCol = lastUpdatedCol_ + 1;
     const int endCol = curNumIters_ - 1;
     blas_type blas;
@@ -1093,7 +1104,7 @@ namespace Belos {
 		       "but the rightmost column to update is " << endCol << "."
 		       "  This is likely a bug in GmresBase.");
     if (startCol == endCol+1) // Nothing to do
-      return Teuchos::ScalarTraits<Scalar>::magnitude (z[endCol+1]);
+      return STS::magnitude ((*z_)[endCol+1]);
 
     const int numCols = endCol - startCol + 1;
     {
@@ -1159,8 +1170,7 @@ namespace Belos {
 
     // The absolute value of the last element of z gives the current
     // "native" residual norm.
-    const magnitude_type nativeResNorm = 
-      Teuchos::ScalarTraits<scalar_type>::magnitude (z[endCol+1]);
+    const magnitude_type nativeResNorm = STS::magnitude ((*z_)[endCol+1]);
 
     // Now that we have the updated R factor of H, and the updated
     // right-hand side z, solve the least-squares problem by solving
@@ -1174,22 +1184,26 @@ namespace Belos {
       y_view.assign (z_view);
     }
     // Solve Ry = z for y.
-    blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NOTRANS, 
-	      Teuchos::NON_UNIT_DIAG, numIters, 1, 
+    blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
+	      Teuchos::NON_UNIT_DIAG, curNumIters_, 1, 
 	      one, R_->values(), LDR, y_->values(), y_->stride());
     return nativeResNorm;
   }
 
 
   template<class Scalar, class MV, class OP>
+#if 0
   std::pair< Teuchos::RCP<MV>, typename Teuchos::ScalarTraits<Scalar>::magnitudeType >
+#else // not 0
+  Teuchos::RCP<MV>
+#endif // 0
   GmresBase<Scalar, MV, OP>::getCurrentUpdate ()
   {
     using Teuchos::is_null;
     using Teuchos::Range1D;
     using Teuchos::RCP;
-    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar one = STS::one();
+    const Scalar zero = STS::zero();
 
     if (is_null (xUpdate_))
       {
@@ -1209,7 +1223,7 @@ namespace Belos {
     if (curNumIters_ == 0)
       {
 	MVT::MvInit (*xUpdate_, zero);
-	return;
+	return xUpdate_;
       }
 
     // When one iteration of GMRES is completed, the upper
@@ -1231,7 +1245,7 @@ namespace Belos {
     const vec_type y_view (Teuchos::View, y_->values(), m);
     // xUpdate_ := Z_view * y_view
     MVT::MvTimesMatAddMv (one, *Z_view, y_view, zero, *xUpdate_);
-    return std::make_pair (xUpdate_, nativeResNorm);
+    return xUpdate_;
   }
 
   template<class Scalar, class MV, class OP>
@@ -1255,21 +1269,23 @@ namespace Belos {
     // analysis, which we omit; instead, we simply take the magnitude
     // (which hopefully is nonnegative by construction, if complex
     // absolute value was implemented correctly).
-    initialResidualNorm_ = Teuchos::ScalarTraits<Scalar>::magnitude (result[0,0]);
+    initialResidualNorm_ = STS::magnitude (result[0,0]);
 
     // Initialize right-hand side of projected least-squares problem
-    (void) z_.putScalar(zero);
-    z_[0] = Scalar (initialResidualNorm_);
+    (void) z_->putScalar (STS::zero());
+    (*z_)[0] = Scalar (initialResidualNorm_);
 
-    MVT::SetBlock (r0, Range1D(0,0), V_);
-    RCP<MV> v1 = MVT::CloneViewNonConst (V_, Range1D(0,0));
-    MVT::MvScale (v1, Scalar(1)/initialResidualNorm_);
+    MVT::SetBlock (*r0, Range1D(0,0), *V_);
+    RCP<MV> v1 = MVT::CloneViewNonConst (*V_, Range1D(0,0));
+    MVT::MvScale (*v1, Scalar(1)/initialResidualNorm_);
   }
 
   template<class Scalar, class MV, class OP>
   void 
   GmresBase<Scalar, MV, OP>::backOut (const int numIters)
   {
+    const Scalar zero = STS::zero();
+
     TEST_FOR_EXCEPTION(numIters < 0, std::invalid_argument,
 		       "The GMRES iteration count cannot be less than "
 		       "zero, but you specified numIters = " << numIters);
@@ -1305,6 +1321,7 @@ namespace Belos {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    const Scalar zero = STS::zero();
 
     // This would be the place where subclasses may implement things
     // like recycling basis vectors for the next restart cycle.  Note
@@ -1317,9 +1334,10 @@ namespace Belos {
     // upcoming new restart cycle), so that the "exact" residuals are
     // correct.
     (void) getCurrentUpdate (); // results stored in xUpdate_
-    (void) lp_->updateSolution (xUpdate_, true, Scalar(1.0));
+    (void) lp_->updateSolution (xUpdate_, true, STS::one());
 
-    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    // We just check in case whether any preconditioner(s) have been
+    // added to the linear problem.
     const bool haveLeftPrec = ! is_null (lp_->getLeftPrec());
     const bool haveRightPrec = ! is_null (lp_->getRightPrec());
     // Initial residual vector (left preconditioned, if applicable).
@@ -1331,7 +1349,8 @@ namespace Belos {
       {
 	maxNumIters_ = maxIterCount;
 	V_ = MVT::Clone (r0, maxIterCount+1);
-	Z_ = (flexible_ && haveRightPrec) ? MVT::Clone(lp.getLHS(), maxIterCount+1) : null;
+	Z_ = (flexible_ && haveRightPrec) ? 
+	  MVT::Clone(lp_->getLHS(), maxIterCount+1) : null;
 	H_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
 	R_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
 	y_ = rcp (new vec_type (maxIterCount));
@@ -1350,7 +1369,7 @@ namespace Belos {
 
     lastUpdatedCol_ = -1; // column updates start with zero
     curNumIters_ = 0;
-    flexible_ = (flexible && haveRightPrec);
+    flexible_ = (flexible_ && haveRightPrec);
 
     // This would be the place where subclasses may implement things
     // like orthogonalizing the first basis vector (after restart)
@@ -1364,7 +1383,7 @@ namespace Belos {
     const bool haveLeftPrec = ! is_null (lp_->getLeftPrec());
     const bool haveRightPrec = ! is_null (lp_->getRightPrec());
     // Initial residual vector (left preconditioned, if applicable).
-    return = haveLeftPrec ? lp_->getInitPrecResVec() : lp_->getInitResVec();
+    return haveLeftPrec ? lp_->getInitPrecResVec() : lp_->getInitResVec();
   }
 
 } // namespace Belos

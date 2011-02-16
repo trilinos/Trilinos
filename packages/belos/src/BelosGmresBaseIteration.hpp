@@ -250,7 +250,7 @@ namespace Belos {
     /// OrthoManager.  This iteration doesn't use the "Mat" features,
     /// so we only take an OrthoManager.
     GmresBaseIteration (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem,
-			const Teuchos::RCP<const OrthoManager<Scalar, MV, OP> >& ortho,
+			const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
 			const Teuchos::RCP<OutputManager<Scalar> >& printer,
 			const Teuchos::RCP<StatusTest<Scalar, MV, OP> >& tester,
 			const Teuchos::RCP<const Teuchos::ParameterList >& params);
@@ -271,8 +271,11 @@ namespace Belos {
 
     //! The linear problem to solve
     Teuchos::RCP<LinearProblem<Scalar, MV, OP> > lp_;
-    //! Orthogonalization manager
-    Teuchos::RCP<const OrthoManager<Scalar, MV, OP> > ortho_;
+    /// \brief Orthogonalization manager.
+    ///
+    /// We're not using MatOrthoManager, because GMRES doesn't need
+    /// that expanded interface.
+    Teuchos::RCP<const OrthoManager<Scalar, MV> > ortho_;
     //! Output manager, for intermediate output during iterations
     Teuchos::RCP<OutputManager<Scalar> > om_;
     //! Status test for stopping iteration
@@ -287,7 +290,7 @@ namespace Belos {
   template<class Scalar, class MV, class OP>
   GmresBaseIteration<Scalar,MV,OP>::
   GmresBaseIteration (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem,
-		      const Teuchos::RCP<const OrthoManager<Scalar, MV, OP> >& ortho,
+		      const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
 		      const Teuchos::RCP<OutputManager<Scalar> >& printer,
 		      const Teuchos::RCP<StatusTest<Scalar, MV, OP> >& tester,
 		      const Teuchos::RCP<const Teuchos::ParameterList>& params) :
@@ -298,7 +301,7 @@ namespace Belos {
     params_ (params),
     initialized_ (false) 
   {
-    initializeImpl();
+    initialize();
   }
 
   template<class Scalar, class MV, class OP>
@@ -326,8 +329,8 @@ namespace Belos {
 	typedef GmresBaseFactory<Scalar, MV, OP> factory_type;
 	impl_ = factory_type::create (lp_, ortho_, params_);
 	initialized_ = true;
-#endif // 0
       }
+#endif // 0
   }
 
 
