@@ -31,17 +31,13 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
   // ********************
   // Assemble DOF names and Residual names
   // ********************
-  this->m_dof_names = Teuchos::rcp(new std::vector<std::string>);
   this->m_dof_names->push_back(this->m_eqset_prefix+"TEMPERATURE");
 
-  this->m_dof_gradient_names = Teuchos::rcp(new std::vector<std::string>);
   this->m_dof_gradient_names->push_back(this->m_eqset_prefix+"GRAD_TEMPERATURE");
 
-  this->m_dof_time_derivative_names = Teuchos::rcp(new std::vector<std::string>);
   if (m_build_transient_support)
     this->m_dof_time_derivative_names->push_back(this->m_eqset_prefix+"DOT_TEMPERATURE");
 
-  this->m_residual_names = Teuchos::rcp(new std::vector<std::string>);
   this->m_residual_names->push_back(this->m_eqset_prefix+"RESIDUAL_TEMPERATURE");
 
   this->m_scatter_name = "Scatter_"+this->m_eqset_prefix+"RESIDUAL_TEMPERATURE";
@@ -56,7 +52,6 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
   this->m_basis = Teuchos::rcp(new panzer::Basis(ies.basis, 
 						 *(this->m_int_rule)));
 
-  this->m_eval_plist = Teuchos::rcp(new Teuchos::ParameterList);
   this->m_eval_plist->set("IR", this->m_int_rule);
   this->m_eval_plist->set("Basis", this->m_basis);
   this->m_eval_plist->set("Equation Dimension", cell_data.baseCellDimension());

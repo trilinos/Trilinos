@@ -9,6 +9,7 @@
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Teuchos_RCP.hpp"
 
 // ***********************************************************************
 template <typename EvalT>
@@ -18,7 +19,13 @@ EquationSet_DefaultImpl(const panzer::InputEquationSet& ies,
   m_input_eq_set(ies),
   m_cell_data(cell_data),
   m_eqset_prefix("")
-{ }
+{ 
+  m_dof_names = Teuchos::rcp(new std::vector<std::string>);
+  m_dof_gradient_names = Teuchos::rcp(new std::vector<std::string>);
+  m_dof_time_derivative_names = Teuchos::rcp(new std::vector<std::string>);
+  m_residual_names = Teuchos::rcp(new std::vector<std::string>);
+  m_eval_plist = Teuchos::rcp(new Teuchos::ParameterList);
+}
 
 // ***********************************************************************
 template <typename EvalT>
