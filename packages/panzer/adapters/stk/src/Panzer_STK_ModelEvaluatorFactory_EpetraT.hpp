@@ -208,8 +208,9 @@ namespace panzer_stk {
       p_0->push_back("viscosity");
       p_names.push_back(p_0);
     }
+    bool is_transient  = p.sublist("Solution Control").get<std::string>("Piro Solver") == "Rythmos" ? true : false;
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names, false));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names, is_transient));
    
     // Build stratimikos solver
     RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new ParameterList);

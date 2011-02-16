@@ -17,7 +17,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(chemical_plant_design_files
+PACKAGE_COPY_FILES_TO_BINARY_DIR(solver_test
   SOURCE_FILES solver_nox.xml solver_rythmos.xml clean.sh
   EXEDEPS solver
   )

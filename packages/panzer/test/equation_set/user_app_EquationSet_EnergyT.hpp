@@ -25,8 +25,7 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
 {
   this->m_eqset_prefix = ies.prefix;
 
-  if (ies.params.isType<bool>("Build Transient Support"))
-    m_build_transient_support = ies.params.get<bool>("Build Transient Support");
+  m_build_transient_support = ies.params.get<bool>("Build Transient Support");
 
   // ********************
   // Assemble DOF names and Residual names

@@ -18,7 +18,7 @@ namespace panzer {
     ies.model_id = 6;
     ies.model_factory = "rf";
     ies.prefix = "ION_";
-    ies.params.set<int>("junk", 1);
+    ies.params.set<bool>("Build Transient Support", false);
     
     int num_cells = 20;
     int cell_dim = 2;

@@ -5,3 +5,5 @@ ADD_SUBDIRECTORY(square_mesh)
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
    ADD_SUBDIRECTORY(assembly_engine)
 ENDIF()
+
+ADD_SUBDIRECTORY(main_driver)
