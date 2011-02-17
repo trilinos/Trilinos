@@ -25,6 +25,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/MueCentral)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Transfers/Smoothed-Aggregation)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Transfers/Generic)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Transfers/BaseClass)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Graph)
 
 #TODO: APPEND_GLOB(HEADERS */*.hpp) instead ?
 APPEND_SET(HEADERS
@@ -54,6 +55,7 @@ APPEND_SET(HEADERS
   Graph/MueLu_AggAlgorithm2Comm.hpp
   Graph/MueLu_AggregationOptions.hpp
   Graph/MueLu_Aggregates.hpp
+  Graph/MueLu_AggregationFactory.hpp
   Graph/MueLu_Graph.hpp
   )
 
