@@ -276,7 +276,7 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
      ies_1.model_id = 6;
      ies_1.model_factory = "rf";
      ies_1.prefix = "";
-     ies_1.params.set<int>("junk", 1);
+     ies_1.params.set<bool>("Build Transient Support", false);
    
      panzer::InputEquationSet ies_2;
      ies_2.name = "Energy";
@@ -285,7 +285,7 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
      ies_2.model_id = 6;
      ies_2.model_factory = "rf";
      ies_2.prefix = "ION_";
-     ies_2.params.set<int>("junk", 1);
+     ies_2.params.set<bool>("Build Transient Support", false);
    
      ipb.physics_block_id = "4";
      ipb.eq_sets.push_back(ies_1);

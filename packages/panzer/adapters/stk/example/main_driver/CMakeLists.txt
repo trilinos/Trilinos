@@ -7,9 +7,21 @@ INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/equation_set)
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/model_factory)
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/bcstrategy)
 
+SET(main_driver_SOURCES
+  main_driver.cpp
+  user_app_NOXObserverFactory_Epetra.hpp
+  user_app_NOXObserver_Epetra.hpp
+  user_app_RythmosObserverFactory_Epetra.hpp
+  user_app_RythmosObserver_Epetra.hpp
+  Panzer_STK_ModelEvaluatorFactory_Epetra.hpp
+  Panzer_STK_ModelEvaluatorFactory_EpetraT.hpp
+  Panzer_STK_NOXObserverFactory_Epetra.hpp
+  Panzer_STK_RythmosObserverFactory_Epetra.hpp
+  )
+
 PACKAGE_ADD_EXECUTABLE(
   main_driver
-  SOURCES Panzer_MainDriver.cpp ${UNIT_TEST_DRIVER}
+  SOURCES ${main_driver_SOURCES}
   )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(main_driver_files

@@ -27,10 +27,17 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
   "Build with IOSS code enabled."
   ON )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
-  ALBANY_IOSS
-  "Build with Albany's IOSS code enabled."
-  ON )
+#ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
+#  ALBANY_IOSS
+#  "Build with Albany's IOSS code enabled."
+#  ON )
+
+COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_SOLVER_DRIVERS_EPETRA
+  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_Stratimikos ${PACKAGE_NAME}_ENABLE_Piro ${PACKAGE_NAME}_ENABLE_NOX ${PACKAGE_NAME}_ENABLE_Rythmos
+  DOCSTR "Enables support for the solver drivers for the tests/examples."
+    " Defaults to ON if Stratimikos, Piro, NOX, and Rythmos are"
+    " enabled, otherwise defaults to OFF."
+  )
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
   "PANZER_EXPLICIT_TEMPLATE_INSTANTIATION"
