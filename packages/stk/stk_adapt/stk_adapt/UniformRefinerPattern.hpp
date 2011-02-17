@@ -249,14 +249,15 @@ namespace stk {
 
       enum
         {
-          fromTopoKey      = FromTopology::key,
-          toTopoKey        = ToTopology::key,
-          topo_key_hex27   = shards::Hexahedron<27>::key,
-          topo_key_hex20   = shards::Hexahedron<20>::key,
-          topo_key_quad8   = shards::Quadrilateral<8>::key,
-          topo_key_quad9   = shards::Quadrilateral<9>::key,
-          topo_key_wedge15 = shards::Wedge<15>::key,
-          centroid_node    = (toTopoKey == topo_key_quad9 ? 8 :
+          fromTopoKey         = FromTopology::key,
+          toTopoKey           = ToTopology::key,
+          topo_key_hex27      = shards::Hexahedron<27>::key,
+          topo_key_hex20      = shards::Hexahedron<20>::key,
+          topo_key_quad8      = shards::Quadrilateral<8>::key,
+          topo_key_shellquad8 = shards::ShellQuadrilateral<8>::key,
+          topo_key_quad9      = shards::Quadrilateral<9>::key,
+          topo_key_wedge15    = shards::Wedge<15>::key,
+          centroid_node       = (toTopoKey == topo_key_quad9 ? 8 :
                             (toTopoKey == topo_key_hex27 ? 20 : 0)
                             )
         };
@@ -561,7 +562,7 @@ namespace stk {
         static unsigned s_shell_tri_3_key = shards::ShellTriangle<3>::key;
         static unsigned s_shell_tri_6_key = shards::ShellTriangle<6>::key;
         static unsigned s_shell_quad_4_key = shards::ShellQuadrilateral<4>::key;
-        //static unsigned s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key;
+        static unsigned s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key;
         static unsigned s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key;
 
         if (cell_topo_key == s_shell_line_2_key || cell_topo_key == s_shell_line_3_key)
@@ -570,7 +571,8 @@ namespace stk {
           }
 
         if (cell_topo_key == s_shell_tri_3_key || cell_topo_key == s_shell_tri_6_key ||
-            cell_topo_key == s_shell_quad_4_key || cell_topo_key == s_shell_quad_9_key)
+            cell_topo_key == s_shell_quad_4_key || cell_topo_key == s_shell_quad_9_key ||
+            cell_topo_key == s_shell_quad_8_key )
           {
             topoDim = 2;
           }
@@ -619,10 +621,11 @@ namespace stk {
         if (1)
           {
             static bool entered = false;
-            if (!entered && (toTopoKey == topo_key_quad8 || toTopoKey == topo_key_hex20))
+            if (!entered && (toTopoKey == topo_key_quad8 || toTopoKey == topo_key_hex20 || toTopoKey == topo_key_shellquad8))
               {
-                std::cout << "toTopoKey = " << toTopoKey << " topo_key_quad8= " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
-                std::cout << "toTopoKey = " << toTopoKey << " topo_key_hex20= " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
+                std::cout << "toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+                std::cout << "toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+                std::cout << "toTopoKey: " << toTopoKey << " topo_key_hex20      = " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
                 entered = true;
                 mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
 
@@ -677,7 +680,7 @@ namespace stk {
 
             /// unfortunately, Intrepid doesn't support a quadratic Line<3> element
 
-            if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_hex20)
+            if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8 || toTopoKey == topo_key_hex20)
               {
                 //std::cout << "tmp here 1 i_new_node= " << i_new_node << " base element= " << std::endl;
                 if ( EXTRA_PRINT_URP_IF) Util::printEntity(std::cout, element, eMesh.getCoordinatesField() );
@@ -1145,6 +1148,8 @@ namespace stk {
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo); // CHECK
+        if (!ref_topo_p)
+          throw std::runtime_error("printRefinementTopoX_Table:: error, no refinement topology found");
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
         unsigned num_child = ref_topo.num_child();
@@ -1667,7 +1672,7 @@ namespace stk {
                 ++n_face_n;
               }
 
-            if (1 && fromTopoKey == topo_key_quad8)
+            if (fromTopoKey == topo_key_quad8 || fromTopoKey == topo_key_shellquad8)
               {
                 n_ord = 9;
               }
@@ -1679,7 +1684,7 @@ namespace stk {
                   continue;
                 if (i_face_n == childNodeIdx)
                   {
-                    if (fromTopoKey == topo_key_quad9 || fromTopoKey == topo_key_quad8)
+                    if (fromTopoKey == topo_key_quad9 || fromTopoKey == topo_key_quad8 || fromTopoKey == topo_key_shellquad8)
                       {
                         if (doRenumber)
                           {
@@ -1735,7 +1740,7 @@ namespace stk {
                             i_ord = renumber_quad_face_interior_nodes(i_face_n);
                           }
                       }
-                    if (1 && fromTopoKey == topo_key_hex20)
+                    if (fromTopoKey == topo_key_hex20)
                       {
                         if (doRenumber)
                           {
@@ -2095,6 +2100,8 @@ namespace stk {
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo);
+        if (!ref_topo_p)
+          throw std::runtime_error("printRefinementTopoX_Table:: error, no refinement topology found");
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
         unsigned num_child = ref_topo.num_child();
@@ -2436,13 +2443,13 @@ namespace stk {
 #include "UniformRefinerPattern_Tri3_Tri3_4_sierra.hpp"
 #include "UniformRefinerPattern_ShellTri3_ShellTri3_4_sierra.hpp"
 #include "UniformRefinerPattern_ShellQuad4_ShellQuad4_4_sierra.hpp"
+#include "UniformRefinerPattern_ShellQuad8_ShellQuad8_4_sierra.hpp"
 
 
 #include "UniformRefinerPattern_Tet4_Tet4_8_sierra.hpp"
 #include "UniformRefinerPattern_Hex8_Hex8_8_sierra.hpp"
 #include "UniformRefinerPattern_Wedge6_Wedge6_8_sierra.hpp"
 
-#include "URP_Heterogeneous_3D.hpp"
 
 #include "UniformRefinerPattern_Line3_Line3_2_sierra.hpp"
 #include "UniformRefinerPattern_Tri6_Tri6_4_sierra.hpp"
@@ -2454,6 +2461,7 @@ namespace stk {
 #include "UniformRefinerPattern_Wedge15_Wedge15_8_sierra.hpp"
 #include "UniformRefinerPattern_Wedge18_Wedge18_8_sierra.hpp"
 
+#include "URP_Heterogeneous_3D.hpp"
 #include "URP_Heterogeneous_QuadraticRefine_3D.hpp"
 
 // enrich
@@ -2490,12 +2498,13 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      4, SierraPort >            Tri3_Tri3_4;
     typedef  UniformRefinerPattern<shards::ShellTriangle<3>, shards::ShellTriangle<3>, 4, SierraPort >            ShellTri3_ShellTri3_4;
     typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<4>, 4, SierraPort >  ShellQuad4_ShellQuad4_4;
+    typedef  UniformRefinerPattern<shards::ShellQuadrilateral<8>, shards::ShellQuadrilateral<8>, 4, SierraPort >  ShellQuad8_ShellQuad8_4;
 
     typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort >            Tet4_Tet4_8;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,    8, SierraPort >            Hex8_Hex8_8;
     typedef  UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort >            Wedge6_Wedge6_8;
 
-    typedef  UniformRefinerPattern<shards::Line<3>,          shards::Line<3>,          2 >                        Line3_Line3_2;
+    typedef  UniformRefinerPattern<shards::Line<3>,          shards::Line<3>,          2, SierraPort >            Line3_Line3_2;
     typedef  UniformRefinerPattern<shards::Triangle<6>,      shards::Triangle<6>,      4, SierraPort >            Tri6_Tri6_4;
     typedef  UniformRefinerPattern<shards::Quadrilateral<9>, shards::Quadrilateral<9>, 4, SierraPort >            Quad9_Quad9_4;
     typedef  UniformRefinerPattern<shards::Quadrilateral<8>, shards::Quadrilateral<8>, 4, SierraPort >            Quad8_Quad8_4;

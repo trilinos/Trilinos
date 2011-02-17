@@ -70,6 +70,11 @@ template<> RefTopoX RefinementTopologyExtra< shards:: ShellTriangle<3>  > :: ref
 
 };
 
+template<> RefTopoX RefinementTopologyExtra< shards:: ShellQuadrilateral<8>  > :: refinement_topology = {
+  {	0,	0,	0,	0,	0,	{0,	0,	0} }
+
+};
+
 template<> RefTopoX RefinementTopologyExtra< shards:: ShellQuadrilateral<4>  > :: refinement_topology = {
   {	0,	0,	0,	0,	1,	{-1,	-1,	0} },
   {	1,	0,	1,	0,	1,	{1,	-1,	0} },
@@ -151,6 +156,8 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Wedge<6>  > :: refinement_
 };
 
 template<> RefTopoX RefinementTopologyExtra< shards:: Wedge<18>  > :: refinement_topology = {
+  {	0,	0,	0,	0,	0,	{0,	0,	0} }
+
 };
 
 template<> RefTopoX RefinementTopologyExtra< shards:: Wedge<15>  > :: refinement_topology = {

@@ -163,7 +163,6 @@ namespace stk {
 
           // line2 mesh
           SweepMesher tp2;
-          tp2 = SweepMesher();
 
           tp2.initNodes(coordsLine, numNodesLine);
           tp2.initElems(shards_Line_2, line2Elems, numElemsL2);

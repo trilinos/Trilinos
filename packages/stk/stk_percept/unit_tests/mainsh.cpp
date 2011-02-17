@@ -181,7 +181,7 @@ namespace stk
         tp2.dump();
 
         // line2 mesh
-        tp2 = SweepMesher();
+        tp2.initialize();
 
         tp2.initNodes(coordsLine, numNodesLine);
         tp2.initElems(shards_Line_2, line2Elems, numElemsL2);
@@ -245,7 +245,7 @@ namespace stk
         tp2.writeSTKMesh("tp2-hex-tet.e");
 
         /////////////// break all testing
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.CopyFromBasicMesh(quadMeshCopy);
         if(verbose) std::cout << "all elems dump" << std::endl;
         tp2.dump();
@@ -276,7 +276,7 @@ namespace stk
         tp2.writeSTKMesh("tp2-all.e");
 
         /////////////// break all testing - hexes
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.CopyFromBasicMesh(quadMeshCopy);
         if(verbose) std::cout << "hex all elems dump" << std::endl;
         tp2.dump();
@@ -301,7 +301,7 @@ namespace stk
         tp2.writeSTKMesh("tp2-all-hex-tet.e");
 
         /////////////// path test
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.CopyFromBasicMesh(quadMeshCopy);
         if(verbose) std::cout << "path elems dump" << std::endl;
         tp2.dump();
@@ -334,7 +334,7 @@ namespace stk
         tp2.writeSTKMesh("tp2-all-hex-tet-path.e");
 
         /////////////// path test 2
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.CopyFromBasicMesh(quadMeshCopy);
         if(verbose) std::cout << "path 2 elems dump" << std::endl;
         tp2.dump();
@@ -381,7 +381,7 @@ namespace stk
         tp2.writeSTKMesh("tp2-all-hex-tet-path2.e");
 
         /////////////// path test 3
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.CopyFromBasicMesh(quadMeshCopy);
         rad = 10.0;
         boost::array<double, 3> dirT = {{0,rad,0}};
