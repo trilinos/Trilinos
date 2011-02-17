@@ -5,7 +5,7 @@
 #include "create_inline_mesh.h"
 #include "../mesh_spec_lt/im_exodusII.h"
 #include "../mesh_spec_lt/im_ne_nemesisI.h"
-#include "../src/Pamgen_config.h"
+#include "Pamgen_config.h"
 #include <string.h>
 #include <limits.h>
 
