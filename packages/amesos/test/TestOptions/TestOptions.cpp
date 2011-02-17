@@ -45,7 +45,10 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Export.h"
+#include "Amesos_ConfigDefs.h"
+#ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
+#endif
 #include "CrsMatrixTranspose.h"
 #include "TestAllClasses.h"
 #include <string>
