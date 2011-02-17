@@ -174,7 +174,7 @@ namespace stk
         EXPECT_FALSE(isBad);
 
         //------- a bad topology with a duplicated node
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.dump(verbose);
         tp2.CopyFromBasicMesh(quadMeshCopy);
         if(verbose) std::cout << "before creating invalid mesh\n";
@@ -199,7 +199,7 @@ namespace stk
         EXPECT_TRUE(isBad);
 
         //------ create a bad topology with crossed elements
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.dump(verbose);
         tp2.CopyFromBasicMesh(quadMeshCopy);
         if(verbose) std::cout << "before creating invalid mesh\n";
@@ -298,7 +298,7 @@ namespace stk
         EXPECT_FALSE(isBad);
 
         /////////////// path test 3
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.CopyFromBasicMesh(quadMeshCopy);
         double rad = 10.0;
         boost::array<double, 3> dirT = {{0,rad,0}};
@@ -383,7 +383,7 @@ namespace stk
           {{0,0,0}}, {{sf*1,0,0}}, {{sf*0.5,sf*sqrt(3.)/2.,0}}, {{sf*0.5, sf*sqrt(3.)/6., sf*sqrt(6.)/3.}}
         };
 
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.initNodes(coordsTetScaled, numNodesTet);
         tp2.initElems(shards_Tetrahedron_4, tetElems, numElems);
         if(verbose) std::cout << "tet4 mesh scaled\n";

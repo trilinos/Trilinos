@@ -75,6 +75,49 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
+      TEST(regr_uniformRefiner, read_biplane)
+      {
+#if 0
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced?
+
+        if (p_size <= 1)
+          {
+            // start_demo_read_biplane
+            std::string input_mesh = "./input_files/salinas/biplane.e";
+
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh;
+            eMesh.open(input_mesh);
+
+            URP_Heterogeneous_3D break_pattern(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            eMesh.commit();
+
+            eMesh.printInfo("biplane", 2);
+            eMesh.saveAs("./output_files/biplane_0.e");
+
+            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("biplane", 2);
+            eMesh.saveAs("./output_files/biplane_1.e");
+
+          }
+#endif
+      }
 
       //======================================================================================================================
       //======================================================================================================================
@@ -128,6 +171,7 @@ namespace stk
             Tri3_Tri3_4              :: printRefinementTopoX_Table(file);
             ShellTri3_ShellTri3_4    :: printRefinementTopoX_Table(file);
             ShellQuad4_ShellQuad4_4  :: printRefinementTopoX_Table(file);
+            //ShellQuad8_ShellQuad8_4  :: printRefinementTopoX_Table(file);
             Tet4_Tet4_8              :: printRefinementTopoX_Table(file);
             Hex8_Hex8_8              :: printRefinementTopoX_Table(file);
             Wedge6_Wedge6_8          :: printRefinementTopoX_Table(file);
@@ -1322,7 +1366,6 @@ namespace stk
       TEST(regr_uniformRefiner, break_tet4_tet10_tet10_1)
       {
         // FIXME
-        //if (1) return;
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
@@ -1947,7 +1990,6 @@ namespace stk
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
-        //if (1) return; //FIXME - Intrepid doesn't have a wedge<15> basis
 
         // start_demo_regr_uniformRefiner_wedge6_enrich_refine
 
@@ -2300,7 +2342,6 @@ namespace stk
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
-        //if (1) return; // FIXME Ioss doesn't support Wedge18 elements
 
         // start_demo_regr_uniformRefiner_wedge6_wedge18_enrich
 
