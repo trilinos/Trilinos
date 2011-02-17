@@ -29,7 +29,7 @@ class AggregationFactory {
     //@{
 
     //! Constructor.
-    AggregationFactory() : Algorithm_('\0') {}
+    AggregationFactory() {}
 
     //! Destructor.
     virtual ~AggregationFactory() {}
@@ -39,13 +39,14 @@ class AggregationFactory {
     //@{
 
     //! Build aggregates.
-    void Build(Graph const &graph, AggregationOptions const &options) const
+    Teuchos::RCP<Aggregates> Build(Graph const &graph, AggregationOptions const &options) const
     {
       Teuchos::OSTab tab(this->out_);
 
       Teuchos::RCP<Aggregates> aggregates = MueLu_Aggregate_CoarsenUncoupled(options,*graph);
       std::string name = "UC_CleanUp";
       MueLu_AggregateLeftOvers(options, *aggregates, name, *graph);
+      return aggregates;
     }
     //@}
 

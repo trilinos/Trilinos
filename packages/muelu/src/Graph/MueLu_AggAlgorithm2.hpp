@@ -10,6 +10,9 @@
 /* Date          : Jan, 2010                                                 */
 /* ************************************************************************* */
 
+#ifndef MUELU_AGGALGORITHM2_HPP
+#define MUELU_AGGALGORITHM2_HPP
+
 #define CLEAN_DEBUG
 
 #include <assert.h>
@@ -34,8 +37,6 @@
 #define maxAll(rcpComm, in, out) \
   Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
 
-using namespace std;
-using namespace MueLu;
 using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
 typedef ArrayView<const int>::const_iterator iter;
@@ -69,6 +70,7 @@ int MueLu_PrintLevel();
                                   /* which we are contemplated adding another*/
                                   /* vertex.  Should be between 0 and 1.     */
 
+namespace MueLu {
 int MueLu_RootCandidates(int nVertices, ArrayView<const int> & vertex2AggId, const Graph<int,int> graph,
                          ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal);
 
@@ -399,7 +401,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
   myWidget.MueLu_NonUnique2NonUnique(*temp_, *tempOutput_, Cthulhu::ADD);
    
-  vector<bool> gidNotShared(exp_nRows);
+  std::vector<bool> gidNotShared(exp_nRows);
   for (int i = 0; i < exp_nRows; i++) {
     if (tempOutput[i] > 1.) gidNotShared[i] = false; 
     else  gidNotShared[i] = true; 
@@ -534,7 +536,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
   // Grab the transpose matrix graph for unaggregated ghost vertices.
   //     a) count the number of nonzeros per row in the transpose
-  vector<int> RowPtr(exp_nRows+1-nVertices);
+  std::vector<int> RowPtr(exp_nRows+1-nVertices);
   //{
   ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
 
@@ -561,7 +563,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     iSum += iTemp;
   }
   RowPtr[exp_nRows-nVertices] = iSum;
-  vector<int> cols(iSum+1);
+  std::vector<int> cols(iSum+1);
    
   //     c) Traverse matrix and insert entries in proper location.
   for (int i = 0; i < nVertices;  i++) {
@@ -881,3 +883,6 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
 
   return 0; //TODO
 }
+} //namespace MueLu
+
+#endif //ifndef MUELU_AGGALGORITHM2_HPP

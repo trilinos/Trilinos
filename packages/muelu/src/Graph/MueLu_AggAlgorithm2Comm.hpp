@@ -1,6 +1,9 @@
 #include <Cthulhu_Import.hpp>
 #include <Cthulhu_EpetraImport.hpp> //tmp
 
+#ifndef MUELU_AGGALGORITHM2COMM_HPP
+#define MUELU_AGGALGORITHM2COMM_HPP
+
 class AggAlgorithm2Comm {
 
 private:
@@ -213,7 +216,7 @@ public:
     return 0; //TODO
   }
 
-  inline int MueLu_ArbitrateAndCommunicate(Cthulhu::Vector<double> &weights, Aggregates<int,int> &aggregates, const bool perturb) const
+  inline int MueLu_ArbitrateAndCommunicate(Cthulhu::Vector<double> &weights, MueLu::Aggregates<int,int> &aggregates, const bool perturb) const
   {
     return MueLu_ArbitrateAndCommunicate(weights, *aggregates.GetProcWinner(), &*aggregates.GetVertex2AggId(), perturb);
   }
@@ -252,3 +255,4 @@ public:
   }
    
 };
+#endif //ifndef MUELU_AGGALGORITHM2COMM_HPP

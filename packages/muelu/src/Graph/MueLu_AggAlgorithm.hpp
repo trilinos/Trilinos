@@ -10,6 +10,9 @@
 /* Date          : Jan, 2010                                                 */
 /* ************************************************************************* */
 
+#ifndef MUELU_AGGALGORITHM_HPP
+#define MUELU_AGGALGORITHM_HPP
+
 #define CLEAN_DEBUG
 
 #include <assert.h>
@@ -26,10 +29,7 @@
 #define sumAll(rcpComm, in, out) \
   Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
 
-using namespace std;
-using namespace MueLu;
-using Teuchos::ArrayView;
-typedef ArrayView<const int>::const_iterator iter;
+typedef Teuchos::ArrayView<const int>::const_iterator iter;
 
 int MueLu_PrintLevel() { return 7; }    /* Normally this should be some general*/
                                         /* attribute the indicates the level   */
@@ -97,12 +97,13 @@ int MueLu_RandomReorder(Teuchos::ArrayRCP<int> randomVector, const Map &map);
 /*       procWinner[] is set during Phase 1.                                */
 /* ------------------------------------------------------------------------ */
 
-RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOptions & aggOptions, const Graph<int,int> & graph)
+RCP<MueLu::Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const MueLu::AggregationOptions & aggOptions, const
+MueLu::Graph<int,int> & graph)
 {
   /* Create Aggregation object */
   const std::string name = "Uncoupled";
   int nAggregates = 0;
-  RCP<Aggregates<int,int> > aggregates = Teuchos::rcp(new Aggregates<int,int>(graph, name));
+  RCP<MueLu::Aggregates<int,int> > aggregates = Teuchos::rcp(new MueLu::Aggregates<int,int>(graph, name));
 
   /* ============================================================= */
   /* aggStat indicates whether this node has been aggreated, and   */
@@ -195,7 +196,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
         if ( aggStat[iNode] == READY ) 
           {
             // neighOfINode is the neighbor node list of node 'iNode'.
-            ArrayView<const int> neighOfINode = graph.getNeighborVertices(iNode);
+            Teuchos::ArrayView<const int> neighOfINode = graph.getNeighborVertices(iNode);
             int length = neighOfINode.size();
           
             supernode = new MueLu_SuperNode;
@@ -283,7 +284,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
                     if ( ordering == 2 ) /* if graph ordering */
                       {
 
-                        ArrayView<const int> neighOfJNode = graph.getNeighborVertices(jNode);
+                        Teuchos::ArrayView<const int> neighOfJNode = graph.getNeighborVertices(jNode);
 
                         for (iter it = neighOfJNode.begin(); it != neighOfJNode.end(); ++it)
                           {
@@ -433,3 +434,5 @@ int MueLu_RandomReorder(Teuchos::ArrayRCP<int> list, const Map &map)
 //  - i and iNode
 //  - k->kNode
 //  - ...
+
+#endif //ifndef MUELU_AGGALGORITHM_HPP
