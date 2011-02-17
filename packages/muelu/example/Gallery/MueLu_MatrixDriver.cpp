@@ -13,6 +13,7 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
+#include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp> // TODO: rename MueLu Gallery
 
 using Teuchos::RCP;
@@ -20,7 +21,7 @@ using Teuchos::RCP;
 /*
   This driver simply generates a Tpetra matrix, prints it to screen, and exits.
 
-  This example doesn't use Cthulhu.
+  THIS EXAMPLE DOES NOT USE CTHULHU.
 
   Use the "--help" option to get verbose help.
 */
@@ -35,41 +36,32 @@ int main(int argc, char** argv)
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  LO numThreads=1;
-  GO nx=4;
-  GO ny=4;
-  GO nz=4;
-  Teuchos::CommandLineProcessor cmdp(false,true);
-  std::string matrixType("Laplace1D");
-  cmdp.setOption("nt",&numThreads,"number of threads.");
-  cmdp.setOption("nx",&nx,"mesh points in x-direction.");
-  cmdp.setOption("ny",&ny,"mesh points in y-direction.");
-  cmdp.setOption("nz",&nz,"mesh points in z-direction.");
-  cmdp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Star2D, Laplace3D");
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return EXIT_FAILURE;
+  /**********************************************************************************/
+  /* SET TEST PARAMETERS                                                            */
+  /**********************************************************************************/
+  // Note: use --help to list available options.
+  Teuchos::CommandLineProcessor cmdp(false);
+  
+  MueLu::Gallery::Parameters matrixParameters(cmdp);   // manage parameters of the test case
+  
+  switch (cmdp.parse(argc,argv)) {
+  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
+  
+  matrixParameters.check();
+  matrixParameters.print();
 
-  std::cout << "#threads = " << numThreads << std::endl;
-  std::cout << "problem size = " << nx*ny << std::endl;
-  std::cout << "matrix type = " << matrixType << std::endl;
+  /**********************************************************************************/
+  /* CREATE INITAL MATRIX                                                           */
+  /**********************************************************************************/
+  RCP<const Tpetra::Map<LO,GO> > map = rcp( new Tpetra::Map<LO,GO>(matrixParameters.GetNumGlobalElements(), 0, comm) );
+  RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO> >(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
-  Teuchos::ParameterList pl;
-  pl.set("Num Threads",numThreads);
-
-  GO numGlobalElements = nx*ny;
-  if (matrixType == "Laplace3D")
-    numGlobalElements *= nz;
-  LO indexBase = 0;
-
-  RCP<const Tpetra::Map<LO,GO> > map;
-  map = rcp( new Tpetra::Map<LO,GO>(numGlobalElements, indexBase, comm) );
-
-  Teuchos::ParameterList matrixList;
-  matrixList.set("nx",nx);
-  matrixList.set("ny",ny);
-  matrixList.set("nz",nz);
-  RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO> >(matrixType,map,matrixList);
+  /**********************************************************************************/
+  /*                                                                                */
+  /**********************************************************************************/
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   if (comm->getRank() == 0)

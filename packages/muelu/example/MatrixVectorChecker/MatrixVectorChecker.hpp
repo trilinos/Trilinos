@@ -181,7 +181,7 @@ int MatrixVectorChecker(const RCP<const Cthulhu::Operator<ScalarType, LocalOrdin
 
 #endif
 
-  return 0;
+  return 1;
 
 } // MatrixVectorChecker()
 
