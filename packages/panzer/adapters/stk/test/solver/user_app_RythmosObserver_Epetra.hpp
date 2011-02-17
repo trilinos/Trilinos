@@ -13,7 +13,7 @@
 
 #include "Panzer_STK_Utilities.hpp"
 
-namespace panzer_stk {
+namespace user_app {
 
   class RythmosObserver_Epetra : 
     public Rythmos::IntegrationObserverBase<double> {

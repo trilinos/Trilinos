@@ -12,7 +12,7 @@ SET(UNIT_TEST_DRIVER
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   solver
-  SOURCES solver.cpp ${UNIT_TEST_DRIVER}
+  SOURCES solver.cpp ${UNIT_TEST_DRIVER} user_app_RythmosObserver_Epetra.hpp
   COMM serial mpi
   NUM_MPI_PROCS 4
   )

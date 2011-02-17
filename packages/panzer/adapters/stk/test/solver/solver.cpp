@@ -27,7 +27,7 @@ using Teuchos::rcp;
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_PauseToAttach.hpp"
-#include "Panzer_STK_RythmosObserver_Epetra.hpp"
+#include "user_app_RythmosObserver_Epetra.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -486,8 +486,8 @@ namespace panzer {
       piro = rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
     }
     else if (solver=="Rythmos") {
-      RCP<panzer_stk::RythmosObserver_Epetra> observer = 
-	Teuchos::rcp(new panzer_stk::RythmosObserver_Epetra(mesh, dofManager, ep_lof));
+      RCP<user_app::RythmosObserver_Epetra> observer = 
+	Teuchos::rcp(new user_app::RythmosObserver_Epetra(mesh, dofManager, ep_lof));
       piro = rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer));
     }
     else {

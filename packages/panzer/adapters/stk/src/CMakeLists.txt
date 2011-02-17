@@ -34,7 +34,6 @@ APPEND_SET(HEADERS
   Panzer_STK_SetupUtilitiesT.hpp
   Panzer_STK_AuxiliaryVariables.hpp
   Panzer_STK_AuxiliaryVariablesT.hpp
-  Panzer_STK_RythmosObserver_Epetra.hpp
   Panzer_STK_ModelEvaluatorFactory_Epetra.hpp
   Panzer_STK_ModelEvaluatorFactory_EpetraT.hpp
   Panzer_STK_NOXObserverFactory_Epetra.hpp
