@@ -6,12 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stdexcept>
 #include <sstream>
 #include <algorithm>
 #include <limits>
 #include <stdint.h>
+
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
 
@@ -37,6 +39,14 @@ struct KeyProcLess {
 
 };
 
+struct KeyProcEqual
+{
+  bool operator()( const DistributedIndex::KeyProc & lhs,
+                   const DistributedIndex::KeyProc & rhs ) const {
+    return lhs == rhs ;
+  }
+};
+
 void sort_unique( std::vector<DistributedIndex::KeyProc> & key_usage )
 {
   std::vector<DistributedIndex::KeyProc>::iterator
@@ -45,7 +55,7 @@ void sort_unique( std::vector<DistributedIndex::KeyProc> & key_usage )
 
   std::sort( i , j , KeyProcLess() );
 
-  i = std::unique( i , j );
+  i = std::unique( i , j , KeyProcEqual() );
 
   key_usage.erase( i , j );
 }
@@ -63,14 +73,14 @@ void sort_unique( std::vector<DistributedIndex::KeyType> & keys )
   keys.erase( i , j );
 }
 
-}
+} // namespace <unnamed>
 
 //----------------------------------------------------------------------
 
 enum { DISTRIBUTED_INDEX_CHUNK_BITS = 12 }; ///< Each chunk is 4096 keys
 
 enum { DISTRIBUTED_INDEX_CHUNK_SIZE =
-         size_t(1) << DISTRIBUTED_INDEX_CHUNK_BITS };
+       size_t(1) << DISTRIBUTED_INDEX_CHUNK_BITS };
 
 DistributedIndex::ProcType
 DistributedIndex::to_which_proc( const DistributedIndex::KeyType & key ) const
@@ -278,6 +288,7 @@ void DistributedIndex::query(
       CommBuffer & buf = all.recv_buffer( p );
       KeyProc kp ;
       kp.second = p ;
+
       while ( buf.remaining() ) {
         buf.unpack<KeyType>( kp.first );
         request.push_back( kp );
@@ -371,7 +382,7 @@ namespace {
 struct RemoveKeyProc {
 
   bool operator()( const DistributedIndex::KeyProc & kp ) const
-    { return kp.second < 0 ; }
+  { return kp.second < 0 ; }
 
   static void mark( std::vector<DistributedIndex::KeyProc> & key_usage ,
                     const DistributedIndex::KeyProc & kp )
@@ -540,6 +551,9 @@ void DistributedIndex::update_keys(
   //------------------------------
   // Append for local keys
 
+  // Add new_keys going to this proc to local_key_usage
+  std::vector<KeyProc> local_key_usage ;
+  local_key_usage.reserve(add_new_keys.size());
   for ( std::vector<KeyType>::const_iterator
         i = add_new_keys.begin();
         i != add_new_keys.end(); ++i ) {
@@ -547,27 +561,60 @@ void DistributedIndex::update_keys(
     const ProcType p = to_which_proc( *i );
     if ( p == m_comm_rank ) {
       KeyProc kp( *i , p );
-      m_key_usage.push_back( kp );
+      local_key_usage.push_back( kp );
     }
   }
 
+  // Merge local_key_usage and m_key_usage into temp_key
+  std::vector<KeyProc> temp_key ;
+  temp_key.reserve(local_key_usage.size() + m_key_usage.size());
+  std::sort( local_key_usage.begin(), local_key_usage.end(), KeyProcLess() );
+  std::merge( m_key_usage.begin(),
+              m_key_usage.end(),
+              local_key_usage.begin(),
+              local_key_usage.end(),
+              std::back_inserter(temp_key) );
+
   // Unpack and append for remote keys:
+  std::vector<KeyProc> remote_key_usage ;
+  {
+    unsigned num_remote_adds = 0;
+    for ( int p = 0 ; p < m_comm_size ; ++p ) {
+      CommBuffer & buf = all.recv_buffer( p );
+      num_remote_adds += buf.remaining() / sizeof(KeyProc);
+    }
+
+    remote_key_usage.reserve(num_remote_adds);
+  }
   for ( int p = 0 ; p < m_comm_size ; ++p ) {
     CommBuffer & buf = all.recv_buffer( p );
 
     KeyProc kp ;
-
     kp.second = p ;
 
     while ( buf.remaining() ) {
       buf.unpack<KeyType>( kp.first );
-      m_key_usage.push_back( kp );
+      remote_key_usage.push_back( kp );
     }
   }
 
-  //------------------------------
+  std::sort( remote_key_usage.begin(), remote_key_usage.end(), KeyProcLess() );
 
-  sort_unique( m_key_usage );
+  m_key_usage.clear();
+  m_key_usage.reserve(temp_key.size() + remote_key_usage.size());
+
+  // Merge temp_key and remote_key_usage into m_key_usage, so...
+  //   m_key_usage = local_key_usage + remote_key_usage + m_key_usage(orig)
+  std::merge( temp_key.begin(),
+              temp_key.end(),
+              remote_key_usage.begin(),
+              remote_key_usage.end(),
+              std::back_inserter(m_key_usage) );
+
+  // Unique m_key_usage
+  m_key_usage.erase(std::unique( m_key_usage.begin(),
+                                 m_key_usage.end()),
+                    m_key_usage.end() );
 }
 
 //----------------------------------------------------------------------
@@ -687,8 +734,10 @@ void DistributedIndex::generate_new_keys_local_planning(
 
     const size_t chunk_inc = m_comm_size * DISTRIBUTED_INDEX_CHUNK_SIZE ;
 
+    const size_t chunk_rsize = m_comm_rank * DISTRIBUTED_INDEX_CHUNK_SIZE ;
+
     for ( KeyType key_begin = m_key_span[i].first +
-                  m_comm_rank * DISTRIBUTED_INDEX_CHUNK_SIZE ;
+                  chunk_rsize ;
           key_begin <= key_upper_bound ; key_begin += chunk_inc ) {
 
       // What is the first key of the chunk
@@ -841,7 +890,7 @@ void DistributedIndex::generate_new_keys(
 
   generate_new_global_key_upper_bound( requests , global_key_upper_bound );
 
-  //  No exception thrown means all inputs are good and parallel consistent
+  // No exception thrown means all inputs are good and parallel consistent
 
   // Determine which local keys will be contributed,
   // keeping what this process could use from the contribution.
@@ -930,7 +979,7 @@ void DistributedIndex::generate_new_keys(
   for ( int p = 0 ; p < m_comm_size ; ++p ) {
     CommBuffer & buf = all.recv_buffer( p );
     while ( buf.remaining() ) {
-      KeyType key ;
+      KeyType key;
       buf.unpack<KeyType>( key );
       new_keys.push_back( key );
     }
