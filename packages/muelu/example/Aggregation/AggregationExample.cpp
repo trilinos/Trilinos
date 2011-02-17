@@ -23,6 +23,8 @@
 #include "MueLu_AggAlgorithm.hpp"
 #include "MueLu_AggAlgorithm2.hpp"
 
+#include "MueLu_UseShortNames.hpp"
+
 int main(int argc, char *argv[]) {
   
   Teuchos::oblackholestream blackhole;
@@ -35,7 +37,7 @@ int main(int argc, char *argv[]) {
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor cmdp(false);
   
-  Gallery::Parameters matrixParameters(cmdp);   // manage parameters of the test case
+  MueLu::Gallery::Parameters matrixParameters(cmdp);   // manage parameters of the test case
   Cthulhu::Parameters cthulhuParameters(cmdp);  // manage parameters of cthulhu
   
   switch (cmdp.parse(argc,argv)) {
@@ -61,7 +63,7 @@ int main(int argc, char *argv[]) {
 
   int printFlag=6;
   
-  AggregationOptions aggOptions;
+  MueLu::AggregationOptions aggOptions;
   
   aggOptions.SetPrintFlag(printFlag);      
   aggOptions.SetMinNodesPerAggregate(2);  
@@ -77,8 +79,8 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0 && printFlag < MueLu_PrintLevel())
     printf("main() Aggregate_CoarsenUncoupled : \n");
  
-  RCP<Graph<> > graph = rcp(new Graph<>(Op->getCrsGraph(), "Uncoupled"));
-  RCP<Aggregates<> > aggregates = MueLu_Aggregate_CoarsenUncoupled(aggOptions,*graph);
+  RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
+  RCP<Aggregates> aggregates = MueLu_Aggregate_CoarsenUncoupled(aggOptions,*graph);
 
   std::string name = "UC_CleanUp";
   MueLu_AggregateLeftOvers(aggOptions, *aggregates, name, *graph);
