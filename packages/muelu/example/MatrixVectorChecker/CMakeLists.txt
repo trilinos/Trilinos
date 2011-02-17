@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # TODO: IF (Cthulhu_ENABLE_Epetra) or IF (Cthulhu_ENABLE_Tpetra)
 
 PACKAGE_ADD_EXECUTABLE(
-  MatrixVectorCheckerExample_Epetra
+  MatrixVectorCheckerExample
   SOURCES MatrixVectorCheckerExample.cpp
   COMM serial mpi
   DEPLIBS muelu muelu-cthulhu
@@ -17,8 +17,8 @@ PACKAGE_ADD_EXECUTABLE(
 
 IF (Cthulhu_ENABLE_Epetra)
   PACKAGE_ADD_TEST(
-    MatrixVectorCheckerExample_Epetra
-    NAME "Matrix-Vector Checker"
+    MatrixVectorCheckerExample
+    NAME "MatrixVectorChecker Epetra"
     ARGS "--linAlgebra=0"
     COMM serial mpi
     # NUM_MPI_PROCS 2
@@ -28,8 +28,8 @@ ENDIF()
 
 IF (Cthulhu_ENABLE_Tpetra)
   PACKAGE_ADD_TEST(
-    MatrixVectorCheckerExample_Epetra
-    NAME "Matrix-Vector Checker"
+    MatrixVectorCheckerExample
+    NAME "MatrixVectorChecker Epetra"
     ARGS "--linAlgebra=1"
     COMM serial mpi
     # NUM_MPI_PROCS 2
