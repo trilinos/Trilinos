@@ -13,4 +13,5 @@ echo "
 ../../Trilinos/checkin-test.py \
 -j12 \
 --ctest-timeout=180 \
+--ctest-options="-E Teuchos_Dependencies_Serialization_test_MPI_1" \
 $EXTRA_ARGS  
