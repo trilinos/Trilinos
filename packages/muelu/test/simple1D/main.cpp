@@ -10,13 +10,11 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaLevel.hpp"
 #include "MueLu_SaPFactory.hpp"
-////#include "MueLu_RAPFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
 //#include "MueLu_GaussSeidel.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
-#include <MueLu_MatrixFactory.hpp>
-#include "MueLu_Utilities.hpp"
 
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
@@ -25,11 +23,15 @@
 #include <Cthulhu_CrsMatrix.hpp>
 #include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_CrsOperator.hpp>
+#include <Cthulhu.hpp>
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 #include <Cthulhu_MultiVectorFactory.hpp>
 
-#include <Cthulhu.hpp>
+#include <MueLu_MatrixFactory.hpp>
+
+#include "MueLu_Utilities.hpp"
+
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 /**********************************************************************************/

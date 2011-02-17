@@ -1,6 +1,7 @@
 #ifndef MUELU_AGGREGATIONFACTORY_HPP
 #define MUELU_AGGREGATIONFACTORY_HPP
 
+#include "Cthulhu.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AggregationOptions.hpp"
 #include "MueLu_AggAlgorithm.hpp"

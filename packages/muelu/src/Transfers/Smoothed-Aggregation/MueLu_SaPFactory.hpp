@@ -4,6 +4,7 @@
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
 #include <Cthulhu_CrsOperator.hpp>
+#include <Cthulhu.hpp>
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 

@@ -17,6 +17,7 @@
 #include <Cthulhu_EpetraVector.hpp>
 #include <Cthulhu_EpetraMultiVector.hpp>
 #endif
+#include <Cthulhu.hpp>
 
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_Exceptions.hpp"

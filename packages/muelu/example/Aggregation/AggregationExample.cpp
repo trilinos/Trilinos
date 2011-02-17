@@ -12,6 +12,7 @@
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_MapFactory.hpp>
 #include <Cthulhu_CrsOperator.hpp>
+#include <Cthulhu.hpp>
 
 // Gallery
 #define CTHULHU_ENABLED // == Gallery have to be build with the support of Cthulhu matrices.
@@ -22,7 +23,6 @@
 #include "MueLu_AggAlgorithm.hpp"
 #include "MueLu_AggAlgorithm2.hpp"
 
-#include <Cthulhu.hpp>
 #include "MueLu_UseShortNames.hpp"
 
 int main(int argc, char *argv[]) {
