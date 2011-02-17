@@ -1,16 +1,16 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
-#include "Cthulhu_DefaultPlatform.hpp"
-
 #define HAVE_CTHULHU_EPETRA
 #define CTHULHU_USE_EPETRA
-#include "MueLu_config.hpp"
 
 //#include "Cthulhu_config.hpp"
 
-#include <Cthulhu.hpp>
-#include <Cthulhu_Map.hpp>
 #include "test_helpers.hpp"
+
+#include <Cthulhu_Map.hpp>
+#include "Cthulhu_DefaultPlatform.hpp"
+
+#include "MueLu_config.hpp"
 #include "MueLu_Version.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -18,6 +18,7 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 
+#include <Cthulhu.hpp>
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 

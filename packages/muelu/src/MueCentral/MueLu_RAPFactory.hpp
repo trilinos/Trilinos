@@ -15,7 +15,6 @@ class RAPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
 #include "MueLu_UseShortNames.hpp"
 
-
   //JG to JJH: use Teuchos::Describable instead ?
   template<class AA, class BB, class CC, class DD, class EE>
   inline friend std::ostream& operator<<(std::ostream& os, RAPFactory<AA,BB,CC,DD,EE> &factory);
