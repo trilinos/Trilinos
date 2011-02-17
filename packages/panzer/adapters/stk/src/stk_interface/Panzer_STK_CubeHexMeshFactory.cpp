@@ -314,7 +314,7 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
          if(side->owner_rank()==machRank_)
             mesh.addEntityToSideset(*side,back);
       }
-      else if(nz+1==totalZElems) {
+      if(nz+1==totalZElems) {
          stk::mesh::Entity * side = getRelationByID(5,relations)->entity();
 
          // on the front
@@ -329,7 +329,7 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
          if(side->owner_rank()==machRank_)
             mesh.addEntityToSideset(*side,bottom);
       }
-      else if(ny+1==totalYElems) {
+      if(ny+1==totalYElems) {
          stk::mesh::Entity * side = getRelationByID(2,relations)->entity();
 
          // on the top
@@ -344,7 +344,7 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
          if(side->owner_rank()==machRank_)
             mesh.addEntityToSideset(*side,left);
       }
-      else if(nx+1==totalXElems) {
+      if(nx+1==totalXElems) {
          stk::mesh::Entity * side = getRelationByID(1,relations)->entity();
 
          // on the right

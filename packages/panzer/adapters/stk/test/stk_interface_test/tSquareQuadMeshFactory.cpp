@@ -17,6 +17,9 @@
    #include "Epetra_SerialComm.h"
 #endif
 
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/Selector.hpp"
+
 namespace panzer_stk {
 
 inline bool XOR(bool A,bool B)
@@ -447,13 +450,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
             stk::mesh::Entity * side = *itr;
             stk::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
-            stk::mesh::EntityId n0 = relations[0].entity()->identifier();
-            stk::mesh::EntityId n1 = relations[1].entity()->identifier();
    
             TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
             TEST_EQUALITY((int) side->relations().size(),3);
             TEST_EQUALITY(relations.size(),2);
-            // TEST_EQUALITY(side->identifier(),mesh->getEdgeId(n0,n1));
          }
          
       }
@@ -494,17 +494,70 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
             stk::mesh::Entity * side = *itr;
             stk::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
-            stk::mesh::EntityId n0 = relations[0].entity()->identifier();
-            stk::mesh::EntityId n1 = relations[1].entity()->identifier();
    
             TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
             TEST_EQUALITY((int) side->relations().size(),3);
             TEST_EQUALITY(relations.size(),2);
-            // TEST_EQUALITY(side->identifier(),mesh->getEdgeId(n0,n1));
          }
          
       }
    }
+}
+
+TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, check_ss)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcpFromRef;
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Blocks",2);
+   pl->set("Y Blocks",1);
+   pl->set("X Elements",2);
+   pl->set("Y Elements",1);
+
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
+
+   SquareQuadMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+
+   stk::mesh::Selector ownedAndGhosted = mesh->getMetaData()->locally_owned_part() 
+                                       | mesh->getMetaData()->globally_shared_part();
+   stk::mesh::Selector topPart = *mesh->getMetaData()->get_part("top","Big error!")    & ownedAndGhosted;
+   stk::mesh::Selector btmPart = *mesh->getMetaData()->get_part("bottom","Big error!") & ownedAndGhosted;
+   stk::mesh::Selector lftPart = *mesh->getMetaData()->get_part("left","Big error!")   & ownedAndGhosted;
+   stk::mesh::Selector rhtPart = *mesh->getMetaData()->get_part("right","Big error!")  & ownedAndGhosted;
+
+   const std::vector<stk::mesh::Bucket*> & nodeBuckets = mesh->getBulkData()->buckets(mesh->getNodeRank());
+
+   unsigned lftCnt = stk::mesh::count_selected_entities(lftPart,nodeBuckets);
+   unsigned rhtCnt = stk::mesh::count_selected_entities(rhtPart,nodeBuckets);
+   unsigned topCnt = stk::mesh::count_selected_entities(topPart,nodeBuckets);
+   unsigned btmCnt = stk::mesh::count_selected_entities(btmPart,nodeBuckets);
+   
+   if(numprocs==1) {
+      TEST_EQUALITY(lftCnt,2);
+      TEST_EQUALITY(rhtCnt,2);
+      TEST_EQUALITY(topCnt,5);
+      TEST_EQUALITY(btmCnt,5);
+   }
+   else if(rank==0) {
+      TEST_EQUALITY(lftCnt,2);
+      TEST_EQUALITY(rhtCnt,0);
+      TEST_EQUALITY(topCnt,4);
+      TEST_EQUALITY(btmCnt,4);
+   }
+   else if(rank==1) {
+      TEST_EQUALITY(lftCnt,0);
+      TEST_EQUALITY(rhtCnt,2);
+      TEST_EQUALITY(topCnt,4);
+      TEST_EQUALITY(btmCnt,4);
+   }
+   else  
+      TEUCHOS_ASSERT(false);
 }
 
 }
