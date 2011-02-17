@@ -20,6 +20,9 @@ namespace panzer {
     
     virtual ~EquationSet_DefaultImpl() {}
     
+    //! Builds the integration rule, basis, DOFs, and default parameter list
+    virtual void setupDOFs(int equation_dimension);
+
     virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const = 0;
 

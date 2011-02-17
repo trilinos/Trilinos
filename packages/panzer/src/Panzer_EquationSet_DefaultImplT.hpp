@@ -30,6 +30,29 @@ EquationSet_DefaultImpl(const panzer::InputEquationSet& ies,
 // ***********************************************************************
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
+setupDOFs(int equation_dimension)
+{
+  this->m_int_rule = 
+    Teuchos::rcp(new panzer::IntegrationRule(m_input_eq_set.integration_order,
+					     m_cell_data));
+  
+  this->m_basis = Teuchos::rcp(new panzer::Basis(m_input_eq_set.basis,
+						 *(this->m_int_rule)));
+  
+  this->m_eval_plist->set("IR", this->m_int_rule);
+  this->m_eval_plist->set("Basis", this->m_basis);
+  this->m_eval_plist->set("Equation Dimension", equation_dimension);
+  
+  this->m_provided_dofs.clear();
+  int index = 0;
+  for (std::vector<std::string>::const_iterator i = this->m_dof_names->begin();
+       i != this->m_dof_names->end(); ++i, ++index)
+    this->m_provided_dofs.push_back(std::make_pair((*(this->m_dof_names))[index], this->m_basis));
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
                                         const LinearObjFactory<panzer::Traits> & lof) const

@@ -25,7 +25,20 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
 {
   this->m_eqset_prefix = ies.prefix;
 
-  m_build_transient_support = ies.params.get<bool>("Build Transient Support");
+  // ********************
+  // Parse valid options
+  // ********************
+  {    
+    Teuchos::ParameterList valid_parameters;
+    valid_parameters.set<bool>("Build Transient Support", false);
+
+    // Don't corrupt original input
+    Teuchos::ParameterList tmp_ies_params = ies.params;
+    tmp_ies_params.setName(ies.prefix+"ENERGY");
+    tmp_ies_params.validateParametersAndSetDefaults(valid_parameters);
+    
+    m_build_transient_support = tmp_ies_params.get<bool>("Build Transient Support");
+  }
 
   // ********************
   // Assemble DOF names and Residual names
@@ -45,18 +58,9 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
   // Build Basis Functions and Integration Rules
   // ********************
   
-  this->m_int_rule = 
-    Teuchos::rcp(new panzer::IntegrationRule(ies.integration_order,cell_data));
-  
-  this->m_basis = Teuchos::rcp(new panzer::Basis(ies.basis, 
-						 *(this->m_int_rule)));
+  this->setupDOFs(cell_data.baseCellDimension());
 
-  this->m_eval_plist->set("IR", this->m_int_rule);
-  this->m_eval_plist->set("Basis", this->m_basis);
-  this->m_eval_plist->set("Equation Dimension", cell_data.baseCellDimension());
 
-  this->m_provided_dofs.push_back(std::make_pair((*(this->m_dof_names))[0],
-						 this->m_basis));
 }
 
 // ***********************************************************************
