@@ -4,6 +4,7 @@
 #include <Teuchos_Describable.hpp>
 
 #include "MueLu_Graph.hpp"
+#include "Cthulhu_VectorFactory.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
@@ -110,4 +111,4 @@ template <class LocalOrdinal ,
 }
 
 #define MUELU_AGGREGATES_SHORT
-#endif
+#endif //ifndef MUELU_AGGREGATES_HPP

@@ -43,7 +43,7 @@ class AggregationFactory {
     {
       Teuchos::OSTab tab(this->out_);
 
-      Teuchos::RCP<Aggregates<LO,GO,NO,LMO> > aggregates = MueLu_Aggregate_CoarsenUncoupled(options,*graph);
+      Teuchos::RCP<Aggregates> aggregates = MueLu_Aggregate_CoarsenUncoupled(options,*graph);
       std::string name = "UC_CleanUp";
       MueLu_AggregateLeftOvers(options, *aggregates, name, *graph);
     }

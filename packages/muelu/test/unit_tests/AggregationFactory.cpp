@@ -1,7 +1,11 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "test_helpers.hpp"
+#include "Cthulhu.hpp"
 #include "MueLu_Version.hpp"
 #include "MueLu_AggregationFactory.hpp"
+
+#include "MueLu_UseDefaultTypes.hpp"
+#include "MueLu_UseShortNames.hpp"
 
 namespace {
 
@@ -17,7 +21,8 @@ TEUCHOS_UNIT_TEST(AggregationFactory, Constructor)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<AggregationFactory> aggFact= rcp(new AggregationFactory);
+  RCP<AggregationFactory> aggFact= rcp(new AggregationFactory());
+  //RCP<MueLu::AggregationFactory<LO,GO,NO,LMO> > aggFact= rcp(new AggregationFactory());
   TEUCHOS_TEST_EQUALITY(aggFact != Teuchos::null, true, out, success);
 } //Constructor
 
