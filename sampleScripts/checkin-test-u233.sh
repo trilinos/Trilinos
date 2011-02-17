@@ -4,14 +4,28 @@
 
 EXTRA_ARGS=$@
 
+TRILINOS_TOOLSET_BASE=/home/trilinos/toolset
+
 echo "
--DBUILD_SHARED_LIBS:BOOL=ON
+-DTrilinos_EXTRA_LINK_FLAGS:STRING='-Wl,-rpath,$TRILINOS_TOOLSET_BASE/lib64'
 -DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so.3
 -DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3
 " > COMMON.config
 
+echo "
+-DMPI_BASE_DIR:PATH=$TRILINOS_TOOLSET_BASE
+" > MPI_DEBUG.config
+
+echo "
+-DCMAKE_CXX_COMPILER:PATH=$TRILINOS_TOOLSET_BASE/bin/g++
+-DCMAKE_C_COMPILER:PATH=$TRILINOS_TOOLSET_BASE/bin/gcc
+" > SERIAL_RELEASE.config
+
 ../../Trilinos/checkin-test.py \
--j12 \
+-j16 \
 --ctest-timeout=180 \
---ctest-options="-E Teuchos_Dependencies_Serialization_test_MPI_1" \
 $EXTRA_ARGS  
+
+# NOTE: By default we use 16 processes which is 1/2 of the 32
+# processes on this machine.  This way two people can build and test
+# Trilinos without taxing the machine too much.
