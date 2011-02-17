@@ -1,19 +1,48 @@
-### MatrixVectorCheckerExample:
-
-IF (Cthulhu_ENABLE_Tpetra)
-  ADD_SUBDIRECTORY(CMake/tpetra)
-ENDIF()
-
-IF (Cthulhu_ENABLE_Epetra)
-  ADD_SUBDIRECTORY(CMake/epetra)
-ENDIF()
-
-### read_MatrixMarket:
-
 INCLUDE(PackageAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-# note: this example don't use cthulhu. Only need Epetra + Galeri.
+#######################################################################################
+#######################################################################################
+
+### MatrixVectorCheckerExample:
+
+# TODO: IF (Cthulhu_ENABLE_Epetra) or IF (Cthulhu_ENABLE_Tpetra)
+
+PACKAGE_ADD_EXECUTABLE(
+  MatrixVectorCheckerExample_Epetra
+  SOURCES MatrixVectorCheckerExample.cpp
+  COMM serial mpi
+  DEPLIBS muelu muelu-cthulhu
+  )
+
+IF (Cthulhu_ENABLE_Epetra)
+  PACKAGE_ADD_TEST(
+    MatrixVectorCheckerExample_Epetra
+    NAME "Matrix-Vector Checker"
+    ARGS "--linAlgebra=0"
+    COMM serial mpi
+    # NUM_MPI_PROCS 2
+    # PASS_REGULAR_EXPRESSION "Example Passed!"
+    )
+ENDIF()
+
+IF (Cthulhu_ENABLE_Tpetra)
+  PACKAGE_ADD_TEST(
+    MatrixVectorCheckerExample_Epetra
+    NAME "Matrix-Vector Checker"
+    ARGS "--linAlgebra=1"
+    COMM serial mpi
+    # NUM_MPI_PROCS 2
+    # PASS_REGULAR_EXPRESSION "Example Passed!"
+    )
+ENDIF()
+
+#######################################################################################
+#######################################################################################
+
+### read_MatrixMarket:
+
+# Note: this example don't use cthulhu. Only need Epetra + Galeri.
 IF (${PACKAGE_NAME}_ENABLE_Epetra) 
   IF (${PACKAGE_NAME}_ENABLE_Galeri)
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
