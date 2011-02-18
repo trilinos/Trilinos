@@ -1,0 +1,3 @@
+LOG="${$}.log"
+./MeshingGenie_2dTest.exe input.dat 1 > $LOG 2>&1
+rm -f $LOG

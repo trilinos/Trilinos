@@ -1,0 +1,21 @@
+To run MeshingGenie_2dTest.exe type
+"./MeshingGenie_2dTest.exe <input file> <random seed>".  There is a sample
+input file input.dat  The first line in the input.dat contains three variables
+"<distance_between_points> <number_of_holes> <number_of_cracks>".
+
+The external boundaries are assumed to be given using a single polygon. In the
+second line, the corner points of that polygon are listed in a counter
+clockwise direction, "<x1> <y1> <x2> <y2> .... <xn> <yn>".
+
+The lines 3 to 3 + num_holes - 1 list the corner points of the polygons
+representing the holes in the domain.  The points of each hole is listed in a
+single line in a clockwise direction.
+
+The lines 3 + num_holes  to 3 + num_holes + num_cracks - 1 list the corner
+points of the polyline representing the cracks in the domain.  The points of
+each crack is listed in a single line in a clockwise direction.
+
+For the <random seed> zero, the clock is used as the random seed.  For a
+nonzero integer <random seed>, it is used as the random seed.  However, the
+pseudorandom generator may yield different sequences for the same seed on
+different platforms.
