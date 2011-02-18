@@ -92,11 +92,9 @@ class UCAggregationFactory : public Teuchos::Describable {
     //! Build aggregates.
     Teuchos::RCP<Aggregates> Build(Graph const &graph, AggregationOptions const &options) const
     {
-      Teuchos::OSTab tab(this->out_);
-
-      Teuchos::RCP<Aggregates> aggregates = CoarsenUncoupled(options,*graph);
+      Teuchos::RCP<Aggregates> aggregates = CoarsenUncoupled(options,graph);
       std::string name = "UC_CleanUp";
-      AggregateLeftOvers(options, *aggregates, name, *graph);
+      AggregateLeftOvers(options, *aggregates, name, graph);
       return aggregates;
     }
     //@}
@@ -111,7 +109,7 @@ class UCAggregationFactory : public Teuchos::Describable {
       /*! @brief Local aggregation.
       */
       RCP<MueLu::Aggregates<LO,GO> >
-      CoarsenUncoupled(const MueLu::AggregationOptions & aggOptions, const MueLu::Graph<LO,GO> & graph)
+      CoarsenUncoupled(MueLu::AggregationOptions const & aggOptions, MueLu::Graph<LO,GO> const & graph) const
       {
         /* Create Aggregation object */
         const std::string name = "Uncoupled";
@@ -149,19 +147,19 @@ class UCAggregationFactory : public Teuchos::Describable {
         /**/
 
         if ( ordering == 1 )       /* random ordering */
-          {
-            randomVector = Teuchos::arcp<int>(nRows);
-            for (int i = 0; i < nRows; ++i) randomVector[i] = i;
-            MueLu_RandomReorder(randomVector, *graph.GetDomainMap());
-          } 
+        {
+          randomVector = Teuchos::arcp<int>(nRows);
+          for (int i = 0; i < nRows; ++i) randomVector[i] = i;
+            MueLu_RandomReorder(randomVector, *(graph.GetDomainMap()));
+        } 
         else if ( ordering == 2 )  /* graph ordering */
-          {
-            newNode = new MueLu_Node;      
-            newNode->nodeId = 0;
-            nodeHead = newNode;
-            nodeTail = newNode;
-            newNode->next = NULL;
-          }
+        {
+          newNode = new MueLu_Node;      
+          newNode->nodeId = 0;
+          nodeHead = newNode;
+          nodeTail = newNode;
+          newNode->next = NULL;
+        }
 
         /* main loop */
         {
@@ -594,10 +592,10 @@ class UCAggregationFactory : public Teuchos::Describable {
          Note: procWinners is also set to MyPid() by MueLu_ArbitrateAndCommunicate()
          for any nonshared gid's with a nonzero weight.
       */
-      int AggregateLeftOvers(const AggregationOptions &aggOptions, 
-                                   Aggregates &aggregates,
-                                   const std::string & label,
-                                   const Graph &graph)
+      int AggregateLeftOvers(AggregationOptions const &aggOptions, 
+                             Aggregates &aggregates,
+                             std::string const & label,
+                             Graph const &graph) const
       {
         int nVertices    = graph.GetNodeNumVertices();
         int exp_nRows    = nVertices + graph.GetNodeNumGhost();
@@ -1146,7 +1144,7 @@ class UCAggregationFactory : public Teuchos::Describable {
          Candidates are vertices not adjacent to already aggregated vertices.
       */
       int MueLu_RootCandidates(int nVertices, ArrayView<const int> & vertex2AggId, const Graph graph,
-                               ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal)
+                               ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal) const
       {
         nCandidates = 0;
        
@@ -1172,7 +1170,7 @@ class UCAggregationFactory : public Teuchos::Describable {
       } //MueLu_RootCandidates
 
       //! @brief Compute sizes of all the aggregates.
-      int MueLu_ComputeAggSizes(Aggregates & aggregates, ArrayRCP<int> & aggSizes)
+      int MueLu_ComputeAggSizes(Aggregates & aggregates, ArrayRCP<int> & aggSizes) const
       {
         int myPid = aggregates.GetMap()->getComm()->getRank();
 
@@ -1192,7 +1190,7 @@ class UCAggregationFactory : public Teuchos::Describable {
 
       //! @brief Attempt to clean up aggregates that are too small.
       int MueLu_RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                                RCP<Cthulhu::Vector<double> > & distWeights, const AggAlgorithm2Comm & myWidget)
+                                RCP<Cthulhu::Vector<double> > & distWeights, const AggAlgorithm2Comm & myWidget) const
       {
         int myPid = aggregates.GetMap()->getComm()->getRank();
         
@@ -1252,7 +1250,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                           that is determined randomly.
          @param map       ?????????????????????????
       */
-      int MueLu_RandomReorder(Teuchos::ArrayRCP<int> list, const Map &map)
+      int MueLu_RandomReorder(Teuchos::ArrayRCP<int> list, const Map &map) const
       {
 
         TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "RandomReorder: TODO");

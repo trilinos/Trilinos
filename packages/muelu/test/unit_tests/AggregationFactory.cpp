@@ -27,7 +27,7 @@ TEUCHOS_UNIT_TEST(AggregationFactory, Constructor)
   TEUCHOS_TEST_EQUALITY(aggFact != Teuchos::null, true, out, success);
 } //Constructor
 
-TEUCHOS_UNIT_TEST(UCAggregationFactory, GetSetMethods)
+TEUCHOS_UNIT_TEST(UCAggregationFactory, Build)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -36,7 +36,37 @@ TEUCHOS_UNIT_TEST(UCAggregationFactory, GetSetMethods)
 
   //UCAggregationFactory aggFact; //FIXME
   MueLu::UCAggregationFactory<LO,GO,NO,LMO> aggFact;
-} //GetSetMethods
+
+
+  MueLu::AggregationOptions aggOptions;
+
+  //these are pulled right from the AggregationExample file.
+  int printFlag=6;
+  aggOptions.SetPrintFlag(printFlag);
+  aggOptions.SetMinNodesPerAggregate(2);
+  aggOptions.SetMaxNeighAlreadySelected(5);
+  aggOptions.SetOrdering(2);
+  aggOptions.SetPhase3AggCreation(0.5);
+
+  RCP<CrsOperator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(16);
+
+  RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
+  RCP<Aggregates> aggregates = aggFact.Build(*graph,aggOptions);
+
+  RCP<Cthulhu::Vector<int> > Final_ = Cthulhu::VectorFactory<int>::Build(
+aggregates->GetVertex2AggId()->getMap() );
+
+  Teuchos::ArrayRCP<int> Final = Final_->getDataNonConst(0);
+  Teuchos::ArrayRCP<const int> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
+  Teuchos::ArrayRCP<const int> procWinner   = aggregates->GetProcWinner()->getData(0);
+
+  for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements();
+i++)
+    Final[i] = vertex2AggId[i] + procWinner[i]*1000;
+
+  cout << *Final_ << endl;
+
+} //Build
 
 
 }//namespace <anonymous>
