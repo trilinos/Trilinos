@@ -30,6 +30,7 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Line<2>  > :: refinement_t
 
 };
 
+
 template<> RefTopoX RefinementTopologyExtra< shards:: ShellLine<2>  > :: refinement_topology = {
   {	0,	0,	0,	0,	1,	{-1,	0,	0} },
   {	1,	0,	1,	0,	1,	{1,	0,	0} },
@@ -71,7 +72,27 @@ template<> RefTopoX RefinementTopologyExtra< shards:: ShellTriangle<3>  > :: ref
 };
 
 template<> RefTopoX RefinementTopologyExtra< shards:: ShellQuadrilateral<8>  > :: refinement_topology = {
-  {	0,	0,	0,	0,	0,	{0,	0,	0} }
+  {	0,	0,	0,	0,	1,	{-1,	-1,	0} },
+  {	1,	0,	1,	0,	1,	{1,	-1,	0} },
+  {	2,	0,	2,	0,	1,	{1,	1,	0} },
+  {	3,	0,	3,	0,	1,	{-1,	1,	0} },
+  {	4,	1,	0,	2,	3,	{0,	-1,	0} },
+  {	5,	1,	1,	2,	3,	{1,	0,	0} },
+  {	6,	1,	2,	2,	3,	{0,	1,	0} },
+  {	7,	1,	3,	2,	3,	{-1,	0,	0} },
+  {	8,	2,	0,	8,	9,	{0,	0,	0} },
+  {	9,	1,	0,	0,	3,	{-0.5,	-1,	0} },
+  {	10,	1,	0,	1,	3,	{0.5,	-1,	0} },
+  {	11,	1,	1,	0,	3,	{1,	-0.5,	0} },
+  {	12,	1,	1,	1,	3,	{1,	0.5,	0} },
+  {	13,	1,	2,	0,	3,	{0.5,	1,	0} },
+  {	14,	1,	2,	1,	3,	{-0.5,	1,	0} },
+  {	15,	1,	3,	0,	3,	{-1,	0.5,	0} },
+  {	16,	1,	3,	1,	3,	{-1,	-0.5,	0} },
+  {	17,	2,	0,	4,	9,	{0,	-0.5,	0} },
+  {	18,	2,	0,	5,	9,	{0.5,	0,	0} },
+  {	19,	2,	0,	6,	9,	{0,	0.5,	0} },
+  {	20,	2,	0,	7,	9,	{-0.5,	0,	0} } 
 
 };
 
@@ -222,6 +243,15 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Wedge<15>  > :: refinement
 };
 
 template<> RefTopoX RefinementTopologyExtra< shards:: Line<3>  > :: refinement_topology = {
+  {	0,	0,	0,	0,	1,	{-1,	0,	0} },
+  {	1,	0,	1,	0,	1,	{1,	0,	0} },
+  {	2,	1,	0,	2,	3,	{0,	0,	0} },
+  {	3,	1,	0,	0,	3,	{-0.5,	0,	0} },
+  {	4,	1,	0,	1,	3,	{0.5,	0,	0} } 
+
+};
+
+template<> RefTopoX RefinementTopologyExtra< shards:: ShellLine<3>  > :: refinement_topology = {
   {	0,	0,	0,	0,	1,	{-1,	0,	0} },
   {	1,	0,	1,	0,	1,	{1,	0,	0} },
   {	2,	1,	0,	2,	3,	{0,	0,	0} },

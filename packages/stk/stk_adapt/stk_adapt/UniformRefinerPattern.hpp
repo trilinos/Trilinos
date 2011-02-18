@@ -257,6 +257,16 @@ namespace stk {
           topo_key_shellquad8 = shards::ShellQuadrilateral<8>::key,
           topo_key_quad9      = shards::Quadrilateral<9>::key,
           topo_key_wedge15    = shards::Wedge<15>::key,
+
+          s_shell_line_2_key = shards::ShellLine<2>::key,
+          s_shell_line_3_key = shards::ShellLine<3>::key,
+          s_shell_tri_3_key  = shards::ShellTriangle<3>::key,
+          s_shell_tri_6_key  = shards::ShellTriangle<6>::key,
+          s_shell_quad_4_key = shards::ShellQuadrilateral<4>::key,
+          s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key,
+          s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key,
+
+
           centroid_node       = (toTopoKey == topo_key_quad9 ? 8 :
                             (toTopoKey == topo_key_hex27 ? 20 : 0)
                             )
@@ -310,6 +320,8 @@ namespace stk {
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo);
+        if (!ref_topo_p)
+          throw std::runtime_error("draw:: error, no refinement topology found");
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
         unsigned num_child = ref_topo.num_child();
@@ -542,6 +554,21 @@ namespace stk {
       /// ------------------------------------------------------------------------------------------------------------------------
 #define EXTRA_PRINT_URP_IF 0
 
+      static void getTopoDim(int& topoDim, unsigned cell_topo_key)
+      {
+        if (cell_topo_key == s_shell_line_2_key || cell_topo_key == s_shell_line_3_key)
+          {
+            topoDim = 1;
+          }
+
+        else if (cell_topo_key == s_shell_tri_3_key || cell_topo_key == s_shell_tri_6_key ||
+                 cell_topo_key == s_shell_quad_4_key || cell_topo_key == s_shell_quad_9_key ||
+                 cell_topo_key == s_shell_quad_8_key )
+          {
+            topoDim = 2;
+          }
+      }
+
       /// This version uses Intrepid for interpolation
       void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement,  const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x, FieldBase *field)
@@ -557,25 +584,7 @@ namespace stk {
         int topoDim = cell_topo.getDimension();
         unsigned cell_topo_key = get_cell_topology(element)->key;
 
-        static unsigned s_shell_line_2_key = shards::ShellLine<2>::key;
-        static unsigned s_shell_line_3_key = shards::ShellLine<3>::key;
-        static unsigned s_shell_tri_3_key = shards::ShellTriangle<3>::key;
-        static unsigned s_shell_tri_6_key = shards::ShellTriangle<6>::key;
-        static unsigned s_shell_quad_4_key = shards::ShellQuadrilateral<4>::key;
-        static unsigned s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key;
-        static unsigned s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key;
-
-        if (cell_topo_key == s_shell_line_2_key || cell_topo_key == s_shell_line_3_key)
-          {
-            topoDim = 1;
-          }
-
-        if (cell_topo_key == s_shell_tri_3_key || cell_topo_key == s_shell_tri_6_key ||
-            cell_topo_key == s_shell_quad_4_key || cell_topo_key == s_shell_quad_9_key ||
-            cell_topo_key == s_shell_quad_8_key )
-          {
-            topoDim = 2;
-          }
+        getTopoDim(topoDim, cell_topo_key);
 
         int fieldStride = 0;
         EntityRank fr_type = mesh::Node;
@@ -621,12 +630,15 @@ namespace stk {
         if (1)
           {
             static bool entered = false;
+
             if (!entered && (toTopoKey == topo_key_quad8 || toTopoKey == topo_key_hex20 || toTopoKey == topo_key_shellquad8))
               {
-                std::cout << "toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
-                std::cout << "toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
-                std::cout << "toTopoKey: " << toTopoKey << " topo_key_hex20      = " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
                 entered = true;
+
+                std::cout << "tmp testing basis functions " << std::endl;
+                std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+                std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+                std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_hex20      = " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
                 mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
 
                 PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
@@ -852,7 +864,9 @@ namespace stk {
                       {                      
                         unsigned face_ord = 0;
                         if (toTopoKey == topo_key_quad9)
-                          face_ord = 8;
+                          {
+                            face_ord = 8;
+                          }
                         else
                           {
                             face_ord = cell_topo_data_toTopo->side[i_face].node[8];
@@ -1091,7 +1105,10 @@ namespace stk {
         
         const mesh::PairIterRelation elem_nodes = element.relations(Node);
 
-        unsigned cellDimension = cell_topo.getDimension();
+        int topoDim = cell_topo.getDimension();
+        //unsigned cell_topo_key = fromTopoKey;
+        //getTopoDim(topoDim, cell_topo_key);
+        unsigned cellDimension = (unsigned)topoDim;
 
         // FIXME
         if (0)
@@ -1149,7 +1166,7 @@ namespace stk {
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo); // CHECK
         if (!ref_topo_p)
-          throw std::runtime_error("printRefinementTopoX_Table:: error, no refinement topology found");
+          throw std::runtime_error("genericRefine_createNewElements:: error, no refinement topology found");
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
         unsigned num_child = ref_topo.num_child();
@@ -1199,8 +1216,27 @@ namespace stk {
                         perm_array = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology->permutation[perm_ord].node;
                       }
 
-                    //std::cout << "tmp 1 " << std::endl;
                   }
+
+                if (0)
+                  {
+                    std::cout << "tmp 2 cell_topo                       = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                    std::cout << "tmp m_primaryEntityRank               = " << m_primaryEntityRank << std::endl;
+                    std::cout << "tmp rank_of_subcell                   = " << rank_of_subcell << std::endl;
+                    std::cout << "tmp ordinal_of_subcell                = " << ordinal_of_subcell <<  std::endl;
+                    std::cout << "tmp ordinal_of_node_on_subcell        = " << ordinal_of_node_on_subcell << std::endl;
+                    std::cout << "tmp num_nodes_on_subcell              = " << num_nodes_on_subcell << std::endl;
+                    std::cout << "tmp new_sub_entity_nodes.size()       = " << new_sub_entity_nodes.size() << std::endl;
+                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[mesh::Face].size() << std::endl;
+                    if (new_sub_entity_nodes[mesh::Face].size())
+                      {
+                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
+                                  << new_sub_entity_nodes[mesh::Face][ordinal_of_subcell].size() << std::endl;
+                      }
+
+                    //std::cout << "tmp new_sub_entity_nodes = \n" << new_sub_entity_nodes << std::endl;
+                  }
+
 
                 switch (rank_of_subcell)
                   {
@@ -1220,7 +1256,6 @@ namespace stk {
                     break;
 
                   case 2:
-                    //if (m_primaryEntityRank == mesh::Face)
                     if (cellDimension == 2)
                       {
                         VERIFY_OP(ordinal_of_subcell, == , 0, "createNewElements: ordinal_of_subcell");
@@ -1249,34 +1284,60 @@ namespace stk {
                               {
                                 if (0)
                                   {
-                                    std::cout << "tmp num_nodes_on_subcell= " << num_nodes_on_subcell << std::endl;
-                                    std::cout << "tmp ordinal_of_subcell= " << ordinal_of_subcell 
-                                              << " ordinal_of_node_on_subcell= " << ordinal_of_node_on_subcell << std::endl;
+                                    std::cout << "tmp cell_topo                  = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                                    std::cout << "tmp rank_of_subcell            = " << rank_of_subcell << std::endl;
+                                    std::cout << "tmp ordinal_of_subcell         = " << ordinal_of_subcell <<  std::endl;
+                                    std::cout << "tmp ordinal_of_node_on_subcell = " << ordinal_of_node_on_subcell << std::endl;
+                                    std::cout << "tmp num_nodes_on_subcell       = " << num_nodes_on_subcell << std::endl;
                                     
                                     for (unsigned ii=0; ii < num_nodes_on_subcell; ii++)
                                       {
                                         std::cout << "tmp pa[ii]= " << perm_array[ii] << std::endl;
                                       }
                                   
-                                    std::cout << "tmp new_sub_entity_nodes.size() = " 
-                                              << new_sub_entity_nodes.size() << std::endl;
-                                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " 
-                                              << new_sub_entity_nodes[mesh::Face].size() << std::endl;
-                                    std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
-                                              << new_sub_entity_nodes[mesh::Face][ordinal_of_subcell].size() << std::endl;
+                                    std::cout << "tmp new_sub_entity_nodes.size() = " << new_sub_entity_nodes.size() << std::endl;
+                                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[mesh::Face].size() << std::endl;
+                                    if (new_sub_entity_nodes[mesh::Face].size())
+                                      {
+                                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
+                                                  << new_sub_entity_nodes[mesh::Face][ordinal_of_subcell].size() << std::endl;
+                                      }
+
+                                    std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell] = \n" 
+                                              << new_sub_entity_nodes[mesh::Face][ordinal_of_subcell] << std::endl;
 
                                     std::cout << "tmp new_sub_entity_nodes = \n" 
                                               << new_sub_entity_nodes << std::endl;
 
                                     std::cout << "tmp  pa = " << (usePerm ? perm_array[ordinal_of_node_on_subcell] : ordinal_of_node_on_subcell) << std::endl;
+
                                   }
                                 inode = NN_Q_P(mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell, perm_array);
                               }
                             else
                               {
+                                if (0)
+                                  {
+                                    std::cout << "tmp 1 cell_topo                       = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                                    std::cout << "tmp m_primaryEntityRank               = " << m_primaryEntityRank << std::endl;
+                                    std::cout << "tmp rank_of_subcell                   = " << rank_of_subcell << std::endl;
+                                    std::cout << "tmp ordinal_of_subcell                = " << ordinal_of_subcell <<  std::endl;
+                                    std::cout << "tmp ordinal_of_node_on_subcell        = " << ordinal_of_node_on_subcell << std::endl;
+                                    std::cout << "tmp num_nodes_on_subcell              = " << num_nodes_on_subcell << std::endl;
+                                    std::cout << "tmp new_sub_entity_nodes.size()       = " << new_sub_entity_nodes.size() << std::endl;
+                                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[mesh::Face].size() << std::endl;
+                                    if (new_sub_entity_nodes[mesh::Face].size())
+                                      {
+                                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
+                                                  << new_sub_entity_nodes[mesh::Face][ordinal_of_subcell].size() << std::endl;
+                                      }
+
+                                    std::cout << "tmp new_sub_entity_nodes = \n" << new_sub_entity_nodes << std::endl;
+                                  }
+
                                 inode = NN_Q(mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell);
                               }
-                          }
+                          } 
                         else
                           {
                             inode = NN_Q(mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell);
@@ -1659,7 +1720,13 @@ namespace stk {
 
         unsigned num_child_nodes = ref_topo.num_child_nodes();
         shards::CellTopology cell_topo ( shards::getCellTopologyData< FromTopology >() );
-        if (cell_topo.getDimension() == 2)
+
+        int topoDim = cell_topo.getDimension();
+        unsigned cell_topo_key = fromTopoKey;
+
+        getTopoDim(topoDim, cell_topo_key);
+
+        if (topoDim == 2)
           {
             i_face = 0;
             n_ord = 0;
@@ -1675,6 +1742,7 @@ namespace stk {
             if (fromTopoKey == topo_key_quad8 || fromTopoKey == topo_key_shellquad8)
               {
                 n_ord = 9;
+                std::cout << "n_ord = " << n_ord << " for cell_topo= " << cell_topo.getName() << std::endl;
               }
 
             i_ord = 0;
@@ -2092,6 +2160,9 @@ namespace stk {
 
         CellTopology cell_topo(cell_topo_data);
 
+        //std::cout << "toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+        //std::cout << "toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+
         unsigned n_edges = cell_topo_data->edge_count;
         unsigned n_faces = cell_topo.getFaceCount();
         if (n_faces == 0) n_faces = 1; // 2D face has one "face"
@@ -2439,6 +2510,7 @@ namespace stk {
 #include "UniformRefinerPattern_Quad4_Quad4_4.hpp"
 #include "UniformRefinerPattern_Line2_Line2_2_sierra.hpp"
 #include "UniformRefinerPattern_ShellLine2_ShellLine2_2_sierra.hpp"
+#include "UniformRefinerPattern_ShellLine3_ShellLine3_2_sierra.hpp"
 #include "UniformRefinerPattern_Quad4_Quad4_4_sierra.hpp"
 #include "UniformRefinerPattern_Tri3_Tri3_4_sierra.hpp"
 #include "UniformRefinerPattern_ShellTri3_ShellTri3_4_sierra.hpp"
@@ -2465,9 +2537,13 @@ namespace stk {
 #include "URP_Heterogeneous_QuadraticRefine_3D.hpp"
 
 // enrich
-// line2-line3
+
+#include "UniformRefinerPattern_Line2_Line3_1_sierra.hpp"
+#include "UniformRefinerPattern_ShellLine2_ShellLine3_1_sierra.hpp"
+
 #include "UniformRefinerPattern_Quad4_Quad9_1_sierra.hpp"
 #include "UniformRefinerPattern_Quad4_Quad8_1_sierra.hpp"
+#include "UniformRefinerPattern_ShellQuad4_ShellQuad8_1_sierra.hpp"
 #include "UniformRefinerPattern_Tri3_Tri6_1_sierra.hpp"
 #include "UniformRefinerPattern_Tet4_Tet10_1_sierra.hpp"
 #include "UniformRefinerPattern_Hex8_Hex27_1_sierra.hpp"
@@ -2491,6 +2567,7 @@ namespace stk {
     // refine
     typedef  UniformRefinerPattern<shards::Line<2>,          shards::Line<2>,          2, SierraPort >            Line2_Line2_2;
     typedef  UniformRefinerPattern<shards::ShellLine<2>,     shards::ShellLine<2>,     2, SierraPort >            ShellLine2_ShellLine2_2;
+    typedef  UniformRefinerPattern<shards::ShellLine<3>,     shards::ShellLine<3>,     2, SierraPort >            ShellLine3_ShellLine3_2;
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4 >                        Quad4_Quad4_4_Old;
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort >            Quad4_Quad4_4;
 
@@ -2517,6 +2594,7 @@ namespace stk {
     // enrich
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<9>, 1, SierraPort >            Quad4_Quad9_1;
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<8>, 1, SierraPort >            Quad4_Quad8_1;
+    typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<8>, 1, SierraPort >            ShellQuad4_ShellQuad8_1;
     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<6>,      1, SierraPort >            Tri3_Tri6_1;
     typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<10>,  1, SierraPort >            Tet4_Tet10_1;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<27>,   1, SierraPort >            Hex8_Hex27_1;

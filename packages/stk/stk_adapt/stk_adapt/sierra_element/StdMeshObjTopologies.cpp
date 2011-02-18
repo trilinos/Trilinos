@@ -488,6 +488,7 @@ namespace stk {
       static MeshObjTopology face_9(shards::getCellTopologyData<shards::Quadrilateral<9> >());
 
       static MeshObjTopology shell_4(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
+      static MeshObjTopology shell_8(shards::getCellTopologyData<shards::ShellQuadrilateral<8> >());
       static MeshObjTopology shell_9(shards::getCellTopologyData<shards::ShellQuadrilateral<9> >());
 
       static bool first = true ;
@@ -507,6 +508,8 @@ namespace stk {
 
           static const_top_ptr
             shell_4_child[] = {&shell_4, &shell_4, &shell_4, &shell_4};
+          static const_top_ptr
+            shell_8_child[] = {&shell_8, &shell_8, &shell_8, &shell_8};
           static const_top_ptr
             shell_9_child[] = {&shell_9, &shell_9, &shell_9, &shell_9};
 
@@ -636,7 +639,9 @@ namespace stk {
           static RefinementTopology face_4_refinement(&face_4, 4, face_4_child, 9, child_node_table, 4, edge_table, 0, NULL, 8, perm_table, edge_perm_table, true);
           static RefinementTopology face_8_refinement(&face_8, 4, face_8_child, 21, child_node_table, 4, edge_table, 0, NULL, 8, perm_table, edge_perm_table, true);
           static RefinementTopology face_9_refinement(&face_9, 4, face_9_child, 25, child_node_table, 4, edge_table, 0, NULL, 8, perm_table, edge_perm_table, true);
+
           static RefinementTopology shell_4_refinement(&shell_4, 4, shell_4_child, 9, child_node_table, 4, edge_table, 2, face_table, 0, NULL, NULL, true);
+          static RefinementTopology shell_8_refinement(&shell_8, 4, shell_8_child, 21, child_node_table, 4, edge_table, 2, face_table, 0, NULL, NULL, true);
           static RefinementTopology shell_9_refinement(&shell_9, 4, shell_9_child, 25, child_node_table, 4, edge_table, 2, face_table, 0, NULL, NULL, true);
         }
       }
@@ -650,6 +655,7 @@ namespace stk {
       case 0x0080 : top = &face_8 ; break ;
       case 0x0090 : top = &face_9 ; break ;
       case 0x0340 : top = &shell_4 ; break ;
+      case 0x0380 : top = &shell_8 ; break ;
       case 0x0390 : top = &shell_9 ; break ;
       default:
         //throw RuntimeError() << "Invalid eclass and nnode specified" << std::endl;// << StackTrace;
