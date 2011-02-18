@@ -20,47 +20,30 @@ SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.hpp
   )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Headers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/MueCentral)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Transfers/Smoothed-Aggregation)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Transfers/Generic)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Transfers/BaseClass)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Graph)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Headers)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/MueCentral)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Transfers/Smoothed-Aggregation)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Transfers/Generic)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Transfers/BaseClass)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Graph)
 
-#TODO: APPEND_GLOB(HEADERS */*.hpp) instead ?
-APPEND_SET(HEADERS
-  Headers/MueLu_Version.hpp
-  Headers/MueLu_Types.hpp
-  MueCentral/MueLu_Level.hpp
-  MueCentral/MueLu_SaLevel.hpp
-  MueCentral/MueLu_Hierarchy.hpp
-  MueCentral/MueLu_Needs.hpp
-  MueCentral/MueLu_RAPFactory.hpp
-  Transfers/BaseClass/MueLu_PRFactory.hpp
-  Transfers/BaseClass/MueLu_PFactory.hpp
-  Transfers/BaseClass/MueLu_RFactory.hpp
-  Transfers/Generic/MueLu_TransPFactory.hpp
-  Transfers/Smoothed-Aggregation/MueLu_SaPFactory.hpp
-  Transfers/Smoothed-Aggregation/MueLu_TentativePFactory.hpp
-  Smoothers/MueLu_GaussSeidel.hpp
-  Smoothers/MueLu_SmootherPrototype.hpp
-  Smoothers/MueLu_SmootherBase.hpp
-  Smoothers/MueLu_SmootherFactoryBase.hpp
-  Smoothers/MueLu_SmootherFactory.hpp
-#  Smoothers/MueLu_Smoother.hpp
-  Smoothers/MueLu_IfpackSmoother.hpp
-  Smoothers/MueLu_AmesosSmoother.hpp
-  Graph/MueLu_AggAlgorithm2Comm.hpp
-  Graph/MueLu_AggregationOptions.hpp
-  Graph/MueLu_Aggregates.hpp
-  Graph/MueLu_UCAggregationFactory.hpp
-  Graph/MueLu_Graph.hpp
-  )
 
-#TODO: APPEND_GLOB(SOURCES */*.cpp) instead ?
-APPEND_SET(SOURCES
-  mac.cpp
-  )
+APPEND_GLOB(HEADERS */*.hpp)
+APPEND_GLOB(HEADERS */*/*.hpp)
+
+# for debugging
+#MESSAGE("")
+#MESSAGE("**************** in muelu src ***********")
+#MESSAGE("")
+#MESSAGE("HEADERS = ${HEADERS}")
+#MESSAGE("")
+#MESSAGE("INCLUDE_DIRECTORIES = ")
+#get_directory_property(output INCLUDE_DIRECTORIES)
+#message(STATUS ${output})
+
+APPEND_GLOB(SOURCES *.cpp)
+APPEND_GLOB(SOURCES */*.cpp)
+APPEND_GLOB(SOURCES */*/*.cpp)
 
 #
 # C) Define the targets for package's library(s)

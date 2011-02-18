@@ -16,6 +16,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 
 #include <iostream>
@@ -40,7 +41,7 @@ class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, L
   private:
 /*
      TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-     AggFact_
+     RCP<MueLu::AggregationFactory<LO,GO,NO,LMO> > AggFact_;
      CoalesceFact_
      TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
 */
@@ -57,6 +58,7 @@ class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, L
 
     //! Constructor.
     SaPFactory() : diagonalView_("current"),
+                   //AggFact_(Teuchos::null),
                    doQR_(false), dampingFactor_(4./3), useAFiltered_(false), reUseP_(false),
                    reUsePtent_(false)
                    //, PFactory::reUseGraph_(false), PFactory::reUseAggregates_(false)

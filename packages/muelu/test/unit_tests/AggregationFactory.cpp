@@ -31,6 +31,7 @@ TEUCHOS_UNIT_TEST(UCAggregationFactory, Build)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::ArrayRCP;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -53,15 +54,14 @@ TEUCHOS_UNIT_TEST(UCAggregationFactory, Build)
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
   RCP<Aggregates> aggregates = aggFact.Build(*graph,aggOptions);
 
-  RCP<Cthulhu::Vector<int> > Final_ = Cthulhu::VectorFactory<int>::Build(
-aggregates->GetVertex2AggId()->getMap() );
+  RCP<Cthulhu::Vector<int> > Final_;
+  Final_ = Cthulhu::VectorFactory<int>::Build( aggregates->GetVertex2AggId()->getMap() );
 
-  Teuchos::ArrayRCP<int> Final = Final_->getDataNonConst(0);
-  Teuchos::ArrayRCP<const int> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
-  Teuchos::ArrayRCP<const int> procWinner   = aggregates->GetProcWinner()->getData(0);
+  ArrayRCP<int> Final = Final_->getDataNonConst(0);
+  ArrayRCP<const int> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
+  ArrayRCP<const int> procWinner   = aggregates->GetProcWinner()->getData(0);
 
-  for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements();
-i++)
+  for (size_t i=0; i<aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
     Final[i] = vertex2AggId[i] + procWinner[i]*1000;
 
   cout << *Final_ << endl;
