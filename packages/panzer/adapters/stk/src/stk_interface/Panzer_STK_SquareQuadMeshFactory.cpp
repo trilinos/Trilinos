@@ -245,8 +245,8 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
 {
    mesh.beginModification();
 
-   int totalXElems = nXElems_*xBlocks_;
-   int totalYElems = nYElems_*yBlocks_;
+   std::size_t totalXElems = nXElems_*xBlocks_;
+   std::size_t totalYElems = nYElems_*yBlocks_;
 
    // get all part vectors
    stk::mesh::Part * left = mesh.getSideset("left");
@@ -263,16 +263,23 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       stk::mesh::Entity * element = (*itr);
       stk::mesh::EntityId gid = element->identifier();      
       stk::mesh::PairIterRelation relations = element->relations(stk::mesh::Edge);
-      
+
+      std::size_t nx,ny;
+      ny = (gid-1) / totalXElems;
+      nx = gid-ny*totalXElems-1;
+
       // vertical boundaries
-      if(gid % totalXElems==0) { 
+      ///////////////////////////////////////////
+
+      if(nx+1==totalXElems) { 
          stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
 
          // on the right
          if(edge->owner_rank()==machRank_)
             mesh.addEntityToSideset(*edge,right);
       }
-      else if((gid-1) % totalXElems ==0) {
+
+      if(nx==0) {
          stk::mesh::Entity * edge = getRelationByID(3,relations)->entity();
 
          // on the left
@@ -281,14 +288,17 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       // horizontal boundaries
-      if(gid <= (std::size_t) totalXElems) {
+      ///////////////////////////////////////////
+
+      if(ny==0) {
          stk::mesh::Entity * edge = getRelationByID(0,relations)->entity();
 
          // on the bottom
          if(edge->owner_rank()==machRank_)
             mesh.addEntityToSideset(*edge,bottom);
       }
-      else if(gid > (std::size_t) totalXElems*totalYElems-totalXElems ) {
+
+      if(ny+1==totalYElems) {
          stk::mesh::Entity * edge = getRelationByID(2,relations)->entity();
 
          // on the top

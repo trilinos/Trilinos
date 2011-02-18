@@ -10,6 +10,11 @@
 
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_STK_PeriodicBC_Matcher.hpp"
+
+#include "Teuchos_FancyOStream.hpp"
+
+#include <boost/unordered_set.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -140,12 +145,26 @@ STKConnManager::LocalOrdinal STKConnManager::addSubcellConnectivities(
 
       // add connectivities: adjust for STK indexing craziness
       for(LocalOrdinal i=0;i<idCnt;i++) 
-         connectivity_.push_back(offset+idCnt*(subcell->identifier()-1));
+         connectivity_.push_back(offset+idCnt*(subcell->identifier()-1)+i);
 
       numIds += idCnt;
    }
 
    return numIds;
+}
+
+void STKConnManager::modifySubcellConnectivities(const panzer::FieldPattern & fp, stk::mesh::Entity * element,
+                                                 unsigned subcellRank,unsigned subcellId,GlobalOrdinal newId,
+                                                 GlobalOrdinal offset)
+{
+   LocalOrdinal elmtLID = stkMeshDB_->elementLocalId(element);
+   GlobalOrdinal * conn = this->getConnectivity(elmtLID);
+   const std::vector<int> & subCellIndices = fp.getSubcellIndices(subcellRank,subcellId);
+
+   // add connectivities: adjust for STK indexing craziness
+   for(std::size_t i=0;i<subCellIndices.size();i++) {
+      conn[subCellIndices[i]] = offset+subCellIndices.size()*(newId-1)+i;
+   }
 }
 
 void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
@@ -192,6 +211,8 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
 
       connSize_[elmtLid] = numIds;
    }
+
+   applyPeriodicBCs( fp, nodeOffset, edgeOffset, faceOffset, cellOffset);
 }
 
 std::string STKConnManager::getBlockId(STKConnManager::LocalOrdinal localElmtId) const
@@ -200,6 +221,35 @@ std::string STKConnManager::getBlockId(STKConnManager::LocalOrdinal localElmtId)
    stk::mesh::Entity * element = (*elements_)[localElmtId];
 
    return stkMeshDB_->containingBlockId(element);
+}
+
+void STKConnManager::applyPeriodicBCs( const panzer::FieldPattern & fp, GlobalOrdinal nodeOffset, GlobalOrdinal edgeOffset, 
+                                                                        GlobalOrdinal faceOffset, GlobalOrdinal cellOffset)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+
+   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > matchedNodes
+            = stkMeshDB_->getPeriodicNodePairing();
+
+   // no matchedNodes means nothing to do!
+   if(matchedNodes==Teuchos::null) return;
+      
+   for(std::size_t m=0;m<matchedNodes->size();m++) {
+      stk::mesh::EntityId oldNodeId = (*matchedNodes)[m].first;
+      std::size_t newNodeId = (*matchedNodes)[m].second;
+
+      std::vector<stk::mesh::Entity*> elements;
+      std::vector<int> localIds;
+
+      // get relevent elements and node IDs
+      stkMeshDB_->getOwnedElementsSharingNode(oldNodeId,elements,localIds);
+
+      // modify global numbering already built for each element
+      for(std::size_t e=0;e<elements.size();e++)
+         modifySubcellConnectivities(fp,elements[e],0,localIds[e],newNodeId,nodeOffset);
+   }
 }
 
 }
