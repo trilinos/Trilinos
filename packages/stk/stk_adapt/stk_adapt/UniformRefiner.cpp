@@ -302,8 +302,10 @@ namespace stk {
             unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
             shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
 
-            if ( TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
-                                             << " elementType= " << elementType << std::endl;
+            if (TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
+                                                  << " elementType= " << elementType 
+                                                  << " cell_topo= " << cell_topo.getName()
+                                                  << std::endl;
 
             std::vector<EntityRank> ranks_one(1, ranks[irank]);
 
@@ -346,7 +348,12 @@ namespace stk {
       
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
+#define OLD_WAY 1
+#if OLD_WAY
               if (ranks[irank] == ranks[0])
+#else
+              if (ranks[irank] >= mesh::Face)
+#endif
                 {
                   EXCEPTWATCH;
 
@@ -376,7 +383,11 @@ namespace stk {
           unsigned num_elem = 0;
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
+#if OLD_WAY
               if (ranks[irank] == ranks[0])
+#else
+              if (ranks[irank] >= mesh::Face)
+#endif
                 {
                   EXCEPTWATCH;
 
@@ -419,7 +430,11 @@ namespace stk {
           unsigned num_elem = 0;
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
+#if OLD_WAY
               if (ranks[irank] == ranks[0])
+#else
+              if (ranks[irank] >= mesh::Face)
+#endif
                 {
                   EXCEPTWATCH;
 
@@ -528,6 +543,7 @@ namespace stk {
             EXCEPTWATCH;
             //if (!irank)
             if (ranks[irank] == ranks[0])
+              //!  if (ranks[irank] >= mesh::Face)
               {
                 m_nodeRegistry->addToExistingParts();
                 m_nodeRegistry->makeCentroid(m_eMesh.getCoordinatesField());

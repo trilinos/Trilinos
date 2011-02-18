@@ -73,8 +73,48 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+#if 1
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
 
-      TEST(regr_uniformRefiner, read_biplane)
+      TEST(regr_uniformRefiner, break_tet4_tet4_1)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size == 1 || p_size == 3)
+          {
+            // start_demo_uniformRefiner_break_tet4_tet4_1
+            percept::PerceptMesh eMesh;
+            eMesh.open("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4_0.e");
+
+            Tet4_Tet4_8 break_tet_tet(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+            eMesh.printInfo("tet mesh");
+
+            UniformRefiner breaker(eMesh, break_tet_tet, proc_rank_field);
+            //breaker.setRemoveOldElements(false);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+            eMesh.saveAs("./output_files/cylinder_tet4_1.e");
+
+            breaker.doBreak();
+            eMesh.saveAs("./output_files/cylinder_tet4_2.e");
+            // end_demo
+
+          }
+      }
+#endif
+
+      TEST(regr_uniformRefiner, biplane_refine)
       {
 #if 0
         EXCEPTWATCH;
@@ -88,7 +128,7 @@ namespace stk
 
         if (p_size <= 1)
           {
-            // start_demo_read_biplane
+            // start_demo_biplane_refine
             std::string input_mesh = "./input_files/salinas/biplane.e";
 
             if (p_size > 1)
@@ -1328,6 +1368,7 @@ namespace stk
             //eMesh.printInfo("tri mesh refined", 5);
             eMesh.printInfo("tri mesh enriched");
             eMesh.saveAs("./output_files/quad_fixture_tri3_tri6_1.e");
+            eMesh.saveAs("./input_files/quad_fixture_tri6_tri6_0.e");
 
             if (0)
               {
@@ -1335,6 +1376,45 @@ namespace stk
                 e1.openReadOnly("./input_files/quad_fixture_tri3_1.e");
                 e1.printInfo("after read", 3);
               }
+            // end_demo
+          }
+
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, break_tri3_to_tri6_to_tri6_sierra)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 3)
+          {
+            // start_demo_break_tri3_to_tri6_to_tri6_sierra
+
+            percept::PerceptMesh eMesh;
+            eMesh.open("./input_files/quad_fixture_tri6_tri6_0.e");
+
+            Tri6_Tri6_4 break_tri6_to_tri6(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            //FieldBase* proc_rank_field_edge =
+            eMesh.addField("proc_rank_edge", mesh::Edge, scalarDimension);
+            eMesh.commit();
+
+            eMesh.printInfo("tri mesh tri6");
+            eMesh.saveAs("./output_files/quad_fixture_tri6_tri6_0.e");
+
+            UniformRefiner breaker(eMesh, break_tri6_to_tri6, proc_rank_field);
+            breaker.doBreak();
+
+            eMesh.printInfo("tri mesh refined");
+            eMesh.saveAs("./output_files/quad_fixture_tri6_tri6_1.e");
             // end_demo
           }
 
@@ -1364,6 +1444,7 @@ namespace stk
           }
       }
 
+#if 0
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
@@ -1402,7 +1483,7 @@ namespace stk
 
           }
       }
-
+#endif
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
