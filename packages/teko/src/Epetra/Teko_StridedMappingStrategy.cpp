@@ -88,12 +88,9 @@ StridedMappingStrategy::StridedMappingStrategy(const std::vector<int> & vars,con
 //   arguments:
 //      X       - source Epetra_MultiVector
 //      thyra_X - destination Thyra::MultiVectorBase
-//      eow     - Operator that defines the transition...this may
-//                be removed in the future
 //
 void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
-                                                 const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X,
-                                                 const Teko::Epetra::EpetraOperatorWrapper & eow) const
+                                                 const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X) const 
 {
    int count = X.NumVectors(); 
 
@@ -123,12 +120,9 @@ void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
 //   arguments:
 //      thyra_Y - source Thyra::MultiVectorBase
 //      Y       - destination Epetra_MultiVector
-//      eow     - Operator that defines the transition...this may
-//                be removed in the future
 //
 void StridedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyra_Y,
-                                                 Epetra_MultiVector& Y,
-                                                 const Teko::Epetra::EpetraOperatorWrapper & eow) const
+                                                 Epetra_MultiVector& Y) const
 {
    std::vector<RCP<const Epetra_MultiVector> > subY;
    RCP<const Thyra::DefaultProductMultiVector<double> > prod_Y 

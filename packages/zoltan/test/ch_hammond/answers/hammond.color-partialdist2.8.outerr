@@ -1,0 +1,157 @@
+
+
+Reading the command file, zdrive.inp.color-partialdist2
+Input values:
+  Zoltan version 3.4
+  zdrive version 1.0
+  Total number of Processors = 8
+
+  Performing load balance using none.
+	Parameters:
+		comm_pattern s
+		coloring_order n
+		coloring_method f
+		superstep_size 100
+		coloring_problem partial-distance-2
+		graph_symmetrize bipartite
+
+  Initially distribute input objects in linear fashion (first n/p to process 0, etc).
+##########################################################
+ZOLTAN Load balancing method = -1 (NONE)
+Starting iteration 1
+
+BEFORE load balancing
+DRIVER EVAL:  load:  max 590.000000  min 590.000000  sum 4720.000000
+DRIVER EVAL:  objs:  max 590  min 590  sum 4720
+DRIVER EVAL:  cuts:  max 288  min 201  sum 1930
+
+Zoltan_LB_Eval_Balance  Part count: 8 requested, 8 actual , 8 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       590      590 4.72e+03     1.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       590      590 4.72e+03        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :        88      122      108      865
+Zoltan_LB_Eval_Graph  Number of cut edges       :       201      288      241 1.93e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         3        7        5       40
+
+
+
+Zoltan_LB_Eval_HG  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       590      590 4.72e+03   1.000
+Zoltan_LB_Eval_HG  Object weight     :       590      590 4.72e+03   1.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_over_edges( (nparts>1)*ewgt )):  865.000
+Zoltan_LB_Eval_HG  CUTL (Sum_over_edges( (nparts-1)*ewgt )): 1058.000
+
+
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = IMPORT AND EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = -1
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 1
+ZOLTAN Parameter SEED = 1220988223 (1220988223)
+ZOLTAN Parameter LB_APPROACH = repartition
+Size of ZOLTAN_ID_TYPE: 4, sizeof ZOLTAN_GNO_TYPE: 8
+MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED
+MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+Zoltan_LB Balancing method selected == NONE; no balancing performed
+DRIVER:  Zoltan_LB_Partition time = 0.000128984
+DRIVER:  new_decomp 0 Min/Max Import: 0 0
+DRIVER:  new_decomp 0 Min/Max Export: 0 0
+DRIVER:  Total migration time = 9.53674e-07
+
+AFTER load balancing
+DRIVER EVAL:  load:  max 590.000000  min 590.000000  sum 4720.000000
+DRIVER EVAL:  objs:  max 590  min 590  sum 4720
+DRIVER EVAL:  cuts:  max 288  min 201  sum 1930
+
+Zoltan_LB_Eval_Balance  Part count: 8 requested, 8 actual , 8 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       590      590 4.72e+03     1.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       590      590 4.72e+03        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :        88      122      108      865
+Zoltan_LB_Eval_Graph  Number of cut edges       :       201      288      241 1.93e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         3        7        5       40
+
+
+
+Zoltan_LB_Eval_HG  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       590      590 4.72e+03   1.000
+Zoltan_LB_Eval_HG  Object weight     :       590      590 4.72e+03   1.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_over_edges( (nparts>1)*ewgt )):  865.000
+Zoltan_LB_Eval_HG  CUTL (Sum_over_edges( (nparts-1)*ewgt )): 1058.000
+
+
+ZOLTAN Parameter COLORING_PROBLEM = PARTIAL-DISTANCE-2
+ZOLTAN Parameter SUPERSTEP_SIZE = 100
+ZOLTAN Parameter COMM_PATTERN = S
+ZOLTAN Parameter COLORING_ORDER = N
+ZOLTAN Parameter COLORING_METHOD = F
+ZOLTAN Parameter GRAPH_SYMMETRIZE = BIPARTITE
+ZOLTAN Parameter GRAPH_SYM_WEIGHT = ADD
+ZOLTAN Parameter GRAPH_BIPARTITE_TYPE = OBJ
+ZOLTAN Parameter GRAPH_BUILD_TYPE = NORMAL
+
+Verifying coloring result
+ZOLTAN Parameter COLORING_PROBLEM = PARTIAL-DISTANCE-2
+ZOLTAN Parameter SUPERSTEP_SIZE = 100
+ZOLTAN Parameter COMM_PATTERN = S
+ZOLTAN Parameter COLORING_ORDER = N
+ZOLTAN Parameter COLORING_METHOD = F
+ZOLTAN Parameter GRAPH_SYMMETRIZE = BIPARTITE
+ZOLTAN Parameter GRAPH_SYM_WEIGHT = ADD
+ZOLTAN Parameter GRAPH_BIPARTITE_TYPE = OBJ
+ZOLTAN Parameter GRAPH_BUILD_TYPE = NORMAL
+Valid coloring found; #colors = 17.
+FILE zdrive.inp.color-partialdist2:  Total:    1.289845e-04 seconds in Partitioning
+FILE zdrive.inp.color-partialdist2:  Average:  1.289845e-04 seconds per Iteration
+Proc 0: Calls to malloc = 13509,  Calls to free = 13507
+Proc 0: Possible memory error: # malloc > # free.
+Proc 1: Calls to malloc = 13521,  Calls to free = 13519
+Proc 1: Possible memory error: # malloc > # free.
+Proc 2: Calls to malloc = 13529,  Calls to free = 13527
+Proc 2: Possible memory error: # malloc > # free.
+Proc 3: Calls to malloc = 13533,  Calls to free = 13531
+Proc 3: Possible memory error: # malloc > # free.
+Proc 4: Calls to malloc = 13529,  Calls to free = 13527
+Proc 4: Possible memory error: # malloc > # free.
+Proc 5: Calls to malloc = 13525,  Calls to free = 13523
+Proc 5: Possible memory error: # malloc > # free.
+Proc 7: Calls to malloc = 13521,  Calls to free = 13519
+Proc 7: Possible memory error: # malloc > # free.
+Proc 6: Calls to malloc = 13529,  Calls to free = 13527
+Proc 6: Possible memory error: # malloc > # free.

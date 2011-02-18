@@ -84,14 +84,12 @@ DefaultMappingStrategy::DefaultMappingStrategy(const RCP<const Thyra::LinearOpBa
    rangeMap_ = Teko::Epetra::thyraVSToEpetraMap(*rangeSpace_,newComm);
 }
 
-void DefaultMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& x, const Ptr<Thyra::MultiVectorBase<double> > & thyraVec,
-                                      const EpetraOperatorWrapper & eow) const
+void DefaultMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& x, const Ptr<Thyra::MultiVectorBase<double> > & thyraVec) const
 {
    Teko::Epetra::blockEpetraToThyra(x,thyraVec);
 }
 
-void DefaultMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyraVec, Epetra_MultiVector& v,
-                                      const EpetraOperatorWrapper & eow) const
+void DefaultMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyraVec, Epetra_MultiVector& v) const
 {
    Teko::Epetra::blockThyraToEpetra(thyraVec,v);
 }
@@ -157,14 +155,14 @@ int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector
        Thyra::assign(tY.ptr(),0.0);
 
        // copy epetra X into thyra X
-       mapStrategy_->copyEpetraIntoThyra(X, tX.ptr(),*this);
-       mapStrategy_->copyEpetraIntoThyra(Y, tY.ptr(),*this); // if this matrix isn't block square, this probably won't work!
+       mapStrategy_->copyEpetraIntoThyra(X, tX.ptr());
+       mapStrategy_->copyEpetraIntoThyra(Y, tY.ptr()); // if this matrix isn't block square, this probably won't work!
 
        // perform matrix vector multiplication
        thyraOp_->apply(Thyra::NOTRANS,*tX,tY.ptr(),1.0,0.0);
 
        // copy thyra Y into epetra Y
-       mapStrategy_->copyThyraIntoEpetra(tY, Y,*this);
+       mapStrategy_->copyThyraIntoEpetra(tY, Y);
    }
    else
    {

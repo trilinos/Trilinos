@@ -324,40 +324,6 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A);
   */
 InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A,const LinearOp & precOp);
 
-#if 0
-/** Build an inverse operator using a factory and a linear operator
-  * This functionality is only useful for Teko::PreconditionerFactory inverses.
-  *
-  * \param[in] factory The inverse factory used to construct the inverse
-  *                    operator
-  * \param[in] A       Linear operator whose inverse is required
-  * \param[in] parentState Current state object to be used. Only useful for preconditioners.
-  *
-  * \returns An (approximate) inverse operator is returned for the operator <code>A</code>.
-  *
-  * \relates PreconditionerInverseFactory InverseFactory
-  */
-InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & linearOp,
-                             const PreconditionerState & parentState);
-
-/** Build an inverse operator using a factory and a linear operator
-  * This functionality is only useful for Teko::PreconditionerFactory inverses.
-  *
-  * \param[in] factory The inverse factory used to construct the inverse
-  *                    operator
-  * \param[in] A       Linear operator whose inverse is required
-  * \param[in] precOp  Preconditioning operator
-  * \param[in] parentState Current state object to be used. Only useful for preconditioners.
-  *
-  * \returns An (approximate) inverse operator is returned for the operator <code>A</code>.
-  *
-  * \relates PreconditionerInverseFactory InverseFactory
-  */
-InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & linearOp,
-                             const LinearOp & precOp,
-                             const PreconditionerState & parentState);
-#endif
-
 /** Using a prebuilt linear operator, use factory to build an inverse operator
   * given a new forward operator.
   *

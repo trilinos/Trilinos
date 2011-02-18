@@ -24,7 +24,7 @@ extern "C" {
 
 static int
 matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_PTR *pinID,
-		 int nX, ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID, ZOLTAN_GNO_TYPE ** xGNO, float** xwgt);
+		 int nX, ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID, ZOLTAN_GNO_TYPE ** xGNO, float** xwgt, int use_full_dd);
 
   /* In build_graph.c, may be moved here soon */
 extern int Zoltan_Get_Num_Edges_Per_Obj(
@@ -38,7 +38,18 @@ extern int Zoltan_Get_Num_Edges_Per_Obj(
   );
 
 int
-Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
+Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
+  int request_GNOs,                /* Input:  Flag indicating calling code 
+                                              needs translation of extra GIDs
+                                              to GNOs; partial 2D coloring
+                                              needs this feature. */
+  int num_requested,               /* Input:  Local # of GIDs needing 
+                                              translation to GNOs. */
+  ZOLTAN_ID_PTR requested_GIDs,    /* Input:  Calling code requests the 
+                                              GNOs for these GIDs */
+  ZOLTAN_GNO_TYPE *requested_GNOs  /* Output: Return GNOs of 
+                                              the requested GIDs.  */
+)  
 {
   static char *yo = "Zoltan_Matrix_Build";
   int ierr = ZOLTAN_OK;
@@ -57,8 +68,14 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   int i;
   int gno_size_for_dd;
   MPI_Datatype zoltan_gno_mpi_type;
+  int use_full_dd = (matrix->opts.speed == MATRIX_FULL_DD || request_GNOs);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  if (num_requested && (!requested_GIDs || !requested_GNOs)) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "Error in requested input; needed arrays are NULL.\n");
+  }
 
   /* ZOLTAN_GNO_TYPE is >= ZOLTAN_ID_TYPE */
   gno_size_for_dd = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
@@ -87,7 +104,9 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   /* Assign vertex consecutive numbers (gnos)                        */
   /*******************************************************************/
 
-  if (matrix->opts.speed == MATRIX_FULL_DD) { /* Zoltan computes a translation */
+  if (use_full_dd) {
+    /* Zoltan computes a translation */
+    /* Have to use Data Directory if request_GNOs is true. */
     if (nX) {
       xGNO = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(nX*sizeof(ZOLTAN_GNO_TYPE));
       if (xGNO == NULL)
@@ -105,8 +124,18 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
 
     /* Make our new numbering public */
     Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, NULL,  NULL, nX);
+    if (requested_GNOs) {
+      Zoltan_DD_Find(dd, requested_GIDs, requested_GNOs, NULL, NULL, 
+                     num_requested, NULL);
+    }
   }
   else { /* We don't want to use the DD */
+    /* KDDKDD 2/10/11  Upon inspection of the code, I cannot understand
+     * KDDKDD 2/10/11  how this code can work when NUM_GID_ENTRIES>1.
+     * KDDKDD 2/10/11  I guess the assumption is that, if a user sets the
+     * KDDKDD 2/10/11  appropriate parameter to enable this code, the user
+     * KDDKDD 2/10/11  knows that his GIDs are compatible with integers.
+     */
     if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(ZOLTAN_ID_TYPE)){
       xGNO = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(nX*sizeof(ZOLTAN_GNO_TYPE));
       if (xGNO == NULL)
@@ -146,7 +175,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   else
     matrix->pinwgtdim = 0;
 
-  ierr = matrix_get_edges(zz, matrix, &yGID, &pinID, nX, &xGID, &xLID, &xGNO, &xwgt);
+  ierr = matrix_get_edges(zz, matrix, &yGID, &pinID, nX, &xGID, &xLID, &xGNO, &xwgt, use_full_dd);
   CHECK_IERR;
   matrix->nY_ori = matrix->nY;
 
@@ -178,7 +207,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     proclist = NULL;
 
   /* Convert pinID to pinGNO using the same translation as x */
-  if (matrix->opts.speed == MATRIX_FULL_DD) {
+  if (use_full_dd) {
     matrix->pinGNO = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(matrix->nPins* sizeof(ZOLTAN_GNO_TYPE));
     if ((matrix->nPins > 0) && (matrix->pinGNO == NULL)) MEMORY_ERROR;
 
@@ -348,7 +377,7 @@ Zoltan_Matrix_Vertex_Info(ZZ* zz, const Zoltan_matrix * const m,
    */
 static int
 matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_PTR *pinID, int nX,
-		 ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID, ZOLTAN_GNO_TYPE **xGNO, float **xwgt)
+		 ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID, ZOLTAN_GNO_TYPE **xGNO, float **xwgt, int use_full_dd)
 {
   static char *yo = "matrix_get_edges";
   int ierr = ZOLTAN_OK;
@@ -373,7 +402,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
   if (hypergraph_callbacks) {
     matrix->redist = 1;
-    if (matrix->opts.speed == MATRIX_FULL_DD)
+    if (use_full_dd)
       ZOLTAN_FREE(xGID);
     else
       *xGID = NULL;
@@ -441,7 +470,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
     /* Not Useful anymore */
     ZOLTAN_FREE(xLID);
-    if (matrix->opts.speed == MATRIX_FULL_DD)
+    if (use_full_dd)
       ZOLTAN_FREE(xGID);
     else
       *xGID = NULL;
