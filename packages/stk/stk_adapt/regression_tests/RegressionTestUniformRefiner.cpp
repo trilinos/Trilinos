@@ -66,7 +66,6 @@ namespace stk
       }
 
 
-
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
@@ -116,6 +115,7 @@ namespace stk
             eMesh.saveAs("./output_files/biplane_1.e");
 
           }
+        exit(123);
 #endif
       }
 
@@ -165,13 +165,15 @@ namespace stk
 
             // FIXME
 #if !(defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
+
             Line2_Line2_2            :: printRefinementTopoX_Table(file);
             ShellLine2_ShellLine2_2  :: printRefinementTopoX_Table(file);
+            ShellLine3_ShellLine3_2  :: printRefinementTopoX_Table(file);
             Quad4_Quad4_4            :: printRefinementTopoX_Table(file);
             Tri3_Tri3_4              :: printRefinementTopoX_Table(file);
             ShellTri3_ShellTri3_4    :: printRefinementTopoX_Table(file);
             ShellQuad4_ShellQuad4_4  :: printRefinementTopoX_Table(file);
-            //ShellQuad8_ShellQuad8_4  :: printRefinementTopoX_Table(file);
+            ShellQuad8_ShellQuad8_4  :: printRefinementTopoX_Table(file);
             Tet4_Tet4_8              :: printRefinementTopoX_Table(file);
             Hex8_Hex8_8              :: printRefinementTopoX_Table(file);
             Wedge6_Wedge6_8          :: printRefinementTopoX_Table(file);
@@ -190,6 +192,7 @@ namespace stk
 #endif
             file << "#endif" << std::endl;
           }
+
       }
 
       //======================================================================================================================
@@ -197,6 +200,85 @@ namespace stk
       //===================== Shell elements testing
       //======================================================================================================================
       //======================================================================================================================
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+
+      TEST(regr_uniformRefiner, break_quad4_to_quad8_to_quad8_shell)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced (I presume there are too few elements)
+
+        if (p_size <= 1)
+          {
+            // start_demo_break_quad4_to_quad8_to_quad8_shell
+            std::string input_mesh = "./input_files/shell-tests/freshell_quad4.g";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh;
+            eMesh.open(input_mesh);
+
+            ShellQuad4_ShellQuad8_1 break_quad4_to_quad8_1(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            //         int vectorDimension = 3;
+
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+
+            eMesh.printInfo("quad mesh");
+            eMesh.saveAs("./output_files/freshell_quad4_quad8_0.g");
+
+            UniformRefiner breaker(eMesh, break_quad4_to_quad8_1, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("quad mesh refined", 5);
+            eMesh.printInfo("quad shell mesh enriched");
+            eMesh.saveAs("./output_files/freshell_quad4_quad8_1.g");
+            eMesh.saveAs("./input_files/freshell_quad8_quad8_0.g");
+
+          }
+
+        if (1 && p_size <= 1)
+          {
+
+            percept::PerceptMesh eMesh;
+            eMesh.open("./input_files/freshell_quad8_quad8_0.g");
+
+            ShellQuad8_ShellQuad8_4 break_quad8_to_quad_8(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+
+            //eMesh.printInfo("quad mesh");
+            //eMesh.saveAs("./output_files/freshell_quad4_quad8_0.g");
+
+            UniformRefiner breaker(eMesh, break_quad8_to_quad_8, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("quad mesh refined", 5);
+            eMesh.printInfo("quad shell mesh enriched and refined");
+            eMesh.saveAs("./output_files/freshell_quad8_quad8_1.g");
+            // end_demo
+
+          }
+      }
 
       //======================================================================================================================
       //======================================================================================================================
@@ -226,7 +308,7 @@ namespace stk
             percept::PerceptMesh eMesh;
             eMesh.open(input_mesh);
 
-            UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
+            ShellQuad4_ShellQuad4_4 break_quad_to_quad_4(eMesh);
 
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
@@ -248,7 +330,6 @@ namespace stk
             // end_demo
 
           }
-
       }
 
       TEST(regr_uniformRefiner, break_tri_to_tri_shell)
@@ -275,7 +356,7 @@ namespace stk
             eMesh.open(input_mesh);
 
 
-            UniformRefinerPattern<shards::ShellTriangle<3>, shards::ShellTriangle<3>, 4, SierraPort > break_tri_to_tri_4(eMesh);
+            ShellTri3_ShellTri3_4 break_tri_to_tri_4(eMesh);
 
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;

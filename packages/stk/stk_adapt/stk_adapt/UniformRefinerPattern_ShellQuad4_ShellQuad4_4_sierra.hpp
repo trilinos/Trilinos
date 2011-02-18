@@ -91,7 +91,7 @@ namespace stk {
 
         needed_entities.resize(2);
         needed_entities[0].first = stk::mesh::Edge;    
-        needed_entities[1].first = (m_eMesh.getSpatialDim() == 2 ? stk::mesh::Element : stk::mesh::Face);
+        needed_entities[1].first = stk::mesh::Face;
 
         setToOne(needed_entities);
       }

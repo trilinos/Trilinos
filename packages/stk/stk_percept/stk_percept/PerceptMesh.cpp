@@ -724,9 +724,30 @@ namespace stk {
 
           double * const coord = stk::mesh::field_data( *getCoordinatesField() , node_0 );
 
-          coord[0] = coord_in[0];
-          coord[1] = coord_in[1];
-          coord[2] = coord_in[2];
+          if (!coord_in)
+            {
+              std::cout << "PerceptMesh::createOrGetNode coord_in is null and node doesn't exist, node_id= " << node_id << std::endl;
+              throw std::runtime_error("PerceptMesh::createOrGetNode coord_in is null and node doesn't exist");
+            }
+
+          if (coord_in) 
+            {
+              coord[0] = coord_in[0];
+              coord[1] = coord_in[1];
+              if (getSpatialDim() == 3)
+                {
+                  coord[2] = coord_in[2];
+                }
+            }
+          else
+            {
+              coord[0] = 0.0;
+              coord[1] = 0.0;
+              if (getSpatialDim() == 3)
+                {
+                  coord[2] = 0.0;
+                }
+            }
 
           return node_0;
         }

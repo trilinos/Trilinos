@@ -98,6 +98,28 @@ namespace stk {
       return blocks;
     }
 
+
+    void UniformRefiner::
+    setRemoveOldElements(bool do_remove) { m_doRemove = do_remove; }
+
+    bool UniformRefiner::
+    getRemoveOldElements() { return m_doRemove; }
+      
+    //static BlockNamesType 
+    //  getBlockNames(std::string& block_name);
+
+    void UniformRefiner::
+    setIgnoreSideSets(bool ignore_ss) 
+    { 
+      m_ignoreSideSets= ignore_ss;
+    }
+
+    bool UniformRefiner::
+    getIgnoreSideSets() 
+    { 
+      return m_ignoreSideSets; 
+    }
+
     void UniformRefiner::
     addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType)
     {
@@ -801,7 +823,7 @@ namespace stk {
         }
       if (notFound)
         {
-          std::cout << "UniformRefiner::fixElementSides: missing sub-dim break pattern - logic error\n"
+          std::cout << "UniformRefiner::fixElementSides1: missing sub-dim break pattern - logic error\n"
             " ---- for this refinement pattern to be able to handle sidesets and edgesets you must provide the sub-dim break pattern\n"
             " ---- or you must set the setIgnoreSideSets() flag " << std::endl;
           throw std::logic_error("UniformRefiner::fixElementSides1: missing sub-dim break pattern - logic error");
@@ -1166,11 +1188,17 @@ namespace stk {
 
           new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first].resize(numSubDimNeededEntities);
 
+          if (0)
+            {
+              std::cout << "P[" << m_eMesh.getRank() << "]  needed_entity_ranks[ineed_ent]= " << needed_entity_ranks[ineed_ent].first
+                        << " , " << needed_entity_ranks[ineed_ent].second << " numSubDimNeededEntities= " << numSubDimNeededEntities
+                        << std::endl;
+            }
+
           for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
             {
               // CHECK
               NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element, needed_entity_ranks[ineed_ent].first, iSubDimOrd);
-              
 
               if (!nodeIds_onSE[0]) {
                 std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " 
@@ -1180,8 +1208,19 @@ namespace stk {
                           <<  std::endl;
                 throw std::logic_error("UniformRefiner logic error");
               }
-              //new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd].resize(
+
               unsigned num_new_nodes_needed = needed_entity_ranks[ineed_ent].second;
+              if (0)
+                {
+                  const CellTopologyData * const cell_topo_data = get_cell_topology(element);
+                  CellTopology cell_topo(cell_topo_data);
+
+                  std::cout << "tmp 43 cell_topo= " << cell_topo.getName() << " ineed_ent= " << ineed_ent << " needed_entity_ranks[ineed_ent].first/second = " 
+                            << needed_entity_ranks[ineed_ent].first << " "
+                            << needed_entity_ranks[ineed_ent].second
+                            << std::endl;
+                }
+
               if (num_new_nodes_needed < 1)
                 {
                   //std::cout << "needed_entity_ranks[ineed_ent].second = " << num_new_nodes_needed << std::endl;

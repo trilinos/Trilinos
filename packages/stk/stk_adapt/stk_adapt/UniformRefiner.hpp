@@ -88,17 +88,19 @@ namespace stk {
       doBreak();
 
       void 
-      setRemoveOldElements(bool do_remove) { m_doRemove = do_remove; }
+      setRemoveOldElements(bool do_remove);
+
       bool 
-      getRemoveOldElements() { return m_doRemove; }
+      getRemoveOldElements();
       
       static BlockNamesType 
       getBlockNames(std::string& block_name);
 
       void 
-      setIgnoreSideSets(bool ignore_sidesets) { m_ignoreSideSets= ignore_sidesets; }
+      setIgnoreSideSets(bool ignore_sidesets) ;
+
       bool 
-      getIgnoreSideSets() { return m_ignoreSideSets; }
+      getIgnoreSideSets();
 
     protected:
   
