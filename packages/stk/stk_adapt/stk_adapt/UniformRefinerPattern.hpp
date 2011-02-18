@@ -641,6 +641,7 @@ namespace stk {
                 std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_hex20      = " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
                 mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
 
+
                 PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
                 MDArray output_tmp(elem_nodes.size(), 1);
                 MDArray input_param_coords_tmp(1, topoDim);

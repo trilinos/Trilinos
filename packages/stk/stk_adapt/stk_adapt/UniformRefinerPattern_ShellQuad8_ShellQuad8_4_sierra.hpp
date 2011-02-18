@@ -85,7 +85,6 @@ namespace stk {
 
         needed_entities.resize(2);
         needed_entities[0] = NeededEntityType(stk::mesh::Edge, 3u);    
-        //needed_entities[1] = NeededEntityType(stk::mesh::Element , 9u);
         needed_entities[1] = NeededEntityType(stk::mesh::Face , 9u);
       }
 
