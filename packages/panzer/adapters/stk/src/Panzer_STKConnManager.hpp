@@ -36,6 +36,16 @@ public:
    virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const 
    { return &connectivity_[elmtLidToConn_[localElmtId]]; }
 
+   /** Get ID connectivity for a particular element
+     *
+     * \param[in] localElmtId Local element ID
+     *
+     * \returns Pointer to beginning of indices, with total size
+     *          equal to <code>getConnectivitySize(localElmtId)</code>
+     */
+   virtual GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) 
+   { return &connectivity_[elmtLidToConn_[localElmtId]]; }
+
    /** How many mesh IDs are associated with this element?
      *
      * \param[in] localElmtId Local element ID
@@ -72,6 +82,14 @@ public:
    { return *(elementBlocks_.find(blockId)->second); }
 
 protected:
+   /** Apply periodic boundary conditions associated with the mesh object.
+     *
+     * \note This function requires global All-2-All communication IFF
+     *       periodic boundary conditions are required.
+     */
+   void applyPeriodicBCs( const panzer::FieldPattern & fp, GlobalOrdinal nodeOffset, GlobalOrdinal edgeOffset, 
+                                                           GlobalOrdinal faceOffset, GlobalOrdinal cellOffset);
+
    void buildLocalElementMapping();
    void clearLocalElementMapping();
    void buildOffsetsAndIdCounts(const panzer::FieldPattern & fp,
@@ -82,6 +100,9 @@ protected:
 
    LocalOrdinal addSubcellConnectivities(stk::mesh::Entity * element,unsigned subcellRank,
                                          LocalOrdinal idCnt,GlobalOrdinal offset);
+
+   void modifySubcellConnectivities(const panzer::FieldPattern & fp, stk::mesh::Entity * element,
+                                    unsigned subcellRank,unsigned subcellId,GlobalOrdinal newId,GlobalOrdinal offset);
 
    Teuchos::RCP<STK_Interface> stkMeshDB_;
 

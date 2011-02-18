@@ -17,5 +17,5 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   periodic_mesh
   SOURCES periodic_mesh.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
-  NUM_MPI_PROCS 1
+  NUM_MPI_PROCS 2
   )

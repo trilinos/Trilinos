@@ -26,6 +26,8 @@ using Teuchos::rcp;
 #include "Epetra_Export.h"
 #include "Epetra_Import.h"
 
+using panzer_stk::CoordMatcher;
+
 namespace panzer {
 
   TEUCHOS_UNIT_TEST(periodic_bcs, sorted_permutation)
@@ -88,18 +90,39 @@ namespace panzer {
     }
 
   }
+
+  TEUCHOS_UNIT_TEST(periodic_bcs, getLocalSideIds)
+  {
+    using Teuchos::RCP;
+    using Teuchos::Tuple;
+
+    Epetra_MpiComm Comm(MPI_COMM_WORLD);
+    int rank = Comm.MyPID(); 
+
+    panzer_stk::SquareQuadMeshFactory mesh_factory;
+
+    // setup mesh
+    /////////////////////////////////////////////
+    RCP<panzer_stk::STK_Interface> mesh;
+    {
+       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Blocks",2);
+       pl->set("Y Blocks",1);
+       pl->set("X Elements",8);
+       pl->set("Y Elements",1);
+       mesh_factory.setParameterList(pl);
+       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+    }
+
+    RCP<std::vector<std::size_t> > locallyRequiredIds = panzer_stk::periodic_helpers::getLocalSideIds(*mesh,"left");
+    if(rank==0) {
+       TEST_EQUALITY(locallyRequiredIds->size(),2);
+    }
+    else {
+       TEST_EQUALITY(locallyRequiredIds->size(),0);
+    }
+  }
  
-  struct CoordMatcher {
-     double error_;
-     int index_;
-     CoordMatcher(int index) : error_(1e-8),index_(index) {}
-     CoordMatcher(int index,double error) : error_(error),index_(index) {}
-
-     bool operator()(const Teuchos::Tuple<double,3> & a,
-                     const Teuchos::Tuple<double,3> & b) const
-     { return std::fabs(a[index_]-b[index_])<error_; /* I'm being lazy here! */ }
-  };
-
   TEUCHOS_UNIT_TEST(periodic_bcs, getLocallyMatchedSideIds)
   {
     using Teuchos::RCP;
@@ -328,6 +351,62 @@ namespace panzer {
        TEST_THROW(pMatch->getMatchedPair(*mesh),std::logic_error);
     }
     
+  }
+
+  TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_multi)
+  {
+    using Teuchos::RCP;
+    using Teuchos::Tuple;
+
+    Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
+    panzer_stk::SquareQuadMeshFactory mesh_factory;
+
+    // setup mesh
+    /////////////////////////////////////////////
+    RCP<panzer_stk::STK_Interface> mesh;
+    {
+       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Blocks",2);
+       pl->set("Y Blocks",1);
+       pl->set("X Elements",4);
+       pl->set("Y Elements",2);
+       mesh_factory.setParameterList(pl);
+       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+    }
+
+    {
+       CoordMatcher xmatcher(0);
+       CoordMatcher ymatcher(1);
+       Teuchos::RCP<const panzer_stk::PeriodicBC_MatcherBase> tb_Match 
+             = panzer_stk::buildPeriodicBC_Matcher("top","bottom",xmatcher);
+       Teuchos::RCP<const panzer_stk::PeriodicBC_MatcherBase> lr_Match 
+             = panzer_stk::buildPeriodicBC_Matcher("left","right",ymatcher);
+
+       RCP<std::vector<std::pair<std::size_t,std::size_t> > > globallyMatchedIds;
+       globallyMatchedIds = tb_Match->getMatchedPair(*mesh);
+       globallyMatchedIds = lr_Match->getMatchedPair(*mesh,globallyMatchedIds);
+
+       // match top & bottom sides
+       for(std::size_t i=0;i<globallyMatchedIds->size();i++) {
+          std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds)[i];
+          out << pair.first << " " << pair.second << std::endl;
+       }
+
+       // match top & bottom sides
+       for(std::size_t i=0;i<globallyMatchedIds->size();i++) {
+          std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds)[i];
+
+          if(pair.first==1 || pair.first==19)
+          {   TEST_EQUALITY(pair.second,9); }
+          else if(pair.first==10)
+          {   TEST_EQUALITY(pair.second,18); }
+          else
+          {   TEST_EQUALITY(pair.second,pair.first-18); }
+       }
+
+    }
+
   }
 
 }

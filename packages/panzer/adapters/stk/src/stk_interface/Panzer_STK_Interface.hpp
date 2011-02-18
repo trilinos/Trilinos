@@ -242,6 +242,17 @@ public:
    //! get a set of elements sharing a single node
    void getElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity *> & elements) const;
 
+   /** Get set of element sharing a single node and its local node id.
+     */
+   void getOwnedElementsSharingNode(stk::mesh::Entity * node,std::vector<stk::mesh::Entity *> & elements,
+                                                        std::vector<int> & localNodeId) const;
+
+   /** Get set of element sharing a single node and its local node id.
+     */
+   void getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity *> & elements,
+                                                          std::vector<int> & localNodeId) const;
+
+
    //! get a set of elements sharing multiple nodes
    void getElementsSharingNodes(const std::vector<stk::mesh::EntityId> nodeId,std::vector<stk::mesh::Entity *> & elements) const;
 
@@ -354,6 +365,9 @@ public:
    void addPeriodicBC(const Teuchos::RCP<const PeriodicBC_MatcherBase> & bc)
    { periodicBCs_.push_back(bc); }
 
+   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 
+   getPeriodicNodePairing() const;
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -401,7 +415,7 @@ protected:
    // what is maximum entity ID
    std::vector<stk::mesh::EntityId> maxEntityId_;
 
-   int procRank_;
+   unsigned procRank_;
    std::size_t currentLocalId_;
 
    Teuchos::RCP<stk::mesh::DefaultFEM> femPtr_;

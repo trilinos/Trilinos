@@ -26,6 +26,13 @@ namespace periodic_helpers {
                      const STK_Interface & mesh,
                      const Matcher & matcher);
 
+   template <typename Matcher>
+   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
+   matchPeriodicSides(const std::string & left,const std::string & right,
+                     const STK_Interface & mesh,
+                     const Matcher & matcher,
+                     const std::vector<std::pair<std::size_t,std::size_t> > & current);
+
    /** This returns all the global IDs and coordinates for 
      * a particular side. By "all" that means across all processors.
      */
@@ -86,6 +93,26 @@ public:
    { return std::fabs(a[index_]-b[index_])<error_; /* I'm being lazy here! */ }
 };
 
+class PlaneMatcher {
+   double error_;
+   int index0_, index1_;
+
+public:
+   PlaneMatcher(int index0,int index1) : error_(1e-8),index0_(index0), index1_(index1) 
+   { TEUCHOS_ASSERT(index0!=index1); }
+
+   PlaneMatcher(int index0,int index1,double error) : error_(error),index0_(index0), index1_(index1) 
+   { TEUCHOS_ASSERT(index0!=index1); }
+
+   PlaneMatcher(const PlaneMatcher & cm) : error_(cm.error_),index0_(cm.index0_), index1_(cm.index1_) 
+   { }
+
+   bool operator()(const Teuchos::Tuple<double,3> & a,
+                   const Teuchos::Tuple<double,3> & b) const
+   { return (std::fabs(a[index0_]-b[index0_])<error_) 
+         && (std::fabs(a[index1_]-b[index1_])<error_) ; /* I'm being lazy here! */ }
+};
+
 /** Simply returns a vector of pairs that match
   * the IDs owned by this processor to their
   * matching IDs on the periodic boundary.
@@ -110,7 +137,9 @@ public:
      */
    virtual 
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
-   getMatchedPair(const STK_Interface & mesh) const = 0;
+   getMatchedPair(const STK_Interface & mesh,
+                  const Teuchos::RCP<const std::vector<std::pair<std::size_t,std::size_t> > >  & currentState = Teuchos::null
+                  ) const = 0;
 };
 
 /** Default implementation class for the periodic boundary conditions.
@@ -137,8 +166,15 @@ public:
      *          that replaces it.
      */
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
-   getMatchedPair(const STK_Interface & mesh) const
-   { return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_); }
+   getMatchedPair(const STK_Interface & mesh,
+                  const Teuchos::RCP<const std::vector<std::pair<std::size_t,std::size_t> > >  & currentState = Teuchos::null
+                  ) const
+   { 
+      if(currentState==Teuchos::null) 
+         return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_); 
+      else
+         return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_,*currentState); 
+   }
 
 private:
    PeriodicBC_Matcher(); // hidden!

@@ -1,5 +1,7 @@
 #include <Panzer_STK_Interface.hpp>
 
+#include <Teuchos_as.hpp>
+
 #include <limits>
 
 #include <stk_mesh/base/FieldData.hpp>
@@ -16,6 +18,8 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/util/UseCase_mesh.hpp>
 #endif
+
+#include "Panzer_STK_PeriodicBC_Matcher.hpp"
 
 #include <set>
 
@@ -209,7 +213,7 @@ void STK_Interface::addElement(Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::P
    }
 
    int * procId = stk::mesh::field_data(*processorIdField_,element);
-   procId[0] = procRank_;
+   procId[0] = Teuchos::as<int>(procRank_);
 
    std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
    localId[0] = currentLocalId_;
@@ -278,6 +282,36 @@ void STK_Interface::getElementsSharingNode(stk::mesh::EntityId nodeId,std::vecto
    for(itr=relations.begin();itr!=relations.end();++itr) {
       elements.push_back(itr->entity());
    }
+}
+
+void STK_Interface::getOwnedElementsSharingNode(stk::mesh::Entity * node,std::vector<stk::mesh::Entity *> & elements,
+                                                                         std::vector<int> & localNodeId) const
+{
+   stk::mesh::EntityRank elementRank = getElementRank();
+
+   // get all relations for node
+   stk::mesh::PairIterRelation relations = node->relations(elementRank);
+
+   // extract elements sharing nodes
+   stk::mesh::PairIterRelation::iterator itr;
+   for(itr=relations.begin();itr!=relations.end();++itr) {
+      stk::mesh::Entity * element = itr->entity();
+      
+      // if owned by this processor 
+      if(element->owner_rank() == procRank_) {
+         elements.push_back(element);
+         localNodeId.push_back(itr->identifier());
+      }
+
+   }
+}
+
+void STK_Interface::getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity *> & elements,
+                                                                           std::vector<int> & localNodeId) const
+{
+   stk::mesh::Entity * node = bulkData_->get_entity(getNodeRank(),nodeId);
+
+   getOwnedElementsSharingNode(node,elements,localNodeId);
 }
 
 void STK_Interface::getElementsSharingNodes(const std::vector<stk::mesh::EntityId> nodeIds,std::vector<stk::mesh::Entity *> & elements) const
@@ -589,13 +623,26 @@ void STK_Interface::buildLocalElementIDs()
 
       // set processor rank
       int * procId = stk::mesh::field_data(*processorIdField_,element);
-      procId[0] = procRank_;
+      procId[0] = Teuchos::as<int>(procRank_);
 
       // set local element ID
       std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
       localId[0] = currentLocalId_;
       currentLocalId_++;
    }
+}
+
+Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 
+STK_Interface::getPeriodicNodePairing() const
+{
+   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > vec;
+   const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & matchers = getPeriodicBCVector();
+
+   // build up the vectors by looping over the matched pair
+   for(std::size_t m=0;m<matchers.size();m++)
+      vec = matchers[m]->getMatchedPair(*this,vec);
+
+   return vec;
 }
 
 }

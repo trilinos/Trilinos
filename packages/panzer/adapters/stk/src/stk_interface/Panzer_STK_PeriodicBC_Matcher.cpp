@@ -12,6 +12,8 @@
 #include "Epetra_LocalMap.h"
 #include "Epetra_Import.h"
 
+#include "Teuchos_FancyOStream.hpp"
+
 namespace panzer_stk {
 
 namespace periodic_helpers {
@@ -77,8 +79,10 @@ getLocalSideIds(const STK_Interface & mesh,
 
    // grab nodes owned by requested side
    /////////////////////////////////////////////
-   stk::mesh::Part * side = metaData->get_part(sideName,"Some error message");
-   stk::mesh::Selector mySides = *side;
+   std::stringstream ss;
+   ss << "Can't find part=\"" << sideName << "\"" << std::endl;
+   stk::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
+   stk::mesh::Selector mySides = *side & (metaData->locally_owned_part() | metaData->globally_shared_part());
  
    std::vector<stk::mesh::Bucket*> nodeBuckets;
    stk::mesh::get_buckets(mySides,bulkData->buckets(mesh.getNodeRank()),nodeBuckets);
@@ -115,7 +119,9 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
 
    // grab nodes owned by requested side
    /////////////////////////////////////////////
-   stk::mesh::Part * side = metaData->get_part(sideName,"Some error message");
+   std::stringstream ss;
+   ss << "Can't find part=\"" << sideName << "\"" << std::endl;
+   stk::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
    stk::mesh::Selector mySides = (*side) & metaData->locally_owned_part();
  
    std::vector<stk::mesh::Bucket*> nodeBuckets;
