@@ -59,7 +59,6 @@ APPEND_SET(HEADERS
 
 #TODO: APPEND_GLOB(SOURCES */*.cpp) instead ?
 APPEND_SET(SOURCES
-  Graph/MueLu_UCAggregationFactory.cpp
   mac.cpp
   )
 
@@ -71,6 +70,5 @@ PACKAGE_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS muelu-cthulhu
   )
 
