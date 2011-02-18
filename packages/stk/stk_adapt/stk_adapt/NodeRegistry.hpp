@@ -563,7 +563,16 @@ namespace stk {
 
         // if empty or if my id is the smallest, make this element the owner
         //if (is_empty || element.identifier() < nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>() )
-        if (is_empty || element.identifier() < stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()) )
+//         bool should_put_in = 
+//           (element.identifier()  < stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()))
+//           && (element.entity_rank() > stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
+        bool should_put_in = 
+          (element.identifier()  < stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()))
+          || (element.entity_rank() > stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
+
+        // once it's in, the assertion should be:
+        // owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
+        if (is_empty || should_put_in)
           {
 #if NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE || NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
             NodeIdsOnSubDimEntityType nids(needed_entity_rank.second, 0u);
@@ -628,6 +637,7 @@ namespace stk {
         else
           {
             unsigned owning_elementId = stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+            unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
 #if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
             if (!owning_elementId)
               {
@@ -639,7 +649,10 @@ namespace stk {
             NodeIdsOnSubDimEntityType nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
 
             // error check
-            if ( element.identifier() < owning_elementId )
+            bool isNotOK = (element.identifier() < owning_elementId) && (element.entity_rank() > owning_elementRank) ;
+
+            //if ( element.identifier() < owning_elementId )
+            if ( isNotOK )
               {
                 std::cout << "P[" << proc_rank << "] elem id = " << element.identifier() 
                           << " nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>() = " 
@@ -1883,7 +1896,6 @@ namespace stk {
         Entity * element = get_entity_element(*m_eMesh.getBulkData(), erank, non_owning_elementId);
         //!
 
-        
         for (unsigned iid = 0; iid < nodeIds_onSE.size(); iid++)
           {
             Entity * node = get_entity_node(*m_eMesh.getBulkData(),Node, nodeIds_onSE[iid]);
@@ -1907,8 +1919,16 @@ namespace stk {
 
 #ifndef NDEBUG
         EntityId owning_element_id = stk::mesh::entity_id(subDimCellData.get<SDC_DATA_OWNING_ELEMENT_KEY>());
-        VERIFY_OP(owning_element_id, !=, non_owning_elementId, "createNodeAndConnect:: bad elem ids");
-        VERIFY_OP(owning_element_id, < , non_owning_elementId, "createNodeAndConnect:: bad elem ids 2");
+        EntityRank owning_element_rank = stk::mesh::entity_rank(subDimCellData.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+        //VERIFY_OP(owning_element_id, !=, non_owning_elementId, "createNodeAndConnect:: bad elem ids");
+        //VERIFY_OP(owning_element_id, < , non_owning_elementId, "createNodeAndConnect:: bad elem ids 2");
+
+        // owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
+        if (owning_element_rank >= non_owning_elementRank)
+          {
+            VERIFY_OP(owning_element_id, !=, non_owning_elementId, "createNodeAndConnect:: bad elem ids");
+            VERIFY_OP(owning_element_id, < , non_owning_elementId, "createNodeAndConnect:: bad elem ids 2");
+          }
 #endif
 
       }
