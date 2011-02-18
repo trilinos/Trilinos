@@ -18,7 +18,7 @@
                                  /* arbitration still needs to occur.       */
                                  /* The corresponding procWinner[]'s remain */
                                  /* as MUELU_UNASSIGNED until               */
-                                 /* MueLu_ArbitrateAndCommunicate() is      */
+                                 /* ArbitrateAndCommunicate() is            */
                                  /* invoked to arbitrate.                   */
 
 /***************************************************************************** 

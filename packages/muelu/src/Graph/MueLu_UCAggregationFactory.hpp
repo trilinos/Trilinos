@@ -150,7 +150,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         {
           randomVector = Teuchos::arcp<int>(nRows);
           for (int i = 0; i < nRows; ++i) randomVector[i] = i;
-            MueLu_RandomReorder(randomVector, *(graph.GetDomainMap()));
+            RandomReorder(randomVector, *(graph.GetDomainMap()));
         } 
         else if ( ordering == 2 )  /* graph ordering */
         {
@@ -447,7 +447,7 @@ class UCAggregationFactory : public Teuchos::Describable {
          On input, the structure Aggregates describes already aggregated vertices.
          The field procWinners[] indicates the processor owning the aggregate to
          which a vertex is "definitively" assigned. If on entry 
-         procWinners[i] == MUELU_UNASSIGNED, MueLu_ArbitrateAndCommunicate() 
+         procWinners[i] == MUELU_UNASSIGNED, ArbitrateAndCommunicate() 
          will arbitrate and decide which processor's aggregate really has
          the vertex. If only one processor claims ownership (as in
          the Uncoupled case), no real arbitration is needed. Otherwise,
@@ -455,7 +455,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         
          This cleanup has many phases:
            
-           Phase 1b: Invoke MueLu_ArbitrateAndCommunicate() to ensure that
+           Phase 1b: Invoke ArbitrateAndCommunicate() to ensure that
                      all processors have the same view of aggregated vertices
                      (e.g., to which aggregate they have been assigend and
                      which processor owns that aggregate).
@@ -463,13 +463,13 @@ class UCAggregationFactory : public Teuchos::Describable {
                      to root nodes. Tentatively assign these to the aggregate
                      associated with the root. Arbitrate any cases where 
                      several processors claim the same vertex for one of 
-                     their aggregates via MueLu_ArbitrateAndCommunicate().
+                     their aggregates via ArbitrateAndCommunicate().
            Phase 3:  Try to create new aggregates if it looks like there are
                      root node candidates which have many unaggregated neighbors.
                      This decision to make a new aggregate is based on only local
                      information. However, the new aggregate will be tentatively
                      assigned any unaggregated ghost vertices. Arbitration is again
-                     done by MueLu_ArbitrateAndCommunicate() where local vertices
+                     done by ArbitrateAndCommunicate() where local vertices
                      use a weight[] = 2 and ghost vertices have weight[] = 1.
                      The basic idea is that after arbitration, each aggregate
                      is guaranteed to keep all local vertices assigned in
@@ -497,7 +497,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                      local vertices that are sent to other processors or ghost
                      vertices) in that each processor sharing the vertex
                      will attempt to assign it to different aggregates. 
-                     MueLu_ArbitrateAndCommunicate() is again used for arbitration
+                     ArbitrateAndCommunicate() is again used for arbitration
                      with the score being given as the weight. 
         
                      The main tricky thing occurs when v is tentatively added to y.
@@ -543,7 +543,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                                  .
                                  .
                                  .
-                             MueLu_ArbitrateAndCommunicate() i
+                             ArbitrateAndCommunicate() i
                         }
         
                      New vertices are swept into aggregates only if their best
@@ -581,7 +581,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                      created.
 
           
-         One final note about the use of MueLu_ArbitrateAndCommunicate(). No
+         One final note about the use of ArbitrateAndCommunicate(). No
          arbitration occurs (which means the procWinner[] is not set as well) for a
          global shared id if and only if all weights on all processors corresponding
          to this id is zero. Thus, the general idea is that any global id where we
@@ -589,7 +589,7 @@ class UCAggregationFactory : public Teuchos::Describable {
          one processor which is nonzero. Any global id where we don't want any
          arbitration should have all weights set to 0.
         
-         Note: procWinners is also set to MyPid() by MueLu_ArbitrateAndCommunicate()
+         Note: procWinners is also set to MyPid() by ArbitrateAndCommunicate()
          for any nonshared gid's with a nonzero weight.
       */
       int AggregateLeftOvers(AggregationOptions const &aggOptions, 
@@ -613,7 +613,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         RCP<Cthulhu::Vector<double> > distWeights = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
 
         // Aggregated vertices not "definitively" assigned to processors are
-        // arbitrated by MueLu_ArbitrateAndCommunicate(). There is some
+        // arbitrated by ArbitrateAndCommunicate(). There is some
         // additional logic to prevent losing root nodes in arbitration.
         {
           ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
@@ -633,7 +633,7 @@ class UCAggregationFactory : public Teuchos::Describable {
           // views on distributed vectors are freed here.
         }
 
-        myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+        myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
         distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
 
         // Tentatively assign any vertex (ghost or local) which neighbors a root
@@ -662,7 +662,7 @@ class UCAggregationFactory : public Teuchos::Describable {
           // views on distributed vectors are freed here.
         }
 
-        myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+        myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
         distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
 
         // Record the number of aggregated vertices
@@ -728,7 +728,7 @@ class UCAggregationFactory : public Teuchos::Describable {
           // views on distributed vectors are freed here.
         }
 
-        myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+        myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
         distWeights->putScalar(0.);//All tentatively assigned vertices are now definitive
 
         if ( printFlag < 7) { //FIXME
@@ -750,7 +750,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         }
 
         // Determine vertices that are not shared by setting Temp to all ones
-        // and doing MueLu_NonUnique2NonUnique(..., ADD). This sums values of all
+        // and doing NonUnique2NonUnique(..., ADD). This sums values of all
         // local copies associated with each Gid. Thus, sums > 1 are shared.
 
         RCP<Cthulhu::Vector<double> > temp_ = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
@@ -761,7 +761,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         temp_->putScalar(1.);  
         tempOutput_->putScalar(0.); 
 
-        myWidget.MueLu_NonUnique2NonUnique(*temp_, *tempOutput_, Cthulhu::ADD);
+        myWidget.NonUnique2NonUnique(*temp_, *tempOutput_, Cthulhu::ADD);
          
         std::vector<bool> gidNotShared(exp_nRows);
         for (int i = 0; i < exp_nRows; i++) {
@@ -804,7 +804,7 @@ class UCAggregationFactory : public Teuchos::Describable {
             {
               ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
               ArrayView<const int> vertex2AggIdView = vertex2AggId();
-              MueLu_RootCandidates(nVertices, vertex2AggIdView, graph,
+              RootCandidates(nVertices, vertex2AggIdView, graph,
                                    candidates, nCandidates, nCandidatesGlobal);
               // views on distributed vectors are freed here.
             }
@@ -858,7 +858,7 @@ class UCAggregationFactory : public Teuchos::Describable {
               }
               // views on distributed vectors are freed here.
             }
-            myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+            myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
             distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
             sumAll(graph.GetComm(), nAggregates, nAggregatesGlobal);
 
@@ -866,7 +866,7 @@ class UCAggregationFactory : public Teuchos::Describable {
            
             aggregates.SetNumAggregates(nAggregates);
 
-            MueLu_RemoveSmallAggs(aggregates, minNodesPerAggregate, distWeights, myWidget);
+            RemoveSmallAggs(aggregates, minNodesPerAggregate, distWeights, myWidget);
             
             nAggregates = aggregates.GetNumAggregates();
           }   // one possibility
@@ -1046,7 +1046,7 @@ class UCAggregationFactory : public Teuchos::Describable {
             // views on distributed vectors are freed here.
           }
 
-          myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+          myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
           distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
         }
 
@@ -1116,7 +1116,7 @@ class UCAggregationFactory : public Teuchos::Describable {
           // views on distributed vectors are freed here.
         }
 
-        myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, false);
+        myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, false);
 
         if (printFlag < 7) { //FIXME
           { int total_Nsingle=0;   sumAll(graph.GetComm(), Nsingle, total_Nsingle);     Nsingle = total_Nsingle; }
@@ -1143,7 +1143,7 @@ class UCAggregationFactory : public Teuchos::Describable {
 
          Candidates are vertices not adjacent to already aggregated vertices.
       */
-      int MueLu_RootCandidates(int nVertices, ArrayView<const int> & vertex2AggId, const Graph graph,
+      int RootCandidates(int nVertices, ArrayView<const int> & vertex2AggId, const Graph graph,
                                ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal) const
       {
         nCandidates = 0;
@@ -1167,10 +1167,10 @@ class UCAggregationFactory : public Teuchos::Describable {
         sumAll(graph.GetComm(), nCandidates, nCandidatesGlobal);
 
         return 0;
-      } //MueLu_RootCandidates
+      } //RootCandidates
 
       //! @brief Compute sizes of all the aggregates.
-      int MueLu_ComputeAggSizes(Aggregates & aggregates, ArrayRCP<int> & aggSizes) const
+      int ComputeAggSizes(Aggregates & aggregates, ArrayRCP<int> & aggSizes) const
       {
         int myPid = aggregates.GetMap()->getComm()->getRank();
 
@@ -1186,10 +1186,10 @@ class UCAggregationFactory : public Teuchos::Describable {
         }
 
         return 0; //TODO
-      } //MueLu_ComputeAggSizes
+      } //ComputeAggSizes
 
       //! @brief Attempt to clean up aggregates that are too small.
-      int MueLu_RemoveSmallAggs(Aggregates& aggregates, int min_size,
+      int RemoveSmallAggs(Aggregates& aggregates, int min_size,
                                 RCP<Cthulhu::Vector<double> > & distWeights, const AggAlgorithm2Comm & myWidget) const
       {
         int myPid = aggregates.GetMap()->getComm()->getRank();
@@ -1204,7 +1204,7 @@ class UCAggregationFactory : public Teuchos::Describable {
 
         ArrayRCP<double> weights = distWeights->getDataNonConst(0);
 
-        MueLu_ComputeAggSizes(aggregates, AggInfo);
+        ComputeAggSizes(aggregates, AggInfo);
 
         // Make a list of all aggregates indicating New AggId
         // Use AggInfo array for this.
@@ -1229,7 +1229,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         }
         nAggregates = NewNAggs;
 
-        myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+        myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
         distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
 
         // procWinner is not set correctly for aggregates which have 
@@ -1241,7 +1241,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         aggregates.SetNumAggregates(nAggregates);
 
         return 0; //TODO
-      } //MueLu_RemoveSmallAggs
+      } //RemoveSmallAggs
 
       /*! @brief Utility to take a list of integers (which should be the same 
          length as the number of local ids in Map) and reorder them randomly.
@@ -1250,7 +1250,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                           that is determined randomly.
          @param map       ?????????????????????????
       */
-      int MueLu_RandomReorder(Teuchos::ArrayRCP<int> list, const Map &map) const
+      int RandomReorder(Teuchos::ArrayRCP<int> list, const Map &map) const
       {
 
         TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "RandomReorder: TODO");
@@ -1266,7 +1266,7 @@ class UCAggregationFactory : public Teuchos::Describable {
       //   Epetra_Util::Sort(true,RandVec.getMap().NumMyElements(), iptr, 0,NULL,1,&list);
 
         return 0; 
-      } //MueLu_RandomReorder
+      } //RandomReorder
 
       //@}
 
