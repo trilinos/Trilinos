@@ -463,11 +463,9 @@ namespace Cthulhu {
       using Teuchos::VERB_MEDIUM;
       using Teuchos::VERB_HIGH;
       using Teuchos::VERB_EXTREME;
-      //Teuchos::EVerbosityLevel vl = verbLevel; //JJH commenting this out to eliminate unused variable
-                                                 //JJH warning
 
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
-
+      if (verbLevel > Teuchos::VERB_NONE)
+        vec_->Print(out);
     }
 
     //@}
