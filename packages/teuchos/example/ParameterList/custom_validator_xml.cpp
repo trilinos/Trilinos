@@ -78,11 +78,11 @@ int main(int argc, char* argv[])
 
   
    //Now we'll write it out to xml.
-  Teuchos::writeParameterListToXmlFile(My_List, "My_List.xml");
+  Teuchos::writeParameterListToXmlFile(My_List, "custom_validator_test_list.xml");
   //Then read it in to a new list.
  
   Teuchos::writeParameterListToXmlOStream(My_List, std::cout);
-  Teuchos::RCP<Teuchos::ParameterList> readIn = Teuchos::getParametersFromXmlFile("My_List.xml");
+  Teuchos::RCP<Teuchos::ParameterList> readIn = Teuchos::getParametersFromXmlFile("custom_validator_test_list.xml");
 
   std::cout << *readIn;
 

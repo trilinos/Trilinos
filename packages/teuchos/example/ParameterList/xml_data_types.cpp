@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
   TEUCHOS_ADD_TYPE_CONVERTER(CustomDataType);
 
   //Now we'll write it out to xml.
-  Teuchos::writeParameterListToXmlFile(My_List, "My_List.xml");
+  Teuchos::writeParameterListToXmlFile(My_List, "xml_data_types_test_list.xml");
   //Then read it in to a new list.
 
   Teuchos::writeParameterListToXmlOStream(
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
     std::cout);
 
  
-  Teuchos::RCP<Teuchos::ParameterList> readIn = Teuchos::getParametersFromXmlFile("My_List.xml");
+  Teuchos::RCP<Teuchos::ParameterList> readIn = Teuchos::getParametersFromXmlFile("xml_data_types_test_list.xml");
 
   std::cout << *readIn;
   //If we compare them, we'll see they're equal
