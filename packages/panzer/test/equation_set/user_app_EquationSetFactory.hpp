@@ -18,7 +18,8 @@ namespace user_app {
 
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
     buildEquationSet(const panzer::InputEquationSet& ies,
-		     const panzer::CellData& cell_data) const
+		     const panzer::CellData& cell_data,
+		     const bool build_transient_support) const
     {
       Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set= 
 	Teuchos::rcp(new panzer::EquationSet_TemplateManager<panzer::Traits>);

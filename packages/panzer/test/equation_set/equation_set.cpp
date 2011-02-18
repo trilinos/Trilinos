@@ -18,7 +18,6 @@ namespace panzer {
     ies.model_id = 6;
     ies.model_factory = "rf";
     ies.prefix = "ION_";
-    ies.params.set<bool>("Build Transient Support", false);
     
     int num_cells = 20;
     int cell_dim = 2;
@@ -27,7 +26,7 @@ namespace panzer {
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set;
   
     user_app::MyFactory my_factory;
-    eq_set = my_factory.buildEquationSet(ies, cell_data);
+    eq_set = my_factory.buildEquationSet(ies, cell_data, false);
 
     
 

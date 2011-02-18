@@ -127,10 +127,11 @@ int main(int argc,char * argv[])
 
       // build physicsBlocks map
       fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
-                             physics_id_to_input_physics_blocks,
-                             base_cell_dimension, workset_size,
-	                     eqset_factory,
-                             physicsBlocks);
+			      physics_id_to_input_physics_blocks,
+			      base_cell_dimension, workset_size,
+			      eqset_factory,
+			      true,
+			      physicsBlocks);
 
       for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
 	   block != block_ids_to_physics_ids.end(); ++block)
@@ -276,7 +277,6 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
      ies_1.model_id = 6;
      ies_1.model_factory = "rf";
      ies_1.prefix = "";
-     ies_1.params.set<bool>("Build Transient Support", false);
    
      panzer::InputEquationSet ies_2;
      ies_2.name = "Energy";
@@ -285,7 +285,6 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
      ies_2.model_id = 6;
      ies_2.model_factory = "rf";
      ies_2.prefix = "ION_";
-     ies_2.params.set<bool>("Build Transient Support", false);
    
      ipb.physics_block_id = "4";
      ipb.eq_sets.push_back(ies_1);

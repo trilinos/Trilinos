@@ -1,6 +1,5 @@
-
-#ifndef USER_APP_EQUATIONSET_ENERGY_H
-#define USER_APP_EQUATIONSET_ENERGY_H
+#ifndef USER_APP_EQUATIONSET_ENERGY_HPP
+#define USER_APP_EQUATIONSET_ENERGY_HPP
 
 #include <vector>
 #include <string>
@@ -18,12 +17,14 @@ namespace user_app {
   public:    
 
     EquationSet_Energy(const panzer::InputEquationSet& ies,
-		       const panzer::CellData& cell_data);
+		       const panzer::CellData& cell_data,
+		       const bool build_transient_support);
     
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm, const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const;
 
-    bool m_build_transient_support;
+  protected:
 
+      std::string m_do_convection;
   };
 
 }

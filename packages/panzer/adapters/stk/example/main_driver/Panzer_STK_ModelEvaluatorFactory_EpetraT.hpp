@@ -128,11 +128,14 @@ namespace panzer_stk {
     Teuchos::RCP<const panzer::EquationSetFactory> eqset_factory = 
       p.sublist("Assembly").get<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory");
 
+    bool is_transient  = p.sublist("Solution Control").get<std::string>("Piro Solver") == "Rythmos" ? true : false;
+    
     fmb->buildPhysicsBlocks(*block_ids_to_physics_ids,
 			    *physics_id_to_input_physics_blocks,
 			    Teuchos::as<int>(mesh->getDimension()),
 			    workset_size,
 			    *eqset_factory,
+			    is_transient,
 			    physicsBlocks);
 
     // finish building mesh, set required field variables and mesh bulk data
@@ -208,7 +211,6 @@ namespace panzer_stk {
       p_0->push_back("viscosity");
       p_names.push_back(p_0);
     }
-    bool is_transient  = p.sublist("Solution Control").get<std::string>("Piro Solver") == "Rythmos" ? true : false;
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
       Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names, is_transient));
    

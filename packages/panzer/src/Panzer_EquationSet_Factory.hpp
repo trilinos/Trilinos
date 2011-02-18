@@ -13,7 +13,8 @@ namespace panzer {
 
     virtual Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
     buildEquationSet(const panzer::InputEquationSet& ies,
-		     const panzer::CellData& cell_data) const = 0;
+		     const panzer::CellData& cell_data,
+		     bool build_transient_support) const = 0;
 
   };
   

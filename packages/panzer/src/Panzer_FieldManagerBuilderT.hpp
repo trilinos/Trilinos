@@ -37,6 +37,7 @@ void panzer::FieldManagerBuilder<LO,GO>::buildPhysicsBlocks(const std::map<std::
                                                             const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
                                                             int base_cell_dimension, std::size_t workset_size,
 	                                                    const panzer::EquationSetFactory & eqset_factory,
+							    const bool build_transient_support,
                                                             std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks
                                                             ) const 
 {
@@ -63,7 +64,7 @@ void panzer::FieldManagerBuilder<LO,GO>::buildPhysicsBlocks(const std::map<std::
 
       const panzer::InputPhysicsBlock& ipb = ipb_it->second;
       RCP<panzer::PhysicsBlock> pb = 
-	rcp(new panzer::PhysicsBlock(ipb, element_block_id, volume_cell_data, eqset_factory));
+	rcp(new panzer::PhysicsBlock(ipb, element_block_id, volume_cell_data, eqset_factory, build_transient_support));
       physicsBlocks.push_back(pb);
    }
 }

@@ -15,9 +15,11 @@
 template <typename EvalT>
 panzer::EquationSet_DefaultImpl<EvalT>::
 EquationSet_DefaultImpl(const panzer::InputEquationSet& ies,
-			const panzer::CellData& cell_data) :
+			const panzer::CellData& cell_data,
+			const bool build_transient_support) :
   m_input_eq_set(ies),
   m_cell_data(cell_data),
+  m_build_transient_support(build_transient_support),
   m_eqset_prefix("")
 { 
   m_dof_names = Teuchos::rcp(new std::vector<std::string>);

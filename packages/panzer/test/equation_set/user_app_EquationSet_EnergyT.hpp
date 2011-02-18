@@ -1,4 +1,8 @@
+#ifndef USER_APP_EQUATIONSET_ENERGY_T_HPP
+#define USER_APP_EQUATIONSET_ENERGY_T_HPP
+
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -19,26 +23,11 @@
 template <typename EvalT>
 user_app::EquationSet_Energy<EvalT>::
 EquationSet_Energy(const panzer::InputEquationSet& ies,
-		   const panzer::CellData& cell_data) :
-  panzer::EquationSet_DefaultImpl<EvalT>(ies, cell_data),
-  m_build_transient_support(false)
+		   const panzer::CellData& cell_data,
+		   const bool build_transient_support) :
+  panzer::EquationSet_DefaultImpl<EvalT>(ies, cell_data, build_transient_support )
 {
   this->m_eqset_prefix = ies.prefix;
-
-  // ********************
-  // Parse valid options
-  // ********************
-  {    
-    Teuchos::ParameterList valid_parameters;
-    valid_parameters.set<bool>("Build Transient Support", false);
-
-    // Don't corrupt original input
-    Teuchos::ParameterList tmp_ies_params = ies.params;
-    tmp_ies_params.setName(ies.prefix+"ENERGY");
-    tmp_ies_params.validateParametersAndSetDefaults(valid_parameters);
-    
-    m_build_transient_support = tmp_ies_params.get<bool>("Build Transient Support");
-  }
 
   // ********************
   // Assemble DOF names and Residual names
@@ -47,7 +36,7 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
 
   this->m_dof_gradient_names->push_back(this->m_eqset_prefix+"GRAD_TEMPERATURE");
 
-  if (m_build_transient_support)
+  if (this->m_build_transient_support)
     this->m_dof_time_derivative_names->push_back(this->m_eqset_prefix+"DOT_TEMPERATURE");
 
   this->m_residual_names->push_back(this->m_eqset_prefix+"RESIDUAL_TEMPERATURE");
@@ -60,6 +49,26 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
   
   this->setupDOFs(cell_data.baseCellDimension());
 
+  // ********************
+  // Parse valid options
+  // ********************
+  {    
+    Teuchos::ParameterList valid_parameters;
+    Teuchos::setStringToIntegralParameter<int>(
+      "CONVECTION",
+      "OFF",
+      "Enables or disables convection term in the energy equation",
+      Teuchos::tuple<std::string>("ON","OFF"),
+      &valid_parameters
+      );
+
+    // Don't corrupt original input, create a copy
+    Teuchos::ParameterList tmp_ies_params = ies.params;
+    tmp_ies_params.setName(ies.prefix+"ENERGY");
+    tmp_ies_params.validateParametersAndSetDefaults(valid_parameters);
+    
+    m_do_convection = tmp_ies_params.get<std::string>("CONVECTION");
+  }
 
 }
 
@@ -80,7 +89,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // ********************
 
   // Transient Operator
-  if (m_build_transient_support) {
+  if (this->m_build_transient_support) {
     ParameterList p("Transient Residual");
     p.set("Residual Name", prefix+"RESIDUAL_TEMPERATURE_TRANSIENT_OP");
     p.set("Value Name", prefix+"DOT_TEMPERATURE");
@@ -112,7 +121,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   }
   
   // Convection Operator
-  {
+  if (m_do_convection == "ON") {
+
     // Combine scalar velocities into a velocity vector
     {
       ParameterList p("Velocity: ScalarToVector");
@@ -135,7 +145,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       // UX
       {
 	ParameterList p("Constant UX");
-	p.set("Value", 0.0);
+	p.set("Value", 1.0);
 	p.set("Name", prefix+"UX");
 	p.set("Data Layout", this->m_int_rule->dl_scalar);
 	
@@ -233,8 +243,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
     sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_DIFFUSION_OP");
     sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_SOURCE_OP");
-    sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_CONVECTION_OP");
-    if (m_build_transient_support)
+    if (m_do_convection == "ON")
+      sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_CONVECTION_OP");
+    if (this->m_build_transient_support)
       sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_TRANSIENT_OP");
 
     p.set("Values Names", sum_names);
@@ -249,3 +260,5 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 }
 
 // ***********************************************************************
+
+#endif

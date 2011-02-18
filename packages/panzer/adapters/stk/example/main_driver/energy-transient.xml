@@ -47,7 +47,6 @@
                 <Parameter name="Model Factory" type="string" value="rf"/> 
                 <Parameter name="Prefix" type="string" value=""/>
                 <ParameterList name="Options">
-                    <Parameter name="Build Transient Support" type="bool" value="1"/>
                 </ParameterList>
             </ParameterList>
 

@@ -96,11 +96,13 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
+      bool build_transient_support = false;
       fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
                               physics_id_to_input_physics_blocks,
                               Teuchos::as<int>(mesh->getDimension()),
 			      workset_size,
                               eqset_factory,
+			      build_transient_support,
                               physicsBlocks);
 
       // store off info needed for workset construction
@@ -345,12 +347,6 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
     
-    // Enable transient support in equation set.  This is an
-    // application specific implementation detail.
-    for (std::vector<panzer::InputEquationSet>::iterator eq_set = ipb.eq_sets.begin();
-	 eq_set != ipb.eq_sets.end(); ++eq_set)
-      eq_set->params.set<bool>("Build Transient Support", true);
-
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
 
@@ -371,11 +367,13 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
+      bool build_transient_support = true;
       fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
                               physics_id_to_input_physics_blocks,
                               Teuchos::as<int>(mesh->getDimension()),
 			      workset_size,
                               eqset_factory,
+			      build_transient_support,
                               physicsBlocks);
 
       // store off info needed for workset construction
@@ -545,7 +543,6 @@ namespace panzer {
     ies_1.model_id = 6;
     ies_1.model_factory = "rf";
     ies_1.prefix = "";
-    ies_1.params.set<bool>("Build Transient Support", false);
 
     panzer::InputEquationSet ies_2;
     ies_2.name = "Energy";
@@ -554,7 +551,6 @@ namespace panzer {
     ies_2.model_id = 6;
     ies_2.model_factory = "rf";
     ies_2.prefix = "ION_";
-    ies_2.params.set<bool>("Build Transient Support", false);
 
     ipb.physics_block_id = "4";
     ipb.eq_sets.push_back(ies_1);

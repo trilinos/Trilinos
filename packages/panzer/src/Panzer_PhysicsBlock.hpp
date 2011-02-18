@@ -34,7 +34,8 @@ namespace panzer {
     PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
                  const std::string & element_block_id,
 		 const panzer::CellData cell_data,
-		 const panzer::EquationSetFactory& factory);
+		 const panzer::EquationSetFactory& factory,
+		 const bool build_transient_support);
 
     PhysicsBlock(const panzer::PhysicsBlock & pb,
                  const panzer::CellData cell_data,
@@ -83,12 +84,14 @@ namespace panzer {
     void initialize(const panzer::InputPhysicsBlock & ipb,
                     const std::string & element_block_id,
    		    const panzer::CellData cell_data,
-   		    const panzer::EquationSetFactory& factory);
+   		    const panzer::EquationSetFactory& factory,
+		    const bool build_transient_support);
 
     std::string m_physics_id;
     std::string m_element_block_id;
     panzer::CellData m_cell_data;
     panzer::InputPhysicsBlock m_initializer;
+    const bool m_build_transient_support;
 
     std::vector<std::string> m_dof_names;
     std::vector<StrBasisPair> m_provided_dofs;

@@ -32,7 +32,6 @@ namespace panzer_test_utils {
       ies_1.model_id = 6;
       ies_1.model_factory = "rf";
       ies_1.prefix = "";
-      ies_1.params.set<bool>("Build Transient Support", false);
     }
     
     panzer::InputEquationSet ies_2;
@@ -43,7 +42,6 @@ namespace panzer_test_utils {
       ies_2.model_id = 6;
       ies_2.model_factory = "rf";
       ies_2.prefix = "ION_";
-      ies_2.params.set<bool>("Build Transient Support", false);
     }
     
     std::size_t num_cells = 20;
@@ -61,7 +59,7 @@ namespace panzer_test_utils {
     
     std::string element_block_id = "eblock_id";
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
-      Teuchos::rcp(new panzer::PhysicsBlock(ipb,element_block_id,cd,eqs_factory));
+      Teuchos::rcp(new panzer::PhysicsBlock(ipb,element_block_id,cd,eqs_factory, false));
     
     return physics_block;
   }

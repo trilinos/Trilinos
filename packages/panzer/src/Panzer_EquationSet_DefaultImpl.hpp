@@ -16,7 +16,7 @@ namespace panzer {
     
   public:    
     
-    EquationSet_DefaultImpl(const panzer::InputEquationSet& ies, const panzer::CellData& cell_data);
+    EquationSet_DefaultImpl(const panzer::InputEquationSet& ies, const panzer::CellData& cell_data, const bool build_transient_support);
     
     virtual ~EquationSet_DefaultImpl() {}
     
@@ -45,6 +45,7 @@ namespace panzer {
     
     const panzer::InputEquationSet m_input_eq_set;
     const panzer::CellData m_cell_data;
+    const bool m_build_transient_support;
     
     std::string m_eqset_prefix;
     

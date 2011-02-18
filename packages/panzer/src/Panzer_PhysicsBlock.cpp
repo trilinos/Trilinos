@@ -14,13 +14,16 @@ panzer::PhysicsBlock::
 PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
              const std::string & element_block_id,
 	     const panzer::CellData cell_data,
-	     const panzer::EquationSetFactory& factory) :
+	     const panzer::EquationSetFactory& factory,
+	     const bool build_transient_support) :
   m_physics_id(ipb.physics_block_id),
   m_element_block_id(element_block_id),
   m_cell_data(cell_data),
-  m_initializer(ipb)
+  m_initializer(ipb),
+  m_build_transient_support(build_transient_support)
 {
-   initialize(m_initializer,element_block_id,cell_data,factory);
+  initialize(m_initializer,element_block_id,cell_data,factory, 
+	     build_transient_support);
 }
 
 panzer::PhysicsBlock::
@@ -30,15 +33,18 @@ PhysicsBlock(const panzer::PhysicsBlock& pb,
   m_physics_id(pb.m_physics_id),
   m_element_block_id(pb.m_element_block_id),
   m_cell_data(cell_data),
-  m_initializer(pb.m_initializer)
+  m_initializer(pb.m_initializer),
+  m_build_transient_support(pb.m_build_transient_support)
 {
-   initialize(m_initializer,m_element_block_id,cell_data,factory);
+  initialize(m_initializer,m_element_block_id,cell_data,factory,
+	     m_build_transient_support);
 }
 
 void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
                                       const std::string & element_block_id,
 	                              const panzer::CellData cell_data,
-	                              const panzer::EquationSetFactory& factory)
+	                              const panzer::EquationSetFactory& factory,
+				      const bool build_transient_support)
 {
   using Teuchos::RCP;
   
@@ -51,7 +57,7 @@ void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
   for (std::size_t i=0; i < input_eq_sets.size(); ++i) {
  
     RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set
-      = factory.buildEquationSet(input_eq_sets[i], m_cell_data);
+      = factory.buildEquationSet(input_eq_sets[i], m_cell_data, build_transient_support);
  
     // add this equation set in
     m_equation_sets.push_back(eq_set);
@@ -194,6 +200,6 @@ const panzer::CellData panzer::PhysicsBlock::cellData() const
 Teuchos::RCP<panzer::PhysicsBlock> panzer::PhysicsBlock::copyWithCellData(const panzer::CellData cell_data,
                                                                           const panzer::EquationSetFactory & factory) const
 {
-   return Teuchos::rcp(new panzer::PhysicsBlock(*this,cell_data,factory));
+  return Teuchos::rcp(new panzer::PhysicsBlock(*this,cell_data,factory));
 }
 // *******************************************************************
