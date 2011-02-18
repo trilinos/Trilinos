@@ -45,7 +45,7 @@ namespace MueLu {
    public:
      
      Aggregates(const MueLu::Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & graph, const std::string & objectLabel = "");
-     ~Aggregates();
+     virtual ~Aggregates() {}
      
      inline int GetNumAggregates()                      { return nAggregates_;            }
      inline void SetNumAggregates(int nAggregates)      { nAggregates_ = nAggregates;     }
@@ -59,19 +59,19 @@ namespace MueLu {
    private:
     int   nAggregates_;             /* Number of aggregates on this processor  */
     
-    RCP<LOVector> vertex2AggId_;/* vertex2AggId[k] gives a local id        */
+    RCP<LOVector> vertex2AggId_;    /* vertex2AggId[k] gives a local id        */
                                     /* corresponding to the aggregate to which */
                                     /* local id k has been assigned.  While k  */
-    RCP<LOVector> procWinner_;  /* is the local id on my processor (MyPID),*/
+    RCP<LOVector> procWinner_;      /* is the local id on my processor (MyPID),*/
                                     /* vertex2AggId[k] is the local id on the  */
                                     /* processor which actually owns the       */
                                     /* aggregate. This owning processor has id */
                                     /* given by procWinner[k].                 */
 
-    bool *isRoot_;                  /* IsRoot[i] indicates whether vertex i  */
+    Teuchos::ArrayRCP<bool> isRoot_;/* IsRoot[i] indicates whether vertex i  */
                                     /* is a root node.                       */
 
-  };
+  }; //class Aggregates
 
   // Constructors to create aggregates.
    template <class LocalOrdinal ,
@@ -91,24 +91,14 @@ namespace MueLu {
     procWinner_ = LOVectorFactory::Build(graph.GetImportMap()); //RTODO
     procWinner_->putScalar(MUELU_UNASSIGNED);
     
-    //RTODO 
-    isRoot_ = new bool[graph.GetImportMap()->getNodeNumElements()]; //TODO: use ArrayRCP
+    //RTODO
+    isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements());
     for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
       isRoot_[i] = false;
 
   }
 
-  // Destructor for aggregates.
-template <class LocalOrdinal ,
-          class GlobalOrdinal,
-          class Node        , 
-            class LocalMatOps  >
-  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~Aggregates()
-  {
-    if (isRoot_       != NULL) delete [] (isRoot_);
-  }
-
-}
+} //namespace MueLu
 
 #define MUELU_AGGREGATES_SHORT
 #endif //ifndef MUELU_AGGREGATES_HPP
