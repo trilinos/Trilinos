@@ -94,7 +94,8 @@ namespace panzer {
       */
     void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
                             const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
-                            int base_cell_dimension, std::size_t workset_size,
+                            const int base_cell_dimension, 
+			    const std::size_t workset_size,
 	                    const panzer::EquationSetFactory & eqset_factory,
 			    const bool build_transient_support,
                             std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks) const;
