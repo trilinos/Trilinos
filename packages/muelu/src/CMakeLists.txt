@@ -50,12 +50,10 @@ APPEND_SET(HEADERS
 #  Smoothers/MueLu_Smoother.hpp
   Smoothers/MueLu_IfpackSmoother.hpp
   Smoothers/MueLu_AmesosSmoother.hpp
-  Graph/MueLu_AggAlgorithm.hpp
-  Graph/MueLu_AggAlgorithm2.hpp
   Graph/MueLu_AggAlgorithm2Comm.hpp
   Graph/MueLu_AggregationOptions.hpp
   Graph/MueLu_Aggregates.hpp
-  Graph/MueLu_AggregationFactory.hpp
+  Graph/MueLu_UCAggregationFactory.hpp
   Graph/MueLu_Graph.hpp
   )
 
