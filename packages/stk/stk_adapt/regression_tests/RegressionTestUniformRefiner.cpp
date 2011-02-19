@@ -74,54 +74,13 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-#if 1
-      //======================================================================================================================
-      //======================================================================================================================
-      //======================================================================================================================
-
-      TEST(regr_uniformRefiner, break_tet4_tet4_1)
-      {
-        EXCEPTWATCH;
-        MPI_Barrier( MPI_COMM_WORLD );
-
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        if (p_size == 1 || p_size == 3)
-          {
-            // start_demo_uniformRefiner_break_tet4_tet4_1
-            percept::PerceptMesh eMesh;
-            eMesh.open("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4_0.e");
-
-            Tet4_Tet4_8 break_tet_tet(eMesh);
-
-            int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
-
-            eMesh.commit();
-            eMesh.printInfo("tet mesh");
-
-            UniformRefiner breaker(eMesh, break_tet_tet, proc_rank_field);
-            //breaker.setRemoveOldElements(false);
-            //breaker.setIgnoreSideSets(true);
-            breaker.doBreak();
-            eMesh.saveAs("./output_files/cylinder_tet4_1.e");
-
-            breaker.doBreak();
-            eMesh.saveAs("./output_files/cylinder_tet4_2.e");
-            // end_demo
-
-          }
-      }
-#endif
-
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
 
       TEST(regr_uniformRefiner, biplane_refine)
       {
-#if 0
+#if 1
         EXCEPTWATCH;
 
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -161,7 +120,7 @@ namespace stk
             eMesh.saveAs("./output_files/biplane_1.e");
 
           }
-        exit(123);
+        //exit(123);
 #endif
       }
 
@@ -1451,7 +1410,7 @@ namespace stk
           }
       }
 
-#if 0
+#if 1
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
