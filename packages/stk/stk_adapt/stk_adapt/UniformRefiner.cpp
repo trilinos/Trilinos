@@ -348,11 +348,11 @@ namespace stk {
       
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
-#define OLD_WAY 1
+#define OLD_WAY 0
 #if OLD_WAY
               if (ranks[irank] == ranks[0])
 #else
-              if (ranks[irank] >= mesh::Face)
+                //if (ranks[irank] >= mesh::Face)
 #endif
                 {
                   EXCEPTWATCH;
@@ -386,7 +386,7 @@ namespace stk {
 #if OLD_WAY
               if (ranks[irank] == ranks[0])
 #else
-              if (ranks[irank] >= mesh::Face)
+                //if (ranks[irank] >= mesh::Face)
 #endif
                 {
                   EXCEPTWATCH;
@@ -433,7 +433,7 @@ namespace stk {
 #if OLD_WAY
               if (ranks[irank] == ranks[0])
 #else
-              if (ranks[irank] >= mesh::Face)
+                //if (ranks[irank] >= mesh::Face)
 #endif
                 {
                   EXCEPTWATCH;
@@ -971,10 +971,14 @@ namespace stk {
     {
       EXCEPTWATCH;
 
-#if 1
       const mesh::Part *oldPart = m_eMesh.getPart(breakPattern->getOldElementsPartName()+toString(rank));
 
-      //std::cout << "tmp removeOldElements::name= " << oldPart->name() << " for rank= " << rank << std::endl;
+      if (1 && oldPart)
+        {
+          const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(*oldPart);
+          std::string ct_name = (cell_topo_data ? cell_topo_data->name : "");
+          std::cout << "tmp removeOldElements::name= " << oldPart->name() << " for rank= " << rank << " topology= " << ct_name << std::endl;
+        }
 
       if (!oldPart)
         {
@@ -982,11 +986,6 @@ namespace stk {
           throw std::runtime_error("oldPart is null");
         }
       mesh::Selector removePartSelector (*oldPart);
-      
-#else
-
-      mesh::Selector toPartSelector = mesh::selectUnion( breakPattern->getToParts() );
-#endif
 
       const vector<Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
 
@@ -1025,6 +1024,7 @@ namespace stk {
                     }
                   std::cout << "P[" << m_eMesh.getRank() << "] removing elements in bucket of parts: " << str << std::endl;
                 }
+
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
                   Entity& element = bucket[iElement];
@@ -1048,11 +1048,35 @@ namespace stk {
 
     void UniformRefiner::removeOldElements(elements_to_be_destroyed_type& elements_to_be_destroyed)
     {
+      elements_to_be_destroyed_type elements_to_be_destroyed_pass2;
+
       for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed.begin(); itbd != elements_to_be_destroyed.end();  ++itbd)
         {
           Entity *element_p = *itbd;
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
             {
+#if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
+              elements_to_be_destroyed_pass2.push_back(element_p);
+#else
+              elements_to_be_destroyed_pass2.insert(element_p);
+#endif
+              //throw std::logic_error("UniformRefiner::removeOldElements couldn't remove element");
+
+            }
+        }
+
+      std::cout << "tmp UniformRefiner::removeOldElements pass2 size = " << elements_to_be_destroyed_pass2.size() << std::endl;
+      for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed_pass2.begin(); 
+           itbd != elements_to_be_destroyed_pass2.end();  ++itbd)
+        {
+          Entity *element_p = *itbd;
+          if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
+            {
+              CellTopology cell_topo(stk::mesh::get_cell_topology(*element_p));
+              std::cout << "tmp UniformRefiner::removeOldElements couldn't remove element: cell= " << cell_topo.getName() << std::endl;
+              const mesh::PairIterRelation elem_relations = element_p->relations(element_p->entity_rank()+1);
+              std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
+              
               throw std::logic_error("UniformRefiner::removeOldElements couldn't remove element");
             }
         }

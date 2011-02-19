@@ -61,6 +61,26 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Triangle<3>  > :: refineme
 
 };
 
+
+template<> RefTopoX RefinementTopologyExtra< shards:: ShellTriangle<6>  > :: refinement_topology = {
+  {	0,	0,	0,	0,	1,	{0,	0,	0} },
+  {	1,	0,	1,	0,	1,	{1,	0,	0} },
+  {	2,	0,	2,	0,	1,	{0,	1,	0} },
+  {	3,	1,	0,	2,	3,	{0.5,	0,	0} },
+  {	4,	1,	1,	2,	3,	{0.5,	0.5,	0} },
+  {	5,	1,	2,	2,	3,	{0,	0.5,	0} },
+  {	6,	1,	0,	0,	3,	{0.25,	0,	0} },
+  {	7,	1,	0,	1,	3,	{0.75,	0,	0} },
+  {	8,	1,	1,	0,	3,	{0.75,	0.25,	0} },
+  {	9,	1,	1,	1,	3,	{0.25,	0.75,	0} },
+  {	10,	1,	2,	0,	3,	{0,	0.75,	0} },
+  {	11,	1,	2,	1,	3,	{0,	0.25,	0} },
+  {	12,	2,	0,	0,	3,	{0.25,	0.25,	0} },
+  {	13,	2,	0,	1,	3,	{0.5,	0.25,	0} },
+  {	14,	2,	0,	2,	3,	{0.25,	0.5,	0} } 
+
+};
+
 template<> RefTopoX RefinementTopologyExtra< shards:: ShellTriangle<3>  > :: refinement_topology = {
   {	0,	0,	0,	0,	1,	{0,	0,	0} },
   {	1,	0,	1,	0,	1,	{1,	0,	0} },

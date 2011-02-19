@@ -73,6 +73,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
 #if 1
       //======================================================================================================================
       //======================================================================================================================
@@ -114,6 +115,10 @@ namespace stk
       }
 #endif
 
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
       TEST(regr_uniformRefiner, biplane_refine)
       {
 #if 0
@@ -144,11 +149,12 @@ namespace stk
             FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
             eMesh.commit();
 
-            eMesh.printInfo("biplane", 2);
+            //eMesh.printInfo("biplane", 2);
             eMesh.saveAs("./output_files/biplane_0.e");
 
             UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
-            breaker.setIgnoreSideSets(true);
+            //breaker.setRemoveOldElements(false);
+            breaker.setIgnoreSideSets(false);
             breaker.doBreak();
 
             //eMesh.printInfo("biplane", 2);
@@ -212,6 +218,7 @@ namespace stk
             Quad4_Quad4_4            :: printRefinementTopoX_Table(file);
             Tri3_Tri3_4              :: printRefinementTopoX_Table(file);
             ShellTri3_ShellTri3_4    :: printRefinementTopoX_Table(file);
+            ShellTri6_ShellTri6_4    :: printRefinementTopoX_Table(file);
             ShellQuad4_ShellQuad4_4  :: printRefinementTopoX_Table(file);
             ShellQuad8_ShellQuad8_4  :: printRefinementTopoX_Table(file);
             Tet4_Tet4_8              :: printRefinementTopoX_Table(file);
