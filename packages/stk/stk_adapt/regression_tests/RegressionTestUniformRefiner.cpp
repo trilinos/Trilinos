@@ -120,7 +120,6 @@ namespace stk
             eMesh.saveAs("./output_files/biplane_1.e");
 
           }
-        //exit(123);
 #endif
       }
 
