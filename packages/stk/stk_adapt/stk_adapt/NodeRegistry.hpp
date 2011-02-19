@@ -636,8 +636,10 @@ namespace stk {
           }
         else
           {
+                                        
             unsigned owning_elementId = stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
             unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+
 #if NODE_REGISTRY_MAP_TYPE_PERCEPT_HASHTABLE
             if (!owning_elementId)
               {
@@ -663,15 +665,14 @@ namespace stk {
 
             //!
             unsigned erank = mesh::Element;
-            erank = element.entity_rank();
-            VERIFY_OP(erank, ==, stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()), "erank...");
+            //erank = element.entity_rank();
+            erank = owning_elementRank;
+            //VERIFY_OP(erank, <=, owning_elementRank , "erank...");
             Entity * owning_element = get_entity_element(*m_eMesh.getBulkData(), erank, owning_elementId);
             //!
 
             if (!owning_element)
               throw std::logic_error("logic: hmmm #5");
-
-            //stk::CommBuffer & send_buffer = comm_all.send_buffer( owner_proc_rank );
 
             bool owning_element_is_ghost = m_eMesh.isGhostElement(*owning_element);
 

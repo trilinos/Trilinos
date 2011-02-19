@@ -2515,6 +2515,7 @@ namespace stk {
 #include "UniformRefinerPattern_Quad4_Quad4_4_sierra.hpp"
 #include "UniformRefinerPattern_Tri3_Tri3_4_sierra.hpp"
 #include "UniformRefinerPattern_ShellTri3_ShellTri3_4_sierra.hpp"
+#include "UniformRefinerPattern_ShellTri6_ShellTri6_4_sierra.hpp"
 #include "UniformRefinerPattern_ShellQuad4_ShellQuad4_4_sierra.hpp"
 #include "UniformRefinerPattern_ShellQuad8_ShellQuad8_4_sierra.hpp"
 
@@ -2575,6 +2576,7 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort >            Quad4_Quad4_4_Sierra;
     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      4, SierraPort >            Tri3_Tri3_4;
     typedef  UniformRefinerPattern<shards::ShellTriangle<3>, shards::ShellTriangle<3>, 4, SierraPort >            ShellTri3_ShellTri3_4;
+    typedef  UniformRefinerPattern<shards::ShellTriangle<6>, shards::ShellTriangle<6>, 4, SierraPort >            ShellTri6_ShellTri6_4;
     typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<4>, 4, SierraPort >  ShellQuad4_ShellQuad4_4;
     typedef  UniformRefinerPattern<shards::ShellQuadrilateral<8>, shards::ShellQuadrilateral<8>, 4, SierraPort >  ShellQuad8_ShellQuad8_4;
 
