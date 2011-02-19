@@ -79,6 +79,7 @@ namespace stk {
                                                  stk::mesh::EntityRank type)
       {
         if (local_include_entity(entity)) {
+          //std::cout << "tmp entity name= " << entity->name() << std::endl;
           stk::mesh::Part & part = meta.declare_part(entity->name(), type);
           stk::io::put_io_part_attribute(part);
         }
@@ -88,6 +89,7 @@ namespace stk {
                                                  stk::mesh::EntityRank type)
       {
         if (local_include_entity(entity)) {
+          //std::cout << "tmp entity name= " << entity->name() << std::endl;
           stk::mesh::Part & part = meta.declare_part(entity->name(), type);
           stk::io::put_io_part_attribute(part);
 
