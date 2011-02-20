@@ -46,6 +46,7 @@ namespace panzer_stk {
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList());
 
       pl->sublist("Physics Blocks");
+      pl->sublist("Closure Models");
       pl->sublist("Boundary Conditions");
       pl->sublist("Solution Control");
       pl->sublist("Solver Factories");
@@ -56,6 +57,7 @@ namespace panzer_stk {
       pl->sublist("Assembly");
       pl->sublist("Block ID to Physics ID Mapping");
       pl->sublist("Options");
+      pl->sublist("User Data");
      
       validPL = pl;
     }
