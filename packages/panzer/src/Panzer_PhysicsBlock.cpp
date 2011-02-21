@@ -129,7 +129,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 // *******************************************************************
 void panzer::PhysicsBlock::
 buildAndRegisterModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				const std::map<std::string,Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > >& factories,
+				const std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories,
 				const std::vector<Teuchos::ParameterList>& models) const
 {
   using namespace std;
@@ -146,7 +146,7 @@ buildAndRegisterModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
       eqstm.begin();
     for (; eval_type != eqstm.end(); ++eval_type) {
-      eval_type->buildAndRegisterModelEvaluators(fm, m_provided_dofs, factories, models);
+      eval_type->buildAndRegisterClosureModelEvaluators(fm, m_provided_dofs, factories, models);
     }
   }
 }

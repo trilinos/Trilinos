@@ -47,7 +47,7 @@ namespace panzer {
                                                  const LinearObjFactory<panzer::Traits> & lof) const;
 
     void buildAndRegisterModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					 const std::map<std::string,Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > >& factories,
+					 const std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories,
 					 const std::vector<Teuchos::ParameterList>& models) const;
 
     template<typename EvalT>
@@ -59,7 +59,7 @@ namespace panzer {
 
     template<typename EvalT>
     void buildAndRegisterModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-						const std::map<std::string,Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > >& factories,
+						const std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories,
 						const std::vector<Teuchos::ParameterList>& models) const;
 
     const std::vector<std::string>& getDOFNames() const;
@@ -142,7 +142,7 @@ void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::F
 
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-								  const std::map<std::string,Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > >& factories,
+								  const std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories,
 								  const std::vector<Teuchos::ParameterList>& models) const
 {
   using std::vector;
@@ -155,7 +155,7 @@ void panzer::PhysicsBlock::buildAndRegisterModelEvaluatorsForType(PHX::FieldMana
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    eqstm.getAsObject<EvalT>()->buildAndRegisterModelEvaluators(fm, m_provided_dofs, factories, models);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterClosureModelEvaluators(fm, m_provided_dofs, factories, models);
 
   }
 }

@@ -5,7 +5,7 @@
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_Base.hpp"
-#include "Panzer_ModelFactory.hpp"
+#include "Panzer_ClosureModel_Factory.hpp"
 
 #include "boost/mpl/placeholders.hpp"
 using namespace boost::mpl::placeholders;
@@ -13,16 +13,16 @@ using namespace boost::mpl::placeholders;
 namespace panzer {
 
   template<typename Traits>
-  class ModelFactory_TemplateManager : 
+  class ClosureModelFactory_TemplateManager : 
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				panzer::Base,
-                                panzer::ModelFactory<_> > {
+                                panzer::ClosureModelFactory<_> > {
 
   public:
 
-    ModelFactory_TemplateManager() {}
+    ClosureModelFactory_TemplateManager() {}
 
-    ~ModelFactory_TemplateManager() {}
+    ~ClosureModelFactory_TemplateManager() {}
 
   };
 

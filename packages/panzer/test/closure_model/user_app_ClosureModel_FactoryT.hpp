@@ -1,3 +1,6 @@
+#ifndef USER_APP_CLOSURE_MODEL_FACTORY_T_HPP
+#define USER_APP_CLOSURE_MODEL_FACTORY_T_HPP
+
 #include <iostream>
 #include <sstream>
 #include "Panzer_InputEquationSet.hpp"
@@ -12,9 +15,9 @@
 template<typename EvalT>
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
 user_app::MyModelFactory<EvalT>::
-buildModels(const panzer::InputEquationSet& set,
-	    const std::vector<Teuchos::ParameterList>& models, 
-	    const Teuchos::ParameterList& default_params) const
+buildClosureModels(const panzer::InputEquationSet& set,
+		   const std::vector<Teuchos::ParameterList>& models, 
+		   const Teuchos::ParameterList& default_params) const
 {
 
   using std::string;
@@ -53,3 +56,5 @@ buildModels(const panzer::InputEquationSet& set,
 
   return evaluators;
 }
+
+#endif

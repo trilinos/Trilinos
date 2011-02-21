@@ -1,12 +1,12 @@
 
-#ifndef USER_APP_MODEL_FACTORY_TEMPLATE_BUILDER_HPP
-#define USER_APP_MODEL_FACTORY_TEMPLATE_BUILDER_HPP
+#ifndef USER_APP_CLOSURE_MODEL_FACTORY_TEMPLATE_BUILDER_HPP
+#define USER_APP_CLOSURE_MODEL_FACTORY_TEMPLATE_BUILDER_HPP
 
 #include <string>
 #include "boost/mpl/apply.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Panzer_Base.hpp"
-#include "user_app_ModelFactory.hpp"
+#include "user_app_ClosureModel_Factory.hpp"
 
 namespace user_app {
 

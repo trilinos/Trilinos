@@ -30,10 +30,10 @@ namespace panzer {
 							 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
                                                          const LinearObjFactory<panzer::Traits> & lof) const;
     
-    virtual void buildAndRegisterModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
-						 const std::map<std::string,Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > >& factories,
-						 const std::vector<Teuchos::ParameterList>& models) const;
+    virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+							const std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories,
+							const std::vector<Teuchos::ParameterList>& models) const;
     
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const;
     

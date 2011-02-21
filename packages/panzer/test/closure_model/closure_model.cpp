@@ -7,9 +7,9 @@
 #include "Panzer_CellData.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Traits.hpp"
-#include "user_app_ModelFactory.hpp"
-#include "Panzer_ModelFactory_TemplateManager.hpp"
-#include "user_app_ModelFactory_TemplateBuilder.hpp"
+#include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
+#include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
+#include "user_app_ClosureModel_Factory.hpp"
 #include <iostream>
 #include <vector>
 
@@ -58,7 +58,7 @@ namespace panzer {
 
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators;
 
-    evaluators = mf.buildModels(ies, evaluators_to_build, default_params);
+    evaluators = mf.buildClosureModels(ies, evaluators_to_build, default_params);
 
     TEST_EQUALITY(evaluators->size(), 3);
 
@@ -66,9 +66,9 @@ namespace panzer {
     evaluators_to_build.push_back(p);  // add one to diferentiate from above
 
     user_app::MyModelFactory_TemplateBuilder builder;
-    panzer::ModelFactory_TemplateManager<panzer::Traits> model_factory;
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> model_factory;
     model_factory.buildObjects(builder);
-    evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildModels(ies, evaluators_to_build, default_params);
+    evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies, evaluators_to_build, default_params);
 
     TEST_EQUALITY(evaluators->size(), 4);
   }

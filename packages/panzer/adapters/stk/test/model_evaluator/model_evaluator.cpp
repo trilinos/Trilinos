@@ -26,7 +26,7 @@ using Teuchos::rcp;
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "user_app_EquationSetFactory.hpp"
-#include "user_app_ModelFactory_TemplateBuilder.hpp"
+#include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"

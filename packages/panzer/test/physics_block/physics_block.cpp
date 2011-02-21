@@ -12,9 +12,9 @@
 #include "Panzer_EpetraLinearObjFactory.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
-#include "user_app_ModelFactory.hpp"
-#include "Panzer_ModelFactory_TemplateManager.hpp"
-#include "user_app_ModelFactory_TemplateBuilder.hpp"
+#include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
+#include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
+#include "user_app_ClosureModel_Factory.hpp"
 #include "UnitTest_UniqueGlobalIndexer.hpp"
 
 #include "Epetra_MpiComm.h"
@@ -64,14 +64,14 @@ namespace panzer_test_utils {
     return physics_block;
   }
 
-  Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> >
+  Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >
   buildModelFactory() 
   {
     user_app::MyModelFactory_TemplateBuilder builder;
 
-    Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > 
+    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > 
       model_factory = 
-      Teuchos::rcp(new panzer::ModelFactory_TemplateManager<panzer::Traits>);
+      Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
     
     model_factory->buildObjects(builder);
 
@@ -183,9 +183,9 @@ namespace panzer {
     physics_block->buildAndRegisterEquationSetEvaluators(fm);
     physics_block->buildAndRegisterGatherScatterEvaluators(fm,elof);
 
-    Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > factory =
+    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
       panzer_test_utils::buildModelFactory(); 
-    std::map<std::string,Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > > my_factories;
+    std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > > my_factories;
     my_factories["rf"] = factory;
 
     std::vector<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
@@ -219,9 +219,9 @@ namespace panzer {
     physics_block->buildAndRegisterEquationSetEvaluatorsForType<panzer::Traits::Jacobian>(fm);
     physics_block->buildAndRegisterGatherScatterEvaluatorsForType<panzer::Traits::Jacobian>(fm,elof);
 
-    Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > factory =
+    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
       panzer_test_utils::buildModelFactory(); 
-    std::map<std::string,Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > > my_factories;
+    std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > > my_factories;
     my_factories["rf"] = factory;
 
     std::vector<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();

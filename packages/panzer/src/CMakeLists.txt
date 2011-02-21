@@ -43,6 +43,8 @@ APPEND_SET(HEADERS
   Panzer_BCStrategy_TemplateManager.hpp
   Panzer_CellData.hpp
   Panzer_CloneableEvaluator.hpp
+  Panzer_ClosureModel_Factory.hpp
+  Panzer_ClosureModel_Factory_TemplateManager.hpp
   Panzer_ConfigDefs.hpp
   Panzer_Dimension.hpp
   Panzer_EquationSet.hpp
@@ -67,8 +69,6 @@ APPEND_SET(HEADERS
   Panzer_ModelEvaluator_Epetra.hpp
   Panzer_ModelEvaluator_Factory.hpp
   Panzer_ModelEvaluator_FactoryT.hpp
-  Panzer_ModelFactory.hpp
-  Panzer_ModelFactory_TemplateManager.hpp
   Panzer_ParameterList_ObjectBuilders.hpp
   Panzer_PauseToAttach.hpp
   Panzer_PhysicsBlock.hpp
