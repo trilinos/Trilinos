@@ -16,8 +16,6 @@ panzer::operator<<(std::ostream& os, const panzer::InputPhysicsBlock& i) {
     os << "    basis = " << i.eq_sets[k].basis << std::endl;
     os << "    int order = " << i.eq_sets[k].integration_order << std::endl;
     os << "    model = " << i.eq_sets[k].model_id << std::endl;
-    os << "    model factory = " << i.eq_sets[k].model_factory 
-       << std::endl;
     os << "    prefix = " << i.eq_sets[k].prefix << std::endl;
     os << "    parameterlist: " << std::endl;
 

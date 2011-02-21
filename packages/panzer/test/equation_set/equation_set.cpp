@@ -15,8 +15,7 @@ namespace panzer {
     ies.name = "Energy";
     ies.basis = "Q2";
     ies.integration_order = 1;
-    ies.model_id = 6;
-    ies.model_factory = "rf";
+    ies.model_id = "solid";
     ies.prefix = "ION_";
     
     int num_cells = 20;
@@ -35,8 +34,7 @@ namespace panzer {
     ies.name = "Energy";
     ies.basis = "Q2";
     ies.integration_order = 1;
-    ies.model_id = 6;
-    ies.model_factory = "rf";
+    ies.model_id = "solid";
     ies.prefix = "ION_";
     
     int num_cells = 20;

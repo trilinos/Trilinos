@@ -163,16 +163,14 @@ namespace panzer {
     ies_1.name = "Energy";
     ies_1.basis = "Q2";
     ies_1.integration_order = 1;
-    ies_1.model_id = 6;
-    ies_1.model_factory = "rf";
+    ies_1.model_id = "solid";
     ies_1.prefix = "";
 
     panzer::InputEquationSet ies_2;
     ies_2.name = "Energy";
     ies_2.basis = "Q1";
     ies_2.integration_order = 1;
-    ies_2.model_id = 6;
-    ies_2.model_factory = "rf";
+    ies_2.model_id = "solid";
     ies_2.prefix = "ION_";
 
     ipb.physics_block_id = "4";

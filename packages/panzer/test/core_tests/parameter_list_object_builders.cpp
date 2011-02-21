@@ -19,16 +19,14 @@ namespace panzer {
     fluid_eqs0.set("Name", "Continuity");
     fluid_eqs0.set("Basis", "Q1");
     fluid_eqs0.set("Integration Order", 1);
-    fluid_eqs0.set("Model ID", 6);
-    fluid_eqs0.set("Model Factory", "rf");
+    fluid_eqs0.set("Model ID", "fluid");
     fluid_eqs0.set("Prefix", "ION_");
     fluid_eqs0.sublist("Options").set("Tau_C", "Codina");
     Teuchos::ParameterList& fluid_eqs1 = fluid.sublist("EQ 1");
     fluid_eqs1.set("Name", "Momentum");
     fluid_eqs1.set("Basis", "Q2");
     fluid_eqs1.set("Integration Order", 2);
-    fluid_eqs1.set("Model ID", 6);
-    fluid_eqs1.set("Model Factory", "rf");
+    fluid_eqs1.set("Model ID", "fluid");
     fluid_eqs1.set("Prefix", "ION_");
     fluid_eqs1.sublist("Options").set("Tau_M", "Codina");
     
@@ -38,8 +36,7 @@ namespace panzer {
     solid_eqs0.set("Name", "Energy");
     solid_eqs0.set("Basis", "Q1");
     solid_eqs0.set("Integration Order", 1);
-    solid_eqs0.set("Model ID", 6);
-    solid_eqs0.set("Model Factory", "rf");
+    solid_eqs0.set("Model ID", "solid");
     solid_eqs0.set("Prefix", "ION_");
     solid_eqs0.sublist("Options").set("junk", 1);
 

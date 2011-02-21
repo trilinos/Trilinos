@@ -22,8 +22,7 @@ namespace panzer {
       ies.name = "Momentum";
       ies.basis = "Q2";
       ies.integration_order = 1;
-      ies.model_id = 6;
-      ies.model_factory = "rf";
+      ies.model_id = "fluid";
       ies.prefix = "";
       ies.params.set<int>("junk", 1);
     }

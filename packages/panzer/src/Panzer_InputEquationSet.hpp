@@ -13,8 +13,7 @@ namespace panzer {
     std::string name;
     std::string basis;
     int integration_order;
-    int model_id;
-    std::string model_factory;
+    std::string model_id;
     std::string prefix;
     Teuchos::ParameterList params;
 

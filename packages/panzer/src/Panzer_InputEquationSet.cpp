@@ -14,8 +14,7 @@ namespace panzer {
     name = p.get<std::string>("Name");
     basis = p.get<std::string>("Basis");
     integration_order = p.get<int>("Integration Order");
-    model_id = p.get<int>("Model ID");
-    model_factory = p.get<std::string>("Model Factory");
+    model_id = p.get<std::string>("Model ID");
     prefix = p.get<std::string>("Prefix");
     params = p.sublist("Options");
   }
@@ -25,11 +24,10 @@ namespace panzer {
   {
     Teuchos::ParameterList valid_params;
     
-    valid_params.set<std::string>("Name", "???");
-    valid_params.set<std::string>("Basis", "??");
+    valid_params.set<std::string>("Name", "");
+    valid_params.set<std::string>("Basis", "");
     valid_params.set<int>("Integration Order", -1);
-    valid_params.set<int>("Model ID", -1);
-    valid_params.set<std::string>("Model Factory", "??");
+    valid_params.set<std::string>("Model ID", "");
     valid_params.set<std::string>("Prefix", "");
     valid_params.sublist("Options");
     

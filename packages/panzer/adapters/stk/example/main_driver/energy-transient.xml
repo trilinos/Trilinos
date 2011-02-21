@@ -43,8 +43,7 @@
                 <Parameter name="Name" type="string" value="Energy"/> 
                 <Parameter name="Basis" type="string" value="Q1"/> 
                 <Parameter name="Integration Order" type="int" value="2"/> 
-                <Parameter name="Model ID" type="int" value="6"/> 
-                <Parameter name="Model Factory" type="string" value="rf"/> 
+                <Parameter name="Model ID" type="string" value="fluid model"/> 
                 <Parameter name="Prefix" type="string" value=""/>
                 <ParameterList name="Options">
                 </ParameterList>
