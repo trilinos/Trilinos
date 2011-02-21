@@ -76,21 +76,18 @@ namespace panzer_test_utils {
     return model_factory;
   }
 
-  std::vector<Teuchos::ParameterList> buildModelDescriptors()
+  Teuchos::RCP<Teuchos::ParameterList> buildModelDescriptors()
   {    
-    Teuchos::ParameterList p;
+    Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList("Closure Models"));
     {
-      p.set("Object Type","Constant");
-      p.set("Name","UX");
-      p.set("Value",4.5);
+      p->sublist("fluid model").sublist("Density").set<double>("Value",1.0);
+      p->sublist("fluid model").sublist("Viscosity").set<double>("Value",1.0);
+      p->sublist("fluid model").sublist("Stress Tensor").set<std::string>("Value","Newtonian");
+      
+      p->sublist("solid model").sublist("Thermal Conductivity").set<double>("Value",1.0);
     }
 
-    std::vector<Teuchos::ParameterList> evaluators_to_build;
-    evaluators_to_build.push_back(p);
-    evaluators_to_build.push_back(p);
-    evaluators_to_build.push_back(p);
-
-    return evaluators_to_build;
+    return p;
   }
 
 }
@@ -146,7 +143,7 @@ namespace panzer {
   {
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
-
+    
     TEST_EQUALITY(physics_block->getBaseCellTopology().getDimension(), 3);
   }
 
@@ -183,12 +180,10 @@ namespace panzer {
 
     Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
       panzer_test_utils::buildModelFactory(); 
-    std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > > my_factories;
-    my_factories["rf"] = factory;
 
-    std::vector<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
+    Teuchos::RCP<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
 
-    physics_block->buildAndRegisterModelEvaluators(fm,my_factories,models);
+    physics_block->buildAndRegisterClosureModelEvaluators(fm,*factory,*models);
   }
 
   TEUCHOS_UNIT_TEST(physics_block, elementBlockID)
@@ -219,13 +214,11 @@ namespace panzer {
 
     Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
       panzer_test_utils::buildModelFactory(); 
-    std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > > my_factories;
-    my_factories["rf"] = factory;
 
-    std::vector<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
+    Teuchos::RCP<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
 
-    physics_block->buildAndRegisterModelEvaluatorsForType<panzer::Traits::Residual>(fm, my_factories, models);
-    physics_block->buildAndRegisterModelEvaluatorsForType<panzer::Traits::Jacobian>(fm, my_factories, models);
+    physics_block->buildAndRegisterClosureModelEvaluatorsForType<panzer::Traits::Residual>(fm, *factory, *models);
+    physics_block->buildAndRegisterClosureModelEvaluatorsForType<panzer::Traits::Jacobian>(fm, *factory, *models);
   }
 
 

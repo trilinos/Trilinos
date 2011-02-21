@@ -29,8 +29,8 @@ namespace panzer {
     
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
-							const std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories,
-							const std::vector<Teuchos::ParameterList>& models) const = 0;
+							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+							const Teuchos::ParameterList& models) const = 0;
     
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const = 0;
     

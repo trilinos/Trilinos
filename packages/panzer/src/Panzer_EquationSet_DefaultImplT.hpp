@@ -184,8 +184,8 @@ template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
-				       const std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories,
-				       const std::vector<Teuchos::ParameterList>& models) const
+				       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+				       const Teuchos::ParameterList& models) const
 {
   // Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators;
   

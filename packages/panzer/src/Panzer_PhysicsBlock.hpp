@@ -46,9 +46,9 @@ namespace panzer {
     void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                  const LinearObjFactory<panzer::Traits> & lof) const;
 
-    void buildAndRegisterModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					 const std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories,
-					 const std::vector<Teuchos::ParameterList>& models) const;
+    void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+						const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+						const Teuchos::ParameterList& models) const;
 
     template<typename EvalT>
     void buildAndRegisterEquationSetEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm) const;
@@ -58,9 +58,9 @@ namespace panzer {
                                                         const LinearObjFactory<panzer::Traits> & lof) const;
 
     template<typename EvalT>
-    void buildAndRegisterModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-						const std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories,
-						const std::vector<Teuchos::ParameterList>& models) const;
+    void buildAndRegisterClosureModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+						       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+						       const Teuchos::ParameterList& models) const;
 
     const std::vector<std::string>& getDOFNames() const;
     const std::vector<StrBasisPair>& getProvidedDOFs() const;
@@ -141,9 +141,9 @@ void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::F
 }
 
 template<typename EvalT>
-void panzer::PhysicsBlock::buildAndRegisterModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-								  const std::map<std::string,Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories,
-								  const std::vector<Teuchos::ParameterList>& models) const
+void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+									 const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+									 const Teuchos::ParameterList& models) const
 {
   using std::vector;
   using Teuchos::RCP;
@@ -155,7 +155,7 @@ void panzer::PhysicsBlock::buildAndRegisterModelEvaluatorsForType(PHX::FieldMana
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    eqstm.getAsObject<EvalT>()->buildAndRegisterClosureModelEvaluators(fm, m_provided_dofs, factories, models);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterClosureModelEvaluators(fm, m_provided_dofs, factory, models);
 
   }
 }
