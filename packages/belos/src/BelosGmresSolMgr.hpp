@@ -69,6 +69,7 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<Scalar> SCT;
     typedef typename SCT::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> SMT;
+    typedef GmresBaseIteration<Scalar, MV, OP> iteration_type;
 
   public:
     typedef Scalar scalar_type;
@@ -98,6 +99,12 @@ namespace Belos {
       problem_ (validatedProblem (problem))
     { 
       setParameters (params);
+      // FIXME (mfh 16 Feb 2011) Perhaps we should initialize the
+      // Iteration subclass inside of setParameters?
+      //
+      // TODO (mfh 16 Feb 2011) What parameters should we give this?
+      iter_ = rcp (new iteration_type (problem_, orthoMan_, outMan_, 
+				       statusTest_, Teuchos::null));
     }
 
     //! Destructor, defined virtual for safe inheritance.
@@ -289,16 +296,20 @@ namespace Belos {
 
     /// \brief User-defined status test (stopping criterion).
     ///
-    /// This will be combined in AND fashion with the current status
-    /// test (not including the current user-defined status test, if
-    /// there is any).
+    /// When the caller sets this, the current status test
+    /// (statusTest_) is modified to include the user-defined test in
+    /// sequential AND fashion.  Any previous user-defined status test
+    /// is discarded.
     Teuchos::RCP<StatusTest<Scalar,MV,OP> > userStatusTest_;
 
     //! "Status test" that outputs intermediate iteration results.
     Teuchos::RCP<StatusTestOutput<Scalar,MV,OP> > outTest_;
 
     //! The orthogonalization method to use for GMRES.
-    Teuchos::RCP<Belos::OrthoManager<Scalar, MV> > orthoMan_;
+    Teuchos::RCP<const OrthoManager<Scalar, MV> > orthoMan_;
+
+    //! Instance of the Belos::Iteration subclass.
+    Teuchos::RCP<iteration_type> iter_;
 
     /// \brief Make sure that GmresSolMgr can solve the given problem.
     ///

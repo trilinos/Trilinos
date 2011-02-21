@@ -42,10 +42,14 @@
 #ifndef __Belos_GmresBaseFactory_hpp
 #define __Belos_GmresBaseFactory_hpp
 
-#include <BelosGmresBase.hpp>
+#include <BelosStandardGmres.hpp>
 
 namespace Belos {
 
+  /// \class GmresBaseFactory
+  /// \author Mark Hoemmen
+  /// \brief Factory for creating GmresBase subclass instances.
+  ///
   template<class Scalar, class MV, class OP>
   class GmresBaseFactory {
   public:
@@ -55,19 +59,22 @@ namespace Belos {
 
     static Teuchos::RCP<base_type> 
     create (const Teuchos::RCP<lp_type>& lp,
-	    const Teuchos::RCP<ortho_type>& ortho,
+	    const Teuchos::RCP<const ortho_type>& ortho,
 	    const Teuchos::RCP<const Teuchos::ParameterList>& params)
     {
       using Teuchos::ParameterList;
       using Teuchos::RCP;
       using Teuchos::rcp;
+
+      // Get the maximum number of iterations.
       //
-      // TODO (mfh 16 Feb 2011) Stub for now.
+      // TODO (mfh 16 Feb 2011) How should we pass in maxIterCount and
+      // flexible?
       //
-      (void) lp;
-      (void) ortho;
-      (void) params;
-      return Teuchos::null;
+      // TODO (mfh 16 Feb 2011) Fill in other GMRES implementations.
+      const int maxIterCount = 20;
+      const bool flexible = false;
+      return rcp (new StandardGmres<Scalar, MV, OP> (lp, ortho, maxIterCount, flexible));
     }
   };
 
