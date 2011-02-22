@@ -75,13 +75,13 @@ public:
 
 protected:
 
-  Property( MetaData & meta_data ,
+  Property( MetaData & my_meta_data ,
             unsigned meta_data_ordinal ,
             const std::string & input_name ,
             const std::type_info & type ,
             unsigned n )
     : m_name( input_name ),
-      m_meta_data( meta_data ),
+      m_meta_data( my_meta_data ),
       m_meta_data_ordinal( meta_data_ordinal ),
       m_type( type ), m_size( n ) {}
 
@@ -129,9 +129,9 @@ private:
 
 protected:
 
-  Property( MetaData & meta_data, unsigned meta_data_ordinal ,
+  Property( MetaData & my_meta_data, unsigned meta_data_ordinal ,
             const std::string & input_name, unsigned input_size = 1 )
-    : PropertyBase( meta_data, meta_data_ordinal ,
+    : PropertyBase( my_meta_data, meta_data_ordinal ,
                     input_name, typeid(DataType), input_size ) {}
 
   virtual void add_property( unsigned key ) { m_data_scalar[ key ]; }
@@ -181,11 +181,11 @@ private:
 
 public:
 
-  Property( MetaData & meta_data ,
+  Property( MetaData & my_meta_data ,
             unsigned   meta_data_ordinal ,
             const std::string & name ,
             unsigned size )
-    : Property<DataType>( meta_data, meta_data_ordinal, name, size ) {}
+    : Property<DataType>( my_meta_data, meta_data_ordinal, name, size ) {}
 
   typedef DataType data_type ;
 
