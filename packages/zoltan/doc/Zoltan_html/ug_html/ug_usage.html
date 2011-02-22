@@ -144,6 +144,16 @@ make everything <br>
 make install 
 </blockquote>
 <p>
+The configure script also allows you to specify the data type for a global identifier.  The choices are
+unsigned int, unsigned long, and unsigned long long.  The default data type is unsigned long.  If your
+space of global identifiers requires more than 32 bits, you can specify a 64-bit data type.  
+<p>
+<blockquote>
+  --with-id-type=uint<br>
+  --with-id-type=ulong<br>
+  --with-id-type=ullong<br>
+</blockquote>
+<p>
 More examples are in the directory zoltan/SampleConfigurationScripts.
 <p>
 After the configuration is done in 
@@ -170,7 +180,16 @@ cmake \ <br>
 make <br>
 make install <br>
 </blockquote>
-
+<p>
+The default data type for a global identifier is unsigned int.  The options to set the global identifier
+data type are shown below.
+<p>
+<blockquote>
+-D Zoltan_ENABLE_UINT_IDS:Bool=ON<br>
+-D Zoltan_ENABLE_ULONG_IDS:Bool=ON<br>
+-D Zoltan_ENABLE_ULLONG_IDS:Bool=ON<br>
+</blockquote>
+<p>
 <b>Serial</b> builds are the default in Trilinos; for serial builds, Zoltan
 builds and links with the siMPI library provided by Pat Miller in the Zoltan
 distribution.  More commonly, Zoltan users desire <b>parallel</b> builds with
