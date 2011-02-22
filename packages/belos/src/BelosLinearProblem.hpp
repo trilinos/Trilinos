@@ -141,20 +141,22 @@ namespace Belos {
     void setRightPrec(const RCP<const OP> &RP) { RP_ = RP; }
     
     //! Inform the linear problem that the solver is finished with the current linear system.
-    /*! \note This method is to be <b> only </b> used by the solver to inform the linear problem that it's
+    /*! \note This method is <b> only </b> to be used by the solver to inform the linear problem that it is
       finished with this block of linear systems.  The next time the Curr(RHS/LHS)Vec() is called, the next
       linear system will be returned.  Computing the next linear system isn't done in this method in case the 
       blocksize is changed.
     */
     void setCurrLS();
-    
-    //! Inform the linear problem of the linear systems that need to be solved next.
-    /*! Any calls to get the current RHS/LHS vectors after this method is called will return the new
-      linear systems indicated by \c index.  The length of \c index is assumed to be the blocksize and entries
-      of \c index must be between 0 and the number of vectors in the RHS/LHS multivector.  An entry of the
-      \c index std::vector can also be -1, which means this column of the linear system is augmented using a random
-      std::vector.
-    */
+
+    /// \brief Tell the linear problem which linear system(s) need to be solved next.
+    ///
+    /// Any calls to get the current RHS/LHS vectors after this method
+    /// is called will return the new linear system(s) indicated by \c
+    /// index.  The length of \c index is assumed to be the blocksize.
+    /// Entries of \c index must be between 0 and the number of
+    /// vectors in the RHS/LHS multivector.  An entry of \c index may
+    /// also be -1, which means this column of the linear system is
+    /// augmented using a random vector.
     void setLSIndex(std::vector<int>& index); 
     
     //! Inform the linear problem that the operator is Hermitian.
@@ -248,17 +250,17 @@ namespace Belos {
     //! Get a pointer to the right preconditioning operator.
     RCP<const OP> getRightPrec() const { return(RP_); };
     
-    //! Get the 0-based index std::vector indicating the current linear systems being solved for.
+    //! Get the 0-based index vector indicating the current linear systems being solved for.
     /*! Since the block size is independent of the number of right-hand sides for
       some solvers (GMRES, CG, etc.), it is important to know which linear systems
       are being solved for.  That may mean you need to update the information
-      about the norms of your initial residual std::vector for weighting purposes.  This
+      about the norms of your initial residual vector for weighting purposes.  This
       information can keep you from querying the solver for information that rarely
       changes.
-      \note The length of the index std::vector is the number of right-hand sides being solved for.
-            If an entry of this std::vector is -1 then that linear system is an augmented linear
+      \note The length of the returned index vector is the number of right-hand sides being solved for.
+            If an entry of the index vector is -1, then that linear system is an augmented linear
 	    system and doesn't need to be considered for convergence.
-      \note The std::vector returned from this method is valid if isProblemSet() returns true.
+      \note The index vector returned from this method is valid if isProblemSet() returns true.
     */
     const std::vector<int> getLSIndex() const { return(rhsIndex_); }
 
@@ -363,10 +365,10 @@ namespace Belos {
     //! Operator of linear system. 
     RCP<const OP> A_;
     
-    //! Solution std::vector of linear system.
+    //! Solution vector of linear system.
     RCP<MV> X_;
     
-    //! Current solution std::vector of the linear system.
+    //! Current solution vector of the linear system.
     RCP<MV> curX_;
     
     //! Right-hand side of linear system.
@@ -543,6 +545,15 @@ namespace Belos {
     }
     else {
       curX_ = MVT::CloneViewNonConst( *X_, rhsIndex_ );
+      // FIXME (mfh 21 Feb 2011) This is absolutely NO reason curB_
+      // should be a nonconst MV.  I can see what the authors of this
+      // code meant -- they wanted to cover the case above, where
+      // curB_ is a freshly allocated multivector, some of whose
+      // columns get filled with random data.  However, the right
+      // thing to do would be to allocate a nonconst MV of a different
+      // name, copy the appropriate columns of B_ there and fill the
+      // rest with random data, then make curB_ a nonconst view of
+      // that nonconst MV.
       curB_ = rcp_const_cast<MV>(MVT::CloneView( *B_, rhsIndex_ ));
     }
     //
@@ -668,6 +679,10 @@ namespace Belos {
 
     // Check the validity of the linear problem object.
     // If no operator A exists, then throw an std::exception.
+    //
+    // FIXME (mfh 21 Feb 2011) The code below doesn't seem to be doing
+    // what the comment above says it should do (that is, throw an
+    // exception if the operator A has not been set).
     if (A_ == null || X_ == null || B_ == null) {
       isSet_ = false;
       return isSet_;
