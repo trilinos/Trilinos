@@ -11,9 +11,11 @@
 
 #include "Kokkos_DefaultNode.hpp"
 
-#include "Panzer_STK_ModelEvaluatorFactory_Epetra.hpp"
-
 #include "Panzer_ConfigDefs.hpp"
+#include "Panzer_STK_ModelEvaluatorFactory_Epetra.hpp"
+#include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
+
+#include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 #include "user_app_NOXObserverFactory_Epetra.hpp"
@@ -69,6 +71,13 @@ int main(int argc, char *argv[])
     Teuchos::RCP<const panzer::EquationSetFactory> eqset_factory = 
       Teuchos::rcp(new user_app::MyFactory);
     input_params->sublist("Assembly").set("Equation Set Factory", eqset_factory);
+
+    // Add in the application specific closure model factory
+    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
+      Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
+    user_app::MyModelFactory_TemplateBuilder cm_builder;
+    (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
+    input_params->sublist("Assembly").set("Closure Model Factory", cm_factory);
 
     // Add in the application specific bc factory
     Teuchos::RCP<const panzer::BCStrategyFactory> bc_factory = 

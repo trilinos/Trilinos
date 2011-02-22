@@ -34,14 +34,14 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
   // ********************
   this->m_dof_names->push_back(this->m_eqset_prefix+"TEMPERATURE");
 
-  this->m_dof_gradient_names->push_back(this->m_eqset_prefix+"GRAD_TEMPERATURE");
+  this->m_dof_gradient_names->push_back("GRAD_"+this->m_eqset_prefix+"TEMPERATURE");
 
   if (this->m_build_transient_support)
-    this->m_dof_time_derivative_names->push_back(this->m_eqset_prefix+"DOT_TEMPERATURE");
+    this->m_dof_time_derivative_names->push_back("DOT_"+this->m_eqset_prefix+"TEMPERATURE");
 
-  this->m_residual_names->push_back(this->m_eqset_prefix+"RESIDUAL_TEMPERATURE");
+  this->m_residual_names->push_back("RESIDUAL_"+this->m_eqset_prefix+"TEMPERATURE");
 
-  this->m_scatter_name = "Scatter_"+this->m_eqset_prefix+"RESIDUAL_TEMPERATURE";
+  this->m_scatter_name = "Scatter_RESIDUAL_"+this->m_eqset_prefix+"TEMPERATURE";
 
   // ********************
   // Build Basis Functions and Integration Rules
@@ -91,8 +91,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Transient Operator
   if (this->m_build_transient_support) {
     ParameterList p("Transient Residual");
-    p.set("Residual Name", prefix+"RESIDUAL_TEMPERATURE_TRANSIENT_OP");
-    p.set("Value Name", prefix+"DOT_TEMPERATURE");
+    p.set("Residual Name", "RESIDUAL_"+prefix+"TEMPERATURE_TRANSIENT_OP");
+    p.set("Value Name", "DOT_"+prefix+"TEMPERATURE");
     p.set("Basis", this->m_basis);
     p.set("IR", this->m_int_rule);
     p.set("Multiplier", 1.0);
@@ -105,14 +105,14 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   // Diffusion Operator
   {
-    double diffusion_coefficient = 1.0;
+    double thermal_conductivity = 1.0;
 
     ParameterList p("Diffusion Residual");
-    p.set("Residual Name", prefix+"RESIDUAL_TEMPERATURE_DIFFUSION_OP");
-    p.set("Flux Name", prefix+"GRAD_TEMPERATURE");
+    p.set("Residual Name", "RESIDUAL_"+prefix+"TEMPERATURE_DIFFUSION_OP");
+    p.set("Flux Name", "GRAD_"+prefix+"TEMPERATURE");
     p.set("Basis", this->m_basis);
     p.set("IR", this->m_int_rule);
-    p.set("Multiplier", diffusion_coefficient);
+    p.set("Multiplier", thermal_conductivity);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_GradBasisDotVector<EvalT,panzer::Traits>(p));
@@ -139,36 +139,6 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       
       fm.template registerEvaluator<EvalT>(op);
     }
-    
-    // Constant value for convection 
-    {
-      // UX
-      {
-	ParameterList p("Constant UX");
-	p.set("Value", 1.0);
-	p.set("Name", prefix+"UX");
-	p.set("Data Layout", this->m_int_rule->dl_scalar);
-	
-	RCP< PHX::Evaluator<panzer::Traits> > op = 
-	  rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
-	
-	fm.template registerEvaluator<EvalT>(op);
-      }
-
-      // UY
-      {
-	ParameterList p("Constant UY");
-	p.set("Value", 0.0);
-	p.set("Name", prefix+"UY");
-	p.set("Data Layout", this->m_int_rule->dl_scalar);
-	
-	RCP< PHX::Evaluator<panzer::Traits> > op = 
-	  rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
-	
-	fm.template registerEvaluator<EvalT>(op);
-      }
-      
-    }
 
     // Evaluator to assemble convection term
     {
@@ -176,7 +146,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("IR", this->m_int_rule);
       p.set("Operator Name", prefix+"TEMPERATURE_CONVECTION_OP");
       p.set("A Name", prefix+"U");
-      p.set("Gradient Name", prefix+"GRAD_TEMPERATURE");
+      p.set("Gradient Name", "GRAD_"+prefix+"TEMPERATURE");
       p.set("Multiplier", 1.0);
 
       RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -188,7 +158,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     // Integration operator (could sum this into source for efficiency)
     {
       ParameterList p("Convection Residual");
-      p.set("Residual Name",prefix+"RESIDUAL_TEMPERATURE_CONVECTION_OP");
+      p.set("Residual Name","RESIDUAL_"+prefix+"TEMPERATURE_CONVECTION_OP");
       p.set("Value Name", prefix+"TEMPERATURE_CONVECTION_OP");
       p.set("Basis", this->m_basis);
       p.set("IR", this->m_int_rule);
@@ -202,33 +172,18 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   }
 
   // Source Operator
-  {    
-    {
-      ParameterList p("Source Operator");
-      p.set("Value", 1.0);
-      p.set("Name", prefix+"SOURCE_TEMPERATURE");
-      p.set("Data Layout", this->m_int_rule->dl_scalar);
-      
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
-	rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
-      
-      fm.template registerEvaluator<EvalT>(op);
-    }
-
-    {
-      ParameterList p("Source Residual");
-      p.set("Residual Name", prefix+"RESIDUAL_TEMPERATURE_SOURCE_OP");
-      p.set("Value Name", prefix+"SOURCE_TEMPERATURE");
-      p.set("Basis", this->m_basis);
-      p.set("IR", this->m_int_rule);
-      p.set("Multiplier", -1.0);
-      
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
-	rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-      
-      fm.template registerEvaluator<EvalT>(op);
-    }
-
+  {   
+    ParameterList p("Source Residual");
+    p.set("Residual Name", "RESIDUAL_"+prefix+"TEMPERATURE_SOURCE_OP");
+    p.set("Value Name", "SOURCE_"+prefix+"TEMPERATURE");
+    p.set("Basis", this->m_basis);
+    p.set("IR", this->m_int_rule);
+    p.set("Multiplier", -1.0);
+    
+    RCP< PHX::Evaluator<panzer::Traits> > op = 
+      rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
   }
 
   // Use a sum operator to form the overall residual for the equation
@@ -236,17 +191,17 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // global residual and Jacobian
   {
     ParameterList p;
-    p.set("Sum Name", prefix+"RESIDUAL_TEMPERATURE");
+    p.set("Sum Name", "RESIDUAL_"+prefix+"TEMPERATURE");
 
     RCP<std::vector<std::string> > sum_names = 
       rcp(new std::vector<std::string>);
 
-    sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_DIFFUSION_OP");
-    sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_SOURCE_OP");
+    sum_names->push_back("RESIDUAL_"+prefix+"TEMPERATURE_DIFFUSION_OP");
+    sum_names->push_back("RESIDUAL_"+prefix+"TEMPERATURE_SOURCE_OP");
     if (m_do_convection == "ON")
-      sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_CONVECTION_OP");
+      sum_names->push_back("RESIDUAL_"+prefix+"TEMPERATURE_CONVECTION_OP");
     if (this->m_build_transient_support)
-      sum_names->push_back(prefix+"RESIDUAL_TEMPERATURE_TRANSIENT_OP");
+      sum_names->push_back("RESIDUAL_"+prefix+"TEMPERATURE_TRANSIENT_OP");
 
     p.set("Values Names", sum_names);
     p.set("Data Layout", this->m_basis->functional);

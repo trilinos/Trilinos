@@ -16,6 +16,7 @@
 #include "Panzer_Basis.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
+#include "Panzer_ClosureModel_Factory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_STK_NOXObserverFactory_Epetra.hpp"
@@ -130,6 +131,9 @@ namespace panzer_stk {
     Teuchos::RCP<const panzer::EquationSetFactory> eqset_factory = 
       p.sublist("Assembly").get<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory");
 
+    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
+      p.sublist("Assembly").get<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory");
+      
     bool is_transient  = p.sublist("Solution Control").get<std::string>("Piro Solver") == "Rythmos" ? true : false;
     
     fmb->buildPhysicsBlocks(*block_ids_to_physics_ids,
@@ -198,8 +202,8 @@ namespace panzer_stk {
     Teuchos::RCP<const panzer::BCStrategyFactory> bc_factory = 
       p.sublist("Assembly").get<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory");
 
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,*linObjFactory);
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,*eqset_factory,*bc_factory,*linObjFactory);
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,p.sublist("Closure Models"),dofManager,*linObjFactory);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,*eqset_factory,*cm_factory,*bc_factory,p.sublist("Closure Models"),*linObjFactory);
 
     // Print Phalanx DAGs
     fmb->writeVolumeGraphvizDependencyFiles("Panzer_Steady-State_", physicsBlocks);
@@ -217,7 +221,7 @@ namespace panzer_stk {
       Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names, is_transient));
    
     // Build stratimikos solver
-    RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new ParameterList);
+    RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);
     std::string solver = p.sublist("Solution Control").get<std::string>("Piro Solver");
     if (solver=="NOX" || solver=="LOCA") {
       *strat_params = p.sublist("Piro Solver").sublist("NOX").sublist("Direction").
@@ -240,7 +244,7 @@ namespace panzer_stk {
     
     m_physics_me = thyra_me;
 
-    RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new ParameterList);
+    RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList);
     *piro_params = p.sublist("Solution Control");
     RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
     if (solver=="NOX") {

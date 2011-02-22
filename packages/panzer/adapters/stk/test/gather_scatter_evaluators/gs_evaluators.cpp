@@ -169,9 +169,19 @@ namespace panzer {
     auxEval["eblock-0_0"] = Teuchos::rcp(new panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits>);
     auxEval["eblock-0_0"]->buildAndPushBackObjects(db);
  
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,*linObjFactory,auxEval);
+    // Add in the application specific closure model factory
+    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
+      Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
+    user_app::MyModelFactory_TemplateBuilder cm_builder;
+    (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
 
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,bc_factory,*linObjFactory);
+    Teuchos::ParameterList closure_models("Closure Models");
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+    closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
+
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,dofManager,*linObjFactory,auxEval);
+
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory);
 
     fmb->writeVolumeGraphvizDependencyFiles("field_manager",physicsBlocks);
 
@@ -260,7 +270,7 @@ namespace panzer {
     ies_2.name = "Energy";
     ies_2.basis = "Q1";
     ies_2.integration_order = 1;
-    ies_2.model_id = "solid";
+    ies_2.model_id = "ion solid";
     ies_2.prefix = "ION_";
 
     ipb.physics_block_id = "4";

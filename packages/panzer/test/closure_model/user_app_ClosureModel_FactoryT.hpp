@@ -6,6 +6,8 @@
 #include "Panzer_InputEquationSet.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Basis.hpp"
+#include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 // User application evaluators for this factory
 #include "user_app_ConstantModel.hpp"
@@ -16,7 +18,7 @@ template<typename EvalT>
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
 user_app::MyModelFactory<EvalT>::
 buildClosureModels(const panzer::InputEquationSet& set,
-		   const std::vector<Teuchos::ParameterList>& models, 
+		   const Teuchos::ParameterList& models, 
 		   const Teuchos::ParameterList& default_params) const
 {
 
@@ -30,26 +32,41 @@ buildClosureModels(const panzer::InputEquationSet& set,
   RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 
     rcp(new vector< RCP<Evaluator<panzer::Traits> > > );
 
-  for (vector<ParameterList>::const_iterator model = models.begin(); 
-       model != models.end(); ++model) {
+  if (!models.isSublist(set.model_id)) {
+    std::stringstream msg;
+    msg << "Falied to find requested model, \"" << set.model_id 
+	<< "\" for equation set:\n" << std::endl;
+    TEST_FOR_EXCEPTION(!models.isSublist(set.model_id), std::logic_error, msg.str());
+  }
+
+  const ParameterList& my_models = models.sublist(set.model_id);
+
+  for (ParameterList::ConstIterator model_it = my_models.begin(); 
+       model_it != my_models.end(); ++model_it) {
     
     bool found = false;
     
-    ParameterList plist = *model;
-
-    if (model->get<string>("Object Type") == "Constant") {
-      plist.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+    const std::string name = model_it->first;
+    ParameterList input;
+    const Teuchos::ParameterEntry& entry = model_it->second;
+    const ParameterList& plist = Teuchos::getValue<Teuchos::ParameterList>(entry);
+    
+    if (plist.isType<double>("Value")) {
+      input.set("Name", name);
+      input.set("Value", plist.get<double>("Value"));
+      input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       RCP< Evaluator<panzer::Traits> > e = 
-	rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(plist));
+	rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
       evaluators->push_back(e);
       found = true;
     }
 
     if (!found) {
       std::stringstream msg;
-      msg << "Evaluator could not be created for \"Object Type\": " 
-	  << model->get<string>("Object Type") << std::endl;
-      TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
+      msg << "ClosureModelFactory failed to build evaluator for key \"" << name 
+	  << "\"\nin model \"" << set.model_id 
+	  << "\".  Please correct the type or add support to the \nfactory." <<std::endl;
+      TEST_FOR_EXCEPTION(!found, std::logic_error, msg.str());
     }
 
   }

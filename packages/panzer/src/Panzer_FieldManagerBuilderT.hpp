@@ -78,6 +78,8 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
                                             const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
                                                                        // element block -> vector of worksets
                                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
+					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+					    const Teuchos::ParameterList& closure_models,
                                             const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
                                             const Teuchos::RCP<const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > > 
@@ -105,7 +107,7 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
     // use the physics block to register evaluators
     pb->buildAndRegisterEquationSetEvaluators(*fm);
     pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory);
-    //pb->buildAndRegisterModelEvaluators(fm, pb->getProvidedDOFs());
+    pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models);
 
     if(auxManager!=Teuchos::null) {
        // find the set of auxilary factories for this block
@@ -149,7 +151,9 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
                                                        // boundary condition -> map of (side_id,worksets)
                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 	                   const panzer::EquationSetFactory & eqset_factory,
+			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                            const panzer::BCStrategyFactory& bc_factory,
+			   const Teuchos::ParameterList& closure_models,
                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory)
 {
 
@@ -206,6 +210,7 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
 	     bcs_type = bcs->begin(); bcs_type != bcs->end(); ++bcs_type) {
 	bcs_type->buildAndRegisterEvaluators(fm,*side_pb);
 	bcs_type->buildAndRegisterGatherScatterEvaluators(fm,*side_pb,lo_factory);
+	//bcs_type->buildAndRegisterClosureModelEvaluators(fm, cm_factory, closure_models);
       }
 
       // Setup the fieldmanager

@@ -21,7 +21,7 @@ namespace panzer {
     
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
       virtual  buildClosureModels(const panzer::InputEquationSet& set,
-				  const std::vector<Teuchos::ParameterList>& models,
+				  const Teuchos::ParameterList& models,
 				  const Teuchos::ParameterList& default_params) const = 0;
 
   };

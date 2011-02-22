@@ -22,10 +22,6 @@
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
 
-
-using namespace std;
-using namespace Teuchos;
-
 template<typename ArrayT>
 Teuchos::RCP< std::vector<panzer::Workset> > 
 panzer::buildWorksets(const std::string& block_id,
@@ -35,6 +31,10 @@ panzer::buildWorksets(const std::string& block_id,
 		      std::size_t workset_size,
 		      int base_cell_dimension)
 {
+  using std::vector;
+  using std::string;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
   std::size_t total_num_cells = vertex_coordinates.dimension(0);
 
@@ -180,6 +180,11 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 		       const panzer::InputPhysicsBlock& ipb,
 		       unsigned base_cell_dim)
 {
+  using std::vector;
+  using std::string;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
   // key is local face index, value is workset with all elements
   // for that local face
   Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets_ptr = 

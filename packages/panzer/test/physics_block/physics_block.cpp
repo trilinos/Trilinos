@@ -38,7 +38,7 @@ namespace panzer_test_utils {
       ies_2.name = "Energy";
       ies_2.basis = "Q1";
       ies_2.integration_order = 1;
-      ies_2.model_id = "solid";
+      ies_2.model_id = "ion solid";
       ies_2.prefix = "ION_";
     }
     
@@ -80,11 +80,8 @@ namespace panzer_test_utils {
   {    
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList("Closure Models"));
     {
-      p->sublist("fluid model").sublist("Density").set<double>("Value",1.0);
-      p->sublist("fluid model").sublist("Viscosity").set<double>("Value",1.0);
-      p->sublist("fluid model").sublist("Stress Tensor").set<std::string>("Value","Newtonian");
-      
-      p->sublist("solid model").sublist("Thermal Conductivity").set<double>("Value",1.0);
+      p->sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+      p->sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
     }
 
     return p;

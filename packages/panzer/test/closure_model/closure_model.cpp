@@ -22,7 +22,7 @@ namespace panzer {
       ies.name = "Momentum";
       ies.basis = "Q2";
       ies.integration_order = 1;
-      ies.model_id = "fluid";
+      ies.model_id = "fluid model";
       ies.prefix = "";
       ies.params.set<int>("junk", 1);
     }
@@ -36,40 +36,37 @@ namespace panzer {
       Teuchos::RCP<panzer::IntegrationRule> ir = 
 	Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
       default_params.set("IR",ir);
+      
     }
 
-    Teuchos::ParameterList p;
+    Teuchos::ParameterList p("Closure Models");
     {
-      p.set("Object Type","Constant");
-      p.set("Name","UX");
-      p.set("Value",4.5);
+      p.sublist("fluid model").sublist("Density").set<double>("Value",1.0);
+      p.sublist("fluid model").sublist("Viscosity").set<double>("Value",1.0);
+      p.sublist("fluid model").sublist("Heat Capacity").set<double>("Value",1.0);
+      p.sublist("fluid model").sublist("Thermal Conductivity").set<double>("Value",1.0);
     }
-
-    std::vector<Teuchos::ParameterList> evaluators_to_build;
-    evaluators_to_build.push_back(p);
-    evaluators_to_build.push_back(p);
-    evaluators_to_build.push_back(p);
-
-    TEST_EQUALITY(evaluators_to_build.size(), 3);
-    
 
     user_app::MyModelFactory<panzer::Traits::Residual> mf;
 
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators;
 
-    evaluators = mf.buildClosureModels(ies, evaluators_to_build, default_params);
+    evaluators = mf.buildClosureModels(ies, p, default_params);
 
-    TEST_EQUALITY(evaluators->size(), 3);
-
-    // Now using template manger
-    evaluators_to_build.push_back(p);  // add one to diferentiate from above
+    TEST_EQUALITY(evaluators->size(), 4);
 
     user_app::MyModelFactory_TemplateBuilder builder;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> model_factory;
     model_factory.buildObjects(builder);
-    evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies, evaluators_to_build, default_params);
+    evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies, p, default_params);
 
     TEST_EQUALITY(evaluators->size(), 4);
+
+    // Add an unsupported type
+    p.sublist("fluid model").sublist("garbage").set<std::string>("Value","help!");
+    
+    TEST_THROW(model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies, p, default_params), std::logic_error);
+
   }
 
 }

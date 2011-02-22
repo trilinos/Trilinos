@@ -10,6 +10,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_AuxiliaryEvaluator_TemplateManager.hpp"
+#include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 
 // Forward Declarations
 namespace panzer {
@@ -106,11 +107,13 @@ namespace panzer {
     void setupVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
                                                           // element block -> vector of worksets
                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+				  const Teuchos::ParameterList& closure_models,
                                   const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
                                   const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > 
                                      & auxManager)
-    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,lo_factory,Teuchos::rcpFromRef(auxManager)); }
+    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,closure_models,dofManager,lo_factory,Teuchos::rcpFromRef(auxManager)); }
 
     /** Setup the volume field managers. This uses the passed in <code>dofManager</code>
       * and sets it for permenant use.
@@ -118,9 +121,11 @@ namespace panzer {
     void setupVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
                                                           // element block -> vector of worksets
                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+				  const Teuchos::ParameterList& closure_models,
                                   const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                   const LinearObjFactory<panzer::Traits> & lo_factory)
-    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,dofManager,lo_factory,Teuchos::null); }
+    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,closure_models,dofManager,lo_factory,Teuchos::null); }
 
     /** Build the BC field managers.
       */
@@ -128,7 +133,9 @@ namespace panzer {
                                                           // boundary condition -> map of (side_id,worksets)
                               const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 	                      const panzer::EquationSetFactory & eqset_factory,
+			      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                               const panzer::BCStrategyFactory& bc_factory,
+			      const Teuchos::ParameterList& closure_models,
                               const LinearObjFactory<panzer::Traits> & lo_factory);
 
     void writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
@@ -139,6 +146,8 @@ namespace panzer {
     void setupVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
                                                           // element block -> vector of worksets
                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+				  const Teuchos::ParameterList& closure_models,
                                   const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
                                   const Teuchos::RCP<const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > >
