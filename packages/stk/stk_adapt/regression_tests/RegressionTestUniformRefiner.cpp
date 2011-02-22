@@ -74,54 +74,15 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      //======================================================================================================================
-      //======================================================================================================================
-      //======================================================================================================================
 
-      TEST(regr_uniformRefiner, biplane_refine)
+#if 0
+      TEST(regr_uniformRefiner, test11)
       {
-#if 1
-        EXCEPTWATCH;
-
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
-
-        // this case can't be load balanced?
-
-        if (p_size <= 1)
-          {
-            // start_demo_biplane_refine
-            std::string input_mesh = "./input_files/salinas/biplane.e";
-
-            if (p_size > 1)
-              {
-                RunEnvironment::doLoadBalance(pm, input_mesh);
-              }
-
-            percept::PerceptMesh eMesh;
-            eMesh.open(input_mesh);
-
-            URP_Heterogeneous_3D break_pattern(eMesh);
-            int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
-            eMesh.commit();
-
-            //eMesh.printInfo("biplane", 2);
-            eMesh.saveAs("./output_files/biplane_0.e");
-
-            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
-            //breaker.setRemoveOldElements(false);
-            breaker.setIgnoreSideSets(false);
-            breaker.doBreak();
-
-            //eMesh.printInfo("biplane", 2);
-            eMesh.saveAs("./output_files/biplane_1.e");
-
-          }
-#endif
+        PerceptMesh pMesh;
+        pMesh.open("./link/dir1/biplane_0.e");
+        exit(123);
       }
+#endif
 
       //======================================================================================================================
       //======================================================================================================================
@@ -2187,7 +2148,7 @@ namespace stk
         //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
         const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
 
-        if (p_size <= 3)
+        if (p_size <= 1)
           {
             // create the mesh
             {
@@ -2243,6 +2204,53 @@ namespace stk
               }
           }
         // end_demo
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, biplane_refine)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced?
+
+        if (p_size <= 1)
+          {
+            // start_demo_biplane_refine
+            std::string input_mesh = "./input_files/salinas/biplane.e";
+
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh;
+            eMesh.open(input_mesh);
+
+            URP_Heterogeneous_3D break_pattern(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            eMesh.commit();
+
+            //eMesh.printInfo("biplane", 2);
+            eMesh.saveAs("./output_files/biplane_0.e");
+
+            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            //breaker.setRemoveOldElements(false);
+            breaker.setIgnoreSideSets(false);
+            breaker.doBreak();
+
+            //eMesh.printInfo("biplane", 2);
+            eMesh.saveAs("./output_files/biplane_1.e");
+
+          }
       }
 
       //======================================================================================================================
@@ -2355,7 +2363,7 @@ namespace stk
         //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
         const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
 
-        if (p_size <= 3)
+        if (p_size <= 1)
           {
             // create the mesh
             {
@@ -2433,7 +2441,7 @@ namespace stk
         //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
         const unsigned p_size = stk::parallel_machine_size(pm);
 
-        if (p_size <= 3)
+        if (p_size <= 1)
           {
             // refine the mesh
             if (1)

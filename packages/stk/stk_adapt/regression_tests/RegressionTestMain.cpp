@@ -46,7 +46,8 @@ namespace stk {
 
         bool result = true;
 
-#ifndef REDS
+#if defined(__PGI) || defined(REDS)
+#else
         testing::InitGoogleTest(&argc, argv);  
         //  bool result = 0;
         try {

@@ -39,7 +39,8 @@ namespace stk {
         std::cout << "Running main() from gtest_main.cc" << std::endl;
         int exitcode = 0;
 
-#ifndef REDS
+#if defined(__PGI) || defined(REDS)
+#else
         testing::InitGoogleTest(&argc, argv);  
         try {
           //TEST_geom_volume(run_environment.m_comm);
