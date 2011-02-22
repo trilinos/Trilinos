@@ -15,6 +15,8 @@ PHX_EVALUATOR_CLASS(Integrator_BasisTimesScalar)
     
   PHX::MDField<ScalarT,Cell,IP> scalar;
 
+  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+
   std::size_t num_nodes;
 
   std::size_t num_qp;
@@ -25,6 +27,9 @@ PHX_EVALUATOR_CLASS(Integrator_BasisTimesScalar)
   std::size_t basis_index;
 
   Intrepid::FieldContainer<ScalarT> tmp;
+
+private:
+  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
 
 PHX_EVALUATOR_CLASS_END
 

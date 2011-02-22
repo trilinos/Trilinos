@@ -96,7 +96,12 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Basis", this->m_basis);
     p.set("IR", this->m_int_rule);
     p.set("Multiplier", 1.0);
-    
+    Teuchos::RCP<std::vector<std::string> > fms = 
+      Teuchos::rcp(new std::vector<std::string>);
+    fms->push_back(prefix+"DENSITY");
+    fms->push_back(prefix+"HEAT_CAPACITY");
+    p.set< Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers",fms);
+
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
     
@@ -163,6 +168,11 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Basis", this->m_basis);
       p.set("IR", this->m_int_rule);
       p.set("Multiplier", 1.0);
+      Teuchos::RCP<std::vector<std::string> > fms = 
+	Teuchos::rcp(new std::vector<std::string>);
+      fms->push_back(prefix+"DENSITY");
+      fms->push_back(prefix+"HEAT_CAPACITY");
+      p.set< Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers",fms);
       
       RCP< PHX::Evaluator<panzer::Traits> > op = 
 	rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));

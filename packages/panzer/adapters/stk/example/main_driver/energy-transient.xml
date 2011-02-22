@@ -66,6 +66,12 @@
             <ParameterList name="Thermal Conductivity">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
+            <ParameterList name="DENSITY">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <ParameterList name="HEAT_CAPACITY">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
 
         </ParameterList>
 
