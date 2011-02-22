@@ -73,7 +73,7 @@ class FEMMetaData {
    */
   void FEM_initialize(
       size_t spatial_dimension, 
-      const std::vector<std::string>& entity_rank_names = std::vector<std::string>() 
+      const std::vector<std::string>& in_entity_rank_names = std::vector<std::string>() 
       );
 
   /** \brief This function returns whether this class has been initialized or not.
@@ -131,7 +131,7 @@ class FEMMetaData {
    *
    * Note:  This function also creates the root cell topology part which is accessible from get_cell_topology_root_part
    */
-  void register_cell_topology(const fem::CellTopology cell_topology, EntityRank entity_rank);
+  void register_cell_topology(const fem::CellTopology cell_topology, EntityRank in_entity_rank);
 
   /** \brief Return the root cell topology part associated with the given cell topology.
    * This Part is created in register_cell_topology
@@ -292,24 +292,24 @@ class FEMMetaData {
   /** \brief Set the entity rank names in a vector.
    * This also currently sets the maximum entity rank.
    */
-  void set_entity_rank_names(const std::vector<std::string> &entity_rank_names)
+  void set_entity_rank_names(const std::vector<std::string> &in_entity_rank_names)
   { 
-    m_entity_rank_names = entity_rank_names;
-    m_meta_data.set_entity_rank_names(entity_rank_names);
+    m_entity_rank_names = in_entity_rank_names;
+    m_meta_data.set_entity_rank_names(in_entity_rank_names);
   }
 
   /** \brief Return the rank for the given name that was provided in set_entity_rank_names
    */
   EntityRank entity_rank( const std::string &name ) const
   { 
-    EntityRank entity_rank = InvalidEntityRank;
+    EntityRank my_entity_rank = InvalidEntityRank;
 
     for (size_t i = 0; i < m_entity_rank_names.size(); ++i)
       if (equal_case(name, m_entity_rank_names[i])) {
-        entity_rank = i;
+        my_entity_rank = i;
       break;
       }
-    return entity_rank;
+    return my_entity_rank;
   }
 
   /** \brief Return the set of entity rank names specified in set_entity_rank_names
@@ -328,12 +328,12 @@ class FEMMetaData {
 
   /** \brief Return the name for a given entity rank as was specified in set_entity_rank_names
    */
-  const std::string & entity_rank_name( EntityRank entity_rank ) const 
+  const std::string & entity_rank_name( EntityRank in_entity_rank ) const 
   {
-    ThrowErrorMsgIf( entity_rank >= m_entity_rank_names.size(),
-        "entity-rank " << entity_rank <<
+    ThrowErrorMsgIf( in_entity_rank >= m_entity_rank_names.size(),
+        "entity-rank " << in_entity_rank <<
         " out of range. Must be in range 0.." << m_entity_rank_names.size());
-    return m_entity_rank_names[entity_rank];
+    return m_entity_rank_names[in_entity_rank];
   }
 
   /** \brief Return true if the given entity rank is valid.

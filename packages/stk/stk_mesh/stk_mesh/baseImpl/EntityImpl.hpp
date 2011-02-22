@@ -67,16 +67,16 @@ public:
   void comm_clear_ghosting(); ///< Clear ghosting
   void comm_clear(); ///< Clear everything
 
-  void set_bucket_and_ordinal( Bucket * bucket, unsigned ordinal )
+  void set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal )
   {
-    m_bucket = bucket;
+    m_bucket = in_bucket;
     m_bucket_ord = ordinal;
   }
 
   // return true if entity was actually modified
-  bool set_owner_rank( unsigned owner_rank ) {
-    if ( owner_rank != m_owner_rank ) {
-      m_owner_rank = owner_rank;
+  bool set_owner_rank( unsigned in_owner_rank ) {
+    if ( in_owner_rank != m_owner_rank ) {
+      m_owner_rank = in_owner_rank;
       return true;
     }
     return false;
