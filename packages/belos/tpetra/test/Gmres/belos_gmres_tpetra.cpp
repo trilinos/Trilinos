@@ -213,7 +213,8 @@ main (int argc, char *argv[])
   // Start with an empty ParameterList on all procs.  If a filename
   // was provided, fill in the list on Proc 0, and broadcast.
   RCP<ParameterList> params = Teuchos::parameterList();
-  if (xmlInFile != "")
+  const bool readParamsFromFile = (xmlInFile != "");
+  if (readParamsFromFile)
     {
       if (debug && myRank == 0)
 	cerr << "Reading parameters for GMRES solve from XML file \"" 
@@ -224,6 +225,18 @@ main (int argc, char *argv[])
       if (debug && myRank == 0)
 	cerr << "done." << endl;
     }
+  if (debug)
+    {
+      const int everything = Belos::Errors & Belos::Warnings & 
+	Belos::IterationDetails && Belos::OrthoDetails && 
+	Belos::FinalSummary && Belos::TimingDetails && 
+	Belos::StatusTestDetails && Belos::Debug;
+      const int newVerbosity = readParamsFromFile ? 
+	params->get<int>("Verbosity") & (int) Belos::Debug : everything;
+      params->set ("Verbosity", newVerbosity);
+    }
+  
+
   // Read the sparse matrix A from the file.
   const bool tolerant = false;
   if (debug && myRank == 0)

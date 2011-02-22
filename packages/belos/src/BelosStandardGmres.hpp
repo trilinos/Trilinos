@@ -116,8 +116,8 @@ namespace Belos {
       TEST_FOR_EXCEPTION(k >= this->maxNumIters(), GmresCantExtendBasis,
 			 "Maximum number of iterations " << this->getNumIters() 
 			 << " reached.");
-      RCP<const MV> V_prv = MVT::CloneView(*V, Range1D(k-1, k-1));
-      V_cur = MVT::CloneViewNonConst(*V, Range1D(k, k));
+      RCP<const MV> V_prv = MVT::CloneView(*V, Range1D(k, k));
+      V_cur = MVT::CloneViewNonConst(*V, Range1D(k+1, k+1));
       if (this->flexible_)
 	{
 	  Z_cur = MVT::CloneViewNonConst(*Z, Range1D(k, k));

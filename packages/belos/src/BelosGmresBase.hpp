@@ -52,6 +52,8 @@
 
 #include <Teuchos_BLAS.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
+#include <algorithm>
+#include <iterator>
 #include <utility> // std::pair
 
 namespace Belos {
@@ -586,14 +588,29 @@ namespace Belos {
     //! \name Helper methods
     //@{
 
-    /// \brief Set first basis vector and initial residual norm
+    /// Make a deep copy of the (left-preconditioned, if applicable)
+    /// initial residual vector r0 from the linear problem instance.
+    /// Compute the initial residual norm.  Allocate the V_ basis if
+    /// necessary or if reallocateBasis=true.  Copy r0 into the first
+    /// column of V_ and scale by the initial residual norm; that
+    /// forms the first basis vector.
     ///
-    /// \param r0 [in] Initial residual vector (left preconditioned,
-    ///   if applicable)
+    /// \param maxIterCount [in] Maximum number of iterations that
+    ///   GMRES may execute before restarting.  maxIterCount+1 basis
+    ///   vector(s) will be allocated if necessary.
+    /// \param reallocateBasis [in] If true, (re)allocate the V_
+    ///   basis.  The V_ basis will be (re)allocated regardless if V_
+    ///   is null or has a number of columns other than
+    ///   maxIterCount+1.
     ///
-    /// \note This is a helper method, to be called by the constructor
-    ///   and by restart() only.
-    void setInitialResidual(const Teuchos::RCP<const MV>& r0);
+    /// \warning This method should only be called by the constructor
+    ///   and by restart().  It assumes that the LinearProblem
+    ///   instance is set and that its setLSIndex() method has been
+    ///   called with an index of exactly one right-hand side for
+    ///   which to solve.
+    void 
+    setInitialResidual(const int maxIterCount,
+		       const bool reallocateBasis = false);
 
     /// \brief Update the projected least-squares problem
     ///
@@ -619,8 +636,8 @@ namespace Belos {
     ///   previously orthogonalized Z basis vectors (a view into Z_).
     ///   Else, Teuchos::null.
     ///
-    /// \warning Don't call this until after setInitialResidual() has
-    ///   been called (it's called in the constructor, and in
+    /// \warning Only call this after setInitialResidual() has been
+    ///   called (that method is called in the constructor, and in
     ///   restart()).
     void 
     previousVectors (Teuchos::RCP<const MV>& V_prv,
@@ -630,15 +647,18 @@ namespace Belos {
     ///
     /// Initial residual vector (left preconditioned, if there is a
     /// left preconditioner) from the linear problem to solve.  This
-    /// changes if the linear problem is updated.
+    /// is copied deeply from the input linear problem.
     ///
     /// \note We keep this here so that it's easy to generate new
-    /// basis vectors, since the V_ basis comes from the same space as
-    /// the initial residual vector.
+    ///   basis vectors, since the V_ basis comes from the same space
+    ///   as the initial residual vector.
     ///
-    /// \warning Don't call this until after the linear problem (lp_)
-    ///   has been set.
-    Teuchos::RCP<const MV> initResVec() const;
+    /// \warning Please, please don't cast to nonconst MV and change
+    ///   this.  You have been warned.  Make a deep copy if you want
+    ///   a mutable vector.
+    Teuchos::RCP<const MV> initResVec() const {
+      return initResVec_;
+    }
 
     //@}
 
@@ -668,12 +688,19 @@ namespace Belos {
     /// about any orthogonalization method, so the above computation
     /// should hold just about always.
     ///
-    /// Storage for the native residual vector is cached and
-    /// reallocated only when the LinearProblem changes.  (This
-    /// ensures that the dimensions and data distribution are correct,
-    /// i.e., are the same as the initial residual vector in the
-    /// linear problem).
+    /// Storage for the native residual vector is allocated only on
+    /// demand.  The storage is cached and reallocated only when the
+    /// LinearProblem changes.  (This ensures that the dimensions and
+    /// data distribution are correct, i.e., are the same as the
+    /// initial residual vector in the linear problem).
     Teuchos::RCP<MV> nativeResVec_;
+
+    /// \brief Initial residual vector.
+    ///
+    /// This is the left-preconditioned residual vector if a left
+    /// preconditioner has been provided, otherwise it is the
+    /// unpreconditioned residual vector.
+    Teuchos::RCP<MV> initResVec_;
     
     /// \brief Current solution update
     ///
@@ -808,7 +835,9 @@ namespace Belos {
   {
     using Teuchos::Range1D;
     
-    // getNumIters() does not include the initial basis vector.
+    // The number of iterations (returned by getNumIters()) does not
+    // include the initial basis vector, which is the first column of
+    // V_.
     const int m = getNumIters(); 
     V_prv = MVT::CloneView (*V_, Range1D(0,m));
     if (flexible_)
@@ -950,75 +979,104 @@ namespace Belos {
   GmresBase (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem,
 	     const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
 	     const int maxIterCount,
-	     const bool flexible)
-    : lp_ (problem), ortho_ (ortho)
+	     const bool flexible) :
+    lp_ (problem), 
+    ortho_ (ortho),
+    lastUpdatedCol_ (-1), // column updates start with zero
+    curNumIters_ (0),
+    maxNumIters_ (maxIterCount),
+    flexible_ (flexible && ! lp_.is_null() && ! lp_->getRightPrec().is_null())
   {
     using Teuchos::is_null;
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    const Scalar zero = STS::zero();
-    const bool haveLeftPrec = ! is_null (lp_->getLeftPrec());
-    const bool haveRightPrec = ! is_null (lp_->getRightPrec());
-    
-    // The solution update is always in the same space as the initial
-    // solution guess (x0).
-    RCP<const MV> x0 = lp_->getLHS();
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs (*x0) != 1, std::invalid_argument,
-		       "Our Arnoldi/GMRES implementation only works for "
-		       "single-vector problems, but the supplied initial "
-		       "guess has " << MVT::GetNumberVecs(*x0) << " columns.");
-    xUpdate_ = MVT::Clone (*x0, 1);
-    MVT::MvInit (*xUpdate_, zero);
 
-    // (Left preconditioned, if applicable) "exact" residual vector.
-    RCP<const MV> r0 = haveLeftPrec ? lp_->getInitPrecResVec() : lp_->getInitResVec();
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*r0) != 1, 
+    // Fragments of error messages for use in sanity checks.
+    const char prefix[] = "Belos::GmresBase constructor: ";
+    const char postfix[] = "  Please call setProblem() with non-null data "
+      "before passing the LinearProblem to the GmresBase constructor.";
+    const char postfix2[] = "  That may mean that the LinearProblem's "
+      "setLSIndex() method has not yet been called, even though setProblem() "
+      "has been called.  After calling setProblem(), you should call "
+      "setLSIndex() with the ind{ex,ices} of the right-hand side(s) to solve.";
+
+    // Sanity checks on the linear problem.
+    //
+    // First, make sure A, X, and B are all non-null.
+    TEST_FOR_EXCEPTION(lp_.is_null(), std::invalid_argument,
+		       prefix << "The given LinearProblem is null.");
+    TEST_FOR_EXCEPTION(! lp_->isProblemSet(), std::invalid_argument,
+    		       prefix << "The given LinearProblem has not yet been set."
+		       << postfix);
+    TEST_FOR_EXCEPTION(lp_->getLHS().is_null(), std::invalid_argument,
+    		       prefix << "The given LinearProblem has null initial guess"
+		       " (getLHS()) for all right-hand sides." << postfix);
+    TEST_FOR_EXCEPTION(lp_->getRHS().is_null(), std::invalid_argument,
+    		       prefix << "The given LinearProblem's right-hand side(s) "
+		       "are all null (getRHS().is_null() == true)." << postfix);
+    TEST_FOR_EXCEPTION(lp_->getOperator().is_null(), std::invalid_argument,
+    		       prefix << "The given LinearProblem's operator (the "
+		       "matrix A) is null." << postfix);
+    // Next, make sure that setLSIndex() has been called on the linear
+    // problem instance, so that the "current" right-hand side and
+    // "current" initial guess have been set.
+    TEST_FOR_EXCEPTION(lp_->getCurrLHSVec().is_null(), 
 		       std::invalid_argument,
-		       "Our Arnoldi/GMRES implementation only works for "
-		       "single-vector problems, but the supplied initial "
-		       "residual vector has " 
-		       << MVT::GetNumberVecs(*r0) << " columns.");
-    // If left preconditioning is used, then the "native" residual
-    // vector is in the same space as the preconditioned "exact"
-    // residual vector.  Otherwise, it is in the same space as the
-    // right-hand side b and the unpreconditioned "exact" residual
-    // vector.
-    nativeResVec_ = MVT::CloneCopy (*r0);
+    		       prefix << "Although the given LinearProblem has non-null "
+		       "initial guess (getLHS()) for all right-hand sides, the "
+		       "current initial guess (getCurrLHSVec()) is null."
+		       << postfix2);
+    TEST_FOR_EXCEPTION(lp_->getCurrRHSVec().is_null(), 
+		       std::invalid_argument,
+    		       prefix << "Although the given LinearProblem has non-null "
+		       "initial guess (getLHS()) for all right-hand sides, the "
+		       "current right-hand side to solve (getCurrRHSVec()) is "
+		       "null." << postfix2);
+    // Get the initial guess x0, and allocate the solution update
+    // (xUpdate_) from the same vector space as x0.
+    RCP<const MV> x0 = lp_->getCurrLHSVec();
+    {
+      const int numLHS = MVT::GetNumberVecs (*x0);
+      TEST_FOR_EXCEPTION(numLHS != 1, std::invalid_argument,
+			 "Our GMRES implementation only works for single-"
+			 "vector problems, but the supplied initial guess has "
+			 << numLHS << " columns.");
+      const int numRHS = MVT::GetNumberVecs (*(lp_->getCurrRHSVec()));
+      TEST_FOR_EXCEPTION(numRHS != 1, std::invalid_argument,
+			 "Our GMRES implementation only works for single-"
+			 "vector problems, but the current right-hand side has "
+			 << numRHS << " columns.");
+    }
+    xUpdate_ = MVT::Clone (*x0, 1);
+    MVT::MvInit (*xUpdate_, STS::zero());
 
-    // If left preconditioning is used, then the V_ vectors are in the
-    // same space as the preconditioned "exact" residual vector.
-    // Otherwise they are in the same space as the right-hand side b
-    // and the unpreconditioned "exact" residual vector.
-    V_ = MVT::Clone (*r0, maxIterCount+1);
+    // Get the (left preconditioned, if applicable) residual vector,
+    // and make a deep copy of it in initResVec_.  Allocate the V_
+    // basis vectors, compute the initial residual norm, and compute
+    // the first basis vector (first column of V_).
+    setInitialResidual (maxIterCount);
 
-    // The Z_ vectors, if we need them, are always in the same space
-    // as the initial solution guess (x0).  Even if the caller asks
-    // for the flexible option, we don't allocate space for Z_ unless
-    // the caller specifies a right preconditioner.
-    Z_ = (flexible && haveRightPrec) ? MVT::Clone(*x0, maxIterCount+1) : null;
+    // The Z_ vectors, if we need them, are always in the same vector
+    // space as the initial solution guess (x0).  Even if the caller
+    // asks for the flexible option, we don't allocate space for Z_
+    // unless the caller specifies a right preconditioner.
+    Z_ = (flexible && ! lp_->getRightPrec().is_null()) ? 
+      MVT::Clone(*x0, maxIterCount+1) : null;
 
     // These (small dense) matrices and vectors encode the projected
-    // least-squares problem.
+    // least-squares problem.  z_ was already allocated and
+    // initialized in setInitialResidual() above.
     H_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
     R_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
     y_ = rcp (new mat_type (maxIterCount, 1));
-    z_ = rcp (new mat_type (maxIterCount+1, 1));
+
     // These cosines and sines encode the Q factor in the QR
     // factorization of the upper Hessenberg matrix H_.  We compute
     // this by computing H_ into R_ and operating on R_ in place; H_
     // itself is left alone.
     theCosines_.resize (maxIterCount);
     theSines_.resize (maxIterCount);
-
-    // Compute initial residual norm, and set the first column of V_
-    // to the scaled initial residual vector.
-    setInitialResidual(r0);
-
-    lastUpdatedCol_ = -1; // column updates start with zero
-    curNumIters_ = 0;
-    maxNumIters_ = maxIterCount;
-    flexible_ = (flexible && haveRightPrec);
   }
 
   template<class Scalar, class MV, class OP>
@@ -1031,27 +1089,44 @@ namespace Belos {
     using Teuchos::Range1D;
     using Teuchos::RCP;
 
-    if (is_null (nativeResVec_) || MVT::GetNumberVecs (*nativeResVec_) != MVT::GetNumberVecs (*initResVec()))
-      nativeResVec_ = MVT::CloneCopy (*initResVec(), Range1D(0,0));
-    else 
-      // Assign initial residual vector to nativeResVec; we will
-      // update this below if the number of iterations is > 0.
-      //
-      // TODO method doesn't exist for Range1D inputs yet
-      MVT::SetBlock (*initResVec(), Range1D(0,0), *nativeResVec_);
+    const char prefix[] = "Belos::GmresBase::currentNativeResidualVector: ";
+    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*initResVec_) != 1,
+		       std::logic_error,
+		       prefix << "Initial residual vector (initResVec_) has " 
+		       << MVT::GetNumberVecs(*initResVec_)
+		       << " columns, but should only have 1 column.  "
+		       "This should never happen.");
+    // If left preconditioning is used, then the "native" residual
+    // vector is in the same vector space as the left-preconditioned
+    // initial residual vector.  Otherwise, it is in the same space as
+    // the right-hand side b and the unpreconditioned initial residual
+    // vector.
+    //
+    // Assign initial residual vector to nativeResVec; we will update
+    // it below if the number of iterations is > 0.  ("Native"
+    // residual vector is the same as the initial residual vector when
+    // the number of iterations is 0.)
+    if (nativeResVec_.is_null() || MVT::GetNumberVecs (*nativeResVec_) != 1)
+      // Allocate nativeResVec if necessary.
+      nativeResVec_ = MVT::CloneCopy (*initResVec_, Range1D(0,0));
+    else
+      MVT::SetBlock (*initResVec_, Range1D(0,0), *nativeResVec_);
 
     if (curNumIters_ > 0)
       {
-	TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*V_) < curNumIters_+1, std::logic_error,
+	TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*V_) < curNumIters_+1, 
+			   std::logic_error,
 			   "Only " << MVT::GetNumberVecs(*V_) << " basis vectors "
 			   "were given, but curNumIters+1=" << (curNumIters_+1) 
 			   << " of them are required.  "
 			   "This likely indicates a bug in Belos.");
-	TEST_FOR_EXCEPTION(H_->numRows() < curNumIters_+1, std::logic_error,
+	TEST_FOR_EXCEPTION(H_->numRows() < curNumIters_+1, 
+			   std::logic_error,
 			   "H only has " << H_->numRows() << " rows, but " 
 			   << (curNumIters_+1) << " rows are required.  "
 			   "This likely indicates a bug in Belos.");
-	TEST_FOR_EXCEPTION(H_->numCols() < curNumIters_, std::logic_error,
+	TEST_FOR_EXCEPTION(H_->numCols() < curNumIters_, 
+			   std::logic_error,
 			   "H only has " << H_->numCols() << " columns, but "
 			   << (curNumIters_+1) << " columns are required.  "
 			   "This likely indicates a bug in Belos.");
@@ -1074,7 +1149,7 @@ namespace Belos {
 			     " a Belos bug.");
 	}
 	// nativeResVec_ := V * (H * y) - r0 (where we stored r0 in nativeResVec_)
-	MVT::MvTimesMatAddMv (one, *V_, H_times_y, -one, *nativeResVec_);
+	MVT::MvTimesMatAddMv (one, *V_view, H_times_y, -one, *nativeResVec_);
       }
     return nativeResVec_;
   }
@@ -1252,31 +1327,144 @@ namespace Belos {
   template<class Scalar, class MV, class OP>
   void
   GmresBase<Scalar, MV, OP>::
-  setInitialResidual(const Teuchos::RCP<const MV>& r0)
+  setInitialResidual(const int maxIterCount,
+		     const bool reallocateBasis)
   {
     using Teuchos::Range1D;
     using Teuchos::RCP;
+
+    // Message fragment for error messages.
+    const char prefix[] = "Belos::GmresBase::setInitialResidual: ";
+
+    TEST_FOR_EXCEPTION(maxIterCount < 0, std::invalid_argument,
+		       prefix << "maxIterCount = " << maxIterCount 
+		       << " < 0.");
+    // Do we have a left preconditioner?
+    const bool haveLeftPrec = ! lp_->getLeftPrec().is_null();
+
+    // mfh 22 Feb 2011: LinearProblem has the annoying quirk that
+    // getInit(Prec)ResVec() return the residual vector for the whole
+    // linear problem (X_ and B_), not for the "current" linear
+    // problem (curX_ and curB_, returned by getCurrLHSVec()
+    // resp. getCurrRHSVec()).  In order to get the residual vector(s)
+    // for the _current_ linear problem, we have to use getLSIndex()
+    // to extract the column ind(ex/ices) and take the corresponding
+    // column of getInit(Prec)ResVec().  It should be exactly one
+    // column, since this GMRES solver only knows how to solve for one
+    // right-hand side at a time.
+    RCP<const MV> R_full = 
+      haveLeftPrec ? lp_->getInitPrecResVec() : lp_->getInitResVec();
+    std::vector<int> inputIndices = lp_->getLSIndex();
+    TEST_FOR_EXCEPTION(inputIndices.size() == 0, 
+		       std::invalid_argument,
+		       "The LinearProblem claims that there are zero linear "
+		       "systems to solve: getLSIndex() returns an index "
+		       "vector of length zero.");
+
+    // Some of the indices returned by getLSIndex() might be -1.
+    // These are for column(s) of getCurr{L,R}HSVec() that don't
+    // correspond to any actual linear system(s) that we want to
+    // solve.  They may be filled in by block iterative methods in
+    // order to make the blocks full rank or otherwise improve
+    // convergence.  We shouldn't have any of those columns here, but
+    // we check just to make sure.
+    std::vector<int> outputIndices;
+    std::remove_copy_if (inputIndices.begin(), inputIndices.end(), 
+			 std::back_inserter (outputIndices), 
+			 std::bind2nd (std::equal_to<int>(), -1));
+
+    // outputIndices should have exactly one entry, corresponding to
+    // the one linear system to solve.  Our GMRES implementation can
+    // only solve for one right-hand side at a time.
+    if (outputIndices.size() != 1 || outputIndices[0] == -1)
+      {
+	std::string inputIndicesAsString;
+	{
+	  std::ostringstream os;
+	  os << "[";
+	  std::copy (inputIndices.begin(), inputIndices.end(),
+		     std::ostream_iterator<int>(os, " "));
+	  os << "]";
+	  inputIndicesAsString = os.str();
+	}
+	std::string outputIndicesAsString;
+	{
+	  std::ostringstream os;
+	  os << "[";
+	  std::copy (outputIndices.begin(), outputIndices.end(),
+		     std::ostream_iterator<int>(os, " "));
+	  os << "]";
+	  outputIndicesAsString = os.str();
+	}
+	std::ostringstream os;
+	os << prefix << "The LinearProblem instance's getLSIndex() method "
+	  "returns indices " << inputIndicesAsString << ", of which the "
+	  "following are not -1: " << outputIndicesAsString << ".";
+	TEST_FOR_EXCEPTION(outputIndices.size() != 1,
+			   std::invalid_argument, 
+			   os.str() << "  The latter list should have length "
+			   "exactly 1, since our GMRES implementation only "
+			   "knows how to solve for one right-hand side at a "
+			   "time.");
+	TEST_FOR_EXCEPTION(outputIndices[0] == -1,
+			   std::invalid_argument,
+			   os.str() << "  the latter list contains no "
+			   "nonnegative entries, meaning that there is no "
+			   "valid linear system to solve.");
+      }
+    // View of the "current" linear system's residual vector.
+    RCP<const MV> r0 = MVT::CloneView (*R_full, outputIndices);
+    // Sanity check that the residual vector has exactly 1 column.
+    // We've already checked this a different way above.
+    const int numResidVecs = MVT::GetNumberVecs (*r0);
+    TEST_FOR_EXCEPTION(numResidVecs != 1, std::logic_error,
+		       prefix << "Residual vector has " << numResidVecs 
+		       << " columns, but should only have one.  "
+		       "Should never get here.");
+    // Save a deep copy of the initial residual vector.
+    initResVec_ = MVT::CloneCopy (*r0);
+
+    // Allocate space for the V_ basis vectors if necessary.
+    //
+    // If left preconditioning is used, then the V_ vectors are in the
+    // same vector space as the (left-)preconditioned initial residual
+    // vector.  Otherwise they are in the same space as the
+    // unpreconditioned initial residual vector.  That's r0 in either
+    // case.
+    //
+    // FIXME (mfh 22 Feb 2011) We should really check to make sure
+    // that the columns of V_ (if previously allocated) are in the
+    // same vector space as r0.  Belos::MultiVecTraits doesn't give us
+    // a way to do that.  Just checking if the number of rows is the
+    // same is not enough.  The third Boolean argument
+    // (reallocateBasis) lets us add in the check externally if
+    // MultiVecTraits gains that ability sometime.
+    if (V_.is_null() || 
+	MVT::GetNumberVecs(*V_) != maxIterCount+1 || 
+	reallocateBasis)
+      V_ = MVT::Clone (*initResVec_, maxIterCount+1);
 
     // Initial residual norm is computed with respect to the inner
     // product defined by the OrthoManager.  Since the basis
     // vectors are orthonormal (resp. unitary) with respect to that
     // inner product, this ensures that the least-squares minimization
     // is also computed with respect to that inner product.
-    mat_type result(1,1);
-    ortho_->innerProd (*r0, *r0, result);
-    // Norm is a magnitude_type.  innerProd() does not promise a
-    // strictly nonzero imaginary part, but it should be "relatively
-    // small."  Defining "relatively small" requires some error
-    // analysis, which we omit; instead, we simply take the magnitude
-    // (which hopefully is nonnegative by construction, if complex
-    // absolute value was implemented correctly).
-    initialResidualNorm_ = STS::magnitude (result(0,0));
+    std::vector<magnitude_type> result (1);
+    ortho_->norm (*r0, result);
+    initialResidualNorm_ = result[0];
 
-    // Initialize right-hand side of projected least-squares problem
-    (void) z_->putScalar (STS::zero());
+    // z_ is the right-hand side of the projected least-squares
+    // problem.  If we reallocated z_, we have to reset it by setting
+    // its first entry to the initial residual norm.
+    if (z_.is_null() || z_->numRows() < maxIterCount+1)
+      z_ = rcp (new mat_type (maxIterCount+1, 1));
+    else
+      (void) z_->putScalar (STS::zero());
     (*z_)(0,0) = Scalar (initialResidualNorm_);
 
-    MVT::SetBlock (*r0, Range1D(0,0), *V_);
+    // Copy the initial residual vector into the first column of V_,
+    // and scale the vector by its norm.
+    MVT::SetBlock (*initResVec_, Range1D(0,0), *V_);
     RCP<MV> v1 = MVT::CloneViewNonConst (*V_, Range1D(0,0));
     MVT::MvScale (*v1, Scalar(1)/initialResidualNorm_);
   }
@@ -1318,17 +1506,14 @@ namespace Belos {
   GmresBase<Scalar, MV, OP>::
   restart (const int maxIterCount)
   {
-    using Teuchos::is_null;
-    using Teuchos::null;
     using Teuchos::RCP;
-    using Teuchos::rcp;
     const Scalar zero = STS::zero();
 
     // This would be the place where subclasses may implement things
     // like recycling basis vectors for the next restart cycle.  Note
     // that the linear problem hasn't been updated yet; this happens
     // below.
-    preRestartHook (lp_, maxIterCount);
+    preRestartHook (maxIterCount);
 
     // Make sure that the LinearProblem object gets the current
     // approximate solution (which becomes the initial guess for the
@@ -1337,25 +1522,33 @@ namespace Belos {
     (void) getCurrentUpdate (); // results stored in xUpdate_
     (void) lp_->updateSolution (xUpdate_, true, STS::one());
 
-    // We just check in case whether any preconditioner(s) have been
-    // added to the linear problem.
-    const bool haveLeftPrec = ! is_null (lp_->getLeftPrec());
-    const bool haveRightPrec = ! is_null (lp_->getRightPrec());
-    // Initial residual vector (left preconditioned, if applicable).
-    RCP<const MV> r0 = haveLeftPrec ? lp_->getInitPrecResVec() : lp_->getInitResVec();
+    // Check whether there is a right preconditioner, since (at least
+    // in theory) the caller could have added a right preconditioner
+    // after a restart cycle.  (Is that legitimate?  Adding or
+    // changing a right preconditioner between restarts wouldn't
+    // change the initial residual vector, and therefore wouldn't
+    // change the V_ basis.  The V_ basis is all that matters for the
+    // restart.)
+    const bool needToAllocateZ = flexible_ && ! lp_->getRightPrec().is_null();
+
+    // This (re)allocates the V_ basis if necessary.  It also
+    // (re)allocates the projected least-squares problem's right-hand
+    // side z_ if necessary, and initializes it regardless.
+    setInitialResidual (maxIterCount);
 
     // If the new max iteration count has changed, reallocate space
-    // for basis vectors and the projected least-squares problem.
+    // for the Z_ basis vectors and the projected least-squares
+    // problem.  setInitialResidual() already does that for the V_
+    // basis.
     if (maxNumIters_ != maxIterCount)
       {
 	maxNumIters_ = maxIterCount;
-	V_ = MVT::Clone (r0, maxIterCount+1);
-	Z_ = (flexible_ && haveRightPrec) ? 
-	  MVT::Clone(lp_->getLHS(), maxIterCount+1) : null;
+	// Initial guess.
+	RCP<MV> x0 = lp_->getCurrLHSVec();
+	Z_ = needToAllocateZ ? MVT::Clone (*x0, maxIterCount+1) : null;
 	H_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
 	R_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
 	y_ = rcp (new mat_type (maxIterCount, 1));
-	z_ = rcp (new mat_type (maxIterCount+1, 1));
       }
     // Even if the max iteration count hasn't changed, we still want
     // to fill in the projected least-squares problem data with zeros,
@@ -1364,27 +1557,15 @@ namespace Belos {
     (void) H_->putScalar(zero);
     (void) R_->putScalar(zero);
     (void) y_->putScalar(zero);
-    (void) z_->putScalar(zero);
-
-    setInitialResidual(r0);
 
     lastUpdatedCol_ = -1; // column updates start with zero
     curNumIters_ = 0;
-    flexible_ = (flexible_ && haveRightPrec);
+    flexible_ = needToAllocateZ;
 
     // This would be the place where subclasses may implement things
     // like orthogonalizing the first basis vector (after restart)
     // against the recycled subspace.
     postRestartHook();
-  }
-
-  template<class Scalar, class MV, class OP>
-  Teuchos::RCP<const MV> GmresBase<Scalar, MV, OP>::initResVec() const
-  {
-    const bool haveLeftPrec = ! is_null (lp_->getLeftPrec());
-    //const bool haveRightPrec = ! is_null (lp_->getRightPrec());
-    // Initial residual vector (left preconditioned, if applicable).
-    return haveLeftPrec ? lp_->getInitPrecResVec() : lp_->getInitResVec();
   }
 
 } // namespace Belos
