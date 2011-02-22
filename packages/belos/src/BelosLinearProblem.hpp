@@ -157,7 +157,7 @@ namespace Belos {
     /// vectors in the RHS/LHS multivector.  An entry of \c index may
     /// also be -1, which means this column of the linear system is
     /// augmented using a random vector.
-    void setLSIndex(std::vector<int>& index); 
+    void setLSIndex(const std::vector<int>& index); 
     
     //! Inform the linear problem that the operator is Hermitian.
     /*! This knowledge may allow the operator to take advantage of the linear problem symmetry.
@@ -489,7 +489,7 @@ namespace Belos {
   {}
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::setLSIndex(std::vector<int>& index)
+  void LinearProblem<ScalarType,MV,OP>::setLSIndex(const std::vector<int>& index)
   {
     // Set new linear systems using the indices in index.
     rhsIndex_ = index;
