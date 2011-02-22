@@ -91,6 +91,12 @@ computational load is equally divided over the processors.  A vector of
 relative part sizes is used to determine the weight assigned to each
 part, but they are currently all equal.  In the future they should
 be input to reflect heterogeneity.
+
+<p>
+Another limitation is that refinement tree partitioning has not been modified to work with 
+64-bit global IDs.  If 64-bit IDs are selected at configure time with either the
+<A HREF="ug_usage.html#Autotools">autotools</A> build or the 
+<A HREF="ug_usage.html#CMake">CMake</A> build, the method will fail.
 <BR>&nbsp;
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >

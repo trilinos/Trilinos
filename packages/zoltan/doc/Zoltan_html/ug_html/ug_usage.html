@@ -145,7 +145,7 @@ make install
 </blockquote>
 <p>
 The configure script also allows you to specify the data type for a global identifier.  The choices are
-unsigned int, unsigned long, and unsigned long long.  The default data type is unsigned long.  If your
+unsigned int, unsigned long, and unsigned long long.  The default data type is unsigned int.  If your
 space of global identifiers requires more than 32 bits, you can specify a 64-bit data type.  
 <p>
 <blockquote>
@@ -153,6 +153,11 @@ space of global identifiers requires more than 32 bits, you can specify a 64-bit
   --with-id-type=ulong<br>
   --with-id-type=ullong<br>
 </blockquote>
+<p>
+Support of 64-bit identifiers is new as of Zoltan version 3.4.
+At this point in time all methods except for
+<a href="ug_alg_reftree.html">refinement tree partitioning</a>
+have been modified to work with 64-bit identifiers.
 <p>
 More examples are in the directory zoltan/SampleConfigurationScripts.
 <p>
@@ -189,6 +194,11 @@ data type are shown below.
 -D Zoltan_ENABLE_ULONG_IDS:Bool=ON<br>
 -D Zoltan_ENABLE_ULLONG_IDS:Bool=ON<br>
 </blockquote>
+<p>
+Support of 64-bit identifiers is new as of Zoltan version 3.4.
+At this point in time all methods except for
+<a href="ug_alg_reftree.html">refinement tree partitioning</a>
+have been modified to work with 64-bit identifiers.
 <p>
 <b>Serial</b> builds are the default in Trilinos; for serial builds, Zoltan
 builds and links with the siMPI library provided by Pat Miller in the Zoltan
