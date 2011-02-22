@@ -57,16 +57,13 @@
 
         <ParameterList name="fluid model">
 
-            <ParameterList name="Density">
+            <ParameterList name="SOURCE_TEMPERATURE">
                 <Parameter name="Value" type="double" value="1.0"/>
-            </ParameterList>
-            <ParameterList name="Energy Flux">
-                <Parameter name="Value" type="string" value="Fourier"/>
             </ParameterList>
             <ParameterList name="Heat Capacity">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
-            <ParameterList name="thermal Conductivity">
+            <ParameterList name="Thermal Conductivity">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
 

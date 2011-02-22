@@ -30,11 +30,15 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(main_driver_files
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
-  main_driver_energy
+  main_driver_energy-ss
   TEST_0 EXEC main_driver 
     ARGS  --i=energy-ss.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-  TEST_1 EXEC main_driver 
+  )
+
+PACKAGE_ADD_ADVANCED_TEST(
+  main_driver_energy-transient
+  TEST_0 EXEC main_driver 
     ARGS  --i=energy-transient.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
