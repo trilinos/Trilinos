@@ -1252,10 +1252,10 @@ namespace stk {
               unsigned num_new_nodes_needed = needed_entity_ranks[ineed_ent].second;
               if (0)
                 {
-                  const CellTopologyData * const cell_topo_data = get_cell_topology(element);
-                  CellTopology cell_topo(cell_topo_data);
+                  const CellTopologyData * const cell_topo_data_0 = get_cell_topology(element);
+                  CellTopology cell_topo_0(cell_topo_data_0);
 
-                  std::cout << "tmp 43 cell_topo= " << cell_topo.getName() << " ineed_ent= " << ineed_ent << " needed_entity_ranks[ineed_ent].first/second = " 
+                  std::cout << "tmp 43 cell_topo= " << cell_topo_0.getName() << " ineed_ent= " << ineed_ent << " needed_entity_ranks[ineed_ent].first/second = " 
                             << needed_entity_ranks[ineed_ent].first << " "
                             << needed_entity_ranks[ineed_ent].second
                             << std::endl;

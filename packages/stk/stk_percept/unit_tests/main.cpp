@@ -60,7 +60,8 @@ namespace stk {
         std::cout << "Running main() from gtest_main.cc" << std::endl;
         bool result = true;
 
-#ifndef REDS
+#if defined(__PGI) || defined(REDS)
+#else
         testing::InitGoogleTest(&argc, argv);  
         //  bool result = 0;
         try {
