@@ -39,14 +39,6 @@ struct KeyProcLess {
 
 };
 
-struct KeyProcEqual
-{
-  bool operator()( const DistributedIndex::KeyProc & lhs,
-                   const DistributedIndex::KeyProc & rhs ) const {
-    return lhs == rhs ;
-  }
-};
-
 void sort_unique( std::vector<DistributedIndex::KeyProc> & key_usage )
 {
   std::vector<DistributedIndex::KeyProc>::iterator
@@ -55,7 +47,7 @@ void sort_unique( std::vector<DistributedIndex::KeyProc> & key_usage )
 
   std::sort( i , j , KeyProcLess() );
 
-  i = std::unique( i , j , KeyProcEqual() );
+  i = std::unique( i , j );
 
   key_usage.erase( i , j );
 }
