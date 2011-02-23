@@ -228,7 +228,7 @@ main (int argc, char *argv[])
       try {
 	verbosityLevel = params->get<int>("Verbosity");
       } catch (Teuchos::Exceptions::InvalidParameter&) {
-	verbosityLevel = Errors | Warnings;
+	verbosityLevel = Belos::Errors | Belos::Warnings;
       }
     }
   if (verbose || debug)
