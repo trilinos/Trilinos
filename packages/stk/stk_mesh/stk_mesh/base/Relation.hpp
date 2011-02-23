@@ -76,7 +76,7 @@ public:
   /** \brief  Construct a relation from a referenced entity,
    *          local identifier, kind, and converse flag.
    */
-  Relation( Entity & entity , unsigned identifier );
+  Relation( Entity & entity , RelationIdentifier identifier );
 
   /** \brief  The encoded relation attribute */
   static raw_attr_type attribute( unsigned rank , unsigned id );
@@ -88,7 +88,7 @@ public:
   unsigned entity_rank() const ;
 
   /** \brief  The local relation identifier */
-  unsigned identifier() const ;
+  RelationIdentifier identifier() const ;
 
   /** \brief  The referenced entity */
   Entity * entity() const { return m_entity ; }
@@ -148,7 +148,7 @@ unsigned Relation::entity_rank() const
 { return unsigned( m_attr.value >> rank_shift ); }
 
 inline
-unsigned Relation::identifier() const
+RelationIdentifier Relation::identifier() const
 { return unsigned( m_attr.value & id_mask ); }
 
 struct LessRelation {
@@ -188,17 +188,17 @@ bool membership_is_induced( const Part & part , unsigned entity_rank );
 void induced_part_membership( Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
-                              unsigned relation_identifier ,
+                              RelationIdentifier relation_identifier ,
                               PartVector & induced_parts );
 
 /** \brief  Induce entities' part membership based upon relationships
  *          between entities.  Do not include and parts in the 'omit' list.
  */
-void induced_part_membership( const Entity     & entity_from ,
-                              const PartVector & omit ,
-                                    unsigned     entity_rank_to ,
-                                    unsigned     relation_identifier ,
-                                    PartVector & entity_to_parts );
+void induced_part_membership( const Entity           & entity_from ,
+                              const PartVector       & omit ,
+                                    unsigned           entity_rank_to ,
+                                    RelationIdentifier relation_identifier ,
+                                    PartVector       & entity_to_parts );
 
 /** \brief  Induce an entity's part membership based upon relationships
  *          from other entities.  Do not include and parts in the 'omit' list.

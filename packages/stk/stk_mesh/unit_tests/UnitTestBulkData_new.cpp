@@ -392,13 +392,14 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyInducedMembership )
   bulk.change_entity_parts ( node , create_node_parts , stk::mesh::PartVector () );
   bulk.change_entity_parts ( cell , create_cell_parts , stk::mesh::PartVector () );
   // Add node to cell part
-  bulk.declare_relation ( cell , node , 0 );
+  stk::mesh::RelationIdentifier cell_node_rel_id = 0;
+  bulk.declare_relation ( cell , node , cell_node_rel_id );
   bulk.modification_end();
 
   STKUNIT_ASSERT ( node.bucket().member ( fixture.get_cell_part() ) );
 
   bulk.modification_begin();
-  bulk.destroy_relation ( cell , node );
+  bulk.destroy_relation ( cell , node, cell_node_rel_id );
   bulk.modification_end();
 
   STKUNIT_ASSERT ( !node.bucket().member ( fixture.get_cell_part() ) );

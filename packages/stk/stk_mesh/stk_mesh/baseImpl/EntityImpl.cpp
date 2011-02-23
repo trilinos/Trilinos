@@ -217,22 +217,22 @@ void EntityImpl::log_created_parallel_copy()
   }
 }
 
-bool EntityImpl::destroy_relation( Entity& e_to )
+bool EntityImpl::destroy_relation( Entity& e_to, const RelationIdentifier local_id )
 {
   bool destroyed_relations = false;
-  for ( std::vector<Relation>::iterator i = m_relation.end() ;
-        i != m_relation.begin() ; ) {
-    --i ;
-    if ( i->entity() == & e_to ) {
-      i = m_relation.erase( i );
+  for ( std::vector<Relation>::iterator
+        i = m_relation.begin() ; i != m_relation.end() ; ++i ) {
+    if ( i->entity() == & e_to && i->identifier() == local_id ) {
+      i = m_relation.erase( i ); // invalidates iterators, but we're breaking so it's OK
       destroyed_relations = true;
+      break;
     }
   }
   return destroyed_relations;
 }
 
 bool EntityImpl::declare_relation( Entity & e_to,
-                                   const unsigned local_id,
+                                   const RelationIdentifier local_id,
                                    unsigned sync_count,
                                    bool is_converse )
 {

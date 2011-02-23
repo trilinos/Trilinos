@@ -103,7 +103,7 @@ void separate_wedge(
       stk::mesh::Entity & old_node = *(relations[ i ].entity());
       stk::mesh::Entity & new_node = *(new_nodes[i]);
 
-      fixture.bulk_data.destroy_relation(*wedge, old_node);
+      fixture.bulk_data.destroy_relation(*wedge, old_node, i);
       fixture.bulk_data.declare_relation(*wedge, new_node, i);
 
       fixture.bulk_data.copy_entity_fields( old_node, new_node);

@@ -92,11 +92,11 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
         //mesh.destroy_entity(current_entity);
         continue;
       }
+      // check if has relation in closure
       else if ( std::binary_search(closure.begin(),
-      //has relation in closure
-            closure.end(),
-            current_entity,
-            stk::mesh::EntityLess()) )
+                                   closure.end(),
+                                   current_entity,
+                                   stk::mesh::EntityLess()) )
       {
         sides.push_back(stk::mesh::EntitySideComponent(current_entity,side_ordinal));
       }
@@ -104,10 +104,9 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
 
     //loop over the sides and break the relations between the old nodes
     //and set up the relations with the new
-    for ( std::vector<stk::mesh::EntitySideComponent>::iterator itr = sides.begin();
-         itr != sides.end(); ++itr)
-    {
-      mesh.destroy_relation(*(itr->entity), *entity);
+    for ( std::vector<stk::mesh::EntitySideComponent>::iterator
+          itr = sides.begin(); itr != sides.end(); ++itr) {
+      mesh.destroy_relation(*(itr->entity), *entity, itr->side_ordinal);
       mesh.declare_relation(*(itr->entity), *new_entity, itr->side_ordinal);
     }
 
