@@ -7,6 +7,7 @@
   namespace Test {
     int numRows = 1000;
     int numIters = 1000;
+    int numThreads = 0;
   }
 
   template <class Node>
@@ -20,6 +21,7 @@
     clp.addOutputSetupOptions(true);
     clp.setOption("test-size",&Test::numRows,"Vector length for tests.");
     clp.setOption("test-iters",&Test::numIters,"Number of mat-vecs to time.");
+    clp.setOption("num-threads",&Test::numThreads,"Number of threads.");
   }
 
 
@@ -85,6 +87,7 @@
     X.initializeValues( Test::numRows,1, node->template allocBuffer<Scalar>(Test::numRows), Test::numRows);
     Y.initializeValues( Test::numRows,1, node->template allocBuffer<Scalar>(Test::numRows), Test::numRows);
     DefaultArithmetic<MV>::Init( X, ST::one() );
+    DefaultArithmetic<MV>::Init( Y, ST::one() );
     Teuchos::RCP<Teuchos::Time> matvectime = Teuchos::TimeMonitor::getNewTimer("LocalTimer");
     {
       Teuchos::TimeMonitor lcltimer(*matvectime);
