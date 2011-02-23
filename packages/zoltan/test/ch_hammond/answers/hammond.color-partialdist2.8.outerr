@@ -9,8 +9,7 @@ Input values:
   Performing load balance using none.
 	Parameters:
 		comm_pattern s
-		coloring_order n
-		coloring_method f
+		vertex_visit_order n
 		superstep_size 100
 		coloring_problem partial-distance-2
 		graph_symmetrize bipartite
@@ -119,8 +118,7 @@ Zoltan_LB_Eval_HG  CUTL (Sum_over_edges( (nparts-1)*ewgt )): 1058.000
 ZOLTAN Parameter COLORING_PROBLEM = PARTIAL-DISTANCE-2
 ZOLTAN Parameter SUPERSTEP_SIZE = 100
 ZOLTAN Parameter COMM_PATTERN = S
-ZOLTAN Parameter COLORING_ORDER = N
-ZOLTAN Parameter COLORING_METHOD = F
+ZOLTAN Parameter VERTEX_VISIT_ORDER = N
 ZOLTAN Parameter GRAPH_SYMMETRIZE = BIPARTITE
 ZOLTAN Parameter GRAPH_SYM_WEIGHT = ADD
 ZOLTAN Parameter GRAPH_BIPARTITE_TYPE = OBJ
@@ -130,8 +128,7 @@ Verifying coloring result
 ZOLTAN Parameter COLORING_PROBLEM = PARTIAL-DISTANCE-2
 ZOLTAN Parameter SUPERSTEP_SIZE = 100
 ZOLTAN Parameter COMM_PATTERN = S
-ZOLTAN Parameter COLORING_ORDER = N
-ZOLTAN Parameter COLORING_METHOD = F
+ZOLTAN Parameter VERTEX_VISIT_ORDER = N
 ZOLTAN Parameter GRAPH_SYMMETRIZE = BIPARTITE
 ZOLTAN Parameter GRAPH_SYM_WEIGHT = ADD
 ZOLTAN Parameter GRAPH_BIPARTITE_TYPE = OBJ

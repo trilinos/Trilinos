@@ -64,6 +64,9 @@ namespace Belos {
     /// \typedef base_type
     /// \brief Base class typedef
     typedef GmresBase<Scalar, MV, OP> base_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef MultiVecTraits<Scalar, MV> MVT;
+    typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
     
   public:
     /// Constructor
@@ -85,34 +88,45 @@ namespace Belos {
     ///   left or split preconditioning.
     StandardGmres (const Teuchos::RCP<LinearProblem<Scalar,MV,OP> >& lp,
 		   const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
-		   const int maxNumIters,
+		   const int maxIterCount,
 		   const bool flexible) :
-      GmresBase (lp, ortho, maxNumIters, flexible) {}
+      GmresBase<Scalar, MV, OP> (lp, ortho, maxIterCount, flexible) {}
 
     virtual bool canExtendBasis() const {
-      return getNumIters() < maxNumIters();
+      return this->getNumIters() < this->maxNumIters();
     }
 
     virtual void
     extendBasis (Teuchos::RCP<MV>& V_cur, 
 		 Teuchos::RCP<MV>& Z_cur)
-    {
-      // This does not count the initial basis vector
-      const int k = getNumIters(); 
-      TEST_FOR_EXCEPTION(k >= maxNumIters(), GmresCantExtendBasis,
-			 "Maximum number of iterations " << getNumIters() 
+    { //
+      // mfh 16 Feb 2011: The use of "this->..." here and elsewhere is
+      // obligatory, since we are inheriting from a templated class.
+      // See the C++ FAQ:
+      //
+      // http://www.parashift.com/c++-faq-lite/templates.html#faq-35.19
+      // 
+      using Teuchos::Range1D;
+      RCP<LinearProblem<Scalar, MV, OP> > lp = this->lp_;
+      RCP<MV> V = this->V_;
+      RCP<MV> Z = this->Z_;
+
+      // This does not count the initial basis vector.
+      const int k = this->getNumIters(); 
+      TEST_FOR_EXCEPTION(k >= this->maxNumIters(), GmresCantExtendBasis,
+			 "Maximum number of iterations " << this->getNumIters() 
 			 << " reached.");
-      RCP<const MV> V_prv = MVT::CloneView(*V_, Range1D(k-1, k-1));
-      V_cur = MVT::CloneView(*V_, Range1D(k, k));
-      if (flexible_)
+      RCP<const MV> V_prv = MVT::CloneView(*V, Range1D(k, k));
+      V_cur = MVT::CloneViewNonConst(*V, Range1D(k+1, k+1));
+      if (this->flexible_)
 	{
-	  RCP<MV> Z_cur = MVT::CloneViewNonConst(*Z_, Range1D(k, k));
-	  lp_->applyOp (V_prv, Z_cur);
-	  lp_->applyRightPrec (Z_cur, V_cur);
+	  Z_cur = MVT::CloneViewNonConst(*Z, Range1D(k, k));
+	  lp->applyOp (*V_prv, *Z_cur);
+	  lp->applyRightPrec (*Z_cur, *V_cur);
 	}
       else
 	{
-	  lp_->apply (V_prv, V_cur);
+	  lp->apply (*V_prv, *V_cur);
 	  if (! Z_cur.is_null())
 	    Z_cur = Teuchos::null;
 	}
@@ -130,22 +144,32 @@ namespace Belos {
     {
       using Teuchos::rcp;
       using Teuchos::tuple;
-      typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+      mat_type& H = *(this->H_);
 
-      C = rcp (new mat_type (Teuchos::View, *H_, k+1, 1, 0, k));
-      B = rcp (new mat_type (Teuchos::View, *H_, 1, 1, k+1, k));
-
+      const int k = this->getNumIters();
+      // Flexible standard GMRES only needs to orthogonalize the new V
+      // basis vector; it doesn't need to orthogonalize the Z basis
+      // vector.
+      //
       // We don't need to do anything with the "rank" output of
       // projectAndNormalize(), since the single value in B will tell
       // us (or rather, the caller) what we (rather, they) need to
       // know.
-      (void) ortho_->projectAndNormalize (V_cur, null, tuple(C), B, tuple(V_prv));
+      C_V = rcp (new mat_type (Teuchos::View, H, k+1, 1, 0, k));
+      B_V = rcp (new mat_type (Teuchos::View, H, 1, 1, k+1, k));
+      (void) this->ortho_->projectAndNormalize (*V_cur, tuple(C_V), 
+						B_V, tuple(V_prv));
     }
 
     virtual bool 
-    acceptedCandidateBasis () const {
-      typedef Teuchos::ScalarTraits<Scalar> STS;
-      const Scalar H_kp1k = (*H_)(k+1, k);
+    acceptedCandidateBasis () const 
+    {
+      mat_type& H = *(this->H_);
+
+      // OK, because we haven't accepted the candidate basis yet,
+      // so the number of iterations hasn't yet been incremented.
+      const int k = this->getNumIters();
+      const Scalar H_kp1k = H(k+1, k);
       
       // NOTE (mfh {15,16} Jan 2011) This test should perhaps be more
       // sophisticated.  However, perhaps the right place for such a

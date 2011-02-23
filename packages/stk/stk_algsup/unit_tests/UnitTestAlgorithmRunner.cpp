@@ -6,9 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <mpi.h>
-
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/fem/DefaultFEM.hpp>
@@ -43,6 +42,12 @@ public:
 
 STKUNIT_UNIT_TEST( UnitTestAlgorithmRunner, UnitTest)
 {
+#ifdef STK_HAS_MPI
+  stk::ParallelMachine comm(MPI_COMM_WORLD);
+#else
+  stk::ParallelMachine comm(0);
+#endif
+
   const stk::AlgorithmRunnerInterface* alg_runner = NULL;
 
 #ifdef STK_HAVE_TBB
@@ -66,7 +71,7 @@ STKUNIT_UNIT_TEST( UnitTestAlgorithmRunner, UnitTest)
 #ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   stk::mesh::DefaultFEM fem(meta_data, spatial_dim);
 #endif
-  stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD );
+  stk::mesh::BulkData bulk_data( meta_data, comm );
 
   fill_utest_mesh_meta_data( meta_data );
   fill_utest_mesh_bulk_data( bulk_data );
