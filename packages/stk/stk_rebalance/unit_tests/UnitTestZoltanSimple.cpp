@@ -147,9 +147,11 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   Teuchos::ParameterList emptyList;
   stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
 
-  stk::mesh::Selector selector(meta_data.universal_part());
+  {
+    stk::mesh::Selector selector(meta_data.universal_part());
 
-  stk::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
+    stk::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
+  }
 
   const double imbalance_threshold = stk::rebalance::check_balance(bulk_data, &weight_field, element_rank);
   const bool do_rebal = 1.5 < imbalance_threshold;
