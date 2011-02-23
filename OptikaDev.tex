@@ -83,7 +83,7 @@ After some deliberation, the following initial solutions were decided upon:
 
 		For number types, a spin box (figure~\ref{spinboxfig}) would be used as input. If the valid
 		values for a string type were specified, a combo box (figure~\ref{comboboxfig}) would be used.
-		Otherwise a line edit (figure~\ref{lineeditfig}) would be used. For booleans, a combo box (firgure~\ref{comboboxfig}) would
+		Otherwise a line edit (figure~\ref{lineeditfig}) would be used. For booleans, a combo box (figure~\ref{comboboxfig}) would
 		also be used. For arrays, a pop-up box containing numerous input
 		widgets would be used. The widget type would be determined by the
 		array type (e.g. for numerical types a series of spinboxes would be used). 
@@ -316,7 +316,9 @@ data structure which mapped parameters to parent lists would be used. Convenienc
 just one dependent was needed. The algorithm used for evaluating dependencies changed very little with these modifications. The only addition
 needed was an extra loop for evaluating each dependent in a dependency for a given dependee.
 
-Adding support for multiple dependents was much harder. There was actually only one specific use case where multiple dependents were needed or even appropriate for that matter. Dr.
+Adding support for multiple dependents was much harder. There was actually only 
+one specific use case where multiple dependents were needed or even appropriate 
+for that matter. Dr.
 Frink needed the ability to test the condition of multiple parameters to determine whether or not a particular parameter should be displayed.
 So a new VisualDependency class called ConditionVisualDependency was created. ConditionVisualDependencies evaluated a condition object to
 determine the whether or not a set of dependents should be hidden or shown. The set of condition classes created are as follows (shown as a hierarchy of classes):
@@ -344,15 +346,54 @@ ConditionVisualDependencies are the only dependencies which allow for multiple d
 Dependency parent class level, ConditionVisualDependency is the only class which actually implements the functionality. In the case of multiple dependents the algorithm
 for evaluating dependencies didn't need to change at all.
 
-At the time of this publication, the Optika team is still waiting to hear back from Dr. Frink as to whether or not these new features meet her needs.
+\section{Serialization}
+The next step was to make Optika's dependencies, conditions, and validators
+ serializable. In addition, we needed to make the parameter serialization more 
+robust. The hope was that by doing this we would allow the application 
+developer to specify the majority of their application via XML, instead of the 
+more cumbersome source-code solution. After some consulting with Roscoe 
+Bartlett, the following model was decided on:
+\begin{itemize}
+	\item Each different type of condition, dependency, parameter, and validator
+		 would have
+		it's own associated XMLConverter. All the dependency converters would 
+		sub-class a DepenencyXMLConverter super-class, all the condition converters
+		would sub-class a ConditionXMLConverter super-class, etc. These converters
+		would be able to convert back-and-forth from object and XML.
+	\item A psuedo-database class would be created for each set of converters. All
+	converters would be obtained by calling a getConverter() function whose 
+	parameter would either be a object to convert, or
+	and XML tag to convert. The getConverter() function would then return an
+	appropriate converter that would allow the object to be converted to and from
+	XML or vice versa.
+\end{itemize}
+This model has the benefit of being extendible If new object 
+types are created, or even if the user desires to create their own types,
+this model will easily accommodate such additions. A new converter class just
+has to be created. 
+
+The summer of 2010 was spent developing the converters for 
+the standard conditions, dependencies, parameters, and validators. Also,
+we changed from the system of using a parent ParameterList and Parameter name
+to identify specific parameters. We now used pointers, which guaranteed a unique
+identification of a specific parameter. This was done for two reasons: it was 
+the only good way to make serialization possible, and we determined that it was
+absolutely necessary for users to be able to uniquely identify parameters.
+All these changes resulted in a rather large effort that added a lot of new
+code. In addition, new tests had to be developed for this large addition of 
+functionality. By September we were basically done with only a few loose ends.
+These were taken care of over the next few months.
+
 
 \section{Future Development}
 There are several main development goals for Optika in the near future. 
 \begin{itemize}
-\item We would like to give users the option to completely write an Optika GUI (with dependencies and validators)
-solely in XML. Our hope is that since writing XML is simpler than writing C++ this will further ease the demands of the application developer.
-In order to achieve this goal XML serialization for all of the validator and dependency related classes must be developed. We have already started working on
-serialization this summer and currently XML serialization for validators is almost finished after which serialization for the dependency and dependency sheet class will begin.
+
+\item Dr. Frink has submitted several requests for new functionality. Most 
+importantly she has identified the need for users to be able to edit two
+dimensional arrays. We are currently in the process of adding this 
+functionality. She would also like to be able to specify a label to use for
+each entry in an array along with a few other niceties.
 
 \item We would like to develop a stand-alone version of Optika. The development team believes that the potential audience for Optika is much 
 larger than just the user base of Trilinos. However, creating a stand-alone version presents the problem of keeping source code consistent between
@@ -362,13 +403,6 @@ the Optika that exists in Trilinos and the stand-alone version. This is an issue
 XML format, allow the user to configure the ParameterList, and then either output the entire ParameterList again with the new settings or output
 a ParameterList only containing the parameters that were changed. We think this will be useful because it will enable end-users to utilize
 Opitka without requiring the program their using to implement Optika support (just ParameterList support).
-
-\item An absolute and simpler way to uniquely identify dependees and dependents is needed.
-The current system right now is clunky and doesn't offer us guaranteed identification.
-
-\item Do a more thorough use case analysis. Initially, only a few people were consulted on the potential requirements
-of such a generic GUI. A broader selection of potential users would help us determine how we can make Optika
-more useful in a much boarder context.
 
 \item We need to further investigate what happens when dependencies conflict
 or become circular. Right now the behavior of Optika under such conditions
