@@ -74,8 +74,6 @@ typedef long int global_ordinal_type;
 typedef int global_ordinal_type;
 #endif // 0
 
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
-
 #ifdef HAVE_KOKKOS_TBB
 typedef Kokkos::TBBNode node_type;
 #else
