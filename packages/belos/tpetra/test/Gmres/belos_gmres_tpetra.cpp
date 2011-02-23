@@ -214,7 +214,7 @@ main (int argc, char *argv[])
   // was provided, fill in the list on Proc 0, and broadcast.
   RCP<ParameterList> params = Teuchos::parameterList();
   const bool readParamsFromFile = (xmlInFile != "");
-  int verbosityLevel = Errors | Warnings;
+  int verbosityLevel = Belos::Errors | Belos::Warnings;
   if (readParamsFromFile)
     {
       if (debug && myRank == 0)
