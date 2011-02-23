@@ -354,13 +354,12 @@ FUNCTION(PACKAGE_ARCH_WRITE_CONFIG_FILE)
   CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake )
 
-  # To be able to properly pull in the configure files for each package we have to append some cmake code
-  # to the end of the configured file. This is that code. The "FOREACH_BLOCK" is same for both the install
-  # and build tree configure files, however, the files that are globbed are different. 
-  SET(GLOB_LINE "FILE(GLOB PACKAGE_CONFIG_FILES \"${CMAKE_CURRENT_BINARY_DIR}/packages/*/*Config.cmake\")\n")
-  SET(FOREACH_BLOCK "FOREACH(FILE \${PACKAGE_CONFIG_FILES})\n  IF(NOT \${FILE} MATCHES \"${PROJECT_NAME}Config.cmake\")\n    INCLUDE(\${FILE})\n  ENDIF()\nENDFOREACH()\n")
-  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake ${GLOB_LINE})
-  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake ${FOREACH_BLOCK})
+  # Appending the logic to include each package's config file.
+  SET(LOAD_CODE "# Load configurations from enabled packages\n")
+  FOREACH(PACKAGE ${FULL_PACKAGE_SET})
+    SET(LOAD_CODE "${LOAD_CODE}include(\"${${PACKAGE}_BINARY_DIR}/${PACKAGE}Config.cmake\")\n")
+  ENDFOREACH()
+  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake "${LOAD_CODE}")
 
   IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
     ######
@@ -406,9 +405,11 @@ FUNCTION(PACKAGE_ARCH_WRITE_CONFIG_FILE)
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake )
 
   # Appending the logic to include each package's config file.
-  SET(GLOB_LINE "FILE(GLOB PACKAGE_CONFIG_FILES \"${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}/*Config.cmake\")\n")
-  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake ${GLOB_LINE})
-  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake ${FOREACH_BLOCK})
+  SET(LOAD_CODE "# Load configurations from enabled packages\n")
+  FOREACH(PACKAGE ${FULL_PACKAGE_SET})
+    SET(LOAD_CODE "${LOAD_CODE}include(\"${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}/${PACKAGE}Config.cmake\")\n")
+  ENDFOREACH()
+  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake "${LOAD_CODE}")
 
   INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake
