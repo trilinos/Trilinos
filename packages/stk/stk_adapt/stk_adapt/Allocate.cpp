@@ -5,6 +5,16 @@
  *      Author: kdcopps
  */
 
+// this is here only to avoid a warning on Mac builds - it was complaining about no symbols existing in this file
+
+namespace stk {
+  namespace adapt {
+    void dummyAllocateMethodForMacBuildWarning()
+    {
+    }
+  }
+}
+
 #ifdef STK_ADAPT_REPLACE_NEW_DELETE
 
 #ifdef STK_HAVE_TBB
