@@ -806,13 +806,9 @@ template<class T>
 RCP<NumberVisualDependency<T> >
   DummyObjectGetter<NumberVisualDependency<T> >::getDummyObject()
 {
-  static RCP<NumberVisualDependency<T> > dummyObject;
-  if(dummyObject.is_null()){
-    dummyObject = rcp(new NumberVisualDependency<T>(
+  return rcp(new NumberVisualDependency<T>(
     rcp(new ParameterEntry(ScalarTraits<T>::zero())),
     DummyObjectGetter<ParameterEntry>::getDummyObject()));
-  }
-  return dummyObject;
 }
 
 /**
@@ -1082,15 +1078,10 @@ template<class DependeeType, class DependentType>
 RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
   DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >::getDummyObject()
 {
-  static RCP<NumberArrayLengthDependency<DependeeType, DependentType> > 
-    dummyObject;
-  if(dummyObject.is_null()){
-    dummyObject = rcp(
-      new NumberArrayLengthDependency<DependeeType, DependentType>(
-      rcp(new ParameterEntry(ScalarTraits<DependeeType>::zero())),
-      rcp(new ParameterEntry(Array<DependentType>(1)))));
-  }
-  return dummyObject;
+  return rcp(
+    new NumberArrayLengthDependency<DependeeType, DependentType>(
+    rcp(new ParameterEntry(ScalarTraits<DependeeType>::zero())),
+    rcp(new ParameterEntry(Array<DependentType>(1)))));
 }
 
 /**
@@ -1632,21 +1623,17 @@ template<class T>
 RCP<RangeValidatorDependency<T> > 
   DummyObjectGetter<RangeValidatorDependency<T> >::getDummyObject()
 {
-  static RCP<RangeValidatorDependency<T> > dummyObject;
-  if(dummyObject.is_null()){
-    typename RangeValidatorDependency<T>::RangeToValidatorMap dummyMap;
-    typename RangeValidatorDependency<T>::Range dummyRange(
-      ScalarTraits<T>::zero(), ScalarTraits<T>::one());
-    RCP<FileNameValidator> dummyValidator = 
-      DummyObjectGetter<FileNameValidator>::getDummyObject();
-    dummyMap.insert(typename RangeValidatorDependency<T>::RangeValidatorPair(
-      dummyRange, dummyValidator));
-    dummyObject = rcp(new RangeValidatorDependency<T>(
-      rcp(new ParameterEntry(ScalarTraits<T>::zero())),
-      DummyObjectGetter<ParameterEntry>::getDummyObject(),
-      dummyMap));
-  }
-  return dummyObject;
+  typename RangeValidatorDependency<T>::RangeToValidatorMap dummyMap;
+  typename RangeValidatorDependency<T>::Range dummyRange(
+    ScalarTraits<T>::zero(), ScalarTraits<T>::one());
+  RCP<FileNameValidator> dummyValidator = 
+    DummyObjectGetter<FileNameValidator>::getDummyObject();
+  dummyMap.insert(typename RangeValidatorDependency<T>::RangeValidatorPair(
+    dummyRange, dummyValidator));
+  return rcp(new RangeValidatorDependency<T>(
+    rcp(new ParameterEntry(ScalarTraits<T>::zero())),
+    DummyObjectGetter<ParameterEntry>::getDummyObject(),
+    dummyMap));
 }
 
 

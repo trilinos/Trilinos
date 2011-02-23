@@ -341,6 +341,13 @@ void AnyNumberParameterEntryValidator::throwTypeError(
     );
 }
 
+RCP<AnyNumberParameterEntryValidator> 
+  DummyObjectGetter<AnyNumberParameterEntryValidator>::getDummyObject()
+{
+  return anyNumberParameterEntryValidator(
+    AnyNumberParameterEntryValidator::PREFER_INT, 
+    AnyNumberParameterEntryValidator::AcceptedTypes());
+}
 
 FileNameValidator::FileNameValidator(bool mustAlreadyExist)
   : ParameterEntryValidator(), mustAlreadyExist_(mustAlreadyExist)
@@ -360,7 +367,7 @@ bool FileNameValidator::setFileMustExist(bool shouldFileExist)
 
 
 ParameterEntryValidator::ValidStringsList
-FileNameValidator::validStringValues() const
+  FileNameValidator::validStringValues() const
 {
   return null;
 }
@@ -416,6 +423,10 @@ void FileNameValidator::printDoc(
   StrUtils::printLines(out,"# ",docString);
   out << "#  Validator Used: " << std::endl;
   out << "#  FileName Validator" << std::endl;
+}
+
+RCP<FileNameValidator> DummyObjectGetter<FileNameValidator>::getDummyObject(){
+  return rcp(new FileNameValidator(true));
 }
 
 StringValidator::StringValidator()
@@ -497,6 +508,10 @@ void StringValidator::printDoc(std::string const &docString,
   Teuchos::StrUtils::printLines(out,"# ",docString);
   out << "#  Validator Used: " << std::endl;
   out << "#  String Validator" << std::endl;
+}
+
+RCP<StringValidator> DummyObjectGetter<StringValidator>::getDummyObject(){
+  return rcp(new StringValidator(tuple<std::string>("")));
 }
 
 

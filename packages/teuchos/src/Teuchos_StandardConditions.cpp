@@ -119,6 +119,12 @@ bool OrCondition::applyOperator(bool op1, bool op2) const{
   return op1 || op2;
 }
 
+RCP<OrCondition> DummyObjectGetter<OrCondition>::getDummyObject(){
+  Condition::ConstConditionList dummyList;
+  dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
+  return rcp(new OrCondition(dummyList));
+}
+
 AndCondition::AndCondition(ConstConditionList& conditions):
   BinaryLogicalCondition(conditions){}
 
@@ -126,11 +132,23 @@ bool AndCondition::applyOperator(bool op1, bool op2) const{
   return op1 && op2;
 }
 
+RCP<AndCondition> DummyObjectGetter<AndCondition>::getDummyObject(){
+  Condition::ConstConditionList dummyList;
+  dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
+  return rcp(new AndCondition(dummyList));
+}
+
 EqualsCondition::EqualsCondition(ConstConditionList& conditions):
   BinaryLogicalCondition(conditions){}
 
 bool EqualsCondition::applyOperator(bool op1, bool op2) const{
   return op1 == op2;
+}
+
+RCP<EqualsCondition> DummyObjectGetter<EqualsCondition>::getDummyObject(){
+  Condition::ConstConditionList dummyList;
+  dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
+  return rcp(new EqualsCondition(dummyList));
 }
 
 NotCondition::NotCondition(RCP<const Condition> childCondition):
@@ -158,6 +176,11 @@ bool NotCondition::containsAtLeasteOneParameter() const{
 
 Dependency::ConstParameterEntryList NotCondition::getAllParameters() const{
   return childCondition_->getAllParameters();
+}
+
+RCP<NotCondition> DummyObjectGetter<NotCondition>::getDummyObject(){
+  return rcp(new NotCondition(
+    DummyObjectGetter<BoolCondition>::getDummyObject()));
 }
 
 StringCondition::StringCondition(
@@ -197,6 +220,11 @@ bool StringCondition::evaluateParameter() const{
     getValue<std::string>(*getParameter())) != values_.end();
 }
 
+RCP<StringCondition> DummyObjectGetter<StringCondition>::getDummyObject(){
+  std::string empty = "";
+  return rcp(new StringCondition(rcp(new ParameterEntry(empty)), empty));
+}
+
 BoolCondition::BoolCondition(
   RCP<ParameterEntry> parameter,
   bool whenParamEqualsValue):
@@ -214,6 +242,11 @@ BoolCondition::BoolCondition(
 bool BoolCondition::evaluateParameter() const{
   return getValue<bool>(*getParameter());
 }
+
+RCP<BoolCondition> DummyObjectGetter<BoolCondition>::getDummyObject(){
+  return rcp(new BoolCondition(rcp(new ParameterEntry(true))));
+}
+
 
 } //namespace Teuchos
 
