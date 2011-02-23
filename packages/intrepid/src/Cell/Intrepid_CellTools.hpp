@@ -54,6 +54,7 @@
 #include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid_HGRAD_TET_C2_FEM.hpp"
+#include "Intrepid_HGRAD_TET_COMP12_FEM.hpp"
 #include "Intrepid_HGRAD_WEDGE_C2_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
 

@@ -705,6 +705,15 @@ const CellTopologyData * getCellTopologyData<Tetrahedron<10> >()
 }
 
 template<>
+const CellTopologyData * getCellTopologyData<Tetrahedron<11> >()
+{
+  static const char name[] = "Tetrahedron_11" ;
+  static const Descriptor< Tetrahedron<11>::Traits >
+    self( getCellTopologyData<Tetrahedron<4> >() , name );
+  return & self.top ;
+}
+
+template<>
 const CellTopologyData * getCellTopologyData<Tetrahedron<8> >()
 {
   static const char name[] = "Tetrahedron_8" ;
