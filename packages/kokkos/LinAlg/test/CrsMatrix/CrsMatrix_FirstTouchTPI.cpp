@@ -75,14 +75,14 @@ namespace {
   // 
 
   typedef TPINode                                             Node;
-  typedef typename DefaultKernels<void,int,Node>::SparseOps   DSM;
+  typedef DefaultKernels<void,int,Node>::SparseOps   DSM;
   typedef CrsMatrixHostCompute<double,int,Node,DSM>           StandardMat;
   typedef CrsGraphHostCompute<int,Node,DSM>                   StandardGraph;
   typedef FirstTouchHostCrsMatrix<double,int,Node,DSM>        FirstTouchMat;
   typedef FirstTouchHostCrsGraph<int,Node,DSM>                FirstTouchGraph;
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsTiming, PowerTriDiag, StandardGraph,   StandardMat   );
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsTiming, PowerTriDiag, FirstTouchGraph, FirstTouchMat );
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsTiming, PowerTriDiag, StandardGraph,   StandardMat   )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsTiming, PowerTriDiag, FirstTouchGraph, FirstTouchMat )
 
 }
 
