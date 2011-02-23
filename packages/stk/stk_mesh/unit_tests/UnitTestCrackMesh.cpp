@@ -139,7 +139,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 
     // destroy right_element's relation to old_node, replace with a
     // relation to new node
-    mesh.destroy_relation(*right_element, *old_node);
+    mesh.destroy_relation(*right_element, *old_node, right_ordinal);
     mesh.declare_relation(*right_element, new_node, right_ordinal);
   }
 

@@ -55,7 +55,7 @@ Relation::attribute( unsigned rank , unsigned id )
   return ( raw_attr_type(rank) << rank_shift ) | id ;
 }
 
-Relation::Relation( Entity & entity , unsigned identifier )
+Relation::Relation( Entity & entity , RelationIdentifier identifier )
   : m_attr( Relation::attribute( entity.entity_rank() , identifier ) ),
     m_entity( & entity )
 {}
@@ -175,7 +175,7 @@ bool membership_is_induced( const Part & part , unsigned entity_rank )
 void induced_part_membership( Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
-                              unsigned relation_identifier ,
+                              RelationIdentifier relation_identifier ,
                               PartVector & induced_parts )
 {
   if ( entity_rank_to < entity_rank_from &&
@@ -207,11 +207,11 @@ void induced_part_membership( Part & part ,
 //  this entity's relationship.  Can only trust 'entity_from' to be
 //  accurate if it is owned by the local process.
 
-void induced_part_membership( const Entity     & entity_from ,
-                              const PartVector & omit ,
-                                    unsigned     entity_rank_to ,
-                                    unsigned     relation_identifier ,
-                                    PartVector & entity_to_parts )
+void induced_part_membership( const Entity           & entity_from ,
+                              const PartVector       & omit ,
+                                    unsigned           entity_rank_to ,
+                                    RelationIdentifier relation_identifier ,
+                                    PartVector       & entity_to_parts )
 {
   const Bucket   & bucket_from    = entity_from.bucket();
   const BulkData & mesh           = BulkData::get(bucket_from);
@@ -264,4 +264,3 @@ void induced_part_membership( const Entity     & entity ,
 
 } // namespace mesh
 } // namespace stk
-

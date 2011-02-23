@@ -170,7 +170,7 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
     for ( std::vector<stk::mesh::EntitySideComponent>::iterator itr = sides.begin();
         itr != sides.end(); ++itr)
     {
-      mesh.destroy_relation(*(itr->entity), *entity);
+      mesh.destroy_relation(*(itr->entity), *entity, itr->side_ordinal);
       mesh.declare_relation(*(itr->entity), *new_entity, itr->side_ordinal);
     }
 

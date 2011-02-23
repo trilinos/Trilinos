@@ -207,7 +207,7 @@ public:
    *  will be resolved by the call to 'modification_end'.
    */
   Entity & declare_entity( EntityRank ent_rank ,
-      EntityId ent_id , const std::vector<Part*> & parts);
+      EntityId ent_id , const PartVector& parts);
 
   /** \brief  Change the parallel-locally-owned entity's
    *          part membership by adding and/or removing parts
@@ -306,8 +306,12 @@ public:
    *  If 'e_to' is shared then the check for removing the induced
    *  relatinship does not occur for that entity until the call to
    *  'modification_end'.
+   *  The local_id arg is used to differentiate the case when there are
+   *  multiple relationships between e_from and e_to.
    */
-  void destroy_relation( Entity & e_from , Entity & e_to );
+  void destroy_relation( Entity & e_from ,
+                         Entity & e_to,
+                         const RelationIdentifier local_id );
 
   //------------------------------------
   //------------------------------------
@@ -436,6 +440,11 @@ private:
   void require_metadata_committed() const;
 
   void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
+
+  void require_valid_relation( const char action[] ,
+                               const BulkData & mesh ,
+                               const Entity   & e_from ,
+                               const Entity   & e_to );
 
   /** \} */
 
