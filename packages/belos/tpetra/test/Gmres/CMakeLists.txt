@@ -9,7 +9,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Tpetra_Gmres_test
     SOURCES belos_gmres_tpetra.cpp
-    ARGS "--verbose"
+    ARGS ""
     COMM serial mpi
     )
 ENDIF()
