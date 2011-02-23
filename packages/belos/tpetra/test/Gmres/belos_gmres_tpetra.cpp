@@ -214,6 +214,7 @@ main (int argc, char *argv[])
   // was provided, fill in the list on Proc 0, and broadcast.
   RCP<ParameterList> params = Teuchos::parameterList();
   const bool readParamsFromFile = (xmlInFile != "");
+  int verbosityLevel = Errors | Warnings;
   if (readParamsFromFile)
     {
       if (debug && myRank == 0)
@@ -224,18 +225,26 @@ main (int argc, char *argv[])
 					       *pComm);
       if (debug && myRank == 0)
 	cerr << "done." << endl;
+      try {
+	verbosityLevel = params->get<int>("Verbosity");
+      } catch (Teuchos::Exceptions::InvalidParameter&) {
+	verbosityLevel = Errors | Warnings;
+      }
     }
-  if (debug)
-    {
-      const int everything = Belos::Errors & Belos::Warnings & 
-	Belos::IterationDetails && Belos::OrthoDetails && 
-	Belos::FinalSummary && Belos::TimingDetails && 
-	Belos::StatusTestDetails && Belos::Debug;
-      const int newVerbosity = readParamsFromFile ? 
-	params->get<int>("Verbosity") & (int) Belos::Debug : everything;
-      params->set ("Verbosity", newVerbosity);
+  if (verbose || debug)
+    { // Change verbosity level from its default.
+      if (verbose)
+	{
+	  verbosityLevel |= Belos::IterationDetails | 
+	    Belos::OrthoDetails |
+	    Belos::FinalSummary |
+	    Belos::TimingDetails |
+	    Belos::StatusTestDetails;
+	}
+      if (debug)
+	verbosityLevel |= Belos::Debug;
+      params->set ("Verbosity", verbosityLevel);
     }
-  
 
   // Read the sparse matrix A from the file.
   const bool tolerant = false;

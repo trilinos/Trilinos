@@ -88,6 +88,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_MatView.hpp
     Tsqr_nodeTestProblem.hpp
     Tsqr_NodeTsqr.hpp
+    Tsqr_NodeTsqrFactory.hpp
     Tsqr_Random_MatrixGenerator.hpp
     Tsqr_Random_NormalGenerator.hpp
     Tsqr_ScalarTraits.hpp
