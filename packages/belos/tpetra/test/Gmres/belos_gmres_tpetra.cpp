@@ -59,17 +59,21 @@ using std::endl;
 typedef double scalar_type;
 typedef int local_ordinal_type;
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+// mfh 22 Feb 2011: Explicit instantiation of templates in the checkin
+// test script makes my life hard sometimes...
+#if 0
+#  ifdef HAVE_TEUCHOS_LONG_LONG_INT
 // Half the point of Tpetra is the capability of using global ordinals
 // that are bigger than local ordinals.  We should test this whenever
 // possible, even in code that is not specifically testing Tpetra.
 typedef long long int global_ordinal_type;
-#else // not HAVE_TEUCHOS_LONG_LONG_INT
+#  else // not HAVE_TEUCHOS_LONG_LONG_INT
 typedef long int global_ordinal_type;
-// mfh 22 Feb 2011: Explicit instantiation of templates in the checkin
-// test script makes my life hard sometimes...
-//typedef long int global_ordinal_type;
+#  endif // HAVE_TEUCHOS_LONG_LONG_INT
+#else // not 0
 typedef int global_ordinal_type;
+#endif // 0
+
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 #ifdef HAVE_KOKKOS_TBB
