@@ -451,20 +451,19 @@ public:
   * StringToIntegralParameterEntryValidator<IntegralType>.
   */
   static RCP<StringToIntegralParameterEntryValidator<IntegralType> >
-    getDummyObject()
-  {
-    static RCP<StringToIntegralParameterEntryValidator<IntegralType> > 
-      dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = stringToIntegralParameterEntryValidator<IntegralType>(
-        tuple<std::string>(""), tuple<std::string>(""), 
-        tuple<IntegralType>((IntegralType)1), "");
-    }
-    return dummyObject;
-  }
+    getDummyObject();
   
   //@}
 };
+
+template<class IntegralType>
+RCP<StringToIntegralParameterEntryValidator<IntegralType> >
+  DummyObjectGetter<StringToIntegralParameterEntryValidator<IntegralType> >::getDummyObject()
+{
+  return stringToIntegralParameterEntryValidator<IntegralType>(
+    tuple<std::string>(""), tuple<std::string>(""), 
+    tuple<IntegralType>((IntegralType)1), "");
+}
 
 
 
@@ -872,18 +871,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * AnyNumberParameterEntryValidator.
   */
-  static RCP<AnyNumberParameterEntryValidator >
-    getDummyObject()
-  {
-    static RCP<AnyNumberParameterEntryValidator > 
-      dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = anyNumberParameterEntryValidator(
-        AnyNumberParameterEntryValidator::PREFER_INT, 
-        AnyNumberParameterEntryValidator::AcceptedTypes());
-    }
-    return dummyObject;
-  }
+  static RCP<AnyNumberParameterEntryValidator > getDummyObject();
   
   //@}
   
@@ -1322,18 +1310,17 @@ public:
   /** \brief Retrieves a dummy object of type
   * EnhancedNumberValidator<T>.
   */
-  static RCP<EnhancedNumberValidator<T> >
-    getDummyObject()
-  {
-  static RCP<EnhancedNumberValidator<T> > dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new EnhancedNumberValidator<T>);
-    }
-    return dummyObject;
-  }
+  static RCP<EnhancedNumberValidator<T> > getDummyObject();
   
   //@}
 };
+
+template<class T>
+RCP<EnhancedNumberValidator<T> >
+  DummyObjectGetter<EnhancedNumberValidator<T> >::getDummyObject()
+{
+  return rcp(new EnhancedNumberValidator<T>);
+}
 
 /** \brief Validate a file name entry.
  *
@@ -1442,15 +1429,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * FileNameValidator.
   */
-  static RCP<FileNameValidator>
-    getDummyObject()
-  {
-    static RCP<FileNameValidator> dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new FileNameValidator(false));
-    }
-    return dummyObject;
-  }
+  static RCP<FileNameValidator> getDummyObject();
   
   //@}
   
@@ -1541,16 +1520,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * StringValidator.
   */
-  static RCP<StringValidator>
-    getDummyObject()
-  {
-    static RCP<StringValidator> dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new StringValidator(
-        tuple<std::string>("")));
-    }
-    return dummyObject;
-  }
+  static RCP<StringValidator> getDummyObject();
   
   //@}
   
@@ -1695,21 +1665,19 @@ public:
   /** \brief Retrieves a dummy object of type
   * ArrayValidator<ValidatorType, EntryType>.
   */
-  static RCP<ArrayValidator<ValidatorType, EntryType> >
-    getDummyObject()
-  {
-    static RCP<ArrayValidator<ValidatorType, EntryType> > dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new ArrayValidator<ValidatorType, EntryType>(
-        DummyObjectGetter<ValidatorType>::getDummyObject()));
-    }
-    return dummyObject;
-  }
+  static RCP<ArrayValidator<ValidatorType, EntryType> > getDummyObject();
   
   //@}
   
 };
 
+template<class ValidatorType, class EntryType>
+RCP<ArrayValidator<ValidatorType, EntryType> >
+  DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >::getDummyObject()
+{
+  return rcp(new ArrayValidator<ValidatorType, EntryType>(
+    DummyObjectGetter<ValidatorType>::getDummyObject()));
+}
 
 
 /** \brief Convience class for StringValidators that are to be applied to

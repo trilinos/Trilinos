@@ -271,15 +271,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * StringCondition.
   */
-  static RCP<StringCondition > getDummyObject() {
-    static RCP<StringCondition> dummyObject;
-    static std::string dummyString = "";
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new StringCondition(
-        rcp(new ParameterEntry(dummyString)),""));
-    }
-    return dummyObject;
-  }
+  static RCP<StringCondition> getDummyObject();
   
   //@}
   
@@ -380,18 +372,20 @@ public:
   /** \brief Retrieves a dummy object of type
   * NumberCondition.
   */
-  static RCP<NumberCondition<T> > getDummyObject(){
-    static RCP<NumberCondition<T> > dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new NumberCondition<T>(
-        rcp(new ParameterEntry(ScalarTraits<T>::zero()))));
-    }
-    return dummyObject;
-  }
+  static RCP<NumberCondition<T> > getDummyObject();
   
   //@}
   
 };
+
+template<class T>
+RCP<NumberCondition<T> >
+  DummyObjectGetter<NumberCondition<T> >::getDummyObject()
+{
+  return rcp(new NumberCondition<T>(
+    rcp(new ParameterEntry(ScalarTraits<T>::zero()))));
+}
+
 
 /**
  * \brief A Bool Condition is a Parameter Condition that evaluates
@@ -459,13 +453,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * BoolCondition.
   */
-  static RCP<BoolCondition > getDummyObject(){
-    static RCP<BoolCondition> dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new BoolCondition(rcp(new ParameterEntry(true))));
-    }
-    return dummyObject;
-  }
+  static RCP<BoolCondition > getDummyObject();
   
   //@}
   
@@ -632,15 +620,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * OrCondition.
   */
-  static RCP<OrCondition > getDummyObject(){
-    static RCP<OrCondition> dummyObject;
-    if(dummyObject.is_null()){
-      Condition::ConstConditionList dummyList;
-      dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
-      dummyObject = rcp(new OrCondition(dummyList));
-    }
-    return dummyObject;
-  }
+  static RCP<OrCondition> getDummyObject();
   
   //@}
   
@@ -709,15 +689,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * AndCondition.
   */
-  static RCP<AndCondition > getDummyObject(){
-    static RCP<AndCondition> dummyObject;
-    if(dummyObject.is_null()){
-      Condition::ConstConditionList dummyList;
-      dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
-      dummyObject = rcp(new AndCondition(dummyList));
-    }
-    return dummyObject;
-  }
+  static RCP<AndCondition > getDummyObject();
   
   //@}
   
@@ -785,15 +757,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * EqualsCondition.
   */
-  static RCP<EqualsCondition > getDummyObject(){
-    static RCP<EqualsCondition> dummyObject;
-    if(dummyObject.is_null()){
-      Condition::ConstConditionList dummyList;
-      dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
-      dummyObject = rcp(new EqualsCondition(dummyList));
-    }
-    return dummyObject;
-  }
+  static RCP<EqualsCondition > getDummyObject();
   
   //@}
   
@@ -885,14 +849,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * NotCondition.
   */
-  static RCP<NotCondition > getDummyObject(){
-    static RCP<NotCondition> dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new NotCondition(
-        DummyObjectGetter<BoolCondition>::getDummyObject()));
-    }
-    return dummyObject;
-  }
+  static RCP<NotCondition > getDummyObject();
   
   //@}
   
