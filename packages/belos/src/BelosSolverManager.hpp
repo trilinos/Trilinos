@@ -113,7 +113,7 @@ class SolverManager : virtual public Teuchos::Describable {
   //! Set the parameters the solver manager should use to solve the linear problem.
   virtual void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) = 0;
 
-  //! Set user-defined convergence status test.1
+  //! Set user-defined convergence status test.
   virtual void setUserConvStatusTest(
     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
     )

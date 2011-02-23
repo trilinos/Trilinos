@@ -242,6 +242,10 @@ namespace Belos {
       using Teuchos::null;
 
       initAkx (akx, params, flexible);
+      // FIXME (mfh 08 Feb 2011) We should decide the candidate basis
+      // length ourselves; the Akx implementation may only bound this
+      // length from above.
+      //
       // FIXME (mfh 31 Dec 2010) Should we get the candidate basis
       // length from the Akx implementation alone?
       candidateBasisLength_ = akx_->candidateBasisLength();

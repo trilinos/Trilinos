@@ -10,9 +10,9 @@ A ZOLTAN_ID_TYPE is still the type that we use for global IDs passed in by the u
 
 In CMake you can choose: 
 
--D Zoltan_ENABLE_UINT_GLOBAL_IDS
--D Zoltan_ENABLE_ULONG_GLOBAL_IDS
--D Zoltan_ENABLE_ULLONG_GLOBAL_IDS
+-D Zoltan_ENABLE_UINT_IDS:Bool=ON
+-D Zoltan_ENABLE_ULONG_IDS:Bool=ON
+-D Zoltan_ENABLE_ULLONG_IDS:Bool=ON
 
 Using autoconf it's:
 
@@ -76,27 +76,14 @@ Other useful TPL configuration macro definitions can be found in tpls/third_libr
 
 Zoltan can be configured to use both Scotch and ParMetis as long as the 32-bit version of Scotch is used.
 
-Limitations:
-===========
-
-Zoltan_Color does not yet support 64-bit ZOLTAN_ID_TYPE.
-
 Assumptions:
 ===========
 
 sizeof(ZOLTAN_GNO_TYPE) >= sizeof(ZOLTAN_ID_TYPE)
 sizeof(ZOLTAN_ID_TYPE) >= sizeof(int)
 
-It is assumed that both types are signed.  The value -1 is used throughout Zoltan to indicate some special setting for these types.
-
 Some changes to support 64-bit IDs:
 ==================================
-
-There is a new library function:
-
-  int Zoltan_get_global_id_type(char **name)
-
-which returns the number of bytes in a ZOLTAN_ID_TYPE.  If "name" is non-NULL, it also returns the name of the data type in "name".  This function is called by Zoltan tests to ensure that were compiled with the same ZOLTAN_ID_TYPE that the Zoltan library was compiled with.
 
 Zoltan_Map_Create() used to assume it was handling keys that were multiples of ZOLTAN_ID_TYPEs.  Now you supply the number of bytes in the key, not the number of ZOLTAN_ID_TYPEs.
 
@@ -109,6 +96,10 @@ which will set the debug level.  Then after partitioning, zdrive checks the debu
 I modified the configure script to define HOST_LINUX on a linux machine.
 
 I wrote three tests in tests/Large_Data that test PHG, RCB and RIB with arbitrarily large numbers of objects.  They have signal handlers that call Zoltan_write_linux_meminfo() on a Linux machine.  One test can be configured to use 64-bit IDs when it has less than 2*10^9 IDs.
+
+Limitations:
+===========
+The reftree and oct methods have not been converted to support 64-bit global IDs and global numbers.
 
 INTERESTING CHART:
 =================
