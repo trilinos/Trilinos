@@ -66,6 +66,7 @@ typedef int local_ordinal_type;
 typedef long long int global_ordinal_type;
 #else // not HAVE_TEUCHOS_LONG_LONG_INT
 typedef long int global_ordinal_type;
+//typedef int global_ordinal_type;
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 #ifdef HAVE_KOKKOS_TBB
