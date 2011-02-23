@@ -278,9 +278,9 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     const stk::mesh::PartVector empty_remove_parts;
     stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
     const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-    stk::mesh::Selector selector( stk::mesh::MetaData::get(bulk_data).locally_owned_part());
+    stk::mesh::Selector selector2( stk::mesh::MetaData::get(bulk_data).locally_owned_part());
     mesh::EntityVector sides;
-    mesh::get_selected_entities(selector, bulk_data.buckets(side_rank), sides);
+    mesh::get_selected_entities(selector2, bulk_data.buckets(side_rank), sides);
 
     const unsigned nSide = sides.size();
     for(unsigned iSide = 0; iSide < nSide; ++iSide)
@@ -297,8 +297,8 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   // Other specializations are possible.
   Teuchos::ParameterList emptyList;
   stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
-  stk::mesh::Selector selector(meta_data.locally_owned_part());
-  stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition);
+  stk::mesh::Selector selector3(meta_data.locally_owned_part());
+  stk::rebalance::rebalance(bulk_data, selector3, &coord_field, NULL, zoltan_partition);
   {
     const int  print_stats = 1;
     int        nentity     = 0;
@@ -348,8 +348,8 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
 
   {
     stk::rebalance::use_cases::GreedySideset greedy_sideset(comm, surfaces, bulk_data);
-    stk::mesh::Selector selector(meta_data.locally_owned_part());
-    stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, greedy_sideset);
+    stk::mesh::Selector selector4(meta_data.locally_owned_part());
+    stk::rebalance::rebalance(bulk_data, selector4, &coord_field, NULL, greedy_sideset);
   }
 
   do_rebal = imbalance_threshold < stk::rebalance::check_balance(bulk_data, NULL, element_rank);
@@ -384,11 +384,11 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   // And verify that all dependent entities are on the same proc as their parent element
   {
     stk::mesh::EntityVector entities;
-    stk::mesh::Selector selector = meta_data.locally_owned_part();
+    stk::mesh::Selector selector5 = meta_data.locally_owned_part();
 
-    get_selected_entities(selector, bulk_data.buckets(node_rank), entities);
+    get_selected_entities(selector5, bulk_data.buckets(node_rank), entities);
     result &= verify_dependent_ownership(element_rank, entities, top_data);
-    get_selected_entities(selector, bulk_data.buckets(stk::mesh::fem::side_rank(top_data)), entities);
+    get_selected_entities(selector5, bulk_data.buckets(stk::mesh::fem::side_rank(top_data)), entities);
     result &= verify_dependent_ownership(element_rank, entities, top_data);
   }
 
