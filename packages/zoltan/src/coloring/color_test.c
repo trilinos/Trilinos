@@ -35,11 +35,11 @@ extern "C" {
 /*  Parameters structure for Color method.  Used in  */
 /*  Zoltan_Color_Set_Param and Zoltan_Color.         */
 static PARAM_VARS Color_params[] = {
-		  { "COLORING_PROBLEM", NULL, "STRING", 0 },
-		  { "SUPERSTEP_SIZE",   NULL, "INT", 0},
-		  { "COMM_PATTERN",     NULL, "CHAR", 0 },
-		  { "COLORING_ORDER",   NULL, "CHAR", 0 },
-		  { "COLORING_METHOD",  NULL, "CHAR", 0},
+		  { "COLORING_PROBLEM",   NULL, "STRING", 0 },
+		  { "SUPERSTEP_SIZE",     NULL, "INT", 0},
+		  { "COMM_PATTERN",       NULL, "CHAR", 0 },
+		  { "VERTEX_VISIT_ORDER", NULL, "CHAR", 0 },
+		  { "COLORING_METHOD",    NULL, "CHAR", 0},
 		  { NULL, NULL, NULL, 0 } };
 
 /*****************************************************************************/
@@ -87,11 +87,11 @@ int Zoltan_Color_Test(
   memset (&graph, 0, sizeof(ZG));
 
   /* PARAMETER SETTINGS */
-  Zoltan_Bind_Param(Color_params, "COLORING_PROBLEM", (void *) &coloring_problemStr);
-  Zoltan_Bind_Param(Color_params, "SUPERSTEP_SIZE", (void *) &ss);
-  Zoltan_Bind_Param(Color_params, "COMM_PATTERN", (void *) &comm_pattern);
-  Zoltan_Bind_Param(Color_params, "COLORING_ORDER", (void *) &coloring_order);
-  Zoltan_Bind_Param(Color_params, "COLORING_METHOD", (void *) &coloring_method);
+  Zoltan_Bind_Param(Color_params, "COLORING_PROBLEM",   (void *) &coloring_problemStr);
+  Zoltan_Bind_Param(Color_params, "SUPERSTEP_SIZE",     (void *) &ss);
+  Zoltan_Bind_Param(Color_params, "COMM_PATTERN",       (void *) &comm_pattern);
+  Zoltan_Bind_Param(Color_params, "VERTEX_VISIT_ORDER", (void *) &coloring_order);
+  Zoltan_Bind_Param(Color_params, "COLORING_METHOD",    (void *) &coloring_method);
 
   strncpy(coloring_problemStr, "distance-1", MAX_PARAM_STRING_LEN);
 
