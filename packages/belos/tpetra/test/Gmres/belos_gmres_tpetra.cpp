@@ -142,6 +142,45 @@ namespace {
     typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
     return reader_type::readFile (filename, pComm, pNode, tolerant, debug);
   }
+
+  /// Print out the given Belos::MsgType to a comma-delimited list of
+  /// names.
+  std::string 
+  msgTypeToString (const int msgType)
+  {
+    // Wouldn't it be nice if C++ enums had introspection and could
+    // be enumerated?
+    const int validTypes[] = {
+      Belos::Errors, 
+      Belos::Warnings, 
+      Belos::IterationDetails,
+      Belos::OrthoDetails,
+      Belos::FinalSummary,
+      Belos::TimingDetails,
+      Belos::StatusTestDetails,
+      Belos::Debug
+    };
+    const char* typeNames[] = {
+      "Errors", 
+      "Warnings", 
+      "IterationDetails",
+      "OrthoDetails",
+      "FinalSummary",
+      "TimingDetails",
+      "StatusTestDetails",
+      "Debug"
+    };
+    const int numValidTypes = 8;
+    std::ostringstream os;
+    for (int k = 0; k < numValidTypes; ++k)
+      {
+	if (msgType & validTypes[k])
+	  os << typeNames[k];
+	if (k > 0 && k < numValidTypes - 1)
+	  os << ", ";
+      }
+    return os.str();
+  }
 } // (anonymous namespace)
 
 /// \fn main
@@ -218,6 +257,7 @@ main (int argc, char *argv[])
   // was provided, fill in the list on Proc 0, and broadcast.
   RCP<ParameterList> params = Teuchos::parameterList();
   const bool readParamsFromFile = (xmlInFile != "");
+  // Default verbosity: only print warnings and errors.
   int verbosityLevel = Belos::Errors | Belos::Warnings;
   if (readParamsFromFile)
     {
@@ -239,16 +279,19 @@ main (int argc, char *argv[])
     { // Change verbosity level from its default.
       if (verbose)
 	{
-	  verbosityLevel |= Belos::IterationDetails | 
+	  verbosityLevel = verbosityLevel | 
+	    Belos::IterationDetails | 
 	    Belos::OrthoDetails |
 	    Belos::FinalSummary |
 	    Belos::TimingDetails |
 	    Belos::StatusTestDetails;
 	}
       if (debug)
-	verbosityLevel |= Belos::Debug;
+	verbosityLevel = verbosityLevel | Belos::Debug;
       params->set ("Verbosity", verbosityLevel);
     }
+  if (debug)
+    cerr << "Verbosity: " << msgTypeToString(verbosityLevel) << endl;
 
   // Read the sparse matrix A from the file.
   const bool tolerant = false;
