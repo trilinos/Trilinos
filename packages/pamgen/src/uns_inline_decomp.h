@@ -1,6 +1,7 @@
 #ifndef uns_inline_decompH
 #define uns_inline_decompH
 
+#include <cstdlib>
 #include <list>
 #include <vector>
 #include "topology_enum.h"
