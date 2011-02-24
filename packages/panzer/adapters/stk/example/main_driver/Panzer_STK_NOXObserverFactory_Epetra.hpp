@@ -17,6 +17,8 @@ namespace panzer_stk {
 
   public:
     
+    virtual ~NOXObserverFactory_Epetra() {}
+
     virtual Teuchos::RCP<NOX::Abstract::PrePostOperator>
     buildNOXObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 		     const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,

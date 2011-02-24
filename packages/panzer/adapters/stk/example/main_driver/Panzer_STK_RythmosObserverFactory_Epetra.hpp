@@ -16,7 +16,9 @@ namespace panzer_stk {
   class RythmosObserverFactory_Epetra {
 
   public:
-    
+
+    virtual ~RythmosObserverFactory_Epetra() {}
+
     virtual Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 			 const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
