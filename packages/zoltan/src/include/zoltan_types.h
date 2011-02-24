@@ -18,6 +18,14 @@
 #include <unistd.h>
 #include <limits.h>
 
+/* int64_t is needed by 64-bit PT-Scotch header file */
+
+#ifdef _WIN32
+typedef __int64 int64_t;
+#else
+#include <stdint.h>
+#endif
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {

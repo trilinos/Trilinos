@@ -12,11 +12,16 @@
  ****************************************************************************/
 
 
-#include <stdint.h>
 #include "dr_const.h"
 #include "dr_input_const.h"
 #include "dr_err_const.h"
 #include "ch_init_dist_const.h"
+
+#ifdef _WIN32
+typedef __int64 int64_t;
+#else
+#include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -53,7 +58,7 @@ extern "C" {
  * are set in ch_dist_init and are used in all subsequent queries of
  * the chaco distribution.
  */
-static intmax_t Gnvtxs;     /* Global number of vertices (across all procs)  */
+static int64_t Gnvtxs;     /* Global number of vertices (across all procs)  */
 static int Num_Proc;        /* Global number of processors                   */
 static int Num_Proc_Dist;   /* Number of processors to distribute data; 
                                Num_Proc_Dist may be < Num_Proc!              */
@@ -62,7 +67,7 @@ static int Initial_Method;  /* Flag indicating which initial decomposition
 
 /*****************************************************************************/
 /* Data structures specifically for INITIAL_LINEAR */
-static intmax_t *Vtxdist;   /* Array of size Num_Proc+1 indicating range of
+static int64_t *Vtxdist;   /* Array of size Num_Proc+1 indicating range of
                                vertices assigned to a processor.  It is 
                                assumed that vertices are numbered 
                                consecutively.  The values stored in Vtxdist
@@ -231,7 +236,7 @@ void ch_dist_vtx_list(
 int i, proc;
 
   *nvtx = 0;
-  proc = (intmax_t)target_proc;
+  proc = (int64_t)target_proc;
 
   switch(Initial_Method) {
   case INITIAL_FILE:
@@ -271,7 +276,7 @@ int ch_dist_proc(int v, short *assignments, int base)
  *       for HG input files, base may be 0 or 1.
  */
 int p;
-intmax_t b = (intmax_t)base;
+int64_t b = (int64_t)base;
 
   switch(Initial_Method) {
   case INITIAL_FILE:
@@ -314,7 +319,7 @@ int rest, i, n;
 
   /* Set up Vtxdist data */
   if (Vtxdist == NULL){
-    Vtxdist = (intmax_t *) malloc((Num_Proc+1) * sizeof(intmax_t));
+    Vtxdist = (int64_t *) malloc((Num_Proc+1) * sizeof(int64_t));
     if (Vtxdist == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
       return;

@@ -74,8 +74,6 @@ int Zoltan_Color_Test(
   ZOLTAN_GNO_TYPE gvtx;                         /* number of global vertices */
   ZOLTAN_GNO_TYPE *vtxdist=NULL, *adjncy=NULL;
   ZG graph;
-  ZOLTAN_ID_PTR requested_GIDs = NULL;     /* Calling code requests the 
-                                              GNOs for these GIDs */
   ZOLTAN_GNO_TYPE *requested_GNOs = NULL;  /* Return GNOs of 
                                               the requested GIDs.  */
   int *loc_partialD2 = NULL;    /* local binary array showing which vertices to be colored */
@@ -192,16 +190,16 @@ int Zoltan_Color_Test(
   if (ierr != ZOLTAN_OK)
       ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
   /* Put req obs with 1 but first inialize the rest with 0 */
-  ierr = Zoltan_DD_Update (dd_color, local_GNOs, NULL,
+  ierr = Zoltan_DD_Update (dd_color, (ZOLTAN_ID_PTR)local_GNOs, NULL,
                            NULL, color, nvtx);
   if (ierr != ZOLTAN_OK)
       ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
-  ierr = Zoltan_DD_Update (dd_color, requested_GNOs, NULL,
+  ierr = Zoltan_DD_Update (dd_color, (ZOLTAN_ID_PTR)requested_GNOs, NULL,
                            NULL, color_exp, num_obj);
   if (ierr != ZOLTAN_OK)
       ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
   /* Get requested colors from the DDirectory. */
-  ierr = Zoltan_DD_Find (dd_color, global_GNOs, NULL, NULL,
+  ierr = Zoltan_DD_Find (dd_color, (ZOLTAN_ID_PTR)global_GNOs, NULL, NULL,
                          color, vtxdist[zz->Num_Proc], NULL);
 
   if (ierr != ZOLTAN_OK)
