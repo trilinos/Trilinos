@@ -6,6 +6,8 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
+#include "Panzer_STK_PeriodicBC_Parser.hpp"
+
 namespace panzer_stk {
 
 class STK_Interface;
@@ -34,6 +36,21 @@ public:
    /** Finishes building a mesh object started by <code>buildUncommitedMesh</code>.
      */
    virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const = 0;
+
+   /** Parse the periodic boundary condition parameter list and build a vector of periodic boundary
+     * conditions (a convenience function)
+     */
+   static void parsePeriodicBCList(const Teuchos::RCP<Teuchos::ParameterList> & pl,
+                                   std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & periodicBC)
+   {
+      panzer_stk::PeriodicBC_Parser parser;
+      parser.setParameterList(pl);
+      periodicBC = parser.getMatchers();
+   }
+
+protected:
+   // vector of periodic boundary condition objects
+   std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCVec_; 
 };
 
 }

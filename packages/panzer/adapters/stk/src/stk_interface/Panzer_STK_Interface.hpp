@@ -365,6 +365,14 @@ public:
    void addPeriodicBC(const Teuchos::RCP<const PeriodicBC_MatcherBase> & bc)
    { periodicBCs_.push_back(bc); }
 
+   /** Add a set of periodic boundary conditions.
+     *
+     * \note This does not actually change the underlying mesh.
+     *       The object itself only communciates the matched IDs (currently nodes)
+     */
+   void addPeriodicBCs(const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & bc_vec)
+   { periodicBCs_.insert(periodicBCs_.end(),bc_vec.begin(),bc_vec.end()); }
+
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 
    getPeriodicNodePairing() const;
 

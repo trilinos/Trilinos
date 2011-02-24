@@ -109,6 +109,37 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
    }
 }
 
+TEUCHOS_UNIT_TEST(tExodusReaderFactory, periodic_bc)
+{
+   // correct setting of parameter list
+   {
+      STK_ExodusReaderFactory factory;
+   
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
+      pl->set("File Name","meshes/basic.gen");
+      TEST_NOTHROW(factory.setParameterList(pl));
+
+      Teuchos::RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+      TEST_ASSERT(mesh!=Teuchos::null);
+      TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
+   }
+
+   {
+      STK_ExodusReaderFactory factory;
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
+      pl->set("File Name","meshes/basic.gen");
+      Teuchos::ParameterList & pbcs = pl->sublist("Periodic BCs");
+      pbcs.set<int>("Count",1);
+      pbcs.set("Periodic Condition 1","x-coord left;right");
+   
+      TEST_NOTHROW(factory.setParameterList(pl));
+
+      Teuchos::RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+      TEST_ASSERT(mesh!=Teuchos::null);
+      TEST_EQUALITY(mesh->getPeriodicBCVector().size(),1);
+   }
+}
+
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, parameter_list_construction)
 {
    // correct setting of parameter list

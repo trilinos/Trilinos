@@ -1,0 +1,180 @@
+#include "Panzer_STK_PeriodicBC_Parser.hpp"
+
+#include "Teuchos_ParameterListExceptions.hpp"
+
+namespace panzer_stk {
+
+PeriodicBC_Parser::PeriodicBC_Parser()
+   : countStr_("Count")
+   , condPrefix_("Periodic Condition ")
+{
+}
+
+const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > &
+PeriodicBC_Parser::getMatchers() const
+{
+   return matchers_;
+}
+
+void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
+{
+   if(not pl->isParameter(countStr_)) {
+      bool validEntry = false;
+      TEST_FOR_EXCEPTION_PURE_MSG(
+        !validEntry, Teuchos::Exceptions::InvalidParameterName,
+        "Error, the parameter {name=\"" << countStr_ << "\","
+        "type=\"int\""
+        "\nis required in parameter (sub)list \""<< pl->name() <<"\"."
+        "\n\nThe valid parameters and types are:\n"
+        << getValidParameters()->currentParametersString() << "\n\n"
+        << "Passed parameter list: \n" << pl->currentParametersString()
+      );
+   }
+
+   int numBCs = pl->get<int>(countStr_);
+   pl->validateParameters(*getValidParameters(numBCs));
+
+   // loop over boundary conditions
+   for(int i=1;i<=numBCs;i++) {
+      std::stringstream ss;
+
+      ss << condPrefix_ << i;
+      std::string cond = pl->get<std::string>(ss.str());
+      matchers_.push_back(buildMatcher(cond));
+   }
+
+   storedPL_ = pl;
+}
+
+Teuchos::RCP<Teuchos::ParameterList>  PeriodicBC_Parser::getNonconstParameterList()
+{
+   return storedPL_;
+}
+
+Teuchos::RCP<Teuchos::ParameterList>  PeriodicBC_Parser::unsetParameterList()
+{
+   Teuchos::RCP<Teuchos::ParameterList> pl = storedPL_;
+   storedPL_ = Teuchos::null;
+   return pl;
+}
+
+Teuchos::RCP<const Teuchos::ParameterList> PeriodicBC_Parser::getValidParameters() const
+{
+   static Teuchos::RCP<Teuchos::ParameterList> pl;
+
+   // build a sample parameter list with a single preconditioner
+   if(pl==Teuchos::null) {
+      std::stringstream ss;
+      ss << condPrefix_ << 1 << std::endl;
+
+      pl = Teuchos::rcp(new Teuchos::ParameterList);
+      pl->set<int>(countStr_,1,
+                   "Number of set periodic boundary conditions");
+      pl->set<std::string>(ss.str(),"MatchCondition bndry1;bndry2",
+                   "Boundary condition fairs formatted: <MatchCondition> <bndry1>;<bndry2>");
+   }
+
+   return pl.getConst();
+}
+
+Teuchos::RCP<Teuchos::ParameterList> PeriodicBC_Parser::getValidParameters(int count) const
+{
+   TEST_FOR_EXCEPTION(count<0,std::logic_error,
+                      "PeriodicBC requires a positive number (or none) of periodic boundary conditions.");
+
+   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
+   pl->set(countStr_,count);
+
+   for(int k=1;k<=count;k++) {
+      std::stringstream ss;
+      ss << condPrefix_ << k;
+
+      pl->set<std::string>(ss.str(),"MatchCondition bndry1;bndry2");
+   }
+
+   return pl;
+}
+
+// basic string utilities to help wit parsing (only local)
+/////////////////////////////////////////////////////////////
+
+static std::string trim_left(const std::string & s)
+{
+   std::string::size_type beg = s.find_first_not_of(' ');
+
+   return s.substr(beg,s.length()-beg);
+}
+
+static std::string trim_right(const std::string & s)
+{
+   std::string::size_type end = s.find_last_not_of(' ');
+
+   return s.substr(0,end+1);
+}
+
+static std::string trim(const std::string & s)
+{
+   return trim_right(trim_left(s));
+}
+
+/////////////////////////////////////////////////////////////
+
+void PeriodicBC_Parser::buildMatcher_Tokenize(const std::string & buildStr,
+                                             std::string & matcher,
+                                             std::string & bndry1,
+                                             std::string & bndry2) const
+{
+   std::string::size_type endMatch = buildStr.find_first_of(' ');
+   std::string::size_type begBndry = buildStr.find_first_of(';');
+
+   matcher = trim(buildStr.substr(0,endMatch));
+   bndry1 = trim(buildStr.substr(endMatch,begBndry-endMatch));
+   bndry2 = trim(buildStr.substr(begBndry+1,buildStr.length()));
+}
+
+Teuchos::RCP<const PeriodicBC_MatcherBase> 
+PeriodicBC_Parser::buildMatcher(const std::string & buildStr) const
+{
+   std::string matcher, bndry1, bndry2;
+
+   buildMatcher_Tokenize(buildStr,matcher,bndry1,bndry2);
+   
+   if(matcher=="x-coord") {
+     panzer_stk::CoordMatcher matcher(0);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(matcher=="y-coord") {
+     panzer_stk::CoordMatcher matcher(1);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(matcher=="z-coord") {
+     panzer_stk::CoordMatcher matcher(2);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(matcher=="xy-coord" || matcher=="yx-coord") {
+     panzer_stk::PlaneMatcher matcher(0,1);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(matcher=="xz-coord" || matcher=="zx-coord") {
+     panzer_stk::PlaneMatcher matcher(0,2);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(matcher=="yz-coord" || matcher=="zy-coord") {
+     panzer_stk::PlaneMatcher matcher(1,2);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   TEST_FOR_EXCEPTION(true,std::logic_error,
+       "Failed parsing parameter list: could not find periodic boundary "
+       "condition matcher \"" << matcher << "\" "
+       "in string \"" << buildStr << "\"");
+
+   return Teuchos::null;
+}
+
+}

@@ -68,6 +68,9 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    // build element blocks
    registerElementBlocks(*mesh,*meshData);
    registerSidesets(*mesh,*meshData);
+
+   mesh->addPeriodicBCs(periodicBCVec_);
+
    return mesh; 
 }
 
@@ -102,11 +105,22 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 //! From ParameterListAcceptor
 void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList)
 {
-   paramList->validateParameters(*getValidParameters()); 
+   TEST_FOR_EXCEPTION_PURE_MSG(!paramList->isParameter("File Name"),
+        Teuchos::Exceptions::InvalidParameterName,
+        "Error, the parameter {name=\"File Name\","
+        "type=\"string\""
+        "\nis required in parameter (sub)list \""<< paramList->name() <<"\"."
+        "\n\nThe parsed parameter parameter list is: \n" << paramList->currentParametersString()
+   );
+      
+   paramList->validateParametersAndSetDefaults(*getValidParameters(),0); 
 
    setMyParamList(paramList);
 
    fileName_ = paramList->get<std::string>("File Name");
+
+   // read in periodic boundary conditions
+   parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
 }
 
 //! From ParameterListAcceptor
@@ -118,6 +132,9 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
       validParams = Teuchos::rcp(new Teuchos::ParameterList);
       validParams->set<std::string>("File Name","<file name not set>","Name of exodus file to be read", 
                                     Teuchos::rcp(new Teuchos::FileNameValidator));
+
+      Teuchos::ParameterList & bcs = validParams->sublist("Periodic BCs");
+      bcs.set<int>("Count",0); // no default periodic boundary conditions
    }
 
    return validParams.getConst();

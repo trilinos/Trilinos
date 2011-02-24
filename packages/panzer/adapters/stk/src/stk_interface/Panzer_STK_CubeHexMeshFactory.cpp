@@ -40,7 +40,9 @@ Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildUncommitedMesh(stk::Paralle
    // build meta information: blocks and side set setups
    buildMetaData(parallelMach,*mesh);
  
-  return mesh;
+   mesh->addPeriodicBCs(periodicBCVec_);
+
+   return mesh;
 }
 
 void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
@@ -61,7 +63,7 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
 //! From ParameterListAcceptor
 void CubeHexMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList)
 {
-   paramList->validateParametersAndSetDefaults(*getValidParameters());
+   paramList->validateParametersAndSetDefaults(*getValidParameters(),0);
 
    setMyParamList(paramList);
 
@@ -80,6 +82,9 @@ void CubeHexMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterL
    nXElems_ = paramList->get<int>("X Elements");
    nYElems_ = paramList->get<int>("Y Elements");
    nZElems_ = paramList->get<int>("Z Elements");
+
+   // read in periodic boundary conditions
+   parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
 }
 
 //! From ParameterListAcceptor
@@ -106,6 +111,9 @@ Teuchos::RCP<const Teuchos::ParameterList> CubeHexMeshFactory::getValidParameter
       defaultParams->set<int>("X Elements",5);
       defaultParams->set<int>("Y Elements",5);
       defaultParams->set<int>("Z Elements",5);
+
+      Teuchos::ParameterList & bcs = defaultParams->sublist("Periodic BCs");
+      bcs.set<int>("Count",0); // no default periodic boundary conditions
    }
 
    return defaultParams;

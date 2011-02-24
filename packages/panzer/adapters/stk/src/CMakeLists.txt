@@ -41,6 +41,7 @@ APPEND_SET(HEADERS
   stk_interface/Panzer_STK_CubeHexMeshFactory.hpp
   stk_interface/Panzer_STK_PeriodicBC_Matcher.hpp
   stk_interface/Panzer_STK_PeriodicBC_MatcherT.hpp
+  stk_interface/Panzer_STK_PeriodicBC_Parser.hpp
   evaluators/Panzer_STK_GatherFields.hpp
   evaluators/Panzer_STK_GatherFieldsT.hpp
   Panzer_STK_Utilities.hpp
@@ -55,6 +56,7 @@ APPEND_SET(SOURCES
   stk_interface/Panzer_STK_ExodusReaderFactory.cpp
   stk_interface/Panzer_STK_CubeHexMeshFactory.cpp
   stk_interface/Panzer_STK_PeriodicBC_Matcher.cpp
+  stk_interface/Panzer_STK_PeriodicBC_Parser.cpp
   Panzer_STK_Utilities.cpp
   )
 

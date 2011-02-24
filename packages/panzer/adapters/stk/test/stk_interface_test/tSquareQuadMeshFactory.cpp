@@ -52,6 +52,32 @@ static const double * getNode(const Teuchos::RCP<const STK_Interface> & mesh, co
    return mesh->getNodeCoordinates(nodeIds[id]); 
 }
 
+TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, periodic_input)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcpFromRef;
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Blocks",2);
+   pl->set("Y Blocks",1);
+   pl->set("X Elements",2);
+   pl->set("Y Elements",3);
+   Teuchos::ParameterList & pbcs = pl->sublist("Periodic BCs");
+   pbcs.set<int>("Count",1);
+   pbcs.set("Periodic Condition 1","x-coord left;right");
+
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
+
+   SquareQuadMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+
+   TEST_EQUALITY(mesh->getPeriodicBCVector().size(),1);
+}
+
 TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
 {
    using Teuchos::RCP;
@@ -71,6 +97,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
    SquareQuadMeshFactory factory; 
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+
+   TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
 
    std::string strBlock0="eblock-0_0", strBlock1="eblock-1_0";
    std::vector<stk::mesh::Entity*> block0, block1;

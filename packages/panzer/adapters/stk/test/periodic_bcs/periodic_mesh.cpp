@@ -3,9 +3,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Tuple.hpp"
@@ -17,6 +14,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_PeriodicBC_Matcher.hpp"
+#include "Panzer_STK_PeriodicBC_Parser.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
@@ -33,7 +31,12 @@ using Teuchos::rcp;
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
 
+#include <string>
+
 typedef Intrepid::FieldContainer<double> FieldContainer;
+
+using Teuchos::RCP;
+using Teuchos::rcp;
 
 namespace panzer {
 
@@ -44,6 +47,53 @@ namespace panzer {
      RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new IntrepidType);
      RCP<const panzer::FieldPattern> pattern = rcp(new panzer::IntrepidFieldPattern(basis));
      return pattern;
+  }
+
+  TEUCHOS_UNIT_TEST(periodic_parser, test_obj)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+    using namespace panzer_stk;
+
+    panzer_stk::PeriodicBC_Parser parser;
+
+    // test basic bc construction functionality
+    {
+       std::string matcher, bndry1, bndry2;
+   
+       parser.buildMatcher_Tokenize("x-coord left;right",matcher,bndry1,bndry2);
+       TEST_EQUALITY(matcher,"x-coord"); TEST_EQUALITY(bndry1,"left"); TEST_EQUALITY(bndry2,"right");
+   
+       parser.buildMatcher_Tokenize("y-coord beg ; what ",matcher,bndry1,bndry2);
+       TEST_EQUALITY(matcher,"y-coord"); TEST_EQUALITY(bndry1,"beg"); TEST_EQUALITY(bndry2,"what");
+    
+       RCP<const panzer_stk::PeriodicBC_MatcherBase> matcher_obj;
+    
+       matcher_obj = parser.buildMatcher("x-coord left;right");
+       TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(matcher_obj));
+   
+       matcher_obj = parser.buildMatcher("xy-coord left;right");
+       TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<PlaneMatcher> >(matcher_obj));
+   
+       TEST_THROW(parser.buildMatcher("dog-coord left;right"),std::logic_error);
+    }
+
+    // test parameter list based construction
+    {
+       RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList("top_list"));
+       
+       pl->set("Count",3);
+       pl->set("Periodic Condition 1","y-coord left;right");
+       pl->set("Periodic Condition 2","x-coord top;bottom");
+       pl->set("Periodic Condition 3","yz-coord fake_a;fake_b");
+      
+       parser.setParameterList(pl);
+
+       TEST_EQUALITY(parser.getMatchers().size(),3);
+       TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(parser.getMatchers()[0]));
+       TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(parser.getMatchers()[1]));
+       TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<PlaneMatcher> >(parser.getMatchers()[2]));
+    }
   }
 
   TEUCHOS_UNIT_TEST(periodic_mesh, add_get_vector)

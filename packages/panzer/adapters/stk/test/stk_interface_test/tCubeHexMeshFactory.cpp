@@ -28,6 +28,8 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, defaults)
    CubeHexMeshFactory factory; 
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
+
+   TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
  
    if(mesh->isWritable());
       mesh->writeToExodus("Cube.exo");
@@ -42,6 +44,31 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, defaults)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),3*25*6);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),3*30*6);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),6*6*6);
+}
+
+TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, periodic_input)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcpFromRef;
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Blocks",1);
+   pl->set("Y Blocks",1);
+   pl->set("Z Blocks",1);
+   pl->set("X Elements",2);
+   pl->set("Y Elements",4);
+   pl->set("Z Elements",5);
+   Teuchos::ParameterList & pbcs = pl->sublist("Periodic BCs");
+   pbcs.set<int>("Count",1);
+   pbcs.set("Periodic Condition 1","yz-coord left;right");
+   
+   CubeHexMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+   TEST_ASSERT(mesh!=Teuchos::null);
+
+   TEST_EQUALITY(mesh->getPeriodicBCVector().size(),1);
 }
 
 TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, element_counts)
