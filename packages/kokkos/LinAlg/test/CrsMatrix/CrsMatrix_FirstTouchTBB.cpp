@@ -64,7 +64,7 @@ namespace {
   RCP<TBBNode> getNode<TBBNode>() {
     if (tbbnode == null) {
       Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
+      pl.set<int>("Num Threads",Test::numThreads);
       tbbnode = rcp(new TBBNode(pl));
     }
     return tbbnode;
@@ -81,8 +81,8 @@ namespace {
   typedef FirstTouchHostCrsMatrix<double,int,Node,DSM>        FirstTouchMat;
   typedef FirstTouchHostCrsGraph<int,Node,DSM>                FirstTouchGraph;
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsTiming, PowerTriDiag, StandardGraph,   StandardMat   );
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsTiming, PowerTriDiag, FirstTouchGraph, FirstTouchMat );
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsTiming, PowerTriDiag, StandardGraph,   StandardMat   )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsTiming, PowerTriDiag, FirstTouchGraph, FirstTouchMat )
 
 }
 
