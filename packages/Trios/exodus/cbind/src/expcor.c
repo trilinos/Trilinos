@@ -53,13 +53,60 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
-/*!
- * writes the coordinates of all the nodes in the model
- * Only writes the 'non-null' arrays.
- * \param   exoid                   exodus file id
- * \param   x_coor                 X coord array
- * \param   y_coor                 y coord array
- * \param   z_coor                 z coord array
+/*!  
+The function ex_put_coord() writes the nodal coordinates of the nodes
+in the model. The function ex_put_init() must be invoked before this
+call is made.
+
+Because the coordinates are floating point values, the application
+code must declare the arrays passed to be the appropriate type
+(\e float or \e double) to match the compute word size passed in
+ex_create() or ex_open().
+
+\return In case of an error, ex_put_coord() returns a negative 
+number; a warning will return a positive number. 
+Possible causes of errors include:
+  -  data file not properly opened with call to ex_create() or ex_open()
+  -  data file opened for read only.
+  -  data file not initialized properly with call to ex_put_init().
+
+\param[in] exoid   exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[in] x_coor  The X-coordinates of the nodes. If this is \c NULL, the
+	           X-coordinates will not be written.
+\param[in] y_coor  The Y-coordinates of the nodes. These are stored only if \c num_dim
+                   > 1; otherwise, pass in \c NULL. If this is \c NULL, the
+		   Y-coordinates will not be written.
+\param[in] z_coor  The Z-coordinates of the nodes. These are stored only if \c num_dim
+		   > 2; otherwise, pass in \c NULL. If this is \c NULL, the
+		   Z-coordinates will not be written.
+
+The following will write the nodal coordinates to an open 
+exodus file :
+
+\code
+int error, exoid;
+
+// \comment{if file opened with compute word size of sizeof(float)}
+float x[8], y[8], z[8];
+
+// \comment{write nodal coordinates values to database}
+x[0] = 0.0; y[0] = 0.0; z[0] = 0.0;
+x[1] = 0.0; y[1] = 0.0; z[1] = 1.0;
+x[2] = 1.0; y[2] = 0.0; z[2] = 1.0;
+x[3] = 1.0; y[3] = 0.0; z[3] = 0.0;
+x[4] = 0.0; y[4] = 1.0; z[4] = 0.0;
+x[5] = 0.0; y[5] = 1.0; z[5] = 1.0;
+x[6] = 1.0; y[6] = 1.0; z[6] = 1.0;
+x[7] = 1.0; y[7] = 1.0; z[7] = 0.0;
+
+error = ex_put_coord(exoid, x, y, z);
+
+// \comment{Do the same as the previous call in three separate calls}
+error = ex_put_coord(exoid, x,    NULL, NULL);
+error = ex_put_coord(exoid, NULL, y,    NULL);
+error = ex_put_coord(exoid, NULL, NULL, z);
+\endcode
+
  */
 
 int ex_put_coord (int   exoid,

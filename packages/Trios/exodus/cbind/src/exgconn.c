@@ -32,9 +32,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
+/*!
 *
-* exgconn - exodusII read edge/face/element block connectivity
+* \undoc exgconn - exodusII read edge/face/element block connectivity
 *
 * entry conditions - 
 *   expelb must be called first to establish element block parameters.
@@ -48,16 +48,11 @@
 *       int*    edgeconn        edge connectivity array (where applicable)
 *       int*    faceconn        face connectivity array (where applicable)
 *
-* revision history - 
 *
 */
 #include <stdlib.h>
 #include "exodusII.h"
 #include "exodusII_int.h"
-
-/*
- * reads the connectivity array for an element block
- */
 
 int ex_get_conn( int   exoid,
                  ex_entity_type blk_type,

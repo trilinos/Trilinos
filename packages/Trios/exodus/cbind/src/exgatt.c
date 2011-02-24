@@ -53,8 +53,8 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
-/*
- * reads the attributes for an edge, face, or element block
+/*!
+ * \undoc reads the attributes for an edge, face, or element block
  */
 
 int ex_get_attr( int   exoid,

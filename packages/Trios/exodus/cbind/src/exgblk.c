@@ -32,9 +32,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
+/*! 
 *
-* exgblk - read block parameters
+* \undoc exgblk - read block parameters
 *
 * entry conditions -
 *   input parameters:

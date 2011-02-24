@@ -32,21 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* excopy - ex_copy
-*
-* entry conditions - 
-*   input parameters:
-*       int     in_exoid                input exodus file id
-*
-* exit conditions - 
-*       int     out_exoid               output exodus file id
-*
-* revision history - 
-*
-*
-*****************************************************************************/
 
 #include <assert.h>
 #include <stdlib.h>
@@ -54,6 +39,7 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
+/*! \cond INTERNAL */
 struct ncdim {                  /* dimension */
     char name[MAX_STR_LENGTH];
     size_t size;
@@ -84,8 +70,11 @@ static int cpy_coord_def(int in_id,int out_id,int rec_dim_id,
 static int cpy_coord_val(int in_id,int out_id,char *var_nm,
 			 int in_large, int out_large);
 static void update_internal_structs( int, ex_inquiry, struct list_item** );
+/*! \endcond */
 
 /*!
+  \undoc
+
  *  efficiently copies all non-transient information (attributes,
  * dimensions, and variables from an opened EXODUS file to another
  * opened EXODUS file.  Will not overwrite a dimension or variable
@@ -336,6 +325,7 @@ int ex_copy (int in_exoid, int out_exoid)
    return(EX_NOERR);
 }
 
+/*! \cond INTERNAL */
 int cpy_att(int in_id,int out_id,int var_in_id,int var_out_id)
 /*
    int in_id: input netCDF input-file ID
@@ -369,6 +359,7 @@ int cpy_att(int in_id,int out_id,int var_in_id,int var_out_id)
   return(EX_NOERR);
 } 
 
+/*! \internal */
 int cpy_coord_def(int in_id,int out_id,int rec_dim_id,char *var_nm,
 		  int in_large, int out_large)
 /*
@@ -450,6 +441,7 @@ int cpy_coord_def(int in_id,int out_id,int rec_dim_id,char *var_nm,
   return var_out_id;
 }
 
+/*! \internal */
 int cpy_var_def(int in_id,int out_id,int rec_dim_id,char *var_nm)
 /*
    int in_id: input netCDF input-file ID
@@ -534,6 +526,7 @@ int cpy_var_def(int in_id,int out_id,int rec_dim_id,char *var_nm)
   return var_out_id;
 } /* end cpy_var_def() */
 
+/*! \internal */
 int
 cpy_var_val(int in_id,int out_id,char *var_nm)
 /*
@@ -671,6 +664,7 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
 
 } /* end cpy_var_val() */
 
+/*! \internal */
 int
 cpy_coord_val(int in_id,int out_id,char *var_nm,
               int in_large, int out_large)
@@ -768,6 +762,7 @@ cpy_coord_val(int in_id,int out_id,char *var_nm,
 } /* end cpy_coord_val() */
 
 
+/*! \internal */
 void update_internal_structs( int out_exoid, ex_inquiry inqcode, struct list_item** ctr_list )
 {
   int i;
@@ -796,3 +791,5 @@ size_t type_size(nc_type type)
   else
     return 0;
 }
+
+/* \endcond */
