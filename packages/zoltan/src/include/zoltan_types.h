@@ -26,6 +26,10 @@ typedef __int64 int64_t;
 #include <stdint.h>
 #endif
 
+#ifndef ssize_t
+typedef long ssize_t;
+#endif
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
