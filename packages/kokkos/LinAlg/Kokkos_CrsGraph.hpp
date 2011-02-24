@@ -728,15 +728,19 @@ namespace Kokkos {
 #endif
   template <class T>
   struct FirstTouchCopyIndicesKernel {
-    ArrayRCP<const size_t> numEntriesPerRow;
-    ArrayRCP<const size_t> offsets1D;
-    ArrayRCP<T>            data1D;
-    ArrayRCP<ArrayRCP<T> > data2D;
+    const size_t * numEntriesPerRow;
+    // ArrayRCP<const size_t> numEntriesPerRow;
+    const size_t * offsets1D;
+    // ArrayRCP<const size_t> offsets1D;
+    T * data1D;
+    // ArrayRCP<T>            data1D;
+    const ArrayRCP<T> * data2D;
     inline KERNEL_PREFIX void execute(size_t row) {
       const size_t rowNumInds = numEntriesPerRow[row];
-      typename ArrayRCP<T>::iterator oldinds, newinds;
-      newinds = data1D.begin() + offsets1D[row];
-      oldinds = data2D[row].begin();
+      const T * oldinds;
+      T * newinds;
+      newinds = data1D + offsets1D[row];
+      oldinds = data2D[row].getRawPtr();
       std::copy(oldinds, oldinds+rowNumInds, newinds);
     }
   };
@@ -784,10 +788,10 @@ namespace Kokkos {
                 Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
           }
           FirstTouchCopyIndicesKernel<Ordinal> kern;
-          kern.offsets1D = offsets;
-          kern.numEntriesPerRow = this->numEntriesPerRow_;
-          kern.data1D = this->indices1D_;
-          kern.data2D = this->indices2D_;
+          kern.offsets1D = offsets.getRawPtr();
+          kern.numEntriesPerRow = this->numEntriesPerRow_.getRawPtr();
+          kern.data1D = this->indices1D_.getRawPtr();
+          kern.data2D = this->indices2D_.getRawPtr();
           this->getNode()->template parallel_for<FirstTouchCopyIndicesKernel<Ordinal> >(0,this->numRows_,kern);
         }
         else {
@@ -858,18 +862,18 @@ namespace Kokkos {
           }
           {
             FirstTouchCopyIndicesKernel<Ordinal> indskern;
-            indskern.offsets1D = offsets;
-            indskern.numEntriesPerRow = this->numEntriesPerRow_;
-            indskern.data1D = this->indices1D_;
-            indskern.data2D = this->indices2D_;
+            indskern.offsets1D = offsets.getRawPtr();
+            indskern.numEntriesPerRow = this->numEntriesPerRow_.getRawPtr();
+            indskern.data1D = this->indices1D_.getRawPtr();
+            indskern.data2D = this->indices2D_.getRawPtr();
             this->getNode()->template parallel_for<FirstTouchCopyIndicesKernel<Ordinal> >(0,this->numRows_,indskern);
           }
           {
             FirstTouchCopyIndicesKernel<Scalar> valskern;
-            valskern.offsets1D = offsets;
-            valskern.numEntriesPerRow = this->numEntriesPerRow_;
-            valskern.data1D = values1D;
-            valskern.data2D = values2D;
+            valskern.offsets1D = offsets.getRawPtr();
+            valskern.numEntriesPerRow = this->numEntriesPerRow_.getRawPtr();
+            valskern.data1D = values1D.getRawPtr();
+            valskern.data2D = values2D.getRawPtr();
             this->getNode()->template parallel_for<FirstTouchCopyIndicesKernel<Scalar> >(0,this->numRows_,valskern);
           }
         }
