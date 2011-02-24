@@ -77,7 +77,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Residual Name", (*residual_names)[0]);
     p.set("DOF Name", (*names_map)[(*residual_names)[0]]);
     p.set("Data Layout", basis->functional);
-    p.set("Value", this->m_bc.params()->get<double>("Value"));
+    p.set("Value", this->m_bc.params()->template get<double>("Value"));
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::DirichletConstant<EvalT,panzer::Traits>(p));
