@@ -252,12 +252,12 @@ namespace panzer_stk {
 	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory_Epetra> >("NOX Observer Factory");
       Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(mesh,dofManager,ep_lof);
       piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
-      piro = rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
+      piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
     }
     else if (solver=="Rythmos") {
       Teuchos::RCP<const panzer_stk::RythmosObserverFactory_Epetra> observer_factory = 
 	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::RythmosObserverFactory_Epetra> >("Rythmos Observer Factory");
-      piro = rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer_factory->buildRythmosObserver(mesh,dofManager,ep_lof)));
+      piro = Teuchos::rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer_factory->buildRythmosObserver(mesh,dofManager,ep_lof)));
     } 
     else {
       TEST_FOR_EXCEPTION(true, std::logic_error,
