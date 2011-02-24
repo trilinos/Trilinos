@@ -32,29 +32,43 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* expcon - ex_put_coord_names
-*
-* entry conditions - 
-*   input parameters:
-*       int     exoid                   exodus file id
-*       char*   coord_names             ptr array of coordinate names
-*
-* exit conditions - 
-*
-* revision history - 
-*
-*
-*****************************************************************************/
 
 #include "exodusII.h"
 #include "exodusII_int.h"
 #include <string.h>
+
 /*!
- * writes the names of the coordinate arrays to the database
- * \param  exoid                   exodus file id
- * \param  coord_names             ptr array of coordinate names
+
+The function ex_put_coord_names() writes the names (\p
+MAX_STR_LENGTH-characters in length) of the coordinate arrays to the
+database. Memory must be allocated for the character strings before
+this function is invoked.
+
+In case of an error, ex_put_coord_names() returns a negative number; a
+warning will return a positive number.  Possible causes of errors
+include:
+  -  data file not properly opened with call to ex_create() or ex_open()
+  -  data file opened for read only.
+  -  data file not initialized properly with call to ex_put_init().
+
+\param[in] exoid          exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[in] coord_names    Array containing \c num_dim names of length \p MAX_STR_LENGTH  
+                          of the nodal coordinate arrays.
+
+The following coding will write the coordinate names to an 
+open exodus file :
+
+\code
+int error, exoid;
+
+char *coord_names[3];
+coord_names[0] = "xcoor";
+coord_names[1] = "ycoor";
+coord_names[2] = "zcoor";
+
+error = ex_put_coord_names (exoid, coord_names);
+\endcode
+
  */
 
 int ex_put_coord_names (int   exoid,

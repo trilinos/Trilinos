@@ -56,17 +56,62 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
-/*!
- * opens an existing EXODUS II file (or EXODUS II history file) and returns 
- * an id that can subsequently be used to refer to the file.  Multiple files 
- * may be open simultaneously. 
- * \param  path                    exodus filename path
- * \param  mode                    access mode w/r
- * \param[out]  comp_ws            computer word size
- * \param[out]  io_ws              storage word size
- * \param[out]  version            EXODUSII interface version number 
- * \param       run_version        EXODUSII version number of linked library
- * \return      exoid              exodus file id
+/*!  
+
+The function ex_open() opens an existing exodus file and returns
+an ID that can subsequently be used to refer to the file, the word
+size of the floating point values stored in the file, and the version
+of the exodus database (returned as a ``float'', regardless of the
+compute or I/O word size). Multiple files may be ``open'' simultaneously.
+
+\return In case of an error, ex_open() returns a negative
+number. Possible causes of errors include:
+  -  The specified file does not exist.
+  -  The mode specified is something other than the predefined constant \fparam{EX_READ} or \fparam{EX_WRITE}.
+  -  Database version is earlier than 2.0.
+
+\param path The file name of the exodus file. This can be given as either an
+            absolute path name (from the root of the file system) or a relative
+            path name (from the current directory).
+
+\param mode Access mode. Use one of the following predefined constants:
+        -  \fparam{EX_READ} To open the file just for reading.
+        -  \fparam{EX_WRITE} To open the file for writing and reading.
+
+\param[in,out] comp_ws The word size in bytes (0, 4 or 8) of the floating point variables
+               used in the application program. If 0 (zero) is passed, the default
+               size of floating point values for the machine will be used and
+               returned in this variable. WARNING: all exodus functions requiring
+               reals must be passed reals declared with this passed in or returned
+               compute word size (4 or 8).
+
+
+\param[in,out] io_ws The word size in bytes (0, 4 or 8) of the floating 
+                    point data as they are stored in the exodus file. If the word 
+                    size does not match the word size of data stored in the file, 
+                    a fatal error is returned. If this argument is 0, the word size 
+                    of the floating point data already stored in the file is returned.
+
+\param[out] version  Returned exodus database version number.
+
+The following opens an exodus file named \file{test.exo} for read
+only, using default settings for compute and I/O word sizes:
+
+\code
+#include "exodusII.h"
+int CPU_word_size,IO_word_size, exoid;
+float version;
+
+CPU_word_size = sizeof(float);   \co{float or double}
+IO_word_size = 0;                \co{use what is stored in file}
+
+\comment{open exodus files}
+exoid = ex_open ("test.exo",     \co{filename path}
+                 EX_READ,        \co{access mode = READ}
+		 &CPU_word_size, \co{CPU word size}
+		 &IO_word_size,  \co{IO word size}
+	         &version);      \co{ExodusII library version}
+\endcode
  */
 
 int ex_open_int (const char  *path,

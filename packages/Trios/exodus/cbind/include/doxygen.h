@@ -130,4 +130,29 @@ A few conventions and limitations must be cited:
  nodes increases, connectivity changes), then the new geometrymust be
  output to a new EXODUS II file.
 
+\defgroup ResultsData Results Data
+@{
+ This section describes data file utility functions for creating /
+ opening a file, initializing a file with global parameters, reading /
+ writing information text, inquiring on parameters stored in the data
+ file, and error reporting.
+@}
+
+\defgroup Utilities Data File Utilities
+  @{
+This section describes data file utility functions for creating /
+opening a file, initializing a file with global parameters, reading /
+writing information text, inquiring on parameters stored in the data
+file, and error reporting.
+  @}
+
+\defgroup ModelDescription Model Description
+  @{
+The routines in this section read and write information which 
+describe an exodus finite element model. This includes nodal 
+coordinates, element order map, element connectivity arrays, 
+element attributes, node sets, side sets, and object properties.
+  @}
+
+
 */

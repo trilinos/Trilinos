@@ -32,40 +32,73 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* expp - ex_put_prop: write object property 
-*
-* entry conditions - 
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     obj_type                type of object (element block, node
-*                                               set or side set)
-*       int     obj_id                  id of object to which property will
-*                                               be assigned
-*       char*   prop_name               name of the property for which the
-*                                               value will be stored
-*       int     value                   value of the property
-*       
-* exit conditions - 
-*
-* revision history - 
-*
-*
-*****************************************************************************/
 
 #include "exodusII.h"
 #include "exodusII_int.h"
 #include <string.h>
 
 /*!
- * writes an object property 
- * \param       exoid                   exodus file id
- * \param       obj_type                type of object
- * \param       obj_id                  id of object to which property will be assigned
- * \param       prop_name               name of the property for which the value will be stored
- * \param       value                   value of the property
- */
+  
+The function ex_put_prop() stores an integer object property value to
+a single element block, node set, or side set. Although it is not
+necessary to invoke ex_put_prop_names(), since ex_put_prop() will
+allocate space within the data file if it hasn't been previously
+allocated, it is more efficient to use ex_put_prop_names() if there is
+more than one property to store. \see Efficiency for a discussion of
+efficiency issues.
+
+It should be noted that the interpretation of the values of the
+integers stored as properties is left to the application code. In
+general, a zero (0) means the object does not have the specified
+property (or is not in the specified group); a nonzero value means the
+object does have the specified property. When space is allocated for
+the properties using ex_put_prop_names() or ex_put_prop(), the
+properties are initialized to zero (0).
+
+Because the ID of an element block, node set, or side set is just
+another property (named \b ID), this routine can be used to change
+the value of an ID. This feature must be used with caution, though,
+because changing the ID of an object to the ID of another object of
+the same type (element block, node set, or side set) would cause two
+objects to have the same ID, and thus only the first would be
+accessible. Therefore, ex_put_prop() issues a warning if a user
+attempts to give two objects the same ID.
+
+\return In case of an error, ex_put_prop() returns a negative number;
+a warning will return a positive number.  Possible causes of errors
+include:
+  -  data file not properly opened with call to ex_create() or ex_open()
+  -  data file opened for read only.
+  -  data file not initialized properly with call to ex_put_init().
+  -  invalid object type specified.
+  -  a warning is issued if a user attempts to change the ID of an
+     object to the ID of an existing object of the same type.
+
+\param[in] exoid      exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[in] obj_type   Type of object; use one of the options in the table below.
+\param[in] obj_id     The element block, node set, or side set ID.
+\param[in]  prop_name The name of the property for which the value will be stored. 
+                      Maximum length of this string is \p MAX_STR_LENGTH .
+\param[in] value      The value of the property.
+
+<table>
+<tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
+<tr><td> \c EX_EDGE_BLOCK </td><td>  Edge Block entity type   </td></tr>
+<tr><td> \c EX_EDGE_SET   </td><td>  Edge Set entity type     </td></tr>
+<tr><td> \c EX_FACE_BLOCK </td><td>  Face Block entity type   </td></tr>
+<tr><td> \c EX_FACE_SET   </td><td>  Face Set entity type     </td></tr>
+<tr><td> \c EX_ELEM_BLOCK </td><td>  Element Block entity type</td></tr>
+<tr><td> \c EX_ELEM_SET   </td><td>  Element Set entity type  </td></tr>
+<tr><td> \c EX_SIDE_SET   </td><td>  Side Set entity type     </td></tr>
+<tr><td> \c EX_ELEM_MAP   </td><td>  Element Map entity type  </td></tr>
+<tr><td> \c EX_NODE_MAP   </td><td>  Node Map entity type     </td></tr>
+<tr><td> \c EX_EDGE_MAP   </td><td>  Edge Map entity type     </td></tr>
+<tr><td> \c EX_FACE_MAP   </td><td>  Face Map entity type     </td></tr>
+</table>
+
+For an example of code to write out an object property, refer to the
+description for ex_put_prop_names().
+*/
 
 int ex_put_prop (int   exoid,
                  ex_entity_type obj_type,

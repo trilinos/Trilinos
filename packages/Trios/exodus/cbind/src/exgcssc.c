@@ -32,6 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
+
 /*****************************************************************************
 *
 * exgcssc - ex_get_concat_side_set_node_count
@@ -54,6 +55,7 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
+/*! \cond INTERNAL */
 void *safe_free(void *array)
 {
   if (array != 0) free(array);
@@ -67,7 +69,9 @@ void *safe_free(void *array)
                       elem_blk_parms[i].num_nodes_per_elem);\
               ex_err("ex_get_side_set_node_count",errmsg,EX_MSG);\
               return(EX_FATAL);\
+/* \endcond */
 
+/*! \undoc */
 int ex_get_concat_side_set_node_count(int exoid,
 				      int *side_set_node_cnt_list)
 {
