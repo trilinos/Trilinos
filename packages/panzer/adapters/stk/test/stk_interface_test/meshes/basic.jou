@@ -37,7 +37,7 @@ block 2 surface 2
 block 2 element type quad4 
 
 sideset 1 curve 1
-sideset 2 curve 2
+sideset 2 curve 2 wrt Surface 1
 sideset 3 curve 3
 sideset 4 curve 4
 sideset 5 curve 5

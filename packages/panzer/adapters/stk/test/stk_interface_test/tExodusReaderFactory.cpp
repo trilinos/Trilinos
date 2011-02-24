@@ -49,7 +49,9 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
          TEST_ASSERT(mesh->isWritable());
          TEST_ASSERT(not mesh->isModifiable());
       
+         out << "Begin writing to meshes/outputcheck.gen" << std::endl;
          mesh->writeToExodus("meshes/outputcheck.gen");
+         out << "Finished writing to meshes/outputcheck.gen" << std::endl;
       
          // check element blocks
          std::vector<std::string> eBlocks;
