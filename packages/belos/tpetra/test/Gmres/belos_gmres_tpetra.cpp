@@ -343,7 +343,6 @@ namespace {
     return pMat;
   }
 
-
   /// Print out the given Belos::MsgType to a comma-delimited list of
   /// names.
   std::string 
