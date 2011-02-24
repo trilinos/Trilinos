@@ -47,9 +47,9 @@ int main(int argc, char *argv[]) {
 
   if (comm->getRank() == 0) {
     typedef Kokkos::DefaultKernels<double,int,Node>::SparseOps DSM;
+    Kokkos::CrsMatrix<double,int,Node,DSM> *mat = NULL;
 #ifndef HAVE_KOKKOS_NO_FIRST_TOUCH_MATVEC_ALLOCATION
     std::cout << "Using Kokkos first-touch matrix objects." << std::endl;
-    Kokkos::CrsMatrix<double,int,Node,DSM> *mat;
     // this will fail to compile if the above macro doesn't appropriately correspond with the reality of the CrsMatrix inheritance
     TEST_FOR_EXCEPT( (static_cast<Kokkos::FirstTouchHostCrsMatrix<double,int,Node,DSM> *>(mat) != 0) );
 #else
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   //
   Teuchos::RCP< Tpetra::CrsMatrix<double,int,int,Node> > A;
   Tpetra::Utils::readHBMatrix(filename,comm,node,A);
-  if (verbose) {
+  if (comm->getRank() == 0 && verbose) {
     std::cout << std::endl << A->description() << std::endl << std::endl;
   }
 
