@@ -236,6 +236,7 @@ void local_test_cell_topology()
 
   test_cell< shards::Tetrahedron<4> >();
   test_cell< shards::Tetrahedron<10> >();
+  test_cell< shards::Tetrahedron<11> >();
 
   test_cell< shards::Pyramid<5> >();
   test_cell< shards::Pyramid<13> >();

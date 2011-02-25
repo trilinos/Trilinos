@@ -244,6 +244,9 @@ template<> const CellTopologyData * getCellTopologyData< Tetrahedron<10> >();
 /** \brief  Return CellTopologyData singleton for the Tetrahedron<8> */
 template<> const CellTopologyData * getCellTopologyData< Tetrahedron<8> >();
 
+/** \brief  Return CellTopologyData singleton for the Tetrahedron<11> */
+template<> const CellTopologyData * getCellTopologyData< Tetrahedron<11> >();
+
 //----------------------------------------------------------------------
 
 /** \brief Topological traits: Dimension = 3, Sides = 5, Edges = 8,
@@ -719,6 +722,22 @@ template<> struct Tetrahedron<10> : public
                       TetrahedronSideNodeMap >
 { typedef Tetrahedron<4> base ; };
 
+template<> struct Tetrahedron<11> : public
+  CellTopologyTraits< 3 , 4 , 11 ,
+                      MakeTypeList< Line<3>  ,
+                                    Line<3>  ,
+                                    Line<3>  ,
+                                    Line<3>  ,
+                                    Line<3>  ,
+                                    Line<3>  >::type ,
+                      TetrahedronEdgeNodeMap ,
+                      MakeTypeList< Triangle<6>  ,
+                                    Triangle<6>  ,
+                                    Triangle<6>  ,
+                                    Triangle<6>  >::type ,
+                      TetrahedronSideNodeMap >
+{ typedef Tetrahedron<4> base ; };
+
 template<> struct Tetrahedron<8> : public
   CellTopologyTraits< 3 , 4 , 8 ,
                       MakeTypeList< Line<2>  ,
@@ -1144,6 +1163,10 @@ template<> struct BasicTopologyOf< Tetrahedron<4>::Traits >
 /** \brief  Map traits to basic topology type */
 template<> struct BasicTopologyOf< Tetrahedron<10>::Traits >
 { typedef Tetrahedron<10> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Tetrahedron<11>::Traits >
+{ typedef Tetrahedron<11> type ; };
 
 /** \brief  Map traits to basic topology type */
 template<> struct BasicTopologyOf< Tetrahedron<8>::Traits >
