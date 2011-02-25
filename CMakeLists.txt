@@ -12,9 +12,20 @@ MESSAGE("Configuring Trilinos build directory")
 MESSAGE("")
 
 IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
-  MESSAGE(FATAL_ERROR "Error, CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+  MESSAGE(FATAL_ERROR "ERROR! "
+    "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
     " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
-    " Trilinos does not support in source builds!" )
+    "\nTrilinos does not support in source builds!\n"
+    "NOTE: You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under"
+    " the source directory for Trilinos or you will not be able to configure Trilinos correctly!"
+    "\nYou must now run something like:\n"
+    "  $ rm -r CMakeCache.txt CMakeFiles/"
+    "\n"
+    "Please create a different directory and configure Trilinos under that such as:\n"
+    "  $ mkdir MY_BUILD\n"
+    "  $ cd MY_BUILD\n"
+    "  $ cmake [OPTIONS] .."
+    )
 ENDIF()
 
 PROJECT(Trilinos NONE)
