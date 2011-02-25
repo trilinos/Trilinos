@@ -272,7 +272,6 @@ void Multiply(
       RCP<const Map_t > domainmap = transposeB ? B.getRangeMap() : B.getDomainMap();
 
       RCP<const Map_t > rangemap = transposeA ? A.getDomainMap() : A.getRangeMap();
-      //C->fillComplete(transposeB ? B->getRangeMap() : B->getDomainMap(), transposeA ? A->getDomainMap() : B->getRangeMap());
       C.fillComplete(domainmap, rangemap);
     }
   }
@@ -281,7 +280,7 @@ void Multiply(
 }
 
 // CGB: check this...
-template <class Scalar, 
+/*template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -324,9 +323,6 @@ void Add(
   else{
     Aprime = rcpFromRef(A);
   }
-  /*else{
-    Aprime = A;
-  }*/
 
   size_t A_NumEntries;
   Array<GlobalOrdinal> A_Indices(Aprime->getGlobalMaxNumRowEntries());
@@ -372,7 +368,7 @@ void Add(
       }
     }
   }
-}
+}*/
 
 // CGB: check this...
 template <class Scalar, 
@@ -1437,14 +1433,6 @@ Scalar sparsedot(
     bool transposeB, \
     RCP<CrsMatrix< SCALAR , LO , GO , NODE , SPMATOPS > >& C, \
     bool call_FillComplete_on_result) \
-  \
-  template <> \
-  int MatrixMatrix::Add( \
-  RCP<const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > A, \
-  bool transposeA, \
-  double scalarA, \
-  RCP<CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > B, \
-  double scalarB ) \
 \
   template <> \
   int MatrixMatrix::Add( \
@@ -1462,4 +1450,12 @@ Scalar sparsedot(
     RCP<const CrsMatrix< SCALAR , LO , GO , NODE ,  SPMATOPS > > M, \
     RCP<const Map< LO , GO , NODE > > colmap)
 
+/*  \
+  template <> \
+  int MatrixMatrix::Add( \
+  RCP<const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > A, \
+  bool transposeA, \
+  double scalarA, \
+  RCP<CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > B, \
+  double scalarB ) \*/
 #endif // TPETRA_MATRIXMATRIX_DEF_HPP

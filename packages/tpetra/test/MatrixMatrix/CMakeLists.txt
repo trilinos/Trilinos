@@ -45,8 +45,9 @@ cdt_m.hb cdt_tce.hb
 gen1a.hb gen1b.hb
 gen2a.hb gen2b.hb
 gen3a.hb gen3b.hb
-add2x4A.hb add2x4B.hb add2x4C.hb
-bigAddA.hb bigAddB.hb bigAddC.hb
+add2x4A.hb add2x4B.hb
+bigAddA.hb bigAddB.hb
+medAddA.hb medAddB.hb
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix/matrices
 DEST_DIR ${PACKAGE_BINARY_DIR}/test/MatrixMatrix/matrices
 EXEDEPS MatrixMatrix_UnitTests

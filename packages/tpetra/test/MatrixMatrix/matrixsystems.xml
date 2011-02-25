@@ -34,7 +34,6 @@
     <Parameter name="op" value="add" type="string"/>
 		<Parameter name="A" value="matrices/add2x4A.hb" type="string"/>
 		<Parameter name="B" value="matrices/add2x4B.hb" type="string"/>
-		<Parameter name="C" value="matrices/add2x4C.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
@@ -42,9 +41,14 @@
     <Parameter name="op" value="add" type="string"/>
 		<Parameter name="A" value="matrices/bigAddA.hb" type="string"/>
 		<Parameter name="B" value="matrices/bigAddB.hb" type="string"/>
-		<Parameter name="C" value="matrices/bigAddC.hb" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
-		<Parameter name="epsilon" value=".00000001" type="double"/>
+	</ParameterList>
+	<ParameterList name="medAdd">
+    <Parameter name="op" value="add" type="string"/>
+		<Parameter name="A" value="matrices/medAddA.hb" type="string"/>
+		<Parameter name="B" value="matrices/medAddB.hb" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
 </ParameterList>

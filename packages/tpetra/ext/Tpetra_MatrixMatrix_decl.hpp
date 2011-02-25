@@ -81,9 +81,6 @@ namespace MatrixMatrix {
            one or both of the input matrices are rectangular and it is not
            trivial to know which maps to use for the domain- and range-maps.)
 
-    @return error-code, 0 if successful. non-zero returns may result if A or
-             B are not already Filled, or if errors occur in putting values
-             into C, etc.
      */
 template <class Scalar, 
            class LocalOrdinal,
@@ -99,6 +96,7 @@ void Multiply(
   bool call_FillComplete_on_result=true);
 
     /** Given CrsMatrix objects A and B, form the sum B = a*A + b*B
+     * Currently not functional.
 
     @param A Input, must already have had 'FillComplete()' called.
     @param transposeA Input, whether to use transpose of matrix A.
@@ -109,11 +107,8 @@ void Multiply(
        will be produced when forming the sum.
     @param scalarB Input, scalar multiplier for matrix B.
 
-    @return error-code, 0 if successful. non-zero returns may result if A is
-             not already Filled, or if errors occur in putting values
-             into B, etc.
      */
-template <class Scalar, 
+/*template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -123,7 +118,7 @@ void Add(
   bool transposeA,
   Scalar scalarA,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
-  Scalar scalarB );
+  Scalar scalarB );*/
 
     /** Given CrsMatrix objects A and B, form the sum C = a*A + b*B
 
@@ -139,9 +134,6 @@ void Add(
              If C is not NULL and FillComplete has already been called then the sparsity pattern is assumed to be fixed and compatible  with the sparsity of A+B. If FillComplete has not been called then the sum is completed and the function
              returns without calling FillComplete on C.
 
-    @return error-code, 0 if successful. non-zero returns may result if A or is
-             not already Filled, or if errors occur in putting values
-             into C, etc.
      */
 template <class Scalar, 
           class LocalOrdinal,

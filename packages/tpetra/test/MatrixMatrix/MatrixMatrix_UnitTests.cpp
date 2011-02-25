@@ -3,11 +3,11 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
+#include "Tpetra_Import.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
-#include <cmath>
 
 namespace Tpetra{
 
@@ -15,6 +15,14 @@ static const double defaultEpsilon = 1e-10;
 bool verbose = false;
 std::string matnamesFile;
 bool write_result_hb = false;
+
+typedef struct add_test_results_struct{
+  double epsilon1;
+//  double epsilon2;
+  double y1Norm;
+  double y2Norm;
+  //double y3Norm;
+} add_test_results;
 
 TEUCHOS_STATIC_SETUP(){
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -27,17 +35,17 @@ TEUCHOS_STATIC_SETUP(){
 }
 
 template<class Ordinal>
-int add_test(
+add_test_results add_test(
     RCP<CrsMatrix<double,int> > A,
     RCP<CrsMatrix<double,int> > B,
-    RCP<CrsMatrix<double,int> > C,
     bool AT,
     bool BT,
-    double epsilon,
-    RCP<const Comm<Ordinal> > comm,
-    bool verbose)
+    RCP<const Comm<Ordinal> > comm)
 {
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
+  typedef Vector<double> Vector_t;
+  typedef CrsMatrixMultiplyOp<double> CrsMatrixMultiplyOp_t;
+  add_test_results toReturn;
 
 
   RCP<CrsMatrix<double,int> > computedC = null;
@@ -47,35 +55,52 @@ int add_test(
 
   MatrixMatrix::Add(*A, false, 1.0, *B, false, 1.0, computedC);
 
-  computedC->fillComplete(C->getDomainMap(), C->getRangeMap());
+  computedC->fillComplete(A->getDomainMap(), A->getRangeMap());
 
-  MatrixMatrix::Add(*C, false, -1.0, *computedC, 1.0);
 
-  double calculated_euc_norm = computedC->getEuclideanNorm();
-  double c_euc_norm = C->getEuclideanNorm();
-  double resultVal1 = calculated_euc_norm/c_euc_norm;
+  Vector_t randomVector1(computedC->getDomainMap(), true);
+  randomVector1.randomize();
 
+  Vector_t y1(computedC->getRangeMap());
+  CrsMatrixMultiplyOp_t cMultiOp(computedC);
+  cMultiOp.apply(randomVector1, y1);
+
+  Vector_t ax(A->getRangeMap());
+  CrsMatrixMultiplyOp_t aMultiOp(A);
+  aMultiOp.apply(randomVector1, ax);
+  
+  Import<int> importer(A->getDomainMap(), B->getDomainMap());
+  Vector_t randomVector2(B->getDomainMap());
+  randomVector2.doImport(randomVector1, importer, REPLACE);
+  Vector_t bx(B->getRangeMap());
+  CrsMatrixMultiplyOp_t bMultiOp(B);
+  bMultiOp.apply(randomVector2, bx);
+
+  Vector_t* y2 = &bx;
+  y2->update(1,ax,1);
+
+  toReturn.epsilon1 = fabs(y2->norm2()-y1.norm2());
+/*
   MatrixMatrix::Add(*A, false, 1.0, *B, 1.0);
+  Vector_t randomVector3(B->getDomainMap());
+  randomVector3.doImport(randomVector1, importer, REPLACE);
+  Vector_t y3(B->getRangeMap());
+  bMultiOp.apply(randomVector3, y3);
+  toReturn.epsilon2 = fabs(y2->norm2()-y3.norm2());*/
 
-  MatrixMatrix::Add(*C, false, -1.0, *B, 1.0);
+  
 
-  calculated_euc_norm = B->getEuclideanNorm();
-  double resultVal2 = calculated_euc_norm/c_euc_norm;
-
-  return (resultVal1 < epsilon && resultVal2 < epsilon) ? 0 : 1;
+  return toReturn;
 
 }
 
 template<class Ordinal>
-int multiply_test(
+double multiply_test(
   RCP<CrsMatrix<double, int> > A,
   RCP<CrsMatrix<double, int> > B,
   bool AT,
   bool BT,
-  double epsilon,
-  RCP<const Comm<Ordinal> > comm,
-  bool verbose,
-  std::ostream& out)
+  RCP<const Comm<Ordinal> > comm)
 {
 
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
@@ -83,79 +108,30 @@ int multiply_test(
   typedef Map<int, int> Map_t;
   typedef Vector<double> Vector_t;
   typedef CrsMatrixMultiplyOp<double> CrsMatrixMultiplyOp_t;
-  RCP<const Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+  RCP<const Map_t> rowmap = AT ? A->getDomainMap() : A->getRowMap();
 
   RCP<CrsMatrix_t> computedC = rcp( new CrsMatrix_t(rowmap, 1));
 
   MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC);
 
-  RCP<Vector_t> randomVector1 = rcp(new Vector_t(computedC->getGraph()->getImporter()->getSourceMap(), true));
-  randomVector1->randomize();
-  RCP<Vector_t> y1 = rcp(new Vector_t(computedC->getRowMap(), true));
+  Vector_t randomVector1(computedC->getDomainMap(), true);
+  randomVector1.randomize();
+  Vector_t y1(computedC->getRangeMap(), true);
   CrsMatrixMultiplyOp_t cTimesVOp(computedC);
-  cTimesVOp.apply(*randomVector1, *y1);
+  cTimesVOp.apply(randomVector1, y1);
 
-
-  RCP<Vector_t> intermediatVector = rcp(new Vector_t(A->getGraph()->getImporter()->getSourceMap(), true));
+  Vector_t intermediateVector(A->getDomainMap(), true);
   CrsMatrixMultiplyOp_t bTimesVOp(B);
-  bTimesVOp.apply(*randomVector1,*intermediatVector);
+  bTimesVOp.apply(randomVector1,intermediateVector);
 
 
-  RCP<Vector_t> y2 = rcp(new Vector_t(A->getRowMap(), true));
+  Vector_t y2(A->getRangeMap(), true);
   CrsMatrixMultiplyOp_t aTimesVOp(A);
-  aTimesVOp.apply(*intermediatVector, *y2);
+  aTimesVOp.apply(intermediateVector, y2);
 
-
-
-  double diff_result = y1->norm2()-y2->norm2();
-
-
-  out << "Difference in norms: " << abs(diff_result);
-  return abs(diff_result)<epsilon ? 0 : -1;
+  return fabs(y1.norm2()-y2.norm2());
 
 }
-
-
-template<class Ordinal>
-int run_test(RCP<const Comm<Ordinal> > comm,
-             Teuchos::ParameterList matrixSystem,
-             bool result_mtx_to_file,
-             bool verbose,
-             std::ostream& out)
-{
-  std::string A_file = matrixSystem.get<std::string>("A");
-  std::string B_file = matrixSystem.get<std::string>("B");
-  bool AT = matrixSystem.get<bool>("TransA");
-  bool BT = matrixSystem.get<bool>("TransB");
-  double epsilon = matrixSystem.get<double>("epsilon", defaultEpsilon);
-  std::string op = matrixSystem.get<std::string>("op");
-
-
-  RCP<CrsMatrix<double,int> > A = null;
-  RCP<CrsMatrix<double,int> > B = null;
-
-  Utils::readHBMatrix(A_file, comm, Kokkos::DefaultNode::getDefaultNode(), A);
-  Utils::readHBMatrix(B_file, comm, Kokkos::DefaultNode::getDefaultNode(), B);
-
-  if(op == "multiply"){
-    out << "Running multiply test for " << matrixSystem.name() << std::endl;
-    return multiply_test(A,B,AT,BT,epsilon,comm,verbose, out);
-  }
-  else if(op == "add"){
-    std::string C_file = matrixSystem.get<std::string>("C");
-    RCP<CrsMatrix<double,int> > C_check = null;
-    Utils::readHBMatrix(C_file, comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
-    out << "Running add test for " << matrixSystem.name() << std::endl;
-    return add_test(A,B,C_check,AT,BT,epsilon,comm,verbose);
-  }
-  else{
-    out << "Unrecognize matrix operation: " << op << ".";
-    return -1;
-  }
-
-
-}
-
 
 
 TEUCHOS_UNIT_TEST(Tpetra_MatMat, test_find_rows){
@@ -214,15 +190,43 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       "Bad tag's name: " << it->first << 
       "Type name: " << it->second.getAny().typeName() << 
       std::endl << std::endl);
-      
-    TEST_EQUALITY(
-    Tpetra::run_test<int>(
-      comm, 
-      matrixSystems->sublist(it->first), 
-      write_result_hb, 
-      verbose,
-      out), 0);
-  }
+    Teuchos::ParameterList currentSystem = matrixSystems->sublist(it->first); 
+    std::string A_file = currentSystem.get<std::string>("A");
+    std::string B_file = currentSystem.get<std::string>("B");
+    bool AT = currentSystem.get<bool>("TransA");
+    bool BT = currentSystem.get<bool>("TransB");
+    double epsilon = currentSystem.get<double>("epsilon", defaultEpsilon);
+    std::string op = currentSystem.get<std::string>("op");
+  
+
+    RCP<CrsMatrix<double,int> > A = null;
+    RCP<CrsMatrix<double,int> > B = null;
+  
+    Utils::readHBMatrix(A_file, comm, Kokkos::DefaultNode::getDefaultNode(), A);
+    Utils::readHBMatrix(B_file, comm, Kokkos::DefaultNode::getDefaultNode(), B);
+
+    TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
+      "Unrecognized Matrix Operation: " << op << "!" << std::endl);
+  
+    if(op == "multiply"){
+      if(verbose){
+        out << "Running multiply test for " << currentSystem.name() << std::endl;
+      }
+      double result = multiply_test(A,B,AT,BT,comm);
+      TEST_COMPARE(result, <, epsilon)
+    }
+    else if(op == "add"){
+      if(verbose){
+        out << "Running add test for " << currentSystem.name() << std::endl;
+      }
+      add_test_results results = add_test(A,B,AT,BT,comm);
+      TEST_COMPARE(results.epsilon1, <, epsilon)
+ //     TEST_COMPARE(results.epsilon2, <, epsilon)
+      out << "Norm 1: " << results.y1Norm << std::endl;
+      out << "Norm 2: " << results.y2Norm << std::endl;
+//      out << "Norm 3: " << results.y3Norm << std::endl;
+    }
+  }   
 }
 
 
