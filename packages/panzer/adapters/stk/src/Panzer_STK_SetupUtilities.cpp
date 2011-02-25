@@ -29,8 +29,18 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
     std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_iterator = 
       eb_to_ipb.find(element_blocks[i]);
     
-    TEST_FOR_EXCEPTION(ipb_iterator == eb_to_ipb.end(), std::logic_error,
-		       "Could not find input physics block corresponding to region");
+    if(ipb_iterator==eb_to_ipb.end()) {
+       std::stringstream ss;
+
+       ss << "Could not find input physics block corresponding to element block"
+          << " \"" << element_blocks[i] << "\"\n\n Choose one of:\n";
+
+       std::map<std::string,panzer::InputPhysicsBlock>::const_iterator str_iter;
+       for(str_iter=eb_to_ipb.begin();str_iter!=eb_to_ipb.end();++str_iter)
+          ss << "   \"" << str_iter->first << "\"\n"; 
+
+       TEST_FOR_EXCEPTION_PURE_MSG(ipb_iterator == eb_to_ipb.end(), std::logic_error,ss.str());
+    }
 
     const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
 
