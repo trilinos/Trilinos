@@ -51,8 +51,6 @@
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-using std::endl;
-
 //
 // These typedefs make main() as generic as possible.
 //

@@ -148,19 +148,27 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local,
     CHECK_IERR;
   }
 
+  /* Redistribute gets rid of duplicate edges?  So unneeded if
+   *   if we know there are no duplicate edges?
+   */
+
+/*  if (opt.speed != MATRIX_NO_REDIST){      This is the idea, but it doesn't work */
+
 #ifdef CC_TIMERS
-  times[4] = Zoltan_Time(zz->Timer);
+    times[4] = Zoltan_Time(zz->Timer);
 #endif
 
-  ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
-  CHECK_IERR;
+    ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
+    CHECK_IERR;
 
 #ifdef CC_TIMERS
-  times[5] = Zoltan_Time(zz->Timer);
-  MPI_Barrier(zz->Communicator);
+    times[5] = Zoltan_Time(zz->Timer);
+    MPI_Barrier(zz->Communicator);
 #endif
-  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0);
-  CHECK_IERR;
+    ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0);
+    CHECK_IERR;
+
+/*  } */
 
 #ifdef CC_TIMERS
   times[6] = Zoltan_Time(zz->Timer);

@@ -60,6 +60,12 @@ namespace Belos {
   ///   vol. 7, pp. 856-869, 1986.
   template<class Scalar, class MV, class OP>
   class StandardGmres : public GmresBase<Scalar,MV,OP> {
+  public:
+    typedef Scalar scalar_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+    typedef MV multivector_type;
+    typedef OP operator_type;
+
   private:
     /// \typedef base_type
     /// \brief Base class typedef

@@ -125,7 +125,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
     /* Make our new numbering public */
     Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, NULL,  NULL, nX);
     if (requested_GNOs) {
-      Zoltan_DD_Find(dd, requested_GIDs, requested_GNOs, NULL, NULL, 
+      Zoltan_DD_Find(dd, requested_GIDs, (ZOLTAN_ID_PTR)requested_GNOs, NULL, NULL, 
                      num_requested, NULL);
     }
   }
@@ -135,6 +135,10 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
      * KDDKDD 2/10/11  I guess the assumption is that, if a user sets the
      * KDDKDD 2/10/11  appropriate parameter to enable this code, the user
      * KDDKDD 2/10/11  knows that his GIDs are compatible with integers.
+     *
+     * This code only executes if GRAPH_BUILD_TYPE is FAST (meaning gids are
+     *   are integers from 0 to ngids-1) or NO_REDIST (FAST + there are no
+     *   duplicate edges).   LARIESEN
      */
     if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(ZOLTAN_ID_TYPE)){
       xGNO = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(nX*sizeof(ZOLTAN_GNO_TYPE));

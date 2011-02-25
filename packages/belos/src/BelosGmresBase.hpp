@@ -51,7 +51,9 @@
 #include <BelosMultiVecTraits.hpp>
 
 #include <Teuchos_BLAS.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
+
 #include <algorithm>
 #include <iterator>
 #include <utility> // std::pair
@@ -322,7 +324,8 @@ namespace Belos {
     /// involving the upper Hessenberg matrix.  Calling this does not
     /// invoke the operator or preconditioner(s), nor does it require
     /// computations on basis vectors.
-    magnitude_type currentNativeResidualNorm ();
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+    currentNativeResidualNorm ();
 
     /// \brief Forward normwise error in the Arnoldi relation
     ///
@@ -341,7 +344,8 @@ namespace Belos {
     ///
     /// In these expressions, "m" is the current iteration count, as
     /// returned by getNumIters().
-    magnitude_type arnoldiRelationError () const;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+    arnoldiRelationError () const;
 
   protected:
 
@@ -625,7 +629,8 @@ namespace Belos {
     /// upper Hessenberg matrix; we allow updating multiple columns in
     /// order to support CA-GMRES, which computes several new columns of
     /// the upper Hessenberg matrix at a time.
-    magnitude_type updateProjectedLeastSquaresProblem ();
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+    updateProjectedLeastSquaresProblem ();
 
     /// Views of previously orthogonalized basis vectors
     ///
@@ -753,8 +758,8 @@ namespace Belos {
     /// with the QR factorization of H_.
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > z_;
 
-    Teuchos::Array<magnitude_type> theCosines_;
-    Teuchos::Array<scalar_type> theSines_;
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> theCosines_;
+    Teuchos::Array<Scalar> theSines_;
 
     /// \brief The initial residual norm
     ///
@@ -764,7 +769,7 @@ namespace Belos {
     /// \fn$\beta\fn$.  For left-preconditioned GMRES, this is the
     /// preconditioned initial residual norm, else it's the
     /// unpreconditioned version.
-    magnitude_type initialResidualNorm_;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType initialResidualNorm_;
 
     /// Last column of H_ for which the QR factorization (implicitly
     /// stored in theCosines_, theSines_, and R_) has been computed.

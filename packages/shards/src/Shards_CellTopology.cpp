@@ -670,6 +670,7 @@ void getTopologies(std::vector<shards::CellTopology>& topologies,
       if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
         topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Tetrahedron<8> >() ) );
         topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Tetrahedron<10> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Tetrahedron<11> >() ) );
         topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Hexahedron<20> >() ) );
         topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Hexahedron<27> >() ) );
         topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Pyramid<13> >() ) );
@@ -722,6 +723,7 @@ int isPredefinedCell(const CellTopology& cell) {
     case Tetrahedron<4>::key:
     case Tetrahedron<8>::key:
     case Tetrahedron<10>::key:
+    case Tetrahedron<11>::key:
       
     case Hexahedron<8>::key:
     case Hexahedron<20>::key:
