@@ -53,6 +53,7 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
+/*! \undoc */
 /*
  * reads the attribute names for an element block
  */

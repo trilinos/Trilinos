@@ -162,9 +162,9 @@ STKUNIT_UNIT_TEST(UnitTestZoltanGraph, testUnit)
   // And verify that all dependent entities are on the same proc as their parent element
   {
     stk::mesh::EntityVector entities;
-    stk::mesh::Selector selector = meta_data.universal_part();
+    stk::mesh::Selector selector1 = meta_data.universal_part();
 
-    get_selected_entities(selector, bulk_data.buckets(element_rank), entities);
+    get_selected_entities(selector1, bulk_data.buckets(element_rank), entities);
     bool result = stk::rebalance::verify_dependent_ownership(NODE_RANK, entities, top_data);
     STKUNIT_ASSERT( result );
   }

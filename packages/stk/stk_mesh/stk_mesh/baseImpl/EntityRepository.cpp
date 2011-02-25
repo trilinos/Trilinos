@@ -136,16 +136,19 @@ Bucket * EntityRepository::get_entity_bucket( Entity & e ) const
   return e.m_entityImpl.bucket_ptr();
 }
 
-void EntityRepository::destroy_relation( Entity & e_from, Entity & e_to )
+void EntityRepository::destroy_relation( Entity & e_from,
+                                         Entity & e_to,
+                                         const RelationIdentifier local_id )
 {
-  bool caused_change_fwd = e_from.m_entityImpl.destroy_relation(e_to);
+  bool caused_change_fwd = e_from.m_entityImpl.destroy_relation(e_to, local_id);
 
   // Relationships should always be symmetrical
   if ( caused_change_fwd ) {
-    bool caused_change_inv = e_to.m_entityImpl.destroy_relation(e_from);
+    bool caused_change_inv = e_to.m_entityImpl.destroy_relation(e_from, local_id);
     ThrowErrorMsgIf( !caused_change_inv,
         " Internal error - could not destroy inverse relation of " <<
-        print_entity_key( e_from ) << " to " << print_entity_key( e_to ));
+        print_entity_key( e_from ) << " to " << print_entity_key( e_to ) <<
+        " with local relation id of " << local_id);
   }
 
   // It is critical that the modification be done AFTER the relations are
@@ -158,7 +161,7 @@ void EntityRepository::destroy_relation( Entity & e_from, Entity & e_to )
 
 void EntityRepository::declare_relation( Entity & e_from,
                                          Entity & e_to,
-                                         const unsigned local_id,
+                                         const RelationIdentifier local_id,
                                          unsigned sync_count )
 {
   bool caused_change_fwd =

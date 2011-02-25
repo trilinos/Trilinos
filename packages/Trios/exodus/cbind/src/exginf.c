@@ -32,27 +32,43 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* exginf - ex_get_info
-*
-* entry conditions - 
-*   input parameters:
-*       int     exoid                   exodus file id
-*
-* exit conditions - 
-*       char*   info[]                  ptr array of info records
-*
-* revision history - 
-*
-*
-*****************************************************************************/
 
 #include "exodusII.h"
 #include "exodusII_int.h"
 
-/*
- * reads information records from the database
+/*!
+
+The function ex_get_info() reads information records from the
+database. The records are \c MAX_LINE_LENGTH-character
+strings. Memory must be allocated for the information records before
+this call is made. The number of records can be determined by invoking
+ex_inquire() or ex_inquire_int().
+
+\returns In case of an error, ex_get_info() returns a negative number;
+         a warning will return a positive number. Possible causes of errors
+         include:
+  -  data file not properly opened with call to ex_create() or ex_open()
+  -  a warning value is returned if no information records were stored.
+
+\param[in]  exoid   exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[out] info    Returned array containing the information records.
+
+The following code segment will determine the number of information 
+records and read them from an open exodus file :
+
+\code
+#include "exodusII.h"
+int error, exoid, num_info;
+char *info[MAXINFO];
+
+\comment{read information records}
+num_info = ex_inquire_int (exoid,EX_INQ_INFO);
+for (i=0; i < num_info; i++) {
+   info[i] = (char *) calloc ((MAX_LINE_LENGTH+1), sizeof(char));
+}
+error = ex_get_info (exoid, info);
+\endcode
+
  */
 
 int ex_get_info (int    exoid,

@@ -185,7 +185,7 @@ bool BulkData::modification_begin()
 //----------------------------------------------------------------------
 
 Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
-                                   const std::vector<Part*> & parts )
+                                   const PartVector & parts )
 {
   require_ok_to_modify();
 
@@ -580,8 +580,12 @@ bool BulkData::destroy_entity( Entity * & entity_in )
   //
   // Must clean up the parallel lists before fully deleting the entity.
 
+  // It is important that relations be destroyed in reverse order so that
+  // the higher (back) relations are destroyed first.
   while ( ! entity.relations().empty() ) {
-    destroy_relation( entity , * entity.relations().back().entity() );
+    destroy_relation( entity ,
+                      * entity.relations().back().entity(),
+                      entity.relations().back().identifier());
   }
 
   // We need to save these items and call remove_entity AFTER the call to

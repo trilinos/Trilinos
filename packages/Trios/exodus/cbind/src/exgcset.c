@@ -32,9 +32,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
+/*!
 *
-* exgcss - ex_get_concat_sets
+* \undoc exgcss - ex_get_concat_sets
+*
+* reads the set ID's, set entry count array, set entry pointers
+* array, set entry list, set extra list, and set distribution factors
+* for all sets of the specified type.
 *
 * entry conditions - 
 *   input parameters:
@@ -51,12 +55,6 @@
 
 #include "exodusII.h"
 #include "exodusII_int.h"
-
-/*
- * reads the set ID's, set entry count array, set entry pointers
- * array, set entry list, set extra list, and set distribution factors
- * for all sets of the specified type.
- */
 
 int ex_get_concat_sets (int   exoid,
                         ex_entity_type set_type,

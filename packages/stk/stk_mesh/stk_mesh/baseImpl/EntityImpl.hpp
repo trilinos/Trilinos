@@ -54,9 +54,9 @@ public:
   // The two relation methods below need to be called symmetically, ideally
   // through EntityRepository which will enforce the symmetry.
 
-  bool destroy_relation( Entity & e_to);
+  bool destroy_relation( Entity & e_to, const RelationIdentifier local_id);
   bool declare_relation( Entity & e_to,
-                         const unsigned local_id,
+                         const RelationIdentifier local_id,
                          unsigned sync_count,
                          bool is_converse = false);
 

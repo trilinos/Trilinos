@@ -32,43 +32,99 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* excre - ex_create
-*
-* entry conditions - 
-*   input parameters:
-*       char*   path                    file name including path
-*       int     cmode                   access mode r/w
-*       int*    comp_ws                 compute word size
-*       int*    io_ws                   storage word size
-*
-* exit conditions - 
-*       return value                    exodus file id
-*
-* revision history - 
-*
-*
-*****************************************************************************/
-#include "exodusII.h"
-#include "exodusII_int.h"
 
 /*!
- * creates a new EXODUS II file and returns an id that can subsequently 
- * be used to refer to the file. This in an internal function; the external
- * name of this function ix ex_create()
- * \param      path         filename of file to create.
- * \param      cmode        access mode.  Any of the defines in the \ref FileVars group or'd together.
- * \param comp_ws The word size in bytes (0, 4 or 8) of the floating
- *                point variables used in the application program. If 0 (zero) is
- *                passed, the default sizeof(float) will be used and returned in this
- *                variable. WARNING: all EXODUS II functions requiring floats must be
- *                passed floats declared with this passed in or returned compute word
- *                size (4 or 8).
- * \param io_ws   The word size in bytes (4 or 8) of the floating point data as they
- *                are to be stored in the EXODUS II file. 
- * \param run_version (internally generated) used to verify compatability of libary and include files.
- */
+
+\note The ex_create_int() is an internal function called by
+ex_create(). The user should call ex_create() and not ex_create_int().
+
+The function ex_create() creates a new exodus file and returns an ID
+that can subsequently be used to refer to the file.
+
+All floating point values in an exodus file are stored as either
+4-byte (\c float) or 8-byte (\c double) numbers; no mixing of 4- and
+8-byte numbers in a single file is allowed. An application code can
+compute either 4- or 8-byte values and can designate that the values
+be stored in the exodus file as either 4- or 8-byte numbers;
+conversion between the 4- and 8-byte values is performed automatically
+by the API routines. Thus, there are four possible combinations of
+compute word size and storage (or I/O) word size.
+
+\return In case of an error, ex_create() returns a negative number. Possible
+causes of errors include:
+  -  Passing a file name that includes a directory that does not
+ exist.
+  -  Specifying a file name of a file that exists and also
+ specifying a no clobber option.
+  -  Attempting to create a file in a directory without permission
+ to create files there.
+  -  Passing an invalid file clobber mode.
+
+
+\param path The file name of the new exodus file. This can be given as either an
+            absolute path name (from the root of the file system) or a relative
+	    path name (from the current directory).
+
+\param cmode Mode. Use one of the following predefined constants:
+\arg \c EX_NOCLOBBER  To create the new file only if the given file name does not refer to a
+		      file that already exists.
+
+\arg \c EX_CLOBBER    To create the new file, regardless of whether a file with the same
+		      name already exists. If a file with the same name does exist, its
+		      contents will be erased.
+
+\arg \c EX_LARGE_MODEL  To create a model that can store individual datasets larger than
+			2 gigabytes. This modifies the internal storage used by exodusII and
+			also puts the underlying NetCDF file into the \e 64-bit offset'
+			mode. See largemodel for more details on this
+			mode. A large model file will also be created if the
+			environment variable \c EXODUS_LARGE_MODEL is defined
+			in the users environment. A message will be printed to standard output
+			if this environment variable is found.
+
+\arg \c EX_NORMAL_MODEL Create a standard model.
+
+\arg \c EX_NETCDF4	To create a model using the HDF5-based NetCDF-4
+			output. An HDF5-based NetCDF-4 file will also be created if the
+			environment variable \c EXODUS_NETCDF4 is defined in the
+			users environment. A message will be printed to standard output if
+			this environment variable is found.
+
+\arg \c EX_NOSHARE	Do not open the underlying NetCDF file in \e share mode. See the
+                        NetCDF documentation for more details.
+
+\arg \c EX_SHARE	Do open the underlying NetCDF file in \e share mode. See the NetCDF
+			documentation for more details.
+
+\param[in,out] comp_ws  The word size in bytes (0, 4 or 8) of the floating point variables
+			used in the application program. If 0 (zero) is passed, the default
+			sizeof(float) will be used and returned in this variable. WARNING: all
+			exodus functions requiring floats must be passed floats declared with
+			this passed in or returned compute word size (4 or 8).}
+
+\param io_ws            The word size in bytes (4 or 8) of the floating point
+			data as they are to be stored in the exodus file.
+
+\param run_version (internally generated) used to verify compatability of libary and include files.
+
+The following code segment creates an exodus file called \file{test.exo}:
+
+\code
+#include "exodusII.h"
+int CPU_word_size, IO_word_size, exoid;
+CPU_word_size = sizeof(float);      \comment{use float or double}
+IO_word_size = 8;                   \comment{store variables as doubles}
+
+\comment{create exodus file}
+exoid = ex_create ("test.exo"       \comment{filename path}
+		    EX_CLOBBER,     \comment{create mode}
+		    &CPU_word_size, \comment{CPU float word size in bytes}
+	            &IO_word_size); \comment{I/O float word size in bytes}
+\endcode
+
+*/
+#include "exodusII.h"
+#include "exodusII_int.h"
 
 int ex_create_int (const char *path,
 		   int   cmode,

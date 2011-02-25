@@ -13,7 +13,7 @@
 #include <mpi.h>
 
 // the redstorm platform doesn't like Google test
-#ifndef REDS
+#if !(defined(__PGI) || defined(REDS))
 #include <gtest/gtest.h>
 #endif
 
@@ -46,7 +46,7 @@ namespace stk {
 
         bool result = true;
 
-#ifndef REDS
+#if !(defined(__PGI) || defined(REDS))
         testing::InitGoogleTest(&argc, argv);  
         //  bool result = 0;
         try {

@@ -169,8 +169,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // entity_0_1 (which is in part_A_0). After the relation
   // is added, there is an induced membership of entity_0_1
   // within part A_1.
+  stk::mesh::RelationIdentifier test_rel_id = 0;
   {
-    bulk.declare_relation( entity_1_1 , entity_0_1 , 0 /*local_rel_id*/ );
+    bulk.declare_relation( entity_1_1 , entity_0_1 , test_rel_id );
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
     STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
@@ -183,7 +184,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // demonstrate that the induced membership of entity_0_1
   // in part_A_1 is gone
   {
-    bulk.destroy_relation( entity_1_1 , entity_0_1 );
+    bulk.destroy_relation( entity_1_1 , entity_0_1, test_rel_id );
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
     STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
@@ -210,7 +211,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // within entity_2_1's parts (A_2 and B_2) (and of course entity_0_1
   // is still in the parts it was already in).
   {
-    bulk.declare_relation( entity_2_1 , entity_0_1 , 0 /*local_rel_id*/);
+    bulk.declare_relation( entity_2_1 , entity_0_1 , test_rel_id );
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(5) , tmp.size() );
     STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
@@ -224,7 +225,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // demonstrate that the induced membership of entity_0_1
   // in parts A_2 and B_2 is gone.
   {
-    bulk.destroy_relation( entity_2_1 , entity_0_1 );
+    bulk.destroy_relation( entity_2_1 , entity_0_1, test_rel_id );
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
     STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );

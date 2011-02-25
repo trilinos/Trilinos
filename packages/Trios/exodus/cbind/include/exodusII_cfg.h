@@ -2,9 +2,9 @@
 #define __exodusII_cfg_h
 
 #define EXODUSII_VERSION_MAJOR 4
-#define EXODUSII_VERSION_MINOR 99
+#define EXODUSII_VERSION_MINOR 96
 #define EXODUSII_VERSION_PATCH 0
-#define EXODUSII_VERSION "4.99.0"
+#define EXODUSII_VERSION "4.96.0"
 
 #if defined(_WIN32) && !defined(WIN32)
 # define WIN32

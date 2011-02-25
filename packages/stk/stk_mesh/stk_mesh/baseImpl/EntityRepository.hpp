@@ -146,11 +146,13 @@ class EntityRepository {
     Bucket * get_entity_bucket ( Entity & e ) const;
     void destroy_later( Entity & e, Bucket* nil_bucket );
 
-    void destroy_relation( Entity & e_from, Entity & e_to);
+    void destroy_relation( Entity & e_from,
+                           Entity & e_to,
+                           const RelationIdentifier local_id);
 
     void declare_relation( Entity & e_from,
                            Entity & e_to,
-                           const unsigned local_id,
+                           const RelationIdentifier local_id,
                            unsigned sync_count );
 
   private:
