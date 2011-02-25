@@ -31,9 +31,10 @@
 
 #else
 
-typedef __int64 int64_t;
-typedef unsigned long intptr_t;
-#define ZOLTAN_NOT_FOUND ULONG_MAX
+#include <BaseTsd.h>              /* for ssize_t, int64, int_ptr */
+typedef int64 int64_t;
+typedef int_ptr intptr_t;
+#define ZOLTAN_NOT_FOUND LONG_MAX  /* safe to say never be a valid pointer? */
 
 #endif
 
