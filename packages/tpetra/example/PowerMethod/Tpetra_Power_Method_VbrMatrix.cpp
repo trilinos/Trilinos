@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   if (verbose) std::cout << std::endl << A->description() << std::endl << std::endl;
 
   // variable needed for iteration
-  Scalar lambda;
+  Scalar lambda; (void)lambda;
   const size_t niters = static_cast<size_t>(numGlobalElements*10);
   const Scalar tolerance = 1.0e-2;
 

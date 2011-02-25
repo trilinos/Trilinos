@@ -143,49 +143,4 @@ namespace KokkosExamples {
 
 } // end of namespace KokkosExamples
 
-namespace Kokkos {
-
-  /** \brief A partial specialization of CrsGraph for use with KokkosExamples::DummySparseKernel
-      \ingroup kokkos_crs_ops
-
-      This specialization inherits from CrsGraphHostCompute. The consequence of this is that it is only appropriate for use on host-based nodes; and that 
-      it doesn't specialize any capability based on the KokkosExamples::DummySparseKernel provider (which is fine, because this is for demonstration purposes only.)
-    */
-  template <class Ordinal, 
-            class Node>
-  class CrsGraph<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > : public CrsGraphHostCompute<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > {
-  public:
-    CrsGraph(size_t numRows, const Teuchos::RCP<Node> &node) : CrsGraphHostCompute<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> >(numRows,node) {}
-  private:
-    CrsGraph(const CrsGraph<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > &graph); // not implemented
-  };
-
-  /** \brief A partial specialization of CrsMatrix for use with KokkosExamples::DummySparseKernel
-      \ingroup kokkos_crs_ops
-
-      This specialization inherits from CrsMatrixHostCompute. The consequence of this is that it is only appropriate for use on host-based nodes; and that 
-      it doesn't specialize any capability based on the KokkosExamples::DummySparseKernel provider (which is fine, because this is for demonstration purposes only.)
-    */
-  template <class Scalar,
-            class Ordinal, 
-            class Node>
-  class CrsMatrix<Scalar,Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > : public CrsMatrixHostCompute<Scalar,Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > {
-  public:
-    CrsMatrix() : CrsMatrixHostCompute<Scalar,Ordinal,Node,KokkosExamples::DummySparseKernel<Node> >() {}
-    CrsMatrix(CrsGraph<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > &graph) : CrsMatrixHostCompute<Scalar,Ordinal,Node,KokkosExamples::DummySparseKernel<Node> >(graph) {}
-    CrsMatrix(const CrsGraph<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > &graph) : CrsMatrixHostCompute<Scalar,Ordinal,Node,KokkosExamples::DummySparseKernel<Node> >(graph) {}
-    void setStaticGraph(const CrsGraph<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > &graph) {
-      const CrsGraphHostCompute<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > &hgraph = dynamic_cast<const CrsGraphHostCompute<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > &>(graph);
-      CrsMatrixHostCompute<Scalar,Ordinal,Node,KokkosExamples::DummySparseKernel<Node> >::setStaticGraph(hgraph);
-    }
-    void setOwnedGraph(CrsGraph<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > &graph) {
-      CrsGraphHostCompute<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > &hgraph = dynamic_cast<CrsGraphHostCompute<Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > &>(graph);
-      CrsMatrixHostCompute<Scalar,Ordinal,Node,KokkosExamples::DummySparseKernel<Node> >::setOwnedGraph(hgraph);
-    }
-  private:
-    CrsMatrix(const CrsMatrix<Scalar,Ordinal,Node,KokkosExamples::DummySparseKernel<Node> > &mat); // not implemented
-  };
-
-}
-
 #endif

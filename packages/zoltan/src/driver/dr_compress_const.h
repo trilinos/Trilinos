@@ -18,6 +18,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef ssize_t
+typedef long ssize_t;
+#endif
+
 #include "dr_const.h"
 
 #if (defined ZOLTAN_GZIP)||(defined ZOLTAN_BZ2)||(defined ZOLTAN_LZMA)

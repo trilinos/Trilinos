@@ -11,13 +11,17 @@
  *    $Revision $
  ****************************************************************************/
 
+#ifdef _WIN32
+typedef size_t intptr_t;
+#else
+#include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include <stdint.h>
 #include <stdlib.h>
 #include <zz_util_const.h>
 #include <zoltan_mem.h>

@@ -77,7 +77,7 @@ inline
 void parallel_for( const FunctorType & functor )
 {
   ParallelFor< FunctorType , typename FunctorType::device_type >::run( functor );
-};
+}
 
 }
 

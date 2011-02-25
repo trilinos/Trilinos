@@ -15,10 +15,15 @@
 #ifndef __ZOLTAN_UTIL_CONST_H
 #define __ZOLTAN_UTIL_CONST_H
 
-#include <stdint.h>
 #include <mpi.h>
 #include "zz_const.h"
 #include "zoltan_types.h"
+
+#ifdef _WIN32
+typedef size_t intptr_t;
+#else
+#include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

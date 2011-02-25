@@ -481,7 +481,7 @@ void Redistributor::create_importer(const Epetra_BlockMap& src_map)
     throw Isorropia::Exception("Cannot redistribute: Too many parts for too few processors.");
   }
 
-  if (!Teuchos::is_null(partitioner_))
+  if (Teuchos::is_null(target_map_) && !Teuchos::is_null(partitioner_))
       target_map_ = partitioner_->createNewMap();
 
   importer_ = Teuchos::rcp(new Epetra_Import(*target_map_, src_map));

@@ -35,11 +35,11 @@ extern "C" {
 /*  Parameters structure for Color method.  Used in  */
 /*  Zoltan_Color_Set_Param and Zoltan_Color.         */
 static PARAM_VARS Color_params[] = {
-		  { "COLORING_PROBLEM", NULL, "STRING", 0 },
-		  { "SUPERSTEP_SIZE",   NULL, "INT", 0},
-		  { "COMM_PATTERN",     NULL, "CHAR", 0 },
-		  { "COLORING_ORDER",   NULL, "CHAR", 0 },
-		  { "COLORING_METHOD",  NULL, "CHAR", 0},
+		  { "COLORING_PROBLEM",   NULL, "STRING", 0 },
+		  { "SUPERSTEP_SIZE",     NULL, "INT", 0},
+		  { "COMM_PATTERN",       NULL, "CHAR", 0 },
+		  { "VERTEX_VISIT_ORDER", NULL, "CHAR", 0 },
+		  { "COLORING_METHOD",    NULL, "CHAR", 0},
 		  { NULL, NULL, NULL, 0 } };
 
 /*****************************************************************************/
@@ -74,8 +74,6 @@ int Zoltan_Color_Test(
   ZOLTAN_GNO_TYPE gvtx;                         /* number of global vertices */
   ZOLTAN_GNO_TYPE *vtxdist=NULL, *adjncy=NULL;
   ZG graph;
-  ZOLTAN_ID_PTR requested_GIDs = NULL;     /* Calling code requests the 
-                                              GNOs for these GIDs */
   ZOLTAN_GNO_TYPE *requested_GNOs = NULL;  /* Return GNOs of 
                                               the requested GIDs.  */
   int *loc_partialD2 = NULL;    /* local binary array showing which vertices to be colored */
@@ -87,11 +85,11 @@ int Zoltan_Color_Test(
   memset (&graph, 0, sizeof(ZG));
 
   /* PARAMETER SETTINGS */
-  Zoltan_Bind_Param(Color_params, "COLORING_PROBLEM", (void *) &coloring_problemStr);
-  Zoltan_Bind_Param(Color_params, "SUPERSTEP_SIZE", (void *) &ss);
-  Zoltan_Bind_Param(Color_params, "COMM_PATTERN", (void *) &comm_pattern);
-  Zoltan_Bind_Param(Color_params, "COLORING_ORDER", (void *) &coloring_order);
-  Zoltan_Bind_Param(Color_params, "COLORING_METHOD", (void *) &coloring_method);
+  Zoltan_Bind_Param(Color_params, "COLORING_PROBLEM",   (void *) &coloring_problemStr);
+  Zoltan_Bind_Param(Color_params, "SUPERSTEP_SIZE",     (void *) &ss);
+  Zoltan_Bind_Param(Color_params, "COMM_PATTERN",       (void *) &comm_pattern);
+  Zoltan_Bind_Param(Color_params, "VERTEX_VISIT_ORDER", (void *) &coloring_order);
+  Zoltan_Bind_Param(Color_params, "COLORING_METHOD",    (void *) &coloring_method);
 
   strncpy(coloring_problemStr, "distance-1", MAX_PARAM_STRING_LEN);
 
@@ -192,16 +190,16 @@ int Zoltan_Color_Test(
   if (ierr != ZOLTAN_OK)
       ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
   /* Put req obs with 1 but first inialize the rest with 0 */
-  ierr = Zoltan_DD_Update (dd_color, local_GNOs, NULL,
+  ierr = Zoltan_DD_Update (dd_color, (ZOLTAN_ID_PTR)local_GNOs, NULL,
                            NULL, color, nvtx);
   if (ierr != ZOLTAN_OK)
       ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
-  ierr = Zoltan_DD_Update (dd_color, requested_GNOs, NULL,
+  ierr = Zoltan_DD_Update (dd_color, (ZOLTAN_ID_PTR)requested_GNOs, NULL,
                            NULL, color_exp, num_obj);
   if (ierr != ZOLTAN_OK)
       ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
   /* Get requested colors from the DDirectory. */
-  ierr = Zoltan_DD_Find (dd_color, global_GNOs, NULL, NULL,
+  ierr = Zoltan_DD_Find (dd_color, (ZOLTAN_ID_PTR)global_GNOs, NULL, NULL,
                          color, vtxdist[zz->Num_Proc], NULL);
 
   if (ierr != ZOLTAN_OK)

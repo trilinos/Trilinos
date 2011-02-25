@@ -101,6 +101,7 @@ namespace Intrepid {
       case shards::Tetrahedron<4>::key:
       case shards::Tetrahedron<8>::key:
       case shards::Tetrahedron<10>::key:
+      case shards::Tetrahedron<11>::key:
         if(subcellDim == 2) {
           if(!tetFacesSet){
             setSubcellParametrization(tetFaces, subcellDim, parentCell);
@@ -578,6 +579,12 @@ namespace Intrepid {
       { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}, { 0.0, 0.0, 0.5}, { 0.5, 0.0, 0.5}, { 0.0, 0.5, 0.5}
     };
 
+    static const double tetrahedron_11[10][3] = {
+      { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
+      // Extension cellWorkset: 6 edge midpoints
+      { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}, { 0.0, 0.0, 0.5}, { 0.5, 0.0, 0.5}, { 0.0, 0.5, 0.5}
+    };
+
     
     // Hexahedron topologies
     static const double hexahedron[8][3] = {
@@ -702,6 +709,9 @@ namespace Intrepid {
         break;
       case shards::Tetrahedron<10>::key:
         return tetrahedron_10[nodeOrd];
+        break;
+      case shards::Tetrahedron<11>::key:
+        return tetrahedron_11[nodeOrd];
         break;
 
         
@@ -835,6 +845,7 @@ namespace Intrepid {
       case shards::Tetrahedron<4>::key:
       case shards::Tetrahedron<8>::key:
       case shards::Tetrahedron<10>::key:
+      case shards::Tetrahedron<11>::key:
         
       case shards::Hexahedron<8>::key:
       case shards::Hexahedron<20>::key:
@@ -918,6 +929,10 @@ namespace Intrepid {
         
       case shards::Tetrahedron<10>::key:
         HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+
+      case shards::Tetrahedron<11>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<Scalar, FieldContainer<Scalar> >() );
         break;
         
       case shards::Hexahedron<27>::key:
@@ -1146,7 +1161,11 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
     case shards::Tetrahedron<10>::key:
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
-      
+
+    case shards::Tetrahedron<11>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+
     case shards::Hexahedron<27>::key:
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
@@ -1300,6 +1319,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
       
     case shards::Tetrahedron<4>::key:
     case shards::Tetrahedron<10>::key:
+    case shards::Tetrahedron<11>::key:
       cellCenter(0) = 1./6.;    cellCenter(1) =  1./6.;    cellCenter(2) =  1./6.;  break;
       
     case shards::Hexahedron<8>::key:

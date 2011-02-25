@@ -124,7 +124,7 @@ namespace Belos {
     }
 
     //! Print the list of valid OrthoManager names to the given ostream
-    void
+    std::ostream&
     printValidNames (std::ostream& out) const
     {
       const int numValid = numOrthoManagers();
@@ -140,6 +140,7 @@ namespace Belos {
 	  out << "or ";
 	}
       out << "\"" << theList_[numValid-1] << "\"";
+      return out;
     }
 
     /// Return a list (as a string) of valid command-line parameter values
@@ -148,7 +149,7 @@ namespace Belos {
     validNamesString () const
     {
       std::ostringstream os;
-      printValidNames (os);
+      (void) printValidNames (os);
       return os.str();
     }
 
