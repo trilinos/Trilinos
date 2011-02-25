@@ -29,17 +29,20 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
     std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_iterator = 
       eb_to_ipb.find(element_blocks[i]);
     
+    // on error print ot all available worksets
     if(ipb_iterator==eb_to_ipb.end()) {
        std::stringstream ss;
 
-       ss << "Could not find input physics block corresponding to element block"
+       ss << "buildWorksets: Could not find input physics block corresponding to element block"
           << " \"" << element_blocks[i] << "\"\n\n Choose one of:\n";
 
-       std::map<std::string,panzer::InputPhysicsBlock>::const_iterator str_iter;
-       for(str_iter=eb_to_ipb.begin();str_iter!=eb_to_ipb.end();++str_iter)
-          ss << "   \"" << str_iter->first << "\"\n"; 
+       std::vector<std::string>::const_iterator str_iter;
+       for(str_iter=element_blocks.begin();str_iter!=element_blocks.end();++str_iter)
+          ss << "   \"" << *str_iter << "\"\n"; 
 
-       TEST_FOR_EXCEPTION_PURE_MSG(ipb_iterator == eb_to_ipb.end(), std::logic_error,ss.str());
+       TEST_FOR_EXCEPTION_PURE_MSG(true, std::logic_error,ss.str());
+
+       // should never get here!
     }
 
     const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
@@ -71,18 +74,48 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
 
   int base_cell_dimension = mesh.getDimension();
 
-  std::vector<std::string> sideSets; 
-  std::vector<std::string> elementBlocks; 
-  mesh.getSidesetNames(sideSets);
-  mesh.getElementBlockNames(elementBlocks);
-  
   std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
   
   for (std::vector<panzer::BC>::const_iterator bc = bcs.begin();
 	 bc != bcs.end(); ++bc) {
     
     std::vector<stk::mesh::Entity*> sideEntities; 
-    mesh.getMySides(bc->sidesetID(),bc->elementBlockID(),sideEntities);
+
+    try {
+       // grab local entities on this side
+       // ...catch any failure...primarily wrong side set and element block info
+       mesh.getMySides(bc->sidesetID(),bc->elementBlockID(),sideEntities);
+    } 
+    catch(STK_Interface::SidesetException & e) {
+       std::stringstream ss;
+       std::vector<std::string> sideSets; 
+       mesh.getSidesetNames(sideSets);
+ 
+       // build an error message
+       ss << e.what() << "\nChoose one of:\n";
+       for(std::size_t i=0;i<sideSets.size();i++) 
+          ss << "\"" << sideSets[i] << "\"\n";
+
+       TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+    }
+    catch(STK_Interface::ElementBlockException & e) {
+       std::stringstream ss;
+       std::vector<std::string> elementBlocks; 
+       mesh.getElementBlockNames(elementBlocks);
+  
+       // build an error message
+       ss << e.what() << "\nChoose one of:\n";
+       for(std::size_t i=0;i<elementBlocks.size();i++) 
+          ss << "\"" << elementBlocks[i] << "\"\n";
+
+       TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+    }
+    catch(std::logic_error & e) {
+       std::stringstream ss;
+       ss << e.what() << "\nUnrecognized logic error.\n";
+
+       TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+    }
     
     std::vector<stk::mesh::Entity*> elements;
     std::vector<std::size_t> local_cell_ids;

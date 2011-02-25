@@ -470,7 +470,11 @@ void STK_Interface::getMyElements(const std::string & blockID,std::vector<stk::m
 
 void STK_Interface::getMySides(const std::string & sideName,std::vector<stk::mesh::Entity*> & sides) const
 {
-   stk::mesh::Selector side = *getSideset(sideName);
+   stk::mesh::Part * sidePart = getSideset(sideName);
+   TEST_FOR_EXCEPTION(sidePart==0,std::logic_error,
+                      "Unknown side set \"" << sideName << "\"");
+
+   stk::mesh::Selector side = *sidePart;
    stk::mesh::Selector ownedBlock = metaData_->locally_owned_part() & side;
 
    // grab elements
@@ -479,8 +483,15 @@ void STK_Interface::getMySides(const std::string & sideName,std::vector<stk::mes
 
 void STK_Interface::getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity*> & sides) const
 {
-   stk::mesh::Selector side = *getSideset(sideName);
-   stk::mesh::Selector block = *getElementBlockPart(blockName);
+   stk::mesh::Part * sidePart = getSideset(sideName);
+   stk::mesh::Part * elmtPart = getElementBlockPart(blockName);
+   TEST_FOR_EXCEPTION(sidePart==0,SidesetException,
+                      "Unknown side set \"" << sideName << "\"");
+   TEST_FOR_EXCEPTION(elmtPart==0,ElementBlockException,
+                      "Unknown element block \"" << blockName << "\"");
+
+   stk::mesh::Selector side = *sidePart;
+   stk::mesh::Selector block = *elmtPart;
    stk::mesh::Selector ownedBlock = metaData_->locally_owned_part() & block & side;
 
    // grab elements

@@ -56,6 +56,13 @@ public:
    typedef stk::mesh::Field<int> ProcIdFieldType;
    typedef stk::mesh::Field<std::size_t> LocalIdFieldType;
 
+   // some simple exception classes
+   struct ElementBlockException : public std::logic_error 
+   { ElementBlockException(const std::string & what) : std::logic_error(what) {} };
+
+   struct SidesetException : public std::logic_error 
+   { SidesetException(const std::string & what) : std::logic_error(what) {} };
+
    STK_Interface();
 
    /** Default constructor
@@ -382,6 +389,7 @@ public: // static operations
    static const std::string edgesString;
 
 protected:
+
 
    /** Compute global entity counts.
      */
