@@ -35,6 +35,7 @@
 #include "EpetraExt_BlockVector.h"
 #include "Epetra_Map.h"
 #include "Teuchos_RCP.hpp"
+#include "Stokhos_OrthogPolyBasis.hpp"
 
 namespace Piro {
 namespace Epetra {
@@ -43,17 +44,21 @@ class StokhosNOXObserver : public NOX::Epetra::Observer
 {
 public:
   StokhosNOXObserver (
-         Teuchos::RCP<NOX::Epetra::Observer> noxObserver_,
-         const Epetra_Map& map_,
-         const int sz_);
+         const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver_,
+         const Teuchos::RCP<const Epetra_Map>& map_,
+         const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis_,
+         int save_moments_ = -1);
 
   void observeSolution(const Epetra_Vector& soln);
 
 private:
 
    Teuchos::RCP<NOX::Epetra::Observer> noxObserver;
-   Epetra_Map map;
+   Teuchos::RCP<const Epetra_Map> map;
+   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis;
    const int numSGBlocks;
+   int save_moments;
+   Teuchos::RCP<Epetra_Vector> moment;
 };
 
 }
