@@ -8,6 +8,7 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_ExodusReaderFactory.hpp"
 
 #include "Intrepid_FieldContainer.hpp"
 
@@ -61,6 +62,45 @@ TEUCHOS_UNIT_TEST(tSTK_IO, fields)
    out << "write to exodus" << std::endl;
 
    mesh->writeToExodus("output.exo");
+}
+
+TEUCHOS_UNIT_TEST(tSTK_IO, exodus_factory_transient_fields)
+{
+   STK_ExodusReaderFactory factory("meshes/basic.gen");
+   RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+   mesh->addSolutionField("u","block_1");
+   mesh->addSolutionField("T","block_1");
+   mesh->addSolutionField("T","block_2");
+   factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+
+   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds; 
+   buildLocalIds(*mesh,localIds);
+
+   FieldContainer vert0, vert1;
+   out << "get vertices" << std::endl;
+   mesh->getElementVertices(*localIds["block_1"],vert0);
+   mesh->getElementVertices(*localIds["block_2"],vert1);
+
+   FieldContainer ublock0, tblock0, tblock1;
+   ublock0.resize(localIds["block_1"]->size(),4);
+   tblock0.resize(localIds["block_1"]->size(),4);
+   tblock1.resize(localIds["block_2"]->size(),4);
+
+   mesh->setupTransientExodusFile("transient_exo.exo");
+
+   out << "assigning 4.5" << std::endl;
+   {
+      assignBlock(ublock0,vert0,6.0);
+      assignBlock(tblock0,vert0,7.0);
+      assignBlock(tblock1,vert1,8.0);
+
+      mesh->setSolutionFieldData("u","block_1",*localIds["block_1"],ublock0);
+      mesh->setSolutionFieldData("T","block_1",*localIds["block_1"],tblock0);
+      mesh->setSolutionFieldData("T","block_2",*localIds["block_2"],tblock1);
+   }
+
+   out << "write to exodus: 4.5" << std::endl;
+   mesh->writeToExodus(4.5);
 }
 
 TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)

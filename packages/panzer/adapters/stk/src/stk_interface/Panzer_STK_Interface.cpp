@@ -73,6 +73,9 @@ void STK_Interface::addSideset(const std::string & name,const CellTopologyData *
 
 void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId) 
 {
+   TEUCHOS_ASSERT(not initialized_);
+   TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
+                      "Unknown element block \"" << blockId << "\"");
    std::pair<std::string,std::string> key = std::make_pair(fieldName,blockId);
 
    // add & declare field if not already added...currently assuming linears
@@ -120,14 +123,16 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
       {
          std::map<std::string, stk::mesh::Part*>::iterator itr;
          for(itr=elementBlocks_.begin();itr!=elementBlocks_.end();++itr) 
-            stk::io::put_io_part_attribute(*itr->second);
+            if(!stk::io::is_part_io_part(*itr->second))
+               stk::io::put_io_part_attribute(*itr->second); // this can only be called once per part
       }
 
       // add side sets
       {
          std::map<std::string, stk::mesh::Part*>::iterator itr;
          for(itr=sidesets_.begin();itr!=sidesets_.end();++itr) 
-            stk::io::put_io_part_attribute(*itr->second);
+            if(!stk::io::is_part_io_part(*itr->second))
+               stk::io::put_io_part_attribute(*itr->second); // this can only be called once per part
       }
    
       // add nodes
@@ -656,4 +661,11 @@ STK_Interface::getPeriodicNodePairing() const
    return vec;
 }
 
+bool STK_Interface::validBlockId(const std::string & blockId) const
+{
+   std::map<std::string, stk::mesh::Part*>::const_iterator blkItr = elementBlocks_.find(blockId);
+
+   return blkItr!=elementBlocks_.end();
 }
+
+} // end namespace panzer_stk

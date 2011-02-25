@@ -80,7 +80,7 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    using Teuchos::rcp;
 
    if(not mesh.isInitialized())
-      mesh.initialize(parallelMach,false);
+      mesh.initialize(parallelMach);
 
    // grab mesh data pointer to build the bulk data
    stk::io::util::MeshData * meshData = 

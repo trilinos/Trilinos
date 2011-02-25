@@ -383,13 +383,16 @@ public:
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 
    getPeriodicNodePairing() const;
 
+   /** check for a valid block id
+     */
+   bool validBlockId(const std::string & blockId) const;
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
    static const std::string edgesString;
 
 protected:
-
 
    /** Compute global entity counts.
      */
