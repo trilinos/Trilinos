@@ -15,19 +15,26 @@
 #define __ZOLTAN_TYPES_H
 
 #include <mpi.h>
+#include <stddef.h>
 #include <unistd.h>
 #include <limits.h>
 
-/* int64_t is needed by 64-bit PT-Scotch header file */
+/* int64_t is needed by 64-bit PT-Scotch header file .
+ * intptr_t is needed by code that uses ints and pointers interchangably
+ * with Zoltan_Map.  ZOLTAN_NOT_FOUND is an invalid intptr_t.
+*/
 
-#ifdef _WIN32
-typedef __int64 int64_t;
-#else
+#ifndef _WIN32
+
 #include <stdint.h>
-#endif
+#define ZOLTAN_NOT_FOUND INTPTR_MAX
 
-#ifndef ssize_t
-typedef long ssize_t;
+#else
+
+typedef __int64 int64_t;
+typedef unsigned long intptr_t;
+#define ZOLTAN_NOT_FOUND ULONG_MAX
+
 #endif
 
 #ifdef __cplusplus

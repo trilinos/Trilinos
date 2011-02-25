@@ -19,12 +19,6 @@
 #include "zz_const.h"
 #include "zoltan_types.h"
 
-#ifdef _WIN32
-typedef size_t intptr_t;
-#else
-#include <stdint.h>
-#endif
-
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -99,8 +93,6 @@ int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, char *key, intptr_t datain, int
 int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP *map);
 int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, char **key, intptr_t *data);
 int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, char **key, intptr_t *data);
-
-#define ZOLTAN_NOT_FOUND INTPTR_MIN
 
 /*****************************************************************************/
 /*****************************************************************************/
