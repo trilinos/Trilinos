@@ -128,6 +128,8 @@ struct ParallelReduce< FunctorType , HostDevice > {
     TPI_Run_threads_reduce( & run_functor_on_tpi , & tmp ,
                             & run_join_on_tpi , & run_init_on_tpi ,
                             reduce_total_size , & tmp.m_result );
+
+    functor.post_process( result );
   }
 };
 

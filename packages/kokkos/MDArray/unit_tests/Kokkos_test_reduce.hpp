@@ -68,6 +68,9 @@ struct ReduceSum<Scalar,1,Device> {
       result(i) = 0 ;
     }
   }
+
+  KOKKOS_DEVICE_FUNCTION
+  void post_process( const reduce_type & result ) const {}
 };
 
 template< typename Scalar , unsigned Rank , class DeviceMap >

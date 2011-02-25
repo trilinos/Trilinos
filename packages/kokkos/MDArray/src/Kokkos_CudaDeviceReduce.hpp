@@ -61,8 +61,8 @@ __device__
 void reduce_shared_on_cuda(
   const typename ReduceOperators::reduce_type & result )
 {
-  typedef typename ReduceOperators::reduce_type       reduce_type ;
-  typedef typename ReduceOperators::reduce_value_type reduce_value_type ;
+  typedef typename ReduceOperators::reduce_type reduce_type ;
+  typedef typename reduce_type::value_type      reduce_value_type ;
   
   reduce_value_type * const ptr = result.address_on_device();
 
@@ -100,8 +100,8 @@ void run_reduce_functor_on_cuda(
   const typename FunctorType::reduce_type block_result ,
   const unsigned int                      reduce_count )
 {
-  typedef typename FunctorType::reduce_type       reduce_type ;
-  typedef typename FunctorType::reduce_value_type reduce_value_type ;
+  typedef typename FunctorType::reduce_type reduce_type ;
+  typedef typename reduce_type::value_type  reduce_value_type ;
 
   reduce_value_type * const shared_values = get_shared_values_on_cuda<reduce_value_type>();
 
@@ -133,14 +133,23 @@ void run_reduce_functor_on_cuda(
       output[ i * gridDim.x ] = shared_values[ i * blockDim.x ];
     }
   }
+
+  // Serial post processing the scalar reduction.
+  // If there is exactly one block and this is thread 0
+  // then the reduction has been completed.
+
+  if ( gridDim.x == 1 && threadIdx.x == 0 ) {
+    functor.post_process( local_result );
+  }
 }
 
 // Single block, reduce contributions
-template< class ReduceOperators >
+template< class FunctorType >
 __global__
 void run_reduce_operator_on_cuda(
-  const typename ReduceOperators::reduce_type result ,
-  const typename ReduceOperators::reduce_type block_result ,
+  const          FunctorType              functor ,
+  const typename FunctorType::reduce_type result ,
+  const typename FunctorType::reduce_type block_result ,
   const unsigned int reduce_count )
 {
   typedef typename ReduceOperators::reduce_type reduce_type ;
@@ -172,14 +181,22 @@ void run_reduce_operator_on_cuda(
       output[i] = shared_values[ i * blockDim.x ] ;
     }
   }
+
+  // Serial post processing the scalar reduction.
+  // If there is exactly one block and this is thread 0
+  // then the reduction has been completed.
+
+  if ( threadIdx.x == 0 ) {
+    functor.post_process( local_result );
+  }
 }
 
 template< class FunctorType >
 struct ParallelReduce< FunctorType , CudaDevice > {
-  typedef typename FunctorType::device_type       device_type ;
-  typedef typename FunctorType::reduce_type       reduce_type ;
-  typedef typename FunctorType::reduce_value_type reduce_value_type ;
-  typedef typename device_type::size_type         size_type ;
+  typedef typename FunctorType::device_type  device_type ;
+  typedef typename FunctorType::reduce_type  reduce_type ;
+  typedef typename reduce_type::value_type   reduce_value_type ;
+  typedef typename device_type::size_type    size_type ;
 
 
   static void run( const FunctorType & functor ,
@@ -261,7 +278,7 @@ struct ParallelReduce< FunctorType , CudaDevice > {
         ( functor , block_result , reduce_count );
 
       run_reduce_operator_on_cuda<FunctorType>
-        <<< 1 , block_count , shmem_size >>>( result , block_result , reduce_count );
+        <<< 1 , block_count , shmem_size >>>( functor , result , block_result , reduce_count );
     }
 
     cudaThreadSynchronize();
