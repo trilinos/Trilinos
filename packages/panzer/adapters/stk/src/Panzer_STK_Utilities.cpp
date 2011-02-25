@@ -92,7 +92,12 @@ void gather_in_block(const std::string & blockId, const panzer::DOFManager<int,i
       int fieldNum = fieldIter->first;
       std::string fieldStr = fieldIter->second;
 
-      fc[fieldStr].resize(localCellIds.size(),dofMngr.getFieldPattern(blockId,fieldStr)->numberIds());
+      // grab the field
+      Teuchos::RCP<const panzer::FieldPattern> fp = dofMngr.getFieldPattern(blockId,fieldNum);
+      if(fp==Teuchos::null) // this field is not in this block
+         continue;
+
+      fc[fieldStr].resize(localCellIds.size(),fp->numberIds());
 
       // gather operation for each cell in workset
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {

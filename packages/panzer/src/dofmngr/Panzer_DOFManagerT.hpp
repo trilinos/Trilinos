@@ -291,7 +291,8 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::string & 
 
    // smash together all fields...do interlacing
    fieldAggPattern_[blockId] = rcp(new FieldAggPattern(blockPatterns));
-   TEUCHOS_ASSERT(geomPattern->equals(*fieldAggPattern_[blockId]->getGeometricAggFieldPattern()));
+   // TEUCHOS_ASSERT(geomPattern->equals(*fieldAggPattern_[blockId]->getGeometricAggFieldPattern()));
+   // this should not be true!  What if this only has Q1s and geometric is for Q2s
 
    // build FEI pattern
    const std::vector<int> & fields = fieldAggPattern_[blockId]->fieldIds();
