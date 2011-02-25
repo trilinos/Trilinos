@@ -1407,6 +1407,27 @@ int Internals::put_non_define_data(const std::vector<Block> &blocks)
 
     if (put_int_array(exodusFilePtr, VAR_STAT_EL_BLK, elem_blk_status) != NC_NOERR)
       return(EX_FATAL);
+
+    for (int iblk = 0; iblk < num_elem_blk; iblk++) {
+      if (blocks[iblk].attributeCount > 0) {
+	// If any attributes defined, then output a dummy attribute name for each
+	// to avoid corruption of name field if client doesn't output a name.
+	int varid;
+	nc_inq_varid(exodusFilePtr, VAR_NAME_ATTRIB(iblk+1), &varid);
+	size_t  start[2];
+	size_t  count[2];
+	std::string text(max_string_length(), ' ');
+
+	count[0] = 1;
+	start[1] = 0;
+	count[1] = text.size()+1;
+
+	for (int i = 0; i < blocks[iblk].attributeCount; i++) {
+	  start[0] = i;
+	  nc_put_vara_text(exodusFilePtr, varid, start, count, text.c_str());
+	}
+      }
+    }
   }
   return (EX_NOERR);
 }
