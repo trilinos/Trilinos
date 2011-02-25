@@ -82,7 +82,7 @@ int ex_put_block( int         exoid,
 {
   int status;
   int arbitrary_polyhedra = 0; /* 1 if block is arbitrary 2d polyhedra type; 2 if 3d polyhedra */
-  int varid, dimid, dims[2], blk_id_ndx, blk_stat, strdim;
+  int att_name_varid, varid, dimid, dims[2], blk_id_ndx, blk_stat, strdim;
   size_t start[2];
   int num_blk;
   size_t temp;
@@ -373,7 +373,7 @@ int ex_put_block( int         exoid,
     dims[0] = numattrdim;
     dims[1] = strdim;
 	    
-    if ((status = nc_def_var(exoid, vattnam, NC_CHAR, 2, dims, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, vattnam, NC_CHAR, 2, dims, &att_name_varid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
 	      "Error: failed to define %s attribute name array in file id %d",
@@ -526,6 +526,24 @@ int ex_put_block( int         exoid,
 	    ex_name_of_object(blk_type), exoid);
     ex_err("ex_put_block",errmsg,exerrval);
     return (EX_FATAL);
+  }
+
+  /* Output a dummy empty attribute name in case client code doesn't
+     write anything; avoids corruption in some cases.
+  */
+  if (num_attr_per_entry > 0) {
+    size_t  count[2];
+    char *text = "                                "; /* 32 spaces */
+    size_t i;
+
+    count[0] = 1;
+    start[1] = 0;
+    count[1] = strlen(text)+1;
+  
+    for (i = 0; i < num_attr_per_entry; i++) {
+      start[0] = i;
+      nc_put_vara_text(exoid, att_name_varid, start, count, text);
+    }
   }
 
   return (EX_NOERR);
