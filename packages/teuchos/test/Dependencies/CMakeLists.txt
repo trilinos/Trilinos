@@ -8,14 +8,16 @@ SET(SerializationFiles
   )
   
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-	Dependencies_Serialization_test
-	SOURCES cxx_main.cpp Dependencies_SerializationTests.cpp
+  Dependencies_Serialization_test
+  SOURCES cxx_main.cpp Dependencies_SerializationTests.cpp
+  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-	Dependencies_test
-	SOURCES cxx_main.cpp Dependencies_UnitTests.cpp
+  Dependencies_test
+  SOURCES cxx_main.cpp Dependencies_UnitTests.cpp
+  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 

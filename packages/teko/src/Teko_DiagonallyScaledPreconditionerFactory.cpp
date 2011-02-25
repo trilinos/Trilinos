@@ -53,14 +53,15 @@ namespace Teko {
 
 //! Default constructor, for use with the AutoClone class.
 DiagonallyScaledPreconditionerFactory::DiagonallyScaledPreconditionerFactory()
-   : invFactory_(Teuchos::null), scalingType_(COLUMN_SCALING)
+   : invFactory_(Teuchos::null), scalingType_(ROW_SCALING), diagonalType_(AbsRowSum)
 { }
 
 /** Construct a preconditioner factory that applies a specified
   * preconditioner, a fixed number of times.
   */
-DiagonallyScaledPreconditionerFactory::DiagonallyScaledPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory> & invFactory,ScalingType scalingType)
-   : invFactory_(invFactory), scalingType_(scalingType)
+DiagonallyScaledPreconditionerFactory::DiagonallyScaledPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory> & invFactory,
+                                                                             ScalingType scalingType,DiagonalType diagonalType)
+   : invFactory_(invFactory), scalingType_(scalingType), diagonalType_(diagonalType)
 { 
 }
 
@@ -82,7 +83,7 @@ LinearOp DiagonallyScaledPreconditionerFactory::buildPreconditionerOperator(Line
                    << "inverse factory has been set. Currently it is null!");
 
    // get diagonal matrix
-   LinearOp invD = getInvDiagonalOp(lo,Teko::AbsRowSum);
+   LinearOp invD = getInvDiagonalOp(lo,diagonalType_);
 
    // M = A * invD
    ModifiableLinearOp & M = state.getModifiableOp("op_M");
@@ -124,39 +125,19 @@ void DiagonallyScaledPreconditionerFactory::initializeFromParameterList(const Te
                    << " could not be found");
    
    // get scaling type specified by XML file
-   const std::string defaultScaleType = "Column";
+   const std::string defaultScaleType = "Row";
    const std::string scalingTypeString = "Scaling Type";
    std::string scaleType = defaultScaleType;
    if(settings.isParameter(scalingTypeString))
       scaleType = settings.get<std::string>(scalingTypeString);
 
    if(defaultScaleType==scaleType)
-      scalingType_ = COLUMN_SCALING;
-   else
       scalingType_ = ROW_SCALING;
-}
+   else
+      scalingType_ = COLUMN_SCALING;
 
-/** \brief Request the additional parameters this preconditioner factory
-  *        needs. 
-  */
-Teuchos::RCP<Teuchos::ParameterList> DiagonallyScaledPreconditionerFactory::getRequestedParameters() const
-{
-   TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
-                      "ERROR: Teko::DiagonallyScaledPreconditionerFactory::getRequestedParameters requires that a "
-                   << "preconditioner factory has been set. Currently it is null!");
-
-   return invFactory_->getRequestedParameters();
-}
-
-/** \brief Update this object with the fields from a parameter list.
-  */
-bool DiagonallyScaledPreconditionerFactory::updateRequestedParameters(const Teuchos::ParameterList & pl)
-{
-   TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
-                      "ERROR: Teko::DiagonallyScaledPreconditionerFactory::updateRequestedParameters requires that a "
-                   << "preconditioner factory has been set. Currently it is null!");
-
-   return invFactory_->updateRequestedParameters(pl);
+   if(settings.isParameter("Diagonal Type"))
+      diagonalType_ = Teko::getDiagonalType(settings.get<std::string>("Diagonal Type"));
 }
 
 } // end namespace Teko

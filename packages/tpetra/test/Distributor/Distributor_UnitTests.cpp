@@ -121,7 +121,7 @@ namespace {
     // each node i sends to node i+1
     // for the last node, this results in an invalid node id, which should throw an exception on 
     // every node
-    size_t numImports = 0;
+    size_t numImports = 0; (void)numImports;
     // create from sends with bad node IDs
     {
       Distributor distributor(comm);

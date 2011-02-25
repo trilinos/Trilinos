@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   //
   // Iterate
   //
-  Scalar lambda;
+  Scalar lambda; (void)lambda;
   lambda = TpetraExamples::powerMethod<Scalar,Ordinal>(A, niters, tolerance, verbose);
 
   if (verbose) {

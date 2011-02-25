@@ -25,7 +25,8 @@ Tpetra::Utils::generateMatrix(const Teuchos::RCP<Teuchos::ParameterList> &plist,
     const GlobalOrdinal numRows = gS2*(GlobalOrdinal)gridSize;
     Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap;
     rowMap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>((global_size_t)numRows,(GlobalOrdinal)0,comm,GloballyDistributed,node));
-    A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,7,Tpetra::StaticProfile));
+    // create with DynamicProfile, so that the fillComplete(DoOptimizeStorage) can do first-touch reallocation 
+    A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,7,Tpetra::DynamicProfile));
     // fill matrix, one row at a time
     Teuchos::Array<GlobalOrdinal> neighbors;
     Teuchos::Array<Scalar> values(7, -ST::one());
@@ -207,7 +208,8 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   else {
     domMap = createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numCols,comm,node);
   }
-  A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,myNNZ,Tpetra::StaticProfile));
+  // create with DynamicProfile, so that the fillComplete(DoOptimizeStorage) can do first-touch reallocation 
+  A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,myNNZ,Tpetra::DynamicProfile));
   // free this locally, A will keep it allocated as long as it is needed by A (up until allocation of nonzeros)
   myNNZ = Teuchos::null;
   if (myRank == 0 && numNZ > 0) {

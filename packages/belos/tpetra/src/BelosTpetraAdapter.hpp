@@ -128,7 +128,7 @@ namespace Belos {
       KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && 
-	index.ubound() < mv.getNumVectors();
+	index.ubound() < GetNumberVecs(mv);
       if (! validRange)
 	{
 	  std::ostringstream os;
@@ -141,7 +141,7 @@ namespace Belos {
 			     os.str() << "Index range includes negative "
 			     "index/ices, which is not allowed.");
 	  // Range1D bounds are signed; size_t is unsigned.
-	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
+	  TEST_FOR_EXCEPTION(index.ubound() >= GetNumberVecs(mv),
 			     std::invalid_argument, 
 			     os.str() << "Index range exceeds number of vectors " 
 			     << mv.getNumVectors() << " in the input multivector.");

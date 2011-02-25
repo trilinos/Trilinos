@@ -85,7 +85,6 @@ extern "C" {
     #define TPL_USE_DATATYPE TPL_SCOTCH_DATATYPES
   #endif
   #ifdef ZOLTAN_PTSCOTCH
-    #include <stdint.h>
     #include<ptscotch.h>
     #define TPL_USE_DATATYPE TPL_SCOTCH_DATATYPES
   #endif
@@ -105,7 +104,6 @@ extern "C" {
 
   #if __ptscotch__ + __scotch__ > 0
     #if __ptscotch__ == 1
-       #include <stdint.h>
        #include<ptscotch.h>
     #else
        #include<scotch.h>

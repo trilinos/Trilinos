@@ -1,5 +1,0 @@
-INCLUDE(TPLDeclareLibraries)
-
-TPL_DECLARE_LIBRARIES( CUSP
-  REQUIRED_HEADERS cusp/version.h
-  )
