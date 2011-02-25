@@ -1,13 +1,18 @@
 
-host_test.exe : \
+SRC =	Kokkos_test_mdarray_host.cpp	\
+	../src/*.cpp	\
+	../../../ThreadPool/src/*.c
+
+INC = -I. -I../src -I../../../ThreadPool/src
+
+host_test.exe : $(SRC) \
 		Kokkos_test_hex_grad.hpp	\
-		Kokkos_test_mdarray_host.cpp	\
 		../src/Kokkos_MDArrayViewRawData.hpp	\
 		../src/Kokkos_HostMDArrayView.hpp	\
 		../src/Kokkos_HostMap.hpp	\
-		../src/Kokkos_HostDevice.hpp	\
-		../src/Kokkos_HostDevice.cpp
-	g++ -g -I. -I../src Kokkos_test_mdarray_host.cpp ../src/Kokkos_HostDevice.cpp -o host_test.exe
+		../src/Kokkos_HostDevice.hpp
+	g++ -g $(INC) $(SRC) -o host_test.exe -lpthread
 
-#	purify g++ -g -I. -I../src Kokkos_test_mdarray_host.cpp ../src/Kokkos_HostDevice.cpp -o host_test.exe
+#	purify g++ -g $(INC) $(SRC) -o host_test.exe -lpthread
+
 
