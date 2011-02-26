@@ -15,19 +15,30 @@
 #define __ZOLTAN_TYPES_H
 
 #include <mpi.h>
+#include <stddef.h>
 #include <unistd.h>
 #include <limits.h>
 
-/* int64_t is needed by 64-bit PT-Scotch header file */
+/* int64_t is needed by 64-bit PT-Scotch header file .
+ *
+ * intptr_t is needed by code that uses ints and pointers interchangably
+ * with Zoltan_Map.  ZOLTAN_NOT_FOUND is an invalid intptr_t.
+ *
+ * ssize_t is needed for the definition of ZOLTAN_GNO_TYPE.
+ */
 
-#ifdef _WIN32
-typedef __int64 int64_t;
+#ifndef _WIN32
+
+#include <stdint.h>                 /* for int64_t and intptr_t */
+#define ZOLTAN_NOT_FOUND INTPTR_MAX /* safe to say never a valid pointer? */
+
 #else
-#include <stdint.h>
-#endif
 
-#ifndef ssize_t
-typedef long ssize_t;
+#include <BaseTsd.h>              /* for ssize_t, int64, int_ptr */
+typedef int64 int64_t;
+typedef int_ptr intptr_t;
+#define ZOLTAN_NOT_FOUND LONG_MAX  /* safe to say never a valid pointer? */
+
 #endif
 
 #ifdef __cplusplus
@@ -56,8 +67,6 @@ extern "C" {
  *   bits depending on whether the machine is a 32 or 64 bit machine.  (We use ssize_t
  *   instead of intmax_t because intmax_t may still be
  *   64 bits on a 32 bit machine because the compiler constructs a 64 bit int.)
- *
- * It's decimal type specifier is "z":    printf("%zd\n",globalNum);
  *
  * The MPI_Datatype for ssize_t is returned by Zoltan_mpi_gno_type().
  *
