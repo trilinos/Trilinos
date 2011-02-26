@@ -4,8 +4,12 @@
 #include "Epetra_LinearProblem.h" 
 #include "Amesos_BaseSolver.h" 
 
-int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
-        Epetra_LinearProblem *&LP, Amesos_BaseSolver *&Solver, int &Dnr, 
-        int *&DRowElems, int &Snr, int *&SRowElems, int *&piv,
-        Epetra_MultiVector *&CMV);
+#define MIN(a, b) (((a) < (b)) ? a : b)
+#define MAX(a, b) (((a) > (b)) ? a : b)
+
+int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
+        Epetra_LinearProblem *&LP, Amesos_BaseSolver *&Solver, 
+        Epetra_CrsMatrix *&Cptr, int &Dnr, 
+        int *&DRowElems, int &Snr, int *&SRowElems,
+        Teuchos::RCP<Epetra_CrsMatrix>& Sbar, double Sdiagfactor);
 

@@ -9,7 +9,7 @@ include ./Makefile.export.Trilinos_install
 MY_LIB_DIR=/home/srajama/proj/Trilinos/Trilinos_HyperLU/tc_build/lib
 RANLIB=/usr/bin/ranlib
 
-OBJ = hyperlu_factor.o hyperlu_util.o Ifpack_HyperLU.o
+OBJ = hyperlu_factor.o hyperlu_util.o Ifpack_HyperLU.o hyperlu_probing_operator.o
 
 all: library exec driver
 
@@ -21,7 +21,6 @@ exec: $(OBJ) hyperlu.o
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -g $(OBJ) hyperlu.o $(MY_LIB_DIR)/libamesos.a $(MY_LIB_DIR)/libepetraext.a $(MY_LIB_DIR)/libepetra.a $(MY_LIB_DIR)/libteuchos.a  $(MY_LIB_DIR)/libisorropia.a  $(MY_LIB_DIR)/libzoltan.a $(MY_LIB_DIR)/libaztecoo.a $(Trilinos_TPL_LIBRARIES) -lgfortran -o hyperlu_factor.exe
 
 driver: $(OBJ) hyperlu_driver.o
-#$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -g $(OBJ) hyperlu_driver.o $(MY_LIB_DIR)/libml.a $(MY_LIB_DIR)/libifpack.a $(MY_LIB_DIR)/libamesos.a $(MY_LIB_DIR)/libepetraext.a $(MY_LIB_DIR)/libaztecoo.a $(MY_LIB_DIR)/libepetra.a $(MY_LIB_DIR)/libteuchos.a  $(MY_LIB_DIR)/libisorropia.a  $(MY_LIB_DIR)/libzoltan.a $(Trilinos_TPL_LIBRARIES) -lgfortran -o hyperlu_driver.exe
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -g $(OBJ) hyperlu_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o hyperlu_driver.exe
 
 prober: hyperlu_prober.o
@@ -48,5 +47,7 @@ hyperlu_driver.o: ./hyperlu_driver.cpp
 hyperlu_prober.o: ./hyperlu_prober.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c -g $< -o $@
 
+hyperlu_probing_operator.o: ./hyperlu_probing_operator.cpp
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c -g $< -o $@
 
 #-------------------------------------------------------------------------------

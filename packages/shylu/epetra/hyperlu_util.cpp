@@ -92,7 +92,8 @@ void checkMaps(Epetra_CrsMatrix *A)
     }
 }
 
-void findLocalColumns(Epetra_CrsMatrix *A, int *gvals)
+// TODO: SNumGlobalCols never used
+void findLocalColumns(Epetra_CrsMatrix *A, int *gvals, int &SNumGlobalCols)
 {
 
     int n = A->NumGlobalRows();
@@ -119,8 +120,18 @@ void findLocalColumns(Epetra_CrsMatrix *A, int *gvals)
     // Bottleneck?: Compute the column permutation
     A->Comm().SumAll(vals, gvals, n);
 
-    delete vals;
+    SNumGlobalCols = 0;
+    for (int i = 0; i < n ; i++)
+    {
+        //cout << gvals[i] ;
+        if (gvals[i] > 1)
+            SNumGlobalCols++;
+    }
+    //cout << endl;
+    //cout << "Snum Global cols=" << SNumGlobalCols << endl;
 
+    delete vals;
+    return;
 }
 
 void findBlockElems(int nrows, int *rows, int *gvals, int Lnr, int *LeftElems, 

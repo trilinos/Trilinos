@@ -32,13 +32,10 @@ void Ifpack_HyperLU::Destroy()
     }
     if (IsComputed_)
     {
-        delete localS_;
         delete LP_;
         delete Solver_;
         delete[] DRowElems_;
         delete[] SRowElems_;
-        delete[] piv_;
-        delete CMV_;
     }
 }
 
@@ -78,9 +75,11 @@ int Ifpack_HyperLU::SetParameters(Teuchos::ParameterList& parameterlist)
 
 int Ifpack_HyperLU::Compute()
 {
-    HyperLU_factor(A_, 1, localS_, LP_, Solver_, Dnr_, DRowElems_, Snr_,
-               SRowElems_, piv_, CMV_);
+    double Sdiagfactor = 0.05; // hard code the diagonals
+    HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
+                    Sbar_, Sdiagfactor);
     IsComputed_ = true;
+    cout << " Done with the compute" << endl ;
     return 0;
 }
 
@@ -94,9 +93,10 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
         cout << X;
     }
 #endif
+    cout << "Entering ApplyInvers" << endl;
+    //if(NumApplyInverse_ == 0) cout << X;
     assert(X.Map().SameAs(Y.Map()));
     assert(X.Map().SameAs(A_->RowMap()));
-    //cout << "Entering ApplyInvers" << endl;
     const Epetra_MultiVector *newX; 
     newX = &X;
     //rd_->redistribute(X, newX);
@@ -104,22 +104,18 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     int nvectors = newX->NumVectors();
 
     // May have to use importer/exporter
-    Epetra_SerialComm LComm;        // Use Serial Comm for the local vectors.
-    Epetra_Map localXsMap(-1, Snr_, SRowElems_, 0, LComm);
-    Epetra_Map localXdMap(-1, Dnr_, DRowElems_, 0, LComm);
+    Epetra_Map BsMap(-1, Snr_, SRowElems_, 0, X.Comm());
+    Epetra_Map BdMap(-1, Dnr_, DRowElems_, 0, X.Comm());
 
-    Epetra_MultiVector localXs(localXsMap, nvectors);
-    Epetra_Import XsImporter(localXsMap, newX->Map());
-    assert(XsImporter.SourceMap().SameAs(newX->Map()));
-    assert((newX->Map()).SameAs(XsImporter.SourceMap()));
-    localXs.Import(*newX, XsImporter, Insert);
+    Epetra_MultiVector Bs(BsMap, nvectors);
+    Epetra_Import BsImporter(BsMap, newX->Map());
+
+    assert(BsImporter.SourceMap().SameAs(newX->Map()));
+    assert((newX->Map()).SameAs(BsImporter.SourceMap()));
+
+    Bs.Import(*newX, BsImporter, Insert);
     //cout << " Done with first import " << endl;
-
-    Teuchos::LAPACK<int, double> lapack;
-    int info;
-    // TODO : Need to check Snr for non blk diagonal Si.
-    lapack.GETRS('N', Snr_, nvectors, localS_->Values(), Snr_, piv_,
-                localXs.Values(), Snr_, &info);
+    //if(NumApplyInverse_ == 0) cout << Bs;
 
 #ifdef DUMP_MATRICES
     if (NumApplyInverse_ == 0 && A_->Comm().MyPID() == 1)
@@ -128,33 +124,87 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
 #endif
 
-    Epetra_MultiVector temp(localXdMap, nvectors);
-    temp.Multiply('N', 'N', 1.0, *CMV_, localXs, 0.0);
+    Epetra_MultiVector Xs(BsMap, nvectors);
+    Epetra_LinearProblem Problem(Sbar_.get(), &Xs, &Bs);
 
-    Epetra_MultiVector localXd(localXdMap, nvectors);
-    Epetra_Import XdImporter(localXdMap, newX->Map());
-    localXd.Import(*newX, XdImporter, Insert);
-    assert(XdImporter.SourceMap().SameAs(newX->Map()));
-    assert((newX->Map()).SameAs(XdImporter.SourceMap()));
-
-    temp.Update(1.0, localXd, -1.0);
-
-    LP_->SetRHS(&temp);
-    LP_->SetLHS(&localXd);
-    Solver_->Solve();
 
 #ifdef DUMP_MATRICES
-    if (NumApplyInverse_ == 0 && A_->Comm().MyPID() == 1)
+    if (NumApplyInverse_ == 0 )
     {
-        EpetraExt::MultiVectorToMatlabFile("localXd.mat", localXd);
+        //cout << *(Sbar_.get()) << endl;
+        EpetraExt::RowMatrixToMatlabFile("Sbar.mat", *(Sbar_.get()));
     }
 #endif
 
-    Epetra_Export XdExporter(localXdMap, Y.Map());
-    Y.Export(localXd, XdExporter, Insert);
+    AztecOO solver(Problem);
+    solver.SetAztecOption(AZ_solver, AZ_gmres);
+    // Do not use AZ_none
+    solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+    //solver.SetAztecOption(AZ_overlap, 3);
+    solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu);
+    solver.SetAztecOption(AZ_output, AZ_all);
+    solver.SetAztecOption(AZ_diagnostics, AZ_all);
 
-    Epetra_Export XsExporter(localXsMap, Y.Map());
-    Y.Export(localXs, XsExporter, Insert);
+    solver.Iterate(30, 1e-10);
+
+    //if(NumApplyInverse_ == 0) cout << "X vector from inner iteration" << Xs;
+
+    Epetra_MultiVector Bd(BdMap, nvectors);
+    Epetra_Import BdImporter(BdMap, newX->Map());
+    assert(BdImporter.SourceMap().SameAs(newX->Map()));
+    assert((newX->Map()).SameAs(BdImporter.SourceMap()));
+    Bd.Import(*newX, BdImporter, Insert);
+
+    Epetra_MultiVector temp(BdMap, nvectors);
+    C_->Multiply(false, Xs, temp);
+    temp.Update(1.0, Bd, -1.0);
+
+    Epetra_SerialComm LComm;        // Use Serial Comm for the local vectors.
+    Epetra_Map LocalBdMap(-1, Dnr_, DRowElems_, 0, LComm);
+    Epetra_MultiVector localrhs(LocalBdMap, nvectors);
+    Epetra_MultiVector locallhs(LocalBdMap, nvectors);
+
+    int lda;
+    double *values;
+    int err = temp.ExtractView(&values, &lda);
+    assert (err == 0);
+    int nrows = C_->RowMap().NumMyElements();
+
+    // copy to local vector
+    assert(lda == nrows);
+    for (int v = 0; v < nvectors; v++)
+    {
+       for (int i = 0; i < nrows; i++)
+       {
+           err = localrhs.ReplaceMyValue(i, v, values[i+v*lda]);
+           assert (err == 0);
+       }
+    }
+
+    LP_->SetRHS(&localrhs);
+    LP_->SetLHS(&locallhs);
+    Solver_->Solve();
+
+    err = locallhs.ExtractView(&values, &lda);
+    assert (err == 0);
+
+    // copy to distributed vector
+    assert(lda == nrows);
+    for (int v = 0; v < nvectors; v++)
+    {
+       for (int i = 0; i < nrows; i++)
+       {
+           err = temp.ReplaceMyValue(i, v, values[i+v*lda]);
+           assert (err == 0);
+       }
+    }
+
+    Epetra_Export XdExporter(BdMap, Y.Map());
+    Y.Export(temp, XdExporter, Insert);
+
+    Epetra_Export XsExporter(BsMap, Y.Map());
+    Y.Export(Xs, XsExporter, Insert);
+
 
 #ifdef DUMP_MATRICES
     if (NumApplyInverse_ == 0)
@@ -165,7 +215,7 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
 #endif
     NumApplyInverse_++;
     //delete newX;
-    //cout << "Leaving ApplyInvers" << endl;
+    cout << "Leaving ApplyInvers" << endl;
     return 0;
 }
 

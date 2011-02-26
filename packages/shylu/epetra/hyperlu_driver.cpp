@@ -129,7 +129,9 @@ int main(int argc, char *argv[])
         prec = new Ifpack_HyperLU(A);
         prec->Initialize();
         prec->Compute();
+        cout << " Going to set it in solver" << endl ;
         solver.SetPrecOperator(prec);
+        cout << " Done setting the solver" << endl ;
     }
     else if (prec_type.compare("ILU") == 0)
     {
@@ -154,6 +156,7 @@ int main(int argc, char *argv[])
 
     solver.SetAztecOption(AZ_solver, AZ_gmres);
     solver.SetAztecOption(AZ_output, 1);
+    //solver.SetAztecOption(AZ_conv, AZ_Anorm);
 
     solver.Iterate(500, 1e-10);
 

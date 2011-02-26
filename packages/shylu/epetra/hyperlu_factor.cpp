@@ -23,6 +23,7 @@
 */
 
 #include <assert.h>
+#include <mpi.h>
 #include <iostream>
 #include <sstream>
 
@@ -67,14 +68,18 @@
 
 #include "hyperlu.h"
 #include "hyperlu_util.h"
+#include "hyperlu_probing_operator.h"
+
+#include "Isorropia_EpetraProber.hpp"
 
 using namespace std;
 
 
-int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
-        Epetra_LinearProblem *&LP, Amesos_BaseSolver *&Solver, int &Dnr, 
-        int *&DRowElems, int &Snr, int *&SRowElems, int *&piv,
-        Epetra_MultiVector *&CMV)
+int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
+        Epetra_LinearProblem *&LP, Amesos_BaseSolver *&Solver, 
+        Epetra_CrsMatrix *&Cptr, int &Dnr, 
+        int *&DRowElems, int &Snr, int *&SRowElems,
+        Teuchos::RCP<Epetra_CrsMatrix>& Sbar, double Sdiagfactor)
 {
     int myPID = A->Comm().MyPID();
     int n = A->NumGlobalRows();
@@ -94,14 +99,15 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
     // Find all columns in this proc
     int *gvals = new int[n];       // vector of size n, not ncols !
     // gvals[local cols] = 1, gvals[shared cols] > 1.
-    findLocalColumns(A, gvals);
+    int SNumGlobalCols;
+    findLocalColumns(A, gvals, SNumGlobalCols);
 
     // 3. Assemble diagonal block and the border in convenient form [
     /* In each processor, we have (in a permuted form)
      *  | D_i    C_i   |
      *  | R_i    S_i   |
      * D_i - diagonal block, C_i - Column Separator, R_i - Row separator
-     * S_i - Schur complement part of A
+     * S_i - A22 block corresponding to Schur complement part of A
      * Assemble all four blocks in local matrices. */
 
      ostringstream ssmsg1;
@@ -124,13 +130,11 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
     Dnr = Dnc;          // #rows in square diagonal block
     Snr = nrows - Dnr;  // #rows in the row separator
 
+    // TODO : The above assignment may not be correct in the unsymetric case
+
     cout << msg << " #columns in diagonal blk ="<< Dnc << endl;
     cout << msg << " #rows in diagonal blk ="<< Dnr << endl;
-#ifdef BLOCK_DIAGONAL_Si
-    cout << msg << " #columns in S ="<< Snr << endl;
-#else
     cout << msg << " #columns in S ="<< Snc << endl;
-#endif
     cout << msg << " #rows in S ="<< Snr << endl;
 
     // Create a row map for the D and S blocks [
@@ -152,7 +156,9 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
     // Create the local row map 
     Epetra_SerialComm LComm;        // Use Serial Comm for the local blocks.
     Epetra_Map LocalDRowMap(-1, Dnr, DRowElems, 0, LComm);
-    Epetra_Map LocalSRowMap(-1, Snr, SRowElems, 0, LComm);
+    Epetra_Map DRowMap(-1, Dnr, DRowElems, 0, A->Comm());
+    //Epetra_Map LocalSRowMap(-1, Snr, SRowElems, 0, LComm);
+    Epetra_Map SRowMap(-1, Snr, SRowElems, 0, A->Comm());
     // ]
 
     // Create a column map for the D and S blocks [
@@ -164,7 +170,9 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
 
     // Create the local column map 
     Epetra_Map LocalDColMap(-1, Dnc, DColElems, 0, LComm);
-    Epetra_Map LocalSColMap(-1, Snc, SColElems, 0, LComm);
+    Epetra_Map DColMap(-1, Dnc, DColElems, 0, A->Comm());
+    //Epetra_Map LocalSColMap(-1, Snc, SColElems, 0, LComm);
+    //Epetra_Map SColMap(SNumGlobalCols, Snc, SColElems, 0, A->Comm());
     for (int i = 0; i < Snr; i++)
     {
         // Epetra guarentees columns corresponding to local rows will be first
@@ -178,31 +186,31 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
     double *Ax;
     int *DNumEntriesPerRow = new int[Dnr];
     int *SNumEntriesPerRow = new int[Snr];
+    int *CNumEntriesPerRow = new int[Dnr];
+    int *RNumEntriesPerRow = new int[Snr];
+    int *SBarNumEntriesPerRow = new int[Snr];
     int Dmaxnnz=0, Cmaxnnz=0, Rmaxnnz=0, Smaxnnz=0; // Max nnz in any row
 
-    int *CColMax = new int[n]; // Possible Elems in column map of C
-    int *RRowMax = new int[n]; // Possible Elems in row map of R
-    int Cnc = 0; // nonzero columns in C
-    int Rnr = 0; // nonzero rows in R
+    // Find the required no of diagonals
+    //int Sdiag = (int) SNumGlobalCols * Sdiagfactor;
+    int Sdiag = (int) Snr * Sdiagfactor;
+    Sdiag = MAX(Sdiag, Snr-1);
+    cout << "No of diagonals in Sbar =" << Sdiag << endl;
+    //assert (Sdiag <= SNumGlobalCols-1);
+    assert (Sdiag <= Snr-1);
 
     int dcol, ccol, rcol, scol;
-    int *CColElems, *RRowElems;
-
     if (sym)
     {
-        for (int i = 0; i < n; i++)
-        {
-            CColMax[i] = -1; RRowMax[i] = -1;
-        }
 
         int NumEntries;
-        int dcnt, scnt;
+        int dcnt, scnt, ccnt, rcnt;
         dcol = 0 ; ccol = 0; rcol = 0; scol = 0;
         // Three things to worry about here, Num entries in each row of S,
         // size of C and R and the corresponding cols/rows.
         for (int i = 0; i < nrows; i++) 
         {
-            dcnt = 0; scnt = 0;
+            dcnt = 0; scnt = 0; ccnt = 0; rcnt = 0;
             // Need to pass local id i to this function 
             int err = A->ExtractMyRowView(i, NumEntries, Ax, Ai);
             if (err != 0)
@@ -224,23 +232,16 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
                     }
                     else
                     { 
-                        // Give a mapping from global column ids to vector ids 
-                        // in C
-                        if (CColMax[gcid] ==  -1)
-                            CColMax[gcid] = Cnc++;
+                        ccnt++;
                     }
                 }
-                // Assign 0 and increase dcol even if it is just C row. 
                 // There should not be a null row in D.
                 assert(dcnt != 0);
                 DNumEntriesPerRow[dcol++] = dcnt;
+                CNumEntriesPerRow[ccol++] = ccnt;
             }
             else
             { // R or S row
-#ifdef BLOCK_DIAGONAL_Si
-                if (RRowMax[gid] == -1)
-                    RRowMax[gid] = Rnr++;
-#endif
                 int gcid;
                 //cout << "proc/row " << myPID << "/" << gid;
                 //cout << " has Cols = " ;
@@ -249,70 +250,44 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
                     gcid = A->GCID(Ai[j]); 
                     if (gvals[gcid] == 1)
                     {
-#ifndef BLOCK_DIAGONAL_Si
-                        if (RRowMax[gid] == -1)
-                            RRowMax[gid] = Rnr++;
-#endif
+                        rcnt++;
                     }
                     else
                     {
-#ifdef BLOCK_DIAGONAL_Si
-                        if (A->LRID(gcid) != -1)
-                        {
-#endif
-                            //cout << gcid << " " ;
-                            scnt++;
-#ifdef BLOCK_DIAGONAL_Si
-                        }
-#endif
+                        scnt++;
                     }
                 }
-                //cout << " count of " << scnt << endl;
-                // Assign 0 and increase scol even if it is just R row. 
                 // There should not be a null row in S.
                 assert(scnt != 0);
                 SNumEntriesPerRow[scol++] = scnt;
+                RNumEntriesPerRow[rcol++] = rcnt;
             }
             Dmaxnnz = max(Dmaxnnz, dcnt);
             Smaxnnz = max(Smaxnnz, scnt); 
+            Rmaxnnz = max(Rmaxnnz, scnt); 
+            Cmaxnnz = max(Cmaxnnz, scnt); 
         }
         assert( dcol == Dnr);
         assert( scol == Snr);
-
-        RRowElems = new int[Rnr]; // Possible Elems in row map of R
-        int temp = 0 ;
-
-#ifdef BLOCK_DIAGONAL_Si
-        assert(Snr == Rnr);
-        CColElems = new int[Rnr]; // Possible Elems in column map of C
-        for (int i = 0; i < Snr; i++)
+        assert( ccol == Dnr);
+        assert( rcol == Snr);
+        int sbarcol = 0;
+        for (int i = 0; i < nrows; i++) 
         {
-            if (RRowMax[SRowElems[i]] != -1)
-            {
-                CColElems[temp++] = SRowElems[i]; // keep the gid for maps
+            gid = rows[i];
+            if (gvals[gid] != 1)
+            { // S row
+                // Add the number of required diagonals in approximate Schur 
+                // complement , +1 below for the main diagonal
+                SBarNumEntriesPerRow[sbarcol] = SNumEntriesPerRow[sbarcol] 
+                                                + Sdiag*2 + 1;
+                sbarcol++;
+                //SBarNumEntriesPerRow[i] = SNumEntriesPerRow[i] ;
+
             }
         }
-        assert(temp == Snr);
-#else
-        CColElems = new int[Cnc]; // Possible Elems in column map of C
-        for (int i = 0; i < Snc; i++)
-        {
-            if (CColMax[SColElems[i]] != -1)
-            {
-                CColElems[temp++] = SColElems[i]; // keep the gid for maps
-            }
-        }
-#endif
-
-        temp = 0;
-        for (int i = 0; i < Snr; i++)
-        {
-            if (RRowMax[SRowElems[i]] != -1)
-            {
-                RRowElems[temp++] = SRowElems[i]; // keep the gid for maps
-            }
-        }
-        cout << msg << " #cols in C=" << Cnc << "#rows in R=" << Rnr << endl;
+        assert( sbarcol == Snr);
+        Smaxnnz = Smaxnnz + Sdiag * 2 + 1;
     }
     else
     {
@@ -323,51 +298,35 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
     }
 
 
-    int Sbd_nc; // #cols in block diagonal of S.
-#ifdef BLOCK_DIAGONAL_Si
-    Sbd_nc = Snr;
-#else
-    Sbd_nc = Cnc;
-#endif
-    Epetra_Map LocalCColMap(-1, Sbd_nc, CColElems, 0, LComm);
-
-#if 0
-        // Create the local column map 
-    Epetra_Map LocalRColMap(-1, rcol, RColElems, 0, LComm);
-#endif
-
+    cout << " I am here" << endl;
     //Create the local matrices
     Epetra_CrsMatrix D(Copy, LocalDRowMap, LocalDColMap, DNumEntriesPerRow, 
                             true);
-#ifdef BLOCK_DIAGONAL_Si
-    Epetra_CrsMatrix S(Copy, LocalSRowMap, LocalSRowMap, SNumEntriesPerRow, 
-                            true);
-#else
-    Epetra_CrsMatrix S(Copy, LocalSRowMap, LocalSColMap, SNumEntriesPerRow, 
-                            true);
-#endif
-    //Epetra_CrsMatrix C(Copy, LocalDRowMap, LocalSColMap, CNumEntriesPerRow, 
-                            //true);
-    //Epetra_CrsMatrix R(Copy, LocalSRowMap, LocalDColMap, RNumEntriesPerRow, 
-                            //true);
-
-    CMV = new Epetra_MultiVector(LocalDRowMap, Sbd_nc);
-
-    // Assuming D's column map is a super set of R's columns
-    // This is R' and not for the solve later to work right.
-    Epetra_MultiVector *RMV = new Epetra_MultiVector(LocalDColMap, Rnr); 
-
-    // TODO : Use S or SMV, not both
-    Epetra_MultiVector *SMV = new Epetra_MultiVector(LocalSRowMap, Sbd_nc); 
+    cout << " Created D matrix" << endl;
+    //MPI_Barrier(MPI_COMM_WORLD);
+    //Epetra_CrsMatrix S(Copy, SRowMap, SColMap, SNumEntriesPerRow, true);
+    Epetra_CrsMatrix S(Copy, SRowMap, SNumEntriesPerRow, true);
+    cout << " Created S matrix" << endl;
+    //Cptr = new Epetra_CrsMatrix(Copy, DRowMap, SColMap, 
+                                        //CNumEntriesPerRow, true);
+    Cptr = new Epetra_CrsMatrix(Copy, DRowMap, CNumEntriesPerRow, true);
+    cout << " Created C matrix" << endl;
+    Epetra_CrsMatrix R(Copy, SRowMap, DColMap, RNumEntriesPerRow, true);
+    cout << " Created all the matrices" << endl;
+    //Epetra_CrsGraph Sg(Copy, SRowMap, SColMap, SNumEntriesPerRow, true);
+    // Leave the column map out, Let Epetra do the work.
+    Epetra_CrsGraph Sg(Copy, SRowMap, SBarNumEntriesPerRow, false);
+    cout << " Created Sbar graph" << endl;
 
     int *LeftIndex = new int[max(Dmaxnnz, Rmaxnnz)];
     double *LeftValues = new double[max(Dmaxnnz, Rmaxnnz)];
     int *RightIndex = new int[max(Cmaxnnz, Smaxnnz)];
     double *RightValues = new double[max(Cmaxnnz, Smaxnnz)];
 
+    cout << "Inserting values in matrices" << endl;
     int err;
-    int lcnt, rcnt;
-    int debug_row = 0;
+    int lcnt, rcnt ;
+    //int debug_row = 0;
     for (int i = 0; i < nrows ; i++)
     {
         int NumEntries;
@@ -387,70 +346,65 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
             }
             else
             {
-#ifdef BLOCK_DIAGONAL_Si
-                if (A->LRID(A->GCID(Ai[j])) != -1)
-                {
-#endif
-                if (rcnt >= max(Cmaxnnz, Smaxnnz)) cout << "rcnt =" << rcnt << "Smaxnnz =" << Smaxnnz << endl;
+                if (rcnt >= max(Cmaxnnz, Smaxnnz)) 
+                    cout << "rcnt =" << rcnt << "Smaxnnz =" << Smaxnnz << endl;
                 assert(rcnt < max(Cmaxnnz, Smaxnnz));
                 RightIndex[rcnt] = A->GCID(Ai[j]);
                 RightValues[rcnt++] = Ax[j];
-#ifdef BLOCK_DIAGONAL_Si
-                }
-#endif
             }
         }
 
         if (gvals[gid] == 1)
         { // D or C row
-            D.InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
-            //C.InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
-            // This is ugly code for cache TODO
-            for (int k = 0; k < rcnt ; k++)
-            {
-#ifdef BLOCK_DIAGONAL_Si
-                CMV->ReplaceGlobalValue(gid, RRowMax[RightIndex[k]], 
-                                        RightValues[k]);
-#else
-                CMV->ReplaceGlobalValue(gid, CColMax[RightIndex[k]], 
-                                        RightValues[k]);
-#endif
-            }
+            err = D.InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
+            assert(err == 0);
+            err = Cptr->InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
+            assert(err == 0);
         }
         else
         { // R or S row
-            //R.InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
-            assert(rcnt == SNumEntriesPerRow[debug_row]);
-            debug_row++;
-            for (int k = 0; k < lcnt ; k++)
-            {
-                RMV->ReplaceGlobalValue(LeftIndex[k], RRowMax[gid], 
-                    LeftValues[k]);
-            }
+            err = R.InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
+            assert(err == 0);
             err = S.InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
-
-            // This is ugly code for cache TODO
-            for (int k = 0; k < rcnt ; k++)
-            {
-#ifdef BLOCK_DIAGONAL_Si
-                SMV->ReplaceGlobalValue(gid, RRowMax[RightIndex[k]],
-                                        RightValues[k]);
-#else
-                SMV->ReplaceGlobalValue(gid, CColMax[RightIndex[k]],
-                                        RightValues[k]);
-#endif
-            }
+            assert(err == 0);
+            err = Sg.InsertGlobalIndices(gid, rcnt, RightIndex);
             assert(err == 0);
         }
     }
+    cout << "Done Inserting values in matrices" << endl;
     D.FillComplete();
-#ifdef BLOCK_DIAGONAL_Si
+    cout << "Done D fill complete" << endl;
     S.FillComplete();
-#else
-    S.FillComplete(LocalSColMap, LocalSRowMap);
-#endif
-    //C.FillComplete(LocalCDomainMap, LocalDRowMap);
-    //R.FillComplete(LocalDDomainMap, LocalSRowMap);
+    cout << "Done S fill complete" << endl;
+    //Cptr->FillComplete(SColMap, DRowMap);
+    Cptr->FillComplete(SRowMap, DRowMap);
+    cout << "Done C fill complete" << endl;
+    R.FillComplete(DColMap, SRowMap);
+    cout << "Done R fill complete" << endl;
+
+    // Add the diagonals to Sg
+    for (int i = 0; i < nrows ; i++)
+    {
+        gid = rows[i];
+        if (gvals[gid] == 1) continue; // not a row in S
+
+        rcnt = 0;
+        //TODO Will be trouble if SNumGlobalCols != Snc
+        //assert(SNumGlobalCols == Snc);
+        //for (int j = MAX(i-Sdiag, 0) ; j < MIN(SNumGlobalCols, i+Sdiag); j++)
+        for (int j = MAX(i-Sdiag, 0) ; j < MIN(Snr, i+Sdiag); j++)
+        {
+            // find the adjacent columns from the row map of S
+            //assert (j >= 0 && j < Snr);
+            RightIndex[rcnt++] = SRowElems[j];
+        }
+        err = Sg.InsertGlobalIndices(gid, rcnt, RightIndex);
+        assert(err == 0);
+        // Always insert the diagonals, if it is added twice that is fine.
+        err = Sg.InsertGlobalIndices(gid, 1, &gid);
+        assert(err == 0);
+    }
+    Sg.FillComplete();
     // A is no longer needed
     delete[] LeftIndex;
     delete[] LeftValues;
@@ -461,6 +415,15 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
         S.NumGlobalCols() << "#cols in column map="<< 
         S.ColMap().NumMyElements() << endl;
 
+    cout << msg << "C rows=" << Cptr->NumGlobalRows() << " C cols=" << 
+        Cptr->NumGlobalCols() << "#cols in column map="<< 
+        Cptr->ColMap().NumMyElements() << endl;
+    cout << msg << "D rows=" << D.NumGlobalRows() << " D cols=" << 
+        D.NumGlobalCols() << "#cols in column map="<< 
+        D.ColMap().NumMyElements() << endl;
+    cout << msg << "R rows=" << R.NumGlobalRows() << " R cols=" << 
+        R.NumGlobalCols() << "#cols in column map="<< 
+        R.ColMap().NumMyElements() << endl;
     // ]
 
     // ======================= Numeric factorization =========================
@@ -469,77 +432,84 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, Epetra_MultiVector *&localS,
     char* SolverType = "Amesos_Klu";
     bool IsAvailable = Factory.Query(SolverType);
 
-    cout << msg <<" #columns in CMV ="<< Cnc << endl;
-    cout << msg <<" #rows in CMV ="<< Dnr << endl;
+    // TODO : All these three vectors and the solve can be removed
+    Epetra_MultiVector *X = new Epetra_MultiVector(LocalDRowMap, 1);
+    Epetra_MultiVector *residual = new Epetra_MultiVector(LocalDRowMap, 1);
+    Epetra_MultiVector *B = new Epetra_MultiVector(LocalDRowMap, 1);
+    B->PutScalar(1.0);
 
-    Epetra_MultiVector *X = new Epetra_MultiVector(LocalDRowMap, Sbd_nc);
-    Epetra_MultiVector *residual = new Epetra_MultiVector(LocalDRowMap, Sbd_nc);
-    double *resid = new double[Sbd_nc];
+    double *resid = new double[Snr];
 
     LP = new Epetra_LinearProblem();
     LP->SetOperator(&D);
     LP->SetLHS(X);
-    LP->SetRHS(CMV);
+    LP->SetRHS(B);
     Solver = Factory.Create(SolverType, *LP);
 
     Solver->SymbolicFactorization();
     Solver->NumericFactorization();
+    cout << "Numeric Factorization" << endl;
     Solver->Solve();
+    cout << "Solve done" << endl;
 
     D.Multiply(false, *X, *residual);
-    residual->Update(-1.0, *CMV, 1.0);
+    residual->Update(-1.0, *B, 1.0);
     residual->Norm2(resid);
     double max_resid = 0;
-    for (int i = 0 ; i < Sbd_nc; i++)
+    for (int i = 0 ; i < Snr; i++)
         max_resid = max(max_resid, abs(resid[i]));
 
     cout << "Maximum residual = " << max_resid << endl;
 
+
 #ifdef DUMP_MATRICES
     if (myPID == 1)
     {
-        EpetraExt::MultiVectorToMatlabFile("RHS.mat", *CMV);
         EpetraExt::MultiVectorToMatlabFile("LHS.mat", *X);
         EpetraExt::RowMatrixToMatlabFile("D.mat", D);
     }
 #endif
 
-    localS = new Epetra_MultiVector(LocalCColMap, Sbd_nc);
-    localS->Multiply('T', 'N', 1.0, *RMV, *X, 1.0);
-    localS->Update(1.0, *SMV, -1.0);
+    //Set up the probing operator
+    HyperLU_Probing_Operator probeop(&S, &R, LP, Solver, Cptr, &LocalDRowMap);
 
-#ifdef DUMP_MATRICES
-    if (myPID == 0)
-    {
-        EpetraExt::MultiVectorToMatlabFile("S0.mat", *localS);
-    }
-#endif
+    //TODO : Testing apply, remove after development
+    Epetra_MultiVector *myX = new Epetra_MultiVector(SRowMap, 2);
+    Epetra_MultiVector *myY = new Epetra_MultiVector(SRowMap, 2);
+    myX->PutScalar(1.0);
+    probeop.Apply(*myX, *myY);
+    //cout << *myY << endl ;
+    delete myX;
+    delete myY;
 
-    Teuchos::LAPACK<int, double> lapack;
-    int info;
-    piv = new int[Sbd_nc];
-    lapack.GETRF(Sbd_nc, Sbd_nc, localS->Values(), Sbd_nc, piv, &info);
+    Teuchos::ParameterList pList;
+    Teuchos::RCP<const Epetra_CrsGraph> rSg = Teuchos::rcpFromRef(Sg);
+    Isorropia::Epetra::Prober prober(rSg, pList, false);
+    prober.color();
+    Sbar = prober.probe(probeop);
 
     // ======================= Solve =========================================
 
     // Clean up
+    delete residual;
+    delete[] resid;
     delete X;
     //delete B;
-    //delete CMV;
-    delete RMV;
-    delete SMV;
     delete[] DNumEntriesPerRow;
     delete[] SNumEntriesPerRow;
+    delete[] CNumEntriesPerRow;
+    delete[] RNumEntriesPerRow;
     delete[] DColElems;
     delete[] SColElems;
-    delete[] CColMax;
-    delete[] RRowMax;
-    delete[] CColElems;
-    delete[] RRowElems;
+    //delete[] CColMax;
+    //delete[] RRowMax;
+    //delete[] CColElems;
+    //delete[] RRowElems;
     //delete[] DRowElems;
     //delete[] SRowElems;
 
     delete[] gvals;
     //delete A;
+    cout << " Out of factor" << endl ;
     return 0;
 }

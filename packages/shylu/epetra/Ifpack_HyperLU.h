@@ -40,6 +40,10 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
 
+// AztecOO includes
+#include "AztecOO.h"
+
+
 #include "hyperlu_util.h"
 
 // Ifpack includes
@@ -52,6 +56,7 @@
 
 // EpetraExt includes
 #include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 // Amesos includes
 #include "Amesos.h"
@@ -276,7 +281,7 @@ class Ifpack_HyperLU: public Ifpack_Preconditioner
 
     //! Pointer to the Epetra_RowMatrix to factorize
     Epetra_CrsMatrix *A_;
-    Epetra_MultiVector *localS_;
+    Epetra_CrsMatrix *C_;
     Teuchos::ParameterList List_;
     Isorropia::Epetra::Partitioner *partitioner_;
     Isorropia::Epetra::Redistributor *rd_;
@@ -286,8 +291,7 @@ class Ifpack_HyperLU: public Ifpack_Preconditioner
     int Snr_;
     int *DRowElems_;
     int *SRowElems_;
-    int *piv_;
-    Epetra_MultiVector *CMV_;
+    Teuchos::RCP<Epetra_CrsMatrix> Sbar_;
 
     bool UseTranspose_;
 
