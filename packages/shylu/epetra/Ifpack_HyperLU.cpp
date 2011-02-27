@@ -75,7 +75,7 @@ int Ifpack_HyperLU::SetParameters(Teuchos::ParameterList& parameterlist)
 
 int Ifpack_HyperLU::Compute()
 {
-    double Sdiagfactor = 0.05; // hard code the diagonals
+    double Sdiagfactor = 0.90; // hard code the diagonals
     HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
                     Sbar_, Sdiagfactor);
     IsComputed_ = true;
@@ -140,8 +140,9 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     solver.SetAztecOption(AZ_solver, AZ_gmres);
     // Do not use AZ_none
     solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+    //solver.SetAztecOption(AZ_precond, AZ_Jacobi);
     //solver.SetAztecOption(AZ_overlap, 3);
-    solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu);
+    //solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu);
     solver.SetAztecOption(AZ_output, AZ_all);
     solver.SetAztecOption(AZ_diagnostics, AZ_all);
 

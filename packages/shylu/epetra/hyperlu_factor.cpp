@@ -264,8 +264,8 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
             }
             Dmaxnnz = max(Dmaxnnz, dcnt);
             Smaxnnz = max(Smaxnnz, scnt); 
-            Rmaxnnz = max(Rmaxnnz, scnt); 
-            Cmaxnnz = max(Cmaxnnz, scnt); 
+            Rmaxnnz = max(Rmaxnnz, rcnt); 
+            Cmaxnnz = max(Cmaxnnz, ccnt); 
         }
         assert( dcol == Dnr);
         assert( scol == Snr);
@@ -340,6 +340,12 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
             // Row permutation does not matter here 
             if (gvals[A->GCID(Ai[j])] == 1)
             {
+                if (lcnt >= max(Dmaxnnz, Rmaxnnz))
+                {
+                    cout << "nentries= "<< NumEntries << " i=" << i << " gid=" << gid << endl;
+                    cout << lcnt << " " << Dmaxnnz << " " << Rmaxnnz << endl;
+                    cout << rcnt << " " << Cmaxnnz << " " << Smaxnnz << endl;
+                }
                 assert(lcnt < max(Dmaxnnz, Rmaxnnz));
                 LeftIndex[lcnt] = A->GCID(Ai[j]);
                 LeftValues[lcnt++] = Ax[j];
@@ -473,6 +479,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
     //Set up the probing operator
     HyperLU_Probing_Operator probeop(&S, &R, LP, Solver, Cptr, &LocalDRowMap);
 
+    /*
     //TODO : Testing apply, remove after development
     Epetra_MultiVector *myX = new Epetra_MultiVector(SRowMap, 2);
     Epetra_MultiVector *myY = new Epetra_MultiVector(SRowMap, 2);
@@ -480,12 +487,14 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
     probeop.Apply(*myX, *myY);
     //cout << *myY << endl ;
     delete myX;
-    delete myY;
+    delete myY;*/
 
     Teuchos::ParameterList pList;
     Teuchos::RCP<const Epetra_CrsGraph> rSg = Teuchos::rcpFromRef(Sg);
     Isorropia::Epetra::Prober prober(rSg, pList, false);
+    cout << "Doing coloring" << endl;
     prober.color();
+    cout << "Doing probing" << endl;
     Sbar = prober.probe(probeop);
 
     // ======================= Solve =========================================

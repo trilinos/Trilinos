@@ -1,5 +1,5 @@
 <ParameterList name="ParaLU Input">
-    <Parameter name="mm_file" type ="string" value="wathenSmall.mtx" />
+    <Parameter name="mm_file" type ="string" value="nd12k_mod.mtx" />
     <Parameter name="preconditioner" type ="string" value="HyperLU" />
     <ParameterList name="Isorropia Input">
     <!--Parameter name="partitioning method" type="string" value="graph" /-->

@@ -28,6 +28,7 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
             Epetra_MultiVector &Y) const
 {
     int nvectors = X.NumVectors();
+    cout << "No of colors after probing" << nvectors << endl;
     Epetra_MultiVector temp(C_->RowMap(), nvectors);
     Epetra_MultiVector temp2(G_->RowMap(), nvectors);
 
@@ -38,7 +39,7 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     Epetra_MultiVector localX(*localDRowMap_, nvectors);
 
     int nrows = C_->RowMap().NumMyElements();
-    //TODO : Do only in debug mode [
+#ifdef DEBUG
     assert(nrows == localDRowMap_->NumGlobalElements());
 
     int gids[nrows], gids1[nrows];
@@ -49,6 +50,7 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     {
        assert(gids[i] == gids1[i]);
     }
+#endif
     cout << "Map check done" << endl;
     // ]
 

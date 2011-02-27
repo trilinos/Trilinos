@@ -95,7 +95,10 @@ int main(int argc, char *argv[])
     Epetra_CrsMatrix *A;
 
     EpetraExt::MatrixMarketFileToCrsMatrix(MMFileName.c_str(), Comm, A);
+    //EpetraExt::MatlabFileToCrsMatrix(MMFileName.c_str(), Comm, A);
+    cout <<"Done reading the matrix"<< endl;
     int n = A->NumGlobalRows();
+    cout <<"n="<< n << endl;
 
     // Create input vectors
     Epetra_Map vecMap(n, 0, Comm);
@@ -158,7 +161,7 @@ int main(int argc, char *argv[])
     solver.SetAztecOption(AZ_output, 1);
     //solver.SetAztecOption(AZ_conv, AZ_Anorm);
 
-    solver.Iterate(500, 1e-10);
+    solver.Iterate(500, 1e-9);
 
     // compute ||Ax - b||
     double Norm;
