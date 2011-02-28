@@ -49,11 +49,16 @@ namespace stk {
         m_bp.push_back(new  UniformRefinerPattern<shards::ShellTriangle<6>,      shards::ShellTriangle<6>,      4, SierraPort > (eMesh, block_names) );
         m_bp.push_back(new  UniformRefinerPattern<shards::ShellQuadrilateral<8>, shards::ShellQuadrilateral<8>, 4, SierraPort > (eMesh, block_names));
 
+        m_bp.push_back(new  UniformRefinerPattern<shards::Beam<2>,          shards::Beam<2>,          2, SierraPort > (eMesh, block_names));
+        m_bp.push_back(new  UniformRefinerPattern<shards::Beam<3>,          shards::Beam<3>,          2, SierraPort > (eMesh, block_names));
+
+
         m_bp.push_back(new  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > (eMesh, block_names) );
         m_bp.push_back(new  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      4, SierraPort > (eMesh, block_names) );
         m_bp.push_back(new  UniformRefinerPattern<shards::Triangle<6>,      shards::Triangle<6>,      4, SierraPort > (eMesh, block_names));
         m_bp.push_back(new  UniformRefinerPattern<shards::Quadrilateral<9>, shards::Quadrilateral<9>, 4, SierraPort > (eMesh, block_names));
         m_bp.push_back(new  UniformRefinerPattern<shards::Quadrilateral<8>, shards::Quadrilateral<8>, 4, SierraPort > (eMesh, block_names));
+
 
 #if 0
         m_bp.push_back(new  UniformRefinerPattern<shards::ShellLine<2>,     shards::ShellLine<2>,     2, SierraPort > (eMesh, block_names));
