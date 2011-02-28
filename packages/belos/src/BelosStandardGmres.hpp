@@ -94,9 +94,10 @@ namespace Belos {
     ///   left or split preconditioning.
     StandardGmres (const Teuchos::RCP<LinearProblem<Scalar,MV,OP> >& lp,
 		   const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
+		   const Teuchos::RCP<OutputManager<Scalar> >& outMan,
 		   const int maxIterCount,
 		   const bool flexible) :
-      GmresBase<Scalar, MV, OP> (lp, ortho, maxIterCount, flexible) {}
+      GmresBase<Scalar, MV, OP> (lp, ortho, outMan, maxIterCount, flexible) {}
 
     virtual bool canExtendBasis() const {
       return this->getNumIters() < this->maxNumIters();
@@ -105,23 +106,38 @@ namespace Belos {
     virtual void
     extendBasis (Teuchos::RCP<MV>& V_cur, 
 		 Teuchos::RCP<MV>& Z_cur)
-    { //
+    { 
+      using Teuchos::Range1D;
+      using std::endl;
+      const bool verboseDebug = false;
+      //
       // mfh 16 Feb 2011: The use of "this->..." here and elsewhere is
       // obligatory, since we are inheriting from a templated class.
       // See the C++ FAQ:
       //
       // http://www.parashift.com/c++-faq-lite/templates.html#faq-35.19
       // 
-      using Teuchos::Range1D;
       RCP<LinearProblem<Scalar, MV, OP> > lp = this->lp_;
       RCP<MV> V = this->V_;
       RCP<MV> Z = this->Z_;
-
       // This does not count the initial basis vector.
       const int k = this->getNumIters(); 
-      TEST_FOR_EXCEPTION(k >= this->maxNumIters(), GmresCantExtendBasis,
-			 "Maximum number of iterations " << this->getNumIters() 
-			 << " reached.");
+      const int m = this->maxNumIters();
+      TEST_FOR_EXCEPTION(k >= m, GmresCantExtendBasis,
+			 "Belos::StandardGmres::extendBasis: "
+			 "Maximum number of iterations " << m << "reached; "
+			 "cannot extend basis further.");
+      std::ostream& dbg = this->outMan_->stream(Debug);
+      if (verboseDebug)
+	{
+	  dbg << "---- StandardGmres::extendBasis: "
+	    "V_prv = V[" << k << "," << k << "], "
+	    "V_cur = V[" << k+1 << "," << k+1 << "]";
+	  if (this->flexible_)
+	    dbg << ", Z_cur = Z[" << k << "," << k << "]" << endl;
+	  else
+	    dbg << endl;
+	}
       RCP<const MV> V_prv = MVT::CloneView(*V, Range1D(k, k));
       V_cur = MVT::CloneViewNonConst(*V, Range1D(k+1, k+1));
       if (this->flexible_)
@@ -148,11 +164,23 @@ namespace Belos {
 		   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> >& C_Z,
 		   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> >& B_Z)
     {
+      using Teuchos::null;
       using Teuchos::rcp;
       using Teuchos::tuple;
-      mat_type& H = *(this->H_);
+      const bool verboseDebug = true;
 
+      // Standard GMRES doesn't generate projection and normalization
+      // coefficients for the Z basis, regardless of whether we are
+      // performing Flexible GMRES.
+      if (! C_Z.is_null())
+	C_Z = null;
+      if (! B_Z.is_null())
+	B_Z = null;
+      // Help C++'s type inference by referring to the "this" pointer.
+      mat_type& H = *(this->H_);
+      mat_type& z = *(this->z_);
       const int k = this->getNumIters();
+
       // Flexible standard GMRES only needs to orthogonalize the new V
       // basis vector; it doesn't need to orthogonalize the Z basis
       // vector.
@@ -165,6 +193,17 @@ namespace Belos {
       B_V = rcp (new mat_type (Teuchos::View, H, 1, 1, k+1, k));
       (void) this->ortho_->projectAndNormalize (*V_cur, tuple(C_V), 
 						B_V, tuple(V_prv));
+      if (verboseDebug)
+	{
+	  using std::endl;
+	  std::ostream& dbg = this->outMan_->stream(Debug);
+	  dbg << "---- Current upper Hessenberg matrix (" 
+	      << k+2 << " x " << k+1 << "): "
+	      << mat_type(Teuchos::View, H, k+2, k+1) << endl;
+	  dbg << "---- Current projected right-hand side ("
+	      << k+2 << " x " << 1 << "): "
+	      << mat_type(Teuchos::View, z, k+2, 1) << endl;
+	}
     }
 
     virtual bool 
