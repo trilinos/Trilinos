@@ -51,12 +51,69 @@
 #include <BelosMultiVecTraits.hpp>
 
 #include <Teuchos_BLAS.hpp>
+#include <Teuchos_LAPACK.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 
 #include <algorithm>
 #include <iterator>
 #include <utility> // std::pair
+
+// Anonymous namespace is a more portable way than "static" to define
+// functions that won't escape the current file's scope.
+namespace {
+  template<class Ordinal, class Scalar>
+  std::ostream& 
+  operator<< (std::ostream& out,
+	      const Teuchos::SerialDenseMatrix<Ordinal, Scalar>& A)
+  {
+    const Ordinal m = A.numRows();
+    const Ordinal n = A.numCols();
+    using std::endl;
+
+    // Summarize the matrix if it's too big to print comfortably on
+    // the terminal.
+    //
+    // FIXME (mfh 25 Feb 2011) Obviously this is no substitute for a
+    // "curses"-type terminal interface that can query the terminal
+    // for its dimensions.
+    if (m > 10 || n > 10)
+      {
+	out << "[<" << m << " x " << n << " SerialDenseMatrix<int," 
+	    << Teuchos::TypeNameTraits<Scalar>::name() << ">]";
+	return out;
+      }
+    else if (m == 0 || n == 0)
+      { // Empty matrix: either zero rows or zeo columns
+	out << "[]";
+	return out;
+      }
+    out << "[";
+    if (m > 1)
+      out << endl;
+    for (Ordinal i = 0; i < m; ++i)
+      { // Indent if printing on more than one row.
+	if (m > 1)
+	  out << "  ";
+	// Print row i of the matrix: comma-delimited, like Matlab.
+	for (Ordinal j = 0; j < n; ++j)
+	  {
+	    out << A(i,j);
+	    if (j < n-1)
+	      out << ", ";
+	  }
+	// End of the current row, which we know is not empty.
+	if (i < m-1 && m > 1)
+	  out << ";" << endl;
+      }
+    if (m > 1)
+      out << endl;
+    out << "]";
+    return out;
+  }
+
+} // (anonymous namespace)
 
 namespace Belos {
 
@@ -170,6 +227,7 @@ namespace Belos {
     typedef Teuchos::SerialDenseMatrix<int,Scalar> mat_type;
     typedef Teuchos::SerialDenseVector<int,Scalar> vec_type;
     typedef Teuchos::BLAS<int, scalar_type> blas_type;
+    typedef Teuchos::LAPACK<int, scalar_type> lapack_type;
     typedef MultiVecTraits<scalar_type, MV> MVT;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
@@ -186,6 +244,7 @@ namespace Belos {
     ///   updateSolution().  On output, if the solution has been
     ///   updated, the vector returned by getLHS() will be modified.
     /// \param ortho [in] Orthogonalization manager
+    /// \param outMan [in/out] Output manager
     /// \param maxIterCount [in] Maximum number of iterations before
     ///   restart.  The number of vectors' worth of storage this
     ///   constructor allocates is proportional to this, so choose
@@ -215,6 +274,7 @@ namespace Belos {
     /// operator.
     GmresBase (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem,
 	       const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
+	       const Teuchos::RCP<OutputManager<Scalar> >& outMan,
 	       const int maxIterCount,
 	       const bool flexible);
 
@@ -238,21 +298,33 @@ namespace Belos {
 
     /// Accept the candidate basis and prepare for the next iteration.
     /// 
-    /// \note Subclasses that produce more than one basis vector at a
-    ///   time should override this implementation appropriately.
-    virtual void acceptCandidateBasis () {
-      curNumIters_++;
+    /// \note Subclasses may override this implementation if they 
+    ///   need to do something unusual with the new candidate basis,
+    ///   like checkpoint it.
+    virtual void 
+    acceptCandidateBasis (const int newNumVectors = 1) 
+    {
+      TEST_FOR_EXCEPTION(newNumVectors <= 0, std::logic_error,
+			 "The number of candidate basis vectors to accept, " 
+			 << newNumVectors << ", is nonpositive, which is not "
+			 "allowed.  This is an std:logic_error because it "
+			 "relates to the implementation of the GmresBase "
+			 "subclass.");
+      curNumIters_ += newNumVectors;
     }
 
     /// Reject the candidate basis
     /// 
     /// \note Subclasses that retry rejected iterations should
     ///   override this implementation appropriately.
-    virtual void rejectCandidateBasis () {
+    virtual void 
+    rejectCandidateBasis (const int newNumVectors = 1) 
+    {
       std::ostringstream os;
       os << (flexible_ ? "Flexible GMRES" : "GMRES") 
-	 << " rejects the computed candidate basis vector(s)";
-      TEST_FOR_EXCEPTION(true, GmresRejectsCandidateBasis, os.str());
+	 << " rejects the computed candidate basis vector"
+	 << (newNumVectors != 1 ? "s" : "");
+      throw GmresRejectsCandidateBasis (os.str());
     }
 
     /// \brief The number of completed iteration(s) (>= 0)
@@ -677,6 +749,9 @@ namespace Belos {
     //! Orthogonalization manager
     Teuchos::RCP<const OrthoManager<Scalar, MV> > ortho_;
 
+    //! Output manager
+    Teuchos::RCP<OutputManager<Scalar> > outMan_;
+
     /// \brief "Native" residual vector
     ///
     /// "Native" means computed using exact-arithmetic invariants of
@@ -771,6 +846,14 @@ namespace Belos {
     /// unpreconditioned version.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType initialResidualNorm_;
 
+    /// \brief The "native" residual norm.
+    ///
+    // This is the absolute residual error from solving the projected
+    // least-squares problem, if we've finished at least one iteration
+    // of (F)GMRES.  Otherwise, it's the same as the initial residual
+    // norm.
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType nativeResidualNorm_;
+
     /// Last column of H_ for which the QR factorization (implicitly
     /// stored in theCosines_, theSines_, and R_) has been computed.
     /// Should be initialized to -1 (which means the 0th column of H_
@@ -839,14 +922,30 @@ namespace Belos {
 		   Teuchos::RCP<const MV>& Z_prv) const
   {
     using Teuchos::Range1D;
-    
+    const bool verboseDebug = false;
+
     // The number of iterations (returned by getNumIters()) does not
     // include the initial basis vector, which is the first column of
-    // V_.
-    const int m = getNumIters(); 
-    V_prv = MVT::CloneView (*V_, Range1D(0,m));
+    // V_.  Hence, the range of previous basis vectors (in the V
+    // basis) is [0,k] inclusive.
+    const int k = getNumIters(); 
+
+    if (verboseDebug)
+      {
+	using std::endl;
+	std::ostream& dbg = outMan_->stream(Debug);
+	dbg << "---- previousVectors: V_prv = V[0:" << k << "]";
+	if (flexible_)
+	  dbg << ", Z_prv = Z[0:" << k << "]" << endl;
+	else 
+	  dbg << endl;
+      }
+    
+    V_prv = MVT::CloneView (*V_, Range1D(0,k));
     if (flexible_)
-      Z_prv = MVT::CloneView (*Z_, Range1D(0,m));
+      // FIXME (mfh 24 Feb 2011) Is this right?  When should we apply
+      // the right preconditioner in Flexible GMRES?
+      Z_prv = MVT::CloneView (*Z_, Range1D(0,k));
     else
       Z_prv = Teuchos::null;
   }
@@ -861,7 +960,15 @@ namespace Belos {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::tuple;
+    using std::endl;
     typedef Teuchos::SerialDenseMatrix<int,Scalar> mat_type;
+    const bool verboseDebug = false;
+
+    std::ostream& dbg = outMan_->stream(Debug);
+    dbg << "Belos::GmresBase::advance():" << endl
+	<< "--" << endl
+	<< "-- Iteration " << getNumIters() << endl
+	<< "--" << endl;
 
     TEST_FOR_EXCEPTION( !canExtendBasis(), GmresCantExtendBasis,
 			"GMRES (iteration " << getNumIters() << ") cannot "
@@ -869,8 +976,17 @@ namespace Belos {
 
     RCP<const MV> V_prv, Z_prv;
     RCP<MV> V_cur, Z_cur;
+    // Fetch the previous basis vector(s), against which to project.
     previousVectors (V_prv, Z_prv);
+    if (verboseDebug)
+    dbg << "---- Number of previous vectors: " 
+    	<< MVT::GetNumberVecs(*V_prv) << endl;
+    // Compute new basis vector(s).
     extendBasis (V_cur, Z_cur);
+
+    // Do whatever the subclass wants to do before orthogonalizing the
+    // new basis vectors.  This might include projecting them against
+    // a fixed basis (e.g., for Krylov subspace recycling).
     preOrthogonalizeHook (V_cur, Z_cur);
 
     // Flexible CA-GMRES must orthogonalize the Z basis along with the
@@ -899,9 +1015,24 @@ namespace Belos {
     // set to Teuchos::null, as the RCPs are passed by reference).
     RCP<mat_type> C_V, B_V, C_Z, B_Z;
     orthogonalize (V_cur, V_prv, C_V, B_V, Z_cur, Z_prv, C_Z, B_Z);
+    if (false && verboseDebug)
+      {
+	dbg << "---- Projection coefficient(s): ";
+	dbg << *C_V << endl;
+	dbg << "---- Normalization coefficient(s): ";
+	dbg << *B_V << endl;
+      }
+    // Do whatever the subclass wants to do after projecting the new
+    // basis vectors against the previous ones and normalizing them.
     postOrthogonalizeHook (V_cur, C_V, B_V, Z_cur, C_Z, B_Z);
-    // Implemented by subclasses.  C_Z and B_Z may not be used (in
-    // which case orthogonalize() may set them to Teuchos::null).
+
+    // Implemented by subclasses.  C_Z and B_Z need not be used,
+    // regardless of whether we are computing Flexible GMRES.  (Only
+    // Flexible CA-GMRES needs them, as far as we know.)  If they are
+    // not used, orthogonalize() may set them to null (the RCPs are
+    // passed by reference).  Some subclasses may choose to update the
+    // upper Hessenberg matrix "in place" in their implementation of
+    // the orthogonalize() method (see above).
     updateUpperHessenbergMatrix (C_V, B_V, C_Z, B_Z);
 
     // The subclass decides whether or not to accept the candidate
@@ -920,9 +1051,11 @@ namespace Belos {
     // setting the "last rejected rank" so that the next call of
     // advance() computes fewer candidate basis vectors).
     if (! acceptedCandidateBasis())
-      rejectCandidateBasis ();
-    else
-      acceptCandidateBasis ();
+      rejectCandidateBasis (MVT::GetNumberVecs(*V_cur));
+    else 
+      // This increments the current iteration count by the number of
+      // accepted candidate basis vectors.
+      acceptCandidateBasis (MVT::GetNumberVecs(*V_cur));
 
     // We don't update the projected least-squares problem here.
     // This is done lazily, whenever the "native" residual norm
@@ -983,10 +1116,12 @@ namespace Belos {
   GmresBase<Scalar, MV, OP>::
   GmresBase (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem,
 	     const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
+	     const Teuchos::RCP<OutputManager<Scalar> >& outMan,
 	     const int maxIterCount,
 	     const bool flexible) :
     lp_ (problem), 
     ortho_ (ortho),
+    outMan_ (outMan),
     lastUpdatedCol_ (-1), // column updates start with zero
     curNumIters_ (0),
     maxNumIters_ (maxIterCount),
@@ -996,6 +1131,10 @@ namespace Belos {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using std::endl;
+
+    std::ostream& dbg = outMan_->stream(Debug);
+    dbg << "Belos::GmresBase:" << endl;
 
     // Fragments of error messages for use in sanity checks.
     const char prefix[] = "Belos::GmresBase constructor: ";
@@ -1053,6 +1192,7 @@ namespace Belos {
 			 "vector problems, but the current right-hand side has "
 			 << numRHS << " columns.");
     }
+    dbg << "-- Initializing xUpdate_ and filling with zeros" << endl;
     xUpdate_ = MVT::Clone (*x0, 1);
     MVT::MvInit (*xUpdate_, STS::zero());
 
@@ -1074,7 +1214,13 @@ namespace Belos {
     // initialized in setInitialResidual() above.
     H_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
     R_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
-    y_ = rcp (new mat_type (maxIterCount, 1));
+    // If we choose to use _GELS to solve the projected least-squares
+    // problem, we need to leave an extra entry in y so that we can
+    // copy the right-hand side z into it.  This is because _GELS
+    // overwrites the input right-hand side with the output
+    // least-squares solution, so our typical procedure is to copy the
+    // right-hand side into the solution vector on input to _GELS.
+    y_ = rcp (new mat_type (maxIterCount+1, 1));
 
     // These cosines and sines encode the Q factor in the QR
     // factorization of the upper Hessenberg matrix H_.  We compute
@@ -1093,8 +1239,16 @@ namespace Belos {
     using Teuchos::is_null;
     using Teuchos::Range1D;
     using Teuchos::RCP;
+    using std::endl;
 
+    const bool verboseDebug = true;
     const char prefix[] = "Belos::GmresBase::currentNativeResidualVector: ";
+    const int m = getNumIters();
+
+    std::ostream& dbg = outMan_->stream(Debug);
+    if (verboseDebug)
+      dbg << "-- currentNativeResidualVector: getNumIters() = " << m << endl;
+
     TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*initResVec_) != 1,
 		       std::logic_error,
 		       prefix << "Initial residual vector (initResVec_) has " 
@@ -1105,56 +1259,95 @@ namespace Belos {
     // vector is in the same vector space as the left-preconditioned
     // initial residual vector.  Otherwise, it is in the same space as
     // the right-hand side b and the unpreconditioned initial residual
-    // vector.
-    //
-    // Assign initial residual vector to nativeResVec; we will update
-    // it below if the number of iterations is > 0.  ("Native"
-    // residual vector is the same as the initial residual vector when
-    // the number of iterations is 0.)
+    // vector.  Regardless, it's always in the same space as
+    // *initResVec_, from which we clone it.  Allocate only if
+    // necessary.
     if (nativeResVec_.is_null() || MVT::GetNumberVecs (*nativeResVec_) != 1)
-      // Allocate nativeResVec if necessary.
-      nativeResVec_ = MVT::CloneCopy (*initResVec_, Range1D(0,0));
-    else
-      MVT::SetBlock (*initResVec_, Range1D(0,0), *nativeResVec_);
+      nativeResVec_ = MVT::Clone (*initResVec_, 1);
 
-    if (curNumIters_ > 0)
+    // The native residual vector is the same as the initial
+    // residual vector when the number of iterations is 0.
+    // Otherwise, we will update *nativeResVec_ below.
+    MVT::Assign (*initResVec_, *nativeResVec_);
+    if (m > 0)
       {
-	TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*V_) < curNumIters_+1, 
+	TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*V_) < m+1,
 			   std::logic_error,
 			   "Only " << MVT::GetNumberVecs(*V_) << " basis vectors "
-			   "were given, but curNumIters+1=" << (curNumIters_+1) 
+			   "were given, but getNumIters()+1=" << (m+1) 
 			   << " of them are required.  "
 			   "This likely indicates a bug in Belos.");
-	TEST_FOR_EXCEPTION(H_->numRows() < curNumIters_+1, 
+	TEST_FOR_EXCEPTION(H_->numRows() < m+1, 
 			   std::logic_error,
 			   "H only has " << H_->numRows() << " rows, but " 
-			   << (curNumIters_+1) << " rows are required.  "
+			   << (m+1) << " rows are required.  "
 			   "This likely indicates a bug in Belos.");
-	TEST_FOR_EXCEPTION(H_->numCols() < curNumIters_, 
+	TEST_FOR_EXCEPTION(H_->numCols() < m,
 			   std::logic_error,
 			   "H only has " << H_->numCols() << " columns, but "
-			   << (curNumIters_+1) << " columns are required.  "
+			   << (m+1) << " columns are required.  "
 			   "This likely indicates a bug in Belos.");
-	// TEST_FOR_EXCEPTION(y_->length() < curNumIters_, std::logic_error,
-	// 		   "y only has " << y_->length() << " entries, but "
-	// 		   curNumIters_ << " entries are required.  "
-	// 		   "This likely indicates a bug in Belos.");
-	RCP<const MV> V_view = MVT::CloneView (*V_, Range1D(0, curNumIters_));
-	const mat_type H_view (Teuchos::View, *H_, curNumIters_+1, curNumIters_);
-	const mat_type y_view (Teuchos::View, *y_, curNumIters_, 1);
-	mat_type H_times_y (curNumIters_+1, 1);
+	TEST_FOR_EXCEPTION(y_->numRows() < m, 
+			   std::logic_error,
+			   "y only has " << y_->numRows() << " entries, but "
+			   << m << " entries are required.  "
+			   "This likely indicates a bug in Belos.");
+	// Update the QR factorization of the upper Hessenberg matrix,
+	// and let y[0:m-1] be the projected least-squares problem's
+	// solution.  This won't do any work if the work has already
+	// been done.
+	updateProjectedLeastSquaresProblem();
+	RCP<const MV> V_view = MVT::CloneView (*V_, Range1D(0, m));
+	const mat_type H_view (Teuchos::View, *H_, m+1, m);
+	const mat_type y_view (Teuchos::View, *y_, m, 1);
+	mat_type H_times_y (m+1, 1);
 	{
 	  const int err = 
 	    H_times_y.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS, 
 				one, H_view, y_view, zero);
 	  TEST_FOR_EXCEPTION(err != 0, std::logic_error,
-			     "In GMRES, when computing the current native resi"
-			     "dual vector via the Arnoldi relation, H*y failed"
-			     " due to incompatible dimensions.  This is likely"
-			     " a Belos bug.");
+			     "In (F)GMRES, when computing the current native "
+			     "residual vector via the Arnoldi relation, H*y "
+			     "failed due to incompatible dimensions.  "
+			     "This likely indicates a bug in Belos.");
 	}
-	// nativeResVec_ := V * (H * y) - r0 (where we stored r0 in nativeResVec_)
-	MVT::MvTimesMatAddMv (one, *V_view, H_times_y, -one, *nativeResVec_);
+	// nativeResVec_ := -V * (H * y) + r0 = r0 - V (H y)
+	// (where we stored r0 in nativeResVec_).
+	MVT::MvTimesMatAddMv (-one, *V_view, H_times_y, one, *nativeResVec_);
+      }
+    // Recport the "native" residual vector's norm, scaled by the
+    // initial residual norm (if the latter is not zero).
+    if (verboseDebug)
+      {
+	std::vector<magnitude_type> theNorm (1);
+	MVT::MvNorm (*nativeResVec_, theNorm);
+	dbg << "---- ||r_0||_2 = " << initialResidualNorm_ << endl;
+	if (initialResidualNorm_ == STM::zero())
+	  {
+	    dbg << "---- ||Native residual vector||_2 = " << theNorm[0] << endl;
+	  }
+	else
+	  {
+	    const magnitude_type relResNorm = theNorm[0] / initialResidualNorm_;
+	    dbg << "---- ||Native residual vector||_2 / ||r_0||_2 = " 
+		<< relResNorm << endl;
+	  }
+	RCP<MV> xUpdate = getCurrentUpdate();
+	// FIXME (mfh 28 Feb 2011) Is this correct for Flexible GMRES
+	// too?
+	RCP<MV> r = MVT::CloneCopy (*initResVec_);
+	RCP<MV> AxUpdate = MVT::CloneCopy (*initResVec_);
+	lp_->apply (*xUpdate, *AxUpdate);
+	// r := initResVec_ - A * xUpdate
+	MVT::MvAddMv (STS::one(), *initResVec_, -STS::one(), *AxUpdate, *r);
+	MVT::MvNorm (*r, theNorm);
+
+	dbg << "---- ||b-Ax||_2 = " << theNorm[0] << endl;
+	if (initialResidualNorm_ != STM::zero())
+	  {
+	    const magnitude_type relResNorm = theNorm[0] / initialResidualNorm_;
+	    dbg << "---- ||b-Ax||_2 / ||r_0|| = " << relResNorm << endl;
+	  }
       }
     return nativeResVec_;
   }
@@ -1165,29 +1358,68 @@ namespace Belos {
   {
     // Update the least-squares problem if necessary.  This computes
     // the current native residual norm for "free."
-    return updateProjectedLeastSquaresProblem();
+    const magnitude_type theNorm = updateProjectedLeastSquaresProblem();
+    return theNorm;
   }
 
   template<class Scalar, class MV, class OP>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   GmresBase<Scalar, MV, OP>::updateProjectedLeastSquaresProblem()
   {
-    const scalar_type zero = STS::zero();
-    const scalar_type one = STS::one();
-    const int startCol = lastUpdatedCol_ + 1;
-    const int endCol = curNumIters_ - 1;
+    using std::endl;
+    const bool verboseDebug = false;
+
+    const int startCol = (lastUpdatedCol_ < 0) ? 0 : lastUpdatedCol_ + 1;
+    const int endCol = getNumIters() - 1;
+    const int m = getNumIters();
     blas_type blas;
+    lapack_type lapack;
+
+    const char prefix[] = "Belos::GmresBase::updateProjectedLeastSquaresProblem: ";
+    std::ostream& dbg = outMan_->stream(Debug);
+    dbg << "---- updateProjectedLeastSquaresProblem: ";
 
     TEST_FOR_EXCEPTION(startCol > endCol+1, std::logic_error,
-		       "Somehow, GmresBase updated the QR factorization of the "
-		       "upper Hessenberg matrix past the last updated column.  "
-		       "The last updated column was " << lastUpdatedCol_ << ", "
-		       "but the rightmost column to update is " << endCol << "."
-		       "  This is likely a bug in GmresBase.");
-    if (startCol == endCol+1) // Nothing to do
-      return STS::magnitude ((*z_)(endCol+1,0));
+		       prefix << "Somehow, GmresBase updated the QR "
+		       "factorization of the upper Hessenberg matrix past the "
+		       "last updated column, which was " << lastUpdatedCol_ 
+		       << ". The rightmost column to update is " << endCol 
+		       << ".  This is likely a bug in GmresBase.");
+    if (m == 0)
+      {
+	dbg << "Nothing to do: # iters = 0" << endl;
+	// Assign here, just in case we haven't done this yet.
+	nativeResidualNorm_ = initialResidualNorm_; 
+	return initialResidualNorm_;
+      }
+    else if (startCol == endCol+1) // Nothing to do
+      {
+	dbg << "Nothing to do: No columns to update (startCol == endCol+1 "
+	  "== " << startCol << ")" << endl;
+	return nativeResidualNorm_;
+      }
+    else
+      dbg << endl;
 
     const int numCols = endCol - startCol + 1;
+    dbg << "------ # cols to update: " << numCols << endl;
+
+    // Define some references to ease notation.
+    mat_type& H = *H_;
+    mat_type& R = *R_;
+    mat_type& y = *y_;
+    mat_type& z = *z_;
+
+    // FIXME (mfh 24 Feb 2011) 
+    //
+    // The "if 0" part attempts to update the QR factorization of the
+    // upper Hessenberg matrix using givens rotations.  I haven't
+    // quite gotten that to work yet, so I've provided as an
+    // alternative a least-squares solve using LAPACK's _GELS routine.
+    // This will be slightly more expensive, but it should only matter
+    // when solving very small problems or when the iteration count is
+    // large.
+#if 0    
     {
       // Copy columns [startCol, endCol] (inclusive) of the current
       // upper Hessenberg matrix H, into the upper triangular matrix
@@ -1196,21 +1428,29 @@ namespace Belos {
       // the "native" residual.)  Columns [0, startCol-1] of R are
       // already upper triangular; we don't have to do any more work
       // there.
-      const int numRows = endCol + 2; // include last subdiagonal element
+      const int numRows = endCol + 2;
       const mat_type H_view (Teuchos::View, *H_, numRows, numCols, 0, startCol);
       mat_type R_view (Teuchos::View, *R_, numRows, numCols, 0, startCol);
       R_view.assign (H_view);
+
+      if (verboseDebug)
+	dbg << "------ R factor of upper Hessenberg matrix before rotations:" << endl
+	    << mat_type(Teuchos::View, *R_, m+1, m) << endl;
     }
-    // Define some references to ease notation.
-    mat_type& R = *R_;
-    mat_type& z = *z_;
-    
+
+    const scalar_type zero = STS::zero();
+    const scalar_type one = STS::one();
+
     // Update columns [startCol, endCol] of the QR factorization of
     // the upper Hessenberg matrix.  Use Givens rotations to maintain
     // the factorization.  We use a left-looking update procedure,
     // since Arnoldi is always adding new column(s) on the right of
     // the upper Hessenberg matrix.
     const int LDR = R.stride();
+    if (startCol > 0)
+      dbg << "-- Applying " << startCol << " previous Givens rotation"
+	  << (startCol != 1 ? "s" : "") << " to new columns of H (in R)"
+	  << endl;
     for (int j = 0; j < startCol; ++j)
       {
 	// Apply all previous Givens rotations to the new columns of
@@ -1225,7 +1465,7 @@ namespace Belos {
 	blas.ROT (numCols, &R(j,j), LDR, &R(j+1,j), LDR, 
 		  &theCosine, &theSine);
       }
-    for (int j = startCol; j != endCol; ++j)
+    for (int j = startCol; j < endCol; ++j)
       {
 	// Calculate new Givens rotation for [R(j,j); R(j+1,j)]
 	magnitude_type theCosine;
@@ -1246,12 +1486,10 @@ namespace Belos {
 	// with the new Givens rotation.
 	blas.ROT (1, &z(j,0), 1, &z(j+1,0), 1, &theCosine, &theSine);
       }
-    // Remember the rightmost updated column.
-    lastUpdatedCol_ = endCol;
 
     // The absolute value of the last element of z gives the current
     // "native" residual norm.
-    const magnitude_type nativeResNorm = STS::magnitude ((*z_)(endCol+1,0));
+    nativeResidualNorm_ = STS::magnitude ((*z_)(m,0));
 
     // Now that we have the updated R factor of H, and the updated
     // right-hand side z, solve the least-squares problem by solving
@@ -1260,15 +1498,113 @@ namespace Belos {
     // TRSM() overwrites the right-hand side with the solution, so
     // copy z into y.
     {
-      mat_type y_view (Teuchos::View, *y_, endCol+1, 1);
-      mat_type z_view (Teuchos::View, *z_, endCol+1, 1);
+      mat_type y_view (Teuchos::View, *y_, m, 1);
+      mat_type z_view (Teuchos::View, *z_, m, 1);
       y_view.assign (z_view);
     }
     // Solve Ry = z for y.
-    blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
-	      Teuchos::NON_UNIT_DIAG, curNumIters_, 1, 
-	      one, R_->values(), LDR, y_->values(), y_->stride());
-    return nativeResNorm;
+    {
+      dbg << "-- R factor of upper Hessenberg matrix:" << endl
+	  << mat_type(Teuchos::View, *R_, m, m) << endl
+	  << "-- Right-hand side of Ry=z:" << endl
+	  << mat_type(Teuchos::View, *y_, m, 1) << endl;
+    }
+    blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+	      Teuchos::NON_UNIT_DIAG, m, 1,
+	      one, R_->values(), R_->stride(), y_->values(), y_->stride());
+#else // not 0
+    // Let's solve the projected least-squares problem the easy way:
+    // Rather than messing around with Givens rotations, let's just
+    // invoke the appropriate LAPACK routine.
+    {
+      mat_type H_view (Teuchos::View, H, m+1, m);
+      mat_type R_view (Teuchos::View, R, m+1, m);
+      // y gets an extra entry, since it needs to hold a copy of the
+      // whole right-hand side (see below).
+      mat_type y_view (Teuchos::View, y, m+1, 1);
+      mat_type z_view (Teuchos::View, z, m+1, 1);
+
+      // Copy _all_ of H into R.  Remember that _GELS overwrites the
+      // entire input matrix with the implicitly stored Q factor.  If
+      // we call _GELS each time, we then have to recopy all of H into
+      // R each time.
+      R_view.assign (H_view);
+      // The least-squares solver overwrites the right-hand side with
+      // the solution, so first copy z into y.
+      y_view.assign (z_view);
+
+      dbg << "------ Current upper Hessenberg matrix (" << m+1 << " by " 
+	  << m << "): " << R_view << endl;
+      dbg << "------ Current projected right-hand side (" << m+1 << " by " 
+	  << 1 << "): " << y_view << endl;
+
+      // Workspace query.
+      int info = 0;
+      Scalar lwork_scalar = STS::zero();
+      if (verboseDebug)
+	dbg << "------ _GELS workspace query: " << endl;
+      // Recall that _GELS overwrites the right-hand side with the
+      // solution.  We've copied z_view into y_view in preparation for
+      // this.  Note that this means the stride of y_view must be no
+      // less than the number of rows in R_view.
+      TEST_FOR_EXCEPTION(y_view.stride() < m+1, std::logic_error,
+			 "Before calling LAPACK _GELS: y_view has stride "
+			 << y_view.stride() << ", which is less than the "
+			 "number of rows " << m+1 << " in R_view.  This is "
+			 "an internal Belos bug.");
+      lapack.GELS ('N', m+1, m, 1, 
+		   R_view.values(), R_view.stride(),
+		   y_view.values(), y_view.stride(),
+		   &lwork_scalar, -1, &info);
+      TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+			 "LAPACK _GELS workspace query failed with INFO = " 
+			 << info << ", for an " << (m+1) << " x " << m 
+			 << " matrix with 1 right-hand side.");
+      // Cast workspace from Scalar (which may be complex, hence the
+      // request for the real part -- don't call magnitude() since it
+      // may overflow due to squaring and square root) to int.
+      // Hopefully LAPACK doesn't ever overflow int this way.
+      const int lwork = static_cast<int> (STS::real (lwork_scalar));
+      dbg << "------ LAPACK _GELS workspace size: " << lwork << endl;
+      TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
+			 "LAPACK _GELS workspace query returned LWORK = " 
+			 << lwork << " < 0.  This should never happen.");
+      std::vector<Scalar> work (lwork, STS::zero()); // Workspace
+      // Solve the least-squares problem.  The ?: operator prevents
+      // accessing the first element of the work array, if it has
+      // length zero.
+      lapack.GELS ('N', m+1, m, 1, 
+		   R_view.values(), R_view.stride(),
+		   y_view.values(), y_view.stride(),
+		   (lwork > 0 ? &work[0] : (Scalar*) NULL), 
+		   lwork, &info);
+      TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+			 "Solving projected least-squares problem with LAPACK "
+			 "_GELS failed with INFO = " << info << ", for an " 
+			 << (m+1) << " x " << m << " matrix with 1 right-hand "
+			 "side.");
+      // Extract the projected least-squares problem's residual error.
+      // It's the magnitude of the last entry of y_view on output from
+      // LAPACK's least-squares solver.  That is the absolute residual
+      // norm, so scale by the initial residual norm.  Be sure not to
+      // divide by zero (though if the initial residual norm is zero,
+      // GMRES shouldn't progress anyway).
+      nativeResidualNorm_ = (initialResidualNorm_ == STM::zero()) ? 
+	STS::magnitude (y_view(m, 0)) : 
+	STS::magnitude (y_view(m, 0)) / initialResidualNorm_;
+      dbg << "Native residual norm (via _GELS): " << nativeResidualNorm_ << endl;
+      dbg << "------ Current projected least-squares solution (" << m << " by " 
+	  << 1 << "): " << mat_type(Teuchos::View, y_view, m, 1) << endl;
+    }
+#endif // 0
+
+    // Remember the rightmost updated column.
+    lastUpdatedCol_ = endCol;
+
+    // Return the "native" residual norm (which is the absolute
+    // residual error from solving the projected least-squares
+    // problem).
+    return nativeResidualNorm_;
   }
 
 
@@ -1301,7 +1637,7 @@ namespace Belos {
 	else
 	  xUpdate_ = MVT::Clone (*V_, 1);
       }
-    if (curNumIters_ == 0)
+    if (getNumIters() == 0)
       {
 	MVT::MvInit (*xUpdate_, zero);
 	return xUpdate_;
@@ -1337,15 +1673,21 @@ namespace Belos {
   {
     using Teuchos::Range1D;
     using Teuchos::RCP;
+    using std::endl;
 
     // Message fragment for error messages.
     const char prefix[] = "Belos::GmresBase::setInitialResidual: ";
+    std::ostream& dbg = outMan_->stream(Debug);
 
     TEST_FOR_EXCEPTION(maxIterCount < 0, std::invalid_argument,
 		       prefix << "maxIterCount = " << maxIterCount 
 		       << " < 0.");
     // Do we have a left preconditioner?
     const bool haveLeftPrec = ! lp_->getLeftPrec().is_null();
+    if (haveLeftPrec)
+      dbg << "-- Have a left preconditioner" << endl;
+    else
+      dbg << "-- No left preconditioner" << endl;
 
     // mfh 22 Feb 2011: LinearProblem has the annoying quirk that
     // getInit(Prec)ResVec() return the residual vector for the whole
@@ -1365,6 +1707,14 @@ namespace Belos {
 		       "The LinearProblem claims that there are zero linear "
 		       "systems to solve: getLSIndex() returns an index "
 		       "vector of length zero.");
+    dbg << "-- Input indices: [";
+    for (std::vector<int>::size_type k = 0; k < inputIndices.size(); ++k)
+      {
+	dbg << inputIndices[k];
+	if (k < inputIndices.size() - 1)
+	  dbg << ", ";
+      }
+    dbg << "]" << endl;
 
     // Some of the indices returned by getLSIndex() might be -1.
     // These are for column(s) of getCurr{L,R}HSVec() that don't
@@ -1377,6 +1727,14 @@ namespace Belos {
     std::remove_copy_if (inputIndices.begin(), inputIndices.end(), 
 			 std::back_inserter (outputIndices), 
 			 std::bind2nd (std::equal_to<int>(), -1));
+    dbg << "-- Output indices: [";
+    for (std::vector<int>::size_type k = 0; k < outputIndices.size(); ++k)
+      {
+	dbg << outputIndices[k];
+	if (k < outputIndices.size() - 1)
+	  dbg << ", ";
+      }
+    dbg << "]" << endl;
 
     // outputIndices should have exactly one entry, corresponding to
     // the one linear system to solve.  Our GMRES implementation can
@@ -1447,7 +1805,14 @@ namespace Belos {
     if (V_.is_null() || 
 	MVT::GetNumberVecs(*V_) != maxIterCount+1 || 
 	reallocateBasis)
-      V_ = MVT::Clone (*initResVec_, maxIterCount+1);
+      {
+	dbg << "-- Reallocating V_ basis with " << (maxIterCount+1) 
+	    << " columns" << endl;
+	V_ = MVT::Clone (*initResVec_, maxIterCount+1);
+      }
+    else
+      dbg << "-- V_ basis has alread been allocated with " 
+	  << (maxIterCount+1) << " columns." << endl;
 
     // Initial residual norm is computed with respect to the inner
     // product defined by the OrthoManager.  Since the basis
@@ -1457,21 +1822,24 @@ namespace Belos {
     std::vector<magnitude_type> result (1);
     ortho_->norm (*r0, result);
     initialResidualNorm_ = result[0];
+    dbg << "-- Initial residual norm (as computed by the OrthoManager): " 
+	<< initialResidualNorm_ << endl;
 
     // z_ is the right-hand side of the projected least-squares
     // problem.  If we reallocated z_, we have to reset it by setting
     // its first entry to the initial residual norm.
-    if (z_.is_null() || z_->numRows() < maxIterCount+1)
+    if (z_.is_null() || z_->numRows() != maxIterCount+1)
       z_ = rcp (new mat_type (maxIterCount+1, 1));
     else
       (void) z_->putScalar (STS::zero());
+    // The residual norm is a magnitude_type; promote to Scalar.
     (*z_)(0,0) = Scalar (initialResidualNorm_);
 
     // Copy the initial residual vector into the first column of V_,
     // and scale the vector by its norm.
-    MVT::SetBlock (*initResVec_, Range1D(0,0), *V_);
     RCP<MV> v1 = MVT::CloneViewNonConst (*V_, Range1D(0,0));
-    MVT::MvScale (*v1, Scalar(1)/initialResidualNorm_);
+    MVT::Assign (*r0, *v1);
+    MVT::MvScale (*v1, STS::one() / initialResidualNorm_);
   }
 
   template<class Scalar, class MV, class OP>
@@ -1553,7 +1921,7 @@ namespace Belos {
 	Z_ = needToAllocateZ ? MVT::Clone (*x0, maxIterCount+1) : null;
 	H_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
 	R_ = rcp (new mat_type (maxIterCount+1, maxIterCount));
-	y_ = rcp (new mat_type (maxIterCount, 1));
+	y_ = rcp (new mat_type (maxIterCount+1, 1));
       }
     // Even if the max iteration count hasn't changed, we still want
     // to fill in the projected least-squares problem data with zeros,
