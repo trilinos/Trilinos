@@ -43,6 +43,7 @@
 #include <stk_percept/RunEnvironment.hpp>
 
 #include <stk_percept/fixtures/Fixture.hpp>
+#include <stk_percept/fixtures/BeamFixture.hpp>
 #include <stk_percept/fixtures/HeterogeneousFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
 #include <stk_percept/fixtures/WedgeFixture.hpp>
@@ -74,15 +75,6 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-
-#if 0
-      TEST(regr_uniformRefiner, test11)
-      {
-        PerceptMesh pMesh;
-        pMesh.open("./link/dir1/biplane_0.e");
-        exit(123);
-      }
-#endif
 
       //======================================================================================================================
       //======================================================================================================================
@@ -132,6 +124,9 @@ namespace stk
 #if !(defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
 
             Line2_Line2_2            :: printRefinementTopoX_Table(file);
+
+            Beam2_Beam2_2            :: printRefinementTopoX_Table(file);
+
             ShellLine2_ShellLine2_2  :: printRefinementTopoX_Table(file);
             ShellLine3_ShellLine3_2  :: printRefinementTopoX_Table(file);
             Quad4_Quad4_4            :: printRefinementTopoX_Table(file);
@@ -149,6 +144,8 @@ namespace stk
             // Wedge18_Wedge18_8        :: printRefinementTopoX_Table(file);
 
             Line3_Line3_2            :: printRefinementTopoX_Table(file);
+            Beam3_Beam3_2            :: printRefinementTopoX_Table(file);
+
             Tri6_Tri6_4              :: printRefinementTopoX_Table(file);
             Quad8_Quad8_4            :: printRefinementTopoX_Table(file);
             Quad9_Quad9_4            :: printRefinementTopoX_Table(file);
@@ -2210,6 +2207,61 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
+
+      TEST(regr_uniformRefiner, beam_refine)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            // create the mesh
+            {
+
+              stk::percept::BeamFixture mesh(pm, false);
+              stk::io::put_io_part_attribute(  mesh.m_block_beam );
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              em1.saveAs("./input_files/beam_0.e");
+
+            }
+
+            // refine
+            {
+              stk::percept::PerceptMesh eMesh;
+              eMesh.open("./input_files/beam_0.e");
+              //URP_Heterogeneous_3D break_pattern(eMesh);
+              Beam2_Beam2_2 break_pattern(eMesh);
+              int scalarDimension = 0; // a scalar
+              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              eMesh.commit();
+
+              eMesh.saveAs("./output_files/beam_0.e");
+
+              eMesh.printInfo("beam", 2);
+
+              UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+              //breaker.setRemoveOldElements(false);
+              breaker.setIgnoreSideSets(true);
+              breaker.doBreak();
+
+              eMesh.saveAs("./output_files/beam_1.e");
+
+            }
+          }
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
       TEST(regr_uniformRefiner, biplane_refine)
       {
         EXCEPTWATCH;
@@ -2239,7 +2291,7 @@ namespace stk
             FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
             eMesh.commit();
 
-            //eMesh.printInfo("biplane", 2);
+            eMesh.printInfo("biplane", 2);
             eMesh.saveAs("./output_files/biplane_0.e");
 
             UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);

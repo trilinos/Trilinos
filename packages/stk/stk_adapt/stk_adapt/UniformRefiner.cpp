@@ -362,6 +362,14 @@ namespace stk {
                   vector<NeededEntityType> needed_entity_ranks;
                   m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
                   unsigned num_elem_not_ghost_0_incr = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks);
+                  if (0)
+                    {
+                      if (irank == 11)
+                        {
+                          std::cout << "tmp irank= " << irank << " num_elem_not_ghost_0_incr= " << num_elem_not_ghost_0_incr << std::endl;
+                        }
+                    }
+
                   num_elem_not_ghost_0 += num_elem_not_ghost_0_incr;
                 }
             }
@@ -501,17 +509,25 @@ namespace stk {
 
             unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
 
+            if (0)
+              {
+                if (irank == 11)
+                  {
+                    std::cout << "tmp irank= " << irank << " num_elem_needed= " << num_elem_needed << " num_elem_not_ghost= " 
+                              << num_elem_not_ghost <<      std::endl;
+                  }
+              }
+
             if (0 && num_elem_not_ghost != num_elem_not_ghost_0) 
               {
                 std::cout << "num_elem_not_ghost_0 = " << num_elem_not_ghost_0 << " num_elem_not_ghost= " << num_elem_not_ghost << std::endl;
-                //exit(1);
                 throw std::runtime_error("num_elem_not_ghost_0 != num_elem_not_ghost");
               }
 
             // create new entities on this proc
             m_nodeRegistry->beginLocalMeshMods();
             new_elements.resize(0);                                                /**/ TRACE_PRINT("UniformRefiner: createEntities... ranks[irank]==ranks[0] ");
-            m_eMesh.createEntities( ranks[irank], num_elem_needed, new_elements); /**/ TRACE_PRINT("UniformRefiner: createEntities... ranks[irank]==ranks[0] done ");
+            m_eMesh.createEntities( ranks[irank], num_elem_needed, new_elements);  /**/ TRACE_PRINT("UniformRefiner: createEntities... ranks[irank]==ranks[0] done ");
             m_nodeRegistry->endLocalMeshMods();
 
           } 
@@ -549,6 +565,7 @@ namespace stk {
                 m_nodeRegistry->makeCentroid(m_eMesh.getCoordinatesField());
                 m_nodeRegistry->interpolateFields();
               }
+
           }
 #endif
           /**/                                                TRACE_PRINT("UniformRefiner: addToExistingParts [etc.] ...done ");
