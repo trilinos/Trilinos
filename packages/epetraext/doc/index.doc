@@ -137,7 +137,8 @@ This class was first released with Trilinos 9.0 and PETSc 2.3.3.  Instructions f
 in the Trilinos 9.0 doxygen comments.  The most current version is available in the
 Trilinos development version as of 4/30/2009, and was released with Trilinos 10.0.
 It has been tested in parallel with PETSc versions 3.0.0-p4, 3.0.0-p7, and 3.0.0-p12, built in static library mode.
-It currently requires MPI, i.e., you cannot build a purely serial version.
+It currently requires MPI, i.e., you cannot build a purely serial version.  PETSc must be built with a C compiler, i.e.,
+do not use the option "--with-clanguage=cxx".
 <b>Note</b>: This will
 not work with an installed version of PETSc (i.e., you have run "make install"). The reason is that the interface requires
 access to certain low level functions for good performance, but these functions are not exposed in an installed version of PETSc.
@@ -195,8 +196,8 @@ cmake \
 \
   -D EpetraExt_USING_PETSC:BOOL=ON \
   -D TPL_ENABLE_PETSC:BOOL=ON \
-  -D PETSC_LIBRARY_DIRS:FILEPATH=${PETSC_LIB_PATH} \
-  -D PETSC_INCLUDE_DIRS:FILEPATH=${PETSC_INCLUDE_PATH} \
+  -D PETSC_LIBRARY_DIRS:FILEPATH="${PETSC_LIB}" \
+  -D PETSC_INCLUDE_DIRS:FILEPATH="${PETSC_INCLUDE_PATH}" \
   -D TPL_PETSC_LIBRARIES:STRING="${PETSC_LIB}" \
   -D TPL_PETSC_INCLUDE_DIRS:STRING="${PETSC_INCLUDE_PATH}" \
 \
