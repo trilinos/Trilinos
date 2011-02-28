@@ -343,13 +343,26 @@ namespace {
     return pMat;
   }
 
-  /// Print out the given Belos::MsgType to a comma-delimited list of
-  /// names.
+  /// \brief Show MsgType as comma-delimited list of names.
+  ///
+  /// Belos::MsgType claims to be an enum, but is really one of those
+  /// C-style bit sets (where you bitwise OR together different names
+  /// to get a combination of values).  This function returns a string
+  /// representing the given MsgType (represented here as an int,
+  /// mainly because Teuchos::ParameterList seems to prefer storing
+  /// these kind of C-style bit sets as int rather than MsgType) as a
+  /// comma-delimited, human-readable list of names.  This is useful
+  /// for debugging.
+  /// 
   std::string 
   msgTypeToString (const int msgType)
   {
+    using std::ostringstream;
+    using std::vector;
+
     // Wouldn't it be nice if C++ enums had introspection and could
     // be enumerated?
+    const int numValidTypes = 8;
     const int validTypes[] = {
       Belos::Errors, 
       Belos::Warnings, 
@@ -370,14 +383,24 @@ namespace {
       "StatusTestDetails",
       "Debug"
     };
-    const int numValidTypes = 8;
-    std::ostringstream os;
-    for (int k = 0; k < numValidTypes; ++k)
+
+    // We first generate a list, and only then build a single string.
+    // This helps us decide where to put the commas.  The list just
+    // uses the indices of the valid names, rather than the valid
+    // names themselves, in order to save space and time.
+    vector<int> theList;
+    for (int nameIndex = 0; nameIndex < numValidTypes; ++nameIndex)
       {
-	if (msgType & validTypes[k])
-	  os << typeNames[k];
-	if (k > 0 && k < numValidTypes - 1)
-	  os << ", ";
+	if (msgType & validTypes[nameIndex])
+	  theList.push_back (nameIndex);
+      }
+    ostringstream os;
+    for (vector<int>::size_type k = 0; k < theList.size(); ++k)
+      {
+	const int nameIndex = theList[k];
+	os << typeNames[nameIndex];
+	if (nameIndex < theList.size() - 1)
+	  os << ",";
       }
     return os.str();
   }
