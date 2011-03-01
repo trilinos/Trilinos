@@ -42,6 +42,10 @@
 #ifndef __Belos_StandardGmres_hpp
 #define __Belos_StandardGmres_hpp
 
+/// \file BelosStandardGmres.hpp
+/// \brief Implementation of standard (and Flexible) GMRES
+/// \author Mark Hoemmen
+
 #include <BelosGmresBase.hpp>
 
 namespace Belos {
@@ -83,6 +87,7 @@ namespace Belos {
     ///   updateSolution().  On output, if the solution has been
     ///   updated, the vector returned by getLHS() will be modified.
     /// \param ortho [in] Orthogonalization manager
+    /// \param outMan [in/out] Output manager
     /// \param maxIterCount [in] Maximum number of iterations before
     ///   restart.  The number of vectors' worth of storage this
     ///   constructor allocates is proportional to this, so choose
@@ -111,9 +116,9 @@ namespace Belos {
       using std::endl;
       const bool verboseDebug = false;
       //
-      // mfh 16 Feb 2011: The use of "this->..." here and elsewhere is
-      // obligatory, since we are inheriting from a templated class.
-      // See the C++ FAQ:
+      // mfh 16 Feb 2011: The use of "this->..." here and elsewhere to
+      // refer to GmresBase member data is obligatory, since we are
+      // inheriting from a templated class.  See the C++ FAQ:
       //
       // http://www.parashift.com/c++-faq-lite/templates.html#faq-35.19
       // 
@@ -232,7 +237,12 @@ namespace Belos {
     {
       // Standard GMRES just writes to the upper Hessenberg matrix in
       // place in its implementation of orthogonalize(), so we don't
-      // need to do anything here.
+      // need to do anything here.  Just include the usual boilerplate
+      // to avoid compiler warnings for unused inputs.
+      (void) C_V;
+      (void) B_V;
+      (void) C_Z;
+      (void) B_Z;
     }
 
   };
