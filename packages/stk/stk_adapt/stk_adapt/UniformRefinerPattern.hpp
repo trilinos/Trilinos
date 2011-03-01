@@ -1888,9 +1888,17 @@ namespace stk {
             return;
           }
 
+
+
         if ( (on_parent_edge = on_parent_edge_interior(childNodeIdx, ref_topo, ordinal_of_subcell, ordinal_of_node_on_subcell, num_node_on_subcell)))
           {
             rank_of_subcell = 1;
+            // SPECIAL CASE
+            if (cell_topo.getKey() == shards::Beam<2>::key ||
+                cell_topo.getKey() == shards::Beam<3>::key )
+              {
+                rank_of_subcell = 3;
+              }
             return;
           }
 
@@ -2543,6 +2551,7 @@ namespace stk {
 
 #include "UniformRefinerPattern_Line2_Line3_1_sierra.hpp"
 #include "UniformRefinerPattern_ShellLine2_ShellLine3_1_sierra.hpp"
+#include "UniformRefinerPattern_Beam2_Beam3_1_sierra.hpp"
 
 #include "UniformRefinerPattern_Quad4_Quad9_1_sierra.hpp"
 #include "UniformRefinerPattern_Quad4_Quad8_1_sierra.hpp"
@@ -2600,6 +2609,8 @@ namespace stk {
     // enrich
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<9>, 1, SierraPort >            Quad4_Quad9_1;
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<8>, 1, SierraPort >            Quad4_Quad8_1;
+    typedef  UniformRefinerPattern<shards::Beam<2>,          shards::Beam<3>,          1, SierraPort >            Beam2_Beam3_1;
+
     typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<8>, 1, SierraPort >            ShellQuad4_ShellQuad8_1;
     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<6>,      1, SierraPort >            Tri3_Tri6_1;
     typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<10>,  1, SierraPort >            Tet4_Tet10_1;
