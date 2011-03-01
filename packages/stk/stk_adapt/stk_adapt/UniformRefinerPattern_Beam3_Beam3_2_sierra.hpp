@@ -16,9 +16,9 @@ namespace stk {
 
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Beam<3>, shards::Beam<3>  >(eMesh)
       {
-//         m_primaryEntityRank = mesh::Edge;
-//         if (m_eMesh.getSpatialDim() == 1)
-          m_primaryEntityRank = mesh::Element;
+        //         m_primaryEntityRank = mesh::Edge;
+        //         if (m_eMesh.getSpatialDim() == 1)
+        m_primaryEntityRank = mesh::Element;
 
         setNeededParts(eMesh, block_names, true);
       }

@@ -42,6 +42,13 @@ namespace stk {
                         Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
                         FieldBase *proc_rank_field=0)
       {
+        if (1)
+          {
+            genericRefine_createNewElements(eMesh, nodeRegistry,
+                                            element, new_sub_entity_nodes, element_pool,
+                                            proc_rank_field);
+            return;
+          }
         const CellTopologyData * const cell_topo_data = get_cell_topology(element);
         typedef boost::tuple<EntityId, EntityId> line_tuple_type;
         static vector<line_tuple_type> elems(2);
