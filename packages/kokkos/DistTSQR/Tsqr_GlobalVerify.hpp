@@ -53,11 +53,11 @@ namespace TSQR {
   /// \note Unfortunately, you need c++0x support to have default
   /// template arguments of template functions.  Otherwise we would
   /// make this a template function and set the default value of
-  /// isComplex to ScalarTraits< Scalar >::isComplex.  Also, C++
+  /// isComplex to ScalarTraits<Scalar>::isComplex.  Also, C++
   /// (before c++0x) doesn't like partial specialization of template
   /// functions, for no particular reason other than C++ is a
   /// challenging language to parse.  So, we had to make this a class.
-  template< class Scalar, bool isComplex = Teuchos::ScalarTraits< Scalar >::isComplex >
+  template<class Scalar, bool isComplex = Teuchos::ScalarTraits< Scalar >::isComplex>
   class GlobalSummer {
   public:
     typedef Scalar scalar_type;
@@ -66,40 +66,40 @@ namespace TSQR {
 
     static magnitude_type
     sum (const Scalar& localSum,
-	 MessengerBase< Scalar >* const messenger);
+	 MessengerBase<Scalar>* const messenger);
   };
 
   // Complex-arithmetic "forward declaration"
-  template< class Scalar >
-  class GlobalSummer< Scalar, true > {
+  template<class Scalar>
+  class GlobalSummer<Scalar, true> {
   public:
     typedef Scalar scalar_type;
-    typedef Teuchos::ScalarTraits< Scalar > STS;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
 
     static magnitude_type
     sum (const Scalar& localSum,
-	 MessengerBase< Scalar >* const messenger);
+	 MessengerBase<Scalar>* const messenger);
   };
 
   // Real-arithmetic "forward declaration"
-  template< class Scalar >
-  class GlobalSummer< Scalar, false > {
+  template<class Scalar>
+  class GlobalSummer<Scalar, false> {
   public:
     typedef Scalar scalar_type;
-    typedef Teuchos::ScalarTraits< Scalar > STS;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
 
     static magnitude_type
     sum (const Scalar& localSum,
-	 MessengerBase< Scalar >* const messenger);
+	 MessengerBase<Scalar>* const messenger);
   };
 
   // Complex-arithmetic case
-  template< class Scalar >
-  typename Teuchos::ScalarTraits< Scalar >::magnitudeType
-  GlobalSummer< Scalar, true >::sum (const Scalar& localSum,
-				     MessengerBase< Scalar >* const messenger)
+  template<class Scalar>
+  typename GlobalSummer<Scalar, true>::magnitude_type
+  GlobalSummer<Scalar, true>::sum (const Scalar& localSum,
+				   MessengerBase<Scalar>* const messenger)
   {
     // In order to use a MessengerBase<Scalar> on magnitude_type
     // values, we have to convert local_result to a Scalar, and then
@@ -119,10 +119,10 @@ namespace TSQR {
   }
 
   // Real-arithmetic case
-  template< class Scalar >
-  typename Teuchos::ScalarTraits< Scalar >::magnitudeType
-  GlobalSummer< Scalar, false >::sum (const Scalar& localSum,
-				      MessengerBase< Scalar >* const messenger)
+  template<class Scalar>
+  typename GlobalSummer<Scalar, false>::magnitude_type
+  GlobalSummer<Scalar, false>::sum (const Scalar& localSum,
+				    MessengerBase<Scalar>* const messenger)
   {
     const Scalar localSumAsScalar (localSum);
     const Scalar globalSumAsScalar = messenger->globalSum (localSumAsScalar);
@@ -130,15 +130,15 @@ namespace TSQR {
     return globalSum;
   }
 
-  template< class LocalOrdinal, class Scalar >
-  typename Teuchos::ScalarTraits< Scalar >::magnitudeType
+  template<class LocalOrdinal, class Scalar>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   global_frobenius_norm (const LocalOrdinal nrows_local, 
 			 const LocalOrdinal ncols,
 			 const Scalar A_local[],
 			 const LocalOrdinal lda_local,
-			 MessengerBase< Scalar >* const messenger)
+			 MessengerBase<Scalar>* const messenger)
   {
-    typedef Teuchos::ScalarTraits< Scalar > STS;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
 
     // FIXME (mfh 20 Apr 2010) This is currently implemented using an
@@ -159,15 +159,15 @@ namespace TSQR {
       }
     // GlobalSummmer() is a hack to let us use a Scalar - type
     // MessengerBase with magnitude_type inputs and outputs.
-    // Otherwise we would need to carry around a MessengerBase<
-    // magnitude_type > object as well.
+    // Otherwise we would need to carry around a
+    // MessengerBase<magnitude_type> object as well.
     const magnitude_type globalResult = 
-      GlobalSummer< Scalar, STS::isComplex >::sum (localResult, messenger);
+      GlobalSummer<Scalar, STS::isComplex>::sum (localResult, messenger);
     return sqrt (globalResult);
   }
 
-  template< class LocalOrdinal, class Scalar >
-  std::vector< typename Teuchos::ScalarTraits< Scalar >::magnitudeType >
+  template<class LocalOrdinal, class Scalar>
+  std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
   global_verify (const LocalOrdinal nrows_local, 
 		 const LocalOrdinal ncols, 
 		 const Scalar A_local[],
@@ -176,9 +176,9 @@ namespace TSQR {
 		 const LocalOrdinal ldq_local,
 		 const Scalar R[],
 		 const LocalOrdinal ldr,
-		 MessengerBase< Scalar >* const messenger)
+		 MessengerBase<Scalar>* const messenger)
   {
-    typedef Teuchos::ScalarTraits< Scalar > STS;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
     using std::make_pair;
     using std::pair;
@@ -186,14 +186,14 @@ namespace TSQR {
 
     const magnitude_type ZERO (0);
     const magnitude_type ONE (1);
-    BLAS< LocalOrdinal, Scalar > blas;
+    BLAS<LocalOrdinal, Scalar> blas;
 
     //
     // Compute $\| I - Q^T * Q \|_F$
     //
 
     // Compute Q_local^T * Q_local (this node's component of Q^T*Q)
-    vector< Scalar > Temp (ncols*ncols, STS::nan());
+    vector<Scalar> Temp (ncols*ncols, STS::nan());
     const LocalOrdinal ld_temp = ncols;
 
     if (STS::isComplex)
@@ -206,7 +206,7 @@ namespace TSQR {
 		 ZERO, &Temp[0], ld_temp);
   
     // Reduce over all the processors to get the global Q^T*Q in Temp2.
-    vector< Scalar > Temp2 (ncols*ncols, STS::nan());
+    vector<Scalar> Temp2 (ncols*ncols, STS::nan());
     messenger->globalVectorSum (&Temp[0], &Temp2[0], ncols*ncols);
 
     // Compute I-(Q^T*Q) redundantly on all processors
@@ -225,7 +225,7 @@ namespace TSQR {
     // Compute $\| A - Q*R \|_F$
     //
 
-    vector< Scalar > Resid (nrows_local * ncols, STS::nan());
+    vector<Scalar> Resid (nrows_local * ncols, STS::nan());
     const LocalOrdinal ld_resid = nrows_local;
 
     // Resid := A (deep copy)
@@ -239,7 +239,7 @@ namespace TSQR {
     const magnitude_type Resid_F = 
       global_frobenius_norm (nrows_local, ncols, &Resid[0], ld_resid, messenger);
 
-    std::vector< magnitude_type > results (3);
+    vector<magnitude_type> results (3);
     results[0] = Resid_F;
     results[1] = Orthog_F;
     results[2] = A_F;
