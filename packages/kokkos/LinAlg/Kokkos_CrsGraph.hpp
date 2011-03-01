@@ -726,18 +726,24 @@ namespace Kokkos {
 #ifndef KERNEL_PREFIX
 #define KERNEL_PREFIX
 #endif
+  /// \class FirstTouchCopyIndicesKernel
+  ///
+  /// Kokkos kernel for copying array indices using a first-touch
+  /// initialization strategy for CPU memory.
+  ///
+  /// \note We have to store member data as raw pointers, rather than
+  /// ArrayRCPs, because ArrayRCP are not thread safe, and the arrays
+  /// get accessed inside a Kokkos kernel.
   template <class T>
   struct FirstTouchCopyIndicesKernel {
     const size_t * numEntriesPerRow;
-    // ArrayRCP<const size_t> numEntriesPerRow;
     const size_t * offsets1D;
-    // ArrayRCP<const size_t> offsets1D;
     T * data1D;
-    // ArrayRCP<T>            data1D;
     const ArrayRCP<T> * data2D;
+
     inline KERNEL_PREFIX void execute(size_t row) {
       const size_t rowNumInds = numEntriesPerRow[row];
-      const T* const oldinds = data2d[row].getRawPtr();
+      const T* const oldinds = data2D[row].getRawPtr();
       T* const newinds = data1D + offsets1D[row];
       std::copy(oldinds, oldinds+rowNumInds, newinds);
     }
