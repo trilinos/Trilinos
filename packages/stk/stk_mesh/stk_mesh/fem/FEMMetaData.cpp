@@ -256,13 +256,13 @@ void find_cell_topologies_in_part_and_subsets_of_same_rank(const Part & part, En
 {
   fem::FEMMetaData & fem_meta = fem::FEMMetaData::get(part);
   fem::CellTopology top = fem_meta.get_cell_topology(part);
-  if ((top.is_valid() && (part.primary_entity_rank() == rank))) {
+  if ((top.isValid() && (part.primary_entity_rank() == rank))) {
     topologies_found.insert(top);
   }
   const PartVector & subsets = part.subsets();
   for (PartVector::const_iterator it=subsets.begin() ; it != subsets.end() ; ++it) {
     top = fem_meta.get_cell_topology(**it);
-    if (top.is_valid() && ( (**it).primary_entity_rank() == rank) ) {
+    if (top.isValid() && ( (**it).primary_entity_rank() == rank) ) {
       topologies_found.insert(top);
     }
   }
@@ -276,7 +276,7 @@ void FEMMetaData::declare_part_subset( Part & superset , Part & subset )
   ThrowRequireMsg(is_FEM_initialized(),"FEMMetaData::declare_part_subset: FEM_initialize() must be called before this function");
   fem::CellTopology superset_top = get_cell_topology(superset);
 
-  const bool no_superset_topology = !superset_top.is_valid();
+  const bool no_superset_topology = !superset_top.isValid();
   if ( no_superset_topology ) {
     m_meta_data.declare_part_subset(superset,subset); 
     return;
@@ -336,7 +336,7 @@ EntityRank FEMMetaData::get_entity_rank(
 bool is_cell_topology_root_part(const Part & part) {
   fem::FEMMetaData & fem_meta = fem::FEMMetaData::get(part);
   fem::CellTopology top = fem_meta.get_cell_topology(part);
-  if (top.is_valid()) {
+  if (top.isValid()) {
     const Part & root_part = fem_meta.get_cell_topology_root_part(top);
     return (root_part == part);
   } 

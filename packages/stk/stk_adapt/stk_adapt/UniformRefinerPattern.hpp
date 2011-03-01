@@ -856,7 +856,7 @@ namespace stk {
                 for (unsigned i_face = 0; i_face < n_faces; i_face++)
                   {
                     // FIXME assumes face is quadrilateral
-                    shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getTopology( 2, i_face));
+                    shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getCellTopologyData( 2, i_face));
                     if (0)
                       std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << FACE_N(i_face) << " for i_face = " << i_face 
                                 << " face_topo.getNodeCount()= " << face_topo.getNodeCount()
@@ -967,8 +967,8 @@ namespace stk {
 
         const mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
 
-        const unsigned * inodes = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].node;
-        int num_subcell_verts = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology->vertex_count;
+        const unsigned * inodes = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].node;
+        int num_subcell_verts = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology->vertex_count;
 
         // tmp
         //vector_sdcell_global_baseline.resize(num_subcell_verts);
@@ -1042,7 +1042,7 @@ namespace stk {
               }
 
             //! now we have a set of nodes in the right order, use Shards to get the actual permutation
-            perm = findPermutation(cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology,
+            perm = findPermutation(cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology,
                                               &vector_sdcell_global_baseline[0], &subCell_from_element[0]);
 
             //std::cout << "tmp perm = " << perm << std::endl;
@@ -1057,7 +1057,7 @@ namespace stk {
 
             if (0 && num_subcell_verts==3)
               {
-                const unsigned *perm_array = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology->permutation[perm].node;
+                const unsigned *perm_array = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology->permutation[perm].node;
                 for (int iv = 0; iv < num_subcell_verts; iv++)
                   {
                     std::cout << "tmp perm_array[" << iv << "]=  " << perm_array[iv] << std::endl;
@@ -1211,10 +1211,10 @@ namespace stk {
                     if (perm_ord < 0)
                       throw std::logic_error("permutation < 0 ");
                     //std::cout << "tmp 0 " << perm_ord << " rank_of_subcell= " << rank_of_subcell << " ordinal_of_subcell= " << ordinal_of_subcell <<  std::endl;
-                    //std::cout << "tmp 0 " << cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology << std::endl;
+                    //std::cout << "tmp 0 " << cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology << std::endl;
                     if (1 <= rank_of_subcell && rank_of_subcell <= 2)
                       {
-                        perm_array = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology->permutation[perm_ord].node;
+                        perm_array = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology->permutation[perm_ord].node;
                       }
 
                   }
@@ -1935,7 +1935,7 @@ namespace stk {
             for (unsigned i_edge = 0; i_edge < n_edges; i_edge++)
               {
                 // FIXME for 2d
-                shards::CellTopology edge_topo = parent_cell_topo.getDimension()==1? parent_cell_topo : shards::CellTopology(cell_topo.getTopology( 1, i_edge));
+                shards::CellTopology edge_topo = parent_cell_topo.getDimension()==1? parent_cell_topo : shards::CellTopology(cell_topo.getCellTopologyData( 1, i_edge));
 
                 if (edge_topo.getNodeCount() == 3)
                   {
@@ -1951,9 +1951,9 @@ namespace stk {
                       }
                     else
                       {
-                        i0 = child_nodes[cell_topo.getTopology()->edge[i_edge].node[0]];
-                        i1 = child_nodes[cell_topo.getTopology()->edge[i_edge].node[1]];
-                        i2 = child_nodes[cell_topo.getTopology()->edge[i_edge].node[2]];
+                        i0 = child_nodes[cell_topo.getCellTopologyData()->edge[i_edge].node[0]];
+                        i1 = child_nodes[cell_topo.getCellTopologyData()->edge[i_edge].node[1]];
+                        i2 = child_nodes[cell_topo.getCellTopologyData()->edge[i_edge].node[2]];
                       }
 
                     double *param_coord = ref_topo_x[i2].parametric_coordinates;
@@ -1972,7 +1972,7 @@ namespace stk {
             for (unsigned i_face = 0; i_face < n_faces; i_face++)
               {
                 // FIXME for 2d
-                shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getTopology( 2, i_face));
+                shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getCellTopologyData( 2, i_face));
 
                 // skip triangle faces
                 if (face_topo.getVertexCount() == 3)
@@ -1981,7 +1981,7 @@ namespace stk {
                 // NOTE: if this is a serendipity 8-node face, it has no interior node - only 9-noded quad faces have an interior node
                 if (face_topo.getNodeCount() == 9)
                   {
-                    unsigned i0 = cell_topo.getDimension()==2 ? 8 : cell_topo.getTopology()->side[i_face].node[8];
+                    unsigned i0 = cell_topo.getDimension()==2 ? 8 : cell_topo.getCellTopologyData()->side[i_face].node[8];
                     i0 = child_nodes[i0];
 
                     double *param_coord = ref_topo_x[i0].parametric_coordinates;
@@ -1990,7 +1990,7 @@ namespace stk {
                     param_coord[2] = 0.0;
                     for (unsigned i_face_n=0; i_face_n < 4; i_face_n++)
                       {
-                        unsigned i1 = cell_topo.getDimension()==2 ? i_face_n : cell_topo.getTopology()->side[i_face].node[i_face_n];
+                        unsigned i1 = cell_topo.getDimension()==2 ? i_face_n : cell_topo.getCellTopologyData()->side[i_face].node[i_face_n];
                         i1 = child_nodes[i1];
                         param_coord[0] += ref_topo_x[i1].parametric_coordinates[0]/4.;
                         param_coord[1] += ref_topo_x[i1].parametric_coordinates[1]/4.;
@@ -2084,7 +2084,7 @@ namespace stk {
                       {
 
                         // FIXME for 2d
-                        shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getTopology( 2, i_face));
+                        shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getCellTopologyData( 2, i_face));
 
                         // skip triangle faces
                         if (face_topo.getVertexCount() == 3)
