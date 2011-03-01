@@ -924,18 +924,98 @@ RANGE_VALIDATOR_TEST(llint)
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, DependencySerializationExceptions){
   
   RCP<DependencySheet> depSheet = rcp(new DependencySheet);
-  TEST_THROW(RCP<ParameterList> missingDependeeList = 
-    getParametersFromXmlFile("MissingDependeeTag.xml", depSheet),
-    MissingDependeesException);
-  TEST_THROW(RCP<ParameterList> missingDependentsList = 
-    getParametersFromXmlFile("MissingDependentTag.xml", depSheet),
-    MissingDependentsException);
-  TEST_THROW(RCP<ParameterList> missingDependeeList = 
-    getParametersFromXmlFile("MissingDependee.xml", depSheet),
-    MissingDependeeException);
-  TEST_THROW(RCP<ParameterList> missingDependentList = 
-    getParametersFromXmlFile("MissingDependent.xml", depSheet),
-    MissingDependentException);
+  
+  // FIXME mfh 01 Mar 2011
+  //
+  // The four XML files (which are in this source directory and
+  // installed by CMake in the binary directory), when invoked by
+  // filename without a qualifying relative path, were not being read
+  // successfully.  This is because the test executable is often run
+  // from a different working directory than its location (especially
+  // when run by the check-in test script).  The executable looks for
+  // the XML files in the current working directory, not in the
+  // executable file's directory.
+  //
+  // I've fixed this problem temporarily by searching two different
+  // locations for each XML file: the current working directory, and
+  // the binary install location for the file.  The latter is
+  // hard-coded below, which is a hack and should be fixed.
+  {
+    const std::string filename ("MissingDependeeTag.xml");
+    bool fileSuccess = false;
+    try {
+      TEST_THROW(RCP<ParameterList> missingDependeeList = 
+		 getParametersFromXmlFile(filename.c_str(), depSheet),
+		 MissingDependeesException);
+      fileSuccess = true;
+    } catch (std::runtime_error&) {
+      const std::string path = 
+	std::string("packages/teuchos/test/Dependencies/") + filename;
+      TEST_THROW(RCP<ParameterList> missingDependeeList = 
+		 getParametersFromXmlFile(path.c_str(), depSheet),
+		 MissingDependeesException);
+      fileSuccess = true;
+    }
+    TEST_FOR_EXCEPTION(! fileSuccess, std::runtime_error, 
+		       "Failed to open XML file \"" << filename << "\"");
+  }
+  {
+    const std::string filename ("MissingDependentTag.xml");
+    bool fileSuccess = false;
+    try {
+      TEST_THROW(RCP<ParameterList> missingDependentsList = 
+		 getParametersFromXmlFile(filename.c_str(), depSheet),
+		 MissingDependentsException);
+      fileSuccess = true;
+    } catch (std::runtime_error&) {
+      const std::string path = 
+	std::string("packages/teuchos/test/Dependencies/") + filename;
+      TEST_THROW(RCP<ParameterList> missingDependentsList = 
+		 getParametersFromXmlFile(path.c_str(), depSheet),
+		 MissingDependentsException);
+      fileSuccess = true;
+    }
+    TEST_FOR_EXCEPTION(! fileSuccess, std::runtime_error, 
+		       "Failed to open XML file \"" << filename << "\"");
+  }
+  {
+    const std::string filename ("MissingDependee.xml");
+    bool fileSuccess = false;
+    try {
+      TEST_THROW(RCP<ParameterList> missingDependeeList = 
+		 getParametersFromXmlFile(filename.c_str(), depSheet),
+		 MissingDependeeException);
+      fileSuccess = true;
+    } catch (std::runtime_error&) {
+      const std::string path = 
+	std::string("packages/teuchos/test/Dependencies/") + filename;
+      TEST_THROW(RCP<ParameterList> missingDependeeList = 
+		 getParametersFromXmlFile(path.c_str(), depSheet),
+		 MissingDependeeException);
+      fileSuccess = true;
+    }
+    TEST_FOR_EXCEPTION(! fileSuccess, std::runtime_error, 
+		       "Failed to open XML file \"" << filename << "\"");
+  }
+  {
+    const std::string filename ("MissingDependent.xml");
+    bool fileSuccess = false;
+    try {
+      TEST_THROW(RCP<ParameterList> missingDependentList = 
+		 getParametersFromXmlFile(filename.c_str(), depSheet),
+		 MissingDependentException);
+      fileSuccess = true;
+    } catch (std::runtime_error&) {
+      const std::string path = 
+	std::string("packages/teuchos/test/Dependencies/") + filename;
+      TEST_THROW(RCP<ParameterList> missingDependentList = 
+		 getParametersFromXmlFile(path.c_str(), depSheet),
+		 MissingDependentException);
+      fileSuccess = true;
+    }
+    TEST_FOR_EXCEPTION(! fileSuccess, std::runtime_error, 
+		       "Failed to open XML file \"" << filename << "\"");
+  }
 
   RCP<ParameterEntry> dependeeParam = rcp(new ParameterEntry(true));
   RCP<ParameterEntry> dependentParam = rcp(new ParameterEntry("blah"));
