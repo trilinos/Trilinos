@@ -2185,7 +2185,7 @@ namespace stk
             percept::WedgeFixture wedgeFixture;
 
             wedgeFixture.createMesh(MPI_COMM_WORLD,
-                                    2, 2, 2,
+                                    4, 2, 2,
                                     0, 1,
                                     0, 1,
                                     0, 1,
