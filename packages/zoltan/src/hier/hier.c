@@ -2935,7 +2935,3 @@ char *msg;
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
-
-#ifdef __cplusplus
-} /* closing bracket for extern "C" */
-#endif
