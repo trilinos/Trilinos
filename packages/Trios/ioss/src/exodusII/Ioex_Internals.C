@@ -1409,7 +1409,7 @@ int Internals::put_non_define_data(const std::vector<Block> &blocks)
       return(EX_FATAL);
 
     for (int iblk = 0; iblk < num_elem_blk; iblk++) {
-      if (blocks[iblk].attributeCount > 0) {
+      if (blocks[iblk].attributeCount > 0 && blocks[iblk].elementCount > 0) {
 	// If any attributes defined, then output a dummy attribute name for each
 	// to avoid corruption of name field if client doesn't output a name.
 	int varid;
