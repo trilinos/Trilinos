@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -35,7 +35,7 @@ public:
   EntityId identifier() const { return stk::mesh::entity_id( m_key ); }
   const EntityKey & key() const { return m_key ; }
   PairIterRelation relations() const { return PairIterRelation(m_relation); }
-  PairIterRelation relations( unsigned type ) const ;
+  PairIterRelation relations( unsigned rank ) const ;
   PairIterEntityComm comm() const { return PairIterEntityComm( m_comm ); }
   PairIterEntityComm sharing() const ;
   PairIterEntityComm comm( const Ghosting & sub ) const ;
