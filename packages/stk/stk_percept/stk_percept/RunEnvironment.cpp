@@ -638,7 +638,7 @@ namespace stk {
 
       unsigned p_size = stk::parallel_machine_size(comm);
       unsigned p_rank = stk::parallel_machine_rank(comm);
-      if (1 && !p_rank)
+      if (p_size > 1 && !p_rank)
         {
 
           std::string fullmesh = meshFileName;
