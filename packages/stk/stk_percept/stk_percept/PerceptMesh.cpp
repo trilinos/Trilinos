@@ -267,6 +267,7 @@ namespace stk {
               subsets += "}";
               std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() 
                         << " topology = " << (topology?CellTopology(topology).getName():"null")
+                        << " primary_entity_rank = " << part.primary_entity_rank()
                         << " subsets = " << subsets
                         << std::endl;
             }
@@ -1401,7 +1402,7 @@ namespace stk {
     }
 
     void PerceptMesh::
-    dumpElements()
+    dumpElements(const std::string& partName)
     {
       const PartVector & parts = getMetaData()->get_parts();
       unsigned nparts = parts.size();
@@ -1412,6 +1413,9 @@ namespace stk {
           mesh::Selector selector(part);
 
           if (part.name()[0] == '{' || (part.name().find("oldElem") != std::string::npos) )
+            continue;
+
+          if (partName.size() > 0 && part.name() != partName)
             continue;
 
           std::cout << "tmp UniformRefiner::dumpElements: part = " << part.name() << std::endl;

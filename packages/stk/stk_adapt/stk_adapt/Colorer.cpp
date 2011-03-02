@@ -74,10 +74,10 @@ namespace stk {
                         doThisBucket = false;
                       }
 
-                    if (0)
+                    if (0 && doThisBucket)
                       {
-                        //std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
-                        //          << " doThisBucket= " << doThisBucket << std::endl;
+                        std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
+                                  << " elementType= " << (elementType?  *elementType : 0) << " doThisBucket= " << doThisBucket << std::endl;
                       }
 
                     if (doThisBucket)

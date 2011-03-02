@@ -481,17 +481,16 @@ namespace stk {
         failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
-        if (1)
-          {
-            Ghosting & ghosting = m_eMesh.getBulkData()->create_ghosting( std::string("new_nodes") );
+        {
+          Ghosting & ghosting = m_eMesh.getBulkData()->create_ghosting( std::string("new_nodes") );
+          
+          vector<Entity*> receive;
 
-            vector<Entity*> receive;
+          ghosting.receive_list( receive );
 
-            ghosting.receive_list( receive );
+          m_eMesh.getBulkData()->change_ghosting( ghosting, m_nodes_to_ghost, receive);
 
-            m_eMesh.getBulkData()->change_ghosting( ghosting, m_nodes_to_ghost, receive);
-
-          }
+        }
 
         failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
@@ -562,10 +561,6 @@ namespace stk {
 #endif
 
         // if empty or if my id is the smallest, make this element the owner
-        //if (is_empty || element.identifier() < nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>() )
-//         bool should_put_in = 
-//           (element.identifier()  < stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()))
-//           && (element.entity_rank() > stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
         bool should_put_in = 
           (element.identifier()  < stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()))
           || (element.entity_rank() > stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
@@ -856,12 +851,22 @@ namespace stk {
 
         if (is_empty)
           {
-#if 0
-            std::cout << "NodeRegistry::makeCentroid: no node found, subDimEntity= " << subDimEntity 
-                      << " element= " << element 
-                      << " element.entity_rank() = " << element.entity_rank()
-                      << " needed_entity_rank= " << needed_entity_rank
-                      << " iSubDimOrd= " << iSubDimOrd << std::endl;
+#if 1
+            const CellTopologyData * const cell_topo_data = get_cell_topology(element);
+            CellTopology cell_topo(cell_topo_data);
+
+            std::cout << "NodeRegistry::makeCentroid: no node found, cell_topo = " << cell_topo.getName()
+                      << "\n subDimEntity= " << subDimEntity 
+                      << "\n element= " << element 
+                      << "\n element.entity_rank() = " << element.entity_rank()
+                      << "\n needed_entity_rank= " << needed_entity_rank
+                      << "\n iSubDimOrd= " << iSubDimOrd << std::endl;
+
+//             std::cout << "NodeRegistry::makeCentroid: no node found, subDimEntity= " << subDimEntity 
+//                       << " element= " << element 
+//                       << " element.entity_rank() = " << element.entity_rank()
+//                       << " needed_entity_rank= " << needed_entity_rank
+//                       << " iSubDimOrd= " << iSubDimOrd << std::endl;
 #endif
             throw std::runtime_error("makeCentroid: no node found");
           }
@@ -869,7 +874,7 @@ namespace stk {
         if (nodeIds_onSE.size() != 1)
           throw std::runtime_error("makeCentroid not ready for multiple nodes");
         //Entity * c_node = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE[0]);
-        Entity * c_node = get_entity_node(*m_eMesh.getBulkData(),Node, nodeIds_onSE[0]);
+        Entity * c_node = get_entity_node(*m_eMesh.getBulkData(), Node, nodeIds_onSE[0]);
 
         if (!c_node)
           {
@@ -879,10 +884,13 @@ namespace stk {
         //std::vector<double> c_p(spatialDim, 0.0);
         double c_p[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
+        bool doPrint = false;
+
         if (needed_entity_rank == mesh::Element)
           {
             const mesh::PairIterRelation elem_nodes = element.relations(Node);
             unsigned npts = elem_nodes.size();
+            //if (npts == 2) doPrint=true;
             double dnpts = elem_nodes.size();
             for (unsigned ipts = 0; ipts < npts; ipts++)
               {
@@ -895,6 +903,15 @@ namespace stk {
                 //double * const coord = stk::mesh::field_data( *field , *node );
                 double *  coord = m_eMesh.field_data(field, *node, null_u);
 
+                if (doPrint && coord)
+                  {
+                    const CellTopologyData * const cell_topo_data = get_cell_topology(element);
+                    CellTopology cell_topo(cell_topo_data);
+
+                    std::cout << "tmp NodeRegistry::makeCentroid cell_topo = " << cell_topo.getName() << " ipts= " << ipts
+                              << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
+                  }
+
                 if (coord)
                   {
                     for (int isp = 0; isp < spatialDim; isp++)
@@ -903,6 +920,7 @@ namespace stk {
                       }
                   }
               }
+
           }
         else
           {
@@ -935,10 +953,23 @@ namespace stk {
             for (int isp = 0; isp < spatialDim; isp++)
               {
                 c_coord[isp] = c_p[isp];
-                //coord_str += toString(c_coord[isp])+ " ";
+                //if (doPrint)
+                //  coord_str += toString(c_coord[isp])+ " ";
+              }
+            if (doPrint) 
+              {
+                const CellTopologyData * const cell_topo_data = get_cell_topology(element);
+                CellTopology cell_topo(cell_topo_data);
+
+                std::cout << "tmp NodeRegistry::makeCentroid cell_topo = " << cell_topo.getName()
+                      << "\n subDimEntity= " << subDimEntity 
+                      << "\n element= " << element 
+                      << "\n element.entity_rank() = " << element.entity_rank()
+                      << "\n needed_entity_rank= " << needed_entity_rank
+                      << "\n iSubDimOrd= " << iSubDimOrd << std::endl;
+                //std::cout << "P[" << m_eMesh.getRank() << "] needed_entity_rank= " << needed_entity_rank << " coord= " << coord_str << std::endl;
               }
           }
-        //std::cout << "P[" << m_eMesh.getRank() << "] needed_entity_rank= " << needed_entity_rank << " coord= " << coord_str << std::endl;
         
       }
 
@@ -1031,6 +1062,7 @@ namespace stk {
               }
 
             double c_p[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+            bool doPrint = false;
 
             if (needed_entity_rank == mesh::Element)
               {
@@ -1055,6 +1087,7 @@ namespace stk {
                   {
                     const mesh::PairIterRelation elem_nodes = element.relations(Node);
                     unsigned npts = elem_nodes.size();
+                    //if (npts == 2) doPrint=true;
                     double dnpts = elem_nodes.size();
                     for (unsigned ipts = 0; ipts < npts; ipts++)
                       {
@@ -1065,6 +1098,15 @@ namespace stk {
                           }
 
                         double *  coord = m_eMesh.field_data(field, *node, null_u);
+
+                        if (doPrint && coord)
+                          {
+                            const CellTopologyData * const cell_topo_data = get_cell_topology(element);
+                            CellTopology cell_topo(cell_topo_data);
+
+                            std::cout << "tmp NodeRegistry::makeCentroid cell_topo = " << cell_topo.getName() << " ipts= " << ipts
+                                      << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
+                          }
 
                         if (coord)
                           {
@@ -1107,12 +1149,18 @@ namespace stk {
 
               double *  c_coord = m_eMesh.field_data(field, *c_node, null_u);
 
+
               if (c_coord)
                 {
                   for (int isp = 0; isp < spatialDim; isp++)
                     {
                       c_coord[isp] = c_p[isp];
                     }
+
+                  if (doPrint)
+                    std::cout << "tmp NodeRegistry::makeCentroid c_coord= " << c_coord[0] << " " << c_coord[1] << " " << c_coord[2] << std::endl;
+
+
                 }
             }
           }

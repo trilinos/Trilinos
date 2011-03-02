@@ -819,7 +819,6 @@ namespace stk {
 
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
-
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
                  nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                  nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
@@ -1889,9 +1888,17 @@ namespace stk {
             return;
           }
 
+
+
         if ( (on_parent_edge = on_parent_edge_interior(childNodeIdx, ref_topo, ordinal_of_subcell, ordinal_of_node_on_subcell, num_node_on_subcell)))
           {
             rank_of_subcell = 1;
+            // SPECIAL CASE
+            if (cell_topo.getKey() == shards::Beam<2>::key ||
+                cell_topo.getKey() == shards::Beam<3>::key )
+              {
+                rank_of_subcell = 3;
+              }
             return;
           }
 
@@ -2510,6 +2517,7 @@ namespace stk {
 // homogeneous refine
 #include "UniformRefinerPattern_Quad4_Quad4_4.hpp"
 #include "UniformRefinerPattern_Line2_Line2_2_sierra.hpp"
+#include "UniformRefinerPattern_Beam2_Beam2_2_sierra.hpp"
 #include "UniformRefinerPattern_ShellLine2_ShellLine2_2_sierra.hpp"
 #include "UniformRefinerPattern_ShellLine3_ShellLine3_2_sierra.hpp"
 #include "UniformRefinerPattern_Quad4_Quad4_4_sierra.hpp"
@@ -2526,6 +2534,7 @@ namespace stk {
 
 
 #include "UniformRefinerPattern_Line3_Line3_2_sierra.hpp"
+#include "UniformRefinerPattern_Beam3_Beam3_2_sierra.hpp"
 #include "UniformRefinerPattern_Tri6_Tri6_4_sierra.hpp"
 #include "UniformRefinerPattern_Quad8_Quad8_4_sierra.hpp"
 #include "UniformRefinerPattern_Quad9_Quad9_4_sierra.hpp"
@@ -2542,6 +2551,7 @@ namespace stk {
 
 #include "UniformRefinerPattern_Line2_Line3_1_sierra.hpp"
 #include "UniformRefinerPattern_ShellLine2_ShellLine3_1_sierra.hpp"
+#include "UniformRefinerPattern_Beam2_Beam3_1_sierra.hpp"
 
 #include "UniformRefinerPattern_Quad4_Quad9_1_sierra.hpp"
 #include "UniformRefinerPattern_Quad4_Quad8_1_sierra.hpp"
@@ -2568,6 +2578,7 @@ namespace stk {
 
     // refine
     typedef  UniformRefinerPattern<shards::Line<2>,          shards::Line<2>,          2, SierraPort >            Line2_Line2_2;
+    typedef  UniformRefinerPattern<shards::Beam<2>,          shards::Beam<2>,          2, SierraPort >            Beam2_Beam2_2;
     typedef  UniformRefinerPattern<shards::ShellLine<2>,     shards::ShellLine<2>,     2, SierraPort >            ShellLine2_ShellLine2_2;
     typedef  UniformRefinerPattern<shards::ShellLine<3>,     shards::ShellLine<3>,     2, SierraPort >            ShellLine3_ShellLine3_2;
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4 >                        Quad4_Quad4_4_Old;
@@ -2585,6 +2596,7 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort >            Wedge6_Wedge6_8;
 
     typedef  UniformRefinerPattern<shards::Line<3>,          shards::Line<3>,          2, SierraPort >            Line3_Line3_2;
+    typedef  UniformRefinerPattern<shards::Beam<3>,          shards::Beam<3>,          2, SierraPort >            Beam3_Beam3_2;
     typedef  UniformRefinerPattern<shards::Triangle<6>,      shards::Triangle<6>,      4, SierraPort >            Tri6_Tri6_4;
     typedef  UniformRefinerPattern<shards::Quadrilateral<9>, shards::Quadrilateral<9>, 4, SierraPort >            Quad9_Quad9_4;
     typedef  UniformRefinerPattern<shards::Quadrilateral<8>, shards::Quadrilateral<8>, 4, SierraPort >            Quad8_Quad8_4;
@@ -2597,6 +2609,8 @@ namespace stk {
     // enrich
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<9>, 1, SierraPort >            Quad4_Quad9_1;
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<8>, 1, SierraPort >            Quad4_Quad8_1;
+    typedef  UniformRefinerPattern<shards::Beam<2>,          shards::Beam<3>,          1, SierraPort >            Beam2_Beam3_1;
+
     typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<8>, 1, SierraPort >            ShellQuad4_ShellQuad8_1;
     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<6>,      1, SierraPort >            Tri3_Tri6_1;
     typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<10>,  1, SierraPort >            Tet4_Tet10_1;

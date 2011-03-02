@@ -175,7 +175,7 @@ data:
   0 ;
 
  attrib_name1 =
-  "" ;
+  "                                " ;
 
  connect1 =
   1, 2, 3, 4 ;
@@ -184,7 +184,7 @@ data:
   0 ;
 
  attrib_name2 =
-  "" ;
+  "                                " ;
 
  connect2 =
   5, 6, 7, 8 ;
@@ -193,7 +193,7 @@ data:
   0 ;
 
  attrib_name3 =
-  "" ;
+  "                                " ;
 
  connect3 =
   9, 10, 11, 12, 13, 14, 15, 16 ;
@@ -202,7 +202,7 @@ data:
   0 ;
 
  attrib_name4 =
-  "" ;
+  "                                " ;
 
  connect4 =
   17, 18, 19, 20 ;
@@ -211,7 +211,7 @@ data:
   0 ;
 
  attrib_name5 =
-  "" ;
+  "                                " ;
 
  connect5 =
   21, 22, 23, 24, 25, 26 ;
@@ -220,7 +220,7 @@ data:
   0 ;
 
  attrib_name6 =
-  "" ;
+  "                                " ;
 
  connect6 =
   17, 18, 19, 20, 27, 28, 30, 29 ;
@@ -229,7 +229,7 @@ data:
   0 ;
 
  attrib_name7 =
-  "" ;
+  "                                " ;
 
  connect7 =
   1, 2, 3, 4 ;
@@ -238,7 +238,7 @@ data:
   0 ;
 
  attrib_name8 =
-  "" ;
+  "                                " ;
 
  connect8 =
   30, 31, 32 ;
