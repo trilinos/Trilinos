@@ -218,14 +218,6 @@ namespace Tpetra {
 
       //@}
 	  
-	  //! @name Attribute Access Functions
-	  //@{
-
-	  //! \brief Returns the infinity norm of the global matrix.
-      Scalar getEuclideanNorm() const;
-
-
-	  //@}
 
       //! @name Transformational Methods
       //@{ 

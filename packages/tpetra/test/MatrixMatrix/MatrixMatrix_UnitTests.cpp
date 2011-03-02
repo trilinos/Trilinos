@@ -166,7 +166,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, test_find_rows){
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
   typedef Kokkos::DefaultKernels<double, int, DNode>::SparseOps SpMatOps;
 
-  RCP<const Map<int> > map_rows = 
+  RCP<const Map<int, int, DNode> > map_rows = 
     MMdetails::find_rows_containing_cols<double, int, int, DNode, SpMatOps>(matrix, colmap);
 
   TEST_EQUALITY(map_rows->getNodeNumElements(), numglobalrows);

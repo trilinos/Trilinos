@@ -1353,7 +1353,7 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
         bool result = std::binary_search(procCols[p], procCols[p] + procNumCols[p], colGID);
         if (result) {
           size_t numRowsP = procNumRows[p];
-          typename ArrayView<GlobalOrdinal>::iterator prows = procRows[p];
+          typename Array<GlobalOrdinal>::iterator prows = procRows[p];
           if (numRowsP < 1 || prows[numRowsP-1] < globalRow) {
             prows[numRowsP] = globalRow;
             procNumRows[p]++;
@@ -1425,30 +1425,31 @@ Scalar sparsedot(
 
 #define TPETRA_MATRIXMATRIX_INSTANT(SCALAR,LO,GO,NODE,SPMATOPS) \
   \
-  template<> \
-  int MatrixMatrix::Multiply( \
-    RCP<const CrsMatrix< SCALAR , LO , GO , NODE , SPMATOPS > >& A, \
+  template \
+  void MatrixMatrix::Multiply( \
+    const CrsMatrix< SCALAR , LO , GO , NODE , SPMATOPS >& A, \
     bool transposeA, \
-    RCP<const CrsMatrix< SCALAR , LO , GO , NODE , SPMATOPS > >& B, \
+    const CrsMatrix< SCALAR , LO , GO , NODE , SPMATOPS >& B, \
     bool transposeB, \
-    RCP<CrsMatrix< SCALAR , LO , GO , NODE , SPMATOPS > >& C, \
-    bool call_FillComplete_on_result) \
+    CrsMatrix< SCALAR , LO , GO , NODE , SPMATOPS >& C, \
+    bool call_FillComplete_on_result); \
 \
-  template <> \
-  int MatrixMatrix::Add( \
-    RCP<const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > A, \
+  template \
+  void MatrixMatrix::Add( \
+    const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS >& A, \
     bool transposeA, \
-    Scalar scalarA, \
-    RCP<const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > B, \
+    SCALAR scalarA, \
+    const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS >& B, \
     bool transposeB, \
-    Scalar scalarB, \
-    RCP<CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > C) \
+    SCALAR scalarB, \
+    RCP<CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > C); \
 \
-  template<> \
+
+/*  template \
   RCP<const Map< LO , GO , NODE > > \
-  MatrixMatrix::MMdetails::find_rows_containing_cols( \
-    RCP<const CrsMatrix< SCALAR , LO , GO , NODE ,  SPMATOPS > > M, \
-    RCP<const Map< LO , GO , NODE > > colmap)
+  MMdetails::find_rows_containing_cols( \
+    const CrsMatrix< SCALAR , LO , GO , NODE ,  SPMATOPS >& M, \
+    RCP<const Map< LO , GO , NODE > > colmap);*/
 
 /*  \
   template <> \

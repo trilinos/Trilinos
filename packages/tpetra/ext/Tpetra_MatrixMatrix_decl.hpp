@@ -31,8 +31,6 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
-#include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MMHelpers.hpp"

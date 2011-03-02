@@ -2043,35 +2043,6 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Scalar CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getEuclideanNorm() const{
-
-  TEST_FOR_EXCEPTION(!isLocallyIndexed(), std::runtime_error, "Matrix must " <<
-    "be locally indexed in order for the Euclidean norm to be calculated.");
-
-  Scalar localTotal = Teuchos::ScalarTraits<Scalar>::zero();
-  Teuchos::ArrayView<const LocalOrdinal> currentRowIndices;
-  Teuchos::ArrayView<const Scalar> currentRowValues;
-
-  for(size_t i =0; i< getNodeNumRows(); ++i){
-    getLocalRowView(i, currentRowIndices, currentRowValues);
-    for(
-      Teuchos_Ordinal j = 0;
-      j<currentRowValues.size(); 
-      ++j)
-    {
-      localTotal += currentRowValues[j] * currentRowValues[j];
-    }
-  }
-  Scalar globalTotal;
-  Teuchos::reduceAll<int, double>(
-    *getComm(),
-    Teuchos::REDUCE_SUM,
-    localTotal,
-    outArg(globalTotal));
-
-  return Teuchos::ScalarTraits<Scalar>::squareroot(globalTotal);
-}
     
 
   /////////////////////////////////////////////////////////////////////////////
