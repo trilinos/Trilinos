@@ -737,10 +737,8 @@ namespace Kokkos {
     const ArrayRCP<T> * data2D;
     inline KERNEL_PREFIX void execute(size_t row) {
       const size_t rowNumInds = numEntriesPerRow[row];
-      const T * oldinds;
-      T * newinds;
-      newinds = data1D + offsets1D[row];
-      oldinds = data2D[row].getRawPtr();
+      const T* const oldinds = data2d[row].getRawPtr();
+      T* const newinds = data1D + offsets1D[row];
       std::copy(oldinds, oldinds+rowNumInds, newinds);
     }
   };
@@ -899,7 +897,11 @@ namespace Kokkos {
           }
           offsets[this->numRows_] = curoffset;
           TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
-              Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
+			      Teuchos::typeName(*this) << "::finalize(): "
+			      "Internal logic error: curoffset (= " 
+			      << curoffset << ") != this->getNumEntries() (= "
+			      << this->getNumEntries() 
+			      << ").  Please contact Kokkos team.");
         }
         // done with the original row beg/end offsets, can point to the new overlapping one
         this->rowBegs_   = offsets;
