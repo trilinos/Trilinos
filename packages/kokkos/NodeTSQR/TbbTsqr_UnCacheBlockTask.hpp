@@ -39,7 +39,14 @@
 namespace TSQR {
   namespace TBB {
     
-    template< class LocalOrdinal, class Scalar >
+    /// \class UnCacheBlockTask
+    /// \brief TBB task for recursive TSQR un-(cache blocking) phase.
+    /// 
+    /// "Un-(cache blocking)" here means copying the input matrix,
+    /// which is stored with contiguous cache blocks, to the output
+    /// matrix, which is stored with noncontiguous cache blocks.
+    ///
+    template<class LocalOrdinal, class Scalar>
     class UnCacheBlockTask : public tbb::task {
     public:
       typedef MatView< LocalOrdinal, Scalar > mat_view;
@@ -51,7 +58,7 @@ namespace TSQR {
 			const size_t P_last__,
 			mat_view& A_out,
 			const_mat_view& A_in,
-			const SequentialTsqr< LocalOrdinal, Scalar >& seq) :
+			const SequentialTsqr<LocalOrdinal, Scalar>& seq) :
 	P_first_ (P_first__), 
 	P_last_ (P_last__), 
 	A_out_ (A_out), 
@@ -59,29 +66,43 @@ namespace TSQR {
 	seq_ (seq)
       {}
 
-      tbb::task* execute () {
+      tbb::task* execute () 
+      {
 	using tbb::task;
 
 	if (P_first_ > P_last_ || A_out_.empty() || A_in_.empty())
 	  return NULL;
 	else if (P_first_ == P_last_)
 	  {
-	    seq_.un_cache_block (A_out_.nrows(), A_out_.ncols(), 
-				 A_out_.get(), A_out_.lda(), A_in_.get());
+	    execute_base_case ();
 	    return NULL;
 	  }
 	else
 	  {
-	    // "c": continuation task
-	    tbb::empty_task& c = *new( allocate_continuation() ) tbb::empty_task;
-
-	    // Recurse on two intervals: [P_first, P_mid] and [P_mid+1, P_last]
+	    // Recurse on two intervals: [P_first, P_mid] and
+	    // [P_mid+1, P_last].
 	    const size_t P_mid = (P_first_ + P_last_) / 2;
 	    split_t out_split = 
 	      partitioner_.split (A_out_, P_first_, P_mid, P_last_, false);
 	    const_split_t in_split = 
 	      partitioner_.split (A_in_, P_first_, P_mid, P_last_, true);
 
+	    // The partitioner may decide that the current blocks
+	    // A_out_ and A_in_ have too few rows to be worth
+	    // splitting.  (It should split both A_out_ and A_in_ in
+	    // the same way.)  In that case, out_split.second and
+	    // in_split.second (the bottom block) will be empty.  We
+	    // can deal with this by treating it as the base case.
+	    if (out_split.second.empty() || out_split.second.nrows() == 0)
+	      {
+		execute_base_case ();
+		return NULL;
+	      }
+
+	    // "c": continuation task
+	    tbb::empty_task& c = 
+	      *new( allocate_continuation() ) tbb::empty_task;
+	    // Recurse on the split
 	    UnCacheBlockTask& topTask = *new( c.allocate_child() )
 	      UnCacheBlockTask (P_first_, P_mid, out_split.first, 
 			      in_split.first, seq_);
@@ -101,8 +122,15 @@ namespace TSQR {
       size_t P_first_, P_last_;
       mat_view A_out_;
       const_mat_view A_in_;
-      SequentialTsqr< LocalOrdinal, Scalar > seq_;
-      Partitioner< LocalOrdinal, Scalar > partitioner_;
+      SequentialTsqr<LocalOrdinal, Scalar> seq_;
+      Partitioner<LocalOrdinal, Scalar> partitioner_;
+
+      void
+      execute_base_case ()
+      {
+	seq_.un_cache_block (A_out_.nrows(), A_out_.ncols(), 
+			     A_out_.get(), A_out_.lda(), A_in_.get());
+      }
     };
 
   } // namespace TBB

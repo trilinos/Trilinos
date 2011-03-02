@@ -81,8 +81,17 @@ namespace TSQR {
 	    const size_t P_mid = (P_first + P_last) / 2;
 	    split_type C_split = partitioner_.split (C, P_first, P_mid, P_last,
 						     contiguous_cache_blocks);
-	    return top_block_helper (P_first, P_mid, C_split.first, 
-				     contiguous_cache_blocks);
+	    // The partitioner may decide that the current block C has
+	    // too few rows to be worth splitting.  In that case,
+	    // C_split.first should be the same block as C, and
+	    // C_split.second (the bottom block) will be empty.  We
+	    // deal with this in the same way as the base case
+	    // (P_first == P_last) above.
+	    if (C_split.second.empty() || C_split.second.nrows() == 0)
+	      return seq_.top_block (C_split.first, contiguous_cache_blocks);
+	    else
+	      return top_block_helper (P_first, P_mid, C_split.first, 
+				       contiguous_cache_blocks);
 	  }
       }
 
@@ -505,9 +514,9 @@ namespace TSQR {
 
     private:
       size_t ncores_;
-      TSQR::SequentialTsqr< LocalOrdinal, Scalar > seq_;
-      TSQR::Combine< LocalOrdinal, Scalar > combine_;
-      Partitioner< LocalOrdinal, Scalar > partitioner_;
+      TSQR::SequentialTsqr<LocalOrdinal, Scalar> seq_;
+      TSQR::Combine<LocalOrdinal, Scalar> combine_;
+      Partitioner<LocalOrdinal, Scalar> partitioner_;
 
       double min_seq_factor_timing_;
       double max_seq_factor_timing_;
@@ -529,8 +538,10 @@ namespace TSQR {
 	    const_mat_view Q_top = seq_.top_block (Q, contiguous_cache_blocks);
 	    mat_view C_top = seq_.top_block (C, contiguous_cache_blocks);
 	    top_blocks[P_first] = 
-	      std::make_pair (const_mat_view (Q_top.ncols(), Q_top.ncols(), Q_top.get(), Q_top.lda()), 
-			      mat_view (C_top.ncols(), C_top.ncols(), C_top.get(), C_top.lda()));
+	      std::make_pair (const_mat_view (Q_top.ncols(), Q_top.ncols(), 
+					      Q_top.get(), Q_top.lda()), 
+			      mat_view (C_top.ncols(), C_top.ncols(), 
+					C_top.get(), C_top.lda()));
 	  }
 	else
 	  {
@@ -542,10 +553,33 @@ namespace TSQR {
 	    split_t C_split = 
 	      partitioner_.split (C, P_first, P_mid, P_last,
 				  contiguous_cache_blocks);
-	    build_partition_array (P_first, P_mid, top_blocks, Q_split.first, 
-				   C_split.first, contiguous_cache_blocks);
-	    build_partition_array (P_mid+1, P_last, top_blocks, Q_split.second, 
-				   C_split.second, contiguous_cache_blocks);
+	    // The partitioner may decide that the current blocks Q
+	    // and C have too few rows to be worth splitting.  (The
+	    // partitioner should split both Q and C in the same way.)
+	    // In that case, Q_split.first should be the same block as
+	    // Q, and Q_split.second (the bottom block) will be empty.
+	    // Ditto for C_split.  We deal with this in the same way
+	    // as the base case (P_first == P_last) above.
+	    if (Q_split.second.empty() || Q_split.second.nrows() == 0)
+	      {
+		const_mat_view Q_top = 
+		  seq_.top_block (Q, contiguous_cache_blocks);
+		mat_view C_top = seq_.top_block (C, contiguous_cache_blocks);
+		top_blocks[P_first] = 
+		  std::make_pair (const_mat_view (Q_top.ncols(), Q_top.ncols(), 
+						  Q_top.get(), Q_top.lda()), 
+				  mat_view (C_top.ncols(), C_top.ncols(), 
+					    C_top.get(), C_top.lda()));
+	      }
+	    else
+	      {
+		build_partition_array (P_first, P_mid, top_blocks, 
+				       Q_split.first, C_split.first, 
+				       contiguous_cache_blocks);
+		build_partition_array (P_mid+1, P_last, top_blocks, 
+				       Q_split.second, C_split.second, 
+				       contiguous_cache_blocks);
+	      }
 	  }
       }
 
