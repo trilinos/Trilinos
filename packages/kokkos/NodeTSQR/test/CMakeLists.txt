@@ -6,16 +6,11 @@ INCLUDE(PackageAddExecutableAndTest)
 
 # Performance and accuracy test suite for TSQR::Combine (which
 # factors cache blocks and combines triangular factors).
-#
-# Teuchos is not built with complex arithmetic by default, so we
-# disable the complex-arithmetic test.  If you omit the "--nocomplex"
-# flag, you can run the complex-arithmetic test yourself.  It should
-# work just fine.
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TSQR_Combine
   SOURCES Tsqr_TestCombine.cpp
   COMM serial mpi
-  ARGS "--verify --nrows=100 --ncols=5 --nocomplex"
+  ARGS "--verify --nrows=100 --ncols=5"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   DEPLIBS kokkos kokkosnodetsqr
