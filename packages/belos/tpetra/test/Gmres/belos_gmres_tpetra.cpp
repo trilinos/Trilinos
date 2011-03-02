@@ -359,10 +359,11 @@ namespace {
   {
     using std::ostringstream;
     using std::vector;
+    typedef vector<int>::size_type size_type;
 
     // Wouldn't it be nice if C++ enums had introspection and could
     // be enumerated?
-    const int numValidTypes = 8;
+    const size_type numValidTypes = 8;
     const int validTypes[] = {
       Belos::Errors, 
       Belos::Warnings, 
@@ -387,17 +388,18 @@ namespace {
     // We first generate a list, and only then build a single string.
     // This helps us decide where to put the commas.  The list just
     // uses the indices of the valid names, rather than the valid
-    // names themselves, in order to save space and time.
-    vector<int> theList;
-    for (int nameIndex = 0; nameIndex < numValidTypes; ++nameIndex)
+    // names themselves, in order to save space and time.  We use
+    // size_type for the indices to avoid signed/unsigned comparisons.
+    vector<size_type> theList;
+    for (size_type nameIndex = 0; nameIndex < numValidTypes; ++nameIndex)
       {
 	if (msgType & validTypes[nameIndex])
 	  theList.push_back (nameIndex);
       }
     ostringstream os;
-    for (vector<int>::size_type k = 0; k < theList.size(); ++k)
+    for (size_type k = 0; k < theList.size(); ++k)
       {
-	const int nameIndex = theList[k];
+	const size_type nameIndex = theList[k];
 	os << typeNames[nameIndex];
 	if (nameIndex < theList.size() - 1)
 	  os << ",";
