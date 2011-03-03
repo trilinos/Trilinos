@@ -326,7 +326,9 @@ int
 main (int argc, char *argv[]) 
 {
   using Belos::OutputManager;
+  using Belos::OrthoManager;
   using Teuchos::CommandLineProcessor;
+  using Teuchos::null;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_implicit_cast;
@@ -431,12 +433,12 @@ main (int argc, char *argv[])
   // FIXME In Anasazi, this class is called BasicOutputManager.  In
   // Belos, this class is called OutputManager.  The difference is
   // annoying and should be factored out.
-  RCP<OutputManager<scalar_type> > MyOM (new OutputManager<scalar_type> (selectVerbosity (verbose, debug)));
+  RCP<OutputManager<scalar_type> > outMan (new OutputManager<scalar_type> (selectVerbosity (verbose, debug)));
 
   // Stream for debug output.  If debug output is not enabled, then
   // this stream doesn't print anything sent to it (it's a "black
   // hole" stream).
-  std::ostream& debugOut = MyOM->stream(Belos::Debug);
+  std::ostream& debugOut = outMan->stream(Belos::Debug);
   printVersionInfo (debugOut);
 
   // Load the inner product operator matrix from the given filename.
@@ -455,7 +457,7 @@ main (int argc, char *argv[])
     map = results.first;
     M = results.second;
   }
-  TEST_FOR_EXCEPTION(Teuchos::is_null(map), std::logic_error,
+  TEST_FOR_EXCEPTION(map.is_null(), std::logic_error,
 		     "Error: (Mat)OrthoManager test code failed to "
 		     "initialize the Map");
   {
@@ -495,8 +497,8 @@ main (int argc, char *argv[])
   // before any possible errors.
   debugOut << "Asking factory to create the OrthoManager subclass..." 
 	   << std::flush; 
-  RCP< Belos::OrthoManager< scalar_type, MV > > OM = 
-    factory.makeOrthoManager (ortho, M, timingLabel, Teuchos::null);
+  RCP<OrthoManager<scalar_type, MV> > OM = 
+    factory.makeOrthoManager (ortho, M, outMan, timingLabel, null);
   TEST_FOR_EXCEPTION(OM.is_null(), std::logic_error, 
 		     "The OrthoManager factory returned null, "
 		     "for ortho=\"" << ortho << "\".");
@@ -525,10 +527,10 @@ main (int argc, char *argv[])
   // should return zero).
   int numFailed = 0;
   {
-    typedef Belos::Test::OrthoManagerTester< scalar_type, MV > tester_type;
+    typedef Belos::Test::OrthoManagerTester<scalar_type, MV> tester_type;
     debugOut << "Running OrthoManager tests..." << endl;
     numFailed = tester_type::runTests (OM, isRankRevealing, S, 
-				       sizeX1, sizeX2, MyOM);
+				       sizeX1, sizeX2, outMan);
     debugOut << "...done running OrthoManager tests." << endl;
   }
 
@@ -538,7 +540,7 @@ main (int argc, char *argv[])
 
   if (numFailed != 0) // Oops, at least one test didn't pass
     {
-      MyOM->stream(Belos::Errors) << numFailed << " errors." << endl;
+      outMan->stream(Belos::Errors) << numFailed << " errors." << endl;
       // The Trilinos test framework depends on seeing this message,
       // so don't rely on the OutputManager to report it correctly,
       // since the verbosity setting of the OutputManager may cause it

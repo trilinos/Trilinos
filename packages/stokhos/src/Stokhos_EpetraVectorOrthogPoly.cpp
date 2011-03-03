@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -27,79 +25,73 @@
 // 
 // ***********************************************************************
 // @HEADER
+
 #include "Stokhos_EpetraVectorOrthogPoly.hpp"
+
 Stokhos::EpetraVectorOrthogPoly::
 EpetraVectorOrthogPoly() :
+  ProductContainer<Epetra_Vector>(),
   VectorOrthogPoly<Epetra_Vector>(),
-  bv() 
-{
-}
-
-Stokhos::EpetraVectorOrthogPoly::
-EpetraVectorOrthogPoly(
-  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis) :
-  VectorOrthogPoly<Epetra_Vector>(basis),
-  bv() 
+  ProductEpetraVector()
 {
 }
 
 Stokhos::EpetraVectorOrthogPoly::
 EpetraVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-  int sz) : 
-  VectorOrthogPoly<Epetra_Vector>(basis, sz),
-  bv() 
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map) :
+  ProductContainer<Epetra_Vector>(block_map),
+  VectorOrthogPoly<Epetra_Vector>(basis, block_map),
+  ProductEpetraVector(block_map) 
 {
 }
 
 Stokhos::EpetraVectorOrthogPoly::
 EpetraVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-  const Epetra_BlockMap& coeff_map) : 
-  VectorOrthogPoly<Epetra_Vector>(basis, EpetraVectorCloner(coeff_map)),
-  bv() 
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm) : 
+  ProductContainer<Epetra_Vector>(block_map),
+  VectorOrthogPoly<Epetra_Vector>(basis, block_map),
+  ProductEpetraVector(block_map, coeff_map, product_comm) 
 {
 }
 
 Stokhos::EpetraVectorOrthogPoly::
 EpetraVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-  const Epetra_BlockMap& coeff_map,
-  int sz) : 
-  VectorOrthogPoly<Epetra_Vector>(basis, EpetraVectorCloner(coeff_map), sz),
-  bv() 
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm) :
+  ProductContainer<Epetra_Vector>(block_map),
+  VectorOrthogPoly<Epetra_Vector>(basis, block_map),
+  ProductEpetraVector(block_map, coeff_map, product_map, product_comm) 
 {
 }
 
 Stokhos::EpetraVectorOrthogPoly::
 EpetraVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-  const Epetra_BlockMap& coeff_map,
-  const Epetra_BlockMap& block_map) :
-  VectorOrthogPoly<Epetra_Vector>(basis),
-  bv(Teuchos::rcp(new EpetraExt::BlockVector(coeff_map, block_map)))
-{
-  for (int i=0; i<this->size(); i++)
-    this->setCoeffPtr(i, bv->GetBlock(i));
-}
-
-Stokhos::EpetraVectorOrthogPoly::
-EpetraVectorOrthogPoly(
-  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
   Epetra_DataAccess CV,
-  const Epetra_BlockMap& coeff_map,
   const Epetra_Vector& block_vector) :
-  VectorOrthogPoly<Epetra_Vector>(basis),
-  bv(Teuchos::rcp(new EpetraExt::BlockVector(CV, coeff_map, block_vector)))
+  ProductContainer<Epetra_Vector>(block_map),
+  VectorOrthogPoly<Epetra_Vector>(basis, block_map),
+  ProductEpetraVector(block_map, coeff_map, product_map, product_comm, CV,
+		      block_vector) 
 {
-  for (int i=0; i<this->size(); i++)
-    this->setCoeffPtr(i, bv->GetBlock(i));
 }
     
 Stokhos::EpetraVectorOrthogPoly::
 EpetraVectorOrthogPoly(const Stokhos::EpetraVectorOrthogPoly& v) :
+  ProductContainer<Epetra_Vector>(v),
   VectorOrthogPoly<Epetra_Vector>(v),
-  bv(v.bv)
+  ProductEpetraVector(v)
 {
 }
 
@@ -109,117 +101,86 @@ Stokhos::EpetraVectorOrthogPoly::
 Stokhos::EpetraVectorOrthogPoly& 
 Stokhos::EpetraVectorOrthogPoly::
 operator=(const Stokhos::EpetraVectorOrthogPoly& v) {
-  VectorOrthogPoly<Epetra_Vector>::operator=(v);
-  bv = v.bv;
+  ProductEpetraVector::operator=(v);
+  this->basis_ = v.basis_;
   return *this;
-}
-
-Stokhos::EpetraVectorOrthogPoly& 
-Stokhos::EpetraVectorOrthogPoly::
-operator=(const Epetra_Vector& v) {
-  if (this->size() > 0) {
-    if (bv != Teuchos::null)
-      bv->Update(1.0, v, 0.0);
-    else {
-      EpetraExt::BlockVector block_v(View, this->coeff_[0]->Map(), v);
-      for (int i=0; i<this->size(); i++)
-	*(coeff_[i]) = *(block_v.GetBlock(i));
-    }
-  }
-  return *this;
-}
-
-void 
-Stokhos::EpetraVectorOrthogPoly::
-assignToBlockVector(Epetra_Vector& v) const 
-{
-  if (this->size() > 0) {
-    if (bv != Teuchos::null)
-      v.Update(1.0, *bv, 0.0);
-    else {
-      EpetraExt::BlockVector block_v(View, this->coeff_[0]->Map(), v);
-      for (int i=0; i<this->size(); i++)
-	*(block_v.GetBlock(i)) = *(coeff_[i]);
-    }
-  }
-}
-
-void 
-Stokhos::EpetraVectorOrthogPoly::
-assignFromBlockVector(const Epetra_Vector& v) 
-{
-  if (this->size() > 0) {
-    if (bv != Teuchos::null)
-      bv->Update(1.0, v, 0.0);
-    else {
-      EpetraExt::BlockVector block_v(View, this->coeff_[0]->Map(), v);
-      for (int i=0; i<this->size(); i++)
-	*(coeff_[i]) = *(block_v.GetBlock(i));
-    }
-  }
 }
       
 void 
 Stokhos::EpetraVectorOrthogPoly::
 reset(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& new_basis,
-  const Epetra_BlockMap& coeff_map) 
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm) 
 {
-  VectorOrthogPoly<Epetra_Vector>::reset(new_basis, 
-					 EpetraVectorCloner(coeff_map));
-  bv = Teuchos::null;
+  ProductEpetraVector::reset(block_map, coeff_map, product_comm);
+  this->basis_ = new_basis;
 }
 
 void 
 Stokhos::EpetraVectorOrthogPoly::
-resetCoefficients(Epetra_DataAccess CV,
-		  const Epetra_BlockMap& coeff_map,
-		  const Epetra_Vector& block_vector) 
+reset(
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& new_basis,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm) 
 {
-  bv = 
-    Teuchos::rcp(new EpetraExt::BlockVector(CV, coeff_map, block_vector));
-  for (int i=0; i<this->size(); i++)
-    this->setCoeffPtr(i, bv->GetBlock(i));
-}
-
-Teuchos::RCP<EpetraExt::BlockVector> 
-Stokhos::EpetraVectorOrthogPoly::
-getBlockVector() 
-{
-  return bv;
-}
-
-Teuchos::RCP<const EpetraExt::BlockVector> 
-Stokhos::EpetraVectorOrthogPoly::
-getBlockVector() const 
-{
-  return bv;
-}
-
-void 
-Stokhos::EpetraVectorOrthogPoly::
-setBlockVector(const Teuchos::RCP<EpetraExt::BlockVector>& block_vec) 
-{
-  bv = block_vec;
-  for (int i=0; i<this->size(); i++)
-    this->setCoeffPtr(i, bv->GetBlock(i));
+  ProductEpetraVector::reset(block_map, coeff_map, product_map, product_comm);
+  this->basis_ = new_basis;
 }
 
 void
 Stokhos::EpetraVectorOrthogPoly::
 computeMean(Epetra_Vector& v) const
 {
-  v.Scale(1.0, *(coeff_[0]));
+  if (this->map_->Comm().NumProc() == 1 || !this->map_->DistributedGlobal()) {
+    v.Scale(1.0, *(this->coeff_[0]));
+    return;
+  }
+
+  int root = -1;
+  int gid = 0;
+  int lid = -1;
+  this->map_->RemoteIDList(1, &gid, &root, &lid);
+  if (this->map_->Comm().MyPID() == root) {
+    v.Scale(1.0, *(this->coeff_[lid]));
+  }
+  this->map_->Comm().Broadcast(v.Values(), v.MyLength(), root);
 }
 
 void
 Stokhos::EpetraVectorOrthogPoly::
 computeStandardDeviation(Epetra_Vector& v) const
 {
+  Epetra_Vector *v_local = NULL;
+  bool is_parallel = (this->map_->Comm().NumProc() > 1) && 
+    this->map_->DistributedGlobal();
+  if (is_parallel)
+    v_local = new Epetra_Vector(v.Map());
+  else
+    v_local = &v;
+
+  // Compute partial variance with terms on this processor
   const Teuchos::Array<double>& nrm2 = this->basis_->norm_squared();
-  v.PutScalar(0.0);
-  for (int i=1; i<this->size(); i++)
-    v.Multiply(nrm2[i], *coeff_[i], *coeff_[i], 1.0);
+  v_local->PutScalar(0.0);
+  int i_gid;
+  for (int i=0; i<this->size(); i++) {
+    i_gid = this->map_->GID(i);
+    if (i_gid != 0) 
+      v_local->Multiply(nrm2[i_gid], *(this->coeff_[i]), *(this->coeff_[i]), 
+			1.0);
+  }
+  
+  // Compute total variance by summing across all processors
+  if (is_parallel)
+    this->map_->Comm().SumAll(v_local->Values(), v.Values(), v.MyLength());
+
+  // Compute standard deviation
   for (int i=0; i<v.MyLength(); i++)
     v[i] = std::sqrt(v[i]);
+
+  if (is_parallel)
+    delete v_local;
 }

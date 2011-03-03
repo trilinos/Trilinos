@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -33,12 +31,13 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "Stokhos_PreconditionerFactory.hpp"
+#include "Stokhos_AbstractPreconditionerFactory.hpp"
 
 namespace Stokhos {
 
   //! A factory for building Ifpack preconditioners
-  class IfpackPreconditionerFactory : public Stokhos::PreconditionerFactory {
+  class IfpackPreconditionerFactory : 
+    public Stokhos::AbstractPreconditionerFactory {
   public:
 
     //! Constructor
@@ -49,7 +48,13 @@ namespace Stokhos {
 
     //! Compute preconditioner
     virtual Teuchos::RCP<Epetra_Operator> 
-    compute(const Teuchos::RCP<Epetra_Operator>& op);
+    compute(const Teuchos::RCP<Epetra_Operator>& op,
+	    bool compute_prec = true);
+
+    //! Recompute preconditioner operator for a new matrix
+    virtual void
+    recompute(const Teuchos::RCP<Epetra_Operator>& op,
+	      const Teuchos::RCP<Epetra_Operator>& prec);
 
   protected:
 

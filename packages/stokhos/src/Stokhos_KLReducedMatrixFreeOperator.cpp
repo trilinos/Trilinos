@@ -1,5 +1,3 @@
-// $Id: Stokhos_KLReducedMatrixFreeEpetraOp.cpp,v 1.7 2009/09/14 18:35:48 etphipp Exp $ 
-// $Source: /space/CVS/Trilinos/packages/stokhos/src/Stokhos_KLReducedMatrixFreeEpetraOp.cpp,v $ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -90,9 +88,9 @@ setupOperator(
   block_vec_map = 
     Teuchos::rcp(new Epetra_Map(-1, mean->NumMyNonzeros(), 0, 
 				domain_base_map->Comm()));
-  block_vec_poly = Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(
-				  sg_basis, 
-				  Stokhos::EpetraVectorCloner(*block_vec_map)));
+  block_vec_poly = 
+    Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+		   sg_basis, block_ops->map(), block_vec_map, sg_comm));
   
   // Setup KL blocks
   setup();
@@ -304,9 +302,12 @@ setup()
 
   // Transform eigenvectors back to matrices
   kl_blocks.resize(num_KL_computed);
+  Teuchos::RCP<Epetra_BlockMap> kl_map =
+    Teuchos::rcp(new Epetra_LocalMap(num_KL_computed+1, 0, 
+				     sg_comm->TimeDomainComm()));
   kl_ops = 
     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Operator>(
-		   sg_basis, num_KL_computed+1));
+		   sg_basis, kl_map));
   kl_ops->setCoeffPtr(0, mean);
   for (int rv=0; rv<num_KL_computed; rv++) {
     if (kl_blocks[rv] == Teuchos::null) 

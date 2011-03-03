@@ -28,12 +28,6 @@
 // Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
 //@HEADER
 
 #include <iostream>
@@ -116,36 +110,34 @@ int main(int argc, char *argv[]) {
     sgParams->set("Jacobian Method", "Matrix Free");
     sgParams->set("Mean Preconditioner Type", "Ifpack");
 
+    // Create stochastic Galerkin model evaluator
+    Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
+      Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
+    						 expansion, sg_parallel_data, 
+						 sgParams));
+
     // Stochastic Galerkin initial guess
     // Set the mean to the deterministic initial guess, higher-order terms
     // to zero
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> x_init_sg = 
-      Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, 
-						       *(model->get_x_map())));
+      sg_model->create_x_sg();
     x_init_sg->init(0.0);
     (*x_init_sg)[0] = *(model->get_x_init());
+    sg_model->set_x_sg_init(*x_init_sg);
 
     // Stochastic Galerkin parameters
     // Linear expansion with the mean given by the deterministic initial
     // parameter values, linear terms equal to 1, and higher order terms
     // equal to zero.
-    Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> > p_init_sg(1);
-    p_init_sg[0] = 
-      Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, 
-						       *(model->get_p_map(0))));
-    p_init_sg[0]->init(0.0);
-    (*p_init_sg[0])[0] = *(model->get_p_init(0));
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> p_init_sg =
+      sg_model->create_p_sg(0);
+    p_init_sg->init(0.0);
+    (*p_init_sg)[0] = *(model->get_p_init(0));
     for (int i=0; i<model->get_p_map(0)->NumMyElements(); i++)
-      (*p_init_sg[0])[i+1][i] = 1.0;
+      (*p_init_sg)[i+1][i] = 1.0;
+    sg_model->set_p_sg_init(0, *p_init_sg);
     std::cout << "Stochatic Galerkin parameter expansion = " << std::endl
-	      << *p_init_sg[0] << std::endl;
-
-    // Create stochastic Galerkin model evaluator
-    Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
-      Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
-    						 expansion, sg_parallel_data, 
-						 sgParams,
-    						 x_init_sg, p_init_sg));
+	      << *p_init_sg << std::endl;
 
     // Set up NOX parameters
     Teuchos::RCP<Teuchos::ParameterList> noxParams =
@@ -247,13 +239,16 @@ int main(int argc, char *argv[]) {
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
     // Convert block Epetra_Vector to orthogonal polynomial of Epetra_Vector's
-    Stokhos::EpetraVectorOrthogPoly x_sg(basis, View, *(model->get_x_map()), 
-    					 finalSolution);
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> x_sg =
+      sg_model->create_x_sg(View, &finalSolution);
 
     utils.out() << "Final Solution (block vector) = " << std::endl;
     std::cout << finalSolution << std::endl;
     utils.out() << "Final Solution (polynomial) = " << std::endl;
-    std::cout << x_sg << std::endl;
+    std::cout << *x_sg << std::endl;
+
+    if (status == NOX::StatusTest::Converged && MyPID == 0) 
+      utils.out() << "Example Passed!" << std::endl;
 
   }
   
