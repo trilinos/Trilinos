@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -32,8 +30,7 @@
 #define STOKHOS_EPETRAMULTIVECTORORTHOGPOLY_HPP
 
 #include "Stokhos_VectorOrthogPoly.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
-#include "EpetraExt_BlockMultiVector.h"
+#include "Stokhos_ProductEpetraMultiVector.hpp"
 
 namespace Stokhos {
 
@@ -43,7 +40,8 @@ namespace Stokhos {
    * would have an expensive copy constructor.  
    */
   class EpetraMultiVectorOrthogPoly : 
-    public VectorOrthogPoly<Epetra_MultiVector> {
+    public VectorOrthogPoly<Epetra_MultiVector>,
+    public ProductEpetraMultiVector {
   public:
 
     //! Typename of values
@@ -64,15 +62,8 @@ namespace Stokhos {
      * coefficients
      */
     EpetraMultiVectorOrthogPoly(
-      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis);
-
-    /*! 
-     * \brief Create a polynomial for basis \c basis with empty 
-     * coefficients of size sz
-     */
-    EpetraMultiVectorOrthogPoly(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-      int sz);
+      const Teuchos::RCP<const Epetra_BlockMap>& block_map);
 
     /*! 
      * \brief Create a polynomial for basis \c basis where each coefficient is 
@@ -80,18 +71,10 @@ namespace Stokhos {
      */
     EpetraMultiVectorOrthogPoly(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-      const Epetra_BlockMap& coeff_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+      const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
       int num_vectors);
-
-    /*! 
-     * \brief Create a polynomial for basis \c basis where each coefficient is 
-     * generated from the supplied map.
-     */
-    EpetraMultiVectorOrthogPoly(
-      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-      const Epetra_BlockMap& coeff_map,
-      int num_vectors,
-      int sz);
 
     /*! 
      * \brief Create a polynomial for basis \c basis where each coefficient is 
@@ -99,9 +82,10 @@ namespace Stokhos {
      */
     EpetraMultiVectorOrthogPoly(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-      Epetra_DataAccess CV,
-      const Epetra_BlockMap& coeff_map,
-      const Epetra_BlockMap& block_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& product_map,
+      const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
       int num_vectors);
 
     /*! 
@@ -110,8 +94,11 @@ namespace Stokhos {
      */
     EpetraMultiVectorOrthogPoly(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
+      const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& product_map,
+      const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
       Epetra_DataAccess CV,
-      const Epetra_BlockMap& coeff_map,
       const Epetra_MultiVector& block_vector);
     
     //! Copy constructor
@@ -121,7 +108,7 @@ namespace Stokhos {
     EpetraMultiVectorOrthogPoly(const EpetraMultiVectorOrthogPoly& v);
 
     //! Destructor
-    ~EpetraMultiVectorOrthogPoly();
+    virtual ~EpetraMultiVectorOrthogPoly();
 
     //! Assignment
     /*!
@@ -129,50 +116,34 @@ namespace Stokhos {
      */
     EpetraMultiVectorOrthogPoly& operator=(const EpetraMultiVectorOrthogPoly& v);
 
-    //! Assignment
-    EpetraMultiVectorOrthogPoly& operator=(const Epetra_MultiVector& v);
-
-    //! Assignment
-    void assignToBlockMultiVector(Epetra_MultiVector& v) const;
-
-    //! Assignment
-    void assignFromBlockMultiVector(const Epetra_MultiVector& v);
-      
+    //! Reset to a new basis
+    /*!
+     * This resizes array to fit new basis.
+     */
+    void reset(
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
+      const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+      const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
+      int num_vectors);
 
     //! Reset to a new basis
     /*!
      * This resizes array to fit new basis.
      */
     void reset(
-      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& new_basis,
-      const Epetra_BlockMap& coeff_map,
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
+      const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& product_map,
+      const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
       int num_vectors);
-
-    //! Reset vector cofficients
-    void resetCoefficients(Epetra_DataAccess CV,
-			   const Epetra_BlockMap& coeff_map,
-			   const Epetra_MultiVector& block_vector);
-
-    //! Get block vector
-    Teuchos::RCP<EpetraExt::BlockMultiVector> getBlockMultiVector();
-
-    //! Get block vector
-    Teuchos::RCP<const EpetraExt::BlockMultiVector> getBlockMultiVector() const;
-
-    //! Set block vector
-    void setBlockMultiVector(
-      const Teuchos::RCP<EpetraExt::BlockMultiVector>& block_vec);
 
     //! Compute mean
     void computeMean(Epetra_MultiVector& v) const;
 
     //! Compute standard deviation
     void computeStandardDeviation(Epetra_MultiVector& v) const;
-
-  protected:
-
-    //! Block vector storing coefficients
-    Teuchos::RCP<EpetraExt::BlockMultiVector> bv;
 
   }; // class EpetraMultiVectorOrthogPoly
 

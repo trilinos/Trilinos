@@ -836,7 +836,7 @@ namespace TSQR {
       // blocks (in C) may or may not be stored contiguously.  If they
       // are stored contiguously, the CacheBlocker knows the right
       // layout, based on the cache blocking strategy.
-      CacheBlocker< LocalOrdinal, Scalar > blocker (C.nrows(), C.ncols(), strategy_);
+      CacheBlocker<LocalOrdinal, Scalar> blocker (C.nrows(), C.ncols(), strategy_);
 
       // C_top_block is a view of the topmost cache block of C.
       // C_top_block should have >= ncols rows, otherwise either cache
@@ -850,7 +850,7 @@ namespace TSQR {
     }
 
   private:
-    CacheBlockingStrategy< LocalOrdinal, Scalar > strategy_;
+    CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_;
   };
   
 } // namespace TSQR

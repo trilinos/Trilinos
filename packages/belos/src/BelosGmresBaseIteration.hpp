@@ -115,6 +115,7 @@ namespace Belos {
 				   "no longer possible to advance!");
 	  impl_->advance();
 	}
+      
     }
 
     /// Initialize the solver
@@ -126,9 +127,12 @@ namespace Belos {
 
     /// \brief Return the current iteration count.
     ///
-    /// \note The number of iterations is defined as the dimension of
-    /// the Krylov basis search space for solution update vectors.
-    int getNumIters() const { return impl_->getNumIters(); }
+    /// \note The first iteration (after the initial residual
+    /// computation) counts as 1.  Belos likes to measure the
+    /// iterations while they are in progress, not after they are done
+    /// (when we increment them.  That's why we add one in the code
+    /// below.
+    int getNumIters() const { return impl_->getNumIters() + 1; }
     
     /// \brief Reset the iteration count to iter.
     ///
@@ -201,7 +205,8 @@ namespace Belos {
 	  // Silence the compiler error about comparing signed and unsigned.
 	  if (norms->size() < (unsigned int) blockSize)
 	    norms->resize (blockSize);
-	  (*norms)[0] = nativeResNorm;
+	  for (int k = 0; k < blockSize; ++k)
+	    (*norms)[k] = nativeResNorm;
 	}
       return nativeResVec;
     }
@@ -275,6 +280,18 @@ namespace Belos {
     //! Trivial destructor
     virtual ~GmresBaseIteration() {}
 
+    /// \brief Update the current approximate solution.
+    ///
+    /// Modify the LinearProblem instance's current approximate
+    /// solution (the multivector returned by getLHS()) by adding in
+    /// the current solution update (xUpdate_).  Tell the
+    /// LinearProblem to compute a new residual vector as well.
+    void
+    updateSolution ()
+    {
+      impl_->updateSolution ();
+    }
+
   private:
     /// Current iteration state and implementation
     /// 
@@ -299,7 +316,7 @@ namespace Belos {
     /// that expanded interface.
     Teuchos::RCP<const OrthoManager<Scalar, MV> > ortho_;
     //! Output manager, for intermediate output during iterations
-    Teuchos::RCP<OutputManager<Scalar> > om_;
+    Teuchos::RCP<OutputManager<Scalar> > outMan_;
     //! Status test for stopping iteration
     Teuchos::RCP<StatusTest<Scalar, MV, OP> > stest_;
     //! Configuration parameters. May be null (signifies defaults).
@@ -322,7 +339,7 @@ namespace Belos {
 		      const Teuchos::RCP<const Teuchos::ParameterList>& params) :
     lp_ (validatedProblem (problem)),
     ortho_ (ortho), 
-    om_ (printer), 
+    outMan_ (printer), 
     stest_ (tester), 
     params_ (params)
   {
@@ -336,7 +353,7 @@ namespace Belos {
     if (! isInitialized())
       {
 	typedef GmresBaseFactory<Scalar, MV, OP> factory_type;
-	impl_ = factory_type::create (lp_, ortho_, params_);
+	impl_ = factory_type::create (lp_, ortho_, outMan_, params_);
       }
   }
 

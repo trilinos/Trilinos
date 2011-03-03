@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -38,7 +36,7 @@
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_EpetraSparse3Tensor.hpp"
 #include "Epetra_Map.h"
-#include "Stokhos_PreconditionerFactory.hpp"
+#include "Stokhos_AbstractPreconditionerFactory.hpp"
 
 namespace Stokhos {
 
@@ -65,14 +63,8 @@ namespace Stokhos {
   protected:
 
     //! Build preconditioner factory for mean
-    Teuchos::RCP<Stokhos::PreconditionerFactory> 
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> 
     buildMeanPreconditionerFactory();
-
-    //! Build preconditioner factory
-    Teuchos::RCP<Stokhos::PreconditionerFactory> 
-    buildPreconditionerFactory(
-      const std::string& prec_name,
-      const Teuchos::RCP<Teuchos::ParameterList>& precParams);
 
   private:
     

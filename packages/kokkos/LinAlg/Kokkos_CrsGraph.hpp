@@ -726,21 +726,25 @@ namespace Kokkos {
 #ifndef KERNEL_PREFIX
 #define KERNEL_PREFIX
 #endif
+  /// \class FirstTouchCopyIndicesKernel
+  ///
+  /// Kokkos kernel for copying array indices using a first-touch
+  /// initialization strategy for CPU memory.
+  ///
+  /// \note We have to store member data as raw pointers, rather than
+  /// ArrayRCPs, because ArrayRCP are not thread safe, and the arrays
+  /// get accessed inside a Kokkos kernel.
   template <class T>
   struct FirstTouchCopyIndicesKernel {
     const size_t * numEntriesPerRow;
-    // ArrayRCP<const size_t> numEntriesPerRow;
     const size_t * offsets1D;
-    // ArrayRCP<const size_t> offsets1D;
     T * data1D;
-    // ArrayRCP<T>            data1D;
     const ArrayRCP<T> * data2D;
+
     inline KERNEL_PREFIX void execute(size_t row) {
       const size_t rowNumInds = numEntriesPerRow[row];
-      const T * oldinds;
-      T * newinds;
-      newinds = data1D + offsets1D[row];
-      oldinds = data2D[row].getRawPtr();
+      const T* const oldinds = data2D[row].getRawPtr();
+      T* const newinds = data1D + offsets1D[row];
       std::copy(oldinds, oldinds+rowNumInds, newinds);
     }
   };
@@ -899,7 +903,11 @@ namespace Kokkos {
           }
           offsets[this->numRows_] = curoffset;
           TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
-              Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
+			      Teuchos::typeName(*this) << "::finalize(): "
+			      "Internal logic error: curoffset (= " 
+			      << curoffset << ") != this->getNumEntries() (= "
+			      << this->getNumEntries() 
+			      << ").  Please contact Kokkos team.");
         }
         // done with the original row beg/end offsets, can point to the new overlapping one
         this->rowBegs_   = offsets;
