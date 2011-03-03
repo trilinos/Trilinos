@@ -181,8 +181,7 @@ public:
   { return m_bucket_repository.buckets(rank); }
 
   /** \brief  Get entity with a given key */
-  /// \todo REFACTOR remove required_by argument
-  Entity * get_entity( EntityRank entity_rank , EntityId entity_id , const char * /* required_by */ = NULL  ) const {
+  Entity * get_entity( EntityRank entity_rank , EntityId entity_id ) const {
     require_good_rank_and_id(entity_rank, entity_id);
     return m_entity_repo.get_entity( EntityKey(entity_rank, entity_id));
   }
