@@ -431,8 +431,11 @@ namespace Belos {
 	      // restart the first time.
 	      if (restartCycle > 0)
 		iter_->restart ();
-	      // Iterate to convergence or maximum number of iterations.
+	      // Iterate to convergence or maximum number of
+	      // iterations.
 	      iter_->iterate ();
+	      // Update the current approximate solution in the linear problem.
+	      iter_->updateSolution ();
 	    }
 	  // Remember whether the current linear system converged.
 	  converged[curRHS] = (convTest_->getStatus() == Passed);

@@ -240,9 +240,10 @@ namespace Belos {
     ///
     /// \param problem [in/out] Linear problem.  On input, we use the
     ///   starting guess (x0) and the initial residual (r0) to
-    ///   initialize the iteration.  The iteration may call
-    ///   updateSolution().  On output, if the solution has been
-    ///   updated, the vector returned by getLHS() will be modified.
+    ///   initialize the iteration.  The advance() method does _not_
+    ///   call updateSolution(); it only iterates on the solution
+    ///   update (the "delta"), not the initial guess.  The restart()
+    ///   method _does_ call updateSolution().
     /// \param ortho [in] Orthogonalization manager
     /// \param outMan [in/out] Output manager
     /// \param maxIterCount [in] Maximum number of iterations before
@@ -418,6 +419,18 @@ namespace Belos {
     /// returned by getNumIters().
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
     arnoldiRelationError () const;
+
+    /// \brief Update the current approximate solution.
+    ///
+    /// Modify the LinearProblem instance's current approximate
+    /// solution (the multivector returned by getLHS()) by adding in
+    /// the current solution update (xUpdate_).  Tell the
+    /// LinearProblem to compute a new residual vector as well.
+    void
+    updateSolution ()
+    {
+      (void) lp_->updateSolution (xUpdate_, true, STS::one());
+    }
 
   protected:
 
@@ -1893,7 +1906,7 @@ namespace Belos {
     // upcoming new restart cycle), so that the "exact" residuals are
     // correct.
     (void) getCurrentUpdate (); // results stored in xUpdate_
-    (void) lp_->updateSolution (xUpdate_, true, STS::one());
+    updateSolution ();
 
     // Check whether there is a right preconditioner, since (at least
     // in theory) the caller could have added a right preconditioner

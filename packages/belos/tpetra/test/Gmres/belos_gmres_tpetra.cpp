@@ -763,10 +763,12 @@ main (int argc, char *argv[])
 	cerr << "||X_guess||_2 = " << theNorm[0] << endl;
     }
 
-  // Construct the linear problem to solve.  X_guess is only copied
-  // shallowly and will likely be changed by the solve.
+  // Construct the linear problem to solve.  The "X" argument of the
+  // LinearProblem constructor is only copied shallowly and will be
+  // overwritten by the solve, so we make a copy.
+  RCP<MV> X = MVT::CloneCopy (*X_guess);
   typedef LinearProblem<scalar_type, MV, OP> prob_type;
-  RCP<prob_type> problem (new prob_type (A, X_guess, B));
+  RCP<prob_type> problem (new prob_type (A, X, B));
 
   // Create a GMRES solver manager to solve the problem.
   typedef GmresSolMgr<scalar_type, MV, OP> solver_type;
@@ -808,50 +810,59 @@ main (int argc, char *argv[])
       // relative residuals.
       std::vector<magnitude_type> rhsNorms (numEquations);
       MVT::MvNorm (*B, rhsNorms);
-      std::vector<magnitude_type> theNorms (numEquations);
 
-      // Compute and display relative (or absolute, if RHS has norm
-      // zero) residual norms for the initial guess(es) for each of
-      // the equation(s).
+      // Compute relative (or absolute, if RHS has norm zero) residual
+      // norms for the initial guess(es) for each of the equation(s).
+      std::vector<magnitude_type> initResNorms (numEquations);
       RCP<MV> R = MVT::Clone (*B, numEquations);
       OPT::Apply (*A, *X_guess, *R);
       MVT::MvAddMv (-STS::one(), *R, STS::one(), *B, *R);
-      MVT::MvNorm (*R, theNorms);
-      if (myRank == 0)
-	{
-	  for (std::vector<magnitude_type>::size_type k = 0;
-	       k < theNorms.size(); ++k)
-	    {
-	      cout << "For problem " << k+1 << " of " << numEquations << ": "
-		   << "||A x_guess - b||_2 ";
-	      if (rhsNorms[k] == STM::zero())
-		cout << "= " << theNorms[k] << endl;
-	      else
-		cout << "/ ||b||_2 = "
-		     << theNorms[k] / rhsNorms[k] << endl;
-	    }
-	}  
-      // Compute and display relative (or absolute, if RHS has norm
-      // zero) residual norms for the approximate solution(s) for each
-      // of the equation(s).
-      RCP<const MV> X = problem->getLHS();
+      MVT::MvNorm (*R, initResNorms);
+
+      // Compute relative (or absolute, if RHS has norm zero) residual
+      // norms for the approximate solution(s) for each of the
+      // equation(s).  X should be the same multivector as returned by
+      // problem->getLHS().
+      std::vector<magnitude_type> finalResNorms (numEquations);
       OPT::Apply (*A, *X, *R);
       MVT::MvAddMv (-STS::one(), *R, STS::one(), *B, *R);
-      MVT::MvNorm (*R, theNorms);
+      MVT::MvNorm (*R, finalResNorms);
+
+      // Compute absolute solution error(s) ||X_exact - X_guess||_2.
+      std::vector<magnitude_type> absSolNorms (numEquations);
+      {
+	// In general, R may not necessarily be in the same vector
+	// space as X, if we're using a left preconditioner.  With no
+	// preconditioning, X and R must be in the same space, but we
+	// prefer a more general approach.
+	RCP<MV> X_diff = MVT::Clone (*X, numEquations);
+	MVT::MvAddMv (STS::one(), *X, -STS::one(), *X_exact, *X_diff);
+	MVT::MvNorm (*X_diff, absSolNorms);
+      }
+
       if (myRank == 0)
 	{
 	  for (std::vector<magnitude_type>::size_type k = 0;
-	       k < theNorms.size(); ++k)
+	       k < rhsNorms.size(); ++k)
 	    {
-	      cout << "For problem " << k+1 << " of " << numEquations << ": "
-		   << "||A x - b||_2 ";
+	      cout << "For problem " << k+1 << " of " << numEquations << ": " 
+		   << endl
+		   << "* ||b||_2 = " << rhsNorms[k] << endl
+		   << "* ||A x_guess - b||_2 ";
 	      if (rhsNorms[k] == STM::zero())
-		cout << "= " << theNorms[k] << endl;
+		cout << "= " << initResNorms[k] << endl;
 	      else
 		cout << "/ ||b||_2 = "
-		     << theNorms[k] / rhsNorms[k] << endl;
+		     << initResNorms[k] / rhsNorms[k] << endl;
+	      cout << "* ||A x - b||_2 ";
+	      if (rhsNorms[k] == STM::zero())
+		cout << "= " << finalResNorms[k] << endl;
+	      else
+		cout << "/ ||b||_2 = "
+		     << finalResNorms[k] / rhsNorms[k] << endl;
+	      cout << "* ||x - x_exact||_2 = " << absSolNorms[k] << endl;
 	    }
-	}  
+	}
       // Teuchos communication doesn't have a reduction for bool, so
       // we use an int instead.
       int badness = 0;

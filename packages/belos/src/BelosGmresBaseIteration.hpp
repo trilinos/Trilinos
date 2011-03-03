@@ -115,6 +115,7 @@ namespace Belos {
 				   "no longer possible to advance!");
 	  impl_->advance();
 	}
+      
     }
 
     /// Initialize the solver
@@ -278,6 +279,18 @@ namespace Belos {
     
     //! Trivial destructor
     virtual ~GmresBaseIteration() {}
+
+    /// \brief Update the current approximate solution.
+    ///
+    /// Modify the LinearProblem instance's current approximate
+    /// solution (the multivector returned by getLHS()) by adding in
+    /// the current solution update (xUpdate_).  Tell the
+    /// LinearProblem to compute a new residual vector as well.
+    void
+    updateSolution ()
+    {
+      impl_->updateSolution ();
+    }
 
   private:
     /// Current iteration state and implementation
