@@ -466,6 +466,11 @@ main (int argc, char *argv[])
   bool verbose = false;
   // Optional argument: Whether to print debugging information.
   bool debug = false;
+  // Optional argument: Frequency of intermediate status output.
+  // Defaults to the invalid value -2, which will be reset to -1 if
+  // not set to something else.  (We use this to detect whether the
+  // frequency has indeed been set on the command line.)
+  int frequency = -2;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption ("filename", &filename, "Name of a Matrix Market - format "
@@ -503,7 +508,14 @@ main (int argc, char *argv[])
 		  "Print messages and results.");
   cmdp.setOption ("debug", "nodebug", &debug,
 		  "Print debugging information.");
+  cmdp.setOption ("frequency", &frequency, "Frequency of intermediate status "
+		  "output, in terms of number of iterations.  1 means every "
+		  "iteration; -1 means no intermediate status output.  Defaults"
+		  " to the invalid value -2, which will be reset to -1 if not "
+		  "set to something else.");
+  //
   // Parse the command-line arguments.
+  //
   {
     const CommandLineProcessor::EParseCommandLineReturn parseResult = 
       cmdp.parse (argc,argv);
@@ -539,6 +551,19 @@ main (int argc, char *argv[])
 			   ".");
       }
   }
+  // We can tell if frequency was set via the "--frequency=<freq>"
+  // command-line option, since the default value of frequency (-2) is
+  // invalid.  Replace the default value with the valid value of -1
+  // (which means, never display intermediate status output).
+  const bool setFrequencyAtCommandLine = (frequency == -2);
+  if (setFrequencyAtCommandLine)
+    frequency = -1;
+
+  // Default verbosity: only print warnings and errors.  This is not
+  // directly a command-line option, but is affected by the --verbose
+  // and --debug Boolean command-line options.
+  int verbosityLevel = Belos::Errors | Belos::Warnings;
+
   // If the name of an XML file of parameters was provided, read it on
   // Proc 0, and broadcast from Proc 0 to the other procs.
   //
@@ -546,8 +571,6 @@ main (int argc, char *argv[])
   // was provided, fill in the list on Proc 0, and broadcast.
   RCP<ParameterList> params = Teuchos::parameterList();
   const bool readParamsFromFile = (xmlInFile != "");
-  // Default verbosity: only print warnings and errors.
-  int verbosityLevel = Belos::Errors | Belos::Warnings;
   if (readParamsFromFile)
     {
       if (debug && myRank == 0)
@@ -558,33 +581,67 @@ main (int argc, char *argv[])
 					       *pComm);
       if (debug && myRank == 0)
 	cerr << "done." << endl;
+      // Set the verbosity level if it was specified in the XML file.
       try {
-	verbosityLevel = params->get<int>("Verbosity");
+	const int verbLevel = params->get<int>("Verbosity");
+	verbosityLevel = verbLevel;
       } catch (Teuchos::Exceptions::InvalidParameter&) {
-	verbosityLevel = Belos::Errors | Belos::Warnings;
+	// Do nothing; leave verbosityLevel at its default value
       }
+
+      // Did the XML file set the "Output Frequency" parameter?
+      // If so, and if the user didn't override at the command
+      // line, read it in.
+      if (! setFrequencyAtCommandLine)
+	{
+	  try {
+	    const int newFreq = params->get<int>("Output Frequency");
+	    frequency = newFreq;
+	  } catch (Teuchos::Exceptions::InvalidParameter&) {
+	    // Do nothing; leave frequency at its (new) default value
+	  }
+	}
     }
+  //
+  // Override any read-in parameters with relevant command-line
+  // arguments.  Frequency may be overridden by the XML file, by the
+  // command-line option "--frequency=<freq>", or by verbose mode.
+  // The command-line option overrides the other two; verbose mode
+  // overrides the XML file, but not the command-line option.
+  //
+  if (verbose && ! setFrequencyAtCommandLine)
+    { // In verbose mode, set frequency to 1 (the most verbose setting
+      // possible).
+      const int verboseFreq = 1;
+      if (debug && myRank == 0)
+	cerr << "Setting \"Output Frequency\" to " << verboseFreq << endl;
+      params->set ("Output Frequency", verboseFreq);
+    }
+  // In debug mode, set verbosity level to its maximum, including
+  // Belos::Debug.  In verbose mode, include everything but
+  // Belos::Debug.
   if (verbose || debug)
     { // Change verbosity level from its default.
       if (verbose)
 	{
-	  verbosityLevel = verbosityLevel | 
-	    Belos::IterationDetails | 
+	  verbosityLevel = Belos::IterationDetails | 
 	    Belos::OrthoDetails |
 	    Belos::FinalSummary |
 	    Belos::TimingDetails |
-	    Belos::StatusTestDetails;
+	    Belos::StatusTestDetails |
+	    Belos::Warnings | 
+	    Belos::Errors;
 	}
-      if (debug)
-	verbosityLevel = verbosityLevel | Belos::Debug;
-      params->set ("Verbosity", verbosityLevel);
-      // Change the output frequency to print output at every
-      // iteration.
-      params->set ("Output Frequency", static_cast<int>(1));
-    }
-  if (debug)
-    cerr << "Verbosity: " << msgTypeToString(verbosityLevel) << endl;
+      else if (debug)
+	verbosityLevel = Belos::Debug |
+	  Belos::Warnings | 
+	  Belos::Errors;
 
+      if (debug && myRank == 0)
+	cerr << "Setting \"Verbosity\" to " 
+	     << msgTypeToString(verbosityLevel) << endl;
+      params->set ("Verbosity", verbosityLevel);
+    }
   //
   // Let's make ourselves a sparse matrix A.  Either read it from the
   // given file, or generate it, depending on the command-line
@@ -739,6 +796,62 @@ main (int argc, char *argv[])
   Belos::ReturnType result = solver.solve();
   if (verbose)
     {
+      const int numEquations = MVT::GetNumberVecs(*B);
+      if (myRank == 0)
+	{
+	  cout << "Total number of iterations: " << solver.getNumIters() 
+	       << endl
+	       << "Relative residual norm" << (numEquations != 1 ? "s" : "") 
+	       << ":" << endl;
+	}
+      // Norm(s) of the right-hand side(s) are useful for computing
+      // relative residuals.
+      std::vector<magnitude_type> rhsNorms (numEquations);
+      MVT::MvNorm (*B, rhsNorms);
+      std::vector<magnitude_type> theNorms (numEquations);
+
+      // Compute and display relative (or absolute, if RHS has norm
+      // zero) residual norms for the initial guess(es) for each of
+      // the equation(s).
+      RCP<MV> R = MVT::Clone (*B, numEquations);
+      OPT::Apply (*A, *X_guess, *R);
+      MVT::MvAddMv (-STS::one(), *R, STS::one(), *B, *R);
+      MVT::MvNorm (*R, theNorms);
+      if (myRank == 0)
+	{
+	  for (std::vector<magnitude_type>::size_type k = 0;
+	       k < theNorms.size(); ++k)
+	    {
+	      cout << "For problem " << k+1 << " of " << numEquations << ": "
+		   << "||A x_guess - b||_2 ";
+	      if (rhsNorms[k] == STM::zero())
+		cout << "= " << theNorms[k] << endl;
+	      else
+		cout << "/ ||b||_2 = "
+		     << theNorms[k] / rhsNorms[k] << endl;
+	    }
+	}  
+      // Compute and display relative (or absolute, if RHS has norm
+      // zero) residual norms for the approximate solution(s) for each
+      // of the equation(s).
+      RCP<const MV> X = problem->getLHS();
+      OPT::Apply (*A, *X, *R);
+      MVT::MvAddMv (-STS::one(), *R, STS::one(), *B, *R);
+      MVT::MvNorm (*R, theNorms);
+      if (myRank == 0)
+	{
+	  for (std::vector<magnitude_type>::size_type k = 0;
+	       k < theNorms.size(); ++k)
+	    {
+	      cout << "For problem " << k+1 << " of " << numEquations << ": "
+		   << "||A x - b||_2 ";
+	      if (rhsNorms[k] == STM::zero())
+		cout << "= " << theNorms[k] << endl;
+	      else
+		cout << "/ ||b||_2 = "
+		     << theNorms[k] / rhsNorms[k] << endl;
+	    }
+	}  
       // Teuchos communication doesn't have a reduction for bool, so
       // we use an int instead.
       int badness = 0;
