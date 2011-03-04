@@ -222,6 +222,13 @@ TRILINOS_DEFINE_PACKAGING()
 
 PACKAGE_ARCH_WRITE_CONFIG_FILE()
 
+# TEMPORARY: Install a compatibility copy of TrilinosConfig.cmake
+# where was previously installed to warn and load the new file.
+INSTALL(
+  FILES ${Trilinos_SOURCE_DIR}/cmake/TrilinosConfigInclude.cmake
+  DESTINATION "${Trilinos_INSTALL_INCLUDE_DIR}"
+  RENAME TrilinosConfig.cmake
+  )
 
 #
 # M) Export the library dependencies. This will let client projects
