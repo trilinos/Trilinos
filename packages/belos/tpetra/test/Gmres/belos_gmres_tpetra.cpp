@@ -794,7 +794,8 @@ main (int argc, char *argv[])
 	cerr << "done." << endl;
     }
 
-  // Attempt to solve the linear system, and report the result.
+  // Attempt to solve the linear system(s).
+  // If in verbose mode, report the result.
   Belos::ReturnType result = solver.solve();
   if (verbose)
     {
@@ -834,12 +835,16 @@ main (int argc, char *argv[])
 	// In general, R may not necessarily be in the same vector
 	// space as X, if we're using a left preconditioner.  With no
 	// preconditioning, X and R must be in the same space, but we
-	// prefer a more general approach.
+	// prefer a more general approach; hence, we clone X_diff from
+	// X, rather than recycling R for X_diff.  (MVT doesn't have a
+	// notion of vector space, so we can't check whether R and X
+	// are in the same vector space.)
 	RCP<MV> X_diff = MVT::Clone (*X, numEquations);
 	MVT::MvAddMv (STS::one(), *X, -STS::one(), *X_exact, *X_diff);
 	MVT::MvNorm (*X_diff, absSolNorms);
       }
 
+      // Display resulting residual norm(s) on Rank 0.
       if (myRank == 0)
 	{
 	  for (std::vector<magnitude_type>::size_type k = 0;
@@ -863,8 +868,18 @@ main (int argc, char *argv[])
 	      cout << "* ||x - x_exact||_2 = " << absSolNorms[k] << endl;
 	    }
 	}
-      // Teuchos communication doesn't have a reduction for bool, so
-      // we use an int instead.
+      // Did the solution manager return a reasonable result
+      // (Converged or Unconverged)?  (We allow the iterations not to
+      // converge, since the test parameters may not have allowed
+      // sufficient iterations for convergence.)  Broadcast the result
+      // from Rank 0.  The result should be the same on all processes,
+      // but we want to make sure.  Teuchos communication doesn't have
+      // a reduction for Boolean values, so we use an int instead,
+      // with the usual Boolean interpretation as in C (0 means false,
+      // 1 means true).
+      //
+      // Note: "badness" doesn't mean "Unconverged", it means "neither
+      // Converged nor Unconverged".
       int badness = 0;
       if (myRank == 0)
 	{
@@ -888,6 +903,12 @@ main (int argc, char *argv[])
 	}
     }
 
+  // Report final result (PASSED or FAILED) to stdout on Rank 0.  This
+  // tells the Trilinos test framework whether the test passed or
+  // failed.  The framework must see "End Result: TEST PASSED" (or
+  // something like that -- it's a regular expression test) in order
+  // for the test to be considered passed.
+  //
   // Later, numFailed might signify the number of test(s) that failed.
   // For now, it's always zero.
   int numFailed = 0;
@@ -900,8 +921,6 @@ main (int argc, char *argv[])
 	      cerr << "There were " << numFailed << " error" 
 		   << (numFailed != 1 ? "s." : ".") << endl;
 	    }
-	  // The Trilinos test framework depends on seeing this message,
-	  // so don't rely on the OutputManager to report it correctly.
 	  cout << "End Result: TEST FAILED" << endl;
 	}
       return EXIT_FAILURE;
