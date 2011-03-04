@@ -27,9 +27,6 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, TwoProcTest){
   if(numprocs <2){ return; }
 
 
-  //RCP< Teuchos::FancyOStream > out = Teuchos::fancyOStream(rcp(&std::cout,false),"",0,false,10,false,true);
-  MMdebug::debug_stream = rcpFromRef(out);
-  MMdebug::debug_level  = Teuchos::VERB_NONE;
 
   // set up a row-std::map with 2 global elements,
   // 1 on each proc.

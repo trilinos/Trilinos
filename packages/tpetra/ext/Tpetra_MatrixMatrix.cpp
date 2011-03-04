@@ -33,19 +33,15 @@ namespace Tpetra {
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-  typedef Kokkos::DefaultKernels<double,int,Kokkos::SerialNode>::SparseOps SerialSpMatOps;
-  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::SerialNode,SerialSpMatOps)
+  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
-  typedef Kokkos::DefaultKernels<double,int,Kokkos::TBBNode>::SparseOps TBBSpMatOps;
-  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::TBBNode,TBBSpMatOps)
+  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::TBBNode)
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
-  typedef Kokkos::DefaultKernels<double,int,Kokkos::TPINode>::SparseOps TPISpMatOps;
-  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::TPINode,TPISpMatOps)
+  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::TPINode)
 #endif
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
-  typedef Kokkos::DefaultKernels<double,int,Kokkos::ThrustGPUNode>::SparseOps ThrustGPUSpMatOps;
-  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode,ThrustGPUSpMatOps)
+  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 #endif
 #endif
 

@@ -157,7 +157,7 @@ template<class Scalar,
          class SpMatOps>
 RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap);
+  const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap);
 
 
 template<class Scalar, 
@@ -223,11 +223,11 @@ template<class LocalOrdinal,
          class GlobalOrdinal, 
          class Node>
 RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > create_map_from_imported_rows(
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map,
-  const size_t totalNumSend,
-  const ArrayView<const GlobalOrdinal> &sendRows,
-  const int numProcs,
-  const ArrayView<const size_t> &numSendPerProc);
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
+  const size_t& totalNumSend,
+  ArrayView<GlobalOrdinal> sendRows,
+  const int& numProcs,
+  ArrayView<size_t> numSendPerProc);
 
 template<class LocalOrdinal, 
          class GlobalOrdinal, 
@@ -248,13 +248,6 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > form_map_union(
 }//end namespace MMdetails
 
 
-// CGB: If it isn't for public consumption, then hide it in a different namespace.
-namespace MMdebug {
-
-    RCP<Teuchos::FancyOStream> debug_stream;
-    Teuchos::EVerbosityLevel   debug_level;
-
-}
 
 
   

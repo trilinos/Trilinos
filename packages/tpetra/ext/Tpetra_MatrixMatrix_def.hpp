@@ -31,7 +31,6 @@
 
 #include "Tpetra_MatrixMatrix_decl.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_map.hpp"
 #include "Teuchos_Array.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_ConfigDefs.hpp"
@@ -39,6 +38,7 @@
 #include "Tpetra_MMHelpers_def.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Map.hpp"
 #include <algorithm>
 
 #ifdef DOXYGEN_USE_ONLY
@@ -51,6 +51,14 @@
  */
 
 namespace Tpetra {
+
+// CGB: If it isn't for public consumption, then hide it in a different namespace.
+namespace MMdebug {
+
+    RCP<Teuchos::FancyOStream> debug_stream;
+    Teuchos::EVerbosityLevel   debug_level;
+
+}
 
 namespace MatrixMatrix{
 
@@ -163,7 +171,7 @@ void Multiply(
     //local portion of the domain-map. (We'll import any remote rows
     //that fit this criteria onto the local processor.)
     if (transposeA) {
-      targetMap_A = MMdetails::find_rows_containing_cols<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(A, A.getDomainMap());
+      targetMap_A = MMdetails::find_rows_containing_cols(A, A.getDomainMap());
     }
   }
   //Now import any needed remote rows and populate the Aview struct.
@@ -1175,11 +1183,11 @@ template<class LocalOrdinal,
          class GlobalOrdinal, 
          class Node>
 RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > create_map_from_imported_rows(
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map,
-  const size_t totalNumSend,
-  const ArrayView<const GlobalOrdinal> &sendRows,
-  const int numProcs,
-  const ArrayView<const size_t> &numSendPerProc)
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
+  const size_t& totalNumSend,
+  ArrayView<GlobalOrdinal> sendRows,
+  const int& numProcs,
+  ArrayView<size_t> numSendPerProc)
 {
   // Perform sparse all-to-all communication to send the row-GIDs
   // in sendRows to appropriate processors according to offset
@@ -1207,7 +1215,9 @@ RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > create_map_from_imported_rows(
   distributor->doPostsAndWaits(sendRows.getConst(), numpackets, recv_rows());
 
   //Now create a map with the rows we've received from other processors.
-  RCP<Map_t > import_rows = rcp(new Map_t(OrdinalTraits<global_size_t>::invalid(), recv_rows(), map->getIndexBase(), map->getComm()));
+  RCP<Map_t > import_rows = rcp(new Map_t(OrdinalTraits<global_size_t>::invalid(), recv_rows(), map->getIndexBase(), map->getComm(), map->getNode()));
+  //const ArrayView<const GlobalOrdinal> recv_rows_view = recv_rows();
+  //RCP<Map_t > import_rows = createNonContigMapWithNode(recv_rows_view, map->getComm(), map->getNode());
 
   return( import_rows );
 }
@@ -1287,7 +1297,7 @@ template<class Scalar,
          class SpMatOps>
 RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap)
+  const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap)
 {
   //The goal of this function is to find all rows in the matrix M that contain
   //column-indices which are in 'colmap'. A map containing those rows is
@@ -1378,7 +1388,8 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
   // to the appropriate processors, and create a map with the rows we've received
   // from other processors.
   RCP<const Map_t > recvd_rows = 
-    create_map_from_imported_rows<LocalOrdinal, GlobalOrdinal, Node>(
+    //create_map_from_imported_rows<LocalOrdinal, GlobalOrdinal, Node>(
+    create_map_from_imported_rows(
       Mrowmap,
       totalNumSend,
       procRows_1D(),
@@ -1416,6 +1427,7 @@ Scalar sparsedot(
 }
 
 } //End namepsace MMdetails
+
 } //End namespace Tpetra
 //
 // Explicit instantiation macro
@@ -1423,33 +1435,32 @@ Scalar sparsedot(
 // Must be expanded from within the Tpetra namespace!
 //
 
-#define TPETRA_MATRIXMATRIX_INSTANT(SCALAR,LO,GO,NODE,SPMATOPS) \
+#define TPETRA_MATRIXMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template \
   void MatrixMatrix::Multiply( \
-    const CrsMatrix< SCALAR , LO , GO , NODE , SPMATOPS >& A, \
+    const CrsMatrix< SCALAR , LO , GO , NODE >& A, \
     bool transposeA, \
-    const CrsMatrix< SCALAR , LO , GO , NODE , SPMATOPS >& B, \
+    const CrsMatrix< SCALAR , LO , GO , NODE >& B, \
     bool transposeB, \
-    CrsMatrix< SCALAR , LO , GO , NODE , SPMATOPS >& C, \
+    CrsMatrix< SCALAR , LO , GO , NODE >& C, \
     bool call_FillComplete_on_result); \
 \
   template \
   void MatrixMatrix::Add( \
-    const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS >& A, \
+    const CrsMatrix< SCALAR, LO , GO , NODE >& A, \
     bool transposeA, \
     SCALAR scalarA, \
-    const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS >& B, \
+    const CrsMatrix< SCALAR, LO , GO , NODE >& B, \
     bool transposeB, \
     SCALAR scalarB, \
-    RCP<CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > C); \
+    RCP<CrsMatrix< SCALAR, LO , GO , NODE > > C); \
 \
-
-/*  template \
+  template \
   RCP<const Map< LO , GO , NODE > > \
   MMdetails::find_rows_containing_cols( \
-    const CrsMatrix< SCALAR , LO , GO , NODE ,  SPMATOPS >& M, \
-    RCP<const Map< LO , GO , NODE > > colmap);*/
+    const CrsMatrix< SCALAR , LO , GO , NODE >& M, \
+    RCP<const Map< LO , GO , NODE > > colmap);
 
 /*  \
   template <> \

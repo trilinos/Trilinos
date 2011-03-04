@@ -21,6 +21,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
   COMM serial mpi
+  DEPLIBS tpetraext
 )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -30,6 +31,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM mpi
   NUM_MPI_PROCS 2
+  DEPLIBS tpetraext
 )
 
 #PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
