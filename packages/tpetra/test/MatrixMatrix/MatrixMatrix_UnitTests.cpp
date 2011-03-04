@@ -33,7 +33,7 @@ TEUCHOS_STATIC_SETUP(){
   clp.setOption("v", "not-verbose", &verbose, 
     "Whether or not to use verbose output");
 }
-
+/*
 template<class Ordinal>
 add_test_results add_test(
     RCP<CrsMatrix<double,int> > A,
@@ -69,30 +69,27 @@ add_test_results add_test(
   CrsMatrixMultiplyOp_t aMultiOp(A);
   aMultiOp.apply(randomVector1, ax);
   
-  Import<int> importer(A->getDomainMap(), B->getDomainMap());
-  Vector_t randomVector2(B->getDomainMap());
-  randomVector2.doImport(randomVector1, importer, REPLACE);
   Vector_t bx(B->getRangeMap());
   CrsMatrixMultiplyOp_t bMultiOp(B);
-  bMultiOp.apply(randomVector2, bx);
+  bMultiOp.apply(randomVector1, bx);
 
   Vector_t* y2 = &bx;
   y2->update(1,ax,1);
 
   toReturn.epsilon1 = fabs(y2->norm2()-y1.norm2());
-/*
+
   MatrixMatrix::Add(*A, false, 1.0, *B, 1.0);
   Vector_t randomVector3(B->getDomainMap());
   randomVector3.doImport(randomVector1, importer, REPLACE);
   Vector_t y3(B->getRangeMap());
   bMultiOp.apply(randomVector3, y3);
-  toReturn.epsilon2 = fabs(y2->norm2()-y3.norm2());*/
+  toReturn.epsilon2 = fabs(y2->norm2()-y3.norm2());
 
   
 
   return toReturn;
 
-}
+}*/
 
 template<class Ordinal>
 double multiply_test(
@@ -216,7 +213,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       TEST_COMPARE(result, <, epsilon)
     }
     else if(op == "add"){
-      if(verbose){
+/*      if(verbose){
         out << "Running add test for " << currentSystem.name() << std::endl;
       }
       add_test_results results = add_test(A,B,AT,BT,comm);
@@ -224,7 +221,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
  //     TEST_COMPARE(results.epsilon2, <, epsilon)
       out << "Norm 1: " << results.y1Norm << std::endl;
       out << "Norm 2: " << results.y2Norm << std::endl;
-//      out << "Norm 3: " << results.y3Norm << std::endl;
+//      out << "Norm 3: " << results.y3Norm << std::endl;*/
     }
   }   
 }

@@ -379,7 +379,7 @@ void Add(
 }*/
 
 // CGB: check this...
-template <class Scalar, 
+/*template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -475,7 +475,7 @@ void Add(
         }
      }
   }
-}
+}*/
 
 } //End namespace MatrixMatrix
 
@@ -1447,6 +1447,13 @@ Scalar sparsedot(
     bool call_FillComplete_on_result); \
 \
   template \
+  RCP<const Map< LO , GO , NODE > > \
+  MMdetails::find_rows_containing_cols( \
+    const CrsMatrix< SCALAR , LO , GO , NODE >& M, \
+    RCP<const Map< LO , GO , NODE > > colmap); \
+
+  /*
+  template \
   void MatrixMatrix::Add( \
     const CrsMatrix< SCALAR, LO , GO , NODE >& A, \
     bool transposeA, \
@@ -1454,13 +1461,7 @@ Scalar sparsedot(
     const CrsMatrix< SCALAR, LO , GO , NODE >& B, \
     bool transposeB, \
     SCALAR scalarB, \
-    RCP<CrsMatrix< SCALAR, LO , GO , NODE > > C); \
-\
-  template \
-  RCP<const Map< LO , GO , NODE > > \
-  MMdetails::find_rows_containing_cols( \
-    const CrsMatrix< SCALAR , LO , GO , NODE >& M, \
-    RCP<const Map< LO , GO , NODE > > colmap);
+    RCP<CrsMatrix< SCALAR, LO , GO , NODE > > C); \*/
 
 /*  \
   template <> \
