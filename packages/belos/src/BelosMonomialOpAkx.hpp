@@ -55,8 +55,9 @@ namespace Belos {
   public:
     MonomialOpAkx (const Teuchos::RCP<const OP>& A, 
 		   const Teuchos::RCP<const OP>& M_left,
-		   const Teuchos::RCP<const OP>& M_right) :
-      OpAkx (A, M_left, M_right) {}
+		   const Teuchos::RCP<const OP>& M_right,
+		   const int recommendedBasisLength) :
+      OpAkx (A, M_left, M_right, recommendedBasisLength) {}
 
     void 
     computeBasis (const MV& q_last, MV& V_cur, const int s) 

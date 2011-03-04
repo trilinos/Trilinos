@@ -66,6 +66,17 @@ namespace Belos {
     /// expensive reorganization of the sparse matrix data structures.
     virtual int maxCandidateBasisLength () const = 0;
 
+    /// \brief Recommended initial candidate basis length.
+    ///
+    /// Some implementations of the matrix powers kernel may recommend
+    /// a particular candidate basis length, at least initially, for
+    /// reasons of performance, numerical stability, or both.  Solvers
+    /// should revise this dynamically for numerical stability, since
+    /// the matrix powers kernel implementation does not promise to do
+    /// the extensive analysis necessary to guarantee numerical
+    /// stability at this candidate basis length.
+    virtual int recommendedCandidateBasisLength () const = 0;
+
     /// \brief Compute flexible matrix powers kernel.
     ///
     /// For Flexible GMRES only.  Given the first vector q = q_last:
