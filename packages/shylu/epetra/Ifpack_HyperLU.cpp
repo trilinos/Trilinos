@@ -8,6 +8,7 @@
 
 #include "hyperlu.h"
 #include "Ifpack_HyperLU.h"
+#include "Teuchos_Time.hpp"
 
 //#define DUMP_MATRICES
 
@@ -76,8 +77,12 @@ int Ifpack_HyperLU::SetParameters(Teuchos::ParameterList& parameterlist)
 int Ifpack_HyperLU::Compute()
 {
     double Sdiagfactor = 0.90; // hard code the diagonals
+    Teuchos::Time time("setup");
+    time.start();
     HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
                     Sbar_, Sdiagfactor);
+    time.stop();
+    cout << "Time to Setup" << time.totalElapsedTime() << endl;
     IsComputed_ = true;
     cout << " Done with the compute" << endl ;
     return 0;

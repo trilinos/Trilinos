@@ -13,7 +13,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "TrilinosCouplings_config.h" // Just for HAVE_MPI
+#include "Isorropia_config.h" // Just for HAVE_MPI
 
 // Epetra includes
 #ifdef HAVE_MPI
@@ -77,6 +77,11 @@ int main(int argc, char *argv[])
     }
 
     // =================== Read input xml file =============================
+    cout << "I am here with ip" << ipFileName << endl;
+    char *fname = new char[ipFileName.size()+1];
+    strcpy(fname,ipFileName.c_str());
+    cout << fname << endl;
+ 
     Teuchos::updateParametersFromXmlFile(ipFileName, &pLUList);
     isoList = pLUList.sublist("Isorropia Input");
     // Get matrix market file name
@@ -105,6 +110,7 @@ int main(int argc, char *argv[])
     Epetra_MultiVector x(vecMap, 1);
     Epetra_MultiVector b(vecMap, 1, false);
     b.PutScalar(1.0); // TODO : Accept it as input
+    cout << "Created the vectors" << endl;
 
     // Partition the matrix with hypergraph partitioning and redisstribute
     Isorropia::Epetra::Partitioner *partitioner = new

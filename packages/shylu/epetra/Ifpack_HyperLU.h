@@ -18,7 +18,7 @@
    */
 #define BLOCK_DIAGONAL_Si
 
-#include "TrilinosCouplings_config.h" // Just for HAVE_MPI
+#include "Isorropia_config.h" // Just for HAVE_MPI
 
 // Epetra includes
 #ifdef HAVE_MPI

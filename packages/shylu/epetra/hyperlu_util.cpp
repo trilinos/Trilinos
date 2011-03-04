@@ -8,7 +8,7 @@
 
 #include <assert.h>
 
-#include "TrilinosCouplings_config.h" // Just for HAVE_MPI
+#include "Isorropia_config.h" // Just for HAVE_MPI
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_CrsMatrix.h" 

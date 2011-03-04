@@ -35,7 +35,7 @@
 // To dump all the matrices into files.
 //#define DUMP_MATRICES
 
-#include "TrilinosCouplings_config.h" // Just for HAVE_MPI
+#include "Isorropia_config.h" // Just for HAVE_MPI
 
 // Epetra includes
 #ifdef HAVE_MPI
@@ -439,16 +439,16 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
     bool IsAvailable = Factory.Query(SolverType);
 
     // TODO : All these three vectors and the solve can be removed
-    Epetra_MultiVector *X = new Epetra_MultiVector(LocalDRowMap, 1);
+    /*Epetra_MultiVector *X = new Epetra_MultiVector(LocalDRowMap, 1);
     Epetra_MultiVector *residual = new Epetra_MultiVector(LocalDRowMap, 1);
     Epetra_MultiVector *B = new Epetra_MultiVector(LocalDRowMap, 1);
     B->PutScalar(1.0);
 
-    double *resid = new double[Snr];
+    double *resid = new double[Snr];*/
 
     LP = new Epetra_LinearProblem();
     LP->SetOperator(&D);
-    LP->SetLHS(X);
+    /*LP->SetLHS(X);
     LP->SetRHS(B);
     Solver = Factory.Create(SolverType, *LP);
 
@@ -465,7 +465,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
     for (int i = 0 ; i < Snr; i++)
         max_resid = max(max_resid, abs(resid[i]));
 
-    cout << "Maximum residual = " << max_resid << endl;
+    cout << "Maximum residual = " << max_resid << endl;*/
 
 
 #ifdef DUMP_MATRICES
@@ -500,9 +500,9 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
     // ======================= Solve =========================================
 
     // Clean up
-    delete residual;
+    /*delete residual;
     delete[] resid;
-    delete X;
+    delete X;*/
     //delete B;
     delete[] DNumEntriesPerRow;
     delete[] SNumEntriesPerRow;
