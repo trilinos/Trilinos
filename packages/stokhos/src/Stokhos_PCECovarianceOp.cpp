@@ -42,7 +42,7 @@ PCECovarianceOp(const Stokhos::VectorOrthogPoly<Epetra_Vector>& X_poly)
     tmp()
 {
   const Epetra_BlockMap& base_map = X_poly[0].Map();
-  int sz = X_poly.basis()->size();
+  int sz = X_poly.size();
   Teuchos::RCP<Epetra_MultiVector> XX = 
     Teuchos::rcp(new Epetra_MultiVector(base_map, sz-1));
   for (int i=0; i<sz-1; i++)

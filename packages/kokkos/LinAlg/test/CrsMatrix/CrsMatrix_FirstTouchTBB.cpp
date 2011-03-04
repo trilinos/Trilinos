@@ -75,7 +75,11 @@ namespace {
   // 
 
   typedef TBBNode                                             Node;
-  typedef typename DefaultKernels<void,int,Node>::SparseOps   DSM;
+  // mfh 23 Feb 2011:
+  // You don't need "typename" here, since none of the three 
+  // parameters of DefaultKernels are template parameters.
+  //typedef typename DefaultKernels<void,int,Node>::SparseOps   DSM;
+  typedef DefaultKernels<void,int,Node>::SparseOps            DSM;
   typedef CrsMatrixHostCompute<double,int,Node,DSM>           StandardMat;
   typedef CrsGraphHostCompute<int,Node,DSM>                   StandardGraph;
   typedef FirstTouchHostCrsMatrix<double,int,Node,DSM>        FirstTouchMat;

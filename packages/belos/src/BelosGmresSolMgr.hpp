@@ -56,7 +56,6 @@
 
 #include <functional> // std::logical_and
 #include <numeric> // std::accumulate
-#include <iostream>
 
 namespace Belos {
 
@@ -104,8 +103,10 @@ namespace Belos {
     ///   a pointer to nonconst only because the SolutionManager
     ///   interface demands it (more or less...).
     GmresSolMgr (const Teuchos::RCP<LinearProblem<Scalar,MV,OP> >& problem,
-		 const Teuchos::RCP<Teuchos::ParameterList>& params) : 
-      problem_ (validatedProblem (problem))
+		 const Teuchos::RCP<Teuchos::ParameterList>& params,
+		 const bool debug = false) : 
+      problem_ (validatedProblem (problem)), 
+      debug_ (debug)
     { 
       setParameters (params);
     }
@@ -235,6 +236,11 @@ namespace Belos {
     reset (const ResetType type) 
     {
       using Teuchos::rcp;
+      using std::endl;
+
+      const char prefix[] = "Belos::GmresSolMgr::reset: ";
+      std::ostream& dbg = outMan_->stream(Debug);
+      dbg << prefix << endl;
 
       if ((type & Belos::RecycleSubspace) != 0)
 	// TODO (mfh 15 Feb 2011) Do we want to support recycling GMRES here?
@@ -249,10 +255,12 @@ namespace Belos {
 	  // residuals, since it calls setProblem() on the
 	  // LinearProblem instance.  Broken!  We should only compute
 	  // initial residuals for the unsolved right-hand sides.
+	  dbg << "-- Recomputing initial residual(s)" << endl;
 	  problem_ = validatedProblem (problem_);
 
 	  // Rebuild the status tests, using the solver manager's
 	  // current list of parameters.
+	  dbg << "-- Rebuilding status tests" << endl;
 	  rebuildStatusTests ();
 
 	  // Rebuild the orthogonalization method.  This is a bit of a
@@ -260,12 +268,13 @@ namespace Belos {
 	  // reinitialized if the data layout of the vectors have
 	  // changed, but the MVT and OPT interfaces don't let me
 	  // check for that.
+	  dbg << "-- Rebuilding OrthoManager" << endl;
 	  rebuildOrthoManager ();
 	}
       else
 	{
 	  std::ostringstream os;
-	  os << "GmresSolMgr::reset(): Invalid ResetType argument type = " 
+	  os << prefix << "Invalid ResetType argument type = " 
 	     << type << ".  Currently, this method only accepts accept type = "
 	    "Belos::Problem (== " << Belos::Problem << ").";
 	  throw std::invalid_argument (os.str());
@@ -289,11 +298,16 @@ namespace Belos {
     ///   (the linear problem was not thusly solved).
     ReturnType solve() 
     {
+      using std::endl;
       const char prefix[] = "Belos::GmresSolMgr::solve(): ";
+      std::ostream& dbg = outMan_->stream(Debug);
+      dbg << prefix << endl;
 
       // Reset the status test output.
+      dbg << "-- Resetting status test output" << endl;
       outTest_->reset();
       // Reset the number of calls about which the status test output knows.
+      dbg << "-- Resetting status test number of calls" << endl;
       outTest_->resetNumCalls();
 
       TEST_FOR_EXCEPTION(problem_.is_null(), std::logic_error,
@@ -306,10 +320,16 @@ namespace Belos {
       // the initial guess(es) for future solve(s), if we know that
       // the right-hand side(s) are related.
       if (! problem_->isProblemSet())
-	problem_->setProblem ();
+	{
+	  dbg << "-- (Re)computing initial residual(s) for all right-hand "
+	    "side(s)" << endl;
+	  problem_->setProblem ();
+	}
 
       // Total number of linear systems (right-hand sides) to solve.
       const int numRHS = MVT::GetNumberVecs (*(problem_->getRHS()));
+      dbg << "-- There are " << numRHS << " total right-hand side" 
+	  << (numRHS != 1 ? "s" : "") << " to solve." << endl;
 
       // Keep track of which linear system(s) converged.  Initially,
       // none of them have yet converged, since we haven't tested for
@@ -321,11 +341,15 @@ namespace Belos {
 
       // Maximum number of restart cycles.
       const int maxNumRestarts = params_->get<int> ("Maximum Restarts");
-
+      dbg << "-- Max number of restart cycles: " << maxNumRestarts << endl;
+      
       // For each right-hand side, restart until GMRES converges or we
       // run out of restart cycles.
       for (int curRHS = 0; curRHS < numRHS; ++curRHS)
 	{
+	  dbg << "-- Solving for right-hand side " << (curRHS+1) 
+	      << " of " << numRHS << ":" << endl;
+
 	  // Tell the linear problem for which right-hand side we are
 	  // currently solving.  A block solver could solve for more
 	  // than one right-hand side at a time; the GMRES solvers
@@ -362,6 +386,21 @@ namespace Belos {
 			       << (nLHS != 1 ? "s" : "") 
 			       << ", but our GMRES solvers only know how to "
 			       "solve for one right-hand side at a time.");
+	    if (debug_)
+	      { // In debug mode, compute and print the initial
+		// residual independently of the solver framework, as
+		// a sanity check.
+		RCP<const OP> A = problem_->getOperator ();
+		RCP<MV> R = MVT::Clone (*B, MVT::GetNumberVecs (*B));
+		// R := A * X
+		OPT::Apply (*A, *X, *R);
+		// R := B - R
+		MVT::MvAddMv (SCT::one(), *B, -SCT::one(), *R, *R);
+		std::vector<magnitude_type> theNorm (MVT::GetNumberVecs (*R));
+		MVT::MvNorm (*R, theNorm);
+		dbg << "-- Initial residual norm: ||B - A*X||_2 = " 
+		    << theNorm[0] << endl;
+	      }
 	  }
 
 	  // (Re)initialize the GmresBaseIteration, and therefore the
@@ -386,12 +425,17 @@ namespace Belos {
 	       convTest_->getStatus() != Passed && restartCycle < maxNumRestarts;
 	       ++restartCycle)
 	    {
+	      dbg << "-- Restart cycle " << (restartCycle+1) << " of " 
+		  << maxNumRestarts << ":" << endl;
 	      // reset() restarts the iteration, so we don't need to
 	      // restart the first time.
 	      if (restartCycle > 0)
 		iter_->restart ();
-	      // Iterate to convergence or maximum number of iterations.
+	      // Iterate to convergence or maximum number of
+	      // iterations.
 	      iter_->iterate ();
+	      // Update the current approximate solution in the linear problem.
+	      iter_->updateSolution ();
 	    }
 	  // Remember whether the current linear system converged.
 	  converged[curRHS] = (convTest_->getStatus() == Passed);
@@ -448,6 +492,9 @@ namespace Belos {
 
     //! Instance of the Belos::Iteration subclass.
     Teuchos::RCP<iteration_type> iter_;
+
+    //! Whether or not to print debug output.
+    bool debug_;
 
     /// \brief (Re)build all the iteration stopping criteria.
     ///
@@ -922,10 +969,7 @@ namespace Belos {
     using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    using std::cerr;
     using std::endl;
-
-    cerr << "Belos::GmresSolMgr::setParameters:" << endl;
 
     RCP<const ParameterList> defaultParams = getDefaultParameters();
     TEST_FOR_EXCEPTION(defaultParams.is_null(), std::logic_error, 
@@ -995,7 +1039,6 @@ namespace Belos {
       params_->get<int> ("Maximum Iterations") != 
       actualParams->get<int> ("Maximum Iterations");
 
-    cerr << "-- Initializing the OutputManager." << endl;
     // Initialize the OutputManager.    
     {
       // FIXME (mfh 16 Feb 2011) Annoyingly, I have to read this back
@@ -1035,10 +1078,13 @@ namespace Belos {
 		       "Belos::GmresSolMgr::setParameters: OutputManager "
 		       "instance is null after its initialization; this should "
 		       "never happen.");
-    cerr << "-- OutputManager initialized." << endl;
 
-    outMan_->stream(Debug) << "Belos::GmresSolMgr::setParameters:" << endl
-			   << "-- Initialized output manager; now we can print debug output." << endl;
+    // Now that we've initialized the output manager, we can print
+    // debug output.
+    std::ostream& dbg = outMan_->stream(Debug);
+    dbg << "Belos::GmresSolMgr::setParameters:" << endl
+	<< "-- Initialized output manager; now we can print debug output." 
+	<< endl;
 
     // (Re)initialize the stopping criteria.
     //
@@ -1046,8 +1092,7 @@ namespace Belos {
     // until setUserConvStatusTest() is called.  Should we look for a
     // custom test in the parameter list?
     rebuildStatusTests (actualParams);
-    cerr << "-- Initialized status tests." << endl;
-    outMan_->stream(Debug) << "-- Initialized status tests." << endl;
+    dbg << "-- Initialized status tests." << endl;
 
     // Initialize the "output status test."  This must be done after
     // initializing statusTest_.
@@ -1071,13 +1116,11 @@ namespace Belos {
       outTest_ = initOutputTest (outMan_, statusTest_, outStyle, outFreq, 
 				 solverDesc, precondDesc);
     }
-    cerr << "-- Initialized output status test." << endl;
-    outMan_->stream(Debug) << "-- Initialized output status test." << endl;
+    dbg << "-- Initialized output status test." << endl;
 
     // (Re)initialize the orthogonalization.
     rebuildOrthoManager (actualParams);
-    cerr << "-- Initialized OrthoManager subclass instance." << endl;
-    outMan_->stream(Debug) << "-- Initialized OrthoManager subclass instance." << endl;
+    dbg << "-- Initialized OrthoManager subclass instance." << endl;
 
     // We don't initialize the Iteration subclass (GmresBaseIteration)
     // here; we do that on demand.  This is because GmresBaseIteration
@@ -1095,6 +1138,8 @@ namespace Belos {
     // progress.
     if (needToResetSolver)
       reset (Belos::Problem);
+
+    dbg << "-- Done with setParameters()." << endl;
   }
 
   template<class Scalar, class MV, class OP>
@@ -1166,6 +1211,10 @@ namespace Belos {
     using Teuchos::RCP;
 
     const char prefix[] = "Belos::GmresSolMgr::rebuildOrthoManager: ";
+    TEST_FOR_EXCEPTION(outMan_.is_null(), std::logic_error,
+		       prefix << "Cannot (re)build the orthogonalization "
+		       "method unless the OutputManager has been "
+		       "instantiated.");
 
     // Default value for plist is null, in which case we use the
     // stored parameter list.  One of those two should be non-null.
@@ -1208,7 +1257,7 @@ namespace Belos {
     // Set the timer label for orthogonalization
     std::ostringstream os; 
     os << "Orthogonalization (method \"" << orthoType << "\")";
-    orthoMan_ = factory.makeOrthoManager (orthoType, null, os.str(),
+    orthoMan_ = factory.makeOrthoManager (orthoType, null, outMan_, os.str(),
 					  Teuchos::rcpFromRef (orthoParams));
   }
 
@@ -1221,10 +1270,11 @@ namespace Belos {
     using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    using std::cerr;
     using std::endl;
-
     const char prefix[] = "Belos::GmresSolMgr::rebuildIteration: ";
+
+    std::ostream& dbg = outMan_->stream(Debug);
+    dbg << prefix << endl;
 
     RCP<const ParameterList> theParams = plist.is_null() ? params_ : plist;
     TEST_FOR_EXCEPTION(theParams.is_null(), std::logic_error,
@@ -1240,14 +1290,7 @@ namespace Belos {
     // we make a deep copy.
     const ParameterList& theSubList = theParams->sublist ("Iteration Parameters");
     RCP<const ParameterList> iterParams = parameterList (theSubList);
-    cerr << "Belos::GmresSolMgr::rebuildIteration:" << endl
-	 << "-- Instantiating GmresBaseIteration instance...";
-    if (! outMan_.is_null())
-      {
-	std::ostream& out = outMan_->stream(Debug);
-	out << "Belos::GmresSolMgr::rebuildIteration:" << endl
-	    << "-- Instantiating GmresBaseIteration instance...";
-      }
+    dbg << "-- Instantiating GmresBaseIteration instance:" << endl;
     TEST_FOR_EXCEPTION(problem_.is_null(), std::logic_error, 
 		       prefix << "LinearProblem instance is null.");
     TEST_FOR_EXCEPTION(orthoMan_.is_null(), std::logic_error, 
@@ -1260,12 +1303,7 @@ namespace Belos {
 		       prefix << "Iteration parameters list is null.");
     iter_ = rcp (new iteration_type (problem_, orthoMan_, outMan_, 
 				     statusTest_, iterParams));
-    cerr << "done instantiating GmresBaseIteration instance." << endl;
-    if (! outMan_.is_null())
-      {
-	std::ostream& out = outMan_->stream(Debug);
-	out << "done instantiating GmresBaseIteration instance." << endl;
-      }
+    dbg << "-- Done instantiating GmresBaseIteration instance." << endl;
   }
 
 

@@ -36,7 +36,7 @@
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_EpetraSparse3Tensor.hpp"
 #include "Epetra_Map.h"
-#include "Stokhos_PreconditionerFactory.hpp"
+#include "Stokhos_AbstractPreconditionerFactory.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 namespace Stokhos {
@@ -56,8 +56,8 @@ namespace Stokhos {
       const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk,
       const Teuchos::RCP<const Epetra_Map>& base_map,
       const Teuchos::RCP<const Epetra_Map>& sg_map,
-      const Teuchos::RCP<Stokhos::PreconditionerFactory>& mean_prec_factory,
-      const Teuchos::RCP<Stokhos::PreconditionerFactory>& G_prec_factory,
+      const Teuchos::RCP<Stokhos::AbstractPreconditionerFactory>& mean_prec_factory,
+      const Teuchos::RCP<Stokhos::AbstractPreconditionerFactory>& G_prec_factory,
       const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
@@ -163,10 +163,10 @@ namespace Stokhos {
     Teuchos::RCP<const Epetra_Map> sg_map;
 
     //! Stores factory for building mean preconditioner
-    Teuchos::RCP<Stokhos::PreconditionerFactory> mean_prec_factory;
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> mean_prec_factory;
 
     //! Stores factory for building G preconditioner
-    Teuchos::RCP<Stokhos::PreconditionerFactory> G_prec_factory;
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> G_prec_factory;
 
     //! Preconditioner parameters
     Teuchos::RCP<Teuchos::ParameterList> params;

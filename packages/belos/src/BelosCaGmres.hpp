@@ -46,8 +46,6 @@
 /// \brief Implementation of Communication-Avoiding GMRES (CA-GMRES)
 /// \author Mark Hoemmen
 
-#include "BelosConfigDefs.hpp"
-#include "BelosTypes.hpp"
 #include "BelosGmresBase.hpp"
 
 namespace Belos {
@@ -151,7 +149,19 @@ namespace Belos {
   public:
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+    typedef MV multivector_type;
+    typedef OP operator_type;
 
+  private:
+    /// \typedef base_type
+    /// \brief Base class typedef
+    typedef GmresBase<Scalar, MV, OP> base_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    typedef MultiVecTraits<Scalar, MV> MVT;
+    typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+
+  public:
     /// Constructor
     ///
     /// \param problem [in/out] Linear problem.  On input, we use the
@@ -159,28 +169,38 @@ namespace Belos {
     ///   initialize the iteration.  The iteration may call
     ///   updateSolution().  On output, if the solution has been
     ///   updated, the vector returned by getLHS() will be modified.
+    ///
     /// \param ortho [in] Orthogonalization manager
-    /// \param maxIterCount [in] Maximum number of iterations before
-    ///   restart.  The number of vectors' worth of storage this
-    ///   constructor allocates is proportional to this, so choose
-    ///   carefully.
-    /// \param flexible [in] Whether or not to run the Flexible
-    ///   variant of GMRES (FGMRES).  This requires twice as much
-    ///   vector storage, but lets the preconditioner change in every
-    ///   iteration.  This only works with right preconditioning, not
-    ///   left or split preconditioning.
-    /// \param akx [in/out] Callers have the option to provide a
+    ///
+    /// \param akx [in/out] Matrix powers kernel implementation; may
+    ///   be null, in which case a default implementation will be
+    ///   constructed.  Callers have the option to provide a
     ///   previously initialized matrix powers kernel.  We offer this
     ///   option both because the LinearProblem doesn't have a slot
     ///   for a matrix powers kernel, and because constructing an
     ///   optimized matrix powers kernel is possibly expensive but
     ///   need only be done once if the matrix and preconditioner
-    ///   don't change.  It's allowed for akx to be null, in which
-    ///   case we construct a matrix powers kernel implementation
-    ///   ourselves.  The object is nonconst because the iteration
+    ///   don't change.  The object is nonconst because the iteration
     ///   itself is used to update eigenvalue approximations, which
-    ///   the matrix powers kernel uses to improve numerical 
+    ///   the matrix powers kernel uses to improve numerical
     ///   stability.
+    ///
+    /// \param outMan [in/out] Output manager
+    ///
+    /// \param maxIterCount [in] Maximum number of iterations before
+    ///   restart.  The number of vectors' worth of storage this
+    ///   constructor allocates is proportional to this, so choose
+    ///   carefully.
+    ///
+    /// \param flexible [in] Whether or not to run the Flexible
+    ///   variant of GMRES (FGMRES).  This requires twice as much
+    ///   vector storage, but lets the preconditioner change in every
+    ///   iteration.  This only works with right preconditioning, not
+    ///   left or split preconditioning.  It also may mean that the
+    ///   matrix powers kernel has to revert to a default
+    ///   implementation, rather than a communication-avoiding
+    ///   implementation.
+    ///
     /// \param params [in] Options.  May be null, in which case
     ///   default options are used.
     ///
@@ -193,138 +213,245 @@ namespace Belos {
     ///   candidate basis length.
     CaGmres (const Teuchos::RCP<LinearProblem<Scalar,MV,OP> >& lp,
 	     const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
-	     const int maxNumIters,
-	     const bool flexible,
 	     const Teuchos::RCP<Akx<Scalar, MV> >& akx,
+	     const Teuchos::RCP<OutputManager<Scalar> >& outMan,
+	     const int maxIterCount,
+	     const bool flexible,
 	     const Teuchos::RCP<const Teuchos::ParameterList>& params)
-      : GmresBase (lp, ortho, maxNumIters, flexible),
-	akx_ (akx),
-	numOuterIters_ (0)
-    {
-      initialize (akx, maxNumIters, flexible, params);
-    }
+      : GmresBase (lp, ortho, outMan, maxIterCount, flexible),
+	params_ (validateParameters (params)),
+	akxParams_ (akxParameters (params_)),
+	akx_ (initAkx (akx, akxParams_)),
+	candidateBasisLength_ (initialCandidateBasisLength (akx_, akxParams_))
+    {}
 
-    void 
-    initAkx (const Teuchos::RCP<Akx<Scalar, MV> >& akx, 
-	     const Teuchos::RCP<Teuchos::ParameterList>& params,
-	     const bool flexible)
+    //! Return nonnull valid list of matrix powers kernel parameters
+    static Teuchos::RCP<const Teuchos::ParameterList>
+    akxParameters (AkxFactory<Scalar, MV, OP>& akxFactory,
+		   const Teuchos::RCP<const Teuchos::ParameterList>& params)
     {
-      if (! is_null(akx))
-	akx_ = akx;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      if (params.is_null())
+	return akxFactory.getDefaultParameters ();
       else
 	{
-	  typedef AkxFactory<Scalar, MV, OP> factory_type;
-	  Teuchos::RCP<Teuchos::ParameterList> akxParams;
-	  if (! is_null(params))
-	    {
-	      const char* candidateNames[] = {"Akx", "Matrix Powers Kernel"};
-	      const int numCandidateNames = 2;
-	      for (k = 0; k < numCandidateNames && is_null(akxParams); ++k)
-		{
-		  try {
-		    *akxParams = params->sublist (candidateNames[k]);
-		  } catch (???) {
-		    akxParams = null;
-		  }
-		}
+	  // Users might have a couple different names in mind for
+	  // the parameter list that configures the matrix powers
+	  // kernel.
+	  const char* candidateNames[] = {"Akx", "Matrix Powers Kernel"};
+	  const int numCandidateNames = 2;
+	  RCP<ParameterList> akxParams;
+	  bool gotAkxParams = false;
+	  for (k = 0; k < numCandidateNames && ! gotAkxParams; ++k)
+	    { // Users may have specified the parameter list
+	      // either as a sublist, or as an RCP<const
+	      // ParameterList>.  Try both.  Regardless, make a
+	      // deep copy of the result, for safety.
+	      //
+	      try { // Could it be a sublist?
+		const ParameterList& result = 
+		  params->sublist (candidateNames[k]);
+		akxParams = parameterList (result);
+		gotAkxParams = true;
+	      } catch (Teuchos::Exceptions::InvalidParameter&) {
+		// No luck; gotAkxParams stays false.
+	      }
+	      try { // Could it be an RCP<const ParameterList>?
+		RCP<const ParameterList> result = 
+		  params->get<RCP<const ParameterList> (candidateNames[k]);
+		akxParams = parameterList (*result);
+		gotAkxParams = true;
+	      } catch (Teuchos::Exceptions::InvalidParameter&) {
+		// No luck; gotAkxParams stays false.
+	      }
 	    }
-	  akx_ = factory_type::create (lp, flexible, akxParams);
+	  if (gotAkxParams)
+	    return akxParams;
+	  else
+	    return akxFactory.getDefaultParameters ();
 	}
     }
 
-    void 
-    initialize (const Teuchos::RCP<Akx<Scalar, MV> >& akx, 
-		const Teuchos::RCP<Teuchos::ParameterList>& params,
-		const int maxNumIters,
-		const bool flexible)
+    /// Return an initialized matrix powers kernel implementation.
+    ///
+    /// \param akx [in] Matrix powers kernel implementation, or null
+    ///   if you want this method to instantiate one for you.
+    /// \param params [in] List of parameters for the matrix powers
+    ///   kernel.  Must be nonnull and valid.
+    ///
+    static Teuchos::RCP<Akx<Scalar, MV> >
+    initAkx (const Teuchos::RCP<Akx<Scalar, MV> >& akx, 
+	     const Teuchos::RCP<const Teuchos::ParameterList>& akxParams)
     {
-      using Teuchos::is_null;
-      using Teuchos::null;
+      using Teuchos::ParameterList;
+      using Teuchos::RCP;
 
-      initAkx (akx, params, flexible);
-      // FIXME (mfh 08 Feb 2011) We should decide the candidate basis
-      // length ourselves; the Akx implementation may only bound this
-      // length from above.
-      //
-      // FIXME (mfh 31 Dec 2010) Should we get the candidate basis
-      // length from the Akx implementation alone?
-      candidateBasisLength_ = akx_->candidateBasisLength();
-      // FIXME (mfh 31 Dec 2010) Is this right?
-      maxNumOuterIters_ = maxNumIters / candidateBasisLength_ + 1;
+      if (! akx.is_null())
+	return akx;
+      else
+	{
+	  RCP<const OP> A = lp->getOperator();
+	  RCP<const OP> M_left = lp->getLeftPrec();
+	  RCP<const OP> M_right = lp->getRightPrec();
+	  return akxFactory.makeOpAkx (A, M_left, M_right, akxParams);
+	}
+    }
+
+    int 
+    initialCandidateBasisLength (const Teuchos::RCP<Akx<Scalar, MV> >& akx, 
+				 const int maxIterCount,
+				 const Teuchos::RCP<const Teuchos::ParameterList>& akxParams) const
+    {
+      TEST_FOR_EXCEPTION(akx.is_null(), std::logic_error,
+			 "The matrix powers kernel implementation must be "
+			 "initialized before asking for the initial candidate "
+			 "basis length, since the former gives a strict upper "
+			 "bound on the latter.");
+      TEST_FOR_EXCEPTION(akxParams.is_null(), std::logic_error,
+			 "The list of parameters must be initialized before "
+			 "asking for the initial candidate basis length.");
+      // An initial basis length of 5 is a reasonable first guess.
+      // Also make sure you don't exceed the max iteration count.  We
+      // may validly call maxNumIters() in the CaGmres constructor, as
+      // long as the GmresBase constructor has been invoked first.
+      int initLength = std::min (5, this->maxNumIters ());
+
+      // Look for the basis length parameter.  ("s" is a shorthand
+      // notation from my PhD dissertation.)
+      const char* candidateNames[] = {"Basis Length", "s"};
+      const int numCandidateNames = 2;
+      bool gotLength = false;
+      for (int k = 0; k < numCandidateNames && ! gotLength; ++k)
+	{
+	  try {
+	    initLength = akxParams->get<int> (candidateNames[k]);
+	    gotLength = true;
+	  } catch (Teuchos::Exceptions::InvalidParameter&) {
+	    // No luck; gotLength stays false.
+	  }
+	}
+      // The Akx implementation may only bound the candidate basis
+      // length loosely from above, but it may also have insights into
+      // the numerical properties of the matrix and the largest
+      // reasonable basis length.
+      return std::min (initLength, akx_->maxCandidateBasisLength());
     }
 
     virtual bool canExtendBasis() const { 
-      return getNumIters() < maxNumIters(); // FIXME (mfh 17 Jan 2011) ???
+      return this->getNumIters() < this->maxNumIters();
     }
 
-    virtual void
+    int 
+    newCandidateBasisLength () const
+    {
+      const int k = this->getNumIters(); 
+      const int m = this->maxNumIters();
+
+      // V[0 : k] is already occupied, and V[0 : m] is the max
+      // (inclusive) range.  V[k+1 : k+s] will be used to store the
+      // candidate basis.
+      //
+      // Reduce candidate basis length as necessary, if we are running
+      // out of iterations to perform.
+      return (k + candidateBasisLength_ > m) ? (m - k) : candidateBasisLength_;
+    }
+
+    void
     extendBasis (Teuchos::RCP<MV>& V_cur, 
 		 Teuchos::RCP<MV>& Z_cur)
     {
-      // This does not count the initial basis vector.
-      const int m = getNumIters(); 
-      TEST_FOR_EXCEPTION(m >= maxNumIters(), GmresCantExtendBasis,
-			 "Maximum number of iterations " << getNumIters() 
-			 << " reached.");
-      // Reduce candidate basis length as necessary, if we are running
-      // out of iterations to perform.  However, if this is the case,
-      // don't change the saved candidate basis length; we want to
-      // keep that in case we restart.  
+      using Teuchos::null;
+      using Teuchos::Range1D;
+      using Teuchos::RCP;
+      using std::endl;
+      const bool verboseDebug = false;
       //
-      // Note that the candidate basis length is not a property of the
-      // matrix powers kernel implementation, which in turn is
-      // required to support different basis lengths, up to a maximum
-      // length with which it was initially configured.
-      const int s = (m + candidateBasisLength_ >= maxNumIters()) ? 
-	maxNumIters() - m : candidateBasisLength_;
+      // mfh 28 Feb 2011: The use of "this->..." here and elsewhere to
+      // refer to GmresBase member data is obligatory, since we are
+      // inheriting from a templated class.  See the C++ FAQ:
+      //
+      // http://www.parashift.com/c++-faq-lite/templates.html#faq-35.19
+      // 
+      std::ostream& dbg = this->outMan_->stream(Debug);
+      const int k = this->getNumIters(); 
+      const int m = this->maxNumIters();
+      TEST_FOR_EXCEPTION(k >= m, GmresCantExtendBasis,
+			 "Belos::CaGmres::extendBasis: "
+			 "Maximum number of iterations " << getNumIters() 
+			 << " reached; cannot extend basis further.");
+      RCP<LinearProblem<Scalar, MV, OP> > lp = this->lp_;
+      RCP<MV> V = this->V_;
+      RCP<MV> Z = this->Z_;
+      const int s = newCandidateBasisLength();
 
       // The most recently orthogonalized and accepted basis vector in
-      // the Q basis.
-      RCP<const MV> q_last = MVT::CloneView (V_, Range1D(m, m));
-      // Space for new candidate basis vectors in the Q basis.
-      V_cur = MVT::CloneViewNonConst (V_, Range1D(m+1, m+s));
-      if (flexible_)
+      // the Q / V basis.
+      RCP<const MV> q_prv = MVT::CloneView (*V, Range1D (k, k));
+      V_cur = MVT::CloneViewNonConst (*V, Range1D (k+1, k+s));
+      if (this->flexible_)
 	{
-	  // Space for new candidate basis vectors in the Z basis.
-	  Z_cur = MVT::CloneViewNonConst (Z_, Range1D(m, m+s-1));
-	  akx_->computeFlexibleBasis (q_last, Z_cur, V_cur, s);
+	  Z_cur = MVT::CloneViewNonConst (*Z, Range1D (k, k+s-1));
+	  akx_->computeFlexibleBasis (q_prv, Z_cur, V_cur, s);
 	}
       else
 	{
 	  if (! Z_cur.is_null())
-	    Z_cur = Teuchos::null;
-	  akx_->computeBasis (q_last, V_cur, s);
+	    Z_cur = null;
+	  akx_->computeBasis (q_prv, V_cur, s);
 	}
       // In case we need to retry with a shorter candidate basis
       // length, remember what basis length we used this time.
-      lastCandidateBasisLength_ = s;
+      candidateBasisLength_ = s;
+    }
+
+    bool
+    acceptedCandidateBasis () const 
+    {
+      return candidateBasisLength_ > 0 && 
+	candidateBasisRank_ == candidateBasisLength_;
     }
 
     virtual void
-    acceptCandidateBasis ()
+    acceptCandidateBasis (const int newNumVectors)
     {
-      const int m = getNumIters(); 
-      const int s = lastCandidateBasisRank_;
+      (void) newNumVectors; // Ignore the input
+
+      const int k = getNumIters(); 
+      const int s = candidateBasisLength_;
+      // In iteration 0, we want H(0:1, 0:0), which is 2 x 1.
+      mat_type H_view (Teuchos::View, *(this->H_), k+2, k+1);
+
+      // FIXME (mfh 28 Feb 2011) We should only do this a few times;
+      // don't need to do this every outer iteration.
+      //
+      // FIXME (mfh 28 Feb 2011) In order to avoid problems with
+      // heterogeneous nodes, we should really compute all these on a
+      // single node and broadcast the result.
+      updateEigenInfo (H_view);
+      akx_->updateBasis (eigRealParts_, eigImagParts_, 
+			 eigMults_, eigNumUnique_);
 
       curNumIters_ += s;
       numInnerIters_.push_back (s);
       numOuterIters_++;
-
-      // FIXME (mfh 31 Dec 2010, 17 Jan 2011) Figure out how best to
-      // express updating the approximate eigenvalue information in
-      // the matrix powers kernel.  What should we pass in?
-      akx_->updateBasis (m, s, H_);
     }
 
+    void
+    updateEigenInfo ();
+
     virtual void
-    rejectCandidateBasis ()
+    rejectCandidateBasis (const int newNumVectors)
     {
       // Whether we should invoke advance() recursively.  The
       // alternative is to throw an exception signalling the inability
       // of CA-GMRES to make progress, given the linear system to
       // solve and the matrix powers kernel implementation.
       const bool shouldRecurse = 
-	lastCandidateBasisRank_ >= 2 && candidateBasisLength_ > 2;
+	candidateBasisRank_ >= 2 && candidateBasisLength_ > 2;
 
       // It's not worth running CA-GMRES with a candidate basis length
       // of 1, so give up if that would happen on recursion.
@@ -516,42 +643,11 @@ namespace Belos {
 
 
   private:
-    /// \brief Candidate basis length for next outer iteration
-    ///
-    /// Number of "inner" iterations to attempt to execute in the next
-    /// "outer" iteration of CA-GMRES; the "s" candidate basis length
-    /// parameter.  CA-GMRES may change (either increase or decrease)
-    /// this adaptively for numerical stability (decrease) or
-    /// performance (usually increase, though not necessarily).
-    int candidateBasisLength_;
+    //! General parameters for the solve
+    RCP<ParameterList> params_;
 
-    //! Length of the most recently generated candidate basis
-    int lastCandidateBasisLength_;
-
-    //! Rank of the most recently generated candidate basis
-    int lastCandidateBasisRank_;
-
-    /// \brief Number of "outer" iterations completed thus far
-    ///
-    /// Inclusive range: [0, maxNumOuterIters_].  Incremented at the
-    /// end of each successful outer iteration, so a value of
-    /// maxNumOuterIters means that all maxNumOuterIters_ outer
-    /// iterations were successful.
-    int numOuterIters_;
-
-    //! Maximum number of "outer" iterations before restart
-    int maxNumOuterIters_;
-
-    /// \brief The number of inner iterations per outer iteration
-    ///
-    /// The number of inner iterations in each completed outer
-    /// iteration.  numInnerIters_[k] more basis vectors were
-    /// generated by successful outer iteration k.  This may differ
-    /// from candidateBasisLength_, since CA-GMRES is allowed to
-    /// change (either increase or decrease) the latter adaptively.
-    /// Does not include the initial basis vector (which is the scaled
-    /// initial residual vector).
-    std::vector<int> numInnerIters_;
+    //! Sublist of params_ specific to the matrix powers kernel
+    RCP<ParameterList> akxParams_;
 
     /// \brief Matrix powers kernel implementation
     ///
@@ -576,6 +672,40 @@ namespace Belos {
     /// candidate basis, this will restrict the candidate basis
     /// length, however.
     Teuchos::RCP<Akx<Scalar, MV> > akx_;
+
+    /// \brief Candidate basis length in current outer iteration.
+    ///
+    /// Number of "inner" iterations the current outer iteration is
+    /// attempting to execute; the "s" parameter.  CA-GMRES may change
+    /// (either increase or decrease) this adaptively for numerical
+    /// stability (decrease) or performance (usually increase, though
+    /// not necessarily).
+    int candidateBasisLength_;
+
+    //! Rank of the most recently generated candidate basis
+    int candidateBasisRank_;
+
+    /// \brief Number of "outer" iterations completed thus far
+    ///
+    /// Inclusive range: [0, maxNumOuterIters_].  Incremented at the
+    /// end of each successful outer iteration, so a value of
+    /// maxNumOuterIters means that all maxNumOuterIters_ outer
+    /// iterations were successful.
+    int numOuterIters_;
+
+    //! Maximum number of "outer" iterations before restart
+    int maxNumOuterIters_;
+
+    /// \brief The number of inner iterations per outer iteration
+    ///
+    /// The number of inner iterations in each completed outer
+    /// iteration.  numInnerIters_[k] more basis vectors were
+    /// generated by successful outer iteration k.  This may differ
+    /// from candidateBasisLength_, since CA-GMRES is allowed to
+    /// change (either increase or decrease) the latter adaptively.
+    /// Does not include the initial basis vector (which is the scaled
+    /// initial residual vector).
+    std::vector<int> numInnerIters_;
   };
 } // namespace Belos
 

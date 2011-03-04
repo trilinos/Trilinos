@@ -1399,7 +1399,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType,double>::GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
-    DGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, &info);
+    DGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, info);
   }
   
   template<typename OrdinalType>

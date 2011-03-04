@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -54,10 +52,7 @@ namespace Stokhos {
 
     // Constructor
     SGQuadModelEvaluator(
-      const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
-      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
-      const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg = Teuchos::null,
-      const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg = Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >());
+      const Teuchos::RCP<EpetraExt::ModelEvaluator>& me);
     
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -91,14 +86,8 @@ namespace Stokhos {
     //! Return initial solution
     Teuchos::RCP<const Epetra_Vector> get_x_init() const;
 
-    //! Return initial solution
-    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> get_x_sg_init() const;
-
     //! Return initial parameters
     Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
-
-    //! Return initial parameters
-    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> get_p_sg_init(int l) const;
 
     //! Create W = alpha*M + beta*J matrix
     Teuchos::RCP<Epetra_Operator> create_W() const;
@@ -118,15 +107,6 @@ namespace Stokhos {
 
     //! Underlying model evaluator
     Teuchos::RCP<EpetraExt::ModelEvaluator> me;
-
-    //! SG basis
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
-
-    //! SG initial guess
-    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> initial_x_sg;
-
-    //! SG initial parameters
-    Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> > initial_p_sg;
 
     //! Number of parameter vectors
     int num_p;

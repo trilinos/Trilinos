@@ -42,6 +42,7 @@
 #include "Epetra_MultiVector.h"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_EpetraVectorOrthogPoly.hpp"
 #include "Stokhos_MatrixFreeOperator.hpp"
 
 namespace Stokhos {
@@ -213,7 +214,7 @@ namespace Stokhos {
     Teuchos::RCP<Epetra_Map> block_vec_map;
 
     //! Polynomial sorting vectorized matrix coefficients
-    Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > block_vec_poly;
+    Teuchos::RCP< Stokhos::EpetraVectorOrthogPoly> block_vec_poly;
 
     //! Dot products of KL eigenvectors and Jacobian blocks
     Teuchos::Array< Teuchos::Array<double> > dot_products;

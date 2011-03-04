@@ -54,18 +54,20 @@ ParallelData(
   stoch_comm = Stokhos::getStochasticComm(globalMultiComm);
   spatial_comm = Stokhos::getSpatialComm(globalMultiComm);
 
-  // Build Epetra Cijk
-  epetraCijk = 
-    Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(basis, Cijk, 
-						  globalMultiComm));
-
-  // Rebalance graphs
-  bool use_isorropia = params.get("Rebalance Stochastic Graph", false);
-  if (use_isorropia)
+  if (Cijk != Teuchos::null) {
+    // Build Epetra Cijk
+    epetraCijk = 
+      Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(basis, Cijk, 
+						    globalMultiComm));
+    
+    // Rebalance graphs
+    bool use_isorropia = params.get("Rebalance Stochastic Graph", false);
+    if (use_isorropia)
     epetraCijk->rebalance(params.sublist("Isorropia"));
-
-  // Transform to local indices
-  epetraCijk->transformToLocal();
+    
+    // Transform to local indices
+    epetraCijk->transformToLocal();
+  }
 }
 
 Stokhos::ParallelData::
@@ -80,18 +82,20 @@ ParallelData(
   stoch_comm = Stokhos::getStochasticComm(globalMultiComm);
   spatial_comm = Stokhos::getSpatialComm(globalMultiComm);
 
-  // Build Epetra Cijk
-  epetraCijk = 
-    Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(basis, Cijk, 
-						  globalMultiComm));
+  if (Cijk != Teuchos::null) {
+    // Build Epetra Cijk
+    epetraCijk = 
+      Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(basis, Cijk, 
+						    globalMultiComm));
 
-  // Rebalance graphs
-  bool use_isorropia = params.get("Rebalance Stochastic Graph", false);
-  if (use_isorropia)
-    epetraCijk->rebalance(params.sublist("Isorropia"));
-
-  // Transform to local indices
-  epetraCijk->transformToLocal();
+    // Rebalance graphs
+    bool use_isorropia = params.get("Rebalance Stochastic Graph", false);
+    if (use_isorropia)
+      epetraCijk->rebalance(params.sublist("Isorropia"));
+    
+    // Transform to local indices
+    epetraCijk->transformToLocal();
+  }
 }
  
 Teuchos::RCP<const EpetraExt::MultiComm> 

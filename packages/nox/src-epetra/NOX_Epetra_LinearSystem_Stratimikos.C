@@ -379,8 +379,24 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   postfixName += ".mm";
   if (p.get("Write Linear System", false)) {
     std::string lhsFileName = prefixName + "_LHS_" + postfixName;
+    std::string rhsFileName = prefixName + "_RHS_" + postfixName;
+    std::string jacFileName = prefixName + "_Jacobian_" + postfixName;
     EpetraExt::MultiVectorToMatrixMarketFile(lhsFileName.c_str(), 
-					   result.getEpetraVector());
+					     result.getEpetraVector());
+    EpetraExt::MultiVectorToMatrixMarketFile(rhsFileName.c_str(), 
+					     input.getEpetraVector());
+
+    Epetra_RowMatrix* printMatrix = NULL;
+    printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()); 
+    if (printMatrix == NULL) {
+      cout << "Error: NOX::Epetra::LinearSystemAztecOO::applyJacobianInverse() - "
+	   << "Could not cast the Jacobian operator to an Epetra_RowMatrix!"
+	   << "Please set the \"Write Linear System\" parameter to false."
+	   << endl;
+      throw "NOX Error";
+    }
+    EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix, 
+					   "test matrix", "Jacobian XXX");
   }
 #endif
 #endif
@@ -643,14 +659,14 @@ NOX::Epetra::LinearSystemStratimikos::getPrecOperator() const
 Teuchos::RCP<const Epetra_Operator> 
 NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator() const
 {
-  return solvePrecOpPtr;
+  return precPtr;
 }
 
 //***********************************************************************
 Teuchos::RCP<Epetra_Operator>
 NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator()
 {
-  return solvePrecOpPtr;
+  return precPtr;
 }
 
 //***********************************************************************
@@ -749,13 +765,23 @@ void
 NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve(
 	       const Teuchos::RCP<const Epetra_Operator>& solvePrecOp)
 {
-  /*
-  solvePrecOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
-  this->setAztecOOPreconditioner();
-  */
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEST_FOR_EXCEPTION(precMatrixSource != UserDefined_, std::logic_error,
      "NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve\n"
-     << " NOT IMPLEMENTED ");
+     << " only implemented for user-defined preconditioners!");
+
+  precPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
+
+  // Wrap the preconditioner so that apply() calls ApplyInverse()
+  Teuchos::RCP<const Thyra::LinearOpBase<double> > precOp =
+    Thyra::epetraLinearOp(precPtr, 
+			  Thyra::NOTRANS, 
+			  Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
+
+  Teuchos::RCP<Thyra::DefaultPreconditioner<double> > precObjDef =
+    rcp(new Thyra::DefaultPreconditioner<double>);
+  precObjDef->initializeRight(precOp);
+  precObj = precObjDef;
+  
 }
 
 //***********************************************************************

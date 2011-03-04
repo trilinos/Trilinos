@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -33,7 +31,7 @@
 
 Stokhos::FullyAssembledPreconditioner::
 FullyAssembledPreconditioner(
-   const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory_,
+   const Teuchos::RCP<Stokhos::AbstractPreconditionerFactory>& prec_factory_,
    const Teuchos::RCP<Teuchos::ParameterList>& params_) :
   label("Stokhos Fully Assembled Preconditioner"),
   prec_factory(prec_factory_),

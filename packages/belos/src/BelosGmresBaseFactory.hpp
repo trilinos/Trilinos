@@ -88,6 +88,7 @@ namespace Belos {
     static Teuchos::RCP<base_type> 
     create (const Teuchos::RCP<lp_type>& lp,
 	    const Teuchos::RCP<const ortho_type>& ortho,
+	    const Teuchos::RCP<OutputManager<Scalar> >& outMan,
 	    const Teuchos::RCP<const Teuchos::ParameterList>& params)
     {
       using Teuchos::ParameterList;
@@ -113,7 +114,8 @@ namespace Belos {
 			 prefix << "LinearProblem instance is null.");
       TEST_FOR_EXCEPTION(ortho.is_null(), std::logic_error, 
 			 prefix << "OrthoManager instance is null.");
-      return rcp (new StandardGmres<Scalar, MV, OP> (lp, ortho, maxIterCount, flexible));
+      return rcp (new StandardGmres<Scalar, MV, OP> (lp, ortho, outMan, 
+						     maxIterCount, flexible));
     }
   };
 
