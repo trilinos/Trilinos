@@ -16,6 +16,7 @@
 #include "Panzer_ScatterResidual_Epetra.hpp"
 #include "Panzer_ScatterDirichletResidual_Epetra.hpp"
 #include "Panzer_GatherSolution_Epetra.hpp"
+#include "Panzer_GatherOrientation.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -50,6 +51,11 @@ public:
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
    { return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits,LocalOrdinalT,int>(gidProvider_)); }
+
+   //! Use preconstructed gather evaluators
+   template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator > buildGatherOrientation() const
+   { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,int>(gidProvider_)); }
 
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>

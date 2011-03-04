@@ -48,6 +48,10 @@ public:
      */
    virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids) const = 0;
 
+   /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
+     */
+   virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const = 0;
+
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array.
      */

@@ -56,6 +56,9 @@ public:
      */
    virtual void getElementGIDs(short localElmtId,std::vector<int> & gids) const;
 
+   virtual void getElementOrientation(short localElmtId,std::vector<double> & gidsOrientation) const
+   { TEUCHOS_ASSERT(false); }
+
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array.
      */

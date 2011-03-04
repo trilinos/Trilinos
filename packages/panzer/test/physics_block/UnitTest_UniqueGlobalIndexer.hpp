@@ -13,7 +13,8 @@ namespace unit_test {
 
 /** This a dummy global indexer used for testing. It has two fields
   *    "U" and "T"
-  * There is one element block called "block_0" with two elements. 
+  * There is one element block called "block_0" with two elements. Each element
+  * resides on a different processor.
   */
 class UniqueGlobalIndexer : public virtual panzer::UniqueGlobalIndexer<short,int> {
 public:
@@ -54,6 +55,9 @@ public:
      * overwrites the <code>gids</code> variable.
      */
    virtual void getElementGIDs(short localElmtId,std::vector<int> & gids) const;
+
+   virtual void getElementOrientation(short localElmtId,std::vector<double> & gidsOrientation) const
+   { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array.

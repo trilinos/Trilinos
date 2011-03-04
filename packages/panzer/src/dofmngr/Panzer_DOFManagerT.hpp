@@ -332,6 +332,15 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT loca
       gids[i] = (GlobalOrdinal) indices[i];
 }
 
+/** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::
+getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
+{
+   TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
+}
+
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostream & os) const
 {

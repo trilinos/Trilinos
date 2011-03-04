@@ -1,8 +1,7 @@
 #ifndef PANZER_EQUATIONSET_DEFAULT_IMPL_T_HPP
 #define PANZER_EQUATIONSET_DEFAULT_IMPL_T_HPP
 
-// #include "Panzer_GatherSolution_Epetra.hpp"
-// #include "Panzer_ScatterResidual_Epetra.hpp"
+#include "Panzer_GatherOrientation.hpp"
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOFGradient.hpp"
 
@@ -67,7 +66,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // DOFs (unknowns)
   // ********************
 
-  // Gather
+  // Gather, includes construction of orientation gathers
   {
     ParameterList p("Gather");
     p.set("Basis", m_basis);
@@ -75,11 +74,10 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Indexer Names", m_dof_names);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
-    //   rcp(new panzer::GatherSolution_Epetra<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }
-  
+
   // Scatter
   RCP<std::map<std::string,std::string> > names_map =
     rcp(new std::map<std::string,std::string>);

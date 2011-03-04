@@ -98,6 +98,11 @@ public:
    Teuchos::RCP<PHX::Evaluator<Traits> > buildGather(const Teuchos::ParameterList & pl) const
    { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(gatherManager_->template getAsBase<EvalT>()->clone(pl)); }
 
+   //! Use preconstructed gather evaluators
+   template <typename EvalT>
+   Teuchos::RCP<PHX::Evaluator<Traits> > buildGatherOrientation(const Teuchos::ParameterList & pl) const
+   { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(gatherOrientManager_->template getAsBase<EvalT>()->clone(pl)); }
+
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<PHX::Evaluator<Traits> > buildScatterDirichlet(const Teuchos::ParameterList & pl) const
@@ -113,6 +118,7 @@ private:
    Teuchos::RCP<Evaluator_TemplateManager> scatterManager_;
    Teuchos::RCP<Evaluator_TemplateManager> scatterDirichletManager_;
    Teuchos::RCP<Evaluator_TemplateManager> gatherManager_;
+   Teuchos::RCP<Evaluator_TemplateManager> gatherOrientManager_;
 
    template <typename BuilderT>
    struct Scatter_Builder {
@@ -146,6 +152,17 @@ private:
       template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> build() const 
       { return builder_->template buildGather<EvalT>(); }
    };
+
+   template <typename BuilderT>
+   struct GatherOrientation_Builder {
+      Teuchos::RCP<const BuilderT> builder_;
+
+      GatherOrientation_Builder(const Teuchos::RCP<const BuilderT> & builder) 
+         : builder_(builder) {}
+     
+      template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> build() const 
+      { return builder_->template buildGatherOrientation<EvalT>(); }
+   };
 };
 
 template<typename Traits>
@@ -164,6 +181,9 @@ buildGatherScatterEvaluators(const BuilderT & builder)
 
    gatherManager_ = Teuchos::rcp(new Evaluator_TemplateManager);
    gatherManager_->buildObjects(Gather_Builder<BuilderT>(rcpFromRef(builder)));
+
+   gatherOrientManager_ = Teuchos::rcp(new Evaluator_TemplateManager);
+   gatherOrientManager_->buildObjects(GatherOrientation_Builder<BuilderT>(rcpFromRef(builder)));
 }
 
 }
