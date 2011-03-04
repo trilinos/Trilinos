@@ -117,17 +117,22 @@ SET(HEADERS ${HEADERS}
   Stokhos_KroneckerProductPreconditioner.hpp
   Stokhos_FullyAssembledPreconditioner.hpp
   Stokhos_SGPreconditionerFactory.hpp
-  Stokhos_PreconditionerFactory.hpp
+  Stokhos_AbstractPreconditionerFactory.hpp
   Stokhos_IfpackPreconditionerFactory.hpp
   Stokhos_MLPreconditionerFactory.hpp
+  Stokhos_PreconditionerFactory.hpp
   Stokhos_MLPrecOp.hpp
   Stokhos_SGModelEvaluator.hpp
   Stokhos_SGQuadModelEvaluator.hpp
   Stokhos_SGInverseModelEvaluator.hpp
+  Stokhos_ProductContainer.hpp
+  Stokhos_ProductContainerImp.hpp
   Stokhos_VectorOrthogPoly.hpp
   Stokhos_VectorOrthogPolyImp.hpp
   Stokhos_Epetra.hpp
   Stokhos_VectorOrthogPolyTraitsEpetra.hpp
+  Stokhos_ProductEpetraVector.hpp
+  Stokhos_ProductEpetraMultiVector.hpp
   Stokhos_EpetraVectorOrthogPoly.hpp
   Stokhos_EpetraMultiVectorOrthogPoly.hpp
   Stokhos_PCECovarianceOp.hpp
@@ -139,6 +144,15 @@ SET(HEADERS ${HEADERS}
   Stokhos_KL_ExponentialRandomField.hpp
   Stokhos_KL_ExponentialRandomFieldImp.hpp
   Stokhos_EpetraMultiVectorOperator.hpp
+  Stokhos_BlockDiagonalOperator.hpp
+  Stokhos_MPPreconditioner.hpp
+  Stokhos_MPBlockDiagonalPreconditioner.hpp
+  Stokhos_MPMeanBasedPreconditioner.hpp
+  Stokhos_MPPreconditionerFactory.hpp
+  Stokhos_MPModelEvaluator.hpp
+  Stokhos_SGQuadMPModelEvaluator.hpp
+  Stokhos_MPModelEvaluatorAdapter.hpp
+  Stokhos_MPInverseModelEvaluator.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -160,7 +174,10 @@ SET(SOURCES ${SOURCES}
   Stokhos_SGPreconditionerFactory.cpp
   Stokhos_IfpackPreconditionerFactory.cpp
   Stokhos_MLPreconditionerFactory.cpp
+  Stokhos_PreconditionerFactory.cpp
   Stokhos_MLPrecOp.cpp
+  Stokhos_ProductEpetraVector.cpp
+  Stokhos_ProductEpetraMultiVector.cpp
   Stokhos_EpetraVectorOrthogPoly.cpp
   Stokhos_EpetraMultiVectorOrthogPoly.cpp
   Stokhos_SGModelEvaluator.cpp
@@ -169,6 +186,14 @@ SET(SOURCES ${SOURCES}
   Stokhos_PCECovarianceOp.cpp
   Stokhos_PCEAnasaziKL.cpp
   Stokhos_EpetraMultiVectorOperator.cpp
+  Stokhos_BlockDiagonalOperator.cpp
+  Stokhos_MPBlockDiagonalPreconditioner.cpp
+  Stokhos_MPMeanBasedPreconditioner.cpp
+  Stokhos_MPPreconditionerFactory.cpp
+  Stokhos_MPModelEvaluator.cpp
+  Stokhos_SGQuadMPModelEvaluator.cpp
+  Stokhos_MPModelEvaluatorAdapter.cpp
+  Stokhos_MPInverseModelEvaluator.cpp
   )
 
 # Sacado
@@ -184,6 +209,10 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_ETPCE_OrthogPolyImp.hpp
     sacado/Sacado_ETPCE_OrthogPolyTraits.hpp
     sacado/Sacado_ETPCE_OrthogPolyOps.hpp
+    sacado/Sacado_ETV_Vector.hpp
+    sacado/Sacado_ETV_VectorImp.hpp
+    sacado/Sacado_ETV_VectorOps.hpp
+    sacado/Sacado_ETV_VectorTraits.hpp
     )
   SET(SOURCES ${SOURCES}
     sacado/Sacado_PCE_OrthogPoly.cpp
@@ -199,11 +228,13 @@ IF (Stokhos_ENABLE_NOX AND NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND
     Stokhos_GaussSeidelPreconditioner.hpp
     nox/NOX_Epetra_LinearSystem_SGJacobi.hpp
     nox/NOX_Epetra_LinearSystem_SGGS.hpp
+    nox/NOX_Epetra_LinearSystem_MPBD.hpp
     )
   SET(SOURCES ${SOURCES}
     Stokhos_GaussSeidelPreconditioner.cpp
     nox/NOX_Epetra_LinearSystem_SGJacobi.cpp
     nox/NOX_Epetra_LinearSystem_SGGS.cpp
+    nox/NOX_Epetra_LinearSystem_MPBD.cpp
     )
 ENDIF()
 

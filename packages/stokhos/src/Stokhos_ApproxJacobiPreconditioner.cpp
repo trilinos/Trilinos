@@ -37,7 +37,7 @@ ApproxJacobiPreconditioner(
   const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk_,
   const Teuchos::RCP<const Epetra_Map>& base_map_,
   const Teuchos::RCP<const Epetra_Map>& sg_map_,
-  const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory_,
+  const Teuchos::RCP<Stokhos::AbstractPreconditionerFactory>& prec_factory_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_) :
   label("Stokhos Approximate Jacobi Preconditioner"),
   sg_comm(sg_comm_),

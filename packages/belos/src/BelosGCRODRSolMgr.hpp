@@ -561,88 +561,188 @@ void GCRODRSolMgr<ScalarType,MV,OP>::init() {
 }
 
 template<class ScalarType, class MV, class OP>
-void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
+void 
+GCRODRSolMgr<ScalarType,MV,OP>::
+setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
-  // Create the internal parameter list if ones doesn't already exist.
-  if (params_ == Teuchos::null) {
-    params_ = Teuchos::rcp( new Teuchos::ParameterList(*getValidParameters()) );
-  }
-  else {
-    params->validateParameters(*getValidParameters());
+  using Teuchos::isParameterType;
+  using Teuchos::getParameter;
+  using Teuchos::null;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+
+  // Create the internal parameter list if one doesn't already exist.
+  //
+  // FIXME (mfh 28 Feb 2011) Parameter validation should really happen
+  // when we call validateParameters().  If that were true, we
+  // wouldn't have to validate the parameters so carefully below and
+  // call params_->set() for each one.  However, we haven't yet
+  // defined appropriate validators for all the parameters, so we have
+  // to do the validation tediously below, one parameter at a time.
+  if (params_.is_null()) {
+    params_ = parameterList (*getValidParameters ());
+  } else {
+    params->validateParameters (*getValidParameters ());
   }
 
-  // Check for maximum number of restarts
-  if (params->isParameter("Maximum Restarts")) {
-    maxRestarts_ = params->get("Maximum Restarts",maxRestarts_default_);
+  // Check for maximum number of restarts.
+  //
+  // FIXME (mfh 28 Feb 2011) We don't really need _any_ of the
+  // "*_default_" member data, since the default values should be
+  // stored in the default parameter list (with documentation, no
+  // less!) returned by getValidParameters().
+  if (params->isParameter ("Maximum Restarts")) {
+    maxRestarts_ = params->get("Maximum Restarts", maxRestarts_default_);
 
     // Update parameter in our list.
-    params_->set("Maximum Restarts", maxRestarts_);
+    params_->set ("Maximum Restarts", maxRestarts_);
   }
 
   // Check for maximum number of iterations
-  if (params->isParameter("Maximum Iterations")) {
-    maxIters_ = params->get("Maximum Iterations",maxIters_default_);
+  if (params->isParameter ("Maximum Iterations")) {
+    maxIters_ = params->get ("Maximum Iterations", maxIters_default_);
 
     // Update parameter in our list and in status test.
-    params_->set("Maximum Iterations", maxIters_);
-    if (maxIterTest_!=Teuchos::null)
-      maxIterTest_->setMaxIters( maxIters_ );
+    params_->set ("Maximum Iterations", maxIters_);
+    if (! maxIterTest_.is_null())
+      maxIterTest_->setMaxIters (maxIters_);
   }
 
   // Check for the maximum number of blocks.
-  if (params->isParameter("Num Blocks")) {
-    numBlocks_ = params->get("Num Blocks",numBlocks_default_);
+  if (params->isParameter ("Num Blocks")) {
+    numBlocks_ = params->get ("Num Blocks", numBlocks_default_);
     TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
-		       "Belos::GCRODRSolMgr: \"Num Blocks\" must be strictly positive.");
-
+		       "Belos::GCRODRSolMgr: The \"Num Blocks\" parameter must "
+		       "be strictly positive, but you specified a value of "
+		       << numBlocks_ << ".");
     // Update parameter in our list.
-    params_->set("Num Blocks", numBlocks_);
+    params_->set ("Num Blocks", numBlocks_);
   }
 
   // Check for the maximum number of blocks.
-  if (params->isParameter("Num Recycled Blocks")) {
-    recycledBlocks_ = params->get("Num Recycled Blocks",recycledBlocks_default_);
+  if (params->isParameter ("Num Recycled Blocks")) {
+    recycledBlocks_ = params->get ("Num Recycled Blocks", 
+				   recycledBlocks_default_);
     TEST_FOR_EXCEPTION(recycledBlocks_ <= 0, std::invalid_argument,
-		       "Belos::GCRODRSolMgr: \"Num Recycled Blocks\" must be strictly positive.");
-
+		       "Belos::GCRODRSolMgr: The \"Num Recycled Blocks\" "
+		       "parameter must be strictly positive, but you specified "
+		       "a value of " << recycledBlocks_ << ".");
     TEST_FOR_EXCEPTION(recycledBlocks_ >= numBlocks_, std::invalid_argument,
-		       "Belos::GCRODRSolMgr: \"Num Recycled Blocks\" must be less than \"Num Blocks\".");
-
+		       "Belos::GCRODRSolMgr: The \"Num Recycled Blocks\" "
+		       "parameter must be less than the \"Num Blocks\" "
+		       "parameter, but you specified \"Num Recycled Blocks\" "
+		       "= " << recycledBlocks_ << " and \"Num Blocks\" = " 
+		       << numBlocks_ << ".");
     // Update parameter in our list.
     params_->set("Num Recycled Blocks", recycledBlocks_);
   }
 
-  // Check to see if the timer label changed.
-  if (params->isParameter("Timer Label")) {
-    std::string tempLabel = params->get("Timer Label", label_default_);
+  // Check to see if the timer label changed.  If it did, update it in
+  // the parameter list, and create a new timer with that label (if
+  // Belos was compiled with timers enabled).
+  if (params->isParameter ("Timer Label")) {
+    std::string tempLabel = params->get ("Timer Label", label_default_);
 
     // Update parameter in our list and solver timer
     if (tempLabel != label_) {
       label_ = tempLabel;
-      params_->set("Timer Label", label_);
+      params_->set ("Timer Label", label_);
       std::string solveLabel = label_ + ": GCRODRSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+      timerSolve_ = Teuchos::TimeMonitor::getNewTimer (solveLabel);
 #endif
     }
   }
 
+  // Check for a change in verbosity level
+  if (params->isParameter ("Verbosity")) {
+    if (isParameterType<int> (*params, "Verbosity")) {
+      verbosity_ = params->get ("Verbosity", verbosity_default_);
+    } else {
+      verbosity_ = (int) getParameter<Belos::MsgType> (*params, "Verbosity");
+    }
+    // Update parameter in our list.
+    params_->set ("Verbosity", verbosity_);
+    // If the output manager (printer_) is null, then we will
+    // instantiate it later with the correct verbosity.
+    if (! printer_.is_null())
+      printer_->setVerbosity (verbosity_);
+  }
+
+  // Check for a change in output style
+  if (params->isParameter ("Output Style")) {
+    if (isParameterType<int> (*params, "Output Style")) {
+      outputStyle_ = params->get ("Output Style", outputStyle_default_);
+    } else {
+      outputStyle_ = (int) getParameter<OutputType> (*params, "Output Style");
+    }
+
+    // Update parameter in our list.
+    params_->set ("Output Style", outputStyle_);
+    // We will (re)instantiate the output status test afresh below.
+    outputTest_ = null;
+  }
+
+  // Get the output stream for the output manager.
+  //
+  // FIXME (mfh 28 Feb 2011) While storing the output stream as an RCP
+  // is convenient and safe for programming, it makes it impossible to
+  // serialize the parameter list, read it back in from the serialized
+  // representation, and get the same output stream as before.
+  // However, a general solution is likely impossible, because output
+  // streams may be arbitrary constructed objects.
+  if (params->isParameter ("Output Stream")) {
+    outputStream_ = getParameter<RCP<std::ostream> > (*params, "Output Stream");
+
+    // Update parameter in our list.
+    params_->set ("Output Stream", outputStream_);
+    // If the output manager (printer_) is null, then we will
+    // instantiate it later with the correct output stream.
+    if (! printer_.is_null())
+      printer_->setOStream (outputStream_);
+  }
+
+  // frequency level
+  if (verbosity_ & Belos::StatusTestDetails) {
+    if (params->isParameter ("Output Frequency")) {
+      outputFreq_ = params->get ("Output Frequency", outputFreq_default_);
+    }
+
+    // Update parameter in out list and output status test.
+    params_->set("Output Frequency", outputFreq_);
+    if (! outputTest_.is_null())
+      outputTest_->setOutputFrequency (outputFreq_);
+  }
+
+  // Create output manager if we need to, using the verbosity level
+  // and output stream that we fetched above.  We do this here because
+  // instantiating an OrthoManager using OrthoManagerFactory requires
+  // a valid OutputManager.
+  if (printer_.is_null()) {
+    printer_ = rcp (new OutputManager<ScalarType> (verbosity_, outputStream_));
+  }  
+
+  // Get the orthogonalization manager name ("Orthogonalization").
+  //
   // Getting default values for the orthogonalization manager
   // parameters ("Orthogonalization Parameters") requires knowing the
-  // orthogonalization manager name ("Orthogonalization").  Save this
-  // for later, and also record whether it's different than before.
+  // orthogonalization manager name.  Save it for later, and also
+  // record whether it's different than before.
   bool changedOrthoType = false;
-  if (params->isParameter("Orthogonalization")) 
+  if (params->isParameter ("Orthogonalization")) 
     {
       const std::string& tempOrthoType = 
-	params->get("Orthogonalization", orthoType_default_);
+	params->get ("Orthogonalization", orthoType_default_);
       // Ensure that the specified orthogonalization type is valid.
       if (! orthoFactory_.isValidName (tempOrthoType))
 	{
 	  std::ostringstream os;
-	  os << "Belos::GCRODRSolMgr: Invalid orthogonalization type \"" 
+	  os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \"" 
 	     << tempOrthoType << "\".  The following are valid options "
-	     << "for the \"Orthogonalization\" type parameter: ";
+	     << "for the \"Orthogonalization\" name parameter: ";
 	  orthoFactory_.printValidNames (os);
 	  throw std::invalid_argument (os.str());
 	}
@@ -651,33 +751,35 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 	  changedOrthoType = true;
 	  orthoType_ = tempOrthoType;
 	  // Update parameter in our list.
-	  params_->set("Orthogonalization", orthoType_);
+	  params_->set ("Orthogonalization", orthoType_);
 	}
     }
 
-  // If any parameters are supplied for the orthogonalization
-  // manager, extract those.  Otherwise, the orthogonalization
-  // manager factory will supply default values.
+  // Get any parameters for the orthogonalization ("Orthogonalization
+  // Parameters").  If not supplied, the orthogonalization manager
+  // factory will supply default values.
   //
-  // NOTE (mfh 12 Jan 2011) For the sake of backwards
-  // compatibility, if params has an "Orthogonalization Constant"
-  // parameter and the DGKS orthogonalization manager is to be
-  // used, the value of this parameter will override DGKS's
-  // "depTol" parameter.
+  // NOTE (mfh 12 Jan 2011) For the sake of backwards compatibility,
+  // if params has an "Orthogonalization Constant" parameter and the
+  // DGKS orthogonalization manager is to be used, the value of this
+  // parameter will override DGKS's "depTol" parameter.
   //
-  // Users may supply the orthogonalization manager parameters
-  // either as a sublist, or as an RCP.  We test for both.
-  Teuchos::RCP<const Teuchos::ParameterList> orthoParams;
+  // Users may supply the orthogonalization manager parameters either
+  // as a sublist, or as an RCP.  We test for both.
+  //
+  // FIXME (mfh 28 Feb 2011) Setting the sublist as an RCP<const
+  // ParameterList> rather than a ParameterList means that you can't
+  // print out the solver manager's parameter list readably and read
+  // it back in again correctly.
+  RCP<const ParameterList> orthoParams;
   {
-    using Teuchos::ParameterList;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
     bool gotOrthoParams = false;
     try { // Could it be an RCP?
-      orthoParams = params->get< RCP<const ParameterList> >("Orthogonalization Parameters");
+      orthoParams = 
+	params->get<RCP<const ParameterList> >("Orthogonalization Parameters");
       gotOrthoParams = true;
     } catch (Teuchos::Exceptions::InvalidParameter&) {
+      // We didn't get orthoParams; gotOrthoParams stays false.
     }
     if (! gotOrthoParams) {
       try { // Could it be a sublist?
@@ -690,18 +792,23 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 	orthoParams = rcp (new ParameterList (_orthoParams));
 	gotOrthoParams = true;
       } catch (Teuchos::Exceptions::InvalidParameter&) {
+	// We didn't get orthoParams; gotOrthoParams stays false.
       }
     }
+    // We didn't get the parameter list from params, so get a default
+    // parameter list from the OrthoManagerFactory.
     if (! gotOrthoParams)
       orthoParams = orthoFactory_.getDefaultParameters (orthoType_);
     // Update parameter in our list.
-    params_->set("Orthogonalization Parameters", orthoParams);
+    params_->set ("Orthogonalization Parameters", orthoParams);
   }
 
-  // Check if the desired orthogonalization method changed.  If so,
-  // instantiate a new MatOrthoManager subclass instance corresponding
-  // to the desired orthogonalization method.  Fetch and set any
-  // parameters which that subclass needs.
+  // Check if the desired orthogonalization method changed, or if the
+  // orthogonalization manager has not yet been instantiated.  If
+  // either is the case, instantiate a new MatOrthoManager subclass
+  // instance corresponding to the desired orthogonalization method.
+  // We've already fetched the orthogonalization method name
+  // (orthoType_) and its parameters (orthoParams) above.
   //
   // FIXME (mfh 12 Jan 2011) We only instantiate a new MatOrthoManager
   // subclass if the orthogonalization method name is different than
@@ -713,11 +820,14 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
   // instance.  The most general way to fix this bug is to supply each
   // orthogonalization manager class with a setParameters() method
   // that takes a parameter list input, and changes the parameters as
-  // appropriate.
-  if (changedOrthoType)
+  // appropriate.  A less efficient but correct way to fix the bug is
+  // simply to reinstantiate the OrthoManager every time, whether or
+  // not the orthogonalization method name or parameters have changed.
+  if (ortho_.is_null() || changedOrthoType)
     {
-      // Create orthogonalization manager.
-      ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, Teuchos::null, 
+      // Create orthogonalization manager.  This requires that the
+      // OutputManager (printer_) already be initialized.
+      ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, null, printer_, 
 						  label_, orthoParams);
     }
 
@@ -730,10 +840,10 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
   // may have been specified in "Orthogonalization Parameters".  We
   // retain this behavior for backwards compatibility.
   bool gotValidOrthoKappa = false;
-  if (params->isParameter("Orthogonalization Constant"))
+  if (params->isParameter ("Orthogonalization Constant"))
     {
       const MagnitudeType orthoKappa = 
-	params->get("Orthogonalization Constant", orthoKappa_default_);
+	params->get ("Orthogonalization Constant", orthoKappa_default_);
       if (orthoKappa > 0)
 	{
 	  orthoKappa_ = orthoKappa;
@@ -743,67 +853,16 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 	  // Only DGKS currently accepts this parameter.
 	  if (orthoType_ == "DGKS" && ! ortho_.is_null())
 	    {
-	      using Teuchos::rcp_dynamic_cast;
-	      typedef DGKSOrthoManager< ScalarType, MV, OP > ortho_man_type;
-	      // This cast should always succeed; it's a bug otherwise.
-	      rcp_dynamic_cast< ortho_man_type >(ortho_)->setDepTol (orthoKappa_);
+	      typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_man_type;
+	      // This cast should always succeed; it's a bug
+	      // otherwise.  (If the cast fails, then orthoType_
+	      // doesn't correspond to the OrthoManager subclass
+	      // instance that we think we have, so we initialized the
+	      // wrong subclass somehow.)
+	      rcp_dynamic_cast<ortho_man_type>(ortho_)->setDepTol (orthoKappa_);
 	    }
 	}
     }
-
-  // Check for a change in verbosity level
-  if (params->isParameter("Verbosity")) {
-    if (Teuchos::isParameterType<int>(*params,"Verbosity")) {
-      verbosity_ = params->get("Verbosity", verbosity_default_);
-    } else {
-      verbosity_ = (int)Teuchos::getParameter<Belos::MsgType>(*params,"Verbosity");
-    }
-
-    // Update parameter in our list.
-    params_->set("Verbosity", verbosity_);
-    if (printer_ != Teuchos::null)
-      printer_->setVerbosity(verbosity_);
-  }
-
-  // Check for a change in output style
-  if (params->isParameter("Output Style")) {
-    if (Teuchos::isParameterType<int>(*params,"Output Style")) {
-      outputStyle_ = params->get("Output Style", outputStyle_default_);
-    } else {
-      outputStyle_ = (int)Teuchos::getParameter<Belos::OutputType>(*params,"Output Style");
-    }
-
-    // Update parameter in our list.
-    params_->set("Output Style", outputStyle_);
-    outputTest_ = Teuchos::null;
-  }
-
-  // output stream
-  if (params->isParameter("Output Stream")) {
-    outputStream_ = Teuchos::getParameter<Teuchos::RCP<std::ostream> >(*params,"Output Stream");
-
-    // Update parameter in our list.
-    params_->set("Output Stream", outputStream_);
-    if (printer_ != Teuchos::null)
-      printer_->setOStream( outputStream_ );
-  }
-
-  // frequency level
-  if (verbosity_ & Belos::StatusTestDetails) {
-    if (params->isParameter("Output Frequency")) {
-      outputFreq_ = params->get("Output Frequency", outputFreq_default_);
-    }
-
-    // Update parameter in out list and output status test.
-    params_->set("Output Frequency", outputFreq_);
-    if (outputTest_ != Teuchos::null)
-      outputTest_->setOutputFrequency( outputFreq_ );
-  }
-
-  // Create output manager if we need to.
-  if (printer_ == Teuchos::null) {
-    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
-  }  
   
   // Convergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
@@ -811,121 +870,127 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convtol_default_);
+    convtol_ = params->get ("Convergence Tolerance", convtol_default_);
 
     // Update parameter in our list and residual tests.
-    params_->set("Convergence Tolerance", convtol_);
-    if (impConvTest_ != Teuchos::null)
-      impConvTest_->setTolerance( convtol_ );
-    if (expConvTest_ != Teuchos::null)
-      expConvTest_->setTolerance( convtol_ );
+    params_->set ("Convergence Tolerance", convtol_);
+    if (! impConvTest_.is_null())
+      impConvTest_->setTolerance (convtol_);
+    if (! expConvTest_.is_null())
+      expConvTest_->setTolerance (convtol_);
   }
  
   // Check for a change in scaling, if so we need to build new residual tests.
-  if (params->isParameter("Implicit Residual Scaling")) {
-    std::string tempImpResScale = Teuchos::getParameter<std::string>( *params, "Implicit Residual Scaling" );
+  if (params->isParameter ("Implicit Residual Scaling")) {
+    std::string tempImpResScale = 
+      getParameter<std::string> (*params, "Implicit Residual Scaling");
 
     // Only update the scaling if it's different.
     if (impResScale_ != tempImpResScale) {
-      Belos::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
+      ScaleType impResScaleType = convertStringToScaleType (tempImpResScale);
       impResScale_ = tempImpResScale;
 
       // Update parameter in our list and residual tests
       params_->set("Implicit Residual Scaling", impResScale_);
-      if (impConvTest_ != Teuchos::null) {
+      // FIXME (mfh 28 Feb 2011) 
+      //
+      // This little bit of code shows some of Belos' design problems.
+      // StatusTestImpResNorm only lets you call defineScaleForm()
+      // once.  The code below attempts to call defineScaleForm(); if
+      // the scale form has already been defined, it constructs a new
+      // StatusTestImpResNorm instance.  StatusTestImpResNorm should
+      // not expose the defineScaleForm() method, since it's serving
+      // an initialization purpose; all initialization should happen
+      // in the constructor whenever possible.  In that case, the code
+      // below could be simplified into a single (re)instantiation.
+      if (! impConvTest_.is_null()) {
         try { 
-          impConvTest_->defineScaleForm( impResScaleType, Belos::TwoNorm );
+          impConvTest_->defineScaleForm (impResScaleType, Belos::TwoNorm);
         }
-        catch (std::exception& e) { 
+        catch (StatusTestError&) {
           // Delete the convergence test so it gets constructed again.
-	  impConvTest_ = Teuchos::null;
-          convTest_ = Teuchos::null;
+	  impConvTest_ = null;
+          convTest_ = null;
         }
       }
     }      
   }
   
   if (params->isParameter("Explicit Residual Scaling")) {
-    std::string tempExpResScale = Teuchos::getParameter<std::string>( *params, "Explicit Residual Scaling" );
+    std::string tempExpResScale = 
+      getParameter<std::string> (*params, "Explicit Residual Scaling");
 
     // Only update the scaling if it's different.
     if (expResScale_ != tempExpResScale) {
-      Belos::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
+      ScaleType expResScaleType = convertStringToScaleType (tempExpResScale);
       expResScale_ = tempExpResScale;
 
       // Update parameter in our list and residual tests
       params_->set("Explicit Residual Scaling", expResScale_);
-      if (expConvTest_ != Teuchos::null) {
+      // FIXME (mfh 28 Feb 2011) 
+      //
+      // See note above on Belos design problems.
+      if (! expConvTest_.is_null()) {
         try { 
-          expConvTest_->defineScaleForm( expResScaleType, Belos::TwoNorm );
+          expConvTest_->defineScaleForm (expResScaleType, Belos::TwoNorm);
         }
-        catch (std::exception& e) {
+        catch (StatusTestError&) {
           // Delete the convergence test so it gets constructed again.
-	  expConvTest_ = Teuchos::null;
-          convTest_ = Teuchos::null;
+	  expConvTest_ = null;
+          convTest_ = null;
         }
       }
     }      
   }
+  //
+  // Create iteration stopping criteria ("status tests") if we need
+  // to, by combining three different stopping criteria.
+  //
+  // First, construct maximum-number-of-iterations stopping criterion.
+  if (maxIterTest_.is_null())
+    maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP> (maxIters_));
 
-  // Create status tests if we need to.
-
-  // Basic test checks maximum iterations and native residual.
-  if (maxIterTest_ == Teuchos::null)
-    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
-
-  // Implicit residual test, using the native residual to determine if convergence was achieved.
-  if (impConvTest_ == Teuchos::null) {
-    impConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-    impConvTest_->defineScaleForm( convertStringToScaleType(impResScale_), Belos::TwoNorm );
+  // Implicit residual test, using the native residual to determine if
+  // convergence was achieved.
+  if (impConvTest_.is_null()) {
+    impConvTest_ = rcp (new StatusTestResNorm_t (convtol_));
+    impConvTest_->defineScaleForm (convertStringToScaleType (impResScale_), 
+				   Belos::TwoNorm);
   }
 
   // Explicit residual test once the native residual is below the tolerance
-  if (expConvTest_ == Teuchos::null) {
-    expConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-    expConvTest_->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
-    expConvTest_->defineScaleForm( convertStringToScaleType(expResScale_), Belos::TwoNorm );
+  if (expConvTest_.is_null()) {
+    expConvTest_ = rcp (new StatusTestResNorm_t (convtol_));
+    expConvTest_->defineResForm (StatusTestResNorm_t::Explicit, Belos::TwoNorm);
+    expConvTest_->defineScaleForm (convertStringToScaleType (expResScale_), 
+				   Belos::TwoNorm);
   }
-
-  if (convTest_ == Teuchos::null) {
-    convTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, impConvTest_, expConvTest_ ) );
+  // Convergence test first tests the implicit residual, then the
+  // explicit residual if the implicit residual test passes.
+  if (convTest_.is_null()) {
+    convTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::SEQ, 
+					    impConvTest_, 
+					    expConvTest_));
   }
-
-  sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
-  
+  // Construct the complete iteration stopping criterion:
+  //
+  // "Stop iterating if the maximum number of iterations has been
+  // reached, or if the convergence test passes."
+  sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, 
+				       maxIterTest_, 
+				       convTest_));
   // Create the status test output class.
   // This class manages and formats the output from the status test.
-  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
-  outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
+  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
+  outputTest_ = stoFactory.create (printer_, sTest_, outputFreq_, 
+				   Passed+Failed+Undefined);
 
   // Set the solver string for the output test
   std::string solverDesc = " GCRODR ";
   outputTest_->setSolverDesc( solverDesc );
 
-  // Create orthogonalization manager if we need to.
-  if (ortho_.is_null())
-    {
-      // We've already checked that the specified orthogonalization
-      // type is valid.  Create orthogonalization manager.
-      ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, Teuchos::null, 
-						  label_, orthoParams);
-      // DGKS has a valid default value of the "Orthogonalization
-      // Constant" (a.k.a. "depTol", orthoKappa) parameter, so only
-      // change it if params has that parameter and its value is
-      // valid.  We've already checked for that above.
-      if (orthoType_ == "DGKS" && gotValidOrthoKappa && orthoKappa_ > 0)
-	{
-	  using Teuchos::rcp_dynamic_cast;
-	  typedef DGKSOrthoManager< ScalarType, MV, OP > ortho_man_type;
-	  // Use the user-specified value of the orthogonalization
-	  // constant kappa.  This cast should always succeed; it's a
-	  // bug otherwise.
-	  rcp_dynamic_cast< ortho_man_type >(ortho_)->setDepTol (orthoKappa_);
-	}
-    }
-
   // Create the timer if we need to.
-  if (timerSolve_ == Teuchos::null) {
+  if (timerSolve_.is_null()) {
     std::string solveLabel = label_ + ": GCRODRSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);

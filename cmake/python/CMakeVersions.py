@@ -22,8 +22,8 @@
 
 cmake_version_min = "2.8.0" # manual_update
 
-cmake_version_release = "2.8.3" # manual_update
+cmake_version_release = "2.8.4" # manual_update
 
-cmake_version_rc = "2.8.3" # auto_update v2.8
+cmake_version_rc = "2.8.4" # auto_update v2.8
 
-cmake_version_dev = "2.8.3.20101112-ga513" # auto_update vCVS
+cmake_version_dev = "2.8.4.20110301-gdeb32d" # auto_update vCVS

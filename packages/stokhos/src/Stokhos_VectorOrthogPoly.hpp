@@ -31,15 +31,10 @@
 #ifndef STOKHOS_VECTORORTHOGPOLY_HPP
 #define STOKHOS_VECTORORTHOGPOLY_HPP
 
-#include <iostream>
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
+#include "Stokhos_ProductContainer.hpp"
 #include "Stokhos_OrthogPolyBasis.hpp"
 
 namespace Stokhos {
-
-  //! Base traits definition for VectorOthogPoly
-  template <typename coeff_type> class VectorOrthogPolyTraits {};
 
   /*! 
    * \brief A container class storing an orthogonal polynomial whose
@@ -47,17 +42,17 @@ namespace Stokhos {
    * would have an expensive copy constructor.  
    */
   template <typename coeff_type>
-  class VectorOrthogPoly {
+  class VectorOrthogPoly : public virtual ProductContainer<coeff_type> {
   public:
 
     //! Typename of traits
-    typedef Stokhos::VectorOrthogPolyTraits<coeff_type> traits_type;
+    typedef typename ProductContainer<coeff_type>::traits_type traits_type;
 
     //! Typename of values
-    typedef typename traits_type::value_type value_type;
+    typedef typename ProductContainer<coeff_type>::value_type value_type;
 
     //! Typename of ordinals
-    typedef typename traits_type::ordinal_type ordinal_type;
+    typedef typename ProductContainer<coeff_type>::ordinal_type ordinal_type;
 
     //! Constructor with no basis
     /*!
@@ -71,15 +66,8 @@ namespace Stokhos {
      * coefficients
      */
     VectorOrthogPoly(
-      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis);
-
-    /*! 
-     * \brief Create a polynomial for basis \c basis with empty 
-     * coefficients of size sz
-     */
-    VectorOrthogPoly(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
-      ordinal_type sz);
+      const Teuchos::RCP<const Epetra_BlockMap>& map);
 
     /*! 
      * \brief Create a polynomial for basis \c basis where each coefficient is 
@@ -88,17 +76,8 @@ namespace Stokhos {
      */
     VectorOrthogPoly(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
+      const Teuchos::RCP<const Epetra_BlockMap>& map,
       const typename traits_type::cloner_type& cloner);
-
-    /*! 
-     * \brief Create a polynomial for basis \c basis where each coefficient is 
-     * generated through a clone operation as implemented by the traits class
-     * for the coefficient.
-     */
-    VectorOrthogPoly(
-      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
-      const typename traits_type::cloner_type& cloner,
-      ordinal_type sz);
 
     //! Copy constructor
     /*!
@@ -107,7 +86,7 @@ namespace Stokhos {
     VectorOrthogPoly(const VectorOrthogPoly&);
 
     //! Destructor
-    ~VectorOrthogPoly();
+    virtual ~VectorOrthogPoly();
 
     //! Assignment
     /*!
@@ -121,51 +100,12 @@ namespace Stokhos {
      */
     void reset(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& new_basis,
+      const Teuchos::RCP<const Epetra_BlockMap>& new_map,
       const typename traits_type::cloner_type& cloner);
-
-    //! Resize to size \c sz
-    /*!
-     * Coefficients are preserved.
-     */
-    void resize(ordinal_type sz);
-
-    //! Reserve space for a size \c sz expansion
-    /*!
-     * Coefficients are preserved.
-     */
-    void reserve(ordinal_type sz);
-
-    //! Return size
-    ordinal_type size() const;
 
     //! Get basis
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> > 
     basis() const;
-
-    //! Return array of coefficients
-    const Teuchos::Array<Teuchos::RCP<coeff_type> >&
-    getCoefficients() const;
-
-    //! Return array of coefficients
-    Teuchos::Array<Teuchos::RCP<coeff_type> >&
-    getCoefficients();
-
-    //! Return ref-count pointer to coefficient \c i
-    Teuchos::RCP<coeff_type>
-    getCoeffPtr(ordinal_type i);
-
-    //! Return ref-count pointer to constant coefficient \c i
-    Teuchos::RCP<const coeff_type>
-    getCoeffPtr(ordinal_type i) const;
-
-    //! Set coefficient \c i to \c c
-    void setCoeffPtr(ordinal_type i, const Teuchos::RCP<coeff_type>& c);
-
-    //! Array access
-    coeff_type& operator[](ordinal_type i);
-
-    //! Array access
-    const coeff_type& operator[](ordinal_type i) const;
 
     //! Get term for dimension \c dimension and order \c order
     coeff_type& term(ordinal_type dimension, ordinal_type order);
@@ -173,10 +113,10 @@ namespace Stokhos {
     //! Get term for dimension \c dimension and order \c order
     const coeff_type& term(ordinal_type dimension, ordinal_type order) const;
 
-    //! Initialize polynomial coefficients
-    void init(const value_type& val);
-
     //! Evaluate polynomial at supplied basis values
+    /*!
+     * Currently doesn't work with parallel map.
+     */
     void evaluate(const Teuchos::Array<value_type>& basis_values, 
 		  coeff_type& result) const;
 
@@ -193,9 +133,6 @@ namespace Stokhos {
 
     //! Basis
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > basis_;
-
-    //! Array of polynomial coefficients
-    Teuchos::Array< Teuchos::RCP<coeff_type> > coeff_;
 
   }; // class VectorOrthogPoly
 

@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -29,26 +27,19 @@
 // @HEADER
 
 #include "Stokhos_SGQuadModelEvaluator.hpp"
+#include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_Quadrature.hpp"
-#include "Stokhos_VectorOrthogPoly.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 #include "Stokhos_EpetraVectorOrthogPoly.hpp"
 #include "Stokhos_EpetraMultiVectorOrthogPoly.hpp"
-#include "Epetra_Vector.h"
 #include "Epetra_Map.h"
+#include "Epetra_Vector.h"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_TestForException.hpp"
 
 Stokhos::SGQuadModelEvaluator::
 SGQuadModelEvaluator(
-  const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
-  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
-  const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg_,
-  const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg_) : 
+  const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_) : 
   me(me_),
-  sg_basis(sg_basis_),
-  initial_x_sg(initial_x_sg_),
-  initial_p_sg(initial_p_sg_),
   num_p(0),
   num_g(0),
   x_dot_qp(),
@@ -226,42 +217,11 @@ get_x_init() const
   return me->get_x_init();
 }
 
-Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>
-Stokhos::SGQuadModelEvaluator::
-get_x_sg_init() const
-{
-  if (initial_x_sg != Teuchos::null)
-    return initial_x_sg;
-  Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> init_x_sg =
-    Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(sg_basis, 
-						     *(me->get_x_map())));
-  (*init_x_sg)[0] = *(me->get_x_init());
-  return init_x_sg;
-}
-
 Teuchos::RCP<const Epetra_Vector>
 Stokhos::SGQuadModelEvaluator::
 get_p_init(int l) const
 {
   return me->get_p_init(l);
-}
-
-Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>
-Stokhos::SGQuadModelEvaluator::
-get_p_sg_init(int l) const
-{
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  Stokhos::SGQuadModelEvaluator::get_p_sg_init():  "
-		     << "Invalid parameter index l = " << l << std::endl);
-  if (initial_p_sg.size() == num_p && initial_p_sg[l] != Teuchos::null)
-    return initial_p_sg[l];
-  Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> init_p_sg =
-    Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(sg_basis, 
-						     *(me->get_p_map(l))));
-  (*init_p_sg)[0] = *(me->get_p_init(l));
-  return init_p_sg;
 }
 
 Teuchos::RCP<Epetra_Operator>

@@ -10,6 +10,7 @@ from GeneralScriptSupport import *
 
 from CMakeBinaries import *
 
+import glob
 import re
 import shutil
 import string
@@ -131,6 +132,13 @@ from optparse import OptionParser
 
 clp = OptionParser(usage=usageHelp)
 
+if sys.platform == 'darwin':
+  defInstallDir = "/Applications"
+  defSymlinksDir = "/usr/local/bin"
+else:
+  defInstallDir = "/usr/local"
+  defSymlinksDir = ""
+
 clp.add_option(
   "--all-platforms", dest="allPlatforms", action="store_true", default=False,
   help="Download and/or extract tarballs for all platforms (default = just this platform)" )
@@ -140,8 +148,8 @@ clp.add_option(
   help="Proxy in the form 'http://server:port/' - use if you are behind a firewall with respect to downloading from http://www.cmake.org (default = \""+default_http_proxy+"\")." )
 
 clp.add_option(
-  "--install-dir", dest="installDir", type="string", default="/usr/local",
-  help="The install directory for CMake (default = /usr/local)." )
+  "--install-dir", dest="installDir", type="string", default=defInstallDir,
+  help="The install directory for CMake (default = "+defInstallDir+"." )
 
 clp.add_option(
   "--installer-type", dest="installerType", type="string", default="release",
@@ -162,6 +170,14 @@ clp.add_option(
 clp.add_option(
   "--skip-install", dest="skipInstall", action="store_true", default=False,
   help="Skip the install step" )
+
+clp.add_option(
+  "--symlinks", dest="symlinks", action="store_true", default=False,
+  help="Create symlinks to the installed CMake executables in --symlinks-dir" )
+
+clp.add_option(
+  "--symlinks-dir", dest="symlinksDir", type="string", default=defSymlinksDir,
+  help="The directory in which to create symlinks to CMake executables (default = "+defSymlinksDir+")." )
 
 (options, args) = clp.parse_args()
 
@@ -349,6 +365,40 @@ def Install(basedir, url):
 
     echoRunSysCmnd("cp -r " + dirname + "/* " + options.installDir)
 
+  # After installing, create symlinks if requested.
+  #   (This chunk needs work if ever it must work on Windows. For now, it's a
+  #    Linux/Mac only chunk of python... Uses 'ln', no '.exe' suffix...)
+  #
+  if options.symlinks and options.symlinksDir != '':
+    cmake_file = ""
+    cmake_install_topdir = ""
+    pre = ""
+
+    cmake_files = glob.glob(dirname + "/*")
+    if len(cmake_files) >= 1:
+      cmake_file = cmake_files[0]
+
+    cmps = cmake_file.rsplit("/", 1)
+    if len(cmps) >= 1:
+      cmake_install_topdir = cmps[1]
+
+    if os.path.exists(options.installDir + "/" + cmake_install_topdir + "/Contents/bin/cmake"):
+      pre = cmake_install_topdir + "/Contents/bin"
+    elif os.path.exists(options.installDir + "/bin/cmake"):
+      pre = "bin"
+
+    if pre == '':
+      print "error: could not determine CMake install tree structure - cannot create symlinks into unexpected directory structure"
+      sys.exit(1)
+
+    if not os.path.exists(options.symlinksDir):
+      echoRunSysCmnd("mkdir -p \"" + options.symlinksDir + "\"")
+
+    for exe in ('ccmake', 'cmake', 'cmake-gui', 'cmakexbuild', 'cpack', 'ctest'):
+      if os.path.exists(options.installDir + "/" + pre + "/" + exe):
+        print "Creating " + exe + " symlink..."
+        echoRunSysCmnd("ln -fs \"" + options.installDir + "/" + pre + "/" + exe + "\" \"" + options.symlinksDir + "/" + exe + "\"")
+
 
 def DownloadForPlatform(p):
   if options.allPlatforms:
@@ -466,6 +516,10 @@ if options.skipExtract:
   print "  --skip-extract \\"
 if options.skipInstall:
   print "  --skip-install \\"
+if options.symlinks:
+  print "  --symlinks \\"
+if options.symlinksDir != '':
+  print "  --symlinks-dir="+options.symlinksDir+" \\"
 
 if not options.httpProxy and not default_http_proxy:
   print "\nWARNING: Could not detect default http proxy for '"+hostname+"'!"

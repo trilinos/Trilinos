@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -58,5 +56,18 @@
 #include "Stokhos_SGModelEvaluator.hpp"
 #include "Stokhos_SGQuadModelEvaluator.hpp"
 #include "Stokhos_SGInverseModelEvaluator.hpp"
+
+// MP Operators
+#include "Stokhos_BlockDiagonalOperator.hpp"
+
+// MP Preconditioners
+#include "Stokhos_MPBlockDiagonalPreconditioner.hpp"
+#include "Stokhos_MPPreconditionerFactory.hpp"
+
+// MP Model Evaluators
+#include "Stokhos_MPModelEvaluator.hpp"
+#include "Stokhos_MPModelEvaluatorAdapter.hpp"
+#include "Stokhos_SGQuadMPModelEvaluator.hpp"
+#include "Stokhos_MPInverseModelEvaluator.hpp"
 
 #endif // STOKHOS_EPETRA_HPP 

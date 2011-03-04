@@ -6,7 +6,7 @@ SET(SerializationFiles
   MissingDependeeTag.xml
   MissingDependentTag.xml
   )
-  
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Dependencies_Serialization_test
   SOURCES cxx_main.cpp Dependencies_SerializationTests.cpp

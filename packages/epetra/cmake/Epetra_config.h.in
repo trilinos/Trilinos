@@ -122,20 +122,11 @@
 /* Define if want to build with OSKI enabled */
 #cmakedefine HAVE_OSKI
 
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#cmakedefine HAVE_SYS_STAT_H
-
-/* Define to 1 if you have the <sys/types.h> header file. */
-#cmakedefine HAVE_SYS_TYPES_H
-
 /* Define if want to build tests */
 #cmakedefine HAVE_TESTS
 
 /* Define if want to build with threads enabled */
 #cmakedefine HAVE_THREADS
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#cmakedefine HAVE_UNISTD_H
 
 /* Define if want to build with warning_messages enabled */
 #cmakedefine HAVE_WARNING_MESSAGES

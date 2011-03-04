@@ -3,7 +3,6 @@ INCLUDE(AddSubdirectories)
 ADD_SUBDIRECTORIES(
   geometric
   part_sizes
-  probing
   #utest
   #rebalance_1d_default
   )
@@ -14,6 +13,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
   ADD_SUBDIRECTORY(mtx)
+  ADD_SUBDIRECTORY(probing)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_TestLevelSolver)

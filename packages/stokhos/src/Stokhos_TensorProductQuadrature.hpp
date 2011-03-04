@@ -63,6 +63,9 @@ namespace Stokhos {
     //! Destructor
     virtual ~TensorProductQuadrature() {}
 
+    //! Get number of quadrature points
+    virtual ordinal_type size() const { return quad_weights.size(); }
+
     //! Get quadrature points
     /*!
      * Array is dimensioned Q-by-d where Q is the number of quadrature
