@@ -68,7 +68,7 @@
    <li> \f$\sigma_i\f$ is the i-th scale factor that can be passed in as a precomputed number of the templated type, 
    or can be selected from by the enum ScaleType (norm of RHS, norm of initial residual).
    <li> \f$\tau\f$ is the tolerance that is passed in as a number of the templated type to the constructor.  
-   The value of \f$\tau\f$ can be reset using the ResetTolerance() method.
+   The value of \f$\tau\f$ can be reset using the setTolerance() method.
    </ul>
 
 */
