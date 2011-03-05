@@ -751,7 +751,7 @@ void mult_A_Btrans(
 
       sort2(Bind.begin(), Bind.end(), bvals.begin());
 
-      const Scalar C_ij = MMdetails::sparsedot<double,int>(avals(0,A_len_i), Aind(0,A_len_i), bvals(0,B_len_j), Bind(0,B_len_j));
+      const Scalar C_ij = sparsedot(avals(0,A_len_i), Aind(0,A_len_i), bvals(0,B_len_j), Bind(0,B_len_j));
 
       if (C_ij == ScalarTraits<Scalar>::zero()) {
         continue;
@@ -1402,8 +1402,8 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
 
 template<class Scalar, class LocalOrdinal>
 Scalar sparsedot(
-          const ArrayView<const Scalar>& u, const ArrayView<const LocalOrdinal>& u_ind,
-          const ArrayView<const Scalar>& v, const ArrayView<const LocalOrdinal>& v_ind)
+  const ArrayView<Scalar>& u, const ArrayView<LocalOrdinal>& u_ind,
+  const ArrayView<Scalar>& v, const ArrayView<LocalOrdinal>& v_ind)
 {
   const size_t usize = (size_t)u.size();
   const size_t vsize = (size_t)v.size();

@@ -242,8 +242,11 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > form_map_union(
    * Important assumption: assumes the indices in u_ind and v_ind are sorted.
    */
   template <class Scalar, class LocalOrdinal>
-  Scalar sparsedot(const Teuchos::ArrayView<const Scalar> &u, const Teuchos::ArrayView<const LocalOrdinal> &u_ind, 
-                   const Teuchos::ArrayView<const Scalar> &v, const Teuchos::ArrayView<const LocalOrdinal> &v_ind);
+  Scalar sparsedot(
+    const Teuchos::ArrayView<Scalar> &u, 
+    const Teuchos::ArrayView<LocalOrdinal> &u_ind, 
+    const Teuchos::ArrayView<Scalar> &v, 
+    const Teuchos::ArrayView<LocalOrdinal> &v_ind);
   
 }//end namespace MMdetails
 
