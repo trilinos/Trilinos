@@ -449,13 +449,13 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
     LP = new Epetra_LinearProblem();
     LP->SetOperator(&D);
     /*LP->SetLHS(X);
-    LP->SetRHS(B);
+    LP->SetRHS(B);*/
     Solver = Factory.Create(SolverType, *LP);
 
     Solver->SymbolicFactorization();
     Solver->NumericFactorization();
     cout << "Numeric Factorization" << endl;
-    Solver->Solve();
+    /*Solver->Solve();
     cout << "Solve done" << endl;
 
     D.Multiply(false, *X, *residual);
