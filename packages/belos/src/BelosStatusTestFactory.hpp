@@ -177,6 +177,10 @@ namespace Belos {
     ///   from forming loops in the graph of status tests, so this
     ///   method should always terminate.
     ///
+    /// \note The given status test does _not_ need to be one that
+    ///   this factory created.  This method should work with any
+    ///   Belos::StatusTest instance.
+    ///
     static std::pair<bool, bool>
     changeConvTolAndMaxIters (const Teuchos::RCP<base_test>& test, 
 			      const magnitude_type convTol,
