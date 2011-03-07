@@ -2312,7 +2312,9 @@ int SNL_FEI_Structure::initializeBlkEqnMapper()
 
   for(; iter!=iter_end; ++iter) {
     NodeDescriptor* node = NULL;
-    CHK_ERR( nodeDatabase_->getNodeAtIndex(iter->second, node) );
+    nodeDatabase_->getNodeAtIndex(iter->second, node);
+
+    if (node==NULL) continue;
 
     int firstPtEqn = node->getFieldEqnNumbers()[0];
     int numNodalDOF = node->getNumNodalDOF();
@@ -2491,9 +2493,9 @@ int SNL_FEI_Structure::writeEqn2NodeMap()
 
   for(; iter!=iter_end; ++iter) {
     NodeDescriptor* node = NULL;
-    CHK_ERR( nodeDatabase_->getNodeAtIndex(iter->second, node) );
+    nodeDatabase_->getNodeAtIndex(iter->second, node);
 
-    if (node->getOwnerProc() != localProc_) {
+    if (node==NULL || node->getOwnerProc() != localProc_) {
       continue;
     }
 
@@ -2711,7 +2713,9 @@ int SNL_FEI_Structure::setNodalEqnInfo()
 
   for(; iter!=iter_end; ++iter) {
     NodeDescriptor* node = NULL;
-    CHK_ERR( nodeDatabase_->getNodeAtIndex(iter->second, node) );
+    nodeDatabase_->getNodeAtIndex(iter->second, node);
+
+    if (node==NULL) continue;
 
     int numFields = node->getNumFields();
     const int* fieldIDs = node->getFieldIDList();
@@ -3063,7 +3067,8 @@ int SNL_FEI_Structure::setNumNodesAndEqnsPerBlock()
 
    for(j=0; j<numNodes; j++) {
      NodeDescriptor* node = NULL;
-     CHK_ERR( nodeDatabase_->getNodeAtIndex(j, node) );
+     nodeDatabase_->getNodeAtIndex(j, node);
+     if (node==NULL) continue;
 
      const int* fieldIDList = node->getFieldIDList();
 

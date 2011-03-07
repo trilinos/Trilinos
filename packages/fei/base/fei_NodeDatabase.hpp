@@ -118,8 +118,8 @@ class NodeDatabase {
       @param node Output. i-th NodeDescriptor.
       @return error-code. 0 if successful. -1 if i is out of bounds.
   */
-  int getNodeAtIndex(int i, const NodeDescriptor*& node) const;
-  int getNodeAtIndex(int i, NodeDescriptor*& node);
+  void getNodeAtIndex(int i, const NodeDescriptor*& node) const;
+  void getNodeAtIndex(int i, NodeDescriptor*& node);
 
   /** Run through the locally-owned NodeDescriptors and count the number of
       nodal equations. (Returns 0 if the node-descriptors haven't
