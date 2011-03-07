@@ -254,6 +254,7 @@ void MeshingGenie_2d::get_Voronoi_Tessellation(std::vector<double> &x, std::vect
 	std::list<double> vxy;
 	std::list<double>::iterator iter;
 	std::vector<bool> vboundary;	
+	std::vector<bool> vboundary_(3);	
 
 	std::vector< std::vector<Point*> > elements_nodes;
 	std::vector< std::vector<bool> > boundary_points;
@@ -569,10 +570,58 @@ void MeshingGenie_2d::get_Voronoi_Tessellation(std::vector<double> &x, std::vect
 							get_edge_data(edge_id_k, edge_index, dir);
 							sidesets_edge_index.push_back(edge_index);
 						}
+						double xen(0.5 * (qi->x + qk->x)), yen(0.5 * (qi->y + qk->y));
 						vxy.push_back(0.5 * (qi->x + qk->x)); vxy.push_back(0.5 * (qi->y + qk->y));      vboundary.push_back(true);  ivtx++;
-						create_element(vxy, iter, element); ivtx = 0;
-						elements_nodes.push_back(element);	
-						boundary_points.push_back(vboundary); vboundary.clear();
+						
+						// check if qi is an end of a crack tip
+						iter = vxy.begin();
+						double xe1 = *iter; iter++;
+						double ye1 = *iter; iter++;
+						xe1 = *iter; iter++;
+						ye1 = *iter; iter++;
+						bool split_cell(false);
+						if (fabs(xe1 - xen) < 1E-8 && fabs(ye1 - yen) < 1E-8) split_cell = true;
+
+						if (split_cell)
+						{							
+							Point* qq; 
+							Point* qm;
+							Point* qp;	
+							iter = vxy.begin();
+							double xx = *iter; iter++;
+							double yy = *iter; iter++;
+							get_closest_point(xx, yy, qq);
+							size_t jj(0);
+							vboundary_[0] = vboundary[jj]; jj++; 
+							xx = *iter; iter++;
+							yy = *iter; iter++;
+							get_closest_point(xx, yy, qp);
+							vboundary_[1] = vboundary[jj]; jj++;
+							while (iter != vxy.end())
+							{
+								xx = *iter; iter++;
+								yy = *iter; iter++;
+								get_closest_point(xx, yy, qm);
+								vboundary_[2] = vboundary[jj]; jj++;
+								element.clear();
+								element.push_back(qq);
+								element.push_back(qp);
+								element.push_back(qm);
+								elements_nodes.push_back(element);
+								boundary_points.push_back(vboundary_);								
+								qp = qm;
+								vboundary_[1] = vboundary_[2];
+							}
+							element.clear();
+							vboundary.clear();
+							vxy.clear(); ivtx = 0;
+						}
+						else
+						{
+							create_element(vxy, iter, element); ivtx = 0;
+							elements_nodes.push_back(element);	
+							boundary_points.push_back(vboundary); vboundary.clear();
+						}
 					}
 					else if (crossing_segments(0.5 * (qi->x + qj->x), 0.5 * (qi->y + qj->y), cx, cy, qi->x, qi->y, qk->x, qk->y, px, py))
 					{	
@@ -583,17 +632,66 @@ void MeshingGenie_2d::get_Voronoi_Tessellation(std::vector<double> &x, std::vect
 							get_edge_data(edge_id_k, edge_index, dir);
 							sidesets_edge_index.push_back(edge_index);
 						}
+						double xen(0.5 * (qi->x + qk->x)), yen(0.5 * (qi->y + qk->y)); 
 						if (ck)
 						{
-							vxy.push_back(0.5 * (qi->x + qk->x)); vxy.push_back(0.5 * (qi->y + qk->y));   vboundary.push_back(true); ivtx++;
+							vxy.push_back(xen); vxy.push_back(yen);   vboundary.push_back(true); ivtx++;
 						}
 						else
 						{
+							xen = px; yen = py;
 							vxy.push_back(px); vxy.push_back(py);						                  vboundary.push_back(true); ivtx++;
 						}
-						create_element(vxy, iter, element); ivtx = 0;      
-						elements_nodes.push_back(element);
-						boundary_points.push_back(vboundary); vboundary.clear();
+
+						// check if qi is an end of a crack tip
+						iter = vxy.begin();
+						double xe1 = *iter; iter++;
+						double ye1 = *iter; iter++;
+						xe1 = *iter; iter++;
+						ye1 = *iter; iter++;
+						bool split_cell(false);
+						if (fabs(xe1 - xen) < 1E-8 && fabs(ye1 - yen) < 1E-8) split_cell = true;
+
+						if (split_cell)
+						{							
+							Point* qq; 
+							Point* qm;
+							Point* qp;	
+							iter = vxy.begin();
+							double xx = *iter; iter++;
+							double yy = *iter; iter++;
+							get_closest_point(xx, yy, qq);
+							size_t jj(0);
+							vboundary_[0] = vboundary[jj]; jj++; 
+							xx = *iter; iter++;
+							yy = *iter; iter++;
+							get_closest_point(xx, yy, qp);
+							vboundary_[1] = vboundary[jj]; jj++;
+							while (iter != vxy.end())
+							{
+								xx = *iter; iter++;
+								yy = *iter; iter++;
+								get_closest_point(xx, yy, qm);
+								vboundary_[2] = vboundary[jj]; jj++;
+								element.clear();
+								element.push_back(qq);
+								element.push_back(qp);
+								element.push_back(qm);
+								elements_nodes.push_back(element);
+								boundary_points.push_back(vboundary_);								
+								qp = qm;
+								vboundary_[1] = vboundary_[2];
+							}
+							element.clear();
+							vboundary.clear();
+							vxy.clear(); ivtx = 0;
+						}
+						else
+						{
+							create_element(vxy, iter, element); ivtx = 0;
+							elements_nodes.push_back(element);	
+							boundary_points.push_back(vboundary); vboundary.clear();
+						}
 					}					
 					else if (bj && crossing_segments(0.5 * (qi->x + qj->x), 0.5 * (qi->y + qj->y), cx, cy, qj->x, qj->y, qk->x, qk->y, px, py))
 					{						
@@ -621,10 +719,58 @@ void MeshingGenie_2d::get_Voronoi_Tessellation(std::vector<double> &x, std::vect
 							get_edge_data(edge_id_k, edge_index, dir);
 							sidesets_edge_index.push_back(edge_index);
 						}
-						vxy.push_back(0.5 * (qi->x + qk->x)); vxy.push_back(0.5 * (qi->y + qk->y));       vboundary.push_back(true); ivtx++;
-						create_element(vxy, iter, element); ivtx = 0;
-						elements_nodes.push_back(element);
-						boundary_points.push_back(vboundary); vboundary.clear();
+						double xen(0.5 * (qi->x + qk->x)), yen(0.5 * (qi->y + qk->y)); 
+						vxy.push_back(xen); vxy.push_back(yen);       vboundary.push_back(true); ivtx++;
+						
+						// check if qi is an end of a crack tip
+						iter = vxy.begin();
+						double xe1 = *iter; iter++;
+						double ye1 = *iter; iter++;
+						xe1 = *iter; iter++;
+						ye1 = *iter; iter++;
+						bool split_cell(false);
+						if (fabs(xe1 - xen) < 1E-8 && fabs(ye1 - yen) < 1E-8) split_cell = true;
+
+						if (split_cell)
+						{							
+							Point* qq; 
+							Point* qm;
+							Point* qp;	
+							iter = vxy.begin();
+							double xx = *iter; iter++;
+							double yy = *iter; iter++;
+							get_closest_point(xx, yy, qq);
+							size_t jj(0);
+							vboundary_[0] = vboundary[jj]; jj++; 
+							xx = *iter; iter++;
+							yy = *iter; iter++;
+							get_closest_point(xx, yy, qp);
+							vboundary_[1] = vboundary[jj]; jj++;
+							while (iter != vxy.end())
+							{
+								xx = *iter; iter++;
+								yy = *iter; iter++;
+								get_closest_point(xx, yy, qm);
+								vboundary_[2] = vboundary[jj]; jj++;
+								element.clear();
+								element.push_back(qq);
+								element.push_back(qp);
+								element.push_back(qm);
+								elements_nodes.push_back(element);
+								boundary_points.push_back(vboundary_);								
+								qp = qm;
+								vboundary_[1] = vboundary_[2];
+							}
+							element.clear();
+							vboundary.clear();
+							vxy.clear(); ivtx = 0;
+						}
+						else
+						{
+							create_element(vxy, iter, element); ivtx = 0;
+							elements_nodes.push_back(element);	
+							boundary_points.push_back(vboundary); vboundary.clear();
+						}
 					}
 					else
 					{
@@ -636,10 +782,58 @@ void MeshingGenie_2d::get_Voronoi_Tessellation(std::vector<double> &x, std::vect
 							get_edge_data(edge_id_k, edge_index, dir);
 							sidesets_edge_index.push_back(edge_index);
 						}
-						vxy.push_back(0.5 * (qi->x + qk->x)); vxy.push_back(0.5 * (qi->y + qk->y));       vboundary.push_back(true);  ivtx++;
-						create_element(vxy, iter, element); ivtx = 0;
-						elements_nodes.push_back(element);
-						boundary_points.push_back(vboundary); vboundary.clear();
+						double xen(0.5 * (qi->x + qk->x)), yen(0.5 * (qi->y + qk->y)); 
+						vxy.push_back(xen); vxy.push_back(yen);       vboundary.push_back(true);  ivtx++;
+						
+						// check if qi is an end of a crack tip
+						iter = vxy.begin();
+						double xe1 = *iter; iter++;
+						double ye1 = *iter; iter++;
+						xe1 = *iter; iter++;
+						ye1 = *iter; iter++;
+						bool split_cell(false);
+						if (fabs(xe1 - xen) < 1E-8 && fabs(ye1 - yen) < 1E-8) split_cell = true;
+
+						if (split_cell)
+						{							
+							Point* qq; 
+							Point* qm;
+							Point* qp;	
+							iter = vxy.begin();
+							double xx = *iter; iter++;
+							double yy = *iter; iter++;
+							get_closest_point(xx, yy, qq);
+							size_t jj(0);
+							vboundary_[0] = vboundary[jj]; jj++; 
+							xx = *iter; iter++;
+							yy = *iter; iter++;
+							get_closest_point(xx, yy, qp);
+							vboundary_[1] = vboundary[jj]; jj++;
+							while (iter != vxy.end())
+							{
+								xx = *iter; iter++;
+								yy = *iter; iter++;
+								get_closest_point(xx, yy, qm);
+								vboundary_[2] = vboundary[jj]; jj++;
+								element.clear();
+								element.push_back(qq);
+								element.push_back(qp);
+								element.push_back(qm);
+								elements_nodes.push_back(element);
+								boundary_points.push_back(vboundary_);								
+								qp = qm;
+								vboundary_[1] = vboundary_[2];
+							}
+							element.clear();
+							vboundary.clear();
+							vxy.clear(); ivtx = 0;
+						}
+						else
+						{
+							create_element(vxy, iter, element); ivtx = 0;
+							elements_nodes.push_back(element);	
+							boundary_points.push_back(vboundary); vboundary.clear();
+						}
 					}
 					#pragma endregion
 				}
