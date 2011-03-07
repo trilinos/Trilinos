@@ -270,6 +270,10 @@ public:
      */
    std::size_t elementLocalId(stk::mesh::Entity * elmt) const;
 
+   /** Get an elements local index
+     */
+   std::size_t elementLocalId(stk::mesh::EntityId gid) const;
+
    /**  Get the containing block ID of this element.
      */ 
    std::string containingBlockId(stk::mesh::Entity * elmt);

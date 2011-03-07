@@ -182,6 +182,59 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getNumFields() const
 //   2. initializes the connectivity
 //   3. calls initComplete
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
+{
+   Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_.getConst();
+   geomPattern_ = geomPattern;
+
+   // get element blocks
+   std::vector<std::string> elementBlockIds;
+   connMngr->getElementBlockIds(elementBlockIds);
+
+   // setup connectivity mesh
+   patternNum_.resize(connMngr->numElementBlocks()); 
+   std::vector<std::string>::const_iterator blockItr;
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      std::string blockId = *blockItr;
+      std::size_t blockIndex = blockIdToIndex(blockId);
+
+      // build the pattern
+      buildPattern(blockId,geomPattern);
+
+      // figure out what IDs are active for this pattern
+      const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockId]->numFieldsPerId();
+      std::vector<int> activeIds;
+      for(std::size_t i=0;i<numFieldsPerID.size();i++)
+         if(numFieldsPerID[i]>0) 
+            activeIds.push_back(i);
+      std::vector<int> reduceConn(activeIds.size()); // which IDs to use
+   
+      // grab elements for this block
+      const std::vector<LocalOrdinal> & elements = connMngr->getElementBlock(blockId);
+
+      // build graph for this block
+      matrixGraph_->initConnectivityBlock(blockIndex,elements.size(),patternNum_[blockIndex]);
+      for(std::size_t e=0;e<elements.size();e++) {
+         const GlobalOrdinal * conn = connMngr->getConnectivity(elements[e]);
+         for(std::size_t i=0;i<activeIds.size();i++)
+            reduceConn[i] = conn[activeIds[i]];
+ 
+         matrixGraph_->initConnectivity(blockIndex,elements[e],&reduceConn[0]);
+      }
+   }
+   matrixGraph_->initComplete();
+
+   // build owned map
+   std::vector<GlobalOrdinal> ownedIndices;
+   getOwnedIndices(ownedIndices);
+   ownedGIDHashTable_.insert(ownedIndices.begin(),ownedIndices.end());  
+}
+
+// build the global unknown numberings
+//   1. this builds the pattens
+//   2. initializes the connectivity
+//   3. calls initComplete
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 {
    // build the pattern for the ID layout on the mesh
@@ -191,6 +244,8 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
    for(f2p_itr=fieldIntToPattern_.begin();f2p_itr!=fieldIntToPattern_.end();f2p_itr++)
       patVector.push_back(f2p_itr->second);
    aggFieldPattern->buildPattern(patVector);
+
+   geomPattern_ = aggFieldPattern;
 
    // get element blocks
    std::vector<std::string> elementBlockIds;
@@ -269,7 +324,7 @@ std::vector<int> DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOrderedBlock(const
 
 // build the pattern associated with this manager
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::string & blockId,const RCP<FieldPattern> & geomPattern)
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::string & blockId,const RCP<const FieldPattern> & geomPattern)
 {
    using Teuchos::rcp;
    using Teuchos::RCP;

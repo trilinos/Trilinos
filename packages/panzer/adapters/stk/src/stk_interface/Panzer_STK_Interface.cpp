@@ -533,6 +533,15 @@ std::size_t STK_Interface::elementLocalId(stk::mesh::Entity * elmt) const
    return fieldCoords[0];
 }
 
+std::size_t STK_Interface::elementLocalId(stk::mesh::EntityId gid) const
+{
+   stk::mesh::EntityRank elementRank = getElementRank();
+   stk::mesh::Entity * elmt = bulkData_->get_entity(elementRank,gid);
+   TEUCHOS_ASSERT(elmt->owner_rank()==procRank_);
+   return elementLocalId(elmt);
+}
+
+
 std::string STK_Interface::containingBlockId(stk::mesh::Entity * elmt)
 {
    std::map<std::string,stk::mesh::Part*>::const_iterator itr;

@@ -53,6 +53,13 @@ public:
      */
    void setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
 
+   /** Get the FieldPattern describing the geometry used for this problem.
+     * If it has not been constructed then null is returned.
+     */
+   Teuchos::RCP<const FieldPattern> getGeometricFieldPattern() const
+   { return geomPattern_; }
+   
+
    /** \brief Reset the indicies for this DOF manager.
      *
      * This method resets the indices and wipes out internal state. This method
@@ -185,6 +192,21 @@ public:
      */
    virtual void buildGlobalUnknowns();
 
+   /** build the global unknown numberings
+     *   1. this builds the pattens
+     *   2. initializes the connectivity
+     *   3. calls initComplete
+     *
+     * This method allows a different geometric
+     * field pattern to used. It does not call the
+     * ConnManger::buildConnectivity, and just
+     * uses the provided field pattern as a the
+     * geometric pattern. Not this requires that
+     * ConnManager::buildConnectivity has already
+     * been called.
+     */
+   virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern);
+
    /** Prints to an output stream the information about
      * the aggregated field.
      */
@@ -299,7 +321,7 @@ protected:
    std::size_t blockIdToIndex(const std::string & blockId) const;
 
    //! build the pattern associated with this manager
-   void buildPattern(const std::string & blockId,const Teuchos::RCP<FieldPattern> & geomPattern);
+   void buildPattern(const std::string & blockId,const Teuchos::RCP<const FieldPattern> & geomPattern);
 
    // computes connectivity
    Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_; 
@@ -341,10 +363,11 @@ protected:
    int edgeType_;
    int numFields_;
    std::vector<int> patternNum_;
+
+   Teuchos::RCP<const FieldPattern> geomPattern_;
 };
 
 }
 
 #include "Panzer_DOFManagerT.hpp"
-
 #endif
