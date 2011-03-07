@@ -14,7 +14,6 @@
 // #include <stk_mesh/base/Entity.hpp>
 // FIXME
 
-
 namespace stk {
   namespace adapt {
 
@@ -1212,10 +1211,6 @@ namespace stk {
     {
       EXCEPTWATCH;
 
-      // CHECK
-      //const CellTopologyData * const cell_topo_data = get_cell_topology(element);
-      //CellTopology cell_topo(cell_topo_data);
-
       NodeRegistry& nodeRegistry = *m_nodeRegistry;
 
       const mesh::PairIterRelation elem_nodes = element.relations(Node);
@@ -1243,6 +1238,10 @@ namespace stk {
               numSubDimNeededEntities = 1;
             }
 
+          if (needed_entity_ranks[ineed_ent].first >= new_sub_entity_nodes.size())
+            {
+               throw std::logic_error("UniformRefiner::createNewNeededNodeIds logic err #1");
+            }
           new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first].resize(numSubDimNeededEntities);
 
           if (0)
@@ -1284,7 +1283,18 @@ namespace stk {
                   //throw std::logic_error("needed_entity_ranks[ineed_ent].second");
                   return true;
                 }
+
+              if (iSubDimOrd >= new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first].size())
+                {
+                  throw std::logic_error("UniformRefiner::createNewNeededNodeIds logic err #2");
+                }
               new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd].resize(num_new_nodes_needed);
+              if (num_new_nodes_needed > nodeIds_onSE.size())
+                {
+                  std::cout << "UniformRefiner::createNewNeededNodeIds logic err #3:  num_new_nodes_needed= " << num_new_nodes_needed
+                            << " nodeIds_onSE.size() = " << nodeIds_onSE.size() << std::endl;
+                  throw std::logic_error("UniformRefiner::createNewNeededNodeIds logic err #3");
+                }
               for (unsigned i_new_node = 0; i_new_node < num_new_nodes_needed; i_new_node++)
                 {
                   new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd][i_new_node] = nodeIds_onSE[i_new_node];

@@ -2070,6 +2070,11 @@ namespace stk {
                 if (cell_topo.getDimension() > 1 && n_faces == 0) n_faces = 1; // 2D face has one "face"
                 //unsigned n_sides = cell_topo.getSideCount();
 
+                // check for shell line elements
+                int topoDim = cell_topo.getDimension();
+                getTopoDim(topoDim, fromTopoKey);
+                if (topoDim == 1) n_faces = 0;
+
                 for (unsigned i_edge = 0; i_edge < n_edges; i_edge++)
                   {
                     const UInt *edge_nodes = ref_topo.edge_node(i_edge);
@@ -2099,8 +2104,31 @@ namespace stk {
 
                         const UInt *face_nodes = ref_topo.face_node(i_face);
 
-                        for (unsigned j_node = 0; j_node < 9; j_node++) // FIXME
+                        unsigned j_node_end = 0;
+#if 0
+                        bool lfnd = false;
+                        for (unsigned j_node = 0; j_node < 9; j_node++) 
                           {
+                            if (face_nodes[j_node] == END_UINT_ARRAY)
+                              {
+                                lfnd = true;
+                                j_node_end = j_node;
+                                break;
+                              }
+                          }
+                        if (!lfnd)
+                          {
+                            throw std::logic_error("findRefinedCellParamCoordsLinear logic err # 0");
+                          }
+#endif
+                        j_node_end = 9;  //!#
+
+                        for (unsigned j_node = 0; j_node < j_node_end; j_node++) // FIXME
+                          {
+                            if (cell_topo.getDimension() != 2 && face_nodes[j_node] == END_UINT_ARRAY)
+                              {
+                                throw std::logic_error("findRefinedCellParamCoordsLinear logic err # 1");
+                              }
                             unsigned fn =  cell_topo.getDimension()==2 ? j_node : face_nodes[j_node];
 
                             if (childNodeIdx == fn)
@@ -2111,8 +2139,13 @@ namespace stk {
                                   {
                                     param_coord[ix] = 0.0;
                                   }
+
                                 for (unsigned k_node = 0; k_node < 4; k_node++)
                                   {
+                                    if (cell_topo.getDimension() != 2 && face_nodes[k_node] == END_UINT_ARRAY)
+                                      {
+                                        throw std::logic_error("findRefinedCellParamCoordsLinear logic err # 2");
+                                      }
                                     unsigned fnk = cell_topo.getDimension()==2 ? k_node : face_nodes[k_node];
                                     for (unsigned ix=0; ix < 3; ix++)
                                       {
@@ -2135,11 +2168,13 @@ namespace stk {
                   {
                     param_coord[ix] = 0.0;
                   }
-                for (unsigned k_node = 0; k_node < 8; k_node++)
+                unsigned nvert = FromTopology::vertex_count;
+                double dnvert = (double)nvert;
+                for (unsigned k_node = 0; k_node < nvert; k_node++)
                   {
                     for (unsigned ix=0; ix < 3; ix++)
                       {
-                        param_coord[ix] += ref_topo_x[k_node].parametric_coordinates[ix]/8.0;
+                        param_coord[ix] += ref_topo_x[k_node].parametric_coordinates[ix]/dnvert;
                       }
                   }
               }
