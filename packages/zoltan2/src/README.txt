@@ -12,3 +12,7 @@ class diagrams.  (You have to set HAVE_DOT to "yes" in zoltan/doc/Doxyfile.)
 Also, we have a trac site with more design documentation.
 
 https://software.sandia.gov/trac/zoltan2
+
+March 2011
+----------
+Much design work has been done.  See the design document in zoltan2/doc/design.
