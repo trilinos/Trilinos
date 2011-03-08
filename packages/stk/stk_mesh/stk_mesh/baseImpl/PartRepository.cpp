@@ -121,14 +121,9 @@ Part * PartRepository::declare_part( const std::string & arg_name , EntityRank a
   if ( p == NULL ) {
     p = declare_part_impl( arg_name, arg_rank );
   }
-
-  ThrowErrorMsgIf( p->primary_entity_rank() != arg_rank,
-                   "Cannot declare Part[ " << arg_name <<
-                   ",rank(" << p->primary_entity_rank() << ")]\n" <<
-                   "Part of name '" << arg_name <<
-                   "' of rank " << p->primary_entity_rank() <<
-                   " already exists, user cannot redeclare " << arg_name <<
-                   " with different rank " << arg_rank );
+  else {
+    p->m_partImpl.set_primary_entity_rank(arg_rank);
+  }
 
   return p;
 }
@@ -314,7 +309,7 @@ PartRepository::~PartRepository()
   } catch(...){}
 }
 
-} // namespace impl 
-} // namespace mesh 
-} // namespace stk 
+} // namespace impl
+} // namespace mesh
+} // namespace stk
 

@@ -91,6 +91,9 @@ public:
 
   ~PartImpl();
 
+  void set_primary_entity_rank( EntityRank entity_rank );
+
+
 private:
 
 #ifndef DOXYGEN_COMPILE
@@ -107,7 +110,7 @@ private:
   std::vector<PartRelation> m_relations ;
   MetaData          * const m_mesh_meta_data ;
   const unsigned            m_universe_ordinal ;
-  const unsigned            m_entity_rank ;
+  EntityRank                m_entity_rank ;
 
 #endif /* DOXYGEN_COMPILE */
 
@@ -129,7 +132,7 @@ PartImpl::declare_attribute_no_delete( const T * a )
   return m_attribute.template insert_no_delete<T>( a );
 }
 
-} // namespace impl 
+} // namespace impl
 } // namespace mesh
 } // namespace stk
 
