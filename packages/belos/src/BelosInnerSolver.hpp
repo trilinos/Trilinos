@@ -106,6 +106,10 @@ namespace Belos {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
     typedef MV multivector_type;
     typedef OP operator_type;
+    typedef typename OperatorTraits<OP>::vector_space_type vector_space_type;
+
+    virtual Teuchos::RCP<const vector_space_type> getDomain() const = 0;
+    virtual Teuchos::RCP<const vector_space_type> getRange() const = 0;
 
     /// \brief Solve \f$AX=B\f$ for the given right-hand side(s) B.
     ///
@@ -176,6 +180,7 @@ namespace Belos {
 	   const Teuchos::RCP<const MV>& B) = 0;
   };
 
+
   /// \brief Partial specialization of OperatorTraits for InnerSolver.
   ///
   /// This partial specialization lets you use InnerSolver (or any of
@@ -187,7 +192,6 @@ namespace Belos {
   template<class Scalar, class MV, class OP>
   class OperatorTraits<Scalar, MV, InnerSolver<Scalar, MV, OP> > {
   public:
-    // y := Op * x.
     static void
     Apply (const InnerSolver<Scalar, MV, OP>& Op,
 	   const MV& x,
@@ -198,15 +202,25 @@ namespace Belos {
       using Teuchos::rcpFromRef;
 
       TEST_FOR_EXCEPTION(trans != NOTRANS, std::invalid_argument,
-			 "Belos::InnerSolver does not know how to solve the "
+			 "Belos::InnerSolver is not able to solve the "
 			 "transposed system.");
       RCP<const MV> x_ptr = rcpFromRef (x);
       RCP<MV> y_ptr = rcpFromRef (y);
       (void) Op.solve (y_ptr, x_ptr);
     }
+
+    typedef typename InnerSolver<Scalar, MV, OP>::vector_space_type vector_space_type;
+
+    static Teuchos::RCP<const vector_space_type> 
+    getDomain (const InnerSolver<Scalar, MV, OP>& A) {
+      return A.getDomain ();
+    }
+    static Teuchos::RCP<const vector_space_type> 
+    getRange (const InnerSolver<Scalar, MV, OP>& A) {
+      return A.getRange ();
+    }
   };
 
 } // namespace Belos
-
 
 #endif // __Belos_InnerSolver_hpp

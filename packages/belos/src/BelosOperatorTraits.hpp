@@ -60,6 +60,12 @@ namespace Belos {
       <tt>OP</tt>, or is not complete.
     */
     static inline void notDefined() { OP::this_type_is_missing_a_specialization(); };
+
+    /// \typedef vector_space_type
+    ///
+    /// This typedef makes OperatorTraits' vector_space_type
+    /// syntactically correct.  Its definition is not meaningful.
+    typedef void vector_space_type;
   };
  
   /*!  \brief Virtual base class which defines basic traits for the operator type.
@@ -73,14 +79,65 @@ namespace Belos {
   class OperatorTraits 
   {
   public:
-    
-    //! Application method which performs operation <b>y = Op*x</b>. An OperatorError exception is thrown if there is an error.
+
+    /// \brief Apply Op to x, putting the result into y.
+    ///
+    /// If applying the (conjugate) transpose of Op is supported, you
+    /// may do this as well.  If not, or if there is some other error, 
+    /// an OperatorError exception is thrown.
     static void Apply ( const OP& Op, 
 			const MV& x, 
 			MV& y, 
 			ETrans trans = NOTRANS )
     { UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
+
+    //! @name Vector space typedefs and methods
+    //@{
     
+    /// \typedef vector_space_type
+    ///
+    /// OP objects have a domain and range "vector space," which may
+    /// or may not be different.  OP objects take MV objects from the
+    /// domain space as input, and produce OP objects from the range
+    /// space as input.  "Vector space" includes the idea of
+    /// distributed-memory data distribution, among other things.
+    /// 
+    /// \note The default definition of this typedef is not
+    ///   meaningful; a specialization of OperatorTraits for the MV
+    ///   type must exist in order for this typedef to have a
+    ///   meaningful definition.
+    typedef typename UndefinedOperatorTraits<ScalarType, MV, OP>::vector_space_type vector_space_type;
+
+    /// Return a persistent view to the domain vector space of A.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of A.  For the Epetra specialization, this
+    /// means that the vector space is copied.  The Tpetra and Thyra
+    /// specializations rely on the ability of both libraries to
+    /// return persistent views of the vector space object.
+    ///
+    /// \note The default definition of this function is not
+    ///   meaningful; a specialization of MultiVecTraits for the MV
+    ///   type must exist in order for this function to have a
+    ///   meaningful definition.
+    static Teuchos::RCP<const vector_space_type> getDomain (const OP& A)
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
+
+    /// Return a persistent view to the range vector space of A.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of A.  For the Epetra specialization, this
+    /// means that the vector space is copied.  The Tpetra and Thyra
+    /// specializations rely on the ability of both libraries to
+    /// return persistent views of the vector space object.
+    ///
+    /// \note The default definition of this function is not
+    ///   meaningful; a specialization of MultiVecTraits for the MV
+    ///   type must exist in order for this function to have a
+    ///   meaningful definition.
+    static Teuchos::RCP<const vector_space_type> getRange (const OP& A)
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
+    //@}
   };
   
 } // end Belos namespace

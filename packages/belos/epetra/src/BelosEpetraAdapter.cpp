@@ -47,6 +47,73 @@
 #include "BelosEpetraAdapter.hpp"
 
 using namespace Belos;
+
+namespace Belos {
+  template<>
+  bool 
+  VectorSpaceTraits<Epetra_BlockMap>::
+  compatible (const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type& first, 
+	      const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type& second)
+  {
+    // FIXME (mfh 07 Mar 2011) Should I call PointSameAs() or
+    // SameAs() here?
+    //
+    // FIXME (mfh 07 Mar 2011) Does it suffice to compare pointers?
+    // If the two pointers point to the same object on one MPI
+    // process, they should on all MPI processes, right?  Comparing
+    // pointers avoids communication for the idiomatic Tpetra case
+    // of multiple objects constructed from the same Map object.
+    return &first == &second || first.PointSameAs (second);
+  }
+
+  template<>
+  Teuchos::RCP<const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type>
+  VectorSpaceTraits<Epetra_BlockMap>::
+  persistentView (const Teuchos::RCP<const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type>& space)
+  {
+    using Teuchos::is_null;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_dynamic_cast;
+    using Teuchos::rcp_implicit_cast;
+
+    // The argument might be a weak reference (Epetra objects'
+    // methods typically return a "const Epetra_{Block}Map&").  If
+    // it is, make a deep copy, using the constructor appropriate to
+    // the (dynamic) type of space.  Otherwise, just return the RCP;
+    // in that case, it's either a strong reference or null.
+    if (space.strength() == Teuchos::RCP_WEAK)
+      {
+	// If space is an Epetra_Map, copy space using Epetra_Map's
+	// constructor.  Otherwise, copy space using
+	// Epetra_BlockMap's constructor.
+	RCP<const Epetra_Map> mapMap = rcp_dynamic_cast<const Epetra_Map> (space);
+	if (is_null (mapMap))
+	  return rcp (new Epetra_BlockMap (*space));
+	else
+	  return rcp_implicit_cast<const Epetra_BlockMap> (rcp (new Epetra_Map (*mapMap)));
+      }
+    else // either a strong reference or null.
+      return space;
+  }
+
+  template<>
+  Teuchos::RCP<const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type>
+  VectorSpaceTraits<Epetra_BlockMap>::
+  persistentView (const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type& space)
+  {
+    return persistentView (Teuchos::rcpFromRef (space));
+  }
+
+  template<>
+  Teuchos::RCP<const MultiVecTraits<double, Epetra_MultiVector>::vector_space_type> 
+  MultiVecTraits<double, Epetra_MultiVector>::
+  getRange (const Epetra_MultiVector& x) 
+  {
+    return VectorSpaceTraits<vector_space_type>::persistentView (x.Map());
+  }
+
+} // namespace Belos
   
   //-------------------------------------------------------------
   

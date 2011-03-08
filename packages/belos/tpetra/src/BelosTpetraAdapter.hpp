@@ -61,6 +61,7 @@
 #include <BelosTypes.hpp>
 #include <BelosMultiVecTraits.hpp>
 #include <BelosOperatorTraits.hpp>
+#include <BelosVectorSpaceTraits.hpp>
 #include <BelosInnerSolver.hpp>
 #include <Kokkos_NodeAPIConfigDefs.hpp>
 
@@ -70,6 +71,56 @@
 
 
 namespace Belos {
+
+  /// \brief Specialization of VectorSpaceTraits for Tpetra objects.
+  ///
+  /// This specialization lets Belos reason about vector spaces
+  /// (called "maps" in Tpetra) for Tpetra objects:
+  /// Tpetra::MultiVector for multivectors, and Tpetra::Operator for
+  /// operators.
+  template<class Scalar, class LO, class GO, class Node>
+  class VectorSpaceTraits<Tpetra::Map<LO, GO, Node> > {
+  public:
+    typedef Tpetra::Map<LO, GO, Node> vector_space_type;
+
+    /// \brief Are vectors from the two vector spaces compatible?
+    ///
+    /// \note This method requires communication in general, so it may
+    ///   be wise to cache the result.
+    static bool 
+    compatible (const vector_space_type& first, 
+		const vector_space_type& second) {
+      // FIXME (mfh 07 Mar 2011) Does it suffice to compare pointers?
+      // If the two pointers point to the same object on one MPI
+      // process, they should on all MPI processes, right?  Comparing
+      // pointers avoids communication for the idiomatic Tpetra case
+      // of multiple objects constructed from the same Map object.
+      return &first == &second || first.isCompatible (second);
+    }
+
+    static Teuchos::RCP<const vector_space_type>
+    persistentView (const Teuchos::RCP<const vector_space_type>& space)
+    {
+      // Tpetra distributed objects return RCP<const Map> when asked
+      // for their data distributions, as do Tpetra::Operator objects
+      // when asked for their domain and range.  Those RCPs are
+      // persistent (strong references) by construction, so we can
+      // just let them pass through.  For safety, we still check
+      // whether it's a weak reference, but Tpetra::Map doesn't have a
+      // public copy constructor or operator=, so we throw an
+      // exception if space is a weak reference.
+      TEST_FOR_EXCEPTION(space.strength() == Teuchos::RCP_WEAK, 
+			 std::logic_error,
+			 "The given RCP<const Tpetra::Map> is a weak reference,"
+			 " so it is impossible to make a persistent view of it."
+			 "  Weak references are not the typical case for Tpetra"
+			 "::Map objects; it could be that you created the RCP i"
+			 "n a strange way, such as via rcp (rcpFromRef (*ptr)) "
+			 "where ptr is an RCP.  The normal use case of Tpetra::"
+			 "Map should not cause problems like this.");
+      return space;
+    }
+  };
 
   ////////////////////////////////////////////////////////////////////
   //
@@ -88,6 +139,33 @@ namespace Belos {
 #ifdef HAVE_BELOS_TPETRA_TIMERS
     static Teuchos::RCP<Teuchos::Time> mvTimesMatAddMvTimer_, mvTransMvTimer_;
 #endif
+
+    //! @name Vector space typedefs and methods
+    //@{
+    
+    /// \typedef vector_space_type
+    ///
+    /// MV objects live in a "vector space."  Two objects of the same
+    /// MV type might live in different vector spaces.  "Vector space"
+    /// includes the idea of distributed-memory data distribution,
+    /// among other things.
+    typedef Tpetra::Map<LO, GO, Node> vector_space_type;
+
+    /// Return a persistent view to the vector space in which x lives.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of x.  The Tpetra specialization relies on
+    /// the ability of Tpetra distributed objects to return persistent
+    /// views of their Tpetra::Map.
+    ///
+    /// \note The term "range" comes from Thyra; an
+    ///   Epetra_MultiVector's Epetra_Map and a Tpetra::MultiVector's
+    ///   Tpetra::Map both correspond to the "range" of the
+    ///   multivector, i.e., the distribution of its rows.
+    static Teuchos::RCP<const vector_space_type> getRange (const MV& x) {
+      return x.getMap ();
+    }
+    //@}
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
     { 
@@ -567,6 +645,39 @@ namespace Belos {
   class OperatorTraits < Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node>, Tpetra::Operator<Scalar,LO,GO,Node> >
   {
   public:
+    //! @name Vector space typedefs and methods
+    //@{
+    
+    /// \typedef vector_space_type
+    ///
+    /// Operator objects have a domain and range "vector space," which
+    /// may or may not be different.  OP objects take MV objects from
+    /// the domain space as input, and produce OP objects from the
+    /// range space as input.  "Vector space" includes the idea of
+    /// distributed-memory data distribution, among other things.
+    typedef Tpetra::Map<LO, GO, Node> vector_space_type;
+
+    /// Return a persistent view to the domain vector space of A.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of A.  The Tpetra specialization relies on
+    /// the ability of Tpetra objects to return persistent views of
+    /// the vector space object, without needing to copy them.
+    static Teuchos::RCP<const vector_space_type> getDomain (const OP& A) {
+      return A.getDomainMap ();
+    }
+
+    /// Return a persistent view to the range vector space of A.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of A.  The Tpetra specialization relies on
+    /// the ability of Tpetra objects to return persistent views of
+    /// the vector space object, without needing to copy them.
+    static Teuchos::RCP<const vector_space_type> getRange (const OP& A) {
+      return A.getRangeMap ();
+    }
+    //@}
+
     static void Apply ( const Tpetra::Operator<Scalar,LO,GO,Node> & Op, 
                         const Tpetra::MultiVector<Scalar,LO,GO,Node> & X,
                               Tpetra::MultiVector<Scalar,LO,GO,Node> & Y,
@@ -586,14 +697,25 @@ namespace Belos {
     }
   };
 
-
+  /// \class TpetraInnerSolver
   /// \brief Adaptor between InnerSolver and Tpetra::Operator.
   /// 
   /// This wrapper lets you use as a Tpetra::Operator any
   /// implementation of Belos::InnerSolver<Scalar, MV, OP> with MV =
-  /// Tpetra::MultiVector and OP = Tpetra::Operator (as long as the
-  /// MultiVector and Operator have compatible template parameters).
+  /// Tpetra::MultiVector<Scalar, LO, GO, Node> and OP =
+  /// Tpetra::Operator<Scalar, LO, GO, Node>.
   /// 
+  /// \note One reason for the whole VectorSpaceTraits thing is
+  ///   because implementations of the Tpetra::Operator interface must
+  ///   implement the getDomainMap() and getRangeMap() methods.  If we
+  ///   want those to return the correct maps (a.k.a. vector spaces),
+  ///   then implementations of the InnerSolver interface need to be
+  ///   able to ask their input LinearProblems for the domain and
+  ///   vector vector spaces of the operator(s).  For correctness
+  ///   (especially when caching vector storage for use with different
+  ///   right-hand sides), it's also useful if InnerSolver can ask for
+  ///   the vector spaces in which the right-hand side B and initial
+  ///   guess X live.
   template <class Scalar, class LO, class GO, class Node>
   class TpetraInnerSolver : public Tpetra::Operator<Scalar, LO, GO, Node> {
   public:
@@ -602,18 +724,34 @@ namespace Belos {
     typedef GO global_ordinal_type;
     typedef Node node_type;
 
-    typedef Tpetra::Operator<Scalar, LO, GO, Node> base_type;
-    typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> multivector_type;
+    typedef Tpetra::Operator<Scalar, LO, GO, Node> operator_type;
+    typedef typename OperatorTraits<operator_type>::vector_space_type vector_space_type;
+    typedef InnerSolver<Scalar, multivector_type, operator_type> inner_solver_type;
 
-    const Teuchos::RCP<const map_type>& getDomainMap() const {
-      return Teuchos::null;
+    /// \brief Constructor.
+    ///
+    /// \param solver [in/out] The actual inner solver implementation.
+    TpetraInnerSolver (const Teuchos::RCP<inner_solver_type>& solver) :
+      solver_ (solver), 
+      domain_ (solver->getDomain()),
+      range_ (solver->getRange())
+    {}
+
+    //! A persistent view of the domain vector space of the operator
+    const Teuchos::RCP<const vector_space_type>& getDomainMap() const {
+      return domain_;
     }
-    const Teuchos::RCP<const map_type>& getRangeMap() const {
-      return Teuchos::null;
+    //! A persistent view of the range vector space of the operator
+    const Teuchos::RCP<const vector_space_type>& getRangeMap() const {
+      return range_;
     }
 
-    //! Compute Y := alpha*solver(Y,X) + beta*Y.
+    /// \brief Compute Y := alpha*solver(Y,X) + beta*Y.
+    ///
+    /// \note The contents of Y on input may be relevant, depending on
+    ///   the inner solver implementation.  For example, Y on input
+    ///   may be treated as the initial guess of an iterative solver.
     void 
     apply(const multivector_type& X,
 	  multivector_type& Y,
@@ -663,10 +801,31 @@ namespace Belos {
 	}
     }
 
+    //! Can you apply the transpose of the operator?
     bool hasTransposeApply() const { return false; }
 
+  private:
+    //! Default construction is not allowed.
+    TpetraInnerSolver ();
+
+    //! The inner solver implementation.
+    Teuchos::RCP<inner_solver_type> solver_;
+
+    /// \brief The domain vector space.
+    ///
+    /// \note We have to keep RCPs of the domain and range vector
+    ///   spaces around, because the Tpetra::Operator interface
+    ///   requires that we return "const RCP&" instead of "RCP" for
+    ///   the domain and range.  Instantiating a new RCP in the method
+    ///   and returning a const reference to it would result in a
+    ///   dangling reference.
+    Teuchos::RCP<const vector_space_type> domain_;
+
+    /// \brief The range vector space.
+    /// 
+    /// See note on \c domain_.
+    Teuchos::RCP<const vector_space_type> range_;    
   };
-  
 
 } // end of Belos namespace 
 

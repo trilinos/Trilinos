@@ -72,6 +72,12 @@ namespace Belos {
       not exist, or is not complete.
     */
     static inline ScalarType notDefined() { return MV::this_type_is_missing_a_specialization(); };
+
+    /// \typedef vector_space_type
+    ///
+    /// This typedef makes MultiVecTraits' vector_space_type
+    /// syntactically correct.  Its definition is not meaningful.
+    typedef void vector_space_type;
   };
 
   /*! \brief Virtual base class which defines basic traits for the multi-vector type.
@@ -85,6 +91,43 @@ namespace Belos {
   class MultiVecTraits 
   {
   public:
+
+    //! @name Vector space typedefs and methods
+    //@{
+    
+    /// \typedef vector_space_type
+    ///
+    /// MV objects live in a "vector space."  Two objects of the same
+    /// MV type might live in different vector spaces.  "Vector space"
+    /// includes the idea of distributed-memory data distribution,
+    /// among other things.
+    /// 
+    /// \note The default definition of this typedef is not
+    ///   meaningful; a specialization of MultiVecTraits for the MV
+    ///   type must exist in order for this typedef to have a
+    ///   meaningful definition.
+    typedef typename UndefinedMultiVecTraits<ScalarType, MV>::vector_space_type vector_space_type;
+
+    /// Return a persistent view to the vector space in which x lives.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of x.  For the Epetra specialization, this
+    /// means that the vector space is copied.  The Tpetra and Thyra
+    /// specializations rely on the ability of both libraries to
+    /// return persistent views of the vector space object.
+    ///
+    /// \note The term "range" comes from Thyra; an
+    ///   Epetra_MultiVector's Epetra_Map and a Tpetra::MultiVector's
+    ///   Tpetra::Map both correspond to the "range" of the
+    ///   multivector, i.e., the distribution of its rows.
+    ///
+    /// \note The default definition of this function is not
+    ///   meaningful; a specialization of MultiVecTraits for the MV
+    ///   type must exist in order for this function to have a
+    ///   meaningful definition.
+    static Teuchos::RCP<const vector_space_type> getRange (const MV& x)
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
+    //@}
 
     //! @name Creation methods
     //@{

@@ -46,6 +46,52 @@
 #endif // HAVE_BELOS_TSQR
 
 namespace Belos {
+
+  /// \brief Specialization of VectorSpaceTraits for Thyra objects.
+  /// 
+  /// \note Belos' Thyra adaptor uses LinearOpBase for the OP
+  ///   (operator) type.  MultiVectorBase "is-a" LinearOpBase, but
+  ///   that doesn't matter here.
+  template<class Scalar>
+  class VectorSpaceTraits<Thyra::MultiVectorBase<Scalar>, 
+			  Thyra::LinearOpBase<Scalar> > {
+  public:
+    typedef Thyra::MultiVectorBase<Scalar> multivector_type;
+    typedef Thyra::LinearOpBase<Scalar> operator_type;
+    typedef Thyra::VectorSpaceBase<Scalar> vector_space_type;
+
+    static bool 
+    compatible (const vector_space_type& first, 
+		const vector_space_type& second) {
+      return first.isCompatible (second);
+    }
+
+    static Teuchos::RCP<const vector_space_type>
+    persistentView (const Teuchos::RCP<const vector_space_type>& space)
+    {
+      using Teuchos::RCP;
+
+      // Thyra distributed objects return RCP<const
+      // VectorSpaceBase<Scalar> > when asked for their data
+      // distributions, as do Thyra::LinearOpBase objects when asked
+      // for their domain and range.  Those RCPs are persistent
+      // (strong references) by construction, so we can just let them
+      // pass through.  For safety, we still check whether it's a weak
+      // reference, and return a deep copy if it is.
+      if (space.strength() == Teuchos::RCP_WEAK)
+	{
+	  // VectorSpaceBase::clone() is allowed to return null,
+	  // indicating that cloning is not supported.
+	  RCP<const vector_space_type> copy = space->clone();
+	  TEST_FOR_EXCEPTION(copy.is_null(), std::logic_error,
+			     "Making a deep copy of the given Thyra::"
+			     "VectorSpaceBase object is not supported.");
+	  return copy;
+	}
+      else
+	return space;
+    }
+  };
   
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -69,6 +115,29 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> ST;
     typedef typename ST::magnitudeType magType;
   public:
+
+    //! @name Vector space typedefs and methods
+    //@{
+    
+    /// \typedef vector_space_type
+    ///
+    /// MV objects live in a "vector space."  Two objects of the same
+    /// MV type might live in different vector spaces.  "Vector space"
+    /// includes the idea of distributed-memory data distribution,
+    /// among other things.
+    typedef Thyra::VectorSpaceBase<ScalarType> vector_space_type;
+
+    /// Return a persistent view to the vector space in which x lives.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of x.  "Range" refers to the data
+    /// distribution of the rows of the multivector, with the
+    /// assumption that it is distributed in block row fashion among
+    /// processor(s).
+    static Teuchos::RCP<const vector_space_type> getRange (const MV& x) {
+      return x.range ();
+    }
+    //@}
 
     /** \name Creation methods */
     //@{
@@ -522,7 +591,35 @@ namespace Belos {
     { 
       Thyra::apply<ScalarType>(Op, Thyra::NOTRANS, x, Teuchos::outArg(y));
     }
+
+    //! @name Vector space typedefs and methods
+    //@{
     
+    /// \typedef vector_space_type
+    ///
+    /// Operator objects have a domain and range "vector space," which
+    /// may or may not be different.  OP objects take MV objects from
+    /// the domain space as input, and produce OP objects from the
+    /// range space as input.  "Vector space" includes the idea of
+    /// distributed-memory data distribution, among other things.
+    typedef Thyra::VectorSpaceBase<ScalarType> vector_space_type;
+
+    /// Return a persistent view to the domain vector space of A.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of A.
+    static Teuchos::RCP<const vector_space_type> getDomain (const OP& A) {
+      return A.domain ();
+    }
+
+    /// Return a persistent view to the range vector space of A.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of A.
+    static Teuchos::RCP<const vector_space_type> getRange (const OP& A) {
+      return A.range ();
+    }
+    //@}
   };
   
 } // end of Belos namespace 
