@@ -115,7 +115,7 @@ namespace Belos {
 		const vector_space_type& second) {
       // This will result in a compile-time error, on purpose, since
       // this traits class is only meaningful when specialized.
-      UndefinedVectorSpaceTraits::not_defined();
+      UndefinedVectorSpaceTraits<VectorSpaceType>::not_defined();
       return false;
     }
 
@@ -130,7 +130,7 @@ namespace Belos {
     persistentView (const Teuchos::RCP<const vector_space_type>& space) {
       // This will result in a compile-time error, on purpose, since
       // this traits class is only meaningful when specialized.
-      UndefinedVectorSpaceTraits::not_defined();
+      UndefinedVectorSpaceTraits<VectorSpaceType>::not_defined();
       return Teuchos::null;
     }
   };

@@ -41,12 +41,15 @@ APPEND_SET(HEADERS
   BelosGmresBaseFactory.hpp
   BelosGmresBase.hpp
   BelosGmresBaseIteration.hpp
+  BelosGmresInnerSolver.hpp
   BelosGmresIteration.hpp
   BelosGmresPolyOp.hpp
   BelosGmresPolySolMgr.hpp
   BelosGmresSolMgr.hpp
   BelosICGSOrthoManager.hpp
   BelosIMGSOrthoManager.hpp
+  BelosInnerSolveResult.hpp
+  BelosInnerSolver.hpp
   BelosIteration.hpp
   BelosLinearProblem.hpp
   BelosMatOrthoManager.hpp
@@ -57,6 +60,7 @@ APPEND_SET(HEADERS
   BelosMultiVec.hpp
   BelosMultiVecTraits.hpp
   BelosMVOPTester.hpp
+  BelosNewtonBasis.hpp
   BelosNewtonOpAkx.hpp
   BelosOpAkx.hpp
   BelosOperator.hpp
@@ -77,6 +81,7 @@ APPEND_SET(HEADERS
   BelosSolverManager.hpp
   BelosStandardGmres.hpp
   BelosStatusTestCombo.hpp
+  BelosStatusTestFactory.hpp
   BelosStatusTestGeneralOutput.hpp
   BelosStatusTestGenResNorm.hpp
   BelosStatusTest.hpp
@@ -89,10 +94,12 @@ APPEND_SET(HEADERS
   BelosTFQMRIter.hpp
   BelosTFQMRSolMgr.hpp
   BelosTypes.hpp
+  BelosVectorSpaceTraits.hpp
   ) 
 
 # CORE
 APPEND_SET(SOURCES
+  BelosInnerSolveResult.cpp
   )
 
 # UTIL

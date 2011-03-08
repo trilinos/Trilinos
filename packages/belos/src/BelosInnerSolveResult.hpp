@@ -81,21 +81,12 @@ namespace Belos {
     InnerSolveResult (const ReturnType theResult,
 		      const int theNumRestartCycles,
 		      const int theTotalNumIters,
-		      const std::map<std::string, double>& theExtraData) :
-      result_ (validatedReturnType (theResult)),
-      numRestartCycles_ (requireNonNegInt (theNumRestartCycles)),
-      totalNumIters_ (requireNonNegInt (theTotalNumIters)),
-      extraData_ (theExtraData)
-    {}
+		      const std::map<std::string, double>& theExtraData);
 
     //! Constructor, with no "extra data" input argument
     InnerSolveResult (const ReturnType theResult,
 		      const int theNumRestartCycles,
-		      const int theTotalNumIters) :
-      result_ (validatedReturnType (theResult)),
-      numRestartCycles_ (requireNonNegInt (theNumRestartCycles)),
-      totalNumIters_ (requireNonNegInt (theTotalNumIters))
-    {}
+		      const int theTotalNumIters);
 
     /// \brief Did the inner solve converge?    
     ///
@@ -125,7 +116,7 @@ namespace Belos {
     /// world than just the data above.  The data are stored as a map
     /// from the string label, to a double-precision floating-point
     /// value.
-    const std::map<std::string, double>& extraData const () {
+    const std::map<std::string, double>& extraData () const {
       return extraData_;
     }
 
@@ -135,24 +126,10 @@ namespace Belos {
     std::map<std::string, double> extraData_;
 
     static ReturnType 
-    validatedReturnType (const ReturnType ret)
-    {
-      TEST_FOR_EXCEPTION(ret != Converged || ret != Unconverged,
-			 std::invalid_argument,
-			 "Invalid ReturnType enum value " << ret << ".  "
-			 "Valid values are Converged=" << Converged << " and "
-			 "Unconverged=" << Unconverged << ".");
-      return ret;
-    }
+    validatedReturnType (const ReturnType ret);
 
     static int 
-    requireNonNegInt (const int k) 
-    {
-      TEST_FOR_EXCEPTION(k < 0, std::invalid_argument, 
-			 "The given integer argument k=" << k 
-			 << " must be nonnegative.");
-      return k;
-    }
+    requireNonNegInt (const int k);
   };
 
 } // namespace Belos
