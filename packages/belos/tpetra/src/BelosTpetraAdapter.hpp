@@ -61,6 +61,7 @@
 #include <BelosTypes.hpp>
 #include <BelosMultiVecTraits.hpp>
 #include <BelosOperatorTraits.hpp>
+#include <BelosInnerSolver.hpp>
 #include <Kokkos_NodeAPIConfigDefs.hpp>
 
 #ifdef HAVE_BELOS_TSQR
@@ -584,6 +585,88 @@ namespace Belos {
       }
     }
   };
+
+
+  /// \brief Adaptor between InnerSolver and Tpetra::Operator.
+  /// 
+  /// This wrapper lets you use as a Tpetra::Operator any
+  /// implementation of Belos::InnerSolver<Scalar, MV, OP> with MV =
+  /// Tpetra::MultiVector and OP = Tpetra::Operator (as long as the
+  /// MultiVector and Operator have compatible template parameters).
+  /// 
+  template <class Scalar, class LO, class GO, class Node>
+  class TpetraInnerSolver : public Tpetra::Operator<Scalar, LO, GO, Node> {
+  public:
+    typedef Scalar scalar_type;
+    typedef LO local_ordinal_type;
+    typedef GO global_ordinal_type;
+    typedef Node node_type;
+
+    typedef Tpetra::Operator<Scalar, LO, GO, Node> base_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> multivector_type;
+
+    const Teuchos::RCP<const map_type>& getDomainMap() const {
+      return Teuchos::null;
+    }
+    const Teuchos::RCP<const map_type>& getRangeMap() const {
+      return Teuchos::null;
+    }
+
+    //! Compute Y := alpha*solver(Y,X) + beta*Y.
+    void 
+    apply(const multivector_type& X,
+	  multivector_type& Y,
+	  Teuchos::ETransp mode = Teuchos::NO_TRANS, 
+	  Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+	  Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcpFromRef;
+      typedef multivector_type MV;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+
+      TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS, std::invalid_argument,
+			 "TpetraInnerSolver only supports applying the operator"
+			 " itself, not its transpose or conjugate transpose.");
+      const Scalar zero = STS::zero();
+      const Scalar one = STS::one();
+
+      // "X" is the right-hand side in this case, and "Y" is the
+      // "left-hand side."
+      RCP<const MV> X_ptr = rcpFromRef (X);
+      RCP<MV> Y_ptr = rcpFromRef (Y);
+
+      // Compute Y := alpha*solver(Y,X) + beta*Y.
+      //
+      // There are special cases for beta==0 or alpha==0; these
+      // special cases ignore NaNs in Y or in the result of
+      // solver(Y,X).  Note also that the inner solver is not invoked
+      // at all if alpha==0.
+      if (beta == 0)
+	{
+	  if (alpha != zero)
+	    solver_ (Y_ptr, X_ptr);
+	  if (alpha != one)
+	    Y_ptr->scale (alpha);
+	}
+      else if (alpha == 0)
+	Y_ptr->scale (beta);
+      else 
+	{ // The solver overwrites Y with the result of the solve, so
+	  // we have to make a copy of Y first before invoking the
+	  // solver.
+	  const MV Y_copy (Y);
+	  solver_ (Y_ptr, X_ptr);
+	  // Y := alpha*Y_copy + beta*Y.
+	  Y_ptr->update (alpha, Y_copy, beta);
+	}
+    }
+
+    bool hasTransposeApply() const { return false; }
+
+  };
+  
 
 } // end of Belos namespace 
 
