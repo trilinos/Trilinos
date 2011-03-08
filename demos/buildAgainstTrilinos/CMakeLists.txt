@@ -2,18 +2,13 @@
 
 cmake_minimum_required(VERSION 2.7)
 
-# Error check up front
-IF (NOT DEFINED MYAPP_TRILINOS_DIR)
-  MESSAGE(FATAL_ERROR "\nMyApp Error: cmake must define MYAPP_TRILINOS_DIR:
-  (-D MYAPP_TRILINOS_DIR:FILEPATH=<trilinos_install_prefix>)!")
-ENDIF()
+# Use Trilinos_PREFIX, if the user set it, to help find Trilinos.
+# The final location will actually be held in Trilinos_DIR which must
+# point at "<prefix>/lib/cmake/Trilinos", but this helps the search.
+SET(CMAKE_PREFIX_PATH ${Trilinos_PREFIX} ${CMAKE_PREFIX_PATH})
 
 # Get Trilinos as one entity
-FIND_PACKAGE(Trilinos PATHS ${MYAPP_TRILINOS_DIR}/include)
-
-IF(NOT Trilinos_FOUND)
-  MESSAGE(FATAL_ERROR "Could not find Trilinos!")
-ENDIF()
+FIND_PACKAGE(Trilinos REQUIRED)
 
 # Echo trilinos build info just for fun
 MESSAGE("\nFound Trilinos!  Here are the details: ")
