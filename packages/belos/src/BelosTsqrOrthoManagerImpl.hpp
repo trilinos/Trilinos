@@ -111,17 +111,21 @@ namespace Belos {
   /// The Block Gram-Schmidt procedure used here is inspired by that
   /// of G. W. Stewart ("Block Gram-Schmidt Orthogonalization", SISC
   /// vol 31 #1 pp. 761--775, 2008), except that we use TSQR+SVD
-  /// instead of standard Gram-Schmidt with orthogonalization to
-  /// handle the current block.  "Orthogonalization faults" may still
-  /// happen, but we do not handle them by default.  Rather, we make
-  /// one BGS pass, do TSQR+SVD, check the resulting column norms, and
-  /// make a second BGS pass (+ TSQR+SVD) if necessary.  If we then
-  /// detect an orthogonalization fault, we throw TsqrOrthoFault.
+  /// instead of (Gram-Schmidt with reorthogonalization) to handle the
+  /// current block.  "Orthogonalization faults" may still happen, but
+  /// we do not handle them by default.  Rather, we make one BGS pass,
+  /// do TSQR+SVD, check the resulting column norms, and make a second
+  /// BGS pass (+ TSQR+SVD) if necessary.  If we then detect an
+  /// orthogonalization fault, we throw TsqrOrthoFault.
   ///
   /// \note Despite the "Impl" part of the name of this class, we
-  ///   don't actually use it for the "pImpl" idiom.
+  ///   don't actually use it for the "pImpl" C++ idiom.  We just
+  ///   separate out the TSQR implementation to make it easier to
+  ///   implement the OrthoManager and MatOrthoManager interfaces for
+  ///   the case where the inner product operator is not the identity
+  ///   matrix.
   ///
-  template< class Scalar, class MV >
+  template<class Scalar, class MV>
   class TsqrOrthoManagerImpl
   {
   public:
@@ -426,7 +430,7 @@ namespace Belos {
     ///
     /// Allocated lazily; only allocated or updated if normalize() is
     /// called.
-    Teuchos::RCP<const typename MultiVecTraits<MV>::vector_space_type> Q_space_;
+    Teuchos::RCP<const typename MultiVecTraits<Scalar, MV>::vector_space_type> Q_space_;
 
     //! Machine precision for Scalar
     magnitude_type eps_;
@@ -926,8 +930,9 @@ namespace Belos {
     // NOTE (mfh 07 Mar 2011) In the worst case, VST::compatible() may
     // require one reduction on a Boolean value.  However, it does its
     // best to avoid communication for more common cases.
-    typedef VectorSpaceTraits<MV> VST;
-    RCP<const typename MVT::vector_space_type> X_space = MVT::getRange (X);
+    typedef typename MVT::vector_space_type vector_space_type;
+    typedef VectorSpaceTraits<vector_space_type> VST;
+    RCP<const vector_space_type> X_space = MVT::getRange (X);
     if (Q_.is_null() || 
 	Q_space_.is_null() ||
 	numCols > MVT::GetNumberVecs (*Q_) ||

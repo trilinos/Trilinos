@@ -45,11 +45,12 @@
 */
 
 #include "BelosEpetraAdapter.hpp"
+#include "BelosInnerSolver.hpp"
 
 using namespace Belos;
 
 namespace Belos {
-  template<>
+
   bool 
   VectorSpaceTraits<Epetra_BlockMap>::
   compatible (const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type& first, 
@@ -66,7 +67,6 @@ namespace Belos {
     return &first == &second || first.PointSameAs (second);
   }
 
-  template<>
   Teuchos::RCP<const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type>
   VectorSpaceTraits<Epetra_BlockMap>::
   persistentView (const Teuchos::RCP<const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type>& space)
@@ -97,7 +97,6 @@ namespace Belos {
       return space;
   }
 
-  template<>
   Teuchos::RCP<const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type>
   VectorSpaceTraits<Epetra_BlockMap>::
   persistentView (const VectorSpaceTraits<Epetra_BlockMap>::vector_space_type& space)
@@ -105,12 +104,101 @@ namespace Belos {
     return persistentView (Teuchos::rcpFromRef (space));
   }
 
-  template<>
   Teuchos::RCP<const MultiVecTraits<double, Epetra_MultiVector>::vector_space_type> 
   MultiVecTraits<double, Epetra_MultiVector>::
   getRange (const Epetra_MultiVector& x) 
   {
     return VectorSpaceTraits<vector_space_type>::persistentView (x.Map());
+  }
+
+  Teuchos::RCP<const OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::vector_space_type>
+  OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::
+  getDomain (const Epetra_Operator& A) 
+  {
+    return VectorSpaceTraits<vector_space_type>::persistentView (A.OperatorDomainMap());
+  }
+
+  Teuchos::RCP<const OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::vector_space_type>
+  OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::
+  getRange (const Epetra_Operator& A) 
+  {
+    return VectorSpaceTraits<vector_space_type>::persistentView (A.OperatorDomainMap());
+  }
+
+
+  EpetraInnerSolver::
+  EpetraInnerSolver (const Teuchos::RCP<inner_solver_type>& solver) :
+    solver_ (solver), 
+    domain_ (solver->getDomain()),
+    range_ (solver->getRange())
+  {}
+
+  int
+  EpetraInnerSolver::
+  Apply (const Epetra_MultiVector& X,
+	 Epetra_MultiVector& Y) const
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcpFromRef;
+    typedef multivector_type MV;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+    // FIXME (mfh 08 Mar 2011) There are many ways in which X and Y
+    // could alias one another; for example, X could be a const column
+    // view of Y.  We choose only to check for the simple case in
+    // which the two pointers are identical.
+    TEST_FOR_EXCEPTION(&X == &Y, std::invalid_argument,
+		       "EpetraInnerSolver::Apply() does not allow aliasing of "
+		       "X and Y.");
+    // "X" is the right-hand side in this case, and "Y" is the
+    // "left-hand side."
+    RCP<const MV> X_ptr = rcpFromRef (X);
+    RCP<MV> Y_ptr = rcpFromRef (Y);
+    solver_->solve (Y_ptr, X_ptr);
+    return 0;
+  }
+
+  int 
+  EpetraInnerSolver::
+  ApplyInverse (const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+  {
+    return -1; // Never successful
+  }
+
+  int 
+  EpetraInnerSolver::SetUseTranspose (bool UseTranspose) {
+    (void) UseTranspose; // Silence compiler warning
+    return -1; // Applying the transpose is not supported
+  }
+
+  double 
+  EpetraInnerSolver::NormInf() const {
+    throw std::logic_error("There is no reasonable way to compute the "
+			   "infinity norm of an Epetra_Operator implemented "
+			   "using InnerSolver.");
+  }
+
+  const char* 
+  EpetraInnerSolver::Label() const {
+    return "Epetra InnerSolver adaptor";
+  }
+
+  const Epetra_Map& 
+  EpetraInnerSolver::OperatorDomainMap() const 
+  {
+    using Teuchos::rcp_dynamic_cast;
+    // If it's not an Epetra_Map, we want the dynamic cast to fail
+    // immediately with an informative error message.
+    return *rcp_dynamic_cast<const Epetra_Map> (domain_, true);
+  }
+
+  const Epetra_Map& 
+  EpetraInnerSolver::OperatorRangeMap() const 
+  {
+    using Teuchos::rcp_dynamic_cast;
+    // If it's not an Epetra_Map, we want the dynamic cast to fail
+    // immediately with an informative error message.
+    return *rcp_dynamic_cast<const Epetra_Map> (range_, true);
   }
 
 } // namespace Belos

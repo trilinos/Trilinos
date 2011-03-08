@@ -106,9 +106,27 @@ namespace Belos {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
     typedef MV multivector_type;
     typedef OP operator_type;
-    typedef typename OperatorTraits<OP>::vector_space_type vector_space_type;
+    /// \typedef vector_space_type
+    /// \brief The type of the domain and range vector space objects.
+    /// 
+    /// \note The definition of this typedef is a bit confusing,
+    ///   because it refers to a different OperatorTraits
+    ///   specialization (for OP) than this one (for
+    ///   InnerSolver<Scalar, MV, OP>)
+    typedef typename OperatorTraits<Scalar, MV, OP>::vector_space_type vector_space_type;
 
+    /// \brief Persistent view of the domain vector space.
+    ///
+    /// The "domain" of the inner solver is the vector space in which
+    /// valid right-hand sides B live, for an inner solver that solves
+    /// AX=B.
     virtual Teuchos::RCP<const vector_space_type> getDomain() const = 0;
+
+    /// \brief Persistent view of the range vector space.
+    ///
+    /// The "range" of the inner solver is the vector space in which
+    /// valid approximate (or exact) solutions X live, for an inner
+    /// solver that solves AX=B.
     virtual Teuchos::RCP<const vector_space_type> getRange() const = 0;
 
     /// \brief Solve \f$AX=B\f$ for the given right-hand side(s) B.
@@ -126,15 +144,18 @@ namespace Belos {
     ///   not required to do so).  On output: the approximate solution
     ///   to Ax=B as computed by the inner solver.  Whether or not the
     ///   solver accepts an initial guess, X must be allocated to hold
-    ///   the output, and it must be in the correct vector space for
-    ///   the solution vectors.
+    ///   the output, and it must be in the range vector space of this
+    ///   solver.
     ///
-    /// \param B [in] Right-hand side(s) for which to solve
+    /// \param B [in] Right-hand side(s) for which to solve.  It must
+    ///   be in the domain vector space of this solver.
     ///
     /// \param convTol [in] "Convergence tolerance," the meaning of
     ///   which depends on the subclass
+    ///
     /// \param maxItersPerRestart [in] Maximum number of iterations
     ///   per restart cycle in the inner solve.
+    ///
     /// \param maxNumRestarts [in] Maximum number of restart cycle(s) 
     ///   in the inner solve.
     ///
@@ -168,9 +189,13 @@ namespace Belos {
     /// \param X [in/out] On input: The initial guess for the inner
     ///   solver, if the inner solver accepts an initial guess (it is
     ///   not required to do so).  On output: the approximate solution
-    ///   to Ax=B as computed by the inner solver.  
+    ///   to Ax=B as computed by the inner solver.  Whether or not the
+    ///   solver accepts an initial guess, X must be allocated to hold
+    ///   the output, and it must be in the range vector space of this
+    ///   solver.
     ///
-    /// \param B [in] Right-hand side(s) for which to solve
+    /// \param B [in] Right-hand side(s) for which to solve.  It must
+    ///   be in the domain vector space of this solver.
     ///
     /// \return The result of the inner solve.  It is a single result,
     ///   aggregated over all right-hand side(s).

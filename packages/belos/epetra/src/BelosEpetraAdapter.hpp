@@ -57,7 +57,6 @@
 #include "BelosOperator.hpp"
 #include "BelosTypes.hpp"
 #include "BelosVectorSpaceTraits.hpp"
-#include "BelosInnerSolver.hpp"
 
 #ifdef HAVE_BELOS_TSQR
 #  include <Epetra_TsqrAdaptor.hpp>
@@ -343,7 +342,8 @@ namespace Belos {
     ///   Epetra_MultiVector's Epetra_Map and a Tpetra::MultiVector's
     ///   Tpetra::Map both correspond to the "range" of the
     ///   multivector, i.e., the distribution of its rows.
-    static Teuchos::RCP<const vector_space_type> getRange (const MV& x);
+    static Teuchos::RCP<const vector_space_type> 
+    getRange (const Epetra_MultiVector& x);
     //@}
 
     static Teuchos::RCP<Epetra_MultiVector> 
@@ -911,14 +911,14 @@ namespace Belos {
       // on that flag staying set...
       if (trans)
 	const_cast<Epetra_Operator &>(Op).SetUseTranspose (true);
-      info = Op.Apply( x, y );
+      info = Op.Apply (x, y);
       if (trans)
 	const_cast<Epetra_Operator &>(Op).SetUseTranspose (false);      
       TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
 			 "Belos::OperatorTraits<double, Epetra_MultiVector, "
 			 "Epetra_Operator>::Apply() " << 
 			 (trans!=NOTRANS ? "(applying the transpose)" : "")
-			 " returned a nonzero value info=" << info << ", "
+			 << " returned a nonzero value info=" << info << ", "
 			 "indicating an error in applying the operator.");
     }
 
@@ -951,9 +951,8 @@ namespace Belos {
     ///   objects only return a const vector space reference that is
     ///   not guaranteed to persist beyond the scope of the
     ///   distributed object.
-    static Teuchos::RCP<const vector_space_type> getDomain (const OP& A) {
-      return VectorSpaceTraits<vector_space_type>::persistentView (A.OperatorDomainMap());
-    }
+    static Teuchos::RCP<const vector_space_type> 
+    getDomain (const Epetra_Operator& A);
 
     /// Return a persistent view to the range vector space of A.
     ///
@@ -962,13 +961,15 @@ namespace Belos {
     ///   objects only return a const vector space reference that is
     ///   not guaranteed to persist beyond the scope of the
     ///   distributed object.
-    static Teuchos::RCP<const vector_space_type> getRange (const OP& A) {
-      return VectorSpaceTraits<vector_space_type>::persistentView (A.OperatorRangeMap());
-    }
+    static Teuchos::RCP<const vector_space_type> 
+    getRange (const Epetra_Operator& A);
     //@}
     
   };
 
+  // Forward declaration of InnerSolver class for EpetraInnerSolver.
+  template<class Scalar, class MV, class OP>
+  class InnerSolver;
   
   /// \class EpetraInnerSolver
   /// \brief Adaptor between InnerSolver and Epetra_Operator.
@@ -981,17 +982,13 @@ namespace Belos {
     typedef double scalar_type;
     typedef Epetra_MultiVector multivector_type;
     typedef Epetra_Operator operator_type;
-    typedef OperatorTraits<operator_type>::vector_space_type vector_space_type;
+    typedef OperatorTraits<scalar_type, multivector_type, operator_type>::vector_space_type vector_space_type;
     typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
 
     /// \brief Constructor.
     ///
     /// \param solver [in/out] The actual inner solver implementation.
-    TpetraInnerSolver (const Teuchos::RCP<inner_solver_type>& solver) :
-      solver_ (solver), 
-      domain_ (solver->getDomain()),
-      range_ (solver->getRange())
-    {}
+    EpetraInnerSolver (const Teuchos::RCP<inner_solver_type>& solver);
 
     /// \brief Compute Y := solver(Y,X).
     ///
@@ -1002,60 +999,33 @@ namespace Belos {
     ///   may be treated as the initial guess of an iterative solver.
     ///
     /// \return Zero on success, else nonzero.
-    int 
-    Apply (const multivector_type& X,
-	   multivector_type& Y) const
-    {
-      using Teuchos::RCP;
-      using Teuchos::rcpFromRef;
-      typedef multivector_type MV;
-      typedef Teuchos::ScalarTraits<Scalar> STS;
+    int Apply (const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-      if (&X == &Y) // Aliasing is not allowed
-	return -1;
-      else
-	{ // "X" is the right-hand side in this case, and "Y" is the
-	  // "left-hand side."
-	  RCP<const MV> X_ptr = rcpFromRef (X);
-	  RCP<MV> Y_ptr = rcpFromRef (Y);
-	  solver_ (Y_ptr, X_ptr);
-	  return 0;
-	}
-    }
+    /// \brief Apply the inverse of an InnerSolver (not supported).
+    /// 
+    /// InnerSolver does not support applying the inverse of the
+    /// solver.  It seems like the inverse of solving AX=B should be
+    /// applying A.  However, this is not necessarily true, since the
+    /// solver may only be approximate.
+    ///
+    /// \return Zero if the inverse was successfully applied, else nonzero.
+    int ApplyInverse (const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-    //! Applying the inverse of an InnerSolver is not supported.
-    int
-    ApplyInverse (const multivector_type& X,
-		  multivector_type& Y) const
-    {
-      return -1;
-    }
-
-    /// \brief Set Apply() to apply the transpose, if possible.
+    /// \brief Set Apply() to apply the transpose if possible (it's not).
     ///
     /// If UseTranspose is true, all subsequent calls to Apply() will
     /// attempt to apply the transpose operator, until \c
     /// SetUseTranspose(false) is called.  If applying the transpose
     /// operator is not supported, this method returns nonzero,
     /// otherwise it returns zero.
-    int SetUseTranspose (bool UseTranspose) {
-      (void) UseTranspose; // Silence compiler warning
-      return -1; // Applying the transpose is not supported
-    }
+    int SetUseTranspose (bool UseTranspose);
 
     /// Computation of the infinity norm (of the whole inner solver)
     /// is not supported.  This method always throws an exception.
-    double NormInf() const {
-      throw std::logic_error("There is no reasonable way to compute the "
-			     "infinity norm of an Epetra_Operator implemented "
-			     "using InnerSolver.");
-      return 0; // To placate the compiler
-    }
+    double NormInf() const;
 
     //! Label for the Epetra_Operator implementation.
-    const char* Label() const {
-      return "Epetra adaptor for InnerSolver";
-    }
+    const char* Label() const;
 
     //! Can you apply the transpose of the operator? (No, never.)
     bool UseTranspose() const { return false; }
@@ -1067,26 +1037,28 @@ namespace Belos {
     ///
     /// The temporary reference should be valid until destruction of
     /// *this.  For a persistent view, call persistentDomainMap() instead.
-    const vector_space_type& OperatorDomainMap() const {
-      return *domain_;
-    }
-    /// \brief Persistent view of the domain vector space of the operator.
-    const Teuchos::RCP<const vector_space_type>& persistentDomainMap() const {
-      return domain_;
-    }
+    const Epetra_Map& OperatorDomainMap() const;
+
     /// \brief Temporary reference to the range vector space of the operator.
     ///
     /// The temporary reference should be valid until destruction of
     /// *this.  For a persistent view, call persistentRangeMap() instead.
-    const Teuchos::RCP<const vector_space_type>& OperatorRangeMap() const {
-      return *range_;
+    const Epetra_Map& OperatorRangeMap() const;
+
+    /// \brief Persistent view of the domain vector space of the operator.
+    const Teuchos::RCP<const vector_space_type>& persistentDomainMap() const {
+      return domain_;
     }
+
     /// \brief Persistent view of the range vector space of the operator.
     const Teuchos::RCP<const vector_space_type>& persistentRangeMap() const {
       return range_;
     }
 
     /// \brief The communicator associated with this Epetra object.
+    ///
+    /// \return A temporary reference to the communicator, which is
+    ///   valid within the scope of *this.
     ///
     /// \note I have interpreted this to mean the communicator
     ///   associated with the range of the operator.  Epetra_CrsMatrix
@@ -1108,7 +1080,7 @@ namespace Belos {
     /// It's not sensible to construct this object without an
     /// instantiated InnerSolver implementation, so we forbid it
     /// syntactically.
-    TpetraInnerSolver ();
+    EpetraInnerSolver ();
 
     //! The inner solver implementation.
     Teuchos::RCP<inner_solver_type> solver_;

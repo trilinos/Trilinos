@@ -78,7 +78,7 @@ namespace Belos {
   /// (called "maps" in Tpetra) for Tpetra objects:
   /// Tpetra::MultiVector for multivectors, and Tpetra::Operator for
   /// operators.
-  template<class Scalar, class LO, class GO, class Node>
+  template<class LO, class GO, class Node>
   class VectorSpaceTraits<Tpetra::Map<LO, GO, Node> > {
   public:
     typedef Tpetra::Map<LO, GO, Node> vector_space_type;
@@ -162,7 +162,8 @@ namespace Belos {
     ///   Epetra_MultiVector's Epetra_Map and a Tpetra::MultiVector's
     ///   Tpetra::Map both correspond to the "range" of the
     ///   multivector, i.e., the distribution of its rows.
-    static Teuchos::RCP<const vector_space_type> getRange (const MV& x) {
+    static Teuchos::RCP<const vector_space_type> 
+    getRange (const Tpetra::MultiVector<Scalar, LO, GO, Node>& x) {
       return x.getMap ();
     }
     //@}
@@ -663,7 +664,8 @@ namespace Belos {
     /// beyond the scope of A.  The Tpetra specialization relies on
     /// the ability of Tpetra objects to return persistent views of
     /// the vector space object, without needing to copy them.
-    static Teuchos::RCP<const vector_space_type> getDomain (const OP& A) {
+    static Teuchos::RCP<const vector_space_type> 
+    getDomain (const Tpetra::Operator<Scalar, LO, GO, Node>& A) {
       return A.getDomainMap ();
     }
 
@@ -673,15 +675,17 @@ namespace Belos {
     /// beyond the scope of A.  The Tpetra specialization relies on
     /// the ability of Tpetra objects to return persistent views of
     /// the vector space object, without needing to copy them.
-    static Teuchos::RCP<const vector_space_type> getRange (const OP& A) {
+    static Teuchos::RCP<const vector_space_type> 
+    getRange (const Tpetra::Operator<Scalar, LO, GO, Node>& A) {
       return A.getRangeMap ();
     }
     //@}
 
-    static void Apply ( const Tpetra::Operator<Scalar,LO,GO,Node> & Op, 
-                        const Tpetra::MultiVector<Scalar,LO,GO,Node> & X,
-                              Tpetra::MultiVector<Scalar,LO,GO,Node> & Y,
-                              ETrans trans=NOTRANS )
+    static void 
+    Apply (const Tpetra::Operator<Scalar,LO,GO,Node>& Op, 
+	   const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
+	   Tpetra::MultiVector<Scalar,LO,GO,Node>& Y,
+	   ETrans trans=NOTRANS)
     { 
       switch (trans) {
         case NOTRANS:
@@ -694,6 +698,9 @@ namespace Belos {
           Op.apply(X,Y,Teuchos::CONJ_TRANS);
           break;
       }
+      throw std::logic_error("Belos::OperatorTraits::Apply(): Should never get "
+			     "here; fell through a switch statement.  Please "
+			     "report this bug to the Belos developers.");
     }
   };
 
@@ -726,7 +733,7 @@ namespace Belos {
 
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> multivector_type;
     typedef Tpetra::Operator<Scalar, LO, GO, Node> operator_type;
-    typedef typename OperatorTraits<operator_type>::vector_space_type vector_space_type;
+    typedef typename OperatorTraits<scalar_type, multivector_type, operator_type>::vector_space_type vector_space_type;
     typedef InnerSolver<Scalar, multivector_type, operator_type> inner_solver_type;
 
     /// \brief Constructor.
