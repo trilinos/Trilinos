@@ -1,20 +1,11 @@
-
-/** @brief Sierra Toolkit */
-namespace stk {
-}//namespace stk
-
 /**
- * \mainpage Sierra Toolkit Algorithm Support Product
- *
- *    \copydoc stk_algsup_module
- *
  * \page stk_algsup_banner Sierra Toolkit Algorithm Support
  *
  *    \ref stk_algsup_module "Sierra Toolkit Algorithm Support"
  *
  *    The Sierra Toolkit Algorithm Support product provides...
  *  
- * \page stk_algsup_module Sierra Toolkit Algorithm Support Product
+ * \addtogroup stk_algsup_module Sierra Toolkit Algorithm Support Product
  *
  *    The Sierra Toolkit Algorithm Support product provides...
  *  
