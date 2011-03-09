@@ -50,6 +50,7 @@ APPEND_SET(HEADERS
   Teuchos_ArrayRCPDecl.hpp
   Teuchos_ArrayView.hpp
   Teuchos_ArrayViewDecl.hpp
+  Teuchos_ArrayConversions.hpp
   Teuchos_Assert.hpp
   Teuchos_BLAS.hpp
   Teuchos_BLAS_types.hpp
@@ -77,6 +78,7 @@ APPEND_SET(HEADERS
   Teuchos_ErrorPolling.hpp
   Teuchos_Exceptions.hpp
   Teuchos_ExpandScalarTypeMacros.hpp
+  Teuchos_ExplicitInstantiationHelpers.hpp
   Teuchos_F77_wrappers.h
   Teuchos_FancyOStream.hpp
   Teuchos_Flops.hpp
