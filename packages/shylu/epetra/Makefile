@@ -2,7 +2,7 @@
 #Compile with Trilinos
 #===============================================================================
 
-default: all
+default: driver
 
 include ./Makefile.export.Trilinos_install
 
@@ -14,13 +14,16 @@ library: $(OBJ)
 	$(Trilinos_AR) cr libhyperlu.a $(OBJ)
 
 exec: $(OBJ) hyperlu.o
-	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) hyperlu.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o hyperlu_factor.exe
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) hyperlu.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -o hyperlu_factor.exe
 
 driver: $(OBJ) hyperlu_driver.o
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) hyperlu_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o hyperlu_driver.exe
 
+adriver: $(OBJ) amesos_driver.o
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) amesos_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -o amesos_driver.exe
+
 prober: hyperlu_prober.o
-	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) hyperlu_prober.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o hyperlu_prober.exe
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) hyperlu_prober.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -o hyperlu_prober.exe
 
 clean:
 	- rm a.out *.o *.a hyperlu_driver.exe hyperlu_factor.exe
@@ -38,6 +41,9 @@ hyperlu.o: ./hyperlu.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
 hyperlu_driver.o: ./hyperlu_driver.cpp
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
+
+amesos_driver.o: ./amesos_driver.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
 hyperlu_prober.o: ./hyperlu_prober.cpp

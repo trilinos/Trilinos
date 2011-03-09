@@ -8,14 +8,10 @@ started.
 2. Copy the file Trilinos/BUILD_DIR/Makefile.export.Trilinos_install to
 ILU/epetra.
 
-3. Edit the ILU/epetra/Makefile to set variables
-a. MY_LIB_DIR to Trilinos/BUILD_DIR/lib 
-b. RANLIB  to ranlib in your machine.
-
-4. Do "make" or "make all" to compile HyperLU.
+4. Do "make" or "make driver" to compile HyperLU.
 
 5. Edit ParaLU.xml to set the precondtioner (HyperLU/ILU/ILUT/ML currently) and
-the matrix market file name. The matrix market file should be in the current 
+the matrix market file name.
 directory.
 
 5. mpirun -n np ./hyperlu_driver.exe will solve the linear system from the
