@@ -19,6 +19,9 @@ exec: $(OBJ) hyperlu.o
 driver: $(OBJ) hyperlu_driver.o
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) hyperlu_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o hyperlu_driver.exe
 
+belos_driver: $(OBJ) hyperlu_belos_driver.o
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) hyperlu_belos_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o hyperlu_belos_driver.exe
+
 adriver: $(OBJ) amesos_driver.o
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) amesos_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -o amesos_driver.exe
 
@@ -50,6 +53,9 @@ hyperlu_prober.o: ./hyperlu_prober.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
 hyperlu_probing_operator.o: ./hyperlu_probing_operator.cpp
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
+
+hyperlu_belos_driver.o: ./hyperlu_belos_driver.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
 #-------------------------------------------------------------------------------
