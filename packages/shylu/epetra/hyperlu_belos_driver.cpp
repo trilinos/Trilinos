@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     using Teuchos::rcp;
 
 
-    bool verbose = false, proc_verbose = false;
+    bool verbose = false, proc_verbose = true;
     bool leftprec = true;      // left preconditioning or right.
     int frequency = -1;        // frequency of status test output.
     int blocksize = 1;         // blocksize
@@ -93,13 +93,13 @@ int main(int argc, char *argv[])
                                // linear system
     int maxsubspace = 25;      // maximum number of blocks the solver can use 
                                // for the subspace
-    MT tol = 1.0e-5;           // relative residual tolerance
+    MT tol = 1.0e-9;           // relative residual tolerance
 
 
     int nProcs, myPID ;
     Teuchos::ParameterList pLUList ;        // ParaLU parameters
     Teuchos::ParameterList isoList ;        // Isorropia parameters
-    string ipFileName = "ParaLU.xml";       // TODO : Accept as i/p
+    string ipFileName = "HyperLU.xml";       // TODO : Accept as i/p
 
     nProcs = mpiSession.getNProc();
     myPID = Comm.MyPID();

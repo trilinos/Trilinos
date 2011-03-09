@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     int nProcs, myPID ;
     Teuchos::ParameterList pLUList ;        // ParaLU parameters
     Teuchos::ParameterList isoList ;        // Isorropia parameters
-    string ipFileName = "ParaLU.xml";       // TODO : Accept as i/p
+    string ipFileName = "HyperLU.xml";       // TODO : Accept as i/p
 
     nProcs = mpiSession.getNProc();
     myPID = Comm.MyPID();

@@ -2,7 +2,7 @@
 #Compile with Trilinos
 #===============================================================================
 
-default: driver
+default: driver belos_driver
 
 include ./Makefile.export.Trilinos_install
 

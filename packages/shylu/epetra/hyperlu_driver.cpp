@@ -66,7 +66,8 @@ int main(int argc, char *argv[])
     int nProcs, myPID ;
     Teuchos::ParameterList pLUList ;        // ParaLU parameters
     Teuchos::ParameterList isoList ;        // Isorropia parameters
-    string ipFileName = "ParaLU.xml";       // TODO : Accept as i/p
+    Teuchos::ParameterList hyperLUList ;    // HyperLU parameters
+    string ipFileName = "HyperLU.xml";       // TODO : Accept as i/p
 
     nProcs = mpiSession.getNProc();
     myPID = Comm.MyPID();
@@ -77,13 +78,9 @@ int main(int argc, char *argv[])
     }
 
     // =================== Read input xml file =============================
-    cout << "I am here with ip" << ipFileName << endl;
-    char *fname = new char[ipFileName.size()+1];
-    strcpy(fname,ipFileName.c_str());
-    cout << fname << endl;
- 
     Teuchos::updateParametersFromXmlFile(ipFileName, &pLUList);
     isoList = pLUList.sublist("Isorropia Input");
+    hyperLUList = pLUList.sublist("HyperLU Input");
     // Get matrix market file name
     string MMFileName = Teuchos::getParameter<string>(pLUList, "mm_file");
     string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
@@ -99,7 +96,8 @@ int main(int argc, char *argv[])
     // ==================== Read input Matrix ==============================
     Epetra_CrsMatrix *A;
 
-    int err = EpetraExt::MatrixMarketFileToCrsMatrix(MMFileName.c_str(), Comm, A);
+    int err = EpetraExt::MatrixMarketFileToCrsMatrix(MMFileName.c_str(), Comm, 
+                                                        A);
     //EpetraExt::MatlabFileToCrsMatrix(MMFileName.c_str(), Comm, A);
     //assert(err != 0);
     cout <<"Done reading the matrix"<< endl;
