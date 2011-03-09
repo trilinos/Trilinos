@@ -1,6 +1,0 @@
-/* 
- * General build options selected in cmake configuration command 
- *   which are of interest to Zoltan
- */
-
-#cmakedefine HAVE_MPI
