@@ -246,6 +246,22 @@ namespace Belos {
     }
   };
 
+  /// \class UndefinedWrapperType
+  ///
+  /// Undefined wrapper type, to check at compile time whether
+  /// InnerSolverTraits has been specialized.  Specializations
+  /// (partial or total) of InnerSolverTraits do not refer to this
+  /// class.  (Deliberate) compiler errors will occur whenever the
+  /// compiler attempts to instantiate the constructor of this class.
+  template<class Scalar, class MV, class OP>
+  class UndefinedWrapperType {
+  public:
+    UndefinedWrapperType() {
+      (void) Scalar::this_specialization_is_not_defined();
+      (void) MV::this_specialization_is_not_defined();
+      (void) OP::this_specialization_is_not_defined();
+    }
+  };
 
   /// \brief Wrap an InnerSolver in an OP (operator).
   ///
@@ -272,9 +288,45 @@ namespace Belos {
     typedef Scalar scalar_type;
     typedef MV multivector_type;
     typedef OP operator_type;
+    typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
+    typedef UndefinedWrapperType<Scalar, MV, OP> wrapper_type;
 
+    /// \brief Wrap the given inner solver in a wrapper_type.
+    ///
+    /// The wrapper_type class implements the operator_type interface,
+    /// which can be used directly in Belos.
     static Teuchos::RCP<OP>
-    makeInnerSolverOperator (const Teuchos::RCP<InnerSolver<Scalar, MV, OP> >& solver);
+    makeInnerSolverOperator (const Teuchos::RCP<InnerSolver<Scalar, MV, OP> >& solver)
+    {
+      using Teuchos::rcp;
+      using Teuchos::rcp_implicit_cast;
+      // If this class is not specialized for the given combination of
+      // (Scalar, MV, OP), the constructor of wrapper_type here will
+      // (deliberately) raise a compiler error.
+      return rcp_implicit_cast<operator_type> (rcp (new wrapper_type (solver)));
+    }
+
+    /// \brief Return the given wrapper's inner solver object.
+    ///
+    /// If op is an inner solver wrapper instance, return the inner
+    /// solver object.  Otherwise, throw an std::bad_cast exception.  
+    ///
+    /// \note After calling this method, the inner solver object will
+    ///   persist beyond the scope of op.  Thus, if you don't care
+    ///   about the wrapper that implements the operator_type
+    ///   interface, you can get rid of the wrapper (by setting the
+    ///   RCP to null) and keep the inner solver.
+    static Teuchos::RCP<inner_solver_type>
+    getInnerSolver (const Teuchos::RCP<operator_type>& op)
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp_dynamic_cast;
+      // If this class is not specialized for the given combination of
+      // (Scalar, MV, OP), the instantiation of the wrapper_type class
+      // here will (deliberately) raise a compiler error.
+      RCP<wrapper_type> wrapper = rcp_dynamic_cast<wrapper_type> (op, true);
+      return wrapper->getInnerSolver();
+    }
   };
 
 } // namespace Belos

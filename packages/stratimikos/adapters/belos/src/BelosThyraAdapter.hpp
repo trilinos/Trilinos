@@ -649,6 +649,27 @@ namespace Belos {
       solver_ (solver)
     {}
 
+    /// \brief Return the underlying inner solver object.
+    ///
+    /// This breach of encapsulation makes EpetraInnerSolver into an
+    /// "envelope."  First, the inner solver hides inside an
+    /// Epetra_Operator until it gets inside a Belos solver that
+    /// recognizes the Epetra_Operator as an EpetraInnerSolver.  Then,
+    /// the Belos solver can take the InnerSolver out of the
+    /// "envelope," destroy the envelope (by setting its RCP to null)
+    /// if it wants, and work directly with the (more feature-rich)
+    /// InnerSolver.
+    ///
+    /// \note This method is declared const in order to cheat
+    ///   Belos::LinearProblem into letting the operator act like an
+    ///   envelope.  It's technically correct to call this method
+    ///   const, since it doesn't let the caller assign to the pointer
+    ///   (even though it lets the caller call nonconst methods on the
+    ///   InnerSolver).
+    Teuchos::RCP<inner_solver_type> getInnerSolver() const {
+      return solver_;
+    }
+
     //! A persistent view of the domain vector space of the operator
     Teuchos::RCP<const vector_space_type> domain() const {
       return solver_->getDomain();
@@ -657,13 +678,6 @@ namespace Belos {
     Teuchos::RCP<const vector_space_type> range() const {
       return solver_->getRange();
     }
-
-    // Clone the inner solver (currently not supported).
-    //
-    // For now, this method always returns null.
-    // Teuchos::RCP<const operator_type> clone() const {
-    //   return Teuchos::null;
-    // }
 
   protected:
     //! Whether apply() with the given transpose option is supported.
@@ -752,15 +766,38 @@ namespace Belos {
     typedef Scalar scalar_type;
     typedef Thyra::MultiVectorBase<Scalar> multivector_type;
     typedef Thyra::LinearOpBase<Scalar> operator_type;
+    typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
+    typedef ThyraInnerSolver<Scalar> wrapper_type;
 
-    Teuchos::RCP<operator_type>
-    makeInnerSolverOperator (const Teuchos::RCP<InnerSolver<scalar_type, multivector_type, operator_type> >& solver)
+    /// \brief Wrap the given inner solver in a wrapper_type.
+    ///
+    /// The wrapper_type class implements the operator_type interface,
+    /// which can be used directly in Belos.
+    static Teuchos::RCP<operator_type>
+    makeInnerSolverOperator (const Teuchos::RCP<inner_solver_type>& solver)
     {
       using Teuchos::rcp;
       using Teuchos::rcp_implicit_cast;
-      typedef ThyraInnerSolver<Scalar> wrapper_type;
-
       return rcp_implicit_cast<operator_type> (rcp (new wrapper_type (solver)));
+    }
+
+    /// \brief Return the given wrapper's inner solver object.
+    ///
+    /// If op is an inner solver wrapper instance, return the inner
+    /// solver object.  Otherwise, throw an std::bad_cast exception.
+    ///
+    /// \note After calling this method, the inner solver object will
+    ///   persist beyond the scope of op.  Thus, if you don't care
+    ///   about the wrapper that implements the operator_type
+    ///   interface, you can get rid of the wrapper (by setting the
+    ///   RCP to null) and keep the inner solver.
+    static Teuchos::RCP<inner_solver_type>
+    getInnerSolver (const Teuchos::RCP<operator_type>& op)
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp_dynamic_cast;
+      RCP<wrapper_type> wrapper = rcp_dynamic_cast<wrapper_type> (op, true);
+      return wrapper->getInnerSolver();
     }
   };
   
