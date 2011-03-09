@@ -153,9 +153,12 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
   Epetra_CrsMatrix *serialA ; 
   Epetra_CrsMatrix *transposeA;
 
+  int ierr = 0;
+
   if ( transpose ) {
     transposeA = new Epetra_CrsMatrix( Copy, *readMap, 0 );
-    assert( CrsMatrixTranspose( readA, transposeA ) == 0 ); 
+    ierr = CrsMatrixTranspose( readA, transposeA );
+    assert( ierr == 0 ); 
     serialA = transposeA ; 
     delete readA;
     readA = 0 ; 
@@ -176,7 +179,8 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
     
     Epetra_CrsMatrix *Amat = new Epetra_CrsMatrix( Copy, DistMap, 0 );
     Amat->Export(*serialA, exporter, Add);
-    assert(Amat->FillComplete()==0);    
+    ierr = Amat->FillComplete();
+    assert(ierr == 0);    
     
     Matrix = Amat; 
     //
