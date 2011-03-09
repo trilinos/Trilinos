@@ -487,16 +487,6 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
     //Set up the probing operator
     HyperLU_Probing_Operator probeop(&S, &R, LP, Solver, Cptr, &LocalDRowMap);
 
-    /*
-    //TODO : Testing apply, remove after development
-    Epetra_MultiVector *myX = new Epetra_MultiVector(SRowMap, 2);
-    Epetra_MultiVector *myY = new Epetra_MultiVector(SRowMap, 2);
-    myX->PutScalar(1.0);
-    probeop.Apply(*myX, *myY);
-    //cout << *myY << endl ;
-    delete myX;
-    delete myY;*/
-
     Teuchos::ParameterList pList;
     Teuchos::RCP<const Epetra_CrsGraph> rSg = Teuchos::rcpFromRef(Sg);
     Isorropia::Epetra::Prober prober(rSg, pList, false);
