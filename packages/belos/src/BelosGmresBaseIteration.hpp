@@ -127,11 +127,13 @@ namespace Belos {
 
     /// \brief Return the current iteration count.
     ///
+    /// Restarting resets the current iteration count.
+    ///
     /// \note The first iteration (after the initial residual
-    /// computation) counts as 1.  Belos likes to measure the
-    /// iterations while they are in progress, not after they are done
-    /// (when we increment them.  That's why we add one in the code
-    /// below.
+    ///   computation) counts as 1.  Belos likes to measure the
+    ///   iterations while they are in progress, not after they are
+    ///   done (when we increment them.  That's why we add one in the
+    ///   code below.
     int getNumIters() const { return impl_->getNumIters() + 1; }
     
     /// \brief Reset the iteration count to iter.

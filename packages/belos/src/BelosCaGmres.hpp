@@ -225,7 +225,17 @@ namespace Belos {
 	candidateBasisLength_ (initialCandidateBasisLength (akx_, akxParams_))
     {}
 
-    //! Return nonnull valid list of matrix powers kernel parameters
+    /// \brief Return valid list of matrix powers kernel parameters.
+    ///
+    /// If the params argument is nonnull and contains an "Akx" or
+    /// "Matrix Powers Kernel" sublist, return a deep copy of that
+    /// sublist.  Else, ask the given matrix powers kernel factory for
+    /// a default list of matrix powers kernel parameters, and return
+    /// the result.
+    ///
+    /// \param akxFactory [in]
+    ///
+    /// \return Valid, nonnull list of matrix powers kernel parameters.
     static Teuchos::RCP<const Teuchos::ParameterList>
     akxParameters (AkxFactory<Scalar, MV, OP>& akxFactory,
 		   const Teuchos::RCP<const Teuchos::ParameterList>& params)
@@ -239,36 +249,29 @@ namespace Belos {
 	return akxFactory.getDefaultParameters ();
       else
 	{
-	  // Users might have a couple different names in mind for
-	  // the parameter list that configures the matrix powers
-	  // kernel.
-	  const char* candidateNames[] = {"Akx", "Matrix Powers Kernel"};
-	  const int numCandidateNames = 2;
 	  RCP<ParameterList> akxParams;
 	  bool gotAkxParams = false;
-	  for (k = 0; k < numCandidateNames && ! gotAkxParams; ++k)
-	    { // Users may have specified the parameter list
-	      // either as a sublist, or as an RCP<const
-	      // ParameterList>.  Try both.  Regardless, make a
-	      // deep copy of the result, for safety.
-	      //
-	      try { // Could it be a sublist?
-		const ParameterList& result = 
-		  params->sublist (candidateNames[k]);
-		akxParams = parameterList (result);
-		gotAkxParams = true;
-	      } catch (Teuchos::Exceptions::InvalidParameter&) {
-		// No luck; gotAkxParams stays false.
-	      }
-	      try { // Could it be an RCP<const ParameterList>?
-		RCP<const ParameterList> result = 
-		  params->get<RCP<const ParameterList> (candidateNames[k]);
-		akxParams = parameterList (*result);
-		gotAkxParams = true;
-	      } catch (Teuchos::Exceptions::InvalidParameter&) {
-		// No luck; gotAkxParams stays false.
-	      }
-	    }
+	  const std::string& listName = akxFactory.parameterListName ();
+	  //
+	  // Users may have specified the parameter list either as a
+	  // sublist, or as an RCP<const ParameterList>.  Try both.
+	  // Regardless, make a deep copy of the result, for safety.
+	  //
+	  try { // Could it be a sublist?
+	    const ParameterList& result = params->sublist (listName);
+	    akxParams = parameterList (result);
+	    gotAkxParams = true;
+	  } catch (Teuchos::Exceptions::InvalidParameter&) {
+	    // No luck; gotAkxParams stays false.
+	  }
+	  try { // Could it be an RCP<const ParameterList>?
+	    RCP<const ParameterList> result = 
+	      params->get<RCP<const ParameterList> (listName);
+	    akxParams = parameterList (*result);
+	    gotAkxParams = true;
+	  } catch (Teuchos::Exceptions::InvalidParameter&) {
+	    // No luck; gotAkxParams stays false.
+	  }
 	  if (gotAkxParams)
 	    return akxParams;
 	  else
@@ -338,7 +341,11 @@ namespace Belos {
       // length loosely from above, but it may also have insights into
       // the numerical properties of the matrix and the largest
       // reasonable basis length.
-      return std::min (initLength, akx_->maxCandidateBasisLength());
+      if (gotLength)
+	return std::min (initLength, akx_->maxCandidateBasisLength());
+      else
+	return std::min (akx_->recommendedCandidateBasisLength(),
+			 akx_->maxCandidateBasisLength());
     }
 
     virtual bool canExtendBasis() const { 

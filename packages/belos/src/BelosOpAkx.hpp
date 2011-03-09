@@ -70,14 +70,24 @@ namespace Belos {
     /// \brief Constructor.
     ///
     /// \param A [in] The matrix of interest.
+    ///
     /// \param M_left [in] If not null, the left preconditioner,
     ///   or split preconditioner if M_right is also not null.
+    ///
     /// \param M_right [in] If not null, the right preconditioner,
     ///   or split preconditioner if M_left is also not null.
+    ///
+    /// \param recommendedBasisLength [in] The basis length
+    ///   recommended, at least initially, for good performance,
+    ///   numerical stability, or both.
     OpAkx (const Teuchos::RCP<const OP>& A, 
 	   const Teuchos::RCP<const OP>& M_left, 
-	   const Teuchos::RCP<const OP>& M_right) :
-      A_ (A), M_left_ (M_left), M_right_ (M_right)
+	   const Teuchos::RCP<const OP>& M_right,
+	   const int recommendedBasisLength) :
+      A_ (A), 
+      M_left_ (M_left), 
+      M_right_ (M_right),
+      recommendedBasisLength_ (validatedBasisLength (recommendedBasisLength))
     {}
 	
     //! Maximum candidate basis length.
@@ -87,6 +97,11 @@ namespace Belos {
       // apply them as many times as we want.  Of course, this doesn't
       // account for memory or time constraints.
       return Teuchos::OrdinalTraits<int>::max(); 
+    }
+
+    //! (Initial) recommended candidate basis length.
+    int recommendedCandidateBasisLength () const {
+      return recommendedBasisLength_;
     }
 
   protected:
@@ -174,6 +189,14 @@ namespace Belos {
     }
 
   private:
+    //! Validate and return the given recommended candidate basis length.
+    int validatedBasisLength (const int len) const {
+      if (len < 1)
+	throw std::invalid_argument("Invalid recommended candidate basis length");
+      else
+	return len;
+    }
+
     //! The matrix A of interest 
     Teuchos::RCP<const OP> A_;
     //! The left preconditioner (null means the identity operator)
@@ -191,6 +214,9 @@ namespace Belos {
     /// operators are changed such that their inputs or outputs have
     /// different Maps.
     Teuchos::RCP<const MV> v_scratch_;
+
+    //! (Initial) recommended candidate basis length.
+    int recommendedBasisLength_
   };
 
 } // namespace Belos

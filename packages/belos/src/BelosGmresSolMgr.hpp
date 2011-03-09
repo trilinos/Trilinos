@@ -65,36 +65,22 @@ namespace Belos {
   ///
   template<class Scalar, class MV, class OP>
   class GmresSolMgr : public SolverManager<Scalar, MV, OP> {
-  private:
-    typedef MultiVecTraits<Scalar,MV> MVT;
-    typedef OperatorTraits<Scalar,MV,OP> OPT;
-    typedef Teuchos::ScalarTraits<Scalar> SCT;
-    typedef typename SCT::magnitudeType magnitude_type;
-    typedef Teuchos::ScalarTraits<magnitude_type> SMT;
-    typedef GmresBaseIteration<Scalar, MV, OP> iteration_type;
-
   public:
     typedef Scalar scalar_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
     typedef MV multivector_type;
     typedef OP operator_type;
 
+  private:
+    typedef MultiVecTraits<Scalar,MV> MVT;
+    typedef OperatorTraits<Scalar,MV,OP> OPT;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    typedef GmresBaseIteration<Scalar, MV, OP> iteration_type;
+
+  public:
     //! \name Constructors and destructor 
     //@{ 
-
-    /// \brief Default constructor.
-    ///
-    /// \note I'm not a fan of default construction for heavyweight
-    /// "solve this problem" classes like this one, since it tends to
-    /// violate the "construction is initialization" preferred C++
-    /// idiom.  Nevertheless, we have to support default construction
-    /// syntactically, in order to inherit from SolverManager.
-    GmresSolMgr() 
-    {
-      throw std::logic_error("We are required to support default construction "
-			     "syntactically, but nothing requires us to support "
-			     "it at runtime!  Remember RAII:  Resource "
-			     "Allocation Is Initialization.");
-    }
 
     /// \brief Preferred constructor.
     ///
@@ -109,6 +95,21 @@ namespace Belos {
       debug_ (debug)
     { 
       setParameters (params);
+    }
+
+    /// \brief Default constructor.  
+    ///
+    /// \note I'm not a fan of default construction for heavyweight
+    /// "solve this problem" classes like this one, since it tends to
+    /// violate the "construction is initialization" preferred C++
+    /// idiom.  Nevertheless, we have to support default construction
+    /// syntactically, in order to inherit from SolverManager.
+    GmresSolMgr() 
+    {
+      throw std::logic_error("We are required to support default construction "
+			     "syntactically, but nothing requires us to support "
+			     "it at runtime!  Remember RAII:  Resource "
+			     "Allocation Is Initialization.");
     }
 
     //! Destructor, defined virtual for safe inheritance.
@@ -148,7 +149,12 @@ namespace Belos {
       return params_;
     }
 
-    //! Iteration count for the most recent call to \c solve().
+    /// \brief Iteration count for the most recent call to \c solve().
+    ///
+    /// It's not entirely clear what the SolutionManager interface
+    /// expects this to mean.  We've interpreted it to mean the
+    /// maximum (over all right-hand side(s)) of the total number of
+    /// iterations over all restart cycle(s).
     int getNumIters() const { 
       if (iter_.is_null())
 	throw std::logic_error("The number of iterations is undefined, since "
@@ -166,6 +172,19 @@ namespace Belos {
     bool isLOADetected() const {
       return false;
     }
+
+    /// \brief Last solve's number of restarts and total iterations.
+    ///
+    /// After calling solve(), you may call this method.  For each
+    /// right-hand side solved, it returns (total number of restart
+    /// cycles, total number of iterations over all restart cycles).
+    /// Before calling solve(), the result of calling this method is
+    /// undefined.
+    std::vector<std::pair<int, int> >
+    totalNumIters () const {
+      return totalNumIters_;
+    }
+
     //@}
 
     //! \name "Set" methods
@@ -232,61 +251,13 @@ namespace Belos {
     ///
     /// \param type [in] The type of reset to perform.  Only type =
     ///   Belos::Problem is currently supported.
-    void 
-    reset (const ResetType type) 
-    {
-      using Teuchos::rcp;
-      using std::endl;
-
-      const char prefix[] = "Belos::GmresSolMgr::reset: ";
-      std::ostream& dbg = outMan_->stream(Debug);
-      dbg << prefix << endl;
-
-      if ((type & Belos::RecycleSubspace) != 0)
-	// TODO (mfh 15 Feb 2011) Do we want to support recycling GMRES here?
-	throw std::invalid_argument ("This version of the GMRES solution "
-				     "manager does not currently support "
-				     "Krylov subspace recycling.");
-      else if ((type & Belos::Problem) != 0)
-	{ // Recompute the initial residual(s) (both left-
-	  // preconditioned (if applicable) and unpreconditioned).
-	  //
-	  // FIXME (mfh 21 Feb 2011) This recomputes _all_ the initial
-	  // residuals, since it calls setProblem() on the
-	  // LinearProblem instance.  Broken!  We should only compute
-	  // initial residuals for the unsolved right-hand sides.
-	  dbg << "-- Recomputing initial residual(s)" << endl;
-	  problem_ = validatedProblem (problem_);
-
-	  // Rebuild the status tests, using the solver manager's
-	  // current list of parameters.
-	  dbg << "-- Rebuilding status tests" << endl;
-	  rebuildStatusTests ();
-
-	  // Rebuild the orthogonalization method.  This is a bit of a
-	  // hack; TsqrOrthoManager specifically needs to be
-	  // reinitialized if the data layout of the vectors have
-	  // changed, but the MVT and OPT interfaces don't let me
-	  // check for that.
-	  dbg << "-- Rebuilding OrthoManager" << endl;
-	  rebuildOrthoManager ();
-	}
-      else
-	{
-	  std::ostringstream os;
-	  os << prefix << "Invalid ResetType argument type = " 
-	     << type << ".  Currently, this method only accepts accept type = "
-	    "Belos::Problem (== " << Belos::Problem << ").";
-	  throw std::invalid_argument (os.str());
-	}
-    }
+    void reset (const ResetType type);
     //@}
 
     //! \name Solver application methods
     //@{ 
 
-
-    /// \brief Attempt to solve the linear system.
+    /// \brief Attempt to solve the linear system \f$AX=B\f$.
     ///
     /// Do so by calling the underlying linear solver's iterate()
     /// routine zero or more times, until the problem has been solved
@@ -296,168 +267,92 @@ namespace Belos {
     /// \return ReturnType enum specifying Converged (the linear
     ///   problem was solved to the desired tolerance) or Unconverged
     ///   (the linear problem was not thusly solved).
-    ReturnType solve() 
+    ReturnType solve();
+
+    /// \brief Change the right-hand side of the linear system to solve.
+    ///
+    /// This works like a special case of setProblem(), when the only
+    /// part of the problem that has changed is the right-hand side,
+    /// and the new right-hand side is in the same vector space as the
+    /// previous right-hand side.  This avoids possibly expensive
+    /// reinitialization of things like the orthogonalization manager.
+    /// The initial guess will be left the same; in fact, if solve()
+    /// has been called before, the initial guess will be the
+    /// approximate solution from the last invocation of solve().
+    ///
+    /// \note This does _not_ create a new LinearProblem instance.
+    ///   The LinearProblem reference returned by getProblem() will
+    ///   still be valid and will still point to the original
+    ///   LinearProblem, except that the original LinearProblem's
+    ///   right-hand side will be different.  The original right-hand
+    ///   side will not be overwritten, though, so it will not go away
+    ///   if you retain an RCP to it.
+    void 
+    setRHS (const Teuchos::RCP<const MV>& B) 
     {
-      using std::endl;
-      const char prefix[] = "Belos::GmresSolMgr::solve(): ";
-      std::ostream& dbg = outMan_->stream(Debug);
-      dbg << prefix << endl;
-
-      // Reset the status test output.
-      dbg << "-- Resetting status test output" << endl;
-      outTest_->reset();
-      // Reset the number of calls about which the status test output knows.
-      dbg << "-- Resetting status test number of calls" << endl;
-      outTest_->resetNumCalls();
-
-      TEST_FOR_EXCEPTION(problem_.is_null(), std::logic_error,
-			 prefix << "The LinearProblem instance is null.");
-
-      // Set up the linear problem by computing initial residual(s)
-      // for all right-hand side(s).  setProblem() takes optional
-      // argument(s) if we want to change the initial guess(es) or the
-      // right-hand side(s).  At some point we might want to change
-      // the initial guess(es) for future solve(s), if we know that
-      // the right-hand side(s) are related.
-      if (! problem_->isProblemSet())
-	{
-	  dbg << "-- (Re)computing initial residual(s) for all right-hand "
-	    "side(s)" << endl;
-	  problem_->setProblem ();
-	}
-
-      // Total number of linear systems (right-hand sides) to solve.
-      const int numRHS = MVT::GetNumberVecs (*(problem_->getRHS()));
-      dbg << "-- There are " << numRHS << " total right-hand side" 
-	  << (numRHS != 1 ? "s" : "") << " to solve." << endl;
-
-      // Keep track of which linear system(s) converged.  Initially,
-      // none of them have yet converged, since we haven't tested for
-      // their convergence yet.
-      //
-      // FIXME (mfh 21 Feb 2011) Oh dear, std::vector<bool>.... full
-      // of hackish badness with respect to iterators.
-      std::vector<bool> converged (numRHS, false);
-
-      // Maximum number of restart cycles.
-      const int maxNumRestarts = params_->get<int> ("Maximum Restarts");
-      dbg << "-- Max number of restart cycles: " << maxNumRestarts << endl;
-      
-      // For each right-hand side, restart until GMRES converges or we
-      // run out of restart cycles.
-      for (int curRHS = 0; curRHS < numRHS; ++curRHS)
-	{
-	  dbg << "-- Solving for right-hand side " << (curRHS+1) 
-	      << " of " << numRHS << ":" << endl;
-
-	  // Tell the linear problem for which right-hand side we are
-	  // currently solving.  A block solver could solve for more
-	  // than one right-hand side at a time; the GMRES solvers
-	  // that this solution manager knows how to manage cannot.
-	  std::vector<int> curProbIndex (1);
-	  curProbIndex[0] = curRHS;
-	  // This method ensures that problem_->getCurr{LHS,RHS}Vec()
-	  // return the right vector, corresponding to the current
-	  // linear system to solve.
-	  problem_->setLSIndex (curProbIndex);
-
-	  // Sanity checks.
-	  {
-	    // Make sure that setLSIndex() has been called on the linear
-	    // problem.  Otherwise, getCurr{L,R}HSVec() (corresponding to
-	    // the current linear system to solve) will return null.
-	    RCP<const MV> X = problem_->getCurrLHSVec();
-	    RCP<const MV> B = problem_->getCurrRHSVec();
-	    TEST_FOR_EXCEPTION(X.is_null() || B.is_null(), std::invalid_argument,
-			       prefix << "setLSIndex() must not yet have been "
-			       "called on the given Belos::LinearProblem "
-			       "instance, since getCurrLHSVec() and/or "
-			       "getCurrRHSVec() return null.");
-	    // Our GMRES implementations only know how to solve for one
-	    // right-hand side at a time.  Make sure that X and B each have
-	    // exactly one column.
-	    const int nLHS = MVT::GetNumberVecs(*X);
-	    const int nRHS = MVT::GetNumberVecs(*B);
-	    TEST_FOR_EXCEPTION(nLHS != 1 || nRHS != 1, std::invalid_argument,
-			       prefix << "The current linear system to solve has "
-			       << nLHS << " initial guess" 
-			       << (nLHS != 1 ? "es" : "")
-			       << " and " << nRHS << " right-hand side"
-			       << (nLHS != 1 ? "s" : "") 
-			       << ", but our GMRES solvers only know how to "
-			       "solve for one right-hand side at a time.");
-	    if (debug_)
-	      { // In debug mode, compute and print the initial
-		// residual independently of the solver framework, as
-		// a sanity check.
-		RCP<const OP> A = problem_->getOperator ();
-		RCP<MV> R = MVT::Clone (*B, MVT::GetNumberVecs (*B));
-		// R := A * X
-		OPT::Apply (*A, *X, *R);
-		// R := B - R
-		MVT::MvAddMv (SCT::one(), *B, -SCT::one(), *R, *R);
-		std::vector<magnitude_type> theNorm (MVT::GetNumberVecs (*R));
-		MVT::MvNorm (*R, theNorm);
-		dbg << "-- Initial residual norm: ||B - A*X||_2 = " 
-		    << theNorm[0] << endl;
-	      }
-	  }
-
-	  // (Re)initialize the GmresBaseIteration, and therefore the
-	  // GmresBase subclass instance, with the current linear
-	  // system to solve.  (We need to do this since we've moved
-	  // on to the next right-hand side, which means we're solving
-	  // a different linear system, even though the
-	  // "LinearProblem" object expresses the same set of linear
-	  // system(s) to solve.
-	  rebuildIteration ();
-
-	  // Restart until GMRES converges or we run out of restart
-	  // cycles.
-	  //
-	  // FIXME (mfh 21 Feb 2011) Should we instead ask the
-	  // iteration (iter_) whether it has converged?  Otherwise,
-	  // this solution manager needs to keep the convergence test
-	  // (not just the whole status test) around.
-	  //
-	  // FIXME (mfh 21 Feb 2011) Get maxNumRestarts from somewhere...
-	  for (int restartCycle = 0; 
-	       convTest_->getStatus() != Passed && restartCycle < maxNumRestarts;
-	       ++restartCycle)
-	    {
-	      dbg << "-- Restart cycle " << (restartCycle+1) << " of " 
-		  << maxNumRestarts << ":" << endl;
-	      // reset() restarts the iteration, so we don't need to
-	      // restart the first time.
-	      if (restartCycle > 0)
-		iter_->restart ();
-	      // Iterate to convergence or maximum number of
-	      // iterations.
-	      iter_->iterate ();
-	      // Update the current approximate solution in the linear problem.
-	      iter_->updateSolution ();
-	    }
-	  // Remember whether the current linear system converged.
-	  converged[curRHS] = (convTest_->getStatus() == Passed);
-
-	  // Tell the linear problem that we have finished attempting
-	  // to solve the current linear system, and are ready to move
-	  // on to the next system (if there is one).
-	  //
-	  // FIXME (mfh 21 Feb 2011) Yeah, I know, this LinearProblem
-	  // method name doesn't make any sense.  Do _you_ have time to
-	  // rewrite most of Belos?
-	  problem_->setCurrLS();
-	}
-
-      // We've Converged if all of the right-hand sides converged.
-      if (std::accumulate (converged.begin(), converged.end(), 
-			   true, std::logical_and<bool>()))
-	return Converged;
-      else
-	return Unconverged;
+      TEST_FOR_EXCEPTION(B.is_null(), std::invalid_argument,
+			 "Belos::GmresSolMgr::setRHS(): the given new right-"
+			 "hand side B is null.");
+      // This "unsets" the problem: it makes the initial residual (and
+      // the left-preconditioned initial residual, if applicable)
+      // invalid.  We don't have to call setProblem() to reset the
+      // problem, since setProblem() will be called in solve().
+      problem_->setRHS (B);
     }
 
+    /// \brief Change the initial guess of the linear system to solve.
+    ///
+    /// This works like a special case of setProblem(), when the only
+    /// part of the problem that has changed is the initial guess, and
+    /// the new initial guess is in the same vector space as the
+    /// previous initial guess.  This avoids possibly expensive
+    /// reinitialization of things like the orthogonalization manager.
+    ///
+    /// \note This does _not_ create a new LinearProblem instance.
+    ///   The LinearProblem reference returned by getProblem() will
+    ///   still be valid and will still point to the original
+    ///   LinearProblem, except that the original LinearProblem's
+    ///   initial guess will be different.  The original initial guess
+    ///   will not be overwritten, though, so it will not go away if
+    ///   you retain an RCP to it.
+    void 
+    setLHS (const Teuchos::RCP<MV>& X) 
+    {
+      TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
+			 "Belos::GmresSolMgr::setLHS(): the given new initial "
+			 "guess X is null.");
+      // This "unsets" the problem; it makes the initial residual (and
+      // the left-preconditioned initial residual, if applicable)
+      // invalid.  We don't have to call setProblem() to reset the
+      // problem, since setProblem() will be called in solve().
+      problem_->setLHS (X);
+    }
+
+    /// Change stopping criteria for next invocation of solve().
+    ///
+    /// \param convTol [in] The new convergence tolerance.
+    ///   Interpretation of this depends on how the residual norm
+    ///   test(s) were initially set up.
+    /// \param maxItersPerRestart [in] Maximum number of iterations
+    ///   per restart cycle.
+    /// \param maxNumRestarts [in] Maximum number of restart cycle(s).
+    void
+    changeStoppingCriteria (const magnitude_type convTol,
+			    const int maxItersPerRestart,
+			    const int maxNumRestarts)
+    {
+      // Testing maxNumRestarts now, rather than below, ensures the
+      // strong exception guarantee: either no state will be changed,
+      // or no exceptions will be thrown.
+      TEST_FOR_EXCEPTION(maxNumRestarts < 0, std::invalid_argument,
+			 "The maximum number of restart cycle(s) must be "
+			 "nonnegative, but a value of " << maxNumRestarts 
+			 << " was specified.");
+      rebuildStatusTests (convTol, maxItersPerRestart);
+      params_->set ("Maximum Restarts", maxNumRestarts,
+		    "Maximum number of restart cycle(s) allowed for each "
+		    "right-hand side solved.");
+    }
     //@}
     
   private:
@@ -468,7 +363,7 @@ namespace Belos {
     Teuchos::RCP<OutputManager<Scalar> > outMan_;
 
     //! Current parameters for this solver manager instance.
-    Teuchos::RCP<const Teuchos::ParameterList> params_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
 
     //! Convergence stopping criterion for the current solve.
     Teuchos::RCP<StatusTest<Scalar,MV,OP> > convTest_;
@@ -493,6 +388,13 @@ namespace Belos {
     //! Instance of the Belos::Iteration subclass.
     Teuchos::RCP<iteration_type> iter_;
 
+    /// After calling solve(): For each right-hand side, the total
+    /// number of restart cycle(s) (first element in the pair), and
+    /// the total number of iterations over all the restart cycle(s)
+    /// (second element in the pair).  Undefined if solve() has not
+    /// yet been called.
+    std::vector<std::pair<int, int> > totalNumIters_;
+
     //! Whether or not to print debug output.
     bool debug_;
 
@@ -505,6 +407,22 @@ namespace Belos {
     void 
     rebuildStatusTests (Teuchos::RCP<const Teuchos::ParameterList> plist = 
 			Teuchos::null);
+
+    /// \brief (Re)build all the iteration stopping criteria.
+    ///
+    /// Variant of the one-argument rebuildStatusTests(), when you
+    /// just want to change the convergence tolerance and maximum
+    /// number of iterations per restart cycle.  (The status tests
+    /// don't control the maximum number of restarts.)
+    ///
+    /// \param convTol [in] The new convergence tolerance.
+    ///   Interpretation of this depends on how the residual norm
+    ///   test(s) were initially set up.
+    /// \param maxItersPerRestart [in] Maximum number of iterations
+    ///   per restart cycle.
+    void
+    rebuildStatusTests (const magnitude_type convTol,
+			const int maxItersPerRestart);
 
     /// \brief Initialize the OrthoManager (orthogonalization method).
     ///
@@ -917,7 +835,7 @@ namespace Belos {
 
 	// Default convergence tolerance is the square root of
 	// machine precision.
-	const magnitude_type defaultConvTol = SMT::squareroot (SMT::eps());
+	const magnitude_type defaultConvTol = STM::squareroot (STM::eps());
 	params->set ("Convergence Tolerance", defaultConvTol,
 		     "Relative residual tolerance that must be attained by "
 		     "the iterative solver in order for the linear system to "
@@ -1161,19 +1079,21 @@ namespace Belos {
   GmresSolMgr<Scalar,MV,OP>::
   rebuildStatusTests (Teuchos::RCP<const Teuchos::ParameterList> plist)
   {
+    using Teuchos::rcp_const_cast;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
 
     // Default value for plist is null, in which case we use the
     // stored parameter list.  One of those two should be non-null.
-    RCP<const ParameterList> theParams = plist.is_null() ? params_ : plist;
+    RCP<const ParameterList> theParams = plist.is_null() ? 
+      rcp_const_cast<const ParameterList>(params_) : plist;
     TEST_FOR_EXCEPTION(theParams.is_null(),
 		       std::logic_error,
 		       "Belos::GmresSolMgr::rebuildStatusTests: We can't (re)"
 		       "build the status tests without any parameters.");
     const magnitude_type convTol = 
       theParams->get<magnitude_type> ("Convergence Tolerance");
-    TEST_FOR_EXCEPTION(convTol < SMT::zero(), std::invalid_argument,
+    TEST_FOR_EXCEPTION(convTol < STM::zero(), std::invalid_argument,
 		       "Convergence tolerance " << convTol << " is negative.");
     const int maxIters = 
       theParams->get<int> ("Maximum Iterations");
@@ -1205,8 +1125,45 @@ namespace Belos {
   template<class Scalar, class MV, class OP>
   void
   GmresSolMgr<Scalar,MV,OP>::
+  rebuildStatusTests (const typename GmresSolMgr<Scalar,MV,OP>::magnitude_type convTol,
+		      const int maxItersPerRestart)
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+
+    TEST_FOR_EXCEPTION(convTol < STM::zero(), std::invalid_argument,
+		       "Convergence tolerance " << convTol << " is negative.");
+    params_->set ("Convergence Tolerance", convTol);
+    TEST_FOR_EXCEPTION(maxItersPerRestart < 0, std::invalid_argument,
+		       "Maximum number of iterations " << maxItersPerRestart
+		       << " per restart cycle is negative.");
+    params_->set ("Maximum Iterations", maxItersPerRestart,
+		  "Maximum number of iterations allowed per restart cycle, "
+		  "for each right-hand side solved.");
+    // If we don't have a problem to solve yet (problem_ is null), do
+    // both an implicit and an explicit convergence test by default.
+    // Then, when the user later calls setProblem() with a problem to
+    // solve, that method will call reset(Belos::Problem), which in
+    // turn will call rebuildStatusTests() again.
+    const bool haveLeftPrecond = problem_.is_null() ||
+      ! problem_->getLeftPrec().is_null();
+    const std::string implicitScaleType = 
+      params_->get<std::string> ("Implicit Residual Scaling");
+    const std::string explicitScaleType = 
+      params_->get<std::string> ("Explicit Residual Scaling");
+    convTest_ = initConvTest (convTol, haveLeftPrecond,
+			      implicitScaleType, explicitScaleType,
+			      userConvTest_);
+    statusTest_ = initStatusTest (convTest_, maxItersPerRestart);
+  }
+
+
+  template<class Scalar, class MV, class OP>
+  void
+  GmresSolMgr<Scalar,MV,OP>::
   rebuildOrthoManager (Teuchos::RCP<const Teuchos::ParameterList> plist)
   {
+    using Teuchos::rcp_const_cast;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
 
@@ -1218,7 +1175,8 @@ namespace Belos {
 
     // Default value for plist is null, in which case we use the
     // stored parameter list.  One of those two should be non-null.
-    RCP<const ParameterList> actualParams = plist.is_null() ? params_ : plist;
+    RCP<const ParameterList> actualParams = plist.is_null() ? 
+      rcp_const_cast<const ParameterList>(params_) : plist;
     TEST_FOR_EXCEPTION(actualParams.is_null(), std::logic_error,
 		       prefix << "We can't (re)build the orthogonalization "
 		       "method without any parameters.");
@@ -1266,6 +1224,7 @@ namespace Belos {
   GmresSolMgr<Scalar,MV,OP>::
   rebuildIteration (Teuchos::RCP<const Teuchos::ParameterList> plist)
   {
+    using Teuchos::rcp_const_cast;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
@@ -1276,7 +1235,8 @@ namespace Belos {
     std::ostream& dbg = outMan_->stream(Debug);
     dbg << prefix << endl;
 
-    RCP<const ParameterList> theParams = plist.is_null() ? params_ : plist;
+    RCP<const ParameterList> theParams = plist.is_null() ? 
+      rcp_const_cast<const ParameterList>(params_) : plist;
     TEST_FOR_EXCEPTION(theParams.is_null(), std::logic_error,
 		       prefix << "We can't (re)build the Iteration subclass "
 		       "instance without any parameters.");
@@ -1304,6 +1264,241 @@ namespace Belos {
     iter_ = rcp (new iteration_type (problem_, orthoMan_, outMan_, 
 				     statusTest_, iterParams));
     dbg << "-- Done instantiating GmresBaseIteration instance." << endl;
+  }
+
+  template<class Scalar, class MV, class OP>
+  void
+  GmresSolMgr<Scalar,MV,OP>::reset (const ResetType type) 
+  {
+    using Teuchos::rcp;
+    using std::endl;
+
+    const char prefix[] = "Belos::GmresSolMgr::reset: ";
+    std::ostream& dbg = outMan_->stream(Debug);
+    dbg << prefix << endl;
+
+    if ((type & Belos::RecycleSubspace) != 0)
+      // TODO (mfh 15 Feb 2011) Do we want to support recycling GMRES here?
+      throw std::invalid_argument ("This version of the GMRES solution "
+				   "manager does not currently support "
+				   "Krylov subspace recycling.");
+    else if ((type & Belos::Problem) != 0)
+      { // Recompute the initial residual(s) (both left-
+	// preconditioned (if applicable) and unpreconditioned).
+	//
+	// FIXME (mfh 21 Feb 2011) This recomputes _all_ the initial
+	// residuals, since it calls setProblem() on the
+	// LinearProblem instance.  Broken!  We should only compute
+	// initial residuals for the unsolved right-hand sides.
+	dbg << "-- Recomputing initial residual(s)" << endl;
+	problem_ = validatedProblem (problem_);
+
+	// Rebuild the status tests, using the solver manager's
+	// current list of parameters.
+	dbg << "-- Rebuilding status tests" << endl;
+	rebuildStatusTests ();
+
+	// Rebuild the orthogonalization method.  This is a bit of a
+	// hack; TsqrOrthoManager specifically needs to be
+	// reinitialized if the data layout of the vectors have
+	// changed, but the MVT and OPT interfaces don't let me
+	// check for that.
+	dbg << "-- Rebuilding OrthoManager" << endl;
+	rebuildOrthoManager ();
+      }
+    else
+      {
+	std::ostringstream os;
+	os << prefix << "Invalid ResetType argument type = " 
+	   << type << ".  Currently, this method only accepts accept type = "
+	  "Belos::Problem (== " << Belos::Problem << ").";
+	throw std::invalid_argument (os.str());
+      }
+  }
+
+  template<class Scalar, class MV, class OP>
+  ReturnType
+  GmresSolMgr<Scalar,MV,OP>::solve ()
+  {
+    using std::endl;
+    using std::make_pair;
+    using std::pair;
+    using std::vector;
+
+    const char prefix[] = "Belos::GmresSolMgr::solve(): ";
+    std::ostream& dbg = outMan_->stream(Debug);
+    dbg << prefix << endl;
+
+    // Reset the status test output.
+    dbg << "-- Resetting status test output" << endl;
+    outTest_->reset();
+    // Reset the number of calls about which the status test output knows.
+    dbg << "-- Resetting status test number of calls" << endl;
+    outTest_->resetNumCalls();
+
+    TEST_FOR_EXCEPTION(problem_.is_null(), std::logic_error,
+		       prefix << "The LinearProblem instance is null.");
+    TEST_FOR_EXCEPTION(problem_->getOperator().is_null(), std::logic_error,
+		       prefix << "The LinearProblem's operator (the matrix A "
+		       "in the equation AX=B) is null.");
+    TEST_FOR_EXCEPTION(problem_->getRHS().is_null(), std::logic_error,
+		       prefix << "The LinearProblem's initial guess X is "
+		       "null.");
+    TEST_FOR_EXCEPTION(problem_->getRHS().is_null(), std::logic_error,
+		       prefix << "The LinearProblem's right-hand side B is "
+		       "null.");
+
+    // Set up the linear problem by computing initial residual(s)
+    // for all right-hand side(s).  setProblem() takes optional
+    // argument(s) if we want to change the initial guess(es) or the
+    // right-hand side(s).  At some point we might want to change
+    // the initial guess(es) for future solve(s), if we know that
+    // the right-hand side(s) are related.
+    if (! problem_->isProblemSet())
+      {
+	dbg << "-- (Re)computing initial residual(s) for all right-hand "
+	  "side(s)" << endl;
+	problem_->setProblem ();
+      }
+    // Total number of linear systems (right-hand sides) to solve.
+    const int numRHS = MVT::GetNumberVecs (*(problem_->getRHS()));
+    dbg << "-- There are " << numRHS << " total right-hand side" 
+	<< (numRHS != 1 ? "s" : "") << " to solve." << endl;
+
+    // Keep track of which linear system(s) converged.  Initially,
+    // none of them have yet converged, since we haven't tested for
+    // their convergence yet.
+    //
+    // FIXME (mfh 21 Feb 2011) Oh dear, std::vector<bool>.... full
+    // of hackish badness with respect to iterators.
+    vector<bool> converged (numRHS, false);
+    
+    // For each right-hand side, keep track of the total number of
+    // restart cycle(s) (first element in the pair), and the total
+    // number of iterations over all the restart cycle(s) (second
+    // element in the pair).
+    vector<pair<int, int> > totalNumIters (numRHS, make_pair (0, 0));
+
+    // Maximum number of restart cycles.
+    const int maxNumRestarts = params_->get<int> ("Maximum Restarts");
+    dbg << "-- Max number of restart cycles: " << maxNumRestarts << endl;
+      
+    // For each right-hand side, restart until GMRES converges or we
+    // run out of restart cycles.
+    for (int curRHS = 0; curRHS < numRHS; ++curRHS)
+      {
+	dbg << "-- Solving for right-hand side " << (curRHS+1) 
+	    << " of " << numRHS << ":" << endl;
+
+	// Tell the linear problem for which right-hand side we are
+	// currently solving.  A block solver could solve for more
+	// than one right-hand side at a time; the GMRES solvers that
+	// this solution manager knows how to manage can only solve
+	// for one right-hand side at a time.
+	vector<int> curProbIndex (1);
+	curProbIndex[0] = curRHS;
+	// This method ensures that problem_->getCurr{LHS,RHS}Vec()
+	// return the right vector, corresponding to the current
+	// linear system to solve.
+	problem_->setLSIndex (curProbIndex);
+
+	// Sanity checks.
+	{
+	  // Make sure that setLSIndex() has been called on the linear
+	  // problem.  Otherwise, getCurr{L,R}HSVec() (corresponding to
+	  // the current linear system to solve) will return null.
+	  RCP<const MV> X = problem_->getCurrLHSVec();
+	  RCP<const MV> B = problem_->getCurrRHSVec();
+	  TEST_FOR_EXCEPTION(X.is_null() || B.is_null(), std::invalid_argument,
+			     prefix << "setLSIndex() must not yet have been "
+			     "called on the given Belos::LinearProblem "
+			     "instance, since getCurrLHSVec() and/or "
+			     "getCurrRHSVec() return null.");
+	  // Our GMRES implementations only know how to solve for one
+	  // right-hand side at a time.  Make sure that X and B each have
+	  // exactly one column.
+	  const int nLHS = MVT::GetNumberVecs(*X);
+	  const int nRHS = MVT::GetNumberVecs(*B);
+	  TEST_FOR_EXCEPTION(nLHS != 1 || nRHS != 1, std::invalid_argument,
+			     prefix << "The current linear system to solve has "
+			     << nLHS << " initial guess" 
+			     << (nLHS != 1 ? "es" : "")
+			     << " and " << nRHS << " right-hand side"
+			     << (nLHS != 1 ? "s" : "") 
+			     << ", but our GMRES solvers only know how to "
+			     "solve for one right-hand side at a time.");
+	  if (debug_)
+	    { // In debug mode, compute and print the initial
+	      // residual independently of the solver framework, as
+	      // a sanity check.
+	      RCP<const OP> A = problem_->getOperator ();
+	      RCP<MV> R = MVT::Clone (*B, MVT::GetNumberVecs (*B));
+	      // R := A * X
+	      OPT::Apply (*A, *X, *R);
+	      // R := B - R
+	      MVT::MvAddMv (STS::one(), *B, -STS::one(), *R, *R);
+	      std::vector<magnitude_type> theNorm (MVT::GetNumberVecs (*R));
+	      MVT::MvNorm (*R, theNorm);
+	      dbg << "-- Initial residual norm: ||B - A*X||_2 = " 
+		  << theNorm[0] << endl;
+	    }
+	}
+
+	// (Re)initialize the GmresBaseIteration, and therefore the
+	// GmresBase subclass instance, with the current linear
+	// system to solve.  (We need to do this since we've moved
+	// on to the next right-hand side, which means we're solving
+	// a different linear system, even though the
+	// "LinearProblem" object expresses the same set of linear
+	// system(s) to solve.
+	rebuildIteration ();
+
+	// Restart until GMRES converges or we run out of restart
+	// cycles.
+	for (int restartCycle = 0; 
+	     convTest_->getStatus() != Passed && restartCycle < maxNumRestarts;
+	     ++restartCycle)
+	  {
+	    dbg << "-- Restart cycle " << (restartCycle+1) << " of " 
+		<< maxNumRestarts << ":" << endl;
+	    // reset() restarts the iteration, so we don't need to
+	    // restart the first time.
+	    if (restartCycle > 0)
+	      iter_->restart ();
+	    // Iterate to convergence or maximum number of
+	    // iterations.
+	    iter_->iterate ();
+	    // For the current right-hand side, keep track of the
+	    // number of restart cycles and the total number of
+	    // iterations over all restart cycles.
+	    totalNumIters[curRHS].first++;
+	    totalNumIters[curRHS].second += iter_->getNumIters();
+
+	    // Update the current approximate solution in the linear problem.
+	    iter_->updateSolution ();
+	  }
+	// Remember whether the current linear system converged.
+	converged[curRHS] = (convTest_->getStatus() == Passed);
+
+	// Tell the linear problem that we have finished attempting
+	// to solve the current linear system, and are ready to move
+	// on to the next system (if there is one).
+	//
+	// FIXME (mfh 21 Feb 2011) Yeah, I know, this LinearProblem
+	// method name doesn't make any sense.  Do _you_ have time to
+	// rewrite most of Belos?
+	problem_->setCurrLS();
+
+	// Remember the total number of restarts and iterations.
+	totalNumIters_ = totalNumIters;
+      }
+
+    // We've Converged if all of the right-hand sides converged.
+    if (std::accumulate (converged.begin(), converged.end(), 
+			 true, std::logical_and<bool>()))
+      return Converged;
+    else
+      return Unconverged;
   }
 
 
