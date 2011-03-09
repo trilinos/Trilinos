@@ -9,9 +9,8 @@ host_test.exe : make.host \
 		$(SRC) \
 		Kokkos_test_hex_grad.hpp	\
 		../src/Kokkos_MDArrayViewRawData.hpp	\
-		../src/Kokkos_HostMDArrayView.hpp	\
-		../src/Kokkos_HostMap.hpp	\
-		../src/Kokkos_HostDevice.hpp
+		../src/Kokkos_HostTPIMDArrayView.hpp	\
+		../src/Kokkos_HostTPI.hpp
 	echo "#define HAVE_PTHREAD" > ThreadPool_config.h
 	g++ -g $(INC) $(SRC) -o host_test.exe -lpthread
 	rm ThreadPool_config.h

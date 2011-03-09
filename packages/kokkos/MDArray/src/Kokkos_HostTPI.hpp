@@ -55,10 +55,10 @@ namespace Kokkos {
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-class HostDevice {
+class HostTPI {
 public:
-  typedef size_t     size_type ;
-  typedef HostDevice device_type ;
+  typedef size_t   size_type ;
+  typedef HostTPI  device_type ;
 
   //----------------------------------
   // Non-parallel work arrays...
@@ -204,9 +204,9 @@ public:
 
 private:
 
-  HostDevice();
-  HostDevice( const HostDevice & );
-  HostDevice & operator = ( const HostDevice & );
+  HostTPI();
+  HostTPI( const HostTPI & );
+  HostTPI & operator = ( const HostTPI & );
 };
 
 //----------------------------------------------------------------------------

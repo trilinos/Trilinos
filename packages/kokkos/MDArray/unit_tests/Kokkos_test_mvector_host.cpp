@@ -2,10 +2,9 @@
 
 #include <iostream>
 #include <TPI.h>
-#include <Kokkos_HostMDArrayView.hpp>
-#include <Kokkos_HostMVectorView.hpp>
-#include <Kokkos_HostDeviceFor.hpp>
-#include <Kokkos_HostDeviceReduce.hpp>
+#include <Kokkos_HostTPIMultiVectorView.hpp>
+#include <Kokkos_HostTPIFor.hpp>
+#include <Kokkos_HostTPIReduce.hpp>
 #include <Kokkos_HostMath.hpp>
 
 #include <Kokkos_test_gram_schmidt.hpp>
@@ -18,7 +17,7 @@ int main( int argc , char ** argv )
 
   TPI_Init( 4 );
 
-  test_modified_gram_schmidt<float,Kokkos::HostMap>( LENGTH , COUNT );
+  test_modified_gram_schmidt<float,Kokkos::HostTPI>( LENGTH , COUNT );
 
   return 0 ;
 }

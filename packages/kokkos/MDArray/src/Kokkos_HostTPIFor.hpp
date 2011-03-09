@@ -42,48 +42,42 @@
 
 #include <algorithm>
 #include <TPI.h>
+#include <Kokkos_ParallelFor.hpp>
+#include <Kokkos_HostTPI.hpp>
 
 namespace Kokkos {
 
-class HostDevice ;
-
-template< class FunctorType , class DeviceType > struct ParallelFor ;
-
 template< class FunctorType >
-struct ParallelFor< FunctorType , HostDevice > {
+struct ParallelFor< FunctorType , HostTPI > {
 
-  const HostDevice::size_type work_count ;
-  const Functor             & functor ;
+  typedef HostTPI::size_type size_type ;
+
+  const FunctorType m_functor ;
+  const size_type   m_work_count ;
 
   static void run_functor_on_tpi( TPI_Work * work )
   {
     const ParallelFor & self = *((const ParallelFor *) work->info );
 
-    const HostDevice::size_type thread_count = work->count ;
-    const HostDevice::size_type thread_rank  = work->rank ;
-    const HostDevice::size_type work_inc     = ( self.work_count + thread_count - 1 ) / thread_count ;
-    const HostDevice::size_type work_begin   = work_inc * thread_rank ;
-    const HostDevice::size_type work_end     = std::max( work_begin + work_inc , self.work_count );
+    const size_type work_inc   = ( self.m_work_count + work->count - 1 ) / work->count ;
+    const size_type work_begin = work_inc * work->rank ;
+    const size_type work_end   = std::max( work_begin + work_inc , self.m_work_count );
 
-    for ( HostDevice::size_type iwork = work_begin ; iwork < work_end ; ++iwork ) {
-      self.functor( iwork );
+    for ( size_type iwork = work_begin ; iwork < work_end ; ++iwork ) {
+      self.m_functor( iwork );
     }
   }
 
   inline
-  ParallelFor( HostDevice::size_type arg_work_count ,
-               const FunctorType   & arg_functor )
-    : work_count( arg_work_count )
-    , functor(    arg_functor )
-    { TPI_Run_threads( & run_on_tpi , this , 0 ); }
-};
+  ParallelFor( const size_type     arg_work_count ,
+               const FunctorType & arg_functor )
+    : m_work_count( arg_work_count )
+    , m_functor(    arg_functor )
+    { TPI_Run_threads( & run_functor_on_tpi , this , 0 ); }
 
-template< typename iType , class FunctorType >
-inline
-void parallel_for( const iType & work_count , const FunctorType & functor )
-{
-  ParallelFor< FunctorType , typename FunctorType::device_type >( work_count , functor );
-}
+  static void run( const size_type work_count , const FunctorType & functor )
+  { ParallelFor( work_count , functor ); }
+};
 
 }
 

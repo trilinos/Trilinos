@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <map>
 #include <ostream>
-#include <Kokkos_HostDevice.hpp>
+#include <Kokkos_HostTPI.hpp>
 
 namespace Kokkos {
 namespace {
@@ -48,28 +48,28 @@ namespace {
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-class HostDeviceImpl {
+class HostTPIImpl {
 public:
   std::map<void*,std::string> m_allocations ;
 
   // Appropriate cached device information
 
-  HostDeviceImpl();
+  HostTPIImpl();
 
-  static HostDeviceImpl & singleton();
+  static HostTPIImpl & singleton();
 };
 
-HostDeviceImpl::HostDeviceImpl()
+HostTPIImpl::HostTPIImpl()
   : m_allocations()
 {
   // Appropriate device queries
 
 }
 
-HostDeviceImpl & HostDeviceImpl::singleton()
+HostTPIImpl & HostTPIImpl::singleton()
 {
-  static HostDeviceImpl * impl = NULL ;
-  if ( impl == NULL ) { impl = new HostDeviceImpl(); }
+  static HostTPIImpl * impl = NULL ;
+  if ( impl == NULL ) { impl = new HostTPIImpl(); }
   return *impl ;
 }
 
@@ -78,7 +78,7 @@ HostDeviceImpl & HostDeviceImpl::singleton()
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-void * HostDevice::allocate_memory( size_type member_size ,
+void * HostTPI::allocate_memory( size_type member_size ,
                                     size_type member_count ,
                                     const std::string & label )
 {
@@ -86,21 +86,21 @@ void * HostDevice::allocate_memory( size_type member_size ,
 
   ptr_on_device = calloc( member_size , member_count );
 
-  HostDeviceImpl::singleton().m_allocations[ ptr_on_device ] = label ;
+  HostTPIImpl::singleton().m_allocations[ ptr_on_device ] = label ;
 
   return ptr_on_device ;
 }
 
-void HostDevice::deallocate_memory( void * ptr_on_device )
+void HostTPI::deallocate_memory( void * ptr_on_device )
 {
   free( ptr_on_device );
 
-  HostDeviceImpl::singleton().m_allocations.erase( ptr_on_device );
+  HostTPIImpl::singleton().m_allocations.erase( ptr_on_device );
 }
 
-void HostDevice::print_allocations( std::ostream & s ) const
+void HostTPI::print_allocations( std::ostream & s ) const
 {
-  HostDeviceImpl & impl = HostDeviceImpl::singleton();
+  HostTPIImpl & impl = HostTPIImpl::singleton();
 
   std::map<void*,std::string>::const_iterator i = impl.m_allocations.begin();
   std::map<void*,std::string>::const_iterator end = impl.m_allocations.end();

@@ -37,8 +37,8 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_MVECTORVIEW_HPP
-#define KOKKOS_MVECTORVIEW_HPP
+#ifndef KOKKOS_MULTIVECTORVIEW_HPP
+#define KOKKOS_MULTIVECTORVIEW_HPP
 
 #include <cstddef>
 #include <string>
@@ -54,39 +54,39 @@ namespace Kokkos {
 //----------------------------------------------------------------------------
 
 
-template< typename ValueType , class DeviceMapType > class MVectorView ;
+template< typename ValueType , class DeviceMapType > class MultiVectorView ;
 
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class DeviceMapType >
 inline
-MVectorView< ValueType , DeviceMapType >
-create_mvector( typename DeviceMapType::size_type length ,
-                typename DeviceMapType::size_type count )
+MultiVectorView< ValueType , DeviceMapType >
+create_multivector( typename DeviceMapType::size_type length ,
+                    typename DeviceMapType::size_type count )
 {
-  return MVectorView< ValueType , DeviceMapType >( length , count , std::string() );
+  return MultiVectorView< ValueType , DeviceMapType >( length , count , std::string() );
 }
 
 template< typename ValueType , class DeviceMapType >
 inline
-MVectorView< ValueType , DeviceMapType >
-create_labeled_mvector( typename DeviceMapType::size_type length ,
-                        typename DeviceMapType::size_type count ,
-                        const std::string & label )
+MultiVectorView< ValueType , DeviceMapType >
+create_labeled_multivector( typename DeviceMapType::size_type length ,
+                            typename DeviceMapType::size_type count ,
+                            const std::string & label )
 {
-  return MVectorView< ValueType , DeviceMapType >( length , count , label );
+  return MultiVectorView< ValueType , DeviceMapType >( length , count , label );
 }
 
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class DeviceMapDest , class DeviceMapSrc >
-struct MVectorDeepCopy ;
+struct MultiVectorDeepCopy ;
 
 template< typename ValueType , class DeviceMapDest , class DeviceMapSrc >
-void deep_copy( const MVectorView<ValueType,DeviceMapDest> & dest ,
-                const MVectorView<ValueType,DeviceMapSrc>  & src )
+void deep_copy( const MultiVectorView<ValueType,DeviceMapDest> & dest ,
+                const MultiVectorView<ValueType,DeviceMapSrc>  & src )
 {
-  MVectorDeepCopy<ValueType,DeviceMapDest,DeviceMapSrc>::run( dest , src );
+  MultiVectorDeepCopy<ValueType,DeviceMapDest,DeviceMapSrc>::run( dest , src );
 }
 
 //----------------------------------------------------------------------------
@@ -108,7 +108,7 @@ void require_equal( size_t i , size_t j );
  *  across compute devices.
  */
 template< typename ValueType , class DeviceMapType >
-class MVectorView {
+class MultiVectorView {
 public:
   typedef DeviceMapType                          device_map_type ;
   typedef typename device_map_type::device_type  device_type ;
@@ -132,28 +132,28 @@ public:
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
-  MVectorView();
+  MultiVectorView();
 
   /** \brief  Construct a view of the array */
-  MVectorView( const MVectorView & rhs );
+  MultiVectorView( const MultiVectorView & rhs );
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
-  MVectorView & operator = ( const MVectorView & rhs );
+  MultiVectorView & operator = ( const MultiVectorView & rhs );
   
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
-  ~MVectorView();
+  ~MultiVectorView();
 
   /*------------------------------------------------------------------*/
   /** \brief View to a single vector */
 
-  MVectorView( const MVectorView & rhs , size_type iV );
+  MultiVectorView( const MultiVectorView & rhs , size_type iV );
 
-  MVectorView( const MVectorView & rhs , size_type iVbeg , size_type iVend );
+  MultiVectorView( const MultiVectorView & rhs , size_type iVbeg , size_type iVend );
 
   /*------------------------------------------------------------------*/
 
@@ -161,18 +161,18 @@ private:
 
   template< typename V , class M >
   friend
-  MVectorView< V , M >
-  create_mvector( typename M::size_type length ,
-                  typename M::size_type count );
+  MultiVectorView< V , M >
+  create_multivector( typename M::size_type length ,
+                      typename M::size_type count );
 
   template< typename V , class M >
   friend
-  MVectorView< V , M >
-  create_labeled_mvector( typename M::size_type length ,
-                          typename M::size_type count ,
-                          const std::string & label );
+  MultiVectorView< V , M >
+  create_labeled_multivector( typename M::size_type length ,
+                              typename M::size_type count ,
+                              const std::string & label );
 
-  MVectorView( size_type length , size_type count , const std::string & label );
+  MultiVectorView( size_type length , size_type count , const std::string & label );
 };
 
 //----------------------------------------------------------------------------
@@ -180,6 +180,6 @@ private:
 
 } // namespace Kokkos
 
-#endif /* KOKKOS_MVECTORVIEW_HPP */
+#endif /* KOKKOS_MULTIVECTORVIEW_HPP */
 
 

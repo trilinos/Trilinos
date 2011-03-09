@@ -40,10 +40,9 @@
 #ifndef KOKKOS_HOSTMVECTORVIEW_HPP
 #define KOKKOS_HOSTMVECTORVIEW_HPP
 
+#include <Kokkos_MultiVectorView.hpp>
 #include <Kokkos_ViewTracker.hpp>
-#include <Kokkos_MVectorView.hpp>
-#include <Kokkos_HostDevice.hpp>
-#include <Kokkos_HostMap.hpp>
+#include <Kokkos_HostTPI.hpp>
 
 namespace Kokkos {
 
@@ -63,11 +62,11 @@ namespace Kokkos {
  *  across compute devices.
  */
 template< typename ValueType >
-class MVectorView< ValueType , HostMap > {
+class MultiVectorView< ValueType , HostTPI > {
 public:
-  typedef HostMap                        device_map_type ;
-  typedef typename HostMap::device_type  device_type ;
-  typedef typename HostMap::size_type    size_type ;
+  typedef HostTPI                        device_map_type ;
+  typedef typename HostTPI::device_type  device_type ;
+  typedef typename HostTPI::size_type    size_type ;
   typedef ValueType                      value_type ;
 
   /*------------------------------------------------------------------*/
@@ -101,7 +100,7 @@ public:
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   inline
-  MVectorView()
+  MultiVectorView()
     : m_tracker()
     , m_alloc_ptr_on_device( NULL )
     , m_ptr_on_device( NULL )
@@ -110,26 +109,26 @@ public:
     {}
 
   /** \brief  Construct view to an existing multivector */
-  MVectorView( const MVectorView & rhs );
+  MultiVectorView( const MultiVectorView & rhs );
 
   /** \brief  Clear the old view and assign this view
    *          to the 'rhs' multivector.
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
-  MVectorView & operator = ( const MVectorView & rhs );
+  MultiVectorView & operator = ( const MultiVectorView & rhs );
   
   /**  \brief  Destroy this view of the multivector.
    *           If the last view then allocated memory is deallocated.
    */
-  ~MVectorView();
+  ~MultiVectorView();
 
   /*------------------------------------------------------------------*/
   /** \brief Construct view to a single vector */
-  MVectorView( const MVectorView & rhs , size_type iV );
+  MultiVectorView( const MultiVectorView & rhs , size_type iV );
 
   /** \brief Construct view to a multivector range */
-  MVectorView( const MVectorView & rhs , size_type iVbeg ,
+  MultiVectorView( const MultiVectorView & rhs , size_type iVbeg ,
                                          size_type iVend );
 
   /*------------------------------------------------------------------*/
@@ -151,7 +150,7 @@ private:
   /*------------------------------------------------------------------*/
   /** \brief  Another view to the same memory. */
   inline
-  void insert_view( const MVectorView & rhs ,
+  void insert_view( const MultiVectorView & rhs ,
                     size_type iVbeg , size_type iVend )
     {
       KOKKOS_BOUNDS_CHECK( require_less( iVbeg , iVend ) );
@@ -185,19 +184,19 @@ private:
 
   template< typename V , class M >
   friend
-  MVectorView< V , M >
-  create_mvector( typename M::size_type length ,
-                  typename M::size_type count );
+  MultiVectorView< V , M >
+  create_multivector( typename M::size_type length ,
+                      typename M::size_type count );
 
   template< typename V , class M >
   friend
-  MVectorView< V , M >
-  create_labeled_mvector( typename M::size_type length ,
-                          typename M::size_type count ,
-                          const std::string & label );
+  MultiVectorView< V , M >
+  create_labeled_multivector( typename M::size_type length ,
+                              typename M::size_type count ,
+                              const std::string & label );
 
   /** \brief  Constructor that allocates */
-  MVectorView( size_type arg_length , size_type arg_count ,
+  MultiVectorView( size_type arg_length , size_type arg_count ,
                const std::string & label )
     : m_tracker()
     , m_alloc_ptr_on_device( NULL )
@@ -223,49 +222,49 @@ private:
 
 template< typename ValueType >
 inline
-MVectorView< ValueType , HostMap >::
-MVectorView( const MVectorView< ValueType , HostMap > & rhs )
+MultiVectorView< ValueType , HostTPI >::
+MultiVectorView( const MultiVectorView< ValueType , HostTPI > & rhs )
   : m_tracker() { insert_view( rhs , 0 , rhs.m_count ); }
 
 template< typename ValueType >
 inline
-MVectorView< ValueType , HostMap > &
-MVectorView< ValueType , HostMap >::
-operator = ( const MVectorView< ValueType , HostMap > & rhs )
+MultiVectorView< ValueType , HostTPI > &
+MultiVectorView< ValueType , HostTPI >::
+operator = ( const MultiVectorView< ValueType , HostTPI > & rhs )
   { clear_view(); insert_view( rhs , 0 , rhs.m_count ); return *this ; }
 
 template< typename ValueType >
 inline
-MVectorView< ValueType , HostMap >::~MVectorView()
+MultiVectorView< ValueType , HostTPI >::~MultiVectorView()
   { clear_view(); }
 
 template< typename ValueType >
 inline
-MVectorView< ValueType , HostMap >::
-MVectorView( const MVectorView< ValueType , HostMap > & rhs , 
-             MVectorView< ValueType , HostMap >::size_type iV )
+MultiVectorView< ValueType , HostTPI >::
+MultiVectorView( const MultiVectorView< ValueType , HostTPI > & rhs , 
+             MultiVectorView< ValueType , HostTPI >::size_type iV )
  : m_tracker()
  { insert_view( rhs , iV , iV + 1 ); }
 
 template< typename ValueType >
 inline
-MVectorView< ValueType , HostMap >::
-MVectorView( const MVectorView< ValueType , HostMap > & rhs , 
-             MVectorView< ValueType , HostMap >::size_type iVbeg ,
-             MVectorView< ValueType , HostMap >::size_type iVend )
+MultiVectorView< ValueType , HostTPI >::
+MultiVectorView( const MultiVectorView< ValueType , HostTPI > & rhs , 
+             MultiVectorView< ValueType , HostTPI >::size_type iVbeg ,
+             MultiVectorView< ValueType , HostTPI >::size_type iVend )
  : m_tracker()
  { insert_view( rhs , iVbeg , iVend ); }
 
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-struct MVectorDeepCopy< ValueType , HostMap , HostMap > {
+struct MultiVectorDeepCopy< ValueType , HostTPI , HostTPI > {
 
-  typedef MVectorView< ValueType , HostMap > MVector ;
-  typedef HostMap::size_type                 size_type ;
+  typedef MultiVectorView< ValueType , HostTPI > MultiVector ;
+  typedef HostTPI::size_type                     size_type ;
 
   static 
-  void run( const MVector & dest , const MVector & src )
+  void run( const MultiVector & dest , const MultiVector & src )
   {
     require_equal( dest.length() , src.length() );
     require_equal( dest.count() ,  src.count() );
