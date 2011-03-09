@@ -56,6 +56,7 @@
 #include "BelosMultiVec.hpp"
 #include "BelosOperator.hpp"
 #include "BelosTypes.hpp"
+#include "BelosInnerSolver.hpp"
 #include "BelosVectorSpaceTraits.hpp"
 
 #ifdef HAVE_BELOS_TSQR
@@ -1111,7 +1112,7 @@ namespace Belos {
   /// \note This is necessary because Belos' solvers require that the
   ///   preconditioner(s) and the matrix all have the same type (OP).
   template<>
-  class InnerSolverTraits<Scalar, Epetra_MultiVector, Epetra_Operator> {
+  class InnerSolverTraits<double, Epetra_MultiVector, Epetra_Operator> {
   public:
     typedef double scalar_type;
     typedef Epetra_MultiVector multivector_type;
