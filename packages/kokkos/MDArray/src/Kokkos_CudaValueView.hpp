@@ -146,7 +146,7 @@ struct ValueDeepCopy<ValueType,CudaDevice> {
   static void run( ValueType & dest ,
                    const ValueView<ValueType,CudaDevice> & src )
   {
-    // ( host , device , size , code )
+    cudaThreadSynchronize(); // Wait for device
     cudaMemcpy( & dest , src.address_on_device() , sizeof(ValueType) , cudaMemcpyDeviceToHost );
   }
 };

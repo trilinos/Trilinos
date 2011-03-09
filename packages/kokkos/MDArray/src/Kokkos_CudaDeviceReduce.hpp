@@ -331,18 +331,28 @@ void cuda_parallel_reduce( const size_t work_count , const FunctorType & functor
 };
 
 //----------------------------------------------------------------------------
-/** \brief  Process reduce value via a finalize functor */
-template< class FunctorType , class FinalizeType >
-struct ParallelReduce< FunctorType , FinalizeType , CudaDevice >
+/** \brief  Return reduce value */
+template< class FunctorType >
+struct ParallelReduce< FunctorType , void , CudaDevice >
 {
-  typedef typename FunctorType::value_type value_type ;
+  typedef typename FunctorType::value_type         value_type ;
 
-  static void run( const size_t work_count , const FunctorType & functor , const FinalizeType & finalize )
+  static value_type run( const size_t work_count , const FunctorType & functor )
   {
-    CudaParallelReduceFinalizeFunctor< value_type , FinalizeType >
-      tmp( finalize );
+    typedef CudaParallelReduceFinalizeValue< value_type > finalize_functor ;
 
-    cuda_parallel_reduce( work_count , functor , tmp );
+    value_type tmp ;
+
+    ValueView< value_type , CudaDevice >
+      view( create_value< value_type , CudaDevice >() );
+
+    finalize_functor finalize( view.address_on_device() );
+
+    cuda_parallel_reduce( work_count , functor , finalize );
+
+    deep_copy( tmp , view );
+
+    return tmp ;
   }
 };
 
@@ -360,7 +370,6 @@ struct ParallelReduce< FunctorType ,
   {
     typedef CudaParallelReduceFinalizeValue< value_type > finalize_functor ;
 
-    // 'reduce_type' is a union { value , ... };
     finalize_functor finalize( view.address_on_device() );
 
     cuda_parallel_reduce( work_count , functor , finalize );
@@ -368,34 +377,22 @@ struct ParallelReduce< FunctorType ,
 };
 
 //----------------------------------------------------------------------------
-/** \brief  Return reduce value specialization */
-template< class FunctorType >
-struct ParallelReduce< FunctorType , void , CudaDevice >
+/** \brief  Process reduce value via a finalize functor */
+template< class FunctorType , class FinalizeType >
+struct ParallelReduce< FunctorType , FinalizeType , CudaDevice >
 {
-  typedef typename FunctorType::value_type         value_type ;
+  typedef typename FunctorType::value_type value_type ;
 
-  static value_type run( const size_t work_count , const FunctorType & functor )
+  static void run( const size_t work_count , const FunctorType & functor , const FinalizeType & finalize )
   {
-    typedef CudaParallelReduceFinalizeValue< value_type > finalize_functor ;
+    CudaParallelReduceFinalizeFunctor< value_type , FinalizeType >
+      tmp( finalize );
 
-    value_type tmp ;
-
-    ValueView< value_type , CudaDevice >
-      view( create_value< value_type , CudaDevice >() );
-
-    // 'reduce_type' is a union { value , ... };
-    finalize_functor finalize( view.address_on_device() );
-
-    cuda_parallel_reduce( work_count , functor , finalize );
-
-    cudaThreadSynchronize(); // Wait for reduction to complete to copy the value out.
-
-    deep_copy( tmp , view );
-
-    return tmp ;
+    cuda_parallel_reduce( work_count , functor , tmp );
   }
 };
 
+//----------------------------------------------------------------------------
 
 } // namespace Kokkos
 
