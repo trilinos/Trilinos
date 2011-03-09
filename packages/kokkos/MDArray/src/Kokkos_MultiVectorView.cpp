@@ -41,7 +41,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <Kokkos_MVectorView.hpp>
+#include <Kokkos_MultiVectorView.hpp>
 
 namespace Kokkos {
 
