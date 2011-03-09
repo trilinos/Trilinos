@@ -21,23 +21,18 @@ SET(SOURCES "")
 # Set the base Trilinos directory in order to find Trilinos_version.h
 
 ASSERT_DEFINED(PROJECT_SOURCE_DIR)
+ASSERT_DEFINED(PROJECT_BINARY_DIR)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 
-APPEND_SET(HEADERS
-  ${CMAKE_CURRENT_BINARY_DIR}/../../../Trilinos_version.h
-  )
-
-# Set headers (for IDEs and installing)
-
+#
+# Include packages/src directory
+#
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
-
-# NOTE: Above, we add the XXX_config.h file so tht MS Visual Studio
-# will know to include this file in the dependency analysis
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -48,9 +43,29 @@ APPEND_SET(HEADERS
   Zoltan2_Partitioner.hpp
   )
 
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/tpetra/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/teuchos/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/teuchos/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/kokkos/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/kokkos/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/kokkos/LinAlg)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/kokkos/NodeAPI)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/epetra/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/epetra/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/epetraext/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/epetraext/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/ThreadPool/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/ThreadPool/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/triutils/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/triutils/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/zoltan/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/zoltan/src)
+
 # Set sources
 
 APPEND_SET(SOURCES
+  Zoltan2_Version.cpp
   )
 
 PACKAGE_ADD_LIBRARY(

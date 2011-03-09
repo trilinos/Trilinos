@@ -26,12 +26,13 @@ namespace Z2
 {
 
 template<typename AppGID, typename AppLID, typename GNO, typename LNO>
-  IdentifierMap<AppGID,AppLID,GNO,LNO>::IdentifierMap(Teuchos::Comm<GNO> &in_comm, std::vector<AppGID> &gids, std::vector<AppLID> &lids) 
-         : comm(in_comm), gidList(NULL), lidList(NULL)){ 
+  IdentifierMap<AppGID,AppLID,GNO,LNO>::IdentifierMap(
+    const Teuchos::Comm<GNO> &in_comm, const std::vector<AppGID> &gids, const std::vector<AppLID> &lids) 
+         : comm(in_comm), gidList(NULL), lidList(NULL) { 
 
-    Teuchos::TEST_FOR_EXCEPTION((gids.size() > 0), std::logic_error, "empty gid list")
+    TEST_FOR_EXCEPTION(gids.size() > 0, std::logic_error, "empty gid list");
 
-    LNO numGids = static_cast<LNO>(gids.size());
+    GNO numGids = static_cast<GNO>(gids.size());
     GNO globalNumGids(0);
 
     Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, GNO(1), &numGids, &globalNumGids);
@@ -75,14 +76,14 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 
   /*! Constructor */
 template<typename AppGID, typename AppLID, typename GNO, typename LNO>
-  IdentifierMap<AppGID,AppLID,GNO,LNO>::IdentifierMap() : comm(), gidList(NULL), lidList(NULL)){ }
+  IdentifierMap<AppGID,AppLID,GNO,LNO>::IdentifierMap() : comm(), gidList(NULL), lidList(NULL){ }
 
   /*! Destructor */
 template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   IdentifierMap<AppGID,AppLID,GNO,LNO>::~IdentifierMap() 
   {
-    if (gidList) free [] gidList;
-    if (lidList) free [] lidList;
+    if (gidList) delete [] gidList;
+    if (lidList) delete [] lidList;
   }
 
   /*! Copy Constructor */

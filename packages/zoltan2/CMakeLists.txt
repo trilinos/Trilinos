@@ -53,11 +53,7 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_HUND
 # C) Add the libraries, tests, and examples
 #
 
-#
-#  nothing to compile here, move along folks
-#ADD_SUBDIRECTORY(src)
-#
-
+ADD_SUBDIRECTORY(src)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 

@@ -70,18 +70,18 @@ template<typename AppGID, typename AppLID, typename GNO=AppGID, typename LNO=int
 
 private:
 
-  Teuchos::Comm<GNO> &comm;
+  const Teuchos::Comm<GNO> &comm;
 
   Tpetra::Vector<AppGID, LNO, GNO> *gidList;
   Tpetra::Vector<AppLID, LNO, GNO> *lidList;
 
 #ifdef APPGID_IS_NOT_GNO
-  bool GidGnoMap(true);
-  bool consecutive(true);
-  GNO base(0);
+  bool GidGnoMap;
+  bool consecutive;
+  GNO base;
   std::vector<GNO> gnoDist;
 #else
-  bool GidGnoMap(false);
+  bool GidGnoMap;
   bool consecutive;
   GNO base;
 #endif
@@ -89,7 +89,7 @@ private:
 public:
 
   /*! Constructor */
-  IdentifierMap(Teuchos::Comm<GNO> &in_comm, std::vector<AppGID> &gids, std::vector<AppLID> &lids);
+  IdentifierMap(const Teuchos::Comm<GNO> &in_comm, const std::vector<AppGID> &gids, const std::vector<AppLID> &lids);
 
   /*! Constructor */
   IdentifierMap();
