@@ -37,55 +37,38 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_HOSTDEVICEFOR_HPP
-#define KOKKOS_HOSTDEVICEFOR_HPP
-
-#include <algorithm>
-#include <TPI.h>
+#ifndef KOKKOS_DEVICEREDUCE_HPP
+#define KOKKOS_DEVICEREDUCE_HPP
 
 namespace Kokkos {
 
-class HostDevice ;
+template< class WorkFunctor , class FinalizeFunctor ,
+          class DeviceType = typename WorkFunctor::device_type >
+struct ParallelReduce ;
 
-template< class FunctorType , class DeviceType > struct ParallelFor ;
-
-template< class FunctorType >
-struct ParallelFor< FunctorType , HostDevice > {
-
-  const HostDevice::size_type work_count ;
-  const Functor             & functor ;
-
-  static void run_functor_on_tpi( TPI_Work * work )
-  {
-    const ParallelFor & self = *((const ParallelFor *) work->info );
-
-    const HostDevice::size_type thread_count = work->count ;
-    const HostDevice::size_type thread_rank  = work->rank ;
-    const HostDevice::size_type work_inc     = ( self.work_count + thread_count - 1 ) / thread_count ;
-    const HostDevice::size_type work_begin   = work_inc * thread_rank ;
-    const HostDevice::size_type work_end     = std::max( work_begin + work_inc , self.work_count );
-
-    for ( HostDevice::size_type iwork = work_begin ; iwork < work_end ; ++iwork ) {
-      self.functor( iwork );
-    }
-  }
-
-  inline
-  ParallelFor( HostDevice::size_type arg_work_count ,
-               const FunctorType   & arg_functor )
-    : work_count( arg_work_count )
-    , functor(    arg_functor )
-    { TPI_Run_threads( & run_on_tpi , this , 0 ); }
-};
-
-template< typename iType , class FunctorType >
-inline
-void parallel_for( const iType & work_count , const FunctorType & functor )
+/** \brief  Parallel reduce returning the reduction value */
+template< class Functor >
+typename Functor::value_type
+parallel_reduce( size_t work_count , const Functor & functor )
 {
-  ParallelFor< FunctorType , typename FunctorType::device_type >( work_count , functor );
+  return ParallelReduce< Functor, void >::run( work_count , functor );
 }
 
+/** \brief  Parallel reduce where the reduction value is placed or processed.
+ *          Two options for 'Result':
+ *          1) ValueView< Functor::value_type , Functor::device_type >
+ *          2) Serial finalization functor.
+ */
+template< class Functor , class Result >
+void parallel_reduce( size_t work_count ,
+                      const Functor & functor ,
+                      const Result  & result )
+{
+  ParallelReduce< Functor, Result >::run( work_count , functor , result );
 }
 
-#endif /* KOKKOS_HOSTDEVICEFOR_HPP */
+} // namespace Kokkos
+
+#endif /* KOKKOS_DEVICEREDUCE_HPP */
+
 

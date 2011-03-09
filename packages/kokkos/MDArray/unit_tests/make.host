@@ -5,13 +5,16 @@ SRC =	Kokkos_test_mdarray_host.cpp	\
 
 INC = -I. -I../src -I../../../ThreadPool/src
 
-host_test.exe : $(SRC) \
+host_test.exe : make.host \
+		$(SRC) \
 		Kokkos_test_hex_grad.hpp	\
 		../src/Kokkos_MDArrayViewRawData.hpp	\
 		../src/Kokkos_HostMDArrayView.hpp	\
 		../src/Kokkos_HostMap.hpp	\
 		../src/Kokkos_HostDevice.hpp
+	echo "#define HAVE_PTHREAD" > ThreadPool_config.h
 	g++ -g $(INC) $(SRC) -o host_test.exe -lpthread
+	rm ThreadPool_config.h
 
 #	purify g++ -g $(INC) $(SRC) -o host_test.exe -lpthread
 

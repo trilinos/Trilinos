@@ -120,7 +120,13 @@ void * CudaDevice::allocate_memory( size_type member_size ,
 
   CUDA_SAFE_CALL( cudaMalloc( & ptr_on_device , member_size * member_count ) );
 
-  clear_memory<<< dimGrid , dimBlock >>>( ptr_on_device , member_size * member_count / sizeof(unsigned) );
+  const size_type word_count = ( member_size * member_count + sizeof(unsigned) - 1 ) / sizeof(unsigned);
+
+  while ( word_count <= ( dimBlock.x * ( dimGrid.x >> 1 ) ) ) {
+    dimGrid.x >>= 1 ;
+  }
+
+  clear_memory<<< dimGrid , dimBlock >>>( ptr_on_device , word_count );
 
   CudaDeviceImpl::singleton().m_allocations[ ptr_on_device ] = label ;
 
@@ -129,6 +135,14 @@ void * CudaDevice::allocate_memory( size_type member_size ,
 
 void CudaDevice::deallocate_memory( void * ptr_on_device )
 {
+  if ( 1 != CudaDeviceImpl::singleton().m_allocations.count( ptr_on_device ) ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::CudaDevice::deallocate_memory("
+        << ptr_on_device
+        << ") FAILED invalid address" ;
+    throw std::runtime_error( msg.str() );
+  }
+
   CudaDeviceImpl::singleton().m_allocations.erase( ptr_on_device );
 
   CUDA_SAFE_CALL( cudaFree( ptr_on_device ) );
@@ -155,7 +169,19 @@ CudaDevice::block_count_max()
 {
   CudaDeviceImpl & impl = CudaDeviceImpl::singleton();
 
-  return 2 * impl.m_cudaProp.multiProcessorCount ;
+  size_type max = impl.m_cudaProp.maxGridSize[0] ;
+
+  // Recomended for good performance 2 * impl.m_cudaProp.multiProcessorCount
+
+  if ( max > 4 * impl.m_cudaProp.multiProcessorCount ) { 
+    max = 4 * impl.m_cudaProp.multiProcessorCount ;
+  }
+
+  size_type nblock = 1 ;
+
+  while ( ( nblock << 1 ) < max ) { nblock <<= 1 ; }
+
+  return nblock ;
 }
 
 /* Final reduction limits: threads per block or shared memory per block ? */
@@ -165,7 +191,7 @@ CudaDevice::reduction_thread_max( CudaDevice::size_type shmemPerThread )
 {
   CudaDeviceImpl & impl = CudaDeviceImpl::singleton();
 
-  size_type nthread = 0x1000 ;
+  size_type nthread = impl.m_cudaProp.maxThreadsPerBlock ;
   size_type maxThreadReduction =
     impl.m_cudaProp.sharedMemPerBlock / shmemPerThread ;
 

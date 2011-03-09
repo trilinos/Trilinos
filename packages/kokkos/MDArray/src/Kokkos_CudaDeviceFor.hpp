@@ -48,12 +48,13 @@ template< class FunctorType , class DeviceType > struct ParallelFor ;
 
 template< class FunctorType >
 __global__
-static void run_functor_on_cuda( const FunctorType functor )
+static void run_functor_on_cuda(
+  const CudaDevice::size_type work_count ,
+  const FunctorType functor )
 {
-  const unsigned int work_count  = functor.work_count();
-  const unsigned int work_stride = blockDim.x * gridDim.x ;
+  const CudaDevice::size_type work_stride = blockDim.x * gridDim.x ;
 
-  for ( unsigned int iwork = threadIdx.x + blockDim.x * blockIdx.x ;
+  for ( CudaDevice::size_type iwork = threadIdx.x + blockDim.x * blockIdx.x ;
         iwork < work_count ; iwork += work_stride ) {
     functor( iwork );
   }
@@ -64,22 +65,24 @@ static void run_functor_on_cuda( const FunctorType functor )
 template< class FunctorType >
 struct ParallelFor< FunctorType , CudaDevice > {
 
-  static void run( const FunctorType & functor )
+  static void run( const CudaDevice::size_type work_count ,
+                   const FunctorType & functor )
   {
     unsigned int threadCount = 256 ;
-    unsigned int blockCount  = ( functor.work_count() + threadCount - 1 ) / threadCount ;
+    unsigned int blockCount  = ( work_count + threadCount - 1 ) / threadCount ;
 
-    run_functor_on_cuda<<< blockCount , threadCount >>>( functor );
+    run_functor_on_cuda<<< blockCount , threadCount >>>( work_count , functor );
 
+    // Reconsider - not necessary, but convenient
     cudaThreadSynchronize();
   }
 };
 
-template< class FunctorType >
+template< typename iType , class FunctorType >
 inline
-void parallel_for( const FunctorType & functor )
+void parallel_for( const iType & work_count , const FunctorType & functor )
 {
-  ParallelFor< FunctorType , typename FunctorType::device_type >::run( functor );
+  ParallelFor< FunctorType , typename FunctorType::device_type >::run( work_count , functor );
 }
 
 }

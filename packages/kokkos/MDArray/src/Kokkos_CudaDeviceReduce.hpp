@@ -40,253 +40,364 @@
 #ifndef KOKKOS_CUDADEVICEREDUCE_HPP
 #define KOKKOS_CUDADEVICEREDUCE_HPP
 
+#include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_ValueView.hpp>
 #include <Kokkos_CudaDevice.hpp>
 
 namespace Kokkos {
 
-template< class FunctorType , class DeviceType > struct ParallelReduce ;
+//----------------------------------------------------------------------------
 
-template< class FunctorType >
-inline
-void parallel_reduce( const FunctorType & functor ,
-                      const typename FunctorType::reduce_type & result )
-{
-  ParallelReduce< FunctorType , typename FunctorType::device_type >::run( functor , result );
-}
+typedef unsigned int CudaWordType ;
+
+template< typename ValueType >
+union CudaSharedMemoryReduceType {
+  // Pad the data size to an odd number of words to provide the proper
+  // coalesced shared memory access.
+  enum { WordCount =
+        ( sizeof(ValueType) + sizeof(CudaWordType) - 1 ) / sizeof(CudaWordType) };
+
+  ValueType    value ;
+  unsigned int storage[ WordCount + ( WordCount % 32 ? 0 : 1 ) ];
+};
 
 //----------------------------------------------------------------------------
 
 template< class ReduceOperators >
 __device__
 void reduce_shared_on_cuda(
-  const typename ReduceOperators::reduce_type & result )
+  CudaSharedMemoryReduceType< typename ReduceOperators::value_type >
+    * const shared_local )
 {
-  typedef typename ReduceOperators::reduce_type reduce_type ;
-  typedef typename reduce_type::value_type      reduce_value_type ;
-  
-  reduce_value_type * const ptr = result.address_on_device();
-
-  reduce_type source ; source.assign_on_device( result );
-
   for ( unsigned int j = blockDim.x ; j ; ) {
     j >>= 1 ;
 
+#ifndef __DEVICE_EMULATION__
     // Wait for contributing thread from a different half-warp
     if ( warpSize < j ) { __syncthreads(); }
+#else
+    __syncthreads();
+#endif
 
     if ( threadIdx.x < j ) {
-
-      // View for source data
-
-      source.assign_on_device( ptr + j );
-
-      ReduceOperators::join( result , source );
+      ReduceOperators::join( shared_local->value , shared_local[j].value );
     }
   }
 }
 
-template< typename Scalar >
+//----------------------------------------------------------------------------
+
+template< typename ValueType >
+inline
 __device__
-Scalar * get_shared_values_on_cuda()
+CudaSharedMemoryReduceType< ValueType > *
+cuda_local_thread_reduce_shared_memory()
 {
-  extern __shared__ Scalar shared_values[];
-  return & shared_values[0] ;
+  typedef CudaSharedMemoryReduceType< ValueType > reduce_type ;
+
+  // Compiler insists that all 'extern __shared__'
+  // statements be identical, cannot template the type.
+
+  extern __shared__ CudaWordType shared_memory[] ;
+
+  // Now cast to the actual type:
+  return ( (reduce_type *) shared_memory ) + threadIdx.x ;
 }
 
-template< class FunctorType >
-__global__
-void run_reduce_functor_on_cuda(
-  const          FunctorType              functor ,
-  const typename FunctorType::reduce_type block_result ,
-  const unsigned int                      reduce_count )
-{
-  typedef typename FunctorType::reduce_type reduce_type ;
-  typedef typename reduce_type::value_type  reduce_value_type ;
-
-  reduce_value_type * const shared_values = get_shared_values_on_cuda<reduce_value_type>();
-
-  reduce_type local_result ;
-
-  local_result.assign_on_device( block_result );
-  local_result.assign_on_device( shared_values + threadIdx.x , blockDim.x );
-
-  FunctorType::init( local_result );
-
-  const unsigned int work_count  = functor.work_count();
-  const unsigned int work_stride = blockDim.x * gridDim.x ;
-
-  for ( unsigned int iwork = threadIdx.x + blockDim.x * blockIdx.x ;
-        iwork < work_count ; iwork += work_stride ) {
-    functor( iwork , local_result );
-  }
-
-  reduce_shared_on_cuda< FunctorType >( local_result );
-
-  // Output partial sum per block: offset = blockIdx , stride = gridDim.x
-  // Copy from local result: stride = blockDim.x
-
-  {
-    reduce_value_type * const output =
-      block_result.address_on_device() + blockIdx.x ;
-
-    for ( int i = threadIdx.x ; i < reduce_count ; i += blockDim.x ) {
-      output[ i * gridDim.x ] = shared_values[ i * blockDim.x ];
-    }
-  }
-
-  // Serial post processing the scalar reduction.
-  // If there is exactly one block and this is thread 0
-  // then the reduction has been completed.
-
-  if ( gridDim.x == 1 && threadIdx.x == 0 ) {
-    functor.post_process( local_result );
-  }
-}
-
+//----------------------------------------------------------------------------
 // Single block, reduce contributions
-template< class FunctorType >
+
+template< class FunctorType , class FinalizeType >
 __global__
 void run_reduce_operator_on_cuda(
-  const          FunctorType              functor ,
-  const typename FunctorType::reduce_type result ,
-  const typename FunctorType::reduce_type block_result ,
-  const unsigned int reduce_count )
+  CudaSharedMemoryReduceType< typename FunctorType::value_type >
+    * const block_result ,
+  const FinalizeType finalize )
 {
-  typedef typename ReduceOperators::reduce_type reduce_type ;
-  typedef typename reduce_type::value_type      reduce_value_type ;
+  typedef typename FunctorType::value_type         value_type ;
+  typedef CudaSharedMemoryReduceType< value_type > reduce_type ;
 
-  reduce_value_type * const shared_values = get_shared_values_on_cuda<reduce_value_type>();
+  // Now cast to the actual type:
+  reduce_type * const shared_local =
+    cuda_local_thread_reduce_shared_memory< value_type >();
 
-  {
-    const reduce_value_type * const input_values = block_result.address_on_device();
+  shared_local->value = block_result[ threadIdx.x ].value ;
 
-    const unsigned int count = reduce_count * blockDim.x ;
+  reduce_shared_on_cuda< FunctorType >( shared_local );
 
-    for ( unsigned int i = threadIdx.x ; i < count ; i += blockDim.x ) {
-      shared_values[i] = input_values[i] ;
-    }
-  }
-
-  reduce_type local_result ;
-
-  local_result.assign_on_device( block_result );
-  local_result.assign_on_device( shared_values + threadIdx.x , blockDim.x );
-
-  reduce_shared_on_cuda< ReduceOperators >( local_result );
-
-  { // Copy reduced result to output.
-    reduce_value_type * const output = result.address_on_device();
-
-    for ( int i = threadIdx.x ; i < reduce_count ; i += blockDim.x ) {
-      output[i] = shared_values[ i * blockDim.x ] ;
-    }
-  }
-
-  // Serial post processing the scalar reduction.
-  // If there is exactly one block and this is thread 0
-  // then the reduction has been completed.
-
-  if ( threadIdx.x == 0 ) {
-    functor.post_process( local_result );
-  }
+  finalize();
 }
 
-template< class FunctorType >
-struct ParallelReduce< FunctorType , CudaDevice > {
-  typedef typename FunctorType::device_type  device_type ;
-  typedef typename FunctorType::reduce_type  reduce_type ;
-  typedef typename reduce_type::value_type   reduce_value_type ;
-  typedef typename device_type::size_type    size_type ;
+//----------------------------------------------------------------------------
 
+template< class FunctorType , class FinalizeType >
+__global__
+void run_reduce_functor_on_cuda(
+  const size_t       work_count ,
+  const FunctorType  functor ,
+  const FinalizeType finalize )
+{
+  typedef typename FunctorType::value_type         value_type ;
+  typedef CudaSharedMemoryReduceType< value_type > reduce_type ;
 
-  static void run( const FunctorType & functor ,
-                   const typename FunctorType::reduce_type & result )
+  reduce_type * const shared_local =
+    cuda_local_thread_reduce_shared_memory< value_type >();
+
+  FunctorType::init( shared_local->value );
+
+  const size_t work_stride = blockDim.x * gridDim.x ;
+
+  for ( size_t iwork = threadIdx.x + blockDim.x * blockIdx.x ;
+        iwork < work_count ; iwork += work_stride ) {
+    functor( iwork , shared_local->value );
+  }
+
+  reduce_shared_on_cuda< FunctorType >( shared_local );
+
+  finalize();
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+/** \brief  Finalize via application provided serial functor */
+template< typename ValueType , class FinalizeFunctor >
+struct CudaParallelReduceFinalizeFunctor {
+
+  FinalizeFunctor serial_finalize ;
+
+  ~CudaParallelReduceFinalizeFunctor() {}
+
+  CudaParallelReduceFinalizeFunctor( const FinalizeFunctor & rhs )
+    : serial_finalize( rhs ) {}
+
+  CudaParallelReduceFinalizeFunctor( const CudaParallelReduceFinalizeFunctor & rhs )
+    : serial_finalize( rhs.serial_finalize ) {}
+
+  __device__
+  void operator()() const
   {
-    size_type reduce_count = 1 ;
-    for ( size_type i = 0 ; i < result.rank() ; ++i ) {
-      reduce_count *= result.dimension(i);
+    typedef CudaSharedMemoryReduceType< ValueType > reduce_type ;
+
+    reduce_type * const shared_local =
+      cuda_local_thread_reduce_shared_memory< ValueType >();
+
+    if ( gridDim.x == 1 && threadIdx.x == 0 ) {
+      serial_finalize( shared_local->value );
     }
-    // Size of result for shared memory
-    const size_type work_count  = functor.work_count();
-    const size_type reduce_size = sizeof(reduce_value_type) * reduce_count ;
-    size_type thread_count = device_type::reduction_thread_max( reduce_size );
+  }
 
-    if ( work_count < thread_count ) {
+private:
+  CudaParallelReduceFinalizeFunctor();
+  CudaParallelReduceFinalizeFunctor & operator =
+    ( const CudaParallelReduceFinalizeFunctor & );
+};
 
-      // Small amount of work, use a single thread block
-      // Reduce thread_count below work_count so that
-      // the number of reduction terms does not exceed the
-      // partial contributions.
+//----------------------------------------------------------------------------
 
-      while ( work_count < thread_count ) { thread_count >>= 1 ; }
+template< typename ValueType >
+struct CudaParallelReduceFinalizeBlock {
 
-      const size_type shmem_size = thread_count * reduce_size ;
+  typedef CudaSharedMemoryReduceType< ValueType > reduce_type ;
 
-      run_reduce_functor_on_cuda<FunctorType> <<< 1, thread_count, shmem_size >>>
-        ( functor , result , reduce_count );
+  reduce_type * const block_value ;
+
+  CudaParallelReduceFinalizeBlock( reduce_type * ptr )
+    : block_value( ptr ) {}
+
+  ~CudaParallelReduceFinalizeBlock() {}
+
+  __device__
+  void operator()() const
+  {
+    reduce_type * const shared_local =
+      cuda_local_thread_reduce_shared_memory< ValueType >();
+
+    reduce_type * const output = block_value + blockIdx.x ;
+
+    // Output a single 'value' for the whole block.
+    // Have multiple threads in the block work together to output
+    // this thread-block's reduction value.
+    // reduce_type is a union { value , storage[N] }
+
+    for ( int i = threadIdx.x ; i < reduce_type::WordCount ; i += blockDim.x ) {
+      output->storage[i] = shared_local->storage[i];
     }
-    else {
+  }
 
-      // Large amount of work, use multiple thread blocks
-      // requiring partial reductions from each thread block
-      // with a final reduction of the partial values.
+private:
+  CudaParallelReduceFinalizeBlock();
+  CudaParallelReduceFinalizeBlock & operator =
+    ( const CudaParallelReduceFinalizeBlock & );
+};
 
-      size_type block_count_max = device_type::block_count_max();
-      size_type block_count = 1 ;
-      while ( ( block_count << 1 ) <= block_count_max ) { block_count <<= 1 ; }
+//----------------------------------------------------------------------------
 
-      if ( thread_count < block_count ) { block_count = thread_count ; }
+template< typename ValueType >
+struct CudaParallelReduceFinalizeValue {
 
-      const size_type shmem_size = thread_count * reduce_size ;
+  typedef CudaSharedMemoryReduceType< ValueType > reduce_type ;
 
-      reduce_type block_result ;
+  ValueType * const value ;
 
-      const std::string block_result_name("reduce_scratch_array");
+  CudaParallelReduceFinalizeValue( ValueType * ptr )
+    : value( ptr ) {}
 
-      switch( result.rank() ) {
-      case 1 :
-        block_result = device_type::template create_scratch_mdarray<reduce_value_type>(
-                         result.dimension(0) ,
-                         block_result_name , block_count );
-        break ;
-      case 2 :
-        block_result = device_type::template create_scratch_mdarray<reduce_value_type>(
-                         result.dimension(0) ,
-                         result.dimension(1) ,
-                         block_result_name , block_count );
-        break ;
-      case 3 :
-        block_result = device_type::template create_scratch_mdarray<reduce_value_type>(
-                         result.dimension(0) ,
-                         result.dimension(1) ,
-                         result.dimension(2) ,
-                         block_result_name , block_count );
-        break ;
-      case 4 :
-        block_result = device_type::template create_scratch_mdarray<reduce_value_type>(
-                         result.dimension(0) ,
-                         result.dimension(1) ,
-                         result.dimension(2) ,
-                         result.dimension(3) ,
-                         block_result_name , block_count );
-        break ;
-      default:
-        break ; // throw std::runtime_error(...);
-      }
+  ~CudaParallelReduceFinalizeValue() {}
 
-      run_reduce_functor_on_cuda<FunctorType> <<< block_count , thread_count , shmem_size >>>
-        ( functor , block_result , reduce_count );
+  __device__
+  void operator()() const
+  {
+    reduce_type * const shared_local =
+      cuda_local_thread_reduce_shared_memory< ValueType >();
 
-      run_reduce_operator_on_cuda<FunctorType>
-        <<< 1 , block_count , shmem_size >>>( functor , result , block_result , reduce_count );
+    // Output a single 'value' for the whole block.
+    // Have multiple threads in the block work together to output
+    // this thread-block's reduction value.
+    // reduce_type is a union { value , storage[N] }
+
+    CudaWordType * const output = (CudaWordType *) value ;
+
+    for ( int i = threadIdx.x ; i < reduce_type::WordCount ; i += blockDim.x ) {
+      output[i] = shared_local->storage[i];
     }
+  }
 
-    cudaThreadSynchronize();
+private:
+  CudaParallelReduceFinalizeValue();
+  CudaParallelReduceFinalizeValue & operator =
+    ( const CudaParallelReduceFinalizeValue & );
+};
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType , class FinalizeType >
+void cuda_parallel_reduce( const size_t work_count , const FunctorType & functor , const FinalizeType & finalize )
+{
+  typedef size_t                                        size_type ;
+  typedef typename FunctorType::value_type              value_type ;
+  typedef CudaSharedMemoryReduceType< value_type >      reduce_type ;
+  typedef CudaParallelReduceFinalizeBlock< value_type > finalize_block_type ;
+
+  // Size of result for shared memory
+  const size_type reduce_size = sizeof(reduce_type);
+
+  const size_type max_thread_count = CudaDevice::reduction_thread_max( reduce_size );
+
+  if ( work_count < max_thread_count ) {
+
+    // Small amount of work, use a single thread block
+
+    size_type thread_count = max_thread_count ;
+
+    // Reduce thread count until nearly every thread will have work
+    while ( work_count <= ( thread_count >> 1 ) ) { thread_count >>= 1 ; }
+
+    run_reduce_functor_on_cuda< FunctorType , FinalizeType >
+      <<< 1, thread_count, reduce_size * thread_count >>>
+      ( work_count , functor , finalize );
+  }
+  else {
+
+    // Large amount of work, use multiple thread blocks
+    // requiring partial reductions from each thread block
+    // with a final reduction of the partial values.
+
+    size_type block_count = CudaDevice::block_count_max();
+
+    // Block count must be less than or equal to max_thread_count
+    // so that the final reduction has one value per block.
+
+    if ( max_thread_count < block_count ) { block_count = max_thread_count ; }
+
+    // Reduce block count until nearly every block will have work.
+    while ( work_count <= max_thread_count * ( block_count >> 1 ) ) { block_count >>= 1 ; }
+
+    // Block reductions are stored in global memory
+    finalize_block_type finalize_block(
+      (reduce_type *) CudaDevice::allocate_memory( reduce_size, block_count, std::string() ) );
+
+    run_reduce_functor_on_cuda< FunctorType , finalize_block_type >
+      <<< block_count , max_thread_count , reduce_size * max_thread_count >>>
+      ( work_count , functor , finalize_block );
+
+    // Reduce block reduction partial values to a single value
+    run_reduce_operator_on_cuda< FunctorType , FinalizeType >
+      <<< 1 , block_count , reduce_size * block_count >>>
+      ( finalize_block.block_value , finalize );
+
+    CudaDevice::deallocate_memory( finalize_block.block_value );
+  }
+};
+
+//----------------------------------------------------------------------------
+/** \brief  Process reduce value via a finalize functor */
+template< class FunctorType , class FinalizeType >
+struct ParallelReduce< FunctorType , FinalizeType , CudaDevice >
+{
+  typedef typename FunctorType::value_type value_type ;
+
+  static void run( const size_t work_count , const FunctorType & functor , const FinalizeType & finalize )
+  {
+    CudaParallelReduceFinalizeFunctor< value_type , FinalizeType >
+      tmp( finalize );
+
+    cuda_parallel_reduce( work_count , functor , tmp );
+  }
+};
+
+//----------------------------------------------------------------------------
+/** \brief  Place reduce value in value view  */
+template< class FunctorType >
+struct ParallelReduce< FunctorType ,
+                       ValueView< typename FunctorType::value_type , CudaDevice > ,
+                       CudaDevice >
+{
+  typedef typename FunctorType::value_type      value_type ;
+  typedef ValueView< value_type , CudaDevice >  view_type ;
+
+  static void run( const size_t work_count , const FunctorType & functor , const view_type & view )
+  {
+    typedef CudaParallelReduceFinalizeValue< value_type > finalize_functor ;
+
+    // 'reduce_type' is a union { value , ... };
+    finalize_functor finalize( view.address_on_device() );
+
+    cuda_parallel_reduce( work_count , functor , finalize );
+  }
+};
+
+//----------------------------------------------------------------------------
+/** \brief  Return reduce value specialization */
+template< class FunctorType >
+struct ParallelReduce< FunctorType , void , CudaDevice >
+{
+  typedef typename FunctorType::value_type         value_type ;
+
+  static value_type run( const size_t work_count , const FunctorType & functor )
+  {
+    typedef CudaParallelReduceFinalizeValue< value_type > finalize_functor ;
+
+    value_type tmp ;
+
+    ValueView< value_type , CudaDevice >
+      view( create_value< value_type , CudaDevice >() );
+
+    // 'reduce_type' is a union { value , ... };
+    finalize_functor finalize( view.address_on_device() );
+
+    cuda_parallel_reduce( work_count , functor , finalize );
+
+    cudaThreadSynchronize(); // Wait for reduction to complete to copy the value out.
+
+    deep_copy( tmp , view );
+
+    return tmp ;
   }
 };
 
 
-}
+} // namespace Kokkos
 
 #endif /* KOKKOS_CUDADEVICEREDUCE_HPP */
 
