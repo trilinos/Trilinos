@@ -13,7 +13,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "Isorropia_config.h" // Just for HAVE_MPI
+#include "TrilinosCouplings_config.h" // Just for HAVE_MPI
 
 // Epetra includes
 #ifdef HAVE_MPI
@@ -30,6 +30,7 @@
 // Teuchos includes
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_Time.hpp"
 
 // EpetraExt includes
 #include "EpetraExt_RowMatrixOut.h"
@@ -77,11 +78,6 @@ int main(int argc, char *argv[])
     }
 
     // =================== Read input xml file =============================
-    cout << "I am here with ip" << ipFileName << endl;
-    char *fname = new char[ipFileName.size()+1];
-    strcpy(fname,ipFileName.c_str());
-    cout << fname << endl;
- 
     Teuchos::updateParametersFromXmlFile(ipFileName, &pLUList);
     isoList = pLUList.sublist("Isorropia Input");
     // Get matrix market file name
@@ -111,7 +107,6 @@ int main(int argc, char *argv[])
     Epetra_MultiVector x(vecMap, 1);
     Epetra_MultiVector b(vecMap, 1, false);
     b.PutScalar(1.0); // TODO : Accept it as input
-    cout << "Created the vectors" << endl;
 
     // Partition the matrix with hypergraph partitioning and redisstribute
     Isorropia::Epetra::Partitioner *partitioner = new
@@ -130,47 +125,27 @@ int main(int argc, char *argv[])
 
     Epetra_LinearProblem problem(A, newX, newB);
 
-    AztecOO solver(problem);
+    Amesos Factory;
+    char* SolverType = "Amesos_Klu";
+    bool IsAvailable = Factory.Query(SolverType);
 
-    Ifpack_Preconditioner *prec;
-    ML_Epetra::MultiLevelPreconditioner *MLprec;
-    if (prec_type.compare("HyperLU") == 0)
-    {
-        prec = new Ifpack_HyperLU(A);
-        prec->Initialize();
-        prec->Compute();
-        (dynamic_cast<Ifpack_HyperLU *>(prec))->JustTryIt();
-        cout << " Going to set it in solver" << endl ;
-        solver.SetPrecOperator(prec);
-        cout << " Done setting the solver" << endl ;
-    }
-    else if (prec_type.compare("ILU") == 0)
-    {
-        prec = new Ifpack_ILU(A);
-        prec->Initialize();
-        prec->Compute();
-        solver.SetPrecOperator(prec);
-    }
-    else if (prec_type.compare("ILUT") == 0)
-    {
-        prec = new Ifpack_ILUT(A);
-        prec->Initialize();
-        prec->Compute();
-        solver.SetPrecOperator(prec);
-    }
-    else if (prec_type.compare("ML") == 0)
-    {
-        Teuchos::ParameterList mlList; // TODO : Take it from i/p
-        MLprec = new ML_Epetra::MultiLevelPreconditioner(*A, mlList, true);
-        solver.SetPrecOperator(MLprec);
-    }
+    Epetra_LinearProblem *LP = new Epetra_LinearProblem();
+    LP->SetOperator(A);
+    LP->SetLHS(newX);
+    LP->SetRHS(newB);
+    Amesos_BaseSolver *Solver = Factory.Create(SolverType, *LP);
 
-    solver.SetAztecOption(AZ_solver, AZ_gmres);
-    //solver.SetAztecOption(AZ_output, 1);
-    //solver.SetAztecOption(AZ_conv, AZ_Anorm);
-    cout << "Going to iterate for the global problem" << endl;
 
-    solver.Iterate(500, 1e-9);
+    Solver->SymbolicFactorization();
+  Teuchos::Time ftime("setup time");
+      ftime.start();
+    Solver->NumericFactorization();
+    cout << "Numeric Factorization" << endl;
+    Solver->Solve();
+    cout << "Solve done" << endl;
+
+    ftime.stop();
+    cout << "Time to setup" << ftime.totalElapsedTime() << endl;
 
     // compute ||Ax - b||
     double Norm;
@@ -186,14 +161,6 @@ int main(int argc, char *argv[])
     cout << "|Ax-b |/|A| = " << Norm/ANorm << endl;
 
     delete newAx;
-    if (prec_type.compare("ML") == 0)
-    {
-        delete MLprec;
-    }
-    else
-    {
-        delete prec;
-    }
     delete newX;
     delete newB;
     delete A;

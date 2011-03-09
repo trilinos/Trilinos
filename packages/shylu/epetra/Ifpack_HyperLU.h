@@ -150,6 +150,8 @@ class Ifpack_HyperLU: public Ifpack_Preconditioner
          Epetra_RowMatrix* Matrix_in = 0);
 
     //! Returns the computed estimated condition number, or -1.0 if not computed.
+int JustTryIt() ;
+
     double Condest() const
     {
         return(Condest_);
@@ -292,6 +294,10 @@ class Ifpack_HyperLU: public Ifpack_Preconditioner
     int *DRowElems_;
     int *SRowElems_;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar_;
+    AztecOO *solver_;
+    Epetra_MultiVector *Xs_;
+    Epetra_MultiVector *Bs_;
+    Epetra_Operator *precop_ ;
 
     bool UseTranspose_;
 

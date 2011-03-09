@@ -56,6 +56,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_Time.hpp"
 
 // EpetraExt includes
 #include "EpetraExt_RowMatrixOut.h"
@@ -453,10 +454,17 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
     Solver = Factory.Create(SolverType, *LP);
 
     Solver->SymbolicFactorization();
+    Teuchos::Time ftime("setup time");
+    ftime.start();
+
     Solver->NumericFactorization();
     cout << "Numeric Factorization" << endl;
     /*Solver->Solve();
     cout << "Solve done" << endl;
+
+    ftime.stop();
+    cout << "Time to factor" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
 
     D.Multiply(false, *X, *residual);
     residual->Update(-1.0, *B, 1.0);
@@ -493,9 +501,19 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
     Teuchos::RCP<const Epetra_CrsGraph> rSg = Teuchos::rcpFromRef(Sg);
     Isorropia::Epetra::Prober prober(rSg, pList, false);
     cout << "Doing coloring" << endl;
+    ftime.start();
     prober.color();
+    ftime.stop();
+    cout << "Time to color" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
     cout << "Doing probing" << endl;
+    ftime.start();
     Sbar = prober.probe(probeop);
+    cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << endl;
+    ftime.stop();
+    cout << "Time to probe" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+
 
     // ======================= Solve =========================================
 

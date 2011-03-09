@@ -65,6 +65,10 @@ int Ifpack_HyperLU::Initialize()
     //A_ = newA;
     // ]
 
+    double Sdiagfactor = 0.05; // hard code the diagonals
+    HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
+                    Sbar_, Sdiagfactor);
+
     IsInitialized_ = true;
     return 0;
 }
@@ -76,16 +80,48 @@ int Ifpack_HyperLU::SetParameters(Teuchos::ParameterList& parameterlist)
 
 int Ifpack_HyperLU::Compute()
 {
-    double Sdiagfactor = 0.90; // hard code the diagonals
-    Teuchos::Time time("setup");
-    time.start();
-    HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
-                    Sbar_, Sdiagfactor);
-    time.stop();
-    cout << "Time to Setup" << time.totalElapsedTime() << endl;
+    Teuchos::Time ftime("setup time");
+    ftime.start();
+
+    solver_  = new AztecOO() ;
+    int err = solver_->SetUserMatrix(Sbar_.get());
+    assert (err == 0);
+    //err = solver_->SetPrecMatrix(Sbar_.get());
+    //assert (err == 0);
+    solver_->SetAztecOption(AZ_solver, AZ_gmres);
+    solver_->SetAztecOption(AZ_precond, AZ_dom_decomp);
+
+    solver_->SetAztecOption(AZ_keep_info, 1);
+    double condest;
+    err = solver_->ConstructPreconditioner(condest);
+    assert (err == 0);
+    cout << "Condition number of inner Sbar" << condest << endl;
+
+    // Do a dummy iterate to construct the preconditioner
+    Epetra_Map BsMap(-1, Snr_, SRowElems_, 0, A_->Comm());
+    Xs_ = new Epetra_MultiVector(BsMap, 1);
+    Bs_ = new Epetra_MultiVector(BsMap, 1);
+    Bs_->PutScalar(1.0);
+    solver_->SetLHS(Xs_);
+    solver_->SetRHS(Bs_);
+    solver_->Iterate(30, 1e-10);
+
+    /* solver_->SetAztecOption(AZ_pre_calc, AZ_reuse);*/
+
+    ftime.stop();
+    cout << "Time to ConstructPreconditioner" << ftime.totalElapsedTime() 
+            << endl;
     IsComputed_ = true;
+    cout << solver_ << endl;
     cout << " Done with the compute" << endl ;
     return 0;
+}
+
+int Ifpack_HyperLU::JustTryIt()
+{
+    cout << "Entering JustTryIt" << endl;
+    cout << solver_ << endl;
+    solver_->Iterate(30, 1e-10);
 }
 
 int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X, 
@@ -99,6 +135,7 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
 #endif
     cout << "Entering ApplyInvers" << endl;
+    int err;
     //if(NumApplyInverse_ == 0) cout << X;
     assert(X.Map().SameAs(Y.Map()));
     assert(X.Map().SameAs(A_->RowMap()));
@@ -119,6 +156,8 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     assert((newX->Map()).SameAs(BsImporter.SourceMap()));
 
     Bs.Import(*newX, BsImporter, Insert);
+    Epetra_MultiVector Xs(BsMap, nvectors);
+    Xs.PutScalar(0.0);
     //cout << " Done with first import " << endl;
     //if(NumApplyInverse_ == 0) cout << Bs;
 
@@ -129,8 +168,8 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
 #endif
 
-    Epetra_MultiVector Xs(BsMap, nvectors);
     Epetra_LinearProblem Problem(Sbar_.get(), &Xs, &Bs);
+    //assert(solver_ != NULL);
 
 
 #ifdef DUMP_MATRICES
@@ -141,15 +180,30 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
 #endif
 
-    AztecOO solver(Problem);
+    // TODO: Can I create the solver in setup ?
+    AztecOO solver;
+    //solver.SetPrecOperator(precop_);
     solver.SetAztecOption(AZ_solver, AZ_gmres);
     // Do not use AZ_none
     solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+    //solver.SetAztecOption(AZ_precond, AZ_none);
     //solver.SetAztecOption(AZ_precond, AZ_Jacobi);
+    ////solver.SetAztecOption(AZ_precond, AZ_Neumann);
     //solver.SetAztecOption(AZ_overlap, 3);
     //solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu);
-    solver.SetAztecOption(AZ_output, AZ_all);
-    solver.SetAztecOption(AZ_diagnostics, AZ_all);
+    //solver.SetAztecOption(AZ_output, AZ_all);
+    //solver.SetAztecOption(AZ_diagnostics, AZ_all);
+    solver.SetProblem(Problem);
+
+    //solver_->SetLHS(&Xs);
+    //solver_->SetRHS(&Bs);
+    //err = solver_->CheckInput();
+    //assert (err == 0);
+
+    /*const int *az_options = solver_->GetAllAztecOptions();
+    for (int az_i = 0; az_i < AZ_OPTIONS_SIZE; az_i++)
+        cout << az_options[az_i] << " ";
+    cout << endl;*/
 
     solver.Iterate(30, 1e-10);
 
@@ -172,7 +226,7 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
 
     int lda;
     double *values;
-    int err = temp.ExtractView(&values, &lda);
+    err = temp.ExtractView(&values, &lda);
     assert (err == 0);
     int nrows = C_->RowMap().NumMyElements();
 
@@ -204,6 +258,9 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
            assert (err == 0);
        }
     }
+
+    // For checking faults
+    //if (NumApplyInverse_ == 5)  temp.ReplaceMyValue(0, 0, 0.0);
 
     Epetra_Export XdExporter(BdMap, Y.Map());
     Y.Export(temp, XdExporter, Insert);
