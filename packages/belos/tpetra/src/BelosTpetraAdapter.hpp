@@ -791,7 +791,7 @@ namespace Belos {
       if (beta == 0)
 	{
 	  if (alpha != zero)
-	    solver_ (Y_ptr, X_ptr);
+	    solver_->solve (Y_ptr, X_ptr);
 	  if (alpha != one)
 	    Y_ptr->scale (alpha);
 	}
@@ -801,8 +801,8 @@ namespace Belos {
 	{ // The solver overwrites Y with the result of the solve, so
 	  // we have to make a copy of Y first before invoking the
 	  // solver.
-	  const MV Y_copy (Y);
-	  solver_ (Y_ptr, X_ptr);
+	  RCP<MV> Y_copy (new MV (*Y_ptr));
+	  solver_->solve (Y_copy, X_ptr);
 	  // Y := alpha*Y_copy + beta*Y.
 	  Y_ptr->update (alpha, Y_copy, beta);
 	}
@@ -832,6 +832,30 @@ namespace Belos {
     /// 
     /// See note on \c domain_.
     Teuchos::RCP<const vector_space_type> range_;    
+  };
+
+  /// \brief Specialization of makeInnerSolverOperator() for Tpetra objects.
+  ///
+  /// Take an InnerSolver instance, and wrap it in an implementation
+  /// of the Tpetra::Operator interface.  That way you can use it
+  /// alongside any other implementation of the Tpetra::Operator
+  /// interface (such as Tpetra::CrsMatrix).  
+  template <class Scalar, class LO, class GO, class Node>
+  class InnerSolverTraits<Scalar, Tpetra::MultiVector<Scalar, LO, GO, Node>, Tpetra::Operator<Scalar, LO, GO, Node> > {
+  public:
+    typedef Scalar scalar_type;
+    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> multivector_type;
+    typedef Tpetra::Operator<Scalar, LO, GO, Node> operator_type;
+
+    static Teuchos::RCP<operator_type>
+    makeInnerSolverOperator (const Teuchos::RCP<InnerSolver<scalar_type, multivector_type, operator_type> >& solver)
+    {
+      using Teuchos::rcp;
+      using Teuchos::rcp_implicit_cast;
+      typedef TpetraInnerSolver<Scalar, LO, GO, Node> wrapper_type;
+
+      return rcp_implicit_cast<operator_type> (rcp (new wrapper_type (solver)));
+    }
   };
 
 } // end of Belos namespace 

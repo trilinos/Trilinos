@@ -1101,6 +1101,32 @@ namespace Belos {
     Teuchos::RCP<const vector_space_type> range_;    
   };
 
+  /// \brief Specialization of makeInnerSolverOperator() for Epetra objects.
+  ///
+  /// Take an InnerSolver instance, and wrap it in an implementation
+  /// of the Epetra_Operator interface.  That way you can use it
+  /// alongside any other implementation of the Epetra_Operator
+  /// interface.
+  ///
+  /// \note This is necessary because Belos' solvers require that the
+  ///   preconditioner(s) and the matrix all have the same type (OP).
+  template<>
+  class InnerSolverTraits<Scalar, Epetra_MultiVector, Epetra_Operator> {
+  public:
+    typedef double scalar_type;
+    typedef Epetra_MultiVector multivector_type;
+    typedef Epetra_Operator operator_type;
+
+    static Teuchos::RCP<operator_type>
+    makeInnerSolverOperator (const Teuchos::RCP<InnerSolver<scalar_type, multivector_type, operator_type> >& solver)
+    {
+      using Teuchos::rcp;
+      using Teuchos::rcp_implicit_cast;
+      typedef EpetraInnerSolver wrapper_type;
+
+      return rcp_implicit_cast<operator_type> (rcp (new wrapper_type (solver)));
+    }
+  };
   
 } // end of Belos namespace 
 

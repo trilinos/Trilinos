@@ -246,6 +246,37 @@ namespace Belos {
     }
   };
 
+
+  /// \brief Wrap an InnerSolver in an OP (operator).
+  ///
+  /// Take an InnerSolver instance, and wrap it in an implementation
+  /// of OP, where OP is one of the base operator interfaces that
+  /// Belos supports (currently Thyra::LinearOpBase, Tpetra::Operator,
+  /// and Epetra_Operator).
+  ///
+  /// \note The reason for this class is that Belos solvers require
+  ///   that the preconditioner(s) and the operator have the same type
+  ///   (OP).  So, if we want to use the InnerSolver as e.g., a
+  ///   preconditioner for a Tpetra::CrsMatrix (which implements
+  ///   Tpetra::Operator), we have to wrap the InnerSolver in
+  ///   something that implements the Tpetra::Operator interface.
+  ///   Otherwise, we would just use the above definition of
+  ///   OperatorTraits for InnerSolver above.
+  /// 
+  /// \note The reason this is a class and not just a template
+  ///   function, is that C++ doesn't allow partial template
+  ///   specialization of template functions.
+  template<class Scalar, class MV, class OP>
+  class InnerSolverTraits {
+  public:
+    typedef Scalar scalar_type;
+    typedef MV multivector_type;
+    typedef OP operator_type;
+
+    static Teuchos::RCP<OP>
+    makeInnerSolverOperator (const Teuchos::RCP<InnerSolver<Scalar, MV, OP> >& solver);
+  };
+
 } // namespace Belos
 
 #endif // __Belos_InnerSolver_hpp

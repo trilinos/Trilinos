@@ -34,9 +34,11 @@
 #ifndef BELOS_THYRA_ADAPTER_HPP
 #define BELOS_THYRA_ADAPTER_HPP
 
+#include "BelosConfigDefs.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
-#include "BelosConfigDefs.hpp"
+#include "BelosVectorSpaceTraits.hpp"
+#include "BelosInnerSolver.hpp"
 
 #include <Thyra_DetachedMultiVectorView.hpp>
 #include <Thyra_MultiVectorBase.hpp>
@@ -53,11 +55,8 @@ namespace Belos {
   ///   (operator) type.  MultiVectorBase "is-a" LinearOpBase, but
   ///   that doesn't matter here.
   template<class Scalar>
-  class VectorSpaceTraits<Thyra::MultiVectorBase<Scalar>, 
-			  Thyra::LinearOpBase<Scalar> > {
+  class VectorSpaceTraits<Thyra::VectorSpaceBase<Scalar> > {
   public:
-    typedef Thyra::MultiVectorBase<Scalar> multivector_type;
-    typedef Thyra::LinearOpBase<Scalar> operator_type;
     typedef Thyra::VectorSpaceBase<Scalar> vector_space_type;
 
     static bool 
@@ -134,7 +133,8 @@ namespace Belos {
     /// distribution of the rows of the multivector, with the
     /// assumption that it is distributed in block row fashion among
     /// processor(s).
-    static Teuchos::RCP<const vector_space_type> getRange (const MV& x) {
+    static Teuchos::RCP<const vector_space_type> 
+    getRange (const Thyra::MultiVectorBase<ScalarType>& x) {
       return x.range ();
     }
     //@}
@@ -608,7 +608,8 @@ namespace Belos {
     ///
     /// "Persistent" means that the vector space object will persist
     /// beyond the scope of A.
-    static Teuchos::RCP<const vector_space_type> getDomain (const OP& A) {
+    static Teuchos::RCP<const vector_space_type> 
+    getDomain (const Thyra::LinearOpBase<ScalarType>& A) {
       return A.domain ();
     }
 
@@ -616,10 +617,151 @@ namespace Belos {
     ///
     /// "Persistent" means that the vector space object will persist
     /// beyond the scope of A.
-    static Teuchos::RCP<const vector_space_type> getRange (const OP& A) {
+    static Teuchos::RCP<const vector_space_type> 
+    getRange (const Thyra::LinearOpBase<ScalarType>& A) {
       return A.range ();
     }
     //@}
+  };
+
+
+  /// \class ThyraInnerSolver
+  /// \brief Adaptor between InnerSolver and Thyra::LinearOpBase.
+  /// 
+  /// This wrapper lets you use as a Thyra::LinearOpBase any
+  /// implementation of Belos::InnerSolver<Scalar, MV, OP> with MV =
+  /// Thyra::MultiVectorBase<Scalar> and OP =
+  /// Thyra::LinearOpBase<Scalar>.
+  /// 
+  template <class Scalar>
+  class ThyraInnerSolver : public Thyra::LinearOpBase<Scalar> {
+  public:
+    typedef Scalar scalar_type;
+    typedef Thyra::MultiVectorBase<Scalar> multivector_type;
+    typedef Thyra::LinearOpBase<Scalar> operator_type;
+    typedef typename OperatorTraits<scalar_type, multivector_type, operator_type>::vector_space_type vector_space_type;
+    typedef InnerSolver<Scalar, multivector_type, operator_type> inner_solver_type;
+
+    /// \brief Constructor.
+    ///
+    /// \param solver [in/out] The actual inner solver implementation.
+    ThyraInnerSolver (const Teuchos::RCP<inner_solver_type>& solver) :
+      solver_ (solver)
+    {}
+
+    //! A persistent view of the domain vector space of the operator
+    Teuchos::RCP<const vector_space_type> domain() const {
+      return solver_->getDomain();
+    }
+    //! A persistent view of the range vector space of the operator
+    Teuchos::RCP<const vector_space_type> range() const {
+      return solver_->getRange();
+    }
+
+    // Clone the inner solver (currently not supported).
+    //
+    // For now, this method always returns null.
+    // Teuchos::RCP<const operator_type> clone() const {
+    //   return Teuchos::null;
+    // }
+
+  protected:
+    //! Whether apply() with the given transpose option is supported.
+    bool opSupportedImpl (Thyra::EOpTransp M_trans) const {
+      // Applying the (conjugate) transpose is not supported.
+      return (M_trans == Thyra::NOTRANS);
+    }
+
+    /// \brief Compute Y := alpha*solver(Y,X) + beta*Y.
+    ///
+    /// \note The contents of Y on input may be relevant, depending on
+    ///   the inner solver implementation.  For example, Y on input
+    ///   may be treated as the initial guess of an iterative solver.
+    void 
+    applyImpl(Thyra::EOpTransp M_trans,
+	      const multivector_type& X,
+	      const Teuchos::Ptr<multivector_type>& Y,
+	      const Scalar alpha,
+	      const Scalar beta) const
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcpFromRef;
+      typedef multivector_type MV;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+
+      TEST_FOR_EXCEPTION(! opSupportedImpl(M_trans), std::invalid_argument,
+			 "ThyraInnerSolver only supports applying the operator"
+			 " itself, not its transpose or conjugate transpose.");
+      TEST_FOR_EXCEPTION(Y.is_null(), std::invalid_argument,
+			 "ThyraInnerSolver does not support callign apply() "
+			 "with Y null.");
+      const Scalar zero = STS::zero();
+      const Scalar one = STS::one();
+
+      // "X" is the right-hand side in this case, and "Y" is the
+      // "left-hand side."
+      RCP<const MV> X_ptr = rcpFromRef (X);
+      RCP<MV> Y_ptr = rcpFromRef (*Y);
+
+      // Compute Y := alpha*solver(Y,X) + beta*Y.
+      //
+      // There are special cases for beta==0 or alpha==0; these
+      // special cases ignore NaNs in Y or in the result of
+      // solver(Y,X).  Note also that the inner solver is not invoked
+      // at all if alpha==0.
+      if (beta == 0)
+	{
+	  if (alpha != zero)
+	    solver_->solve (Y_ptr, X_ptr);
+	  if (alpha != one)
+	    Thyra::scale (alpha, Y_ptr.ptr());
+	}
+      else if (alpha == 0)
+	Thyra::scale (beta, Y_ptr.ptr());
+      else 
+	{ // The solver overwrites Y with the result of the solve, so
+	  // we have to make a copy of Y first before invoking the
+	  // solver.
+	  RCP<MV> Y_copy = Y_ptr->clone_mv ();
+	  solver_->solve (Y_copy, X_ptr);
+	  // Y := alpha*Y_copy + beta*Y.
+	  if (beta != one)
+	    Thyra::scale (beta, Y_ptr.ptr());
+	  Thyra::update (alpha, *Y_copy, Y_ptr.ptr());
+	}
+    }
+
+  private:
+    //! Default construction is not allowed.
+    ThyraInnerSolver ();
+
+    //! The inner solver implementation.
+    Teuchos::RCP<inner_solver_type> solver_;
+  };
+
+  
+  /// \brief Specialization of makeInnerSolverOperator() for Thyra objects.
+  ///
+  /// Take an InnerSolver instance, and wrap it in an implementation
+  /// of the Thyra::LinearOpBase interface.  That way you can use it
+  /// alongside any other implementation of the Thyra::LinearOpBase
+  /// interface.
+  template<class Scalar>
+  class InnerSolverTraits<Scalar, Thyra::MultiVectorBase<Scalar>, Thyra::LinearOpBase<Scalar> > {
+  public:
+    typedef Scalar scalar_type;
+    typedef Thyra::MultiVectorBase<Scalar> multivector_type;
+    typedef Thyra::LinearOpBase<Scalar> operator_type;
+
+    Teuchos::RCP<operator_type>
+    makeInnerSolverOperator (const Teuchos::RCP<InnerSolver<scalar_type, multivector_type, operator_type> >& solver)
+    {
+      using Teuchos::rcp;
+      using Teuchos::rcp_implicit_cast;
+      typedef ThyraInnerSolver<Scalar> wrapper_type;
+
+      return rcp_implicit_cast<operator_type> (rcp (new wrapper_type (solver)));
+    }
   };
   
 } // end of Belos namespace 
