@@ -74,7 +74,7 @@ struct TPI_ParallelReduce {
     // Rank of this thread: work->rank
     const size_type work_inc   = ( self.m_work_count + work->count - 1 ) / work->count ;
     const size_type work_begin = work_inc * work->rank ;
-    const size_type work_end   = std::max( work_begin + work_inc , self.m_work_count );
+    const size_type work_end   = std::min( work_begin + work_inc , self.m_work_count );
 
     for ( size_type iwork = work_begin ; iwork < work_end ; ++iwork ) {
       self.m_functor( iwork , update );
@@ -113,6 +113,8 @@ struct ParallelReduce< FunctorType , void , HostTPI >
   {
     value_type value ;
 
+    FunctorType::init( value );
+
     tpi_functor tmp( functor , work_count );
 
     TPI_Run_threads_reduce( & tpi_functor::run , & tmp ,
@@ -141,6 +143,8 @@ struct ParallelReduce<
                    const FunctorType & functor ,
                    const view_type   & view )
   {
+    FunctorType::init( *view );
+
     tpi_functor tmp( functor , work_count );
 
     TPI_Run_threads_reduce( & tpi_functor::run , & tmp ,
@@ -164,6 +168,8 @@ struct ParallelReduce< FunctorType , FinalizeType , HostTPI > {
                    const FinalizeType & finalize )
   {
     value_type result ;
+
+    FunctorType::init( result );
 
     tpi_functor tmp( functor , work_count );
 
