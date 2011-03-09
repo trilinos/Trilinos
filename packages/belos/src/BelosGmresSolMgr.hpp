@@ -65,6 +65,12 @@ namespace Belos {
   ///
   template<class Scalar, class MV, class OP>
   class GmresSolMgr : public SolverManager<Scalar, MV, OP> {
+  public:
+    typedef Scalar scalar_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+    typedef MV multivector_type;
+    typedef OP operator_type;
+
   private:
     typedef MultiVecTraits<Scalar,MV> MVT;
     typedef OperatorTraits<Scalar,MV,OP> OPT;
@@ -73,11 +79,6 @@ namespace Belos {
     typedef GmresBaseIteration<Scalar, MV, OP> iteration_type;
 
   public:
-    typedef Scalar scalar_type;
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
-    typedef MV multivector_type;
-    typedef OP operator_type;
-
     //! \name Constructors and destructor 
     //@{ 
 
@@ -348,9 +349,9 @@ namespace Belos {
 			 "nonnegative, but a value of " << maxNumRestarts 
 			 << " was specified.");
       rebuildStatusTests (convTol, maxItersPerRestart);
-      params->set ("Maximum Restarts", maxNumRestarts,
-		   "Maximum number of restart cycle(s) allowed for each "
-		   "right-hand side solved.");
+      params_->set ("Maximum Restarts", maxNumRestarts,
+		    "Maximum number of restart cycle(s) allowed for each "
+		    "right-hand side solved.");
     }
     //@}
     
@@ -362,7 +363,7 @@ namespace Belos {
     Teuchos::RCP<OutputManager<Scalar> > outMan_;
 
     //! Current parameters for this solver manager instance.
-    Teuchos::RCP<const Teuchos::ParameterList> params_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
 
     //! Convergence stopping criterion for the current solve.
     Teuchos::RCP<StatusTest<Scalar,MV,OP> > convTest_;
@@ -1078,12 +1079,14 @@ namespace Belos {
   GmresSolMgr<Scalar,MV,OP>::
   rebuildStatusTests (Teuchos::RCP<const Teuchos::ParameterList> plist)
   {
+    using Teuchos::rcp_const_cast;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
 
     // Default value for plist is null, in which case we use the
     // stored parameter list.  One of those two should be non-null.
-    RCP<const ParameterList> theParams = plist.is_null() ? params_ : plist;
+    RCP<const ParameterList> theParams = plist.is_null() ? 
+      rcp_const_cast<const ParameterList>(params_) : plist;
     TEST_FOR_EXCEPTION(theParams.is_null(),
 		       std::logic_error,
 		       "Belos::GmresSolMgr::rebuildStatusTests: We can't (re)"
@@ -1131,11 +1134,12 @@ namespace Belos {
     TEST_FOR_EXCEPTION(convTol < STM::zero(), std::invalid_argument,
 		       "Convergence tolerance " << convTol << " is negative.");
     params_->set ("Convergence Tolerance", convTol);
-    TEST_FOR_EXCEPTION(maxIters < 0, std::invalid_argument,
-		       "Maximum number of iterations " << maxIters 
+    TEST_FOR_EXCEPTION(maxItersPerRestart < 0, std::invalid_argument,
+		       "Maximum number of iterations " << maxItersPerRestart
 		       << " per restart cycle is negative.");
-    params_->set ("Maximum Iterations", maxItersPerRestart);
-
+    params_->set ("Maximum Iterations", maxItersPerRestart,
+		  "Maximum number of iterations allowed per restart cycle, "
+		  "for each right-hand side solved.");
     // If we don't have a problem to solve yet (problem_ is null), do
     // both an implicit and an explicit convergence test by default.
     // Then, when the user later calls setProblem() with a problem to
@@ -1143,11 +1147,14 @@ namespace Belos {
     // turn will call rebuildStatusTests() again.
     const bool haveLeftPrecond = problem_.is_null() ||
       ! problem_->getLeftPrec().is_null();
-
+    const std::string implicitScaleType = 
+      params_->get<std::string> ("Implicit Residual Scaling");
+    const std::string explicitScaleType = 
+      params_->get<std::string> ("Explicit Residual Scaling");
     convTest_ = initConvTest (convTol, haveLeftPrecond,
 			      implicitScaleType, explicitScaleType,
 			      userConvTest_);
-    statusTest_ = initStatusTest (convTest_, maxIters);
+    statusTest_ = initStatusTest (convTest_, maxItersPerRestart);
   }
 
 
@@ -1156,6 +1163,7 @@ namespace Belos {
   GmresSolMgr<Scalar,MV,OP>::
   rebuildOrthoManager (Teuchos::RCP<const Teuchos::ParameterList> plist)
   {
+    using Teuchos::rcp_const_cast;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
 
@@ -1167,7 +1175,8 @@ namespace Belos {
 
     // Default value for plist is null, in which case we use the
     // stored parameter list.  One of those two should be non-null.
-    RCP<const ParameterList> actualParams = plist.is_null() ? params_ : plist;
+    RCP<const ParameterList> actualParams = plist.is_null() ? 
+      rcp_const_cast<const ParameterList>(params_) : plist;
     TEST_FOR_EXCEPTION(actualParams.is_null(), std::logic_error,
 		       prefix << "We can't (re)build the orthogonalization "
 		       "method without any parameters.");
@@ -1215,6 +1224,7 @@ namespace Belos {
   GmresSolMgr<Scalar,MV,OP>::
   rebuildIteration (Teuchos::RCP<const Teuchos::ParameterList> plist)
   {
+    using Teuchos::rcp_const_cast;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
@@ -1225,7 +1235,8 @@ namespace Belos {
     std::ostream& dbg = outMan_->stream(Debug);
     dbg << prefix << endl;
 
-    RCP<const ParameterList> theParams = plist.is_null() ? params_ : plist;
+    RCP<const ParameterList> theParams = plist.is_null() ? 
+      rcp_const_cast<const ParameterList>(params_) : plist;
     TEST_FOR_EXCEPTION(theParams.is_null(), std::logic_error,
 		       prefix << "We can't (re)build the Iteration subclass "
 		       "instance without any parameters.");
@@ -1444,13 +1455,6 @@ namespace Belos {
 
 	// Restart until GMRES converges or we run out of restart
 	// cycles.
-	//
-	// FIXME (mfh 21 Feb 2011) Should we instead ask the
-	// iteration (iter_) whether it has converged?  Otherwise,
-	// this solution manager needs to keep the convergence test
-	// (not just the whole status test) around.
-	//
-	// FIXME (mfh 21 Feb 2011) Get maxNumRestarts from somewhere...
 	for (int restartCycle = 0; 
 	     convTest_->getStatus() != Passed && restartCycle < maxNumRestarts;
 	     ++restartCycle)
