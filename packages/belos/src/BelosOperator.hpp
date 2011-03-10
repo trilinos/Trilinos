@@ -48,6 +48,7 @@
 */
 
 #include "BelosOperatorTraits.hpp"
+#include "BelosVectorSpaceTraits.hpp"
 #include "BelosMultiVec.hpp"
 #include "BelosConfigDefs.hpp"
 
@@ -102,25 +103,71 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////  
   
-  /*!  \brief Template specialization of Belos::OperatorTraits class using Belos::Operator and Belos::MultiVec virtual
-    base classes.
-    
-    Any class that inherits from Belos::Operator will be accepted by the Belos templated solvers due to this
-    interface to the Belos::OperatorTraits class.
-  */
-
+  /// \brief Specialization of OperatorTraits for Operator and MultiVec.
+  ///
+  /// This is a partial template specialization of
+  /// Belos::OperatorTraits class using the Belos::Operator and
+  /// Belos::MultiVec abstract interfaces.  Any class that inherits
+  /// from Belos::Operator will be accepted by the Belos templated
+  /// solvers, due to this specialization of Belos::OperatorTraits.
   template <class ScalarType> 
   class OperatorTraits < ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > 
   {
   public:
     
-    ///
+    //! Specialization of Apply() for Operator and MultiVec objects.
     static void Apply ( const Operator<ScalarType>& Op, 
 			const MultiVec<ScalarType>& x, 
 			MultiVec<ScalarType>& y,
 			ETrans trans=NOTRANS )
     { Op.Apply( x, y, trans ); }
+
+    //! @name Vector space typedefs and methods
+    //@{
     
+    /// \typedef vector_space_type
+    ///
+    /// Belos operators have domain and range "vector spaces," and
+    /// Belos vectors belong to a particular vector space.  This lets
+    /// Belos solvers know whether (for example) a vector may be
+    /// assigned to another vector.  "Vector space" includes the idea
+    /// of distributed-memory data distribution, among other things.
+    ///
+    /// For Belos::Operator, we have given this typedef a trivial
+    /// definition, so that all vector spaces are the same and all
+    /// vectors belong to the same vector space.  This might change in
+    /// the future, so don't rely on this behavior, or on the type
+    /// used to implement vector_space_type.
+    typedef DefaultVectorSpace vector_space_type;
+
+    /// Return a persistent view to the domain vector space of A.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of A.  
+    ///
+    /// For Belos::Operator, we have given this function a trivial
+    /// definition, so that all vector spaces are the same and all
+    /// vectors belong to the same vector space.  This might change in
+    /// the future, so don't rely on this behavior, or on the
+    /// implementation of this function.
+    static Teuchos::RCP<const vector_space_type> getDomain (const Operator<ScalarType>& A) {
+      return DefaultVectorSpace::getDefaultVectorSpace ();
+    }
+
+    /// Return a persistent view to the range vector space of A.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of A.  
+    ///
+    /// For Belos::Operator, we have given this function a trivial
+    /// definition, so that all vector spaces are the same and all
+    /// vectors belong to the same vector space.  This might change in
+    /// the future, so don't rely on this behavior, or on the
+    /// implementation of this function.
+    static Teuchos::RCP<const vector_space_type> getRange (const Operator<ScalarType>& A) {
+      return DefaultVectorSpace::getDefaultVectorSpace ();
+    }
+    //@}
   };
   
 } // end Belos namespace

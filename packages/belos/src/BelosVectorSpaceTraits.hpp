@@ -134,6 +134,73 @@ namespace Belos {
       return Teuchos::null;
     }
   };
+
+
+  /// \class DefaultVectorSpace
+  /// \brief A default implementation of VectorSpaceType.
+  ///
+  /// For Belos::MultiVec and Belos::Operator, we have provided a
+  /// trivial definition of the various vector space properties.  This
+  /// ensures that for those two types, all vector spaces are
+  /// identical, and all vectors belong to the same vector space.
+  /// This might change in the future, so don't rely on this behavior,
+  /// or on the implementation details of DefaultVectorSpace.
+  class DefaultVectorSpace {
+  public:
+    bool compatible (const DefaultVectorSpace& other) const {
+      return index_ == other.index_;
+    }
+
+    /// \brief Return the "default" vector space.
+    /// 
+    /// \warning This method is not reentrant!
+    static Teuchos::RCP<const DefaultVectorSpace> 
+    getDefaultVectorSpace () 
+    {
+      static Teuchos::RCP<const DefaultVectorSpace> theSpace;
+      if (theSpace.is_null())
+	{
+	  const int defaultIndex = 0;
+	  theSpace = Teuchos::rcp (new DefaultVectorSpace (defaultIndex));
+	}
+      return theSpace;
+    }
+      
+  private:
+    //! Default construction is forbidden.
+    DefaultVectorSpace ();
+
+    //! Construction itself is an implementation detail and therefore private.
+    DefaultVectorSpace (const int index) : index_ (index) {}
+
+    //! Implementation detail (the index of the vector space).
+    int index_;
+  };
+
+  //! Full specialization of VectorSpaceTraits for DefaultVectorSpace.
+  template<>
+  class VectorSpaceTraits<DefaultVectorSpace> {
+  public:
+    typedef DefaultVectorSpace vector_space_type;
+
+    /// \brief Are vectors from the two vector spaces compatible?
+    static bool 
+    compatible (const vector_space_type& first, 
+		const vector_space_type& second) {
+      return first.compatible (second);
+    }
+
+    /// \brief Return a persistent view of the given vector space.
+    ///
+    /// A "persistent view" means that the vector space is guaranteed
+    /// to survive the life of the distributed object which was
+    /// queried in order to get the vector space.  
+    static Teuchos::RCP<const vector_space_type>
+    persistentView (const Teuchos::RCP<const vector_space_type>& space) {
+      return space;
+    }
+  };
+
   
 } // namespace Belos
 

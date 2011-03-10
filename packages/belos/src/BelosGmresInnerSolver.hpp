@@ -44,9 +44,13 @@
 
 #include <BelosInnerSolver.hpp>
 #include <BelosGmresSolMgr.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 
 namespace Belos {
 
+  /// \class GmresInnerSolver
+  /// \brief Inner solver that uses GMRES (via GmresSolMgr).
+  ///
   template<class Scalar, class MV, class OP>
   class GmresInnerSolver : public InnerSolver<Scalar, MV, OP> {
   public:
@@ -56,6 +60,25 @@ namespace Belos {
     typedef typename base_type::multivector_type multivector_type;
     typedef typename base_type::operator_type operator_type;
 
+  private:
+    /// \brief Validate and return the given LinearProblem.
+    /// 
+    /// To be called only by the GmresInnerSolver constructor.
+    static Teuchos::RCP<LinearProblem<Scalar, MV, OP> >
+    validProblem (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem)
+    {
+      if (problem.is_null())
+	throw std::invalid_argument("GmresInnerSolver constructor: The linear "
+				    "problem to solve is null.");
+      else if (problem->getOperator().is_null())
+	throw std::invalid_argument("GmresInnerSolver constructor: the matrix A"
+				    " in the linear system AX=B to solve is "
+				    "null.");
+      else
+	return problem;
+    }
+
+  public:
     /// \brief Constructor.
     ///
     /// \param problem [in/out] The linear problem to solve.  Its
@@ -64,21 +87,77 @@ namespace Belos {
     ///   of those multivectors won't be overwritten -- just the
     ///   pointers (RCPs) will be changed -- so if you want to keep
     ///   either of them, you need only save the RCP before calling
-    ///   any of the solve() methods.
+    ///   any of the solve() methods.  The linear problem itself must
+    ///   be non-null, and the matrix / operator A
+    ///   (problem->getOperator()) in the linear system \f$AX=B\f$ to
+    ///   solve must be non-null.
     ///
-    /// \param params [in] Parameters for the solve.  This is 
-    ///   a pointer to nonconst only because the SolutionManager
-    ///   interface demands it (more or less...).
+    /// \param params [in] Parameters for GmresSolMgr.  If null, 
+    ///   we use defaults, else we make a deep copy.
     ///
     /// \param debug [in] Whether or not to run the GMRES
     ///   implementation in debug mode (which will produce verbose
     ///   debugging output, and may also result in extra computation
     ///   in order to test certain invariants or display status).
     GmresInnerSolver (const Teuchos::RCP<LinearProblem<Scalar,MV,OP> >& problem,
-		      const Teuchos::RCP<Teuchos::ParameterList>& params,
+		      const Teuchos::RCP<const Teuchos::ParameterList>& params,
 		      const bool debug = false)
-      : solMgr_ (problem, params, debug)
+      : solMgr_ (validProblem (problem), params, debug)
     {}
+
+    /// \brief Current parameters for the inner solver implementation.
+    ///
+    /// These parameters may change values in place, if the
+    /// five-argument version of the \c solve() method is called.  If
+    /// you want to preserve the original parameter values, make a
+    /// deep copy of the returned ParameterList.
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
+      return solMgr_.getCurrentParameters();
+    }
+
+    /// \brief Persistent view of the domain vector space.
+    ///
+    /// The "domain" of the inner solver is the vector space in which
+    /// valid right-hand sides B live, for an inner solver that solves
+    /// AX=B.
+    Teuchos::RCP<const vector_space_type> 
+    getDomain() const 
+    {
+      using Teuchos::RCP;
+      using Teuchos::TypeNameTraits;
+
+      RCP<const operator_type> A = solMgr_.getProblem().getOperator();
+      TEST_FOR_EXCEPTION(A.is_null(), std::logic_error,
+			 "Belos::GmresInnerSolver<" 
+			 << TypeNameTraits<Scalar>::name() << "," 
+			 << TypeNameTraits<MV>::name() << "," 
+			 << TypeNameTraits<OP>::name() << ">::getDomain: "
+			 "The matrix A in the equation AX=B which we're "
+			 "supposed to solve is null.");
+      return OperatorTraits<OP>::getDomain (A);
+    }
+
+    /// \brief Persistent view of the range vector space.
+    ///
+    /// The "range" of the inner solver is the vector space in which
+    /// valid approximate (or exact) solutions X live, for an inner
+    /// solver that solves AX=B.
+    Teuchos::RCP<const vector_space_type> 
+    getRange() const 
+    {
+      using Teuchos::RCP;
+      using Teuchos::TypeNameTraits;
+
+      RCP<const operator_type> A = solMgr_.getProblem().getOperator();
+      TEST_FOR_EXCEPTION(A.is_null(), std::logic_error,
+			 "Belos::GmresInnerSolver<" 
+			 << TypeNameTraits<Scalar>::name() << "," 
+			 << TypeNameTraits<MV>::name() << "," 
+			 << TypeNameTraits<OP>::name() << ">::getRange: "
+			 "The matrix A in the equation AX=B which we're "
+			 "supposed to solve is null.");
+      return OperatorTraits<OP>::getRange (A);
+    }
 
     /// \brief Solve \f$AX=B\f$ for the given right-hand side(s) B.
     ///
@@ -114,8 +193,10 @@ namespace Belos {
       //
       // I have a vague feeling that the stopping criteria should be
       // changed _after_ setting the RHS, but I'm not sure if this is
-      // true.
-      solMgr_.changeStoppingCriteria (convTol, maxItersPerRestart, maxNumRestarts);
+      // true.  (Does it have something to do with one of the stopping
+      // criteria computing or storing its own residual vector(s)?)
+      solMgr_.changeStoppingCriteria (convTol, maxItersPerRestart, 
+				      maxNumRestarts);
       return invokeSolver ();
     }
 
@@ -150,6 +231,13 @@ namespace Belos {
     }
 
   private:
+    /// \brief Default constructor (not implemented).
+    ///
+    /// We forbid default construction syntactically by making the
+    /// default constructor private to the class, and not implementing
+    /// it.
+    GmresInnerSolver();
+
     /// \brief GMRES solver manager (implementation of GMRES).
     /// 
     /// The solver manager configures GMRES on construction, and can
@@ -161,7 +249,9 @@ namespace Belos {
     ///
     /// This method assumes that the linear system (more precisely,
     /// the left-hand side X and the right-hand side B) have already
-    /// been set.
+    /// been set.  It aggregates the convergence data from the solve
+    /// over all right-hand side(s) and returns a single
+    /// InnerSolveResult which represents that aggregate result.
     InnerSolveResult
     invokeSolver ()
     {

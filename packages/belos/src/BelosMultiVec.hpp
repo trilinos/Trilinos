@@ -47,6 +47,7 @@
 */
 
 #include "BelosMultiVecTraits.hpp"
+#include "BelosVectorSpaceTraits.hpp"
 #include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
 
@@ -217,6 +218,44 @@ public:
   class MultiVecTraits<ScalarType,MultiVec<ScalarType> >
   {
   public:
+
+    //! @name Vector space typedefs and methods
+    //@{
+    
+    /// \typedef vector_space_type
+    ///
+    /// MV objects live in a "vector space."  Two objects of the same
+    /// MV type might live in different vector spaces.  "Vector space"
+    /// includes the idea of distributed-memory data distribution,
+    /// among other things.
+    ///
+    /// For Belos::MultiVec, we have given this typedef a trivial
+    /// definition, so that all vector spaces are the same and all
+    /// vectors belong to the same vector space.  This might change in
+    /// the future, so don't rely on this behavior, or on the type
+    /// used to implement vector_space_type.
+    typedef DefaultVectorSpace vector_space_type;
+
+    /// Return a persistent view to the vector space in which x lives.
+    ///
+    /// "Persistent" means that the vector space object will persist
+    /// beyond the scope of x.
+    ///
+    /// For Belos::MultiVec, we have given this function a trivial
+    /// definition, so that all vector spaces are the same and all
+    /// vectors belong to the same vector space.  This might change in
+    /// the future, so don't rely on this behavior, or on the
+    /// implementation of this function.
+    ///
+    /// \note The term "range" comes from Thyra; an
+    ///   Epetra_MultiVector's Epetra_Map and a Tpetra::MultiVector's
+    ///   Tpetra::Map both correspond to the "range" of the
+    ///   multivector, i.e., the distribution of its rows.
+    static Teuchos::RCP<const vector_space_type> getRange (const MultiVec<ScalarType>& x) {
+      return DefaultVectorSpace::getDefaultVectorSpace ();
+    }
+    //@}
+
     ///
     static Teuchos::RCP<MultiVec<ScalarType> > Clone( const MultiVec<ScalarType>& mv, const int numvecs )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).Clone(numvecs) ); }

@@ -85,16 +85,15 @@ namespace Belos {
     /// \brief Preferred constructor.
     ///
     /// \param problem [in/out] The linear problem to solve.
-    /// \param params [in] Parameters for the solve.  This is 
-    ///   a pointer to nonconst only because the SolutionManager
-    ///   interface demands it (more or less...).
+    /// \param params [in] Parameters for the solve.  If null, 
+    ///   we use defaults, else we make a deep copy.
     GmresSolMgr (const Teuchos::RCP<LinearProblem<Scalar,MV,OP> >& problem,
-		 const Teuchos::RCP<Teuchos::ParameterList>& params,
+		 const Teuchos::RCP<const Teuchos::ParameterList>& params,
 		 const bool debug = false) : 
       problem_ (validatedProblem (problem)), 
       debug_ (debug)
     { 
-      setParameters (params);
+      setParametersImpl (params);
     }
 
     /// \brief Default constructor.  
@@ -211,7 +210,11 @@ namespace Belos {
     /// not yet been set, or if the maximum number of iterations has
     /// changed (which affects GMRES storage).
     ///
-    /// \param params [in] New parameters for the linear solve
+    /// \param params [in] New parameters for the linear solve.  The
+    ///   original parameter list is not modified.  Since
+    ///   setParameters() implements a pure virtual method of
+    ///   Belos::SolutionManager, the ParameterList has to be passed
+    ///   in as non-const, even though we don't modify it.
     ///
     /// \note We don't actually keep a pointer to params.  This is
     ///   because we might fill in unsupplied parameters with their
@@ -397,6 +400,19 @@ namespace Belos {
 
     //! Whether or not to print debug output.
     bool debug_;
+
+    /// \brief Set parameters for solving the linear problem.
+    ///
+    /// If necessary, this method restarts (by calling
+    /// reset(Belos::Problem)) the current solve that might be in
+    /// progress.  Currently, it does so only if the parameters have
+    /// not yet been set, or if the maximum number of iterations has
+    /// changed (which affects GMRES storage).
+    ///
+    /// \param params [in] New parameters for the linear solve.
+    ///   The original parameter list is not modified.
+    void 
+    setParametersImpl (const Teuchos::RCP<const Teuchos::ParameterList>& params);
 
     /// \brief (Re)build all the iteration stopping criteria.
     ///
@@ -880,6 +896,20 @@ namespace Belos {
   GmresSolMgr<Scalar,MV,OP>::
   setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
+    using Teuchos::ParameterList;
+    using Teuchos::rcp_const_cast;
+    // const_cast is OK, because setParametersImpl doesn't modify its
+    // input.  We just have to pass in a non-const ParameterList
+    // because Belos::SolutionManager requires it for implementations
+    // of setParameters().
+    setParametersImpl (rcp_const_cast<const ParameterList> (params));
+  }
+
+  template<class Scalar, class MV, class OP>
+  void
+  GmresSolMgr<Scalar,MV,OP>::
+  setParametersImpl (const Teuchos::RCP<const Teuchos::ParameterList>& params)
+  {
     using Teuchos::Exceptions::InvalidParameter;
     using Teuchos::Exceptions::InvalidParameterType;
     using Teuchos::null;
@@ -891,8 +921,9 @@ namespace Belos {
 
     RCP<const ParameterList> defaultParams = getDefaultParameters();
     TEST_FOR_EXCEPTION(defaultParams.is_null(), std::logic_error, 
-		       "Belos::GmresSolMgr::setParameters: default parameter "
-		       "list is null; this should never happen.");
+		       "Belos::GmresSolMgr::setParametersImpl: The default "
+		       "parameter list is null; this should never happen.  "
+		       "Please report this bug to the Belos developers.");
     RCP<ParameterList> actualParams;
     if (params.is_null())
       actualParams = parameterList (*defaultParams);
@@ -993,14 +1024,15 @@ namespace Belos {
       outMan_ = initOutputManager (outMan_, verbosity, outStream);
     }
     TEST_FOR_EXCEPTION(outMan_.is_null(), std::logic_error,
-		       "Belos::GmresSolMgr::setParameters: OutputManager "
-		       "instance is null after its initialization; this should "
-		       "never happen.");
+		       "Belos::GmresSolMgr::setParametersImpl: OutputManager "
+		       "instance is null after its initialization; this should"
+		       " never happen.  Please report this bug to the Belos "
+		       "developers.");
 
     // Now that we've initialized the output manager, we can print
     // debug output.
     std::ostream& dbg = outMan_->stream(Debug);
-    dbg << "Belos::GmresSolMgr::setParameters:" << endl
+    dbg << "Belos::GmresSolMgr::setParametersImpl:" << endl
 	<< "-- Initialized output manager; now we can print debug output." 
 	<< endl;
 
@@ -1057,7 +1089,7 @@ namespace Belos {
     if (needToResetSolver)
       reset (Belos::Problem);
 
-    dbg << "-- Done with setParameters()." << endl;
+    dbg << "-- Done with setParametersImpl()." << endl;
   }
 
   template<class Scalar, class MV, class OP>

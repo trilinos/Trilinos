@@ -99,6 +99,38 @@ namespace Belos {
   }
 
 
+  /// \class InnerSolver
+  /// \brief Inner solver interface.
+  /// \author Mark Hoemmen
+  ///
+  /// An "inner solver" wraps an existing linear solver, especially an
+  /// iterative solver (such as any of the iterative solvers
+  /// implemented in Belos).  InnerSolver is designed especially for
+  /// implementing the inner solve in inner-outer iterations, such as
+  /// the following:
+  /// - Flexible GMRES (which was originally designed as an inner-outer
+  ///   iteration)
+  /// - Multiprecision algorithms (where e.g., the preconditioner uses a 
+  ///   different floating-point precision than the matrix and vectors)
+  /// - Inexact Krylov methods (where the matrix and/or preconditioner
+  ///   are applied with accuracy that gradually decreases as the
+  ///   outer iteration converges)
+  ///
+  /// InnerSolvers may be used directly as the "OP" template argument
+  /// in \c Belos::OperatorTraits, but Belos' current architecture
+  /// makes this hard to use in practice.  The more typical use is via
+  /// the wrapper defined in \c Belos::InnerSolveTraits.  The \c
+  /// InnerSolveTraits::makeInnerSolveOperator() method wraps an
+  /// InnerSolve instance in an operator appropriate for your linear
+  /// algebra library: \c Epetra_Operator for Epetra, \c
+  /// Tpetra::Operator for Tpetra, or \c Thyra::LinearOpBase for
+  /// Thyra.  Then, you can mix and match InnerSolver instances with
+  /// ordinary matrices or other kinds of operators in your Belos
+  /// iterative solvers.  The wrappers have an "envelope" capability,
+  /// so your custom iterative solvers can receive the InnerSolver
+  /// wrapped up in the wrapper, extract the InnerSolver (via \c
+  /// Belos::InnerSolveTraits::getInnerSolver()), discard the wrapper
+  /// if desired, and use the InnerSolver directly.
   template<class Scalar, class MV, class OP>
   class InnerSolver {
   public:
@@ -128,6 +160,15 @@ namespace Belos {
     /// valid approximate (or exact) solutions X live, for an inner
     /// solver that solves AX=B.
     virtual Teuchos::RCP<const vector_space_type> getRange() const = 0;
+
+    /// \brief Current parameters for the inner solver implementation.
+    ///
+    /// These parameters may change values in place, if the
+    /// five-argument version of the \c solve() method is called.  If
+    /// you want to preserve the original parameter values, make a
+    /// deep copy of the returned ParameterList.
+    virtual Teuchos::RCP<const Teuchos::ParameterList> 
+    getCurrentParameters() const = 0;
 
     /// \brief Solve \f$AX=B\f$ for the given right-hand side(s) B.
     ///
@@ -161,6 +202,16 @@ namespace Belos {
     ///
     /// \return The result of the inner solve.  It is a single result,
     ///   aggregated over all right-hand side(s).
+    ///
+    /// \note Why isn't this method const?  First, inner solves almost
+    ///   certainly involve side effects (other than just modifying
+    ///   the output argument X), and likely those side effects affect
+    ///   the state of the inner solver's implementation.  Second, \c
+    ///   solve() may not be a pure function.  For example, if the
+    ///   inner solve implementation is a recycling Krylov solver, it
+    ///   may compute a different (hopefully better) approximate
+    ///   solution if given the same inputs twice in a row, or at
+    ///   least it may converge in fewer iterations the second time.
     ///
     virtual InnerSolveResult
     solve (const Teuchos::RCP<MV>& X,
@@ -199,6 +250,18 @@ namespace Belos {
     ///
     /// \return The result of the inner solve.  It is a single result,
     ///   aggregated over all right-hand side(s).
+    ///
+    /// \note Why isn't this method const?  First, inner solves almost
+    ///   certainly involve side effects (other than just modifying
+    ///   the output argument X), and likely those side effects affect
+    ///   the state of the inner solver's implementation.  Second, \c
+    ///   solve() may not be a pure function.  For example, if the
+    ///   inner solve implementation is a recycling Krylov solver, it
+    ///   may compute a different (hopefully better) approximate
+    ///   solution if given the same inputs twice in a row, or at
+    ///   least it may converge in fewer iterations the second time.
+    ///   Third, the two-argument version of \c solve() reserves the
+    ///   right to modify the stopping criteria on each call.
     ///
     virtual InnerSolveResult
     solve (const Teuchos::RCP<MV>& X,
