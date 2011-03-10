@@ -105,13 +105,22 @@ double multiply_test(
   typedef Map<int, int> Map_t;
   typedef Vector<double> Vector_t;
   typedef CrsMatrixMultiplyOp<double> CrsMatrixMultiplyOp_t;
-  RCP<const Map_t> rowmap = AT ? A->getDomainMap() : A->getRowMap();
+  RCP<const Map_t> map = A->getRowMap();
 
-  RCP<CrsMatrix_t> computedC = rcp( new CrsMatrix_t(rowmap, 1));
+  RCP<CrsMatrix_t> computedC = rcp( new CrsMatrix_t(map, 1));
 
   MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC);
 
-  Vector_t randomVector1(computedC->getDomainMap(), true);
+  Vector_t x1(map), x2(map), x3(map);
+  Vector_t y3(map);
+
+  x1.randomize();
+
+  A->apply(x1,x2);
+  B->apply(x2,x3);
+  computedC->apply(x1,y3);
+  x3.update(1.0,y3,-1.0);
+  /*Vector_t randomVector1(computedC->getDomainMap(), true);
   randomVector1.randomize();
   Vector_t y1(computedC->getRangeMap(), true);
   CrsMatrixMultiplyOp_t cTimesVOp(computedC);
@@ -124,9 +133,9 @@ double multiply_test(
 
   Vector_t y2(A->getRangeMap(), true);
   CrsMatrixMultiplyOp_t aTimesVOp(A);
-  aTimesVOp.apply(intermediateVector, y2);
+  aTimesVOp.apply(intermediateVector, y2);*/
 
-  return fabs(y1.norm2()-y2.norm2());
+  return fabs(x3.norm2());
 
 }
 
@@ -174,6 +183,10 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems = 
     Teuchos::getParametersFromXmlFile(matnamesFile);
+  if(verbose){
+    MMdebug::debug_stream = rcpFromRef(out);
+    MMdebug::debug_level = Teuchos::VERB_HIGH;
+  }
   for(
     Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
     it != matrixSystems->end();
@@ -198,7 +211,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
 
     RCP<CrsMatrix<double,int> > A = null;
     RCP<CrsMatrix<double,int> > B = null;
-  
+ 
     Utils::readHBMatrix(A_file, comm, Kokkos::DefaultNode::getDefaultNode(), A);
     Utils::readHBMatrix(B_file, comm, Kokkos::DefaultNode::getDefaultNode(), B);
 

@@ -50,6 +50,7 @@ gen3a.hb gen3b.hb
 add2x4A.hb add2x4B.hb
 bigAddA.hb bigAddB.hb
 medAddA.hb medAddB.hb
+squareA.hb squareB.hb
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix/matrices
 DEST_DIR ${PACKAGE_BINARY_DIR}/test/MatrixMatrix/matrices
 EXEDEPS MatrixMatrix_UnitTests

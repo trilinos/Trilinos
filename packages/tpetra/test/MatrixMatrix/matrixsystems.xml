@@ -30,6 +30,22 @@
 		<Parameter name="TransB" value="false" type="bool"/>
 		<Parameter name="epsilon" value=".00000001" type="double"/>
   </ParameterList>
+  <ParameterList name="syntheticAtransB">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/squareA.hb" type="string"/>
+		<Parameter name="B" value="matrices/squareB.hb" type="string"/>
+		<Parameter name="TransA" value="true" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+		<Parameter name="epsilon" value=".00000001" type="double"/>
+  </ParameterList>
+  <ParameterList name="syntheticAtransBtrans">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/squareA.hb" type="string"/>
+		<Parameter name="B" value="matrices/squareB.hb" type="string"/>
+		<Parameter name="TransA" value="true" type="bool"/>
+		<Parameter name="TransB" value="true" type="bool"/>
+		<Parameter name="epsilon" value=".00000001" type="double"/>
+  </ParameterList>
 	<ParameterList name="2x4add">
     <Parameter name="op" value="add" type="string"/>
 		<Parameter name="A" value="matrices/add2x4A.hb" type="string"/>

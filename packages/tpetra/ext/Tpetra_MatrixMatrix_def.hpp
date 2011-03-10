@@ -142,19 +142,6 @@ void Multiply(
   //if more than 1 processor is performing this run, depending on the scenario.
   int numProcs = A.getComm()->getSize();
 
-  //If we are to use the transpose of A and/or B, we'll need to be able to 
-  //access, on the local processor, all rows that contain column-indices in
-  //the domain-map.
-//  const Epetra_Map* domainMap_A = &(A.DomainMap());
-//  const Epetra_Map* domainMap_B = &(B.DomainMap());
-
-  //const Epetra_Map* rowmap_A = &(A.RowMap());
-  //const Epetra_Map* rowmap_B = &(B.RowMap());
-
-  //Declare some 'work-space' maps which may be created depending on
-  //the scenario, and which will be deleted before exiting this function.
-
-
   //Declare a couple of structs that will be used to hold views of the data
   //of A and B, to be used for fast access during the matrix-multiplication.
   CrsMatrixStruct_t Aview;
@@ -175,13 +162,11 @@ void Multiply(
     }
   }
   //Now import any needed remote rows and populate the Aview struct.
-  //EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A, Aview) );
   MMdetails::import_and_extract_views(A, targetMap_A, Aview);
 
   //We will also need local access to all rows of B that correspond to the
   //column-map of op(A).
   if (numProcs > 1) {
-    //const Epetra_Map* colmap_op_A = NULL;
     RCP<const Map_t > colmap_op_A = null;
     if (transposeA) {
       colmap_op_A = targetMap_A;
@@ -792,8 +777,11 @@ void mult_Atrans_B(
     C_lastCol_import = Bview.importColMap->getMaxLocalIndex();
   }
 
-  size_t C_numCols = C_lastCol - C_firstCol + OrdinalTraits<LocalOrdinal>::one();
-  size_t C_numCols_import = C_lastCol_import - C_firstCol_import + OrdinalTraits<LocalOrdinal>::one();
+  size_t C_numCols = 
+    C_lastCol - C_firstCol + OrdinalTraits<LocalOrdinal>::one();
+
+  size_t C_numCols_import = 
+    C_lastCol_import - C_firstCol_import + OrdinalTraits<LocalOrdinal>::one();
 
   if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
 
@@ -934,11 +922,13 @@ void mult_Atrans_Btrans(
     C_inds[j] = OrdinalTraits<GlobalOrdinal>::invalid();
   }
 
-  ArrayView<const GlobalOrdinal> A_col_inds = Aview.colMap->getNodeElementList();
-  ArrayView<const GlobalOrdinal> A_col_inds_import = Aview.importColMap == null ?
+  ArrayView<const GlobalOrdinal> A_col_inds = 
+    Aview.colMap->getNodeElementList();
+  ArrayView<const GlobalOrdinal> A_col_inds_import = 
+    (Aview.importColMap != null ?
     Aview.importColMap->getNodeElementList() 
-	:
-	null;
+	  :
+	  null);
 
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > Crowmap = C.getRowMap();
 
