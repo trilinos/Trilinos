@@ -32,7 +32,7 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
     Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
     Teuchos::RCP<std::vector<AppGID> > &gids, 
     Teuchos::RCP<std::vector<AppLID> > &lids) 
-         : comm(in_comm), localGIDs(gids), localLIDs(lids), 
+         : comm(in_comm), myGids(gids), myLids(lids), 
            globalMap(NULL), gidList(NULL), lidList(NULL) { 
 
 
@@ -103,12 +103,14 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 
   /*! Constructor */
 template<typename AppGID, typename AppLID, typename GNO, typename LNO>
-  IdentifierMap<AppGID,AppLID,GNO,LNO>::IdentifierMap() : comm(), gidList(NULL), lidList(NULL){ }
+  IdentifierMap<AppGID,AppLID,GNO,LNO>::IdentifierMap() : gidList(NULL), lidList(NULL){ }
 
   /*! Destructor */
 template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   IdentifierMap<AppGID,AppLID,GNO,LNO>::~IdentifierMap() 
   {
+    if (gidList) delete gidList;
+    if (lidList) delete lidList;
   }
 
   /*! Copy Constructor */
@@ -124,6 +126,29 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   {
   }
 
+  /*! Set or reset the communicator*/
+template<typename AppGID, typename AppLID, typename GNO, typename LNO>
+  void 
+    IdentifierMap<AppGID,AppLID,GNO,LNO>::setComm(Teuchos::RCP<const Teuchos::Comm<int> > &in_comm) 
+  {
+    comm = in_comm;
+  }
+
+  /*! Set or reset application global IDs for this process*/
+template<typename AppGID, typename AppLID, typename GNO, typename LNO>
+  void 
+    IdentifierMap<AppGID,AppLID,GNO,LNO>::setGlobalIds(Teuchos::RCP<std::vector<AppGID> > &ids)
+  {
+    myGids = ids;
+  }
+
+  /*! Set or reset application local IDs for this process*/
+template<typename AppGID, typename AppLID, typename GNO, typename LNO>
+  void 
+    IdentifierMap<AppGID,AppLID,GNO,LNO>::setLocalIds(Teuchos::RCP<std::vector<AppLID> > &ids)
+  {
+    myLids = ids;
+  }
 }   // end namespace Z2
 
 #endif /* _ZOLTAN2_IDENTIFIERMAP_DEF_HPP_ */

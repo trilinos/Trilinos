@@ -35,21 +35,18 @@ int main(int argc, char *argv[])
 
   if (rank < leftOver) numLocalObjects++;
 
-  std::vector<int> localIDs(numLocalObjects);
-  std::vector<long> globalIDs(numLocalObjects);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::RCP< std::vector<long> > gids = Teuchos::rcp(new std::vector<long>(numLocalObjects));
+  Teuchos::RCP< std::vector<int> > lids = Teuchos::rcp(new std::vector<int>(numLocalObjects));
 
   long base = nobjects * rank;
 
   for (int i=0; i < numLocalObjects; i++){
-    globalIDs[i] = base + i;
-    localIDs[i] = i;
+    (*gids)[i] = base + i;
+    (*lids)[i] = i;
   }
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  Teuchos::RCP< std::vector<long> > gids = Teuchos::rcp(&globalIDs);
-  Teuchos::RCP< std::vector<int> > lids = Teuchos::rcp(&localIDs);
-
-  Z2::IdentifierMap<long, int> map(comm, gids, lids);
+  Z2::IdentifierMap<long, int> idmap(comm, gids, lids);
 
   std::cout << "PASS" << std::endl;
 }

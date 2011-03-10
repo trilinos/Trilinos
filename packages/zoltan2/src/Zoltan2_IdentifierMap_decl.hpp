@@ -72,10 +72,10 @@ template<typename AppGID, typename AppLID, typename GNO=AppGID, typename LNO=int
 
 private:
 
-  Teuchos::RCP<const Teuchos::Comm<int> > &comm;        // Get this from InputAdapter
+  Teuchos::RCP<const Teuchos::Comm<int> > comm;        // Get this from InputAdapter
 
-  Teuchos::RCP<std::vector<AppGID> > &localGIDs;  // This proc's global IDs from InputAdapter
-  Teuchos::RCP<std::vector<AppLID> > &localLIDs;  // This proc's local IDs from InputAdapter
+  Teuchos::RCP<std::vector<AppGID> > myGids;  // This proc's global IDs from InputAdapter
+  Teuchos::RCP<std::vector<AppLID> > myLids;  // This proc's local IDs from InputAdapter
 
   Teuchos::RCP<Tpetra::Map<LNO, GNO> > globalMap;
 
@@ -112,9 +112,14 @@ public:
   /*! Assignment operator */
   IdentifierMap &operator=(const IdentifierMap &id);
 
-#if 0
+  /*! Set or reset the communicator*/
+  void setComm(Teuchos::RCP<const Teuchos::Comm<int> > &in_comm);
 
-#endif
+  /*! Set or reset application global IDs for this process*/
+  void setGlobalIds(Teuchos::RCP<std::vector<AppGID> > &ids);
+
+  /*! Set or reset application local IDs for this process*/
+  void setLocalIds(Teuchos::RCP<std::vector<AppLID> > &ids);
 };
 
 }   // end namespace Z2
