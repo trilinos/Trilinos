@@ -61,6 +61,8 @@
 
 #include "EpetraExt_readEpetraLinearSystem.h"
 
+//TODO Combine Belos driver and AztecOO driver into one driver.
+
 
 using namespace std;
 
@@ -99,6 +101,7 @@ int main(int argc, char *argv[])
     int nProcs, myPID ;
     Teuchos::ParameterList pLUList ;        // ParaLU parameters
     Teuchos::ParameterList isoList ;        // Isorropia parameters
+    Teuchos::ParameterList hyperLUList ;    // HyperLU parameters
     string ipFileName = "HyperLU.xml";       // TODO : Accept as i/p
 
     nProcs = mpiSession.getNProc();
@@ -112,6 +115,8 @@ int main(int argc, char *argv[])
     // =================== Read input xml file =============================
     Teuchos::updateParametersFromXmlFile(ipFileName, &pLUList);
     isoList = pLUList.sublist("Isorropia Input");
+    hyperLUList = pLUList.sublist("HyperLU Input");
+    hyperLUList.set("Outer Solver Library", "Belos");
     // Get matrix market file name
     string MMFileName = Teuchos::getParameter<string>(pLUList, "mm_file");
     string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
@@ -165,6 +170,7 @@ int main(int argc, char *argv[])
     if (prec_type.compare("HyperLU") == 0)
     {
         prec = new Ifpack_HyperLU(A);
+        prec->SetParameters(hyperLUList);
         prec->Initialize();
         prec->Compute();
         cout << " Going to set it in solver" << endl ;

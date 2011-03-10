@@ -2,6 +2,7 @@
     <Parameter name="mm_file" type ="string" value="wathenSmall.mtx" />
     <Parameter name="preconditioner" type ="string" value="HyperLU" />
     <ParameterList name="HyperLU Input">
+    <!-- Parameter name="Outer Solver Library" type ="string" value="Belos" /-->
     </ParameterList>
     <ParameterList name="Isorropia Input">
     <!--Parameter name="partitioning method" type="string" value="graph" /-->

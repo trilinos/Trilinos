@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
     Teuchos::updateParametersFromXmlFile(ipFileName, &pLUList);
     isoList = pLUList.sublist("Isorropia Input");
     hyperLUList = pLUList.sublist("HyperLU Input");
+    hyperLUList.set("Outer Solver Library", "AztecOO");
     // Get matrix market file name
     string MMFileName = Teuchos::getParameter<string>(pLUList, "mm_file");
     string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
@@ -135,9 +136,10 @@ int main(int argc, char *argv[])
     if (prec_type.compare("HyperLU") == 0)
     {
         prec = new Ifpack_HyperLU(A);
+        prec->SetParameters(hyperLUList);
         prec->Initialize();
         prec->Compute();
-        (dynamic_cast<Ifpack_HyperLU *>(prec))->JustTryIt();
+        //(dynamic_cast<Ifpack_HyperLU *>(prec))->JustTryIt();
         cout << " Going to set it in solver" << endl ;
         solver.SetPrecOperator(prec);
         cout << " Done setting the solver" << endl ;

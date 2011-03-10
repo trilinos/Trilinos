@@ -294,10 +294,11 @@ int JustTryIt() ;
     int *DRowElems_;
     int *SRowElems_;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar_;
-    AztecOO *solver_;
+    mutable AztecOO *solver_; // Ugh !!! Mutable ! Ugh! Workaround AztecOO bug
     Epetra_MultiVector *Xs_;
     Epetra_MultiVector *Bs_;
     Epetra_Operator *precop_ ;
+    string libName_;
 
     bool UseTranspose_;
 

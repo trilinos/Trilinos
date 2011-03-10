@@ -83,42 +83,50 @@ int Ifpack_HyperLU::Compute()
     Teuchos::Time ftime("setup time");
     ftime.start();
 
-    solver_  = new AztecOO() ;
-    int err = solver_->SetUserMatrix(Sbar_.get());
-    assert (err == 0);
-    //err = solver_->SetPrecMatrix(Sbar_.get());
-    //assert (err == 0);
-    solver_->SetAztecOption(AZ_solver, AZ_gmres);
-    solver_->SetAztecOption(AZ_precond, AZ_dom_decomp);
+    libName_ = Teuchos::getParameter<string>(List_,
+                                                "Outer Solver Library");
+    if (libName_ == "Belos")
+    {
+        solver_  = new AztecOO() ;
+        int err = solver_->SetUserMatrix(Sbar_.get());
+        assert (err == 0);
+        solver_->SetAztecOption(AZ_solver, AZ_gmres);
+        solver_->SetAztecOption(AZ_precond, AZ_dom_decomp);
+        solver_->SetAztecOption(AZ_keep_info, 1);
 
-    solver_->SetAztecOption(AZ_keep_info, 1);
-    double condest;
-    err = solver_->ConstructPreconditioner(condest);
-    assert (err == 0);
-    cout << "Condition number of inner Sbar" << condest << endl;
+        double condest;
+        err = solver_->ConstructPreconditioner(condest);
+        assert (err == 0);
+        cout << "Condition number of inner Sbar" << condest << endl;
 
-    // Do a dummy iterate to construct the preconditioner
-    Epetra_Map BsMap(-1, Snr_, SRowElems_, 0, A_->Comm());
-    Xs_ = new Epetra_MultiVector(BsMap, 1);
-    Bs_ = new Epetra_MultiVector(BsMap, 1);
-    Bs_->PutScalar(1.0);
-    solver_->SetLHS(Xs_);
-    solver_->SetRHS(Bs_);
-    solver_->Iterate(30, 1e-10);
-
-    /* solver_->SetAztecOption(AZ_pre_calc, AZ_reuse);*/
+        // Do a dummy iterate to construct the preconditioner
+        /*Epetra_Map BsMap(-1, Snr_, SRowElems_, 0, A_->Comm());
+        Xs_ = new Epetra_MultiVector(BsMap, 1);
+        Bs_ = new Epetra_MultiVector(BsMap, 1);
+        Bs_->PutScalar(1.0);
+        solver_->SetLHS(Xs_);
+        solver_->SetRHS(Bs_);
+        solver_->Iterate(30, 1e-10);*/
+    }
+    else
+    {
+        // I suspect there is a bug in AztecOO. Doing what we do in the if case
+        // here will cause an error when we use the solver in AppluInvers
+        // The error will not happen when we call the dummy JustTryIt() below
+        solver_ = NULL;
+    }
 
     ftime.stop();
     cout << "Time to ConstructPreconditioner" << ftime.totalElapsedTime() 
             << endl;
     IsComputed_ = true;
-    cout << solver_ << endl;
     cout << " Done with the compute" << endl ;
     return 0;
 }
 
 int Ifpack_HyperLU::JustTryIt()
 {
+    // Dummy function, To show the error in AztecOO
     cout << "Entering JustTryIt" << endl;
     cout << solver_ << endl;
     solver_->Iterate(30, 1e-10);
@@ -169,8 +177,6 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
 #endif
 
     Epetra_LinearProblem Problem(Sbar_.get(), &Xs, &Bs);
-    //assert(solver_ != NULL);
-
 
 #ifdef DUMP_MATRICES
     if (NumApplyInverse_ == 0 )
@@ -180,32 +186,30 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
 #endif
 
-    // TODO: Can I create the solver in setup ?
-    AztecOO solver;
-    //solver.SetPrecOperator(precop_);
-    solver.SetAztecOption(AZ_solver, AZ_gmres);
-    // Do not use AZ_none
-    solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
-    //solver.SetAztecOption(AZ_precond, AZ_none);
-    //solver.SetAztecOption(AZ_precond, AZ_Jacobi);
-    ////solver.SetAztecOption(AZ_precond, AZ_Neumann);
-    //solver.SetAztecOption(AZ_overlap, 3);
-    //solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu);
-    //solver.SetAztecOption(AZ_output, AZ_all);
-    //solver.SetAztecOption(AZ_diagnostics, AZ_all);
-    solver.SetProblem(Problem);
-
-    //solver_->SetLHS(&Xs);
-    //solver_->SetRHS(&Bs);
-    //err = solver_->CheckInput();
-    //assert (err == 0);
-
-    /*const int *az_options = solver_->GetAllAztecOptions();
-    for (int az_i = 0; az_i < AZ_OPTIONS_SIZE; az_i++)
-        cout << az_options[az_i] << " ";
-    cout << endl;*/
-
-    solver.Iterate(30, 1e-10);
+    if (libName_ == "Belos")
+    {
+        solver_->SetLHS(&Xs);
+        solver_->SetRHS(&Bs);
+    }
+    else
+    {
+        // See the comment above on why we are not able to reuse the solver
+        // when outer solve is AztecOO as well.
+        solver_ = new AztecOO();
+        //solver.SetPrecOperator(precop_);
+        solver_->SetAztecOption(AZ_solver, AZ_gmres);
+        // Do not use AZ_none
+        solver_->SetAztecOption(AZ_precond, AZ_dom_decomp);
+        //solver_->SetAztecOption(AZ_precond, AZ_none);
+        //solver_->SetAztecOption(AZ_precond, AZ_Jacobi);
+        ////solver_->SetAztecOption(AZ_precond, AZ_Neumann);
+        //solver_->SetAztecOption(AZ_overlap, 3);
+        //solver_->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
+        //solver_->SetAztecOption(AZ_output, AZ_all);
+        //solver_->SetAztecOption(AZ_diagnostics, AZ_all);
+        solver_->SetProblem(Problem);
+    }
+    solver_->Iterate(30, 1e-10);
 
     //if(NumApplyInverse_ == 0) cout << "X vector from inner iteration" << Xs;
 
@@ -277,6 +281,14 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
 #endif
     NumApplyInverse_++;
+    if (libName_ == "Belos")
+    {
+        // clean up
+    }
+    else
+    {
+        delete solver_;
+    }
     //delete newX;
     cout << "Leaving ApplyInvers" << endl;
     return 0;
