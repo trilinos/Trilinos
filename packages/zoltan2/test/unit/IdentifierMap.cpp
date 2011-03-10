@@ -12,6 +12,8 @@
 
 // TODO: doxygen comments
 
+#define APPGID_IS_NOT_GNO
+
 #include <vector>
 #include <ostream>
 #include <Zoltan2_IdentifierMap.hpp>
@@ -43,9 +45,11 @@ int main(int argc, char *argv[])
     localIDs[i] = i;
   }
 
-  Teuchos::RCP<const Teuchos::Comm<long> > comm = Teuchos::DefaultComm<long>::getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::RCP< std::vector<long> > gids = Teuchos::rcp(&globalIDs);
+  Teuchos::RCP< std::vector<int> > lids = Teuchos::rcp(&localIDs);
 
-  Z2::IdentifierMap<long, int> map(*comm, globalIDs, localIDs);
+  Z2::IdentifierMap<long, int> map(comm, gids, lids);
 
   std::cout << "PASS" << std::endl;
 }

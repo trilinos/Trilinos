@@ -19,38 +19,65 @@
 #include <stdexcept>
 #include <vector>
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_Map.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 namespace Z2
 {
 
 template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   IdentifierMap<AppGID,AppLID,GNO,LNO>::IdentifierMap(
-    const Teuchos::Comm<GNO> &in_comm, const std::vector<AppGID> &gids, const std::vector<AppLID> &lids) 
-         : comm(in_comm), gidList(NULL), lidList(NULL) { 
+    Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
+    Teuchos::RCP<std::vector<AppGID> > &gids, 
+    Teuchos::RCP<std::vector<AppLID> > &lids) 
+         : comm(in_comm), localGIDs(gids), localLIDs(lids), 
+           globalMap(NULL), gidList(NULL), lidList(NULL) { 
 
-    TEST_FOR_EXCEPTION(gids.size() > 0, std::logic_error, "empty gid list");
 
-    GNO numGids = static_cast<GNO>(gids.size());
-    GNO globalNumGids(0);
+    GNO numIds[2] = {static_cast<GNO>(gids->size()), static_cast<GNO>(lids->size())};
+    GNO globalNumIds[2];
 
-    Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, GNO(1), &numGids, &globalNumGids);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, int(2), numIds, globalNumIds);
+
+    TEST_FOR_EXCEPTION((globalNumIds[1] > 0) && (globalNumIds[0] != globalNumIds[1]), 
+                        std::runtime_error,
+                       "local IDs are provided but number of global IDs"
+                       " does not equal number of local IDs");
 
 #ifdef APPGID_IS_NOT_GNO
 
-    int nprocs = comm.getSize();
-    GNO *num = new [nprocs] GNO;
-    
-    Teuchos::scan(comm, Teuchos::REDUCE_SUM, GNO(1), &numGids, num);
+    // We can't use the application global ID as our global number.  We'll assign
+    //   unique global numbers to each global ID.  
+    //
+    //   1. We need to store the global numbers in a distributed map because in most 
+    //      problems the Model will need this.
+    //
+    //   2. We need a distributed vector where the value for a given global number
+    //      is the application global ID.
+    //
+    //   3. We need a local hash table to look up the global number for a global ID.
+    //
+    //   4. If local IDs were supplied by the application, we need a vector analygous to #2
+    //        and hash table analygous to #3.
 
-    gnoDist.reserve(nprocs+1);
-    gnoDist[0] = 0;
 
-    for (int i=1; i < nprocs+1; i++)
-      gnoDist[i] = gnoDist[i-1] + num[i-1];
+    consecutive = true;   // Tpetra::Map gives processes consecutive GNOs
+    base = 0;
 
-    delete [] num;
+    globalMap = Teuchos::rcp(new Tpetra::Map<LNO, GNO>(globalNumIds[0], numIds[0], comm));
+
+    Teuchos::ArrayView<AppGID> gidArray(*gids);
+
+    gidList = new Tpetra::Vector<AppGID, LNO, GNO>(globalMap, gidArray);
+
+    if (globalNumIds[1] > 0){
+
+      Teuchos::ArrayView<AppLID> lidArray(*lids);
+
+      lidList = new Tpetra::Vector<AppLID, LNO, GNO>(globalMap, lidArray);
+    }
 
 #else
     GNO min(0), max(0), globalMin(0), globalMax(0);
@@ -82,8 +109,6 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   IdentifierMap<AppGID,AppLID,GNO,LNO>::~IdentifierMap() 
   {
-    if (gidList) delete [] gidList;
-    if (lidList) delete [] lidList;
   }
 
   /*! Copy Constructor */

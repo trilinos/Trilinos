@@ -19,6 +19,8 @@
 #include <stdexcept>
 #include <vector>
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_Map.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_TestForException.hpp>
 
@@ -70,26 +72,33 @@ template<typename AppGID, typename AppLID, typename GNO=AppGID, typename LNO=int
 
 private:
 
-  const Teuchos::Comm<GNO> &comm;
+  Teuchos::RCP<const Teuchos::Comm<int> > &comm;        // Get this from InputAdapter
 
-  Tpetra::Vector<AppGID, LNO, GNO> *gidList;
-  Tpetra::Vector<AppLID, LNO, GNO> *lidList;
+  Teuchos::RCP<std::vector<AppGID> > &localGIDs;  // This proc's global IDs from InputAdapter
+  Teuchos::RCP<std::vector<AppLID> > &localLIDs;  // This proc's local IDs from InputAdapter
 
-#ifdef APPGID_IS_NOT_GNO
-  bool GidGnoMap;
+  Teuchos::RCP<Tpetra::Map<LNO, GNO> > globalMap;
+
+  Tpetra::Vector<AppGID, LNO, GNO> *gidList;   // needed if the GNOs are not the AppGIDs
+  Tpetra::Vector<AppLID, LNO, GNO> *lidList;   // needed if local IDs were supplied
+
   bool consecutive;
   GNO base;
-  std::vector<GNO> gnoDist;
-#else
-  bool GidGnoMap;
-  bool consecutive;
-  GNO base;
-#endif
 
 public:
 
-  /*! Constructor */
-  IdentifierMap(const Teuchos::Comm<GNO> &in_comm, const std::vector<AppGID> &gids, const std::vector<AppLID> &lids);
+  /*! Constructor - Must be called by all processes 
+   *
+   *  We are not taking a Kokkos node here.  In the future we should.
+   *
+   *  Problem: we have to template the communicator on int, because Tpetra_Map
+   *  only takes Teuchos::Comm<int>. 
+   */
+
+  explicit IdentifierMap(Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
+                         Teuchos::RCP<std::vector<AppGID> > &gids, 
+                         Teuchos::RCP<std::vector<AppLID> > &lids);
+
 
   /*! Constructor */
   IdentifierMap();
@@ -105,18 +114,6 @@ public:
 
 #if 0
 
-  /*! Methods to duplicate functionality of Zoltan_DD_*   ?? Does this all belong here??
-   */
-
-  void update();
-  void find();
-  void gid2gno();
-  void gno2lno();
-  void etc();
-
-  /*! Assign global numbers randomly across processes.
-   */
-  bool randomize_ownership();
 #endif
 };
 
