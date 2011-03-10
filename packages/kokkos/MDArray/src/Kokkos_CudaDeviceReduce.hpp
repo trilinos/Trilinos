@@ -296,7 +296,7 @@ void cuda_parallel_reduce( const size_t work_count , const FunctorType & functor
     // Reduce thread count until nearly every thread will have work
     while ( work_count <= ( thread_count >> 1 ) ) { thread_count >>= 1 ; }
 
-    run_reduce_functor_on_cuda< FunctorType , FinalizeType >
+    run_reduce_functor_on_cuda< FunctorType , finalize_functor_type >
       <<< 1, thread_count, reduce_size * thread_count >>>
       ( work_count , functor , serial_finalize );
   }
@@ -325,7 +325,7 @@ void cuda_parallel_reduce( const size_t work_count , const FunctorType & functor
       ( work_count , functor , finalize_block );
 
     // Reduce block reduction partial values to a single value
-    run_reduce_operator_on_cuda< FunctorType , FinalizeType >
+    run_reduce_operator_on_cuda< FunctorType , finalize_functor_type >
       <<< 1 , block_count , reduce_size * block_count >>>
       ( finalize_block.block_value , serial_finalize );
 

@@ -87,7 +87,7 @@ public:
    *          on the device.
    */
   KOKKOS_DEVICE_FUNCTION
-  void operator()( const value_type & rhs )
+  void operator()( const value_type & rhs ) const
   { *m_ptr_on_device = rhs ; }
 
   KOKKOS_DEVICE_AND_HOST_FUNCTION

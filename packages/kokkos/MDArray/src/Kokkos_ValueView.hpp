@@ -119,8 +119,7 @@ public:
    *          'finalize functor' that assigns the reduced value
    *          on the device.
    */
-  KOKKOS_DEVICE_FUNCTION
-  void operator()( const value_type & rhs );
+  void operator()( const value_type & rhs ) const ;
 
 private:
 
