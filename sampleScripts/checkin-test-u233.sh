@@ -2,9 +2,12 @@
 
 # Used to test Trilinos on u233.ornl.gov
 
+# NOTE: To use this, you must first prepend /opt/trilinos-toolset/bin
+# to your path to find eg and cmake!
+
 EXTRA_ARGS=$@
 
-TRILINOS_TOOLSET_BASE=/home/trilinos/toolset
+TRILINOS_TOOLSET_BASE=/opt/gcc-4.5.1/trilinos-toolset
 
 echo "
 -DTrilinos_EXTRA_LINK_FLAGS:STRING='-Wl,-rpath,$TRILINOS_TOOLSET_BASE/lib64'
