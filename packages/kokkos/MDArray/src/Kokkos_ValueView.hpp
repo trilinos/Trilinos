@@ -93,8 +93,7 @@ public:
   typedef ValueType  value_type ;
 
   /*------------------------------------------------------------------*/
-  /** \brief  Query value */
-  value_type & operator()() const ;
+  /** \brief  Access value */
   value_type & operator* () const ;
 
   /*------------------------------------------------------------------*/
@@ -116,6 +115,12 @@ public:
   ~ValueView();
 
   /*------------------------------------------------------------------*/
+  /** \brief  Allow the ValueView to be a parallel reduce
+   *          'finalize functor' that assigns the reduced value
+   *          on the device.
+   */
+  KOKKOS_DEVICE_FUNCTION
+  void operator()( const value_type & rhs );
 
 private:
 

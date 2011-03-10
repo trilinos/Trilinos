@@ -179,10 +179,10 @@ struct CudaParallelReduceFinalizeFunctor {
   {
     typedef CudaSharedMemoryReduceType< ValueType > reduce_type ;
 
-    reduce_type * const shared_local =
-      cuda_local_thread_reduce_shared_memory< ValueType >();
-
     if ( gridDim.x == 1 && threadIdx.x == 0 ) {
+      reduce_type * const shared_local =
+        cuda_local_thread_reduce_shared_memory< ValueType >();
+
       serial_finalize( shared_local->value );
     }
   }
@@ -278,6 +278,9 @@ void cuda_parallel_reduce( const size_t work_count , const FunctorType & functor
   typedef typename FunctorType::value_type              value_type ;
   typedef CudaSharedMemoryReduceType< value_type >      reduce_type ;
   typedef CudaParallelReduceFinalizeBlock< value_type > finalize_block_type ;
+  typedef CudaParallelReduceFinalizeFunctor< value_type , FinalizeType > finalize_functor_type ;
+
+  const finalize_functor_type serial_finalize( finalize );
 
   // Size of result for shared memory
   const size_type reduce_size = sizeof(reduce_type);
@@ -295,7 +298,7 @@ void cuda_parallel_reduce( const size_t work_count , const FunctorType & functor
 
     run_reduce_functor_on_cuda< FunctorType , FinalizeType >
       <<< 1, thread_count, reduce_size * thread_count >>>
-      ( work_count , functor , finalize );
+      ( work_count , functor , serial_finalize );
   }
   else {
 
@@ -324,7 +327,7 @@ void cuda_parallel_reduce( const size_t work_count , const FunctorType & functor
     // Reduce block reduction partial values to a single value
     run_reduce_operator_on_cuda< FunctorType , FinalizeType >
       <<< 1 , block_count , reduce_size * block_count >>>
-      ( finalize_block.block_value , finalize );
+      ( finalize_block.block_value , serial_finalize );
 
     CudaDevice::deallocate_memory( finalize_block.block_value );
   }
@@ -335,44 +338,22 @@ void cuda_parallel_reduce( const size_t work_count , const FunctorType & functor
 template< class FunctorType >
 struct ParallelReduce< FunctorType , void , CudaDevice >
 {
-  typedef typename FunctorType::value_type         value_type ;
+  typedef typename FunctorType::value_type value_type ;
+  typedef typename CudaDevice::size_type   size_type ;
 
-  static value_type run( const size_t work_count , const FunctorType & functor )
+  static value_type run( const size_type work_count ,
+                         const FunctorType & functor )
   {
-    typedef CudaParallelReduceFinalizeValue< value_type > finalize_functor ;
-
     value_type tmp ;
 
     ValueView< value_type , CudaDevice >
       view( create_value< value_type , CudaDevice >() );
 
-    finalize_functor finalize( view.address_on_device() );
-
-    cuda_parallel_reduce( work_count , functor , finalize );
+    cuda_parallel_reduce( work_count , functor , view );
 
     deep_copy( tmp , view );
 
     return tmp ;
-  }
-};
-
-//----------------------------------------------------------------------------
-/** \brief  Place reduce value in value view  */
-template< class FunctorType >
-struct ParallelReduce< FunctorType ,
-                       ValueView< typename FunctorType::value_type , CudaDevice > ,
-                       CudaDevice >
-{
-  typedef typename FunctorType::value_type      value_type ;
-  typedef ValueView< value_type , CudaDevice >  view_type ;
-
-  static void run( const size_t work_count , const FunctorType & functor , const view_type & view )
-  {
-    typedef CudaParallelReduceFinalizeValue< value_type > finalize_functor ;
-
-    finalize_functor finalize( view.address_on_device() );
-
-    cuda_parallel_reduce( work_count , functor , finalize );
   }
 };
 
@@ -385,10 +366,7 @@ struct ParallelReduce< FunctorType , FinalizeType , CudaDevice >
 
   static void run( const size_t work_count , const FunctorType & functor , const FinalizeType & finalize )
   {
-    CudaParallelReduceFinalizeFunctor< value_type , FinalizeType >
-      tmp( finalize );
-
-    cuda_parallel_reduce( work_count , functor , tmp );
+    cuda_parallel_reduce( work_count , functor , finalize );
   }
 };
 

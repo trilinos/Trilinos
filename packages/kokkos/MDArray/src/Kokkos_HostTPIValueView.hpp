@@ -82,6 +82,14 @@ public:
 
   /*------------------------------------------------------------------*/
 
+  /** \brief  Allow the ValueView to be a parallel reduce
+   *          'finalize functor' that assigns the reduced value
+   *          on the device.
+   */
+  KOKKOS_DEVICE_FUNCTION
+  void operator()( const value_type & rhs )
+  { *m_ptr_on_device = rhs ; }
+
   KOKKOS_DEVICE_AND_HOST_FUNCTION
   ValueType * address_on_device() const { return m_ptr_on_device ; }
 

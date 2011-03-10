@@ -128,34 +128,6 @@ struct ParallelReduce< FunctorType , void , HostTPI >
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType >
-struct ParallelReduce<
-  FunctorType ,
-  ValueView< typename FunctorType::value_type , HostTPI > ,
-  HostTPI >
-{
-  typedef HostTPI::size_type                size_type ;
-  typedef typename FunctorType::value_type  value_type ;
-  typedef ValueView< value_type , HostTPI > view_type ;
-  typedef TPI_ParallelReduce< FunctorType > tpi_functor ;
-
-  static void run( const size_type     work_count ,
-                   const FunctorType & functor ,
-                   const view_type   & view )
-  {
-    FunctorType::init( *view );
-
-    tpi_functor tmp( functor , work_count );
-
-    TPI_Run_threads_reduce( & tpi_functor::run , & tmp ,
-                            & tpi_functor::join ,
-                            & tpi_functor::init ,
-                            sizeof(value_type) , view.address_on_device  );
-  }
-};
-
-//----------------------------------------------------------------------------
-
 template< class FunctorType , class FinalizeType >
 struct ParallelReduce< FunctorType , FinalizeType , HostTPI > {
 
@@ -167,18 +139,18 @@ struct ParallelReduce< FunctorType , FinalizeType , HostTPI > {
                    const FunctorType  & functor ,
                    const FinalizeType & finalize )
   {
-    value_type result ;
+    value_type value ;
 
-    FunctorType::init( result );
+    FunctorType::init( value );
 
     tpi_functor tmp( functor , work_count );
 
     TPI_Run_threads_reduce( & tpi_functor::run , & tmp ,
                             & tpi_functor::join ,
                             & tpi_functor::init ,
-                            sizeof(value_type) , & result );
+                            sizeof(value_type) , & value );
 
-    finalize( result );
+    finalize( value );
   }
 };
 
