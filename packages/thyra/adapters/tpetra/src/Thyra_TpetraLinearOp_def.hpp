@@ -32,15 +32,14 @@
 #include "Thyra_TpetraLinearOp_decl.hpp"
 #include "Thyra_TpetraVectorSpace.hpp"
 
-
 #ifdef HAVE_THYRA_TPETRA_EPETRA
-
-
-#include "Thyra_EpetraThyraWrappers.hpp"
-
+#  include "Thyra_EpetraThyraWrappers.hpp"
+#endif
 
 namespace Thyra {
 
+
+#ifdef HAVE_THYRA_TPETRA_EPETRA
 
 // Utilites
 

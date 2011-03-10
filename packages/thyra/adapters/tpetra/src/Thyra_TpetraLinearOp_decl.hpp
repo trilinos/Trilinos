@@ -93,8 +93,6 @@ public:
 
   //@}
 
-#ifdef HAVE_THYRA_TPETRA_EPETRA
-
   /** \name Public Overridden functions from LinearOpBase. */
   //@{
 
@@ -105,6 +103,8 @@ public:
   RCP<const Thyra::VectorSpaceBase<Scalar> > domain() const;
 
   //@}
+
+#ifdef HAVE_THYRA_TPETRA_EPETRA
 
   /** \name Overridden from EpetraLinearOpBase */
   //@{
