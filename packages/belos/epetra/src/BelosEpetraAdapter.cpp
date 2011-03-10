@@ -62,8 +62,11 @@ namespace Belos {
     // FIXME (mfh 07 Mar 2011) Does it suffice to compare pointers?
     // If the two pointers point to the same object on one MPI
     // process, they should on all MPI processes, right?  Comparing
-    // pointers avoids communication for the idiomatic Tpetra case
-    // of multiple objects constructed from the same Map object.
+    // pointers avoids communication for the idiomatic Tpetra case of
+    // multiple objects constructed from the same Map object, but
+    // Epetra objects that inherit from Epetra_DistObject make a deep
+    // copy of the Epetra_BlockMap, so comparing pointers in the
+    // Epetra world may make less sense.
     return &first == &second || first.PointSameAs (second);
   }
 
