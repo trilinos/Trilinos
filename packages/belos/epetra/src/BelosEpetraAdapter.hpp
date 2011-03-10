@@ -991,6 +991,9 @@ namespace Belos {
     /// \param solver [in/out] The actual inner solver implementation.
     EpetraInnerSolver (const Teuchos::RCP<inner_solver_type>& solver);
 
+    //! Virtual destructor implementation, for correctness.
+    virtual ~EpetraInnerSolver() {}
+
     /// \brief Return the underlying inner solver object.
     ///
     /// This breach of encapsulation makes EpetraInnerSolver into an

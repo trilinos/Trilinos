@@ -758,6 +758,9 @@ namespace Belos {
       range_ (solver->getRange())
     {}
 
+    //! Virtual destructor implementation, for correctness.
+    virtual ~TpetraInnerSolver() {}
+
     //! A persistent view of the domain vector space of the operator
     const Teuchos::RCP<const vector_space_type>& getDomainMap() const {
       return domain_;

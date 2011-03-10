@@ -50,6 +50,7 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosVectorSpaceTraits.hpp"
 #include "BelosMultiVec.hpp"
+#include "BelosInnerSolver.hpp"
 #include "BelosConfigDefs.hpp"
 
 /*!	\class Belos::Operator
@@ -150,7 +151,8 @@ namespace Belos {
     /// vectors belong to the same vector space.  This might change in
     /// the future, so don't rely on this behavior, or on the
     /// implementation of this function.
-    static Teuchos::RCP<const vector_space_type> getDomain (const Operator<ScalarType>& A) {
+    static Teuchos::RCP<const vector_space_type> 
+    getDomain (const Operator<ScalarType>& A) {
       return DefaultVectorSpace::getDefaultVectorSpace ();
     }
 
@@ -164,10 +166,146 @@ namespace Belos {
     /// vectors belong to the same vector space.  This might change in
     /// the future, so don't rely on this behavior, or on the
     /// implementation of this function.
-    static Teuchos::RCP<const vector_space_type> getRange (const Operator<ScalarType>& A) {
+    static Teuchos::RCP<const vector_space_type> 
+    getRange (const Operator<ScalarType>& A) {
       return DefaultVectorSpace::getDefaultVectorSpace ();
     }
     //@}
+  };
+
+
+  /// \class OperatorInnerSolver
+  /// \brief Adaptor between InnerSolver and Belos::Operator.
+  /// 
+  /// This wrapper lets you use as a Belos::Operator any
+  /// implementation of Belos::InnerSolver<Scalar, MV, OP> with MV =
+  /// Belos::MultiVec<Scalar> and OP = Belos::Operator<Scalar>.  You
+  /// may also treat this wrapper as an "envelope" by extracting the
+  /// underlying InnerSolver object (which has a richer interface) and
+  /// discarding the Belos::Operator wrapper.
+  template<class Scalar>
+  class OperatorInnerSolver : public Operator<Scalar> {
+  public:
+    typedef Scalar scalar_type;
+    typedef MultiVec<Scalar> multivector_type;
+    typedef Operator<Scalar> operator_type;
+    typedef typename OperatorTraits<scalar_type, multivector_type, operator_type>::vector_space_type vector_space_type;
+    typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
+
+    /// \brief Constructor.
+    ///
+    /// \param solver [in/out] The actual inner solver implementation.
+    OperatorInnerSolver (const Teuchos::RCP<inner_solver_type>& solver) :
+      solver_ (solver)
+    {}
+    //! Virtual destructor implementation, for correctness.
+    virtual ~OperatorInnerSolver() {}
+
+    //! A persistent view of the domain vector space of the operator
+    Teuchos::RCP<const vector_space_type> getDomain() const {
+      return solver_->getDomain();
+    }
+    //! A persistent view of the range vector space of the operator
+    Teuchos::RCP<const vector_space_type> getRange() const {
+      return solver_->getRange();
+    }
+
+    /// \brief Return the underlying inner solver object.
+    ///
+    /// This breach of encapsulation makes this class into an
+    /// "envelope."  First, the inner solver hides inside the
+    /// Belos::Operator until it gets inside a Belos outer solver that
+    /// recognizes the Belos::Operator as an OperatorInnerSolver.
+    /// Then, the Belos outer solver can take the InnerSolver out of
+    /// the "envelope," destroy the envelope (by setting its RCP to
+    /// null) if it wants, and work directly with the InnerSolver.
+    /// This is useful because InnerSolver's interface has the
+    /// features necessary for algorithms like inexact Krylov and
+    /// other inner-outer iterations, where the outer iteration is
+    /// responsible for controlling the convergence tolerance and/or
+    /// the cost of the inner iteration.
+    ///
+    /// \note This method is declared const in order to cheat
+    ///   Belos::LinearProblem into letting the operator act like an
+    ///   envelope.  It's technically correct to call this method
+    ///   const, since it doesn't let the caller assign to the pointer
+    ///   (even though it lets the caller call nonconst methods on the
+    ///   InnerSolver).
+    Teuchos::RCP<inner_solver_type> getInnerSolver() const {
+      return solver_;
+    }
+
+    /// \brief Compute Y := alpha*solver(Y,X) + beta*Y.
+    ///
+    /// \note The contents of Y on input may be relevant, depending on
+    ///   the inner solver implementation.  For example, Y on input
+    ///   may be treated as the initial guess of an iterative solver.
+    void 
+    apply(const multivector_type& X,
+	  multivector_type& Y,
+	  ETrans mode = NOTRANS) const
+    {
+      using Teuchos::rcpFromRef;
+
+      TEST_FOR_EXCEPTION(mode != NOTRANS, std::invalid_argument,
+			 "Belos::OperatorInnerSolver only supports applying the"
+			 " operator itself, not its transpose or conjugate "
+			 "transpose.");
+      solver_->solve (rcpFromRef (Y), rcpFromRef (X));
+    }
+
+  private:
+    //! Default construction is not allowed.
+    OperatorInnerSolver ();
+
+    //! The inner solver implementation.
+    Teuchos::RCP<inner_solver_type> solver_;
+  };
+
+  /// \brief Specialization of makeInnerSolverOperator() for Belos::Operator.
+  ///
+  /// This class knows how to take an InnerSolver instance and wrap it
+  /// in an implementation of the Belos::Operator interface.  That way
+  /// you can use it alongside any other implementation of the
+  /// Belos::Operator interface in any of the the Belos solvers.
+  template <class Scalar>
+  class InnerSolverTraits<Scalar, MultiVec<Scalar>, Operator<Scalar> > {
+  public:
+    typedef Scalar scalar_type;
+    typedef MultiVec<scalar_type> multivector_type;
+    typedef Operator<scalar_type> operator_type;
+    typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
+    typedef OperatorInnerSolver<scalar_type> wrapper_type;
+
+    /// \brief Wrap the given inner solver in a wrapper_type.
+    ///
+    /// The wrapper_type class implements the operator_type interface,
+    /// which can be used directly in Belos.
+    static Teuchos::RCP<operator_type>
+    makeInnerSolverOperator (const Teuchos::RCP<inner_solver_type>& solver)
+    {
+      using Teuchos::rcp;
+      using Teuchos::rcp_implicit_cast;
+      return rcp_implicit_cast<operator_type> (rcp (new wrapper_type (solver)));
+    }
+
+    /// \brief Return the given wrapper's inner solver object.
+    ///
+    /// If op is an inner solver wrapper instance, return the inner
+    /// solver object.  Otherwise, throw an std::bad_cast exception.
+    ///
+    /// \note The returned inner solver object will persist beyond the
+    ///   scope of the input object.  Thus, if you don't care about
+    ///   the wrapper that implements the operator_type interface, you
+    ///   can get rid of the wrapper and keep the inner solver.
+    static Teuchos::RCP<inner_solver_type>
+    getInnerSolver (const Teuchos::RCP<operator_type>& op)
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp_dynamic_cast;
+      RCP<wrapper_type> wrapper = rcp_dynamic_cast<wrapper_type> (op, true);
+      return wrapper->getInnerSolver();
+    }
   };
   
 } // end Belos namespace

@@ -147,6 +147,9 @@ namespace Belos {
     ///   InnerSolver<Scalar, MV, OP>)
     typedef typename OperatorTraits<Scalar, MV, OP>::vector_space_type vector_space_type;
 
+    //! Virtual destructor, for correctness.
+    virtual ~InnerSolver() {}
+
     /// \brief Persistent view of the domain vector space.
     ///
     /// The "domain" of the inner solver is the vector space in which
