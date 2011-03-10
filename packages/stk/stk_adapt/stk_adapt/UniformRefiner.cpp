@@ -103,7 +103,7 @@ namespace stk {
                       }
                   }
                 }
-              //std::cout << "tmp blocks = " << blocks << std::endl;
+              if (0) std::cout << "tmp UniformRefiner::getBlockNames: blocks = " << blocks << std::endl;
             }
 
         }
@@ -146,12 +146,16 @@ namespace stk {
       mesh::PartVector remove_parts;
       mesh::Selector on_locally_owned_part =  ( m_eMesh.getMetaData()->locally_owned_part() );
 
+      // The list of Parts that this break pattern will refine.  Only remove elements belonging to these parts.
+      mesh::Selector fromPartsSelector = mesh::selectUnion( breakPattern->getFromParts() );
+
       std::vector<Entity*> elems;
       const vector<Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
 
       for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
-          if (on_locally_owned_part(**k)) 
+          if (on_locally_owned_part(**k) && fromPartsSelector(**k) ) 
+            //if ( on_locally_owned_part(**k) )
             {
               Bucket & bucket = **k ;
               const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
@@ -332,7 +336,7 @@ namespace stk {
           
           //!FIXME add part info
           Colorer meshColorerThisTypeOnly(elementColorsByType[irank], ranks_one);   TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)... ");
-          meshColorerThisTypeOnly.color(m_eMesh, &elementType, fromParts);         TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)...done ");
+          meshColorerThisTypeOnly.color(m_eMesh, &elementType, fromParts);          TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)...done ");
 
           if (0 && elementColorsByType[irank].size() == 0)
             {
@@ -982,6 +986,7 @@ namespace stk {
           std::cout << "name= " << breakPattern->getOldElementsPartName()+toString(rank) << std::endl;
           throw std::runtime_error("oldPart is null");
         }
+
       mesh::Selector removePartSelector (*oldPart);
 
       const vector<Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
@@ -1070,11 +1075,11 @@ namespace stk {
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
             {
               CellTopology cell_topo(stk::mesh::get_cell_topology(*element_p));
-              //std::cout << "tmp UniformRefiner::removeOldElements couldn't remove element: cell= " << cell_topo.getName() << std::endl;
+              std::cout << "tmp UniformRefiner::removeOldElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
               const mesh::PairIterRelation elem_relations = element_p->relations(element_p->entity_rank()+1);
-              //std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
+              std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
               
-              throw std::logic_error("UniformRefiner::removeOldElements couldn't remove element");
+              throw std::logic_error("UniformRefiner::removeOldElements couldn't remove element, destroy_entity returned false.");
             }
         }
     }
