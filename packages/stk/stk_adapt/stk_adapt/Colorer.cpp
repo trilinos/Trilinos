@@ -44,12 +44,28 @@ namespace stk {
     getElementColors() { return m_element_colors; }
 
     void Colorer::
-    color(percept::PerceptMesh& eMesh, unsigned * elementType, FieldBase *element_color_field)
+    color(percept::PerceptMesh& eMesh, unsigned * elementType,  PartVector* fromParts, FieldBase *element_color_field)
     {
       const unsigned MAX_COLORS=100;
       vector< ColorerNodeSetType > node_colors(MAX_COLORS+1); 
       m_element_colors = vector< ColorerSetType > (MAX_COLORS+1);
       ColorerElementSetType all_elements; 
+
+      mesh::Selector selector(eMesh.getMetaData()->universal_part());
+      if (fromParts) 
+        {
+          if (0)
+            {
+              //std::cout << "tmp Colorer::color fromParts= " << *fromParts << std::endl;
+              std::cout << "tmp Colorer::color elementType= " << *elementType << std::endl;
+              for (unsigned i_part = 0; i_part < fromParts->size(); i_part++)
+                {
+                  std::cout << "tmp Colorer::color i_part = " << i_part << " fromParts= " << (*fromParts)[i_part]->name() << std::endl;
+                }
+            }
+
+          selector = mesh::selectUnion(*fromParts);
+        }
 
       BulkData& bulkData = *eMesh.getBulkData();
       int ncolor = 0;
@@ -62,7 +78,7 @@ namespace stk {
               const vector<Bucket*> & buckets = bulkData.buckets( m_entityRanks[irank] );
               for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
                 {
-                  //if (select_owned(**k))  // this is where we do part selection
+                  if (selector(**k))  
                   {
                     Bucket & bucket = **k ;
 

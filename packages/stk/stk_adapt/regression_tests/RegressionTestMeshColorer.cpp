@@ -86,7 +86,7 @@ namespace stk
 
         Colorer meshColorer;
         unsigned elementType = 0u;
-        meshColorer.color(eMesh, &elementType, element_color_field);
+        meshColorer.color(eMesh, &elementType, 0, element_color_field);
         eMesh.saveAs("./output_files/cube_colored.e");
         //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
 
@@ -112,7 +112,7 @@ namespace stk
 
             Colorer meshColorer;
             unsigned elementType = 0u;
-            meshColorer.color(eMesh, &elementType, element_color_field);
+            meshColorer.color(eMesh, &elementType, 0, element_color_field);
             //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
             eMesh.printInfo();
             eMesh.dump();

@@ -241,7 +241,7 @@ namespace stk {
       std::string convert="";
       std::string refine="DEFAULT";
       std::string enrich="";
-      bool doConvert = true;
+      bool doRefineMesh = true;
       int load_balance = 1;
       std::string convert_Hex8_Tet4_24 = "Hex8_Tet4_24";      
       int print_info=0;
@@ -255,8 +255,11 @@ namespace stk {
         "  (1) empty string or option not specified: convert all blocks in the input mesh file\n"
         "  (2) file:my_filename.my_ext (e.g. file:filelist.dat) which will read input block names\n"
         "            from the given file\n"
-        "  (3) list:block_name_1,block_name_2,...,block_name_n \n"
+        "  (3) [+]block_name_1,[+]block_name_2, etc ,block_name_n to include only these blocks, plus sign is optional\n"
         "  (4) a single input block name (e.g. block_3) to be converted \n"
+        "  (5) -block_3,-block_5 to exclude blocks from those included (all blocks or include-only blocks), minus sign is mandatory\n"
+        "  (6) block_1..block_10 include the range of blocks #1 to #10 \n"
+        "  (7) any combination of [+] and - options and range (..) option can be specified \n"
         "Note: wherever you specify block_# this can be replaced with just the #, e.g. \"1,2,4,5\" ";
 
       std::string convert_options = UniformRefinerPatternBase::s_convert_options;
@@ -283,8 +286,8 @@ namespace stk {
       run_environment.clp.setOption("input_mesh"               , &input_mesh               , "input mesh name");
       run_environment.clp.setOption("output_mesh"              , &output_mesh              , "output mesh name");
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
-      run_environment.clp.setOption("include"                  , &block_name_inc           , block_name_desc_inc.c_str());
-      run_environment.clp.setOption("exclude"                  , &block_name_exc           , block_name_desc_exc.c_str());
+      run_environment.clp.setOption("block_name"               , &block_name_inc           , block_name_desc_inc.c_str());
+      //run_environment.clp.setOption("exclude"                  , &block_name_exc           , block_name_desc_exc.c_str());
       run_environment.clp.setOption("print_info"               , &print_info               , ">= 0  (higher values print more info)");
       run_environment.clp.setOption("load_balance"             , &load_balance             , " load balance (slice/spread) input mesh file");
 
@@ -313,7 +316,7 @@ namespace stk {
 
         if (print_info)
           {
-            doConvert = false;
+            doRefineMesh = false;
           }
 
         if (input_mesh.length() == 0 
@@ -345,7 +348,7 @@ namespace stk {
 
         Teuchos::RCP<UniformRefinerPatternBase> pattern;
 
-        if (doConvert)
+        if (doRefineMesh)
           {
             BlockNamesType block_names = UniformRefiner::getBlockNames(block_name_inc);
 
@@ -398,10 +401,11 @@ namespace stk {
             exit(1);
           }
 
-        if (doConvert)
+        if (doRefineMesh)
           {
             UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
             breaker.setRemoveOldElements(remove_original_elements);
+            //breaker.setIgnoreSideSets(true);
 
             for (int iBreak = 0; iBreak < number_refines; iBreak++)
               {

@@ -2334,7 +2334,8 @@ namespace stk {
         return part_cell_topo_data;
       }
 
-      void setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology=true)
+      void setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, 
+                          bool sameTopology=true)
       {
         EXCEPTWATCH;
         if (block_names_ranks.size() == 0)
@@ -2360,12 +2361,13 @@ namespace stk {
             if (m_primaryEntityRank != irank)
               continue;
 
-            std::vector<std::string>& block_names = block_names_ranks[irank];
-            //if (block_names.size() == 0 || m_primaryEntityRank != irank)
+            std::vector<std::string>& block_names_include = block_names_ranks[irank];
+            //if (block_names_include.size() == 0 || m_primaryEntityRank != irank)
 
             //const mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
             mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
-            for (unsigned ib = 0; ib < block_names.size(); ib++)
+            bool found_include_only_block = false;
+            for (unsigned ib = 0; ib < block_names_include.size(); ib++)
               {
                 bool foundPart = false;
                 //for (mesh::PartVector::const_iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
@@ -2374,7 +2376,11 @@ namespace stk {
                     //mesh::Part * const part = *i_part ;
                     mesh::Part * part = *i_part ;
 
-                    if (part->name() == block_names[ib])
+                    std::string bname = block_names_include[ib];
+                    if ('+' == bname[0])
+                      found_include_only_block = true;
+                    bname = bname.substr(1, bname.length()-1);
+                    if (part->name() == bname)
                       {
                         foundPart = true;
                         break;
@@ -2382,7 +2388,7 @@ namespace stk {
                   }
                 if (!foundPart)
                   {
-                    std::string msg = "UniformRefinerPattern::setNeededParts unknown block name: " + block_names[ib];
+                    std::string msg = "UniformRefinerPattern::setNeededParts unknown block name: " + block_names_include[ib];
                     throw std::runtime_error(msg.c_str());
                   }
               }
@@ -2395,13 +2401,42 @@ namespace stk {
                 if (part->name()[0] == '{')
                   continue;
 
-                bool doThisPart = (block_names.size() == 0);
-                for (unsigned ib = 0; ib < block_names.size(); ib++)
+                bool doThisPart = (block_names_include.size() == 0);
+                if (!doThisPart)
                   {
-                    if (part->name() == block_names[ib])
+                    if (found_include_only_block) 
                       {
-                        doThisPart=true;
-                        break;
+                        doThisPart = false;
+                        for (unsigned ib = 0; ib < block_names_include.size(); ib++)
+                          {
+                            std::string bname = block_names_include[ib];
+                            if ('+' == bname[0])
+                              {
+                                bname = bname.substr(1, bname.length()-1);
+                                if (part->name() == bname)
+                                  {
+                                    doThisPart = true;
+                                    break;
+                                  }
+                              }
+                          }
+                      }
+                    // check for excludes
+                    if (doThisPart)
+                      {
+                        for (unsigned ib = 0; ib < block_names_include.size(); ib++)
+                          {
+                            std::string bname = block_names_include[ib];
+                            if ('-' == bname[0])
+                              {
+                                bname = bname.substr(1, bname.length()-1);
+                                if (part->name() == bname)
+                                  {
+                                    doThisPart = false;
+                                    break;
+                                  }
+                              }
+                          }
                       }
                   }
                 bool isOldElementsPart = ( (part->name()).find(m_oldElementsPartName) != std::string::npos);
@@ -2525,11 +2560,26 @@ namespace stk {
           }
         if (!found)
           {
+            std::cout << "URP::change_entity_parts couldn't find part, listing parts: " << std::endl;
             std::cout << "m_fromParts= " << m_fromParts << std::endl;
             for (unsigned i_part = 0; i_part < m_fromParts.size(); i_part++)
               {
                 std::cout << "i_part = " << i_part << " m_fromParts= " << m_fromParts[i_part]->name() << std::endl;
               }
+            bool found_in_another_part = false;
+
+            mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+            for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
+              {
+                mesh::Part *  part = *i_part ;
+
+                if (old_owning_elem.bucket().member(*part))
+                  {
+                    std::cout << "found_in_another_part part name= " << part->name() << std::endl;
+                    found_in_another_part = true;
+                  }
+              }
+
             throw std::runtime_error("URP::change_entity_parts couldn't find part");
           }
       }
