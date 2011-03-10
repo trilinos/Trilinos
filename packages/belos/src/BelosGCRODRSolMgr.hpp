@@ -573,15 +573,25 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcpFromRef;
+  using Teuchos::Exceptions::InvalidParameter;
+  using Teuchos::Exceptions::InvalidParameterName;
+  using Teuchos::Exceptions::InvalidParameterType;
 
   // Create the internal parameter list if one doesn't already exist.
   //
-  // FIXME (mfh 28 Feb 2011) Parameter validation should really happen
-  // when we call validateParameters().  If that were true, we
-  // wouldn't have to validate the parameters so carefully below and
-  // call params_->set() for each one.  However, we haven't yet
-  // defined appropriate validators for all the parameters, so we have
-  // to do the validation tediously below, one parameter at a time.
+  // (mfh 28 Feb 2011, 10 Mar 2011) At the time this code was written,
+  // ParameterList did not have validators or validateParameters().
+  // This is why the code below carefully validates the parameters one
+  // by one and fills in defaults.  This code could be made a lot
+  // shorter by using validators.  To do so, we would have to define
+  // appropriate validators for all the parameters.
+  //
+  // For an analogous reason, GCRODRSolMgr defines default parameter
+  // values as class data, as well as in the default ParameterList.
+  // This redundancy could be removed by defining the default
+  // parameter values only in the default ParameterList (which
+  // documents each parameter as well -- handy!).
   if (params_.is_null()) {
     params_ = parameterList (*getValidParameters ());
   } else {
@@ -589,11 +599,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   }
 
   // Check for maximum number of restarts.
-  //
-  // FIXME (mfh 28 Feb 2011) We don't really need _any_ of the
-  // "*_default_" member data, since the default values should be
-  // stored in the default parameter list (with documentation, no
-  // less!) returned by getValidParameters().
   if (params->isParameter ("Maximum Restarts")) {
     maxRestarts_ = params->get("Maximum Restarts", maxRestarts_default_);
 
@@ -688,14 +693,29 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Get the output stream for the output manager.
   //
-  // FIXME (mfh 28 Feb 2011) While storing the output stream as an RCP
-  // is convenient and safe for programming, it makes it impossible to
-  // serialize the parameter list, read it back in from the serialized
-  // representation, and get the same output stream as before.
-  // However, a general solution is likely impossible, because output
-  // streams may be arbitrary constructed objects.
+  // FIXME (mfh 28 Feb 2011) While storing the output stream in the
+  // parameter list (either as an RCP or as a nonconst reference) is
+  // convenient and safe for programming, it makes it nearly
+  // impossible to serialize the parameter list, read it back in from
+  // the serialized representation, and get the same output stream as
+  // before.  However, a general solution is likely impossible,
+  // because output streams may be arbitrary constructed objects.  
+  //
+  // In case the output stream can't be read back in, we default to
+  // stdout (std::cout), just to ensure reasonable behavior.
   if (params->isParameter ("Output Stream")) {
-    outputStream_ = getParameter<RCP<std::ostream> > (*params, "Output Stream");
+    try {
+      outputStream_ = getParameter<RCP<std::ostream> > (*params, "Output Stream");
+    } catch (InvalidParameter&) {
+      outputStream_ = rcpFromRef (std::cout);
+    }
+    // We assume that a null output stream indicates that the user
+    // doesn't want to print anything, so we replace it with a "black
+    // hole" stream that prints nothing sent to it.  (We can't use a
+    // null output stream, since the output manager always sends
+    // things it wants to print to the output stream.)
+    if (outputStream_.is_null())
+      outputStream_ = rcp (new Teuchos::oblackholestream);
 
     // Update parameter in our list.
     params_->set ("Output Stream", outputStream_);
@@ -778,7 +798,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       orthoParams = 
 	params->get<RCP<const ParameterList> >("Orthogonalization Parameters");
       gotOrthoParams = true;
-    } catch (Teuchos::Exceptions::InvalidParameter&) {
+    } catch (InvalidParameter&) {
       // We didn't get orthoParams; gotOrthoParams stays false.
     }
     if (! gotOrthoParams) {
@@ -791,7 +811,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 	// scope.
 	orthoParams = rcp (new ParameterList (_orthoParams));
 	gotOrthoParams = true;
-      } catch (Teuchos::Exceptions::InvalidParameter&) {
+      } catch (InvalidParameter&) {
 	// We didn't get orthoParams; gotOrthoParams stays false.
       }
     }

@@ -96,6 +96,11 @@ namespace Belos {
       // process, they should on all MPI processes, right?  Comparing
       // pointers avoids communication for the idiomatic Tpetra case
       // of multiple objects constructed from the same Map object.
+      //
+      // isCompatible is the method called in
+      // Tpetra::MultiVector::operator= to ensure legality of
+      // assigning the input vector to *this, so it's the right method
+      // to call in this case.
       return &first == &second || first.isCompatible (second);
     }
 
