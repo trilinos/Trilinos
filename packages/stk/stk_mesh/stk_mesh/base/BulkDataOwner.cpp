@@ -408,16 +408,19 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
           i = local_change.begin() ; i != local_change.end() ; ++i ) {
       // Giving ownership, change the parts first and then
       // the owner rank to pass the ownership test.
-      change_entity_parts( * i->first , PartVector() , owned );
+      Entity* entity = i->first;
 
-      m_entity_repo.set_entity_owner_rank( *(i->first), i->second);
+      change_entity_parts( *entity , PartVector() , owned );
+
+      m_entity_repo.set_entity_owner_rank( *entity, i->second );
     }
 
     for ( std::vector<EntityProc>::iterator
           i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
-      m_entity_repo.set_entity_owner_rank( *(i->first), i->second);
+      Entity* entity = i->first;
+      m_entity_repo.set_entity_owner_rank( *entity, i->second);
       if ( p_rank == i->second ) { // I receive ownership
-        change_entity_parts( * i->first , owned , PartVector() );
+        change_entity_parts( *entity , owned , PartVector() );
       }
     }
   }
@@ -477,17 +480,19 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
         std::pair<Entity*,bool> result =
           m_entity_repo.internal_create_entity( key );
 
-        m_entity_repo.log_created_parallel_copy( *(result.first) );
+        Entity* entity = result.first;
+
+        m_entity_repo.log_created_parallel_copy( *entity );
 
         // The entity was copied and not created.
 
-        m_entity_repo.set_entity_owner_rank( *(result.first), owner);
+        m_entity_repo.set_entity_owner_rank( *entity, owner);
 
-        internal_change_entity_parts( *result.first , parts , PartVector() );
+        internal_change_entity_parts( *entity , parts , PartVector() );
 
-        declare_relation( *result.first , relations );
+        declare_relation( *entity , relations );
 
-        if ( ! unpack_field_values( buf , * result.first , error_msg ) ) {
+        if ( ! unpack_field_values( buf , *entity , error_msg ) ) {
           ++error_count ;
         }
       }

@@ -201,16 +201,18 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
 
   std::pair< Entity * , bool > result = m_entity_repo.internal_create_entity( key );
 
+  Entity* declared_entity = result.first;
+
   if ( result.second ) {
     // A new application-created entity
-    m_entity_repo.set_entity_owner_rank( *(result.first), m_parallel_rank);
-    m_entity_repo.set_entity_sync_count( *(result.first), m_sync_count);
-    DiagIfWatching(LOG_ENTITY, key, "new entity: " << *result.first << diag::dendl);
+    m_entity_repo.set_entity_owner_rank( *declared_entity, m_parallel_rank);
+    m_entity_repo.set_entity_sync_count( *declared_entity, m_sync_count);
+    DiagIfWatching(LOG_ENTITY, key, "new entity: " << *declared_entity << diag::dendl);
   }
   else {
     // An existing entity, the owner must match.
-    require_entity_owner( * result.first , m_parallel_rank );
-    DiagIfWatching(LOG_ENTITY, key, "existing entity: " << *result.first << diag::dendl);
+    require_entity_owner( *declared_entity , m_parallel_rank );
+    DiagIfWatching(LOG_ENTITY, key, "existing entity: " << *declared_entity << diag::dendl);
   }
 
   //------------------------------
@@ -221,11 +223,11 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   std::vector<Part*> add( parts );
   add.push_back( owns );
 
-  change_entity_parts( * result.first , add , rem );
+  change_entity_parts( *declared_entity , add , rem );
 
   // m_transaction_log.insert_entity ( *(result.first) );
 
-  return * result.first ;
+  return *declared_entity ;
 }
 
 //----------------------------------------------------------------------
@@ -504,9 +506,12 @@ void BulkData::internal_change_entity_parts(
     const std::pair<const unsigned *, const unsigned*>
       bucket_parts = k_old->superset_part_ordinals();
 
-    const unsigned num_bucket_parts = bucket_parts.second - bucket_parts.first;
+    const unsigned * parts_begin = bucket_parts.first;
+    const unsigned * parts_end   = bucket_parts.second;
+
+    const unsigned num_bucket_parts = parts_begin - parts_end;
     parts_total.reserve( num_bucket_parts + add_parts.size() );
-    parts_total.insert( parts_total.begin(), bucket_parts.first , bucket_parts.second);
+    parts_total.insert( parts_total.begin(), parts_begin , parts_end);
 
     if ( !remove_parts.empty() ) {
       parts_removed.reserve(remove_parts.size());
@@ -673,12 +678,15 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
                        " which was already used in this modification cycle.");
 
       // A new application-created entity
-      m_entity_repo.set_entity_owner_rank( *(result.first), m_parallel_rank);
-      m_entity_repo.set_entity_sync_count( *(result.first), m_sync_count);
+
+      Entity* new_entity = result.first;
+
+      m_entity_repo.set_entity_owner_rank( *new_entity, m_parallel_rank);
+      m_entity_repo.set_entity_sync_count( *new_entity, m_sync_count);
 
       //add entity to 'owned' part
-      change_entity_parts( * result.first , add , rem );
-      requested_entities.push_back(result.first);
+      change_entity_parts( *new_entity , add , rem );
+      requested_entities.push_back(new_entity);
     }
   }
 }
