@@ -48,7 +48,6 @@
 */
 
 #include "BelosOperatorTraits.hpp"
-#include "BelosVectorSpaceTraits.hpp"
 #include "BelosMultiVec.hpp"
 #include "BelosInnerSolver.hpp"
 #include "BelosConfigDefs.hpp"
@@ -111,68 +110,20 @@ namespace Belos {
   /// Belos::MultiVec abstract interfaces.  Any class that inherits
   /// from Belos::Operator will be accepted by the Belos templated
   /// solvers, due to this specialization of Belos::OperatorTraits.
-  template <class ScalarType> 
-  class OperatorTraits < ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > 
+  template<class ScalarType> 
+  class OperatorTraits<ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > 
   {
   public:
-    
     //! Specialization of Apply() for Operator and MultiVec objects.
-    static void Apply ( const Operator<ScalarType>& Op, 
-			const MultiVec<ScalarType>& x, 
-			MultiVec<ScalarType>& y,
-			ETrans trans=NOTRANS )
-    { Op.Apply( x, y, trans ); }
-
-    //! @name Vector space typedefs and methods
-    //@{
-    
-    /// \typedef vector_space_type
-    ///
-    /// Belos operators have domain and range "vector spaces," and
-    /// Belos vectors belong to a particular vector space.  This lets
-    /// Belos solvers know whether (for example) a vector may be
-    /// assigned to another vector.  "Vector space" includes the idea
-    /// of distributed-memory data distribution, among other things.
-    ///
-    /// For Belos::Operator, we have given this typedef a trivial
-    /// definition, so that all vector spaces are the same and all
-    /// vectors belong to the same vector space.  This might change in
-    /// the future, so don't rely on this behavior, or on the type
-    /// used to implement vector_space_type.
-    typedef DefaultVectorSpace vector_space_type;
-
-    /// Return a persistent view to the domain vector space of A.
-    ///
-    /// "Persistent" means that the vector space object will persist
-    /// beyond the scope of A.  
-    ///
-    /// For Belos::Operator, we have given this function a trivial
-    /// definition, so that all vector spaces are the same and all
-    /// vectors belong to the same vector space.  This might change in
-    /// the future, so don't rely on this behavior, or on the
-    /// implementation of this function.
-    static Teuchos::RCP<const vector_space_type> 
-    getDomain (const Operator<ScalarType>& A) {
-      return DefaultVectorSpace::getDefaultVectorSpace ();
+    static void 
+    Apply (const Operator<ScalarType>& Op, 
+	   const MultiVec<ScalarType>& x, 
+	   MultiVec<ScalarType>& y,
+	   ETrans trans=NOTRANS)
+    { 
+      Op.Apply (x, y, trans); 
     }
-
-    /// Return a persistent view to the range vector space of A.
-    ///
-    /// "Persistent" means that the vector space object will persist
-    /// beyond the scope of A.  
-    ///
-    /// For Belos::Operator, we have given this function a trivial
-    /// definition, so that all vector spaces are the same and all
-    /// vectors belong to the same vector space.  This might change in
-    /// the future, so don't rely on this behavior, or on the
-    /// implementation of this function.
-    static Teuchos::RCP<const vector_space_type> 
-    getRange (const Operator<ScalarType>& A) {
-      return DefaultVectorSpace::getDefaultVectorSpace ();
-    }
-    //@}
   };
-
 
   /// \class OperatorInnerSolver
   /// \brief Adaptor between InnerSolver and Belos::Operator.
@@ -189,7 +140,6 @@ namespace Belos {
     typedef Scalar scalar_type;
     typedef MultiVec<Scalar> multivector_type;
     typedef Operator<Scalar> operator_type;
-    typedef typename OperatorTraits<scalar_type, multivector_type, operator_type>::vector_space_type vector_space_type;
     typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
 
     /// \brief Constructor.
@@ -200,15 +150,6 @@ namespace Belos {
     {}
     //! Virtual destructor implementation, for correctness.
     virtual ~OperatorInnerSolver() {}
-
-    //! A persistent view of the domain vector space of the operator
-    Teuchos::RCP<const vector_space_type> getDomain() const {
-      return solver_->getDomain();
-    }
-    //! A persistent view of the range vector space of the operator
-    Teuchos::RCP<const vector_space_type> getRange() const {
-      return solver_->getRange();
-    }
 
     /// \brief Return the underlying inner solver object.
     ///

@@ -138,31 +138,9 @@ namespace Belos {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
     typedef MV multivector_type;
     typedef OP operator_type;
-    /// \typedef vector_space_type
-    /// \brief The type of the domain and range vector space objects.
-    /// 
-    /// \note The definition of this typedef is a bit confusing,
-    ///   because it refers to a different OperatorTraits
-    ///   specialization (for OP) than this one (for
-    ///   InnerSolver<Scalar, MV, OP>)
-    typedef typename OperatorTraits<Scalar, MV, OP>::vector_space_type vector_space_type;
 
     //! Virtual destructor, for correctness.
     virtual ~InnerSolver() {}
-
-    /// \brief Persistent view of the domain vector space.
-    ///
-    /// The "domain" of the inner solver is the vector space in which
-    /// valid right-hand sides B live, for an inner solver that solves
-    /// AX=B.
-    virtual Teuchos::RCP<const vector_space_type> getDomain() const = 0;
-
-    /// \brief Persistent view of the range vector space.
-    ///
-    /// The "range" of the inner solver is the vector space in which
-    /// valid approximate (or exact) solutions X live, for an inner
-    /// solver that solves AX=B.
-    virtual Teuchos::RCP<const vector_space_type> getRange() const = 0;
 
     /// \brief Current parameters for the inner solver implementation.
     ///
@@ -300,16 +278,6 @@ namespace Belos {
       (void) Op.solve (y_ptr, x_ptr);
     }
 
-    typedef typename InnerSolver<Scalar, MV, OP>::vector_space_type vector_space_type;
-
-    static Teuchos::RCP<const vector_space_type> 
-    getDomain (const InnerSolver<Scalar, MV, OP>& A) {
-      return A.getDomain ();
-    }
-    static Teuchos::RCP<const vector_space_type> 
-    getRange (const InnerSolver<Scalar, MV, OP>& A) {
-      return A.getRange ();
-    }
   };
 
   /// \class UndefinedWrapperType

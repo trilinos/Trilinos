@@ -48,7 +48,6 @@
 
 #include "BelosConfigDefs.hpp" // HAVE_BELOS_TSQR
 #include "BelosMultiVecTraits.hpp"
-#include "BelosVectorSpaceTraits.hpp"
 #include "BelosOrthoManager.hpp" // OrthoError, etc.
 
 #include "Teuchos_LAPACK.hpp"
@@ -425,12 +424,6 @@ namespace Belos {
     /// whenever possible.  normalizeOutOfPlace() does _not_ allocate
     /// Q_, which you can use to your advantage.
     Teuchos::RCP<MV> Q_;
-
-    /// \brief The vector space to which Q_ belongs.
-    ///
-    /// Allocated lazily; only allocated or updated if normalize() is
-    /// called.
-    Teuchos::RCP<const typename MultiVecTraits<Scalar, MV>::vector_space_type> Q_space_;
 
     //! Machine precision for Scalar
     magnitude_type eps_;
@@ -922,25 +915,22 @@ namespace Belos {
     // in Q_, never decrease.  This is OK for typical uses of TSQR,
     // but you might prefer different behavior in some cases.
     //
-    // NOTE (mfh 07 Mar 2011) Calling getRange() on Epetra objects may
-    // involve constructing a new Epetra_(Block)Map, since the vector
-    // space it returns must outlive X.  That's why we go through effort
-    // below to avoid unnecessary getRange() calls.
-    //
-    // NOTE (mfh 07 Mar 2011) In the worst case, VST::compatible() may
-    // require one reduction on a Boolean value.  However, it does its
-    // best to avoid communication for more common cases.
-    typedef typename MVT::vector_space_type vector_space_type;
-    typedef VectorSpaceTraits<vector_space_type> VST;
-    RCP<const vector_space_type> X_space = MVT::getRange (X);
+    // FIXME (mfh 10 Mar 2011) The vector space capability that I
+    // proposed for Belos would have made it possible to ensure safe
+    // recycling of the scratch space.  Its removal means that we can
+    // only check whether X and Q_ have the same number of rows.
+    // Hopefully your linear algebra library implementation will do
+    // more checks than that and throw an exception if X and Q_ are
+    // not compatible.  If you find that recycling the Q_ space causes
+    // troubles, you may consider reallocating Q_ for every X that
+    // comes in, regardless of whether Q_ and X have the same number
+    // of rows.  The code below will be correct for the common case in
+    // Belos that all multivectors with the same number of rows have
+    // the same data distribution.
     if (Q_.is_null() || 
-	Q_space_.is_null() ||
-	numCols > MVT::GetNumberVecs (*Q_) ||
-	! VST::compatible (*X_space, *Q_space_))
-      {
-	Q_ = MVT::Clone (X, numCols);
-	Q_space_ = X_space; // No need to call getRange() again
-      }
+	MVT::GetVecLength(*Q_) != MVT::GetVecLength(X) ||
+	numCols > MVT::GetNumberVecs (*Q_))
+      Q_ = MVT::Clone (X, numCols);
 
     // normalizeImpl() wants the second MV argument to have the same
     // number of columns as X.  To ensure this, we pass it a view of

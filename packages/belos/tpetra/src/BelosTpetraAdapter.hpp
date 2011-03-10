@@ -62,8 +62,6 @@
 #include <BelosTypes.hpp>
 #include <BelosMultiVecTraits.hpp>
 #include <BelosOperatorTraits.hpp>
-#include <BelosVectorSpaceTraits.hpp>
-#include <BelosInnerSolver.hpp>
 #include <Kokkos_NodeAPIConfigDefs.hpp>
 
 #ifdef HAVE_BELOS_TSQR
@@ -72,61 +70,6 @@
 
 
 namespace Belos {
-
-  /// \brief Specialization of VectorSpaceTraits for Tpetra objects.
-  ///
-  /// This specialization lets Belos reason about vector spaces
-  /// (called "maps" in Tpetra) for Tpetra objects:
-  /// Tpetra::MultiVector for multivectors, and Tpetra::Operator for
-  /// operators.
-  template<class LO, class GO, class Node>
-  class VectorSpaceTraits<Tpetra::Map<LO, GO, Node> > {
-  public:
-    typedef Tpetra::Map<LO, GO, Node> vector_space_type;
-
-    /// \brief Are vectors from the two vector spaces compatible?
-    ///
-    /// \note This method requires communication in general, so it may
-    ///   be wise to cache the result.
-    static bool 
-    compatible (const vector_space_type& first, 
-		const vector_space_type& second) {
-      // FIXME (mfh 07 Mar 2011) Does it suffice to compare pointers?
-      // If the two pointers point to the same object on one MPI
-      // process, they should on all MPI processes, right?  Comparing
-      // pointers avoids communication for the idiomatic Tpetra case
-      // of multiple objects constructed from the same Map object.
-      //
-      // isCompatible is the method called in
-      // Tpetra::MultiVector::operator= to ensure legality of
-      // assigning the input vector to *this, so it's the right method
-      // to call in this case.
-      return &first == &second || first.isCompatible (second);
-    }
-
-    static Teuchos::RCP<const vector_space_type>
-    persistentView (const Teuchos::RCP<const vector_space_type>& space)
-    {
-      // Tpetra distributed objects return RCP<const Map> when asked
-      // for their data distributions, as do Tpetra::Operator objects
-      // when asked for their domain and range.  Those RCPs are
-      // persistent (strong references) by construction, so we can
-      // just let them pass through.  For safety, we still check
-      // whether it's a weak reference, but Tpetra::Map doesn't have a
-      // public copy constructor or operator=, so we throw an
-      // exception if space is a weak reference.
-      TEST_FOR_EXCEPTION(space.strength() == Teuchos::RCP_WEAK, 
-			 std::logic_error,
-			 "The given RCP<const Tpetra::Map> is a weak reference,"
-			 " so it is impossible to make a persistent view of it."
-			 "  Weak references are not the typical case for Tpetra"
-			 "::Map objects; it could be that you created the RCP i"
-			 "n a strange way, such as via rcp (rcpFromRef (*ptr)) "
-			 "where ptr is an RCP.  The normal use case of Tpetra::"
-			 "Map should not cause problems like this.");
-      return space;
-    }
-  };
 
   ////////////////////////////////////////////////////////////////////
   //
@@ -145,34 +88,6 @@ namespace Belos {
 #ifdef HAVE_BELOS_TPETRA_TIMERS
     static Teuchos::RCP<Teuchos::Time> mvTimesMatAddMvTimer_, mvTransMvTimer_;
 #endif
-
-    //! @name Vector space typedefs and methods
-    //@{
-    
-    /// \typedef vector_space_type
-    ///
-    /// MV objects live in a "vector space."  Two objects of the same
-    /// MV type might live in different vector spaces.  "Vector space"
-    /// includes the idea of distributed-memory data distribution,
-    /// among other things.
-    typedef Tpetra::Map<LO, GO, Node> vector_space_type;
-
-    /// Return a persistent view to the vector space in which x lives.
-    ///
-    /// "Persistent" means that the vector space object will persist
-    /// beyond the scope of x.  The Tpetra specialization relies on
-    /// the ability of Tpetra distributed objects to return persistent
-    /// views of their Tpetra::Map.
-    ///
-    /// \note The term "range" comes from Thyra; an
-    ///   Epetra_MultiVector's Epetra_Map and a Tpetra::MultiVector's
-    ///   Tpetra::Map both correspond to the "range" of the
-    ///   multivector, i.e., the distribution of its rows.
-    static Teuchos::RCP<const vector_space_type> 
-    getRange (const Tpetra::MultiVector<Scalar, LO, GO, Node>& x) {
-      return x.getMap ();
-    }
-    //@}
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
     { 
@@ -648,45 +563,11 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////
 
+  /// \brief Partial specialization of OperatorTraits for Tpetra::Operator.
   template <class Scalar, class LO, class GO, class Node> 
-  class OperatorTraits < Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node>, Tpetra::Operator<Scalar,LO,GO,Node> >
+  class OperatorTraits <Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node>, Tpetra::Operator<Scalar,LO,GO,Node> >
   {
   public:
-    //! @name Vector space typedefs and methods
-    //@{
-    
-    /// \typedef vector_space_type
-    ///
-    /// Operator objects have a domain and range "vector space," which
-    /// may or may not be different.  OP objects take MV objects from
-    /// the domain space as input, and produce OP objects from the
-    /// range space as input.  "Vector space" includes the idea of
-    /// distributed-memory data distribution, among other things.
-    typedef Tpetra::Map<LO, GO, Node> vector_space_type;
-
-    /// Return a persistent view to the domain vector space of A.
-    ///
-    /// "Persistent" means that the vector space object will persist
-    /// beyond the scope of A.  The Tpetra specialization relies on
-    /// the ability of Tpetra objects to return persistent views of
-    /// the vector space object, without needing to copy them.
-    static Teuchos::RCP<const vector_space_type> 
-    getDomain (const Tpetra::Operator<Scalar, LO, GO, Node>& A) {
-      return A.getDomainMap ();
-    }
-
-    /// Return a persistent view to the range vector space of A.
-    ///
-    /// "Persistent" means that the vector space object will persist
-    /// beyond the scope of A.  The Tpetra specialization relies on
-    /// the ability of Tpetra objects to return persistent views of
-    /// the vector space object, without needing to copy them.
-    static Teuchos::RCP<const vector_space_type> 
-    getRange (const Tpetra::Operator<Scalar, LO, GO, Node>& A) {
-      return A.getRangeMap ();
-    }
-    //@}
-
     static void 
     Apply (const Tpetra::Operator<Scalar,LO,GO,Node>& Op, 
 	   const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
@@ -714,207 +595,6 @@ namespace Belos {
 			   "get here; fell through a switch statement.  "
 			   "Please report this bug to the Belos developers.");
       }
-    }
-  };
-
-  /// \class TpetraInnerSolver
-  /// \brief Adaptor between InnerSolver and Tpetra::Operator.
-  /// 
-  /// This wrapper lets you use as a Tpetra::Operator any
-  /// implementation of Belos::InnerSolver<Scalar, MV, OP> with MV =
-  /// Tpetra::MultiVector<Scalar, LO, GO, Node> and OP =
-  /// Tpetra::Operator<Scalar, LO, GO, Node>.
-  /// 
-  /// \note One reason for the whole VectorSpaceTraits thing is
-  ///   because implementations of the Tpetra::Operator interface must
-  ///   implement the getDomainMap() and getRangeMap() methods.  If we
-  ///   want those to return the correct maps (a.k.a. vector spaces),
-  ///   then implementations of the InnerSolver interface need to be
-  ///   able to ask their input LinearProblems for the domain and
-  ///   vector vector spaces of the operator(s).  For correctness
-  ///   (especially when caching vector storage for use with different
-  ///   right-hand sides), it's also useful if InnerSolver can ask for
-  ///   the vector spaces in which the right-hand side B and initial
-  ///   guess X live.
-  template <class Scalar, class LO, class GO, class Node>
-  class TpetraInnerSolver : public Tpetra::Operator<Scalar, LO, GO, Node> {
-  public:
-    typedef Scalar scalar_type;
-    typedef LO local_ordinal_type;
-    typedef GO global_ordinal_type;
-    typedef Node node_type;
-
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> multivector_type;
-    typedef Tpetra::Operator<Scalar, LO, GO, Node> operator_type;
-    typedef typename OperatorTraits<scalar_type, multivector_type, operator_type>::vector_space_type vector_space_type;
-    typedef InnerSolver<Scalar, multivector_type, operator_type> inner_solver_type;
-
-    /// \brief Constructor.
-    ///
-    /// \param solver [in/out] The actual inner solver implementation.
-    TpetraInnerSolver (const Teuchos::RCP<inner_solver_type>& solver) :
-      solver_ (solver), 
-      domain_ (solver->getDomain()),
-      range_ (solver->getRange())
-    {}
-
-    //! Virtual destructor implementation, for correctness.
-    virtual ~TpetraInnerSolver() {}
-
-    //! A persistent view of the domain vector space of the operator
-    const Teuchos::RCP<const vector_space_type>& getDomainMap() const {
-      return domain_;
-    }
-    //! A persistent view of the range vector space of the operator
-    const Teuchos::RCP<const vector_space_type>& getRangeMap() const {
-      return range_;
-    }
-
-    /// \brief Return the underlying inner solver object.
-    ///
-    /// This breach of encapsulation makes TpetraInnerSolver into an
-    /// "envelope."  First, the inner solver hides inside an
-    /// Tpetra::Operator until it gets inside a Belos solver that
-    /// recognizes the Tpetra::Operator as an TpetraInnerSolver.
-    /// Then, the Belos solver can take the InnerSolver out of the
-    /// "envelope," destroy the envelope (by setting its RCP to null)
-    /// if it wants, and work directly with the (more feature-rich)
-    /// InnerSolver.
-    ///
-    /// \note This method is declared const in order to cheat
-    ///   Belos::LinearProblem into letting the operator act like an
-    ///   envelope.  It's technically correct to call this method
-    ///   const, since it doesn't let the caller assign to the pointer
-    ///   (even though it lets the caller call nonconst methods on the
-    ///   InnerSolver).
-    Teuchos::RCP<inner_solver_type> getInnerSolver() const {
-      return solver_;
-    }
-
-    /// \brief Compute Y := alpha*solver(Y,X) + beta*Y.
-    ///
-    /// \note The contents of Y on input may be relevant, depending on
-    ///   the inner solver implementation.  For example, Y on input
-    ///   may be treated as the initial guess of an iterative solver.
-    void 
-    apply(const multivector_type& X,
-	  multivector_type& Y,
-	  Teuchos::ETransp mode = Teuchos::NO_TRANS, 
-	  Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-	  Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const
-    {
-      using Teuchos::RCP;
-      using Teuchos::rcpFromRef;
-      typedef multivector_type MV;
-      typedef Teuchos::ScalarTraits<Scalar> STS;
-
-      TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS, std::invalid_argument,
-			 "TpetraInnerSolver only supports applying the operator"
-			 " itself, not its transpose or conjugate transpose.");
-      const Scalar zero = STS::zero();
-      const Scalar one = STS::one();
-
-      // "X" is the right-hand side in this case, and "Y" is the
-      // "left-hand side."
-      RCP<const MV> X_ptr = rcpFromRef (X);
-      RCP<MV> Y_ptr = rcpFromRef (Y);
-
-      // Compute Y := alpha*solver(Y,X) + beta*Y.
-      //
-      // There are special cases for beta==0 or alpha==0; these
-      // special cases ignore NaNs in Y or in the result of
-      // solver(Y,X).  Note also that the inner solver is not invoked
-      // at all if alpha==0.
-      if (beta == 0)
-	{
-	  if (alpha != zero)
-	    solver_->solve (Y_ptr, X_ptr);
-	  if (alpha != one)
-	    Y_ptr->scale (alpha);
-	}
-      else if (alpha == 0)
-	Y_ptr->scale (beta);
-      else 
-	{ // The solver overwrites Y with the result of the solve, so
-	  // we have to make a copy of Y first before invoking the
-	  // solver.
-	  RCP<MV> Y_copy (new MV (*Y_ptr));
-	  solver_->solve (Y_copy, X_ptr);
-	  // Y := alpha*Y_copy + beta*Y.
-	  Y_ptr->update (alpha, Y_copy, beta);
-	}
-    }
-
-    //! Can you apply the transpose of the operator?
-    bool hasTransposeApply() const { return false; }
-
-  private:
-    //! Default construction is not allowed.
-    TpetraInnerSolver ();
-
-    //! The inner solver implementation.
-    Teuchos::RCP<inner_solver_type> solver_;
-
-    /// \brief The domain vector space.
-    ///
-    /// \note We have to keep RCPs of the domain and range vector
-    ///   spaces around, because the Tpetra::Operator interface
-    ///   requires that we return "const RCP&" instead of "RCP" for
-    ///   the domain and range.  Instantiating a new RCP in the method
-    ///   and returning a const reference to it would result in a
-    ///   dangling reference.
-    Teuchos::RCP<const vector_space_type> domain_;
-
-    /// \brief The range vector space.
-    /// 
-    /// See note on \c domain_.
-    Teuchos::RCP<const vector_space_type> range_;    
-  };
-
-  /// \brief Specialization of makeInnerSolverOperator() for Tpetra objects.
-  ///
-  /// Take an InnerSolver instance, and wrap it in an implementation
-  /// of the Tpetra::Operator interface.  That way you can use it
-  /// alongside any other implementation of the Tpetra::Operator
-  /// interface (such as Tpetra::CrsMatrix).  
-  template <class Scalar, class LO, class GO, class Node>
-  class InnerSolverTraits<Scalar, Tpetra::MultiVector<Scalar, LO, GO, Node>, Tpetra::Operator<Scalar, LO, GO, Node> > {
-  public:
-    typedef Scalar scalar_type;
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> multivector_type;
-    typedef Tpetra::Operator<Scalar, LO, GO, Node> operator_type;
-    typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
-    typedef TpetraInnerSolver<Scalar, LO, GO, Node> wrapper_type;
-
-    /// \brief Wrap the given inner solver in a wrapper_type.
-    ///
-    /// The wrapper_type class implements the operator_type interface,
-    /// which can be used directly in Belos.
-    static Teuchos::RCP<operator_type>
-    makeInnerSolverOperator (const Teuchos::RCP<inner_solver_type>& solver)
-    {
-      using Teuchos::rcp;
-      using Teuchos::rcp_implicit_cast;
-      return rcp_implicit_cast<operator_type> (rcp (new wrapper_type (solver)));
-    }
-
-    /// \brief Return the given wrapper's inner solver object.
-    ///
-    /// If op is an inner solver wrapper instance, return the inner
-    /// solver object.  Otherwise, throw an std::bad_cast exception.
-    ///
-    /// \note After calling this method, the inner solver object will
-    ///   persist beyond the scope of op.  Thus, if you don't care
-    ///   about the wrapper that implements the operator_type
-    ///   interface, you can get rid of the wrapper (by setting the
-    ///   RCP to null) and keep the inner solver.
-    static Teuchos::RCP<inner_solver_type>
-    getInnerSolver (const Teuchos::RCP<operator_type>& op)
-    {
-      using Teuchos::RCP;
-      using Teuchos::rcp_dynamic_cast;
-      RCP<wrapper_type> wrapper = rcp_dynamic_cast<wrapper_type> (op, true);
-      return wrapper->getInnerSolver();
     }
   };
 

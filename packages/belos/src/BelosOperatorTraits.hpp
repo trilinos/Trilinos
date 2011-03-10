@@ -51,30 +51,34 @@
 
 namespace Belos {
 
-  template< class ScalarType, class MV, class OP >
-  struct UndefinedOperatorTraits
+  /// \class UndefinedOperatorTraits
+  /// \brief Class used to require specialization of OperatorTraits.
+  /// 
+  /// This class is used by OperatorTraits to ensure that
+  /// OperatorTraits cannot be used unless a specialization for
+  /// particular multivector and operator types has been defined.
+  template<class ScalarType, class MV, class OP>
+  class UndefinedOperatorTraits
   {
-    //! This function should not compile if there is an attempt to instantiate!
-    /*! \note Any attempt to compile this function results in a compile time error.  This means
-      that the template specialization of Belos::OperatorTraits class does not exist for type
-      <tt>OP</tt>, or is not complete.
-    */
-    static inline void notDefined() { OP::this_type_is_missing_a_specialization(); };
-
-    /// \typedef vector_space_type
+  public:
+    /// \brief Function that will not compile if instantiation is attempted.
     ///
-    /// This typedef makes OperatorTraits' vector_space_type
-    /// syntactically correct.  Its definition is not meaningful.
-    typedef void vector_space_type;
+    /// \note Any attempt to compile this function results in a
+    ///   compile time error.  Such an error means that the template
+    ///   specialization of Belos::OperatorTraits class either does
+    ///   not exist for type <tt>OP</tt>, or is not complete.
+    static inline void notDefined() { 
+      OP::this_type_is_missing_a_specialization(); 
+    };
   };
  
-  /*!  \brief Virtual base class which defines basic traits for the operator type.
-
-       An adapter for this traits class must exist for the <tt>MV</tt> and <tt>OP</tt> types.
-       If not, this class will produce a compile-time error.
-
-       \ingroup belos_opvec_interfaces
-  */ 
+  /// \brief Traits class which defines basic traits for the operator type.
+  ///
+  /// A specialization of this traits class must exist for the
+  /// <tt>MV</tt> and <tt>OP</tt> types.  If not, this class will
+  /// produce a compile-time error.
+  ///
+  /// \ingroup belos_opvec_interfaces
   template <class ScalarType, class MV, class OP>
   class OperatorTraits 
   {
@@ -85,59 +89,17 @@ namespace Belos {
     /// If applying the (conjugate) transpose of Op is supported, you
     /// may do this as well.  If not, or if there is some other error, 
     /// an OperatorError exception is thrown.
-    static void Apply ( const OP& Op, 
-			const MV& x, 
-			MV& y, 
-			ETrans trans = NOTRANS )
-    { UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
-
-    //! @name Vector space typedefs and methods
-    //@{
-    
-    /// \typedef vector_space_type
-    ///
-    /// OP objects have a domain and range "vector space," which may
-    /// or may not be different.  OP objects take MV objects from the
-    /// domain space as input, and produce OP objects from the range
-    /// space as input.  "Vector space" includes the idea of
-    /// distributed-memory data distribution, among other things.
-    /// 
-    /// \note The default definition of this typedef is not
-    ///   meaningful; a specialization of OperatorTraits for the MV
-    ///   type must exist in order for this typedef to have a
-    ///   meaningful definition.
-    typedef typename UndefinedOperatorTraits<ScalarType, MV, OP>::vector_space_type vector_space_type;
-
-    /// Return a persistent view to the domain vector space of A.
-    ///
-    /// "Persistent" means that the vector space object will persist
-    /// beyond the scope of A.  For the Epetra specialization, this
-    /// means that the vector space is copied.  The Tpetra and Thyra
-    /// specializations rely on the ability of both libraries to
-    /// return persistent views of the vector space object.
-    ///
-    /// \note The default definition of this function is not
-    ///   meaningful; a specialization of MultiVecTraits for the MV
-    ///   type must exist in order for this function to have a
-    ///   meaningful definition.
-    static Teuchos::RCP<const vector_space_type> getDomain (const OP& A)
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
-
-    /// Return a persistent view to the range vector space of A.
-    ///
-    /// "Persistent" means that the vector space object will persist
-    /// beyond the scope of A.  For the Epetra specialization, this
-    /// means that the vector space is copied.  The Tpetra and Thyra
-    /// specializations rely on the ability of both libraries to
-    /// return persistent views of the vector space object.
-    ///
-    /// \note The default definition of this function is not
-    ///   meaningful; a specialization of MultiVecTraits for the MV
-    ///   type must exist in order for this function to have a
-    ///   meaningful definition.
-    static Teuchos::RCP<const vector_space_type> getRange (const OP& A)
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
-    //@}
+    static void 
+    Apply (const OP& Op, 
+	   const MV& x, 
+	   MV& y, 
+	   ETrans trans = NOTRANS)
+    { 
+      // This will result in a deliberate compile-time error, if a
+      // specialization of OperatorTraits has not been defined for the
+      // MV and OP types.
+      UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); 
+    };
   };
   
 } // end Belos namespace

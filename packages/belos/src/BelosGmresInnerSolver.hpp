@@ -115,50 +115,6 @@ namespace Belos {
       return solMgr_.getCurrentParameters();
     }
 
-    /// \brief Persistent view of the domain vector space.
-    ///
-    /// The "domain" of the inner solver is the vector space in which
-    /// valid right-hand sides B live, for an inner solver that solves
-    /// AX=B.
-    Teuchos::RCP<const vector_space_type> 
-    getDomain() const 
-    {
-      using Teuchos::RCP;
-      using Teuchos::TypeNameTraits;
-
-      RCP<const operator_type> A = solMgr_.getProblem().getOperator();
-      TEST_FOR_EXCEPTION(A.is_null(), std::logic_error,
-			 "Belos::GmresInnerSolver<" 
-			 << TypeNameTraits<Scalar>::name() << "," 
-			 << TypeNameTraits<MV>::name() << "," 
-			 << TypeNameTraits<OP>::name() << ">::getDomain: "
-			 "The matrix A in the equation AX=B which we're "
-			 "supposed to solve is null.");
-      return OperatorTraits<OP>::getDomain (A);
-    }
-
-    /// \brief Persistent view of the range vector space.
-    ///
-    /// The "range" of the inner solver is the vector space in which
-    /// valid approximate (or exact) solutions X live, for an inner
-    /// solver that solves AX=B.
-    Teuchos::RCP<const vector_space_type> 
-    getRange() const 
-    {
-      using Teuchos::RCP;
-      using Teuchos::TypeNameTraits;
-
-      RCP<const operator_type> A = solMgr_.getProblem().getOperator();
-      TEST_FOR_EXCEPTION(A.is_null(), std::logic_error,
-			 "Belos::GmresInnerSolver<" 
-			 << TypeNameTraits<Scalar>::name() << "," 
-			 << TypeNameTraits<MV>::name() << "," 
-			 << TypeNameTraits<OP>::name() << ">::getRange: "
-			 "The matrix A in the equation AX=B which we're "
-			 "supposed to solve is null.");
-      return OperatorTraits<OP>::getRange (A);
-    }
-
     /// \brief Solve \f$AX=B\f$ for the given right-hand side(s) B.
     ///
     /// \param X [in/out] On input: The initial guess for the inner

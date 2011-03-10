@@ -257,22 +257,18 @@ namespace Belos {
     ///   left or split preconditioning.
     ///
     /// \note Instantiating a new GmresBase subclass instance is the
-    /// only way to change the linear problem.  This ensures that the
-    /// V (and Z, for Flexible GMRES) spaces (especially their data
-    /// distributions) are correct.  It's allowed to change a
-    /// LinearProblem instance's operator and right-hand, for example,
-    /// and afterwards they might not even have the same number of
-    /// rows, let alone the same data distribution as before.
-    /// Belos::MultiVecTraits offers a limited interface to
-    /// multivectors and operators that doesn't let us access the data
-    /// distribution, so we choose instead to reinitialize from
-    /// scratch whenever the linear problem is changed.  The way to
-    /// avoid this reinitialization would be to refactor Belos to use
-    /// only Thyra's MultiVectorBase and LinearOpBase, instead of
-    /// being templated on MV and OP.  Thyra's interfaces reify and
-    /// offer (abstract) access to the vector space (VectorSpaceBase)
-    /// to which (multi)vectors belong, and the domain and range of an
-    /// operator.
+    ///   only way to change the linear problem.  This ensures that
+    ///   the V (and Z, for Flexible GMRES) spaces (especially their
+    ///   data distributions) are correct.  It's allowed to change a
+    ///   LinearProblem instance's operator and right-hand, for
+    ///   example, and afterwards they might not even have the same
+    ///   number of rows, let alone the same data distribution as
+    ///   before.  Belos::MultiVecTraits offers a limited interface to
+    ///   multivectors and operators that doesn't let us access the
+    ///   data distribution, so we choose instead to reinitialize from
+    ///   scratch whenever the linear problem is changed.  The way to
+    ///   avoid this reinitialization would be to add a check for
+    ///   compatibility of multivectors in MultiVecTraits.
     GmresBase (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem,
 	       const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
 	       const Teuchos::RCP<OutputManager<Scalar> >& outMan,

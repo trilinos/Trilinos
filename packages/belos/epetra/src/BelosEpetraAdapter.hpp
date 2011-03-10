@@ -56,8 +56,6 @@
 #include "BelosMultiVec.hpp"
 #include "BelosOperator.hpp"
 #include "BelosTypes.hpp"
-#include "BelosInnerSolver.hpp"
-#include "BelosVectorSpaceTraits.hpp"
 
 #ifdef HAVE_BELOS_TSQR
 #  include <Epetra_TsqrAdaptor.hpp>
@@ -65,59 +63,6 @@
 
 namespace Belos {
 
-  /// \brief Specialization of VectorSpaceTraits for Epetra objects.
-  ///
-  /// This specialization lets Belos reason about vector spaces
-  /// (called "maps" in Epetra) for Epetra objects: Epetra_MultiVector
-  /// for multivectors, and Epetra_Operator for operators.  We use
-  /// Epetra_BlockMap as the vector space type, with dynamic casting
-  /// to Epetra_Map as necessary if we need to make a deep copy of the
-  /// map.
-  /// 
-  /// \note Since this is a full specialization of the template class,
-  ///   the implementation can live in the .cpp file.
-  template<>
-  class VectorSpaceTraits<Epetra_BlockMap> {
-  public:
-    typedef Epetra_BlockMap vector_space_type;
-
-    /// \brief Are vectors from the two vector spaces compatible?
-    ///
-    /// \note This method may require communication, so it may be wise
-    ///   to cache the result.
-    static bool 
-    compatible (const vector_space_type& first, 
-		const vector_space_type& second);
-
-    /// \brief Return a persistent view of the given vector space.
-    ///
-    /// "Persistent" means that the view will outlast the Epetra
-    /// distributed object from which the vector space object comes.
-    /// This is particularly important with Epetra, since its objects'
-    /// methods return vector spaces as const references (which are
-    /// not guaranteed to survive destruction of their host
-    /// distributed object). 
-    ///
-    /// The cost of persistence for Epetra objects is that if space is
-    /// a weak RCP (likely coming from Teuchos::rcpFromRef() called on
-    /// a const reference coming from the Epetra object), a deep copy
-    /// will be made.  A deep copy is _not_ made if space is a strong
-    /// RCP, so you could avoid unnecessary deep copies by making your
-    /// own deep copy once and reusing it as necessary.  Tpetra does
-    /// not have this problem.
-    static Teuchos::RCP<const vector_space_type>
-    persistentView (const Teuchos::RCP<const vector_space_type>& space);
-
-    /// \brief Return a persistent view of the given vector space.
-    ///
-    /// \note Epetra's VectorSpaceTraits gets an overload of \c
-    ///   persistentView() for "const vector_space_type&", since
-    ///   passing vector spaces by const reference (rather than by
-    ///   RCP) is a common Epetra idiom.
-    static Teuchos::RCP<const vector_space_type>
-    persistentView (const vector_space_type& space);
-  };
- 
   //! @name Epetra Adapter Exceptions
   //@{
 
@@ -136,8 +81,13 @@ namespace Belos {
     {}};
 
   //@}
- 
-  //--------template class BelosEpetraMultiVec-------------------------------------
+
+  /// \class EpetraMultiVec
+  /// \brief Implementation of Belos::MultiVec using Epetra_MultiVector.
+  ///
+  /// Belos::MultiVec offers a simple abstract interface for
+  /// multivector operations in Belos solver algorithms.  This class
+  /// implements Belos::MultiVec by extending Epetra_MultiVector.
   class EpetraMultiVec : public MultiVec<double>, public Epetra_MultiVector {
   public:
     // constructors
@@ -147,104 +97,93 @@ namespace Belos {
     EpetraMultiVec& operator=(const EpetraMultiVec& pv) { Epetra_MultiVector::operator=(pv); return *this; }
     EpetraMultiVec(const Epetra_MultiVector & P_vec);
     ~EpetraMultiVec();
-    //
-    //  member functions inherited from Belos::MultiVec
-    //
-    //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. std::vector values are
-    //  not copied; instead a new MultiVec is created containing
-    //  a non-zero amount of columns.  
-    //
+
+    //! @name Member functions inherited from Belos::MultiVec
+    //@{
+
+    /// A virtual "copy constructor" that returns a pointer to a new
+    /// object of the pure virtual class.  This vector's entries are
+    /// not copied; instead, a new MultiVec is created with the same
+    /// data distribution, but with numvecs columns (numvecs > 0).
+    /// 
+    /// \param numvecs [in] The number of columns in the output
+    ///   multivector.  Must be positive.
     MultiVec<double> * Clone ( const int numvecs ) const;
-    //
-    //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. std::vector values are
-    //  copied and a new stand-alone MultiVector is created.
-    //  (deep copy).
-    //
+
+    /// A virtual "copy constructor" returning a pointer to a new
+    /// object of the pure virtual class.  This vector's entries are
+    /// copied and a new stand-alone multivector is created.  (deep
+    /// copy).
     MultiVec<double> * CloneCopy () const;
-    //
-    //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. std::vector values are
-    //  copied and a new stand-alone MultiVector is created
-    //  where only selected columns are chosen.  (deep copy).
-    //
+
+    /// A virtual "copy constructor" returning a pointer to the pure
+    /// virtual class.  This vector's entries are copied and a new
+    /// stand-alone MultiVector is created where only selected columns
+    /// are chosen.  (deep copy).
     MultiVec<double> * CloneCopy ( const std::vector<int>& index ) const;
-    //
-    //  the following is a virtual view constructor returning
-    //  a pointer to the pure virtual class. std::vector values are 
-    //  shared and hence no memory is allocated for the columns.
-    //
+
+    /// A virtual view "constructor" returning a pointer to the pure
+    /// virtual class.  This vector's entries are shared and hence no
+    /// memory is allocated for the columns.
     MultiVec<double> * CloneViewNonConst ( const std::vector<int>& index );
-    //
-    //  the following is a virtual view constructor returning
-    //  a pointer to the pure virtual class. std::vector values are 
-    //  shared and hence no memory is allocated for the columns.
-    //
+
+    /// A virtual view constructor returning a pointer to the pure
+    /// virtual class.  This vector's entries are shared and hence no
+    /// memory is allocated for the columns.
     const MultiVec<double> * CloneView ( const std::vector<int>& index ) const;
-    //
-    //  this routine sets a subblock of the multivector, which
-    //  need not be contiguous, and is given by the indices.
-    //
+
+    /// Set a subblock of the multivector, which need not be
+    /// contiguous, and is given by the indices.
     void SetBlock ( const MultiVec<double>& A, const std::vector<int>& index );
-    //
+    
+    //! The number of columns in the multivector.
     int GetNumberVecs () const { return NumVectors(); }
+
+    //! The (global) number of rows in the multivector.
     int GetVecLength () const { return GlobalLength(); }
-    //
-    // *this <- alpha * A * B + beta * (*this)
-    //
+
+    //! *this <- alpha * A * B + beta * (*this)
     void MvTimesMatAddMv ( const double alpha, const MultiVec<double>& A, 
 			   const Teuchos::SerialDenseMatrix<int,double>& B, const double beta );
-    //
-    // *this <- alpha * A + beta * B
-    //
+    //! *this <- alpha * A + beta * B
     void MvAddMv ( const double alpha, const MultiVec<double>& A, const double beta,
 		   const MultiVec<double>& B);
 
-    /*! \brief Scale each element of the vectors in \c *this with \c alpha.
-     */
+    //! Scale each element of the vectors in \c *this with \c alpha.
     void MvScale ( const double alpha ) { 
       TEST_FOR_EXCEPTION( this->Scale( alpha )!=0, EpetraMultiVecFailure, 
 			  "Belos::EpetraMultiVec::MvScale() call to Scale() returned a nonzero value."); }
 
-    /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
-     */
+    //! Scale each element of the \c i-th vector in \c *this with \c alpha[i].
     void MvScale ( const std::vector<double>& alpha );
-    //
-    // B <- alpha * A^T * (*this)
-    //
+
+    //! B <- alpha * A^T * (*this)
     void MvTransMv ( const double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const;
-    //
-    // b[i] = A[i]^T * this[i]
-    // 
+
+    //! b[i] = A[i]^T * this[i]
     void MvDot ( const MultiVec<double>& A, std::vector<double>& b ) const;
-    //
-    // alpha[i] = norm of i-th column of (*this)
-    //	
+
+    //! alpha[i] = norm of i-th column of (*this)
     void MvNorm ( std::vector<double>& normvec, NormType norm_type = TwoNorm ) const;
-    //
-    // random vectors in i-th column of (*this)
-    //
+
+    //! Fill all columns of *this with random values.
     void MvRandom() { 
       TEST_FOR_EXCEPTION( Random()!=0, EpetraMultiVecFailure, 
 			  "Belos::EpetraMultiVec::MvRandom() call to Random() returned a nonzero value."); }
-    //
-    // initializes each element of (*this) with alpha
-    //
+
+    //! Initialize each element of (*this) to the scalar value alpha. 
     void MvInit ( const double alpha ) { 
       TEST_FOR_EXCEPTION( PutScalar(alpha)!=0, EpetraMultiVecFailure, 
 			  "Belos::EpetraMultiVec::MvInit() call to PutScalar() returned a nonzero value."); }
-    //
-    // print (*this)
-    //
+
+    //! Print (*this) to the given output stream.
     void MvPrint( std::ostream& os ) const { os << *this << std::endl; };
   private:
   };
   
-  
-  ///////////////////////////////////////////////////////////////
-  //--------template class BelosEpetraOp---------------------
-  
+  /// \class EpetraOp
+  /// \brief Implementation of Belos::Operator using Epetra_Operator.
+  ///
   class EpetraOp : public virtual Operator<double> {
   public:
     EpetraOp( const Teuchos::RCP<Epetra_Operator> &Op );
@@ -254,9 +193,10 @@ namespace Belos {
     Teuchos::RCP<Epetra_Operator> Epetra_Op;
   };
   
-  ///////////////////////////////////////////////////////////////
-  //--------template class BelosEpetraPrecOp---------------------
-  
+
+  /// \class EpetraPrecOp
+  /// \brief Implementation of Belos::Operator using Epetra_Operator as a preconditioner.
+  ///
   class EpetraPrecOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
     //! Basic constructor for applying the operator as its inverse.
@@ -303,7 +243,6 @@ namespace Belos {
     Teuchos::RCP<Epetra_Operator> Epetra_Op;
 
   };
-
   
   ////////////////////////////////////////////////////////////////////
   //
@@ -311,41 +250,11 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////
 
+  //! Full specialization of Belos::MultiVecTraits for Epetra_MultiVector.
   template<>
   class MultiVecTraits<double, Epetra_MultiVector>
   {
   public:
-
-    //! @name Vector space typedefs and methods
-    //@{
-    
-    /// \typedef vector_space_type
-    ///
-    /// \note If you ask for the domain or range map of an
-    ///   Epetra_Operator, you'll get an Epetra_Map, but if you ask
-    ///   for the map of an Epetra distributed object (such as an
-    ///   Epetra_MultiVector), you'll get an Epetra_BlockMap.  An
-    ///   Epetra_Map is-an Epetra_BlockMap, so we use the more generic
-    ///   interface, except for when we need to make a deep copy of
-    ///   the map (in which case we attempt a dynamic cast to
-    ///   Epetra_Map and do the right thing, depending on what we
-    ///   get).
-    typedef Epetra_BlockMap vector_space_type;
-
-    /// Return a persistent view to the vector space in which x lives.
-    ///
-    /// "Persistent" means that the vector space object will persist
-    /// beyond the scope of x.  For the Epetra specialization, this
-    /// generally means that a deep copy of the vector space is made.
-    /// The Tpetra specialization does not need to make a deep copy.
-    ///
-    /// \note The term "range" comes from Thyra; an
-    ///   Epetra_MultiVector's Epetra_Map and a Tpetra::MultiVector's
-    ///   Tpetra::Map both correspond to the "range" of the
-    ///   multivector, i.e., the distribution of its rows.
-    static Teuchos::RCP<const vector_space_type> 
-    getRange (const Epetra_MultiVector& x);
-    //@}
 
     static Teuchos::RCP<Epetra_MultiVector> 
     Clone (const Epetra_MultiVector& mv, const int outNumVecs)
@@ -357,7 +266,7 @@ namespace Belos {
       // FIXME (mfh 13 Jan 2011) Anasazi currently lets Epetra fill in
       // the entries of the returned multivector with zeros, but Belos
       // does not.  We retain this different behavior for now, but the
-      // two versions will need to be reconciled.
+      // two versions should be reconciled.
       return Teuchos::rcp (new Epetra_MultiVector (mv.Map(), outNumVecs, false)); 
     }
 
@@ -922,260 +831,8 @@ namespace Belos {
 			 << " returned a nonzero value info=" << info << ", "
 			 "indicating an error in applying the operator.");
     }
-
-    //! @name Vector space typedefs and methods
-    //@{
-    
-    /// \typedef vector_space_type
-    ///
-    /// OP objects have a domain and range "vector space," which may
-    /// or may not be different.  OP objects take MV objects from the
-    /// domain space as input, and produce OP objects from the range
-    /// space as input.  "Vector space" includes the idea of
-    /// distributed-memory data distribution, among other things.
-    ///  
-    /// \note If you ask for the domain or range map of an
-    ///   Epetra_Operator, you'll get an Epetra_Map, but if you ask
-    ///   for the map of an Epetra distributed object (such as an
-    ///   Epetra_MultiVector), you'll get an Epetra_BlockMap.  An
-    ///   Epetra_Map is-an Epetra_BlockMap, so we use the more generic
-    ///   interface, except for when we need to make a deep copy of
-    ///   the map (in which case we attempt a dynamic cast to
-    ///   Epetra_Map and do the right thing, depending on what we
-    ///   get).
-    typedef Epetra_BlockMap vector_space_type;
-
-    /// Return a persistent view to the domain vector space of A.
-    ///
-    /// \note The Epetra specialization requires copying the vector
-    ///   space (Map, in Epetra terms), since Epetra distributed
-    ///   objects only return a const vector space reference that is
-    ///   not guaranteed to persist beyond the scope of the
-    ///   distributed object.
-    static Teuchos::RCP<const vector_space_type> 
-    getDomain (const Epetra_Operator& A);
-
-    /// Return a persistent view to the range vector space of A.
-    ///
-    /// \note The Epetra specialization requires copying the vector
-    ///   space (Map, in Epetra terms), since Epetra distributed
-    ///   objects only return a const vector space reference that is
-    ///   not guaranteed to persist beyond the scope of the
-    ///   distributed object.
-    static Teuchos::RCP<const vector_space_type> 
-    getRange (const Epetra_Operator& A);
-    //@}
-    
   };
 
-  // Forward declaration of InnerSolver class for EpetraInnerSolver.
-  template<class Scalar, class MV, class OP>
-  class InnerSolver;
-  
-  /// \class EpetraInnerSolver
-  /// \brief Adaptor between InnerSolver and Epetra_Operator.
-  /// 
-  /// This wrapper lets you use as an Epetra_Operator any
-  /// implementation of Belos::InnerSolver<Scalar, MV, OP> with MV =
-  /// Epetra_MultiVector and OP = Epetra_Operator.
-  class EpetraInnerSolver : public Epetra_Operator {
-  public:
-    typedef double scalar_type;
-    typedef Epetra_MultiVector multivector_type;
-    typedef Epetra_Operator operator_type;
-    typedef OperatorTraits<scalar_type, multivector_type, operator_type>::vector_space_type vector_space_type;
-    typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
-
-    /// \brief Constructor.
-    ///
-    /// \param solver [in/out] The actual inner solver implementation.
-    EpetraInnerSolver (const Teuchos::RCP<inner_solver_type>& solver);
-
-    //! Virtual destructor implementation, for correctness.
-    virtual ~EpetraInnerSolver() {}
-
-    /// \brief Return the underlying inner solver object.
-    ///
-    /// This breach of encapsulation makes EpetraInnerSolver into an
-    /// "envelope."  First, the inner solver hides inside an
-    /// Epetra_Operator until it gets inside a Belos solver that
-    /// recognizes the Epetra_Operator as an EpetraInnerSolver.  Then,
-    /// the Belos solver can take the InnerSolver out of the
-    /// "envelope," destroy the envelope (by setting its RCP to null)
-    /// if it wants, and work directly with the (more feature-rich)
-    /// InnerSolver.
-    ///
-    /// \note This method is declared const in order to cheat
-    ///   Belos::LinearProblem into letting the operator act like an
-    ///   envelope.  It's technically correct to call this method
-    ///   const, since it doesn't let the caller assign to the pointer
-    ///   (even though it lets the caller call nonconst methods on the
-    ///   InnerSolver).
-    Teuchos::RCP<inner_solver_type> getInnerSolver() const {
-      return solver_;
-    }
-
-    /// \brief Compute Y := solver(Y,X).
-    ///
-    /// \warning X and Y may not alias one another.
-    ///
-    /// \note The contents of Y on input may be relevant, depending on
-    ///   the inner solver implementation.  For example, Y on input
-    ///   may be treated as the initial guess of an iterative solver.
-    ///
-    /// \return Zero on success, else nonzero.
-    int Apply (const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-
-    /// \brief Apply the inverse of an InnerSolver (not supported).
-    /// 
-    /// InnerSolver does not support applying the inverse of the
-    /// solver.  It seems like the inverse of solving AX=B should be
-    /// applying A.  However, this is not necessarily true, since the
-    /// solver may only be approximate.
-    ///
-    /// \return Zero if the inverse was successfully applied, else nonzero.
-    int ApplyInverse (const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-
-    /// \brief Set Apply() to apply the transpose if possible (it's not).
-    ///
-    /// If UseTranspose is true, all subsequent calls to Apply() will
-    /// attempt to apply the transpose operator, until \c
-    /// SetUseTranspose(false) is called.  If applying the transpose
-    /// operator is not supported, this method returns nonzero,
-    /// otherwise it returns zero.
-    int SetUseTranspose (bool UseTranspose);
-
-    /// Computation of the infinity norm (of the whole inner solver)
-    /// is not supported.  This method always throws an exception.
-    double NormInf() const;
-
-    //! Label for the Epetra_Operator implementation.
-    const char* Label() const;
-
-    //! Can you apply the transpose of the operator? (No, never.)
-    bool UseTranspose() const { return false; }
-
-    //! Can you compute the infinity norm of the operator? (No, never.)
-    bool HasNormInf() const { return false; }
-
-    /// \brief Temporary reference to the domain vector space of the operator.
-    ///
-    /// The temporary reference should be valid until destruction of
-    /// *this.  For a persistent view, call persistentDomainMap() instead.
-    const Epetra_Map& OperatorDomainMap() const;
-
-    /// \brief Temporary reference to the range vector space of the operator.
-    ///
-    /// The temporary reference should be valid until destruction of
-    /// *this.  For a persistent view, call persistentRangeMap() instead.
-    const Epetra_Map& OperatorRangeMap() const;
-
-    /// \brief Persistent view of the domain vector space of the operator.
-    const Teuchos::RCP<const vector_space_type>& persistentDomainMap() const {
-      return domain_;
-    }
-
-    /// \brief Persistent view of the range vector space of the operator.
-    const Teuchos::RCP<const vector_space_type>& persistentRangeMap() const {
-      return range_;
-    }
-
-    /// \brief The communicator associated with this Epetra object.
-    ///
-    /// \return A temporary reference to the communicator, which is
-    ///   valid within the scope of *this.
-    ///
-    /// \note I have interpreted this to mean the communicator
-    ///   associated with the range of the operator.  Epetra_CrsMatrix
-    ///   returns the communicator associated with the row Map (since
-    ///   its Epetra_DistObject parent constructor is called with
-    ///   rowMap as an argument), which may be different than the
-    ///   range Map.  I would imagine that all of an
-    ///   Epetra_CrsMatrix's maps should use the same communicator,
-    ///   otherwise sparse matrix-vector multiply wouldn't make sense.
-    ///   So it shouldn't really matter which map's communicator to
-    ///   return.
-    const Epetra_Comm& Comm() const {
-      return range_->Comm();
-    }
-
-  private:
-    /// \brief Default construction is not allowed.
-    ///
-    /// It's not sensible to construct this object without an
-    /// instantiated InnerSolver implementation, so we forbid it
-    /// syntactically.
-    EpetraInnerSolver ();
-
-    //! The inner solver implementation.
-    Teuchos::RCP<inner_solver_type> solver_;
-
-    /// \brief The domain vector space.
-    ///
-    /// \note We have to keep RCPs of the domain and range vector
-    ///   spaces around, because the Tpetra::Operator interface
-    ///   requires that we return "const RCP&" instead of "RCP" for
-    ///   the domain and range.  Instantiating a new RCP in the method
-    ///   and returning a const reference to it would result in a
-    ///   dangling reference.
-    Teuchos::RCP<const vector_space_type> domain_;
-
-    /// \brief The range vector space.
-    /// 
-    /// See note on \c domain_.
-    Teuchos::RCP<const vector_space_type> range_;    
-  };
-
-  /// \brief Specialization of makeInnerSolverOperator() for Epetra objects.
-  ///
-  /// Take an InnerSolver instance, and wrap it in an implementation
-  /// of the Epetra_Operator interface.  That way you can use it
-  /// alongside any other implementation of the Epetra_Operator
-  /// interface.
-  ///
-  /// \note This is necessary because Belos' solvers require that the
-  ///   preconditioner(s) and the matrix all have the same type (OP).
-  template<>
-  class InnerSolverTraits<double, Epetra_MultiVector, Epetra_Operator> {
-  public:
-    typedef double scalar_type;
-    typedef Epetra_MultiVector multivector_type;
-    typedef Epetra_Operator operator_type;
-    typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
-    typedef EpetraInnerSolver wrapper_type;
-
-    /// \brief Wrap the given inner solver in a wrapper_type.
-    ///
-    /// The wrapper_type class implements the operator_type interface,
-    /// which can be used directly in Belos.
-    static Teuchos::RCP<operator_type>
-    makeInnerSolverOperator (const Teuchos::RCP<inner_solver_type>& solver)
-    {
-      using Teuchos::rcp;
-      using Teuchos::rcp_implicit_cast;
-      return rcp_implicit_cast<operator_type> (rcp (new wrapper_type (solver)));
-    }
-
-    /// \brief Return the given wrapper's inner solver object.
-    ///
-    /// If op is an inner solver wrapper instance, return the inner
-    /// solver object.  Otherwise, throw an std::bad_cast exception.
-    ///
-    /// \note After calling this method, the inner solver object will
-    ///   persist beyond the scope of op.  Thus, if you don't care
-    ///   about the wrapper that implements the operator_type
-    ///   interface, you can get rid of the wrapper (by setting the
-    ///   RCP to null) and keep the inner solver.
-    static Teuchos::RCP<inner_solver_type>
-    getInnerSolver (const Teuchos::RCP<operator_type>& op)
-    {
-      using Teuchos::RCP;
-      using Teuchos::rcp_dynamic_cast;
-      RCP<wrapper_type> wrapper = rcp_dynamic_cast<wrapper_type> (op, true);
-      return wrapper->getInnerSolver();
-    }
-  };
-  
 } // end of Belos namespace 
 
 #endif 

@@ -94,7 +94,6 @@ APPEND_SET(HEADERS
   BelosTFQMRIter.hpp
   BelosTFQMRSolMgr.hpp
   BelosTypes.hpp
-  BelosVectorSpaceTraits.hpp
   ) 
 
 # CORE
