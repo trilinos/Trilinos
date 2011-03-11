@@ -58,6 +58,10 @@ void AZOO_set_stream_out(std::ostream& ostrm);
    for the output that Aztec would normally send to stderr.
 */
 void AZOO_set_stream_err(std::ostream& ostrm);
+
+/** C++ users can use this function to clear out and err streams
+*/
+void AZOO_clear_streams();
 #endif
 
 #endif

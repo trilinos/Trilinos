@@ -57,6 +57,11 @@ class az_ostream_out {
     strm_ = &ostrm;
   }
 
+  void clear_ostream()
+  {
+    strm_ = 0;
+  }
+
  private:
   az_ostream_out() : strm_(0) {}
 
@@ -84,6 +89,11 @@ class az_ostream_err {
   void set_ostream(std::ostream& ostrm)
   {
     strm_ = &ostrm;
+  }
+
+  void clear_ostream()
+  {
+    strm_ = 0;
   }
 
  private:
@@ -185,5 +195,16 @@ void AZOO_set_stream_err(std::ostream& ostrm)
   azerr.set_ostream(ostrm);
 
   azoo_printf_err = AZOO_printf_err;
+}
+
+/** AZOO_clear_streams sets the out and err streams to NULL
+*/
+void AZOO_clear_streams()
+{
+  az_ostream_out& azout = az_ostream_out::get_instance();
+  azout.clear_ostream();
+
+  az_ostream_err& azerr = az_ostream_err::get_instance();
+  azerr.clear_ostream();
 }
 

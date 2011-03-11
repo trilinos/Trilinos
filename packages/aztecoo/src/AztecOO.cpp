@@ -163,6 +163,7 @@ AztecOO::AztecOO(const AztecOO& source) {
 AztecOO::~AztecOO(void) {
   DeleteMemory();
   DeleteAzArrays();
+  AZOO_clear_streams();
 }
 
 //=============================================================================
