@@ -58,7 +58,7 @@ public:
   bool declare_relation( Entity & e_to,
                          const RelationIdentifier local_id,
                          unsigned sync_count,
-                         bool is_converse = false);
+                         bool is_back_relation = false);
 
   // Communication info access:
   bool insert( const EntityCommInfo & );

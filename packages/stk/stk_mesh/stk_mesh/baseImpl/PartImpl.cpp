@@ -70,11 +70,9 @@ PartImpl::PartImpl( MetaData          * arg_meta_data ,
 void PartImpl::set_primary_entity_rank( EntityRank entity_rank )
 {
   const bool rank_already_set = m_entity_rank != InvalidEntityRank && entity_rank != m_entity_rank;
-  const bool has_superset_other_than_universal = m_supersets.size() > 1;
   const bool has_subsets = m_subsets.size() > 0;
 
   ThrowErrorMsgIf( rank_already_set, " Error: Different entity rank has already been set on Part");
-  ThrowErrorMsgIf( has_superset_other_than_universal, " Error: Part has supersets other than universal");
   ThrowErrorMsgIf( has_subsets, " Error: Part has subsets");
 
   m_entity_rank = entity_rank;

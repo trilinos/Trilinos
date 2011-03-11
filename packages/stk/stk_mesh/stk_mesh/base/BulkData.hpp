@@ -286,6 +286,9 @@ public:
    *     'e_from' is a member of part_rel.m_root and
    *     the entity relation conforms to the part relation
    *     then 'e_to' has induced membership in part_rel.m_target.
+   *
+   * Note that relation-declarations must be symmetric across all
+   * sharers of the involved entities within a modification cycle.
    */
   void declare_relation( Entity & e_from ,
       Entity & e_to ,
