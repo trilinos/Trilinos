@@ -149,7 +149,7 @@ namespace stk {
                     {
                       continue;
                     }
-                  if (eMesh.sharesNodes(*part, *surfacePart))
+                  if (eMesh.isBoundarySurface(*part, *surfacePart))
                     {
                       std::cout << "tmp part [" << part->name() << "] shares sideset [" << surfacePart->name() << "]" << std::endl;
                       blocks[subDimRank].push_back(std::string("+"+surfacePart->name()));

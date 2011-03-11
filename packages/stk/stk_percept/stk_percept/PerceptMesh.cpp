@@ -1930,24 +1930,24 @@ namespace stk {
     }
 
     bool PerceptMesh::
-    sharesNodes(mesh::Part& part_1, mesh::Part& part_2)
+    isBoundarySurface(mesh::Part& block, mesh::Part& surface)
     {
-      EntityRank part_1_rank = part_1.primary_entity_rank();
-      EntityRank part_2_rank = part_2.primary_entity_rank();
-      // assert part_1_rank > part_2_rank
+      EntityRank block_rank = block.primary_entity_rank();
+      EntityRank surface_rank = surface.primary_entity_rank();
+      // assert block_rank > surface_rank
 
-      mesh::Selector part_1_selector(part_1);
-      mesh::Selector part_2_selector(part_2);
+      mesh::Selector block_selector(block);
+      mesh::Selector surface_selector(surface);
 
-      const std::vector<Bucket*> & buckets_1 = getBulkData()->buckets( part_1_rank );
-      const std::vector<Bucket*> & buckets_2 = getBulkData()->buckets( part_2_rank );
+      const std::vector<Bucket*> & buckets_1 = getBulkData()->buckets( block_rank );
+      const std::vector<Bucket*> & buckets_2 = getBulkData()->buckets( surface_rank );
 
       static std::vector<unsigned> element_side(27);
-      static std::vector<unsigned> part_2_node_ids(27);
+      static std::vector<unsigned> surface_node_ids(27);
 
       for ( std::vector<Bucket*>::const_iterator k = buckets_1.begin() ; k != buckets_1.end() ; ++k ) 
         {
-          if (part_1_selector(**k))   // and locally_owned_part  FIXME
+          if (block_selector(**k))   // and locally_owned_part  FIXME
             {
               Bucket & bucket = **k ;
 
@@ -1969,15 +1969,15 @@ namespace stk {
                       Entity & node = *elem_nodes[ inode ].entity();
                       //EntityId nid = node.identifier();
 
-                      // this element is a candidate for sharing a face with part_2
-                      if (node.bucket().member(part_2))
+                      // this element is a candidate for sharing a face with surface
+                      if (node.bucket().member(surface))
                         {
                           isCandidate = true;
-                          // FIXME at this point we know part_1 shares at least one node with part_2, which may be enough to return true here?
+                          // FIXME at this point we know block shares at least one node with surface, which may be enough to return true here?
                           break;
                         }
                     }
-                  // now check if the higher-rank part shares a face with the elements of part_2
+                  // now check if the higher-rank part shares a face with the elements of surface
                   if (isCandidate)
                     {
                       for (unsigned iface = 0; iface < cell_topo_data->side_count; iface++)
@@ -1996,7 +1996,7 @@ namespace stk {
                               if (break_bucket_loop)
                                 break;
 
-                              if (part_2_selector(**k_2))   // and locally_owned_part  FIXME
+                              if (surface_selector(**k_2))   // and locally_owned_part  FIXME
                                 {
                                   Bucket & bucket_2 = **k_2 ;
 
@@ -2010,14 +2010,14 @@ namespace stk {
                                       Entity& element_2 = bucket_2[iElement_2];
 
                                       const PairIterRelation& elem_nodes_2 = element_2.relations( mesh::Node );  
-                                      part_2_node_ids.resize(elem_nodes_2.size());
+                                      surface_node_ids.resize(elem_nodes_2.size());
                                       for (unsigned jnode = 0; jnode < elem_nodes_2.size(); jnode++)
                                         {
-                                          part_2_node_ids[jnode] = elem_nodes_2[jnode].entity()->identifier();
+                                          surface_node_ids[jnode] = elem_nodes_2[jnode].entity()->identifier();
                                         }
               
-                                      int perm = findPermutation(cell_topo.getTopology()->subcell[part_2_rank][iface].topology,
-                                                                 &element_side[0], &part_2_node_ids[0]);
+                                      int perm = findPermutation(cell_topo.getTopology()->subcell[surface_rank][iface].topology,
+                                                                 &element_side[0], &surface_node_ids[0]);
                                       if (perm < 0)
                                         {
                                           break_bucket_loop = true;
@@ -2025,7 +2025,7 @@ namespace stk {
                                         }
                                       else
                                         {
-                                          //std::cout << "tmp part_1 and part_2 share: " << part_1.name() << " " << part_2.name() << std::endl;
+                                          //std::cout << "tmp block and surface share: " << block.name() << " " << surface.name() << std::endl;
                                           return true;
                                         }
                                     }

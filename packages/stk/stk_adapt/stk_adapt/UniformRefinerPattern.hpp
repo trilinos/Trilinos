@@ -2401,7 +2401,9 @@ namespace stk {
                 if (part->name()[0] == '{')
                   continue;
 
-                bool doThisPart = (block_names_include.size() == 0);
+                //bool doThisPart = (block_names_include.size() == 0);
+                bool doThisPart = (block_names_ranks[mesh::Element].size() == 0);
+
                 if (!doThisPart)
                   {
                     if (found_include_only_block) 

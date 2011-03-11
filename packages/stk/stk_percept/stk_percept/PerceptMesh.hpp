@@ -239,7 +239,7 @@ namespace stk {
       SameRankRelation& adapt_parent_to_child_relations() { return m_adapt_parent_to_child_relations; }
 
       bool
-      sharesNodes(mesh::Part& part_1, mesh::Part& part_2);
+      isBoundarySurface(mesh::Part& block, mesh::Part& surface);
 
     private:
 
