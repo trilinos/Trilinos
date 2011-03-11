@@ -100,7 +100,9 @@ public:
                          Teuchos::RCP<std::vector<AppLID> > &lids);
 
 
-  /*! Constructor */
+  /*! Constructor 
+      This constructor does not need to be called by all processes.
+   */
   IdentifierMap();
 
   /*! Destructor */
@@ -120,6 +122,46 @@ public:
 
   /*! Set or reset application local IDs for this process*/
   void setLocalIds(Teuchos::RCP<std::vector<AppLID> > &ids);
+
+  /*! Return true if we are using the application global IDs 
+   *  for our internal global numbers 
+   */
+  bool gnosAreGids();
+
+  /*! Map application global IDs to internal global numbers or vice versa.
+
+      This is a local call.  If gid is a vector of application global IDs, then
+      gno will be set to the corresponding internal global numbers.  If the
+      gno vector contains internal global numbers, they will be translated
+      to application global IDs.  The application global IDs must be from
+      those supplied by this process.
+   */
+  void gidTranslate(std::vector<AppGID> &gid, std::vector<GNO> &gno);
+
+  /*! Map application local IDs to internal global numbers or vice versa.
+
+      This is a local call.  If lid is a vector of application local IDs, then
+      gno will be set to the corresponding internal global numbers.  If the
+      gno vector contains internal global numbers, they will be translated
+      to application local IDs.  The application local IDs must be from
+      those supplied by this process.
+   */
+  void lidTranslate(std::vector<AppLID> &lid, std::vector<GNO> &gno);
+
+  /*! Returns a smart pointer to the global number map.  
+
+   *  May be needed by the Model.  Should not be required by the InputAdapter.
+   */
+  Teuchos::RCP<Tpetra::Map<LNO, GNO> > &getGlobalMap();
+
+  /*! Map application global IDs to internal global numbers or vice versa.
+
+      All processes must call this.  The global IDs or global numbers
+      supplied may belong to another process.  This method will fill
+      in the empty vector with the corresponding id, and will fill the
+      proc vector with the owner of the global ID.
+   */
+  void gidGlobalTranslate(std::vector<AppGID> &gid, std::vector<GNO> &gno, std::vector<int> &proc);
 };
 
 }   // end namespace Z2

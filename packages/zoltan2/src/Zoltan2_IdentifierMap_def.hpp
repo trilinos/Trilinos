@@ -5,8 +5,6 @@
 //
 //                Copyright message goes here.   TODO
 //
-// Questions? Contact Lee Ann Riesen (lriesen@sandia.gov)
-//
 // ***********************************************************************
 // @HEADER
 
