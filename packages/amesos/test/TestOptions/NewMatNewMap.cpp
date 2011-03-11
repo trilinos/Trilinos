@@ -69,6 +69,8 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
     assert( ReindexRowMap==0 && ReindexColMap == 0 ) ; 
   }
 
+  int ierr = 0;
+
   int (*RowPermute)(int in) = 0;
   int (*ColPermute)(int in) = 0;
 
@@ -266,11 +268,12 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
     {
 
       int NumIndicesThisRow = 0;
-      assert( In.ExtractMyRowCopy( i, 
+      ierr = In.ExtractMyRowCopy( i, 
 				   In.MaxNumEntries(),
 				   NumIndicesThisRow,
 				   &ThisRowValues[0],
-				   &ThisRowIndices[0] ) == 0 ) ;
+				   &ThisRowIndices[0] );
+      assert( ierr == 0 ) ;
       for (int j = 0 ; j < NumIndicesThisRow ; j++ )
 	{
 	  PermutedGlobalColIndices[j] = MyPermutedGlobalColElementTable[ ThisRowIndices[j] ]  ;
@@ -311,10 +314,11 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
 	NumIndicesThisRow++  ;
 
       } 
-      assert( Out->InsertGlobalValues( MyPermutedGlobalRowElements[i], 
+      ierr = Out->InsertGlobalValues( MyPermutedGlobalRowElements[i], 
 				       NumIndicesThisRow,
 				       &ThisRowValues[0],
-				       &PermutedGlobalColIndices[0] ) >= 0 ); 
+				       &PermutedGlobalColIndices[0] );
+      assert( ierr >= 0 ); 
     }
 
   //
@@ -354,9 +358,11 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
     break;
   }
 #if 0
-  assert(Out->FillComplete( *PermutedDomainMap, *PermutedRangeMap )==0);
+  ierr = Out->FillComplete( *PermutedDomainMap, *PermutedRangeMap );
+  assert( ierr == 0 );
 #else
-  assert(Out->FillComplete( *OutDomainMap, *OutRangeMap )==0);
+  ierr = Out->FillComplete( *OutDomainMap, *OutRangeMap );
+  assert( ierr == 0 );
 #endif
 
 #if 0

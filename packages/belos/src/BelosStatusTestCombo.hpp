@@ -64,10 +64,12 @@
   There are three possible combinations:
   <ol>
   <li> OR combination:
-  If an OR combination is selected, the status returns Converged if any one of the subtest returns
+  If an OR combination is selected, the status returns Converged if any one of the subtest returns.
+  All of the tests are executed, whether or not any of them return Converged.
   as Converged.  
   <li> AND combination:
   If an AND combination is selected, the status returns Converged only when all subtests return as Converged.
+  All of the tests are executed, whether or not any of them return Failed.
   <li> SEQ combination:
   SEQ is a form of AND that will perform subtests in sequence.  If the first test returns Passed, Failed or Undefined,
   no other subtests are done, and the status is returned as Failed if the first test was Failed, or as
@@ -126,7 +128,9 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1, 
 		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test2);
 
-  //! Add another test to this combination.
+  /// \brief Add another test to this combination.
+  ///
+  /// Only add the test if doing so would not in infinite recursion.
   StatusTestCombo<ScalarType,MV,OP>& addStatusTest(const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& add_test);
 
   //! Destructor
@@ -136,13 +140,16 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   //! @name Status methods
   //@{ 
   
-  //! Check convergence status of the iterative solver: Passed, Failed or Undefined.
-  /*! This method checks to see if the convergence criteria are met using the current information from the 
-    iterative solver.
-  */
+  /// \brief Check convergence status of the iterative solver.
+  ///
+  /// Return one of the following values: Passed (the convergence
+  /// criteria are met), Failed (they are not met) or Undefined (we
+  /// can't tell).
   StatusType checkStatus( Iteration<ScalarType,MV,OP>* iSolver );
 
-  //! Return the result of the most recent CheckStatus call.
+  /// \brief Return the result of the most recent checkStatus call.
+  ///
+  /// If checkStatus has not yet been called, return the default status.
   StatusType getStatus() const { return(status_); };
 
   //@}
@@ -160,11 +167,11 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   //! @name Accessor methods
   //@{ 
 
-  //! Returns the maximum number of iterations set in the constructor.
-  ComboType getComboType() const {return(type_);}
+  //! Return the type of combination (OR, AND, or SEQ).
+  ComboType getComboType() const { return type_; }
 
-  //! Returns the vector of status tests
-  st_vector getStatusTests() {return(tests_);}
+  //! Return the vector of status tests
+  st_vector getStatusTests() { return tests_; }
 
   //@}
 
@@ -198,14 +205,14 @@ protected:
 
   //! @name Private data members.
   //@{ 
-  //! Type of test
+  //! The type of combination (OR, AND, or SEQ)
   ComboType type_;
 
   //! Vector of generic status tests
   st_vector tests_;
 
-  //! Status
-   StatusType status_;
+  /// \brief The current status
+  StatusType status_;
   //@}
 
 };

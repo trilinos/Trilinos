@@ -2070,6 +2070,11 @@ namespace stk {
                 if (cell_topo.getDimension() > 1 && n_faces == 0) n_faces = 1; // 2D face has one "face"
                 //unsigned n_sides = cell_topo.getSideCount();
 
+                // check for shell line elements
+                int topoDim = cell_topo.getDimension();
+                getTopoDim(topoDim, fromTopoKey);
+                if (topoDim == 1) n_faces = 0;
+
                 for (unsigned i_edge = 0; i_edge < n_edges; i_edge++)
                   {
                     const UInt *edge_nodes = ref_topo.edge_node(i_edge);
@@ -2099,8 +2104,31 @@ namespace stk {
 
                         const UInt *face_nodes = ref_topo.face_node(i_face);
 
-                        for (unsigned j_node = 0; j_node < 9; j_node++) // FIXME
+                        unsigned j_node_end = 0;
+#if 0
+                        bool lfnd = false;
+                        for (unsigned j_node = 0; j_node < 9; j_node++) 
                           {
+                            if (face_nodes[j_node] == END_UINT_ARRAY)
+                              {
+                                lfnd = true;
+                                j_node_end = j_node;
+                                break;
+                              }
+                          }
+                        if (!lfnd)
+                          {
+                            throw std::logic_error("findRefinedCellParamCoordsLinear logic err # 0");
+                          }
+#endif
+                        j_node_end = 9;  //!#
+
+                        for (unsigned j_node = 0; j_node < j_node_end; j_node++) // FIXME
+                          {
+                            if (cell_topo.getDimension() != 2 && face_nodes[j_node] == END_UINT_ARRAY)
+                              {
+                                throw std::logic_error("findRefinedCellParamCoordsLinear logic err # 1");
+                              }
                             unsigned fn =  cell_topo.getDimension()==2 ? j_node : face_nodes[j_node];
 
                             if (childNodeIdx == fn)
@@ -2111,8 +2139,13 @@ namespace stk {
                                   {
                                     param_coord[ix] = 0.0;
                                   }
+
                                 for (unsigned k_node = 0; k_node < 4; k_node++)
                                   {
+                                    if (cell_topo.getDimension() != 2 && face_nodes[k_node] == END_UINT_ARRAY)
+                                      {
+                                        throw std::logic_error("findRefinedCellParamCoordsLinear logic err # 2");
+                                      }
                                     unsigned fnk = cell_topo.getDimension()==2 ? k_node : face_nodes[k_node];
                                     for (unsigned ix=0; ix < 3; ix++)
                                       {
@@ -2135,11 +2168,13 @@ namespace stk {
                   {
                     param_coord[ix] = 0.0;
                   }
-                for (unsigned k_node = 0; k_node < 8; k_node++)
+                unsigned nvert = FromTopology::vertex_count;
+                double dnvert = (double)nvert;
+                for (unsigned k_node = 0; k_node < nvert; k_node++)
                   {
                     for (unsigned ix=0; ix < 3; ix++)
                       {
-                        param_coord[ix] += ref_topo_x[k_node].parametric_coordinates[ix]/8.0;
+                        param_coord[ix] += ref_topo_x[k_node].parametric_coordinates[ix]/dnvert;
                       }
                   }
               }
@@ -2299,7 +2334,8 @@ namespace stk {
         return part_cell_topo_data;
       }
 
-      void setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology=true)
+      void setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, 
+                          bool sameTopology=true)
       {
         EXCEPTWATCH;
         if (block_names_ranks.size() == 0)
@@ -2325,12 +2361,13 @@ namespace stk {
             if (m_primaryEntityRank != irank)
               continue;
 
-            std::vector<std::string>& block_names = block_names_ranks[irank];
-            //if (block_names.size() == 0 || m_primaryEntityRank != irank)
+            std::vector<std::string>& block_names_include = block_names_ranks[irank];
+            //if (block_names_include.size() == 0 || m_primaryEntityRank != irank)
 
             //const mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
             mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
-            for (unsigned ib = 0; ib < block_names.size(); ib++)
+            bool found_include_only_block = false;
+            for (unsigned ib = 0; ib < block_names_include.size(); ib++)
               {
                 bool foundPart = false;
                 //for (mesh::PartVector::const_iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
@@ -2339,7 +2376,11 @@ namespace stk {
                     //mesh::Part * const part = *i_part ;
                     mesh::Part * part = *i_part ;
 
-                    if (part->name() == block_names[ib])
+                    std::string bname = block_names_include[ib];
+                    if ('+' == bname[0])
+                      found_include_only_block = true;
+                    bname = bname.substr(1, bname.length()-1);
+                    if (part->name() == bname)
                       {
                         foundPart = true;
                         break;
@@ -2347,7 +2388,7 @@ namespace stk {
                   }
                 if (!foundPart)
                   {
-                    std::string msg = "UniformRefinerPattern::setNeededParts unknown block name: " + block_names[ib];
+                    std::string msg = "UniformRefinerPattern::setNeededParts unknown block name: " + block_names_include[ib];
                     throw std::runtime_error(msg.c_str());
                   }
               }
@@ -2360,13 +2401,44 @@ namespace stk {
                 if (part->name()[0] == '{')
                   continue;
 
-                bool doThisPart = (block_names.size() == 0);
-                for (unsigned ib = 0; ib < block_names.size(); ib++)
+                //bool doThisPart = (block_names_include.size() == 0);
+                bool doThisPart = (block_names_ranks[mesh::Element].size() == 0);
+
+                if (!doThisPart)
                   {
-                    if (part->name() == block_names[ib])
+                    if (found_include_only_block) 
                       {
-                        doThisPart=true;
-                        break;
+                        doThisPart = false;
+                        for (unsigned ib = 0; ib < block_names_include.size(); ib++)
+                          {
+                            std::string bname = block_names_include[ib];
+                            if ('+' == bname[0])
+                              {
+                                bname = bname.substr(1, bname.length()-1);
+                                if (part->name() == bname)
+                                  {
+                                    doThisPart = true;
+                                    break;
+                                  }
+                              }
+                          }
+                      }
+                    // check for excludes
+                    if (doThisPart)
+                      {
+                        for (unsigned ib = 0; ib < block_names_include.size(); ib++)
+                          {
+                            std::string bname = block_names_include[ib];
+                            if ('-' == bname[0])
+                              {
+                                bname = bname.substr(1, bname.length()-1);
+                                if (part->name() == bname)
+                                  {
+                                    doThisPart = false;
+                                    break;
+                                  }
+                              }
+                          }
                       }
                   }
                 bool isOldElementsPart = ( (part->name()).find(m_oldElementsPartName) != std::string::npos);
@@ -2490,11 +2562,26 @@ namespace stk {
           }
         if (!found)
           {
+            std::cout << "URP::change_entity_parts couldn't find part, listing parts: " << std::endl;
             std::cout << "m_fromParts= " << m_fromParts << std::endl;
             for (unsigned i_part = 0; i_part < m_fromParts.size(); i_part++)
               {
                 std::cout << "i_part = " << i_part << " m_fromParts= " << m_fromParts[i_part]->name() << std::endl;
               }
+            bool found_in_another_part = false;
+
+            mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+            for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
+              {
+                mesh::Part *  part = *i_part ;
+
+                if (old_owning_elem.bucket().member(*part))
+                  {
+                    std::cout << "found_in_another_part part name= " << part->name() << std::endl;
+                    found_in_another_part = true;
+                  }
+              }
+
             throw std::runtime_error("URP::change_entity_parts couldn't find part");
           }
       }

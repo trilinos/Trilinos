@@ -56,6 +56,9 @@ namespace Stokhos {
     //! Destructor
     virtual ~UserDefinedQuadrature() {}
 
+    //! Get number of quadrature points
+    virtual ordinal_type size() const { return quad_weights->size(); }
+
     //! Get quadrature points
     virtual const Teuchos::Array< Teuchos::Array<value_type> >& 
     getQuadPoints() const;

@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
 #include <math.h>
+
 #include "zz_const.h"
 #include "zz_util_const.h"
 #include "zoltan_dd.h"

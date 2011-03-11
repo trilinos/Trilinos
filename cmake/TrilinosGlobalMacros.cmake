@@ -182,6 +182,7 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/packages
     ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/r.*
     ${Trilinos_SOURCE_DIR}/commonTools/scripts
+    ${Trilinos_SOURCE_DIR}/commonTools/release
     ${Trilinos_SOURCE_DIR}/commonTools/git
     ${Trilinos_SOURCE_DIR}/packages/common/DoxyfilePackageTemplate
     ${Trilinos_SOURCE_DIR}/stamp-h.in

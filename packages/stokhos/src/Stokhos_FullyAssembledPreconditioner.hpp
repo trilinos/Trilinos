@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -34,7 +32,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Stokhos_SGPreconditioner.hpp"
-#include "Stokhos_PreconditionerFactory.hpp"
+#include "Stokhos_AbstractPreconditionerFactory.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 namespace Stokhos {
@@ -49,7 +47,7 @@ namespace Stokhos {
 
     //! Constructor 
     FullyAssembledPreconditioner(
-      const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory,
+      const Teuchos::RCP<Stokhos::AbstractPreconditionerFactory>& prec_factory,
       const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     
     //! Destructor
@@ -134,7 +132,7 @@ namespace Stokhos {
     std::string label;
 
     //! Stores factory for building preconditioner
-    Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory;
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> prec_factory;
 
     //! Stores preconditioner
     Teuchos::RCP<Epetra_Operator> prec;

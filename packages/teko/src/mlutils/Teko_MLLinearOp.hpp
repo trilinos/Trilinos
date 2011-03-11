@@ -44,6 +44,9 @@ public:
    virtual void describe(Teuchos::FancyOStream & out_arg,
                          const Teuchos::EVerbosityLevel verbLevel) const;
 
+   Teuchos::RCP<const ML_Epetra::MultiLevelPreconditioner> getMLPreconditioner() const;
+   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> getMLPreconditioner();
+
 protected:
 
    void extractConversionInformation(ML_Epetra::MultiLevelPreconditioner & mlPrec);
@@ -62,6 +65,8 @@ private:
    MLLinearOp();
    MLLinearOp(const MLLinearOp &);
 };
+
+Teuchos::RCP<const ML_Epetra::MultiLevelPreconditioner> getMLPreconditioner(const Teko::LinearOp & lo);
 
 }
 

@@ -47,6 +47,9 @@ namespace Stokhos {
     //! Destructor
     virtual ~Quadrature() {}
 
+    //! Get number of quadrature points
+    virtual ordinal_type size() const = 0;
+
     //! Get quadrature points
     /*!
      * Array is dimensioned Q-by-d where Q is the number of quadrature

@@ -39,33 +39,44 @@
 namespace TSQR {
   namespace TBB {
     
+    /// \class ApplyTask
+    /// \brief TBB task for recursive TSQR "apply Q factor" phase.
+    ///
     template< class LocalOrdinal, class Scalar, class TimerType >
     class ApplyTask : public tbb::task {
     public:
-      typedef MatView< LocalOrdinal, Scalar > mat_view;
-      typedef ConstMatView< LocalOrdinal, Scalar > const_mat_view;
-      typedef std::pair< mat_view, mat_view > split_t;
-      typedef std::pair< const_mat_view, const_mat_view > const_split_t;
-      typedef std::pair< const_mat_view, mat_view > top_blocks_t;
-      typedef std::vector< top_blocks_t > array_top_blocks_t;
+      typedef MatView<LocalOrdinal, Scalar> mat_view;
+      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view;
+      typedef std::pair<mat_view, mat_view> split_t;
+      typedef std::pair<const_mat_view, const_mat_view> const_split_t;
+      typedef std::pair<const_mat_view, mat_view> top_blocks_t;
+      typedef std::vector<top_blocks_t> array_top_blocks_t;
 
-      /// Results of SequentialTsqr for each core.
-      typedef typename SequentialTsqr< LocalOrdinal, Scalar >::FactorOutput SeqOutput;
+      /// \typedef SeqOutput
+      /// Result of SequentialTsqr for each thread.
+      typedef typename SequentialTsqr<LocalOrdinal, Scalar>::FactorOutput SeqOutput;
+      /// \typedef ParOutput
+      ///
       /// Array of ncores "local tau arrays" from parallel TSQR.
       /// (Local Q factors are stored in place.)
-      typedef std::vector< std::vector< Scalar > > ParOutput;
-      /// factor() returns a pair: the results of SequentialTsqr for
-      /// data on each core, and the results of combining the data on
-      /// the cores.
-      typedef typename std::pair< std::vector< SeqOutput >, ParOutput > FactorOutput;
+      typedef std::vector<std::vector<Scalar> > ParOutput;
+      /// \typedef FactorOutput
+      /// Result of SequentialTsqr for the data on each thread,
+      /// and the result of combining the threads' data.
+      typedef typename std::pair<std::vector<SeqOutput>, ParOutput> FactorOutput;
 
+      /// \brief Constructor.
+      ///
+      /// \note The timing references are only modified by one thread
+      ///   at a time; recursive calls use distinct references and
+      ///   combine the results.
       ApplyTask (const size_t P_first__, 
 		 const size_t P_last__,
-		 ConstMatView< LocalOrdinal, Scalar > Q,
-		 MatView< LocalOrdinal, Scalar > C,
+		 ConstMatView<LocalOrdinal, Scalar> Q,
+		 MatView<LocalOrdinal, Scalar> C,
 		 array_top_blocks_t& top_blocks, 
 		 const FactorOutput& factor_output,
-		 const SequentialTsqr< LocalOrdinal, Scalar >& seq,
+		 const SequentialTsqr<LocalOrdinal, Scalar>& seq,
 		 double& my_seq_timing,
 		 double& min_seq_timing,
 		 double& max_seq_timing,
@@ -84,19 +95,13 @@ namespace TSQR {
 	contiguous_cache_blocks_ (contiguous_cache_blocks)
       {}
 
-      tbb::task* execute () {
+      tbb::task* execute () 
+      {
 	if (P_first_ > P_last_ || Q_.empty() || C_.empty())
 	  return NULL;
 	else if (P_first_ == P_last_)
 	  {
-	    TimerType timer("");
-	    timer.start();
-	    const std::vector< SeqOutput >& seq_outputs = factor_output_.first;
-	    seq_.apply (apply_type_, Q_.nrows(), Q_.ncols(), 
-			Q_.get(), Q_.lda(), seq_outputs[P_first_], 
-			C_.ncols(), C_.get(), C_.lda(), 
-			contiguous_cache_blocks_);
-	    my_seq_timing_ = timer.stop();
+	    execute_base_case ();
 	    return NULL;
 	  }
 	else
@@ -109,6 +114,17 @@ namespace TSQR {
 	    split_t C_split = 
 	      partitioner_.split (C_, P_first_, P_mid, P_last_,
 				  contiguous_cache_blocks_);
+
+	    // The partitioner may decide that the current blocks Q_
+	    // and C_ have too few rows to be worth splitting.  In
+	    // that case, Q_split.second and C_split.second (the
+	    // bottom block) will be empty.  We can deal with this by
+	    // treating it as the base case.
+	    if (Q_split.second.empty() || Q_split.second.nrows() == 0)
+	      {
+		execute_base_case ();
+		return NULL;
+	      }
 
 	    double top_timing;
 	    double top_min_timing = 0.0;
@@ -152,14 +168,27 @@ namespace TSQR {
       mat_view C_;
       array_top_blocks_t& top_blocks_;
       const FactorOutput& factor_output_;
-      SequentialTsqr< LocalOrdinal, Scalar > seq_;
+      SequentialTsqr<LocalOrdinal, Scalar> seq_;
       TSQR::ApplyType apply_type_;
-      TSQR::Combine< LocalOrdinal, Scalar > combine_;
-      Partitioner< LocalOrdinal, Scalar > partitioner_;
+      TSQR::Combine<LocalOrdinal, Scalar> combine_;
+      Partitioner<LocalOrdinal, Scalar> partitioner_;
       double& my_seq_timing_;
       double& min_seq_timing_;
       double& max_seq_timing_;
       bool contiguous_cache_blocks_;
+
+      void 
+      execute_base_case ()
+      {
+	TimerType timer("");
+	timer.start();
+	const std::vector<SeqOutput>& seq_outputs = factor_output_.first;
+	seq_.apply (apply_type_, Q_.nrows(), Q_.ncols(), 
+		    Q_.get(), Q_.lda(), seq_outputs[P_first_], 
+		    C_.ncols(), C_.get(), C_.lda(), 
+		    contiguous_cache_blocks_);
+	my_seq_timing_ = timer.stop();
+      }
 
       void 
       apply_pair (const size_t P_top, 
@@ -173,8 +202,8 @@ namespace TSQR {
 	mat_view& C_bot = top_blocks_[P_bot].second;
 
 	const ParOutput& par_output = factor_output_.second;
-	const std::vector< Scalar >& tau = par_output[P_bot];
-	std::vector< Scalar > work (C_top.ncols());
+	const std::vector<Scalar>& tau = par_output[P_bot];
+	std::vector<Scalar> work (C_top.ncols());
 	combine_.apply_pair (apply_type_, C_top.ncols(), Q_bot.ncols(), 
 			     Q_bot.get(), Q_bot.lda(), &tau[0],
 			     C_top.get(), C_top.lda(), 

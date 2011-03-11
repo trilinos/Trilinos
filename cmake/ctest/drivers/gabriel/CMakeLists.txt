@@ -1,8 +1,8 @@
 TRILINOS_DRIVER_SETUP()
 
-# Set a timeout of 6 hours for an individual build run in parallel with other
+# Set a timeout of 7 hours for an individual build run in parallel with other
 # builds
-SET(TIMEOUT_MINUTES 360)
+SET(TIMEOUT_MINUTES 420)
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_DEBUG_PS

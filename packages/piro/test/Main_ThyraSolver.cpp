@@ -43,11 +43,9 @@
 
 #include "Piro_ConfigDefs.hpp"
 
-#ifdef  NOX_NOT_YET_CONVERTED_TO_THYRA
 #ifdef Piro_ENABLE_NOX
 #include "Piro_NOXSolver.hpp"
-#include "Piro_LOCASolver.hpp"
-#endif
+//#include "Piro_LOCASolver.hpp"
 #endif
 #ifdef Piro_ENABLE_Rythmos
 #include "Piro_RythmosSolver.hpp"
@@ -76,15 +74,15 @@ int main(int argc, char *argv[]) {
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
  
-#ifdef  NOX_NOT_YET_CONVERTED_TO_THYRA
+#ifdef NO_LOCA_YET
   for (int iTest=0; iTest<3; iTest++) {
 #else
-  for (int iTest=2; iTest<3; iTest++) {
+  for (int iTest=0; iTest<3; iTest+=2) {
 #endif
 
     if (doAll) {
       switch (iTest) {
-       case 0: inputFile="input_Solve_NOX_1.xml"; break;
+       case 0: inputFile="input_Solve_NOX_2.xml"; break;
        case 1: inputFile="input_Solve_LOCA_1.xml"; break;
        case 2: inputFile="input_Solve_Rythmos_1.xml"; break;
        default : cout << "iTest logic error " << endl; exit(-1);
@@ -132,14 +130,14 @@ int main(int argc, char *argv[]) {
       thyraModel = Thyra::epetraModelEvaluator(epetraModel,lowsFactory);
 
 
-#ifdef  NOX_NOT_YET_CONVERTED_TO_THYRA
 #ifdef Piro_ENABLE_NOX
       if (solver=="NOX") {
-        piro = rcp(new Piro::NOXSolver(piroParams, thyraModel));
+        piro = rcp(new Piro::NOXSolver<double>(piroParams, thyraModel));
       }
-      else if (solver=="LOCA") {
-        piro = rcp(new Piro::LOCASolver(
-                       piroParams, thyraModel, Teuchos::null));
+      else
+#ifdef NO_LOCA_YET
+ if (solver=="LOCA") {
+        piro = rcp(new Piro::LOCASolver<double>( piroParams, thyraModel, Teuchos::null));
       }
       else
 #endif

@@ -285,7 +285,7 @@ main (int argc, char *argv[])
 	params = paramsCopy;
 	label = label + " (" + normalization + " normalization)";
       }
-    orthoMan = factory.makeOrthoManager (orthoManName, M, label, params);
+    orthoMan = factory.makeOrthoManager (orthoManName, M, outMan, label, params);
   }
 
   // "Prototype" multivector.  The test code will use this (via

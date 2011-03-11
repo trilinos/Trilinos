@@ -94,7 +94,10 @@ int Zoltan_Order (
   zz->Num_GID = gcomm[0];
 
   if (num_gid_entries != zz->Num_GID) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "num_gid_entries doesn't have the good value");
+    char msg[253];
+    sprintf(msg, "num_gid_entries=%d is not equal to parameter setting "
+                 "NUM_GID_ENTRIES=%d\n", num_gid_entries, zz->Num_GID);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     return (ZOLTAN_FATAL);
   }
 

@@ -17,6 +17,7 @@
 #include <stk_mesh/base/PartRelation.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/baseImpl/PartImpl.hpp>
+#include <stk_util/environment/ReportHandler.hpp>
 
 //----------------------------------------------------------------------
 
@@ -26,15 +27,15 @@ namespace mesh {
 namespace impl {
 
 
-void PartImpl::add_part_to_subset( Part & part) 
-{ 
-  insert( m_subsets, part ); 
+void PartImpl::add_part_to_subset( Part & part)
+{
+  insert( m_subsets, part );
 }
 
 
-void PartImpl::add_part_to_superset( Part & part ) 
-{ 
-  insert( m_supersets, part ); 
+void PartImpl::add_part_to_superset( Part & part )
+{
+  insert( m_supersets, part );
 }
 
 void PartImpl::add_relation( PartRelation relation )
@@ -66,6 +67,16 @@ PartImpl::PartImpl( MetaData          * arg_meta_data ,
     m_entity_rank( arg_rank )
 {}
 
+void PartImpl::set_primary_entity_rank( EntityRank entity_rank )
+{
+  const bool rank_already_set = m_entity_rank != InvalidEntityRank && entity_rank != m_entity_rank;
+  const bool has_subsets = m_subsets.size() > 0;
+
+  ThrowErrorMsgIf( rank_already_set, " Error: Different entity rank has already been set on Part");
+  ThrowErrorMsgIf( has_subsets, " Error: Part has subsets");
+
+  m_entity_rank = entity_rank;
+}
 
 
 //----------------------------------------------------------------------
@@ -74,7 +85,7 @@ PartImpl::PartImpl( MetaData          * arg_meta_data ,
 
 //----------------------------------------------------------------------
 
-} // namespace impl 
+} // namespace impl
 
 } // namespace mesh
 } // namespace stk

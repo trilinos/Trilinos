@@ -1,5 +1,5 @@
 #!/bin/bash
-# Edit path to where Trilinos is installed
+# Edit path to where Trilinos is installed, if not a standard system prefix
 #  (CMAKE_INSTALL_PREFIX in Trilinos configure)
 #
 # The ".."  at the end is the relative path from the current build dir
@@ -9,7 +9,7 @@
 rm CMakeCache.txt
 
 cmake \
- -D MYAPP_TRILINOS_DIR:FILEPATH=/home/turing/InstalledTrilinos10_6 \
+ -D Trilinos_PREFIX:PATH=/home/turing/InstalledTrilinos10_6 \
  -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
  ..
 

@@ -35,7 +35,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DependencyXMLConverterDB.hpp"
 #include "Teuchos_StandardDependencyXMLConverters.hpp"
-#include "Teuchos_ParameterList.cpp"
+#include "Teuchos_ParameterList.hpp"
 
 
 namespace Teuchos{
@@ -924,18 +924,19 @@ RANGE_VALIDATOR_TEST(llint)
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, DependencySerializationExceptions){
   
   RCP<DependencySheet> depSheet = rcp(new DependencySheet);
+
   TEST_THROW(RCP<ParameterList> missingDependeeList = 
-    getParametersFromXmlFile("MissingDependeeTag.xml", depSheet),
-    MissingDependeesException);
+	     getParametersFromXmlFile("MissingDependeeTag.xml", depSheet),
+	     MissingDependeesException);
   TEST_THROW(RCP<ParameterList> missingDependentsList = 
-    getParametersFromXmlFile("MissingDependentTag.xml", depSheet),
-    MissingDependentsException);
+	     getParametersFromXmlFile("MissingDependentTag.xml", depSheet),
+	     MissingDependentsException);
   TEST_THROW(RCP<ParameterList> missingDependeeList = 
-    getParametersFromXmlFile("MissingDependee.xml", depSheet),
-    MissingDependeeException);
+	     getParametersFromXmlFile("MissingDependee.xml", depSheet),
+	     MissingDependeeException);
   TEST_THROW(RCP<ParameterList> missingDependentList = 
-    getParametersFromXmlFile("MissingDependent.xml", depSheet),
-    MissingDependentException);
+	     getParametersFromXmlFile("MissingDependent.xml", depSheet),
+	     MissingDependentException);
 
   RCP<ParameterEntry> dependeeParam = rcp(new ParameterEntry(true));
   RCP<ParameterEntry> dependentParam = rcp(new ParameterEntry("blah"));

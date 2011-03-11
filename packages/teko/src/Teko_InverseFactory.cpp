@@ -137,35 +137,6 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
    return inv;
 }
 
-#if 0
-/** Build an inverse operator using a factory and a linear operator
-  * This functionality is only useful for Teko::PreconditionerFactory inverses.
-  */
-InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A,
-                             const PreconditionerState & parentState)
-{
-   Teko_DEBUG_SCOPE("buildInverse(factory,A,parentState)",10);
-   InverseLinearOp inv;
-   try {
-      inv = factory.buildInverse(A,parentState);
-   }
-   catch(std::exception & e) {
-      RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
-
-      *out << "Teko: \"buildInverse\" could not construct the inverse operator using ";
-      *out << "\"" << factory.toString() << "\"" << std::endl;
-      *out << std::endl;
-      *out << "*** THROWN EXCEPTION ***\n";
-      *out << e.what() << std::endl;
-      *out << "************************\n";
-      
-      throw e;
-   }
-
-   return inv;
-}
-#endif
-
 /** Build an inverse operator using a factory and a linear operator
   *
   * \param[in] factory The inverse factory used to construct the inverse
@@ -199,46 +170,6 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A,c
 
    return inv;
 }
-
-#if 0
-/** Build an inverse operator using a factory and a linear operator
-  * This functionality is only useful for Teko::PreconditionerFactory inverses.
-  *
-  * \param[in] factory The inverse factory used to construct the inverse
-  *                    operator
-  * \param[in] A       Linear operator whose inverse is required
-  * \param[in] precOp  Preconditioning operator
-  * \param[in] parentState Current state object to be used. Only useful for preconditioners.
-  *
-  * \returns An (approximate) inverse operator is returned for the operator <code>A</code>.
-  *
-  * \relates PreconditionerInverseFactory InverseFactory
-  */
-InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & linearOp,
-                             const LinearOp & precOp,
-                             const PreconditionerState & parentState)
-{
-   Teko_DEBUG_SCOPE("buildInverse(factory,A,precOp,parentState)",10);
-   InverseLinearOp inv;
-   try {
-      inv = factory.buildInverse(linearOp,precOp,parentState);
-   }
-   catch(std::exception & e) {
-      RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
-
-      *out << "Teko: \"buildInverse\" could not construct the inverse operator using ";
-      *out << "\"" << factory.toString() << "\"" << std::endl;
-      *out << std::endl;
-      *out << "*** THROWN EXCEPTION ***\n";
-      *out << e.what() << std::endl;
-      *out << "************************\n";
-      
-      throw e;
-   }
-
-   return inv;
-}
-#endif
 
 /** Using a prebuilt linear operator, use factory to build an inverse operator
   * given a new forward operator.

@@ -1161,7 +1161,8 @@ int FEI_Implementation::getBlockNodeIDList(GlobalID elemBlockID,
   int offset = 0;
   for(int i=0; i<numActiveNodes; i++) {
     const NodeDescriptor* node = NULL;
-    CHK_ERR( nodeDB.getNodeAtIndex(i, node) );
+    nodeDB.getNodeAtIndex(i, node);
+    if (node==NULL) continue;
     if (node->containedInBlock(elemBlockID))
       nodeIDs[offset++] = node->getGlobalNodeID();
     if (offset == numNodes) break;

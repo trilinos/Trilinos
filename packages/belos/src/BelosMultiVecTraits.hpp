@@ -63,7 +63,7 @@ namespace Belos {
   /*! \brief This is the default struct used by MultiVecTraits<ScalarType, MV> class to produce a
       compile time error when the specialization does not exist for multivector type <tt>MV</tt>.
   */
-  template< class ScalarType, class MV >
+  template<class ScalarType, class MV>
   struct UndefinedMultiVecTraits
   {
     //! This function should not compile if there is an attempt to instantiate!
@@ -71,7 +71,9 @@ namespace Belos {
       that the template specialization of Belos::MultiVecTraits class for type <tt>MV</tt> does
       not exist, or is not complete.
     */
-    static inline ScalarType notDefined() { return MV::this_type_is_missing_a_specialization(); };
+    static inline ScalarType notDefined() { 
+      return MV::this_type_is_missing_a_specialization(); 
+    }
   };
 
   /*! \brief Virtual base class which defines basic traits for the multi-vector type.
@@ -85,7 +87,6 @@ namespace Belos {
   class MultiVecTraits 
   {
   public:
-
     //! @name Creation methods
     //@{
 

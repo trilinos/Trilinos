@@ -268,7 +268,7 @@ main (int argc, char *argv[])
 	params = paramsCopy;
 	label = label + " (" + normalization + " normalization)";
       }
-    orthoMan = factory.makeOrthoManager (orthoManName, M, label, params);
+    orthoMan = factory.makeOrthoManager (orthoManName, M, outMan, label, params);
   }
 
   // Whether the specific OrthoManager subclass promises to compute

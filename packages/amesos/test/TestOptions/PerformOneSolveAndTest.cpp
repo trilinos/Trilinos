@@ -17,7 +17,6 @@ relerror = 1.3e15; relresidual=1e15; return(1);}  }\
 #include "Epetra_LinearProblem.h"
 #include "PerformOneSolveAndTest.h"
 #include "PartialFactorization.h"
-#include "CreateTridi.h"
 #include "NewMatNewMap.h" 
 #include "Amesos_TestRowMatrix.h" 
 
@@ -93,6 +92,8 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 			    int ExpectedError )
 {
 
+  int ierr = 0;
+
   bool AddToAllDiagonalElements =  ParamList.get( "AddZeroToDiag", false ) ;
 
 
@@ -164,9 +165,11 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     Epetra_Vector AddConstVecToDiag( MyMatWithDiag->RowMap() );
     AddConstVecToDiag.PutScalar( AddToDiag );
 
-    assert( MyMatWithDiag->ExtractDiagonalCopy( Diag ) == 0 );
+    ierr = MyMatWithDiag->ExtractDiagonalCopy( Diag );
+    assert( ierr == 0 );
     Diag.Update( 1.0, AddConstVecToDiag, 1.0 ) ; 
-    assert(MyMatWithDiag->ReplaceDiagonalValues( Diag ) >= 0 ) ;   // This may return 1 indicating that structurally non-zero elements were left untouched. 
+    ierr = MyMatWithDiag->ReplaceDiagonalValues( Diag );   // This may return 1 indicating that structurally non-zero elements were left untouched. 
+    assert( ierr >= 0 );
 
       InMat->SetTracebackMode( oldtracebackmode ) ;   
   } else { 

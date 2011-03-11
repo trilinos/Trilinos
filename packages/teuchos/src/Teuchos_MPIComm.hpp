@@ -132,6 +132,8 @@ namespace Teuchos
       static const int FLOAT;
       //! Double data type
       static const int DOUBLE;
+      //! Double/int structdata type
+      static const int DOUBLE_INT;
       //! Character data type
       static const int CHAR;
       //@}
@@ -144,6 +146,10 @@ namespace Teuchos
       static const int MIN;
       //! Maximize operation
       static const int MAX;
+      //! Minimize operation
+      static const int MINLOC;
+      //! Maximize operation
+      static const int MAXLOC;
       //! Dot-product (Multiplication) operation
       static const int PROD;
       //@}

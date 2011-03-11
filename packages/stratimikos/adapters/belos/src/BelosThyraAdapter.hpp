@@ -34,9 +34,9 @@
 #ifndef BELOS_THYRA_ADAPTER_HPP
 #define BELOS_THYRA_ADAPTER_HPP
 
+#include "BelosConfigDefs.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
-#include "BelosConfigDefs.hpp"
 
 #include <Thyra_DetachedMultiVectorView.hpp>
 #include <Thyra_MultiVectorBase.hpp>
@@ -53,14 +53,12 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////////////
 
-  /*!  \brief Template specialization of Belos::MultiVecTraits class using the
-    Thyra::MultiVectorBase class.
-
-    This interface will ensure that any implementation of MultiVectorBaseClass 
-    will be accepted by the Belos templated solvers.  
-
-  */
-
+  /// \brief Specialization of MultiVecTraits using Thyra::MultiVectorBase.
+  ///
+  /// This is a partial specialization of Belos::MultiVecTraits class
+  /// using the Thyra::MultiVectorBase class.  It will ensure that any
+  /// implementation of Thyra::MultiVectorBase will be accepted by the
+  /// Belos templated solvers.
   template<class ScalarType>
   class MultiVecTraits< ScalarType, Thyra::MultiVectorBase<ScalarType> >
   {
@@ -68,6 +66,7 @@ namespace Belos {
     typedef Thyra::MultiVectorBase<ScalarType> TMVB;
     typedef Teuchos::ScalarTraits<ScalarType> ST;
     typedef typename ST::magnitudeType magType;
+
   public:
 
     /** \name Creation methods */
@@ -499,32 +498,32 @@ namespace Belos {
   //
   ///////////////////////////////////////////////////////////////////////// 
 
-  /*!  \brief Template specialization of Belos::OperatorTraits class using the
-    Thyra::LinearOpBase virtual base class and Thyra::MultiVectorBase class.
-
-    This interface will ensure that any LinearOpBase and MultiVectorBase
-    implementations will be accepted by the Belos templated solvers.
-
-  */
-
+  /// \brief Specialization of OperatorTraits for Thyra objects.
+  ///
+  /// This is a partial specialization of the Belos::OperatorTraits
+  /// traits class with Thyra::LinearOpBase as the operator type, and
+  /// Thyra::MultiVectorBase class as the multivector type.  This
+  /// interface will ensure that any LinearOpBase and MultiVectorBase
+  /// implementations will be accepted by the Belos templated solvers.
   template <class ScalarType> 
   class OperatorTraits < ScalarType, Thyra::MultiVectorBase<ScalarType>, Thyra::LinearOpBase<ScalarType> >
   {
   private:
     typedef Thyra::MultiVectorBase<ScalarType> TMVB;
     typedef Thyra::LinearOpBase<ScalarType>    TLOB;
+
   public:
-    
-    /*! \brief This method takes the MultiVectorBase \c x and
-      applies the LinearOpBase \c Op to it resulting in the MultiVectorBase \c y.
-    */    
-    static void Apply ( const TLOB& Op, const TMVB& x, TMVB& y )
+    /// \brief Apply Op to x, storing the result in y.
+    ///
+    /// This method takes the MultiVectorBase \c x and applies the
+    /// LinearOpBase \c Op to it, resulting in the MultiVectorBase \c
+    /// y.
+    static void Apply (const TLOB& Op, const TMVB& x, TMVB& y)
     { 
       Thyra::apply<ScalarType>(Op, Thyra::NOTRANS, x, Teuchos::outArg(y));
     }
-    
   };
-  
+
 } // end of Belos namespace 
 
 #endif 

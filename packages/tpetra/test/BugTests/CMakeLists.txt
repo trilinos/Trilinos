@@ -1,5 +1,6 @@
 
 INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -9,4 +10,9 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
+  )
+
+PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraBugTests
+  SOURCE_FILES addA2.hb
+  EXEDEPS BugTests
   )

@@ -35,6 +35,9 @@
 #include "EpetraExt_BlockVector.h"
 #include "Epetra_Map.h"
 #include "Teuchos_RCP.hpp"
+#include "Stokhos_OrthogPolyBasis.hpp"
+#include "EpetraExt_MultiComm.h"
+#include "Epetra_Import.h"
 
 namespace Piro {
 namespace Epetra {
@@ -43,17 +46,30 @@ class StokhosNOXObserver : public NOX::Epetra::Observer
 {
 public:
   StokhosNOXObserver (
-         Teuchos::RCP<NOX::Epetra::Observer> noxObserver_,
-         const Epetra_Map& map_,
-         const int sz_);
+    const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver_,
+    const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis_,
+    const Teuchos::RCP<const Epetra_BlockMap>& stoch_map_,
+    const Teuchos::RCP<const Epetra_BlockMap>& spatial_map_,
+    const Teuchos::RCP<const Epetra_BlockMap>& product_map_,
+    const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm_,
+    const Teuchos::RCP<const Epetra_Import>& importer_,
+    int save_moments_ = -1);
 
   void observeSolution(const Epetra_Vector& soln);
 
 private:
 
    Teuchos::RCP<NOX::Epetra::Observer> noxObserver;
-   Epetra_Map map;
+   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis;
+   Teuchos::RCP<const Epetra_BlockMap> stoch_map;
+   Teuchos::RCP<const Epetra_BlockMap> spatial_map;
+   Teuchos::RCP<const Epetra_BlockMap> product_map;
+   Teuchos::RCP<const EpetraExt::MultiComm> product_comm;
+   Teuchos::RCP<const Epetra_Import> importer;
    const int numSGBlocks;
+   int save_moments;
+   Teuchos::RCP<Epetra_Vector> moment;
+   Teuchos::RCP<Epetra_Vector> overlap_vec;
 };
 
 }

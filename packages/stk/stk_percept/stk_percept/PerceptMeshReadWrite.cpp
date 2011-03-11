@@ -48,7 +48,8 @@ namespace stk {
   namespace percept {
     namespace io_util {
 
-#define USE_LOCAL_PART_PROCESSING !defined(__IBMCPP__)
+      //#define USE_LOCAL_PART_PROCESSING !defined(__IBMCPP__)
+#define USE_LOCAL_PART_PROCESSING 1
 #if USE_LOCAL_PART_PROCESSING
       static bool local_include_entity(Ioss::GroupingEntity *entity)
       {
@@ -75,7 +76,12 @@ namespace stk {
         return !omitted;
       }
 
-      static void local_internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
+      template<class ENTITY>
+      void local_internal_part_processing(ENTITY *entity, stk::mesh::MetaData &meta,
+                                                 stk::mesh::EntityRank type);
+
+      template<>
+      void local_internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
                                                  stk::mesh::EntityRank type)
       {
         if (local_include_entity(entity)) {
@@ -85,7 +91,8 @@ namespace stk {
         }
       }
 
-      static void local_internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta,
+      template<>
+      void local_internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta,
                                                  stk::mesh::EntityRank type)
       {
         if (local_include_entity(entity)) {
@@ -108,6 +115,16 @@ namespace stk {
         }
       }
 
+      template<> void local_internal_part_processing(Ioss::ElementBlock *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::FaceBlock *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::EdgeBlock *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
+
+      template<> void local_internal_part_processing(Ioss::EdgeSet *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::FaceSet *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::NodeSet *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
+
+
+
 #endif
 
       template <typename T>
@@ -123,6 +140,7 @@ namespace stk {
         }
 #endif
       }
+
 
       //static int s_spatial_dim = 3;
 

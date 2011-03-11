@@ -42,6 +42,7 @@
 #include <BelosConfigDefs.hpp>
 #include <BelosMultiVecTraits.hpp>
 #include <BelosOrthoManager.hpp>
+#include <BelosOutputManager.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TimeMonitor.hpp>
@@ -69,8 +70,13 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<Scalar> SCT;
     typedef Teuchos::ScalarTraits<magnitude_type> SCTM;
 
+    //! Label for Belos timer display
     std::string label_;
+    //! Output manager (used mainly for debugging)
+    Teuchos::RCP<OutputManager<Scalar> > outMan_;
+    //! Whether or not to do (unconditional) reorthogonalization
     bool reorthogonalize_;
+    //! Whether to use MGS or CGS in the normalize() step
     bool useMgs_;
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -144,9 +150,17 @@ namespace Belos {
       return fastParams;
     }
 
-    SimpleOrthoManager (const std::string& label,
+    /// \brief Constructor
+    ///
+    /// \param outMan [in/out] Output manager.  If not null, use for
+    ///   various kinds of status output (in particular, for debugging).
+    /// \param label [in] Label for Belos timers
+    /// \param params [in] List of configuration parameters
+    SimpleOrthoManager (const Teuchos::RCP<OutputManager<Scalar> >& outMan,
+			const std::string& label,
 			const Teuchos::RCP<const Teuchos::ParameterList>& params) :
-      label_ (label)
+      label_ (label),
+      outMan_ (outMan)
     {
       using Teuchos::ParameterList;
       using Teuchos::RCP;
@@ -185,6 +199,17 @@ namespace Belos {
       else 
 	useMgs_ = false;
       reorthogonalize_ = reorthogonalize;
+
+      if (! outMan_.is_null())
+	{
+	  using std::endl;
+	  std::ostream& dbg = outMan_->stream(Debug);
+	  dbg << "Belos::SimpleOrthoManager constructor:" << endl
+	      << "-- Normalization method: " 
+	      << (useMgs_ ? "MGS" : "CGS") << endl
+	      << "-- Reorthogonalize (unconditionally)? " 
+	      << (reorthogonalize_ ? "Yes" : "No") << endl;
+	}
     }
     
     
@@ -418,6 +443,9 @@ namespace Belos {
       const int num_Q_blocks = Q.size();
       const int ncols_X = MVT::GetNumberVecs (X);
       C.resize (num_Q_blocks);
+      // # of block(s) that had to be (re)allocated (either allocated
+      // freshly, or resized).
+      int numAllocated = 0;
       if (attemptToRecycle)
 	{
 	  for (int i = 0; i < num_Q_blocks; ++i) 
@@ -426,12 +454,18 @@ namespace Belos {
 	      // Create a new C[i] if necessary, otherwise resize if
 	      // necessary, otherwise fill with zeros.
 	      if (C[i].is_null())
-		C[i] = rcp (new mat_type (ncols_Qi, ncols_X));
+		{
+		  C[i] = rcp (new mat_type (ncols_Qi, ncols_X));
+		  numAllocated++;
+		}
 	      else 
 		{
 		  mat_type& Ci = *C[i];
 		  if (Ci.numRows() != ncols_Qi || Ci.numCols() != ncols_X)
-		    Ci.shape (ncols_Qi, ncols_X);
+		    {
+		      Ci.shape (ncols_Qi, ncols_X);
+		      numAllocated++;
+		    }
 		  else
 		    Ci.putScalar (SCT::zero());
 		}
@@ -443,7 +477,16 @@ namespace Belos {
 	    {
 	      const int ncols_Qi = MVT::GetNumberVecs (*Q[i]);
 	      C[i] = rcp (new mat_type (ncols_Qi, ncols_X));
+	      numAllocated++;
 	    }
+	}
+      if (! outMan_.is_null())
+	{
+	  using std::endl;
+	  std::ostream& dbg = outMan_->stream(Debug);
+	  dbg << "SimpleOrthoManager::allocateProjectionCoefficients: " 
+	      << "Allocated " << numAllocated << " blocks out of " 
+	      << num_Q_blocks << endl;
 	}
     }
 

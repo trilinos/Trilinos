@@ -221,7 +221,7 @@ bool tEpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
       
       // create its Epetra counter part
       const RCP<Epetra_Vector> ev = rcp(new Epetra_Vector(epetra_A->OperatorDomainMap()));
-      ms->copyThyraIntoEpetra(tv,*ev,*epetra_A);
+      ms->copyThyraIntoEpetra(tv,*ev);
 
       // compare tv to ev!
       TEST_EQUALITY(tv->range()->dim(),ev->GlobalLength(),
@@ -264,7 +264,7 @@ bool tEpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
       int off_0 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(tv_0->range())->localOffset();
       int off_1 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(tv_1->range())->localOffset();
 
-      ms->copyEpetraIntoThyra(*ev,tv.ptr(),*epetra_A);
+      ms->copyEpetraIntoThyra(*ev,tv.ptr());
    
       // compare handle_tv to ev!
       TEST_EQUALITY(tv->range()->dim(),ev->GlobalLength(),

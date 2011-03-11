@@ -227,8 +227,6 @@ main(int argc, char *argv[])
   // ****************Start the MINRES iteration*************************
   // *******************************************************************
   //
-  Belos::OutputManager< ST > My_OM();
- 
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<ST,MV,OP> > newSolver
     = rcp( new Belos::MinresSolMgr<ST,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));

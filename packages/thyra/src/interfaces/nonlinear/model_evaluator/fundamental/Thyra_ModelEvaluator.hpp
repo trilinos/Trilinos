@@ -110,9 +110,10 @@ namespace Thyra {
  *
  * </ul>
  *
- * where <tt>x_space</tt>, <tt>f_space</tt>, <tt>p_space(l)</tt> (for
- * <tt>l=0...Np-1</tt>), and <tt>g_space(j)</tt> (for <tt>j=0...Ng-1</tt>) are
- * <tt>%Thyra</tt> vector spaces.
+ * where <tt>x_space <: RE^n_x</tt>, <tt>f_space <: RE^n_x</tt>,
+ * <tt>p_space(l) <: RE^n_p_l</tt> (for <tt>l=0...Np-1</tt>), and
+ * <tt>g_space(j) <: RE^n_g_j</tt> (for <tt>j=0...Ng-1</tt>) are
+ * <tt>%Thyra</tt> vector spaces of the given dimensions.
  *
  * Above, the notation <tt>{p(l)}</tt> is shorthand for the set of parameter
  * vectors <tt>{ p(0), p(1), ..., p(Np-1) }</tt>.
@@ -655,14 +656,14 @@ public:
   /** \name Vector spaces */
   //@{
 
-  /** \brief Return the vector space for the state variables <tt>x</tt> . */
+  /** \brief Return the vector space for the state variables <tt>x <: RE^n_x</tt>. */
   virtual RCP<const VectorSpaceBase<Scalar> > get_x_space() const = 0;
 
-  /** \brief Return the vector space for the state function <tt>f(...)</tt>. */
+  /** \brief Return the vector space for the state function <tt>f(...) <: RE^n_x</tt>. */
   virtual RCP<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
 
   /** \brief Return the vector space for the auxiliary parameters
-   * <tt>p(l)</tt>.
+   * <tt>p(l) <: RE^n_p_l</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>this->Np() > 0</tt>
@@ -691,7 +692,7 @@ public:
   virtual RCP<const Teuchos::Array<std::string> > get_p_names(int l) const = 0;
 
   /** \brief Return the vector space for the auxiliary response functions
-   * <tt>g(j)</tt>.
+   * <tt>g(j) <: RE^n_g_j</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>this->Ng() > 0</tt>

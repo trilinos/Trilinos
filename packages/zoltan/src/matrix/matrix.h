@@ -143,7 +143,8 @@ typedef struct Zoltan_Arc_ {
  * The matrix cannot be directly used as a graph or hypergraph, you have
  * to make a distribution of this matrix. */
 int
-Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix);
+Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
+  int, int, ZOLTAN_ID_PTR, ZOLTAN_GNO_TYPE *);
 
 /* Free a matrix object */
 void

@@ -1,12 +1,4 @@
-
-/** \brief Sierra Toolkit */
-namespace stk {
-}//namespace stk
-
 /**
- * \mainpage Sierra Toolkit I/O Product
- *
- *    \copydoc stk_io_module
  *
  * \page stk_io_banner Sierra Toolkit I/O
  *
@@ -22,7 +14,7 @@ namespace stk {
  *    stk::mesh structure is shown in the \ref stk_example_io namespace and the
  *    stk_io/use_cases/io_example.cpp file.
  *
- * \page stk_io_module Sierra Toolkit I/O Routines
+ * \addtogroup stk_io_module Sierra Toolkit I/O Routines
  *
  *    The Sierra Toolkit IO product contains functions related to the transfer of data between the
  *    Ioss classes and the stk::mesh classes.  These functions do not provide a total turnkey mesh
@@ -30,11 +22,5 @@ namespace stk {
  *    application to use which make it easier to read and/or write the data.  The application has
  *    full control over the mesh reading and results/restart writing.
  *  
- * \page stk_io_howto I/O How To ...
- *
- *    Sierra I/O Example
- *
- *    - \ref stk_io_example "A basic example of how an application would interact with the stk::io and Ioss functions"<br>
- *
  */
 

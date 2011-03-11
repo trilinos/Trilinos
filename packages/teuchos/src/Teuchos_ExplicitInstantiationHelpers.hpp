@@ -30,9 +30,10 @@
 #define TEUCHOS_EXPLICIT_INSTANTIATION_HELPERS_HPP
 
 
-/*! \file Teuchos_UnitTestHelpers.hpp
+/*! \file Teuchos_ExplicitInstantiationHelpers.hpp
 
-\brief Macros for helping to create concrete unit tests.
+\brief Macros for helping to templated classes create explicit instantiations.
+
 */
 
 

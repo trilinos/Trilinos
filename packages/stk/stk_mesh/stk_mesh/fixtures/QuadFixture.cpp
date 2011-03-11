@@ -86,7 +86,8 @@ void QuadFixture::elem_x_y( EntityId entity_id, unsigned &x , unsigned &y ) cons
 }
 
 
-void QuadFixture::generate_mesh() {
+void QuadFixture::generate_mesh()
+{
   std::vector<EntityId> element_ids_on_this_processor;
 
   const unsigned p_size = m_bulk_data.parallel_size();
@@ -103,8 +104,8 @@ void QuadFixture::generate_mesh() {
   generate_mesh(element_ids_on_this_processor);
 }
 
-void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor) {
-
+void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor)
+{
   {
     //sort and unique the input elements
     std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
@@ -154,7 +155,6 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
   }
 
   m_bulk_data.modification_end();
-
 }
 
 

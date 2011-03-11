@@ -31,6 +31,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "EpetraExt_ModelEvaluator.h"
 
@@ -42,6 +43,7 @@
 
 #include "Stokhos.hpp"
 #include "Stokhos_Epetra.hpp"
+#include "Stokhos_AbstractPreconditionerFactory.hpp"
 
 //! ModelEvaluator for a linear 2-D diffusion problem
 class twoD_diffusion_ME : public EpetraExt::ModelEvaluator {
@@ -54,7 +56,8 @@ public:
     const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis = 
     Teuchos::null,
     bool log_normal = false,
-    bool eliminate_bcs = false);
+    bool eliminate_bcs = false,
+    const Teuchos::RCP<Teuchos::ParameterList>& precParams = Teuchos::null);
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
@@ -71,11 +74,17 @@ public:
   //! Return parameter vector map
   Teuchos::RCP<const Epetra_Map> get_p_sg_map(int l) const;
 
+  //! Return parameter vector map
+  Teuchos::RCP<const Epetra_Map> get_p_mp_map(int l) const;
+
   //! Return response function map
   Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
 
   //! Return response function map
   Teuchos::RCP<const Epetra_Map> get_g_sg_map(int j) const;
+
+  //! Return response function map
+  Teuchos::RCP<const Epetra_Map> get_g_mp_map(int j) const;
   
   //! Return array of parameter names
   Teuchos::RCP<const Teuchos::Array<std::string> > 
@@ -84,6 +93,10 @@ public:
   //! Return array of parameter names
   Teuchos::RCP<const Teuchos::Array<std::string> > 
   get_p_sg_names(int l) const;
+
+  //! Return array of parameter names
+  Teuchos::RCP<const Teuchos::Array<std::string> > 
+  get_p_mp_names(int l) const;
   
   //! Return initial solution
   Teuchos::RCP<const Epetra_Vector> get_x_init() const;
@@ -93,6 +106,9 @@ public:
 
   //! Create W = alpha*M + beta*J matrix
   Teuchos::RCP<Epetra_Operator> create_W() const;
+
+  //! Create preconditioner for W
+  Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> create_WPrec() const;
   
   //! Create InArgs
   InArgs createInArgs() const;
@@ -129,6 +145,9 @@ protected:
   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis;
   bool log_normal;
   bool eliminate_bcs;
+
+  Teuchos::RCP<Teuchos::ParameterList> precParams;
+  Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> precFactory;
 
   //! Solution vector map
   Teuchos::RCP<Epetra_Map> x_map;

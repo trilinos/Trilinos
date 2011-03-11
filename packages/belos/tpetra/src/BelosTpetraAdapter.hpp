@@ -54,6 +54,7 @@
 #include <Tpetra_Operator.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_DefaultSerialComm.hpp>
 
@@ -128,7 +129,7 @@ namespace Belos {
       KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && 
-	index.ubound() < mv.getNumVectors();
+	index.ubound() < GetNumberVecs(mv);
       if (! validRange)
 	{
 	  std::ostringstream os;
@@ -141,7 +142,7 @@ namespace Belos {
 			     os.str() << "Index range includes negative "
 			     "index/ices, which is not allowed.");
 	  // Range1D bounds are signed; size_t is unsigned.
-	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
+	  TEST_FOR_EXCEPTION(index.ubound() >= GetNumberVecs(mv),
 			     std::invalid_argument, 
 			     os.str() << "Index range exceeds number of vectors " 
 			     << mv.getNumVectors() << " in the input multivector.");
@@ -562,14 +563,16 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////
 
+  /// \brief Partial specialization of OperatorTraits for Tpetra::Operator.
   template <class Scalar, class LO, class GO, class Node> 
-  class OperatorTraits < Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node>, Tpetra::Operator<Scalar,LO,GO,Node> >
+  class OperatorTraits <Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node>, Tpetra::Operator<Scalar,LO,GO,Node> >
   {
   public:
-    static void Apply ( const Tpetra::Operator<Scalar,LO,GO,Node> & Op, 
-                        const Tpetra::MultiVector<Scalar,LO,GO,Node> & X,
-                              Tpetra::MultiVector<Scalar,LO,GO,Node> & Y,
-                              ETrans trans=NOTRANS )
+    static void 
+    Apply (const Tpetra::Operator<Scalar,LO,GO,Node>& Op, 
+	   const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
+	   Tpetra::MultiVector<Scalar,LO,GO,Node>& Y,
+	   ETrans trans=NOTRANS)
     { 
       switch (trans) {
         case NOTRANS:
@@ -581,6 +584,16 @@ namespace Belos {
         case CONJTRANS:
           Op.apply(X,Y,Teuchos::CONJ_TRANS);
           break;
+      default:
+	const std::string scalarName = Teuchos::TypeNameTraits<Scalar>::name();
+	const std::string loName = Teuchos::TypeNameTraits<LO>::name();
+	const std::string goName = Teuchos::TypeNameTraits<GO>::name();
+	const std::string nodeName = Teuchos::TypeNameTraits<Node>::name();
+	const std::string otName = "Belos::OperatorTraits<" + scalarName 
+	  + "," + loName + "," + goName + "," + nodeName + ">";
+	TEST_FOR_EXCEPTION(true, std::logic_error, otName << ": Should never "
+			   "get here; fell through a switch statement.  "
+			   "Please report this bug to the Belos developers.");
       }
     }
   };

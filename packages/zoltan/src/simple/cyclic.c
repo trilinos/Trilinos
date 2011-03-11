@@ -20,7 +20,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <memory.h>
-#include "zz_const.h"
+#include "zz_util_const.h"
 #include "zz_rand.h"
 #include "params_const.h"
 #include "all_allo_const.h"
@@ -152,12 +152,17 @@ End:
 static void cyclic_part(ZZ *zz, int num_obj, int wtflag, float *wgts, 
             float *part_sizes, int *newparts)
 {
+  ZOLTAN_GNO_TYPE n, scan_sum;
+  MPI_Datatype gno_mpi_type;
   int i, part=0;
   const int k = zz->LB.Num_Global_Parts;
 
+  gno_mpi_type = Zoltan_mpi_gno_type();
+
   /* Compute offset for my proc */
-  MPI_Scan(&num_obj, &part, 1, MPI_INT, MPI_SUM, zz->Communicator);
-  part -= num_obj; 
+  n = (ZOLTAN_GNO_TYPE)num_obj;
+  MPI_Scan(&n, &scan_sum, 1, gno_mpi_type, MPI_SUM, zz->Communicator);
+  part = (int)(scan_sum - num_obj); 
   part = (part % k);
 
   /* Loop over objects and assign parts. */

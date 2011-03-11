@@ -81,12 +81,9 @@ BasicMappingStrategy::BasicMappingStrategy(const Teuchos::RCP<const Epetra_Map> 
 //   arguments:
 //      X       - source Epetra_MultiVector
 //      thyra_X - destination Thyra::MultiVectorBase
-//      eow     - Operator that defines the transition...this may
-//                be removed in the future
 //
 void BasicMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
-                                               const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X,
-                                               const Teko::Epetra::EpetraOperatorWrapper & eow) const
+                                               const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X) const
 {
    // perform a simple copy
    RCP<Thyra::DefaultSpmdMultiVector<double> > vec 
@@ -102,12 +99,9 @@ void BasicMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
 //   arguments:
 //      thyra_Y - source Thyra::MultiVectorBase
 //      Y       - destination Epetra_MultiVector
-//      eow     - Operator that defines the transition...this may
-//                be removed in the future
 //
 void BasicMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyra_Y,
-                                                 Epetra_MultiVector& Y,
-                                                 const Teko::Epetra::EpetraOperatorWrapper & eow) const
+                                                 Epetra_MultiVector& Y) const
 {
    RCP<const Epetra_MultiVector> eSrc = Thyra::get_Epetra_MultiVector(*rangeMap(),thyra_Y);
 

@@ -50,6 +50,7 @@
 #include <BelosIMGSOrthoManager.hpp>
 #include <BelosDGKSOrthoManager.hpp>
 #include <BelosSimpleOrthoManager.hpp>
+#include <BelosOutputManager.hpp>
 
 #include <Teuchos_StandardCatchMacros.hpp>
 
@@ -69,7 +70,7 @@ namespace Belos {
   class OrthoManagerFactory {
   private:
     //! List of valid OrthoManager names
-    std::vector< std::string > theList_;
+    std::vector<std::string> theList_;
 
   public:
     /// Number of valid command-line parameter values for the OrthoManager
@@ -124,7 +125,7 @@ namespace Belos {
     }
 
     //! Print the list of valid OrthoManager names to the given ostream
-    void
+    std::ostream&
     printValidNames (std::ostream& out) const
     {
       const int numValid = numOrthoManagers();
@@ -140,6 +141,7 @@ namespace Belos {
 	  out << "or ";
 	}
       out << "\"" << theList_[numValid-1] << "\"";
+      return out;
     }
 
     /// Return a list (as a string) of valid command-line parameter values
@@ -148,7 +150,7 @@ namespace Belos {
     validNamesString () const
     {
       std::ostringstream os;
-      printValidNames (os);
+      (void) printValidNames (os);
       return os.str();
     }
 
@@ -253,6 +255,9 @@ namespace Belos {
     /// \param M [in] Inner product operator.  If Teuchos::null,
     ///   orthogonalize with respect to the standard Euclidean 
     ///   inner product.
+    /// \param outMan [in/out] Output manager, which the OrthoManager
+    ///   instance may use (but is not required to use) for various
+    ///   kinds of status output
     /// \param label [in] Label for timers
     /// \param params [in] Optional (null) list of parameters for
     ///   setting up the specific MatOrthoManager subclass.  A default
@@ -265,6 +270,7 @@ namespace Belos {
     Teuchos::RCP< Belos::MatOrthoManager<Scalar, MV, OP> >
     makeMatOrthoManager (const std::string& ortho, 
 			 const Teuchos::RCP<const OP>& M,
+			 const Teuchos::RCP<OutputManager<Scalar> >& outMan,
 			 const std::string& label,
 			 const Teuchos::RCP<const Teuchos::ParameterList>& params)
     {
@@ -328,6 +334,9 @@ namespace Belos {
     /// \param M [in] Inner product operator.  If Teuchos::null,
     ///   orthogonalize with respect to the standard Euclidean 
     ///   inner product.
+    /// \param outMan [in/out] Output manager, which the OrthoManager
+    ///   instance may use (but is not required to use) for various
+    ///   kinds of status output
     /// \param label [in] Label for timers
     /// \param params [in] Optional list of parameters for 
     ///   setting up the specific OrthoManager subclass
@@ -337,6 +346,7 @@ namespace Belos {
     Teuchos::RCP<Belos::OrthoManager<Scalar, MV> >
     makeOrthoManager (const std::string& ortho, 
 		      const Teuchos::RCP<const OP>& M,
+		      const Teuchos::RCP<OutputManager<Scalar> >& outMan,
 		      const std::string& label,
 		      const Teuchos::RCP<const Teuchos::ParameterList>& params)
     {
@@ -364,10 +374,10 @@ namespace Belos {
 			     "SimpleOrthoManager is not yet supported "
 			     "when the operator M is nontrivial (i.e., "
 			     "M != null).");
-	  return rcp (new SimpleOrthoManager<Scalar, MV> (label, params));
+	  return rcp (new SimpleOrthoManager<Scalar, MV> (outMan, label, params));
 	}
       // A MatOrthoManager is-an OrthoManager.
-      return makeMatOrthoManager (ortho, M, label, params);
+      return makeMatOrthoManager (ortho, M, outMan, label, params);
     }
   };
 

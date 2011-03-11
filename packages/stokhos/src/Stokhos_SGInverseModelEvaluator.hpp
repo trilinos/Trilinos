@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -34,7 +32,6 @@
 #include "EpetraExt_ModelEvaluator.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
-#include "Stokhos_OrthogPolyBasis.hpp"
 
 namespace Stokhos {
 
@@ -52,7 +49,6 @@ namespace Stokhos {
     // Constructor
     SGInverseModelEvaluator(
       const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
-      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
       const Teuchos::Array<int>& sg_p_index,
       const Teuchos::Array<int>& non_sg_p_index,
       const Teuchos::Array<int>& sg_g_index,
@@ -92,9 +88,6 @@ namespace Stokhos {
     //! Return initial parameters
     Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
 
-    //! Return initial parameters
-    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> get_p_sg_init(int l) const;
-
     //! Create InArgs
     InArgs createInArgs() const;
 
@@ -110,9 +103,6 @@ namespace Stokhos {
 
     //! Underlying model evaluator
     Teuchos::RCP<EpetraExt::ModelEvaluator> me;
-
-    //! Stochastic Galerkin basis
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> > sg_basis;
 
     //! Index of stochastic parameters
     Teuchos::Array<int> sg_p_index;

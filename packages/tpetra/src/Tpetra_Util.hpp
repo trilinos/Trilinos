@@ -204,6 +204,17 @@ namespace Tpetra {
     }
   }
 
+  template<class IT1, class T>
+  IT1 binary_serach(IT1 first, IT1 last, const T& value){
+	first = std::lower_bound(first,last,value);
+	if(first!=last && !(value<*first)){
+		return first;
+	}
+	else{
+		return last;
+	}
+  }
+  
 } // namespace Tpetra
 
 

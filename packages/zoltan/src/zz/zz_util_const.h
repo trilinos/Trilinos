@@ -15,7 +15,6 @@
 #ifndef __ZOLTAN_UTIL_CONST_H
 #define __ZOLTAN_UTIL_CONST_H
 
-#include <stdint.h>
 #include <mpi.h>
 #include "zz_const.h"
 #include "zoltan_types.h"
@@ -94,8 +93,6 @@ int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, char *key, intptr_t datain, int
 int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP *map);
 int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, char **key, intptr_t *data);
 int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, char **key, intptr_t *data);
-
-#define ZOLTAN_NOT_FOUND INTPTR_MIN
 
 /*****************************************************************************/
 /*****************************************************************************/

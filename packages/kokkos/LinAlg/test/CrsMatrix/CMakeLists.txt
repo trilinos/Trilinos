@@ -18,6 +18,34 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
+IF (Kokkos_ENABLE_ThreadPool) 
+  PACKAGE_ADD_EXECUTABLE_AND_TEST( CrsMatrix_FirstTouchTPI
+    SOURCES   
+      CrsMatrix_FirstTouchTPI.cpp
+      ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+  ) 
+  INSTALL(TARGETS Kokkos_CrsMatrix_FirstTouchTPI
+         RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")
+ENDIF (Kokkos_ENABLE_ThreadPool) 
+
+IF (Kokkos_ENABLE_TBB) 
+  PACKAGE_ADD_EXECUTABLE_AND_TEST( CrsMatrix_FirstTouchTBB
+    SOURCES   
+      CrsMatrix_FirstTouchTBB.cpp
+      ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+  ) 
+  INSTALL(TARGETS Kokkos_CrsMatrix_FirstTouchTBB
+         RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")
+ENDIF (Kokkos_ENABLE_TBB) 
+
 IF (Kokkos_ENABLE_CUSP) 
   PACKAGE_ADD_EXECUTABLE_AND_TEST( CrsMatrix_CUSP
     SOURCES   
@@ -28,6 +56,6 @@ IF (Kokkos_ENABLE_CUSP)
     STANDARD_PASS_OUTPUT
     DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   ) 
-  INSTALL(Kokkos_CrsMatrix_CUSP
+  INSTALL(TARGETS Kokkos_CrsMatrix_CUSP
          RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")
 ENDIF()

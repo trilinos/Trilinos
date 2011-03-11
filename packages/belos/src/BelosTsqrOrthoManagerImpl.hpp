@@ -110,17 +110,21 @@ namespace Belos {
   /// The Block Gram-Schmidt procedure used here is inspired by that
   /// of G. W. Stewart ("Block Gram-Schmidt Orthogonalization", SISC
   /// vol 31 #1 pp. 761--775, 2008), except that we use TSQR+SVD
-  /// instead of standard Gram-Schmidt with orthogonalization to
-  /// handle the current block.  "Orthogonalization faults" may still
-  /// happen, but we do not handle them by default.  Rather, we make
-  /// one BGS pass, do TSQR+SVD, check the resulting column norms, and
-  /// make a second BGS pass (+ TSQR+SVD) if necessary.  If we then
-  /// detect an orthogonalization fault, we throw TsqrOrthoFault.
+  /// instead of (Gram-Schmidt with reorthogonalization) to handle the
+  /// current block.  "Orthogonalization faults" may still happen, but
+  /// we do not handle them by default.  Rather, we make one BGS pass,
+  /// do TSQR+SVD, check the resulting column norms, and make a second
+  /// BGS pass (+ TSQR+SVD) if necessary.  If we then detect an
+  /// orthogonalization fault, we throw TsqrOrthoFault.
   ///
   /// \note Despite the "Impl" part of the name of this class, we
-  ///   don't actually use it for the "pImpl" idiom.
+  ///   don't actually use it for the "pImpl" C++ idiom.  We just
+  ///   separate out the TSQR implementation to make it easier to
+  ///   implement the OrthoManager and MatOrthoManager interfaces for
+  ///   the case where the inner product operator is not the identity
+  ///   matrix.
   ///
-  template< class Scalar, class MV >
+  template<class Scalar, class MV>
   class TsqrOrthoManagerImpl
   {
   public:
@@ -415,20 +419,12 @@ namespace Belos {
     tsqr_adaptor_ptr tsqrAdaptor_;
     /// \brief Scratch space for TSQR
     ///
-    /// Only allocated if normalize() is called.  We do our best to
-    /// avoid allocation and recycle this space whenever possible.
-    /// normalizeOutOfPlace() does _not_ allocate Q_, which you can
-    /// use to your advantage.
-    ///
-    /// \warning MultiVecTraits doesn't let you express data
-    /// distribution (Epetra_Map or Tpetra::Map) or "range" (as an
-    /// operator: domain -> range, as in Thyra).  Thus, we have no way
-    /// of guaranteeing that Q_ has the same data distribution as the
-    /// input vector X to normalize().  There are only two ways to fix
-    /// this: Add a "Map" feature to MultiVecTraits (with at least a
-    /// test for compatibility of data distributions), or replace
-    /// MultiVecTraits with Thyra.
+    /// Allocated lazily; only allocated if normalize() is called.  We
+    /// do our best to avoid allocation and recycle this space
+    /// whenever possible.  normalizeOutOfPlace() does _not_ allocate
+    /// Q_, which you can use to your advantage.
     Teuchos::RCP<MV> Q_;
+
     //! Machine precision for Scalar
     magnitude_type eps_;
 
@@ -609,9 +605,9 @@ namespace Belos {
       // don't need to reinitialize the adaptor.
       //
       // FIXME (mfh 15 Jul 2010) If tsqrAdaptor_ has already been
-      // initialized, check to make sure that X has the same Map /
-      // communicator as the multivector previously used to initialize
-      // tsqrAdaptor_.
+      // initialized, check to make sure that X has the same
+      // communicator as that of the the multivector with which
+      // tsqrAdaptor_ was previously initialized.
       if (tsqrAdaptor_.is_null())
 	tsqrAdaptor_ = rcp (new tsqr_adaptor_type (X, tsqrParams));
 
@@ -907,27 +903,33 @@ namespace Belos {
       return normalizeOne (X, B);
 
     // We use Q_ as scratch space for the normalization, since TSQR
-    // requires a scratch multivector (it can't factor in place).
-    // Q_ should have the same number of rows as X, and at least as
-    // many columns.  If not, we have to reallocate.  We also have
-    // to allocate (not "re-") Q_ if we haven't allocated it before.
-    // (We can't allocate Q_ until we have some X, so we need a
-    // multivector as the "prototype.")
-    //
-    // FIXME (mfh 07 Nov 2010, {11,20} Jan 2011) We assume that Q_ has
-    // the right number of rows and uses the same Map / communicator
-    // as X.  The only way to fix this is to refactor the TSQR
-    // implemention so it understands the data layout (i.e., so it
-    // uses a Map rather than a communicator), and to somehow make the
-    // Map (a.k.a. range (in the function sense: domain->range))
-    // available to MultiVecTraits (at least so we can check
-    // compatibility).
+    // requires a scratch multivector (it can't factor in place).  Q_
+    // should come from a vector space compatible with X's vector
+    // space, and Q_ should have at least as many columns as X.
+    // Otherwise, we have to reallocate.  We also have to allocate
+    // (not "re-") Q_ if we haven't allocated it before.  (We can't
+    // allocate Q_ until we have some X, so we need a multivector as
+    // the "prototype.")
     //
     // NOTE (mfh 11 Jan 2011) We only increase the number of columsn
     // in Q_, never decrease.  This is OK for typical uses of TSQR,
     // but you might prefer different behavior in some cases.
-    if (Q_.is_null() || numCols > MVT::GetNumberVecs(*Q_) ||
-	MVT::GetVecLength(X) != MVT::GetVecLength(*Q_))
+    //
+    // FIXME (mfh 10 Mar 2011) The vector space capability that I
+    // proposed for Belos would have made it possible to ensure safe
+    // recycling of the scratch space.  Its removal means that we can
+    // only check whether X and Q_ have the same number of rows.
+    // Hopefully your linear algebra library implementation will do
+    // more checks than that and throw an exception if X and Q_ are
+    // not compatible.  If you find that recycling the Q_ space causes
+    // troubles, you may consider reallocating Q_ for every X that
+    // comes in, regardless of whether Q_ and X have the same number
+    // of rows.  The code below will be correct for the common case in
+    // Belos that all multivectors with the same number of rows have
+    // the same data distribution.
+    if (Q_.is_null() || 
+	MVT::GetVecLength(*Q_) != MVT::GetVecLength(X) ||
+	numCols > MVT::GetNumberVecs (*Q_))
       Q_ = MVT::Clone (X, numCols);
 
     // normalizeImpl() wants the second MV argument to have the same

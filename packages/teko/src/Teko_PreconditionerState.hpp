@@ -106,14 +106,10 @@ public:
    { isInitialized_ = init; }
 
    //! Set the vector associated with this operator (think nonlinear system)
-   // virtual void setSourceVector(const Teko::BlockedMultiVector & srcVec)
-   // { srcVector_ = srcVec; }
    virtual void setSourceVector(const Teko::MultiVector & srcVec)
    { srcVector_ = srcVec; }
 
    //! Set the vector associated with this operator (think nonlinear system)
-   // virtual const Teko::BlockedMultiVector getSourceVector() const
-   // { return srcVector_; }
    virtual const Teko::MultiVector getSourceVector() const
    { return srcVector_; }
 

@@ -47,7 +47,7 @@ namespace stk {
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
       {
         EXCEPTWATCH;
-        bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
+        bp = std::vector<UniformRefinerPatternBase *>(3u, 0);
 
         bp[0] = this;
 #if FACE_BREAKER_W6_W15_1

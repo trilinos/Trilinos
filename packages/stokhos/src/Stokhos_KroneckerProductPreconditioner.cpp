@@ -38,8 +38,8 @@ KroneckerProductPreconditioner(
   const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk_,
   const Teuchos::RCP<const Epetra_Map>& base_map_,
   const Teuchos::RCP<const Epetra_Map>& sg_map_,
-  const Teuchos::RCP<Stokhos::PreconditionerFactory>& mean_prec_factory_,
-  const Teuchos::RCP<Stokhos::PreconditionerFactory>& G_prec_factory_,
+  const Teuchos::RCP<Stokhos::AbstractPreconditionerFactory>& mean_prec_factory_,
+  const Teuchos::RCP<Stokhos::AbstractPreconditionerFactory>& G_prec_factory_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_) :
   label("Stokhos Kronecker Product Preconditioner"),
   sg_comm(sg_comm_),

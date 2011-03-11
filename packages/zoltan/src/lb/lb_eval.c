@@ -17,7 +17,6 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
 #include "phg.h"
@@ -547,7 +546,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 
       /* Zoltan_Map "iterator */
 
-      ierr = Zoltan_Map_First(zz, map, (char **)&key, &keyValue);
+      ierr = Zoltan_Map_First(zz, map, (char **) (void *) &key, &keyValue);
 
       if ( ((ierr == ZOLTAN_OK) && !key) ||  /* must be at least one pair */
            (ierr != ZOLTAN_OK)){
@@ -559,7 +558,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
         partNbors[num_parts++] = key[0];
         partNbors[num_parts++] = key[1];
 
-        ierr = Zoltan_Map_Next(zz, map, (char **)&key, &keyValue);
+        ierr = Zoltan_Map_Next(zz, map, (char **) (void *) &key, &keyValue);
   
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Map_Next\n");

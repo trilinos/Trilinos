@@ -1052,8 +1052,6 @@ void new_comm_recv_to_send(
   const std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv ,
         std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send )
 {
-  static const char method[] = "stk::mesh::BulkData::change_ghosting" ;
-
   const unsigned parallel_size = mesh.parallel_size();
 
   stk::CommAll all( mesh.parallel() );
@@ -1080,7 +1078,7 @@ void new_comm_recv_to_send(
     while ( buf.remaining() ) {
       stk::mesh::EntityKey key ;
       buf.unpack<stk::mesh::EntityKey>( & key , 1 );
-      stk::mesh::EntityProc tmp( mesh.get_entity( entity_rank(key), entity_id(key) , method ) , p );
+      stk::mesh::EntityProc tmp( mesh.get_entity( entity_rank(key), entity_id(key) ) , p );
       new_send.insert( tmp );
     }
   }

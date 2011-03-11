@@ -106,7 +106,123 @@ namespace stk {
 
     }
 
+    static void print_simple_usage()
+    {
+      std::cout << "usage: exe_name [convert|enrich|refine] input_file_name [number_refines]" << std::endl;
+    }
+
+    int adapt_main(int argc, char **argv) ;
+    int adapt_main_full_options(int argc, char **argv) ;
+
+    // FIXME
+    static int check_for_simple_options(int argc, char **argv) 
+    {
+      int simple = 0;
+      for (int i = 1; i < argc; i++)
+        {
+          if (std::string(argv[i]) == "refine" || std::string(argv[i]) == "enrich" || std::string(argv[i]) == "convert")  
+            return i;
+        }
+      return simple;
+    }
+
+    static bool debug = false;
+    int adapt_main_simple_options(int argc_in, char **argv_in) 
+    {
+
+      // format: exe_name [convert|enrich|refine] input_file_name
+      int simple_options_index = check_for_simple_options(argc_in, argv_in);
+
+      //       if (!simple_options_index)
+      //         {
+      //           print_simple_usage();
+      //           return 1;
+      //         }
+
+      int argc = argc_in;
+      if (argc != 2 + simple_options_index && argc != 3 + simple_options_index)
+        {
+          print_simple_usage();
+          return 1;
+        }
+
+      std::vector<std::string> argv(argc);
+      for (int i = 0; i < argc; i++)
+        {
+          argv[i] = (const char *)argv_in[i];
+        }
+      if (debug)
+        std::cout << "argc = " << argc << " argv= \n" << argv << std::endl;
+
+      std::string exe_name        = argv[0];
+      std::string option          = argv[0+simple_options_index];
+      if (option != "refine" && option != "enrich" && option != "convert")
+        {
+          print_simple_usage();
+          return 1;
+        }
+      std::string input_mesh = argv[1+simple_options_index];
+      std::string number_refines = (argc == 3+simple_options_index? argv[2+simple_options_index] : "1");
+      std::string output_mesh = input_mesh;
+      std::string extension = input_mesh.substr(input_mesh.length()-2,input_mesh.length());
+      if (debug) std::cout << " extension= " << extension << std::endl;
+      std::string new_ext = "";
+      new_ext += "_";
+      if (option == "refine")
+        new_ext += "refined_"+number_refines+extension;
+      else
+        new_ext += option+"ed_"+extension;
+
+      Util::replace(output_mesh, extension, new_ext);
+      if (debug) std::cout << " output_mesh= " << output_mesh << std::endl;
+
+      std::vector<std::string> argv_new;
+      for (int i = 0; i < simple_options_index; i++)
+        argv_new.push_back(argv[i]);
+      argv_new.push_back("--input_mesh="+input_mesh);
+      argv_new.push_back("--output_mesh="+output_mesh);
+      if (option == "refine")
+        argv_new.push_back("--refine=DEFAULT");
+      else if (option == "enrich")
+        argv_new.push_back("--enrich=DEFAULT");
+      else
+        argv_new.push_back("--convert=Hex8_Tet4_24");
+      argv_new.push_back("--load_balance=1");
+      argv_new.push_back("--remove_original_elements=1");
+      argv_new.push_back("--number_refines="+number_refines);
+
+      if (debug) std::cout << "new argv = \n" << argv_new << std::endl;
+      int argc_new = argv_new.size();
+      char **argv_new_cstr = new char*[argc_new];
+      for (int i = 0; i < argc_new; i++)
+        {
+          argv_new_cstr[i] = (char *)argv_new[i].c_str();
+        }
+      return adapt_main_full_options(argc_new, argv_new_cstr);
+    }
+
+    static void dump_args(int argc, char **argv) 
+    {
+      std::cout << "argc = " << argc << std::endl;
+      for (int i = 0; i < argc; i++)
+        {
+          std::cout << "argv[" << i << "]= " << argv[i] << std::endl;
+        }
+    }
+
+
     int adapt_main(int argc, char **argv) 
+    {
+      if (debug)
+        dump_args(argc, argv);
+      // allow positional arguments, etc.
+      if (check_for_simple_options(argc, argv))
+        return adapt_main_simple_options(argc, argv);
+      else
+        return adapt_main_full_options(argc, argv);
+    }
+
+    int adapt_main_full_options(int argc, char **argv) 
     { 
       EXCEPTWATCH;
       bool debug_re = false;
@@ -115,22 +231,22 @@ namespace stk {
 
       double t0 =  stk::wall_time(); 
 
-      //bopt::options_description desc("stk_adapt options", 132);
       std::string options_description_desc = "stk_adapt options";
     
       // NOTE: Options --directory --output-log --runtest are handled/defined in RunEnvironment
       std::string input_mesh="";
       std::string output_mesh="";
-      std::string block_name = "";
+      std::string block_name_inc = "";
+      std::string block_name_exc = "";
       std::string convert="";
-      std::string refine="";
+      std::string refine="DEFAULT";
       std::string enrich="";
-      bool doConvert = true;
+      bool doRefineMesh = true;
       int load_balance = 1;
       std::string convert_Hex8_Tet4_24 = "Hex8_Tet4_24";      
       int print_info=0;
       int remove_original_elements = 1;
-      int number_refines = 1u;
+      int number_refines = 1;
       int proc_rank_field = 0;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
@@ -139,8 +255,12 @@ namespace stk {
         "  (1) empty string or option not specified: convert all blocks in the input mesh file\n"
         "  (2) file:my_filename.my_ext (e.g. file:filelist.dat) which will read input block names\n"
         "            from the given file\n"
-        "  (3) list:block_name_1,block_name_2,...,block_name_n \n"
-        "  (4) a single input block name (e.g. block_3) to be converted";
+        "  (3) [+]block_name_1,[+]block_name_2, etc ,block_name_n to include only these blocks, plus sign is optional\n"
+        "  (4) a single input block name (e.g. block_3) to be converted \n"
+        "  (5) -block_3,-block_5 to exclude blocks from those included (all blocks or include-only blocks), minus sign is mandatory\n"
+        "  (6) block_1..block_10 include the range of blocks #1 to #10 \n"
+        "  (7) any combination of [+] and - options and range (..) option can be specified \n"
+        "Note: wherever you specify block_# this can be replaced with just the #, e.g. \"1,2,4,5\" ";
 
       std::string convert_options = UniformRefinerPatternBase::s_convert_options;
       std::string refine_options  = UniformRefinerPatternBase::s_refine_options;
@@ -151,13 +271,23 @@ namespace stk {
       int test_memory_elements = 0;
       int test_memory_nodes = 0;
       
+      //convert_options = "DEFAULT or one of "+convert_options;
+      //refine_options = "DEFAULT or one of "+refine_options;
+      //enrich_options = "DEFAULT or one of "+enrich_options;
+
+      // : if not specified, use input mesh name appended with _{converted,refined_#refines,enriched}");
+
+      std::string block_name_desc_inc = "which blocks to include, specified as: "+block_name_desc;
+      std::string block_name_desc_exc = "which blocks to exclude, specified as: "+block_name_desc;
+
       run_environment.clp.setOption("convert"                  , &convert                  , convert_options.c_str());
       run_environment.clp.setOption("refine"                   , &refine                   , refine_options.c_str());
       run_environment.clp.setOption("enrich"                   , &enrich                   , enrich_options.c_str());
       run_environment.clp.setOption("input_mesh"               , &input_mesh               , "input mesh name");
       run_environment.clp.setOption("output_mesh"              , &output_mesh              , "output mesh name");
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
-      run_environment.clp.setOption("block_name"               , &block_name               , block_name_desc.c_str());
+      run_environment.clp.setOption("block_name"               , &block_name_inc           , block_name_desc_inc.c_str());
+      //run_environment.clp.setOption("exclude"                  , &block_name_exc           , block_name_desc_exc.c_str());
       run_environment.clp.setOption("print_info"               , &print_info               , ">= 0  (higher values print more info)");
       run_environment.clp.setOption("load_balance"             , &load_balance             , " load balance (slice/spread) input mesh file");
 
@@ -186,7 +316,7 @@ namespace stk {
 
         if (print_info)
           {
-            doConvert = false;
+            doRefineMesh = false;
           }
 
         if (input_mesh.length() == 0 
@@ -218,10 +348,25 @@ namespace stk {
 
         Teuchos::RCP<UniformRefinerPatternBase> pattern;
 
-        if (doConvert)
+        if (doRefineMesh)
           {
-            BlockNamesType block_names = UniformRefiner::getBlockNames(block_name);
+            //             BlockNamesType block_names = UniformRefiner::getBlockNames(block_name_inc);
+            //             block_names = UniformRefiner::correctBlockNamesForPartPartConsistency(eMesh, block_names);
 
+            // FIXME move this next block of code to a method on UniformRefiner
+            BlockNamesType block_names(mesh::EntityRankEnd+1u);
+            if (block_name_inc.length())
+              {
+                block_names = UniformRefiner::getBlockNames(block_name_inc);
+                if (1)
+                  {
+                    eMesh.commit();
+                    block_names = UniformRefiner::correctBlockNamesForPartPartConsistency(eMesh, block_names);
+                    eMesh.close();
+                    eMesh.open(input_mesh);
+                  }
+              }
+            
             pattern = UniformRefinerPatternBase::createPattern(refine, enrich, convert, eMesh, block_names);
 
             if (0)
@@ -271,10 +416,11 @@ namespace stk {
             exit(1);
           }
 
-        if (doConvert)
+        if (doRefineMesh)
           {
             UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
             breaker.setRemoveOldElements(remove_original_elements);
+            //breaker.setIgnoreSideSets(true);
 
             for (int iBreak = 0; iBreak < number_refines; iBreak++)
               {

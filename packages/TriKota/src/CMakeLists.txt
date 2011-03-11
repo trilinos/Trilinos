@@ -197,11 +197,17 @@ APPEND_SET(SOURCES
 
 IF(TriKota_ENABLE_DakotaCMake)
 
+# The DEPLIBS part is to tell CMake that trikota depends on the specified
+# Dakota libraries.  The IMPORTEDLIBS part is to get the PACKAGE_ADD_LIBRARY
+# macro to put the Dakota libraries TriKota_LIBRARIES when writing
+# TriKotaConfig.cmake and Makefile.export.TriKota.  There should be a better
+# way of doing this...
 PACKAGE_ADD_LIBRARY(
   trikota
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS ${Dakota_LIBRARIES}
+  IMPORTEDLIBS ${Dakota_LIBRARIES}
   )
 
 ELSE()

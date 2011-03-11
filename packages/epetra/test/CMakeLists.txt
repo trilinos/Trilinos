@@ -2,6 +2,9 @@
 INCLUDE(PackageAddExecutable)
 INCLUDE(PackageAddTest)
 
+# Library with test functions.
+ADD_SUBDIRECTORY(src)
+
 # Test definitions
 
 ADD_SUBDIRECTORY(BlockMap)

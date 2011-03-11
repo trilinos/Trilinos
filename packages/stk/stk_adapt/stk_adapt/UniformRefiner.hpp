@@ -96,6 +96,9 @@ namespace stk {
       static BlockNamesType 
       getBlockNames(std::string& block_name);
 
+      static BlockNamesType 
+      correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks);
+
       void 
       setIgnoreSideSets(bool ignore_sidesets) ;
 
@@ -154,7 +157,8 @@ namespace stk {
       void 
       trace_print(std::string msg);
 
-      //void dumpElements();
+      void 
+      checkBreakPatternValidityAndBuildRanks(std::vector<EntityRank>& ranks);
 
     private:
       percept::PerceptMesh& m_eMesh;

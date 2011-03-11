@@ -736,7 +736,7 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl= Teuchos::rcp( new Teuchos::ParameterList() );
     pl->set("Convergence Tolerance", convtol_default_,
       "The relative residual tolerance that needs to be achieved by the\n"
-      "iterative solver in order for the linera system to be declared converged.");
+      "iterative solver in order for the linear system to be declared converged.");
     pl->set("Maximum Restarts", maxRestarts_default_,
       "The maximum number of restarts allowed for each\n"
       "set of RHS solved.");

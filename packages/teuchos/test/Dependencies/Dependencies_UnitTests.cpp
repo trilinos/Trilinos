@@ -811,6 +811,20 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
 		),
 		InvalidDependencyException
 	);
+
+	RangeValidatorDependency<int>::RangeToValidatorMap badRanges;
+	tempranges[std::pair<int,int>(200,100)] = lowTempCheeseValidator;
+	TEST_THROW(
+		RCP<RangeValidatorDependency<int> > 
+		cheeseTempDep = RCP<RangeValidatorDependency<int> >(
+			new RangeValidatorDependency<int>(
+			  list1->getEntryRCP("string parameter"),
+				list1->getEntryRCP("Cheese to Fondue"), 
+				badRanges
+			)
+		),
+		InvalidDependencyException
+	);
 }
 
 

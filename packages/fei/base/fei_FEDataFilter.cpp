@@ -1882,7 +1882,7 @@ int FEDataFilter::getBlockNodeSolution(GlobalID elemBlockID,
    int offset = 0;
    for(int i=0; i<numActiveNodes; i++) {
      NodeDescriptor* node_i = NULL;
-     CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
+     nodeDB.getNodeAtIndex(i, node_i);
 
       if (offset == numNodes) break;
 
@@ -1896,7 +1896,7 @@ int FEDataFilter::getBlockNodeSolution(GlobalID elemBlockID,
       //Obtain the NodeDescriptor of nodeID in the activeNodes list...
       //Don't call the getActiveNodeDesc_ID function unless we have to.
 
-      if (nodeID == node_i->getGlobalNodeID()) {
+      if (node_i!=NULL && nodeID == node_i->getGlobalNodeID()) {
         node = node_i;
       }
       else {
@@ -1958,7 +1958,7 @@ int FEDataFilter::getNodalSolution(int numNodes,
   int offset = 0;
   for(int i=0; i<numActiveNodes; i++) {
     NodeDescriptor* node_i = NULL;
-    CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
+    nodeDB.getNodeAtIndex(i, node_i);
 
     if (offset == numNodes) break;
 
@@ -1972,7 +1972,7 @@ int FEDataFilter::getNodalSolution(int numNodes,
     //Obtain the NodeDescriptor of nodeID in the activeNodes list...
     //Don't call the getNodeWithID function unless we have to.
 
-    if (nodeID == node_i->getGlobalNodeID()) {
+    if (node_i!=NULL && nodeID == node_i->getGlobalNodeID()) {
       node = node_i;
     }
     else {
@@ -2042,7 +2042,7 @@ int FEDataFilter::getBlockFieldNodeSolution(GlobalID elemBlockID,
 
    for(int i=0; i<numNodes; i++) {
      NodeDescriptor* node_i = NULL;
-     CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
+     nodeDB.getNodeAtIndex(i, node_i);
 
      GlobalID nodeID = nodeIDs[i];
 
@@ -2051,7 +2051,7 @@ int FEDataFilter::getBlockFieldNodeSolution(GlobalID elemBlockID,
      //Obtain the NodeDescriptor of nodeID in the activeNodes list...
      //Don't call the getActiveNodeDesc_ID function unless we have to.
 
-     if (nodeID == node_i->getGlobalNodeID()) {
+     if (node_i!=NULL && nodeID == node_i->getGlobalNodeID()) {
        node = node_i;
      }
      else {
@@ -2111,7 +2111,7 @@ int FEDataFilter::getNodalFieldSolution(int fieldID,
 
   for(int i=0; i<numNodes; i++) {
     NodeDescriptor* node_i = NULL;
-    CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
+    nodeDB.getNodeAtIndex(i, node_i);
 
     GlobalID nodeID = nodeIDs[i];
 
@@ -2120,7 +2120,7 @@ int FEDataFilter::getNodalFieldSolution(int fieldID,
     //Obtain the NodeDescriptor of nodeID in the activeNodes list...
     //Don't call the getNodeWithID function unless we have to.
 
-    if (nodeID == node_i->getGlobalNodeID()) {
+    if (node_i!=NULL && nodeID == node_i->getGlobalNodeID()) {
       node = node_i;
     }
     else {

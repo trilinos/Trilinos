@@ -174,8 +174,6 @@ namespace stk {
 
       void Gear::mesh( stk::mesh::BulkData & M )
       {
-	static const char method[] = "phdmesh::Gear::mesh" ;
-
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
         const stk::mesh::EntityRank element_rank = stk::mesh::Element;
         const stk::mesh::EntityRank side_rank    = stk::mesh::Face;
@@ -325,7 +323,7 @@ namespace stk {
 				      static_cast<unsigned>(j) );
 		}
 
-		stk::mesh::Entity & elem = * M.get_entity(element_rank, elem_id,method);
+		stk::mesh::Entity & elem = * M.get_entity(element_rank, elem_id);
 
 		M.declare_relation( elem , face , face_ord );
 	      }

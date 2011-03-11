@@ -20,6 +20,13 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_y12m AND ${PACKAGE_NAME}_ENABLE_AZLU)
   MESSAGE(FATAL_ERROR "You have enabled the AZLU support in AztecOO with the flag \"AztecOO_ENABLE_AZLU\", but this requires the y12m TPL which is currently disabled.  Please enable this TPL or disable AZLU support.")
 ENDIF()
 
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
+  AZ_ENABLE_TIMEMONITOR
+  "Add timers to AztecOO GMRES solver."
+  NO
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #

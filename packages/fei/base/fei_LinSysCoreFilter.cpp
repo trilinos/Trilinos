@@ -2951,7 +2951,7 @@ int LinSysCoreFilter::getBlockNodeSolution(GlobalID elemBlockID,
    int offset = 0;
    for(int i=0; i<numActiveNodes; i++) {
      const NodeDescriptor* node_i = NULL;
-     CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
+     nodeDB.getNodeAtIndex(i, node_i);
 
       if (offset == numNodes) break;
 
@@ -2965,7 +2965,7 @@ int LinSysCoreFilter::getBlockNodeSolution(GlobalID elemBlockID,
       //Obtain the NodeDescriptor of nodeID in the activeNodes list...
       //Don't call the getActiveNodeDesc_ID function unless we have to.
 
-      if (nodeID == node_i->getGlobalNodeID()) {
+      if (node_i!=NULL && nodeID == node_i->getGlobalNodeID()) {
         node = node_i;
       }
       else {
@@ -3025,7 +3025,7 @@ int LinSysCoreFilter::getNodalSolution(int numNodes,
   int offset = 0;
   for(int i=0; i<numActiveNodes; i++) {
     const NodeDescriptor* node_i = NULL;
-    CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
+    nodeDB.getNodeAtIndex(i, node_i);
 
     if (offset == numNodes) break;
 
@@ -3039,7 +3039,7 @@ int LinSysCoreFilter::getNodalSolution(int numNodes,
     //Obtain the NodeDescriptor of nodeID in the activeNodes list...
     //Don't call the getNodeWithID function unless we have to.
 
-    if (nodeID == node_i->getGlobalNodeID()) {
+    if (node_i!=NULL && nodeID == node_i->getGlobalNodeID()) {
       node = node_i;
     }
     else {
@@ -3112,7 +3112,7 @@ int LinSysCoreFilter::getBlockFieldNodeSolution(GlobalID elemBlockID,
 
    for(int i=0; i<numNodes; i++) {
      const NodeDescriptor* node_i = NULL;
-     CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
+     nodeDB.getNodeAtIndex(i, node_i);
 
      GlobalID nodeID = nodeIDs[i];
 
@@ -3124,7 +3124,7 @@ int LinSysCoreFilter::getBlockFieldNodeSolution(GlobalID elemBlockID,
      //a direct lookup.) Often the user supplies a nodeIDs list that is in the
      //"natural" order, so we don't need to call getNodeWithID at all.
 
-     if (nodeID == node_i->getGlobalNodeID()) {
+     if (node_i!=NULL && nodeID == node_i->getGlobalNodeID()) {
        node = node_i;
      }
      else {
@@ -3174,7 +3174,7 @@ int LinSysCoreFilter::getNodalFieldSolution(int fieldID,
 
   for(int i=0; i<numNodes; i++) {
     const NodeDescriptor* node_i = NULL;
-    CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
+    nodeDB.getNodeAtIndex(i, node_i);
 
     GlobalID nodeID = nodeIDs[i];
 
@@ -3183,7 +3183,7 @@ int LinSysCoreFilter::getNodalFieldSolution(int fieldID,
     //Obtain the NodeDescriptor of nodeID in the activeNodes list...
     //Don't call the getNodeWithID function unless we have to.
 
-    if (nodeID == node_i->getGlobalNodeID()) {
+    if (node_i!=NULL && nodeID == node_i->getGlobalNodeID()) {
       node = node_i;
     }
     else {

@@ -24,60 +24,73 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # CORE
 APPEND_SET(HEADERS
-  BelosBlockCGSolMgr.hpp
+  BelosAkxFactory.hpp
+  BelosAkx.hpp
   BelosBlockCGIter.hpp
-  BelosBlockGmresIter.hpp
+  BelosBlockCGSolMgr.hpp
   BelosBlockFGmresIter.hpp
+  BelosBlockGmresIter.hpp
   BelosBlockGmresSolMgr.hpp
   BelosCaGmres.hpp  # Subclass of GmresBase
-  BelosCGIter.hpp
   BelosCGIteration.hpp
+  BelosCGIter.hpp
   BelosConfigDefs.hpp
   BelosDGKSOrthoManager.hpp
-  BelosPCPGIter.hpp
-  BelosPCPGSolMgr.hpp
   BelosGCRODRIter.hpp
   BelosGCRODRSolMgr.hpp
+  BelosGmresBaseFactory.hpp
   BelosGmresBase.hpp
+  BelosGmresBaseIteration.hpp
+  BelosGmresInnerSolver.hpp
   BelosGmresIteration.hpp
   BelosGmresPolyOp.hpp
   BelosGmresPolySolMgr.hpp
+  BelosGmresSolMgr.hpp
   BelosICGSOrthoManager.hpp
   BelosIMGSOrthoManager.hpp
+  BelosInnerSolveResult.hpp
+  BelosInnerSolver.hpp
   BelosIteration.hpp
   BelosLinearProblem.hpp
   BelosMatOrthoManager.hpp
+  BelosMinresIteration.hpp
+  BelosMinresIter.hpp
+  BelosMinresSolMgr.hpp
+  BelosMonomialOpAkx.hpp
   BelosMultiVec.hpp
   BelosMultiVecTraits.hpp
   BelosMVOPTester.hpp
+  BelosNewtonBasis.hpp
+  BelosNewtonOpAkx.hpp
+  BelosOpAkx.hpp
   BelosOperator.hpp
   BelosOperatorTraits.hpp
-  BelosOrthoManager.hpp
   BelosOrthoManagerFactory.hpp
+  BelosOrthoManager.hpp
   BelosOrthoManagerTest.hpp
   BelosOutputManager.hpp
+  BelosPCPGIter.hpp
+  BelosPCPGSolMgr.hpp
   BelosPseudoBlockCGIter.hpp
   BelosPseudoBlockCGSolMgr.hpp
-  BelosMinresIter.hpp
-  BelosMinresIteration.hpp
-  BelosMinresSolMgr.hpp
   BelosPseudoBlockGmresIter.hpp
   BelosPseudoBlockGmresSolMgr.hpp
   BelosRCGIter.hpp
   BelosRCGSolMgr.hpp
-  BelosSimpleOrthoManager.hpp # New (mfh 20 Jan 2011)
+  BelosSimpleOrthoManager.hpp
   BelosSolverManager.hpp
-  BelosStandardGmres.hpp  # Subclass of GmresBase
-  BelosStatusTest.hpp
+  BelosStandardGmres.hpp
   BelosStatusTestCombo.hpp
-  BelosStatusTestMaxIters.hpp
-  BelosStatusTestOutput.hpp
-  BelosStatusTestOutputFactory.hpp
+  BelosStatusTestFactory.hpp
   BelosStatusTestGeneralOutput.hpp
-  BelosStatusTestResNormOutput.hpp
-  BelosStatusTestResNorm.hpp
   BelosStatusTestGenResNorm.hpp
+  BelosStatusTest.hpp
   BelosStatusTestImpResNorm.hpp
+  BelosStatusTestMaxIters.hpp
+  BelosStatusTestOutputFactory.hpp
+  BelosStatusTestOutput.hpp
+  BelosStatusTestResNorm.hpp
+  BelosStatusTestResNormOutput.hpp
   BelosTFQMRIter.hpp
   BelosTFQMRSolMgr.hpp
   BelosTypes.hpp
@@ -85,6 +98,7 @@ APPEND_SET(HEADERS
 
 # CORE
 APPEND_SET(SOURCES
+  BelosInnerSolveResult.cpp
   )
 
 # UTIL

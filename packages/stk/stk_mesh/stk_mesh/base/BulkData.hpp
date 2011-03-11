@@ -181,8 +181,7 @@ public:
   { return m_bucket_repository.buckets(rank); }
 
   /** \brief  Get entity with a given key */
-  /// \todo REFACTOR remove required_by argument
-  Entity * get_entity( EntityRank entity_rank , EntityId entity_id , const char * /* required_by */ = NULL  ) const {
+  Entity * get_entity( EntityRank entity_rank , EntityId entity_id ) const {
     require_good_rank_and_id(entity_rank, entity_id);
     return m_entity_repo.get_entity( EntityKey(entity_rank, entity_id));
   }
@@ -287,6 +286,9 @@ public:
    *     'e_from' is a member of part_rel.m_root and
    *     the entity relation conforms to the part relation
    *     then 'e_to' has induced membership in part_rel.m_target.
+   *
+   * Note that relation-declarations must be symmetric across all
+   * sharers of the involved entities within a modification cycle.
    */
   void declare_relation( Entity & e_from ,
       Entity & e_to ,

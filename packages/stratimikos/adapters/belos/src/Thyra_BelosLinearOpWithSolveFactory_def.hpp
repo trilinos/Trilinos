@@ -11,6 +11,7 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosGCRODRSolMgr.hpp"
+#include "BelosRCGSolMgr.hpp"
 #include "BelosMinresSolMgr.hpp"
 #include "BelosThyraAdapter.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -42,6 +43,8 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockCG_name = "Pseudo Block CG";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GCRODR_name = "GCRODR";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::RCG_name = "RCG";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::MINRES_name = "MINRES";
 template<class Scalar>
@@ -331,6 +334,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "Block CG",
         "Pseudo Block CG",
         "GCRODR",
+	"RCG",
         "MINRES"
         ),
       tuple<std::string>(
@@ -350,6 +354,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "they are solved.",
 
         "GMRES solver that performs subspace recycling between RHS and linear systems.",
+	"CG solver that performs subspace recycling between RHS and linear systems.",
 
         "MINRES solver that performs single-RHS MINRES on multiple RHSs sequentially."
         ),
@@ -359,6 +364,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         SOLVER_TYPE_BLOCK_CG,
         SOLVER_TYPE_PSEUDO_BLOCK_CG,
         SOLVER_TYPE_GCRODR,
+	SOLVER_TYPE_RCG,
         SOLVER_TYPE_MINRES
         ),
       &*validParamList
@@ -395,6 +401,12 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
     {
       Belos::GCRODRSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(GCRODR_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Belos::RCGSolMgr<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(RCG_name).setParameters(
         *mgr.getValidParameters()
         );
     }
@@ -678,6 +690,25 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       } 
       else {
         iterativeSolver = rcp(new Belos::GCRODRSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+      }
+      break;
+    }
+    case SOLVER_TYPE_RCG:
+    {
+      // Set the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &rcgPL = solverTypesPL.sublist(RCG_name);
+        solverPL = Teuchos::rcp( &rcgPL, false );
+      }
+      // Create the solver
+      if (oldIterSolver != Teuchos::null) {
+        iterativeSolver = oldIterSolver;
+        iterativeSolver->setProblem( lp );
+        iterativeSolver->setParameters( solverPL );
+      } 
+      else {
+        iterativeSolver = rcp(new Belos::RCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
       }
       break;
     }
