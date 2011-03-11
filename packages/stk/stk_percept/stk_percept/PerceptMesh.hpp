@@ -238,6 +238,9 @@ namespace stk {
       // FIXME
       SameRankRelation& adapt_parent_to_child_relations() { return m_adapt_parent_to_child_relations; }
 
+      bool
+      sharesNodes(mesh::Part& part_1, mesh::Part& part_2);
+
     private:
 
       /// reads meta data, commits it, reads bulk data

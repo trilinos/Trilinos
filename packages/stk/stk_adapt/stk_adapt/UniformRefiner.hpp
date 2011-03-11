@@ -96,6 +96,9 @@ namespace stk {
       static BlockNamesType 
       getBlockNames(std::string& block_name);
 
+      static BlockNamesType 
+      correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks);
+
       void 
       setIgnoreSideSets(bool ignore_sidesets) ;
 

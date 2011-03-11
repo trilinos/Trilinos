@@ -35,81 +35,135 @@ namespace stk {
       BlockNamesType blocks(mesh::EntityRankEnd+1u);
       if (block_name.length() == 0)
         return blocks;
+
+      if (block_name.substr(0, 5) == "file:")
+        {
+          if (1) throw std::runtime_error("file: option Not implemented");
+          std::string fileName = block_name.substr(5, block_name.length()-5);
+          std::ifstream file(fileName.c_str());
+          while(!file.eof())
+            {
+              std::string block;
+              file >> block;
+              if (block[0] != '#')
+                {
+                  if (block.substr(0,6) == "block_")
+                    blocks[mesh::Element].push_back(block);
+                  else if (block.substr(0,8) == "surface_")
+                    blocks[mesh::Face].push_back(block);
+                }
+                  
+            }
+        }
       else
         {
-          if (block_name.substr(0, 5) == "file:")
+          std::string names = block_name;
+          while(1)
             {
-              if (1) throw std::runtime_error("file: option Not implemented");
-              std::string fileName = block_name.substr(5, block_name.length()-5);
-              std::ifstream file(fileName.c_str());
-              while(!file.eof())
-                {
-                  std::string block;
-                  file >> block;
-                  if (block[0] != '#')
-                    {
-                      if (block.substr(0,6) == "block_")
-                        blocks[mesh::Element].push_back(block);
-                      else if (block.substr(0,8) == "surface_")
-                        blocks[mesh::Face].push_back(block);
-                    }
+              if (!names.length())
+                break;
+              size_t ipos = names.find(',');
+              bool last_one =  (ipos == std::string::npos);
                   
-                }
-            }
-          else
-            {
-              std::string names = block_name;
-              while(1)
-                {
-                  if (!names.length())
-                    break;
-                  size_t ipos = names.find(',');
-                  bool last_one =  (ipos == std::string::npos);
-                  
+              {
+                std::string n1 = (last_one ? names : names.substr(0, ipos) );
+                bool inc = true;
+                bool exc = false;
+                if ('-' == n1[0]) 
                   {
-                    std::string n1 = (last_one ? names : names.substr(0, ipos) );
-                    bool inc = true;
-                    bool exc = false;
-                    if ('-' == n1[0]) 
-                      {
-                        exc = true;
-                        inc = false;
-                      }
-                    else if ('+' == n1[0])
-                      {
-                      }
-                    else
-                      {
-                        n1 = "+" + n1;
-                      }
-                    std::string n2 = n1.substr(1, n1.length()-1);
-                    //std::cout << "n1= " << n1 << " n2= " << n2 << std::endl;
-                    if (n1.length() > 6 && n1.substr(1,6) == "block_")
-                      blocks[mesh::Element].push_back(n1);
-                    else if (n1.length() > 8 && n1.substr(1,8) == "surface_")
-                      blocks[mesh::Face].push_back(n1);
-                    else
-                      {
-                        std::string pm = (inc?"+":"-");
-                        blocks[mesh::Element].push_back(pm+"block_"+n2);
-                      }
-                    if (last_one) 
-                      {
-                        break;
-                      }
-                    else
-                      {
-                        names = names.substr(ipos+1, names.length()-(ipos+1));
-                      }
+                    exc = true;
+                    inc = false;
                   }
-                }
-              if (0) std::cout << "tmp UniformRefiner::getBlockNames: blocks = " << blocks << std::endl;
+                else if ('+' == n1[0])
+                  {
+                  }
+                else
+                  {
+                    n1 = "+" + n1;
+                  }
+                std::string n2 = n1.substr(1, n1.length()-1);
+                //std::cout << "n1= " << n1 << " n2= " << n2 << std::endl;
+                if (n1.length() > 6 && n1.substr(1,6) == "block_")
+                  blocks[mesh::Element].push_back(n1);
+                else if (n1.length() > 8 && n1.substr(1,8) == "surface_")
+                  blocks[mesh::Face].push_back(n1);
+                else
+                  {
+                    std::string pm = (inc?"+":"-");
+                    blocks[mesh::Element].push_back(pm+"block_"+n2);
+                  }
+                if (last_one) 
+                  {
+                    break;
+                  }
+                else
+                  {
+                    names = names.substr(ipos+1, names.length()-(ipos+1));
+                  }
+              }
             }
-
+          if (1) std::cout << "tmp UniformRefiner::getBlockNames: blocks = " << blocks << std::endl;
         }
+
       return blocks;
     }
 
+    // FIXME move this to a utils class
+    /**
+     * This method looks for surfaces that share nodes with the blocks specified in @param blocks and if it finds
+     * any surfaces (sidesets), they are added to the blocks so they get refined properly.  If a surface is shared
+     * by more than one block, an error is thrown.
+     */
+
+
+    BlockNamesType UniformRefiner::correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks)
+    {
+      if (blocks[mesh::Element].size() == 0)
+        return blocks;
+
+      EntityRank subDimRank = (eMesh.getSpatialDim() == 3 ? mesh::Face : mesh::Edge);
+
+      mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+      for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
+        {
+          mesh::Part *  part = *i_part ;
+
+          for (mesh::PartVector::iterator i_surfacePart = all_parts.begin(); i_surfacePart != all_parts.end(); ++i_surfacePart)
+            {
+              mesh::Part *  surfacePart = *i_surfacePart ;
+              const CellTopologyData * part_cell_topo_data = stk::mesh::get_cell_topology(*surfacePart);
+
+              if (part_cell_topo_data && part->primary_entity_rank() == mesh::Element && surfacePart->primary_entity_rank() == subDimRank)
+                {
+                  std::string partNamePlus = "+" + part->name();
+                  std::vector<std::string>::iterator partInBlocks = std::find(blocks[mesh::Element].begin(), blocks[mesh::Element].end(), partNamePlus);
+                  // if this part is not in the blocks list, skip it
+                  if (partInBlocks == blocks[mesh::Element].end())
+                    {
+                      continue;
+                    }
+                  std::string surfacePartNamePlus = "+" + surfacePart->name();
+                  std::vector<std::string>::iterator surfacePartInBlocks = std::find(blocks[subDimRank].begin(), blocks[subDimRank].end(), surfacePartNamePlus);
+                  // if this surface is already in the list, skip it
+                  if (surfacePartInBlocks != blocks[subDimRank].end())
+                    {
+                      continue;
+                    }
+                  if (eMesh.sharesNodes(*part, *surfacePart))
+                    {
+                      std::cout << "tmp part [" << part->name() << "] shares sideset [" << surfacePart->name() << "]" << std::endl;
+                      blocks[subDimRank].push_back(std::string("+"+surfacePart->name()));
+                    }
+                  else
+                    {
+                      //std::cout << "tmp part [" << part->name() << "] doesn't shares sideset [" << surfacePart->name() << "]" << std::endl;
+                    }
+                }
+            }
+        }
+      if (1) std::cout << "tmp UniformRefiner::correctBlockNamesForPartPartConsistency: blocks = " << blocks << std::endl;
+      return blocks;
+    }  
 
     void UniformRefiner::
     setRemoveOldElements(bool do_remove) { m_doRemove = do_remove; }

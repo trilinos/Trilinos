@@ -350,8 +350,23 @@ namespace stk {
 
         if (doRefineMesh)
           {
-            BlockNamesType block_names = UniformRefiner::getBlockNames(block_name_inc);
+            //             BlockNamesType block_names = UniformRefiner::getBlockNames(block_name_inc);
+            //             block_names = UniformRefiner::correctBlockNamesForPartPartConsistency(eMesh, block_names);
 
+            // FIXME move this next block of code to a method on UniformRefiner
+            BlockNamesType block_names(mesh::EntityRankEnd+1u);
+            if (block_name_inc.length())
+              {
+                block_names = UniformRefiner::getBlockNames(block_name_inc);
+                if (1)
+                  {
+                    eMesh.commit();
+                    block_names = UniformRefiner::correctBlockNamesForPartPartConsistency(eMesh, block_names);
+                    eMesh.close();
+                    eMesh.open(input_mesh);
+                  }
+              }
+            
             pattern = UniformRefinerPatternBase::createPattern(refine, enrich, convert, eMesh, block_names);
 
             if (0)
