@@ -102,7 +102,7 @@ namespace stk {
                   }
               }
             }
-          if (1) std::cout << "tmp UniformRefiner::getBlockNames: blocks = " << blocks << std::endl;
+          if (0) std::cout << "tmp UniformRefiner::getBlockNames: blocks = " << blocks << std::endl;
         }
 
       return blocks;
@@ -161,7 +161,7 @@ namespace stk {
                 }
             }
         }
-      if (1) std::cout << "tmp UniformRefiner::correctBlockNamesForPartPartConsistency: blocks = " << blocks << std::endl;
+      if (0) std::cout << "tmp UniformRefiner::correctBlockNamesForPartPartConsistency: blocks = " << blocks << std::endl;
       return blocks;
     }  
 
@@ -872,7 +872,7 @@ namespace stk {
 
       SameRankRelation& parent_child = m_eMesh.adapt_parent_to_child_relations();
 
-      std::cout << "tmp parent_child.size() = " << parent_child.size() << std::endl;
+      //std::cout << "tmp parent_child.size() = " << parent_child.size() << std::endl;
 
       SameRankRelation::iterator pc_it;
       for (pc_it = parent_child.begin(); pc_it != parent_child.end(); pc_it++)

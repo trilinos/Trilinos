@@ -54,7 +54,7 @@ namespace stk {
       mesh::Selector selector(eMesh.getMetaData()->universal_part());
       if (fromParts) 
         {
-          if (1)
+          if (0)
             {
               //std::cout << "tmp Colorer::color fromParts= " << *fromParts << std::endl;
               std::cout << "tmp Colorer::color elementType= " << *elementType << std::endl;
