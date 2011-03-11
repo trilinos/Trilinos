@@ -30,21 +30,25 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
 PrintTimer.hpp
 Timer.hpp
+Trace.hpp
 TimerMetricTraits.hpp
 WriterExt.hpp
 Writer_fwd.hpp
 Writer.hpp
 WriterManip.hpp
 WriterOStream.hpp
+WriterParser.hpp
   )
 
 APPEND_SET(SOURCES
 PrintTimer.cpp
 Timer.cpp
+Trace.cpp
 TimerMetricTraits.cpp
 Writer.cpp
 WriterExt.cpp
 WriterManip.cpp
+WriterParser.cpp
   )
 
 IF (TPL_ENABLE_MPI)

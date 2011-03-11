@@ -6,6 +6,9 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#ifdef __CYGWIN__
+#include <strings.h>
+#endif
 #include <string.h>
 #include <iostream>
 
