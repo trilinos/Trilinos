@@ -35,6 +35,7 @@ void Ifpack_HyperLU::Destroy()
     {
         delete hlu_data_.LP;
         delete hlu_data_.Solver;
+        delete hlu_data_.innersolver;
         delete[] hlu_data_.DRowElems;
         delete[] hlu_data_.SRowElems;
     }
@@ -72,6 +73,8 @@ int Ifpack_HyperLU::Initialize()
                                                 "Diagonal Factor");
     hlu_config_.sym =  Teuchos::getParameter<int>(List_,
                                                 "Symmetry");
+    hlu_config_.libName = Teuchos::getParameter<string>(List_,
+                                                "Outer Solver Library");
     HyperLU_factor(A_, &hlu_data_, &hlu_config_);
 
     IsInitialized_ = true;
@@ -85,23 +88,24 @@ int Ifpack_HyperLU::SetParameters(Teuchos::ParameterList& parameterlist)
 
 int Ifpack_HyperLU::Compute()
 {
+    AztecOO *solver;
     Teuchos::Time ftime("setup time");
     ftime.start();
 
-    libName_ = Teuchos::getParameter<string>(List_,
+    hlu_config_.libName = Teuchos::getParameter<string>(List_,
                                                 "Outer Solver Library");
-    if (libName_ == "Belos")
+    if (hlu_config_.libName == "Belos")
     {
-        solver_  = new AztecOO() ;
-        int err = solver_->SetUserMatrix(hlu_data_.Sbar.get());
+        solver  = new AztecOO() ;
+        int err = solver->SetUserMatrix(hlu_data_.Sbar.get());
         assert (err == 0);
-        solver_->SetAztecOption(AZ_solver, AZ_gmres);
-        solver_->SetAztecOption(AZ_precond, AZ_dom_decomp);
-        solver_->SetAztecOption(AZ_keep_info, 1);
-        solver_->SetMatrixName(999);
+        solver->SetAztecOption(AZ_solver, AZ_gmres);
+        solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
+        solver->SetAztecOption(AZ_keep_info, 1);
+        solver->SetMatrixName(999);
 
         double condest;
-        err = solver_->ConstructPreconditioner(condest);
+        err = solver->ConstructPreconditioner(condest);
         assert (err == 0);
         cout << "Condition number of inner Sbar" << condest << endl;
     }
@@ -110,12 +114,13 @@ int Ifpack_HyperLU::Compute()
         // I suspect there is a bug in AztecOO. Doing what we do in the if case
         // here will cause an error when we use the solver in ApplyInverse
         // The error will not happen when we call the dummy JustTryIt() below
-        solver_ = NULL;
+        solver = NULL;
     }
 
     ftime.stop();
     cout << "Time to ConstructPreconditioner" << ftime.totalElapsedTime() 
             << endl;
+    hlu_data_.innersolver = solver;
     IsComputed_ = true;
     cout << " Done with the compute" << endl ;
     return 0;
@@ -125,14 +130,16 @@ int Ifpack_HyperLU::JustTryIt()
 {
     // Dummy function, To show the error in AztecOO, This works
     cout << "Entering JustTryIt" << endl;
+    AztecOO *solver;
+    solver = hlu_data_.innersolver;
     //cout << solver_ << endl;
     Epetra_Map BsMap(-1, hlu_data_.Snr, hlu_data_.SRowElems, 0, A_->Comm());
     Epetra_MultiVector Xs(BsMap, 1);
     Epetra_MultiVector Bs(BsMap, 1);
     Xs.PutScalar(0.0);
-    solver_->SetLHS(&Xs);
-    solver_->SetRHS(&Bs);
-    solver_->Iterate(30, 1e-10);
+    solver->SetLHS(&Xs);
+    solver->SetRHS(&Bs);
+    solver->Iterate(30, 1e-10);
 }
 
 int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X, 
@@ -146,130 +153,8 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
 #endif
     cout << "Entering ApplyInvers" << endl;
-    int err;
-    assert(X.Map().SameAs(Y.Map()));
-    assert(X.Map().SameAs(A_->RowMap()));
-    const Epetra_MultiVector *newX; 
-    newX = &X;
-    //rd_->redistribute(X, newX);
 
-    int nvectors = newX->NumVectors();
-
-    // May have to use importer/exporter
-    Epetra_Map BsMap(-1, hlu_data_.Snr, hlu_data_.SRowElems, 0, X.Comm());
-    Epetra_Map BdMap(-1, hlu_data_.Dnr, hlu_data_.DRowElems, 0, X.Comm());
-
-    Epetra_MultiVector Bs(BsMap, nvectors);
-    Epetra_Import BsImporter(BsMap, newX->Map());
-
-    assert(BsImporter.SourceMap().SameAs(newX->Map()));
-    assert((newX->Map()).SameAs(BsImporter.SourceMap()));
-
-    Bs.Import(*newX, BsImporter, Insert);
-    Epetra_MultiVector Xs(BsMap, nvectors);
-    Xs.PutScalar(0.0);
-
-#ifdef DUMP_MATRICES
-    if (NumApplyInverse_ == 0 && A_->Comm().MyPID() == 1)
-    {
-        EpetraExt::MultiVectorToMatlabFile("localXs.mat", localXs);
-    }
-#endif
-
-    Epetra_LinearProblem Problem(hlu_data_.Sbar.get(), &Xs, &Bs);
-
-#ifdef DUMP_MATRICES
-    if (NumApplyInverse_ == 0 )
-    {
-        EpetraExt::RowMatrixToMatlabFile("Sbar.mat", *(hlu_data_.Sbar.get()));
-    }
-#endif
-
-    if (libName_ == "Belos")
-    {
-        solver_->SetLHS(&Xs);
-        solver_->SetRHS(&Bs);
-    }
-    else
-    {
-        // See the comment above on why we are not able to reuse the solver
-        // when outer solve is AztecOO as well.
-        solver_ = new AztecOO();
-        //solver.SetPrecOperator(precop_);
-        solver_->SetAztecOption(AZ_solver, AZ_gmres);
-        // Do not use AZ_none
-        solver_->SetAztecOption(AZ_precond, AZ_dom_decomp);
-        //solver_->SetAztecOption(AZ_precond, AZ_none);
-        //solver_->SetAztecOption(AZ_precond, AZ_Jacobi);
-        ////solver_->SetAztecOption(AZ_precond, AZ_Neumann);
-        //solver_->SetAztecOption(AZ_overlap, 3);
-        //solver_->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
-        //solver_->SetAztecOption(AZ_output, AZ_all);
-        //solver_->SetAztecOption(AZ_diagnostics, AZ_all);
-        solver_->SetProblem(Problem);
-    }
-    solver_->Iterate(30, 1e-10);
-
-    Epetra_MultiVector Bd(BdMap, nvectors);
-    Epetra_Import BdImporter(BdMap, newX->Map());
-    assert(BdImporter.SourceMap().SameAs(newX->Map()));
-    assert((newX->Map()).SameAs(BdImporter.SourceMap()));
-    Bd.Import(*newX, BdImporter, Insert);
-
-    Epetra_MultiVector temp(BdMap, nvectors);
-    hlu_data_.Cptr->Multiply(false, Xs, temp);
-    temp.Update(1.0, Bd, -1.0);
-
-    Epetra_SerialComm LComm;        // Use Serial Comm for the local vectors.
-    Epetra_Map LocalBdMap(-1, hlu_data_.Dnr, hlu_data_.DRowElems, 0, LComm);
-    Epetra_MultiVector localrhs(LocalBdMap, nvectors);
-    Epetra_MultiVector locallhs(LocalBdMap, nvectors);
-
-    int lda;
-    double *values;
-    err = temp.ExtractView(&values, &lda);
-    assert (err == 0);
-    int nrows = hlu_data_.Cptr->RowMap().NumMyElements();
-
-    // copy to local vector
-    assert(lda == nrows);
-    for (int v = 0; v < nvectors; v++)
-    {
-       for (int i = 0; i < nrows; i++)
-       {
-           err = localrhs.ReplaceMyValue(i, v, values[i+v*lda]);
-           assert (err == 0);
-       }
-    }
-
-    hlu_data_.LP->SetRHS(&localrhs);
-    hlu_data_.LP->SetLHS(&locallhs);
-    hlu_data_.Solver->Solve();
-
-    err = locallhs.ExtractView(&values, &lda);
-    assert (err == 0);
-
-    // copy to distributed vector
-    assert(lda == nrows);
-    for (int v = 0; v < nvectors; v++)
-    {
-       for (int i = 0; i < nrows; i++)
-       {
-           err = temp.ReplaceMyValue(i, v, values[i+v*lda]);
-           assert (err == 0);
-       }
-    }
-
-    // For checking faults
-    //if (NumApplyInverse_ == 5)  temp.ReplaceMyValue(0, 0, 0.0);
-
-    Epetra_Export XdExporter(BdMap, Y.Map());
-    Y.Export(temp, XdExporter, Insert);
-
-    Epetra_Export XsExporter(BsMap, Y.Map());
-    Y.Export(Xs, XsExporter, Insert);
-
-
+    hyperlu_solve(&hlu_data_, &hlu_config_, X, Y);
 #ifdef DUMP_MATRICES
     if (NumApplyInverse_ == 0)
     {
@@ -278,14 +163,6 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
 #endif
     NumApplyInverse_++;
-    if (libName_ == "Belos")
-    {
-        // clean up
-    }
-    else
-    {
-        delete solver_;
-    }
     cout << "Leaving ApplyInvers" << endl;
     return 0;
 }

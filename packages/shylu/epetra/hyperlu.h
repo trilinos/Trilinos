@@ -3,6 +3,7 @@
 #include "Epetra_MultiVector.h" 
 #include "Epetra_LinearProblem.h" 
 #include "Amesos_BaseSolver.h" 
+#include "AztecOO.h"
 
 #define MIN(a, b) (((a) < (b)) ? a : b)
 #define MAX(a, b) (((a) > (b)) ? a : b)
@@ -18,12 +19,14 @@ typedef struct
     int *DRowElems;             // local rows
     int *SRowElems;             // remote rows
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
+    AztecOO *innersolver;            // inner solver
 } hyperlu_data;
 
 typedef struct
 {
     int sym;                    // flag for symmetry
     double Sdiagfactor;         // % of diagonals added to Schur complement
+    string libName;             // library for the outer solver
 } hyperlu_config;
 
 int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config 
@@ -33,3 +36,6 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         Epetra_CrsMatrix *&Cptr, int &Dnr, 
         int *&DRowElems, int &Snr, int *&SRowElems,
         Teuchos::RCP<Epetra_CrsMatrix>& Sbar, double Sdiagfactor);*/
+
+int hyperlu_solve(hyperlu_data *data, hyperlu_config *config,
+    const Epetra_MultiVector& X, Epetra_MultiVector& Y);

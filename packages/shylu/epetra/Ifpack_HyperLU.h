@@ -285,10 +285,9 @@ int JustTryIt() ;
     Epetra_CrsMatrix *A_;
 
     Teuchos::ParameterList List_;
-    mutable AztecOO *solver_; // Ugh !!! Mutable ! To workaround AztecOO bug
-    string libName_;
-    hyperlu_data hlu_data_;
-    hyperlu_config hlu_config_;
+    //mutable AztecOO *solver_; // Ugh !!! Mutable ! To workaround AztecOO bug
+    mutable hyperlu_data hlu_data_; // More mutable !!!
+    mutable hyperlu_config hlu_config_; // More mutable !!
 
     //fpr later use
     Isorropia::Epetra::Partitioner *partitioner_;

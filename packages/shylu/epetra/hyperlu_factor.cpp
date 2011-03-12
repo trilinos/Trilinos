@@ -22,58 +22,14 @@
 
 */
 
-#include <assert.h>
-#include <mpi.h>
-#include <iostream>
-#include <sstream>
-
 /* This define will make S block diagonal, To make this happen even some
    zero columns/rows of C and R will be stored.
    */
 #define BLOCK_DIAGONAL_Si
 
-// To dump all the matrices into files.
-//#define DUMP_MATRICES
-
-#include "Isorropia_config.h" // Just for HAVE_MPI
-
-// Epetra includes
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_SerialComm.h"
-#include "Epetra_Time.h" 
-#include "Epetra_CrsMatrix.h" 
-#include "Epetra_Map.h" 
-#include "Epetra_MultiVector.h" 
-#include "Epetra_LinearProblem.h"
-#include "Epetra_Import.h" 
-#include "Epetra_Export.h" 
-
-// Teuchos includes
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_Time.hpp"
-
-// EpetraExt includes
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_MultiVectorOut.h"
-#include "EpetraExt_CrsMatrixIn.h"
-
-// Amesos includes
-#include "Amesos.h"
-#include "Amesos_BaseSolver.h"
-
 #include "hyperlu.h"
 #include "hyperlu_util.h"
 #include "hyperlu_probing_operator.h"
-
-#include "Isorropia_EpetraProber.hpp"
-
-using namespace std;
 
 
 int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
