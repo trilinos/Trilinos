@@ -76,14 +76,20 @@
 using namespace std;
 
 
-int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
-        Epetra_LinearProblem *&LP, Amesos_BaseSolver *&Solver, 
-        Epetra_CrsMatrix *&Cptr, int &Dnr, 
-        int *&DRowElems, int &Snr, int *&SRowElems,
-        Teuchos::RCP<Epetra_CrsMatrix>& Sbar, double Sdiagfactor)
+int HyperLU_factor(Epetra_CrsMatrix *A, int sym, hyperlu_data *data,
+        double Sdiagfactor)
 {
     int myPID = A->Comm().MyPID();
     int n = A->NumGlobalRows();
+
+    Epetra_LinearProblem *LP;
+    Amesos_BaseSolver *Solver;
+    Epetra_CrsMatrix *Cptr;
+    int Dnr;
+    int Snr;
+    int *DRowElems;
+    int *SRowElems;
+    Teuchos::RCP<Epetra_CrsMatrix> Sbar;
 
     checkMaps(A);
 
@@ -153,6 +159,11 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
         // SRowElems are not known until factorization, TODO
         assert(0 == 1);
     }
+
+    data->Dnr = Dnr;
+    data->Snr = Snr;
+    data->DRowElems = DRowElems;
+    data->SRowElems = SRowElems;
 
     // Create the local row map 
     Epetra_SerialComm LComm;        // Use Serial Comm for the local blocks.
@@ -459,6 +470,11 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
 
     Solver->NumericFactorization();
     cout << "Numeric Factorization" << endl;
+
+    data->LP = LP;
+    data->Solver = Solver;
+    data->Cptr = Cptr;
+
     /*Solver->Solve();
     cout << "Solve done" << endl;
 
@@ -504,6 +520,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
     cout << "Time to probe" << ftime.totalElapsedTime() << endl;
     ftime.reset();
 
+    data->Sbar  = Sbar;
 
     // ======================= Solve =========================================
 

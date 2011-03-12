@@ -166,6 +166,7 @@ int main(int argc, char *argv[])
     }
 
     solver.SetAztecOption(AZ_solver, AZ_gmres);
+    solver.SetMatrixName(666);
     //solver.SetAztecOption(AZ_output, 1);
     //solver.SetAztecOption(AZ_conv, AZ_Anorm);
     cout << "Going to iterate for the global problem" << endl;

@@ -283,22 +283,15 @@ int JustTryIt() ;
 
     //! Pointer to the Epetra_RowMatrix to factorize
     Epetra_CrsMatrix *A_;
-    Epetra_CrsMatrix *C_;
+
     Teuchos::ParameterList List_;
+    mutable AztecOO *solver_; // Ugh !!! Mutable ! To workaround AztecOO bug
+    string libName_;
+    hyperlu_data hlu_data_;
+
+    //fpr later use
     Isorropia::Epetra::Partitioner *partitioner_;
     Isorropia::Epetra::Redistributor *rd_;
-    Epetra_LinearProblem *LP_;
-    Amesos_BaseSolver *Solver_;
-    int Dnr_;
-    int Snr_;
-    int *DRowElems_;
-    int *SRowElems_;
-    Teuchos::RCP<Epetra_CrsMatrix> Sbar_;
-    mutable AztecOO *solver_; // Ugh !!! Mutable ! Ugh! Workaround AztecOO bug
-    Epetra_MultiVector *Xs_;
-    Epetra_MultiVector *Bs_;
-    Epetra_Operator *precop_ ;
-    string libName_;
 
     bool UseTranspose_;
 

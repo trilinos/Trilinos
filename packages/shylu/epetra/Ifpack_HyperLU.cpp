@@ -33,10 +33,10 @@ void Ifpack_HyperLU::Destroy()
     }
     if (IsComputed_)
     {
-        delete LP_;
-        delete Solver_;
-        delete[] DRowElems_;
-        delete[] SRowElems_;
+        delete hlu_data_.LP;
+        delete hlu_data_.Solver;
+        delete[] hlu_data_.DRowElems;
+        delete[] hlu_data_.SRowElems;
     }
 }
 
@@ -66,8 +66,9 @@ int Ifpack_HyperLU::Initialize()
     // ]
 
     double Sdiagfactor = 0.05; // hard code the diagonals
-    HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
-                    Sbar_, Sdiagfactor);
+    /*HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
+                    Sbar_, Sdiagfactor);*/
+    HyperLU_factor(A_, 1, &hlu_data_, Sdiagfactor);
 
     IsInitialized_ = true;
     return 0;
@@ -88,30 +89,22 @@ int Ifpack_HyperLU::Compute()
     if (libName_ == "Belos")
     {
         solver_  = new AztecOO() ;
-        int err = solver_->SetUserMatrix(Sbar_.get());
+        int err = solver_->SetUserMatrix(hlu_data_.Sbar.get());
         assert (err == 0);
         solver_->SetAztecOption(AZ_solver, AZ_gmres);
         solver_->SetAztecOption(AZ_precond, AZ_dom_decomp);
         solver_->SetAztecOption(AZ_keep_info, 1);
+        solver_->SetMatrixName(999);
 
         double condest;
         err = solver_->ConstructPreconditioner(condest);
         assert (err == 0);
         cout << "Condition number of inner Sbar" << condest << endl;
-
-        // Do a dummy iterate to construct the preconditioner
-        /*Epetra_Map BsMap(-1, Snr_, SRowElems_, 0, A_->Comm());
-        Xs_ = new Epetra_MultiVector(BsMap, 1);
-        Bs_ = new Epetra_MultiVector(BsMap, 1);
-        Bs_->PutScalar(1.0);
-        solver_->SetLHS(Xs_);
-        solver_->SetRHS(Bs_);
-        solver_->Iterate(30, 1e-10);*/
     }
     else
     {
         // I suspect there is a bug in AztecOO. Doing what we do in the if case
-        // here will cause an error when we use the solver in AppluInvers
+        // here will cause an error when we use the solver in ApplyInverse
         // The error will not happen when we call the dummy JustTryIt() below
         solver_ = NULL;
     }
@@ -126,9 +119,15 @@ int Ifpack_HyperLU::Compute()
 
 int Ifpack_HyperLU::JustTryIt()
 {
-    // Dummy function, To show the error in AztecOO
+    // Dummy function, To show the error in AztecOO, This works
     cout << "Entering JustTryIt" << endl;
-    cout << solver_ << endl;
+    //cout << solver_ << endl;
+    Epetra_Map BsMap(-1, hlu_data_.Snr, hlu_data_.SRowElems, 0, A_->Comm());
+    Epetra_MultiVector Xs(BsMap, 1);
+    Epetra_MultiVector Bs(BsMap, 1);
+    Xs.PutScalar(0.0);
+    solver_->SetLHS(&Xs);
+    solver_->SetRHS(&Bs);
     solver_->Iterate(30, 1e-10);
 }
 
@@ -144,7 +143,6 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
 #endif
     cout << "Entering ApplyInvers" << endl;
     int err;
-    //if(NumApplyInverse_ == 0) cout << X;
     assert(X.Map().SameAs(Y.Map()));
     assert(X.Map().SameAs(A_->RowMap()));
     const Epetra_MultiVector *newX; 
@@ -154,8 +152,8 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     int nvectors = newX->NumVectors();
 
     // May have to use importer/exporter
-    Epetra_Map BsMap(-1, Snr_, SRowElems_, 0, X.Comm());
-    Epetra_Map BdMap(-1, Dnr_, DRowElems_, 0, X.Comm());
+    Epetra_Map BsMap(-1, hlu_data_.Snr, hlu_data_.SRowElems, 0, X.Comm());
+    Epetra_Map BdMap(-1, hlu_data_.Dnr, hlu_data_.DRowElems, 0, X.Comm());
 
     Epetra_MultiVector Bs(BsMap, nvectors);
     Epetra_Import BsImporter(BsMap, newX->Map());
@@ -166,8 +164,6 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     Bs.Import(*newX, BsImporter, Insert);
     Epetra_MultiVector Xs(BsMap, nvectors);
     Xs.PutScalar(0.0);
-    //cout << " Done with first import " << endl;
-    //if(NumApplyInverse_ == 0) cout << Bs;
 
 #ifdef DUMP_MATRICES
     if (NumApplyInverse_ == 0 && A_->Comm().MyPID() == 1)
@@ -176,13 +172,12 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
 #endif
 
-    Epetra_LinearProblem Problem(Sbar_.get(), &Xs, &Bs);
+    Epetra_LinearProblem Problem(hlu_data_.Sbar.get(), &Xs, &Bs);
 
 #ifdef DUMP_MATRICES
     if (NumApplyInverse_ == 0 )
     {
-        //cout << *(Sbar_.get()) << endl;
-        EpetraExt::RowMatrixToMatlabFile("Sbar.mat", *(Sbar_.get()));
+        EpetraExt::RowMatrixToMatlabFile("Sbar.mat", *(hlu_data_.Sbar.get()));
     }
 #endif
 
@@ -211,8 +206,6 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
     solver_->Iterate(30, 1e-10);
 
-    //if(NumApplyInverse_ == 0) cout << "X vector from inner iteration" << Xs;
-
     Epetra_MultiVector Bd(BdMap, nvectors);
     Epetra_Import BdImporter(BdMap, newX->Map());
     assert(BdImporter.SourceMap().SameAs(newX->Map()));
@@ -220,11 +213,11 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     Bd.Import(*newX, BdImporter, Insert);
 
     Epetra_MultiVector temp(BdMap, nvectors);
-    C_->Multiply(false, Xs, temp);
+    hlu_data_.Cptr->Multiply(false, Xs, temp);
     temp.Update(1.0, Bd, -1.0);
 
     Epetra_SerialComm LComm;        // Use Serial Comm for the local vectors.
-    Epetra_Map LocalBdMap(-1, Dnr_, DRowElems_, 0, LComm);
+    Epetra_Map LocalBdMap(-1, hlu_data_.Dnr, hlu_data_.DRowElems, 0, LComm);
     Epetra_MultiVector localrhs(LocalBdMap, nvectors);
     Epetra_MultiVector locallhs(LocalBdMap, nvectors);
 
@@ -232,7 +225,7 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     double *values;
     err = temp.ExtractView(&values, &lda);
     assert (err == 0);
-    int nrows = C_->RowMap().NumMyElements();
+    int nrows = hlu_data_.Cptr->RowMap().NumMyElements();
 
     // copy to local vector
     assert(lda == nrows);
@@ -245,9 +238,9 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
        }
     }
 
-    LP_->SetRHS(&localrhs);
-    LP_->SetLHS(&locallhs);
-    Solver_->Solve();
+    hlu_data_.LP->SetRHS(&localrhs);
+    hlu_data_.LP->SetLHS(&locallhs);
+    hlu_data_.Solver->Solve();
 
     err = locallhs.ExtractView(&values, &lda);
     assert (err == 0);
@@ -289,7 +282,6 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     {
         delete solver_;
     }
-    //delete newX;
     cout << "Leaving ApplyInvers" << endl;
     return 0;
 }
