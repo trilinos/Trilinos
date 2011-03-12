@@ -2,9 +2,9 @@
     <Parameter name="mm_file" type ="string" value="wathenSmall.mtx" />
     <Parameter name="preconditioner" type ="string" value="HyperLU" />
     <ParameterList name="HyperLU Input">
-    <Parameter name="Outer Solver Library" type ="string" value="Belos" />
-    <Parameter name="Diagonal factor" type="double" value="0.05" />
-    <Parameter name="symmetric" type="bool" value="true" />
+        <Parameter name="Outer Solver Library" type ="string" value="Belos" />
+        <Parameter name="Diagonal Factor" type="double" value="0.05" />
+        <Parameter name="Symmetry" type="int" value="1" />
     </ParameterList>
     <ParameterList name="Isorropia Input">
     <!--Parameter name="partitioning method" type="string" value="graph" /-->

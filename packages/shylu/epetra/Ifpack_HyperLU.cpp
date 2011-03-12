@@ -68,7 +68,11 @@ int Ifpack_HyperLU::Initialize()
     double Sdiagfactor = 0.05; // hard code the diagonals
     /*HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
                     Sbar_, Sdiagfactor);*/
-    HyperLU_factor(A_, 1, &hlu_data_, Sdiagfactor);
+    hlu_config_.Sdiagfactor =  Teuchos::getParameter<double>(List_,
+                                                "Diagonal Factor");
+    hlu_config_.sym =  Teuchos::getParameter<int>(List_,
+                                                "Symmetry");
+    HyperLU_factor(A_, &hlu_data_, &hlu_config_);
 
     IsInitialized_ = true;
     return 0;

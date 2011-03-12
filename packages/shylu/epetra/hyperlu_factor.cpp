@@ -76,8 +76,8 @@
 using namespace std;
 
 
-int HyperLU_factor(Epetra_CrsMatrix *A, int sym, hyperlu_data *data,
-        double Sdiagfactor)
+int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
+                *config)
 {
     int myPID = A->Comm().MyPID();
     int n = A->NumGlobalRows();
@@ -90,6 +90,8 @@ int HyperLU_factor(Epetra_CrsMatrix *A, int sym, hyperlu_data *data,
     int *DRowElems;
     int *SRowElems;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar;
+    int sym = config->sym;
+    double Sdiagfactor = config->Sdiagfactor;
 
     checkMaps(A);
 
