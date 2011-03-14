@@ -20,6 +20,7 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/Trace.hpp>
 
 namespace stk {
 namespace mesh {
@@ -74,6 +75,8 @@ FieldBaseImpl::FieldBaseImpl(
   m_rank( arg_rank ),
   m_dim_map()
 {
+  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::FieldBaseImpl", LOG_FIELD, m_ordinal);
+
   FieldBase * const pzero = NULL ;
   const shards::ArrayDimTag * const dzero = NULL ;
   Copy<MaximumFieldStates>(    m_field_states , pzero );
@@ -140,6 +143,8 @@ void FieldBaseImpl::insert_restriction(
   const Part     & arg_part ,
   const unsigned * arg_stride )
 {
+  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
+
   FieldRestriction tmp ;
 
   tmp.key = EntityKey( arg_entity_rank , arg_part.mesh_meta_data_ordinal() );
@@ -192,6 +197,8 @@ void FieldBaseImpl::verify_and_clean_restrictions(
   const char       * arg_method ,
   const PartVector & arg_all_parts )
 {
+  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::verify_and_clean_restrictions", LOG_FIELD, m_ordinal);
+
   const EntityKey invalid_key ;
   FieldRestrictionVector & rMap = restrictions();
   FieldRestrictionVector::iterator i , j ;
@@ -289,6 +296,15 @@ unsigned FieldBaseImpl::max_size( unsigned entity_rank ) const
   }
 
   return max ;
+}
+
+void FieldBaseImpl::set_field_states( FieldBase ** field_states)
+{
+  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::set_field_states", LOG_FIELD, m_ordinal);
+
+  for (unsigned i = 0; i < m_num_states; ++i) {
+    m_field_states[i] = field_states[i];
+  }
 }
 
 //----------------------------------------------------------------------

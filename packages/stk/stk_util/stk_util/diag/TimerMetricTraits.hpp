@@ -20,7 +20,7 @@ typedef unsigned long MetricsMask;
  * @brief Member function <code>setTimerTimeFormat</code> sets the display format of time in the
  * output tables
  *
- * @param time_format		a <code>TimeFormat</code> variable...
+ * @param time_format    a <code>TimeFormat</code> variable...
  */
 void setTimerTimeFormat(int time_format);
 

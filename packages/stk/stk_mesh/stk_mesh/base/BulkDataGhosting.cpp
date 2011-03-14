@@ -26,6 +26,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/Trace.hpp>
 
 using std::strcmp;
 
@@ -36,6 +37,8 @@ namespace mesh {
 
 Ghosting & BulkData::create_ghosting( const std::string & name )
 {
+  Trace_("stk::mesh::BulkData::create_ghosting");
+
   require_ok_to_modify();
 
   // Verify name is the same on all processors,
@@ -98,6 +101,8 @@ void comm_sync_send_recv(
 
 void BulkData::destroy_all_ghosting()
 {
+  Trace_("stk::mesh::BulkData::destroy_all_ghosting");
+
   require_ok_to_modify();
 
   // Clear Ghosting data
@@ -142,6 +147,8 @@ void BulkData::change_ghosting(
   const std::vector<EntityProc> & add_send ,
   const std::vector<Entity*> & remove_receive )
 {
+  Trace_("stk::mesh::BulkData::change_ghosting");
+
   //----------------------------------------
   // Verify inputs:
 
@@ -211,6 +218,8 @@ void BulkData::internal_change_ghosting(
   const std::vector<EntityProc> & add_send ,
   const std::vector<Entity*> & remove_receive )
 {
+  Trace_("stk::mesh::BulkData::internal_change_ghosting");
+
   const MetaData & meta = m_mesh_meta_data ;
   const unsigned rank_count = meta.entity_rank_count();
   const unsigned p_size = m_parallel_size ;
@@ -638,6 +647,8 @@ void comm_sync_send_recv(
 
 void BulkData::internal_regenerate_shared_aura()
 {
+  Trace_("stk::mesh::BulkData::internal_regenerate_shared_aura");
+
   require_ok_to_modify();
 
   std::vector<EntityProc> send ;

@@ -33,7 +33,7 @@ namespace mesh {
  *    conversely from the referenced entity to the owning entity.
  *  - The identifier provides a local numbering convention for relations,
  *    for example the local numbering convention for the nodes of an element.
- *  - Relations can be given a <em> kind </em> attribute to differentiate
+ *  - Relations can be given a <em> kind </em> raw_relation_id to differentiate
  *    between topological relations (kind = 0) and other kinds of
  *    relationships such as constraints.
  *
@@ -46,43 +46,43 @@ namespace mesh {
  */
 class Relation {
 public:
-  typedef uintptr_t raw_attr_type ;
+  typedef uint32_t raw_relation_id_type ;
+  typedef uint32_t attribute_type;
 
   /** \brief  Destructor */
   ~Relation() {}
 
   /** \brief  Constructor */
-  Relation() : m_attr(), m_entity(NULL) {}
+  Relation() : m_raw_relation(), m_attribute(), m_entity(NULL) {}
 
   /** \brief  Copy Constructor */
   Relation( const Relation & r )
-    : m_attr( r.m_attr ), m_entity(r.m_entity) {}
+    : m_raw_relation( r.m_raw_relation ), m_attribute(r.m_attribute), m_entity(r.m_entity) {}
 
   /** \brief  Assignment operator */
   Relation & operator = ( const Relation & r )
   {
     if( this != &r ) {
-      m_attr   = r.m_attr ;
-      m_entity = r.m_entity ;
+      m_raw_relation = r.m_raw_relation ;
+      m_attribute    = r.m_attribute ;
+      m_entity       = r.m_entity ;
     }
     return *this ;
   }
-
-  /** \brief  Construct a relation from an encoded relation attribute
-   *          and a referenced entity.
-   */
-  Relation( raw_attr_type attr , Entity & entity );
 
   /** \brief  Construct a relation from a referenced entity,
    *          local identifier, kind, and converse flag.
    */
   Relation( Entity & entity , RelationIdentifier identifier );
 
-  /** \brief  The encoded relation attribute */
-  static raw_attr_type attribute( unsigned rank , unsigned id );
+  attribute_type   attribute() const { return m_attribute; }
+  void set_attribute(attribute_type attr) const  { m_attribute = attr; }
 
-  /** \brief  The encoded relation attribute */
-  raw_attr_type attribute() const { return m_attr.value ; }
+  /** \brief  The encoded relation raw_relation_id */
+  static raw_relation_id_type raw_relation_id( unsigned rank , unsigned id );
+
+  /** \brief  The encoded relation raw_relation_id */
+  raw_relation_id_type raw_relation_id() const { return m_raw_relation.value ; }
 
   /** \brief  The rank of the referenced entity */
   unsigned entity_rank() const ;
@@ -95,68 +95,66 @@ public:
 
   /** \brief  Equality operator */
   bool operator == ( const Relation & r ) const
-    { return m_attr.value == r.m_attr.value && m_entity == r.m_entity ; }
+    { return m_raw_relation.value == r.m_raw_relation.value && m_entity == r.m_entity ; }
 
   /** \brief  Inequality operator */
   bool operator != ( const Relation & r ) const
-    { return m_attr.value != r.m_attr.value || m_entity != r.m_entity ; }
+    { return m_raw_relation.value != r.m_raw_relation.value || m_entity != r.m_entity ; }
 
   /** \brief  Ordering operator */
   bool operator < ( const Relation & r ) const ;
 
 private:
 
+  enum { entity_rank_ok = 1 / (!!(EntityKey::rank_digits == 8)) };
   enum {
-    attr_digits   = std::numeric_limits<raw_attr_type>::digits ,
-    uint_digits   = std::numeric_limits<unsigned>::digits ,
-    rank_digits   = EntityKey::rank_digits ,
-    id_max_digits = attr_digits - rank_digits ,
-    id_digits     = uint_digits - rank_digits ,
-    id_mask       = ~(0u) >> ( uint_digits - id_digits ),
-    rank_shift    = id_max_digits
+    rank_digits = 8  ,
+    id_digits   = 24 ,
+    id_mask     = ~(0u) >> rank_digits
   };
 
-  union AttrType {
+  union RawRelationType {
   public:
-    raw_attr_type value ;
+    raw_relation_id_type value ;
 
     struct {
-      raw_attr_type identifier  : id_digits ;
-      raw_attr_type entity_rank : rank_digits ;
+      raw_relation_id_type identifier  : id_digits ;
+      raw_relation_id_type entity_rank : rank_digits ;
     } normal_view ;
 
     struct {
-      raw_attr_type entity_rank : rank_digits ;
-      raw_attr_type identifier  : id_digits ;
+      raw_relation_id_type entity_rank : rank_digits ;
+      raw_relation_id_type identifier  : id_digits ;
     } reverse_view ;
 
-    AttrType( raw_attr_type v ) : value(v) {}
-    AttrType() : value(0) {}
-    AttrType( const AttrType & rhs ) : value( rhs.value ) {}
-    AttrType & operator = ( const AttrType & rhs )
+    RawRelationType( raw_relation_id_type v ) : value(v) {}
+    RawRelationType() : value(0) {}
+    RawRelationType( const RawRelationType & rhs ) : value( rhs.value ) {}
+    RawRelationType & operator = ( const RawRelationType & rhs )
       { value = rhs.value ; return *this ; }
   };
 
-  AttrType m_attr ;
-  Entity * m_entity ;
+  RawRelationType   m_raw_relation ;
+  mutable attribute_type    m_attribute ;
+  Entity          * m_entity ;
 };
 
 //----------------------------------------------------------------------
 
 inline
 unsigned Relation::entity_rank() const
-{ return unsigned( m_attr.value >> rank_shift ); }
+{ return m_raw_relation.value >> id_digits; }
 
 inline
 RelationIdentifier Relation::identifier() const
-{ return unsigned( m_attr.value & id_mask ); }
+{ return unsigned( m_raw_relation.value & id_mask ); }
 
 struct LessRelation {
   bool operator() ( const Relation & lhs , const Relation & rhs ) const
     { return lhs < rhs ; }
 
-  bool operator() ( const Relation & lhs , Relation::raw_attr_type rhs ) const
-    { return lhs.attribute() < rhs ; }
+  bool operator() ( const Relation & lhs , Relation::raw_relation_id_type rhs ) const
+    { return lhs.raw_relation_id() < rhs ; }
 };
 
 //----------------------------------------------------------------------
@@ -211,17 +209,17 @@ void induced_part_membership( const Entity     & entity ,
 //----------------------------------------------------------------------
 
 #if 0
-/** \brief  Decode and print the relation attribute */
+/** \brief  Decode and print the relation raw_relation_id */
 std::ostream &
 print_relation( std::ostream & , Relation::raw__attr_type );
 
-/** \brief  Decode and print the relation attribute and referenced entity key */
+/** \brief  Decode and print the relation raw_relation_id and referenced entity key */
 std::ostream &
 print_relation( std::ostream & , const MetaData & ,
                 Relation::raw__attr_type , EntityKey );
 #endif
 
-/** \brief  Print the relation attributes and referenced entity's key */
+/** \brief  Print the relation raw_relation_ids and referenced entity's key */
 std::ostream & operator << ( std::ostream & , const Relation & );
 
 /** \} */

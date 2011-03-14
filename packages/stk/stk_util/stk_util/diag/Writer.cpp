@@ -33,8 +33,8 @@ WriterThrowSafe::~WriterThrowSafe()
 
 Writer::Writer(
   std::streambuf *      writer_streambuf,
-  PrintMask		print_mask,
-  Flags			flags)
+  PrintMask    print_mask,
+  Flags      flags)
   : m_flags(flags),
     m_printMask(print_mask),
     m_lineMaskStack(),
@@ -50,7 +50,7 @@ Writer::~Writer()
 /**
  * @brief Member function <b>dflush</b> flushes the output stream.
  *
- * @return			a <b>Writer</b> reference to this object
+ * @return      a <b>Writer</b> reference to this object
  */
 Writer &
 Writer::dflush() {
@@ -64,7 +64,7 @@ Writer::dflush() {
  *
  * The std::endl manipulator is sent to the output stream.
  *
- * @return			a <b>Writer</b> reference to this object
+ * @return      a <b>Writer</b> reference to this object
  */
 Writer &
 Writer::dendl() {
@@ -80,7 +80,7 @@ Writer::dendl() {
  * @brief Member function <b>push</b> is a manipulator which increases the line
  * mask depth by one.
  *
- * @return			a <b>Writer</b> reference to this object
+ * @return      a <b>Writer</b> reference to this object
  */
 Writer &
 Writer::push() {
@@ -96,7 +96,7 @@ Writer::push() {
  * @brief Member function <b>pop</b> is a manipulator which decreases the line
  * mask depth by one, but not less than zero(0).
  *
- * @return			a <b>Writer</b> reference to this object
+ * @return      a <b>Writer</b> reference to this object
  */
 Writer &
 Writer::pop() {
@@ -112,7 +112,7 @@ Writer::pop() {
  * @brief Member function <b>pop</b> is a manipulator which decreases the line
  * mask depth by one, but not less than zero(0).
  *
- * @return			a <b>Writer</b> reference to this object
+ * @return      a <b>Writer</b> reference to this object
  */
 Writer &
 Writer::resetLineMask() {
@@ -125,7 +125,7 @@ Writer::resetLineMask() {
  * @brief Member function <b>operator<<</b> is the manipulator instantiation
  * function
  *
- * @return			a <b>Writer</b> reference to this object
+ * @return      a <b>Writer</b> reference to this object
  */
 Writer &
 Writer::operator<<(Writer& (*f)(Writer&)) {
@@ -156,8 +156,8 @@ Writer::operator<<(
 
 Writer &
 operator<<(
-  Writer &	dout,
-  const void *	ptr)
+  Writer &  dout,
+  const void *  ptr)
 {
   if (dout.shouldPrint())
     dout.getStream() << ptr;
@@ -168,8 +168,8 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	dout,
-  const char *	c_str)
+  Writer &  dout,
+  const char *  c_str)
 {
   if (dout.shouldPrint()) {
     std::ostream &os = dout.getStream();
@@ -195,7 +195,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	dout,
+  Writer &  dout,
   const float & x)
 {
   if (dout.shouldPrint())
@@ -207,7 +207,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	        dout,
+  Writer &          dout,
   const double &        x)
 {
   if (dout.shouldPrint())
@@ -219,7 +219,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	        dout,
+  Writer &          dout,
   const long double &   x)
 {
   if (dout.shouldPrint())
@@ -231,7 +231,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	dout,
+  Writer &  dout,
   const int &   x)
 {
   if (dout.shouldPrint())
@@ -243,7 +243,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	        dout,
+  Writer &          dout,
   const unsigned int &  x)
 {
   if (dout.shouldPrint())
@@ -255,7 +255,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	dout,
+  Writer &  dout,
   const long &  x)
 {
   if (dout.shouldPrint())
@@ -267,7 +267,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	        dout,
+  Writer &          dout,
   const unsigned long & x)
 {
   if (dout.shouldPrint())
@@ -278,7 +278,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	          dout,
+  Writer &            dout,
   const long long &     x)
 {
   if (dout.shouldPrint())
@@ -289,7 +289,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	          dout,
+  Writer &            dout,
   const unsigned long long &  x)
 {
   if (dout.shouldPrint())
@@ -300,7 +300,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	dout,
+  Writer &  dout,
   const short & x)
 {
   if (dout.shouldPrint())
@@ -312,7 +312,7 @@ operator<<(
 
 Writer &
 operator<<(
-  Writer &	          dout,
+  Writer &            dout,
   const unsigned short &  x)
 {
   if (dout.shouldPrint())
