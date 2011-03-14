@@ -1,5 +1,3 @@
-// $Id: Stokhos_Quadrature.hpp,v 1.4 2009/09/14 18:35:48 etphipp Exp $ 
-// $Source: /space/CVS/Trilinos/packages/stokhos/src/Stokhos_Quadrature.hpp,v $ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -51,7 +49,7 @@ namespace Stokhos {
       OneDEigenFunction() {}
 
       //! Destructor
-      ~OneDEigenFunction() {}
+      virtual ~OneDEigenFunction() {}
 
       //! Evaluate eigenfunction
       virtual value_type evaluate(const value_type& x) const = 0;
