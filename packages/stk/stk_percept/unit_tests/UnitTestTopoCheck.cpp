@@ -33,9 +33,6 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-#include <stk_util/environment/ProgramOptions.hpp>
-//#include <stk_util/use_cases/UseCaseEnvironment.hpp>
-
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
@@ -63,53 +60,12 @@ namespace stk_percept_unit
   int
   myMain()
   {
-    // Add my command line options to the option descriptions.
-    boost::program_options::options_description desc("Use case options");
 
-    // sample of options - only use_encr_case_1 is used
-    desc.add_options()
-      ("performance", "run performance test")
-      ( "use_encr_case_1" , "use case 1" )
-      ( "use_case_14" , "use case 14" )
-      ( "use_case_23" , "use case 23" )
-      ("mesh", boost::program_options::value<std::string>(), "run mesh file performance test");
-
-    stk::get_options_description().add(desc);
-
-    //use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
-
-    //      boost::program_options::variables_map &vm = stk::get_variables_map();
-
-    //stk::ParallelMachine parallel_machine = use_case_environment.m_comm;
     stk::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
 
-    //  int mpi_rank = stk::parallel_machine_rank(parallel_machine);
-    //int mpi_size = stk::parallel_machine_size(parallel_machine);
-    //bool isParallel = mpi_size > 0; // FIXME
     if (isParallel() ) return 0;
 
-    // Now call the use-case drivers based on command line options
-
-    //      bool run_performance_case = vm.count("performance") != 0;
-
     use_encr_case_1_driver( parallel_machine );
-
-#if 0
-    if (vm.count("use_encr_case_1")) {
-      stk_use_cases::use_encr_case_1_driver( parallel_machine );
-    }
-    else if (vm.count("use_case_14")) {
-      stk::app::use_case_14_driver( parallel_machine, run_performance_case );
-    }
-    else if (vm.count("use_case_23")) {
-      stk::app::use_case_23_driver( parallel_machine, run_performance_case );
-    }
-    else {
-      stk_use_cases::use_encr_case_1_driver( parallel_machine );
-      stk::app::use_case_14_driver( parallel_machine, run_performance_case );
-      stk::app::use_case_23_driver( parallel_machine, run_performance_case );
-    }
-#endif
 
     // Need to check whether all use-cases actually did run ok.  If they didn't, then don't
     // print the following "OK" string.  (The "OK" string is for the runtest tool to
@@ -218,7 +174,7 @@ namespace stk
         EXPECT_FALSE(isBad);
 
         //------- a bad topology with a duplicated node
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.dump(verbose);
         tp2.CopyFromBasicMesh(quadMeshCopy);
         if(verbose) std::cout << "before creating invalid mesh\n";
@@ -243,7 +199,7 @@ namespace stk
         EXPECT_TRUE(isBad);
 
         //------ create a bad topology with crossed elements
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.dump(verbose);
         tp2.CopyFromBasicMesh(quadMeshCopy);
         if(verbose) std::cout << "before creating invalid mesh\n";
@@ -342,7 +298,7 @@ namespace stk
         EXPECT_FALSE(isBad);
 
         /////////////// path test 3
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.CopyFromBasicMesh(quadMeshCopy);
         double rad = 10.0;
         boost::array<double, 3> dirT = {{0,rad,0}};
@@ -427,7 +383,7 @@ namespace stk
           {{0,0,0}}, {{sf*1,0,0}}, {{sf*0.5,sf*sqrt(3.)/2.,0}}, {{sf*0.5, sf*sqrt(3.)/6., sf*sqrt(6.)/3.}}
         };
 
-        tp2 = SweepMesher();
+        tp2.initialize();
         tp2.initNodes(coordsTetScaled, numNodesTet);
         tp2.initElems(shards_Tetrahedron_4, tetElems, numElems);
         if(verbose) std::cout << "tet4 mesh scaled\n";

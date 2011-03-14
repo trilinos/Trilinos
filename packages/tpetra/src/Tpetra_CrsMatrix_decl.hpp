@@ -217,6 +217,7 @@ namespace Tpetra {
       void scale(const Scalar &alpha);
 
       //@}
+	  
 
       //! @name Transformational Methods
       //@{ 

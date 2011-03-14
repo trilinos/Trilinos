@@ -47,7 +47,7 @@
 ///
 
 #include "BelosIteration.hpp"
-#include "BelosGmresBase.hpp"
+#include "BelosGmresBaseFactory.hpp"
 
 namespace Belos {
 
@@ -90,7 +90,9 @@ namespace Belos {
     /// solution manager.  The Iteration has the LinearProblem
     /// instance anyway, so it should call updateSolution() before the
     /// restart.
-    void iterate() {
+    void 
+    iterate() 
+    {
       // GmresBaseIteration is an Iteration subclass, and the status
       // checks (should) only call Iteration methods to get the
       // information they want.  We add another "status test," which
@@ -101,12 +103,19 @@ namespace Belos {
       //
       // FIXME (mfh 14 Jan 2011): The owning solver manager object
       // really should set up this Iteration so that the status test
-      // accounts for the maximum number of iterations allowed by the
-      // GmresBase implementation.  Thus, the additional "status test"
-      // should be unnecessary.
-      while (stest_->checkStatus(this) != Passed && 
-	     impl_->getNumIters() < impl_->maxNumIters())
-	impl_->next();
+      // doesn't allow the GmresBase subclass to advance beyond its
+      // capacity to advance.  For example, the status test should set
+      // the maximum number of iterations no bigger than the amount of
+      // vector storage that the GmresBase subclass allocates.  Thus,
+      // the additional "status test" should be unnecessary.
+      while (stest_->checkStatus(this) != Passed)
+	{ 
+	  if (! impl_->canAdvance())
+	    throw std::logic_error("Attempt to advance iteration when it is "
+				   "no longer possible to advance!");
+	  impl_->advance();
+	}
+      
     }
 
     /// Initialize the solver
@@ -118,9 +127,14 @@ namespace Belos {
 
     /// \brief Return the current iteration count.
     ///
-    /// \note The number of iterations is defined as the dimension of
-    /// the Krylov basis search space for solution update vectors.
-    int getNumIters() const { return impl_->getNumIters(); }
+    /// Restarting resets the current iteration count.
+    ///
+    /// \note The first iteration (after the initial residual
+    ///   computation) counts as 1.  Belos likes to measure the
+    ///   iterations while they are in progress, not after they are
+    ///   done (when we increment them.  That's why we add one in the
+    ///   code below.
+    int getNumIters() const { return impl_->getNumIters() + 1; }
     
     /// \brief Reset the iteration count to iter.
     ///
@@ -139,6 +153,14 @@ namespace Belos {
 			 "ation::resetNumIters: iter = " << iter << " is "
 			 "invalid; only nonnegative values are allowed.");
       impl_->backOut (iter); 
+    }
+
+    //! Restart GMRES.
+    void restart () { 
+      TEST_FOR_EXCEPTION(impl_.is_null(), std::logic_error, 
+			 "Belos::GmresBaseIteration::restart(): GmresBase "
+			 "subclass instance is null.");
+      impl_->restart ();
     }
     
     /// \brief Get the residuals native to the solver.
@@ -178,13 +200,15 @@ namespace Belos {
 	{
 	  // This should always be 1
 	  const int blockSize = getBlockSize();
-	  TEST_FOR_EXCEPTION(blockSize == 1, std::logic_error,
+	  TEST_FOR_EXCEPTION(blockSize != 1, std::logic_error,
 			     "This implementation of Arnoldi/GMRES only "
 			     "supports a block size of 1, but the current "
 			     "block size is " << blockSize << ".");
-	  if (norms->size() < blockSize)
+	  // Silence the compiler error about comparing signed and unsigned.
+	  if (norms->size() < (unsigned int) blockSize)
 	    norms->resize (blockSize);
-	  (*norms)[0] = nativeResNorm;
+	  for (int k = 0; k < blockSize; ++k)
+	    (*norms)[k] = nativeResNorm;
 	}
       return nativeResVec;
     }
@@ -230,7 +254,7 @@ namespace Belos {
 
     //! Whether or not the solver has been initialized
     bool isInitialized() {
-      return initialized_;
+      return ! impl_.is_null();
     }
 
     /// \brief Constructor
@@ -250,13 +274,25 @@ namespace Belos {
     /// OrthoManager.  This iteration doesn't use the "Mat" features,
     /// so we only take an OrthoManager.
     GmresBaseIteration (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem,
-			const Teuchos::RCP<const OrthoManager<Scalar, MV, OP> >& ortho,
+			const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
 			const Teuchos::RCP<OutputManager<Scalar> >& printer,
 			const Teuchos::RCP<StatusTest<Scalar, MV, OP> >& tester,
 			const Teuchos::RCP<const Teuchos::ParameterList >& params);
     
     //! Trivial destructor
     virtual ~GmresBaseIteration() {}
+
+    /// \brief Update the current approximate solution.
+    ///
+    /// Modify the LinearProblem instance's current approximate
+    /// solution (the multivector returned by getLHS()) by adding in
+    /// the current solution update (xUpdate_).  Tell the
+    /// LinearProblem to compute a new residual vector as well.
+    void
+    updateSolution ()
+    {
+      impl_->updateSolution ();
+    }
 
   private:
     /// Current iteration state and implementation
@@ -269,64 +305,91 @@ namespace Belos {
     /// (otherwise, how could it initialize anything?).
     mutable Teuchos::RCP<GmresBase<Scalar, MV, OP> > impl_;
 
-    //! The linear problem to solve
+    /// \brief The linear problem to solve.
+    //
+    /// \note We have to keep a pointer to this because the interface
+    ///   that we must implement (in order for the iteration status
+    ///   checks to work) requires that initialization be separate
+    ///   from construction.
     Teuchos::RCP<LinearProblem<Scalar, MV, OP> > lp_;
-    //! Orthogonalization manager
-    Teuchos::RCP<const OrthoManager<Scalar, MV, OP> > ortho_;
+    /// \brief Orthogonalization manager.
+    ///
+    /// We're not using MatOrthoManager, because GMRES doesn't need
+    /// that expanded interface.
+    Teuchos::RCP<const OrthoManager<Scalar, MV> > ortho_;
     //! Output manager, for intermediate output during iterations
-    Teuchos::RCP<OutputManager<Scalar> > om_;
+    Teuchos::RCP<OutputManager<Scalar> > outMan_;
     //! Status test for stopping iteration
     Teuchos::RCP<StatusTest<Scalar, MV, OP> > stest_;
     //! Configuration parameters. May be null (signifies defaults).
     Teuchos::RCP<const Teuchos::ParameterList> params_;
 
-    //! Whether the iteration is initialized
-    bool initialized_;
+    /// \brief Return a validated version of the given LinearProblem.
+    ///
+    /// "Validated" means that the returned LinearProblem is not null,
+    /// and problem->isProblemSet() returns true.
+    static Teuchos::RCP<LinearProblem<Scalar, MV, OP> >
+    validatedProblem (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem);
   };
 
   template<class Scalar, class MV, class OP>
   GmresBaseIteration<Scalar,MV,OP>::
   GmresBaseIteration (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem,
-		      const Teuchos::RCP<const OrthoManager<Scalar, MV, OP> >& ortho,
+		      const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
 		      const Teuchos::RCP<OutputManager<Scalar> >& printer,
 		      const Teuchos::RCP<StatusTest<Scalar, MV, OP> >& tester,
 		      const Teuchos::RCP<const Teuchos::ParameterList>& params) :
-    lp_ (problem), 
+    lp_ (validatedProblem (problem)),
     ortho_ (ortho), 
-    om_ (printer), 
+    outMan_ (printer), 
     stest_ (tester), 
-    params_ (params),
-    initialized_ (false) 
+    params_ (params)
   {
-    initializeImpl();
+    initialize();
   }
 
   template<class Scalar, class MV, class OP>
   void
   GmresBaseIteration<Scalar,MV,OP>::initialize ()
   {
-    if (! initialized_)
+    if (! isInitialized())
       {
-	// TODO (mfh 30 Dec 2010)
-	//
-	// Factory will be responsible for:
-	// * Picking the appropriate subclass of GmresBase (which may
-	//   depend upon the static type of OP (and MV)
-	// * Reading and validating parameters from the given parameter
-	//   list, and filling in missing parameters with default values.
-	//   These include whether or not Flexible GMRES is to be used.
-	// * Constructing specialized kernels that depend on the
-	//   operator(s), such as the matrix powers kernel (if
-	//   applicable).  This should actually be delegated to a
-	//   matrix powers kernel factory class that "does the right
-	//   thing," depending on the types and any additional
-	//   information available.
 	typedef GmresBaseFactory<Scalar, MV, OP> factory_type;
-	impl_ = factory_type::create (lp_, ortho_, params_);
-	initialized_ = true;
+	impl_ = factory_type::create (lp_, ortho_, outMan_, params_);
       }
   }
 
+  template<class Scalar, class MV, class OP>
+  Teuchos::RCP<LinearProblem<Scalar, MV, OP> >
+  GmresBaseIteration<Scalar,MV,OP>::
+  validatedProblem (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem)
+  {
+    const char prefix[] = "Belos::GmresBaseIteration constructor: ";
+    TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
+		       prefix << "The linear problem (Belos::LinearProblem "
+		       "instance) that you want me to solve is null.");
+    if (! problem->isProblemSet())
+      {
+	const bool notInitialized = problem->getOperator().is_null() || 
+	  problem->getRHS().is_null() || problem->getLHS().is_null();
+	TEST_FOR_EXCEPTION(notInitialized, std::invalid_argument,
+			   prefix << "The given linear problem (Belos::Linear"
+			   "Problem) instance is not fully initialized: "
+			   << (problem->getOperator().is_null() ? "the operator A is null; " : "")
+			   << (problem->getRHS().is_null() ? "the right-hand side B is null; " : "")
+			   << (problem->getLHS().is_null() ? "the initial guess X is null" : "")
+			   << ".");
+	if (! problem->isProblemSet())
+	  problem->setProblem();
+	TEST_FOR_EXCEPTION(! problem->isProblemSet(), std::logic_error,
+			   prefix << "Although the given LinearProblem instance "
+			   "has non-null operator (matrix A), right-hand side B,"
+			   " and initial guess X, and although its setProblem() "
+			   "method has been called, its isProblemSet() method "
+			   "returns false.  This should not happen.");
+      }
+    return problem;
+  }
 
 } // namespace Belos
 

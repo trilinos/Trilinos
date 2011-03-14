@@ -149,8 +149,6 @@ const char *name##_expr = #expr1
 
 #define EXPREVAL_DEFINE_TEST1(name,expr) EXPREVAL_DEFINE_TEST(name,expr,expr)
 
-#define EXPREVAL_TEST(name) test(name##_expr, name)
-
   // Hiearchy tests
 EXPREVAL_DEFINE_TEST1(h1, x*1.0/2.0*3.0);
 EXPREVAL_DEFINE_TEST1(h2, x*1.0/2.0*3.0);
@@ -217,8 +215,9 @@ EXPREVAL_DEFINE_TEST1(b1, sin(x*.5));
 EXPREVAL_DEFINE_TEST1(b2, .5*.2*sin(.5*x));
 EXPREVAL_DEFINE_TEST1(b3, .5*sin(x));
 
-} // namespace <unnamed>
+#undef EXPREVAL_DEFINE_TEST1
 
+} // namespace <unnamed>
 
 void
 UnitTestEvaluator::testEvaluator()
@@ -248,6 +247,8 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(fail_syntax("(x)y"));
   STKUNIT_EXPECT_TRUE(fail_syntax("()"));
   STKUNIT_EXPECT_TRUE(syntax("rand()"));
+
+#define EXPREVAL_TEST(name) test(name##_expr, name)
 
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h1));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h2));
@@ -305,4 +306,6 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b1));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b2));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b3));
+
+#undef EXPREVAL_TEST
 }

@@ -54,7 +54,7 @@ test: MyApp.exe input.xml
 
 # build the 
 MyApp.exe: libmyappLib.a
-	$(CXX) $(CXX_FLAGS) $(LINK_FLAGS) $(INCLUDE_DIRS) $(DEFINES) $(LIBRARY_DIRS) $(LIBRARIES) libMyappLib.a main_file.cpp -o MyApp.exe
+	$(CXX) $(CXX_FLAGS) libMyappLib.a main_file.cpp -o MyApp.exe $(LINK_FLAGS) $(INCLUDE_DIRS) $(DEFINES) $(LIBRARY_DIRS) $(LIBRARIES)
 
 libmyappLib.a: src_file.o
 	$(Trilinos_AR) cr libmyappLib.a src_file.o

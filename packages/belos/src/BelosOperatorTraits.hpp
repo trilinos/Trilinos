@@ -51,36 +51,55 @@
 
 namespace Belos {
 
-  template< class ScalarType, class MV, class OP >
-  struct UndefinedOperatorTraits
+  /// \class UndefinedOperatorTraits
+  /// \brief Class used to require specialization of OperatorTraits.
+  /// 
+  /// This class is used by OperatorTraits to ensure that
+  /// OperatorTraits cannot be used unless a specialization for
+  /// particular multivector and operator types has been defined.
+  template<class ScalarType, class MV, class OP>
+  class UndefinedOperatorTraits
   {
-    //! This function should not compile if there is an attempt to instantiate!
-    /*! \note Any attempt to compile this function results in a compile time error.  This means
-      that the template specialization of Belos::OperatorTraits class does not exist for type
-      <tt>OP</tt>, or is not complete.
-    */
-    static inline void notDefined() { OP::this_type_is_missing_a_specialization(); };
+  public:
+    /// \brief Function that will not compile if instantiation is attempted.
+    ///
+    /// \note Any attempt to compile this function results in a
+    ///   compile time error.  Such an error means that the template
+    ///   specialization of Belos::OperatorTraits class either does
+    ///   not exist for type <tt>OP</tt>, or is not complete.
+    static inline void notDefined() { 
+      OP::this_type_is_missing_a_specialization(); 
+    };
   };
  
-  /*!  \brief Virtual base class which defines basic traits for the operator type.
-
-       An adapter for this traits class must exist for the <tt>MV</tt> and <tt>OP</tt> types.
-       If not, this class will produce a compile-time error.
-
-       \ingroup belos_opvec_interfaces
-  */ 
+  /// \brief Traits class which defines basic traits for the operator type.
+  ///
+  /// A specialization of this traits class must exist for the
+  /// <tt>MV</tt> and <tt>OP</tt> types.  If not, this class will
+  /// produce a compile-time error.
+  ///
+  /// \ingroup belos_opvec_interfaces
   template <class ScalarType, class MV, class OP>
   class OperatorTraits 
   {
   public:
-    
-    //! Application method which performs operation <b>y = Op*x</b>. An OperatorError exception is thrown if there is an error.
-    static void Apply ( const OP& Op, 
-			const MV& x, 
-			MV& y, 
-			ETrans trans = NOTRANS )
-    { UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
-    
+
+    /// \brief Apply Op to x, putting the result into y.
+    ///
+    /// If applying the (conjugate) transpose of Op is supported, you
+    /// may do this as well.  If not, or if there is some other error, 
+    /// an OperatorError exception is thrown.
+    static void 
+    Apply (const OP& Op, 
+	   const MV& x, 
+	   MV& y, 
+	   ETrans trans = NOTRANS)
+    { 
+      // This will result in a deliberate compile-time error, if a
+      // specialization of OperatorTraits has not been defined for the
+      // MV and OP types.
+      UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); 
+    };
   };
   
 } // end Belos namespace

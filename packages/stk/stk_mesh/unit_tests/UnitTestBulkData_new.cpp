@@ -392,13 +392,14 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyInducedMembership )
   bulk.change_entity_parts ( node , create_node_parts , stk::mesh::PartVector () );
   bulk.change_entity_parts ( cell , create_cell_parts , stk::mesh::PartVector () );
   // Add node to cell part
-  bulk.declare_relation ( cell , node , 0 );
+  stk::mesh::RelationIdentifier cell_node_rel_id = 0;
+  bulk.declare_relation ( cell , node , cell_node_rel_id );
   bulk.modification_end();
 
   STKUNIT_ASSERT ( node.bucket().member ( fixture.get_cell_part() ) );
 
   bulk.modification_begin();
-  bulk.destroy_relation ( cell , node );
+  bulk.destroy_relation ( cell , node, cell_node_rel_id );
   bulk.modification_end();
 
   STKUNIT_ASSERT ( !node.bucket().member ( fixture.get_cell_part() ) );
@@ -1051,8 +1052,6 @@ void new_comm_recv_to_send(
   const std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv ,
         std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send )
 {
-  static const char method[] = "stk::mesh::BulkData::change_ghosting" ;
-
   const unsigned parallel_size = mesh.parallel_size();
 
   stk::CommAll all( mesh.parallel() );
@@ -1079,7 +1078,7 @@ void new_comm_recv_to_send(
     while ( buf.remaining() ) {
       stk::mesh::EntityKey key ;
       buf.unpack<stk::mesh::EntityKey>( & key , 1 );
-      stk::mesh::EntityProc tmp( mesh.get_entity( entity_rank(key), entity_id(key) , method ) , p );
+      stk::mesh::EntityProc tmp( mesh.get_entity( entity_rank(key), entity_id(key) ) , p );
       new_send.insert( tmp );
     }
   }

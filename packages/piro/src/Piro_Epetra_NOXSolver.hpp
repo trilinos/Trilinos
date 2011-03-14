@@ -69,7 +69,10 @@ class NOXSolver
   /** \brief Takes the number of elements in the discretization . */
   NOXSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
             Teuchos::RCP<EpetraExt::ModelEvaluator> model,
-            Teuchos::RCP<NOX::Epetra::Observer> observer = Teuchos::null
+            Teuchos::RCP<NOX::Epetra::Observer> observer = Teuchos::null,
+	    Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> interface = 
+	    Teuchos::null,
+	    Teuchos::RCP<NOX::Epetra::LinearSystem> linsys = Teuchos::null
             );
 
 

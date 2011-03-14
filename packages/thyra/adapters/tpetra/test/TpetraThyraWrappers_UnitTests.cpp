@@ -683,6 +683,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_EpetraRow
 
 }
 
+#else
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_EpetraRowMatrix,
+  Scalar )
+{
+}
 
 #endif // HAVE_THYRA_TPETRA_EPETRA
 

@@ -409,6 +409,8 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getFirstGlobalPointInLocalBlock(Local
   return pointMap_->getGlobalElement(view_firstPointInBlock_[localBlockID]);
 }
 
+}//namespace Tpetra
+
 //
 // Explicit instantiation macro
 //
@@ -419,8 +421,4 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getFirstGlobalPointInLocalBlock(Local
   \
   template class BlockMap< LO , GO , NODE >;
 
-
-}//namespace Tpetra
-
 #endif
-

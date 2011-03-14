@@ -86,11 +86,16 @@ bool in_ghost( const Ghosting & ghost , const Entity & entity , unsigned p )
  */
 bool in_owned_closure( const Entity & entity , unsigned proc )
 {
+  // TODO: This function has a potential performance problem if relations
+  // are dense.
+
+  // Does proc own this entity? If so, we're done
   bool result = entity.owner_rank() == proc ;
 
   if ( ! result ) {
     const unsigned erank = entity.entity_rank();
 
+    // Does entity have an upward relation to an entity owned by proc
     for ( PairIterRelation
           rel = entity.relations(); ! result && ! rel.empty() ; ++rel ) {
       result =  erank < rel->entity_rank() &&
@@ -170,7 +175,7 @@ void unpack_entity_info(
   for ( unsigned i = 0 ; i < nparts ; ++i ) {
     unsigned part_ordinal = ~0u ;
     buf.unpack<unsigned>( part_ordinal );
-    parts[i] = & mesh.mesh_meta_data().get_part( part_ordinal );
+    parts[i] = & MetaData::get(mesh).get_part( part_ordinal );
   }
 
   buf.unpack( nrel );
@@ -198,8 +203,8 @@ void unpack_entity_info(
 void pack_field_values( CommBuffer & buf , Entity & entity )
 {
   const Bucket   & bucket = entity.bucket();
-  const BulkData & mesh   = bucket.mesh();
-  const MetaData & mesh_meta_data = mesh.mesh_meta_data();
+  const BulkData & mesh   = BulkData::get(bucket);
+  const MetaData & mesh_meta_data = MetaData::get(mesh);
 
   const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields();
 
@@ -226,8 +231,8 @@ bool unpack_field_values(
   CommBuffer & buf , Entity & entity , std::ostream & error_msg )
 {
   const Bucket   & bucket = entity.bucket();
-  const BulkData & mesh   = bucket.mesh();
-  const MetaData & mesh_meta_data = mesh.mesh_meta_data();
+  const BulkData & mesh   = BulkData::get(bucket);
+  const MetaData & mesh_meta_data = MetaData::get(mesh);
 
   const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields();
 

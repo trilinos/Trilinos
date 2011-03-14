@@ -34,8 +34,6 @@
 #include <stk_util/util/PrintTable.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/environment/ProgramOptions.hpp>
-#include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
 

@@ -41,17 +41,7 @@ XCOMM Building ExodusII libraries for installation
  * Building ExodusII libraries for debugging
  * % accmkmf
  * % make Makefiles
- * % make CDEBUGFLAGS=-g
- *
- * Building ExodusII libraries on Sandias Teraflop machine
- * Service Partition
- * % accmkmf
- * % make Makefiles
- * % make all
- * Service Partition
- * % accmkmf -D PARALLEL
- * % make Makefiles
- * % make all
+ * % make DEBUG=-g
  *
  */
 

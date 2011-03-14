@@ -42,6 +42,9 @@ bool comm_mesh_verify_parallel_consistency(
 
 unsigned BulkData::determine_new_owner( Entity & entity ) const
 {
+  // We will decide the new owner by looking at all the processes sharing
+  // this entity. The new owner will be the sharing process with lowest rank.
+
   // The local process is a candidate only if the entity is not destroyed.
   unsigned new_owner =
     EntityLogDeleted == entity.log_query() ? ~0u : m_parallel_rank ;
@@ -171,15 +174,22 @@ void communicate_entity_modification( const BulkData & mesh ,
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
+// Postconditions:
+//  * DistributedIndex is updated based on entity creation/deletions in the
+//    last modification cycle.
+//  * Comm lists for shared entities are up-to-date.
+//  * shared_new contains all entities that were modified/created on a
+//    different process
 void BulkData::internal_update_distributed_index(
-        std::vector<Entity*> & shared_new )
+  std::vector<Entity*> & shared_new )
 {
   std::vector< parallel::DistributedIndex::KeyType >
-    new_entities_keys , del_entities_keys ;
+    local_created_or_modified , // only store locally owned/shared entities
+    del_entities_keys ;
 
-  std::vector< parallel::DistributedIndex::KeyProc >
-    new_entities_keyprocs ;
-
+  // Iterate over all entities known to this process, putting
+  // locally deleted entities in del_entities_keys, and putting
+  // modified shared/owned entities in local_created_or_modified.
   for ( impl::EntityRepository::iterator
         i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
 
@@ -189,35 +199,43 @@ void BulkData::internal_update_distributed_index(
       // Has been destroyed
       del_entities_keys.push_back( entity.key().raw_key() );
     }
-    else if ( EntityLogNoChange != entity.log_query() &&
+    else if ( entity.log_query() != EntityLogNoChange &&
               in_owned_closure( entity , m_parallel_rank ) ) {
       // Has been changed and is in owned closure, may be shared
-      new_entities_keys.push_back( entity.key().raw_key() );
+      local_created_or_modified.push_back( entity.key().raw_key() );
     }
   }
 
+  // Update distributed index. Note that the DistributedIndex only
+  // tracks ownership and sharing information.
+  m_entities_index.update_keys( local_created_or_modified , del_entities_keys );
+
+  // Retrieve data regarding which processes use the local_created_or_modified
+  // including this process.
+  std::vector< parallel::DistributedIndex::KeyProc >
+    global_created_or_modified ;
+  m_entities_index.query_to_usage( local_created_or_modified ,
+                                   global_created_or_modified );
+
   //------------------------------
-  // Update distributed index.
-
-  m_entities_index.update_keys( new_entities_keys , del_entities_keys );
-
-  //------------------------------
-  // Inform creating processes:
-
-  m_entities_index.query_to_usage( new_entities_keys , new_entities_keyprocs );
-
+  // Take the usage data and update the sharing comm lists
   {
     Entity * entity = NULL ;
 
+    // Iterate over all global modifications to this entity, this vector is
+    // sorted, so we're guaranteed that all modifications to a particular
+    // entities will be adjacent in this vector.
     for ( std::vector< parallel::DistributedIndex::KeyProc >::iterator
-          i =  new_entities_keyprocs.begin() ;
-          i != new_entities_keyprocs.end() ; ++i ) {
+          i =  global_created_or_modified.begin() ;
+          i != global_created_or_modified.end() ; ++i ) {
 
       EntityKey key( & i->first );
+      unsigned modifying_proc = i->second;
 
-      if ( (int) m_parallel_rank != i->second ) {
+      if ( m_parallel_rank != modifying_proc ) {
         // Another process also created or updated this entity.
 
+        // Only want to look up entities at most once
         if ( entity == NULL || entity->key() != key ) {
           // Have not looked this entity up by key
           entity = get_entity( key );
@@ -226,7 +244,8 @@ void BulkData::internal_update_distributed_index(
         }
 
         // Add the other_process to the entity's sharing info.
-        m_entity_repo.insert_comm_info( *entity, EntityCommInfo( 0 , i->second ) );
+        m_entity_repo.insert_comm_info( *entity, EntityCommInfo( 0, // sharing
+                                                                 modifying_proc ) );
       }
     }
   }
@@ -271,11 +290,11 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity * entity )
 
 void resolve_shared_removed_from_owned_closure( BulkData & mesh )
 {
-  for ( std::vector<Entity*>::const_iterator
-        i =  mesh.entity_comm().end() ;
-        i != mesh.entity_comm().begin() ; ) {
+  for ( std::vector<Entity*>::const_reverse_iterator
+        i =  mesh.entity_comm().rbegin() ;
+        i != mesh.entity_comm().rend() ; ++i) {
 
-    Entity * entity = *--i ;
+    Entity * entity = *i ;
 
     if ( ! entity->sharing().empty() &&
          ! in_owned_closure( *entity , mesh.parallel_rank() ) ) {
@@ -359,6 +378,7 @@ void BulkData::internal_resolve_shared_modify_delete()
                                         locally_destroyed &&
                                         new_sharing.empty() );
 
+    // If the entity has been deleted everywhere, nothing left to do
     if ( exists_somewhere ) {
 
       const bool old_local_owner = m_parallel_rank == entity->owner_rank();
@@ -399,13 +419,13 @@ void BulkData::internal_resolve_shared_modify_delete()
           internal_change_entity_parts( *entity , add_part , remove_part );
         }
       } // if ( ! locally_destroyed )
-    } // if ( ! delete_everywhere )
-  } // last touch of this shared entity
+    } // if ( exists_somewhere )
+  } // remote mod loop
 
   // Erase all sharing communication lists for Destroyed entities:
-  for ( std::vector<Entity*>::const_iterator
-        i = entity_comm().end() ; i != entity_comm().begin() ; ) {
-    Entity * entity = *--i ;
+  for ( std::vector<Entity*>::const_reverse_iterator
+        i = entity_comm().rbegin() ; i != entity_comm().rend() ; ++i) {
+    Entity * entity = *i ;
 
     if ( EntityLogDeleted == entity->log_query() ) {
       // m_ghosting[0] is the SHARED communication
@@ -443,11 +463,8 @@ void BulkData::internal_resolve_ghosted_modify_delete()
   // higher-ranking entities first. This is important because higher-ranking
   // entities like element must be deleted before the nodes they have are
   // deleted.
-  for ( std::vector<EntityProcState>::iterator
-        i = remote_mod.end(); i != remote_mod.begin() ; ) {
-
-    --i ;
-
+  for ( std::vector<EntityProcState>::reverse_iterator
+        i = remote_mod.rbegin(); i != remote_mod.rend() ; ++i ) {
     Entity *       entity       = i->entity_proc.first ;
     const unsigned remote_proc  = i->entity_proc.second ;
     const bool     local_owner  = entity->owner_rank() == m_parallel_rank ;
@@ -503,10 +520,10 @@ void BulkData::internal_resolve_ghosted_modify_delete()
   // 1) Destroyed entities.
   // 2) Owned and modified entities.
 
-  for ( std::vector<Entity*>::const_iterator
-        i = entity_comm().end() ; i != entity_comm().begin() ; ) {
+  for ( std::vector<Entity*>::const_reverse_iterator
+        i = entity_comm().rbegin() ; i != entity_comm().rend() ; ++i) {
 
-    Entity & entity = **--i ;
+    Entity & entity = **i ;
 
     const bool locally_destroyed = EntityLogDeleted == entity.log_query();
     const bool locally_owned_and_modified =
@@ -541,7 +558,10 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
 //----------------------------------------------------------------------
 
-
+// Postconditions:
+//  * All shared entities have parallel-consistent owner
+//  * Part membership of shared entities is up-to-date
+//  * m_entity_comm is up-to-date
 void BulkData::internal_resolve_parallel_create()
 {
   std::vector<Entity*> shared_modified ;
@@ -550,42 +570,34 @@ void BulkData::internal_resolve_parallel_create()
   // output shared and modified entities.
   internal_update_distributed_index( shared_modified );
 
-  // A shared_modified entity which was not created this
-  // cycle and is locally owned send claim on ownership
-  // to the sharing processes.
-
+  // ------------------------------------------------------------
+  // Claim ownership on all shared_modified entities that I own
+  // and which were not created in this modification cycle. All
+  // sharing procs will need to be informed of this claim.
   {
     CommAll comm_all( m_parallel_machine );
 
-    for ( std::vector<Entity*>::iterator
-          i = shared_modified.begin() ; i != shared_modified.end() ; ++i ) {
-      Entity & entity = **i ;
-      if ( entity.owner_rank() == m_parallel_rank &&
-           entity.log_query()  != EntityLogCreated ) {
+    for ( int phase = 0; phase < 2; ++phase ) {
+      for ( std::vector<Entity*>::iterator
+            i = shared_modified.begin() ; i != shared_modified.end() ; ++i ) {
+        Entity & entity = **i ;
+        if ( entity.owner_rank() == m_parallel_rank &&
+             entity.log_query()  != EntityLogCreated ) {
 
-        for ( PairIterEntityComm
-              jc = entity.sharing() ; ! jc.empty() ; ++jc ) {
-          comm_all.send_buffer( jc->proc ) .pack<EntityKey>( entity.key() );
+          for ( PairIterEntityComm
+                jc = entity.sharing() ; ! jc.empty() ; ++jc ) {
+            comm_all.send_buffer( jc->proc ) .pack<EntityKey>( entity.key() );
+          }
         }
       }
-    }
 
-    comm_all.allocate_buffers( m_parallel_size / 4 );
-
-    for ( std::vector<Entity*>::iterator
-          i = shared_modified.begin() ; i != shared_modified.end() ; ++i ) {
-      Entity & entity = **i ;
-      if ( entity.owner_rank() == m_parallel_rank &&
-           entity.log_query()  != EntityLogCreated ) {
-
-        for ( PairIterEntityComm
-              jc = entity.sharing() ; ! jc.empty() ; ++jc ) {
-          comm_all.send_buffer( jc->proc ) .pack<EntityKey>( entity.key() );
-        }
+      if (phase == 0) { //allocation phase
+        comm_all.allocate_buffers( m_parallel_size / 4 );
+      }
+      else { // communication phase
+        comm_all.communicate();
       }
     }
-
-    comm_all.communicate();
 
     for ( unsigned p = 0 ; p < m_parallel_size ; ++p ) {
       CommBuffer & buf = comm_all.recv_buffer( p );
@@ -601,6 +613,7 @@ void BulkData::internal_resolve_parallel_create()
     }
   }
 
+  // ------------------------------------------------------------
   // Update shared created entities.
   // - Revise ownership to selected processor
   // - Update sharing.
@@ -614,10 +627,11 @@ void BulkData::internal_resolve_parallel_create()
   shared_part.push_back( & m_mesh_meta_data.globally_shared_part() );
   owned_part.push_back(  & m_mesh_meta_data.locally_owned_part() );
 
-  for ( std::vector<Entity*>::const_iterator
-        i = shared_modified.end() ; i != shared_modified.begin() ; ) {
+  std::vector<Entity*>::const_reverse_iterator iend = shared_modified.rend();
+  for ( std::vector<Entity*>::const_reverse_iterator
+        i = shared_modified.rbegin() ; i != iend ; ++i) {
 
-    Entity * entity = *--i ;
+    Entity * entity = *i ;
 
     if ( entity->owner_rank() == m_parallel_rank &&
          entity->log_query() == EntityLogCreated ) {
@@ -633,17 +647,17 @@ void BulkData::internal_resolve_parallel_create()
       // Do not own it and still have it.
       // Remove the locally owned, add the globally_shared
       m_entity_repo.set_entity_sync_count( *entity, m_sync_count);
-      internal_change_entity_parts( *entity , shared_part , owned_part );
+      internal_change_entity_parts( *entity , shared_part /*add*/, owned_part /*remove*/);
     }
     else if ( ! entity->sharing().empty() ) {
       // Own it and has sharing information.
       // Add the globally_shared
-      internal_change_entity_parts( *entity , shared_part , PartVector() );
+      internal_change_entity_parts( *entity , shared_part /*add*/, PartVector() /*remove*/ );
     }
     else {
       // Own it and does not have sharing information.
       // Remove the globally_shared
-      internal_change_entity_parts( *entity , PartVector() , shared_part );
+      internal_change_entity_parts( *entity , PartVector() /*add*/, shared_part /*remove*/);
     }
 
     // Newly created shared entity had better be in the owned closure
@@ -664,11 +678,14 @@ void BulkData::internal_resolve_parallel_create()
       error_msg << "\n" ;
     }
   }
+
+  // Parallel-consistent error checking of above loop
   if ( error_flag ) { error_msg << "}\n" ; }
-
   all_reduce( m_parallel_machine , ReduceMax<1>( & error_flag ) );
-
   ThrowErrorMsgIf( error_flag, error_msg.str() );
+
+  // ------------------------------------------------------------
+  // Update m_entity_comm based on shared_modified
 
   const size_t n_old = m_entity_comm.size();
 
@@ -715,7 +732,7 @@ void print_comm_list( const BulkData & mesh , bool doit )
       Entity & entity = **i ;
       msg << "P" << mesh.parallel_rank() << ": " ;
 
-      print_entity_key( msg , mesh.mesh_meta_data() , entity.key() );
+      print_entity_key( msg , MetaData::get(mesh) , entity.key() );
 
       msg << " owner(" << entity.owner_rank() << ")" ;
 
@@ -751,7 +768,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 
   // Resolution of shared and ghost modifications can empty
   // the communication information for entities.
-  // If their is no communication information then the
+  // If there is no communication information then the
   // entity must be removed from the communication list.
   {
     std::vector<Entity*>::iterator i = m_entity_comm.begin();

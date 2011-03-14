@@ -33,8 +33,8 @@ void print_entity_map(stk::diag::Writer &writer,
     for (size_t i=0; i < size; i++) {
       stk::mesh::EntityKey key1 = entity_map[i].first->key();
       stk::mesh::EntityKey key2 = entity_map[i].second->key();
-      const stk::mesh::MetaData& meta1 = entity_map[i].first->bucket().mesh().mesh_meta_data();
-      const stk::mesh::MetaData& meta2 = entity_map[i].second->bucket().mesh().mesh_meta_data();
+      const stk::mesh::MetaData& meta1 = stk::mesh::MetaData::get(*(entity_map[i].first));
+      const stk::mesh::MetaData& meta2 = stk::mesh::MetaData::get(*(entity_map[i].second));
 
       writer << "[" << i << "] "
              << meta1.entity_rank_name(stk::mesh::entity_rank(key1)) << " "
@@ -66,7 +66,7 @@ void print_entity_proc_map(stk::diag::Writer &writer,
     size_t size = entity_proc.size();
     for (size_t i=0; i < size; i++) {
       stk::mesh::EntityKey key = entity_proc[i].first->key();
-      const stk::mesh::MetaData& meta = entity_proc[i].first->bucket().mesh().mesh_meta_data();
+      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get( *(entity_proc[i].first) );
 
       writer << "[" << i << "] "
              << action
@@ -86,7 +86,7 @@ void print_entity_proc_map(stk::diag::Writer &writer,
     size_t size = entity_proc.size();
     for (size_t i=0; i < size; i++) {
       stk::mesh::EntityKey key = entity_proc[i]->key();
-      const stk::mesh::MetaData& meta = entity_proc[i]->bucket().mesh().mesh_meta_data();
+      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get( entity_proc[i]->bucket() );
 
       writer << "[" << i << "] "
              << action
@@ -101,7 +101,7 @@ void print_entity_proc_map(stk::diag::Writer &writer,
 void print_entity_proc_map( stk::diag::Writer & writer ,
                             const stk::mesh::BulkData & mesh )
 {
-  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
   const std::vector<stk::mesh::Entity*> & comm = mesh.entity_comm();
   const std::vector<stk::mesh::Ghosting*> & ghost = mesh.ghostings();
 

@@ -86,7 +86,7 @@ int main(int argc, char **argv)
     Teuchos::Array<double> quad_weights;
     Teuchos::Array<Teuchos::Array< double > > quad_values;
     basis->getQuadPoints(20, quad_points, quad_weights, quad_values);
-    for(std::size_t i = 0; i<quad_points.size(); i++){
+    for(int i = 0; i<quad_points.size(); i++){
       std::cout << "x_i = "<<quad_points[i]<<" w_i = "<< quad_weights[i] <<" " << i << " / " << quad_points.size()<< "\n";
     }
 

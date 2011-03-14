@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
-#include <cassert>
 
 #include <stk_mesh/base/Ghosting.hpp>
 
@@ -62,8 +61,10 @@ PairIterEntityComm EntityImpl::sharing() const
   EntityCommInfoVector::const_iterator i = m_comm.begin();
   EntityCommInfoVector::const_iterator e = m_comm.end();
 
-  e = std::lower_bound( i , e , EntityCommInfo(1,0) );
+  e = std::lower_bound( i , e , EntityCommInfo(1,     // ghost id, 1->aura
+                                               0 ) ); // proc
 
+  // Contains everything up the first aura comm (IE, only contains shared comms)
   return PairIterEntityComm( i , e );
 }
 
@@ -158,7 +159,7 @@ bool EntityImpl::marked_for_destruction() const {
       "Inconsistent destruction state; " <<
       "destroyed entities should be in the nil bucket and vice versa.\n" <<
       "Problem is with entity: " <<
-      print_entity_key( bucket().mesh().mesh_meta_data(), key() ) <<
+      print_entity_key( MetaData::get( bucket() ), key() ) <<
       "\nWas in nil bucket: " << (bucket().capacity() == 0) << ", " <<
       "was in destroyed state: " << (m_mod_log == EntityLogDeleted) );
 
@@ -178,7 +179,7 @@ void EntityImpl::log_resurrect()
 {
   ThrowErrorMsgIf( EntityLogDeleted != m_mod_log,
       "Trying to resurrect non-deleted entity: " <<
-      print_entity_key( bucket().mesh().mesh_meta_data(), key() ) );
+      print_entity_key( MetaData::get( bucket() ), key() ) );
 
   m_mod_log = EntityLogModified;
   m_bucket = NULL;
@@ -216,26 +217,26 @@ void EntityImpl::log_created_parallel_copy()
   }
 }
 
-bool EntityImpl::destroy_relation( Entity& e_to )
+bool EntityImpl::destroy_relation( Entity& e_to, const RelationIdentifier local_id )
 {
   bool destroyed_relations = false;
-  for ( std::vector<Relation>::iterator i = m_relation.end() ;
-        i != m_relation.begin() ; ) {
-    --i ;
-    if ( i->entity() == & e_to ) {
-      i = m_relation.erase( i );
+  for ( std::vector<Relation>::iterator
+        i = m_relation.begin() ; i != m_relation.end() ; ++i ) {
+    if ( i->entity() == & e_to && i->identifier() == local_id ) {
+      i = m_relation.erase( i ); // invalidates iterators, but we're breaking so it's OK
       destroyed_relations = true;
+      break;
     }
   }
   return destroyed_relations;
 }
 
 bool EntityImpl::declare_relation( Entity & e_to,
-                                   const unsigned local_id,
+                                   const RelationIdentifier local_id,
                                    unsigned sync_count,
                                    bool is_converse )
 {
-  const MetaData & meta_data = bucket().mesh().mesh_meta_data();
+  const MetaData & meta_data = MetaData::get( bucket() );
 
   const Relation new_relation( e_to , local_id );
 

@@ -30,59 +30,104 @@
 #define TPETRAEXT_BLOCKEXTRACTION_DEF_HPP
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Tpetra::Ext::extractBlockDiagonals(
-          const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
-          const Teuchos::ArrayView<const LocalOrdinal>            &block_sizes,
-          Teuchos::ArrayRCP<Scalar>                               &out_block_diagonals,
-          Teuchos::ArrayRCP<LocalOrdinal>                         &out_block_offsets)
+void
+Tpetra::Ext::extractBlockDiagonals(
+          const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & matrix, 
+          const Teuchos::ArrayView<const LocalOrdinal>            & first_points,
+          Teuchos::ArrayRCP<Scalar>                               & out_diags,
+          Teuchos::ArrayRCP<LocalOrdinal>                         & out_offsets)
 {
   // block meta-data
-  const int numBlocks = (int)block_sizes.size();
+  const int numBlocks = (int)first_points.size()-1;
+  const size_t numRows = matrix.getNodeNumRows();
+  TEST_FOR_EXCEPTION(numRows != 0 && numBlocks <= 0, std::runtime_error,
+      "Tpetra::Ext::extractBlockDiagonals(): specified zero blocks for a matrix with more than zero rows.");
+  TEST_FOR_EXCEPTION(numBlocks > 0 && first_points[0] != 0, std::runtime_error,
+      "Tpetra::Ext::extractBlockDiagonals(): first point of first block must be zero.");
+  TEST_FOR_EXCEPTION(matrix.isFillComplete() == false, std::runtime_error,
+      "Tpetra::Ext::extractBlockDiagonals(): matrix must be fill-complete.");
+  // INVARIANT: for all i=0,...,numBlock-1: first_points[i] - first_points[i-1] = block_size[i]
+  int alloc_size      = 0,
+      sum_block_sizes = 0;
   if (numBlocks) {
-    out_block_offsets = arcp<LocalOrdinal>(numBlocks);
+    out_offsets = arcp<LocalOrdinal>(numBlocks);
   }
-  int blockSum = 0;
-  int allocSize = 0;
-  for (int b=0; b != (int)numBlocks; ++b) {
-    out_block_offsets[b] = allocSize;
-    allocSize += block_sizes[b]*block_sizes[b];
-    blockSum  += block_sizes[b];
+  for (int b=0; b < numBlocks; ++b) 
+  {
+    const int block_size_b = (int)first_points[b+1] - (int)first_points[b];
+    TEST_FOR_EXCEPTION(block_size_b < 0, std::runtime_error,
+        "Tpetra::Ext::extractBlockDiagonals(): first points are not coherent.");
+    sum_block_sizes += block_size_b;
+    out_offsets[b]   = alloc_size;
+    alloc_size      += block_size_b*block_size_b;
   }
-  TEST_FOR_EXCEPTION( (size_t)blockSum != matrix.getNodeNumRows(), std::runtime_error,
-      "Tpetra::Ext::extractBlockDiagonals(): block_sizes must sum to number of local matrix rows.");
-  if (allocSize) {
-    out_block_diagonals = arcp<Scalar>(allocSize);
-    std::fill( out_block_diagonals.begin(), out_block_diagonals.end(), ScalarTraits<Scalar>::zero() );
+  TEST_FOR_EXCEPTION( sum_block_sizes != (int)matrix.getNodeNumRows(), std::runtime_error, 
+      "Tpetra::Ext::extractBlockDiagonals(): specified blocks are not compatible with specified matrix (blocks are too large or too small or the last offset was missing).");
+  if (alloc_size) {
+    out_diags = arcp<Scalar>(alloc_size);
+    // must explicitly fill with zeros, because we will only insert non-zeros below
+    std::fill( out_diags.begin(), out_diags.end(), ScalarTraits<Scalar>::zero() );
   }
-  // extract blocks
-  if (allocSize) {
+  // extract blocks from matrix
+  if (alloc_size) {
     const LocalOrdinal first_row = matrix.getRowMap()->getMinLocalIndex(),
                         last_row = matrix.getRowMap()->getMaxLocalIndex();
     ArrayView<const Scalar> rowvals;
     ArrayView<const LocalOrdinal> rowinds;
-    int b = 0, subrow = 0, coloffset = 0;
-    typename ArrayRCP<Scalar>::iterator block;
-    block = out_block_diagonals.persistingView( out_block_offsets[b], block_sizes[b]*block_sizes[b] ).begin();
+    // b is ready to be incremented to zero
+    // block is invalid
+    // subrow and block_size_b are prepared to trigger the while loop and properly initialize the others
+    int b            = -1, // zero minus one
+        subrow       =  0, 
+        block_size_b =  subrow;
+    typename ArrayRCP<Scalar>::iterator block = out_diags.end();
     // loop over all local rows
     for (LocalOrdinal lrow = first_row; lrow <= last_row; ++lrow)
     {
-      if (subrow == block_sizes[b]) {
+      // the while loop accounts for blocks of size zero
+      while (subrow == block_size_b) 
+      {
         // we busted the block, move to the next
-        coloffset += block_sizes[b];
-        ++b;
-        block = out_block_diagonals.persistingView( out_block_offsets[b], block_sizes[b]*block_sizes[b] ).begin();
+        b += 1;
+        block_size_b = first_points[b+1] - first_points[b];
+        // an iterator to the beginning of this particular space will ensure bounds in a debug build
+        // in a release build, it will simply be a pointer
+        if (block_size_b) {
+          block = out_diags.persistingView( out_offsets[b], block_size_b*block_size_b ).begin();
+        }
         subrow = 0;
       }
       // extract the row, put the members of the block diagonal into the current block
       matrix.getLocalRowView(lrow, rowinds, rowvals);
       for (int k=0; k < (int)rowinds.size(); ++k) {
-        const int subcol = rowinds[k] - coloffset;
-        if (subcol >= 0 && subcol < block_sizes[b]) {
-          block[subcol*block_sizes[b] + subrow] += rowvals[k];
+        const int subcol = rowinds[k] - first_points[b];
+        if (subcol >= 0 && subcol < block_size_b) {
+          block[subcol*block_size_b + subrow] += rowvals[k];
         }
       }
       ++subrow;
     }
+    // this should have simultaneously finished matrix and the last block
+    TEST_FOR_EXCEPTION( subrow != block_size_b, std::logic_error,
+        "Tpetra::Ext::extractBlockDiagonals(): internal logic error. Please contact Tpetra team.");
+  }
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+Tpetra::Ext::extractBlockDiagonals(
+          const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & matrix, 
+          const BlockMap<LocalOrdinal,GlobalOrdinal,Node>         & block_map,
+          Teuchos::ArrayRCP<Scalar>                               & out_diags,
+          Teuchos::ArrayRCP<LocalOrdinal>                         & out_offsets)
+{
+  ArrayRCP<const LocalOrdinal> block_firsts = block_map.getNodeFirstPointInBlocks();
+  try {
+    extractBlockDiagonals( matrix, block_firsts(), out_diags, out_offsets );
+  }
+  catch (std::exception &e) {
+    TEST_FOR_EXCEPTION(true, std::runtime_error, 
+        "Tpetra::Ext::extractBlockDiagonals(RowMatrix,BlockMap,...) caught exception:\n\n" << e.what());
   }
 }
 
@@ -92,10 +137,18 @@ void Tpetra::Ext::extractBlockDiagonals(
 // Must be expanded from within the Tpetra::Ext namespace!
 //
 
-#define TPETRAEXT_BLOCKEXTRACTION_INSTANT(SCALAR,LO,GO,NODE) \
-  template void extractBlockDiagonals(const RowMatrix<SCALAR,LO,GO,NODE> &,  \
-                                      const Teuchos::ArrayView<const LO> &,  \
-                                      Teuchos::ArrayRCP<SCALAR>          &,  \
-                                      Teuchos::ArrayRCP<LO>              &);
+#define TPETRAEXT_BLOCKEXTRACTION_INSTANT(SCALAR,LO,GO,NODE)   \
+  template void                                                \
+  extractBlockDiagonals(const RowMatrix<SCALAR,LO,GO,NODE> &,  \
+                        const Teuchos::ArrayView<const LO> &,  \
+                              Teuchos::ArrayRCP<SCALAR> &,     \
+                              Teuchos::ArrayRCP<LO> &);        \
+  \
+  template void                                                \
+  extractBlockDiagonals(const RowMatrix<SCALAR,LO,GO,NODE> &,  \
+                        const BlockMap<LO,GO,NODE> &,          \
+                              Teuchos::ArrayRCP<SCALAR> &,     \
+                              Teuchos::ArrayRCP<LO> &);
+
 
 #endif // TPETRAEXT_BLOCKEXTRACTION_DEF_HPP

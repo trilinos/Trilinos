@@ -31,6 +31,7 @@
 #include "Stokhos_KL_ExponentialRandomField.hpp"
 #include "EpetraExt_MatrixMatrix.h"
 #include "Teuchos_TestForException.hpp"
+#include "Stokhos_PreconditionerFactory.hpp"
 
 namespace {
 
@@ -148,11 +149,13 @@ twoD_diffusion_ME(
   double s, double mu, 
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis_,
   bool log_normal_,
-  bool eliminate_bcs_) :
+  bool eliminate_bcs_,
+  const Teuchos::RCP<Teuchos::ParameterList>& precParams_) :
   mesh(n*n),
   basis(basis_),
   log_normal(log_normal_),
-  eliminate_bcs(eliminate_bcs_)
+  eliminate_bcs(eliminate_bcs_),
+  precParams(precParams_)
 {
   //////////////////////////////////////////////////////////////////////////////
   // Construct the mesh.  
@@ -291,6 +294,14 @@ twoD_diffusion_ME(
     point.resize(d);
     basis_vals.resize(basis->size());
   }
+
+  if (precParams != Teuchos::null) {
+    std::string name = precParams->get("Preconditioner Type", "Ifpack");
+    Teuchos::RCP<Teuchos::ParameterList> p =
+      Teuchos::rcp(&(precParams->sublist("Preconditioner Parameters")), false);
+    precFactory = 
+      Teuchos::rcp(new Stokhos::PreconditionerFactory(name, p));
+  }
 }
 
 // Overridden from EpetraExt::ModelEvaluator
@@ -337,6 +348,19 @@ get_p_sg_map(int l) const
 
 Teuchos::RCP<const Epetra_Map>
 twoD_diffusion_ME::
+get_p_mp_map(int l) const
+{
+  TEST_FOR_EXCEPTION(l != 0, 
+		     std::logic_error,
+                     std::endl << 
+                     "Error!  twoD_diffusion_ME::get_p_mp_map():  " <<
+                     "Invalid parameter index l = " << l << std::endl);
+
+  return p_map;
+}
+
+Teuchos::RCP<const Epetra_Map>
+twoD_diffusion_ME::
 get_g_map(int l) const
 {
   TEST_FOR_EXCEPTION(l != 0, 
@@ -356,6 +380,19 @@ get_g_sg_map(int l) const
 		     std::logic_error,
                      std::endl << 
                      "Error!  twoD_diffusion_ME::get_g_sg_map():  " <<
+                     "Invalid parameter index l = " << l << std::endl);
+
+  return g_map;
+}
+
+Teuchos::RCP<const Epetra_Map>
+twoD_diffusion_ME::
+get_g_mp_map(int l) const
+{
+  TEST_FOR_EXCEPTION(l != 0, 
+		     std::logic_error,
+                     std::endl << 
+                     "Error!  twoD_diffusion_ME::get_g_mp_map():  " <<
                      "Invalid parameter index l = " << l << std::endl);
 
   return g_map;
@@ -382,6 +419,19 @@ get_p_sg_names(int l) const
 		     std::logic_error,
                      std::endl << 
                      "Error!  twoD_diffusion_ME::get_p_sg_names():  " <<
+                     "Invalid parameter index l = " << l << std::endl);
+
+  return p_names;
+}
+
+Teuchos::RCP<const Teuchos::Array<std::string> >
+twoD_diffusion_ME::
+get_p_mp_names(int l) const
+{
+  TEST_FOR_EXCEPTION(l != 0, 
+		     std::logic_error,
+                     std::endl << 
+                     "Error!  twoD_diffusion_ME::get_p_mp_names():  " <<
                      "Invalid parameter index l = " << l << std::endl);
 
   return p_names;
@@ -418,6 +468,19 @@ create_W() const
   return AA;
 }
 
+Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
+twoD_diffusion_ME::
+create_WPrec() const
+{
+  if (precFactory != Teuchos::null) {
+    Teuchos::RCP<Epetra_Operator> precOp = 
+      precFactory->compute(A, false);
+    return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(precOp,
+								      true));
+  }
+  return Teuchos::null;
+}
+
 EpetraExt::ModelEvaluator::InArgs
 twoD_diffusion_ME::
 createInArgs() const
@@ -435,6 +498,10 @@ createInArgs() const
   inArgs.setSupports(IN_ARG_sg_basis,true);
   inArgs.setSupports(IN_ARG_sg_quadrature,true);
   inArgs.setSupports(IN_ARG_sg_expansion,true);
+
+  // Multipoint InArgs
+  inArgs.setSupports(IN_ARG_x_mp,true);
+  inArgs.set_Np_mp(1); // 1 SG parameter vector
   
   return inArgs;
 }
@@ -450,11 +517,18 @@ createOutArgs() const
   outArgs.set_Np_Ng(1, 1);
   outArgs.setSupports(OUT_ARG_f,true);
   outArgs.setSupports(OUT_ARG_W,true);
+  if (precFactory != Teuchos::null)
+    outArgs.setSupports(OUT_ARG_WPrec,true);
   
   // Stochastic OutArgs
   outArgs.set_Np_Ng_sg(1, 1);
   outArgs.setSupports(OUT_ARG_f_sg,true);
   outArgs.setSupports(OUT_ARG_W_sg,true);
+
+  // Multipoint OutArgs
+  outArgs.set_Np_Ng_mp(1, 1);
+  outArgs.setSupports(OUT_ARG_f_mp,true);
+  outArgs.setSupports(OUT_ARG_W_mp,true);
 
   return outArgs;
 }
@@ -478,7 +552,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 
   Teuchos::RCP<Epetra_Vector> f = outArgs.get_f();
   Teuchos::RCP<Epetra_Operator> W = outArgs.get_W();
-  if (f != Teuchos::null || W != Teuchos::null) {
+  Teuchos::RCP<Epetra_Operator> WPrec = outArgs.get_WPrec();
+  if (f != Teuchos::null || W != Teuchos::null || WPrec != Teuchos::null) {
     if (basis != Teuchos::null) {
       for (int i=0; i<point.size(); i++)
     	point[i] = (*p)[i];
@@ -508,6 +583,10 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
       Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W, true);
     *jac = *A;
   }
+
+  // Preconditioner
+  if (WPrec != Teuchos::null)
+    precFactory->recompute(A, WPrec);
 
   // Responses (mean value)
   Teuchos::RCP<Epetra_Vector> g = outArgs.get_g(0);
@@ -586,6 +665,65 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     for (int i=0; i<sz; i++) {
       (*x_sg)[i].MeanValue(&(*g_sg)[i][0]);
       (*g_sg)[i][0] *= double((*x_sg)[i].GlobalLength()) / double(mesh.size());
+    }
+  }
+
+  //
+  // Multi-point calculation
+  //
+
+  // Stochastic solution vector
+  mp_const_vector_t x_mp = inArgs.get_x_mp();
+
+  // Stochastic parameters
+  mp_const_vector_t p_mp = inArgs.get_p_mp(0);
+
+  // Stochastic residual
+  mp_vector_t f_mp = outArgs.get_f_mp();
+  mp_operator_t W_mp = outArgs.get_W_mp();
+  if (f_mp != Teuchos::null || W_mp != Teuchos::null) {
+    int num_mp = x_mp->size();
+    for (int i=0; i<num_mp; i++) {
+      // Compute operator
+      if (basis != Teuchos::null) {
+	for (int k=0; k<point.size(); k++)
+	  point[k] = (*p_mp)[i][k];
+	basis->evaluateBases(point, basis_vals);
+	A->PutScalar(0.0);
+	for (int k=0;k<A_k.size();k++)
+	  EpetraExt::MatrixMatrix::Add((*A_k[k]), false, basis_vals[k], *A, 
+				       1.0);
+      }
+      else {
+	*A = *(A_k[0]);
+	for (int k=1;k<A_k.size();k++)
+	  EpetraExt::MatrixMatrix::Add((*A_k[k]), false, (*p_mp)[i][k-1], *A, 
+				       1.0);
+      }
+      
+      // Compute residual
+      if (f_mp != Teuchos::null) {
+	A->Apply((*x_mp)[i], (*f_mp)[i]);
+	(*f_mp)[i].Update(-1.0, *b, 1.0);
+      }
+
+      // Copy operator
+      if (W_mp != Teuchos::null) {
+	Teuchos::RCP<Epetra_CrsMatrix> jac = 
+	  Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_mp->getCoeffPtr(i), 
+						      true);
+	*jac = *A;
+      }
+    }
+  }
+
+  // Multipoint responses
+  mp_vector_t g_mp = outArgs.get_g_mp(0);
+  if (g_mp != Teuchos::null) {
+    int sz = x_mp->size();
+    for (int i=0; i<sz; i++) {
+      (*x_mp)[i].MeanValue(&(*g_mp)[i][0]);
+      (*g_mp)[i][0] *= double((*x_mp)[i].GlobalLength()) / double(mesh.size());
     }
   }
 

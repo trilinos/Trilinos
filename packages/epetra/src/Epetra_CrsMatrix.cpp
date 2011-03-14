@@ -1113,12 +1113,6 @@ int Epetra_CrsMatrix::OptimizeStorage() {
         double * newValues = All_Values_s+curOffset;
 	for (int j=0; j<NumEntries; j++) newValues[j] = values[j];
       }
-
-      for (int i=0;i<NumMyRows_; ++i) {
-         if (Values_[i]!=0) delete [] Values_[i]; 
-      }
-
-      delete [] Values_alloc_lengths_; Values_alloc_lengths_ = 0;
     }
     else { // Static Profile, so just pack into existing storage (can't be threaded)
       double * tmp = All_Values_;
@@ -1130,6 +1124,11 @@ int Epetra_CrsMatrix::OptimizeStorage() {
         tmp += NumEntries;
       }
     }
+
+    for (int i=0;i<NumMyRows_; ++i) {
+       if (Values_[i]!=0) delete [] Values_[i];
+    }
+    delete [] Values_alloc_lengths_; Values_alloc_lengths_ = 0;
   } // End of !Contiguous section
   else {
     //if already contiguous, we'll simply set All_Values_ to be

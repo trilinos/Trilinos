@@ -29,7 +29,17 @@
 //Forward declaration for pointer to a Zoltan structrue.
 struct Zoltan_Struct;
 
-/** \file ZoltanPartition derived from \a Partition to implement Zoltan based rebalancing.
+/** \addtogroup stk_rebalance_module
+ *  \{
+ */
+
+/** \file ZoltanPartition.hpp derived from \a Partition to implement Zoltan based rebalancing.
+ *
+ * \class Zoltan 
+ *
+ * \brief Class for implementing Zoltan based rebalancing
+ *
+ * Derived from the \a GeomDecomp class.
  *
  * The \a Partition class can be derived from to define all different ways of 
  * determining a new partition for rebalancing. This is one example where the
@@ -76,7 +86,6 @@ public:
    * should form a unique global identification across all
    * processors.
    */
-
   struct MeshInfo {
     std::vector<mesh::Entity *>      mesh_entities;
     const VectorField              * nodal_coord_ref ;
@@ -109,7 +118,7 @@ public:
                                const VectorField   * nodal_coord_ref,
                                const ScalarField   * elem_weight_ref=NULL);
 
-  /** \bref Reset owning processor.
+  /** \brief Reset owning processor.
    *
    *  Default destination for an entity is the processor
    *  that already owns the entity, which is this processor.
@@ -175,7 +184,7 @@ public:
   unsigned num_moid() const;
 
   /** \brief Find the local ID of a given mesh entity. */
-  bool find_mesh_entity(const mesh::Entity * obj, unsigned & moid) const;
+  bool find_mesh_entity(const mesh::Entity * entity, unsigned & moid) const;
 
   /** \brief Return a mesh entity pointer. */
   mesh::Entity *mesh_entity(const unsigned moid ) const;
@@ -226,7 +235,7 @@ public:
 
   /** \brief Perform communication to create new partition.
    *
-   * \param  new_partition  New layout of mesh objects on the processing grid.
+   * \param  new_partition  New layout of mesh entities on the processing grid.
    *
    * Given a communication specification this
    * function will apply the new partition by
@@ -249,15 +258,15 @@ public:
    *
    * \param print_stats   Zoltan should print some info about the partition.
    *
-   * \param nobj          Number of objects partitioned on this processor.
+   * \param nentity          Number of entities partitioned on this processor.
    *
-   * \param obj_wgt       Total weight of objects on this processor.
+   * \param entity_wgt       Total weight of entities on this processor.
    *
    * \param ncuts         Total number of cuts used in partition
    *
    * \param cut_wgt       Not sure about this one.
    * 
-   * \param nboundary     Maybe the number of objects on the processor boundary.
+   * \param nboundary     Maybe the number of entities on the processor boundary.
    *
    * \param nadj          Not sure about this one.
    *
@@ -267,8 +276,8 @@ public:
    *
    */
   int evaluate ( int      print_stats,
-                 int     *nobj,
-                 double  *obj_wgt,
+                 int     *nentity,
+                 double  *entity_wgt,
                  int     *ncuts,
                  double  *cut_wgt,
                  int     *nboundary,
@@ -290,7 +299,7 @@ public:
     return m_zoltan_id_;
   }
 
-  /** \brief Return the spatial dimention of the objects being rebalanced. */
+  /** \brief Return the spatial dimention of the entities being rebalanced. */
   unsigned spatial_dimension() const {
     return m_spatial_dimension_;
   }
@@ -324,6 +333,8 @@ private:
 
 
 };
+
+/** \} */
 
 }
 } // namespace stk

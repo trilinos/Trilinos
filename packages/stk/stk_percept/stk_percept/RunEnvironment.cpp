@@ -24,323 +24,24 @@
 
 #include <stk_percept/RunEnvironment.hpp>
 #include <stk_percept/Util.hpp>
+#include <stk_percept/OptionMask.hpp>
 
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_Version.hpp"
+
+#define STK_PERCEPT_DEBUG_INPUT_ARGS 0
 
 /// copied and edited from stk_util/use_cases/UseCaseEnvironment 
 
 namespace {
 
-  namespace boptl = boost::program_options;
-
-
-  // Parse command line bit masks and produce -h documentation. (Probably moved to Util at some point)
-  typedef unsigned long OptionMask;
-
-  struct OptionMaskName
-  {
-    OptionMaskName()
-      : m_name(""),
-        m_mask(0),
-        m_description("")
-    {}
-
-    OptionMaskName(const std::string &name, const OptionMask &mask, const std::string &description = "No description available")
-      : m_name(name),
-        m_mask(mask),
-        m_description(description)
-    {}
-
-    virtual ~OptionMaskName()
-    {}
-
-    std::string		m_name;
-    OptionMask		m_mask;
-    std::string		m_description;
-  };
-
-
-  class OptionMaskNameMap: public std::map<std::string, OptionMaskName>
-  {
-  public:
-    void mask(const std::string &name, const OptionMask mask, const std::string &description) {
-      iterator it = find(name);
-      if (it == end())
-        insert(std::make_pair(name, OptionMaskName(name, mask, description)));
-      else {
-        (*it).second.m_mask = mask;
-        (*it).second.m_description = description;
-      }
-    }
-  };
-
-  class OptionMaskParser
-  {
-  public:
-    typedef OptionMask Mask;		///< Mask for this option
-
-  public:
-    /**
-     * Creates a new <b>OptionMaskParser</b> instance.
-     *
-     */
-    OptionMaskParser(const std::string &description)
-      : m_optionMaskNameMap(),
-        m_description(description),
-        m_optionMask(0),
-        m_status(true)
-    {}
-
-    virtual ~OptionMaskParser()
-    {}
-
-    Mask parse(const char *mask) const;
-
-    virtual void parseArg(const std::string &name) const;
-
-    std::string describe() const {
-      std::ostringstream strout;
-      strout << m_description << std::endl;
-      for (OptionMaskNameMap::const_iterator it = m_optionMaskNameMap.begin(); it != m_optionMaskNameMap.end(); ++it)
-        strout << "  " << (*it).first << std::setw(14 - (*it).first.size()) << " " << (*it).second.m_description << std::endl;
-      return strout.str();
-    }
-
-    void mask(const std::string &name, const Mask mask, const std::string &description) {
-      m_optionMaskNameMap.mask(name, mask, description);
-    }
-
-  protected:
-    OptionMaskNameMap		m_optionMaskNameMap;	///< Mask name vector
-    std::string                   m_description;          ///< Help description
-    mutable OptionMask		m_optionMask;		///< Most recently parsed mask
-    mutable bool			m_status;		///< Result of most recent parse
-  };
-
-
-  OptionMaskParser::Mask
-  OptionMaskParser::parse(
-                          const char *          mask) const
-  {
-    if (mask) {
-      const std::string mask_string(mask);
-
-      m_status = true;
-
-      std::string::const_iterator it0 = mask_string.begin();
-      std::string::const_iterator it1;
-      std::string::const_iterator it2;
-      std::string::const_iterator it3;
-      do {
-        // Trim preceeding spaces
-        while (it0 != mask_string.end() && *it0 == ' ')
-          it0++;
-
-        if (it0 == mask_string.end())
-          break;
-
-        for (it1 = it0; it1 != mask_string.end(); ++it1) {
-          if (*it1 == '(' || *it1 == ':' || *it1 == ',')
-            break;
-        }
-
-        // Trim trailing spaces
-        it2 = it1;
-        while (it2 != it0 && *(it2 - 1) == ' ')
-          --it2;
-
-        std::string name(it0, it2);
-
-        // Get argument list
-        if (*it1 == '(') {
-          it2 = it1 + 1;
-
-          // Trim preceeding spaces
-          while (it2 != mask_string.end() && *it2 == ' ')
-            ++it2;
-
-          int paren_count = 0;
-
-          for (; it1 != mask_string.end(); ++it1) {
-            if (*it1 == '(')
-              ++paren_count;
-            else if (*it1 == ')') {
-              --paren_count;
-              if (paren_count == 0)
-                break;
-            }
-          }
-          it3 = it1;
-
-          // Trim trailing spaces
-          while (it3 != it2 && *(it3 - 1) == ' ')
-            --it3;
-
-          // Find next argument start
-          for (; it1 != mask_string.end(); ++it1)
-            if (*it1 == ':' || *it1 == ',')
-              break;
-        }
-        else
-          it2 = it3 = it1;
-
-        const std::string arg(it2, it3);
-
-        parseArg(name);
-
-        it0 = it1 + 1;
-      } while (it1 != mask_string.end());
-    }
-
-    return m_optionMask;
-  }
-
-
-  void
-  OptionMaskParser::parseArg(
-                             const std::string &	name) const
-  {
-    OptionMaskNameMap::const_iterator mask_entry = m_optionMaskNameMap.find(name);
-
-    if (mask_entry != m_optionMaskNameMap.end()) m_optionMask |= (*mask_entry).second.m_mask;
-    else {
-      Mask	mask_hex = 0;
-      std::istringstream mask_hex_stream(name.c_str());
-      if (mask_hex_stream >> std::resetiosflags(std::ios::basefield) >> mask_hex)
-        m_optionMask |= mask_hex;
-      else
-        m_status = false;
-    }
-  }
-
-  // Build output logging description for binding output streams
-  std::string
-  build_log_description(
-                        const boptl::variables_map &   vm,
-                        const std::string &           working_directory,
-                        int                           parallel_rank,
-                        int                           parallel_size)
-  {
-    std::ostringstream output_description;
-
-    // On processor 0:
-    //   [outfile=path] [poutfile=path.n.r] [doutfile=path.n.r] out>{-|cout|cerr|outfile}+pout pout>{null|poutfile} dout>{out|doutfile}
-
-    // On processor 1..n:
-    //   [poutfile=path.n.r] [doutfile=path.n.r] out>pout pout>{null|poutfile} dout>{out|doutfile}
-
-    std::string out_path = "-";
-    if (vm.count("output-log"))
-      out_path = vm["output-log"].as<std::string>();
-    if (out_path == "-")
-      out_path = "cout";
-
-    std::string out_ostream;
-
-    if (!stk::get_log_ostream(out_path))
-      if (out_path.size() && out_path[0] != '/')
-        out_path = working_directory + out_path;
-
-    if (parallel_rank == 0) {
-      if (!stk::get_log_ostream(out_path)) {
-        output_description << "outfile=\"" << out_path << "\"";
-        out_ostream = "outfile";
-      }
-      else
-        out_ostream = out_path;
-    }
-    else
-      out_ostream = "null";
-
-    std::string pout_ostream = "null";
-    if (vm.count("pout")) {
-      std::string pout_path = vm["pout"].as<std::string>();
-      if (pout_path == "-") {
-        std::ostringstream s;
-
-        if (stk::get_log_ostream(out_path))
-          s << working_directory << "sierra.log." << parallel_size << "." << parallel_rank;
-        else
-          s << out_path << "." << parallel_size << "." << parallel_rank;
-        pout_path = s.str();
-      }
-      else if (pout_path.find("/") == std::string::npos && !stk::get_log_ostream(pout_path)) {
-        std::ostringstream s;
-
-        s << working_directory << pout_path << "." << parallel_size << "." << parallel_rank;
-        pout_path = s.str();
-      }
-
-      if (!stk::get_log_ostream(pout_path)) {
-        output_description << " poutfile=\"" << pout_path << "\"";
-        pout_ostream = "poutfile";
-      }
-      else
-        pout_ostream = pout_path;
-    }
-
-    std::string dout_ostream;
-    if (vm.count("dout")) {
-      std::string dout_path = vm["dout"].as<std::string>();
-      if (!dout_path.empty() && stk::is_registered_ostream(dout_path))
-        dout_ostream = dout_path;
-      else {
-        std::ostringstream s;
-        if (dout_path.size() && dout_path[0] != '/')
-          s << working_directory << dout_path << "." << parallel_size << "." << parallel_rank;
-        else
-          s << dout_path << parallel_size << "." << parallel_rank;
-        dout_path = s.str();
-        output_description << " doutfile=\"" << dout_path << "\"";
-        dout_ostream = "doutfile";
-      }
-    }
-    else
-      dout_ostream = "out";
-
-    if (parallel_rank == 0)
-      output_description << " out>" << out_ostream << "+pout";
-    else
-      output_description << " out>pout";
-
-    output_description << " pout>" << pout_ostream << " dout>" << dout_ostream;
-
-    return output_description.str();
-  }
-
   OptionMaskParser dw_option_mask("stk_percept diagnostic writer");
   OptionMaskParser timer_option_mask("stk_percept timers");
 
-  void
-  bootstrap()
-  {
-    /// \todo REFACTOR  Put these program_options in a function
-    ///                 that can be called without the bootstrapping.
-    //! dw_option_mask.mask("search", stk::percept::LOG_SEARCH, "log search diagnostics");
-    //! dw_option_mask.mask("transfer", stk::percept::LOG_TRANSFER, "log transfer diagnostics");
-    //! dw_option_mask.mask("timer", stk::percept::LOG_TIMER, "log timer diagnostics");
-    dw_option_mask.mask("all", stk::percept::LOG_ALWAYS, "log all");
-
-    timer_option_mask.mask("mesh", stk::percept::TIMER_MESH, "mesh operations timers");
-    //! timer_option_mask.mask("meshio", stk::percept::TIMER_MESH_IO, "mesh I/O timers");
-    //! timer_option_mask.mask("transfer", stk::percept::TIMER_TRANSFER, "transfer timers");
-    //! timer_option_mask.mask("search", stk::percept::TIMER_SEARCH, "search timers");
-
-    boost::program_options::options_description desc("Run environment options", 132);
-    desc.add_options()
-      ("help,h", "produce help message")
-      ("directory,d", boost::program_options::value<std::string>(), "working directory")
-      ("output-log,o", boost::program_options::value<std::string>(), "output log path")
-      ("pout", boost::program_options::value<std::string>()->implicit_value("-"), "per-processor log file path")
-      ("dout", boost::program_options::value<std::string>()->implicit_value("out"), "diagnostic output stream one of: 'cout', 'cerr', 'out' or a file path")
-      ("dw", boost::program_options::value<std::string>(), dw_option_mask.describe().c_str())
-      ("timer", boost::program_options::value<std::string>(), timer_option_mask.describe().c_str())
-      ("runtest,r", boost::program_options::value<std::string>(), "runtest pid file");
-      //("exit", "do nothing and then exit");
-
-    stk::get_options_description().add(desc);
-  }
-
-  stk::Bootstrap x(bootstrap);
+  //!stk::Bootstrap x(bootstrap);
 
 } // namespace <empty>
 
@@ -355,14 +56,12 @@ namespace stk {
       return s_out;
     }
 
-
     std::ostream &
     pout() {
       static std::ostream s_pout(std::cout.rdbuf());
 
       return s_pout;
     }
-
 
     std::ostream &
     dout() {
@@ -371,14 +70,12 @@ namespace stk {
       return s_dout;
     }
 
-
     std::ostream &
     tout() {
       static std::ostream s_tout(std::cout.rdbuf());
 
       return s_tout;
     }
-
 
     std::ostream &
     dwout() {
@@ -388,7 +85,6 @@ namespace stk {
       return s_dwout;
     }
 
-
     // Diagnostic writer
     stk::diag::Writer &
     dw()
@@ -397,7 +93,6 @@ namespace stk {
 
       return s_diagWriter;
     }
-
 
     // Message reporting
     std::ostream &
@@ -425,7 +120,6 @@ namespace stk {
       return os;
     }
 
-
     void
     report_handler(
                    const char *		message,
@@ -448,35 +142,86 @@ namespace stk {
       return s_timerSet;
     }
 
-
     stk::diag::Timer &timer() {
       static stk::diag::Timer s_timer = stk::diag::createRootTimer("root timer", timerSet());
 
       return s_timer;
     }
 
-
     RunEnvironment::RunEnvironment(
-                                           int *         argc,
-                                           char ***      argv)
+                                   int *         argc,
+                                   char ***      argv, bool debug)
       : m_comm(stk::parallel_machine_init(argc, argv)),
-        m_need_to_finalize(true)
+        m_need_to_finalize(true), m_debug(debug), m_processCommandLine_invoked(false)
     {
-      initialize(argc, argv);
+      internal_initialize(argc, argv);
     }
 
     RunEnvironment::RunEnvironment(
-                                           int *         argc,
-                                           char ***      argv,
-                                           stk::ParallelMachine comm)
+                                   int *         argc,
+                                   char ***      argv,
+                                   stk::ParallelMachine comm, bool debug)
       : m_comm(comm),
-        m_need_to_finalize(false)
+        m_need_to_finalize(false), m_debug(debug), m_processCommandLine_invoked(false)
     {
-      initialize(argc, argv);
+      internal_initialize(argc, argv);
     }
 
-    void RunEnvironment::initialize(int* argc, char*** argv)
+    void RunEnvironment::internal_initialize(int* argc, char*** argv)
     {
+      // Broadcast argc and argv to all processors.
+      int parallel_rank = stk::parallel_machine_rank(m_comm);
+      //int parallel_size = stk::parallel_machine_size(m_comm);
+
+      if (m_debug && !parallel_rank)
+        {
+          for (int i = 0; i < *argc; ++i) {
+            const std::string s((*argv)[i]);
+            std::cout << "tmp 1 argv["<<i<<"]= " << s << std::endl;
+          }
+        }
+
+      int pargc = *argc;
+      std::string *argv_new = new std::string[pargc];
+      int argc_new = 0;
+      for (int i = 0; i < pargc; i++)
+        {
+          std::string pargvi( (*argv)[i] );
+          int incr=0;
+          if (pargvi == "-d")
+            {
+              pargvi = "--d="+std::string((*argv)[i+1]);
+              incr=1;
+            }
+          if (pargvi == "-o")
+            {
+              pargvi = "--o="+std::string((*argv)[i+1]);
+              incr=1;
+            }
+          if (incr)
+            {
+              i++;
+            }
+          argv_new[argc_new++] = pargvi;
+        }
+
+      *argc = argc_new;
+
+      for (int i = 0; i < *argc; ++i) {
+        (*argv)[i] = const_cast<char *>(argv_new[i].c_str());
+        if (m_debug && !parallel_rank) std::cout << "modified argv["<<i<<"]= " << argv_new[i] << std::endl;
+      }
+
+      output_log_opt = "sierra.output.log";
+      dw_opt = "";
+      timer_opt = "";
+      directory_opt = "";
+      help_opt = 0;
+
+      pout_opt = "-";
+      dout_opt = "out";
+      runtest_opt = "";
+
       stk::register_log_ostream(std::cout, "cout");
       stk::register_log_ostream(std::cerr, "cerr");
 
@@ -494,40 +239,39 @@ namespace stk {
       for (int i = 0; i < *argc; ++i) {
         const std::string s((*argv)[i]);
         if ( s == "-h" || s == "-help" || s == "--help") {
-          std::cout << "Usage: " << (*argv)[0] << " [options...]" << std::endl;
-          std::cout << stk::get_options_description() << std::endl;
+          //std::cout << "Found Help:: Usage: " << (*argv)[0] << " [options...]" << std::endl;
+          printHelp();
           std::exit(0);
-          return; // So application can handle app-specific options.
+          return; 
         }
       }
-
-      // Broadcast argc and argv to all processors.
-      int parallel_rank = stk::parallel_machine_rank(m_comm);
-      int parallel_size = stk::parallel_machine_size(m_comm);
 
       Util::setRank(parallel_rank);
       stk::BroadcastArg b_arg(m_comm, *argc, *argv);
 
-      // Parse broadcast arguments
-      boptl::variables_map &vm = stk::get_variables_map();
+      bootstrap();
+
+      setSierraOpts(parallel_rank, *argc, *argv);
+    }
+
+    void RunEnvironment::processCommandLine(int* argc, char*** argv)
+    {
+      int parallel_rank = stk::parallel_machine_rank(m_comm);
+      int parallel_size = stk::parallel_machine_size(m_comm);
+
       unsigned failed = 0;
-      try {
-        boptl::store(boptl::parse_command_line(b_arg.m_argc, b_arg.m_argv, stk::get_options_description()), vm);
-        boptl::notify(vm);
-      }
-      catch (std::exception &x) {
-        if (!parallel_rank) std::cout << "argument list exception = " << x.what() << std::endl;
-        failed = 1;
-      }
-      stk::all_reduce( m_comm, stk::ReduceSum<1>( &failed ) );
+
+      int success = processCLP(parallel_rank, *argc, *argv);
+      failed = success == 0 ? 0u : 1u;
 
       if (failed)
         {
           if ( !parallel_rank)
             {
+              std::cout << "Command Line error: echo of args:" << std::endl;
               for (int ii=0; ii < *argc; ii++)
                 {
-                  std::cout << "arg[" << ii  << "] = " << (*argv)[ii] << std::endl;
+                  std::cout << "failed = 1, arg[" << ii  << "] = " << (*argv)[ii] << std::endl;
                 }
               printHelp();
             }
@@ -537,24 +281,20 @@ namespace stk {
         }
 
       // Parse diagnostic messages to display
-      if (vm.count("dw"))
-        dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
+      dw().setPrintMask(dw_option_mask.parse(dw_opt.c_str()));
 
       // Parse timer metrics and classes to display
       stk::diag::setEnabledTimerMetricsMask(stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME);
-      if (vm.count("timer"))
-        timerSet().setEnabledTimerMask(timer_option_mask.parse(vm["timer"].as<std::string>().c_str()));
+      timerSet().setEnabledTimerMask(timer_option_mask.parse(timer_opt.c_str()));
 
       // Set working directory
       m_workingDirectory = "./";
-      if (vm.count("directory"))
-        m_workingDirectory = vm["directory"].as<std::string>();
+      m_workingDirectory = directory_opt;
+
       if (m_workingDirectory.length() && m_workingDirectory[m_workingDirectory.length() - 1] != '/')
         m_workingDirectory += "/";
 
-      //std::cout << "m_workingDirectory= " << m_workingDirectory << std::endl;
-
-      std::string output_description = build_log_description(vm, m_workingDirectory, parallel_rank, parallel_size);
+      std::string output_description = build_log_description( m_workingDirectory, parallel_rank, parallel_size);
 
       stk::bind_output_streams(output_description);
 
@@ -562,10 +302,17 @@ namespace stk {
 
       // Start stk_percept root timer
       timer().start();
+      std::cout << "RunEnvironment::initialize done, m_workingDirectory= " << m_workingDirectory << std::endl;
+      m_processCommandLine_invoked = true;
+
     }
 
     RunEnvironment::~RunEnvironment()
     {
+      if (!m_processCommandLine_invoked)
+        {
+          throw std::runtime_error("RunEnvironment:: you must now invoke processCommandLine after constructing a RunEnvironment");
+        }
       stk::report_deferred_messages(m_comm);
 
       // Stop stk_percept root timer
@@ -593,7 +340,235 @@ namespace stk {
     void RunEnvironment::printHelp()
     {
       std::cout << "Usage: stk_percept_mesh_mod  [options...]" << std::endl;
-      std::cout << stk::get_options_description() << std::endl;
+      clp.printHelpMessage("RunEnvironment",std::cout);
+    }
+
+    void
+    RunEnvironment::bootstrap()
+    {
+      /// \todo REFACTOR  Put these program options in a function
+      ///                 that can be called without the bootstrapping.
+      //* dw_option_mask.mask("search", stk::percept::LOG_SEARCH, "log search diagnostics");
+      //* dw_option_mask.mask("transfer", stk::percept::LOG_TRANSFER, "log transfer diagnostics");
+      //* dw_option_mask.mask("timer", stk::percept::LOG_TIMER, "log timer diagnostics");
+      dw_option_mask.mask("all", stk::percept::LOG_ALWAYS, "log all");
+
+      timer_option_mask.mask("mesh", stk::percept::TIMER_MESH, "mesh operations timers");
+      //* timer_option_mask.mask("meshio", stk::percept::TIMER_MESH_IO, "mesh I/O timers");
+      //* timer_option_mask.mask("transfer", stk::percept::TIMER_TRANSFER, "transfer timers");
+      //* timer_option_mask.mask("search", stk::percept::TIMER_SEARCH, "search timers");
+
+
+      //!stk::get_options_description().add(desc);
+
+    }
+
+    void RunEnvironment::
+    setSierraOpts(int procRank, int argc, char* argv[])
+    {
+      Teuchos::oblackholestream blackhole;
+      std::ostream &out = ( procRank == 0 ? std::cout : blackhole );
+
+        if (m_debug)
+          out << Teuchos::Teuchos_Version() << std::endl << std::endl;
+    
+        clp.setDocString("Run environment options" );
+        clp.setOption("help",         &help_opt,        "help flag");
+        clp.setOption("directory",    &directory_opt,   "working directory");
+        clp.setOption("d",            &directory_opt,   "working directory");
+        clp.setOption("output-log",   &output_log_opt,  "output log path");
+        clp.setOption("o",            &output_log_opt,  "output log path");
+        clp.setOption("pout",         &pout_opt,        "per-processor log file path");
+        clp.setOption("dout",         &dout_opt,        "diagnostic output stream one of: 'cout', 'cerr', 'out' or a file path");
+        clp.setOption("dw",           &dw_opt,          dw_option_mask.describe().c_str());
+        clp.setOption("timer",        &timer_opt,       timer_option_mask.describe().c_str());
+        clp.setOption("runtest",      &runtest_opt,     "runtest pid file");;
+        //("exit", "do nothing and then exit");
+
+    }
+
+    int RunEnvironment::
+    processCLP(int procRank, int argc, char* argv[])
+    {
+      Teuchos::oblackholestream blackhole;
+      std::ostream &out = ( procRank == 0 ? std::cout : blackhole );
+
+      bool success = true;
+  
+      try {
+
+        /* There are also two methods that control the behavior of the
+           command line processor.  First, for the command line processor to
+           allow an unrecognized a command line option to be ignored (and
+           only have a warning printed), use:
+        */
+
+        clp.recogniseAllOptions(true);
+  
+        /* Second, by default, if the parser finds a command line option it
+           doesn't recognize or finds the --help option, it will throw an
+           std::exception.  If you want prevent a command line processor from
+           throwing an std::exception (which is important in this program since
+           we don't have an try/catch around this) when it encounters a
+           unrecognized option or help is printed, use:
+        */
+        clp.throwExceptions(true);
+
+        /* We now parse the command line where argc and argv are passed to
+           the parse method.  Note that since we have turned off std::exception
+           throwing above we had better grab the return argument so that
+           we can see what happened and act accordingly.
+        */
+        Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn= Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ;
+        try {
+          parseReturn = clp.parse( argc, argv );
+        }
+        catch (std::exception exc)
+          {
+            out << "RunEnvironment::processCLP error, exc= " << exc.what() << std::endl;
+            return 1;
+          }
+
+        if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) {
+
+          return 0;
+        }
+
+        if( parseReturn == Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION   ) {
+
+          if (m_debug)
+            out << "RunEnvironment::processCLP error, unrecognized option" << std::endl;
+          return 1; // Error!
+        }
+
+        if( parseReturn == Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) {
+          if (m_debug)
+            out << "RunEnvironment::processCLP success" << std::endl;
+        }
+
+        // Here is where you would use these command line arguments but for this example program
+        // we will just print the help message with the new values of the command-line arguments.
+        if (procRank == 0 && m_debug)
+          {
+            out << "\nPrinting help message with new values of command-line arguments ...\n\n";
+
+            clp.throwExceptions(false);
+
+            clp.printHelpMessage(argv[0],out);
+
+            clp.throwExceptions(true);
+          }
+
+        // Now we will print the option values
+        if (procRank == 0 && m_debug) {
+          out << "\nPrinting user options after parsing ...\n\n";
+          out << " output_log_opt= " <<  output_log_opt << std::endl;
+          out << " dw_opt= " <<  dw_opt << std::endl;
+          out << " timer_opt= " <<  timer_opt << std::endl;
+          out << " directory_opt= " <<  directory_opt << std::endl;
+          out << " help_opt= " <<  help_opt << std::endl;
+        }
+
+      } // try
+      TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
+  
+      if(success && m_debug)
+        out << "\nEnd Result: TEST PASSED" << std::endl;	
+
+      return ( success ? 0 : 1 );
+    }
+
+    // Build output logging description for binding output streams
+    std::string
+    RunEnvironment::build_log_description(
+                                          const std::string &           working_directory,
+                                          int                           parallel_rank,
+                                          int                           parallel_size)
+    {
+      std::ostringstream output_description;
+
+      // On processor 0:
+      //   [outfile=path] [poutfile=path.n.r] [doutfile=path.n.r] out>{-|cout|cerr|outfile}+pout pout>{null|poutfile} dout>{out|doutfile}
+
+      // On processor 1..n:
+      //   [poutfile=path.n.r] [doutfile=path.n.r] out>pout pout>{null|poutfile} dout>{out|doutfile}
+
+      std::string out_path = "-";
+      out_path = output_log_opt;
+      if (out_path == "-")
+        out_path = "cout";
+
+      std::string out_ostream;
+
+      if (!stk::get_log_ostream(out_path))
+        if (out_path.size() && out_path[0] != '/')
+          out_path = working_directory + out_path;
+
+      if (parallel_rank == 0) {
+        if (!stk::get_log_ostream(out_path)) {
+          output_description << "outfile=\"" << out_path << "\"";
+          out_ostream = "outfile";
+        }
+        else
+          out_ostream = out_path;
+      }
+      else
+        out_ostream = "null";
+
+      std::string pout_ostream = "null";
+      if (true) {
+        std::string pout_path = pout_opt;
+        if (pout_path == "-") {
+          std::ostringstream s;
+
+          if (stk::get_log_ostream(out_path))
+            s << working_directory << "sierra.log." << parallel_size << "." << parallel_rank;
+          else
+            s << out_path << "." << parallel_size << "." << parallel_rank;
+          pout_path = s.str();
+        }
+        else if (pout_path.find("/") == std::string::npos && !stk::get_log_ostream(pout_path)) {
+          std::ostringstream s;
+
+          s << working_directory << pout_path << "." << parallel_size << "." << parallel_rank;
+          pout_path = s.str();
+        }
+
+        if (!stk::get_log_ostream(pout_path)) {
+          output_description << " poutfile=\"" << pout_path << "\"";
+          pout_ostream = "poutfile";
+        }
+        else
+          pout_ostream = pout_path;
+      }
+
+      std::string dout_ostream;
+      if (true) {
+        std::string dout_path = dout_opt;
+        if (!dout_path.empty() && stk::is_registered_ostream(dout_path))
+          dout_ostream = dout_path;
+        else {
+          std::ostringstream s;
+          if (dout_path.size() && dout_path[0] != '/')
+            s << working_directory << dout_path << "." << parallel_size << "." << parallel_rank;
+          else
+            s << dout_path << parallel_size << "." << parallel_rank;
+          dout_path = s.str();
+          output_description << " doutfile=\"" << dout_path << "\"";
+          dout_ostream = "doutfile";
+        }
+      }
+      else
+        dout_ostream = "out";
+
+      if (parallel_rank == 0)
+        output_description << " out>" << out_ostream << "+pout";
+      else
+        output_description << " out>pout";
+
+      output_description << " pout>" << pout_ostream << " dout>" << dout_ostream;
+
+      return output_description.str();
     }
 
     // broken - do not use - for reference purposes only
@@ -663,7 +638,7 @@ namespace stk {
 
       unsigned p_size = stk::parallel_machine_size(comm);
       unsigned p_rank = stk::parallel_machine_rank(comm);
-      if (1 && !p_rank)
+      if (p_size > 1 && !p_rank)
         {
 
           std::string fullmesh = meshFileName;

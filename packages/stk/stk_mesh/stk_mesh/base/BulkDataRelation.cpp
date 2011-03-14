@@ -31,7 +31,7 @@ void set_field_relations( Entity & e_from ,
                           const unsigned ident )
 {
   const std::vector<FieldRelation> & field_rels =
-    e_from.bucket().mesh().mesh_meta_data().get_field_relations();
+    MetaData::get(e_from).get_field_relations();
 
   for ( std::vector<FieldRelation>::const_iterator
         j = field_rels.begin() ; j != field_rels.end() ; ++j ) {
@@ -58,49 +58,14 @@ void set_field_relations( Entity & e_from ,
   }
 }
 
-
 namespace {
-
-// TODO: Change function below to official require method
-
-void assert_valid_relation( const char action[] ,
-                            const BulkData & mesh ,
-                            const Entity   & e_from ,
-                            const Entity   & e_to )
-{
-  const bool error_mesh_from = & mesh != & e_from.bucket().mesh();
-  const bool error_mesh_to   = & mesh != & e_to.bucket().mesh();
-  const bool error_type      = e_from.entity_rank() <= e_to.entity_rank();
-  const bool error_nil_from  = EntityLogDeleted == e_from.log_query();
-  const bool error_nil_to    = EntityLogDeleted == e_to.log_query();
-
-  if ( error_mesh_from || error_mesh_to || error_type ||
-       error_nil_from || error_nil_to ) {
-    std::ostringstream msg ;
-
-    msg << "Could not " << action << " relation from entity "
-        << print_entity_key(e_from) << " to entity "
-        << print_entity_key(e_to) << "\n";
-
-    ThrowErrorMsgIf( error_mesh_from || error_mesh_to,
-                     msg.str() << (error_mesh_from ? "e_from" : "e_to" ) <<
-                     " not member of this mesh");
-    ThrowErrorMsgIf( error_nil_from  || error_nil_to,
-                     msg.str() << (error_mesh_from ? "e_from" : "e_to" ) <<
-                     " was destroyed");
-    ThrowErrorMsgIf( error_type, msg.str() <<
-                     "A relation must be from higher to lower ranking entity");
-  }
-}
-
 
 void clear_field_relations( Entity & e_from ,
                             const unsigned type ,
                             const unsigned ident )
-
 {
   const std::vector<FieldRelation> & field_rels =
-    e_from.bucket().mesh().mesh_meta_data().get_field_relations();
+    MetaData::get(e_from).get_field_relations();
 
   for ( std::vector<FieldRelation>::const_iterator
         j = field_rels.begin() ; j != field_rels.end() ; ++j ) {
@@ -124,20 +89,53 @@ void clear_field_relations( Entity & e_from ,
   }
 }
 
+} // empty namespace
+
+//----------------------------------------------------------------------
+
+void BulkData::require_valid_relation( const char action[] ,
+                                       const BulkData & mesh ,
+                                       const Entity   & e_from ,
+                                       const Entity   & e_to )
+{
+  const bool error_mesh_from = & mesh != & BulkData::get(e_from);
+  const bool error_mesh_to   = & mesh != & BulkData::get(e_to);
+  const bool error_type      = e_from.entity_rank() <= e_to.entity_rank();
+  const bool error_nil_from  = EntityLogDeleted == e_from.log_query();
+  const bool error_nil_to    = EntityLogDeleted == e_to.log_query();
+
+  if ( error_mesh_from || error_mesh_to || error_type ||
+       error_nil_from || error_nil_to ) {
+    std::ostringstream msg ;
+
+    msg << "Could not " << action << " relation from entity "
+        << print_entity_key(e_from) << " to entity "
+        << print_entity_key(e_to) << "\n";
+
+    ThrowErrorMsgIf( error_mesh_from || error_mesh_to,
+                     msg.str() << (error_mesh_from ? "e_from" : "e_to" ) <<
+                     " not member of this mesh");
+    ThrowErrorMsgIf( error_nil_from  || error_nil_to,
+                     msg.str() << (error_mesh_from ? "e_from" : "e_to" ) <<
+                     " was destroyed");
+    ThrowErrorMsgIf( error_type, msg.str() <<
+                     "A relation must be from higher to lower ranking entity");
+  }
 }
 
 //----------------------------------------------------------------------
 
 void BulkData::declare_relation( Entity & e_from ,
                                  Entity & e_to ,
-                                 const unsigned local_id )
+                                 const RelationIdentifier local_id )
 {
   require_ok_to_modify();
 
-  assert_valid_relation( "declare" , *this , e_from , e_to );
+  require_valid_relation( "declare" , *this , e_from , e_to );
 
+  // TODO: Don't throw if exact relation already exists, that should be a no-op.
+  // Should be an exact match if relation of local_id already exists (e_to should be the same).
   m_entity_repo.declare_relation( e_from, e_to, local_id, m_sync_count);
-
 
   PartVector add , empty ;
 
@@ -178,55 +176,70 @@ void BulkData::declare_relation( Entity & entity ,
 
 //----------------------------------------------------------------------
 
-void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
+void BulkData::destroy_relation( Entity & e_from ,
+                                 Entity & e_to,
+                                 const RelationIdentifier local_id )
 {
   require_ok_to_modify();
 
-  assert_valid_relation( "destroy" , *this , e_from , e_to );
+  require_valid_relation( "destroy" , *this , e_from , e_to );
 
   //------------------------------
   // When removing a relationship may need to
   // remove part membership and set field relation pointer to NULL
 
-  PartVector del , keep ;
+  if ( parallel_size() < 2 || e_to.sharing().empty() ) {
 
-  for ( PairIterRelation i = e_to.relations() ; i.first != i.second ; ++(i.first) ) {
+    //------------------------------
+    // 'keep' contains the parts deduced from kept relations
+    // 'del'  contains the parts deduced from deleted relations
+    //        that are not in 'keep'
+    // Only remove these part memberships the entity is not shared.
+    // If the entity is shared then wait until modificaton_end_synchronize.
+    //------------------------------
 
-    if ( !( i.first->entity() == & e_from )  &&
-        ( e_to.entity_rank() < i.first->entity_rank() ) )
-    {
-      induced_part_membership( * i.first->entity(), del, e_to.entity_rank(),
-                               i.first->identifier(), keep );
+    PartVector del, keep, empty;
+
+    // For all relations that are *not* being deleted, add induced parts for
+    // these relations to the 'keep' vector
+    for ( PairIterRelation i = e_to.relations();
+          !i.empty() && e_to.entity_rank() < i->entity_rank();
+          ++i ) {
+      if ( !( i->entity() == & e_from && i->identifier() == local_id ) ) {
+        induced_part_membership( * i->entity(), empty, e_to.entity_rank(),
+                                 i->identifier(), keep );
+      }
+    }
+
+    // Find the relation this is being deleted and add the parts that are
+    // induced from that relation (and that are not in 'keep') to 'del'
+    for ( PairIterRelation i = e_from.relations() ; !i.empty() ; ++i ) {
+      if ( i->entity() == & e_to && i->identifier() == local_id ) {
+        induced_part_membership( e_from, keep, e_to.entity_rank(),
+                                 i->identifier(), del );
+        clear_field_relations( e_from , e_to.entity_rank() ,
+                               i->identifier() );
+        break; // at most 1 relation can match our specification
+      }
+    }
+
+    if ( !del.empty() ) {
+      internal_change_entity_parts( e_to , empty , del );
     }
   }
-
-  for ( PairIterRelation i = e_from.relations() ; i.first != i.second ; ++(i.first) ) {
-    if ( i.first->entity() == & e_to ) {
-
-      induced_part_membership( e_from, keep, e_to.entity_rank(),
-                               i.first->identifier(), del );
-
-      clear_field_relations( e_from , e_to.entity_rank() ,
-                             i.first->identifier() );
+  else {
+    // Just clear the field, part membership will be handled by modification end
+    for ( PairIterRelation i = e_from.relations() ; !i.empty() ; ++i ) {
+      if ( i->entity() == & e_to && i->identifier() == local_id ) {
+        clear_field_relations( e_from , e_to.entity_rank() ,
+                               i->identifier() );
+        break; // at most 1 relation can match our specification
+      }
     }
-  }
-
-  //------------------------------
-  // 'keep' contains the parts deduced from kept relations
-  // 'del'  contains the parts deduced from deleted relations
-  //        that are not in 'keep'
-  // Only remove these part memberships the entity is not shared.
-  // If the entity is shared then wait until modificaton_end_synchronize.
-  //------------------------------
-
-  if ( ! del.empty() && (parallel_size() < 2 || e_to.sharing().empty()) ) {
-    PartVector add ;
-    internal_change_entity_parts( e_to , add , del );
   }
 
   //delete relations from the entities
-  m_entity_repo.destroy_relation( e_from, e_to);
-
+  m_entity_repo.destroy_relation( e_from, e_to, local_id);
 }
 
 //----------------------------------------------------------------------

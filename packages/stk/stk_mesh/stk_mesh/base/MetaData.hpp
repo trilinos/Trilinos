@@ -20,7 +20,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Property.hpp>
+#include <stk_mesh/base/PropertyBase.hpp>
 
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
@@ -56,6 +56,15 @@ public:
   /** \name  Meta data manager construction and destruction
    *  \{
    */
+
+  inline static MetaData & get( const Part & part ) { return part.meta_data(); }
+  inline static MetaData & get( const FieldBase & field ) { return field.meta_data(); }
+  inline static MetaData & get( const PropertyBase & property ) { return property.meta_data(); }
+
+  static MetaData & get( const BulkData & bulk_data );
+  static MetaData & get( const Bucket & bucket );
+  static MetaData & get( const Entity & entity );
+  static MetaData & get( const Ghosting & ghost );
 
   /** \brief  Construct a meta data manager to own parts and fields.  */
   explicit MetaData( const std::vector<std::string>& entity_rank_names );
@@ -103,7 +112,7 @@ public:
   Part & get_part( unsigned ord ) const ;
 
   /** \brief  Query all parts of the mesh ordered by the parts' ordinal. */
-  const PartVector & get_parts() const { return m_universal_part->subsets(); }
+  const PartVector & get_parts() const { return m_part_repo.get_all_parts(); }
 
   /** \brief  Declare a part of the given name and entity rank
    *          Redeclaration returns the previously declared part.
@@ -166,9 +175,9 @@ public:
    *
    */
   void set_entity_rank_names(const std::vector<std::string> &entity_rank_names);
-  
+
   EntityRank entity_rank( const std::string &name ) const;
-  
+
   const std::vector<std::string> & entity_rank_names() const
     { return m_entity_rank_names ; }
 
@@ -486,7 +495,7 @@ namespace mesh {
 
 inline
 Part & MetaData::get_part( unsigned ord ) const
-{ return * m_universal_part->subsets()[ord] ; }
+{ return * m_part_repo.get_all_parts()[ord] ; }
 
 template< class field_type >
 inline
@@ -538,8 +547,7 @@ field_type & put_field(
 
   Helper::assign( stride );
 
-  field.mesh_meta_data().
-    declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -558,8 +566,7 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 );
 
-  field.mesh_meta_data().
-    declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -579,8 +586,7 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 );
 
-  field.mesh_meta_data().
-    declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -601,8 +607,7 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 );
 
-  field.mesh_meta_data().
-    declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -624,8 +629,7 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 , n4 );
 
-  field.mesh_meta_data().
-    declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -648,8 +652,7 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 , n4, n5 );
 
-  field.mesh_meta_data().
-    declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -673,8 +676,7 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6 );
 
-  field.mesh_meta_data().
-    declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -699,8 +701,7 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6, n7 );
 
-  field.mesh_meta_data().
-    declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }

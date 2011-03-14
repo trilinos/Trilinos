@@ -45,15 +45,22 @@ namespace TSQR {
   /// \brief Noncommunicating "communication" object for TSQR
   ///
   /// The internode parallel part of TSQR communicates via a
-  /// MessengerBase< Datum > interface.  TrivialMessenger< Datum >
+  /// MessengerBase<Datum> interface.  TrivialMessenger<Datum>
   /// implements that interface by acting as if running on MPI with
   /// only one rank, though it doesn't require MPI support to build.
   ///
-  /// \warning Datum should be a class with value-type semantics.
-  template< class Datum >
-  class TrivialMessenger : public MessengerBase< Datum > {
+  /// \warning Datum should be a class with value-type semantics, and
+  ///   Datum objects should be less-than comparable (though this
+  ///   class does not require this syntactically, min and max
+  ///   wouldn't make sense otherwise).
+  template<class Datum>
+  class TrivialMessenger : public MessengerBase<Datum> {
   public:
+    //! Trivial / default constructor, since no member data.
     TrivialMessenger () {}
+
+    //! Virtual destructor, for correct deallocation.
+    virtual ~TrivialMessenger() {}
 
     /// Send sendData[0:sendCount-1] to process destProc.
     ///
@@ -61,7 +68,7 @@ namespace TSQR {
     /// \param sendCount [in] Number of elements in the array
     /// \param destProc [in] Rank of destination process
     /// \param tag [in] MPI tag (ignored)
-    virtual void 
+    void 
     send (const Datum sendData[], 
 	  const int sendCount, 
 	  const int destProc, 
@@ -74,13 +81,15 @@ namespace TSQR {
     /// \param recvCount [in] Number of elements to receive in the array
     /// \param srcProc [in] Rank of sending process
     /// \param tag [in] MPI tag (ignored)
-    virtual void 
+    void 
     recv (Datum recvData[], 
 	  const int recvCount, 
 	  const int srcProc, 
 	  const int tag) 
     {}
 
+    /// \brief Exchange data between processors.
+    ///
     /// Exchange sencRecvCount elements of sendData with processor
     /// destProc, receiving the result into recvData.  Assume that
     /// sendData and recvData do not alias one another.
@@ -95,7 +104,7 @@ namespace TSQR {
     ///   this process is sending data, and from which this process is
     ///   receiving data)
     /// \param tag [in] MPI tag (ignored)
-    virtual void 
+    void 
     swapData (const Datum sendData[], 
 	      Datum recvData[], 
 	      const int sendRecvCount, 
@@ -122,41 +131,36 @@ namespace TSQR {
 	safeCopy (sendData, recvData, sendRecvCount);
     }
 
-
-    /// Allreduce sum all processors' inDatum data, returning the
-    /// result (on all processors).
-    virtual Datum 
+    //! Sum inDatum on all processors, and return the result.
+    Datum 
     globalSum (const Datum& inDatum) 
     {
       Datum outDatum (inDatum);
       return outDatum;
     }
 
+    /// \brief Compute the global minimum over all processors.
     ///
-    /// Assumes that Datum objects are less-than comparable by the
-    /// underlying communication protocol.
-    ///
-    virtual Datum 
+    /// Assumes that Datum objects are less-than comparable.
+    Datum 
     globalMin (const Datum& inDatum)
     {
       Datum outDatum (inDatum);
       return outDatum;
     }
 
+    /// \brief Compute the global maximum over all processors.
     ///
-    /// Assumes that Datum objects are less-than comparable by the
-    /// underlying communication protocol.
-    ///
-    virtual Datum 
+    /// Assumes that Datum objects are less-than comparable.
+    Datum 
     globalMax (const Datum& inDatum)
     {
       Datum outDatum (inDatum);
       return outDatum;
     }
 
-    /// Allreduce sum all processors' inData[0:count-1], storing the
-    /// results (on all processors) in outData.
-    virtual void
+    //! Sum inData[0:count-1] over all processors into outData.
+    void
     globalVectorSum (const Datum inData[], 
 		     Datum outData[], 
 		     const int count) 
@@ -164,32 +168,28 @@ namespace TSQR {
       safeCopy (inData, outData, count);
     }
 
-    virtual void
+    //! Broadcast data[0:count-1] from root to all processors.
+    void
     broadcast (Datum data[], 
 	       const int count,
 	       const int root)
     {}
 
-    /// 
-    /// Return this process' rank.
-    /// 
-    virtual int rank () const { return 0; }
+    //! Return this process' rank.
+    int rank () const { return 0; }
 
-    /// 
-    /// Return the total number of ranks in the communicator.
-    /// 
-    virtual int size () const { return 1; }
+    //! Return the total number of ranks in the communicator.
+    int size () const { return 1; }
 
-    /// 
-    /// Execute a barrier over the communicator.
-    /// 
-    virtual void barrier () const { }
+    //! Execute a barrier over the communicator.
+    void barrier () const { }
 
   private:
 
-    /// Copy count elements of inData into outData.  Use a method
-    /// appropriate for whether or not the inData and outData arrays
-    /// alias one another.
+    /// \brief Copy count elements of inData into outData.
+    /// 
+    /// Attempt to detect aliasing, and use a method appropriate for
+    /// either the nonaliased or the aliased case.
     void
     safeCopy (const Datum inData[],
 	      Datum outData[],
@@ -215,8 +215,7 @@ namespace TSQR {
 
     /// Buffer to guard against incorrect behavior for aliased arrays.
     /// Space won't be allocated unless needed.
-    ///
-    std::vector< Datum > buf_;
+    std::vector<Datum> buf_;
   };
 } // namespace TSQR
 

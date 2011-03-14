@@ -62,7 +62,7 @@
 #endif // HAVE_BELOS_TSQR
 
 namespace Belos {
- 
+
   //! @name Epetra Adapter Exceptions
   //@{
 
@@ -81,8 +81,13 @@ namespace Belos {
     {}};
 
   //@}
- 
-  //--------template class BelosEpetraMultiVec-------------------------------------
+
+  /// \class EpetraMultiVec
+  /// \brief Implementation of Belos::MultiVec using Epetra_MultiVector.
+  ///
+  /// Belos::MultiVec offers a simple abstract interface for
+  /// multivector operations in Belos solver algorithms.  This class
+  /// implements Belos::MultiVec by extending Epetra_MultiVector.
   class EpetraMultiVec : public MultiVec<double>, public Epetra_MultiVector {
   public:
     // constructors
@@ -92,104 +97,93 @@ namespace Belos {
     EpetraMultiVec& operator=(const EpetraMultiVec& pv) { Epetra_MultiVector::operator=(pv); return *this; }
     EpetraMultiVec(const Epetra_MultiVector & P_vec);
     ~EpetraMultiVec();
-    //
-    //  member functions inherited from Belos::MultiVec
-    //
-    //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. std::vector values are
-    //  not copied; instead a new MultiVec is created containing
-    //  a non-zero amount of columns.  
-    //
+
+    //! @name Member functions inherited from Belos::MultiVec
+    //@{
+
+    /// A virtual "copy constructor" that returns a pointer to a new
+    /// object of the pure virtual class.  This vector's entries are
+    /// not copied; instead, a new MultiVec is created with the same
+    /// data distribution, but with numvecs columns (numvecs > 0).
+    /// 
+    /// \param numvecs [in] The number of columns in the output
+    ///   multivector.  Must be positive.
     MultiVec<double> * Clone ( const int numvecs ) const;
-    //
-    //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. std::vector values are
-    //  copied and a new stand-alone MultiVector is created.
-    //  (deep copy).
-    //
+
+    /// A virtual "copy constructor" returning a pointer to a new
+    /// object of the pure virtual class.  This vector's entries are
+    /// copied and a new stand-alone multivector is created.  (deep
+    /// copy).
     MultiVec<double> * CloneCopy () const;
-    //
-    //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. std::vector values are
-    //  copied and a new stand-alone MultiVector is created
-    //  where only selected columns are chosen.  (deep copy).
-    //
+
+    /// A virtual "copy constructor" returning a pointer to the pure
+    /// virtual class.  This vector's entries are copied and a new
+    /// stand-alone MultiVector is created where only selected columns
+    /// are chosen.  (deep copy).
     MultiVec<double> * CloneCopy ( const std::vector<int>& index ) const;
-    //
-    //  the following is a virtual view constructor returning
-    //  a pointer to the pure virtual class. std::vector values are 
-    //  shared and hence no memory is allocated for the columns.
-    //
+
+    /// A virtual view "constructor" returning a pointer to the pure
+    /// virtual class.  This vector's entries are shared and hence no
+    /// memory is allocated for the columns.
     MultiVec<double> * CloneViewNonConst ( const std::vector<int>& index );
-    //
-    //  the following is a virtual view constructor returning
-    //  a pointer to the pure virtual class. std::vector values are 
-    //  shared and hence no memory is allocated for the columns.
-    //
+
+    /// A virtual view constructor returning a pointer to the pure
+    /// virtual class.  This vector's entries are shared and hence no
+    /// memory is allocated for the columns.
     const MultiVec<double> * CloneView ( const std::vector<int>& index ) const;
-    //
-    //  this routine sets a subblock of the multivector, which
-    //  need not be contiguous, and is given by the indices.
-    //
+
+    /// Set a subblock of the multivector, which need not be
+    /// contiguous, and is given by the indices.
     void SetBlock ( const MultiVec<double>& A, const std::vector<int>& index );
-    //
+    
+    //! The number of columns in the multivector.
     int GetNumberVecs () const { return NumVectors(); }
+
+    //! The (global) number of rows in the multivector.
     int GetVecLength () const { return GlobalLength(); }
-    //
-    // *this <- alpha * A * B + beta * (*this)
-    //
+
+    //! *this <- alpha * A * B + beta * (*this)
     void MvTimesMatAddMv ( const double alpha, const MultiVec<double>& A, 
 			   const Teuchos::SerialDenseMatrix<int,double>& B, const double beta );
-    //
-    // *this <- alpha * A + beta * B
-    //
+    //! *this <- alpha * A + beta * B
     void MvAddMv ( const double alpha, const MultiVec<double>& A, const double beta,
 		   const MultiVec<double>& B);
 
-    /*! \brief Scale each element of the vectors in \c *this with \c alpha.
-     */
+    //! Scale each element of the vectors in \c *this with \c alpha.
     void MvScale ( const double alpha ) { 
       TEST_FOR_EXCEPTION( this->Scale( alpha )!=0, EpetraMultiVecFailure, 
 			  "Belos::EpetraMultiVec::MvScale() call to Scale() returned a nonzero value."); }
 
-    /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
-     */
+    //! Scale each element of the \c i-th vector in \c *this with \c alpha[i].
     void MvScale ( const std::vector<double>& alpha );
-    //
-    // B <- alpha * A^T * (*this)
-    //
+
+    //! B <- alpha * A^T * (*this)
     void MvTransMv ( const double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const;
-    //
-    // b[i] = A[i]^T * this[i]
-    // 
+
+    //! b[i] = A[i]^T * this[i]
     void MvDot ( const MultiVec<double>& A, std::vector<double>& b ) const;
-    //
-    // alpha[i] = norm of i-th column of (*this)
-    //	
+
+    //! alpha[i] = norm of i-th column of (*this)
     void MvNorm ( std::vector<double>& normvec, NormType norm_type = TwoNorm ) const;
-    //
-    // random vectors in i-th column of (*this)
-    //
+
+    //! Fill all columns of *this with random values.
     void MvRandom() { 
       TEST_FOR_EXCEPTION( Random()!=0, EpetraMultiVecFailure, 
 			  "Belos::EpetraMultiVec::MvRandom() call to Random() returned a nonzero value."); }
-    //
-    // initializes each element of (*this) with alpha
-    //
+
+    //! Initialize each element of (*this) to the scalar value alpha. 
     void MvInit ( const double alpha ) { 
       TEST_FOR_EXCEPTION( PutScalar(alpha)!=0, EpetraMultiVecFailure, 
 			  "Belos::EpetraMultiVec::MvInit() call to PutScalar() returned a nonzero value."); }
-    //
-    // print (*this)
-    //
+
+    //! Print (*this) to the given output stream.
     void MvPrint( std::ostream& os ) const { os << *this << std::endl; };
   private:
   };
   
-  
-  ///////////////////////////////////////////////////////////////
-  //--------template class BelosEpetraOp---------------------
-  
+  /// \class EpetraOp
+  /// \brief Implementation of Belos::Operator using Epetra_Operator.
+  ///
   class EpetraOp : public virtual Operator<double> {
   public:
     EpetraOp( const Teuchos::RCP<Epetra_Operator> &Op );
@@ -199,9 +193,10 @@ namespace Belos {
     Teuchos::RCP<Epetra_Operator> Epetra_Op;
   };
   
-  ///////////////////////////////////////////////////////////////
-  //--------template class BelosEpetraPrecOp---------------------
-  
+
+  /// \class EpetraPrecOp
+  /// \brief Implementation of Belos::Operator using Epetra_Operator as a preconditioner.
+  ///
   class EpetraPrecOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
     //! Basic constructor for applying the operator as its inverse.
@@ -248,7 +243,6 @@ namespace Belos {
     Teuchos::RCP<Epetra_Operator> Epetra_Op;
 
   };
-
   
   ////////////////////////////////////////////////////////////////////
   //
@@ -256,6 +250,7 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////
 
+  //! Full specialization of Belos::MultiVecTraits for Epetra_MultiVector.
   template<>
   class MultiVecTraits<double, Epetra_MultiVector>
   {
@@ -271,7 +266,7 @@ namespace Belos {
       // FIXME (mfh 13 Jan 2011) Anasazi currently lets Epetra fill in
       // the entries of the returned multivector with zeros, but Belos
       // does not.  We retain this different behavior for now, but the
-      // two versions will need to be reconciled.
+      // two versions should be reconciled.
       return Teuchos::rcp (new Epetra_MultiVector (mv.Map(), outNumVecs, false)); 
     }
 
@@ -802,33 +797,42 @@ namespace Belos {
   
   ////////////////////////////////////////////////////////////////////
   //
-  // Implementation of the Belos::OperatorTraits for Epetra::Operator.
+  // Implementation of the Belos::OperatorTraits for Epetra_Operator.
   //
   ////////////////////////////////////////////////////////////////////
   
+  //! Specialization of OperatorTraits for Epetra_Operator.
   template <> 
-  class OperatorTraits < double, Epetra_MultiVector, Epetra_Operator >
+  class OperatorTraits <double, Epetra_MultiVector, Epetra_Operator>
   {
   public:
     
-    ///
-    static void Apply ( const Epetra_Operator& Op, 
-     		        const Epetra_MultiVector& x, 
-			Epetra_MultiVector& y,
-			ETrans trans=NOTRANS )
+    //! Specialization of Apply() for Epetra_Operator.
+    static void 
+    Apply (const Epetra_Operator& Op, 
+	   const Epetra_MultiVector& x, 
+	   Epetra_MultiVector& y,
+	   ETrans trans=NOTRANS)
     { 
       int info = 0;
-      if ( trans )
-	const_cast<Epetra_Operator &>(Op).SetUseTranspose( true );
-      info = Op.Apply( x, y );
-      if ( trans )
-	const_cast<Epetra_Operator &>(Op).SetUseTranspose( false );      
+      // Applying the transpose of an Epetra_Operator requires
+      // temporarily setting its "use transpose" flag.  We unset the
+      // flag after we are done.  Hopefully you haven't been depending
+      // on that flag staying set...
+      if (trans)
+	const_cast<Epetra_Operator &>(Op).SetUseTranspose (true);
+      info = Op.Apply (x, y);
+      if (trans)
+	const_cast<Epetra_Operator &>(Op).SetUseTranspose (false);      
       TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
-			 "Belos::OperatorTraits<double,Epetra_MultiVector,Epetra_Operator>::Apply call to Apply() returned a nonzero value.");
+			 "Belos::OperatorTraits<double, Epetra_MultiVector, "
+			 "Epetra_Operator>::Apply() " << 
+			 (trans!=NOTRANS ? "(applying the transpose)" : "")
+			 << " returned a nonzero value info=" << info << ", "
+			 "indicating an error in applying the operator.");
     }
-    
   };
-  
+
 } // end of Belos namespace 
 
 #endif 

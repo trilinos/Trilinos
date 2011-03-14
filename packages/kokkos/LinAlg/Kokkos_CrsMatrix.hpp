@@ -169,7 +169,7 @@ namespace Kokkos {
     // 2D storage
     ArrayRCP<ArrayRCP<Scalar> >  values2D_;
     // 1D storage
-    ArrayRCP<Scalar>                      values1D_;
+    ArrayRCP<Scalar>             values1D_;
   };
 
 
@@ -529,6 +529,151 @@ namespace Kokkos {
 
   //=========================================================================================================================
   // 
+  // A first-touch allocation host-resident CrsMatrix
+  // 
+  //=========================================================================================================================
+
+  /** \brief A host-compute compressed-row sparse matrix with first-touch allocation.
+      \ingroup kokkos_crs_ops
+   */
+  template <class Scalar, 
+            class Ordinal, 
+            class Node,
+            class LocalMatOps>
+  class FirstTouchHostCrsMatrix : public CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps> {
+  public:
+
+    typedef typename CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::ScalarType        ScalarType;
+    typedef typename CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::OrdinalType       OrdinalType;
+    typedef typename CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::NodeType          NodeType;
+    typedef typename CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::LocalMatOpsType   LocalMatOpsType;
+
+    //! @name Constructors/Destructor
+    //@{
+
+    //! Default constructor with no graph. (Must be set later.) 
+    FirstTouchHostCrsMatrix();
+
+    //! Constructor with a matrix-owned non-const graph
+    FirstTouchHostCrsMatrix(FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &graph);
+
+    //! Constructor with a non-owned const graph.
+    FirstTouchHostCrsMatrix(const FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &graph);
+
+    //! FirstTouchHostCrsMatrix Destructor
+    virtual ~FirstTouchHostCrsMatrix();
+
+    //@}
+
+    //! @name Graph set routines.
+    //@{
+
+    //! Set matrix-owned graph.
+    void setOwnedGraph(FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &graph);
+
+    //! Set static graph.
+    void setStaticGraph(const FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &graph);
+    
+    //@}
+
+    //! @name Data entry and accessor methods.
+    //@{
+
+    //! Instruct the matrix to perform any necessary manipulation, including (optionally) optimizing the storage of the matrix data.
+    /** 
+          If the matrix is associated with a matrix-owned graph, then it will be finalized as well. A static graph will not be modified.
+
+          @param[in] OptimizeStorage   Permit the graph to reallocate storage on the host in order to provide optimal storage and/or performance.
+          \post if OptimizeStorage == true, then is2DStructure() == true
+     */
+    void finalize(bool OptimizeStorage);
+
+    //@}
+
+  protected:
+    //! Copy constructor (protected and not implemented) 
+    FirstTouchHostCrsMatrix(const FirstTouchHostCrsMatrix& sources);
+    // pointers to first-touch graphs
+    FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps>           *myFTGraph_;
+    const FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> *staticFTGraph_;
+  };
+
+
+  //==============================================================================
+  template <class Scalar, class Ordinal, class Node, class LocalMatOps>
+  FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::FirstTouchHostCrsMatrix()
+  : CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>() 
+  , myFTGraph_(NULL)
+  , staticFTGraph_(NULL)
+  {}
+
+  //==============================================================================
+  template <class Scalar, class Ordinal, class Node, class LocalMatOps>
+  FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::FirstTouchHostCrsMatrix(const FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &graph)
+  : CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>(graph) 
+  , myFTGraph_(NULL)
+  , staticFTGraph_(&graph)
+  {}
+
+  //==============================================================================
+  template <class Scalar, class Ordinal, class Node, class LocalMatOps>
+  FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::FirstTouchHostCrsMatrix(FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &graph)
+  : CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>(graph) 
+  , myFTGraph_(&graph)
+  , staticFTGraph_(&graph)
+  {}
+
+  //==============================================================================
+  template <class Scalar, class Ordinal, class Node, class LocalMatOps>
+  FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::~FirstTouchHostCrsMatrix() {
+  }
+
+  //==============================================================================
+  template <class Scalar, class Ordinal, class Node, class LocalMatOps>
+  void FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::setStaticGraph(const FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &dgraph)
+  {
+    CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::setStaticGraph(dgraph);
+    myFTGraph_     = NULL;
+    staticFTGraph_ = &dgraph;
+  }
+
+  //==============================================================================
+  template <class Scalar, class Ordinal, class Node, class LocalMatOps>
+  void FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::setOwnedGraph(FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &dgraph)
+  {
+    CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::setOwnedGraph(dgraph);
+    myFTGraph_     = &dgraph;
+    staticFTGraph_ = &dgraph;
+  }
+
+  // ======= finalize ===========
+  template <class Scalar, class Ordinal, class Node, class LocalMatOps>
+  void FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::finalize(bool OptimizeStorage)
+  {
+    if (this->isFinalized_ == false || 
+       (OptimizeStorage == true && staticFTGraph_->isOptimized() == false))
+    {
+      if (this->myFTGraph_ != NULL) {
+        // call graph finalize to finalize/first-touch graph and matrix at the same time
+        myFTGraph_->template finalize<Scalar>(OptimizeStorage, this->values2D_, this->values1D_);
+      }
+      else {
+        TEST_FOR_EXCEPTION(OptimizeStorage == true && staticFTGraph_->isOptimized() == false, std::runtime_error, 
+            Teuchos::typeName(*this) << "::finalize(OptimizeStorage == true): underlying static graph is not already optimized and cannot be optimized.");
+      }
+      this->isFinalized_ = true;
+    }
+#ifdef HAVE_KOKKOS_DEBUG
+    TEST_FOR_EXCEPTION(this->isFinalized_ == false || staticFTGraph_->isFinalized() == false, std::logic_error,
+        Teuchos::typeName(*this) << "::finalize(): logic error. Post-condition violated. Please contact Tpetra team.");
+    TEST_FOR_EXCEPTION(OptimizeStorage == true && (staticFTGraph_->isOptimized() == false && staticFTGraph_->isEmpty() == false), std::logic_error,
+        Teuchos::typeName(*this) << "::finalize(): logic error. Post-condition violated. Please contact Tpetra team.");
+#endif
+  }
+
+
+  //=========================================================================================================================
+  // 
   // Specializations
   // 
   //=========================================================================================================================
@@ -559,6 +704,63 @@ namespace Kokkos {
   private:
     CrsMatrix(const CrsMatrix<Scalar,Ordinal,Node,LocalMatOps> &mat); // not implemented
   };
+
+#ifndef HAVE_KOKKOS_NO_FIRST_TOUCH_MATVEC_ALLOCATION
+#ifdef HAVE_KOKKOS_TBB
+  /** \brief Kokkos compressed-row sparse matrix class.
+      \ingroup kokkos_crs_ops
+
+      Specialization is a first-touch host-bound FirstTouchHostCrsMatrix object.
+    */
+  class TBBNode;
+  template <class Scalar,
+            class Ordinal, 
+            class LocalMatOps>
+  class CrsMatrix<Scalar,Ordinal,TBBNode,LocalMatOps> : public FirstTouchHostCrsMatrix<Scalar,Ordinal,TBBNode,LocalMatOps> {
+  public:
+    CrsMatrix() : FirstTouchHostCrsMatrix<Scalar,Ordinal,TBBNode,LocalMatOps>() {}
+    CrsMatrix(CrsGraph<Ordinal,TBBNode,LocalMatOps> &graph) : FirstTouchHostCrsMatrix<Scalar,Ordinal,TBBNode,LocalMatOps>(graph) {}
+    CrsMatrix(const CrsGraph<Ordinal,TBBNode,LocalMatOps> &graph) : FirstTouchHostCrsMatrix<Scalar,Ordinal,TBBNode,LocalMatOps>(graph) {}
+    void setStaticGraph(const CrsGraph<Ordinal,TBBNode,LocalMatOps> &graph) {
+      const FirstTouchHostCrsGraph<Ordinal,TBBNode,LocalMatOps> &hgraph = dynamic_cast<const FirstTouchHostCrsGraph<Ordinal,TBBNode,LocalMatOps> &>(graph);
+      FirstTouchHostCrsMatrix<Scalar,Ordinal,TBBNode,LocalMatOps>::setStaticGraph(hgraph);
+    }
+    void setOwnedGraph(CrsGraph<Ordinal,TBBNode,LocalMatOps> &graph) {
+      FirstTouchHostCrsGraph<Ordinal,TBBNode,LocalMatOps> &hgraph = dynamic_cast<FirstTouchHostCrsGraph<Ordinal,TBBNode,LocalMatOps> &>(graph);
+      FirstTouchHostCrsMatrix<Scalar,Ordinal,TBBNode,LocalMatOps>::setOwnedGraph(hgraph);
+    }
+  private:
+    CrsMatrix(const CrsMatrix<Scalar,Ordinal,TBBNode,LocalMatOps> &mat); // not implemented
+  };
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+  class TPINode;
+  /** \brief Kokkos compressed-row sparse matrix class.
+      \ingroup kokkos_crs_ops
+
+      Specialization is a first-touch host-bound FirstTouchHostCrsMatrix object.
+    */
+  template <class Scalar,
+            class Ordinal, 
+            class LocalMatOps>
+  class CrsMatrix<Scalar,Ordinal,TPINode,LocalMatOps> : public FirstTouchHostCrsMatrix<Scalar,Ordinal,TPINode,LocalMatOps> {
+  public:
+    CrsMatrix() : FirstTouchHostCrsMatrix<Scalar,Ordinal,TPINode,LocalMatOps>() {}
+    CrsMatrix(CrsGraph<Ordinal,TPINode,LocalMatOps> &graph) : FirstTouchHostCrsMatrix<Scalar,Ordinal,TPINode,LocalMatOps>(graph) {}
+    CrsMatrix(const CrsGraph<Ordinal,TPINode,LocalMatOps> &graph) : FirstTouchHostCrsMatrix<Scalar,Ordinal,TPINode,LocalMatOps>(graph) {}
+    void setStaticGraph(const CrsGraph<Ordinal,TPINode,LocalMatOps> &graph) {
+      const FirstTouchHostCrsGraph<Ordinal,TPINode,LocalMatOps> &hgraph = dynamic_cast<const FirstTouchHostCrsGraph<Ordinal,TPINode,LocalMatOps> &>(graph);
+      FirstTouchHostCrsMatrix<Scalar,Ordinal,TPINode,LocalMatOps>::setStaticGraph(hgraph);
+    }
+    void setOwnedGraph(CrsGraph<Ordinal,TPINode,LocalMatOps> &graph) {
+      FirstTouchHostCrsGraph<Ordinal,TPINode,LocalMatOps> &hgraph = dynamic_cast<FirstTouchHostCrsGraph<Ordinal,TPINode,LocalMatOps> &>(graph);
+      FirstTouchHostCrsMatrix<Scalar,Ordinal,TPINode,LocalMatOps>::setOwnedGraph(hgraph);
+    }
+  private:
+    CrsMatrix(const CrsMatrix<Scalar,Ordinal,TPINode,LocalMatOps> &mat); // not implemented
+  };
+#endif
+#endif
 
   /** \brief Kokkos compressed-row sparse matrix class.
       \ingroup kokkos_crs_ops

@@ -32,31 +32,44 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* expinf - ex_put_info
-*
-* entry conditions - 
-*   input parameters:
-*       int     exoid                   exodus file id
-*       char*   info[]                  ptr array of info records
-*
-* exit conditions - 
-*
-* revision history - 
-*
-*
-*****************************************************************************/
 
 #include "exodusII.h"
 #include "exodusII_int.h"
 #include <string.h>
 
 /*!
- * writes information records to the database
- *  \param  exoid                   exodus file id
- *  \param  num_info                count of info records to be written.
- *  \param  info[]                  ptr array of info records
+The function ex_put_info() writes information records to the
+database. The records are \c MAX_LINE_LENGTH-character strings.
+
+In case of an error, ex_put_info() returns a negative number;
+a warning will return a positive number. Possible causes of errors
+include:
+  -  data file not properly opened with call to ex_create() or ex_open()
+  -  data file opened for read only.
+  -  information records already exist in file.
+
+\param[in] exoid       exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[in] num_info    The number of information records.
+\param[in] info        Array containing the information records.
+
+The following code will write out three information records 
+to an open exodus file -
+
+\code
+#include "exodusII.h"
+int error, exoid, num_info;
+char *info[3];
+
+\comment{write information records}
+num_info = 3;
+
+info[0] = "This is the first information record.";
+info[1] = "This is the second information record.";
+info[2] = "This is the third information record.";
+
+error = ex_put_info(exoid, num_info, info);
+\endcode
+
  */
 
 int ex_put_info (int   exoid, 

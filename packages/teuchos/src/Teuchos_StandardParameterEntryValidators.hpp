@@ -2028,7 +2028,6 @@ void StringToIntegralParameterEntryValidator<IntegralType>::setValidValues(
   // Here I build the list of valid values in the same order as passed in by
   // the client!
   std::ostringstream oss;
-  typename map_t::const_iterator itr = map_.begin();
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
     oss << "    \""<<strings[i]<<"\"\n";
   }

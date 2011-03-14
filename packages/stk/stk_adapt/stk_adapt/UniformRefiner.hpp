@@ -27,6 +27,15 @@
 
 #include <stk_adapt/SubDimCell.hpp>
 
+#define UNIFORM_REF_REMOVE_OLD_STD_SET 1
+#define UNIFORM_REF_REMOVE_OLD_STD_VECTOR 0
+#define UNIFORM_REF_REMOVE_OLD_BOOST_SET 0
+
+#if UNIFORM_REF_REMOVE_OLD_BOOST_SET
+#include <boost/unordered_set.hpp>
+#endif
+
+
 namespace stk {
   namespace adapt {
 
@@ -34,6 +43,18 @@ namespace stk {
     using std::vector;
     using std::map;
     using std::set;
+
+
+#if UNIFORM_REF_REMOVE_OLD_STD_SET
+    typedef std::set<Entity *> elements_to_be_destroyed_type;
+#endif
+#if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
+    typedef std::vector<Entity *> elements_to_be_destroyed_type;
+#endif
+#if UNIFORM_REF_REMOVE_OLD_BOOST_SET
+    typedef boost::unordered_set<Entity *> elements_to_be_destroyed_type;
+#endif
+
 
     /// e.g. UniformRefiner<shards::Hex<8>, shards::Tet<4> >
     //template<typename FromTopology, typename ToTopology>
@@ -67,17 +88,19 @@ namespace stk {
       doBreak();
 
       void 
-      setRemoveOldElements(bool do_remove) { m_doRemove = do_remove; }
+      setRemoveOldElements(bool do_remove);
+
       bool 
-      getRemoveOldElements() { return m_doRemove; }
+      getRemoveOldElements();
       
       static BlockNamesType 
       getBlockNames(std::string& block_name);
 
       void 
-      setIgnoreSideSets(bool ignore_sidesets) { m_ignoreSideSets= ignore_sidesets; }
+      setIgnoreSideSets(bool ignore_sidesets) ;
+
       bool 
-      getIgnoreSideSets() { return m_ignoreSideSets; }
+      getIgnoreSideSets();
 
     protected:
   
@@ -85,18 +108,21 @@ namespace stk {
 
       unsigned
       doForAllElements(EntityRank rank, NodeRegistry::ElementFunctionPrototype function, vector< ColorerSetType >& elementColors, vector<NeededEntityType>& needed_entity_ranks,
-                       bool only_count=false);
+                       bool only_count=false, bool doAllElements=true);
 
       void 
-      connectLocal(unsigned irank,  UniformRefinerPatternBase* breakPattern, 
+      createElementsAndNodesAndConnectLocal(unsigned irank,  UniformRefinerPatternBase* breakPattern, 
                    vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,  vector<Entity *>& new_elements_pool);
 
       bool
-      createNewNeededNodes(const CellTopologyData * const cell_topo_data, 
-                           const Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes);
+      createNewNeededNodeIds(const CellTopologyData * const cell_topo_data, 
+                             const Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes);
 
       void 
       removeOldElements(EntityRank rank, UniformRefinerPatternBase* breakPattern );
+
+      void 
+      removeOldElements( elements_to_be_destroyed_type& elements_to_be_destroyed);
 
       void 
       addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);
@@ -127,6 +153,8 @@ namespace stk {
 
       void 
       trace_print(std::string msg);
+
+      //void dumpElements();
 
     private:
       percept::PerceptMesh& m_eMesh;

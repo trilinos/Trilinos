@@ -43,16 +43,20 @@ namespace TSQR {
   ///
   /// A thin wrapper around Teuchos::Comm, for use by TSQR.  The
   /// internode parallel part of TSQR communicates via a
-  /// MessengerBase< Datum > interface.  TeuchosMessenger< Datum >
+  /// MessengerBase<Datum> interface.  TeuchosMessenger<Datum>
   /// implements that interface by wrapping Teuchos::Comm.
   ///
-  /// \warning Datum should be a class with value-type semantics.
-  template< class Datum >
-  class TeuchosMessenger : public MessengerBase< Datum > {
+  /// \warning Datum should be a class with value-type semantics, and
+  ///   Datum objects should be less-than comparable.
+  template<class Datum>
+  class TeuchosMessenger : public MessengerBase<Datum> {
   public:
-    typedef Teuchos::RCP< const Teuchos::Comm<int> > comm_ptr;
+    typedef Teuchos::RCP<const Teuchos::Comm<int> > comm_ptr;
 
     TeuchosMessenger (const comm_ptr& pComm) : pComm_ (pComm) {}
+
+    //! Virtual destructor, for correct deallocation.
+    virtual ~TeuchosMessenger() {}
 
     /// Send sendData[0:sendCount-1] to process destProc.
     ///
@@ -60,7 +64,7 @@ namespace TSQR {
     /// \param sendCount [in] Number of elements in the array
     /// \param destProc [in] Rank of destination process
     /// \param tag [in] MPI tag (ignored)
-    virtual void 
+    void 
     send (const Datum sendData[], 
 	  const int sendCount, 
 	  const int destProc, 
@@ -78,7 +82,7 @@ namespace TSQR {
     /// \param recvCount [in] Number of elements to receive in the array
     /// \param srcProc [in] Rank of sending process
     /// \param tag [in] MPI tag (ignored)
-    virtual void 
+    void 
     recv (Datum recvData[], 
 	  const int recvCount, 
 	  const int srcProc, 
@@ -104,7 +108,7 @@ namespace TSQR {
     ///   this process is sending data, and from which this process is
     ///   receiving data)
     /// \param tag [in] MPI tag (ignored)
-    virtual void 
+    void 
     swapData (const Datum sendData[], 
 	      Datum recvData[], 
 	      const int sendRecvCount, 
@@ -179,9 +183,8 @@ namespace TSQR {
 	}
     }
 
-    /// Allreduce sum all processors' inDatum data, returning the
-    /// result (on all processors).
-    virtual Datum 
+    //! Sum inDatum on all processors, and return the result.
+    Datum 
     globalSum (const Datum& inDatum) 
     {
       Datum outDatum;
@@ -190,11 +193,10 @@ namespace TSQR {
       return outDatum;
     }
 
+    /// \brief Compute the global minimum over all processors.
     ///
-    /// Assumes that Datum objects are less-than comparable by the
-    /// underlying communication protocol.
-    ///
-    virtual Datum 
+    /// Assumes that Datum objects are less-than comparable.
+    Datum 
     globalMin (const Datum& inDatum)
     {
       Datum outDatum;
@@ -203,11 +205,10 @@ namespace TSQR {
       return outDatum;
     }
 
+    /// \brief Compute the global maximum over all processors.
     ///
-    /// Assumes that Datum objects are less-than comparable by the
-    /// underlying communication protocol.
-    ///
-    virtual Datum 
+    /// Assumes that Datum objects are less-than comparable.
+    Datum 
     globalMax (const Datum& inDatum)
     {
       Datum outDatum;
@@ -216,9 +217,8 @@ namespace TSQR {
       return outDatum;
     }
 
-    /// Allreduce sum all processors' inData[0:count-1], storing the
-    /// results (on all processors) in outData.
-    virtual void
+    //! Sum inData[0:count-1] over all processors into outData.
+    void
     globalVectorSum (const Datum inData[], 
 		     Datum outData[], 
 		     const int count) 
@@ -227,34 +227,27 @@ namespace TSQR {
 			  inData, outData);
     }
 
-    virtual void
+    //! Broadcast data[0:count-1] from root to all processors.
+    void
     broadcast (Datum data[], 
 	       const int count,
 	       const int root)
     {
-      // Assumes that Datum has value semantics.
       Teuchos::broadcast (*pComm_, root, count, data);
     }
 
-    /// 
-    /// Return this process' rank.
-    /// 
-    virtual int rank () const { return Teuchos::rank (*pComm_); }
+    //! Return this process' rank.
+    int rank () const { return Teuchos::rank (*pComm_); }
 
-    /// 
-    /// Return the total number of ranks in the Teuchos::Comm communicator.
-    /// 
-    virtual int size () const { return Teuchos::size (*pComm_); }
+    //! Return the total number of ranks in the communicator.
+    int size () const { return Teuchos::size (*pComm_); }
 
-    /// 
-    /// Execute a barrier over the communicator.
-    /// 
-    virtual void barrier () const { Teuchos::barrier (*pComm_); }
+    //! Execute a barrier over the communicator.
+    void barrier () const { Teuchos::barrier (*pComm_); }
 
   private:
-    /// 
-    /// Shared pointer to the the underlying Teuchos::Comm object.
-    ///
+
+    //! Shared pointer to the the underlying communicator object.
     comm_ptr pComm_;
   };
 } // namespace TSQR

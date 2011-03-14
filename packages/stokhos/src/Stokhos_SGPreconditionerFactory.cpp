@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -36,8 +34,7 @@
 #include "Stokhos_GaussSeidelPreconditioner.hpp"
 #include "Stokhos_KroneckerProductPreconditioner.hpp"
 #include "Stokhos_FullyAssembledPreconditioner.hpp"
-#include "Stokhos_IfpackPreconditionerFactory.hpp"
-#include "Stokhos_MLPreconditionerFactory.hpp"
+#include "Stokhos_PreconditionerFactory.hpp"
 #include "Teuchos_TestForException.hpp"
 
 Stokhos::SGPreconditionerFactory::
@@ -57,7 +54,7 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
   Teuchos::RCP<Stokhos::SGPreconditioner> sg_prec;
   std::string prec_method = params->get("Preconditioner Method", "Mean-based");
   if (prec_method == "Mean-based") {
-    Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory = 
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> prec_factory = 
       buildMeanPreconditionerFactory();
     sg_prec = Teuchos::rcp(new Stokhos::MeanBasedPreconditioner(
 			     sg_comm, sg_basis, epetraCijk, 
@@ -65,7 +62,7 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
 			     params));
   }
   else if (prec_method == "Approximate Gauss-Seidel") {
-    Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory = 
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> prec_factory = 
       buildMeanPreconditionerFactory();
     sg_prec = Teuchos::rcp(new Stokhos::ApproxGaussSeidelPreconditioner(
 			     sg_comm, sg_basis, epetraCijk, 
@@ -73,7 +70,7 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
 			     params));
   }
   else if (prec_method == "Approximate Jacobi") {
-    Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory = 
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> prec_factory = 
       buildMeanPreconditionerFactory();
     sg_prec = Teuchos::rcp(new Stokhos::ApproxJacobiPreconditioner(
 			     sg_comm, sg_basis, epetraCijk, 
@@ -91,14 +88,15 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
   }
 #endif
   else if (prec_method == "Kronecker Product") {
-    Teuchos::RCP<Stokhos::PreconditionerFactory> mean_prec_factory = 
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> mean_prec_factory = 
       buildMeanPreconditionerFactory();
     std::string G_prec_name = 
       params->get("G Preconditioner Type", "Ifpack");
     Teuchos::RCP<Teuchos::ParameterList> G_prec_params =
       Teuchos::rcp(&(params->sublist("G Preconditioner Parameters")),false);
-    Teuchos::RCP<Stokhos::PreconditionerFactory> G_prec_factory = 
-      buildPreconditionerFactory(G_prec_name, G_prec_params);
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> G_prec_factory = 
+      Teuchos::rcp(new Stokhos::PreconditionerFactory(G_prec_name, 
+						      G_prec_params));
     sg_prec = Teuchos::rcp(new Stokhos::KroneckerProductPreconditioner(
 			     sg_comm, sg_basis, epetraCijk, base_map, sg_map, 
 			     mean_prec_factory, G_prec_factory, params));
@@ -108,8 +106,8 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
        params->get("Fully Assembled Preconditioner Type", "Ifpack");
     Teuchos::RCP<Teuchos::ParameterList> prec_params =
       Teuchos::rcp(&(params->sublist("Fully Assembled Preconditioner Parameters")),false);
-    Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory = 
-      buildPreconditionerFactory(prec_name, prec_params);
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> prec_factory = 
+      Teuchos::rcp(new Stokhos::PreconditionerFactory(prec_name, prec_params));
     sg_prec = Teuchos::rcp(new Stokhos::FullyAssembledPreconditioner(
 			     prec_factory, params));
   }
@@ -123,7 +121,7 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
   return sg_prec;
 }
 
-Teuchos::RCP<Stokhos::PreconditionerFactory>
+Teuchos::RCP<Stokhos::AbstractPreconditionerFactory>
 Stokhos::SGPreconditionerFactory::
 buildMeanPreconditionerFactory()
 {
@@ -131,27 +129,6 @@ buildMeanPreconditionerFactory()
     params->get("Mean Preconditioner Type", "Ifpack");
   Teuchos::RCP<Teuchos::ParameterList> precParams = 
     Teuchos::rcp(&params->sublist("Mean Preconditioner Parameters"),false);
-
-  return buildPreconditionerFactory(prec_name, precParams);
-}
-
-Teuchos::RCP<Stokhos::PreconditionerFactory>
-Stokhos::SGPreconditionerFactory::
-buildPreconditionerFactory(
-  const std::string& prec_name,
-  const Teuchos::RCP<Teuchos::ParameterList>& precParams)
-{
-  Teuchos::RCP<Stokhos::PreconditionerFactory> precFactory;
-  if (prec_name == "Ifpack")
-    precFactory = 
-      Teuchos::rcp(new Stokhos::IfpackPreconditionerFactory(precParams));
-  else if (prec_name == "ML")
-    precFactory = 
-      Teuchos::rcp(new Stokhos::MLPreconditionerFactory(precParams));
-  else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Error!  Unknown preconditioner type " << prec_name
-		       << ".  Valid choices are \"Ifpack\" and \"ML\".");
-
-  return precFactory;
+  return Teuchos::rcp(new Stokhos::PreconditionerFactory(prec_name, 
+							 precParams));
 }

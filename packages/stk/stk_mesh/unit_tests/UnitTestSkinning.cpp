@@ -96,7 +96,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testSingleShell )
 
   {
     const unsigned mesh_rank = element_rank;
-    const stk::mesh::MetaData & meta = bulk_data.mesh_meta_data();
+    const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk_data);
     stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
     const std::vector<stk::mesh::Bucket*>& buckets = bulk_data.buckets( mesh_rank -1);
     int num_skin_entities = stk::mesh::count_selected_entities( select_skin, buckets);

@@ -109,6 +109,11 @@ C) Configuring (Makefile Generator)
   can be a sub-directory of the Trilinos base source directory or anywhere
   else.
 
+  NOTE: If you mistakenly try to configure for an in-source build
+  (e.g. with 'cmake .') you will get an error message and instructions
+  on how to resolve the problem by deleting the generated
+  CMakeCache.txt file (and other generated files) and then directions
+  on how to create a different build directory as shown above.
 
 (*) Basic configuration of Trilinos:
 

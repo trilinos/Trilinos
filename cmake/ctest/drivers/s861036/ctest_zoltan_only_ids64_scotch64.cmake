@@ -27,8 +27,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Zoltan:BOOL=ON"
   "-DZoltan_ENABLE_ULONG_IDS:BOOL=ON"
   "-DZoltan_ENABLE_Scotch:BOOL=ON"
-  "-DScotch_INCLUDE_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a/include"
-  "-DScotch_LIBRARY_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a/lib"
+  "-DScotch_INCLUDE_DIRS:FILEPATH=/home/lriesen/local/system/scotch_5.1.10a/include"
+  "-DScotch_LIBRARY_DIRS:FILEPATH=/home/lriesen/local/system/scotch_5.1.10a/lib"
   )
 
 SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )

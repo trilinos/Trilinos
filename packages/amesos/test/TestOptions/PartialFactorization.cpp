@@ -16,7 +16,6 @@ relerror = 1.3e15; relresidual=1e15; return(1);}  }\
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
 #include "PerformOneSolveAndTest.h"
-#include "CreateTridi.h"
 //
 //  PartialFactorization checks to make sure that we clean up after our mess
 //  before everything is done.

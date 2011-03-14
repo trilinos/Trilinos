@@ -194,9 +194,9 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
 
   for(int i=0; i<numNodes; i++) {
     const NodeDescriptor* node = NULL;
-    CHK_ERR( nodeDB.getNodeAtIndex(i, node) );
+    nodeDB.getNodeAtIndex(i, node);
 
-    if (node->getOwnerProc() != localRank_) continue;
+    if (node==NULL || node->getOwnerProc() != localRank_) continue;
 
     const int* fieldIDList = node->getFieldIDList();
     const int* fieldEqnNums = node->getFieldEqnNumbers();
@@ -207,43 +207,43 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
       int fSize = DBFieldSize;
 
       if (numDBFields > 1) {
-	fIndex = fei::binarySearch(fieldIDList[j], fieldIDs, numFields);
-	if (fIndex < 0) return(-1);
-	fSize = problemStructure_->getFieldSize(fieldIDList[j]);
-	if (fSize < 0) return(-1);
+        fIndex = fei::binarySearch(fieldIDList[j], fieldIDs, numFields);
+        if (fIndex < 0) return(-1);
+        fSize = problemStructure_->getFieldSize(fieldIDList[j]);
+        if (fSize < 0) return(-1);
       }
 
       for(int k=0; k<fSize; k++) {
-	int eqn = fieldEqnNums[j]+k;
+        int eqn = fieldEqnNums[j]+k;
 
-	if (haveSlaves) {
-	  if (problemStructure_->isSlaveEqn(eqn)) continue;
-	  int reducedEqn;
-	  problemStructure_->translateToReducedEqn(eqn, reducedEqn);
+        if (haveSlaves) {
+          if (problemStructure_->isSlaveEqn(eqn)) continue;
+          int reducedEqn;
+          problemStructure_->translateToReducedEqn(eqn, reducedEqn);
 
-	  if (reducedEqn < reducedStartRow || reducedEqn > reducedEndRow) {
-	    continue;
-	  }
-	  eqn = reducedEqn;
-	}
+          if (reducedEqn < reducedStartRow || reducedEqn > reducedEndRow) {
+            continue;
+          }
+          eqn = reducedEqn;
+        }
 
-	double rval = residPtr[eqn - reducedStartRow];
+        double rval = residPtr[eqn - reducedStartRow];
 
-	switch(whichNorm) {
-	case 0:
-	  if (tmpNormsPtr[fIndex] < std::abs(rval)) tmpNormsPtr[fIndex] = rval;
-	  break;
-	case 1:
-	  tmpNormsPtr[fIndex] += std::abs(rval);
-	  break;
-	case 2:
-	  tmpNormsPtr[fIndex] += rval*rval;
-	  break;
-	default:
-	  FEI_COUT << "Filter::residualNorm: ERROR, whichNorm="<<whichNorm
-	       << " not recognized." << FEI_ENDL;
-	  return(-1);
-	}
+        switch(whichNorm) {
+          case 0:
+            if (tmpNormsPtr[fIndex] < std::abs(rval)) tmpNormsPtr[fIndex] = rval;
+            break;
+          case 1:
+            tmpNormsPtr[fIndex] += std::abs(rval);
+            break;
+          case 2:
+            tmpNormsPtr[fIndex] += rval*rval;
+            break;
+          default:
+            FEI_COUT << "Filter::residualNorm: ERROR, whichNorm="<<whichNorm
+              << " not recognized." << FEI_ENDL;
+            return(-1);
+        }
       }
     }
   }

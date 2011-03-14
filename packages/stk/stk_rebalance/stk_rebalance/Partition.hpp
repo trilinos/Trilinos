@@ -12,7 +12,10 @@
 #ifndef stk_rebalance_Partition_hpp
 #define stk_rebalance_Partition_hpp
 
-/** @file Partition.h
+/** \addtogroup stk_rebalance_module
+ *  \{
+ */
+/** \file Partition.hpp
  * \brief For partitioning of mesh entities over a processing grid.
  *
  * This file defines a single class, Partition.  This class describes
@@ -55,7 +58,7 @@ typedef mesh::Field<double, mesh::Cartesian>  VectorField ;
 typedef mesh::Field<double>                   ScalarField ;
 
 
-/** @class Class for keeping track of a mesh entity partition.
+/** @class Partition for keeping track of a mesh entity partition.
  *
  * \brief Initialized with a list of mesh entities unique to each processor.
  *
@@ -126,7 +129,7 @@ public:
 
   /** \brief Perform communication to create new partition.
    *
-   * \param  new_partition  New layout of mesh objects on the processing grid.
+   * \param  new_partition  New layout of mesh entities on the processing grid.
    *
    * Given a communication specification this
    * function will apply the new partition by
@@ -148,6 +151,8 @@ protected:
 
   const stk::ParallelMachine comm_;
 };
+
+/** \} */
 
 }
 } // namespace stk

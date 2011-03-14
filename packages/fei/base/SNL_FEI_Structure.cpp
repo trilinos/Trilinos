@@ -2312,7 +2312,9 @@ int SNL_FEI_Structure::initializeBlkEqnMapper()
 
   for(; iter!=iter_end; ++iter) {
     NodeDescriptor* node = NULL;
-    CHK_ERR( nodeDatabase_->getNodeAtIndex(iter->second, node) );
+    nodeDatabase_->getNodeAtIndex(iter->second, node);
+
+    if (node==NULL) continue;
 
     int firstPtEqn = node->getFieldEqnNumbers()[0];
     int numNodalDOF = node->getNumNodalDOF();
@@ -2491,9 +2493,9 @@ int SNL_FEI_Structure::writeEqn2NodeMap()
 
   for(; iter!=iter_end; ++iter) {
     NodeDescriptor* node = NULL;
-    CHK_ERR( nodeDatabase_->getNodeAtIndex(iter->second, node) );
+    nodeDatabase_->getNodeAtIndex(iter->second, node);
 
-    if (node->getOwnerProc() != localProc_) {
+    if (node==NULL || node->getOwnerProc() != localProc_) {
       continue;
     }
 
@@ -2711,7 +2713,9 @@ int SNL_FEI_Structure::setNodalEqnInfo()
 
   for(; iter!=iter_end; ++iter) {
     NodeDescriptor* node = NULL;
-    CHK_ERR( nodeDatabase_->getNodeAtIndex(iter->second, node) );
+    nodeDatabase_->getNodeAtIndex(iter->second, node);
+
+    if (node==NULL) continue;
 
     int numFields = node->getNumFields();
     const int* fieldIDs = node->getFieldIDList();
@@ -3063,7 +3067,8 @@ int SNL_FEI_Structure::setNumNodesAndEqnsPerBlock()
 
    for(j=0; j<numNodes; j++) {
      NodeDescriptor* node = NULL;
-     CHK_ERR( nodeDatabase_->getNodeAtIndex(j, node) );
+     nodeDatabase_->getNodeAtIndex(j, node);
+     if (node==NULL) continue;
 
      const int* fieldIDList = node->getFieldIDList();
 
@@ -3216,31 +3221,38 @@ int SNL_FEI_Structure::getEqnNumbers(int numIDs,
 
     int fieldSize = getFieldSize(fieldID);
     if (fieldSize < 0) {
-	ERReturn(-1);
+      ERReturn(-1);
     }
 
     int offset = 0;
     for(int i=0; i<numIDs; ++i) {
-	NodeDescriptor* node = NULL;
+      NodeDescriptor* node = NULL;
 
-	if ( nodeDatabase_->getNodeWithID(IDs[i], node) != 0 ) {
-	    // FEI_CERR << "SNL_FEI_Structure::getEqnNumbers: ERROR getting node " << IDs[i] << FEI_ENDL;
-	    for(int ii=0; ii<fieldSize; ii++) {
-		eqnNumbers[offset++] = -1;
-	    }
-	    continue;
-	    // ERReturn(-1);
-	}
+      if ( nodeDatabase_->getNodeWithID(IDs[i], node) != 0 ) {
+        // FEI_CERR << "SNL_FEI_Structure::getEqnNumbers: ERROR getting node " << IDs[i] << FEI_ENDL;
+        for(int ii=0; ii<fieldSize; ii++) {
+          eqnNumbers[offset++] = -1;
+        }
+        continue;
+        // ERReturn(-1);
+      }
 
-	int nodeFieldEqnNumber = -1;
+      int nodeFieldEqnNumber = -1;
 
-	if ( !node->getFieldEqnNumber(fieldID, nodeFieldEqnNumber) ) {
-	    ERReturn(-1);
-	}
-
-	for(int ii=0; ii<fieldSize; ii++) {
-	    eqnNumbers[offset++] = nodeFieldEqnNumber + ii;
-	}
+      if ( !node->getFieldEqnNumber(fieldID, nodeFieldEqnNumber) ) {
+        //if we didn't find a field eqn-number, set eqnNumbers to -1. These
+        //positions will then be skipped by code that passes the data on down to
+        //underlying solver objects.
+        for(int ii=0; ii<fieldSize; ii++) {
+          eqnNumbers[offset++] = -1;
+        }
+      }
+      else {
+        //else we did find valid eqn-numbers...
+        for(int ii=0; ii<fieldSize; ii++) {
+          eqnNumbers[offset++] = nodeFieldEqnNumber + ii;
+        }
+      }
     }
 
     numEqns = fieldSize*numIDs;

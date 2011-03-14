@@ -16,20 +16,20 @@ namespace stk
     SimpleSearcher::SimpleSearcher(FieldFunction *ff) : m_fieldFunction(ff) {}
 
     /**
-     *  Dimensions of input_phy_points = ([P]=1, [D]) 
+     *  Dimensions of input_phy_points = ([P]=1, [D])
      *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
      */
 
-    const stk::mesh::Entity *SimpleSearcher::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, 
+    const stk::mesh::Entity *SimpleSearcher::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
                                                          unsigned& found_it, const mesh::Entity *hint_element )
     {
       VERIFY_OP(input_phy_points.rank(), ==, found_parametric_coordinates.rank(), "SimpleSearcher::findElement bad dims");
       VERIFY_OP(input_phy_points.rank(), ==, 2, "SimpleSearcher::findElement bad rank");
 
-      mesh::MetaData& metaData = m_fieldFunction->getField()->mesh_meta_data();
+      mesh::MetaData& metaData = MetaData::get( *(m_fieldFunction->getField()));
       mesh::BulkData& bulkData = *m_fieldFunction->getBulkData();
-        
-      // FIXME consider caching the coords_field 
+
+      // FIXME consider caching the coords_field
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       PerceptMesh meshUtil(&metaData, &bulkData);
@@ -52,7 +52,7 @@ namespace stk
 
       meshUtil.elementOpLoop(isIn, coords_field);
       //if (EXTRA_PRINT) std::cout << "SimpleSearcher::findElement: found it= " << isIn.m_found_it << std::endl;
-        
+
       if (isIn.m_found_it)
         {
           found_it = 1;

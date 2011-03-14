@@ -214,6 +214,18 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, noEntityTypes )
     std::runtime_error
     );
 }
+STKUNIT_UNIT_TEST( UnitTestMetaData, declare_part_with_rank )
+{
+  //MetaData constructor fails because there are no entity types:
+  const int spatial_dimension = 3;
+  MetaData metadata(stk::mesh::fem::entity_rank_names(spatial_dimension));
+  metadata.declare_part("foo");
+  STKUNIT_ASSERT_NO_THROW(metadata.declare_part("foo",1));
+  STKUNIT_ASSERT_NO_THROW(metadata.declare_part("foo",1));
+
+  STKUNIT_ASSERT_THROW(metadata.declare_part("foo",2),std::runtime_error);
+  STKUNIT_ASSERT_THROW(metadata.declare_part("foo"),std::runtime_error);
+}
 
 STKUNIT_UNIT_TEST( UnitTestMetaData, declare_attribute_no_delete )
 {

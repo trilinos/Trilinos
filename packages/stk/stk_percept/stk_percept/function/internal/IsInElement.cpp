@@ -13,16 +13,16 @@ namespace stk
   namespace percept
   {
 
-    IsInElement::IsInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates) : 
+    IsInElement::IsInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates) :
       m_found_it(false), m_input_phy_points(input_phy_points), m_found_parametric_coordinates(found_parametric_coordinates),
       m_foundElement(0)
     {}
 
-    void IsInElement::init_elementOp() 
+    void IsInElement::init_elementOp()
     {
       m_found_it=false;
     }
-    void IsInElement::fini_elementOp() 
+    void IsInElement::fini_elementOp()
     {
     }
 
@@ -44,7 +44,7 @@ namespace stk
     }
 
     /**
-     *  Dimensions of input_phy_points = ([P]=1, [D]) 
+     *  Dimensions of input_phy_points = ([P]=1, [D])
      *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
      */
     void IsInElement::isInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, unsigned& found_it, const mesh::Entity& element,
@@ -55,7 +55,7 @@ namespace stk
       found_it = 0;
 
       // FIXME consider caching the coords_field in FieldFunction
-      const mesh::MetaData& metaData = bulkData.mesh_meta_data();
+      const mesh::MetaData& metaData = MetaData::get(bulkData);
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       const mesh::Bucket & bucket = element.bucket();
@@ -83,7 +83,7 @@ namespace stk
                 }
             }
         }
-        
+
       // FIXME for multiple points
       if (input_phy_points.rank() == 1)
         {
@@ -97,7 +97,7 @@ namespace stk
           VERIFY_1("IsInElement::isInElement bad rank of found_parametric_coordinates");
         }
       VERIFY_OP(found_parametric_coordinates.dimension(0), == , 1, "IsInElement::isInElement bad found_parametric_coordinates 1st dim");
-      VERIFY_OP(found_parametric_coordinates.dimension(1), == , (int)cellDim, 
+      VERIFY_OP(found_parametric_coordinates.dimension(1), == , (int)cellDim,
                 "IsInElement::isInElement bad found_parametric_coordinates 2nd dim");
 
       unsigned cellOrd = 0;  // FIXME

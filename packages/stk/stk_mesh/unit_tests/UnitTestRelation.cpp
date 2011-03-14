@@ -40,6 +40,7 @@ using stk::mesh::Relation;
 using stk::mesh::Selector;
 using stk::mesh::EntityId;
 using stk::mesh::MetaData;
+using stk::mesh::BulkData;
 using stk::mesh::DefaultFEM;
 using stk::mesh::Ghosting;
 using stk::mesh::fixtures::BoxFixture;
@@ -73,8 +74,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   const int spatial_dimension = 3;
   const EntityRank element_rank = stk::mesh::fem::element_rank(fixture1.fem());
 
-  stk::mesh::BulkData& bulk  = fixture1.bulk_data();
-  stk::mesh::BulkData& bulk2 = fixture2.bulk_data();
+  BulkData& bulk  = fixture1.bulk_data();
+  BulkData& bulk2 = fixture2.bulk_data();
 
   ScalarFieldType & temperature =
     meta.declare_field < ScalarFieldType > ( "temperature" , 4 );
@@ -115,7 +116,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     stk::mesh::get_entities(bulk, NODE_RANK, nodes);
     std::vector<unsigned> procs ;
     STKUNIT_ASSERT(!nodes.empty());
-    stk::mesh::comm_procs( gg, *nodes.front() , procs );  
+    stk::mesh::comm_procs( gg, *nodes.front() , procs );
 
     STKUNIT_ASSERT(bulk.modification_end());
 
@@ -283,4 +284,56 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 
   }
 
+}
+
+STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
+{
+  // Test that, if you set up degenerate relations, only of the relations
+  // is deleted when you destroy one of the degenerate relations.
+  // BulkData::destroy_relation has been changed to take a relation-id so
+  // that it can work this way.
+  //
+  // To test this, we set up an element that has several relations
+  // to the same node and then delete them one by one.
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dim));
+  meta_data.commit();
+  BulkData mesh(meta_data, pm);
+  unsigned p_rank = mesh.parallel_rank();
+
+  // Begin modification cycle so we can create the entities and relations
+  mesh.modification_begin();
+
+  // We're just going to add everything to the universal part
+  stk::mesh::PartVector empty_parts;
+
+  // Create element
+  const EntityRank entity_rank = stk::mesh::fem::element_rank(spatial_dim);
+  Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+
+  // Create node
+  Entity & node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
+
+  // Add degenerate relations
+  const unsigned nodes_per_elem = 4;
+  for (unsigned i = 0; i < nodes_per_elem; ++i) {
+    mesh.declare_relation( elem, node, i );
+  }
+
+  // Elem should have nodes-per-elem relations
+  STKUNIT_ASSERT_EQUAL( nodes_per_elem, elem.relations().size() );
+
+  // Destroy relation one-by-one, always checking that appropriate number
+  // of relations remain.
+  for (unsigned i = 0; i < nodes_per_elem; ++i) {
+    mesh.destroy_relation( elem, node, i );
+    STKUNIT_ASSERT_EQUAL( nodes_per_elem - (i+1), elem.relations().size() );
+  }
+
+  mesh.modification_end();
 }

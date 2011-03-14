@@ -658,7 +658,7 @@ namespace Tpetra {
     for (size_t dec=10; dec<getGlobalNumElements(); dec *= 10) {
       ++width;
     }
-    width = std::max<size_t>(width,12) + 2;
+    width = std::max<size_t>(width,Teuchos::as<size_t>(12)) + 2;
 
     Teuchos::OSTab tab(out);
 

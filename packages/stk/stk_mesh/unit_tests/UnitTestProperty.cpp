@@ -15,11 +15,12 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/base/Part.hpp>
+#include <stk_mesh/base/Property.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
+#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 using stk::mesh::MetaData;
 using stk::mesh::Part;
@@ -77,7 +78,7 @@ STKUNIT_UNIT_TEST(UnitTestProperty, testProperty)
 
   //Coverage of virtual const data_type * data( unsigned key ) const in Property.hpp
   STKUNIT_ASSERT_FALSE( stk::mesh::property_data( pi2 , meta_data.locally_owned_part() ) != NULL);
-  
+
   //Cover unsigned data type in Property.hpp
   STKUNIT_ASSERT_FALSE( stk::mesh::property_data( pi_unsigned , meta_data.locally_owned_part() ) != NULL);
   STKUNIT_ASSERT_FALSE( stk::mesh::property_data( pi_unsigned_2 , meta_data.locally_owned_part() ) != NULL);
@@ -99,7 +100,7 @@ STKUNIT_UNIT_TEST(UnitTestProperty, testProperty)
 
   //Test get_property_base with an incorrect type and size in Property.cpp
   const std::string& string_incorrect_double = "my_i";
-  STKUNIT_ASSERT_THROW( 
+  STKUNIT_ASSERT_THROW(
       meta_data.get_property<double>( string_incorrect_double ),
       std::runtime_error
       );
@@ -110,7 +111,7 @@ STKUNIT_UNIT_TEST(UnitTestProperty, testProperty)
 
   //Final coverage of MetaData.hpp - declare_property
   const std::string& string_correct_new_double = "my_y";
-  meta_data.get_property<double>( string_correct_new_double ); 
+  meta_data.get_property<double>( string_correct_new_double );
   STKUNIT_ASSERT( (pb).type_is<double>() );
 
   //Coverage of add_property in Property.hpp

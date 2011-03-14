@@ -12,9 +12,20 @@ MESSAGE("Configuring Trilinos build directory")
 MESSAGE("")
 
 IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
-  MESSAGE(FATAL_ERROR "Error, CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+  MESSAGE(FATAL_ERROR "ERROR! "
+    "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
     " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
-    " Trilinos does not support in source builds!" )
+    "\nTrilinos does not support in source builds!\n"
+    "NOTE: You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under"
+    " the source directory for Trilinos or you will not be able to configure Trilinos correctly!"
+    "\nYou must now run something like:\n"
+    "  $ rm -r CMakeCache.txt CMakeFiles/"
+    "\n"
+    "Please create a different directory and configure Trilinos under that such as:\n"
+    "  $ mkdir MY_BUILD\n"
+    "  $ cd MY_BUILD\n"
+    "  $ cmake [OPTIONS] .."
+    )
 ENDIF()
 
 PROJECT(Trilinos NONE)
@@ -37,6 +48,9 @@ SET( CMAKE_MODULE_PATH
    ${TRILINOS_HOME_DIR}/cmake/package_arch
    ${TRILINOS_HOME_DIR}/cmake/config_tests
    )
+
+#any overrides that we have for CMake functions
+INCLUDE(CMakeOverrides)
 
 #Pull in Trilinos version information and create the version header file.
 INCLUDE(TrilinosVersion)
@@ -107,6 +121,10 @@ ADVANCED_OPTION(Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST
 
 SET(TRILINOS_BUILD_SHARED_LIBS "@BUILD_SHARED_LIBS@")
 
+# Find an installed version of Trilinos for installation testing
+# (the check that we are in installation mode is inside the macro)
+INCLUDE(TrilinosInstallationTestingMacros)
+FIND_TRILINOS_INSTALL()
 
 #
 # C) Read in Trilinos packages and TPLs and process dependencies
@@ -222,6 +240,13 @@ TRILINOS_DEFINE_PACKAGING()
 
 PACKAGE_ARCH_WRITE_CONFIG_FILE()
 
+# TEMPORARY: Install a compatibility copy of TrilinosConfig.cmake
+# where was previously installed to warn and load the new file.
+INSTALL(
+  FILES ${Trilinos_SOURCE_DIR}/cmake/TrilinosConfigInclude.cmake
+  DESTINATION "${Trilinos_INSTALL_INCLUDE_DIR}"
+  RENAME TrilinosConfig.cmake
+  )
 
 #
 # M) Export the library dependencies. This will let client projects

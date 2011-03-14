@@ -32,6 +32,7 @@
 #include "TriKota_ThyraDirectApplicInterface.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
+#include "Thyra_DetachedVectorView.hpp"
 
 
 using namespace Dakota;

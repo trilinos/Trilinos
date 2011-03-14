@@ -97,8 +97,8 @@ public:
      * \param[in]     eow       Operator that defines the transition
      */
    virtual void copyEpetraIntoThyra(const Epetra_MultiVector& epetra_X, 
-                                    const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X,
-                                    const Teko::Epetra::EpetraOperatorWrapper & eow) const;
+                                    const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X) const;
+                                    // const Teko::Epetra::EpetraOperatorWrapper & eow) const;
 
    /** Virtual function defined in MappingStrategy.  This copies
      * an Epetra_MultiVector into a Thyra::MultiVectorBase with
@@ -109,8 +109,8 @@ public:
      * \param[in]     eow      Operator that defines the transition
      */
    virtual void copyThyraIntoEpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & thyra_Y, 
-                                    Epetra_MultiVector& epetra_Y,
-                                    const Teko::Epetra::EpetraOperatorWrapper & eow) const;
+                                    Epetra_MultiVector& epetra_Y) const;
+                                    // const Teko::Epetra::EpetraOperatorWrapper & eow) const;
 
    /** Returns the domain and range maps used by this class.
      * This faciliates building an Epetra_Operator around this

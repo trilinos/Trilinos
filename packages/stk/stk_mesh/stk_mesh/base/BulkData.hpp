@@ -45,6 +45,10 @@ namespace mesh {
 class BulkData {
 public:
 
+  inline static BulkData & get( const Bucket & bucket);
+  inline static BulkData & get( const Entity & entity);
+  inline static BulkData & get( const Ghosting & ghost);
+
   enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
 
   ~BulkData();
@@ -56,7 +60,7 @@ public:
    *  - The maximum number of entities per bucket may be supplied.
    *  - The bulk data is in the synchronized or "locked" state.
    */
-  BulkData( const MetaData & mesh_meta_data ,
+  BulkData( MetaData & mesh_meta_data ,
       ParallelMachine parallel ,
       unsigned bucket_max_size = 1000 );
 
@@ -154,7 +158,6 @@ public:
    */
   void update_field_data_states() const { m_bucket_repository.update_field_data_states(); }
 
-
   /** \brief  Copy field data from src entity to Dest entity
    *           - Fields that exist on the src that don't exist on the dest will
    *             be ignored
@@ -178,8 +181,7 @@ public:
   { return m_bucket_repository.buckets(rank); }
 
   /** \brief  Get entity with a given key */
-  /// \todo REFACTOR remove required_by argument
-  Entity * get_entity( EntityRank entity_rank , EntityId entity_id , const char * /* required_by */ = NULL  ) const {
+  Entity * get_entity( EntityRank entity_rank , EntityId entity_id ) const {
     require_good_rank_and_id(entity_rank, entity_id);
     return m_entity_repo.get_entity( EntityKey(entity_rank, entity_id));
   }
@@ -204,7 +206,7 @@ public:
    *  will be resolved by the call to 'modification_end'.
    */
   Entity & declare_entity( EntityRank ent_rank ,
-      EntityId ent_id , const std::vector<Part*> & parts);
+      EntityId ent_id , const PartVector& parts);
 
   /** \brief  Change the parallel-locally-owned entity's
    *          part membership by adding and/or removing parts
@@ -216,8 +218,8 @@ public:
    *  processes by modification_end.
    */
   void change_entity_parts( Entity & entity,
-      const std::vector<Part*> & add_parts ,
-      const std::vector<Part*> & remove_parts = std::vector<Part*>() );
+      const PartVector & add_parts ,
+      const PartVector & remove_parts = PartVector() );
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -303,8 +305,12 @@ public:
    *  If 'e_to' is shared then the check for removing the induced
    *  relatinship does not occur for that entity until the call to
    *  'modification_end'.
+   *  The local_id arg is used to differentiate the case when there are
+   *  multiple relationships between e_from and e_to.
    */
-  void destroy_relation( Entity & e_from , Entity & e_to );
+  void destroy_relation( Entity & e_from ,
+                         Entity & e_to,
+                         const RelationIdentifier local_id );
 
   //------------------------------------
   //------------------------------------
@@ -358,12 +364,14 @@ public:
 
 private:
 
+  /** \brief  The meta data manager for this bulk data manager. */
+  MetaData & meta_data() const { return m_mesh_meta_data ; }
+
 #ifndef DOXYGEN_COMPILE
 
   BulkData();
   BulkData( const BulkData & );
   BulkData & operator = ( const BulkData & );
-
 
   /** \brief  Parallel index for entity keys */
   parallel::DistributedIndex          m_entities_index ;
@@ -373,7 +381,7 @@ private:
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
 
   // Other information:
-  const MetaData &   m_mesh_meta_data ;
+  MetaData &   m_mesh_meta_data ;
   ParallelMachine    m_parallel_machine ;
   unsigned           m_parallel_size ;
   unsigned           m_parallel_rank ;
@@ -381,6 +389,10 @@ private:
   BulkDataSyncState  m_sync_state ;
   bool               m_meta_data_verified ;
 
+  /**
+   * For all processors sharing an entity, find one to be the new
+   * owner.
+   */
   unsigned determine_new_owner( Entity & ) const ;
 
   /*  Entity modification consequences:
@@ -428,15 +440,32 @@ private:
 
   void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
 
+  void require_valid_relation( const char action[] ,
+                               const BulkData & mesh ,
+                               const Entity   & e_from ,
+                               const Entity   & e_to );
+
   /** \} */
 
   //------------------------------------
 
-
   // FIXME: Remove this friend once unit-testing has been refactored
   friend class UnitTestModificationEndWrapper;
+  friend class ::stk::mesh::MetaData;
 #endif /* DOXYGEN_COMPILE */
 };
+
+BulkData & BulkData::get( const Bucket & bucket) {
+  return bucket.bulk_data();
+}
+
+BulkData & BulkData::get( const Entity & entity) {
+  return BulkData::get(entity.bucket());
+}
+
+BulkData & BulkData::get( const Ghosting & ghost) {
+  return ghost.bulk_data();
+}
 
 /** \} */
 

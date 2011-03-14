@@ -134,11 +134,16 @@ namespace stk {
         CellTopology cell_topo(cell_topo_data);
         const mesh::PairIterRelation elem_nodes = element.relations(Node);
 
+        // for cases that have a single center node, we just compute the new node's quantities here instead of globally
+        //Entity * node = getBulkData()->get_entity( Node, node_id );
+
+#define CENTROID_N NN(mesh::Element, 0)  
+
+#if STK_ADAPT_URP_LOCAL_NODE_COMPS
         nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), Element, 0u);
         nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), Element, 0u);
         nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), Element, 0u);
-
-#define CENTROID_N NN(mesh::Element, 0)  
+#endif
 
         // following code is from SweepMesher::breakElement, modified here for stk_mesh
         // from here------------------------------------------->>>>>>
@@ -328,7 +333,7 @@ namespace stk {
               if (!new_elements[ielem].get<0>())
                 {
                   std::cout << "P[" << eMesh.getRank() << " nid = 0 << " << std::endl;
-                  exit(1);
+                  exit(123);
                 }
             }
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<0>()), 0);

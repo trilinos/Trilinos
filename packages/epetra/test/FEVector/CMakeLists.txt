@@ -5,6 +5,7 @@ ELSE()
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     FEVector_test
     SOURCES cxx_main.cpp ExecuteTestProblems.cpp
+    DEPLIBS epetratest
     ARGS -v
     COMM serial mpi
     NUM_MPI_PROCS 1

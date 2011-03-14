@@ -39,7 +39,18 @@ static PARAM_VARS ZG_params[] = {
 
 /* This function needs a distribution : rows then cols to work properly */
 int
-Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
+Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local,
+  int request_GNOs,                /* Input:  Flag indicating calling code 
+                                              needs translation of extra GIDs
+                                              to GNOs; partial 2D coloring
+                                              needs this feature. */
+  int num_requested,               /* Input:  Local # of GIDs needing 
+                                              translation to GNOs. */
+  ZOLTAN_ID_PTR requested_GIDs,    /* Input:  Calling code requests the 
+                                              GNOs for these GIDs */
+  ZOLTAN_GNO_TYPE *requested_GNOs  /* Output: Return GNOs of 
+                                              the requested GIDs.  */
+)
 {
   static char *yo = "Zoltan_ZG_Build";
   int ierr = ZOLTAN_OK;
@@ -110,7 +121,8 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
   times[1] = Zoltan_Time(zz->Timer);
 #endif
 
-  ierr = Zoltan_Matrix_Build(zz, &opt, &graph->mtx.mtx);
+  ierr = Zoltan_Matrix_Build(zz, &opt, &graph->mtx.mtx, request_GNOs,
+                             num_requested, requested_GIDs, requested_GNOs);
   CHECK_IERR;
 
 #ifdef CC_TIMERS
@@ -136,19 +148,27 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
     CHECK_IERR;
   }
 
+  /* Redistribute gets rid of duplicate edges?  So unneeded if
+   *   if we know there are no duplicate edges?
+   */
+
+/*  if (opt.speed != MATRIX_NO_REDIST){      This is the idea, but it doesn't work */
+
 #ifdef CC_TIMERS
-  times[4] = Zoltan_Time(zz->Timer);
+    times[4] = Zoltan_Time(zz->Timer);
 #endif
 
-  ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
-  CHECK_IERR;
+    ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
+    CHECK_IERR;
 
 #ifdef CC_TIMERS
-  times[5] = Zoltan_Time(zz->Timer);
-  MPI_Barrier(zz->Communicator);
+    times[5] = Zoltan_Time(zz->Timer);
+    MPI_Barrier(zz->Communicator);
 #endif
-  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0);
-  CHECK_IERR;
+    ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0);
+    CHECK_IERR;
+
+/*  } */
 
 #ifdef CC_TIMERS
   times[6] = Zoltan_Time(zz->Timer);
@@ -335,8 +355,8 @@ Zoltan_ZG_Query (ZZ* zz, const ZG* const graph,
 
 void
 Zoltan_ZG_Free(ZG *graph){
-  if (graph->bipartite)
-    ZOLTAN_FREE(&graph->fixed_vertices);
+/*   if (graph->bipartite) */
+/*     ZOLTAN_FREE(&graph->fixed_vertices); */
 
   Zoltan_Matrix2d_Free(&graph->mtx);
 }

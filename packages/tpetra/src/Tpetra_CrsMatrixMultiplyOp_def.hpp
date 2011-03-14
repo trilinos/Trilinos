@@ -35,6 +35,10 @@
   #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
 #endif
 
+#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+  #include "Teuchos_VerboseObject.hpp"
+#endif
+
 /*! \file Tpetra_CrsMatrixMultiplyOp_def.hpp 
 
     The implementations for the members of Tpetra::CrsMatrixMultiplyOp and related non-member constructors.

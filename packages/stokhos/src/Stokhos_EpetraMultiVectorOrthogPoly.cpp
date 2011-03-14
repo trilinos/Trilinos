@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -27,90 +25,76 @@
 // 
 // ***********************************************************************
 // @HEADER
+
 #include "Stokhos_EpetraMultiVectorOrthogPoly.hpp"
 
 Stokhos::EpetraMultiVectorOrthogPoly::
 EpetraMultiVectorOrthogPoly() :
+  ProductContainer<Epetra_MultiVector>(),
   VectorOrthogPoly<Epetra_MultiVector>(),
-  bv() 
-{
-}
-
-Stokhos::EpetraMultiVectorOrthogPoly::
-EpetraMultiVectorOrthogPoly(
-  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis) :
-  VectorOrthogPoly<Epetra_MultiVector>(basis),
-  bv() 
+  ProductEpetraMultiVector() 
 {
 }
 
 Stokhos::EpetraMultiVectorOrthogPoly::
 EpetraMultiVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-  int sz) : 
-  VectorOrthogPoly<Epetra_MultiVector>(basis, sz),
-  bv() 
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map) :
+  ProductContainer<Epetra_MultiVector>(block_map),
+  VectorOrthogPoly<Epetra_MultiVector>(basis, block_map),
+  ProductEpetraMultiVector(block_map) 
 {
 }
 
 Stokhos::EpetraMultiVectorOrthogPoly::
 EpetraMultiVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-  const Epetra_BlockMap& coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
   int num_vectors) : 
-  VectorOrthogPoly<Epetra_MultiVector>(basis, 
-				       EpetraMultiVectorCloner(coeff_map, 
-							       num_vectors)),
-  bv() 
+  ProductContainer<Epetra_MultiVector>(block_map),
+  VectorOrthogPoly<Epetra_MultiVector>(basis, block_map),
+  ProductEpetraMultiVector(block_map, coeff_map, product_comm, num_vectors) 
 {
 }
 
 Stokhos::EpetraMultiVectorOrthogPoly::
 EpetraMultiVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-  const Epetra_BlockMap& coeff_map,
-  int num_vectors,
-  int sz) : 
-  VectorOrthogPoly<Epetra_MultiVector>(basis, 
-				       EpetraMultiVectorCloner(coeff_map,
-							       num_vectors), 
-				       sz),
-  bv() 
-{
-}
-
-Stokhos::EpetraMultiVectorOrthogPoly::
-EpetraMultiVectorOrthogPoly(
-  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-  Epetra_DataAccess CV,
-  const Epetra_BlockMap& coeff_map,
-  const Epetra_BlockMap& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
   int num_vectors) :
-  VectorOrthogPoly<Epetra_MultiVector>(basis),
-  bv(Teuchos::rcp(new EpetraExt::BlockMultiVector(coeff_map, block_map, 
-						  num_vectors)))
+  ProductContainer<Epetra_MultiVector>(block_map),
+  VectorOrthogPoly<Epetra_MultiVector>(basis, block_map),
+  ProductEpetraMultiVector(block_map, coeff_map, product_map, product_comm, 
+			   num_vectors)
 {
-  for (int i=0; i<this->size(); i++)
-    this->setCoeffPtr(i, bv->GetBlock(i));
 }
 
 Stokhos::EpetraMultiVectorOrthogPoly::
 EpetraMultiVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
   Epetra_DataAccess CV,
-  const Epetra_BlockMap& coeff_map,
   const Epetra_MultiVector& block_vector) :
-  VectorOrthogPoly<Epetra_MultiVector>(basis),
-  bv(Teuchos::rcp(new EpetraExt::BlockMultiVector(CV, coeff_map, block_vector)))
+  ProductContainer<Epetra_MultiVector>(block_map),
+  VectorOrthogPoly<Epetra_MultiVector>(basis, block_map),
+  ProductEpetraMultiVector(block_map, coeff_map, product_map, product_comm, CV,
+			   block_vector)
 {
-  for (int i=0; i<this->size(); i++)
-    this->setCoeffPtr(i, bv->GetBlock(i));
 }
     
 Stokhos::EpetraMultiVectorOrthogPoly::
 EpetraMultiVectorOrthogPoly(const Stokhos::EpetraMultiVectorOrthogPoly& v) :
+  ProductContainer<Epetra_MultiVector>(v),
   VectorOrthogPoly<Epetra_MultiVector>(v),
-  bv(v.bv)
+  ProductEpetraMultiVector(v)
 {
 }
 
@@ -120,108 +104,46 @@ Stokhos::EpetraMultiVectorOrthogPoly::
 Stokhos::EpetraMultiVectorOrthogPoly& 
 Stokhos::EpetraMultiVectorOrthogPoly::
 operator=(const Stokhos::EpetraMultiVectorOrthogPoly& v) {
-  VectorOrthogPoly<Epetra_MultiVector>::operator=(v);
-  bv = v.bv;
+  ProductEpetraMultiVector::operator=(v);
+  this->basis_ = v.basis_;
   return *this;
-}
-
-Stokhos::EpetraMultiVectorOrthogPoly& 
-Stokhos::EpetraMultiVectorOrthogPoly::
-operator=(const Epetra_MultiVector& v) {
-  if (this->size() > 0) {
-    if (bv != Teuchos::null)
-      bv->Update(1.0, v, 0.0);
-    else {
-      EpetraExt::BlockMultiVector block_v(View, this->coeff_[0]->Map(), v);
-      for (int i=0; i<this->size(); i++)
-	*(coeff_[i]) = *(block_v.GetBlock(i));
-    }
-  }
-  return *this;
-}
-
-void 
-Stokhos::EpetraMultiVectorOrthogPoly::
-assignToBlockMultiVector(Epetra_MultiVector& v) const 
-{
-  if (this->size() > 0) {
-    if (bv != Teuchos::null)
-      v.Update(1.0, *bv, 0.0);
-    else {
-      EpetraExt::BlockMultiVector block_v(View, this->coeff_[0]->Map(), v);
-      for (int i=0; i<this->size(); i++)
-	*(block_v.GetBlock(i)) = *(coeff_[i]);
-    }
-  }
-}
-
-void 
-Stokhos::EpetraMultiVectorOrthogPoly::
-assignFromBlockMultiVector(const Epetra_MultiVector& v) 
-{
-  if (this->size() > 0) {
-    if (bv != Teuchos::null)
-      bv->Update(1.0, v, 0.0);
-    else {
-      EpetraExt::BlockMultiVector block_v(View, this->coeff_[0]->Map(), v);
-      for (int i=0; i<this->size(); i++)
-	*(coeff_[i]) = *(block_v.GetBlock(i));
-    }
-  }
 }
       
 void 
 Stokhos::EpetraMultiVectorOrthogPoly::
 reset(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& new_basis,
-  const Epetra_BlockMap& coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
   int num_vectors) 
 {
-  VectorOrthogPoly<Epetra_MultiVector>::reset(
-    new_basis, EpetraMultiVectorCloner(coeff_map, num_vectors));
-  bv = Teuchos::null;
+  ProductEpetraMultiVector::reset(block_map, coeff_map, product_comm, 
+				  num_vectors);
+  this->basis_ = new_basis;
 }
 
 void 
 Stokhos::EpetraMultiVectorOrthogPoly::
-resetCoefficients(Epetra_DataAccess CV,
-		  const Epetra_BlockMap& coeff_map,
-		  const Epetra_MultiVector& block_vector) 
+reset(
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& new_basis,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
+  int num_vectors) 
 {
-  bv = 
-    Teuchos::rcp(new EpetraExt::BlockMultiVector(CV, coeff_map, block_vector));
-  for (int i=0; i<this->size(); i++)
-    this->setCoeffPtr(i, bv->GetBlock(i));
-}
-
-Teuchos::RCP<EpetraExt::BlockMultiVector> 
-Stokhos::EpetraMultiVectorOrthogPoly::
-getBlockMultiVector() 
-{
-  return bv;
-}
-
-Teuchos::RCP<const EpetraExt::BlockMultiVector> 
-Stokhos::EpetraMultiVectorOrthogPoly::
-getBlockMultiVector() const 
-{
-  return bv;
-}
-
-void 
-Stokhos::EpetraMultiVectorOrthogPoly::
-setBlockMultiVector(const Teuchos::RCP<EpetraExt::BlockMultiVector>& block_vec) 
-{
-  bv = block_vec;
-  for (int i=0; i<this->size(); i++)
-    this->setCoeffPtr(i, bv->GetBlock(i));
+  ProductEpetraMultiVector::reset(block_map, coeff_map, product_map, 
+				  product_comm, num_vectors);
+  this->basis_ = new_basis;
 }
 
 void
 Stokhos::EpetraMultiVectorOrthogPoly::
 computeMean(Epetra_MultiVector& v) const
 {
-  v.Scale(1.0, *(coeff_[0]));
+  int lid = this->map_->LID(0);
+  v.Scale(1.0, *(this->coeff_[lid]));
 }
 
 void
@@ -230,8 +152,11 @@ computeStandardDeviation(Epetra_MultiVector& v) const
 {
   const Teuchos::Array<double>& nrm2 = this->basis_->norm_squared();
   v.PutScalar(0.0);
-  for (int i=1; i<this->size(); i++)
-    v.Multiply(nrm2[i], *coeff_[i], *coeff_[i], 1.0);
+  int i_gid;
+  for (int i=1; i<this->size(); i++) {
+    i_gid = this->map_->GID(i);
+    v.Multiply(nrm2[i_gid], *(this->coeff_[i]), *(this->coeff_[i]), 1.0);
+  }
   for (int j=0; j<v.NumVectors(); j++)
     for (int i=0; i<v.MyLength(); i++)
       v[j][i] = std::sqrt(v[j][i]);

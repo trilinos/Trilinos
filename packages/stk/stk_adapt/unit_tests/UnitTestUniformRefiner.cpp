@@ -154,10 +154,10 @@ namespace stk
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, false);
 
-//             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_tri_to_tri_4(eMesh);
-//             // FIXME
-//             int scalarDimension = 0; // a scalar
-//             FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            //             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_tri_to_tri_4(eMesh);
+            //             // FIXME
+            //             int scalarDimension = 0; // a scalar
+            //             FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
 
             //fixture.meta_data.commit();
             eMesh.commit();
@@ -166,8 +166,8 @@ namespace stk
 
             eMesh.printInfo("tri mesh");
 
-//             UniformRefiner breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
-//             breaker.doBreak();
+            //             UniformRefiner breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
+            //             breaker.doBreak();
         
             eMesh.saveAs("./quad_fixture_tri3.e");
             // end_demo
@@ -230,12 +230,14 @@ namespace stk
             //                         double zmin, double zmax,
             //                         std::string output_filename
             //                         )
-	    percept::WedgeFixture::createMesh(MPI_COMM_WORLD, 
-                                     4, 3, 2,
-                                     0, 1,
-                                     0, 1,
-                                     0, 1,
-                                     std::string("swept-wedge_0.e") );
+
+            percept::WedgeFixture wedgeFixture;
+            wedgeFixture.createMesh(MPI_COMM_WORLD, 
+                                    4, 3, 2,
+                                    0, 1,
+                                    0, 1,
+                                    0, 1,
+                                    std::string("swept-wedge_0.e") );
           }
       }
 

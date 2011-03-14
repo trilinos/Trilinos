@@ -14,6 +14,9 @@
 #include <use_cases/UseCase_Rebal_4.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/use_cases/UseCaseEnvironment.hpp>
+
 #include <stk_rebalance/Rebalance.hpp>
 
 void printStatus(bool status)
@@ -36,12 +39,14 @@ int main ( int argc, char * argv[] )
   {
     std::cout << "Use Case 1, unequal element weights ... ";
     bool local_status = stk::rebalance::use_cases::test_unequal_weights(parallel_machine);
+    stk::all_reduce(parallel_machine, stk::ReduceMin<1>(&local_status));
     printStatus(local_status);
     status = status && local_status;
   }
   {
     std::cout << "Use Case 2, heavy entities ... ";
     bool local_status = stk::rebalance::use_cases::test_heavy_nodes(parallel_machine);
+    stk::all_reduce(parallel_machine, stk::ReduceMin<1>(&local_status));
     printStatus(local_status);
     status = status && local_status;
   }
@@ -49,24 +54,20 @@ int main ( int argc, char * argv[] )
   {
     std::cout << "Use Case 3, contact surfaces ... ";
     bool local_status = stk::rebalance::use_cases::test_contact_surfaces(parallel_machine);
+    stk::all_reduce(parallel_machine, stk::ReduceMin<1>(&local_status));
     printStatus(local_status);
     status = status && local_status;
   }
   {
     std::cout << "Use Case 4, greedy sideset ... ";
     bool local_status = stk::rebalance::use_cases::test_greedy_sideset(parallel_machine);
+    stk::all_reduce(parallel_machine, stk::ReduceMin<1>(&local_status));
     printStatus(local_status);
     status = status && local_status;
   }
 
-  int return_code = -1;
-  if (status) {
-    return_code = 0;
-    std::cout << "End Result: TEST PASSED" << std::endl;
-  }
-  else {
-    std::cout << "End Result: TEST FAILED" << std::endl;
-  }
+  bool collective_result = use_case::print_status(parallel_machine, status);
+  int return_code = collective_result ? 0 : -1;
 
   stk::parallel_machine_finalize();
 

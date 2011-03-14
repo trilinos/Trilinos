@@ -22,6 +22,8 @@
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
 
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
+
 //----------------------------------------------------------------------
 
 using namespace stk::mesh::fixtures;
@@ -73,7 +75,7 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
   stk::mesh::BulkData & bulk  = fixture.m_bulk_data;
   stk::mesh::DefaultFEM & fem = fixture.m_fem;
 
-  // Put weights field on all elements
+  // Put weights field on all entities
   const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
   const stk::mesh::EntityRank face_rank = stk::mesh::fem::face_rank(fem);
   const stk::mesh::EntityRank edge_rank = stk::mesh::fem::edge_rank(fem);
@@ -214,19 +216,11 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
   Teuchos::ParameterList emptyList;
   stk::rebalance::Zoltan zoltan_partition(pm, fixture.m_spatial_dimension, emptyList);
 
-  // Force a rebalance by using imbalance_threshold < 1.0
-  double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, imbalance_threshold);
-  // Coordinates are passed to support geometric-based load balancing algorithms
-  if( do_rebal )
-    stk::rebalance::rebalance(bulk, meta.universal_part(), &fixture.m_coord_field, &weight_field, zoltan_partition);
+  stk::rebalance::rebalance(bulk, meta.universal_part(), &fixture.m_coord_field, &weight_field, zoltan_partition);
 
-  if( 3 == p_size ) // Zoltan does not do so well for 3 procs
-    imbalance_threshold = 1.45;
-  else // ... but does pretty well for 2 and 4 procs
-    imbalance_threshold = 1.1;
-
-  do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, imbalance_threshold);
+  const double imbalance_threshold = ( 3 == p_size )? 1.45 // Zoltan does not do so well for 3 procs
+                                                    : 1.1; // ... but does pretty well for 2 and 4 procs
+  const bool do_rebal = imbalance_threshold < stk::rebalance::check_balance(bulk, &weight_field, element_rank);
 
   if( 0 == p_rank )
     std::cerr << std::endl 
@@ -235,6 +229,22 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
 
   // Check that we satisfy our threshhold
   bool result = !do_rebal;
+
+  // And verify that all dependent entities are on the same proc as their parent element
+  {
+    stk::mesh::EntityVector entities;
+    stk::mesh::Selector selector = meta.locally_owned_part();
+
+    get_selected_entities(selector, bulk.buckets(node_rank), entities);
+    result &= verify_dependent_ownership(element_rank, entities, fem);
+
+    get_selected_entities(selector, bulk.buckets(edge_rank), entities);
+    result &= verify_dependent_ownership(element_rank, entities, fem);
+
+    get_selected_entities(selector, bulk.buckets(face_rank), entities);
+    result &= verify_dependent_ownership(element_rank, entities, fem);
+  }
+
   return result;
 }
 

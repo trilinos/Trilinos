@@ -27,7 +27,6 @@ namespace mesh {
  */
 class Ghosting {
 public:
-  BulkData & mesh() const { return m_mesh ; }
 
   /** \brief  Text name for printing purposes only */
   const std::string & name() const { return m_name ; }
@@ -62,6 +61,8 @@ private:
   /** \brief  A Ghosting object is owned by a BulkData object,
    *          and as such can only be modified by its owner.
    */
+
+  BulkData & bulk_data() const { return m_mesh ; }
   friend class BulkData ;
 
   BulkData                & m_mesh ; ///< Owner

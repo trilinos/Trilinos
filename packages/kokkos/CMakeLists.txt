@@ -30,6 +30,13 @@ ADD_OPTION_AND_DEFINE(
   )
 
 ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_MDArray
+  HAVE_KOKKOS_MDARRAY
+  "Enable Kokkos multi-dimensional arrays."
+  OFF
+  )
+
+ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_CUDA_FLOAT
   HAVE_KOKKOS_CUDA_FLOAT
   "Enable float type for CUDA nodes."
@@ -142,6 +149,10 @@ ENDIF()
 
 if (Kokkos_ENABLE_LinAlg AND Kokkos_ENABLE_NodeAPI)
   ADD_SUBDIRECTORY(LinAlg)
+ENDIF()
+
+IF (Kokkos_ENABLE_MDArray)
+  ADD_SUBDIRECTORY(MDArray)
 ENDIF()
 
 ######################################################################

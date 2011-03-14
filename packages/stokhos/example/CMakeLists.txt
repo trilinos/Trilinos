@@ -87,7 +87,25 @@ IF(Stokhos_ENABLE_TriKota)
          DEPLIBS stokhos linear2d_diffusion
        )
 
+       IF(Stokhos_ENABLE_NOX)
+
+         PACKAGE_ADD_EXECUTABLE_AND_TEST(
+           Linear2D_Diffusion_PCE_MPNI_Example
+           SOURCES linear2d_diffusion_pce_mpni.cpp
+           COMM serial mpi
+	   DEPLIBS stokhos linear2d_diffusion
+	   ARGS 1
+	   NUM_MPI_PROCS 2
+	   PASS_REGULAR_EXPRESSION "Example Passed!"
+         )
+
+       ENDIF()
+
      ENDIF()
+  ENDIF()
+ENDIF()
+
+IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
 
      PACKAGE_ADD_EXECUTABLE_AND_TEST(
        Linear2D_Diffusion_PCE_Example
@@ -131,6 +149,15 @@ IF(Stokhos_ENABLE_TriKota)
 	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
 	  NAME "Linear2D_Diffusion_GMRES_AGS"
 	  ARGS "--sg_prec_method=Approx-Gauss-Seidel --num_spatial_procs=1"
+	  COMM serial mpi
+	  NUM_MPI_PROCS 2
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
+        )
+
+	PACKAGE_ADD_TEST(
+	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
+	  NAME "Linear2D_Diffusion_CG_AGS"
+	  ARGS "--outer_krylov_method=CG --sg_prec_method=Approx-Gauss-Seidel --num_spatial_procs=1"
 	  COMM serial mpi
 	  NUM_MPI_PROCS 2
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
@@ -220,8 +247,6 @@ IF(Stokhos_ENABLE_TriKota)
 
      ENDIF()  
 
-  ENDIF()
-
 ENDIF()
 
 IF(Stokhos_ENABLE_Sacado)
@@ -229,6 +254,15 @@ IF(Stokhos_ENABLE_Sacado)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     sacado_example
     SOURCES sacado_example.cpp
+    ARGS -v
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    DEPLIBS stokhos
+    )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    sacado_vector_example
+    SOURCES sacado_vector_example.cpp
     ARGS -v
     COMM serial mpi
     NUM_MPI_PROCS 1

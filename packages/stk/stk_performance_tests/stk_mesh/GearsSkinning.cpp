@@ -35,11 +35,11 @@
 
 namespace {
 
-/** To create a movie from this performance test, change the 
+/** To create a movie from this performance test, change the
   output_exodus_file flag to true and run.  Then do the following:
-  > conjoin -output gears.e mesh_* 
+  > conjoin -output gears.e mesh_*
   > module load viz
-  > paraview 
+  > paraview
   [ open conjoin file, filter until happy ]
   [ change viewport to largest possible (to increase resolution of image)]
   [ press play till happy ]
@@ -76,7 +76,7 @@ void separate_wedge(
   const size_t spatial_dim = fixture.fem_data.get_spatial_dimension();
   stk::mesh::EntityVector new_nodes;
 
-  std::vector<size_t> requests(fixture.bulk_data.mesh_meta_data().entity_rank_count(), 0);
+  std::vector<size_t> requests(fixture.meta_data.entity_rank_count(), 0);
   if (do_separate_wedge) {
     requests[NODE_RANK] = num_nodes_per_wedge;
   } else {
@@ -103,7 +103,7 @@ void separate_wedge(
       stk::mesh::Entity & old_node = *(relations[ i ].entity());
       stk::mesh::Entity & new_node = *(new_nodes[i]);
 
-      fixture.bulk_data.destroy_relation(*wedge, old_node);
+      fixture.bulk_data.destroy_relation(*wedge, old_node, i);
       fixture.bulk_data.declare_relation(*wedge, new_node, i);
 
       fixture.bulk_data.copy_entity_fields( old_node, new_node);
@@ -169,10 +169,10 @@ void find_and_shuffle_wedges_to_separate(
     )
 {
   // Get all wedges still attached to the cylinder and shuffle them.
-  
-  stk::mesh::Selector select_wedge = 
-    fixture.cylindrical_coord_part & 
-    fixture.wedge_part & 
+
+  stk::mesh::Selector select_wedge =
+    fixture.cylindrical_coord_part &
+    fixture.wedge_part &
     fixture.meta_data.locally_owned_part();
 
   const stk::mesh::BucketVector wedge_buckets = fixture.bulk_data.buckets(fixture.element_rank);
@@ -202,7 +202,7 @@ void move_detached_wedges(
 
   // Select all detached nodes by creating a selector for things not in the
   // cylinder part.
-  stk::mesh::Selector select_detached_wedges =  (! fixture.cylindrical_coord_part ) & 
+  stk::mesh::Selector select_detached_wedges =  (! fixture.cylindrical_coord_part ) &
     (fixture.meta_data.locally_owned_part() | fixture.meta_data.globally_shared_part());
 
   const stk::mesh::BucketVector all_node_buckets =
@@ -289,7 +289,7 @@ Ioss::Region *create_output_mesh(
   std::string out_filename = mesh_filename;
 
   Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
-      "exodusII", 
+      "exodusII",
       out_filename,
       Ioss::WRITE_RESULTS,
       bulk_data.parallel()
@@ -311,11 +311,11 @@ Ioss::Region *create_output_mesh(
     out_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
     // Special processing for nodeblock (all nodes in model)...
-    stk::io::ioss_add_fields(bulk_data.mesh_meta_data().universal_part(), NODE_RANK,
+    stk::io::ioss_add_fields(stk::mesh::MetaData::get(bulk_data).universal_part(), NODE_RANK,
         out_region->get_node_blocks()[0],
         Ioss::Field::TRANSIENT, add_all_fields);
 
-    const stk::mesh::PartVector & all_parts = bulk_data.mesh_meta_data().get_parts();
+    const stk::mesh::PartVector & all_parts = stk::mesh::MetaData::get(bulk_data).get_parts();
     for ( stk::mesh::PartVector::const_iterator
         ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
@@ -339,7 +339,7 @@ Ioss::Region *create_output_mesh(
 }
 
 
-} // namespace 
+} // namespace
 
 STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
 
@@ -440,7 +440,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
     //}
 
     // Determine if it's time to separate a wedge
-    //bool do_separate_wedge = (!wedges_to_separate.empty()); 
+    //bool do_separate_wedge = (!wedges_to_separate.empty());
     const bool do_separate_wedge = (!wedges_to_separate.empty()) && ((time_step %(separation_interval*(p_rank+1))) == 0);
     //const bool do_separate_wedge = (!wedges_to_separate.empty()) && ((time_step %30) == 1);
 
@@ -455,7 +455,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
       // Separate the wedge if it's time
       if (do_separate_wedge) {
         wedge = wedges_to_separate.back();
-        wedges_to_separate.pop_back(); 
+        wedges_to_separate.pop_back();
       }
 
       separate_wedge(

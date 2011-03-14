@@ -32,7 +32,7 @@ using stk::mesh::fem::NODE_RANK;
 
 size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, EntityRank skin_rank ) {
 
-  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
 
   stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
@@ -43,7 +43,7 @@ size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_p
 
 void delete_skin( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, EntityRank skin_rank ) {
 
-  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
 
   stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
@@ -69,7 +69,8 @@ void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part, Entity
   stk::mesh::EntityVector owned_elements, modified_elements;
 
   // select owned
-  stk::mesh::Selector owned = mesh.mesh_meta_data().locally_owned_part();
+  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
+  stk::mesh::Selector owned = meta.locally_owned_part();
   stk::mesh::get_selected_entities( owned,
                          mesh.buckets(element_rank),
                          owned_elements);
@@ -169,7 +170,7 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
     for ( std::vector<stk::mesh::EntitySideComponent>::iterator itr = sides.begin();
         itr != sides.end(); ++itr)
     {
-      mesh.destroy_relation(*(itr->entity), *entity);
+      mesh.destroy_relation(*(itr->entity), *entity, itr->side_ordinal);
       mesh.declare_relation(*(itr->entity), *new_entity, itr->side_ordinal);
     }
 

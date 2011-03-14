@@ -108,27 +108,22 @@ Part * PartRepository::universal_part() const
   return m_universal_part;
 }
 
-const PartVector & PartRepository::all_parts() const
+const PartVector & PartRepository::get_all_parts() const
 {
-  return m_universal_part->subsets();
+  return m_all_parts;
 }
 
 Part * PartRepository::declare_part( const std::string & arg_name , EntityRank arg_rank )
 {
-  const PartVector & all_parts = m_universal_part->subsets();
+  const PartVector & all_parts = get_all_parts();
   Part * p = find( all_parts, arg_name );
 
   if ( p == NULL ) {
     p = declare_part_impl( arg_name, arg_rank );
   }
-
-  ThrowErrorMsgIf( p->primary_entity_rank() != arg_rank,
-                   "Cannot declare Part[ " << arg_name <<
-                   ",rank(" << p->primary_entity_rank() << ")]\n" <<
-                   "Part of name '" << arg_name <<
-                   "' of rank " << p->primary_entity_rank() <<
-                   " already exists, user cannot redeclare " << arg_name <<
-                   " with different rank " << arg_rank );
+  else {
+    p->m_partImpl.set_primary_entity_rank(arg_rank);
+  }
 
   return p;
 }
@@ -183,13 +178,12 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
     }
     p_name.append("}");
 
-    const PartVector & all_parts = m_universal_part->subsets();
+    const PartVector & all_parts = get_all_parts();
     p = find( all_parts, p_name );
     if ( p == NULL ) {
       // Create the part:
 
-      p = new Part( m_meta_data , p_name , p_rank , all_parts.size() );
-      declare_subset_impl( *m_universal_part, *p );
+      p = declare_part_impl( p_name , p_rank );
 
       // Define the part to be an intersection of the given parts:
 
@@ -214,9 +208,10 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
 
 Part * PartRepository::declare_part_impl( const std::string & name, EntityRank rank)
 {
-  size_t ordinal = m_universal_part->subsets().size();
+  size_t ordinal = get_all_parts().size();
   Part * part = new Part(m_meta_data,name,rank,ordinal);
   declare_subset_impl(*m_universal_part, *part);
+  m_all_parts.push_back(part);
   return part;
 }
 
@@ -295,33 +290,26 @@ void PartRepository::declare_part_relation( Part & root_part, PartRelation relat
 
 
 PartRepository::PartRepository(MetaData * meta)
-  : m_meta_data(meta)
+  : m_meta_data(meta),
+    m_universal_part(NULL),
+    m_all_parts()
 {
   m_universal_part = new Part( m_meta_data, universal_part_name(), ~0u, 0 );
-  m_universal_part->m_partImpl.add_part_to_subset(*m_universal_part);
+  m_all_parts.push_back(m_universal_part);
 }
 
 PartRepository::~PartRepository()
 {
-  // The universal part is the 0^th entry in the subset vector.
-  // Delete all but the universal part in the loop, deleting
-  // the universal part will invalidate the universal part subset vector.
-  // Thus delete the universal part outside of the loop.
-
   try {
-    for ( PartVector::const_iterator
-          i = m_universal_part->subsets().end() ;
-          --i != m_universal_part->subsets().begin() ; ) {
+    for ( PartVector::const_iterator i = m_all_parts.begin() ;
+          i != m_all_parts.end() ; ++i) {
       Part * part = *i ;
       try { delete part ; } catch(...) {}
     }
-    try { delete m_universal_part ; } catch(...) {}
-    m_universal_part = NULL ;
   } catch(...){}
 }
 
-} // namespace impl 
-} // namespace mesh 
-} // namespace stk 
-
+} // namespace impl
+} // namespace mesh
+} // namespace stk
 

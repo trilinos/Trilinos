@@ -9,7 +9,45 @@
 #ifndef stk_mesh_baseImpl_EntityRepository_hpp
 #define stk_mesh_baseImpl_EntityRepository_hpp
 
+
+/// define only one of these to be 1
+#define STK_MESH_ENTITYREPOSITORY_MAP_TYPE_BOOST 0
+#define STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1 0      // don't use this
+#define STK_MESH_ENTITYREPOSITORY_MAP_TYPE_STD 1
+
+#define STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TEUCHOS_HASHTABLE 0    // don't use this
+
+#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_BOOST
+#include <boost/unordered_map.hpp>
+#include <algorithm>
+#endif
+
+#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_STD
 #include <map>
+#endif
+
+#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1
+#include <tr1/unordered_map>
+#endif
+
+#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TEUCHOS_HASHTABLE
+
+// a start at using a simple hashtable from Teuchos - but, requires more work (needs ::iterator, ::const_iterator, operator[],  etc.)
+// and not worth the effort - better to find a more portable std::unordered_map replacement
+
+#include <Teuchos_Hashtable.hpp>
+namespace Teuchos
+{
+  //template <class T> int hashCode(const T& x);
+  template <> int hashCode(const stk::mesh::EntityKey& x)
+  {
+    return (int)(x.raw_key()); 
+  }
+  typedef Teuchos::Hashtable<stk::mesh::EntityKey, stk::mesh::Entity*> ER_hashtable;
+
+}
+#endif
+
 #include <stk_mesh/base/Entity.hpp>
 
 namespace stk {
@@ -17,9 +55,51 @@ namespace mesh {
 namespace impl {
 
 class EntityRepository {
-    typedef std::map<EntityKey,Entity*> EntityMap;
+
+#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_STD
+  typedef std::map<EntityKey,Entity*> EntityMap;
+#endif
+
+#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TEUCHOS_HASHTABLE
+  typedef Teuchos::ER_hashtable EntityMap;
+#endif
+
+#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_BOOST
+
+  struct stk_entity_rep_hash : public std::unary_function< EntityKey, std::size_t>
+  {
+    inline std::size_t
+    operator()(const EntityKey& x) const
+    {
+      //return (std::size_t)(x.id()); 
+      return (std::size_t)(x.raw_key()); 
+    }
+  };
+
+  struct stk_entity_rep_equal_to :  public std::binary_function<EntityKey, EntityKey, bool>
+  {
+    bool
+    operator()(const EntityKey& x, const EntityKey& y) const
+    {
+      //return x.id() == y.id();
+      return x == y;
+    }
+  };
+
+  //typedef boost::unordered_map<EntityKey, Entity*, stk_entity_rep_hash, stk_entity_rep_equal_to > EntityMap;
+  typedef boost::unordered_map<EntityKey, Entity*, stk_entity_rep_hash > EntityMap;
+
+#endif
+
   public:
+
+#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_STD
     typedef std::map<EntityKey,Entity*>::const_iterator iterator;
+#endif
+
+#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_BOOST
+    typedef boost::unordered_map<EntityKey,Entity*>::const_iterator iterator;
+#endif
 
     EntityRepository() : m_entities() {}
     ~EntityRepository();
@@ -66,11 +146,13 @@ class EntityRepository {
     Bucket * get_entity_bucket ( Entity & e ) const;
     void destroy_later( Entity & e, Bucket* nil_bucket );
 
-    void destroy_relation( Entity & e_from, Entity & e_to);
+    void destroy_relation( Entity & e_from,
+                           Entity & e_to,
+                           const RelationIdentifier local_id);
 
     void declare_relation( Entity & e_from,
                            Entity & e_to,
-                           const unsigned local_id,
+                           const RelationIdentifier local_id,
                            unsigned sync_count );
 
   private:

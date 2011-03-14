@@ -11,12 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include <stdint.h>
 #include "phg.h"
 #include "phg_verbose.h"
 #include "zz_const.h"

@@ -198,13 +198,16 @@ int ex_put_attr_names(int   exoid,
 
   /* write out the attributes  */
   for (i = 0; i < num_attr; i++) {
+    char temp[33];
     start[0] = i;
     start[1] = 0;
 
     count[0] = 1;
-    count[1] = strlen(names[i])+1;
+    count[1] = 33;
 
-    if ((status = nc_put_vara_text(exoid, varid, start, count, (void*) names[i])) != NC_NOERR) {
+    strncpy(temp, names[i], 32);
+    temp[32] = '\0';
+    if ((status = nc_put_vara_text(exoid, varid, start, count, temp)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
 	      "Error: failed to put attribute namess for %s %d in file id %d",

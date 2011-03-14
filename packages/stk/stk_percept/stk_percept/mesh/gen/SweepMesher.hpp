@@ -162,10 +162,22 @@ namespace stk
       bool m_deleteAfterBreak;
 
       /// only a few sweep types allowed so far; later could add quadratic sweeping
-      SweepMesher() : m_deleteAfterSweep(1), m_deleteAfterBreak(1), m_metaData(0), m_bulkData(0) {
+      SweepMesher() //: m_deleteAfterSweep(1), m_deleteAfterBreak(1), m_metaData(0), m_bulkData(0) 
+      {
+        //m_dump = false;
+        //m_elemInfo = ShardsInterfaceTable::s_elemInfo;
+        initialize();
+        //m_atest.doIt();
+      }
+
+      void initialize() 
+      {
+        m_deleteAfterSweep = 1;
+        m_deleteAfterBreak = 1;
+        m_metaData = 0;
+        m_bulkData = 0;
         m_dump = false;
         m_elemInfo = ShardsInterfaceTable::s_elemInfo;
-        //m_atest.doIt();
       }
 
       // allow public access for simplicity - FIXME
@@ -590,6 +602,9 @@ namespace stk
 
       /// create a std::mesh representation of this
       void stkMeshCreate(stk::ParallelMachine& );
+
+      void stkMeshCreateMetaNoCommit(stk::ParallelMachine& );
+      void stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine& );
 
       void stkMeshCreate_UseCase_3(stk::ParallelMachine& );
 

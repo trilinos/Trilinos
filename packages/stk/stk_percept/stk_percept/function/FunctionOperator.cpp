@@ -34,12 +34,12 @@ namespace stk
     void FunctionOperator::integrate( Function& integrand, Function& result)
     {
       std::cout << "type= " << typeid(integrand).name() << " " << typeid(FieldFunction).name() << std::endl;
-      if (typeid(integrand) == typeid(FieldFunction) || 
+      if (typeid(integrand) == typeid(FieldFunction) ||
           typeid(integrand) == typeid(StringFunction))
         {
           const FieldFunction *field_function_const = dynamic_cast<const FieldFunction *>(&integrand);
           FieldFunction *field_function = const_cast<FieldFunction *>(field_function_const);
-          PerceptMesh meshUtil(const_cast<mesh::MetaData *>(&field_function->getBulkData()->mesh_meta_data()), field_function->getBulkData());
+          PerceptMesh meshUtil(const_cast<mesh::MetaData *>(&MetaData::get(field_function->getBulkData())), field_function->getBulkData());
 #if 0
           NoOpScalar no_op(integrand, field_function->getField());
           meshUtil.elementOpLoop(no_op , field_function->getField());
@@ -53,13 +53,13 @@ namespace stk
     {
       const FieldFunction *field_function_const = dynamic_cast<const FieldFunction *>(&integrand);
       FieldFunction *field_function = const_cast<FieldFunction *>(field_function_const);
-      PerceptMesh meshUtil(const_cast<mesh::MetaData *>(&field_function->getBulkData()->mesh_meta_data()), field_function->getBulkData());
+      PerceptMesh meshUtil(const_cast<mesh::MetaData *>(&MetaData::get(field_function->getBulkData())), field_function->getBulkData());
       IntegratedOp general_integrand(integrand, TURBO_NONE);
       meshUtil.elementOpLoop(general_integrand , field_function->getField());
     }
 #endif
-    
-    
+
+
   }//namespace percept
 }//namespace stk
 

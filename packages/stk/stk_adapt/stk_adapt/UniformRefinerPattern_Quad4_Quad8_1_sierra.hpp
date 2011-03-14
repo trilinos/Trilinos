@@ -79,11 +79,6 @@ namespace stk {
         genericEnrich_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool,
                                         proc_rank_field);
-        // write a diagram of the refinement pattern as a vtk file, or a latex/tikz/pgf file
-#define WRITE_DIAGRAM 0
-#if WRITE_DIAGRAM
-
-#endif
       }      
     };
 

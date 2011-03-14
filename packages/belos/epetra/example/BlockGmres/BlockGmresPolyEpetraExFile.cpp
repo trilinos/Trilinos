@@ -236,8 +236,6 @@ int main(int argc, char *argv[]) {
   // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  Belos::OutputManager<double> My_OM();
- 
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<double,MV,OP> > newSolver
     //= rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));

@@ -32,27 +32,50 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* exgqa - ex_get_qa
-*
-* entry conditions - 
-*   input parameters:
-*       int     exoid                   exodus file id
-*
-* exit conditions - 
-*       char*   qa_record[8][4]         ptr to qa record ptr array
-*
-* revision history - 
-*
-*
-*****************************************************************************/
 
 #include "exodusII.h"
 #include "exodusII_int.h"
 
-/*
- * reads the QA records from the database
+/*!
+The function ex_get_qa() reads the QA records from the database. Each
+QA record contains four \c MAX_STR_LENGTH-byte character
+strings. The character strings are:
+ -  the analysis code name
+ -  the analysis code QA descriptor
+ -  the analysis date
+ -  the analysis time
+
+Memory must be allocated for the QA records before this call is
+made. The number of QA records can be determined by invoking
+ex_inquire().
+
+\return In case of an error, ex_get_qa() returns a negative number; a
+        warning will return a positive number.  Possible causes of errors
+        include:
+  -  data file not properly opened with call to ex_create() or ex_open()
+  -  a warning value is returned if no QA records were stored.
+
+\param[in] exoid          exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[out]  qa_record    Returned array containing the QA records.
+
+The following will determine the number of QA records and 
+read them from the open exodus file:
+
+\code
+#include "exodusII.h"
+int num_qa_rec, error, exoid
+char *qa_record[MAX_QA_REC][4];
+
+\comment{read QA records}
+num_qa_rec = ex_inquire_int(exoid, EX_INQ_QA);
+
+for (i=0; i<num_qa_rec; i++) {
+    for (j=0; j<4; j++)
+    qa_record[i][j] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
+}
+error = ex_get_qa (exoid, qa_record);
+\endcode
+
  */
 
 int ex_get_qa (int exoid,

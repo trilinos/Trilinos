@@ -123,7 +123,7 @@ namespace stk
     {
       TurboOption m_turboOpt;
     public:
-      Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_NONE) : 
+      Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_NONE) :
         FunctionOperator(bulkData, part), m_turboOpt(turboOpt)
      {}
 
@@ -131,12 +131,12 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        /** contract: 
+        /** contract:
          *
          * 1. @param integrand : maps input_phy_points([C],[P],[D]) to output_values([C],[P],[DOF])
          * 2. this function then copies output_values to the @param result (assumes it is a ConstantFunction)
-         * 
-         * algorithm: 
+         *
+         * algorithm:
          * 1. loop over elements (later buckets) and fire @param integrand on each quadrature point/cell collection
          * 2. further process the output_values by the LN_Op function, which simply raises the results to the N'th power
          * 3. (note: later we can pass in an Op instead of this being hard-coded to norm_LN)
@@ -148,18 +148,18 @@ namespace stk
         if (1 || typeid(integrand) == typeid(FieldFunction))
           {
             // FIXME - make all stk::percept code const-correct
-            PerceptMesh eMesh(const_cast<mesh::MetaData *>(&m_bulkData.mesh_meta_data()), &m_bulkData);
+            PerceptMesh eMesh(&MetaData::get(m_bulkData), &m_bulkData);
             LN_NormOp<Power> LN_op(integrand);
             CompositeFunction LN_of_integrand("LN_of_integrand", integrand, LN_op);
             IntegratedOp integrated_LN_op(LN_of_integrand, m_turboOpt);
             eMesh.printInfo("Norm");
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)
               {
-                eMesh.elementOpLoop(integrated_LN_op, 0, &m_bulkData.mesh_meta_data().locally_owned_part());
+                eMesh.elementOpLoop(integrated_LN_op, 0, &MetaData::get(m_bulkData).locally_owned_part());
               }
             else if (m_turboOpt == TURBO_BUCKET)
               {
-                eMesh.bucketOpLoop(integrated_LN_op, 0, &m_bulkData.mesh_meta_data().locally_owned_part());
+                eMesh.bucketOpLoop(integrated_LN_op, 0, &MetaData::get(m_bulkData).locally_owned_part());
               }
 
             unsigned vec_sz = integrated_LN_op.getValue().size();
@@ -168,9 +168,9 @@ namespace stk
             //unsigned p_rank = m_bulkData.parallel_rank();
             //std::cout  << "P["<<p_rank<<"] value = " << local << std::endl;
 
-            std::vector<double> global_sum(vec_sz, 0.0); 
+            std::vector<double> global_sum(vec_sz, 0.0);
             stk::all_reduce_sum(m_bulkData.parallel(), &local[0], &global_sum[0], vec_sz);
-  
+
             std::vector<double> result1(vec_sz);
             LN_op.finalOp(global_sum, result1);
 
@@ -185,7 +185,7 @@ namespace stk
                 cf.setValue(result1);
               }
           }
-        
+
       }
 
       //void operator()(FieldFunction& input);

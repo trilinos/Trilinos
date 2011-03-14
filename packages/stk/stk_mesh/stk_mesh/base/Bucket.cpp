@@ -145,7 +145,7 @@ bool has_superset( const Bucket & bucket , const PartVector & ps )
 
 void Bucket::supersets( PartVector & ps ) const
 {
-  const MetaData & mesh_meta_data = mesh().mesh_meta_data();
+  const MetaData & mesh_meta_data = MetaData::get( *this );
 
   std::pair<const unsigned *, const unsigned *>
     part_ord = superset_part_ordinals();
@@ -165,8 +165,8 @@ bool field_data_valid( const FieldBase & f ,
                        unsigned ord ,
                        const char * required_by )
 {
-  const MetaData * const k_mesh_meta_data = & k.mesh().mesh_meta_data();
-  const MetaData * const f_mesh_meta_data = & f.mesh_meta_data();
+  const MetaData * const k_mesh_meta_data = & MetaData::get(k);
+  const MetaData * const f_mesh_meta_data = & MetaData::get(f);
   const bool ok_mesh_meta_data  = k_mesh_meta_data == f_mesh_meta_data ;
   const bool ok_ord     = ord < k.size() ;
   const bool exists     = ok_mesh_meta_data && ok_ord &&
@@ -211,13 +211,14 @@ Bucket::~Bucket()
 
 std::ostream & operator << ( std::ostream & s , const Bucket & k )
 {
-  const MetaData & mesh_meta_data = k.mesh().mesh_meta_data();
-  const std::string & entity_name =
+  const MetaData & mesh_meta_data = MetaData::get(k);
+  const std::string & entity_rank_name =
+    k.entity_rank() == InvalidEntityRank ? "Nil" :
     mesh_meta_data.entity_rank_names()[ k.entity_rank() ];
 
   PartVector parts ; k.supersets( parts );
 
-  s << "Bucket( " << entity_name << " : " ;
+  s << "Bucket( " << entity_rank_name << " : " ;
   for ( PartVector::iterator i = parts.begin() ; i != parts.end() ; ++i ) {
     s << (*i)->name() << " " ;
   }
@@ -230,8 +231,9 @@ std::ostream & operator << ( std::ostream & s , const Bucket & k )
 std::ostream &
 print( std::ostream & os , const std::string & indent , const Bucket & bucket )
 {
-  const MetaData & mesh_meta_data = bucket.mesh().mesh_meta_data();
-  const std::string & entity_name =
+  const MetaData & mesh_meta_data = MetaData::get(bucket);
+  const std::string & entity_rank_name =
+    bucket.entity_rank() == InvalidEntityRank ? "Nil" :
     mesh_meta_data.entity_rank_names()[ bucket.entity_rank() ];
 
   const std::pair<const unsigned *, const unsigned *>
@@ -244,7 +246,7 @@ print( std::ostream & os , const std::string & indent , const Bucket & bucket )
     os << " " << part.name();
   }
 
-  os << " }" << std::endl << indent << entity_name << " members {" ;
+  os << " }" << std::endl << indent << entity_rank_name << " members {" ;
 
   for ( unsigned j = 0 ; j < bucket.size() ; ++j ) {
     const EntityId id = bucket[j].identifier();

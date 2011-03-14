@@ -28,6 +28,7 @@
 #include <boost/lexical_cast.hpp>
 #include <stk_io/IossBridge.hpp>
 
+#include <stk_percept/Percept.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
 
@@ -42,6 +43,7 @@
 #include <stk_percept/RunEnvironment.hpp>
 
 #include <stk_percept/fixtures/Fixture.hpp>
+#include <stk_percept/fixtures/BeamFixture.hpp>
 #include <stk_percept/fixtures/HeterogeneousFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
 #include <stk_percept/fixtures/WedgeFixture.hpp>
@@ -58,6 +60,12 @@ namespace stk
 
 #define EXTRA_PRINT 0
 
+      static void output_draw(std::string filename, std::string toFile)
+      {
+        std::ofstream file(filename.c_str());
+        file << toFile;
+      }
+
 
       //======================================================================================================================
       //======================================================================================================================
@@ -66,99 +74,106 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
-
-      TEST(regr_uniformRefiner, break_tet_shell3_tet)
+      TEST(regr_uniformRefiner, beam_enrich)
       {
         EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
 
-        //if (1) return;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size(pm);
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        std::cout << "p_size= " << p_size << std::endl;
-        // this case can't be load balanced (I presume there are too few elements)
         if (p_size <= 1)
           {
-            // start_demo_break_tet_shell3_tet
+            // create the mesh
+            {
 
-            std::string input_mesh = "./input_files/shell-tests/tet_shell3_tet.g";
-            if (p_size) 
-              {
-                RunEnvironment::doLoadBalance(pm, input_mesh);
-              }
+              stk::percept::BeamFixture mesh(pm, false);
+              stk::io::put_io_part_attribute(  mesh.m_block_beam );
+              mesh.m_metaData.commit();
+              mesh.populate();
 
-            percept::PerceptMesh eMesh;
-            eMesh.open(input_mesh);
+              bool isCommitted = true;
+              percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              em1.saveAs("./input_files/beam_enrich_0.e");
 
-            URP_Heterogeneous_3D break_pattern(eMesh);
-            int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
-            eMesh.commit();
+            }
 
-            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            // enrich
+            {
+              stk::percept::PerceptMesh eMesh;
+              eMesh.open("./input_files/beam_enrich_0.e");
+              //URP_Heterogeneous_3D break_pattern(eMesh);
+              Beam2_Beam3_1 break_pattern(eMesh);
+              int scalarDimension = 0; // a scalar
+              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              eMesh.commit();
 
-            //breaker.setRemoveOldElements(false);
-            //breaker.setIgnoreSideSets(true);
-            unsigned numRefines = 2;
-            for (unsigned iBreak = 0; iBreak < numRefines; iBreak++)
-              {
-                breaker.doBreak();
-              }
+              eMesh.saveAs("./output_files/beam_enrich_0.e");
 
-            eMesh.saveAs("./output_files/tet_shell3_tet_"+toString(numRefines)+".g");
-            eMesh.close();
+              eMesh.printInfo("beam", 2);
 
-            // end_demo
+              UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+              //breaker.setRemoveOldElements(false);
+              breaker.setIgnoreSideSets(true);
+              breaker.doBreak();
 
+              eMesh.saveAs("./output_files/beam_enrich_1.e");
+
+            }
           }
       }
 
-      //======================================================================================================================
-      //======================================================================================================================
-      //======================================================================================================================
-
-      TEST(regr_uniformRefiner, break_hex_shell4_hex)
+      TEST(regr_uniformRefiner, beam_refine)
       {
         EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
 
-        //if (1) return;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        // this case can't be load balanced (I presume there are too few elements)
-        //if (p_size <= 3)
-          if (p_size == 1)
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
           {
-            // start_demo_break_hex_shell4_hex
-            std::string input_mesh = "./input_files/shell-tests/hex_shell4_hex.g";
-            if (p_size) 
-              {
-                RunEnvironment::doLoadBalance(pm, input_mesh);
-              }
+            // create the mesh
+            {
 
-            percept::PerceptMesh eMesh;
-            eMesh.open(input_mesh);
+              stk::percept::BeamFixture mesh(pm, false);
+              stk::io::put_io_part_attribute(  mesh.m_block_beam );
+              mesh.m_metaData.commit();
+              mesh.populate();
 
-            URP_Heterogeneous_3D break_pattern(eMesh);
-            int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
-            eMesh.commit();
+              bool isCommitted = true;
+              percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              em1.saveAs("./input_files/beam_0.e");
 
-            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            }
 
-            //breaker.setRemoveOldElements(false);
-            //breaker.setIgnoreSideSets(true);
-            breaker.doBreak();
-            eMesh.saveAs("./output_files/hex_shell4_hex_1.g");
-            eMesh.close();
+            // refine
+            {
+              stk::percept::PerceptMesh eMesh;
+              eMesh.open("./input_files/beam_0.e");
+              //URP_Heterogeneous_3D break_pattern(eMesh);
+              Beam2_Beam2_2 break_pattern(eMesh);
+              int scalarDimension = 0; // a scalar
+              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              eMesh.commit();
 
-            // end_demo
+              eMesh.saveAs("./output_files/beam_0.e");
 
+              eMesh.printInfo("beam", 2);
+
+              UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+              //breaker.setRemoveOldElements(false);
+              breaker.setIgnoreSideSets(true);
+              breaker.doBreak();
+
+              eMesh.saveAs("./output_files/beam_1.e");
+
+            }
           }
       }
+
 
       //======================================================================================================================
       //======================================================================================================================
@@ -178,8 +193,8 @@ namespace stk
           {
             std::ofstream file("./generated_refinement_tables.hpp");
 
-            file << "#ifndef STK_PERCEPT_GENERATED_REFINEMENT_TABLES_HPP" << std::endl;
-            file << "#define STK_PERCEPT_GENERATED_REFINEMENT_TABLES_HPP" << std::endl;
+            file << "#ifndef STK_ADAPT_GENERATED_REFINEMENT_TABLES_HPP" << std::endl;
+            file << "#define STK_ADAPT_GENERATED_REFINEMENT_TABLES_HPP" << std::endl;
 
             file <<
               "/**  New ref topo info \n"
@@ -204,23 +219,42 @@ namespace stk
               "*/\n\n"
                  << std::endl;
 
+            // FIXME
+#if !(defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
+
             Line2_Line2_2            :: printRefinementTopoX_Table(file);
+
+            Beam2_Beam2_2            :: printRefinementTopoX_Table(file);
+
             ShellLine2_ShellLine2_2  :: printRefinementTopoX_Table(file);
+            ShellLine3_ShellLine3_2  :: printRefinementTopoX_Table(file);
             Quad4_Quad4_4            :: printRefinementTopoX_Table(file);
             Tri3_Tri3_4              :: printRefinementTopoX_Table(file);
             ShellTri3_ShellTri3_4    :: printRefinementTopoX_Table(file);
+            ShellTri6_ShellTri6_4    :: printRefinementTopoX_Table(file);
             ShellQuad4_ShellQuad4_4  :: printRefinementTopoX_Table(file);
+            ShellQuad8_ShellQuad8_4  :: printRefinementTopoX_Table(file);
             Tet4_Tet4_8              :: printRefinementTopoX_Table(file);
             Hex8_Hex8_8              :: printRefinementTopoX_Table(file);
             Wedge6_Wedge6_8          :: printRefinementTopoX_Table(file);
+            Wedge15_Wedge15_8        :: printRefinementTopoX_Table(file);
+
+            // Not supported by Sierra
+            // Wedge18_Wedge18_8        :: printRefinementTopoX_Table(file);
 
             Line3_Line3_2            :: printRefinementTopoX_Table(file);
+            Beam3_Beam3_2            :: printRefinementTopoX_Table(file);
+
+            Tri6_Tri6_4              :: printRefinementTopoX_Table(file);
+            Quad8_Quad8_4            :: printRefinementTopoX_Table(file);
             Quad9_Quad9_4            :: printRefinementTopoX_Table(file);
             Hex27_Hex27_8            :: printRefinementTopoX_Table(file);
+            Hex20_Hex20_8            :: printRefinementTopoX_Table(file);
             Tet10_Tet10_8            :: printRefinementTopoX_Table(file);
-
+#endif
             file << "#endif" << std::endl;
           }
+
       }
 
       //======================================================================================================================
@@ -228,6 +262,85 @@ namespace stk
       //===================== Shell elements testing
       //======================================================================================================================
       //======================================================================================================================
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+
+      TEST(regr_uniformRefiner, break_quad4_to_quad8_to_quad8_shell)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced (I presume there are too few elements)
+
+        if (p_size <= 1)
+          {
+            // start_demo_break_quad4_to_quad8_to_quad8_shell
+            std::string input_mesh = "./input_files/shell-tests/freshell_quad4.g";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh;
+            eMesh.open(input_mesh);
+
+            ShellQuad4_ShellQuad8_1 break_quad4_to_quad8_1(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            //         int vectorDimension = 3;
+
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+
+            eMesh.printInfo("quad mesh");
+            eMesh.saveAs("./output_files/freshell_quad4_quad8_0.g");
+
+            UniformRefiner breaker(eMesh, break_quad4_to_quad8_1, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("quad mesh refined", 5);
+            eMesh.printInfo("quad shell mesh enriched");
+            eMesh.saveAs("./output_files/freshell_quad4_quad8_1.g");
+            eMesh.saveAs("./input_files/freshell_quad8_quad8_0.g");
+
+          }
+
+        if (1 && p_size <= 1)
+          {
+
+            percept::PerceptMesh eMesh;
+            eMesh.open("./input_files/freshell_quad8_quad8_0.g");
+
+            ShellQuad8_ShellQuad8_4 break_quad8_to_quad_8(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+
+            //eMesh.printInfo("quad mesh");
+            //eMesh.saveAs("./output_files/freshell_quad4_quad8_0.g");
+
+            UniformRefiner breaker(eMesh, break_quad8_to_quad_8, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("quad mesh refined", 5);
+            eMesh.printInfo("quad shell mesh enriched and refined");
+            eMesh.saveAs("./output_files/freshell_quad8_quad8_1.g");
+            // end_demo
+
+          }
+      }
 
       //======================================================================================================================
       //======================================================================================================================
@@ -249,7 +362,7 @@ namespace stk
           {
             // start_demo_break_quad_to_quad_shell
             std::string input_mesh = "./input_files/shell-tests/freshell_quad4.g";
-            if (p_size) 
+            if (p_size > 1)
               {
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
@@ -257,7 +370,7 @@ namespace stk
             percept::PerceptMesh eMesh;
             eMesh.open(input_mesh);
 
-            UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
+            ShellQuad4_ShellQuad4_4 break_quad_to_quad_4(eMesh);
 
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
@@ -279,7 +392,6 @@ namespace stk
             // end_demo
 
           }
-
       }
 
       TEST(regr_uniformRefiner, break_tri_to_tri_shell)
@@ -287,10 +399,6 @@ namespace stk
         EXCEPTWATCH;
 
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-
-        // exit(1); Can't do this, breaks MPI due to lack of finalize call
-        //return;
 
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
@@ -301,7 +409,7 @@ namespace stk
             // start_demo_break_tri_to_tri_shell
 
             std::string input_mesh = "./input_files/shell-tests/freshell_tri3.g";
-            if (p_size) 
+            if (p_size > 1)
               {
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
@@ -310,7 +418,7 @@ namespace stk
             eMesh.open(input_mesh);
 
 
-            UniformRefinerPattern<shards::ShellTriangle<3>, shards::ShellTriangle<3>, 4, SierraPort > break_tri_to_tri_4(eMesh);
+            ShellTri3_ShellTri3_4 break_tri_to_tri_4(eMesh);
 
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
@@ -341,10 +449,18 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      static void output_draw(std::string filename, std::string toFile)
+      TEST(unit_uniformRefiner, draw1)
       {
-        std::ofstream file(filename.c_str());
-        file << toFile;
+        //std::cout << Quad4_Quad4_4::draw() << std::endl;
+        std::string dir = "./";
+        output_draw(dir+"quad4.dot", Quad4_Quad4_4::draw(true) );
+        output_draw(dir+"tet4.dot",  Tet4_Tet4_8::draw() );
+        output_draw(dir+"hex8.dot",  Hex8_Hex8_8::draw(true) );
+        output_draw(dir+"hex27.dot",  Hex27_Hex27_8::draw(true, true) );
+        output_draw(dir+"hex20.dot",  Hex20_Hex20_8::draw(true, true) );
+        output_draw(dir+"wedge6.dot",  Wedge6_Wedge6_8::draw() );
+
+        output_draw(dir+"quad9.dot", Quad9_Quad9_4::draw(true, true));
       }
 
       TEST(unit_uniformRefiner, draw)
@@ -355,6 +471,9 @@ namespace stk
         output_draw(dir+"tet4.dot",  Tet4_Tet4_8::draw() );
         output_draw(dir+"hex8.dot",  Hex8_Hex8_8::draw(true) );
         output_draw(dir+"wedge6.dot",  Wedge6_Wedge6_8::draw() );
+
+        output_draw(dir+"quad9.dot", Quad9_Quad9_4::draw(true));
+
         // refine
 #if 0
         std::cout << Line2_Line2_2::draw() << std::endl;
@@ -375,7 +494,6 @@ namespace stk
         //     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>,      4, Specialization >        Quad4_Tri3_4;
         //     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Tetrahedron<4>,  24 >                        Hex8_Tet4_24;
 
-        //exit(1);
       }
 
       //======================================================================================================================
@@ -416,6 +534,7 @@ namespace stk
 
             //eMesh.saveAs("./output_files/break_test/quad/square/square_quad4_out.e");
             eMesh.saveAs("./output_files/square_quad4_out.e");
+            // end_demo
           }
       }
 
@@ -456,6 +575,7 @@ namespace stk
 
             //eMesh.saveAs("./input_files/break_test/quad/square/square_quad4_out.e");
             eMesh.saveAs("./output_files/square_quad4_tri3_4_out.e");
+            // end_demo
           }
       }
 
@@ -552,7 +672,6 @@ namespace stk
             eMesh.open("./input_files/break_test/quad/sidesets/quad_sidesets.e");
             eMesh.commit();
             eMesh.printInfo("quad mesh");
-            exit(1);
           }
 
         if (p_size == 1 || p_size == 2)
@@ -674,7 +793,6 @@ namespace stk
       {
 
         EXCEPTWATCH;
-        //if (1) return;
 
         // start_demo_uniformRefiner_hex8_tet4_6_12_2
         MPI_Barrier( MPI_COMM_WORLD );
@@ -958,6 +1076,7 @@ namespace stk
 
             breaker.doBreak();
             eMesh.saveAs("./output_files/quad_fixture_quad8_1.e");
+            eMesh.saveAs("./input_files/quad_fixture_quad8_quad8_0.e");
 
             // end_demo
           }
@@ -966,10 +1085,42 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      TEST(regr_uniformRefiner, break_quad8_to_quad8)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size == 1 || p_size == 3)
+        if (p_size <= 3)
+          {
+            percept::PerceptMesh eMesh;
+            eMesh.open("./input_files/quad_fixture_quad8_quad8_0.e");
+
+            Quad8_Quad8_4 break_quad8_to_quad8_4(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+
+            UniformRefiner breaker(eMesh, break_quad8_to_quad8_4, proc_rank_field);
+            breaker.setIgnoreSideSets(false);
+
+            breaker.doBreak();
+            eMesh.saveAs("./output_files/quad_fixture_quad8_quad8_1.e");
+
+          }
+      }
+
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
       TEST(regr_uniformRefiner, break_quad4_to_quad9_to_quad9_0)
       {
         EXCEPTWATCH;
-        //if (1) return;
 
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
@@ -1035,7 +1186,6 @@ namespace stk
       TEST(regr_uniformRefiner, break_quad4_to_quad9_to_quad9)
       {
         EXCEPTWATCH;
-        //if (1) return;
 
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
@@ -1095,8 +1245,6 @@ namespace stk
               em1.saveAs("./output_files/quad_fixture_quad9_quad9_1.e");
 
             }
-            //exit(1);
-
             // end_demo
           }
       }
@@ -1166,7 +1314,6 @@ namespace stk
 
             //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
             //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
-            //             exit(1);
 
             //fixture.meta_data.commit();
             eMesh.commit();
@@ -1189,7 +1336,6 @@ namespace stk
                 percept::PerceptMesh e1;
                 e1.openReadOnly("./input_files/quad_fixture_tri3_1.e");
                 e1.printInfo("after read", 3);
-                exit(1);
               }
             // end_demo
           }
@@ -1228,7 +1374,6 @@ namespace stk
 
             //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
             //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
-            //             exit(1);
 
             //fixture.meta_data.commit();
             eMesh.commit();
@@ -1245,14 +1390,53 @@ namespace stk
             //eMesh.printInfo("tri mesh refined", 5);
             eMesh.printInfo("tri mesh enriched");
             eMesh.saveAs("./output_files/quad_fixture_tri3_tri6_1.e");
+            eMesh.saveAs("./input_files/quad_fixture_tri6_tri6_0.e");
 
             if (0)
               {
                 percept::PerceptMesh e1;
                 e1.openReadOnly("./input_files/quad_fixture_tri3_1.e");
                 e1.printInfo("after read", 3);
-                exit(1);
               }
+            // end_demo
+          }
+
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, break_tri3_to_tri6_to_tri6_sierra)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 3)
+          {
+            // start_demo_break_tri3_to_tri6_to_tri6_sierra
+
+            percept::PerceptMesh eMesh;
+            eMesh.open("./input_files/quad_fixture_tri6_tri6_0.e");
+
+            Tri6_Tri6_4 break_tri6_to_tri6(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            //FieldBase* proc_rank_field_edge =
+            eMesh.addField("proc_rank_edge", mesh::Edge, scalarDimension);
+            eMesh.commit();
+
+            eMesh.printInfo("tri mesh tri6");
+            eMesh.saveAs("./output_files/quad_fixture_tri6_tri6_0.e");
+
+            UniformRefiner breaker(eMesh, break_tri6_to_tri6, proc_rank_field);
+            breaker.doBreak();
+
+            eMesh.printInfo("tri mesh refined");
+            eMesh.saveAs("./output_files/quad_fixture_tri6_tri6_1.e");
             // end_demo
           }
 
@@ -1277,10 +1461,12 @@ namespace stk
             eMesh.openReadOnly("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4.e");
 
             eMesh.saveAs("./output_files/cylinder_tet4_0.e");
+            // end_demo
 
           }
       }
 
+#if 1
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
@@ -1315,10 +1501,11 @@ namespace stk
 
             breaker.doBreak();
             eMesh.saveAs("./output_files/cylinder_tet4_2.e");
+            // end_demo
 
           }
       }
-
+#endif
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
@@ -1350,6 +1537,7 @@ namespace stk
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
             eMesh.saveAs("./output_files/cylinder_tet10_1.e");
+            // end_demo
 
 
           }
@@ -1361,7 +1549,7 @@ namespace stk
 
       TEST(regr_uniformRefiner, break_tet4_tet10_tet10_1)
       {
-        if (1) return;
+        // FIXME
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
@@ -1388,6 +1576,7 @@ namespace stk
             breaker.doBreak();
             eMesh.saveAs("./input_files/cylinder_tet10_1.e");
             eMesh.printInfo("cylinder_tet10_1");
+            // end_demo
 
           }
 
@@ -1417,6 +1606,7 @@ namespace stk
               }
             
             eMesh.saveAs("./output_files/cylinder_tet10_tet10_"+toString(numRefines)+".e");
+            // end_demo
 
 
           }
@@ -1617,6 +1807,8 @@ namespace stk
         breaker.doBreak();
 
         eMesh.saveAs(std::string("./output_files/")+std::string("hex8_hex20_cube1x1x")+toString(p_size)+std::string(".e"));
+        eMesh.saveAs(std::string("./input_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
+
 
         // end_demo
 
@@ -1655,6 +1847,7 @@ namespace stk
             breaker.doBreak();
 
             eMesh.saveAs("./output_files/cylinder_hex20_1.e");
+            eMesh.saveAs("./input_files/cylinder_hex20_hex20_0.e");
 
 
             // end_demo
@@ -1666,11 +1859,88 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
+      TEST(regr_uniformRefiner, hex20_hex20_1)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        // start_demo_uniformRefiner_hex20_hex20_1
+
+        percept::PerceptMesh eMesh;
+
+        unsigned p_size = eMesh.getParallelSize();
+
+        if (p_size <= 3)
+          {
+            eMesh.open(std::string("./input_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
+
+            Hex20_Hex20_8 break_hex_to_hex(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+            eMesh.saveAs(std::string("./output_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
+
+            UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+            breaker.setRemoveOldElements(true);
+
+            breaker.doBreak();
+
+            eMesh.saveAs(std::string("./output_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_1.e"));
+          }
+
+        // end_demo
+
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, hex20_hex20_1_2)
+      {
+        EXCEPTWATCH;
+
+        // start_demo_uniformRefiner_hex20_hex20_1_2
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size == 1 || p_size == 3)
+          {
+            percept::PerceptMesh eMesh;
+
+            eMesh.open("./input_files/cylinder_hex20_hex20_0.e");
+
+            Hex20_Hex20_8 break_hex_to_hex(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+            eMesh.saveAs("./output_files/cylinder_hex20_hex20_0.e");
+
+            UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            eMesh.saveAs("./output_files/cylinder_hex20_hex20_1.e");
+
+
+            // end_demo
+          }
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
       TEST(regr_uniformRefiner, hex27_hex27_0)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
-        //if (1) return;
 
         // start_demo_uniformRefiner_hex27_hex27_0
 
@@ -1817,12 +2087,14 @@ namespace stk
             //                         double zmin, double zmax,
             //                         std::string output_filename
             //                         )
-            percept::WedgeFixture::createMesh(MPI_COMM_WORLD,
-                                             4, 3, 2,
-                                             0, 1,
-                                             0, 1,
-                                             0, 1,
-                                             std::string("swept-wedge_0.e") );
+            percept::WedgeFixture wedgeFixture;
+
+            wedgeFixture.createMesh(MPI_COMM_WORLD,
+                                    4, 3, 2,
+                                    0, 1,
+                                    0, 1,
+                                    0, 1,
+                                    std::string("swept-wedge_0.e") );
 
             eMesh.open("swept-wedge_0.e");
 
@@ -1832,8 +2104,6 @@ namespace stk
             FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
 
             eMesh.commit();
-            //eMesh.printInfo();
-            //eMesh.saveAs("./output_files/cylinder_hex20_0.e");
 
             UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
@@ -1841,6 +2111,8 @@ namespace stk
             eMesh.saveAs("./output_files/swept-wedge_1.e");
 
           }
+        // end_demo
+        
       }
 
       //======================================================================================================================
@@ -1859,7 +2131,6 @@ namespace stk
         unsigned p_size = eMesh.getParallelSize();
         if (p_size == 1)
           {
-
             //         void createMesh(stk::ParallelMachine parallel_machine,
             //                         unsigned n_nodes_x, unsigned n_nodes_y, unsigned n_nodes_z,
             //                         double xmin, double xmax,
@@ -1867,12 +2138,14 @@ namespace stk
             //                         double zmin, double zmax,
             //                         std::string output_filename
             //                         )
-            percept::WedgeFixture::createMesh(MPI_COMM_WORLD,
-                                             4, 3, 2,
-                                             0, 1,
-                                             0, 1,
-                                             0, 1,
-                                             std::string("swept-wedge_enrich_0.e") );
+            percept::WedgeFixture wedgeFixture;
+
+            wedgeFixture.createMesh(MPI_COMM_WORLD,
+                                    4, 3, 2,
+                                    0, 1,
+                                    0, 1,
+                                    0, 1,
+                                    std::string("swept-wedge_enrich_0.e") );
 
             eMesh.open("swept-wedge_enrich_0.e");
 
@@ -1882,31 +2155,90 @@ namespace stk
             FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
 
             eMesh.commit();
-            //eMesh.printInfo();
-            //eMesh.saveAs("./output_files/cylinder_hex20_0.e");
 
             UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
 
             eMesh.saveAs("./output_files/swept-wedge_enrich_1.e");
+            eMesh.saveAs("./input_files/swept-wedge_enrich_refine_0.e");
 
           }
+        // end_demo
       }
 
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
 
-      /*
-        FIXME: Please use a mesh from stk_mesh/fixtures instead of use-case mesh.
-      */
+      TEST(regr_uniformRefiner, wedge6_enrich_refine)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        // start_demo_regr_uniformRefiner_wedge6_enrich_refine
+
+        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD );
+
+        if (p_size == 1)
+          {
+            PerceptMesh eMesh;
+            percept::WedgeFixture wedgeFixture;
+
+            wedgeFixture.createMesh(MPI_COMM_WORLD,
+                                    4, 2, 2,
+                                    0, 1,
+                                    0, 1,
+                                    0, 1,
+                                    std::string("tmp-swept-wedge_enrich_0.e") );
+
+            eMesh.open("tmp-swept-wedge_enrich_0.e");
+
+            Wedge6_Wedge15_1 break_wedge(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            eMesh.commit();
+            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            breaker.doBreak();
+            eMesh.saveAs("./input_files/swept-wedge_enrich_refine_0.e");
+          }
+
+        percept::PerceptMesh eMesh;
+
+        if (p_size == 1)
+          {
+            eMesh.open("./input_files/swept-wedge_enrich_refine_0.e");
+
+            Wedge15_Wedge15_8 break_wedge(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+
+            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            eMesh.saveAs("./output_files/swept-wedge_enrich_refine_1.e");
+
+          }
+        // end_demo
+
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
       TEST(regr_uniformRefiner, heterogeneous_mesh)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        //if (1) return;
-        // start_demo_use_case_3_heterogeneous_mesh
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        // start_demo_heterogeneous_mesh
 
         //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
         const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
@@ -1915,47 +2247,46 @@ namespace stk
           {
             // create the mesh
             {
-              //stk::mesh::use_cases::UseCase_3_Mesh mesh(MPI_COMM_WORLD, false);
               stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
               stk::io::put_io_part_attribute(  mesh.m_block_hex );
               stk::io::put_io_part_attribute(  mesh.m_block_wedge );
               stk::io::put_io_part_attribute(  mesh.m_block_tet );
-              ///
+
 #if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
               stk::io::put_io_part_attribute(  mesh.m_block_pyramid );
               stk::io::put_io_part_attribute(  mesh.m_block_quad_shell );
               stk::io::put_io_part_attribute(  mesh.m_block_tri_shell );
 #endif
-              ///
-              mesh.m_metaData.commit();
 
+              mesh.m_metaData.commit();
               mesh.populate();
-              //std::cout << "tmp here 1 " << &mesh.m_metaData << " " << &mesh.m_bulkData << std::endl;
-              //bool local_status =  stk::mesh::use_cases::verifyMesh(mesh);
 
               bool isCommitted = true;
               percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
 
-              em1.printInfo("heterogeneous", 1);
+              //em1.printInfo("heterogeneous", 4);
 
               em1.saveAs("./input_files/heterogeneous_0.e");
               em1.close();
             }
-            
+
+            std::string input_mesh = "./input_files/heterogeneous_0.e";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
             // refine the mesh
             if (1)
-            {
+              {
                 percept::PerceptMesh eMesh1;
+
                 eMesh1.open("./input_files/heterogeneous_0.e");
 
-                //UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_pattern(eMesh1);
                 URP_Heterogeneous_3D break_pattern(eMesh1);
                 int scalarDimension = 0; // a scalar
                 FieldBase* proc_rank_field = eMesh1.addField("proc_rank", mesh::Element, scalarDimension);
                 eMesh1.commit();
-
-                //                 if (iBreak != 0)
-                //                   proc_rank_field = eMesh1.getField("proc_rank");
 
                 UniformRefiner breaker(eMesh1, break_pattern, proc_rank_field);
 
@@ -1963,14 +2294,430 @@ namespace stk
                 breaker.setIgnoreSideSets(true);
                 breaker.doBreak();
 
-                //eMesh1.printInfo("quad_fixture_1.e");
-
                 eMesh1.saveAs("./output_files/heterogeneous_1.e");
                 eMesh1.close();
+              }
+          }
+        // end_demo
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+
+#if 0
+      TEST(regr_uniformRefiner, beam_refine)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            // create the mesh
+            {
+
+              stk::percept::BeamFixture mesh(pm, false);
+              stk::io::put_io_part_attribute(  mesh.m_block_beam );
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              em1.saveAs("./input_files/beam_0.e");
+
+            }
+
+            // refine
+            {
+              stk::percept::PerceptMesh eMesh;
+              eMesh.open("./input_files/beam_0.e");
+              //URP_Heterogeneous_3D break_pattern(eMesh);
+              Beam2_Beam2_2 break_pattern(eMesh);
+              int scalarDimension = 0; // a scalar
+              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              eMesh.commit();
+
+              eMesh.saveAs("./output_files/beam_0.e");
+
+              eMesh.printInfo("beam", 2);
+
+              UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+              //breaker.setRemoveOldElements(false);
+              breaker.setIgnoreSideSets(true);
+              breaker.doBreak();
+
+              eMesh.saveAs("./output_files/beam_1.e");
+
             }
           }
       }
 
+#endif
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, biplane_refine)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced?
+
+        if (p_size <= 1)
+          {
+            // start_demo_biplane_refine
+            std::string input_mesh = "./input_files/salinas/biplane.e";
+
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh;
+            eMesh.open(input_mesh);
+
+            URP_Heterogeneous_3D break_pattern(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            eMesh.commit();
+
+            eMesh.printInfo("biplane", 2);
+            eMesh.saveAs("./output_files/biplane_0.e");
+
+            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            //breaker.setRemoveOldElements(false);
+            breaker.setIgnoreSideSets(false);
+            breaker.doBreak();
+
+            //eMesh.printInfo("biplane", 2);
+            eMesh.saveAs("./output_files/biplane_1.e");
+
+          }
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, break_tet_shell3_tet)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        std::cout << "p_size= " << p_size << std::endl;
+        // this case can't be load balanced (I presume there are too few elements)
+        if (p_size <= 1)
+          {
+            // start_demo_break_tet_shell3_tet
+
+            std::string input_mesh = "./input_files/shell-tests/tet_shell3_tet.g";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh;
+            eMesh.open(input_mesh);
+
+            URP_Heterogeneous_3D break_pattern(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            eMesh.commit();
+
+            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+
+            //breaker.setRemoveOldElements(false);
+            //breaker.setIgnoreSideSets(true);
+            unsigned numRefines = 2;
+            for (unsigned iBreak = 0; iBreak < numRefines; iBreak++)
+              {
+                breaker.doBreak();
+              }
+
+            eMesh.saveAs("./output_files/tet_shell3_tet_"+toString(numRefines)+".g");
+            eMesh.close();
+
+            // end_demo
+
+          }
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, break_hex_shell4_hex)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        // this case can't be load balanced (I presume there are too few elements)
+        //if (p_size <= 3)
+        if (p_size == 1)
+          {
+            // start_demo_break_hex_shell4_hex
+            std::string input_mesh = "./input_files/shell-tests/hex_shell4_hex.g";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh;
+            eMesh.open(input_mesh);
+
+            URP_Heterogeneous_3D break_pattern(eMesh);
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            eMesh.commit();
+
+            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+
+            //breaker.setRemoveOldElements(false);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+            eMesh.saveAs("./output_files/hex_shell4_hex_1.g");
+            eMesh.close();
+
+            // end_demo
+
+          }
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, heterogeneous_mesh_enrich)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        // start_demo_heterogeneous_mesh_enrich
+
+        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+
+        if (p_size <= 1)
+          {
+            // create the mesh
+            {
+              stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
+              stk::io::put_io_part_attribute(  mesh.m_block_hex );
+              stk::io::put_io_part_attribute(  mesh.m_block_wedge );
+              stk::io::put_io_part_attribute(  mesh.m_block_tet );
+
+#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
+              stk::io::put_io_part_attribute(  mesh.m_block_pyramid );
+              stk::io::put_io_part_attribute(  mesh.m_block_quad_shell );
+              stk::io::put_io_part_attribute(  mesh.m_block_tri_shell );
+#endif
+
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              
+              //em1.printInfo("hetero_enrich", 4);
+
+
+              em1.saveAs("./input_files/heterogeneous_enrich_0.e");
+              em1.close();
+            }
+
+            std::string input_mesh = "./input_files/heterogeneous_enrich_0.e";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            // enrich the mesh
+            if (1)
+              {
+                percept::PerceptMesh eMesh1;
+
+                eMesh1.open("./input_files/heterogeneous_enrich_0.e");
+                //eMesh1.printInfo("hetero_enrich_2", 4);
+
+                URP_Heterogeneous_Enrich_3D break_pattern(eMesh1);
+                //int scalarDimension = 0; // a scalar
+                FieldBase* proc_rank_field = 0;      //eMesh1.addField("proc_rank", mesh::Element, scalarDimension);
+                eMesh1.commit();
+                //eMesh1.printInfo("hetero_enrich_2", 4);
+
+                UniformRefiner breaker(eMesh1, break_pattern, proc_rank_field);
+
+                //breaker.setRemoveOldElements(false);
+                breaker.setIgnoreSideSets(true);
+                breaker.doBreak();
+
+                eMesh1.saveAs("./output_files/heterogeneous_enrich_1.e");
+                eMesh1.saveAs("./input_files/heterogeneous_quadratic_refine_0.e");
+                eMesh1.close();
+              }
+          }
+        // end_demo
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, heterogeneous_quadratic_refine)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        // start_demo_heterogeneous_quadratic_refine
+
+        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            // refine the mesh
+            if (1)
+              {
+                percept::PerceptMesh eMesh1;
+
+                eMesh1.open("./input_files/heterogeneous_quadratic_refine_0.e");
+
+                URP_Heterogeneous_QuadraticRefine_3D break_pattern(eMesh1);
+                int scalarDimension = 0; // a scalar
+                FieldBase* proc_rank_field = eMesh1.addField("proc_rank", mesh::Element, scalarDimension);
+                eMesh1.commit();
+
+                UniformRefiner breaker(eMesh1, break_pattern, proc_rank_field);
+
+                //breaker.setRemoveOldElements(false);
+                breaker.setIgnoreSideSets(true);
+                breaker.doBreak();
+
+                eMesh1.saveAs("./output_files/heterogeneous_quadratic_refine_1.e");
+                eMesh1.close();
+              }
+          }
+        // end_demo
+      }
+
+      //here
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      TEST(regr_uniformRefiner, wedge6_wedge18_enrich)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        // start_demo_regr_uniformRefiner_wedge6_wedge18_enrich
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+
+        //unsigned p_size = eMesh.getParallelSize();
+        if (p_size == 1)
+          {
+            //         void createMesh(stk::ParallelMachine parallel_machine,
+            //                         unsigned n_nodes_x, unsigned n_nodes_y, unsigned n_nodes_z,
+            //                         double xmin, double xmax,
+            //                         double ymin, double ymax,
+            //                         double zmin, double zmax,
+            //                         std::string output_filename
+            //                         )
+            percept::WedgeFixture wedgeFixture;
+
+            mesh::BulkData *bulk = 
+              wedgeFixture.createMesh(MPI_COMM_WORLD,
+                                      4, 3, 2,
+                                      0, 1,
+                                      0, 1,
+                                      0, 1,
+                                      std::string(""));
+            //std::string("swept-wedge6_18_enrich_0.e") );
+            percept::PerceptMesh eMesh(&bulk->mesh_meta_data(), bulk, false);
+            //percept::PerceptMesh eMesh;
+            //eMesh.open("swept-wedge6_18_enrich_0.e");
+
+            Wedge6_Wedge18_1 break_wedge(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+            //eMesh.printInfo();
+
+            wedgeFixture.createBulkAfterMetaCommit(MPI_COMM_WORLD);
+
+            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            breaker.doBreak();
+
+            //eMesh.saveAs("./output_files/swept-wedge6_18_enrich_0.e");
+            //eMesh.saveAs("./input_files/swept-wedge6_18_enrich_refine_0.e");
+          }
+        // end_demo
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+#if 0
+
+      TEST(regr_uniformRefiner, wedge6_18_enrich_refine)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        // start_demo_regr_uniformRefiner_wedge6_18_enrich_refine
+
+        percept::PerceptMesh eMesh;
+
+        unsigned p_size = eMesh.getParallelSize();
+        if (p_size == 1)
+          {
+            eMesh.open("./input_files/swept-wedge_enrich_refine_0.e");
+
+            Wedge15_Wedge15_8 break_wedge(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+            eMesh.commit();
+
+            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            eMesh.saveAs("./output_files/swept-wedge_enrich_refine_1.e");
+          }
+        // end_demo
+      }
+#endif
 
     }//    namespace regression_tests
   }//  namespace adapt

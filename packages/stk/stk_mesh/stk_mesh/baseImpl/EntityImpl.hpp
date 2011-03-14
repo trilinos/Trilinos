@@ -11,10 +11,10 @@
 
 #include <stk_util/util/PairIter.hpp>
 
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Relation.hpp>
-
-#include <cassert>
 
 namespace stk {
 namespace mesh {
@@ -40,7 +40,7 @@ public:
   PairIterEntityComm sharing() const ;
   PairIterEntityComm comm( const Ghosting & sub ) const ;
   Bucket & bucket() const {
-    assert(m_bucket); //don't want to return a reference to a null bucket
+    ThrowAssert(m_bucket); //don't want to return a reference to a null bucket
     return *m_bucket ;
   }
   Bucket* bucket_ptr() const {
@@ -54,9 +54,9 @@ public:
   // The two relation methods below need to be called symmetically, ideally
   // through EntityRepository which will enforce the symmetry.
 
-  bool destroy_relation( Entity & e_to);
+  bool destroy_relation( Entity & e_to, const RelationIdentifier local_id);
   bool declare_relation( Entity & e_to,
-                         const unsigned local_id,
+                         const RelationIdentifier local_id,
                          unsigned sync_count,
                          bool is_converse = false);
 
@@ -67,7 +67,8 @@ public:
   void comm_clear_ghosting(); ///< Clear ghosting
   void comm_clear(); ///< Clear everything
 
-  void set_bucket_and_ordinal( Bucket * bucket, unsigned ordinal ) {
+  void set_bucket_and_ordinal( Bucket * bucket, unsigned ordinal )
+  {
     m_bucket = bucket;
     m_bucket_ord = ordinal;
   }

@@ -11,12 +11,12 @@
  *    $Revision$
  ****************************************************************************/
  
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include <stdint.h>
 #include <stdlib.h>
 #include "phg.h"
 #include "g2l_hash.h"

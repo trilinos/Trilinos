@@ -21,6 +21,10 @@ C++ includes: AnasaziBasicEigenproblem.hpp ";
 
 /*  Constructors/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BasicEigenproblem::BasicEigenproblem "Anasazi::BasicEigenproblem< ScalarType, MV, OP >::BasicEigenproblem()
 
 Empty constructor - allows Anasazi::BasicEigenproblem to be described
@@ -51,6 +55,10 @@ Copy Constructor. ";
 Destructor. ";
 
 /*  Set Methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BasicEigenproblem::setOperator "void
 Anasazi::BasicEigenproblem< ScalarType, MV, OP >::setOperator(const
@@ -152,6 +160,10 @@ manager at the end of its SolverManager::solve() routine. ";
 
 /*  Accessor Methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BasicEigenproblem::getOperator "Teuchos::RCP<const OP> Anasazi::BasicEigenproblem< ScalarType, MV, OP
 >::getOperator() const
 
@@ -225,6 +237,10 @@ C++ includes: AnasaziBasicOrthoManager.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BasicOrthoManager::BasicOrthoManager "Anasazi::BasicOrthoManager< ScalarType, MV, OP
 >::BasicOrthoManager(Teuchos::RCP< const OP > Op=Teuchos::null,
 typename Teuchos::ScalarTraits< ScalarType >::magnitudeType
@@ -241,6 +257,10 @@ Constructor specifying re-orthogonalization tolerance. ";
 Destructor. ";
 
 /*  Methods implementing Anasazi::MatOrthoManager  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BasicOrthoManager::projectMat "void
 Anasazi::BasicOrthoManager< ScalarType, MV, OP >::projectMat(MV &X,
@@ -417,6 +437,10 @@ returned X and rows in the returned B are valid. ";
 
 /*  Error methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BasicOrthoManager::orthonormErrorMat "Teuchos::ScalarTraits< ScalarType >::magnitudeType
 Anasazi::BasicOrthoManager< ScalarType, MV, OP
 >::orthonormErrorMat(const MV &X, Teuchos::RCP< const MV >
@@ -436,6 +460,10 @@ measured as the Frobenius norm of innerProd(X,Y). The method has the
 option of exploiting a caller-provided MX. ";
 
 /*  Accessor routines  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BasicOrthoManager::setKappa "void
 Anasazi::BasicOrthoManager< ScalarType, MV, OP >::setKappa(typename
@@ -461,6 +489,10 @@ C++ includes: AnasaziBasicOutputManager.hpp ";
 
 /*  Constructors/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BasicOutputManager::BasicOutputManager
 "Anasazi::BasicOutputManager< ScalarType >::BasicOutputManager(int
 vb=Anasazi::Errors, Teuchos::RCP< ostream >
@@ -476,6 +508,10 @@ Destructor. ";
 
 /*  Set/Get methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BasicOutputManager::setOStream "void
 Anasazi::BasicOutputManager< ScalarType >::setOStream(Teuchos::RCP<
 ostream > os)
@@ -488,6 +524,10 @@ Set the output stream for this manager. ";
 Get the output stream for this manager. ";
 
 /*  Output methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BasicOutputManager::isVerbosity "bool
 Anasazi::BasicOutputManager< ScalarType >::isVerbosity(MsgType type)
@@ -511,6 +551,10 @@ Anasazi::BasicOutputManager< ScalarType >::stream(MsgType type)
 Return a stream for outputting to. ";
 
 /*  Undefined methods  */
+
+/*
+
+*/
 
 
 // File: classAnasazi_1_1BasicSort.xml
@@ -625,21 +669,6 @@ n:  [in] Number of values in r_evals, i_evals to be sorted. If n ==
 of r_evals and the length of i_evals. ";
 
 
-// File: structAnasazi_1_1BasicSort_1_1compAlg.xml
-
-
-// File: structAnasazi_1_1BasicSort_1_1compMag.xml
-
-
-// File: structAnasazi_1_1BasicSort_1_1compMag2.xml
-
-
-// File: structAnasazi_1_1BasicSort_1_1sel1st.xml
-
-
-// File: structAnasazi_1_1BasicSort_1_1sel2nd.xml
-
-
 // File: classAnasazi_1_1BlockDavidson.xml
 %feature("docstring") Anasazi::BlockDavidson "
 
@@ -656,6 +685,10 @@ Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 C++ includes: AnasaziBlockDavidson.hpp ";
 
 /*  Constructor/Destructor  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BlockDavidson::BlockDavidson "Anasazi::BlockDavidson< ScalarType, MV, OP >::BlockDavidson(const
 Teuchos::RCP< Eigenproblem< ScalarType, MV, OP > > &problem, const
@@ -682,6 +715,10 @@ allocated for the solver basis. ";
 AnasaziBlockDavidson destructor. ";
 
 /*  Solver methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BlockDavidson::iterate "void
 Anasazi::BlockDavidson< ScalarType, MV, OP >::iterate()
@@ -798,6 +835,10 @@ they are not pointers to views of the multivectors. ";
 
 /*  Status methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BlockDavidson::getNumIters "int
 Anasazi::BlockDavidson< ScalarType, MV, OP >::getNumIters() const
 
@@ -894,6 +935,10 @@ BlockDavidson, this always returns numBlocks*blockSize. ";
 
 /*  Accessor routines from Eigensolver  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BlockDavidson::setStatusTest "void
 Anasazi::BlockDavidson< ScalarType, MV, OP
 >::setStatusTest(Teuchos::RCP< StatusTest< ScalarType, MV, OP > >
@@ -955,6 +1000,10 @@ Get the auxiliary vectors for the solver. ";
 
 /*  BlockDavidson-specific accessor routines  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BlockDavidson::setSize "void
 Anasazi::BlockDavidson< ScalarType, MV, OP >::setSize(int blockSize,
 int numBlocks)
@@ -971,15 +1020,16 @@ std::invalid_argument exception. ";
 
 /*  Output methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BlockDavidson::currentStatus "void
 Anasazi::BlockDavidson< ScalarType, MV, OP
 >::currentStatus(std::ostream &os)
 
 This method requests that the solver print out its current status to
 the given output stream. ";
-
-
-// File: structAnasazi_1_1BlockDavidson_1_1CheckList.xml
 
 
 // File: classAnasazi_1_1BlockDavidsonInitFailure.xml
@@ -1066,6 +1116,10 @@ C++ includes: AnasaziBlockDavidsonSolMgr.hpp ";
 
 /*  Constructors/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")
 Anasazi::BlockDavidsonSolMgr::BlockDavidsonSolMgr "Anasazi::BlockDavidsonSolMgr< ScalarType, MV, OP
 >::BlockDavidsonSolMgr(const Teuchos::RCP< Eigenproblem< ScalarType,
@@ -1134,6 +1188,10 @@ Destructor. ";
 
 /*  Accessor methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BlockDavidsonSolMgr::getProblem "const Eigenproblem<ScalarType,MV,OP>& Anasazi::BlockDavidsonSolMgr<
 ScalarType, MV, OP >::getProblem() const
 
@@ -1157,6 +1215,10 @@ time spent restarting
 time spent locking converged eigenvectors ";
 
 /*  Solver application methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BlockDavidsonSolMgr::solve "ReturnType Anasazi::BlockDavidsonSolMgr< ScalarType, MV, OP >::solve()
 
@@ -1270,6 +1332,10 @@ C++ includes: AnasaziBlockKrylovSchur.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BlockKrylovSchur::BlockKrylovSchur "Anasazi::BlockKrylovSchur< ScalarType, MV, OP
 >::BlockKrylovSchur(const Teuchos::RCP< Eigenproblem< ScalarType, MV,
 OP > > &problem, const Teuchos::RCP< SortManager< typename
@@ -1308,6 +1374,10 @@ Size\" ";
 BlockKrylovSchur destructor. ";
 
 /*  Solver methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BlockKrylovSchur::iterate "void
 Anasazi::BlockKrylovSchur< ScalarType, MV, OP >::iterate()
@@ -1395,6 +1465,10 @@ current solver state. ";
 
 /*  Status methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BlockKrylovSchur::getNumIters "int
 Anasazi::BlockKrylovSchur< ScalarType, MV, OP >::getNumIters() const
 
@@ -1462,6 +1536,10 @@ A vector of length blockSize containing the 2-norms of the Ritz
 residuals. ";
 
 /*  Accessor routines  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BlockKrylovSchur::setStatusTest "void
 Anasazi::BlockKrylovSchur< ScalarType, MV, OP
@@ -1561,6 +1639,10 @@ Get the auxiliary vectors for the solver. ";
 
 /*  Output methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BlockKrylovSchur::currentStatus "void
 Anasazi::BlockKrylovSchur< ScalarType, MV, OP
 >::currentStatus(std::ostream &os)
@@ -1569,6 +1651,10 @@ This method requests that the solver print out its current status to
 screen. ";
 
 /*  Block-Krylov Schur status routines  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BlockKrylovSchur::isRitzVecsCurrent "bool Anasazi::BlockKrylovSchur< ScalarType, MV, OP
 >::isRitzVecsCurrent() const
@@ -1590,6 +1676,10 @@ Get the status of the Schur form currently stored in the eigensolver.
 
 /*  Block-Krylov Schur compute routines  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BlockKrylovSchur::computeRitzVectors "void Anasazi::BlockKrylovSchur< ScalarType, MV, OP
 >::computeRitzVectors()
 
@@ -1605,9 +1695,6 @@ Compute the Ritz values using the current Krylov factorization. ";
 
 Compute the Schur form of the projected eigenproblem from the current
 Krylov factorization. ";
-
-
-// File: structAnasazi_1_1BlockKrylovSchur_1_1CheckList.xml
 
 
 // File: classAnasazi_1_1BlockKrylovSchurInitFailure.xml
@@ -1683,6 +1770,10 @@ C++ includes: AnasaziBlockKrylovSchurSolMgr.hpp ";
 
 /*  Constructors/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")
 Anasazi::BlockKrylovSchurSolMgr::BlockKrylovSchurSolMgr "Anasazi::BlockKrylovSchurSolMgr< ScalarType, MV, OP
 >::BlockKrylovSchurSolMgr(const Teuchos::RCP< Eigenproblem<
@@ -1731,6 +1822,10 @@ Destructor. ";
 
 /*  Accessor methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::BlockKrylovSchurSolMgr::getProblem "const Eigenproblem<ScalarType,MV,OP>& Anasazi::BlockKrylovSchurSolMgr<
 ScalarType, MV, OP >::getProblem() const
 
@@ -1758,6 +1853,10 @@ The timers are ordered as follows: time spent in solve() routine
 time spent restarting ";
 
 /*  Solver application methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::BlockKrylovSchurSolMgr::solve "ReturnType Anasazi::BlockKrylovSchurSolMgr< ScalarType, MV, OP
 >::solve()
@@ -1833,6 +1932,27 @@ C++ includes: AnasaziBlockKrylovSchur.hpp ";
 %feature("docstring")
 Anasazi::BlockKrylovSchurState::BlockKrylovSchurState "Anasazi::BlockKrylovSchurState< ScalarType, MulVec
 >::BlockKrylovSchurState() ";
+
+
+// File: structAnasazi_1_1LOBPCG_1_1CheckList.xml
+
+
+// File: structAnasazi_1_1BlockKrylovSchur_1_1CheckList.xml
+
+
+// File: structAnasazi_1_1RTRBase_1_1CheckList.xml
+
+
+// File: structAnasazi_1_1BlockDavidson_1_1CheckList.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1compAlg.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1compMag.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1compMag2.xml
 
 
 // File: classAnasazi_1_1DenseMatTraits.xml
@@ -1979,6 +2099,10 @@ C++ includes: AnasaziDirectSolver.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::DirectSolver::DirectSolver "Anasazi::DirectSolver< ScalarType >::DirectSolver()
 
 Basic constructor. ";
@@ -1990,6 +2114,10 @@ Destructor. ";
 
 /*  Eigensolver Projection Methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::DirectSolver::directSolver "virtual
 int Anasazi::DirectSolver< ScalarType >::directSolver(int size, const
 Teuchos::SerialDenseMatrix< int, ScalarType > &KK, const
@@ -1999,7 +2127,7 @@ typename Teuchos::ScalarTraits< ScalarType >::magnitudeType > &theta)
 const =0
 
 Routine for computing the generalized eigenpairs of the symmetric
-pencil (KK, MM).
+pencil (KK, MM)
 
 Parameters:
 -----------
@@ -2029,6 +2157,10 @@ C++ includes: AnasaziEigenproblem.hpp ";
 
 /*  Constructors/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::Eigenproblem::Eigenproblem "Anasazi::Eigenproblem< ScalarType, MV, OP >::Eigenproblem()
 
 Empty constructor. ";
@@ -2039,6 +2171,10 @@ Anasazi::Eigenproblem< ScalarType, MV, OP >::~Eigenproblem()
 Destructor. ";
 
 /*  Set Methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::Eigenproblem::setOperator "virtual
 void Anasazi::Eigenproblem< ScalarType, MV, OP >::setOperator(const
@@ -2133,6 +2269,10 @@ manager at the end of its SolverManager::solve() routine. ";
 
 /*  Accessor Methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::Eigenproblem::getOperator "virtual
 Teuchos::RCP<const OP> Anasazi::Eigenproblem< ScalarType, MV, OP
 >::getOperator() const =0
@@ -2224,6 +2364,10 @@ C++ includes: AnasaziEigensolverDecl.hpp ";
 
 /*  Constructors/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::Eigensolver::Eigensolver "Anasazi::Eigensolver< ScalarType, MV, OP >::Eigensolver()
 
 Default Constructor. ";
@@ -2250,6 +2394,10 @@ Destructor. ";
 
 /*  Solver methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::Eigensolver::iterate "virtual void
 Anasazi::Eigensolver< ScalarType, MV, OP >::iterate()=0
 
@@ -2264,6 +2412,10 @@ Initialize the solver with the initial vectors from the eigenproblem
 or random data. ";
 
 /*  Status methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::Eigensolver::getNumIters "virtual int
 Anasazi::Eigensolver< ScalarType, MV, OP >::getNumIters() const =0
@@ -2348,6 +2500,10 @@ Get the maximum dimension allocated for the search subspace. ";
 
 /*  Accessor methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::Eigensolver::setStatusTest "virtual
 void Anasazi::Eigensolver< ScalarType, MV, OP
 >::setStatusTest(Teuchos::RCP< StatusTest< ScalarType, MV, OP > >
@@ -2401,6 +2557,10 @@ States whether the solver has been initialized or not. ";
 
 /*  Output methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::Eigensolver::currentStatus "virtual
 void Anasazi::Eigensolver< ScalarType, MV, OP
 >::currentStatus(std::ostream &os)=0
@@ -2424,6 +2584,10 @@ C++ includes: AnasaziGenOrthoManager.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::GenOrthoManager::GenOrthoManager "Anasazi::GenOrthoManager< ScalarType, MV, OP
 >::GenOrthoManager(Teuchos::RCP< const OP > Op=Teuchos::null)
 
@@ -2435,6 +2599,10 @@ Default constructor. ";
 Destructor. ";
 
 /*  Orthogonalization methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::GenOrthoManager::projectGen "virtual
 void Anasazi::GenOrthoManager< ScalarType, MV, OP >::projectGen(MV &S,
@@ -2654,6 +2822,10 @@ C++ includes: AnasaziICGSOrthoManager.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::ICGSOrthoManager::ICGSOrthoManager "Anasazi::ICGSOrthoManager< ScalarType, MV, OP
 >::ICGSOrthoManager(Teuchos::RCP< const OP > Op=Teuchos::null, int
 numIters=2, typename Teuchos::ScalarTraits< ScalarType
@@ -2668,6 +2840,10 @@ as the number of orthogonalization iterations. ";
 Destructor. ";
 
 /*  Methods implementing Anasazi::GenOrthoManager  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::ICGSOrthoManager::projectGen "void
 Anasazi::ICGSOrthoManager< ScalarType, MV, OP >::projectGen(MV &S,
@@ -2867,6 +3043,10 @@ Rank of the basis computed by this method. ";
 
 /*  Methods implementing Anasazi::MatOrthoManager  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::ICGSOrthoManager::projectMat "void
 Anasazi::ICGSOrthoManager< ScalarType, MV, OP >::projectMat(MV &X,
 Teuchos::Array< Teuchos::RCP< const MV > > Q, Teuchos::Array<
@@ -2916,6 +3096,10 @@ projectAndNormalizeGen() for argument requirements. ";
 
 /*  Error methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::ICGSOrthoManager::orthonormErrorMat "Teuchos::ScalarTraits< ScalarType >::magnitudeType
 Anasazi::ICGSOrthoManager< ScalarType, MV, OP
 >::orthonormErrorMat(const MV &X, Teuchos::RCP< const MV >
@@ -2935,6 +3119,10 @@ measured as the Frobenius norm of innerProd(X,Y). The method has the
 option of exploiting a caller-provided MX. ";
 
 /*  Accessor routines  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::ICGSOrthoManager::setNumIters "void
 Anasazi::ICGSOrthoManager< ScalarType, MV, OP >::setNumIters(int
@@ -2969,6 +3157,10 @@ Chris Baker
 C++ includes: AnasaziIRTR.hpp ";
 
 /*  Constructor/Destructor  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::IRTR::IRTR "Anasazi::IRTR<
 ScalarType, MV, OP >::IRTR(const Teuchos::RCP< Eigenproblem<
@@ -3008,6 +3200,10 @@ IRTR destructor ";
 
 /*  Solver methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::IRTR::iterate "void Anasazi::IRTR<
 ScalarType, MV, OP >::iterate()
 
@@ -3015,6 +3211,10 @@ Impemements Eigensolver. The outer IRTR iteration. See
 RTRBase::iterate(). ";
 
 /*  Output methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::IRTR::currentStatus "void
 Anasazi::IRTR< ScalarType, MV, OP >::currentStatus(std::ostream &os)
@@ -3031,9 +3231,9 @@ Gradient (LOBPCG) iteration, a preconditioned iteration for solving
 linear Hermitian eigenproblems.
 
 This implementation is a modification of the one found in A. Knyazev,
-\"Toward the optimal preconditioned eigensolver: Locally optimal block
-preconditioner conjugate gradient method\", SIAM J. Sci. Comput., vol
-23, n 2, pp. 517-541.
+\"Toward the optimal preconditioned eigensolver:         Locally
+optimal block preconditioner conjugate gradient method\", SIAM J. Sci.
+Comput., vol 23, n 2, pp. 517-541.
 
 The modification consists of the orthogonalization steps recommended
 in U. Hetmaniuk and R. Lehoucq, \"Basis Selection in LOBPCG\", Journal
@@ -3048,6 +3248,10 @@ Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 C++ includes: AnasaziLOBPCG.hpp ";
 
 /*  Constructor/Destructor  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::LOBPCG::LOBPCG "Anasazi::LOBPCG<
 ScalarType, MV, OP >::LOBPCG(const Teuchos::RCP< Eigenproblem<
@@ -3077,6 +3281,10 @@ Anasazi::LOBPCG< ScalarType, MV, OP >::~LOBPCG()
 LOBPCG destructor ";
 
 /*  Solver methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::LOBPCG::iterate "void
 Anasazi::LOBPCG< ScalarType, MV, OP >::iterate()
@@ -3191,6 +3399,10 @@ state. ";
 
 /*  Status methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::LOBPCG::getNumIters "int
 Anasazi::LOBPCG< ScalarType, MV, OP >::getNumIters() const
 
@@ -3287,6 +3499,10 @@ subspace colspan([X H P]). ";
 
 /*  Accessor routines from Eigensolver  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::LOBPCG::setStatusTest "void
 Anasazi::LOBPCG< ScalarType, MV, OP >::setStatusTest(Teuchos::RCP<
 StatusTest< ScalarType, MV, OP > > test)
@@ -3345,6 +3561,10 @@ Get the current auxiliary vectors. ";
 
 /*  %LOBPCG-specific accessor routines  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::LOBPCG::setFullOrtho "void
 Anasazi::LOBPCG< ScalarType, MV, OP >::setFullOrtho(bool fullOrtho)
 
@@ -3367,14 +3587,15 @@ Indicates whether the search direction given by getState() is valid.
 
 /*  Output methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::LOBPCG::currentStatus "void
 Anasazi::LOBPCG< ScalarType, MV, OP >::currentStatus(std::ostream &os)
 
 This method requests that the solver print out its current status to
 screen. ";
-
-
-// File: structAnasazi_1_1LOBPCG_1_1CheckList.xml
 
 
 // File: classAnasazi_1_1LOBPCGInitFailure.xml
@@ -3497,6 +3718,10 @@ C++ includes: AnasaziLOBPCGSolMgr.hpp ";
 
 /*  Constructors/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::LOBPCGSolMgr::LOBPCGSolMgr "Anasazi::LOBPCGSolMgr< ScalarType, MV, OP >::LOBPCGSolMgr(const
 Teuchos::RCP< Eigenproblem< ScalarType, MV, OP > > &problem,
 Teuchos::ParameterList &pl)
@@ -3570,6 +3795,10 @@ Destructor. ";
 
 /*  Accessor methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::LOBPCGSolMgr::getProblem "const
 Eigenproblem<ScalarType,MV,OP>& Anasazi::LOBPCGSolMgr< ScalarType, MV,
 OP >::getProblem() const
@@ -3591,6 +3820,10 @@ The timers are ordered as follows: time spent in solve() routine
 time spent locking converged eigenvectors ";
 
 /*  Solver application methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::LOBPCGSolMgr::solve "ReturnType
 Anasazi::LOBPCGSolMgr< ScalarType, MV, OP >::solve()
@@ -3712,6 +3945,10 @@ C++ includes: AnasaziMatOrthoManager.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MatOrthoManager::MatOrthoManager "Anasazi::MatOrthoManager< ScalarType, MV, OP
 >::MatOrthoManager(Teuchos::RCP< const OP > Op=Teuchos::null)
 
@@ -3723,6 +3960,10 @@ Default constructor. ";
 Destructor. ";
 
 /*  Accessor routines  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MatOrthoManager::setOp "void
 Anasazi::MatOrthoManager< ScalarType, MV, OP >::setOp(Teuchos::RCP<
@@ -3755,6 +3996,10 @@ Reset the operator counter to zero.
 See getOpCounter() for more details. ";
 
 /*  Matrix-based Orthogonality Methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MatOrthoManager::innerProdMat "void
 Anasazi::MatOrthoManager< ScalarType, MV, OP >::innerProdMat(const MV
@@ -3884,6 +4129,10 @@ and/or MY. ";
 
 /*  Methods implementing Anasazi::OrthoManager  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MatOrthoManager::innerProd "void
 Anasazi::MatOrthoManager< ScalarType, MV, OP >::innerProd(const MV &X,
 const MV &Y, Teuchos::SerialDenseMatrix< int, ScalarType > &Z) const
@@ -3966,6 +4215,10 @@ C++ includes: AnasaziMultiVec.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MultiVec::MultiVec "Anasazi::MultiVec< ScalarType >::MultiVec()
 
 Anasazi::MultiVec constructor. ";
@@ -3976,6 +4229,10 @@ Anasazi::MultiVec< ScalarType >::~MultiVec()
 Anasazi::MultiVec destructor. ";
 
 /*  Creation methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MultiVec::Clone "virtual
 MultiVec<ScalarType>* Anasazi::MultiVec< ScalarType >::Clone(const int
@@ -4026,6 +4283,10 @@ Pointer to the new multivector ";
 
 /*  Attribute methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MultiVec::GetVecLength "virtual int
 Anasazi::MultiVec< ScalarType >::GetVecLength() const =0
 
@@ -4037,6 +4298,10 @@ Anasazi::MultiVec< ScalarType >::GetNumberVecs() const =0
 Obtain the number of vectors in *this. ";
 
 /*  Update methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MultiVec::MvTimesMatAddMv "virtual
 void Anasazi::MultiVec< ScalarType >::MvTimesMatAddMv(ScalarType
@@ -4070,6 +4335,10 @@ A. ";
 
 /*  Norm method  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MultiVec::MvNorm "virtual void
 Anasazi::MultiVec< ScalarType >::MvNorm(std::vector< typename
 Teuchos::ScalarTraits< ScalarType >::magnitudeType > &normvec) const
@@ -4079,6 +4348,10 @@ Compute the 2-norm of each individual vector of *this. Upon return,
 normvec[i] holds the 2-norm of the i-th vector of *this. ";
 
 /*  Initialization methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MultiVec::SetBlock "virtual void
 Anasazi::MultiVec< ScalarType >::SetBlock(const MultiVec< ScalarType >
@@ -4111,6 +4384,10 @@ Replace each element of the vectors in *this with alpha. ";
 
 /*  Print method  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MultiVec::MvPrint "virtual void
 Anasazi::MultiVec< ScalarType >::MvPrint(std::ostream &os) const =0
 
@@ -4129,6 +4406,10 @@ this class will produce a compile-time error.
 C++ includes: AnasaziMultiVecTraits.hpp ";
 
 /*  Creation methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MultiVecTraits::Clone "static
 Teuchos::RCP<MV> Anasazi::MultiVecTraits< ScalarType, MV
@@ -4158,6 +4439,24 @@ The copied vectors from mv are indicated by the index.size() indices
 in index. Reference-counted pointer to the new multivector of type MV.
 ";
 
+%feature("docstring")  Anasazi::MultiVecTraits::CloneCopy "static
+Teuchos::RCP<MV> Anasazi::MultiVecTraits< ScalarType, MV
+>::CloneCopy(const MV &mv, const Teuchos::Range1D &index)
+
+Deep copy of specified columns of mv.
+
+Create a new MV, and copy (deep copy) the columns of mv specified by
+the given inclusive index range into the new multivector.
+
+Parameters:
+-----------
+
+mv:  [in] Multivector to copy
+
+index:  [in] Inclusive index range of columns of mv
+
+Reference-counted pointer to the new multivector of type MV. ";
+
 %feature("docstring")  Anasazi::MultiVecTraits::CloneViewNonConst "static Teuchos::RCP<MV> Anasazi::MultiVecTraits< ScalarType, MV
 >::CloneViewNonConst(MV &mv, const std::vector< int > &index)
 
@@ -4167,6 +4466,24 @@ copy).
 The index of the numvecs vectors shallow copied from mv are indicated
 by the indices given in index. Reference-counted pointer to the new
 multivector of type MV. ";
+
+%feature("docstring")  Anasazi::MultiVecTraits::CloneViewNonConst "static Teuchos::RCP<MV> Anasazi::MultiVecTraits< ScalarType, MV
+>::CloneViewNonConst(MV &mv, const Teuchos::Range1D &index)
+
+Non-const view of specified columns of mv.
+
+Return a non-const view of the columns of mv specified by the given
+inclusive index range.
+
+Parameters:
+-----------
+
+mv:  [in] Multivector to view (shallow non-const copy)
+
+index:  [in] Inclusive index range of columns of mv
+
+Reference-counted pointer to the non-const view of specified columns
+of mv ";
 
 %feature("docstring")  Anasazi::MultiVecTraits::CloneView "static
 Teuchos::RCP<const MV> Anasazi::MultiVecTraits< ScalarType, MV
@@ -4179,7 +4496,30 @@ The index of the numvecs vectors shallow copied from mv are indicated
 by the indices given in index. Reference-counted pointer to the new
 const multivector of type MV. ";
 
+%feature("docstring")  Anasazi::MultiVecTraits::CloneView "static
+Teuchos::RCP<MV> Anasazi::MultiVecTraits< ScalarType, MV
+>::CloneView(MV &mv, const Teuchos::Range1D &index)
+
+Const view of specified columns of mv.
+
+Return a const view of the columns of mv specified by the given
+inclusive index range.
+
+Parameters:
+-----------
+
+mv:  [in] Multivector to view (shallow const copy)
+
+index:  [in] Inclusive index range of columns of mv
+
+Reference-counted pointer to the const view of specified columns of mv
+";
+
 /*  Attribute methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MultiVecTraits::GetVecLength "static
 int Anasazi::MultiVecTraits< ScalarType, MV >::GetVecLength(const MV
@@ -4194,6 +4534,10 @@ int Anasazi::MultiVecTraits< ScalarType, MV >::GetNumberVecs(const MV
 Obtain the number of vectors in mv. ";
 
 /*  Update methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MultiVecTraits::MvTimesMatAddMv "static void Anasazi::MultiVecTraits< ScalarType, MV
 >::MvTimesMatAddMv(const ScalarType alpha, const MV &A, const
@@ -4238,6 +4582,10 @@ products of the i-th columns of A and mv, i.e. $b[i] = A[i]^Hmv[i]$.
 
 /*  Norm method  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MultiVecTraits::MvNorm "static void
 Anasazi::MultiVecTraits< ScalarType, MV >::MvNorm(const MV &mv,
 std::vector< typename Teuchos::ScalarTraits< ScalarType
@@ -4248,6 +4596,10 @@ normvec[i] holds the value of $||mv_i||_2$, the i-th column of mv. ";
 
 /*  Initialization methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MultiVecTraits::SetBlock "static void
 Anasazi::MultiVecTraits< ScalarType, MV >::SetBlock(const MV &A, const
 std::vector< int > &index, MV &mv)
@@ -4257,6 +4609,35 @@ indices given in index.
 
 The numvecs vectors in A are copied to a subset of vectors in mv
 indicated by the indices given in index, i.e.  mv[index[i]] = A[i]. ";
+
+%feature("docstring")  Anasazi::MultiVecTraits::SetBlock "static void
+Anasazi::MultiVecTraits< ScalarType, MV >::SetBlock(const MV &A, const
+Teuchos::Range1D &index, MV &mv)
+
+Deep copy of A into specified columns of mv.
+
+(Deeply) copy the first index.size() columns of A into the columns of
+mv specified by the given index range.
+
+Postcondition: mv[i] = A[i - index.lbound()] for all i in
+[index.lbound(), index.ubound()]
+
+Parameters:
+-----------
+
+A:  [in] Source multivector
+
+index:  [in] Inclusive index range of columns of mv; index set of the
+target
+
+mv:  [out] Target multivector ";
+
+%feature("docstring")  Anasazi::MultiVecTraits::Assign "static void
+Anasazi::MultiVecTraits< ScalarType, MV >::Assign(const MV &A, MV &mv)
+
+mv := A
+
+Assign (deep copy) A into mv. ";
 
 %feature("docstring")  Anasazi::MultiVecTraits::MvRandom "static void
 Anasazi::MultiVecTraits< ScalarType, MV >::MvRandom(MV &mv)
@@ -4270,6 +4651,10 @@ ScalarType alpha=Teuchos::ScalarTraits< ScalarType >::zero())
 Replace each element of the vectors in mv with alpha. ";
 
 /*  Print method  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MultiVecTraits::MvPrint "static void
 Anasazi::MultiVecTraits< ScalarType, MV >::MvPrint(const MV &mv,
@@ -4292,6 +4677,10 @@ Anasazi::MultiVecTraits class.
 C++ includes: AnasaziMultiVec.hpp ";
 
 /*  Creation methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > >::Clone " static Teuchos::RCP<MultiVec<ScalarType> >
@@ -4352,6 +4741,10 @@ const  Anasazi::MultiVec. ";
 
 /*  Attribute methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > >::GetVecLength " static int Anasazi::MultiVecTraits<
 ScalarType, MultiVec< ScalarType > >::GetVecLength(const MultiVec<
@@ -4367,6 +4760,10 @@ ScalarType > &mv)
 Obtain the number of vectors in mv. ";
 
 /*  Update methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > >::MvTimesMatAddMv " static void Anasazi::MultiVecTraits<
@@ -4419,6 +4816,10 @@ Scale each element of the i-th vector in *this with alpha[i]. ";
 
 /*  Norm method  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > >::MvNorm " static void Anasazi::MultiVecTraits<
 ScalarType, MultiVec< ScalarType > >::MvNorm(const MultiVec<
@@ -4429,6 +4830,10 @@ Compute the 2-norm of each individual vector of mv. Upon return,
 normvec[i] holds the value of $||mv_i||_2$, the i-th column of mv. ";
 
 /*  Initialization methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > >::SetBlock " static void Anasazi::MultiVecTraits<
@@ -4458,19 +4863,16 @@ Replace each element of the vectors in mv with alpha. ";
 
 /*  Print method  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > >::MvPrint " static void Anasazi::MultiVecTraits<
 ScalarType, MultiVec< ScalarType > >::MvPrint(const MultiVec<
 ScalarType > &mv, std::ostream &os)
 
 Print the mv multi-vector to the os output stream. ";
-
-
-// File: classAnasazi_1_1NonNullOperatorError.xml
-%feature("docstring") Anasazi::NonNullOperatorError "";
-
-%feature("docstring")
-Anasazi::NonNullOperatorError::NonNullOperatorError "Anasazi::NonNullOperatorError::NonNullOperatorError() ";
 
 
 // File: classAnasazi_1_1Operator.xml
@@ -4489,6 +4891,10 @@ C++ includes: AnasaziOperator.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::Operator::Operator "Anasazi::Operator< ScalarType >::Operator()
 
 Default constructor. ";
@@ -4499,6 +4905,10 @@ Anasazi::Operator< ScalarType >::~Operator()
 Destructor. ";
 
 /*  Operator application method  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::Operator::Apply "virtual void
 Anasazi::Operator< ScalarType >::Apply(const MultiVec< ScalarType >
@@ -4530,6 +4940,10 @@ C++ includes: AnasaziOperatorTraits.hpp ";
 
 /*  Operator application method.  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::OperatorTraits::Apply "static void
 Anasazi::OperatorTraits< ScalarType, MV, OP >::Apply(const OP &Op,
 const MV &x, MV &y)
@@ -4552,6 +4966,10 @@ Anasazi::OperatorTraits class.
 C++ includes: AnasaziOperator.hpp ";
 
 /*  Operator application method  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::OperatorTraits< ScalarType, MultiVec<
 ScalarType >, Operator< ScalarType > >::Apply " static void
@@ -4594,6 +5012,10 @@ C++ includes: AnasaziOrthoManager.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::OrthoManager::OrthoManager "Anasazi::OrthoManager< ScalarType, MV >::OrthoManager()
 
 Default constructor. ";
@@ -4604,6 +5026,10 @@ Anasazi::OrthoManager< ScalarType, MV >::~OrthoManager()
 Destructor. ";
 
 /*  Orthogonalization methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::OrthoManager::innerProd "virtual void
 Anasazi::OrthoManager< ScalarType, MV >::innerProd(const MV &X, const
@@ -4788,6 +5214,10 @@ returned X and rows in the returned B are valid. ";
 
 /*  Error methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::OrthoManager::orthonormError "virtual
 Teuchos::ScalarTraits< ScalarType >::magnitudeType
 Anasazi::OrthoManager< ScalarType, MV >::orthonormError(const MV &X)
@@ -4825,6 +5255,10 @@ C++ includes: AnasaziOutputManager.hpp ";
 
 /*  Constructors/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::OutputManager::OutputManager "Anasazi::OutputManager< ScalarType >::OutputManager(int
 vb=Anasazi::Errors)
 
@@ -4835,6 +5269,10 @@ Default constructor. ";
 Destructor. ";
 
 /*  Set/Get methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::OutputManager::setVerbosity "virtual
 void Anasazi::OutputManager< ScalarType >::setVerbosity(int vb)
@@ -4847,6 +5285,10 @@ int Anasazi::OutputManager< ScalarType >::getVerbosity() const
 Get the message output types for this manager. ";
 
 /*  Output methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::OutputManager::isVerbosity "virtual
 bool Anasazi::OutputManager< ScalarType >::isVerbosity(MsgType type)
@@ -4871,6 +5313,10 @@ type)=0
 Create a stream for outputting to. ";
 
 /*  Undefined methods  */
+
+/*
+
+*/
 
 
 // File: classAnasazi_1_1ResNormNaNError.xml
@@ -4963,6 +5409,10 @@ C++ includes: AnasaziRTRBase.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::RTRBase::RTRBase "Anasazi::RTRBase<
 ScalarType, MV, OP >::RTRBase(const Teuchos::RCP< Eigenproblem<
 ScalarType, MV, OP > > &problem, const Teuchos::RCP< SortManager<
@@ -4985,6 +5435,10 @@ Anasazi::RTRBase< ScalarType, MV, OP >::~RTRBase()
 RTRBase destructor ";
 
 /*  Solver methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::RTRBase::iterate "virtual void
 Anasazi::RTRBase< ScalarType, MV, OP >::iterate()=0
@@ -5073,6 +5527,10 @@ An RTRState object containing const pointers to the current solver
 state. ";
 
 /*  Status methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::RTRBase::getNumIters "int
 Anasazi::RTRBase< ScalarType, MV, OP >::getNumIters() const
@@ -5165,6 +5623,10 @@ this always returns getBlockSize(). ";
 
 /*  Accessor routines from Eigensolver  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::RTRBase::setStatusTest "void
 Anasazi::RTRBase< ScalarType, MV, OP >::setStatusTest(Teuchos::RCP<
 StatusTest< ScalarType, MV, OP > > test)
@@ -5234,15 +5696,16 @@ Get the current auxiliary vectors. ";
 
 /*  Output methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::RTRBase::currentStatus "void
 Anasazi::RTRBase< ScalarType, MV, OP >::currentStatus(std::ostream
 &os)
 
 This method requests that the solver print out its current status to
 screen. ";
-
-
-// File: structAnasazi_1_1RTRBase_1_1CheckList.xml
 
 
 // File: classAnasazi_1_1RTRInitFailure.xml
@@ -5320,6 +5783,10 @@ C++ includes: AnasaziRTRSolMgr.hpp ";
 
 /*  Constructors/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::RTRSolMgr::RTRSolMgr "Anasazi::RTRSolMgr< ScalarType, MV, OP >::RTRSolMgr(const
 Teuchos::RCP< Eigenproblem< ScalarType, MV, OP > > &problem,
 Teuchos::ParameterList &pl)
@@ -5363,6 +5830,10 @@ Destructor. ";
 
 /*  Accessor methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::RTRSolMgr::getProblem "const
 Eigenproblem<ScalarType,MV,OP>& Anasazi::RTRSolMgr< ScalarType, MV, OP
 >::getProblem() const
@@ -5382,6 +5853,10 @@ Anasazi::RTRSolMgr< ScalarType, MV, OP >::getNumIters() const
 Get the iteration count for the most recent call to solve. ";
 
 /*  Solver application methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::RTRSolMgr::solve "ReturnType
 Anasazi::RTRSolMgr< ScalarType, MV, OP >::solve()
@@ -5410,6 +5885,12 @@ C++ includes: AnasaziRTRBase.hpp ";
 %feature("docstring")  Anasazi::RTRState::RTRState "Anasazi::RTRState< ScalarType, MV >::RTRState() ";
 
 
+// File: structAnasazi_1_1BasicSort_1_1sel1st.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1sel2nd.xml
+
+
 // File: classAnasazi_1_1SimpleLOBPCGSolMgr.xml
 %feature("docstring") Anasazi::SimpleLOBPCGSolMgr "
 
@@ -5436,6 +5917,10 @@ Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 C++ includes: AnasaziSimpleLOBPCGSolMgr.hpp ";
 
 /*  Constructors/Destructor  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SimpleLOBPCGSolMgr::SimpleLOBPCGSolMgr
 "Anasazi::SimpleLOBPCGSolMgr< ScalarType, MV, OP
@@ -5471,6 +5956,10 @@ Destructor. ";
 
 /*  Accessor methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::SimpleLOBPCGSolMgr::getProblem "const
 Eigenproblem<ScalarType,MV,OP>& Anasazi::SimpleLOBPCGSolMgr<
 ScalarType, MV, OP >::getProblem() const
@@ -5483,6 +5972,10 @@ Anasazi::SimpleLOBPCGSolMgr< ScalarType, MV, OP >::getNumIters() const
 Get the iteration count for the most recent call to  solve(). ";
 
 /*  Solver application methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SimpleLOBPCGSolMgr::solve "ReturnType
 Anasazi::SimpleLOBPCGSolMgr< ScalarType, MV, OP >::solve()
@@ -5519,6 +6012,10 @@ Chris Baker
 C++ includes: AnasaziSIRTR.hpp ";
 
 /*  Constructor/Destructor  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SIRTR::SIRTR "Anasazi::SIRTR<
 ScalarType, MV, OP >::SIRTR(const Teuchos::RCP< Eigenproblem<
@@ -5558,6 +6055,10 @@ SIRTR destructor ";
 
 /*  Solver methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::SIRTR::iterate "void Anasazi::SIRTR<
 ScalarType, MV, OP >::iterate()
 
@@ -5565,6 +6066,10 @@ Impemements Eigensolver. The outer IRTR iteration. See
 RTRBase::iterate(). ";
 
 /*  Output methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SIRTR::currentStatus "void
 Anasazi::SIRTR< ScalarType, MV, OP >::currentStatus(std::ostream &os)
@@ -5583,6 +6088,10 @@ C++ includes: AnasaziSolverManager.hpp ";
 
 /*  Constructors/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::SolverManager::SolverManager "Anasazi::SolverManager< ScalarType, MV, OP >::SolverManager()
 
 Empty constructor. ";
@@ -5592,6 +6101,10 @@ Empty constructor. ";
 Destructor. ";
 
 /*  Accessor methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SolverManager::getProblem "virtual
 const Eigenproblem<ScalarType,MV,OP>& Anasazi::SolverManager<
@@ -5606,6 +6119,10 @@ int Anasazi::SolverManager< ScalarType, MV, OP >::getNumIters() const
 Get the iteration count for the most recent call to  solve(). ";
 
 /*  Solver application methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SolverManager::solve "virtual
 ReturnType Anasazi::SolverManager< ScalarType, MV, OP >::solve()=0
@@ -5638,7 +6155,15 @@ C++ includes: AnasaziSolverUtils.hpp ";
 
 /*  Internal Typedefs  */
 
+/*
+
+*/
+
 /*  Constructor/Destructor  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SolverUtils::SolverUtils "Anasazi::SolverUtils< ScalarType, MV, OP >::SolverUtils()
 
@@ -5650,6 +6175,10 @@ Anasazi::SolverUtils< ScalarType, MV, OP >::~SolverUtils()
 Destructor. ";
 
 /*  Sorting Methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SolverUtils::permuteVectors "void
 Anasazi::SolverUtils< ScalarType, MV, OP >::permuteVectors(const int
@@ -5668,6 +6197,10 @@ Permute the columns of a Teuchos::SerialDenseMatrix according to the
 permutation vector perm. ";
 
 /*  Basis update methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SolverUtils::applyHouse "void
 Anasazi::SolverUtils< ScalarType, MV, OP >::applyHouse(int k, MV &V,
@@ -5716,6 +6249,10 @@ multiplication by the accumulated Householder reflectors. ";
 
 /*  Eigensolver Projection Methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::SolverUtils::directSolver "int
 Anasazi::SolverUtils< ScalarType, MV, OP >::directSolver(int size,
 const Teuchos::SerialDenseMatrix< int, ScalarType > &KK, Teuchos::RCP<
@@ -5725,7 +6262,7 @@ typename Teuchos::ScalarTraits< ScalarType >::magnitudeType > &theta,
 int &nev, int esType=0)
 
 Routine for computing the first NEV generalized eigenpairs of the
-Hermitian pencil (KK, MM).
+Hermitian pencil (KK, MM)
 
 Parameters:
 -----------
@@ -5761,6 +6298,10 @@ on the status of the computation info = 0 >> Success
 info = - 20 >> Failure in LAPACK routine ";
 
 /*  Sanity Checking Methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SolverUtils::errorEquality "Teuchos::ScalarTraits< ScalarType >::magnitudeType
 Anasazi::SolverUtils< ScalarType, MV, OP >::errorEquality(const MV &X,
@@ -5879,6 +6420,10 @@ C++ includes: AnasaziStatusTestDecl.hpp ";
 
 /*  Constructors/destructors  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTest::StatusTest "Anasazi::StatusTest< ScalarType, MV, OP >::StatusTest()
 
 Constructor. ";
@@ -5889,6 +6434,10 @@ Anasazi::StatusTest< ScalarType, MV, OP >::~StatusTest()
 Destructor. ";
 
 /*  Status methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTest::checkStatus "virtual
 TestStatus Anasazi::StatusTest< ScalarType, MV, OP
@@ -5918,6 +6467,10 @@ Get the number of vectors that passed the test. ";
 
 /*  Reset methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTest::reset "virtual void
 Anasazi::StatusTest< ScalarType, MV, OP >::reset()=0
 
@@ -5943,6 +6496,10 @@ SEQAND tests in the StatusTestCombo class, which may short circuit and
 not evaluate all of the StatusTests contained in them. ";
 
 /*  Print methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTest::print "virtual
 std::ostream& Anasazi::StatusTest< ScalarType, MV, OP
@@ -5973,6 +6530,10 @@ C++ includes: AnasaziStatusTestCombo.hpp ";
 
 /*  Constructors/destructors  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestCombo::StatusTestCombo "Anasazi::StatusTestCombo< ScalarType, MV, OP >::StatusTestCombo()
 
 Default constructor has no tests and initializes to
@@ -5994,6 +6555,10 @@ Constructor ";
 Destructor. ";
 
 /*  Status methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestCombo::checkStatus "TestStatus Anasazi::StatusTestCombo< ScalarType, MV, OP
 >::checkStatus(Eigensolver< ScalarType, MV, OP > *solver)
@@ -6028,6 +6593,10 @@ Anasazi::StatusTestCombo< ScalarType, MV, OP >::howMany() const
 Get the number of vectors that passed the test. ";
 
 /*  Accessor methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestCombo::setComboType "void
 Anasazi::StatusTestCombo< ScalarType, MV, OP >::setComboType(ComboType
@@ -6072,6 +6641,10 @@ This also resets the test status to Undefined, if a test was removed.
 
 /*  Reset methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestCombo::reset "void
 Anasazi::StatusTestCombo< ScalarType, MV, OP >::reset()
 
@@ -6095,6 +6668,10 @@ StatusTestCombo class, which may short circuit and not evaluate all of
 the StatusTests contained in them. ";
 
 /*  Print methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestCombo::print "std::ostream
 & Anasazi::StatusTestCombo< ScalarType, MV, OP >::print(std::ostream
@@ -6135,6 +6712,10 @@ C++ includes: AnasaziStatusTestMaxIters.hpp ";
 
 /*  Constructors/destructors  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestMaxIters::StatusTestMaxIters
 "Anasazi::StatusTestMaxIters< ScalarType, MV, OP
 >::StatusTestMaxIters(int maxIter, bool negate=false)
@@ -6149,6 +6730,10 @@ Anasazi::StatusTestMaxIters< ScalarType, MV, OP
 Destructor. ";
 
 /*  Status methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestMaxIters::checkStatus "TestStatus Anasazi::StatusTestMaxIters< ScalarType, MV, OP
 >::checkStatus(Eigensolver< ScalarType, MV, OP > *solver)
@@ -6173,6 +6758,10 @@ Anasazi::StatusTestMaxIters< ScalarType, MV, OP >::howMany() const
 Get the number of vectors that passed the test. ";
 
 /*  Accessor methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestMaxIters::setMaxIters "void
 Anasazi::StatusTestMaxIters< ScalarType, MV, OP >::setMaxIters(int
@@ -6202,6 +6791,10 @@ Get the negation policy for the status test. ";
 
 /*  Reset methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestMaxIters::reset "void
 Anasazi::StatusTestMaxIters< ScalarType, MV, OP >::reset()
 
@@ -6228,6 +6821,10 @@ not evaluate all of the StatusTests contained in them. ";
 
 /*  Print methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestMaxIters::print "std::ostream& Anasazi::StatusTestMaxIters< ScalarType, MV, OP
 >::print(std::ostream &os, int indent=0) const
 
@@ -6248,6 +6845,10 @@ StatusTestOutput::StatusTestOutput().
 C++ includes: AnasaziStatusTestOutput.hpp ";
 
 /*  Constructors/destructors  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestOutput::StatusTestOutput "Anasazi::StatusTestOutput< ScalarType, MV, OP
 >::StatusTestOutput(const Teuchos::RCP< OutputManager< ScalarType > >
@@ -6291,6 +6892,10 @@ Destructor. ";
 
 /*  Status methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestOutput::checkStatus "TestStatus Anasazi::StatusTestOutput< ScalarType, MV, OP
 >::checkStatus(Eigensolver< ScalarType, MV, OP > *solver)
 
@@ -6332,6 +6937,10 @@ Get the number of vectors that passed the test. ";
 
 /*  Accessor methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestOutput::setChild "void
 Anasazi::StatusTestOutput< ScalarType, MV, OP
 >::setChild(Teuchos::RCP< StatusTest< ScalarType, MV, OP > > test)
@@ -6346,6 +6955,10 @@ ScalarType, MV, OP >::getChild() const
 Get child test. ";
 
 /*  Reset methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestOutput::reset "void
 Anasazi::StatusTestOutput< ScalarType, MV, OP >::reset()
@@ -6365,6 +6978,10 @@ state to an Undefined state and calls clearStatus() on the underlying
 test. ";
 
 /*  Print methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestOutput::print "std::ostream& Anasazi::StatusTestOutput< ScalarType, MV, OP
 >::print(std::ostream &os, int indent=0) const
@@ -6394,6 +7011,10 @@ C++ includes: AnasaziStatusTestResNorm.hpp ";
 
 /*  Constructors/destructors  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestResNorm::StatusTestResNorm "Anasazi::StatusTestResNorm< ScalarType, MV, OP
 >::StatusTestResNorm(typename Teuchos::ScalarTraits< ScalarType
 >::magnitudeType tol, int quorum=-1, ResType whichNorm=RES_ORTH, bool
@@ -6408,6 +7029,10 @@ Constructor. ";
 Destructor. ";
 
 /*  Status methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestResNorm::checkStatus "TestStatus Anasazi::StatusTestResNorm< ScalarType, MV, OP
 >::checkStatus(Eigensolver< ScalarType, MV, OP > *solver)
@@ -6433,6 +7058,10 @@ Anasazi::StatusTestResNorm< ScalarType, MV, OP >::howMany() const
 Get the number of vectors that passed the test. ";
 
 /*  Accessor methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestResNorm::setQuorum "void
 Anasazi::StatusTestResNorm< ScalarType, MV, OP >::setQuorum(int
@@ -6488,6 +7117,10 @@ Returns true if the test scales the norms by the eigenvalue estimates
 
 /*  Reset methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestResNorm::reset "void
 Anasazi::StatusTestResNorm< ScalarType, MV, OP >::reset()
 
@@ -6513,6 +7146,10 @@ SEQAND tests in the StatusTestCombo class, which may short circuit and
 not evaluate all of the StatusTests contained in them. ";
 
 /*  Print methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestResNorm::print "std::ostream & Anasazi::StatusTestResNorm< ScalarType, MV, OP
 >::print(std::ostream &os, int indent=0) const
@@ -6546,6 +7183,10 @@ C++ includes: AnasaziStatusTestWithOrdering.hpp ";
 
 /*  Constructors/destructors  */
 
+/*
+
+*/
+
 %feature("docstring")
 Anasazi::StatusTestWithOrdering::StatusTestWithOrdering "Anasazi::StatusTestWithOrdering< ScalarType, MV, OP
 >::StatusTestWithOrdering(Teuchos::RCP< StatusTest< ScalarType, MV, OP
@@ -6562,6 +7203,10 @@ Anasazi::StatusTestWithOrdering< ScalarType, MV, OP
 Destructor. ";
 
 /*  Status methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestWithOrdering::checkStatus "TestStatus Anasazi::StatusTestWithOrdering< ScalarType, MV, OP
 >::checkStatus(Eigensolver< ScalarType, MV, OP > *solver)
@@ -6593,6 +7238,10 @@ Get the number of vectors that passed the test. ";
 
 /*  Accessor methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestWithOrdering::setQuorum "void Anasazi::StatusTestWithOrdering< ScalarType, MV, OP
 >::setQuorum(int quorum)
 
@@ -6607,6 +7256,10 @@ const
 Get quorum. ";
 
 /*  Reset methods  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::StatusTestWithOrdering::reset "void
 Anasazi::StatusTestWithOrdering< ScalarType, MV, OP >::reset()
@@ -6664,6 +7317,10 @@ eigenvalues. ";
 
 /*  Print methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::StatusTestWithOrdering::print "std::ostream & Anasazi::StatusTestWithOrdering< ScalarType, MV, OP
 >::print(std::ostream &os, int indent=0) const
 
@@ -6687,6 +7344,10 @@ C++ includes: AnasaziSVQBOrthoManager.hpp ";
 
 /*  Constructor/Destructor  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::SVQBOrthoManager::SVQBOrthoManager "Anasazi::SVQBOrthoManager< ScalarType, MV, OP
 >::SVQBOrthoManager(Teuchos::RCP< const OP > Op=Teuchos::null, bool
 debug=false)
@@ -6698,6 +7359,10 @@ Constructor specifying re-orthogonalization tolerance. ";
 Destructor. ";
 
 /*  Methods implementing Anasazi::MatOrthoManager  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::SVQBOrthoManager::projectMat "void
 Anasazi::SVQBOrthoManager< ScalarType, MV, OP >::projectMat(MV &X,
@@ -6870,6 +7535,10 @@ returned X and rows in the returned B are valid. ";
 
 /*  Error methods  */
 
+/*
+
+*/
+
 %feature("docstring")  Anasazi::SVQBOrthoManager::orthonormErrorMat "Teuchos::ScalarTraits< ScalarType >::magnitudeType
 Anasazi::SVQBOrthoManager< ScalarType, MV, OP
 >::orthonormErrorMat(const MV &X, Teuchos::RCP< const MV >
@@ -6920,15 +7589,20 @@ Default constructor (sets Op to Teuchos::null). ";
 
 %feature("docstring")
 Anasazi::TsqrMatOrthoManager::TsqrMatOrthoManager "Anasazi::TsqrMatOrthoManager< ScalarType, MV, OP
->::TsqrMatOrthoManager(const Teuchos::ParameterList &tsqrParams,
-Teuchos::RCP< const OP > Op=Teuchos::null)
+>::TsqrMatOrthoManager(const Teuchos::RCP< const
+Teuchos::ParameterList > &params, const std::string
+&label=\"Anasazi\", Teuchos::RCP< const OP > Op=Teuchos::null)
 
 Constructor.
 
 Parameters:
 -----------
 
-tsqrParams:  [in] Parameters used to initialize TSQR
+params:  [in] Parameters used to set up the orthogonalization. Call
+the getDefaultParameters() class method for default parameters and
+their documentation.
+
+label:  [in] Label for timers (if timers are used)
 
 Op:  [in] Inner product with respect to which to orthogonalize
 vectors. If Teuchos::null, use the Euclidean inner product. ";
@@ -6956,6 +7630,8 @@ the new op. ";
 %feature("docstring")  Anasazi::TsqrMatOrthoManager::getOp "virtual
 Teuchos::RCP< const OP > Anasazi::TsqrMatOrthoManager< ScalarType, MV,
 OP >::getOp() const
+
+Return the inner product operator, if any.
 
 We override only to help C++ do name lookup in the other member
 functions. ";
@@ -6994,7 +7670,7 @@ MX=Teuchos::null, const_mv_ptr MY=Teuchos::null) const ";
 
 TsqrOrthoManager(Impl) error.
 
-C++ includes: AnasaziTsqrOrthoManager.hpp ";
+C++ includes: AnasaziTsqrOrthoManagerImpl.hpp ";
 
 %feature("docstring")  Anasazi::TsqrOrthoError::TsqrOrthoError "Anasazi::TsqrOrthoError::TsqrOrthoError(const std::string &what_arg)
 ";
@@ -7005,21 +7681,22 @@ C++ includes: AnasaziTsqrOrthoManager.hpp ";
 
 Orthogonalization fault.
 
-Stewart (SISC 2008) gives a Block Gram-Schmidt (BGS) with
-reorthogonalization algorithm. An \"orthogonalization fault\" is what
-happens when the second BGS pass does not succeed (which is possible
-in BGS, but not possible in (non-block) Gram-Schmidt if you use
-Stewart's randomization procedure). Stewart gives an algorithm for
-recovering from an orthogonalization fault, but the algorithm is
-expensive: it involves careful reorthogonalization with non-block
-Gram-Schmidt. We choose instead to report the orthogonalization fault
-and let users recover from it.
+Stewart (SISC 2008) presents a Block Gram-Schmidt (BGS) algorithm with
+careful reorthogonalization. He defines an \"orthogonalization fault\"
+as happening when the second BGS pass does not succeed. This is
+possible in BGS, but not possible in (non-block) Gram-Schmidt, if you
+use Stewart's randomization procedure for the latter. Stewart gives an
+algorithm for recovering from an orthogonalization fault, but the
+algorithm is expensive: it involves careful reorthogonalization with
+non-block Gram-Schmidt. If the \"throwOnReorthogFault\" option is set,
+we choose instead to report the orthogonalization fault as an
+exception.
 
 This is not a (subclass of) TsqrOrthoError, because the latter is a
 logic or runtime bug, whereas a TsqrOrthoFault is a property of the
 input and admits recovery.
 
-C++ includes: AnasaziTsqrOrthoManager.hpp ";
+C++ includes: AnasaziTsqrOrthoManagerImpl.hpp ";
 
 %feature("docstring")  Anasazi::TsqrOrthoFault::TsqrOrthoFault "Anasazi::TsqrOrthoFault::TsqrOrthoFault(const std::string &what_arg)
 ";
@@ -7036,7 +7713,10 @@ TsqrOrthoManagerImpl (TSQR + Block Gram-Schmidt).
 C++ includes: AnasaziTsqrOrthoManager.hpp ";
 
 %feature("docstring")  Anasazi::TsqrOrthoManager::TsqrOrthoManager "Anasazi::TsqrOrthoManager< ScalarType, MV >::TsqrOrthoManager(const
-Teuchos::ParameterList &tsqrParams) ";
+Teuchos::RCP< const Teuchos::ParameterList > &params, const
+std::string &label=\"Anasazi\")
+
+Constructor. ";
 
 %feature("docstring")  Anasazi::TsqrOrthoManager::~TsqrOrthoManager "virtual Anasazi::TsqrOrthoManager< ScalarType, MV
 >::~TsqrOrthoManager() ";
@@ -7268,53 +7948,199 @@ resulting column norms, and make a second BGS pass (+ TSQR+SVD) if
 necessary. If we then detect an orthogonalization fault, we throw
 TsqrOrthoFault.
 
-C++ includes: AnasaziTsqrOrthoManager.hpp ";
+Despite the \"Impl\" part of the name of this class, we don't actually
+use it for the \"pImpl\" idiom.
+
+C++ includes: AnasaziTsqrOrthoManagerImpl.hpp ";
 
 %feature("docstring")
 Anasazi::TsqrOrthoManagerImpl::TsqrOrthoManagerImpl "Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
->::TsqrOrthoManagerImpl(const Teuchos::ParameterList &tsqrParams)
+>::TsqrOrthoManagerImpl(const Teuchos::RCP< const
+Teuchos::ParameterList > &params, const std::string &label)
 
-Constructor.
+Constructor
 
 Parameters:
 -----------
 
-tsqrParams:  [in] Configuration parameters for TSQR. See TSQR
-documentation for how to set those. They depend on which multivector
-(MV) class you are using (since each MV class maps to a specific TSQR
-implementation).
+params:  [in] Configuration parameters, both for this
+orthogonalization manager, and for TSQR itself (as an RCP<const
+ParameterList> under \"TsqrImpl\"). Call the getDefaultParameters()
+class method for default parameters and their documentation, including
+TSQR implementation parameters.
 
-Op:  [in] Inner product. Don't set to anything not Teuchos::null,
-otherwise an exception will be thrown. Also, don't call setOp(). ";
+label:  [in] Label for timers. This only matters if the compile-time
+option for enabling timers is set. ";
 
 %feature("docstring")  Anasazi::TsqrOrthoManagerImpl::innerProd "void
 Anasazi::TsqrOrthoManagerImpl< ScalarType, MV >::innerProd(const MV
-&X, const MV &Y, serial_matrix_type &Z) const ";
+&X, const MV &Y, serial_matrix_type &Z) const
+
+Euclidean inner product.
+
+Compute the Euclidean block inner product X^* Y, and store the result
+in Z.
+
+Parameters:
+-----------
+
+X:  [in]
+
+Y:  [in]
+
+Z:  [out] On output, $X^* Y$ ";
 
 %feature("docstring")  Anasazi::TsqrOrthoManagerImpl::norm "void
 Anasazi::TsqrOrthoManagerImpl< ScalarType, MV >::norm(const MV &X,
-std::vector< MagnitudeType > &normvec) const ";
+std::vector< MagnitudeType > &normvec) const
+
+Compute the 2-norm of each column j of X
+
+Parameters:
+-----------
+
+X:  [in] Multivector for which to compute column norms
+
+normvec:  [out] On output: normvec[j] is the 2-norm of column j of X.
+normvec is resized if necessary so that it has at least as many
+entries as there are columns of X.
+
+Performance of this method depends on how MultiVecTraits implements
+column norm computation for the given multivector type MV. It may or
+may not be the case that a reduction is performed for every column of
+X. Furthermore, whether or not the columns of X are contiguous (as
+opposed to a view of noncontiguous columns) may also affect
+performance. The computed results should be the same regardless,
+except perhaps for small rounding differences due to a different order
+of operations. ";
 
 %feature("docstring")  Anasazi::TsqrOrthoManagerImpl::project "void
 Anasazi::TsqrOrthoManagerImpl< ScalarType, MV >::project(MV &X,
-const_prev_mvs_type Q, prev_coeffs_type
-C=Teuchos::tuple(serial_matrix_ptr(Teuchos::null))) const
+prev_coeffs_type C, const_prev_mvs_type Q)
 
 Compute $C := Q^* X$ and $X := X - Q C$.
 
-WARNING:  This method does not do reorthogonalization. This is because
-the reorthogonalization test requires normalization as well. ";
+Project X against the span of the (Euclidean) orthogonal vectors Q,
+and store the resulting coefficients in C.
+
+Parameters:
+-----------
+
+X:  [in/out] On input: the vectors to project. On output: $X := X - Q
+C$ where $C := Q^* X$.
+
+C:  [out] The projection coefficients $C := Q^* X$
+
+Q:  [in] The orthogonal basis against which to project
+
+FIXME (mfh 12 Jan 2011): Original: project(X, Q, C =
+tuple(serial_matrix_ptr(null))) const ";
 
 %feature("docstring")  Anasazi::TsqrOrthoManagerImpl::normalize "int
 Anasazi::TsqrOrthoManagerImpl< ScalarType, MV >::normalize(MV &X,
-serial_matrix_ptr B=Teuchos::null) ";
+serial_matrix_ptr B)
+
+Orthogonalize the columns of X in place.
+
+Orthogonalize the columns of X in place, storing the resulting
+coefficients in B. Return the rank of X. If X is full rank, then X*B
+on output is a QR factorization of X on input. If X is not full rank,
+then the first rank columns of X on output form a basis for the column
+space of X (on input). Additional options control randomization of the
+null space basis.
+
+Parameters:
+-----------
+
+X:  [in/out]
+
+B:  [out]
+
+Rank of X  FIXME (mfh 12 Jan 2011): Original: normalize(X, B = null)
+";
+
+%feature("docstring")  Anasazi::TsqrOrthoManagerImpl::normalizeNoCopy
+"int Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
+>::normalizeNoCopy(MV &X, MV &Q, serial_matrix_ptr B)
+
+Normalize X into Q*B, overwriting X with invalid values.
+
+Normalize X into Q*B, overwriting X with invalid values.
+
+We expose this interface to applications because TSQR is not able to
+compute an orthogonal basis in place; it needs scratch space.
+Applications can exploit this interface to avoid excessive copying of
+vectors when using TSQR for orthogonalization.
+
+Parameters:
+-----------
+
+X:  [in/out] Vector(s) to orthogonalize
+
+B:  [out] Orthogonalization coefficients
+
+Rank of X
+
+Q must have at least as many columns as X. It may have more columns
+than X; those columns are ignored. ";
 
 %feature("docstring")
 Anasazi::TsqrOrthoManagerImpl::projectAndNormalize "int
 Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
->::projectAndNormalize(MV &X, const_prev_mvs_type Q, prev_coeffs_type
-C=Teuchos::tuple(serial_matrix_ptr(Teuchos::null)), serial_matrix_ptr
-B=Teuchos::null) ";
+>::projectAndNormalize(MV &X, prev_coeffs_type C, serial_matrix_ptr B,
+const_prev_mvs_type Q)
+
+Equivalent (in exact arithmetic) to project(X,C,Q) followed by
+normalize(X,B). However, this method performs reorthogonalization more
+efficiently and accurately.
+
+Parameters:
+-----------
+
+X:  [in/out] The vectors to project against Q and normalize.
+
+C:  [out] The projection coefficients
+
+B:  [out] The normalization coefficients
+
+Q:  [in] The orthogonal basis against which to project
+
+Rank of X after projection  FIXME (mfh 12 Jan 2011): Original:
+projectAndNormalize(X, Q, C = tuple(serial_matrix_ptr(null)), B =
+null) ";
+
+%feature("docstring")
+Anasazi::TsqrOrthoManagerImpl::projectAndNormalizeNoCopy "int
+Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
+>::projectAndNormalizeNoCopy(MV &X_in, MV &X_out, prev_coeffs_type C,
+serial_matrix_ptr B, const_prev_mvs_type Q)
+
+Project and normalize X_in into X_out; overwrite X_in.
+
+Project X_in against Q, storing projection coefficients in C, and
+normalize X_in into X_out, storing normalization coefficients in B. On
+output, X_out has the resulting orthogonal vectors and X_in is
+overwritten with invalid values.
+
+Parameters:
+-----------
+
+X_in:  [in/out] On input: The vectors to project against Q and
+normalize. Overwritten with invalid values on output.
+
+X_out:  [out] On output: the normalized input vectors after projection
+against Q.
+
+C:  [out] The projection coefficients
+
+B:  [out] The normalization coefficients
+
+Q:  [in] The orthogonal basis against which to project
+
+Rank of X_in after projection
+
+We expose this interface to applications for the same reason that we
+expose normalizeNoCopy(). ";
 
 %feature("docstring")  Anasazi::TsqrOrthoManagerImpl::orthonormError "MagnitudeType Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
 >::orthonormError(const MV &X) const
@@ -7325,7 +8151,9 @@ Return the Frobenius norm of I - X^* X, which is an absolute measure
 of the orthogonality of the columns of X. ";
 
 %feature("docstring")  Anasazi::TsqrOrthoManagerImpl::orthogError "MagnitudeType Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
->::orthogError(const MV &X1, const MV &X2) const ";
+>::orthogError(const MV &X1, const MV &X2) const
+
+Return the Frobenius norm of the inner product of X1 and X1. ";
 
 %feature("docstring")
 Anasazi::TsqrOrthoManagerImpl::blockReorthogThreshold "MagnitudeType
@@ -7391,6 +8219,10 @@ ScalarType >::set(const typename Teuchos::ScalarTraits< ScalarType
 
 // File: namespaceAnasazi.xml
 /*  Anasazi Enumerations  */
+
+/*
+
+*/
 
 %feature("docstring")  Anasazi::Anasazi_Version "std::string
 Anasazi::Anasazi_Version() ";
@@ -7550,53 +8382,57 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziTsqrOrthoManager_8hpp.xml
 
 
+// File: AnasaziTsqrOrthoManagerImpl_8hpp.xml
+%feature("docstring")  Anasazi::stopForBreak "void stopForBreak() ";
+
+
 // File: AnasaziTypes_8hpp.xml
 
 
 // File: AnasaziVersion_8cpp.xml
 
 
-// File: dir_8f983d347b184c700dae93e0e3738fe1.xml
+// File: dir_cfcf785d330e8f6cf9265ee0cf028086.xml
 
 
-// File: dir_af06fb6c54d4c652eacc03e73e36cb53.xml
+// File: dir_73432c73b202f8663e3fe783990d1240.xml
 
 
-// File: BlockDavidson_2BlockDavidsonEpetraEx_8cpp-example.xml
+// File: BlockDavidson_2BlockDavidsonEpetraEx.cpp-example.xml
 
 
-// File: BlockDavidson_2BlockDavidsonEpetraExGen_8cpp-example.xml
+// File: BlockDavidson_2BlockDavidsonEpetraExGen.cpp-example.xml
 
 
-// File: BlockDavidson_2BlockDavidsonEpetraExGenPrecIfpack_8cpp-example.xml
+// File: BlockDavidson_2BlockDavidsonEpetraExGenPrecIfpack.cpp-example.xml
 
 
-// File: BlockKrylovSchur_2BlockKrylovSchurEpetraEx_8cpp-example.xml
+// File: BlockKrylovSchur_2BlockKrylovSchurEpetraEx.cpp-example.xml
 
 
-// File: BlockKrylovSchur_2BlockKrylovSchurEpetraExGenAmesos_8cpp-example.xml
+// File: BlockKrylovSchur_2BlockKrylovSchurEpetraExGenAmesos.cpp-example.xml
 
 
-// File: BlockKrylovSchur_2BlockKrylovSchurEpetraExGenAztecOO_8cpp-example.xml
+// File: BlockKrylovSchur_2BlockKrylovSchurEpetraExGenAztecOO.cpp-example.xml
 
 
-// File: BlockKrylovSchur_2BlockKrylovSchurEpetraExGenBelos_8cpp-example.xml
+// File: BlockKrylovSchur_2BlockKrylovSchurEpetraExGenBelos.cpp-example.xml
 
 
-// File: BlockKrylovSchur_2BlockKrylovSchurEpetraExSVD_8cpp-example.xml
+// File: BlockKrylovSchur_2BlockKrylovSchurEpetraExSVD.cpp-example.xml
 
 
-// File: LOBPCG_2LOBPCGEpetraEx_8cpp-example.xml
+// File: LOBPCG_2LOBPCGEpetraEx.cpp-example.xml
 
 
-// File: LOBPCG_2LOBPCGEpetraExGen_8cpp-example.xml
+// File: LOBPCG_2LOBPCGEpetraExGen.cpp-example.xml
 
 
-// File: LOBPCG_2LOBPCGEpetraExGenPrecIfpack_8cpp-example.xml
+// File: LOBPCG_2LOBPCGEpetraExGenPrecIfpack.cpp-example.xml
 
 
-// File: LOBPCG_2LOBPCGEpetraExSimple_8cpp-example.xml
+// File: LOBPCG_2LOBPCGEpetraExSimple.cpp-example.xml
 
 
-// File: MVOPTester_2MVOPTesterEx_8cpp-example.xml
+// File: MVOPTester_2MVOPTesterEx.cpp-example.xml
 

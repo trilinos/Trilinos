@@ -55,9 +55,45 @@
 #include <ctype.h>
 
 /*!
- * reads the number of global, nodal, or element variables that are 
- * stored in the database
- */
+
+The function ex_get_variable_param() reads the number of global,
+nodal, or element variables stored in the database.
+
+\return In case of an error, ex_get_variable_param() returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+  -  data file not properly opened with call to ex_create() or ex_open()
+  -  invalid variable type specified.
+
+\param[in]  exoid     exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[in]  obj_type  Variable indicating the type of variable which is described. Use one
+                      of the options in the table below.
+\param[out] num_vars  Returned number of \c var_type variables that are stored in the database.
+
+<table>
+<tr><td> \c EX_GLOBAL}    </td><td>  Global entity type       </td></tr>
+<tr><td> \c EX_NODAL}     </td><td>  Nodal entity type        </td></tr>
+<tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
+<tr><td> \c EX_EDGE_BLOCK </td><td>  Edge Block entity type   </td></tr>
+<tr><td> \c EX_EDGE_SET   </td><td>  Edge Set entity type     </td></tr>
+<tr><td> \c EX_FACE_BLOCK </td><td>  Face Block entity type   </td></tr>
+<tr><td> \c EX_FACE_SET   </td><td>  Face Set entity type     </td></tr>
+<tr><td> \c EX_ELEM_BLOCK </td><td>  Element Block entity type</td></tr>
+<tr><td> \c EX_ELEM_SET   </td><td>  Element Set entity type  </td></tr>
+<tr><td> \c EX_SIDE_SET   </td><td>  Side Set entity type     </td></tr>
+</table>
+
+As an example, the following coding will determine the number of
+global variables stored in the data file:
+
+\code
+int num_glo_vars, error, exoid;
+
+\comment{read global variables parameters}
+error = ex_get_variable_param(exoid, EX_GLOBAL, &num_glo_vars);
+\endcode
+
+*/
 
 int ex_get_variable_param (int   exoid,
 			   ex_entity_type obj_type,

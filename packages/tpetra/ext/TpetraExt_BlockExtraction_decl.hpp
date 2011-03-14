@@ -31,26 +31,59 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_BlockMap.hpp"
 
 namespace Tpetra {
   namespace Ext {
 
     /** \brief Extracts the block diagonals from a RowMatrix into contiguous, host storage.
 
-        \param in matrix - The sparse matrix
-        \param in block_sizes - A list of ordinals indicating the sizes defining the block diagonals
-        \param out out_block_diagonals - a host-allocated buffer for the extracted diagonal blocks
-        \param out out_block_offsets  - a convenience array of offsets into \c out_block_diagonals
+        This method does not initiate any communication, and therefore can be called safely on a single node.
 
-        \pre The sum of the block sizes must be equal to the number of local rows in the matrix
-        \post - The sparse entries in the <tt>i</tt>-th block diagonal are stored in <tt>out_block_diagonals( out_block_offsets[i] , block_sizes[i]*block_sizes[i] )</tt>
-        \post - <tt>out_block_offsets.size() == block_sizes.size()</tt>
+        \param in matrix - The sparse matrix source for the diagonals.
+        \param in first_points - A list of ordinals, where <tt>first_points[b]</tt> indicates the first local element in the <tt>b</tt>-th block.
+        \param out out_diags - A reference-counted array, containing the block diagonals in contiguous storage.
+        \param out out_offsets - A reference-counted array, indicating the offset to reach each block in \c out_diags.
+
+        \pre - <tt>first_points[0] == 0</tt>
+        \pre - elements in \c first_points are non-decreasing
+        \pre - <tt>matrix.isFillComplete() == true</tt>
+
+        \post - <tt>out_offsets.size() == block_sizes.size()</tt>
+        \post - the non-trivial <tt>b</tt>-th block is stored contiguously (column-major) in <tt>out_diags( out_offsets[b], block_size_b )</tt>, where \f$block\_size\_b = ( first\_points\[b+1\] - first\_points\[b\] )^2 \f$.
       */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void extractBlockDiagonals(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
-                               const Teuchos::ArrayView<const LocalOrdinal> &block_sizes,
-                               Teuchos::ArrayRCP<Scalar>       &out_block_diagonals,
-                               Teuchos::ArrayRCP<LocalOrdinal> &out_block_offsets);
+    void
+    extractBlockDiagonals(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
+                          const Teuchos::ArrayView<const LocalOrdinal> &first_points,
+                          Teuchos::ArrayRCP<Scalar>       &out_diags,
+                          Teuchos::ArrayRCP<LocalOrdinal> &out_offsets);
+
+    /** \brief Extracts the block diagonals from a RowMatrix into contiguous, host storage using a BlockMap.
+
+        This method does not initiate any communication, and therefore can be called safely on a single node.
+
+        \param in matrix - The sparse matrix source for the diagonals.
+        \param in bloc_map - A BlockMap describing the blocks
+        \param out out_diags - A reference-counted array, containing the block diagonals in contiguous storage.
+        \param out out_offsets - A reference-counted array, indicating the offset to reach each block in \c out_diags.
+
+        \pre - <tt>block_map.getPointMap().isCompatible( matrix.getRowMap() )</tt>
+        \pre - <tt>matrix.isFillComplete() == true</tt>
+
+        \post - <tt>out_offsets.size() == block_sizes.size()</tt>
+        \post - the non-trivial <tt>b</tt>-th block is stored contiguously (column-major) in <tt>out_diags( out_offsets[b], block_map.getLocalBlockSize(b) )</tt>
+      
+        Calls extractBlockDiagonals().
+
+      */
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void
+    extractBlockDiagonals(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
+                          const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>         &block_map,
+                          Teuchos::ArrayRCP<Scalar>       &out_diags,
+                          Teuchos::ArrayRCP<LocalOrdinal> &out_offsets);
+
   }
 }
 

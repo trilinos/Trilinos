@@ -206,22 +206,6 @@ IF(TPL_ENABLE_MPI)
 
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_TESTS)
-
-  INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/src)
-
-  SET(HEADERS ${HEADERS}
-    ${PACKAGE_SOURCE_DIR}/test/src/Epetra_test_functions.h
-    ${PACKAGE_SOURCE_DIR}/test/src/Epetra_matrix_data.h
-  )
-
-  SET(SOURCES ${SOURCES}
-    ${PACKAGE_SOURCE_DIR}/test/src/Epetra_test_functions.cpp
-    ${PACKAGE_SOURCE_DIR}/test/src/Epetra_matrix_data.cpp
-  )
-
-ENDIF()
-
 #
 # C) Define the targets for package's library(s)
 #

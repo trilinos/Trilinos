@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -25,6 +24,8 @@
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
+
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
 
 using stk::mesh::fem::NODE_RANK;
 
@@ -132,22 +133,20 @@ STKUNIT_UNIT_TEST(UnitTestZoltanGraph, testUnit)
 
   // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
   // Other specializations are possible.
+  // Configure Zoltan to use graph-based partitioning
   Teuchos::ParameterList graph;
   Teuchos::ParameterList lb_method;
   lb_method.set("LOAD BALANCING METHOD"      , "4");
   graph.sublist(stk::rebalance::Zoltan::default_parameters_name())=lb_method;
   stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, graph);
+  // end configure snippet
   stk::mesh::Selector selector(meta_data.universal_part());
 
-  // Force a rebalance by using imbalance_threshold < 1.0
-  double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold,  stk::mesh::fem::node_rank(top_data), &selector);
   // Coordinates are passed to support geometric-based load balancing algorithms
-  if( do_rebal )
-    stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition, stk::mesh::fem::node_rank(top_data));
+  stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition, stk::mesh::fem::node_rank(top_data));
 
-  imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, imbalance_threshold,  stk::mesh::fem::node_rank(top_data), &selector);
+  const double imbalance_threshold = stk::rebalance::check_balance(bulk_data, NULL, stk::mesh::fem::node_rank(top_data), &selector);
+  const bool do_rebal = 1.5 < imbalance_threshold;
 
   // Check that we satisfy our threshhold
   STKUNIT_ASSERT( !do_rebal );
@@ -159,4 +158,41 @@ STKUNIT_UNIT_TEST(UnitTestZoltanGraph, testUnit)
   {
     STKUNIT_ASSERT_LE(imbalance_threshold, 1.5);
   }
+
+  // And verify that all dependent entities are on the same proc as their parent element
+  {
+    stk::mesh::EntityVector entities;
+    stk::mesh::Selector selector1 = meta_data.universal_part();
+
+    get_selected_entities(selector1, bulk_data.buckets(element_rank), entities);
+    bool result = stk::rebalance::verify_dependent_ownership(NODE_RANK, entities, top_data);
+    STKUNIT_ASSERT( result );
+  }
+
 }
+
+/// \page stk_rebalance_unit_test_zoltan
+///  \ingroup stk_rebalance_unit_test_module
+/// \section stk_rebalance_unit_test_zoltan_graph Simple Zoltan Unit Test using Graph-Based Partitioning
+///
+/// This unit test is identical to 
+/// \ref stk_rebalance_unit_test_zoltan_description "Simple Zoltan Unit Test"
+/// with the only difference being use of graph-based partitioning instead
+/// of element weights.
+///
+/// The distinction involves setting up an appropriate parameter list,
+/// \dontinclude UnitTestZoltanGraph.cpp
+/// \skip Configure Zoltan to use graph-based partitioning
+/// \until end configure snippet
+/// and then calling check_balance and rebalance with NULL weight fields 
+/// and calling rebalance with non-NULL coordinates, eg
+/// \skip double imbalance_threshold = 
+/// \until rebalance::rebalance(
+/// 
+///
+/// The test passes if the resulting rebalance produces an imbalance measure
+/// below 1.1 for 2 or 4 procs and below 1.5 otherwise.
+///
+///
+/// See \ref UnitTestZoltanGraph.cpp for the complete source listing.
+///

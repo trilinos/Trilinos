@@ -128,7 +128,7 @@ void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data)
   stk::mesh::EntityId elem_id = 1 + myProc*num_elems;
   stk::mesh::EntityId node_ids[ shards::Hexahedron<8>::node_count ];
 
-  stk::mesh::Part& elem_block = *(bulk_data.mesh_meta_data().get_part( "block_1" ));
+  stk::mesh::Part& elem_block = *(stk::mesh::MetaData::get(bulk_data).get_part( "block_1" ));
 
   for(unsigned i = 0; i<num_elems; ++i) {
     elem_node_ids( elem_id+i, node_ids );
@@ -150,7 +150,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   const std::vector<stk::mesh::Bucket*>& mesh_buckets = mesh.buckets(element_rank);
 
   std::vector<stk::mesh::Bucket*> part_buckets;
-  stk::mesh::Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
+  stk::mesh::Selector select_owned(stk::mesh::MetaData::get(mesh).locally_owned_part());
   stk::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
 
   stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
@@ -227,7 +227,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   const std::vector<stk::mesh::Bucket*>& mesh_buckets = mesh.buckets(element_rank);
 
   std::vector<stk::mesh::Bucket*> part_buckets;
-  stk::mesh::Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
+  stk::mesh::Selector select_owned(stk::mesh::MetaData::get(mesh).locally_owned_part());
   stk::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
 
   int field_id = dof_mapper.get_field_id(field);

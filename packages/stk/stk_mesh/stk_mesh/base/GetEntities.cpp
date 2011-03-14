@@ -100,7 +100,7 @@ void count_entities(
   const BulkData & mesh ,
   std::vector< EntityRank > & count )
 {
-  const size_t ntype = mesh.mesh_meta_data().entity_rank_count();
+  const size_t ntype = MetaData::get(mesh).entity_rank_count();
 
   count.resize( ntype );
 

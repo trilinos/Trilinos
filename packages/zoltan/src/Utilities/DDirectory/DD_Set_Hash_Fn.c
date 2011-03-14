@@ -31,9 +31,9 @@ extern "C" {
 static unsigned int dd_hash_user (
   ZOLTAN_ID_PTR gid, int gid_length, 
   unsigned int nproc,
-  unsigned int (*hashdata) (ZOLTAN_ID_PTR, int, unsigned int)) 
+  ZOLTAN_HASH_FN *fn)
 {
-  return (*hashdata)(gid, gid_length, nproc);
+  return (*fn)(gid, gid_length, nproc);
 }
 
 /*************  Zoltan_DD_Set_Hash_Fn()  ***********************/
@@ -41,7 +41,7 @@ static unsigned int dd_hash_user (
 
 int Zoltan_DD_Set_Hash_Fn (
  Zoltan_DD_Directory *dd,              /* directory state information */
- unsigned int (*hash) (ZOLTAN_ID_PTR, int, unsigned int))
+ ZOLTAN_HASH_FN *hash)
 {
    char *yo = "Zoltan_DD_Set_Hash_Fn";
 
@@ -52,7 +52,7 @@ int Zoltan_DD_Set_Hash_Fn (
    }
 
    dd->hash = (DD_Hash_fn*)dd_hash_user;
-   dd->hashdata = (char *)hash;
+   dd->hashfn = hash;
    dd->cleanup = (DD_Cleanup_fn*) NULL; /* We don't have to free the function pointer */
 
    if (dd->debug_level > 0)

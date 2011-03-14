@@ -153,7 +153,7 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Teuchos::RCP<const Epe
    
    // build the thyra version of the source multivector
    RCP<Thyra::MultiVectorBase<double> > thyra_mv = Thyra::createMembers(thyraA->range(),epetra_mv.NumVectors());
-   getMapStrategy()->copyEpetraIntoThyra(epetra_mv,thyra_mv.ptr(),*this);
+   getMapStrategy()->copyEpetraIntoThyra(epetra_mv,thyra_mv.ptr());
 
    // build preconObj_ 
    initPreconditioner(clear);
@@ -252,8 +252,7 @@ void EpetraBlockPreconditioner::rebuildPreconditioner(const Teuchos::RCP<const E
    // build the thyra version of the source multivector
    Teko_DEBUG_EXPR(timer.start(true));
    RCP<Thyra::MultiVectorBase<double> > thyra_mv = Thyra::createMembers(thyraA->range(),epetra_mv.NumVectors());
-   // getMapStrategy()->copyEpetraIntoThyra(epetra_mv,thyra_mv.ptr(),*eow);
-   getMapStrategy()->copyEpetraIntoThyra(epetra_mv,thyra_mv.ptr(),*this);
+   getMapStrategy()->copyEpetraIntoThyra(epetra_mv,thyra_mv.ptr());
    Teko_DEBUG_EXPR(timer.stop());
    Teko_DEBUG_MSG("EBP::rebuild vector copy time =  " << timer.totalElapsedTime(),2);
 

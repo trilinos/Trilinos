@@ -1,6 +1,6 @@
 
-#include <cstring>
-#include <cstdio>
+#include <string>
+#include <vector>
 #include <iostream>
 #include <fstream>
 
@@ -32,29 +32,27 @@ Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
 }
 
 int read_input_file(Epetra_Comm& Comm,
-                    const char* input_file_name,
-                    const char**& filenames,
-                    int& numfiles,
-                    int& numfilenames_allocated);
+                    const std::string& input_file_name,
+                    std::vector<std::string>& filenames);
 
 int read_matrix_file_names(Epetra_Comm& Comm,
-                           const char* input_file_name,
-                           char*& A_file,
+                           const std::string& input_file_name,
+                           std::string& A_file,
                            bool& transA,
-                           char*& B_file,
+                           std::string& B_file,
                            bool& transB,
-                           char*& C_file);
+                           std::string& C_file);
 
-int broadcast_name(Epetra_Comm& Comm, const char*& name);
+int broadcast_name(Epetra_Comm& Comm, std::string& name);
 
 int create_maps(Epetra_Comm& Comm,
-                const char* input_file_name,
+                const std::string& input_file_name,
                 Epetra_Map*& row_map,
                 Epetra_Map*& col_map,
                 Epetra_Map*& range_map,
                 Epetra_Map*& domain_map);
 
-int read_matrix(const char* filename,
+int read_matrix(const std::string& filename,
                 Epetra_Comm& Comm,
                 const Epetra_Map* rowmap,
                 Epetra_Map* colmap,
@@ -63,7 +61,7 @@ int read_matrix(const char* filename,
                 Epetra_CrsMatrix*& mat);
 
 int run_test(Epetra_Comm& Comm,
-             const char* filename,
+             const std::string& filename,
              bool result_mtx_to_file=false,
              bool verbose=false);
 
@@ -83,7 +81,7 @@ int time_matrix_matrix_multiply(Epetra_Comm& Comm,
 
 /////////////////////////////////////
 //Global variable!!!!
-char* path;
+std::string path;
 ////////////////////////////////////
 
 int main(int argc, char** argv) {
@@ -97,9 +95,9 @@ int main(int argc, char** argv) {
 
   bool write_result_mtx = false;
   bool verbose = false;
-  int write = 0;
+  int write = 0, inp_specified = 0;
   bool path_specified = false;
-  char* input_file = NULL;
+  std::string input_file;
   bool input_file_specified = false;
 
   if (Comm.MyPID()==0) {
@@ -116,15 +114,17 @@ int main(int argc, char** argv) {
       }
     }
     write = write_result_mtx ? 1 : 0;
+    inp_specified = input_file_specified ? 1 : 0;
   }
 #ifdef EPETRA_MPI
   MPI_Bcast(&write, 1, MPI_INT, 0, MPI_COMM_WORLD);
   if (write) write_result_mtx = true;
+  MPI_Bcast(&inp_specified, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (inp_specified) input_file_specified = true;
 #endif
 
   if (!path_specified) {
-    path = new char[32];
-    sprintf(path, "%s", ".");
+    path = ".";
   }
 
   int err = two_proc_test(Comm, verbose);
@@ -133,22 +133,21 @@ int main(int argc, char** argv) {
     return(err);
   }
 
-  if (!input_file_specified) {
-    input_file = new char[64];
-    sprintf(input_file, "%s", "infiles");
+  std::vector<std::string> filenames;
+
+  if (input_file_specified) {
+    filenames.push_back(std::string(input_file));
   }
+  else {
+    input_file = "infiles";
+    std::cout << "specific input-file not specified, getting list of input-files from file 'infiles'." << std::endl;
 
-  const char** filenames = NULL;
-  int numfiles = 0;
-  int numfilenames_allocated = 0;
-
-  err = read_input_file(Comm, input_file,
-                        filenames, numfiles, numfilenames_allocated);
-  if (err != 0) {
-    if (path_specified) path_specified = false;
-    sprintf(path, "%s", "./MatrixMatrix");
-    read_input_file(Comm, input_file,
-                    filenames, numfiles, numfilenames_allocated);
+    err = read_input_file(Comm, input_file, filenames);
+    if (err != 0) {
+      if (path_specified) path_specified = false;
+      path = "./MatrixMatrix";
+      read_input_file(Comm, input_file, filenames);
+    }
   }
 
   err = test_find_rows(Comm);
@@ -157,26 +156,16 @@ int main(int argc, char** argv) {
     return(err);
   }
 
-  for(int i=0; i<numfiles; ++i) {
+  for(size_t i=0; i<filenames.size(); ++i) {
     err = run_test(Comm, filenames[i], write_result_mtx, verbose);
-    delete [] filenames[i];
     if (err != 0) break;
   }
-
-  for(int j=numfiles; j<numfilenames_allocated; ++j) {
-    delete [] filenames[j];
-  }
-
-  delete [] filenames;
-
-  if (!input_file_specified) delete [] input_file;
-  if (!path_specified) delete [] path;
 
   Epetra_CrsMatrix* D = create_epetra_crsmatrix(Comm.NumProc(),
                                                 Comm.MyPID(), 10,
                                                 true, false);
 
-  std::cout << "D: \n"  << *D << std::endl;
+//  std::cout << "D: \n"  << *D << std::endl;
 
   EpetraExt::MatrixMatrix::Add(*D, true, 0.5, *D, 0.5);
 
@@ -196,7 +185,6 @@ int main(int argc, char** argv) {
 #endif
 
   return(global_err);
-
 }
 
 int test_find_rows(Epetra_Comm& Comm)
@@ -271,23 +259,21 @@ int expand_name_list(const char* newname,
   return(0);
 }
 
-int broadcast_name(Epetra_Comm& Comm, const char*& name)
+int broadcast_name(Epetra_Comm& Comm, std::string& name)
 {
   if (Comm.NumProc() < 2) return(0);
 
 #ifdef EPETRA_MPI
-  int len;
+  int len = name.size();
   int localProc = Comm.MyPID();
   if (localProc == 0) {
-    len = (int)strlen(name)+1;
-    
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast((void*)name, len, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast((void*)name.c_str(), len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
   }
   else {
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    name = new char[len];
-    MPI_Bcast((void*)name, len, MPI_CHAR, 0, MPI_COMM_WORLD);
+    name.resize(len+1, ' ');
+    MPI_Bcast((void*)name.c_str(), len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
   }
 
 #endif
@@ -295,33 +281,21 @@ int broadcast_name(Epetra_Comm& Comm, const char*& name)
 }
 
 int read_input_file(Epetra_Comm& Comm,
-                    const char* input_file_name,
-                    const char**& filenames,
-                    int& numfiles,
-                    int& numfilenames_allocated)
+                    const std::string& input_file_name,
+                    std::vector<std::string>& filenames)
 {
   int local_err = 0, global_err = 0;
   std::ifstream* infile = NULL;
-  int pathlen = path != 0 ? (int)strlen(path): 0;
+  int pathlen = path.size();
 
   if (Comm.MyPID() == 0) {
-    char* full_name = NULL;
-    int filenamelen = input_file_name != 0 ? (int)strlen(input_file_name) : 0;
+    std::string full_name = path.empty() ? input_file_name : path+"/"+input_file_name;
 
-    full_name = new char[pathlen+filenamelen+2];
-    if (path != 0) {
-      sprintf(full_name, "%s/%s",path,input_file_name);
-    }
-    else {
-      sprintf(full_name, "%s", input_file_name);
-    }
-
-    infile = new std::ifstream(full_name);
+    infile = new std::ifstream(full_name.c_str());
     if (!(*infile)) {
       local_err = -1;
       delete infile;
     }
-    delete [] full_name;
   }
 
   Comm.SumAll(&local_err, &global_err, 1);
@@ -332,14 +306,13 @@ int read_input_file(Epetra_Comm& Comm,
 
 
   if (Comm.MyPID() == 0) {
-    int linelen = 512;
-    char* line = NULL;
+    const int linelen = 512;
+    char line[linelen];
 
     std::ifstream& ifile = *infile;
     while(!ifile.eof()) {
-      line = new char[pathlen+1+linelen];
       if (pathlen>0) {
-        sprintf(line,"%s/",path);
+        sprintf(line,"%s/",path.c_str());
         ifile.getline(&(line[pathlen+1]), linelen);
       }
       else {
@@ -347,17 +320,14 @@ int read_input_file(Epetra_Comm& Comm,
       }
 
       if (ifile.fail()) {
-	delete [] line;
         break;
       }
       if (strchr(line, '#') == NULL) {
-        expand_name_list(line, filenames, numfilenames_allocated, numfiles);
-      }
-      else {
-        delete [] line;
+        filenames.push_back(std::string(line));
       }
     }
 
+    int numfiles = filenames.size();
 #ifdef EPETRA_MPI
     MPI_Bcast(&numfiles, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
@@ -368,11 +338,11 @@ int read_input_file(Epetra_Comm& Comm,
     delete infile;
   }
   else {
+    int numfiles = 0;
 #ifdef EPETRA_MPI
     MPI_Bcast(&numfiles, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
-    filenames = new const char*[numfiles];
-    numfilenames_allocated = numfiles;
+    filenames.resize(numfiles);
     for(int i=0; i<numfiles; ++i) {
       broadcast_name(Comm, filenames[i]);
     }
@@ -382,15 +352,15 @@ int read_input_file(Epetra_Comm& Comm,
 }
 
 int run_test(Epetra_Comm& Comm,
-             const char* filename,
+             const std::string& filename,
              bool result_mtx_to_file,
              bool verbose)
 {
-  char* A_file = NULL;
+  std::string A_file;
   char AT[3]; AT[0] = '^'; AT[1] = 'T'; AT[2] = '\0';
-  char* B_file = NULL;
+  std::string B_file;
   char BT[3]; BT[0] = '^'; BT[1] = 'T'; BT[2] = '\0';
-  char* C_file = NULL;
+  std::string C_file;
   bool transA, transB;
 
   int err = read_matrix_file_names(Comm, filename, A_file, transA,
@@ -437,7 +407,6 @@ int run_test(Epetra_Comm& Comm,
 
   err = read_matrix(A_file, Comm, A_row_map, A_col_map,
                     A_range_map, A_domain_map, A);
-  delete [] A_file;
   if (err != 0) {
     std::cout << "read_matrix A returned err=="<<err<<std::endl;
     return(err);
@@ -445,7 +414,6 @@ int run_test(Epetra_Comm& Comm,
 
   err = read_matrix(B_file, Comm, B_row_map, B_col_map,
                     B_range_map, B_domain_map, B);
-  delete [] B_file;
   if (err != 0) {
     std::cout << "read_matrix B returned err=="<<err<<std::endl;
     return(-1);
@@ -479,18 +447,13 @@ int run_test(Epetra_Comm& Comm,
 
   err = read_matrix(C_file, Comm, Cck_row_map, Cck_col_map,
                      Cck_range_map, Cck_domain_map, C_check);
-  delete [] C_file;
   if (err != 0) {
     std::cout << "read_matrix C returned err=="<<err<<std::endl;
     return(-1);
   }
 
-  err = EpetraExt::MatrixMatrix::Multiply(*A, transA, *B, transB, *C);
-  if (err != 0) {
-    std::cout << "err "<<err<<" from MatrixMatrix::Multiply"<<std::endl;
-    return(err);
-  }
-
+  //now subtract our check-matrix from our result matrix (C) and
+  //the infinity-norm of that should be zero.
   EpetraExt::MatrixMatrix::Add(*C, false, -1.0, *C_check, 1.0);
 
   double inf_norm = C_check->NormInf();
@@ -533,30 +496,27 @@ int run_test(Epetra_Comm& Comm,
 }
 
 int read_matrix_file_names(Epetra_Comm& Comm,
-                           const char* input_file_name,
-                           char*& A_file,
+                           const std::string& input_file_name,
+                           std::string& A_file,
                            bool& transA,
-                           char*& B_file,
+                           std::string& B_file,
                            bool& transB,
-                           char*& C_file)
+                           std::string& C_file)
 {
-  int pathlen = path!=0 ? (int)strlen(path) : 0;
-
   if (Comm.MyPID()==0) {
-    std::ifstream infile(input_file_name);
+    std::ifstream infile(input_file_name.c_str());
     if (!infile) {
       std::cout << "error opening input file " << input_file_name << std::endl;
       return(-1);
     }
 
-    int linelen = 512;
-    char line[512];
+    const int linelen = 512;
+    char line[linelen];
 
     infile.getline(line, linelen);
     if (!infile.eof()) {
       if (strchr(line, '#') == NULL) {
-        A_file = new char[pathlen+strlen(line)+2];
-        sprintf(A_file, "%s/%s",path,line);
+        A_file = path+"/"+line;
       }
     }
 
@@ -571,8 +531,7 @@ int read_matrix_file_names(Epetra_Comm& Comm,
     infile.getline(line, linelen);
     if (!infile.eof()) {
       if (strchr(line, '#') == NULL) {
-        B_file = new char[pathlen+strlen(line)+2];
-        sprintf(B_file, "%s/%s",path,line);
+        B_file = path+"/"+line;
       }
     }
 
@@ -587,14 +546,13 @@ int read_matrix_file_names(Epetra_Comm& Comm,
     infile.getline(line, linelen);
     if (!infile.eof()) {
       if (strchr(line, '#') == NULL) {
-        C_file = new char[pathlen+strlen(line)+2];
-        sprintf(C_file, "%s/%s", path, line);
+        C_file = path+"/"+line;
       }
     }
 
-    broadcast_name(Comm, (const char*&)A_file);
-    broadcast_name(Comm, (const char*&)B_file);
-    broadcast_name(Comm, (const char*&)C_file);
+    broadcast_name(Comm, A_file);
+    broadcast_name(Comm, B_file);
+    broadcast_name(Comm, C_file);
 #ifdef EPETRA_MPI
     int len = transA ? 1 : 0;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -603,9 +561,9 @@ int read_matrix_file_names(Epetra_Comm& Comm,
 #endif
   }
   else {
-    broadcast_name(Comm, (const char*&)A_file);
-    broadcast_name(Comm, (const char*&)B_file);
-    broadcast_name(Comm, (const char*&)C_file);
+    broadcast_name(Comm, A_file);
+    broadcast_name(Comm, B_file);
+    broadcast_name(Comm, C_file);
 #ifdef EPETRA_MPI
     int len = 0;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -619,13 +577,13 @@ int read_matrix_file_names(Epetra_Comm& Comm,
 }
 
 int create_maps(Epetra_Comm& Comm,
-                const char* input_file_name,
+                const std::string& input_file_name,
                 Epetra_Map*& row_map,
                 Epetra_Map*& col_map,
                 Epetra_Map*& range_map,
                 Epetra_Map*& domain_map)
 {
-  return( EpetraExt::MatrixMarketFileToBlockMaps(input_file_name,
+  return( EpetraExt::MatrixMarketFileToBlockMaps(input_file_name.c_str(),
                                          Comm,
                                          (Epetra_BlockMap*&)row_map,
                                          (Epetra_BlockMap*&)col_map,
@@ -634,7 +592,7 @@ int create_maps(Epetra_Comm& Comm,
   );
 }
 
-int read_matrix(const char* filename,
+int read_matrix(const std::string& filename,
                 Epetra_Comm& Comm,
                 const Epetra_Map* rowmap,
                 Epetra_Map* colmap,
@@ -643,7 +601,7 @@ int read_matrix(const char* filename,
                 Epetra_CrsMatrix*& mat)
 {
   (void)Comm;
-  int err = EpetraExt::MatrixMarketFileToCrsMatrix(filename, *rowmap, *colmap,
+  int err = EpetraExt::MatrixMarketFileToCrsMatrix(filename.c_str(), *rowmap, *colmap,
                                                    *rangemap, *domainmap, mat);
 
   return(err);

@@ -213,7 +213,7 @@ void FieldBaseImpl::verify_and_clean_restrictions(
                              contain( partI.supersets() , partJ );
 
             if ( found_subset || found_superset ) {
-              ThrowErrorMsgIf( Compare< MaximumFieldDimension >::not_equal( i->stride , j->stride ), 
+              ThrowErrorMsgIf( Compare< MaximumFieldDimension >::not_equal( i->stride , j->stride ),
                   arg_method << "[" << *this << "] FAILED: " <<
                   print_restriction( typeI, partI, m_rank, i->stride ) <<
                   ( found_subset ? " INCOMPATIBLE SUBSET " : " INCOMPATIBLE SUPERSET ") <<
@@ -316,7 +316,7 @@ std::ostream & print( std::ostream & s ,
                       const char * const b ,
                       const FieldBase & field )
 {
-  const PartVector & all_parts = field.mesh_meta_data().get_parts();
+  const PartVector & all_parts = MetaData::get(field).get_parts();
   const std::vector<FieldBase::Restriction> & rMap = field.restrictions();
   s << field.name() ;
   s << " {" ;

@@ -29,7 +29,11 @@ ADD_SUBDIRECTORY(stk_util)
 
 ADD_SUBDIRECTORY(stk_mesh)
 
-ADD_SUBDIRECTORY(stk_expreval)
+ADD_SUBDIRECTORY(stk_algsup)
+
+IF (STK_ENABLE_Sacado)
+  ADD_SUBDIRECTORY(stk_expreval)
+ENDIF()
 
 IF( STK_ENABLE_Trios )
   ADD_SUBDIRECTORY(stk_io)

@@ -16,7 +16,6 @@
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
 
-#include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/WriterExt.hpp>
 #include <stk_search/CoarseSearch.hpp>
@@ -25,7 +24,7 @@
 
 //#include "junk.hpp"
 
-using namespace use_case;
+//using namespace use_case;
 
 using namespace stk::diag;
 
@@ -62,9 +61,9 @@ namespace stk
 
         for (int i = parallel_rank*box_count; i < (parallel_rank + 1)*box_count; ++i) {
 #if DIM == 3
-          float box[6] = {i,0.0f,0.0f,i+1.0f,1.0f,1.0f };
+          float box[6] = {(float)i,0.0f,0.0f,i+1.0f,1.0f,1.0f };
 #else
-          float box[4] = {i,0.0f,0.0f,i+1.0f};
+          float box[4] = {(float)i,0.0f,0.0f,i+1.0f};
 #endif
 
           BoundingBox   domain;

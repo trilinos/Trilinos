@@ -1,16 +1,15 @@
-/** \mainpage
- *  - \ref stk_mesh_module  "Sierra Toolkit Mesh"
- *  - \ref stk_mesh_documentation "Sierra Toolkit Documentation"
- *  - \ref util_page  "Sierra Toolkit Utilities"
- *  - \ref shards_package  "Shards Multi-dimensional array and cell topology"
- *
+/** 
  *  \page stk_mesh_banner Sierra Toolkit Mesh
  *
- *  \ref stk_mesh_module "Sierra Toolkit Mesh"
- *  <P>
- *  The Sierra Toolkit Mesh supports parallel distributed,
- *  heterogeneous, and dynamically modifiable unstructured meshes
- *  with computational field data.
+ *    \ref stk_mesh_module "Sierra Toolkit Mesh"
+ *    <p>
+ *      The Sierra Toolkit Mesh supports parallel distributed,
+ *      heterogeneous, and dynamically modifiable unstructured meshes
+ *      with computational field data.
+ *    </p>
+ *
+ * \addtogroup stk_mesh_module 
+ * \{
  *
  * \page stk_mesh_howto Mesh How To ...
  *
@@ -40,8 +39,6 @@
  *    - \ref stk_mesh_building "Building STK mesh"<br>
  *    - \ref stk_mesh_running "Running STK mesh"<br>
  *    - \ref stk_mesh_testing_and_debugging "Unit Testing and Debugging"<br>
- *    - \ref stk_mesh_deploying_STK_apps "Deploying STK Applications"<br>
- *    - \ref stk_mesh_technical_practices "Technical Practices"
  *
  *    Community and Resources
  *    - \ref stk_mesh_online_resources "Online Resources"<br>
@@ -60,8 +57,6 @@
  *
  * \page stk_mesh_first_steps First Steps
  *
- * \page stk_mesh_tutorials_examples Tutorials and Examples
- *
  * \page stk_mesh_demonstrations Demonstrations
  *    - Internal Force Calculation (Use Case 14)
  *    - Gears Demonstration & video
@@ -78,6 +73,7 @@
  *    This page explains the various STK modules and extension points in STK.
  *
  * \page stk_mesh_tutorials_examples Tutorials and Examples
+ *   \ingroup stk_mesh_module
  *    - \ref stk_mesh_use_case_1 "Use Case 1"
  *
  * \page stk_mesh_how_to_best_practices How-To's and Best Practices
@@ -105,9 +101,6 @@
  *
  * \page stk_mesh_vocabulary Vocabulary
  *    This page explains the vocabulary used in stk_mesh.
- *
- * \page stk_mesh_whats_new What's New in STK
- *    This page explains the new features going into STK.
  *
  * \page stk_mesh_building Building STK mesh
  *   - Sierra (bake or bjam)
@@ -182,10 +175,6 @@ caused the problem.
  *       - Exceptions: STKUNIT_ASSERT_[THROW, NO_THROW]
  *       - Floating point values: STKUNIT_ASSERT_[DOUBLE_EQ, NEAR]
 
- * \page stk_mesh_deploying_STK_apps Deploying STK Applications
- *
- * \page stk_mesh_technical_practices "Technical Practices"
- *
  * <h2> Software Architecture </h2>
  *   - The site <a href=http://www.bredemeyer.com/index.html>Resources for Software Architects</a> has excellent <a href=http://www.bredemeyer.com/ArchitectingProcess/SWAActionGuideTOC.htm>free documentation</a>.
  *   - Domain Modeling expresses the requirements for software within a
@@ -249,9 +238,8 @@ components), and key concepts of the software design.
  * \page stk_mesh_license_for_STK BSD
  *    - The Sierra Tool-Kit is currently distributed with Trilinos under the BSD license.
  *
- * \page stk_mesh_licenses_in_STK Licenses Used in STK
- *
  * \page stk_mesh_use_case_1 Use Case 1
+ *   \ingroup stk_mesh_module
  *    This is a hello world example for how to construct a stk mesh.
  *    \dontinclude UseCase_1.hpp
  *    First, these two headers need to be included:
@@ -272,4 +260,4 @@ components), and key concepts of the software design.
  *    in a very trivial way:
  *    \skip doxygen tutorial start source
  *    \until end code snippet
- */
+ * \} */

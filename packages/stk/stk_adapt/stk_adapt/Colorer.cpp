@@ -47,9 +47,9 @@ namespace stk {
     color(percept::PerceptMesh& eMesh, unsigned * elementType, FieldBase *element_color_field)
     {
       const unsigned MAX_COLORS=100;
-      vector< ColorerSetType > node_colors(MAX_COLORS+1); 
+      vector< ColorerNodeSetType > node_colors(MAX_COLORS+1); 
       m_element_colors = vector< ColorerSetType > (MAX_COLORS+1);
-      ColorerSetType all_elements; 
+      ColorerElementSetType all_elements; 
 
       BulkData& bulkData = *eMesh.getBulkData();
       int ncolor = 0;
@@ -74,10 +74,10 @@ namespace stk {
                         doThisBucket = false;
                       }
 
-                    if (0)
+                    if (0 && doThisBucket)
                       {
-                        //std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
-                        //          << " doThisBucket= " << doThisBucket << std::endl;
+                        std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
+                                  << " elementType= " << (elementType?  *elementType : 0) << " doThisBucket= " << doThisBucket << std::endl;
                       }
 
                     if (doThisBucket)
@@ -93,17 +93,21 @@ namespace stk {
                               std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
                                         << " elementId = " << element.identifier() << " element = " << element << std::endl;
 
-                            if (contains(all_elements, element.identifier()))
+                            EntityId elem_id = element.identifier();
+                            if (contains(all_elements, elem_id))
                               continue;
 
                             const PairIterRelation elem_nodes = element.relations( mesh::Node );  //! check for reference
                             unsigned num_node = elem_nodes.size(); 
                             bool none_in_this_color = true;
+                            static std::vector<EntityId> node_ids(100);
+                            node_ids.reserve(num_node);
                             for (unsigned inode=0; inode < num_node; inode++)
                               {
                                 Entity & node = *elem_nodes[ inode ].entity();
-
-                                if (contains(node_colors[icolor], node.identifier()))
+                                EntityId nid = node.identifier();
+                                node_ids[inode] = nid;
+                                if (contains(node_colors[icolor], nid))
                                   {
                                     none_in_this_color = false;
                                     break;
@@ -117,12 +121,15 @@ namespace stk {
                                     double *fdata = stk::mesh::field_data( *static_cast<const percept::ScalarFieldType *>(element_color_field) , element );
                                     fdata[0] = double(icolor);
                                   }
-                                m_element_colors[icolor].insert(element.identifier());
-                                all_elements.insert(element.identifier());
+#if STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
+                                m_element_colors[icolor].push_back(&element);
+#else
+                                m_element_colors[icolor].insert(&element);
+#endif
+                                all_elements.insert(elem_id);
                                 for (unsigned inode=0; inode < num_node; inode++)
                                   {
-                                    Entity & node = *elem_nodes[ inode ].entity();
-                                    node_colors[icolor].insert(node.identifier());
+                                    node_colors[icolor].insert(node_ids[inode]);
                                   }
                               }
                           }  // elements in bucket
@@ -132,7 +139,6 @@ namespace stk {
             } // irank
           if (0 == num_colored_this_pass)
             {
-              //std::cout << "tmp break" << std::endl;
               break;
             }
           ++ncolor;

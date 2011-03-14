@@ -1580,7 +1580,15 @@ void RangeValidatorDependency<T>::validateDep() const{
       InvalidDependencyException,
       "Ay no! All of the validators in a RangeValidatorDependency "
       "must have the same type.");
+    TEST_FOR_EXCEPTION(
+      it->first.first > it->first.second,
+      InvalidDependencyException,
+      "The Range " << it->first.first << " to " << it->first.second <<
+      " is invalid. The min can't be greater than the max, you silly goose!"
+      );
   }
+
+    
 }
 
 template<class T>

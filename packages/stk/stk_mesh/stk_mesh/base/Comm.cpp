@@ -31,7 +31,7 @@ bool comm_mesh_counts( BulkData & M ,
 
   // Count locally owned entities
 
-  const MetaData & S = M.mesh_meta_data();
+  const MetaData & S = MetaData::get(M);
   const unsigned entity_rank_count = S.entity_rank_count();
   const size_t   comm_count        = entity_rank_count + 1 ;
 

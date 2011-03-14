@@ -10,7 +10,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
-
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
@@ -25,7 +24,7 @@ namespace {
 
 unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank)
 {
-  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
 
   stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
@@ -49,9 +48,10 @@ void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity * ent
 
   for (; !entity->relations().empty();) {
     stk::mesh::Entity * related_entity = (entity->relations().back().entity());
+    stk::mesh::RelationIdentifier rel_id = entity->relations().back().identifier();
     stk::mesh::EntityRank related_entity_rank = related_entity->entity_rank();
 
-    mesh.destroy_relation( *entity, *related_entity);
+    mesh.destroy_relation( *entity, *related_entity, rel_id );
 
     stk::mesh::PairIterRelation related_entity_relations = related_entity->relations();
 

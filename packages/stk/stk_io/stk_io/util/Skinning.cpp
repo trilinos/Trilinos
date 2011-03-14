@@ -278,7 +278,7 @@ namespace stk {
 	// Generate one layer of ghost mesh
         mesh.modification_begin();
 
-	const stk::mesh::MetaData& meta_data = mesh.mesh_meta_data();
+	const stk::mesh::MetaData& meta_data = mesh::MetaData::get(mesh);
 #ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
         stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */

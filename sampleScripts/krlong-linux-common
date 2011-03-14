@@ -74,7 +74,6 @@ EXTRA_CXX_FLAGS=
 # should be linked in. 
 #
 # Whether the exodus mesh database libraries are available. Default=yes.
-HAVE_EXODUS=ON
 ENABLE_NETCDF=ON
 
 # ----------------------------------------------------------------------------
@@ -91,12 +90,12 @@ INSTALL_PREFIX=$PWD
 #
 # ---------------------------------------------------------------------------
 # Argument parsing logic.
-TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,trios,explicit,no-explicit,lax,ordinal:,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
+TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,stohkos,no-stokhos,lib64,explicit,no-explicit,lax,ordinal:,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
 
 eval set -- "$TEMP"
 
 while true ; do
-  case "$1" in 
+    case "$1" in 
       --python) PY_SUNDANCE=ON; 
                 PARANOID_COMPILER=OFF; 
                 PYTHON_INC_STRING="-I${PYTHON_INC_PATH}";
@@ -112,13 +111,11 @@ while true ; do
       --opt) BUILD_TYPE=RELEASE; 
              OPT_STR="-finline-functions -funroll-loops"; shift;;
       --lax) PARANOID_COMPILER=OFF; shift;;
-      --g77) FORTRAN_LIBS="-lg2c"; shift;;
       --lib64) LIB_PATH="${COMPILER_ROOT}/lib;${COMPILER_ROOT}/lib64"; shift;;
-      --exodus) HAVE_EXODUS=ON; shift;;
-      --no-exodus) HAVE_EXODUS=OFF; shift;;
-      --meros) ENABLE_MEROS=ON; shift;;
       --explicit) EXPLICIT_TEMPLATES=ON; shift;;
       --no-explicit) EXPLICIT_TEMPLATES=OFF; shift;;
+      --stokhos) ENABLE_STOKHOS=ON; shift;;
+      --no-stokhos) ENABLE_STOKHOS=OFF; shift;;
       --src)
             TRILINOS_SRC_DIR="$2"; shift 2;;
       --extra-cxxflags)
@@ -130,7 +127,7 @@ while true ; do
       --data)
             TRILINOS_DATA_DIR="$2"; shift 2;;
       --ordinal)
-            ORDINAL="$2"; shift 2;;
+            ORDINAL_TYPE="$2"; shift 2;;
       --prefix)
             INSTALL_PREFIX="$2"; shift 2;;
       --help)
@@ -147,11 +144,7 @@ while true ; do
             echo "--debug          turn on debugging features (default: on)"
             echo "--opt            turn on optimized compilation (default: off)"
             echo "--lax            turn off paranoid compiler flags (necessary for python wrappers)"
-            echo "--g77            use g77 instead of gfortran (default: off)"
             echo "--lib64          include lib64 in search path (default: off)"
-            echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: on)"
-            echo "--no-exodus      disable ExodusII readers"
-            echo "--meros          enable Meros block preconditioners (default: off)"
             echo "--explicit       enable explicit template instantiation (default: on)"
             echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"
             echo "--extra-cxxflags <f>   extra C++ flags (default: none)" 
@@ -165,7 +158,7 @@ while true ; do
             shift
             ;;
       --) shift; break;;
-  esac
+   esac
 done
 
 # ---------------------------------------------------------------------------
@@ -188,12 +181,13 @@ ${ECHO} cmake \
 -D LAPACK_LIBRARY_DIRS:FILEPATH=${LIB_PATH} \
 -D Trilinos_EXTRA_LINK_FLAGS:STRING=${FORTRAN_LIBS} \
 -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
 -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=${PARANOID_COMPILER} \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=${CHECK_STL} \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=${EXPLICIT_TEMPLATES} \
 -D Trilinos_ENABLE_Sundance:BOOL=ON \
--D Trilinos_VERBOSE_CONFIGURE:BOOL=${VERBOSE_CONFIGURE} \
+-D Sundance_VERBOSE_CONFIGURE:BOOL=${VERBOSE_CONFIGURE} \
 -D Trilinos_ENABLE_Trios:BOOL=${ENABLE_TRIOS} \
 -D Trilinos_ENABLE_Sacado:BOOL=${ENABLE_SACADO} \
 -D Trilinos_ENABLE_Stokhos:BOOL=${ENABLE_STOKHOS} \
@@ -203,7 +197,8 @@ ${ECHO} cmake \
 -D Trios_ENABLE_EXAMPLES:BOOL=OFF \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
--D Teuchos_ORDINAL_TYPE:STRING=${ORDINAL} \
+-D Sundance_ENABLE_Trios:BOOL=${ENABLE_TRIOS} \
+-D Teuchos_ORDINAL_TYPE:STRING=${ORDINAL_TYPE} \
 -D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
 -D NOX_ENABLE_LOCA:BOOL=OFF \
 -D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PREFIX} \

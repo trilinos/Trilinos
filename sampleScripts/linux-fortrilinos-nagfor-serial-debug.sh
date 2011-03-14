@@ -1,10 +1,10 @@
 #!/bin/sh
-TRILINOS_PATH=/home/sfilippo/NUMERICAL/TRILINOS/Trilinos
+TRILINOS_PATH=/Users/rouson/working-trilinos/Trilinos
 EXTRA_ARGS=$@
 
 rm -f CMakeCache.txt
 #
-# nagfor.sh is a wrapper workaround for a problem with preprocessor.
+# nagfor.pl is a wrapper workaround for a problem with preprocessor.
 # When the vendor fixes the bug you can revert to nagfor.
 # Works with cmake-2.8.3-g67a4d or later
 #
@@ -13,7 +13,7 @@ cmake \
   -D CMAKE_CXX_COMPILER:FILEPATH=g++ \
   -D CMAKE_C_COMPILER:FILEPATH=gcc \
   -D CMAKE_Fortran_COMPILER:FILEPATH="$TRILINOS_PATH/packages/ForTrilinos/nagfor.pl" \
-  -D CMAKE_Fortran_FLAGS:STRING="-f2003 -g" \
+  -D CMAKE_Fortran_FLAGS:STRING="-f2003 -g -C=all" \
   -D HAVE_GCC_ABI_DEMANGLE:BOOL=ON \
   -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
   -D Trilinos_ENABLE_DEFAULT_PACKAGES:BOOL=OFF \

@@ -29,7 +29,7 @@
 #include <stk_io/IossBridge.hpp>
 
 #include <Intrepid_FieldContainer.hpp>
-//#include <Intrepid_Basis.hpp>
+
 
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
@@ -42,6 +42,7 @@
 #include <stk_percept/function/BucketOp.hpp>
 
 #include <stk_percept/SameRankRelation.hpp>
+
 
 //using namespace Intrepid;
 
@@ -83,7 +84,7 @@ namespace stk {
         const std::vector<int> m_dimensions;
         const mesh::Part* m_part;
         FieldCreateOrder();
-        FieldCreateOrder(const std::string name, const unsigned entity_rank, 
+        FieldCreateOrder(const std::string name, const unsigned entity_rank,
                         const std::vector<int> dimensions, const mesh::Part* part);
       };
       typedef std::vector<PerceptMesh::FieldCreateOrder> FieldCreateOrderVec;
@@ -98,11 +99,11 @@ namespace stk {
       PerceptMesh(stk::ParallelMachine comm =  MPI_COMM_WORLD );
 
       /// reads and commits mesh, editing disabled
-      void 
+      void
       openReadOnly(const std::string& in_filename);
 
       /// reads but doesn't commit mesh, enabling edit
-      void 
+      void
       open(const std::string& in_filename);
 
       /// creates a new mesh using the GeneratedMesh fixture with spec @param gmesh_spec, Read Only mode, no edits allowed
@@ -110,27 +111,27 @@ namespace stk {
       newMeshReadOnly(const GMeshSpec gmesh_spec);
 
       /// creates a new mesh using the GeneratedMesh fixture with spec @param gmesh_spec
-      void 
+      void
       newMesh(const GMeshSpec gmesh_spec);
 
       /// add a field to the mesh
-      stk::mesh::FieldBase * 
+      stk::mesh::FieldBase *
       addField(const std::string& name, const unsigned entity_rank, int vectorDimension=0, const std::string part_name="universal_part");
 
-      stk::mesh::FieldBase * 
+      stk::mesh::FieldBase *
       getField(const std::string name);
 
       /// commits mesh  - any operations done on a non-committed mesh, except to add fields will throw an exception
-      void 
+      void
       commit();
 
       /// reopens the mesh for editing - warning, this operation writes the mesh to a temp file then re-reads it and
       /// thus recreates the internal MetaData and BulkData
-      void 
+      void
       reopen(const std::string temp_file_name="percept_tmp.e");
-      
+
       /// commits mesh if not committed and saves it in new file
-      void 
+      void
       saveAs(const std::string& out_filename );
 
       /// closes this mesh to further changes
@@ -138,20 +139,23 @@ namespace stk {
       close();
 
       /// print number of parts and fields, and info on each
-      void 
+      void
       printInfo(std::string header="", int print_level = 0);
 
-      void 
+      void
       printFields(std::string header="");
 
       int
-      getSpatialDim(); 
+      getSpatialDim();
+
+      int
+      getNumberElements();
 
       //========================================================================================================================
       /// low-level interfaces
       /// Create a Mesh object that doesn't own its constituent MetaData and BulkData, pointers to which are adopted
       /// by this constructor.
-      PerceptMesh(stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
+      PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
 
       ~PerceptMesh() ;
       void init (stk::ParallelMachine comm);
@@ -159,6 +163,7 @@ namespace stk {
 
       /// reads the given file into a temporary model and prints info about it
       void dump(const std::string& file="");
+      void dumpElements(const std::string& partName = "");
 
       unsigned getRank() { return getBulkData()->parallel_rank(); }
       unsigned getParallelSize() { return getBulkData()->parallel_size(); }
@@ -168,15 +173,15 @@ namespace stk {
         bool isGhost = element.owner_rank() != getRank();
         return isGhost;
       }
-      
+
       stk::mesh::Entity & createOrGetNode(stk::mesh::EntityId nid, double* x=0);
 
       void createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity *>& requested_entities);
 
-      const mesh::Part* 
+      const mesh::Part*
       getPart(const std::string& part_name) ;
 
-      mesh::Part* 
+      mesh::Part*
       getNonConstPart(const std::string& part_name);
 
       static double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
@@ -186,7 +191,7 @@ namespace stk {
 
       stk::mesh::BulkData * getBulkData();
       stk::mesh::MetaData * getMetaData();
-      
+
       static BasisTypeRCP getBasis(shards::CellTopology& topo);
       static void setupBasisTable();
 
@@ -199,10 +204,10 @@ namespace stk {
 
       /// \brief Fill the array cellNodes(numCells, numNodesPerCell, nDof) with DOF values from the given Field
       /// The stride of the data (last dimension in cellNodes) is taken to be that of the field's stride; however,
-      /// in some cases you may want to pass in an array where nDof is less than the stride (e.g., pull out 2 
+      /// in some cases you may want to pass in an array where nDof is less than the stride (e.g., pull out 2
       /// coordinates from a 3D coordinate field).  In that case, the dataStride argument can be set (to e.g. "2").
       template<class ArrayType>
-      static void fillCellNodes( const stk::mesh::Bucket &bucket,  
+      static void fillCellNodes( const stk::mesh::Bucket &bucket,
                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
                                  FieldBase* field,
@@ -210,19 +215,21 @@ namespace stk {
 
       /// \brief see comment for fillCellNodes(Bucket& ...)
       template<class ArrayType>
-      static void fillCellNodes( const stk::mesh::Entity &element,  
+      static void fillCellNodes( const stk::mesh::Entity &element,
                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
                                  FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
-      static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field, 
+      static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                        FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length);
 
-      VectorFieldType* getCoordinatesField();
+      VectorFieldType* getCoordinatesField() {
+        // this should have been set by a previous internal call to setCoordinatesField
+        return m_coordinatesField;
+      }
 
-
-      static void 
+      static void
       element_side_nodes( const Entity & elem , int local_side_id, EntityRank side_entity_rank, std::vector<Entity *>& side_node_entities );
 
       static void
@@ -232,6 +239,7 @@ namespace stk {
       SameRankRelation& adapt_parent_to_child_relations() { return m_adapt_parent_to_child_relations; }
 
     private:
+
       /// reads meta data, commits it, reads bulk data
       void readModel( const std::string& in_filename );
 
@@ -242,6 +250,7 @@ namespace stk {
       void createMetaDataNoCommit( const std::string& gmesh_spec);
 
       void commitMetaData();
+
       /// read the bulk data (no op in create mode)
       void readBulkData();
 
@@ -254,47 +263,45 @@ namespace stk {
       // deprecated
       void createFields(bool print, FieldCreateOrderVec create_field = FieldCreateOrderVec());
 
+      /// Cache internal pointer to coordinate field
+      void setCoordinatesField();
+
       // write in exodus format to given file
       void writeModel( const std::string& out_filename );
 
-      stk::mesh::FieldBase * createField(const std::string& name, const unsigned entity_rank, const std::vector<int>& dimensions, 
+      stk::mesh::FieldBase * createField(const std::string& name, const unsigned entity_rank, const std::vector<int>& dimensions,
                                          const stk::mesh::Part* arg_part=0);
 
       //static void transformMesh(GenericFunction& coordinate_transform);
 
     private:
-      bool                                 m_ownData;
-      stk::mesh::MetaData *                m_metaData;
-      stk::mesh::BulkData *                m_bulkData;
-      stk::io::util::Gmesh_STKmesh_Fixture * m_fixture;
-      Ioss::Region *                       m_iossRegion;
-      stk::ParallelMachine                 m_comm;
-      bool                                 m_isCommitted;
-      bool                                 m_isOpen;
-      bool                                 m_isInitialized;
-      std::string                          m_filename;
-      int                                  m_spatialDim;
-      bool                                 m_isAdopted;
+      stk::mesh::MetaData *                 m_metaData;
+      stk::mesh::BulkData *                 m_bulkData;
+      stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
+      Ioss::Region *                        m_iossRegion;
+      VectorFieldType*                      m_coordinatesField;
+      int                                   m_spatialDim;
+      bool                                  m_ownData;
+      bool                                  m_isCommitted;
+      bool                                  m_isOpen;
+      bool                                  m_isInitialized;
+      bool                                  m_isAdopted;
+      bool                                  m_dontCheckState;
+      std::string                           m_filename;
+      stk::ParallelMachine                  m_comm;
 
-      //VectorFieldType                      m_coordinates_field;
       //static std::map<unsigned, BasisType *> m_basisTable;
-
-
       static BasisTableMap m_basisTable;
 
       SameRankRelation m_adapt_parent_to_child_relations;
 
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
-      void checkState(const std::string& function)
-      {
+
+      void checkState(const std::string& function) {
         return checkStateSpec(function, m_isOpen, m_isInitialized, m_isCommitted);
       }
 
-    public:
-      bool m_dontCheckState;
-
-
-    };
+    }; // class PerceptMesh
 
 
 #if 0
@@ -307,7 +314,7 @@ namespace stk {
 
     // static
     template<class ArrayType>
-    void PerceptMesh::fillCellNodes( const mesh::Bucket &bucket,  
+    void PerceptMesh::fillCellNodes( const mesh::Bucket &bucket,
                                   //stk::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
                                   FieldBase* field,
@@ -324,7 +331,7 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, field->mesh_meta_data().universal_part());
+          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
           dataStride = r.stride[0] ;
         }
       //std::cout << "bucket dataStride= " << dataStride << std::endl;
@@ -332,7 +339,7 @@ namespace stk {
       for ( unsigned iElemInBucketOrd = 0 ; iElemInBucketOrd < number_elems ; ++iElemInBucketOrd)
         {
           mesh::Entity & elem = bucket[iElemInBucketOrd] ;
-          
+
           if (0) std::cout << "elemOfBucket= " << elem << std::endl;
           const mesh::PairIterRelation elem_nodes = elem.relations( mesh::Node );
 
@@ -355,7 +362,7 @@ namespace stk {
 
     // static
     template<class ArrayType>
-    void PerceptMesh::fillCellNodes( const stk::mesh::Entity &element,  
+    void PerceptMesh::fillCellNodes( const stk::mesh::Entity &element,
                                   //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
                                   FieldBase* field,
@@ -365,7 +372,7 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, field->mesh_meta_data().universal_part());
+          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
           dataStride = r.stride[0] ;
         }
       //std::cout << "element dataStride= " << dataStride << std::endl;

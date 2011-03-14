@@ -14,7 +14,7 @@ SET(BUILD_DIR_NAME ZOLTAN_PLUS_USERS)
 SET(Trilinos_PACKAGES Zoltan)
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
 SET(CTEST_TEST_TIMEOUT "1800")
-SET(CTEST_TEST_TYPE Nightly)
+SET(CTEST_TEST_TYPE Experimental)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
@@ -31,10 +31,11 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DZoltan_ENABLE_Scotch:BOOL=ON"
   "-DParMETIS_INCLUDE_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
   "-DParMETIS_LIBRARY_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
-  "-DScotch_INCLUDE_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/include"
-  "-DScotch_LIBRARY_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/lib"
-  "-DTPL_BLAS_LIBRARIES:STRING=-L/usr/local/lib -lcblas -lf77blas -latlas -lblas"
-  "-DTPL_LAPACK_LIBRARIES:STRING=/usr/local/lib/liblapack.a"
+  "-DScotch_INCLUDE_DIRS:FILEPATH=/home/lriesen/local/system/scotch_5.1.10a-32/include"
+  "-DScotch_LIBRARY_DIRS:FILEPATH=/home/lriesen/local/system/scotch_5.1.10a-32/lib"
+  "-DLAPACK_LIBRARY_DIRS:FILEPATH=/usr/local/lib"
+  "-DBLAS_LIBRARY_DIRS:FILEPATH=/usr/local/lib"
+  "-DTPL_LAPACK_LIBRARIES:STRING=-llapack -lblas -lgfortran"
   )
 
 SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )

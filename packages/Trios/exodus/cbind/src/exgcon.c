@@ -32,33 +32,42 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* exgcon - ex_get_coord_names
-*
-* entry conditions - 
-*   input parameters:
-*       int     exoid                   exodus file id
-*
-* exit conditions - 
-*       char*   coord_names[]           ptr array of coord names
-*
-* revision history - 
-*
-*
-*****************************************************************************/
 
 #include "exodusII.h"
 #include "exodusII_int.h"
 
 /*!
- * reads the names (#MAX_STR_LENGTH characters in length) of the
- * coordinate arrays from the database. Memory must be allocated for
- * the character strings before this function is invoked.
- * \param      exoid  exodus file id
- * \param[out] coord_names Returned pointer to a vector containing
- *             'num_dim' names of the nodal coordinate arrays.
- */
+
+The function ex_get_coord_names() reads the names (\p MAX_STR_LENGTH
+-characters in length) of the coordinate arrays from the
+database. Memory must be allocated for the character strings before
+this function is invoked.
+
+\return In case of an error, ex_get_coord_names() returns a negative
+number; a warning will return a positive number.  Possible causes of
+errors include:
+  -  data file not properly opened with call to ex_create() or ex_open()
+  -  a warning value is returned if coordinate names were not stored.
+
+\param[in]   exoid        exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[out]  coord_names  Returned pointer to a vector containing \c num_dim names of the nodal
+                          coordinate arrays.
+
+The following code segment will read the coordinate names from an open
+exodus file :
+
+\code
+int error, exoid;
+char *coord_names[3];
+
+for (i=0; i < num_dim; i++) {
+   coord_names[i] = (char *)calloc((MAX_STR_LENGTH+1), sizeof(char));
+}
+
+error = ex_get_coord_names (exoid, coord_names);
+\endcode
+
+*/
 
 int ex_get_coord_names (int    exoid,
                         char **coord_names)

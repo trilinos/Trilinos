@@ -15,9 +15,12 @@
 #include <use_cases/UseCase_ElementDeath.hpp>
 #include <use_cases/UseCase_Skinning.hpp>
 #include <use_cases/UseCase_ChangeOwner.hpp>
+
 #include <stk_mesh/base/Types.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+
+#include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
 void printStatus(bool status)
 {
@@ -149,14 +152,8 @@ int main ( int argc, char * argv[] )
     status = status && local_status;
   }
 
-  int return_code = -1;
-  if (status) {
-    return_code = 0;
-    std::cout << "End Result: TEST PASSED" << std::endl;
-  }
-  else {
-    std::cout << "End Result: TEST FAILED" << std::endl;
-  }
+  bool collective_result = use_case::print_status(parallel_machine, status);
+  int return_code = collective_result ? 0 : -1;
 
   stk::parallel_machine_finalize();
 

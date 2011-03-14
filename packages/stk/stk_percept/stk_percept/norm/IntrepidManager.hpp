@@ -473,7 +473,8 @@ namespace stk
       public:
         typedef MDArray BaseType;
         Bases(IM& im);
-         ~Bases() {}
+
+        using BaseType::operator();
 
         void operator()(const stk::mesh::Entity& element, const MDArray& parametric_coordinates);
         void operator()(const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates);

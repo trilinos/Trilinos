@@ -288,6 +288,7 @@ namespace Belos {
     // Default solver values.
     static const MagnitudeType convtol_default_;
     static const int maxIters_default_;
+    static const int blockSize_default_;
     static const int numBlocks_default_;
     static const int recycleBlocks_default_;
     static const bool showMaxResNormOnly_default_;
@@ -385,6 +386,9 @@ const int RCGSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
 
 template<class ScalarType, class MV, class OP>
 const int RCGSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 25;
+
+template<class ScalarType, class MV, class OP>
+const int RCGSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
  
 template<class ScalarType, class MV, class OP>
 const int RCGSolMgr<ScalarType,MV,OP>::recycleBlocks_default_ = 3;
@@ -670,6 +674,8 @@ RCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Maximum Iterations", maxIters_default_,
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
+    pl->set("Block Size", blockSize_default_,
+      "Block Size Parameter -- currently must be 1 for RCG");
     pl->set("Num Blocks", numBlocks_default_,
       "The length of a cycle (and this max number of search vectors kept)\n");
     pl->set("Num Recycled Blocks", recycleBlocks_default_,

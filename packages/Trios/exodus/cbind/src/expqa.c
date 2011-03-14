@@ -32,32 +32,56 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* expqa = ex_put_qa
-*
-* entry conditions - 
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     num_qa_records          number of qa records to be written
-*       char*   qa_record[][4])         qa record array
-*
-* exit conditions - 
-*
-* revision history - 
-*
-*
-*****************************************************************************/
 
 #include "exodusII.h"
 #include "exodusII_int.h"
 #include <string.h>
 
 /*!
- * writes the QA records to the database
- * \param  exoid                   exodus file id
- * \param  num_qa_records          number of qa records to be written
- * \param *qa_record               qa record array
+
+The function ex_put_qa() writes the QA records to the database. Each
+QA record contains four \c MAX_STR_LENGTH-byte character
+strings. The character strings are:
+
+ -  the analysis code name
+ -  the analysis code QA descriptor
+ -  the analysis date
+ -  the analysis time
+
+\return In case of an error, ex_put_qa() returns a negative number; a
+        warning will return a positive number. Possible causes of errors
+        include:
+  -  data file not properly opened with call to ex_create() or ex_open()
+  -  data file opened for read only.
+  -  QA records already exist in file.
+
+\param[in] exoid            exodus file ID returned from a previous call to ex_create() or ex_open().
+
+\param[in] num_qa_records   The number of QA records.
+\param[in]  qa_record       Array containing the QA records.
+
+The following code segment will write out two QA records:
+
+\code
+#include "exodusII.h"
+int num_qa_rec, error, exoid;
+char *qa_record[2][4];
+
+\comment{write QA records}
+num_qa_rec = 2;
+
+qa_record[0][0] = "TESTWT1";
+qa_record[0][1] = "testwt1";
+qa_record[0][2] = "07/07/93";
+qa_record[0][3] = "15:41:33";
+qa_record[1][0] = "FASTQ";
+qa_record[1][1] = "fastq";
+qa_record[1][2] = "07/07/93";
+qa_record[1][3] = "16:41:33";
+
+error = ex_put_qa (exoid, num_qa_rec, qa_record);
+\endcode
+
  */
 
 int ex_put_qa (int   exoid,

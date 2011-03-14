@@ -404,6 +404,11 @@ int Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode,
   EPETRA_CHK_ERR( Export(nonlocalVector, *exporter_, mode) );
 
   zeroNonlocalData();
+  //set the number-of-IDs and number-of-coefs counters back to 0.
+  //We're not actually destroying these arrays here, because it is
+  //expensive to re-alloc them.
+  numNonlocalIDs_ = 0;
+  numNonlocalCoefs_ = 0;
 
   return(0);
 }

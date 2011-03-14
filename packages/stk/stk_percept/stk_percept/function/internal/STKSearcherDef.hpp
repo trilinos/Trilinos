@@ -12,15 +12,15 @@ namespace stk
   {
 
     template<int SpatialDim>
-    STKSearcher<SpatialDim>::STKSearcher(FieldFunction *ff) : m_fieldFunction(ff), m_boxes() 
+    STKSearcher<SpatialDim>::STKSearcher(FieldFunction *ff) : m_fieldFunction(ff), m_boxes()
     {
     }
 
     template<int SpatialDim>
-    void 
+    void
     STKSearcher<SpatialDim>::setupSearch()
     {
-      mesh::MetaData& metaData = m_fieldFunction->getField()->mesh_meta_data();
+      mesh::MetaData& metaData = MetaData::get(*(m_fieldFunction->getField()));
       mesh::BulkData& bulkData = *m_fieldFunction->getBulkData();
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
       PerceptMesh meshUtil(&metaData, &bulkData);
@@ -30,26 +30,26 @@ namespace stk
     }
 
     template<int SpatialDim>
-    void 
+    void
     STKSearcher<SpatialDim>::tearDownSearch()
     {
       m_boxes.clear();
     }
 
     /**
-     *  Dimensions of input_phy_points = ([P]=1, [D]) 
+     *  Dimensions of input_phy_points = ([P]=1, [D])
      *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
      */
 
     template<int SpatialDim>
     const stk::mesh::Entity *
-    STKSearcher<SpatialDim>::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, 
+    STKSearcher<SpatialDim>::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
                                          unsigned& found_it, const mesh::Entity *hint_element )
     {
       //return 0;
-      mesh::MetaData& metaData = m_fieldFunction->getField()->mesh_meta_data();
+      mesh::MetaData& metaData = MetaData::get(*(m_fieldFunction->getField()));
       mesh::BulkData& bulkData = *m_fieldFunction->getBulkData();
-        
+
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       PerceptMesh meshUtil(&metaData, &bulkData);
@@ -63,12 +63,12 @@ namespace stk
       pointBoundingBox.key.ident = 123;  // FIXME for multiple points
       pointBoundingBox.set_center(pts);
       std::vector<BPoint> points(1, pointBoundingBox);
-        
+
       stk::search::FactoryOrder order;
       order.m_communicator = bulkData.parallel();
       order.m_algorithm = stk::search::FactoryOrder::BIHTREE;
 
-      if (0 || EXTRA_PRINT) 
+      if (0 || EXTRA_PRINT)
         {
           bool box_p = m_boxes[0].intersect(pointBoundingBox);
           bool p_box = pointBoundingBox.intersect(m_boxes[0]);
@@ -84,7 +84,7 @@ namespace stk
       IdentProcRelation relation;
       stk::search::coarse_search(relation,  m_boxes, points, order);
       //stk::search::coarse_search(relation,   points, m_boxes, order);
-        
+
       if (0 || EXTRA_PRINT) std::cout << "STKSearcher::findElement: found  " << relation.size() << " containing bboxes"  << std::endl;
 
       if (relation.size())

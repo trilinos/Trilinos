@@ -373,11 +373,14 @@ namespace stk
                           if (p_rank==1) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1[0] << "should be 38" << std::endl;
                           if (p_rank==2) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1[0] << "should be 41" << std::endl;
 
-#if NODE_REGISTRY_MAP_TYPE_BOOST
                           unsigned expectedId= 37u;
+#if NODE_REGISTRY_MAP_TYPE_BOOST
 #endif
 #if NODE_REGISTRY_MAP_TYPE_STD
-                          unsigned expectedId= 38u;
+                          expectedId= 38u;
+#endif
+#if NODE_REGISTRY_MAP_TYPE_GOOGLE
+                          expectedId= 39u;
 #endif
                           
                           if (p_rank==1) EXPECT_EQ(nodeIds_onSE_1[0], expectedId); 

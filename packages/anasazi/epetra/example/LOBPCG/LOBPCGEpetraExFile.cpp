@@ -36,12 +36,22 @@ int main(int argc, char *argv[]) {
   
   int MyPID = Comm.MyPID();
 
-  bool verbose=false;
+  int nev = 5;
+  int blockSize = 5;
+  int maxIterations = 1000;
+  double tol = 1.0e-8;
+  bool verbose=false, locking=false, fullOrtho=true;
   std::string k_filename = "";
   std::string m_filename = "";
   std::string which = "SM";
   Teuchos::CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
+  cmdp.setOption("blocksize",&blockSize,"Block size used in LOBPCG.");
+  cmdp.setOption("maxiters",&maxIterations,"Maximum number of iterations used in LOBPCG.");
+  cmdp.setOption("tol",&tol,"Convergence tolerance requested for computed eigenvalues.");
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("locking","nolocking",&locking,"Use locking of converged eigenvalues.");
+  cmdp.setOption("fullortho","nofullortho",&fullOrtho,"Use full orthogonalization.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM,LM,SR,or LR).");
   cmdp.setOption("K-filename",&k_filename,"Filename and path of the stiffness matrix.");
   cmdp.setOption("M-filename",&m_filename,"Filename and path of the mass matrix.");
@@ -82,11 +92,6 @@ int main(int argc, char *argv[]) {
   //
   //  Variables used for the LOBPCG Method
   // 
-  int nev = 5;
-  int blockSize = 5;
-  int maxRestarts = 1000;
-  double tol = 1.0e-8;
-  
   // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
@@ -99,8 +104,11 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Maximum Iterations", maxIterations );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "Use Locking", locking );
+  MyPL.set( "Locking Tolerance", tol/10 );
+  MyPL.set( "Full Ortho", fullOrtho );
 
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;

@@ -28,13 +28,16 @@
 using stk::mesh::Part;
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
-using stk::mesh::Entity;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
-using stk::mesh::EntityProc;
 using stk::mesh::BaseEntityRank;
 using stk::mesh::PairIterRelation;
+using stk::mesh::EntityProc;
+using stk::mesh::Entity;
 using stk::mesh::EntityId;
+using stk::mesh::EntityKey;
+using stk::mesh::EntityVector;
+using stk::mesh::EntityRank;
 using stk::mesh::DefaultFEM;
 using stk::mesh::fixtures::RingFixture;
 using stk::mesh::fixtures::BoxFixture;
@@ -45,7 +48,7 @@ void donate_one_element( BulkData & mesh , bool aura )
 {
   const unsigned p_rank = mesh.parallel_rank();
 
-  Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
+  Selector select_owned( MetaData::get(mesh).locally_owned_part() );
 
   std::vector<unsigned> before_count ;
   std::vector<unsigned> after_count ;
@@ -114,8 +117,8 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
 {
   const unsigned p_rank = mesh.parallel_rank();
 
-  const Selector select_used = mesh.mesh_meta_data().locally_owned_part() |
-                               mesh.mesh_meta_data().globally_shared_part() ;
+  const Selector select_used = MetaData::get(mesh).locally_owned_part() |
+                               MetaData::get(mesh).globally_shared_part() ;
 
   std::vector<unsigned> before_count ;
   std::vector<unsigned> after_count ;
@@ -795,7 +798,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
   STKUNIT_ASSERT(bulk.modification_end());
 
   // grab the first edge
-  stk::mesh::EntityVector edges;
+  EntityVector edges;
   const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(ring_mesh.m_fem);
   stk::mesh::get_entities( ring_mesh.m_bulk_data, element_rank, edges );
   stk::mesh::Entity& edge = *( edges.front() );
@@ -817,4 +820,254 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
   STKUNIT_ASSERT_EQUAL ( edge.log_query(), stk::mesh::EntityLogModified );
 
   STKUNIT_ASSERT ( ring_mesh.m_bulk_data.modification_end() );
+}
+
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
+{
+  // It should be legal to "change" entity ownership from yourself to yourself.
+  //
+  // 1---3---5
+  // | 1 | 2 |
+  // 2---4---6
+  //
+  // To test this, we use the mesh above, with elem 1 going on rank 0 and
+  // elem 2 going on rank 1. Nodes 3,4 are shared. After the mesh is set up
+  // we change the ownership of a few nodes to the same proc that already
+  // owns them.
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dim));
+  meta_data.commit();
+  BulkData mesh(meta_data, pm);
+  unsigned p_rank = mesh.parallel_rank();
+  unsigned p_size = mesh.parallel_size();
+
+  // Bail if we only have one proc
+  if (p_size == 1) {
+    return;
+  }
+
+  // Begin modification cycle so we can create the entities and relations
+  mesh.modification_begin();
+
+  EntityVector nodes;
+  const unsigned nodes_per_elem = 4, nodes_per_side = 2;
+
+  if (p_rank < 2) {
+    // We're just going to add everything to the universal part
+    stk::mesh::PartVector empty_parts;
+
+    // Create element
+    const EntityRank elem_rank = stk::mesh::fem::element_rank(spatial_dim);
+    Entity & elem = mesh.declare_entity(elem_rank,
+                                        p_rank+1, //elem_id
+                                        empty_parts);
+
+    // Create nodes
+    const unsigned starting_node_id = p_rank * nodes_per_side + 1;
+    for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
+      nodes.push_back(&mesh.declare_entity(stk::mesh::fem::NODE_RANK,
+                                           id,
+                                           empty_parts));
+    }
+
+    // Add relations to nodes
+    unsigned rel_id = 0;
+    for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
+      mesh.declare_relation( elem, **itr, rel_id );
+    }
+  }
+
+  mesh.modification_end();
+
+  mesh.modification_begin();
+
+  std::vector<EntityProc> change ;
+  if (p_rank < 2) {
+    // Change ownership of some nodes to the same proc that owns them
+
+    // Add a non-shared node to change list
+    if ( p_rank == 0 ) {
+      EntityProc entry( nodes.front(), p_rank ) ;
+      change.push_back( entry );
+    }
+    else {
+      EntityProc entry( nodes.back(), p_rank ) ;
+      change.push_back( entry );
+    }
+
+    // Add a shared node to change list
+    Entity* shared_node = nodes[p_rank == 0 ? nodes_per_side : 0];
+    EntityId expected_id = 3;
+    Part& shared_part = meta_data.globally_shared_part();
+    STKUNIT_ASSERT( has_superset(shared_node->bucket(), shared_part) );
+    STKUNIT_ASSERT_EQUAL(shared_node->identifier(), expected_id);
+    if (shared_node->owner_rank() == p_rank) {
+      EntityProc entry( shared_node, p_rank );
+      change.push_back( entry );
+    }
+  }
+
+  mesh.change_entity_owner(change);
+
+  mesh.modification_end();
+}
+
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
+{
+  // This unit-test is designed to test the conditions that results that
+  // resulted in the difficult-to-fix rebalance use-case bug. Specifically,
+  // it will test the changing-of-ownership of a shared edge to a proc that
+  // either ghosted it or did not know about it.
+  //
+  // 1---3---5---7
+  // | 1 | 2 | 3 | ...
+  // 2---4---6---8
+  //
+  // To test this, we use the mesh above, with each elem going on a separate
+  // proc, one elem per proc. We will take the edge shared by the last
+  // two (rightmost) elements and change the ownership to proc 0.
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dim));
+  meta_data.commit();
+  BulkData mesh(meta_data, pm);
+  unsigned p_rank = mesh.parallel_rank();
+  unsigned p_size = mesh.parallel_size();
+  const EntityRank edge_rank = stk::mesh::fem::edge_rank(spatial_dim);
+  const EntityRank elem_rank = stk::mesh::fem::element_rank(spatial_dim);
+
+  // Bail if we have fewer than 3 procs
+  if (p_size < 3) {
+    return;
+  }
+
+  // Begin modification cycle so we can create the entities and relations
+  mesh.modification_begin();
+
+  const unsigned nodes_per_elem = 4, nodes_per_side = 2;
+  EntityKey elem_key_chg_own(elem_rank, p_size - 1 /*id*/);
+  EntityKey edge_key_chg_own(edge_rank, 1 /*id*/);
+
+  // We're just going to add everything to the universal part
+  stk::mesh::PartVector empty_parts;
+
+  // Create element
+  Entity & elem = mesh.declare_entity(elem_rank,
+                                      p_rank+1, //elem_id
+                                      empty_parts);
+
+  // If it is 2nd to last element, it is the one changing
+  if (p_rank == p_size - 2) {
+    STKUNIT_ASSERT(elem_key_chg_own == elem.key());
+  }
+
+  // Create nodes
+  EntityVector nodes;
+  const unsigned starting_node_id = p_rank * nodes_per_side + 1;
+  for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
+    nodes.push_back(&mesh.declare_entity(stk::mesh::fem::NODE_RANK,
+                                         id,
+                                         empty_parts));
+  }
+
+  // Add relations to nodes
+  unsigned rel_id = 0;
+  for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
+    mesh.declare_relation( elem, **itr, rel_id );
+  }
+
+  // Create edge on last two procs
+
+  if (p_rank >= p_size - 2) {
+    Entity& edge = mesh.declare_entity(edge_rank,
+                                       1, // id
+                                       empty_parts);
+    STKUNIT_ASSERT(edge.key() == edge_key_chg_own);
+
+    // Add relation from elem to edge
+    mesh.declare_relation( elem, edge, 1 /*rel-id*/);
+
+    // Add relations from edge to nodes
+    unsigned start_idx = p_rank == p_size - 1 ? 0 : nodes_per_side;
+    unsigned end_idx = start_idx + nodes_per_side;
+    rel_id = 0;
+    for (unsigned idx = start_idx ;
+         start_idx < end_idx;
+         ++start_idx, ++rel_id) {
+      mesh.declare_relation( edge, *nodes[idx], rel_id );
+    }
+  }
+
+  mesh.modification_end();
+
+  // Changing elem and edge should be ghosted or unknown on proc 0
+  if (p_rank == 0) {
+    // Get the two entities
+    Entity* changing_elem = mesh.get_entity(elem_key_chg_own);
+    Entity* changing_edge = mesh.get_entity(edge_key_chg_own);
+    if (p_size == 3) {
+      // Should be ghosted
+      STKUNIT_ASSERT(changing_elem != NULL);
+      STKUNIT_ASSERT(changing_edge != NULL);
+
+      // Verify that the entities are ghosted
+      Part& owned = meta_data.locally_owned_part();
+      Part& shared = meta_data.globally_shared_part();
+      STKUNIT_ASSERT(!(changing_elem->bucket().member(owned) ||
+                       changing_elem->bucket().member(shared)));
+      STKUNIT_ASSERT(!(changing_edge->bucket().member(owned) ||
+                       changing_edge->bucket().member(shared)));
+    }
+    else {
+      // Should be NULL
+      STKUNIT_ASSERT(changing_elem == NULL);
+      STKUNIT_ASSERT(changing_edge == NULL);
+    }
+  }
+
+  mesh.modification_begin();
+
+  std::vector<EntityProc> change ;
+  if (p_rank >= p_size - 2) {
+    // Change ownership of changing elem and all entities in it's closure that
+    // we own to proc 0.
+
+    Entity* changing_elem = mesh.get_entity(elem_key_chg_own);
+    if (p_rank == p_size - 2) {
+      EntityProc eproc(changing_elem, 0 /*new owner*/);
+      change.push_back(eproc);
+    }
+
+    for (PairIterRelation i = changing_elem->relations() ; !i.empty() ; ++i) {
+      if (i->entity()->owner_rank() == p_rank) {
+        EntityProc eproc(i->entity(), 0 /*new owner*/);
+        change.push_back(eproc);
+      }
+    }
+  }
+
+  mesh.change_entity_owner(change);
+
+  mesh.modification_end();
+
+  // Changing elem and edge should now be owned by proc 0
+  if (p_rank == 0) {
+    // Get the two ghosted entities, check that they were found
+    Entity* changing_elem = mesh.get_entity(elem_key_chg_own);
+    Entity* changing_edge = mesh.get_entity(edge_key_chg_own);
+    STKUNIT_ASSERT(changing_elem != NULL);
+    STKUNIT_ASSERT(changing_edge != NULL);
+
+    // Verify that the entities are ghosted
+    Part& owned = meta_data.locally_owned_part();
+    STKUNIT_ASSERT( changing_elem->bucket().member(owned) );
+    STKUNIT_ASSERT( changing_edge->bucket().member(owned) );
+  }
 }

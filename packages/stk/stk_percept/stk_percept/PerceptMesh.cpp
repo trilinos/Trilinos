@@ -7,7 +7,7 @@
 #include <stk_percept/Util.hpp>
 
 
-#include "PerceptMesh.hpp"
+#include <stk_percept/PerceptMesh.hpp>
 
 //#include <Intrepid_Basis.hpp>
 
@@ -16,7 +16,11 @@
 
 #include <stk_io/IossBridge.hpp>
 #include <Intrepid_HGRAD_HEX_C1_FEM.hpp>
+// FIXME
 
+#include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
+#include <stk_percept/Intrepid_HGRAD_QUAD_C2_Serendipity_FEM.hpp>
+#include <stk_percept/Intrepid_HGRAD_HEX_C2_Serendipity_FEM.hpp>
 
 namespace stk {
   namespace percept {
@@ -30,20 +34,31 @@ namespace stk {
     std::string PerceptMesh::s_omit_part = "_uo";  // stk_io now lowercases everything
 
     PerceptMesh::FieldCreateOrder::FieldCreateOrder() : m_name(), m_entity_rank(mesh::Node), m_dimensions(), m_part(0) {}
-    PerceptMesh::FieldCreateOrder::FieldCreateOrder(const std::string name, const unsigned entity_rank, 
+    PerceptMesh::FieldCreateOrder::FieldCreateOrder(const std::string name, const unsigned entity_rank,
                                                    const std::vector<int> dimensions, const mesh::Part* part)
       : m_name(name), m_entity_rank(entity_rank), m_dimensions(dimensions), m_part(part) {}
-    
+
 
     //========================================================================================================================
     /// high-level interface
 
-
-    PerceptMesh::PerceptMesh(stk::ParallelMachine comm  ) 
+    PerceptMesh::PerceptMesh(stk::ParallelMachine comm) :
+      m_metaData(NULL),
+      m_bulkData(NULL),
+      m_fixture(NULL),
+      m_iossRegion(NULL),
+      m_coordinatesField(NULL),
+      m_spatialDim(0),
+      m_ownData(false),
+      m_isCommitted(false),
+      m_isOpen(false),
+      m_isInitialized(false),
+      m_isAdopted(false),
+      m_dontCheckState(false),
+      m_filename(),
+      m_comm(comm)
     {
-      m_dontCheckState = false;
-      m_comm = comm;
-      init(comm);
+        init(m_comm);
     }
 
     /// reads and commits mesh, editing disabled
@@ -141,12 +156,12 @@ namespace stk {
     }
 
     /// commits mesh  - any operations done on a non-committed mesh, except to add fields will throw an exception
-    void PerceptMesh::
-    commit()
+    void PerceptMesh::commit()
     {
       commitMetaData();
       // no op if mesh created by newMesh
-      readBulkData();  
+      readBulkData();
+      setCoordinatesField();
       m_isCommitted = true;
     }
 
@@ -170,7 +185,7 @@ namespace stk {
       open(temp_file_name);
       std::cout << "reopen: after open, m_fixture = " << m_fixture << std::endl;
     }
-      
+
     /// commits mesh if not committed and saves it in new file
     void PerceptMesh::
     saveAs(const std::string& out_filename )
@@ -202,17 +217,17 @@ namespace stk {
       //const unsigned p_rank = stk::parallel_machine_rank( eMesh.getBulkData()->parallel() );
       const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
 
-      std::cout 
-        << "\n\nP[" << p_rank << "] ========================================================\n" 
-        << "P[" << p_rank << "] ========================================================\n" 
-        << "P[" << p_rank << "] ========================================================\n\n\n" 
+      std::cout
+        << "\n\nP[" << p_rank << "] ========================================================\n"
+        << "P[" << p_rank << "] ========================================================\n"
+        << "P[" << p_rank << "] ========================================================\n\n\n"
         << std::endl;
-      
+
       std::cout << "P[" << p_rank << "] PerceptMesh::printInfo: " << header << std::endl;
       using namespace mesh;
       bool printInfo = true;
 
-	
+
       MetaData& metaData = *eMesh.getMetaData();
 
       {
@@ -229,51 +244,54 @@ namespace stk {
         std::cout.flush();
       }
 
+      // Parts information
       const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
-
       unsigned nparts = parts.size();
-      if (printInfo) std::cout << "P[" << p_rank << "] info>    Number of parts = " << nparts << std::endl;
-      for (unsigned ipart=0; ipart < nparts; ipart++)
+      if (printInfo) 
         {
-          Part& part = *parts[ipart];
-          const CellTopologyData *const topology = stk::mesh::get_cell_topology(part);
-          std::string subsets = "{";
-          const stk::mesh::PartVector &part_subsets = part.subsets();
-          if (part_subsets.size() > 0) {
-            for (size_t j = 0; j < part_subsets.size(); j++) 
-              {
-                mesh::Part & efb_part = *part_subsets[j];
-                subsets += efb_part.name()+(j != part_subsets.size()-1?" , ":"");
+          std::cout << "P[" << p_rank << "] info>    Number of parts = " << nparts << std::endl;
+          std::cout << "\nP[" << p_rank << "] info>    Part subset info: \n" << std::endl;
+          for (unsigned ipart=0; ipart < nparts; ipart++)
+            {
+              Part& part = *parts[ipart];
+              const CellTopologyData *const topology = stk::mesh::get_cell_topology(part);
+              std::string subsets = "{";
+              const stk::mesh::PartVector &part_subsets = part.subsets();
+              if (part_subsets.size() > 0) {
+                for (size_t j = 0; j < part_subsets.size(); j++) 
+                  {
+                    mesh::Part & efb_part = *part_subsets[j];
+                    subsets += efb_part.name()+(j != part_subsets.size()-1?" , ":"");
+                  }
               }
-          }
-          subsets += "}";
-          std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() 
-                    << " topology = " << (topology?CellTopology(topology).getName():"null")
-                    << " subsets = " << subsets
-                    << std::endl;
-        }
+              subsets += "}";
+              std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() 
+                        << " topology = " << (topology?CellTopology(topology).getName():"null")
+                        << " primary_entity_rank = " << part.primary_entity_rank()
+                        << " subsets = " << subsets
+                        << std::endl;
+            }
 
-      for (unsigned ipart=0; ipart < nparts; ipart++)
-        {
-          Part& part = *parts[ipart];
-          {
-            std::vector<unsigned> count ;
-            mesh::Selector selector(part);
-            count_entities( selector, *eMesh.getBulkData(), count );
+          std::cout << "\nP[" << p_rank << "] info>     Part Uses information: \n" << std::endl;
+          for (unsigned ipart=0; ipart < nparts; ipart++)
+            {
+              Part& part = *parts[ipart];
+              {
+                std::vector<unsigned> count ;
+                mesh::Selector selector(part);
+                count_entities( selector, *eMesh.getBulkData(), count );
 
-            std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() ;
-            std::cout <<  " : Uses {" ;
-            std::cout << " Node = " << count[ mesh::Node ] ;
-            std::cout << " Edge = " << count[ mesh::Edge ] ;
-            std::cout << " Face = " << count[ mesh::Face ] ;
-            std::cout << " Elem = " << count[ mesh::Element ] ;
-            std::cout << " }" << std::endl ;
-            std::cout.flush();
-          }
+                std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() ;
+                std::cout <<  " : Uses {" ;
+                std::cout << " Node = " << count[ mesh::Node ] ;
+                std::cout << " Edge = " << count[ mesh::Edge ] ;
+                std::cout << " Face = " << count[ mesh::Face ] ;
+                std::cout << " Elem = " << count[ mesh::Element ] ;
+                std::cout << " }" << std::endl ;
+                std::cout.flush();
+              }
+            }
         }
-      // here's where we can add parts
-      // ...
-      // ... then we would have to commit the metaData
 
       const FieldVector & fields =  metaData.get_fields();
       unsigned nfields = fields.size();
@@ -295,8 +313,8 @@ namespace stk {
                   mesh::Part& frpart = metaData.get_part(fr.ordinal());
                   stride = fr.stride[0];
                   field_rank = fr.type();
-                  if (printInfo) std::cout << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr.stride[0] << 
-                    " type= " << fr.type() << " ord= " << fr.ordinal() << 
+                  if (printInfo) std::cout << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr.stride[0] <<
+                    " type= " << fr.type() << " ord= " << fr.ordinal() <<
                     " which corresponds to Part= " << frpart.name() << std::endl;
                 }
 
@@ -308,16 +326,16 @@ namespace stk {
                   const std::vector<Bucket*> & buckets = getBulkData()->buckets( rank );
                   std::cout  << "P[" << p_rank << "] info> num buckets = " << buckets.size() << " for rank= " << rank << std::endl;
 
-                  for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+                  for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
                     {
                       if (on_locally_owned_part(**k))  // this is where we do part selection
                       {
                         Bucket & bucket = **k ;
                         const unsigned num_elements_in_bucket = bucket.size();
-                
+
                         //dw().m(LOG_APPLICATION) << "num_elements_in_bucket = " << num_elements_in_bucket<< " element ids = " << stk::diag::dendl;
                         //dw() << "num_elements_in_bucket = " << num_elements_in_bucket<< " element ids = " << stk::diag::dendl;
-              
+
                         std::ostringstream outstr;
                         for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                           {
@@ -348,16 +366,16 @@ namespace stk {
         std::cout  << "P[" << p_rank << "] info> num buckets = " << buckets.size() << std::endl;
 
         int ibucket = 0;
-        for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
             //if (select_owned(**k))  // this is where we do part selection
             {
               Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
-                
+
               //dw().m(LOG_APPLICATION) << "num_elements_in_bucket = " << num_elements_in_bucket<< " element ids = " << stk::diag::dendl;
               //dw() << "num_elements_in_bucket = " << num_elements_in_bucket<< " element ids = " << stk::diag::dendl;
-              
+
               std::ostringstream outstr;
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
@@ -375,17 +393,17 @@ namespace stk {
                       std::cout << "P[" << p_rank << "] info> " << " " << element << std::endl;
                     }
                 }
-              std::cout  << "P[" << p_rank << "] info> bucket # " << ibucket 
+              std::cout  << "P[" << p_rank << "] info> bucket # " << ibucket
                          << " num_elements_in_bucket = " << num_elements_in_bucket<< " element ids = " << outstr.str() << std::endl;
               ++ibucket;
             }
           }
       }
 
-      std::cout 
-        << "\n\nP[" << p_rank << "] ========================================================\n" 
-        << "P[" << p_rank << "] ========================================================\n" 
-        << "P[" << p_rank << "] ========================================================\n" 
+      std::cout
+        << "\n\nP[" << p_rank << "] ========================================================\n"
+        << "P[" << p_rank << "] ========================================================\n"
+        << "P[" << p_rank << "] ========================================================\n"
         << std::endl;
 
     }
@@ -418,7 +436,7 @@ namespace stk {
       std::cout << "P[" << p_rank << "] PerceptMesh::printFields: " << header << std::endl;
       using namespace mesh;
       bool printInfo = true;
-	
+
       MetaData& metaData = *eMesh.getMetaData();
 
       const FieldVector & fields =  metaData.get_fields();
@@ -440,7 +458,7 @@ namespace stk {
                   //std::cout << fr.key.rank();
                   if (fr.type() == stk::mesh::Node)
                     {
-                      
+
                       if (printInfo) std::cout << "P[" << p_rank << "] info>   stride = "<< fr.stride[0] << std::endl;
                       PrintFieldOp pfop(field->name(), *this, 3, fr.stride[0]);
                       nodalOpLoop(pfop, field);
@@ -454,13 +472,28 @@ namespace stk {
     int PerceptMesh::
     getSpatialDim()
     {
-#ifndef NDEBUG
-      const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getMetaData()->universal_part());
-      unsigned dataStride = r.stride[0] ;
-      VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::getSpatialDim() bad spatial dim");
-#endif
+      // #ifndef NDEBUG
+      //       const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getMetaData()->universal_part());
+      //       unsigned dataStride = r.stride[0] ;
+      //       VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::getSpatialDim() bad spatial dim");
+      // #endif
       return m_spatialDim;
     }
+
+    int PerceptMesh::
+    getNumberElements()
+    {
+      std::vector<unsigned> count ;
+      mesh::Selector selector(getMetaData()->universal_part());
+      count_entities( selector, *getBulkData(), count );
+      return count[ mesh::Element ];
+      //         std::cout << " Node = " << count[ mesh::Node ] ;
+      //         std::cout << " Edge = " << count[ mesh::Edge ] ;
+      //         std::cout << " Face = " << count[ mesh::Face ] ;
+      //         std::cout << " Elem = " << count[ mesh::Element ] ;
+      //         std::cout << " }" << std::endl ;
+      //         std::cout.flush();
+      }
 
     //========================================================================================================================
     /// low-level interfaces
@@ -475,25 +508,29 @@ namespace stk {
         }
     }
 
-    PerceptMesh::PerceptMesh(stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) : 
-      m_ownData(false), m_metaData(metaData), m_bulkData(bulkData),  m_iossRegion(0)
+    PerceptMesh::PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) :
+      m_metaData(const_cast<mesh::MetaData *>(metaData)),
+      m_bulkData(bulkData),
+        m_fixture(NULL),
+        m_iossRegion(NULL),
+        m_coordinatesField(NULL),
+        m_spatialDim(3),
+        m_ownData(false),
+        m_isCommitted(isCommitted),
+        m_isOpen(true),
+        m_isInitialized(true),
+        m_isAdopted(true),
+        m_dontCheckState(false),
+        m_filename(),
+        m_comm()
     {
-      if (!bulkData) 
+      if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
-      m_fixture       = 0;
-      m_iossRegion    = 0;
-      m_isCommitted   = isCommitted;
-      m_isAdopted     = true;
-      m_isOpen        = true;
-      m_filename      = "";
-      m_isInitialized = true;
-      m_dontCheckState = false;
-      m_spatialDim = 3;
-#if 1
 
-      if (getCoordinatesField())
-        {
-          const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getMetaData()->universal_part());
+      setCoordinatesField();
+
+      if (m_coordinatesField) {
+          const stk::mesh::FieldBase::Restriction & r = m_coordinatesField->restriction(stk::mesh::Node, getMetaData()->universal_part());
           unsigned dataStride = r.stride[0] ;
           m_spatialDim = dataStride;
           if (m_spatialDim != 2 && m_spatialDim != 3)
@@ -502,11 +539,10 @@ namespace stk {
               throw std::runtime_error("PerceptMesh::PerceptMesh(adopt form): bad spatial dim");
             }
         }
-#endif
     }
 
     void PerceptMesh::
-    init (stk::ParallelMachine comm)
+    init(stk::ParallelMachine comm)
     {
       m_isInitialized = true;
       m_comm          = comm;
@@ -519,10 +555,10 @@ namespace stk {
       m_isAdopted     = false;
       m_isOpen        = false;
       m_filename      = "";
+      m_coordinatesField = NULL;
     }
 
-    void PerceptMesh::
-    destroy()
+    void PerceptMesh::destroy()
     {
       //EXCEPTWATCH;
       if (m_ownData)
@@ -532,39 +568,50 @@ namespace stk {
           m_metaData = 0;
           m_bulkData = 0;
         }
-      if (m_fixture) 
+      if (m_fixture)
         {
           delete m_fixture;
           m_fixture = 0;
         }
       m_spatialDim = 0;
+      m_coordinatesField = NULL;
     }
-    PerceptMesh::~PerceptMesh() 
-    { 
+
+    PerceptMesh::~PerceptMesh()
+    {
       destroy();
     }
 
-    stk::mesh::BulkData * PerceptMesh::getBulkData() 
-    { 
+    stk::mesh::BulkData * PerceptMesh::getBulkData()
+    {
       //checkState("getBulkData");
       return m_bulkData;
     }
-    stk::mesh::MetaData * PerceptMesh::getMetaData() 
-    { 
+    stk::mesh::MetaData * PerceptMesh::getMetaData()
+    {
       //checkState("getMetaData");
       return m_metaData;
     }
 
+    void PerceptMesh::setCoordinatesField() {
+      if (m_bulkData == NULL || m_metaData == NULL) {
+        throw std::runtime_error("PerceptMesh::setCoordinatesField() requires metadata and bulkdata");
+      }
+      m_coordinatesField = m_metaData->get_field<VectorFieldType >("coordinates");
+      if (m_coordinatesField == NULL) {
+          throw std::runtime_error("PerceptMesh::setCoordinatesField() could not obtain the field from meta data");
+      }
+    }
 
     mesh::Part* PerceptMesh::
-    getNonConstPart(const std::string& part_name) 
+    getNonConstPart(const std::string& part_name)
     {
       const mesh::Part* part = getPart(part_name);
       return const_cast<mesh::Part *>(part);
     }
 
     const mesh::Part* PerceptMesh::
-    getPart(const std::string& part_name) 
+    getPart(const std::string& part_name)
     {
 #if 1
       const mesh::Part* part = getMetaData()->get_part(part_name);
@@ -601,7 +648,7 @@ namespace stk {
 #endif
     }
 
-    FieldBase* PerceptMesh::createField(const std::string& name, const unsigned entity_rank, 
+    FieldBase* PerceptMesh::createField(const std::string& name, const unsigned entity_rank,
                                        const std::vector<int>& dimensions, const mesh::Part* arg_part)
     {
       EXCEPTWATCH;
@@ -645,19 +692,6 @@ namespace stk {
       return field;
     }
 
-    VectorFieldType* PerceptMesh::
-    getCoordinatesField() 
-    {
-      VectorFieldType *coords_field = getMetaData()->get_field<VectorFieldType >("coordinates");
-#if 1
-      if (!coords_field) 
-        {
-          throw std::runtime_error("PerceptMesh::getCoordinatesField() coords_field = null");
-        }
-#endif
-      return coords_field;
-    }
-
     // modeled after Kuettler's code
     Entity & PerceptMesh::createOrGetNode(EntityId node_id, double* coord_in)
     {
@@ -687,15 +721,36 @@ namespace stk {
       else
         {
           stk::mesh::PartVector empty ;
-          stk::mesh::Entity & node = getBulkData()->declare_entity( stk::mesh::Node, node_id, empty );
+          stk::mesh::Entity & node_0 = getBulkData()->declare_entity( stk::mesh::Node, node_id, empty );
 
-          double * const coord = stk::mesh::field_data( *getCoordinatesField() , node );
+          double * const coord = stk::mesh::field_data( *getCoordinatesField() , node_0 );
 
-          coord[0] = coord_in[0];
-          coord[1] = coord_in[1];
-          coord[2] = coord_in[2];
+          if (!coord_in)
+            {
+              std::cout << "PerceptMesh::createOrGetNode coord_in is null and node doesn't exist, node_id= " << node_id << std::endl;
+              throw std::runtime_error("PerceptMesh::createOrGetNode coord_in is null and node doesn't exist");
+            }
 
-          return node;
+          if (coord_in) 
+            {
+              coord[0] = coord_in[0];
+              coord[1] = coord_in[1];
+              if (getSpatialDim() == 3)
+                {
+                  coord[2] = coord_in[2];
+                }
+            }
+          else
+            {
+              coord[0] = 0.0;
+              coord[1] = 0.0;
+              if (getSpatialDim() == 3)
+                {
+                  coord[2] = 0.0;
+                }
+            }
+
+          return node_0;
         }
     }
 
@@ -715,8 +770,8 @@ namespace stk {
       unsigned rank = field->rank();
       double * fdata = 0;
 
-      if(stride) { 
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, field->mesh_meta_data().universal_part());
+      if(stride) {
+        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
         *stride = r.stride[0] ;
       }
 
@@ -750,10 +805,10 @@ namespace stk {
       EXCEPTWATCH;
       unsigned rank = field->rank();
       double * fdata = 0;
-      
 
-      if(stride) { 
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, field->mesh_meta_data().universal_part());
+
+      if(stride) {
+        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
         *stride = r.stride[0] ;
       }
 
@@ -790,7 +845,7 @@ namespace stk {
     }
 
 #if 0
-    FieldBase* PerceptMesh::getField(const std::string& name, const unsigned entity_rank, 
+    FieldBase* PerceptMesh::getField(const std::string& name, const unsigned entity_rank,
                                     const std::vector<int>& dimensions, const mesh::Part* arg_part)
     {
       FieldBase *field=0;
@@ -838,8 +893,8 @@ namespace stk {
       unsigned rank = field->rank();
       double * fdata = 0;
 
-      if(stride) { 
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, field->mesh_meta_data().universal_part());
+      if(stride) {
+        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
         *stride = r.stride[0] ;
       }
 
@@ -848,7 +903,7 @@ namespace stk {
         case 0:
           {
             fdata = stk::mesh::field_data( *static_cast<ScalarFieldType *>(field) , bucket.begin() );
-            Teuchos::Array<int> dims(1); 
+            Teuchos::Array<int> dims(1);
             dims(0) = bucket.size();
             MDArray md(dims, fdata);
             return md;
@@ -914,7 +969,7 @@ namespace stk {
 
 
       // Example command line in current code corresponding to behavior below:
-#if 0        
+#if 0
       std::cout << "\nWhen processing file multi-block.g for use case 2, the blocks below will be omitted:\n";
       std::cout << "\tOMIT BLOCK Cblock Eblock I1 I2\n\n";
 
@@ -972,14 +1027,14 @@ namespace stk {
     {
       if (m_fixture)
         m_fixture->commit();
-      else 
+      else
         m_metaData->commit();
     }
 
     void PerceptMesh::readBulkData()
     {
       //std::cout << "PerceptMesh::readBulkData() " << std::endl;
-      if (m_fixture || m_isAdopted) 
+      if (m_fixture || m_isAdopted)
         {
           //std::cout << "PerceptMesh::readBulkData() m_fixture " << std::endl;
           return;
@@ -1001,7 +1056,7 @@ namespace stk {
       int timestep_count = in_region.get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
-      
+
       if (timestep_count == 0)
         process_read_input_request(in_region, bulk_data, 0);
       else
@@ -1042,19 +1097,19 @@ namespace stk {
           for (unsigned ipart=0; ipart < nparts; ipart++)
             {
               Part& part = *parts[ipart];
-              if (print) std::cout << "PerceptMesh::readModelCreateOptionalFields: part = " << part.name() 
-                                   << " primary_entity_rank= " << part.primary_entity_rank() 
+              if (print) std::cout << "PerceptMesh::readModelCreateOptionalFields: part = " << part.name()
+                                   << " primary_entity_rank= " << part.primary_entity_rank()
                                    << " mesh_meta_data_ordinal= " << part.mesh_meta_data_ordinal() << " supersets= " << part.supersets().size()
                                    << " subsets= " << part.subsets().size() << std::endl;
             }
         }
       /// here's where we can add parts, fields, etc., before commit
-        
+
       /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field if needed
       //FieldBase *f_coords = metaData.get_field<FieldBase>("coordinates");
       //if (print) std::cout << "coordinates field name = "<< f_coords->name() << std::endl;
 
-      /// create a new field to contain the magnitude of the coordinates field - 
+      /// create a new field to contain the magnitude of the coordinates field -
       /// it is a scalar field, so we pass in dimensions of length 0
       if (create_field.size())
         {
@@ -1068,10 +1123,10 @@ namespace stk {
 
 #if 0
     /// now we have created all fields we need, we can commit the meta data and actually read the bulk data
-        
+
     commitMetaData();
     readBulkData();
-        
+
     if (print)
       {
         const FieldVector & fields =  metaData.get_fields();
@@ -1080,7 +1135,7 @@ namespace stk {
         for (unsigned ifld = 0; ifld < nfields; ifld++)
           {
             FieldBase *field = fields[ifld];
-            if (print) std::cout << "PerceptMesh::readModelCreateOptionalFields:: Field[" << ifld << "]= " << field->name() 
+            if (print) std::cout << "PerceptMesh::readModelCreateOptionalFields:: Field[" << ifld << "]= " << field->name()
                                  << " rank= " << field->rank() << std::endl;
           }
       }
@@ -1092,7 +1147,7 @@ namespace stk {
 
     void PerceptMesh::setOmitted(Ioss::Region& out_region)
     {
-    
+
           // Filter out all non-hex8 element blocks...
           if (hex_only) {
             const Ioss::ElementBlockContainer& elem_blocks = in_region->get_element_blocks();
@@ -1166,7 +1221,7 @@ namespace stk {
             Ioss::EntityBlock *block = ef_set->get_block(i);
             omit_entity(block);
           }
-          
+
           omit_entity(*it);
         }
       }
@@ -1184,7 +1239,7 @@ namespace stk {
             Ioss::EntityBlock *block = ef_set->get_block(i);
             omit_entity(block);
           }
-          
+
           omit_entity(*it);
         }
       }
@@ -1319,7 +1374,7 @@ namespace stk {
 
       MetaData& metaData = *eMesh->getMetaData();
       //BulkData& bulkData = *eMesh.getBulkData();
-        
+
       const PartVector & parts = metaData.get_parts();
 
       unsigned nparts = parts.size();
@@ -1339,11 +1394,50 @@ namespace stk {
             {
               const FieldRestriction& fr = field->restrictions()[ifr];
               mesh::Part& frpart = metaData.get_part(fr.ordinal());
-              std::cout << "PerceptMesh::dump: field restriction " << ifr << " stride[0] = " << fr.stride[0] << " type= " << fr.type() << " ord= " << fr.ordinal() << 
+              std::cout << "PerceptMesh::dump: field restriction " << ifr << " stride[0] = " << fr.stride[0] << " type= " << fr.type() << " ord= " << fr.ordinal() <<
                 " which corresponds to Part= " << frpart.name() << std::endl;
             }
         }
 
+    }
+
+    void PerceptMesh::
+    dumpElements(const std::string& partName)
+    {
+      const PartVector & parts = getMetaData()->get_parts();
+      unsigned nparts = parts.size();
+
+      for (unsigned ipart=0; ipart < nparts; ipart++)
+        {
+          Part& part = *parts[ipart];
+          mesh::Selector selector(part);
+
+          if (part.name()[0] == '{' || (part.name().find("oldElem") != std::string::npos) )
+            continue;
+
+          if (partName.size() > 0 && part.name() != partName)
+            continue;
+
+          std::cout << "tmp UniformRefiner::dumpElements: part = " << part.name() << std::endl;
+          const std::vector<Bucket*> & buckets = getBulkData()->buckets( mesh::Element );
+
+          for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            {
+              if (selector(**k))
+              {
+                Bucket & bucket = **k ;
+                const unsigned num_elements_in_bucket = bucket.size();
+
+                for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                  {
+                    Entity& element = bucket[iElement];
+
+                    std::cout << "tmp UniformRefiner::dumpElements: newElement: " << element << std::endl;
+                    Util::printEntity(std::cout, element, getCoordinatesField() );
+                  }
+              }
+            }
+        }
     }
 
     /** \brief Loop over all buckets and apply \param bucketOp passing in the argument \param field to \param bucketOp */
@@ -1366,7 +1460,7 @@ namespace stk {
 
       const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::Element );
 
-      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           if (!part || selector(**k))  // this is where we do part selection
             {
@@ -1403,7 +1497,7 @@ namespace stk {
 
       const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::Element );
 
-      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           if (!part || selector(**k))  // this is where we do part selection
             {
@@ -1441,11 +1535,9 @@ namespace stk {
       EXCEPTWATCH;
       //checkState("nodalOpLoop");
 
-      mesh::MetaData& metaData = *m_metaData;
       mesh::BulkData& bulkData = *m_bulkData;
 
-      // FIXME consider caching the coords_field in FieldFunction
-      VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
+      VectorFieldType *coords_field = getCoordinatesField();
 
       // for each node in the codomain, evaluate the function_to_interpolate's function, assign to the codomain field
 
@@ -1453,7 +1545,7 @@ namespace stk {
 
       int num_nodes = 0;
 
-      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           //if (select_owned(**k))  // this is where we do part selection
           {
@@ -1533,6 +1625,9 @@ namespace stk {
          supportedTopologies.push_back(shards::getCellTopologyData<Wedge<6> >() );
          supportedTopologies.push_back(shards::getCellTopologyData<Wedge<18> >() );
       */
+
+      // FIXME
+#if !(defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
       m_basisTable[shards::getCellTopologyData<Line<2> >()-> key]          = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
       //m_basisTable[shards::getCellTopologyData<Line<3> >()-> key]          = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
 
@@ -1540,24 +1635,31 @@ namespace stk {
       m_basisTable[shards::getCellTopologyData<Triangle<6> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
 
       m_basisTable[shards::getCellTopologyData<Quadrilateral<4> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<Quadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
       m_basisTable[shards::getCellTopologyData<Quadrilateral<9> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_FEM<double, MDArray >() );
 
       m_basisTable[shards::getCellTopologyData<Hexahedron<8> >()-> key]    = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<Hexahedron<20> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM<double, MDArray >() );
       m_basisTable[shards::getCellTopologyData<Hexahedron<27> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_FEM<double, MDArray >() );
 
       m_basisTable[shards::getCellTopologyData<Tetrahedron<4> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C1_FEM<double, MDArray >() );
       m_basisTable[shards::getCellTopologyData<Tetrahedron<10> >()-> key]  = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C2_FEM<double, MDArray >() );
 
       m_basisTable[shards::getCellTopologyData<Wedge<6> >()-> key]         = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C1_FEM<double, MDArray >() );
-      m_basisTable[shards::getCellTopologyData<Wedge<18> >()-> key]        = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C2_FEM<double, MDArray >() );
+
+      // Intrepid doesn't support wedge 15
+      m_basisTable[shards::getCellTopologyData<Wedge<15> >()-> key]        = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C2_Serendipity_FEM<double, MDArray >() );
 
 
       // Shells
       m_basisTable[shards::getCellTopologyData<ShellTriangle<3> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, MDArray >() );
       m_basisTable[shards::getCellTopologyData<ShellTriangle<6> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
 
-      m_basisTable[shards::getCellTopologyData<ShellQuadrilateral<4> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
-      
+      m_basisTable[shards::getCellTopologyData<ShellQuadrilateral<4> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
+
+      m_basisTable[shards::getCellTopologyData<ShellQuadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
+
+#endif
 
       // etc....
 
@@ -1582,7 +1684,7 @@ namespace stk {
 
     // static
     void PerceptMesh::
-    findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field, 
+    findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                          FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length)
     {
       const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
@@ -1604,7 +1706,7 @@ namespace stk {
           double max_edge_length = -1.0;
           for (unsigned iedgeOrd = 0; iedgeOrd < bucket_cell_topo_data->edge_count; iedgeOrd++)
             {
-              //const CellTopologyData_Subcell& edge = 
+              //const CellTopologyData_Subcell& edge =
 
               unsigned in0 = bucket_cell_topo_data->edge[iedgeOrd].node[0];
               unsigned in1 = bucket_cell_topo_data->edge[iedgeOrd].node[1];
@@ -1615,7 +1717,7 @@ namespace stk {
               double edge_length = 0.0;
               for (unsigned iSpaceDimOrd = 0; iSpaceDimOrd < spaceDim; iSpaceDimOrd++)
                 {
-                  edge_length += 
+                  edge_length +=
                     (node_coord_data_0[iSpaceDimOrd]-node_coord_data_1[iSpaceDimOrd])*
                     (node_coord_data_0[iSpaceDimOrd]-node_coord_data_1[iSpaceDimOrd]);
                 }
@@ -1649,7 +1751,7 @@ namespace stk {
       const bool is_side = side_entity_rank != Edge;
       const CellTopologyData * const elem_top = get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      const fem::FemInterface& fem = *elem.bucket().mesh().mesh_meta_data().get_attribute<FemInterface>();
+      const fem::FemInterface& fem = MetaData::get(*elem).get_attribute<FemInterface>();
       const bool is_side = side_entity_rank != fem::edge_rank(fem);
       const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -1661,7 +1763,7 @@ namespace stk {
       if ( NULL == elem_top ||
            local_side_id < 0 ||
            static_cast<int>(side_count) <= local_side_id ) {
-        const MetaData & meta_data = elem.bucket().mesh().mesh_meta_data();
+        const MetaData & meta_data = MetaData::get(elem);
         std::ostringstream msg ;
         msg << method ;
         msg << " ( Element[" << elem.identifier() << "]" ;
@@ -1708,7 +1810,7 @@ namespace stk {
       EntityRank needed_entity_rank = side.entity_rank();
 
       const CellTopologyData * const cell_topo_data = get_cell_topology(element);
-                
+
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(Node);
       const mesh::PairIterRelation side_nodes = side.relations(Node);
@@ -1817,7 +1919,7 @@ namespace stk {
                   returnedIndex = -1;
                   return;
                 }
-            }          
+            }
         }
       else
         {

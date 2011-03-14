@@ -3,6 +3,7 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MatrixIO.hpp"
+#include <iostream>
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
@@ -24,7 +25,8 @@ Tpetra::Utils::generateMatrix(const Teuchos::RCP<Teuchos::ParameterList> &plist,
     const GlobalOrdinal numRows = gS2*(GlobalOrdinal)gridSize;
     Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap;
     rowMap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>((global_size_t)numRows,(GlobalOrdinal)0,comm,GloballyDistributed,node));
-    A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,7,Tpetra::StaticProfile));
+    // create with DynamicProfile, so that the fillComplete(DoOptimizeStorage) can do first-touch reallocation 
+    A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,7,Tpetra::DynamicProfile));
     // fill matrix, one row at a time
     Teuchos::Array<GlobalOrdinal> neighbors;
     Teuchos::Array<Scalar> values(7, -ST::one());
@@ -184,14 +186,18 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
     for (int p=1; p < Teuchos::size(*comm); ++p) {
       size_t numRowsForP;
       Teuchos::receive(*comm,p,&numRowsForP);
-      Teuchos::send<int,size_t>(*comm,numRowsForP,nnzPerRow(numRowsAlreadyDistributed,numRowsForP).getRawPtr(),p);
-      numRowsAlreadyDistributed += numRowsForP;
+      if (numRowsForP) {
+        Teuchos::send<int,size_t>(*comm,numRowsForP,nnzPerRow(numRowsAlreadyDistributed,numRowsForP).getRawPtr(),p);
+        numRowsAlreadyDistributed += numRowsForP;
+      }
     }
   }
   else {
     const size_t numMyRows = rowMap->getNodeNumElements();
     Teuchos::send(*comm,numMyRows,0);
-    Teuchos::receive<int,size_t>(*comm,0,numMyRows,myNNZ(0,numMyRows).getRawPtr());
+    if (numMyRows) {
+      Teuchos::receive<int,size_t>(*comm,0,numMyRows,myNNZ(0,numMyRows).getRawPtr());
+    }
   }
   nnzPerRow = Teuchos::null;
   // create column map
@@ -202,7 +208,8 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   else {
     domMap = createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numCols,comm,node);
   }
-  A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,myNNZ,Tpetra::StaticProfile));
+  // create with DynamicProfile, so that the fillComplete(DoOptimizeStorage) can do first-touch reallocation 
+  A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,myNNZ,Tpetra::DynamicProfile));
   // free this locally, A will keep it allocated as long as it is needed by A (up until allocation of nonzeros)
   myNNZ = Teuchos::null;
   if (myRank == 0 && numNZ > 0) {
@@ -220,6 +227,273 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   svals   = Teuchos::null;
   rowptrs = Teuchos::null;
   A->fillComplete(domMap,rowMap,Tpetra::DoOptimizeStorage);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
+  Teuchos::RCP<const Teuchos::Comm<int> > comm,
+  Teuchos::RCP<Node> node,
+ Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& A,
+ bool transpose,
+ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap,
+ bool verbose,
+ std::ostream* outstream
+ )
+{
+  const int chunk_read = 500000;  //  Modify this variable to change the
+                                  //  size of the chunks read from the file.
+  const int headerlineLength = 257;
+  const int lineLength = 81;
+  const int tokenLength = 35;
+  char line[lineLength];
+  char token1[tokenLength];
+  char token2[tokenLength];
+  char token3[tokenLength];
+  char token4[tokenLength];
+  char token5[tokenLength];
+  int M, N, NZ;      // Matrix dimensions
+  int me = comm->getRank();
+
+  Teuchos::Time timer("Mtx reader timer", true);
+
+  // Make sure domain and range maps are either both defined or undefined 
+  /*if ((domainMap!=0 && rangeMap==0) || (domainMap==0 && rangeMap!=0)) {
+    EPETRA_CHK_ERR(-3);
+  }*/
+
+  // check maps to see if domain and range are 1-to-1
+
+  /*if (domainMap!=0) {
+    if (!domainMap->UniqueGIDs()) {EPETRA_CHK_ERR(-2);}
+    if (!rangeMap->UniqueGIDs()) {EPETRA_CHK_ERR(-2);}
+  }
+  else {
+    // If domain and range are not specified, 
+    // rowMap becomes both and must be 1-to-1 if specified
+    if (rowMap!=0) {
+      if (!rowMap->UniqueGIDs()) {EPETRA_CHK_ERR(-2);}
+    }
+  }*/
+      
+  FILE * handle = 0;
+  if (me == 0) {
+    if (verbose) *outstream << 
+      "Reading MatrixMarket file " << filename << std::endl;
+    handle = fopen(filename.c_str(),"r");  // Open file
+	TEST_FOR_EXCEPTION(
+    handle == 0, 
+    std::runtime_error, 
+    "Couldn't open file: " << filename <<std::endl);
+
+
+    // Check first line, which should be 
+    // %%MatrixMarket matrix coordinate real general
+	try{
+	  TEST_FOR_EXCEPTION(fgets(line, headerlineLength, handle)==0, std::runtime_error,
+	  "Bad file header in: " << filename << std::endl);
+      TEST_FOR_EXCEPTION(sscanf(line, "%s %s %s %s %s", token1,token2,token3,token4,token5)==0,
+	  std::runtime_error,
+	  "Bad file header in: " << filename << std::endl);
+      TEST_FOR_EXCEPTION(strcmp(token1, "%%MatrixMarket") ||
+        strcmp(token2, "matrix") ||
+        strcmp(token3, "coordinate") ||
+        strcmp(token4, "real") ||
+        strcmp(token5, "general"),
+	  std::runtime_error,
+	  "Bad file header in: " << filename << std::endl);
+	}
+	catch(std::runtime_error& e){
+      if (handle!=0) fclose(handle); 
+	  throw std::runtime_error(e.what());
+	}
+    // Next, strip off header lines (which start with "%")
+    do {
+	  try{
+        TEST_FOR_EXCEPTION(fgets(line, headerlineLength, handle)==0,
+	      std::runtime_error,
+	      "Bad file header in: " << filename << std::endl);
+	  }
+	  catch(std::runtime_error& e){
+        if (handle!=0) fclose(handle); 
+	    throw std::runtime_error(e.what());
+	  }
+    } while (line[0] == '%');
+
+    // Next get problem dimensions: M, N, NZ
+	try{
+      TEST_FOR_EXCEPTION(sscanf(line, "%d %d %d", &M, &N, &NZ)==0,
+	    std::runtime_error,
+	    "Couldn't get problem dimensions in file: " << filename << std::endl);
+	}
+	catch(std::runtime_error& e){
+      if (handle!=0) fclose(handle); 
+	  throw std::runtime_error(e.what());
+	}
+  }
+  Teuchos::broadcast(*comm,  0, 1, &M);
+  Teuchos::broadcast(*comm,  0, 1, &N);
+  Teuchos::broadcast(*comm,  0, 1, &NZ);
+
+  // Now create matrix using user maps if provided.
+
+
+  // Now read in chunks of triplets and broadcast them to other processors.
+  char *buffer = new char[chunk_read*lineLength];
+  int nchunk; 
+  int nmillion = 0;
+  int nread = 0;
+  int rlen;
+
+  // Storage for this processor's nonzeros.
+  const int localblock = 100000;
+  size_t localsize = NZ / comm->getSize() + localblock;
+
+  Teuchos::ArrayRCP<GlobalOrdinal> iv(localsize);
+  Teuchos::ArrayRCP<GlobalOrdinal> jv(localsize);
+  Teuchos::ArrayRCP<Scalar> vv(localsize);
+  size_t lnz = Teuchos::OrdinalTraits<size_t>::zero();   //  Number of non-zeros on this processor.
+
+  Teuchos::RCP<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap1 = Teuchos::null;
+  bool allocatedHere=false;
+  if (!rowMap.is_null()) 
+    rowMap1 = Teuchos::rcp_const_cast<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(rowMap);
+  else {
+	  rowMap1 = Teuchos::rcp(
+      new Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(
+        (global_size_t)M, 
+        Teuchos::OrdinalTraits<GlobalOrdinal>::zero(), 
+        comm));
+    allocatedHere = true;
+  }
+  GlobalOrdinal ioffset = rowMap1->getIndexBase()-Teuchos::OrdinalTraits<GlobalOrdinal>::one();
+  int joffset = ioffset; 
+
+  int rowmajor = 1;  // Assume non-zeros are listed in row-major order, 
+  int prevrow = -1;  // but test to detect otherwise.  If non-zeros
+                     // are row-major, we can avoid the sort.
+
+
+  while (nread < NZ) {
+    if (NZ-nread > chunk_read) nchunk = chunk_read;
+    else nchunk = NZ - nread;
+
+    if (me == 0) {
+      char *eof;
+      rlen = 0;
+      for (int i = 0; i < nchunk; i++) {
+        eof = fgets(&buffer[rlen],lineLength,handle);
+        if (eof == NULL) {
+          fprintf(stderr, "%s", "Unexpected end of matrix file.");
+		  throw std::runtime_error("Unexpected end of matrix file.");
+        }
+        rlen += strlen(&buffer[rlen]);
+      }
+      buffer[rlen++]='\n';
+    }
+	  Teuchos::broadcast(*comm, 0, 1, &rlen);
+      comm->broadcast(0, rlen, buffer);
+
+    buffer[rlen++] = '\0';
+    nread += nchunk;
+
+    // Process the received data, saving non-zeros belonging on this proc.
+    char *lineptr = buffer;
+    for (rlen = 0; rlen < nchunk; rlen++) {
+      char *next = strchr(lineptr,'\n');
+      GlobalOrdinal I = atoi(strtok(lineptr," \t\n")) + ioffset;
+      GlobalOrdinal J = atoi(strtok(NULL," \t\n")) + joffset;
+      Scalar V = atof(strtok(NULL," \t\n"));
+      lineptr = next + 1;
+      /*if (transpose) {
+        // swap I and J indices.
+        int tmp = I;
+        I = J;
+        J = tmp;
+      }*/
+      if (rowMap1->isNodeGlobalElement(I)) {
+        //  This processor keeps this non-zero.
+        if (lnz >= localsize) {  
+          // Need more memory to store nonzeros.
+          localsize += localblock;
+          iv.resize(localsize);
+          jv.resize(localsize);
+          vv.resize(localsize);
+        }
+        iv[lnz] = I;
+        jv[lnz] = J;
+        vv[lnz] = V;
+        lnz++;
+        if (I < prevrow) rowmajor = 0;
+        prevrow = I;
+      }
+    }
+    // Status check
+    if (nread / 1000000 > nmillion) {
+      nmillion++;
+      if (verbose && me == 0) *outstream << nmillion << "M ";
+    }
+  }
+
+  delete [] buffer;
+
+  if (!rowmajor) {
+    // Sort into row-major order (by iv) so can insert entire rows at once.
+    // Reorder jv and vv to parallel iv.
+    if (verbose && me == 0) *outstream << std::endl << "   Sorting local nonzeros" << std::endl;
+	sort3(iv.begin(), iv.end(), jv.begin(), vv.begin());
+  }
+
+  //  Compute number of entries per local row for use in constructor;
+  //  saves reallocs in FillComplete.
+
+  //  Now construct the matrix.
+  //  Count number of entries in each row so can use StaticProfile=2.
+  if (verbose && me == 0) *outstream << std::endl << "   Constructing the matrix" << std::endl;
+  size_t numRows = rowMap1->getNodeNumElements();
+  Teuchos::ArrayRCP<size_t> numNonzerosPerRow(numRows);
+  for (size_t i = Teuchos::OrdinalTraits<size_t>::zero(); i < lnz; i++) 
+    numNonzerosPerRow[rowMap1->getLocalElement(iv[i])]++;
+
+  A = Teuchos::rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(rowMap1, numNonzerosPerRow));
+  //A->SetTracebackMode(1);
+
+  // Rows are inserted in ascending global number, and the insertion uses numNonzerosPerRow.
+  // Therefore numNonzerosPerRow must be permuted, as it was created in ascending local order.
+  //Teuchos::ArrayView<GlobalOrdinal> gidList = rowMap1->getNodeElementList(); 
+  //sort2(gidList.begin(), gidList.end(), numNonzerosPerRow.begin());
+
+  //  Insert the global values into the matrix row-by-row.
+  if (verbose && me == 0) *outstream << "   Inserting global values" << std::endl;
+  for (size_t sum = Teuchos::OrdinalTraits<size_t>::zero(), i = Teuchos::OrdinalTraits<size_t>::zero(); i < numRows; i++) {
+    if (numNonzerosPerRow[i]) {
+       A->insertGlobalValues(iv[sum],  
+                             jv(sum,numNonzerosPerRow[i]),
+                             vv(sum, numNonzerosPerRow[i]));
+      sum += numNonzerosPerRow[i];
+    }
+  }
+
+  if (verbose && me == 0) *outstream << "   Completing matrix fill" << std::endl;
+  /*if (rangeMap != 0 && domainMap != 0) {
+    EPETRA_CHK_ERR(A->FillComplete(*domainMap, *rangeMap));
+  }
+  else if (M!=N) {
+    Epetra_Map newDomainMap(N,rowMap1->IndexBase(), comm);
+    EPETRA_CHK_ERR(A->FillComplete(newDomainMap, *rowMap1));
+  }
+  else {
+    EPETRA_CHK_ERR(A->FillComplete());
+  }*/
+
+  A->fillComplete();
+  
+  if (handle!=0) fclose(handle);
+  timer.stop();
+  double dt = timer.totalElapsedTime();
+  if (verbose && me == 0) *outstream << "File Read time (secs):  " << dt << std::endl;
+  //return(0);
+
 }
 
 

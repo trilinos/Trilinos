@@ -73,7 +73,7 @@ void BucketImpl::update_state()
   bool this_is_first_bucket_in_family = ( bucket_counter() == 0 );
   if (this_is_first_bucket_in_family) {
 
-    const MetaData & S = m_mesh.mesh_meta_data();
+    const MetaData & S = MetaData::get(m_mesh);
     const std::vector<FieldBase*> & field_set = S.get_fields();
 
     for ( unsigned i = 0 ; i < field_set.size() ; ) {
@@ -163,7 +163,7 @@ BucketImpl::DataMap * BucketImpl::get_field_map()
 void BucketImpl::zero_fields( unsigned i_dst )
 {
   const std::vector<FieldBase*> & field_set =
-    m_mesh.mesh_meta_data().get_fields();
+    MetaData::get(m_mesh).get_fields();
 
   unsigned char * const p = reinterpret_cast<unsigned char*>(m_entities);
   const DataMap *       i = m_field_map;
@@ -179,7 +179,7 @@ void BucketImpl::zero_fields( unsigned i_dst )
 void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src )
 {
   const std::vector<FieldBase*> & field_set =
-    m_mesh.mesh_meta_data().get_fields();
+    MetaData::get(m_mesh).get_fields();
 
   unsigned char * const s = reinterpret_cast<unsigned char*>(k_src.m_bucketImpl.m_entities);
   unsigned char * const d = reinterpret_cast<unsigned char*>(m_entities);

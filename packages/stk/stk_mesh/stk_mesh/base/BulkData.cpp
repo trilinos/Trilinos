@@ -66,7 +66,7 @@ convert_entity_keys_to_spans( const MetaData & meta )
 
 //----------------------------------------------------------------------
 
-BulkData::BulkData( const MetaData & mesh_meta_data ,
+BulkData::BulkData( MetaData & mesh_meta_data ,
                     ParallelMachine parallel ,
                     unsigned bucket_max_size )
   : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
@@ -185,7 +185,7 @@ bool BulkData::modification_begin()
 //----------------------------------------------------------------------
 
 Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
-                                   const std::vector<Part*> & parts )
+                                   const PartVector & parts )
 {
   require_ok_to_modify();
 
@@ -313,8 +313,8 @@ void verify_change_parts( const MetaData   & meta ,
 
 void BulkData::change_entity_parts(
   Entity & entity ,
-  const std::vector<Part*> & add_parts ,
-  const std::vector<Part*> & remove_parts )
+  const PartVector & add_parts ,
+  const PartVector & remove_parts )
 {
   require_ok_to_modify();
 
@@ -328,7 +328,12 @@ void BulkData::change_entity_parts(
   // 2) Do not include a remove_part if it appears in the add_parts
   // 3) Include subsets of remove_parts
 
-  PartVector a_parts( add_parts );
+  // most parts will at least have universal and topology part as supersets
+  const unsigned expected_min_num_supersets = 2;
+
+  PartVector a_parts;
+  a_parts.reserve( add_parts.size() * (expected_min_num_supersets + 1) );
+  a_parts.insert( a_parts.begin(), add_parts.begin(), add_parts.end() );
   bool quick_verify_check = true;
 
   for ( PartVector::const_iterator
@@ -483,12 +488,22 @@ void BulkData::internal_change_entity_parts(
     const std::pair<const unsigned *, const unsigned*>
       bucket_parts = k_old->superset_part_ordinals();
 
-    parts_total.assign( bucket_parts.first , bucket_parts.second );
+    const unsigned num_bucket_parts = bucket_parts.second - bucket_parts.first;
+    parts_total.reserve( num_bucket_parts + add_parts.size() );
+    parts_total.insert( parts_total.begin(), bucket_parts.first , bucket_parts.second);
 
-    filter_out( parts_total , remove_parts , parts_removed );
+    if ( !remove_parts.empty() ) {
+      parts_removed.reserve(remove_parts.size());
+      filter_out( parts_total , remove_parts , parts_removed );
+    }
+  }
+  else {
+    parts_total.reserve(add_parts.size());
   }
 
-  merge_in( parts_total , add_parts );
+  if ( !add_parts.empty() ) {
+    merge_in( parts_total , add_parts );
+  }
 
   if ( parts_total.empty() ) {
     // Always a member of the universal part.
@@ -565,8 +580,12 @@ bool BulkData::destroy_entity( Entity * & entity_in )
   //
   // Must clean up the parallel lists before fully deleting the entity.
 
+  // It is important that relations be destroyed in reverse order so that
+  // the higher (back) relations are destroyed first.
   while ( ! entity.relations().empty() ) {
-    destroy_relation( entity , * entity.relations().back().entity() );
+    destroy_relation( entity ,
+                      * entity.relations().back().entity(),
+                      entity.relations().back().identifier());
   }
 
   // We need to save these items and call remove_entity AFTER the call to

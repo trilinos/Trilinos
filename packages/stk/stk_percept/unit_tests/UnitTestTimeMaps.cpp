@@ -1,0 +1,383 @@
+/*--------------------------------------------------------------------*/
+/*    Copyright 2009 Sandia Corporation.                              */
+/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
+
+#define DO_TEST_TIME_MAPS 0
+
+#include <gtest/gtest.h>
+
+#include <stdexcept>
+#include <sstream>
+#include <vector>
+#include <cmath>
+#include <iostream>
+#include <string>
+#include <typeinfo>
+#include <mpi.h>
+#include <math.h>
+
+
+#include <boost/unordered_map.hpp>
+
+#include <map>
+
+#include <stk_percept/Util.hpp>
+#include <stk_percept/ExceptionWatch.hpp>
+
+#define NOMALLOC_ARRAY_CHECK_SIZES
+#include <stk_percept/NoMallocArray.hpp>
+
+#include <stk_util/environment/CPUTime.hpp>
+#include <stk_util/environment/WallTime.hpp>
+#include <stk_util/util/PrintTable.hpp>
+
+#include <Teuchos_ScalarTraits.hpp>
+
+#include <stk_percept/fixtures/Fixture.hpp>
+
+#include <stk_percept/Teuchos_My_Hashtable.hpp>
+
+#include <stk_percept/Hashtable.hpp>
+
+//#include <stk_percept/sparsehash/include/google/sparse_hash_map>
+#define USE_SPARSEHASH 0
+#if USE_SPARSEHASH
+#include <google/sparse_hash_map>
+#include <google/dense_hash_map>
+#endif
+
+
+namespace Teuchos
+{
+  template <> 
+  inline
+  int hashCode(const unsigned& x)
+   {
+     return (int)x;
+   }
+
+  typedef stk::percept::NoMallocArray<int, 3> NMA1;
+
+  template <> 
+  inline
+  int hashCode(const NMA1& x)
+   {
+     return (int)(x.m_data[0] + x.m_data[1] + x.m_data[2]);
+   }
+
+}
+
+namespace stk
+{
+  namespace percept
+  {
+    namespace unit_tests
+    {
+
+#define EXTRA_PRINT 0
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+#if 0
+      TEST(unit_tests_percept, hashtable_1)
+      {
+        typedef NoMallocArray<int, 3> NMA;
+        typedef percept::Hashtable<NMA, int> HTII;
+        HTII ht;
+        std::cout << "HTII start " << std::endl;
+        NMA nma;
+        nma.insert(1); nma.insert(2); nma.insert(3);
+        NMA nma1;
+        nma1.insert(1); nma1.insert(2); nma1.insert(4);
+        ht.put(nma,-2);
+        ht[nma1] = -1;
+
+        std::cout << "ht[1]= " << ht[nma] << std::endl;
+          std::cout << "ht[3]= " << ht.get(nma1) << std::endl;
+
+        HTII::iterator it = ht.begin();
+        std::cout << "here 2 " << std::endl;
+
+        std::cout << "here 2 it=" << (*it).first() << " " << (*it).second() << std::endl;
+
+        for ( ; it != ht.end(); ++it)
+          {
+            NMA& key = (*it).first();
+            int val = (*it).second();
+            std::cout << "key= " << key << " val= " << val << std::endl;
+            //std::cout << "here" << std::endl;
+          }
+
+      }
+#endif
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+      TEST(unit_tests_percept, hashtable)
+      {
+        typedef percept::Hashtable<int, int> HTII;
+        HTII ht;
+        std::cout << "HTII start " << std::endl;
+        ht.put(1,-2);
+        ht[2] = -1;
+        int i=1;
+        std::cout << "ht[1]= " << ht[i] << std::endl;
+        bool got_it = false;
+        try {
+          std::cout << "ht[3]= " << ht.get(3) << std::endl;
+        }
+        catch(std::runtime_error& err)
+          {
+            got_it = true;
+          }
+        std::cout << "got_it= " << got_it << " [should be true] " << std::endl;
+        EXPECT_TRUE(got_it);
+
+        HTII::iterator it = ht.begin();
+        std::cout << "here 2 " << std::endl;
+
+        std::cout << "here 2 it=" << (*it).first() << " " << (*it).second() << std::endl;
+
+        for ( ; it != ht.end(); ++it)
+          {
+            int key = (*it).first();
+            int val = (*it).second();
+            std::cout << "key= " << key << " val= " << val << std::endl;
+            //std::cout << "here" << std::endl;
+          }
+
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+      TEST(unit_tests_percept, noMallocArray)
+      {
+        NoMallocArray<unsigned, 4u> nma;
+        EXPECT_TRUE(nma.max_size() == 4u);
+        EXPECT_TRUE(nma.size() == 0u);
+        EXPECT_TRUE(nma.max_size() == nma.max_capacity());
+
+        bool got_it = false;
+        try {
+          NoMallocArray<unsigned, 4> nma1(5, 0u);
+        }
+        catch (std::runtime_error& e)
+          {
+            got_it = true;
+          }
+        if (!got_it)
+          {
+            EXPECT_TRUE(false);
+          }
+
+        NoMallocArray<unsigned, 4> nma2(4u, 0u);
+        std::cout << "nma.size()= " << nma2.size() << std::endl;
+        EXPECT_TRUE(nma2.size() == 4u);
+
+        nma2.resize(0u);
+        EXPECT_TRUE(nma2.size() == 0u);
+        nma2.insert(0u);
+        nma2.insert(1u);
+        nma2.insert(2u);
+        nma2.insert(3u);
+        
+        EXPECT_TRUE(nma2.size() == 4u);
+        EXPECT_TRUE(nma2[1] == 1);
+        EXPECT_TRUE(*nma2.begin() == 0);
+        EXPECT_TRUE(*(nma2.end()-1) == 3);
+        
+
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      //template<class K, class V, class MAP >
+      template<class MAP >
+      static void setupMap(MAP& map, unsigned N)
+      {
+        for (unsigned i = 0; i < N; i++)
+          {
+            map[i] = new unsigned(i);
+          }
+      }
+
+      
+      template<class MAP, class ITER >
+      static unsigned *find1(MAP& map,  ITER& i, unsigned key)
+      {
+        i = map.find( key );
+        return i != map.end() ? i->second : 0 ;
+      }
+
+      template<class MAP, class ITER >
+      static unsigned *find2(MAP& map,  ITER& i, unsigned key)
+      {
+        return map[key];
+      }
+
+      template<class MAP, class ITER >
+      struct FindMapItem1 
+      {
+        inline unsigned *operator()(MAP& map,  ITER& i, unsigned key)
+        {
+          return map[key];
+        }
+      };
+
+      template<class MAP, class ITER >
+      struct FindMapItem2 
+      {
+        inline unsigned *operator()(MAP& map,  ITER& i, unsigned key)
+        {
+          i = map.find( key );
+          return i != map.end() ? i->second : 0 ;
+          //return i->second;
+        }
+      };
+
+      template<class MAP, class ITER, class FUNC >
+      static double dot1(MAP& map,  ITER& it, unsigned N, unsigned niter, FUNC& fm)
+      {
+        //MAP ::iterator ii = 0;
+        double sum=0.0;
+        unsigned ll=0u;
+        for (unsigned iter = 0; iter < niter; iter++)
+          {
+            //std::cout << "iter= " << iter << std::endl;
+            for (unsigned i = 0; i < N; i++)
+              {
+                //unsigned *pm = find1(map, it, i);
+                unsigned *pm = fm(map, it, i);
+                ll+= *pm;
+                sum += (double)( *pm)/(double(N));
+                map[i] = pm;
+              }
+          }
+        return sum;
+      }
+
+      
+      template<class MAP, class ITER, class FUNC >
+      static void doTest(MAP& map,  ITER& it, unsigned N, unsigned niter, FUNC& fm, std::string msg)
+      {
+        EXCEPTWATCH;
+        
+        double t0 =  stk::cpu_time(); 
+        setupMap(map, N);
+        double t1 =  stk::cpu_time(); 
+        std::cout << "maptest:   setup time  = " << (t1-t0)/60. << " [min] for " << msg << std::endl;
+
+        double t2s =  stk::cpu_time(); 
+        double dd= dot1(map, it, N, niter, fm);
+        double t2e =  stk::cpu_time(); 
+
+        std::cout << "maptest:  lookup time  = " << (t2e-t2s)/60. << " [min] for " << msg << " dd= " << dd << std::endl;
+      }
+
+
+      TEST(time_maps, compare_different_maps)
+      {
+#if DO_TEST_TIME_MAPS
+
+        EXCEPTWATCH;
+
+        unsigned N = 10000000; // 10M
+        //unsigned N = 100000; // 100K
+        //unsigned N = 10; // 10M
+        unsigned niter = 10;
+
+        unsigned init_capacity = N;
+
+        typedef std::map<unsigned, unsigned *> std_map_type;
+        std_map_type std_map1;
+        std_map_type std_map2;
+        //std::map<unsigned, unsigned*>::iterator std_map_it;
+        std_map_type::iterator std_map_it1;
+        std_map_type::iterator std_map_it2;
+
+        typedef boost::unordered_map<unsigned, unsigned *> boost_map_type;
+        boost_map_type boost_map1(init_capacity);
+        boost_map_type boost_map2(init_capacity);
+        boost_map_type::iterator boost_map_it1;
+        boost_map_type::iterator boost_map_it2;
+
+        //std::map<unsigned, unsigned *> std_map;
+
+        typedef percept::Hashtable<unsigned, unsigned *> percept_map_type;
+        percept_map_type percept_map1(init_capacity);
+        percept_map_type percept_map2(init_capacity);
+        percept_map_type::iterator percept_map_it1;
+        percept_map_type::iterator percept_map_it2;
+
+#if USE_SPARSEHASH
+        typedef google::dense_hash_map<unsigned, unsigned *> google_dense_map_type;
+        google_dense_map_type google_dense_map1(init_capacity);
+        google_dense_map1.set_empty_key(2*N);
+        google_dense_map_type::iterator google_dense_map_it1;
+
+        {
+          FindMapItem1< google_dense_map_type, google_dense_map_type::iterator > fm1;
+          if (1) doTest(google_dense_map1, google_dense_map_it1, N, niter, fm1, "google_dense_map, map[key]");
+
+          //FindMapItem2< percept_map_type, percept_map_type::iterator > fm2;
+          //if (1) doTest(percept_map2, percept_map_it2, N, niter, fm2, "percept_map, find(key)");
+        }
+#endif
+
+#if USE_SPARSEHASH
+        typedef google::sparse_hash_map<unsigned, unsigned *> google_sparse_map_type;
+        google_sparse_map_type google_sparse_map1(init_capacity);
+        google_sparse_map_type google_sparse_map2(init_capacity);
+        google_sparse_map_type::iterator google_sparse_map_it1;
+        google_sparse_map_type::iterator google_sparse_map_it2;
+
+        {
+          FindMapItem1< google_sparse_map_type, google_sparse_map_type::iterator > fm1;
+          if (1) doTest(google_sparse_map1, google_sparse_map_it1, N, niter, fm1, "google_sparse_map, map[key]");
+
+          //FindMapItem2< percept_map_type, percept_map_type::iterator > fm2;
+          //if (1) doTest(percept_map2, percept_map_it2, N, niter, fm2, "percept_map, find(key)");
+        }
+#endif
+
+        {
+          FindMapItem1< percept_map_type, percept_map_type::iterator > fm1;
+          if (1) doTest(percept_map1, percept_map_it1, N, niter, fm1, "percept_map, map[key]");
+
+          //FindMapItem2< percept_map_type, percept_map_type::iterator > fm2;
+          //if (1) doTest(percept_map2, percept_map_it2, N, niter, fm2, "percept_map, find(key)");
+        }
+
+
+        {
+          FindMapItem1< boost_map_type, boost_map_type::iterator > fm1;
+          FindMapItem2< boost_map_type, boost_map_type::iterator > fm2;
+          if (1) doTest(boost_map1, boost_map_it1, N, niter, fm1, "boost_map, map[key]");
+          if (1) doTest(boost_map2, boost_map_it2, N, niter, fm2, "boost_map, find(key)");
+        }
+
+        {
+          FindMapItem1< std_map_type, std_map_type::iterator > fm1;
+          FindMapItem2< std_map_type, std_map_type::iterator > fm2;
+          if (1) doTest(std_map1, std_map_it1, N, niter, fm1, "std_map, map[key]");
+          if (1) doTest(std_map2, std_map_it2, N, niter, fm2, "std_map, find(key)");
+        }
+
+        //doTest(boost_map, N, niter);
+
+#endif
+
+      }
+
+    }
+  }
+}

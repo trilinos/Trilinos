@@ -1339,7 +1339,7 @@ int Zoltan_RB_check_geom_output(
 
   char *yo = "Zoltan_RB_check_geom_output";
   char msg[1024];
-  int dd,i,iflag,proc,nprocs,input[2],total[2];
+  int dd=0,i,iflag,proc,nprocs,input[2],total[2];
   double *wtsum,tolerance;
   struct rcb_box *rcbbox = (struct rcb_box *) rcbbox_arg;
   int ierr = ZOLTAN_OK;

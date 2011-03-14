@@ -40,7 +40,7 @@ namespace Intrepid {
   {
     this -> basisCardinality_  = 10;
     this -> basisDegree_       = 1;    
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<10> >() );
+    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<11> >() );
     this -> basisType_         = BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;

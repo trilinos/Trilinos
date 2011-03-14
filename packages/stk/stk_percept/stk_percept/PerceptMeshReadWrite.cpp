@@ -48,7 +48,8 @@ namespace stk {
   namespace percept {
     namespace io_util {
 
-#define USE_LOCAL_PART_PROCESSING !defined(__IBMCPP__)
+      //#define USE_LOCAL_PART_PROCESSING !defined(__IBMCPP__)
+#define USE_LOCAL_PART_PROCESSING 1
 #if USE_LOCAL_PART_PROCESSING
       static bool local_include_entity(Ioss::GroupingEntity *entity)
       {
@@ -57,7 +58,7 @@ namespace stk {
         std::string name = entity->name();
         if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
           {
-            //std::cout << "tmp found orig" << std::endl;
+            //std::cout << "tmp found omitted part= " << name << std::endl;
             if ( entity->property_exists(std::string("omitted") ) )
               {
                 entity->property_erase(std::string("omitted"));
@@ -75,19 +76,27 @@ namespace stk {
         return !omitted;
       }
 
-      static void local_internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
+      template<class ENTITY>
+      void local_internal_part_processing(ENTITY *entity, stk::mesh::MetaData &meta,
+                                                 stk::mesh::EntityRank type);
+
+      template<>
+      void local_internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
                                                  stk::mesh::EntityRank type)
       {
         if (local_include_entity(entity)) {
+          //std::cout << "tmp entity name= " << entity->name() << std::endl;
           stk::mesh::Part & part = meta.declare_part(entity->name(), type);
           stk::io::put_io_part_attribute(part);
         }
       }
 
-      static void local_internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta,
+      template<>
+      void local_internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta,
                                                  stk::mesh::EntityRank type)
       {
         if (local_include_entity(entity)) {
+          //std::cout << "tmp entity name= " << entity->name() << std::endl;
           stk::mesh::Part & part = meta.declare_part(entity->name(), type);
           stk::io::put_io_part_attribute(part);
 
@@ -106,6 +115,16 @@ namespace stk {
         }
       }
 
+      template<> void local_internal_part_processing(Ioss::ElementBlock *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::FaceBlock *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::EdgeBlock *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
+
+      template<> void local_internal_part_processing(Ioss::EdgeSet *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::FaceSet *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::NodeSet *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
+
+
+
 #endif
 
       template <typename T>
@@ -121,6 +140,7 @@ namespace stk {
         }
 #endif
       }
+
 
       //static int s_spatial_dim = 3;
 
@@ -225,7 +245,7 @@ namespace stk {
           //std::cout << "PerceptMeshReadWrite::process_read_nodesets: node_sets entity= " << entity->name()
           //          << " stk::io::include_entity(entity) = " << stk::io::include_entity(entity) << std::endl;
 
-          
+
           if (stk::io::include_entity(entity)) {
             stk::mesh::Part* const part = meta.get_part(entity->name());
             assert(part != NULL);
@@ -346,7 +366,7 @@ namespace stk {
         using namespace mesh;
         bool printInfo = true;
 
-        const MetaData& metaData = bulk.mesh_meta_data();
+        const MetaData& metaData = MetaData::get(bulk);
 
         const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
 
@@ -363,7 +383,7 @@ namespace stk {
                 FieldBase *field = fields[ifld];
                 if (printInfo) std::cout << "info>    Field[" << ifld << "]= " << field->name() << " rank= " << field->rank() << std::endl;
                 if (printInfo) std::cout << "info>    " << *field << std::endl;
-                
+
                 //if (field->name() == std::string("pressure"))
                 //  stk::io::field_data_from_ioss(field, nodes, nb, field->name());
                 if (field->name() == std::string("coordinates"))
@@ -391,7 +411,7 @@ namespace stk {
          * (and others) somewhere after the declaration instead of
          * looking it up each time it is needed.
          */
-        const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+        const stk::mesh::MetaData& meta = MetaData::get(bulk);
         stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
           meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
@@ -412,7 +432,7 @@ namespace stk {
 
           if (stk::io::include_entity(entity)) {
             const std::string &name = entity->name();
-            const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+            const stk::mesh::MetaData& meta = MetaData::get(bulk);
             stk::mesh::Part* const part = meta.get_part(name);
             assert(part != NULL);
 
@@ -468,7 +488,7 @@ namespace stk {
 
           if (stk::io::include_entity(entity)) {
             const std::string & name = entity->name();
-            const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+            const stk::mesh::MetaData& meta = MetaData::get(bulk);
             stk::mesh::Part* const part = meta.get_part(name);
             assert(part != NULL);
             stk::mesh::PartVector add_parts( 1 , part );
@@ -503,7 +523,7 @@ namespace stk {
                                             stk::mesh::BulkData & bulk)
       {
         assert(io->type() == Ioss::FACESET || io->type() == Ioss::EDGESET);
-        const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+        const stk::mesh::MetaData& meta = MetaData::get(bulk);
 
         int block_count = io->block_count();
         for (int i=0; i < block_count; i++) {
@@ -594,7 +614,7 @@ namespace stk {
         std::vector<stk::mesh::Entity*> entities;
         stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
-        stk::mesh::MetaData & meta = part.mesh_meta_data();
+        stk::mesh::MetaData & meta = MetaData::get(part);
         stk::mesh::Part &universal = meta.universal_part();
         const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
@@ -620,7 +640,7 @@ namespace stk {
           }
 
         // Special processing for nodeblock (all nodes in model)...
-        const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+        const stk::mesh::MetaData & meta = MetaData::get(bulk);
 
         // ??? Get field data from nodeblock...
         get_field_data(bulk, meta.universal_part(), stk::mesh::Node,
@@ -673,7 +693,7 @@ namespace stk {
         std::vector<stk::mesh::Entity*> entities;
         stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
-        stk::mesh::MetaData & meta = part.mesh_meta_data();
+        stk::mesh::MetaData & meta = MetaData::get(part);
         stk::mesh::Part &universal = meta.universal_part();
         const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
@@ -697,7 +717,7 @@ namespace stk {
             region.begin_state(step);
           }
         // Special processing for nodeblock (all nodes in model)...
-        const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+        const stk::mesh::MetaData & meta = MetaData::get(bulk);
 
         put_field_data(bulk, meta.universal_part(), stk::mesh::Node,
                        region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
@@ -730,15 +750,15 @@ namespace stk {
                                  stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
                                  fb, Ioss::Field::TRANSIENT);
                 }
-              } 
-              else 
+              }
+              else
                 {
                   put_field_data(bulk, *part,
                                  stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
                                  entity, Ioss::Field::TRANSIENT);
                 }
-            } 
-            else 
+            }
+            else
               {
                 /// \todo IMPLEMENT handle error... Possibly an assert since
                 /// I think the corresponding entity should always exist...

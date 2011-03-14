@@ -52,7 +52,7 @@
 #include "exodusII_int.h"
 
 /*!
- * retrieves the number of attributes.
+ * \undoc retrieves the number of attributes.
  */
 
 int ex_get_attr_param (int   exoid,

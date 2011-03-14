@@ -213,10 +213,17 @@ public:
   ////////////////////////////////////////////////////////////////////
 
 
+  /// \brief Specialization of MultiVecTraits for Belos::MultiVec.
+  ///
+  /// This is a partial specialization of MultiVecTraits for
+  /// Belos::MultiVec, which is a generic interface that users may
+  /// implement in order to wrap their own multivector
+  /// implementations.
   template<class ScalarType>
   class MultiVecTraits<ScalarType,MultiVec<ScalarType> >
   {
   public:
+
     ///
     static Teuchos::RCP<MultiVec<ScalarType> > Clone( const MultiVec<ScalarType>& mv, const int numvecs )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).Clone(numvecs) ); }

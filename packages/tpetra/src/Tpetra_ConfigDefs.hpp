@@ -103,6 +103,7 @@ namespace Tpetra {
   #define TPETRA_PRINTS_ABUSE_WARNINGS 0
 #endif
 
+
 #include <functional>
 
 #ifndef __CUDACC__
@@ -125,6 +126,7 @@ namespace Tpetra {
 
 //! Namespace for Tpetra classes and methods
 namespace Tpetra {
+
   /** \brief Global size_t object. 
   
       Set at configure time, this type is intended to support scenarios where the global memory allocation is larger than that of a single node.

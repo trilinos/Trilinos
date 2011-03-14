@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
-#include <cassert>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
@@ -42,7 +41,7 @@ const CellTopologyData * get_cell_topology_deprecated( const Part & p )
 // DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology( const Part & p )
 {
-  const fem::FEMInterface * fem = p.mesh_meta_data().get_attribute<fem::FEMInterface>();
+  const fem::FEMInterface * fem = MetaData::get(p).get_attribute<fem::FEMInterface>();
   const CellTopologyData * cell_topology_data = NULL;
   if (fem) {
     cell_topology_data = fem::get_cell_topology(p).getCellTopologyData();
@@ -57,7 +56,7 @@ const CellTopologyData * get_cell_topology( const Part & p )
 // DEPRECATED: 09/15/10 FEM refactor
 void set_cell_topology( Part & p , const CellTopologyData * singleton )
 {
-  const fem::FEMInterface * fem = p.mesh_meta_data().get_attribute<fem::FEMInterface>();
+  const fem::FEMInterface * fem = MetaData::get(p).get_attribute<fem::FEMInterface>();
   if (fem) {
     fem::set_cell_topology(p, singleton);
   } else {
@@ -71,11 +70,11 @@ void set_cell_topology_deprecated( Part & p , const CellTopologyData * singleton
 {
   static const char method[] = "stk::mesh::set_cell_topology" ;
 
-  MetaData & m = p.mesh_meta_data();
+  MetaData & m = MetaData::get(p);
 
   const CellTopologyData * t = NULL ;
 
-  if ( p.mesh_meta_data().entity_rank_count() <= p.primary_entity_rank() ||
+  if ( MetaData::get(p).entity_rank_count() <= p.primary_entity_rank() ||
        singleton == NULL ||
        singleton != ( t = m.declare_attribute_no_delete(p,singleton) ) ) {
     std::ostringstream msg ;
@@ -136,7 +135,7 @@ const CellTopologyData * get_cell_topology_deprecated( const Bucket & bucket )
 // DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology( const Bucket & bucket )
 {
-  const fem::FEMInterface * fem = bucket.mesh().mesh_meta_data().get_attribute< fem::FEMInterface >();
+  const fem::FEMInterface * fem = MetaData::get(bucket).get_attribute< fem::FEMInterface >();
   const CellTopologyData * cell_topology_data;
   if (fem) {
     cell_topology_data = fem::get_cell_topology(bucket).getCellTopologyData();

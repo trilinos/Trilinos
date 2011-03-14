@@ -358,6 +358,8 @@ STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_double_ptr)
 }
 //----------------------------------------------------------------------
 
+#ifndef __PGI
+
 enum EType { val_a = 'a' , val_b = 'b' , val_c = 'c' };
 
 namespace stk {
@@ -472,6 +474,7 @@ STKUNIT_UNIT_TEST(TestDataTraits, testEnum)
 }
 
 }
+
 //----------------------------------------------------------------------
 
 struct Vec3 { double x , y , z ; };
@@ -575,3 +578,4 @@ STKUNIT_UNIT_TEST(TestDataTraits, testClass)
 
 }
 
+#endif

@@ -55,7 +55,7 @@ namespace stk
 
       ExampleFunctionWithIntrepidRequest(BulkData& bulkData) : FunctionWithIntrepidRequest()
       {
-        MetaData& metaData = *const_cast<mesh::MetaData *>(&bulkData.mesh_meta_data());
+        MetaData& metaData = MetaData::get(bulkData);
         FieldBase *pressure =  metaData.get_field<FieldBase>("pressure");
         m_pressure_array.resize(10, 1);
         m_pressure_grad_array.resize(10, 1, 3);
@@ -103,7 +103,7 @@ namespace stk
 
       Example2FunctionWithIntrepidRequest(BulkData& bulkData) : FunctionWithIntrepidRequest()
       {
-        MetaData& metaData = *const_cast<mesh::MetaData *>(&bulkData.mesh_meta_data());
+        MetaData& metaData = MetaData::get(bulkData);
         FieldBase *pressure = metaData.get_field<FieldBase>("pressure");
         m_pressure_array.resize(10, 1);
         m_pressure_grad_array.resize(10, 1, 3);
@@ -152,7 +152,7 @@ namespace stk
 
       l2NormOpScalar( FieldBase *field) : FunctionWithIntrepidRequest()
       {
-        //MetaData& metaData = *const_cast<mesh::MetaData *>(&bulkData.mesh_meta_data());
+        //MetaData& metaData = MetaData::get(BulkData);
 
 #if 0
         int npts=0; // FIXME

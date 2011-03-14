@@ -131,23 +131,25 @@ int NodeDatabase::getNodeWithEqn(int eqnNumber, const NodeDescriptor*& node) con
 }
 
 //------------------------------------------------------------------------------
-int NodeDatabase::getNodeAtIndex(int i, const NodeDescriptor*& node) const
+void NodeDatabase::getNodeAtIndex(int i, const NodeDescriptor*& node) const
 {
-  //For performance reasons, we will assume that the caller is providing a
-  //valid in-range index, and will forego the safety check:
-
-  node = nodePtrs_[i];
-  return(0);
+  if (i>=0 && i < nodePtrs_.size()) {
+    node = nodePtrs_[i];
+  }
+  else {
+    node = NULL;
+  }
 }
 
 //------------------------------------------------------------------------------
-int NodeDatabase::getNodeAtIndex(int i, NodeDescriptor*& node)
+void NodeDatabase::getNodeAtIndex(int i, NodeDescriptor*& node)
 {
-  //For performance reasons, we will assume that the caller is providing a
-  //valid in-range index, and will forego the safety check:
-
-  node = nodePtrs_[i];
-  return(0);
+  if (i>=0 && i < nodePtrs_.size()) {
+    node = nodePtrs_[i];
+  }
+  else {
+    node = NULL;
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -257,7 +259,8 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
   for(; iter!=iter_end; ++iter) {
     int i = iter->second;
     NodeDescriptor* node = NULL;
-    CHK_ERR( getNodeAtIndex(i, node) );
+    getNodeAtIndex(i, node);
+    if (node==NULL) continue;
 
     int numFields = node->getNumFields();
     const int* fieldIDList = node->getFieldIDList();

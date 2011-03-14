@@ -134,4 +134,12 @@ IF(Stokhos_ENABLE_Sacado)
     NUM_MPI_PROCS 1
     )
 
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    SacadoVectorUnitTest
+    SOURCES Stokhos_SacadoVectorUnitTest.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+ )
+
 ENDIF()

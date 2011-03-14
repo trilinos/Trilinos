@@ -23,11 +23,13 @@ ALL = \
 COLORING_H = \
 	$(srcdir)/coloring/coloring_const.h \
 	$(srcdir)/coloring/coloring.h \
+	$(srcdir)/coloring/bucket.h \
 	$(srcdir)/coloring/g2l_hash.h
 
 COLORING = \
 	$(srcdir)/coloring/coloring.c \
 	$(srcdir)/coloring/color_test.c \
+	$(srcdir)/coloring/bucket.c \
 	$(srcdir)/coloring/g2l_hash.c
 
 GRAPH_H = \

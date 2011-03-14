@@ -401,7 +401,7 @@
   <SubProject name="STK">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="LO"/>
-    <Dependency name="Sacado" type="ILO"/>
+    <Dependency name="Sacado" type="LO"/>
     <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="LO"/>
@@ -659,7 +659,7 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="ILR"/>
-    <Dependency name="RTOp" type="ILR"/>
+    <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
@@ -667,7 +667,7 @@
     <Dependency name="Triutils" type="ILR"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
-    <Dependency name="Thyra" type="LR"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -677,12 +677,11 @@
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="LR"/>
     <Dependency name="Belos" type="LR"/>
-    <Dependency name="Stratimikos" type="LR"/>
+    <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="LR"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Intrepid" type="LR"/>
     <Dependency name="NOX" type="LR"/>
-    <Dependency name="MOOCHO" type="LO"/>
     <Dependency name="Stokhos" type="LO"/>
     <EmailAddresses>
       <Email address="sundance-regression@software.sandia.gov"/>
@@ -823,10 +822,12 @@
     <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="GlobiPack" type="ITO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
     <Dependency name="Thyra" type="ILO"/>
+    <Dependency name="OptiPack" type="ITO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -838,7 +839,10 @@
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="NOX" type="TO"/>
+    <Dependency name="Rythmos" type="ITO"/>
+    <Dependency name="MOOCHO" type="ITO"/>
     <Dependency name="Stokhos" type="LO"/>
+    <Dependency name="Piro" type="TO"/>
     <EmailAddresses>
       <Email address="feapp-regression@software.sandia.gov"/>
     </EmailAddresses>

@@ -1,14 +1,18 @@
 #include <Teuchos_UnitTestHarness.hpp>
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_CrsGraph.hpp"
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_MatrixIO.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 #include "Tpetra_Map_def.hpp"
 #include "Tpetra_Directory_def.hpp"
 #include "Tpetra_CrsGraph_def.hpp"
+#include "Tpetra_CrsMatrix_def.hpp"
+#include "Tpetra_MatrixIO_def.hpp"
 #endif
 
 namespace {
@@ -21,6 +25,7 @@ namespace {
   using Teuchos::null;
   using Tpetra::Map;
   using Tpetra::CrsGraph;
+  using Tpetra::CrsMatrix;
   using Tpetra::global_size_t;
   using Tpetra::DefaultPlatform;
 
@@ -48,9 +53,62 @@ namespace {
     return rcp(new Teuchos::SerialComm<int>());
   }
 
+  RCP<DefaultPlatform::DefaultPlatformType::NodeType> getDefaultNode()
+  {
+    return DefaultPlatform::getDefaultPlatform().getNode();
+  }
+
   //
   // UNIT TESTS
   // 
+
+  ////
+  TEUCHOS_UNIT_TEST( readHBMatrix, Bug5072_ReadOneRowMPI )
+  {
+    // failure reading 1x4 matrix under MPI
+    typedef int                       LO;
+    typedef int                       GO;
+    typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int myImageID = comm->getRank();
+    RCP<Node>             node = getDefaultNode();
+    RCP<const CrsMatrix<double,int> > readMatrix, testMatrix;
+    {
+      // this is what the file looks like: 1 3 4 9
+      RCP<const Map<int> > rng = Tpetra::createUniformContigMap<int,int>(1,comm);
+      RCP<const Map<int> > dom = Tpetra::createUniformContigMap<int,int>(4,comm);
+      RCP<CrsMatrix<double,int> > A = Tpetra::createCrsMatrix<double>(rng);
+      if (myImageID == 0) {
+        A->insertGlobalValues( 0, Teuchos::tuple<int>(0,1,2,3), Teuchos::tuple<double>(1.0,3.0,4.0,9.0) );
+      }
+      A->fillComplete(dom,rng,Tpetra::DoOptimizeStorage);
+      testMatrix = A;
+    }
+    {
+      RCP<CrsMatrix<double,int> > A;
+      Tpetra::Utils::readHBMatrix("addA2.hb", comm, node, A);
+      readMatrix = A;
+    }
+    // test that *readMatrix == *testMatrix 
+    TEST_EQUALITY( testMatrix->getNodeNumRows(), readMatrix->getNodeNumRows() );
+    TEST_EQUALITY( testMatrix->getNodeNumCols(), readMatrix->getNodeNumCols() );
+    TEST_EQUALITY( testMatrix->getNodeNumEntries(), readMatrix->getNodeNumEntries() );
+    if (success) {
+      Teuchos::ArrayView<const int>    rowinds1, rowinds2;
+      Teuchos::ArrayView<const double> rowvals1, rowvals2;
+      for (int r=0; r < (int)testMatrix->getNodeNumRows(); ++r ) {
+        testMatrix->getLocalRowView(r, rowinds1, rowvals1);  
+        readMatrix->getLocalRowView(r, rowinds2, rowvals2);  
+        TEST_COMPARE_ARRAYS( rowinds1, rowinds2 );
+        TEST_COMPARE_ARRAYS( rowvals1, rowvals2 );
+      }
+    }
+    // All procs fail if any proc fails 
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
 
   ////
   TEUCHOS_UNIT_TEST( Map, Bug4756_UnsignedGlobalOrdinal )

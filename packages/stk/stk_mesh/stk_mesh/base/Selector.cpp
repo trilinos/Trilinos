@@ -39,7 +39,7 @@ Selector::Selector( const Selector & selector )
 
 
 Selector::Selector( const Part & p )
-  : m_mesh_meta_data( & p.mesh_meta_data() ) , m_op()
+  : m_mesh_meta_data( & MetaData::get(p) ) , m_op()
 {
   m_op.push_back( OpType( p.mesh_meta_data_ordinal() , 0 , 0 ) );
 }
@@ -148,7 +148,7 @@ void Selector::verify_compatible( const Selector & B ) const
 
 void Selector::verify_compatible( const Bucket & B ) const
 {
-  const MetaData * B_mesh_meta_data = &B.mesh().mesh_meta_data();
+  const MetaData * B_mesh_meta_data = & MetaData::get(B);
   ThrowErrorMsgIf( B_mesh_meta_data != m_mesh_meta_data,
       "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data <<
       "\nBucket has mesh meta data pointer = " << B_mesh_meta_data <<
@@ -366,7 +366,7 @@ Selector selectIntersection( const PartVector& intersection_part_vector )
 Selector selectField( const FieldBase& field )
 {
   Selector selector;
-  const MetaData& meta = field.mesh_meta_data();
+  const MetaData& meta = MetaData::get(field);
   const FieldRestrictionVector& rvec = field.restrictions();
 
   for(size_t i=0; i<rvec.size(); ++i) {

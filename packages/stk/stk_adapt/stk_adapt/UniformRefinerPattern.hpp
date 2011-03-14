@@ -39,9 +39,13 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
+// more efficient fixElementSides implementation using parent/child relations
 #define NEW_FIX_ELEMENT_SIDES 1
 
+// set to 0 for doing global (and thus more efficient) computation of node coords and adding to parts
+#define STK_ADAPT_URP_LOCAL_NODE_COMPS 0
 
+// set to 1 to turn on some print tracing and cpu/mem tracing
 #define TRACE_STAGE_PRINT_ON 0
 #define TRACE_STAGE_PRINT (TRACE_STAGE_PRINT_ON && (m_eMesh.getRank()==0))
 
@@ -180,7 +184,7 @@ namespace stk {
 
       /// utilities
       /// ---------
-      
+
       /// sets the needed number of nodes on each sub-entity to 1 - this is just a helper - in general, edges and faces have 1 new node
       /// for linear elements, and multiple new nodes in the case of quadratic elements
       void setToOne(std::vector<NeededEntityType>& needed_entities)
@@ -245,11 +249,25 @@ namespace stk {
 
       enum
         {
-          fromTopoKey    = FromTopology::key,
-          toTopoKey      = ToTopology::key,
-          topo_key_hex27 = shards::Hexahedron<27>::key,
-          topo_key_quad9 = shards::Quadrilateral<9>::key,
-          centroid_node  = (toTopoKey == topo_key_quad9 ? 8 :
+          fromTopoKey         = FromTopology::key,
+          toTopoKey           = ToTopology::key,
+          topo_key_hex27      = shards::Hexahedron<27>::key,
+          topo_key_hex20      = shards::Hexahedron<20>::key,
+          topo_key_quad8      = shards::Quadrilateral<8>::key,
+          topo_key_shellquad8 = shards::ShellQuadrilateral<8>::key,
+          topo_key_quad9      = shards::Quadrilateral<9>::key,
+          topo_key_wedge15    = shards::Wedge<15>::key,
+
+          s_shell_line_2_key = shards::ShellLine<2>::key,
+          s_shell_line_3_key = shards::ShellLine<3>::key,
+          s_shell_tri_3_key  = shards::ShellTriangle<3>::key,
+          s_shell_tri_6_key  = shards::ShellTriangle<6>::key,
+          s_shell_quad_4_key = shards::ShellQuadrilateral<4>::key,
+          s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key,
+          s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key,
+
+
+          centroid_node       = (toTopoKey == topo_key_quad9 ? 8 :
                             (toTopoKey == topo_key_hex27 ? 20 : 0)
                             )
         };
@@ -260,7 +278,7 @@ namespace stk {
 
       // draw
       /// draw a picture of the element's topology and its refinement pattern (using the "dot" program from AT&T's graphviz program)
-      static std::string draw(bool showRefined = false)
+      static std::string draw(bool showRefined = false, bool showEdgeNodes = false)
       {
         Elem::StdMeshObjTopologies::bootstrap();
 
@@ -302,6 +320,8 @@ namespace stk {
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo);
+        if (!ref_topo_p)
+          throw std::runtime_error("draw:: error, no refinement topology found");
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
         unsigned num_child = ref_topo.num_child();
@@ -313,7 +333,7 @@ namespace stk {
         typedef Elem::StdMeshObjTopologies::RefTopoX RefTopoX;
         RefTopoX& ref_topo_x = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;
 
-        if (0) std::cout << num_child << homogeneous_child << n_vert;
+        if (0) std::cout << num_child << " " << homogeneous_child << " " << n_vert;
 
         //if (n_face == 0) n_face = 1; // 2D face has one "face"
         if (0)
@@ -375,16 +395,19 @@ namespace stk {
 
         // draw edges
         if (!showRefined)
-        for (unsigned i_edge = 0; i_edge < n_edge; i_edge++)
-          {
-            unsigned nn = cell_topo_data->edge[i_edge].topology->vertex_count;
-            for (unsigned j_node = 0; j_node < nn - 1; j_node++)
-              {
-                graph_str << "  "
-                          << cell_topo_data->edge[i_edge].node[j_node] << " -- "
-                          << cell_topo_data->edge[i_edge].node[(j_node + 1) % nn] << " ; \n" ;
-              }
-          }
+          //if (showEdges)
+          for (unsigned i_edge = 0; i_edge < n_edge; i_edge++)
+            {
+              unsigned nn = cell_topo_data->edge[i_edge].topology->vertex_count;
+              if (showEdgeNodes) 
+                nn = cell_topo_data->edge[i_edge].topology->node_count;
+              for (unsigned j_node = 0; j_node < nn - 1; j_node++)
+                {
+                  graph_str << "  "
+                            << cell_topo_data->edge[i_edge].node[j_node] << " -- "
+                            << cell_topo_data->edge[i_edge].node[(j_node + 1) % nn] << " ; \n" ;
+                }
+            }
 
         bool ft = (fromTopoKey == toTopoKey);
 
@@ -399,7 +422,8 @@ namespace stk {
             for (unsigned iChild = 0; iChild < num_child; iChild++)
               {
                 // draw nodes
-                for (unsigned jNode = 0; jNode < FromTopology::vertex_count; jNode++)
+                unsigned nvn = (showEdgeNodes? FromTopology::node_count : FromTopology::vertex_count);
+                for (unsigned jNode = 0; jNode < nvn; jNode++)
                   {
                     unsigned childNodeIdx = ref_topo.child_node(iChild)[jNode];
 #ifndef NDEBUG
@@ -418,6 +442,7 @@ namespace stk {
 
                     //graph_str << "  " << i_node << " [ pos=\"" << pc[0] << "," << pc[1] << "\"];\n";
                     std::string color="green";
+                    //if (childNodeIdx >= FromTopology::node_count)
                     if (childNodeIdx >= FromTopology::vertex_count)
                       color = "red";
                     graph_str << "  " << childNodeIdx << " [color=" << color << ", pos=\"" << v(0) << "," << v(1) << "\"];\n";
@@ -426,7 +451,13 @@ namespace stk {
 
                 for (unsigned i_edge = 0; i_edge < n_edge; i_edge++)
                   {
+                    //unsigned nn = cell_topo_data->edge[i_edge].topology->vertex_count;
+                    //unsigned nn = cell_topo_data->edge[i_edge].topology->node_count;
+
                     unsigned nn = cell_topo_data->edge[i_edge].topology->vertex_count;
+                    if (showEdgeNodes) 
+                      nn = cell_topo_data->edge[i_edge].topology->node_count;
+
                     for (unsigned j_node = 0; j_node < nn - 1; j_node++)
                       {
                         unsigned j0 = ref_topo.child_node(iChild)[ cell_topo_data->edge[i_edge].node[j_node] ];
@@ -466,7 +497,10 @@ namespace stk {
         double xi = input_param_coords(0, 0);
 
         // FIXME assumes {-1,0,1} element parametric coords
-        double basis_val[3] = { (xi)*(xi - 1.0)/2.0, (1.0-xi)*(1.0+xi), (xi)*(1.0+xi)/2.0 };
+        //double basis_val[3] = { (xi)*(xi - 1.0)/2.0,  (1.0-xi)*(1.0+xi) , (xi)*(1.0+xi)/2.0 };
+
+        double basis_val[3] = { (xi)*(xi - 1.0)/2.0,  (xi)*(1.0+xi)/2.0, (1.0-xi)*(1.0+xi) };
+
         for (int i_stride=0; i_stride < fieldStride; i_stride++)
           {
             output_pts(0, i_stride) = 0.0;
@@ -482,45 +516,81 @@ namespace stk {
           }
       }
 
-      /// helpers for interpolating fields, coordinates
-      /// ------------------------------------------------------------------------------------------------------------------------
-      //void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement,  refined_element_type& child_nodes,
-#define EXTRA_PRINT_URP_IF 0
-      void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement,  const unsigned *child_nodes,
-                             RefTopoX_arr ref_topo_x, FieldBase *field)
+      void interpolateIntrepid(percept::PerceptMesh& eMesh, FieldBase* field, CellTopology& cell_topo,
+                               MDArray& output_pts, Entity& element, MDArray& input_param_coords, double time_val=0.0)
       {
-        EXCEPTWATCH;
-
-        // FIXME
-        //if (1) return;
-
+        int fieldStride = output_pts.dimension(1);
         unsigned *null_u = 0;
 
-        CellTopology cell_topo(get_cell_topology(element));
+        mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
+        MDArray basis_val(elem_nodes.size(), 1);
+        //std::cout << "tmp fieldStride= " << fieldStride << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
 
-        // FIXME - need topo dimensions here
-        int topoDim = cell_topo.getDimension();
-        unsigned cell_topo_key = get_cell_topology(element)->key;
+        PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
+        basis->getValues(basis_val, input_param_coords, OPERATOR_VALUE);
+        if (0)
+          std::cout << "\n tmp input_param_coords= " 
+                    << input_param_coords(0,0) << " "
+                    << input_param_coords(0,1) << " "
+                    << input_param_coords(0,2) << " " << std::endl;
 
-        static unsigned s_shell_line_2_key = shards::getCellTopologyData<ShellLine<2> >()-> key;
-        static unsigned s_shell_line_3_key = shards::getCellTopologyData<ShellLine<3> >()-> key;
-        static unsigned s_shell_tri_3_key = shards::getCellTopologyData<ShellTriangle<3> >()-> key;
-        static unsigned s_shell_tri_6_key = shards::getCellTopologyData<ShellTriangle<6> >()-> key;
-        static unsigned s_shell_quad_4_key = shards::getCellTopologyData<ShellQuadrilateral<4> >()-> key;
-        static unsigned s_shell_quad_9_key = shards::getCellTopologyData<ShellQuadrilateral<9> >()-> key;
+        for (int i_stride=0; i_stride < fieldStride; i_stride++)
+          {
+            output_pts(0, i_stride) = 0.0;
+          }
+        for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
+          {
+            //std::cout << "tmp basis_val[" << i_node <<"]= " << basis_val(i_node,0) << std::endl;
+            Entity *node = elem_nodes[i_node].entity();
+            double *f_data = eMesh.field_data(field, *node, null_u);
+            for (int i_stride=0; i_stride < fieldStride; i_stride++)
+              {
+                output_pts(0, i_stride) += f_data[i_stride]*basis_val(i_node, 0);
+              }
+          }
+      }
+
+      /// helpers for interpolating fields, coordinates
+      /// ------------------------------------------------------------------------------------------------------------------------
+#define EXTRA_PRINT_URP_IF 0
+
+      static void getTopoDim(int& topoDim, unsigned cell_topo_key)
+      {
         if (cell_topo_key == s_shell_line_2_key || cell_topo_key == s_shell_line_3_key)
           {
             topoDim = 1;
           }
 
-        if (cell_topo_key == s_shell_tri_3_key || cell_topo_key == s_shell_tri_6_key || 
-            cell_topo_key == s_shell_quad_4_key || cell_topo_key == s_shell_quad_9_key)
+        else if (cell_topo_key == s_shell_tri_3_key || cell_topo_key == s_shell_tri_6_key ||
+                 cell_topo_key == s_shell_quad_4_key || cell_topo_key == s_shell_quad_9_key ||
+                 cell_topo_key == s_shell_quad_8_key )
           {
             topoDim = 2;
           }
+      }
+
+      /// This version uses Intrepid for interpolation
+      void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement,  const unsigned *child_nodes,
+                             RefTopoX_arr ref_topo_x, FieldBase *field)
+      {
+        EXCEPTWATCH;
+
+        unsigned *null_u = 0;
+
+        CellTopology cell_topo(get_cell_topology(element));
+
+
+        // FIXME - need topo dimensions here
+        int topoDim = cell_topo.getDimension();
+        unsigned cell_topo_key = get_cell_topology(element)->key;
+
+        getTopoDim(topoDim, cell_topo_key);
 
         int fieldStride = 0;
         EntityRank fr_type = mesh::Node;
+
+        //std::cout << "tmp cell_topo= " << cell_topo.getName() << " topoDim= " << topoDim << std::endl;
+
         if (EXTRA_PRINT_URP_IF) std::cout << "tmp field = " << field->name() << " topoDim= " << topoDim << std::endl;
 
         {
@@ -538,7 +608,7 @@ namespace stk {
             }
           {
             const stk::mesh::FieldBase::Restriction & r =
-              field->restriction(fr_type, field->mesh_meta_data().universal_part());
+              field->restriction(fr_type, MetaData::get(*field).universal_part());
             fieldStride = r.stride[0];
             if (EXTRA_PRINT_URP_IF) std::cout << "tmp stride = " <<  r.stride[0] << " fieldStride= " << fieldStride
                              << " fr_type= " << fr_type << " mesh::Element= " << mesh::Element<< std::endl;
@@ -557,6 +627,53 @@ namespace stk {
 
         if (EXTRA_PRINT_URP_IF) std::cout << "tmp field = " << field->name() << " topoDim= " << topoDim << " fieldStride= " << fieldStride << std::endl;
 
+        if (1)
+          {
+            static bool entered = false;
+
+            if (!entered && (toTopoKey == topo_key_quad8 || toTopoKey == topo_key_hex20 || toTopoKey == topo_key_shellquad8))
+              {
+                entered = true;
+
+                std::cout << "tmp testing basis functions " << std::endl;
+                std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+                std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+                std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_hex20      = " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
+                mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
+
+
+                PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
+                MDArray output_tmp(elem_nodes.size(), 1);
+                MDArray input_param_coords_tmp(1, topoDim);
+
+                for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
+                  {
+                    double *param_coord = ref_topo_x[i_node].parametric_coordinates;
+                    for (int ip=0; ip < topoDim; ip++)
+                      {
+                        input_param_coords_tmp(0, ip) = param_coord[ip];
+                      }
+
+                    basis->getValues(output_tmp, input_param_coords_tmp, OPERATOR_VALUE);
+                    bool found = false;
+                    for (unsigned ii=0; ii < elem_nodes.size(); ii++)
+                      {
+                        if (fabs(output_tmp(ii, 0)-((ii == i_node)? 1.0 : 0.0)) > 1.e-6)
+                          {
+                            found = true;
+                            std::cout << "tmp i_node= " << i_node << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
+                            std::cout << "fabs(output_tmp(ii, 0)-1.0) > 1.e-6),... output_tmp(ii,0)= " << output_tmp(ii,0) << std::endl;
+                            std::cout << "ii = " << ii << " i_node= " << i_node << std::endl;
+                            std::cout << "input_param_coords= " 
+                                      << input_param_coords << "  " << std::endl;
+                            std::cout << "output_tmp= " << output_tmp << std::endl;
+                          }
+                      }
+                    if (found) throw std::runtime_error("error in Intrepid");
+                  }
+              }
+          }
+
         mesh::PairIterRelation new_elem_nodes = newElement.relations(mesh::Node);
         for (unsigned i_new_node = 0; i_new_node < new_elem_nodes.size(); i_new_node++)
           {
@@ -571,21 +688,42 @@ namespace stk {
               }
             if (EXTRA_PRINT_URP_IF) std::cout << "tmp input_param_coords= " << input_param_coords << " cell_topo= " << cell_topo << std::endl;
 
+
             double time_val=0.0;
 
             /// unfortunately, Intrepid doesn't support a quadratic Line<3> element
 
-            if (cell_topo.getDimension() == 1 && cell_topo.getNodeCount() == 3)  // Line<3> element
+            if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8 || toTopoKey == topo_key_hex20)
               {
-                interpolateLine3(eMesh, field, output_pts, element, input_param_coords, time_val);
+                //std::cout << "tmp here 1 i_new_node= " << i_new_node << " base element= " << std::endl;
+                if ( EXTRA_PRINT_URP_IF) Util::printEntity(std::cout, element, eMesh.getCoordinatesField() );
+
+                interpolateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
+                if (0)
+                  {
+                    std::cout << "tmp input_param_coords= " 
+                              << input_param_coords(0,0) << " "
+                              << input_param_coords(0,1) << " "
+                              << (topoDim == 3 ? input_param_coords(0,2) : 0.0 ) << " "
+                      ;
+                    std::cout << "output_pts= " 
+                              << output_pts(0,0) << " "
+                              << output_pts(0,1) << " "
+                              << (topoDim == 3 ? output_pts(0,2) : 0.0 ) << " "
+                              << std::endl;
+                  }
               }
             else
               {
-                if (EXTRA_PRINT_URP_IF) std::cout << "tmp here3= " <<  std::endl;
-                field_func(input_pts, output_pts, element, input_param_coords, time_val);
-                if (EXTRA_PRINT_URP_IF) std::cout << "tmp here3a= " <<  std::endl;
+                if (cell_topo.getDimension() == 1 && cell_topo.getNodeCount() == 3)  // Line<3> element
+                  {
+                    interpolateLine3(eMesh, field, output_pts, element, input_param_coords, time_val);
+                  }
+                else
+                  {
+                    field_func(input_pts, output_pts, element, input_param_coords, time_val);
+                  }
               }
-            if (EXTRA_PRINT_URP_IF) std::cout << "tmp here4= " <<  std::endl;
 
             Entity *new_node = new_elem_nodes[i_new_node].entity();
 
@@ -594,15 +732,18 @@ namespace stk {
               for (int ifd=0; ifd < fieldStride; ifd++)
                 {
                   f_data_new[ifd] = output_pts(0, ifd);
-                if (EXTRA_PRINT_URP_IF) std::cout << "tmp here5= " <<  std::endl;
                 }
             }
           }
-        if (EXTRA_PRINT_URP_IF) Util::printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
+        if ( EXTRA_PRINT_URP_IF) 
+          {
+            std::cout << "tmp newElement: " << std::endl;
+            Util::printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
+          }
       }
 
       /// do interpolation for all fields
-      //     void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement, refined_element_type& child_nodes,
+      /// This version uses Intrepid 
       void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement, const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x)
       {
@@ -616,6 +757,20 @@ namespace stk {
 
             interpolateFields(eMesh, element, newElement, child_nodes, ref_topo_x, field);
           }
+      }
+
+
+      mesh::Entity& createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, EntityId eid)
+      {
+#if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
+        mesh::Entity *node_p = nodeRegistry.get_entity_node(*eMesh.getBulkData(), mesh::Node, eid);
+        if (node_p)
+          return *node_p;
+        else
+          return eMesh.createOrGetNode(eid);
+#else
+        return eMesh.createOrGetNode(eid);
+#endif
       }
 
       enum { NumNewElements_Enrich = 1 };
@@ -664,9 +819,11 @@ namespace stk {
 
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
-                nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
-                nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
-                nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
+#if STK_ADAPT_URP_LOCAL_NODE_COMPS
+                 nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
+#endif
               }
           }
 
@@ -698,23 +855,35 @@ namespace stk {
                 for (unsigned i_face = 0; i_face < n_faces; i_face++)
                   {
                     // FIXME assumes face is quadrilateral
-                    unsigned face_ord = 0;
-                    if (toTopoKey == topo_key_quad9)
-                      face_ord = 8;
-                    else
-                      face_ord = cell_topo_data_toTopo->side[i_face].node[8];
+                    shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getTopology( 2, i_face));
+                    if (0)
+                      std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << FACE_N(i_face) << " for i_face = " << i_face 
+                                << " face_topo.getNodeCount()= " << face_topo.getNodeCount()
+                                << std::endl;
+                    if (face_topo.getNodeCount() == 4 || toTopoKey == topo_key_quad9)
+                      {                      
+                        unsigned face_ord = 0;
+                        if (toTopoKey == topo_key_quad9)
+                          {
+                            face_ord = 8;
+                          }
+                        else
+                          {
+                            face_ord = cell_topo_data_toTopo->side[i_face].node[8];
+                          }
 
-                    unsigned inode = FACE_N(i_face);
+                        unsigned inode = FACE_N(i_face);
+                        
+                        //std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << inode << " for i_face = " << i_face << " face_ord= " << face_ord << std::endl;
 
-                    //std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << inode << " for i_face = " << i_face << " face_ord= " << face_ord << std::endl;
+                        if (!inode)
+                          {
+                            std::cout << "P[" << eMesh.getRank() << "] inode = 0 for i_face = " << i_face << " face_ord= " << face_ord << std::endl;
+                            //throw std::logic_error("UniformRefinerPatternBase::genericEnrich_createNewElements bad entity id = 0 ");
+                          }
 
-                    if (!inode)
-                      {
-                        std::cout << "P[" << eMesh.getRank() << "] inode = 0 for i_face = " << i_face << " face_ord= " << face_ord << std::endl;
-                        //throw std::logic_error("UniformRefinerPatternBase::genericEnrich_createNewElements bad entity id = 0 ");
+                        EN[face_ord] = inode;
                       }
-
-                    EN[face_ord] = inode;
                   }
               }
             else if (needed_entities[i_need].first == Element)
@@ -748,7 +917,8 @@ namespace stk {
                     std::cout << "P[" << eMesh.getRank() << "] eid = 0 for inode = " << inode << std::endl;
                     throw std::logic_error("UniformRefinerPatternBase::genericEnrich_createNewElements bad entity id = 0 ");
                   }
-                mesh::Entity& node = eMesh.createOrGetNode(eid);
+                //mesh::Entity& node = eMesh.createOrGetNode(eid);
+                mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
                 eMesh.getBulkData()->declare_relation(newElement, node, inode);
               }
 
@@ -785,40 +955,38 @@ namespace stk {
 
       int getPermutation(int num_verts, Entity& element, CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
       {
-        //std::cout << "tmp element 0= " << element << " cell_topo= " << cell_topo.getName() << " rank_of_subcell= " << rank_of_subcell
-        //<< " num_verts= " << num_verts
-        //          << std::endl;
-
         if (rank_of_subcell == 0 || rank_of_subcell == 3) return 0;
 
-        static std::set<unsigned> subdimCell_global_baseline;
-        static std::vector<unsigned> subdimCell_global_baseline_vector;
-        static std::set<unsigned>::iterator subdimCell_global_baseline_iter;
-        static std::vector<unsigned> subCell_from_element;
+        //! We choose to define the "global baseline" as an imaginary face that has its nodes sorted on their identifiers.
+        //! The main part of this is to find the minimum node index.
+        //! Once sorted, the node id's go into the vector_sdcell_global_baseline array.
 
-        subdimCell_global_baseline.clear();
-        subdimCell_global_baseline_vector.resize(0);
-        subCell_from_element.resize(0);
+        static std::vector<unsigned> vector_sdcell_global_baseline(4);
+        static std::vector<unsigned> subCell_from_element(4);
 
         const mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
 
         const unsigned * inodes = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].node;
         int num_subcell_verts = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology->vertex_count;
+
+        // tmp
+        //vector_sdcell_global_baseline.resize(num_subcell_verts);
+        //subCell_from_element.resize(num_subcell_verts);
+        // tmp end
+
+        unsigned minNodeId = 0;
         for (int iv = 0; iv < num_subcell_verts; iv++)
           {
-            subdimCell_global_baseline.insert(elem_nodes[inodes[iv]].entity()->identifier());
-            subCell_from_element.push_back(elem_nodes[inodes[iv]].entity()->identifier());
-          }
-
-        for (subdimCell_global_baseline_iter = subdimCell_global_baseline.begin();
-             subdimCell_global_baseline_iter != subdimCell_global_baseline.end();
-             subdimCell_global_baseline_iter++)
-          {
-            subdimCell_global_baseline_vector.push_back( *subdimCell_global_baseline_iter );
+            unsigned nid = elem_nodes[inodes[iv]].entity()->identifier();
+            if (iv == 0)
+              minNodeId = nid;
+            else
+              minNodeId = std::min(minNodeId, nid);
+            subCell_from_element[iv] = nid;
           }
 
         int perm = -1;
-        
+
         /// for tri or quad faces we search for the min node, then look at its two neighbors along edges
         ///   - if the first edge is the next node in line (in terms of its id) we use the ordering as 0,1,2,3
         ///   else it is flipped and we reverse the ordering
@@ -829,14 +997,17 @@ namespace stk {
             // quad or tri
             if (0 && num_subcell_verts==3)
               {
-                std::cout << "tmp b4 element 1= " << element << " cell_topo= " << cell_topo.getName() 
+                std::cout << "tmp b4 element 1= " << element << " cell_topo= " << cell_topo.getName()
                           << " rank_of_subcell= " << rank_of_subcell << std::endl;
-                std::cout << "tmp b4 subdimCell_global_baseline_vector= " << subdimCell_global_baseline_vector << std::endl;
+                std::cout << "tmp b4 vector_sdcell_global_baseline= " << vector_sdcell_global_baseline << std::endl;
                 std::cout << "tmp b4 subCell_from_element = " << subCell_from_element << std::endl;
               }
 
-            subdimCell_global_baseline_iter = subdimCell_global_baseline.begin();
-            unsigned i0 = *subdimCell_global_baseline_iter;
+            //! extract the minimal node index
+            //set_sdcell_global_baseline_iter = set_sdcell_global_baseline.begin();
+            unsigned i0 = minNodeId;
+
+            //! find the rotation to get to the minimal node
             int j0 = -1;
             for (int iv = 0; iv < num_subcell_verts; iv++)
               {
@@ -846,33 +1017,41 @@ namespace stk {
                     break;
                   }
               }
+
             if (j0 < 0) throw std::logic_error("j0 < 0 ");
+
             int j1 = (j0 + 1) % num_subcell_verts;
             int j2 = (j0 + (num_subcell_verts-1)) % num_subcell_verts;  // adds 3 for quads, or 2 for tris to pickup the neigh node
+
+            //! see if we need to reverse the order to make it match up; save the newly oriented nodes in vector_sdcell_global_baseline
             if (subCell_from_element[j1] < subCell_from_element[j2])
               {
                 for (int iv = 0; iv < num_subcell_verts; iv++)
                   {
-                    subdimCell_global_baseline_vector[iv] = subCell_from_element[(j0 + iv) % num_subcell_verts];
+                    vector_sdcell_global_baseline[iv] = subCell_from_element[(j0 + iv) % num_subcell_verts];
                   }
               }
             else
               {
                 for (int iv = 0; iv < num_subcell_verts; iv++)
                   {
-                    subdimCell_global_baseline_vector[(num_subcell_verts - iv) % num_subcell_verts] = 
+                    vector_sdcell_global_baseline[(num_subcell_verts - iv) % num_subcell_verts] =
                       subCell_from_element[(j0 + iv) % num_subcell_verts];
                   }
               }
 
+            //! now we have a set of nodes in the right order, use Shards to get the actual permutation
             perm = findPermutation(cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology,
-                                              &subdimCell_global_baseline_vector[0], &subCell_from_element[0]);
+                                              &vector_sdcell_global_baseline[0], &subCell_from_element[0]);
+
+            //std::cout << "tmp perm = " << perm << std::endl;
 
             if ( perm < 0)
               {
                 std::cout << "tmp aft element 1= " << element << " cell_topo= " << cell_topo.getName() << " rank_of_subcell= " << rank_of_subcell << std::endl;
-                std::cout << "tmp aft subdimCell_global_baseline_vector= " << subdimCell_global_baseline_vector << std::endl;
+                std::cout << "tmp aft vector_sdcell_global_baseline= " << vector_sdcell_global_baseline << std::endl;
                 std::cout << "tmp aft subCell_from_element = " << subCell_from_element << std::endl;
+                throw std::logic_error("getPermutation: perm < 0");
               }
 
             if (0 && num_subcell_verts==3)
@@ -889,8 +1068,9 @@ namespace stk {
         if (perm < 0)
           {
             std::cout << "tmp element 1= " << element << " cell_topo= " << cell_topo.getName() << " rank_of_subcell= " << rank_of_subcell << std::endl;
-            std::cout << "tmp subdimCell_global_baseline_vector= " << subdimCell_global_baseline_vector << std::endl;
+            std::cout << "tmp vector_sdcell_global_baseline= " << vector_sdcell_global_baseline << std::endl;
             std::cout << "tmp subCell_from_element = " << subCell_from_element << std::endl;
+            throw std::logic_error("getPermutation 2: perm < 0");
           }
 
         return perm;
@@ -910,9 +1090,6 @@ namespace stk {
         static std::vector<NeededEntityType> needed_entities;
         fillNeededEntities(needed_entities);
 
-        //
-
-        // CHECK
         const CellTopologyData * const cell_topo_data = get_cell_topology(element);
 
         static vector<refined_element_type> elems;
@@ -921,10 +1098,28 @@ namespace stk {
         CellTopology cell_topo(cell_topo_data);
         bool linearElement = Util::isLinearElement(cell_topo);
 
+        // SPECIAL CASE ALERT  FIXME
+        //if (toTopoKey == topo_key_wedge15)
+        //  linearElement = true;
+        //std::cout << "tmp cell_topo= " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+        
         const mesh::PairIterRelation elem_nodes = element.relations(Node);
 
-        unsigned cellDimension = cell_topo.getDimension();
+        int topoDim = cell_topo.getDimension();
+        //unsigned cell_topo_key = fromTopoKey;
+        //getTopoDim(topoDim, cell_topo_key);
+        unsigned cellDimension = (unsigned)topoDim;
 
+        // FIXME
+        if (0)
+        {
+          int nface = new_sub_entity_nodes[2].size();
+          std::cout << "tmp nface= " << nface << " cellDimension= " << cellDimension << std::endl;
+          for (int iface = 0; iface < nface; iface++)
+            {
+              std::cout << "tmp iface= " << iface << " vec= " << new_sub_entity_nodes[2][iface] << std::endl;
+            }
+        }
 
         unsigned n_edges = cell_topo_data->edge_count;
         if (n_edges == 0) n_edges = 1; // 1D edge has one "edge"
@@ -949,14 +1144,19 @@ namespace stk {
                 nSubDimEntities = 1;
               }
 
+
             // FIXME - assumes first node on each sub-dim entity is the "linear" one
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
+                //!
+#if STK_ADAPT_URP_LOCAL_NODE_COMPS
                 nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                 if (linearElement)
                   {
                     nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                   }
+#endif
+
               }
           }
 
@@ -965,6 +1165,8 @@ namespace stk {
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo); // CHECK
+        if (!ref_topo_p)
+          throw std::runtime_error("genericRefine_createNewElements:: error, no refinement topology found");
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
         unsigned num_child = ref_topo.num_child();
@@ -974,7 +1176,7 @@ namespace stk {
         //bool homogeneous_child = ref_topo.homogeneous_child();
         //VERIFY_OP(homogeneous_child, ==, true, "genericRefine_createNewElements homogeneous_child");
 
-        RefTopoX& ref_topo_x = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;  
+        RefTopoX& ref_topo_x = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;
 
         for (unsigned iChild = 0; iChild < num_child; iChild++)
           {
@@ -994,12 +1196,17 @@ namespace stk {
                 unsigned ordinal_of_node_on_subcell = ref_topo_x[childNodeIdx].ordinal_of_node_on_subcell;
                 unsigned num_nodes_on_subcell       = ref_topo_x[childNodeIdx].num_nodes_on_subcell;
 
-                bool usePerm = true;  //FIXME FIXME FIXME
-                //bool usePerm = false;
+                bool usePerm = true;
+
+                // only need permuation for quadratic elements
+                if (num_nodes_on_subcell == 1)
+                  usePerm = false;
+
                 const unsigned * perm_array = 0;
                 if (usePerm)
                   {
                     int perm_ord = getPermutation(FromTopology::vertex_count, element, cell_topo, rank_of_subcell, ordinal_of_subcell);
+
                     if (perm_ord < 0)
                       throw std::logic_error("permutation < 0 ");
                     //std::cout << "tmp 0 " << perm_ord << " rank_of_subcell= " << rank_of_subcell << " ordinal_of_subcell= " << ordinal_of_subcell <<  std::endl;
@@ -1009,14 +1216,34 @@ namespace stk {
                         perm_array = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology->permutation[perm_ord].node;
                       }
 
-                    //std::cout << "tmp 1 " << std::endl;
                   }
+
+                if (0)
+                  {
+                    std::cout << "tmp 2 cell_topo                       = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                    std::cout << "tmp m_primaryEntityRank               = " << m_primaryEntityRank << std::endl;
+                    std::cout << "tmp rank_of_subcell                   = " << rank_of_subcell << std::endl;
+                    std::cout << "tmp ordinal_of_subcell                = " << ordinal_of_subcell <<  std::endl;
+                    std::cout << "tmp ordinal_of_node_on_subcell        = " << ordinal_of_node_on_subcell << std::endl;
+                    std::cout << "tmp num_nodes_on_subcell              = " << num_nodes_on_subcell << std::endl;
+                    std::cout << "tmp new_sub_entity_nodes.size()       = " << new_sub_entity_nodes.size() << std::endl;
+                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[mesh::Face].size() << std::endl;
+                    if (new_sub_entity_nodes[mesh::Face].size())
+                      {
+                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
+                                  << new_sub_entity_nodes[mesh::Face][ordinal_of_subcell].size() << std::endl;
+                      }
+
+                    //std::cout << "tmp new_sub_entity_nodes = \n" << new_sub_entity_nodes << std::endl;
+                  }
+
 
                 switch (rank_of_subcell)
                   {
                   case 0:
                     inode = VERT_N(ordinal_of_subcell);
                     break;
+
                   case 1:
                     if (usePerm) // FIXME
                       if (num_nodes_on_subcell > 1)
@@ -1027,8 +1254,8 @@ namespace stk {
                       inode = EDGE_N_Q(ordinal_of_subcell, ordinal_of_node_on_subcell);
 
                     break;
+
                   case 2:
-                    //if (m_primaryEntityRank == mesh::Face)
                     if (cellDimension == 2)
                       {
                         VERIFY_OP(ordinal_of_subcell, == , 0, "createNewElements: ordinal_of_subcell");
@@ -1055,13 +1282,62 @@ namespace stk {
                           {
                             if (num_nodes_on_subcell > 1)
                               {
+                                if (0)
+                                  {
+                                    std::cout << "tmp cell_topo                  = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                                    std::cout << "tmp rank_of_subcell            = " << rank_of_subcell << std::endl;
+                                    std::cout << "tmp ordinal_of_subcell         = " << ordinal_of_subcell <<  std::endl;
+                                    std::cout << "tmp ordinal_of_node_on_subcell = " << ordinal_of_node_on_subcell << std::endl;
+                                    std::cout << "tmp num_nodes_on_subcell       = " << num_nodes_on_subcell << std::endl;
+                                    
+                                    for (unsigned ii=0; ii < num_nodes_on_subcell; ii++)
+                                      {
+                                        std::cout << "tmp pa[ii]= " << perm_array[ii] << std::endl;
+                                      }
+                                  
+                                    std::cout << "tmp new_sub_entity_nodes.size() = " << new_sub_entity_nodes.size() << std::endl;
+                                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[mesh::Face].size() << std::endl;
+                                    if (new_sub_entity_nodes[mesh::Face].size())
+                                      {
+                                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
+                                                  << new_sub_entity_nodes[mesh::Face][ordinal_of_subcell].size() << std::endl;
+                                      }
+
+                                    std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell] = \n" 
+                                              << new_sub_entity_nodes[mesh::Face][ordinal_of_subcell] << std::endl;
+
+                                    std::cout << "tmp new_sub_entity_nodes = \n" 
+                                              << new_sub_entity_nodes << std::endl;
+
+                                    std::cout << "tmp  pa = " << (usePerm ? perm_array[ordinal_of_node_on_subcell] : ordinal_of_node_on_subcell) << std::endl;
+
+                                  }
                                 inode = NN_Q_P(mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell, perm_array);
                               }
                             else
                               {
+                                if (0)
+                                  {
+                                    std::cout << "tmp 1 cell_topo                       = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                                    std::cout << "tmp m_primaryEntityRank               = " << m_primaryEntityRank << std::endl;
+                                    std::cout << "tmp rank_of_subcell                   = " << rank_of_subcell << std::endl;
+                                    std::cout << "tmp ordinal_of_subcell                = " << ordinal_of_subcell <<  std::endl;
+                                    std::cout << "tmp ordinal_of_node_on_subcell        = " << ordinal_of_node_on_subcell << std::endl;
+                                    std::cout << "tmp num_nodes_on_subcell              = " << num_nodes_on_subcell << std::endl;
+                                    std::cout << "tmp new_sub_entity_nodes.size()       = " << new_sub_entity_nodes.size() << std::endl;
+                                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[mesh::Face].size() << std::endl;
+                                    if (new_sub_entity_nodes[mesh::Face].size())
+                                      {
+                                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
+                                                  << new_sub_entity_nodes[mesh::Face][ordinal_of_subcell].size() << std::endl;
+                                      }
+
+                                    std::cout << "tmp new_sub_entity_nodes = \n" << new_sub_entity_nodes << std::endl;
+                                  }
+
                                 inode = NN_Q(mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell);
                               }
-                          }
+                          } 
                         else
                           {
                             inode = NN_Q(mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell);
@@ -1076,11 +1352,14 @@ namespace stk {
                     throw std::logic_error("UniformRefinerPattern logic error");
                   }
 
-                if (0) std::cout << "tmp 2.1 " << inode << " " << jNode << " rank_of_subcell= " << rank_of_subcell
+                if (0) std::cout << "tmp 2.1 " << inode << " " << jNode 
+                                 << " usePerm = " << usePerm
+                                 << " childNodeIdx= " << childNodeIdx
+                                 << " rank_of_subcell= " << rank_of_subcell
                                  << " ordinal_of_subcell = " << ordinal_of_subcell
                                  << " ordinal_of_node_on_subcell = " << ordinal_of_node_on_subcell
+                                 << " num_nodes_on_subcell = " << num_nodes_on_subcell
                                  << std::endl;
-
                 EN[jNode] = inode;
               }
           }
@@ -1090,30 +1369,32 @@ namespace stk {
           {
             Entity& newElement = *(*element_pool);
 
-            // FIXME
             if (m_primaryEntityRank == Element &&  proc_rank_field)
               {
-                //exit(1);  // FIXME FIXME FIXME CHECK
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
               }
 
-            // CHECK
             change_entity_parts(eMesh, element, newElement);
-            
+
             for (int inode=0; inode < ToTopology::node_count; inode++)
               {
                 mesh::EntityId eid = elems[iChild][inode];
                 if (!eid)
                   {
-                    std::cout << "P[" << eMesh.getRank() << "] eid = 0 for inode = " << inode << std::endl;
+                    std::cout << "P[" << eMesh.getRank() << "] eid = 0 for inode = " << inode << " iChild = " << iChild << std::endl;
+                    std::cout << "elems[iChild] = " ;
+                    for (int in=0; in < ToTopology::node_count; in++)
+                      {
+                        std::cout << "in= " << in << " elems[iChild][in]= " << elems[iChild][in] << std::endl;
+                      }
                     throw std::logic_error("UniformRefinerPatternBase::genericRefine_createNewElements bad entity id = 0 ");
                   }
 
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_createOrGetNode);
-                mesh::Entity& node = eMesh.createOrGetNode(eid);
+                mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_createOrGetNode);
-               
+
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_declare_relation);
                 eMesh.getBulkData()->declare_relation(newElement, node, inode);
                 //register_relation(newElement, node, inode);
@@ -1123,7 +1404,8 @@ namespace stk {
             if (!linearElement)
               {
                 interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0], eMesh.getCoordinatesField() );
-                interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0]);
+                //FIXME FIXME FIXME
+                //interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0]);
               }
 
             set_parent_child_relations(eMesh, element, newElement, iChild);
@@ -1271,6 +1553,25 @@ namespace stk {
        *   o----*----o----*----o
        *  0     9    4   10     1
        *
+       *
+       * After refinement:
+       *
+       *  3    14    6   13     2   CHILD 8-Node Quadrilateral Object Nodes
+       *   o----*----o----*----o    (new nodes = *)
+       *   |         |         |
+       *   |         |         |
+       * 15*         *19       *12    This case is so similar to the full quadratic case we just re-use the node numbering and
+       *   |         |         |         go ahead and generate 9 nodes per face, which is 4 more than we need, but we drop them later.
+       *   |        8|    18   |
+       * 7 o----*----o----*----o 5
+       *   |   20    |         |
+       *   |         |         |
+       * 16*       17*         *11
+       *   |         |         |
+       *   |         |         |
+       *   o----*----o----*----o
+       *  0     9    4   10     1
+       *
        * The way this meshes with hierarchical elements is to imagine the face being
        *  part of a p-element with local polynomial degree 4x3 (p=4 in local-x of the face, p=3 in local-y).  In that
        *  case, we can think of the nodes laid out in a rectangular pattern as:
@@ -1319,19 +1620,46 @@ namespace stk {
       static unsigned renumber_quad_face_interior_nodes(unsigned original_node)
       {
         static int face_interior_inverse_map[] = { -1, /* 0 */
-                                                        -1, -2, -3, -4, -5, -6, -7, 8, -9, -10,
-                                                        -11, -12, -13, -14, -15, -16, 
-                                                        4, 5, 6, 7, // -17, -18, -19, -20
-                                                        0, 1, 2, 3 }; //-21, -22, -23, -24};
+                                                   -1, -2, -3, -4, -5, -6, -7, 
+                                                   8,  /* 8 */
+                                                   -9, -10,
+                                                   -11, -12, -13, -14, -15, -16, 
+                                                   4, 5, 6, 7, // -17, -18, -19, -20
+                                                   0, 1, 2, 3 }; //-21, -22, -23, -24};
 
         /*
-        static int face_interior_map[] = {21, 22, 23, 24, 
+        static int face_interior_map[] = {21, 22, 23, 24,
                                                17, 18, 19, 20,
                                                8 };
         */
         if (original_node >= 25) throw std::logic_error("renumber_quad_face_interior_nodes 1");
         int val = face_interior_inverse_map[original_node];
         if (val < 0) throw std::logic_error("renumber_quad_face_interior_nodes 2");
+        return (unsigned)val;
+      }
+
+      // not used (yet)
+      static unsigned renumber_quad_face_interior_nodes_quad8(unsigned original_node)
+      {
+        // FIXME
+        if (1) return renumber_quad_face_interior_nodes(original_node);
+
+        static int face_interior_inverse_map[] = { -1, /* 0 */
+                                                   -1, -2, -3, -4, -5, -6, -7, 
+                                                   4,  /* 8 */
+                                                   -9, -10,
+                                                   -11, -12, -13, -14, -15, -16, 
+                                                   0, 1, 2, 3 // -17, -18, -19, -20
+        }; 
+
+        /*
+        static int face_interior_map[] = {21, 22, 23, 24, 
+                                               17, 18, 19, 20,
+                                               8 };
+        */
+        if (original_node >= 21) throw std::logic_error("renumber_quad_face_interior_nodes_quad8 1");
+        int val = face_interior_inverse_map[original_node];
+        if (val < 0) throw std::logic_error("renumber_quad_face_interior_nodes_quad8 2");
         return (unsigned)val;
       }
 
@@ -1392,7 +1720,13 @@ namespace stk {
 
         unsigned num_child_nodes = ref_topo.num_child_nodes();
         shards::CellTopology cell_topo ( shards::getCellTopologyData< FromTopology >() );
-        if (cell_topo.getDimension() == 2)
+
+        int topoDim = cell_topo.getDimension();
+        unsigned cell_topo_key = fromTopoKey;
+
+        getTopoDim(topoDim, cell_topo_key);
+
+        if (topoDim == 2)
           {
             i_face = 0;
             n_ord = 0;
@@ -1405,6 +1739,12 @@ namespace stk {
                 ++n_face_n;
               }
 
+            if (fromTopoKey == topo_key_quad8 || fromTopoKey == topo_key_shellquad8)
+              {
+                n_ord = 9;
+                std::cout << "n_ord = " << n_ord << " for cell_topo= " << cell_topo.getName() << std::endl;
+              }
+
             i_ord = 0;
             for (unsigned i_face_n = 0; i_face_n < num_child_nodes; i_face_n++)
               {
@@ -1412,7 +1752,7 @@ namespace stk {
                   continue;
                 if (i_face_n == childNodeIdx)
                   {
-                    if (fromTopoKey == topo_key_quad9)
+                    if (fromTopoKey == topo_key_quad9 || fromTopoKey == topo_key_quad8 || fromTopoKey == topo_key_shellquad8)
                       {
                         if (doRenumber)
                           {
@@ -1424,7 +1764,7 @@ namespace stk {
                 ++i_ord;
               }
             return false;
-          }
+          }  // cell dim == 2
 
         unsigned n_faces = cell_topo.getFaceCount();
 
@@ -1443,7 +1783,17 @@ namespace stk {
                 ++n_face_n;
               }
 
+            if (1 && fromTopoKey == topo_key_hex20)
+              {
+                n_ord = 9;
+              }
+
             i_ord = 0;
+            unsigned fnl=0;
+            for (unsigned i_face_n = 0; face_nodes[i_face_n] != END_UINT_ARRAY; i_face_n++)
+              {
+                ++fnl;
+              }
             for (unsigned i_face_n = 0; face_nodes[i_face_n] != END_UINT_ARRAY; i_face_n++)
               {
                 if (on_parent_edge(face_nodes[i_face_n], ref_topo))
@@ -1458,6 +1808,15 @@ namespace stk {
                             i_ord = renumber_quad_face_interior_nodes(i_face_n);
                           }
                       }
+                    if (fromTopoKey == topo_key_hex20)
+                      {
+                        if (doRenumber)
+                          {
+                            i_ord = renumber_quad_face_interior_nodes_quad8(i_face_n);
+                            //std::cout << "tmp childNodeIdx= " << childNodeIdx << " i_ord= " << i_ord << " i_face_n= " << i_face_n << " fnl= " << fnl <<  std::endl;
+                          }
+                      }
+                    
                     return true;
                   }
                 if (j_e_node < num_child_nodes)
@@ -1529,9 +1888,17 @@ namespace stk {
             return;
           }
 
+
+
         if ( (on_parent_edge = on_parent_edge_interior(childNodeIdx, ref_topo, ordinal_of_subcell, ordinal_of_node_on_subcell, num_node_on_subcell)))
           {
             rank_of_subcell = 1;
+            // SPECIAL CASE
+            if (cell_topo.getKey() == shards::Beam<2>::key ||
+                cell_topo.getKey() == shards::Beam<3>::key )
+              {
+                rank_of_subcell = 3;
+              }
             return;
           }
 
@@ -1703,6 +2070,11 @@ namespace stk {
                 if (cell_topo.getDimension() > 1 && n_faces == 0) n_faces = 1; // 2D face has one "face"
                 //unsigned n_sides = cell_topo.getSideCount();
 
+                // check for shell line elements
+                int topoDim = cell_topo.getDimension();
+                getTopoDim(topoDim, fromTopoKey);
+                if (topoDim == 1) n_faces = 0;
+
                 for (unsigned i_edge = 0; i_edge < n_edges; i_edge++)
                   {
                     const UInt *edge_nodes = ref_topo.edge_node(i_edge);
@@ -1732,8 +2104,31 @@ namespace stk {
 
                         const UInt *face_nodes = ref_topo.face_node(i_face);
 
-                        for (unsigned j_node = 0; j_node < 9; j_node++) // FIXME
+                        unsigned j_node_end = 0;
+#if 0
+                        bool lfnd = false;
+                        for (unsigned j_node = 0; j_node < 9; j_node++) 
                           {
+                            if (face_nodes[j_node] == END_UINT_ARRAY)
+                              {
+                                lfnd = true;
+                                j_node_end = j_node;
+                                break;
+                              }
+                          }
+                        if (!lfnd)
+                          {
+                            throw std::logic_error("findRefinedCellParamCoordsLinear logic err # 0");
+                          }
+#endif
+                        j_node_end = 9;  //!#
+
+                        for (unsigned j_node = 0; j_node < j_node_end; j_node++) // FIXME
+                          {
+                            if (cell_topo.getDimension() != 2 && face_nodes[j_node] == END_UINT_ARRAY)
+                              {
+                                throw std::logic_error("findRefinedCellParamCoordsLinear logic err # 1");
+                              }
                             unsigned fn =  cell_topo.getDimension()==2 ? j_node : face_nodes[j_node];
 
                             if (childNodeIdx == fn)
@@ -1744,8 +2139,13 @@ namespace stk {
                                   {
                                     param_coord[ix] = 0.0;
                                   }
+
                                 for (unsigned k_node = 0; k_node < 4; k_node++)
                                   {
+                                    if (cell_topo.getDimension() != 2 && face_nodes[k_node] == END_UINT_ARRAY)
+                                      {
+                                        throw std::logic_error("findRefinedCellParamCoordsLinear logic err # 2");
+                                      }
                                     unsigned fnk = cell_topo.getDimension()==2 ? k_node : face_nodes[k_node];
                                     for (unsigned ix=0; ix < 3; ix++)
                                       {
@@ -1768,11 +2168,13 @@ namespace stk {
                   {
                     param_coord[ix] = 0.0;
                   }
-                for (unsigned k_node = 0; k_node < 8; k_node++)
+                unsigned nvert = FromTopology::vertex_count;
+                double dnvert = (double)nvert;
+                for (unsigned k_node = 0; k_node < nvert; k_node++)
                   {
                     for (unsigned ix=0; ix < 3; ix++)
                       {
-                        param_coord[ix] += ref_topo_x[k_node].parametric_coordinates[ix]/8.0;
+                        param_coord[ix] += ref_topo_x[k_node].parametric_coordinates[ix]/dnvert;
                       }
                   }
               }
@@ -1801,6 +2203,9 @@ namespace stk {
 
         CellTopology cell_topo(cell_topo_data);
 
+        //std::cout << "toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+        //std::cout << "toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+
         unsigned n_edges = cell_topo_data->edge_count;
         unsigned n_faces = cell_topo.getFaceCount();
         if (n_faces == 0) n_faces = 1; // 2D face has one "face"
@@ -1809,6 +2214,8 @@ namespace stk {
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo);
+        if (!ref_topo_p)
+          throw std::runtime_error("printRefinementTopoX_Table:: error, no refinement topology found");
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
         unsigned num_child = ref_topo.num_child();
@@ -1908,6 +2315,25 @@ namespace stk {
       virtual ~URP() {}
 
 
+      const CellTopologyData * get_effective_topo(mesh::Part& part)
+      {
+        const CellTopologyData * part_cell_topo_data = stk::mesh::get_cell_topology(part);
+
+        // check subsets
+        if (!part_cell_topo_data)
+          {
+            const mesh::PartVector subsets = part.subsets();
+            for (unsigned i_subset = 0; i_subset < subsets.size(); i_subset++)
+              {
+                mesh::Part& subset = *subsets[i_subset];
+                part_cell_topo_data = stk::mesh::get_cell_topology(subset);
+                if (part_cell_topo_data) 
+                  return part_cell_topo_data;
+              }
+          }
+        return part_cell_topo_data;
+      }
+
       void setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology=true)
       {
         EXCEPTWATCH;
@@ -1919,6 +2345,15 @@ namespace stk {
         m_fromParts.resize(0);
         m_toParts.resize(0);
 
+        if (0)
+          {
+            mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+            for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
+              {
+                mesh::Part *  part = *i_part ;
+                std::cout << "tmp 0 setNeededParts: part = " << part->name() << std::endl;
+              }
+          }
 
         for (unsigned irank = 0; irank < mesh::EntityRankEnd; irank++)
           {
@@ -1960,7 +2395,6 @@ namespace stk {
                 if (part->name()[0] == '{')
                   continue;
 
-
                 bool doThisPart = (block_names.size() == 0);
                 for (unsigned ib = 0; ib < block_names.size(); ib++)
                   {
@@ -1970,10 +2404,39 @@ namespace stk {
                         break;
                       }
                   }
+                bool isOldElementsPart = ( (part->name()).find(m_oldElementsPartName) != std::string::npos);
                 doThisPart = doThisPart && ( part->primary_entity_rank() == m_primaryEntityRank );
+                doThisPart = doThisPart && !isOldElementsPart;
 
-                //                 std::cout << "setNeededParts:: part name= " << part->name() << " doThisPart= " << doThisPart
-                //                           << "  part->primary_entity_rank() = " <<  part->primary_entity_rank() << std::endl;
+                if (!isOldElementsPart)
+                  {
+                    //const CellTopologyData * const part_cell_topo_data = stk::mesh::get_cell_topology(*part);
+                    const CellTopologyData * part_cell_topo_data = get_effective_topo(*part);
+                    
+                    if (!part_cell_topo_data)
+                      {
+                        //std::cout << "cell topo is null for part = " << part->name() << std::endl;
+                        //throw std::runtime_error("cell topo is null");
+                        doThisPart = false;
+
+                      }
+                    else
+                      {
+                        shards::CellTopology topo(part_cell_topo_data);
+                        unsigned my_cellTopoKey = getFromTypeKey();
+                        doThisPart = doThisPart && (topo.getKey() == my_cellTopoKey);
+
+                        if (0)
+                          std::cout << "tmp setNeededParts:: "
+                                    << " part name= " << part->name() 
+                                    << " doThisPart= " << doThisPart
+                                    << " part->primary_entity_rank() = " <<  part->primary_entity_rank() 
+                                    << " my_cellTopoKey= " << my_cellTopoKey
+                                    << " topo.getKey() = " << topo.getKey()
+                                    << " topo.getName() = " << topo.getName()
+                                    << std::endl;
+                      }
+                  }
 
                 if (doThisPart)
                   {
@@ -1984,7 +2447,6 @@ namespace stk {
                     case mesh::Face:
                       {
                         mesh::Part *  block_to=0;
-                        //mesh::Part* block_to = 0;
                         if (sameTopology)
                           {
                             block_to = part;
@@ -1992,13 +2454,14 @@ namespace stk {
                         else
                           {
                             block_to = &eMesh.getMetaData()->declare_part(part->name() + m_appendConvertString, part->primary_entity_rank());
+                            if (0) std::cout << "tmp setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
                             mesh::set_cell_topology< ToTopology  >( *block_to );
                             stk::io::put_io_part_attribute(*block_to);
                           }
 
-                        if (0) std::cout << "tmp setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
 
-                        if (!(part->name() == m_oldElementsPartName+toString(m_primaryEntityRank)))
+                        if (!((part->name()).find(m_oldElementsPartName) != std::string::npos))
+                          //if (!(part->name() == m_oldElementsPartName+toString(m_primaryEntityRank)))
                           {
                             if (0) std::cout << "tmp setNeededParts:: fromPart = " << part->name() << " toPart = " << block_to->name() << std::endl;
                             m_fromParts.push_back(part);
@@ -2012,20 +2475,26 @@ namespace stk {
           }
         fixSubsets(eMesh, sameTopology);
 
-        eMesh.getMetaData()->declare_part(m_oldElementsPartName+toString(m_primaryEntityRank), m_primaryEntityRank);
+
+        {
+          mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+          std::string oldPartName = m_oldElementsPartName+toString(m_primaryEntityRank);
+          bool foundOldPart = false;
+          for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
+            {
+              mesh::Part *  part = *i_part ;
+              if (oldPartName == part->name())
+                {
+                  foundOldPart = true;
+                  break;
+                }
+            }
+
+          if (!foundOldPart)
+            eMesh.getMetaData()->declare_part(oldPartName, m_primaryEntityRank);
+        }
 
 
-#if 0
-        if (m_primaryEntityRank == mesh::Element)
-          {
-            //mesh::Part& oldElementsPart =
-            eMesh.getMetaData()->declare_part(m_oldElementsPartName+toString(mesh::Element), mesh::Element);
-            eMesh.getMetaData()->declare_part(m_oldElementsPartName+toString(mesh::Edge), mesh::Edge);
-            //mesh::Part& oldElementsPart = eMesh.getMetaData()->declare_part(m_oldElementsPartName);
-            //mesh::set_cell_topology< FromTopology  >( oldElementsPart );
-            //stk::io::put_io_part_attribute( oldElementsPart );
-          }
-#endif
       }
 
       void change_entity_parts(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement)
@@ -2083,34 +2552,53 @@ namespace stk {
 // homogeneous refine
 #include "UniformRefinerPattern_Quad4_Quad4_4.hpp"
 #include "UniformRefinerPattern_Line2_Line2_2_sierra.hpp"
+#include "UniformRefinerPattern_Beam2_Beam2_2_sierra.hpp"
 #include "UniformRefinerPattern_ShellLine2_ShellLine2_2_sierra.hpp"
+#include "UniformRefinerPattern_ShellLine3_ShellLine3_2_sierra.hpp"
 #include "UniformRefinerPattern_Quad4_Quad4_4_sierra.hpp"
 #include "UniformRefinerPattern_Tri3_Tri3_4_sierra.hpp"
 #include "UniformRefinerPattern_ShellTri3_ShellTri3_4_sierra.hpp"
+#include "UniformRefinerPattern_ShellTri6_ShellTri6_4_sierra.hpp"
 #include "UniformRefinerPattern_ShellQuad4_ShellQuad4_4_sierra.hpp"
+#include "UniformRefinerPattern_ShellQuad8_ShellQuad8_4_sierra.hpp"
+
 
 #include "UniformRefinerPattern_Tet4_Tet4_8_sierra.hpp"
 #include "UniformRefinerPattern_Hex8_Hex8_8_sierra.hpp"
 #include "UniformRefinerPattern_Wedge6_Wedge6_8_sierra.hpp"
 
-#include "URP_Heterogeneous_3D.hpp"
 
 #include "UniformRefinerPattern_Line3_Line3_2_sierra.hpp"
+#include "UniformRefinerPattern_Beam3_Beam3_2_sierra.hpp"
 #include "UniformRefinerPattern_Tri6_Tri6_4_sierra.hpp"
+#include "UniformRefinerPattern_Quad8_Quad8_4_sierra.hpp"
 #include "UniformRefinerPattern_Quad9_Quad9_4_sierra.hpp"
 #include "UniformRefinerPattern_Hex27_Hex27_8_sierra.hpp"
+#include "UniformRefinerPattern_Hex20_Hex20_8_sierra.hpp"
 #include "UniformRefinerPattern_Tet10_Tet10_8_sierra.hpp"
+#include "UniformRefinerPattern_Wedge15_Wedge15_8_sierra.hpp"
+#include "UniformRefinerPattern_Wedge18_Wedge18_8_sierra.hpp"
 
+#include "URP_Heterogeneous_3D.hpp"
+#include "URP_Heterogeneous_QuadraticRefine_3D.hpp"
 
 // enrich
-// line2-line3
+
+#include "UniformRefinerPattern_Line2_Line3_1_sierra.hpp"
+#include "UniformRefinerPattern_ShellLine2_ShellLine3_1_sierra.hpp"
+#include "UniformRefinerPattern_Beam2_Beam3_1_sierra.hpp"
+
 #include "UniformRefinerPattern_Quad4_Quad9_1_sierra.hpp"
 #include "UniformRefinerPattern_Quad4_Quad8_1_sierra.hpp"
+#include "UniformRefinerPattern_ShellQuad4_ShellQuad8_1_sierra.hpp"
 #include "UniformRefinerPattern_Tri3_Tri6_1_sierra.hpp"
 #include "UniformRefinerPattern_Tet4_Tet10_1_sierra.hpp"
 #include "UniformRefinerPattern_Hex8_Hex27_1_sierra.hpp"
 #include "UniformRefinerPattern_Hex8_Hex20_1_sierra.hpp"
 #include "UniformRefinerPattern_Wedge6_Wedge15_1_sierra.hpp"
+#include "UniformRefinerPattern_Wedge6_Wedge18_1_sierra.hpp"
+
+#include "URP_Heterogeneous_Enrich_3D.hpp"
 
 // convert topology
 #include "UniformRefinerPattern_Quad4_Tri3_6.hpp"
@@ -2125,33 +2613,46 @@ namespace stk {
 
     // refine
     typedef  UniformRefinerPattern<shards::Line<2>,          shards::Line<2>,          2, SierraPort >            Line2_Line2_2;
+    typedef  UniformRefinerPattern<shards::Beam<2>,          shards::Beam<2>,          2, SierraPort >            Beam2_Beam2_2;
     typedef  UniformRefinerPattern<shards::ShellLine<2>,     shards::ShellLine<2>,     2, SierraPort >            ShellLine2_ShellLine2_2;
+    typedef  UniformRefinerPattern<shards::ShellLine<3>,     shards::ShellLine<3>,     2, SierraPort >            ShellLine3_ShellLine3_2;
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4 >                        Quad4_Quad4_4_Old;
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort >            Quad4_Quad4_4;
 
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort >            Quad4_Quad4_4_Sierra;
     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      4, SierraPort >            Tri3_Tri3_4;
     typedef  UniformRefinerPattern<shards::ShellTriangle<3>, shards::ShellTriangle<3>, 4, SierraPort >            ShellTri3_ShellTri3_4;
+    typedef  UniformRefinerPattern<shards::ShellTriangle<6>, shards::ShellTriangle<6>, 4, SierraPort >            ShellTri6_ShellTri6_4;
     typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<4>, 4, SierraPort >  ShellQuad4_ShellQuad4_4;
+    typedef  UniformRefinerPattern<shards::ShellQuadrilateral<8>, shards::ShellQuadrilateral<8>, 4, SierraPort >  ShellQuad8_ShellQuad8_4;
 
     typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort >            Tet4_Tet4_8;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,    8, SierraPort >            Hex8_Hex8_8;
     typedef  UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort >            Wedge6_Wedge6_8;
 
-    typedef  UniformRefinerPattern<shards::Line<3>,          shards::Line<3>,          2 >                        Line3_Line3_2;
+    typedef  UniformRefinerPattern<shards::Line<3>,          shards::Line<3>,          2, SierraPort >            Line3_Line3_2;
+    typedef  UniformRefinerPattern<shards::Beam<3>,          shards::Beam<3>,          2, SierraPort >            Beam3_Beam3_2;
     typedef  UniformRefinerPattern<shards::Triangle<6>,      shards::Triangle<6>,      4, SierraPort >            Tri6_Tri6_4;
     typedef  UniformRefinerPattern<shards::Quadrilateral<9>, shards::Quadrilateral<9>, 4, SierraPort >            Quad9_Quad9_4;
+    typedef  UniformRefinerPattern<shards::Quadrilateral<8>, shards::Quadrilateral<8>, 4, SierraPort >            Quad8_Quad8_4;
     typedef  UniformRefinerPattern<shards::Hexahedron<27>,   shards::Hexahedron<27>,   8, SierraPort >            Hex27_Hex27_8;
-    typedef  UniformRefinerPattern<shards::Tetrahedron<10>,  shards::Tetrahedron<10>,   8, SierraPort >           Tet10_Tet10_8;
+    typedef  UniformRefinerPattern<shards::Hexahedron<20>,   shards::Hexahedron<20>,   8, SierraPort >            Hex20_Hex20_8;
+    typedef  UniformRefinerPattern<shards::Tetrahedron<10>,  shards::Tetrahedron<10>,  8, SierraPort >            Tet10_Tet10_8;
+    typedef  UniformRefinerPattern<shards::Wedge<15>,        shards::Wedge<15>,        8, SierraPort >            Wedge15_Wedge15_8;
+    typedef  UniformRefinerPattern<shards::Wedge<18>,        shards::Wedge<18>,        8, SierraPort >            Wedge18_Wedge18_8;
 
     // enrich
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<9>, 1, SierraPort >            Quad4_Quad9_1;
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<8>, 1, SierraPort >            Quad4_Quad8_1;
+    typedef  UniformRefinerPattern<shards::Beam<2>,          shards::Beam<3>,          1, SierraPort >            Beam2_Beam3_1;
+
+    typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<8>, 1, SierraPort >            ShellQuad4_ShellQuad8_1;
     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<6>,      1, SierraPort >            Tri3_Tri6_1;
     typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<10>,  1, SierraPort >            Tet4_Tet10_1;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<27>,   1, SierraPort >            Hex8_Hex27_1;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<20>,   1, SierraPort >            Hex8_Hex20_1;
     typedef  UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<15>,        1, SierraPort >            Wedge6_Wedge15_1;
+    typedef  UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<18>,        1, SierraPort >            Wedge6_Wedge18_1;
 
     // convert
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>,      2 >                        Quad4_Tri3_2;

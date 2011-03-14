@@ -107,7 +107,7 @@ int Zoltan_CColAMD(
 
   /* Construct a CSC matrix */
   /* TODO: take this in parameter instead */
-  ierr = Zoltan_Matrix_Build(zz, &opt, &mtx.mtx);
+  ierr = Zoltan_Matrix_Build(zz, &opt, &mtx.mtx, 0, 0, NULL, NULL);
   CHECK_IERR;
 
  /* Set up the correct distribution function */

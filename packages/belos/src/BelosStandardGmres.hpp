@@ -42,6 +42,10 @@
 #ifndef __Belos_StandardGmres_hpp
 #define __Belos_StandardGmres_hpp
 
+/// \file BelosStandardGmres.hpp
+/// \brief Implementation of standard (and Flexible) GMRES
+/// \author Mark Hoemmen
+
 #include <BelosGmresBase.hpp>
 
 namespace Belos {
@@ -60,10 +64,19 @@ namespace Belos {
   ///   vol. 7, pp. 856-869, 1986.
   template<class Scalar, class MV, class OP>
   class StandardGmres : public GmresBase<Scalar,MV,OP> {
+  public:
+    typedef Scalar scalar_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+    typedef MV multivector_type;
+    typedef OP operator_type;
+
   private:
     /// \typedef base_type
     /// \brief Base class typedef
     typedef GmresBase<Scalar, MV, OP> base_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef MultiVecTraits<Scalar, MV> MVT;
+    typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
     
   public:
     /// Constructor
@@ -74,6 +87,7 @@ namespace Belos {
     ///   updateSolution().  On output, if the solution has been
     ///   updated, the vector returned by getLHS() will be modified.
     /// \param ortho [in] Orthogonalization manager
+    /// \param outMan [in/out] Output manager
     /// \param maxIterCount [in] Maximum number of iterations before
     ///   restart.  The number of vectors' worth of storage this
     ///   constructor allocates is proportional to this, so choose
@@ -85,34 +99,61 @@ namespace Belos {
     ///   left or split preconditioning.
     StandardGmres (const Teuchos::RCP<LinearProblem<Scalar,MV,OP> >& lp,
 		   const Teuchos::RCP<const OrthoManager<Scalar, MV> >& ortho,
-		   const int maxNumIters,
+		   const Teuchos::RCP<OutputManager<Scalar> >& outMan,
+		   const int maxIterCount,
 		   const bool flexible) :
-      GmresBase (lp, ortho, maxNumIters, flexible) {}
+      GmresBase<Scalar, MV, OP> (lp, ortho, outMan, maxIterCount, flexible) {}
 
     virtual bool canExtendBasis() const {
-      return getNumIters() < maxNumIters();
+      return this->getNumIters() < this->maxNumIters();
     }
 
     virtual void
     extendBasis (Teuchos::RCP<MV>& V_cur, 
 		 Teuchos::RCP<MV>& Z_cur)
-    {
-      // This does not count the initial basis vector
-      const int k = getNumIters(); 
-      TEST_FOR_EXCEPTION(k >= maxNumIters(), GmresCantExtendBasis,
-			 "Maximum number of iterations " << getNumIters() 
-			 << " reached.");
-      RCP<const MV> V_prv = MVT::CloneView(*V_, Range1D(k-1, k-1));
-      V_cur = MVT::CloneView(*V_, Range1D(k, k));
-      if (flexible_)
+    { 
+      using Teuchos::Range1D;
+      using std::endl;
+      const bool verboseDebug = false;
+      //
+      // mfh 16 Feb 2011: The use of "this->..." here and elsewhere to
+      // refer to GmresBase member data is obligatory, since we are
+      // inheriting from a templated class.  See the C++ FAQ:
+      //
+      // http://www.parashift.com/c++-faq-lite/templates.html#faq-35.19
+      // 
+      RCP<LinearProblem<Scalar, MV, OP> > lp = this->lp_;
+      RCP<MV> V = this->V_;
+      RCP<MV> Z = this->Z_;
+      // This does not count the initial basis vector.
+      const int k = this->getNumIters(); 
+      const int m = this->maxNumIters();
+      TEST_FOR_EXCEPTION(k >= m, GmresCantExtendBasis,
+			 "Belos::StandardGmres::extendBasis: "
+			 "Maximum number of iterations " << m << "reached; "
+			 "cannot extend basis further.");
+      std::ostream& dbg = this->outMan_->stream(Debug);
+      if (verboseDebug)
 	{
-	  RCP<MV> Z_cur = MVT::CloneViewNonConst(*Z_, Range1D(k, k));
-	  lp_->applyOp (V_prv, Z_cur);
-	  lp_->applyRightPrec (Z_cur, V_cur);
+	  dbg << "---- StandardGmres::extendBasis: "
+	    "V_prv = V[" << k << "," << k << "], "
+	    "V_cur = V[" << k+1 << "," << k+1 << "]";
+	  if (this->flexible_)
+	    dbg << ", Z_cur = Z[" << k << "," << k << "]" << endl;
+	  else
+	    dbg << endl;
+	}
+      RCP<const MV> V_prv = MVT::CloneView(*V, Range1D(k, k));
+      V_cur = MVT::CloneViewNonConst(*V, Range1D(k+1, k+1));
+      if (this->flexible_)
+	{
+	  Z_cur = MVT::CloneViewNonConst(*Z, Range1D(k, k));
+	  lp->applyOp (*V_prv, *Z_cur);
+	  lp->applyRightPrec (*Z_cur, *V_cur);
 	}
       else
 	{
-	  lp_->apply (V_prv, V_cur);
+	  lp->apply (*V_prv, *V_cur);
 	  if (! Z_cur.is_null())
 	    Z_cur = Teuchos::null;
 	}
@@ -128,24 +169,57 @@ namespace Belos {
 		   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> >& C_Z,
 		   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> >& B_Z)
     {
+      using Teuchos::null;
       using Teuchos::rcp;
       using Teuchos::tuple;
-      typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+      const bool verboseDebug = true;
 
-      C = rcp (new mat_type (Teuchos::View, *H_, k+1, 1, 0, k));
-      B = rcp (new mat_type (Teuchos::View, *H_, 1, 1, k+1, k));
+      // Standard GMRES doesn't generate projection and normalization
+      // coefficients for the Z basis, regardless of whether we are
+      // performing Flexible GMRES.
+      if (! C_Z.is_null())
+	C_Z = null;
+      if (! B_Z.is_null())
+	B_Z = null;
+      // Help C++'s type inference by referring to the "this" pointer.
+      mat_type& H = *(this->H_);
+      mat_type& z = *(this->z_);
+      const int k = this->getNumIters();
 
+      // Flexible standard GMRES only needs to orthogonalize the new V
+      // basis vector; it doesn't need to orthogonalize the Z basis
+      // vector.
+      //
       // We don't need to do anything with the "rank" output of
       // projectAndNormalize(), since the single value in B will tell
       // us (or rather, the caller) what we (rather, they) need to
       // know.
-      (void) ortho_->projectAndNormalize (V_cur, null, tuple(C), B, tuple(V_prv));
+      C_V = rcp (new mat_type (Teuchos::View, H, k+1, 1, 0, k));
+      B_V = rcp (new mat_type (Teuchos::View, H, 1, 1, k+1, k));
+      (void) this->ortho_->projectAndNormalize (*V_cur, tuple(C_V), 
+						B_V, tuple(V_prv));
+      if (verboseDebug)
+	{
+	  using std::endl;
+	  std::ostream& dbg = this->outMan_->stream(Debug);
+	  dbg << "---- Current upper Hessenberg matrix (" 
+	      << k+2 << " x " << k+1 << "): "
+	      << mat_type(Teuchos::View, H, k+2, k+1) << endl;
+	  dbg << "---- Current projected right-hand side ("
+	      << k+2 << " x " << 1 << "): "
+	      << mat_type(Teuchos::View, z, k+2, 1) << endl;
+	}
     }
 
     virtual bool 
-    acceptedCandidateBasis () const {
-      typedef Teuchos::ScalarTraits<Scalar> STS;
-      const Scalar H_kp1k = (*H_)(k+1, k);
+    acceptedCandidateBasis () const 
+    {
+      mat_type& H = *(this->H_);
+
+      // OK, because we haven't accepted the candidate basis yet,
+      // so the number of iterations hasn't yet been incremented.
+      const int k = this->getNumIters();
+      const Scalar H_kp1k = H(k+1, k);
       
       // NOTE (mfh {15,16} Jan 2011) This test should perhaps be more
       // sophisticated.  However, perhaps the right place for such a
@@ -163,7 +237,12 @@ namespace Belos {
     {
       // Standard GMRES just writes to the upper Hessenberg matrix in
       // place in its implementation of orthogonalize(), so we don't
-      // need to do anything here.
+      // need to do anything here.  Just include the usual boilerplate
+      // to avoid compiler warnings for unused inputs.
+      (void) C_V;
+      (void) B_V;
+      (void) C_Z;
+      (void) B_Z;
     }
 
   };
