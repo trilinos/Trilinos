@@ -28,7 +28,7 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
             Epetra_MultiVector &Y) const
 {
     int nvectors = X.NumVectors();
-    cout << "No of colors after probing" << nvectors << endl;
+    //cout << "No of colors after probing" << nvectors << endl;
     Epetra_MultiVector temp(C_->RowMap(), nvectors);
     Epetra_MultiVector temp2(G_->RowMap(), nvectors);
 
@@ -51,7 +51,7 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
        assert(gids[i] == gids1[i]);
     }
 #endif
-    cout << "Map check done" << endl;
+    //cout << "Map check done" << endl;
     // ]
 
     int lda;
@@ -88,7 +88,7 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
 
     R_->Multiply(false, temp, Y);
     err = Y.Update(1.0, temp2, -1.0);
-    cout << Y.MyLength() << " " << temp2.MyLength() << endl;
+    //cout << Y.MyLength() << " " << temp2.MyLength() << endl;
     assert(err == 0);
     return 0;
 }

@@ -66,8 +66,8 @@ int Ifpack_HyperLU::Initialize()
     //A_ = newA;
     // ]
 
-    double Sdiagfactor = 0.05; // hard code the diagonals
-    /*HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
+    /*double Sdiagfactor = 0.05; // hard code the diagonals
+    HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
                     Sbar_, Sdiagfactor);*/
     hlu_config_.Sdiagfactor =  Teuchos::getParameter<double>(List_,
                                                 "Diagonal Factor");
@@ -75,6 +75,17 @@ int Ifpack_HyperLU::Initialize()
                                                 "Symmetry");
     hlu_config_.libName = Teuchos::getParameter<string>(List_,
                                                 "Outer Solver Library");
+    string schurApproxMethod = Teuchos::getParameter<string>(List_,
+                                                "Schur Approximation Method");
+    if (schurApproxMethod == "A22AndBlockDiagonals")
+        hlu_config_.schurApproxMethod = 1;
+    else if (schurApproxMethod == "Diagonal")
+        hlu_config_.schurApproxMethod = 2;
+
+    hlu_config_.inner_tolerance =  Teuchos::getParameter<double>(List_,
+                                                "Inner Solver Tolerance");
+    hlu_config_.inner_maxiters =  Teuchos::getParameter<int>(List_,
+                                                "Inner Solver MaxIters");
     HyperLU_factor(A_, &hlu_data_, &hlu_config_);
 
     IsInitialized_ = true;
@@ -107,7 +118,7 @@ int Ifpack_HyperLU::Compute()
         double condest;
         err = solver->ConstructPreconditioner(condest);
         assert (err == 0);
-        cout << "Condition number of inner Sbar" << condest << endl;
+        //cout << "Condition number of inner Sbar" << condest << endl;
     }
     else
     {
@@ -118,18 +129,18 @@ int Ifpack_HyperLU::Compute()
     }
 
     ftime.stop();
-    cout << "Time to ConstructPreconditioner" << ftime.totalElapsedTime() 
-            << endl;
+    //cout << "Time to ConstructPreconditioner" << ftime.totalElapsedTime() 
+            //<< endl;
     hlu_data_.innersolver = solver;
     IsComputed_ = true;
-    cout << " Done with the compute" << endl ;
+    //cout << " Done with the compute" << endl ;
     return 0;
 }
 
 int Ifpack_HyperLU::JustTryIt()
 {
     // Dummy function, To show the error in AztecOO, This works
-    cout << "Entering JustTryIt" << endl;
+    //cout << "Entering JustTryIt" << endl;
     AztecOO *solver;
     solver = hlu_data_.innersolver;
     //cout << solver_ << endl;
@@ -152,7 +163,7 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
         cout << X;
     }
 #endif
-    cout << "Entering ApplyInvers" << endl;
+    //cout << "Entering ApplyInvers" << endl;
 
     hyperlu_solve(&hlu_data_, &hlu_config_, X, Y);
 #ifdef DUMP_MATRICES
@@ -163,7 +174,7 @@ int Ifpack_HyperLU::ApplyInverse(const Epetra_MultiVector& X,
     }
 #endif
     NumApplyInverse_++;
-    cout << "Leaving ApplyInvers" << endl;
+    //cout << "Leaving ApplyInvers" << endl;
     return 0;
 }
 

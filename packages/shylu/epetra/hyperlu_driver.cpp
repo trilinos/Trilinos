@@ -85,6 +85,8 @@ int main(int argc, char *argv[])
     // Get matrix market file name
     string MMFileName = Teuchos::getParameter<string>(pLUList, "mm_file");
     string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
+    int maxiters = Teuchos::getParameter<int>(pLUList, "Outer Solver MaxIters");
+    double tol = Teuchos::getParameter<double>(pLUList, "Outer Solver Tolerance");
 
     if (myPID == 0)
     {
@@ -101,16 +103,16 @@ int main(int argc, char *argv[])
                                                         A);
     //EpetraExt::MatlabFileToCrsMatrix(MMFileName.c_str(), Comm, A);
     //assert(err != 0);
-    cout <<"Done reading the matrix"<< endl;
+    //cout <<"Done reading the matrix"<< endl;
     int n = A->NumGlobalRows();
-    cout <<"n="<< n << endl;
+    //cout <<"n="<< n << endl;
 
     // Create input vectors
     Epetra_Map vecMap(n, 0, Comm);
     Epetra_MultiVector x(vecMap, 1);
     Epetra_MultiVector b(vecMap, 1, false);
     b.PutScalar(1.0); // TODO : Accept it as input
-    cout << "Created the vectors" << endl;
+    //cout << "Created the vectors" << endl;
 
     // Partition the matrix with hypergraph partitioning and redisstribute
     Isorropia::Epetra::Partitioner *partitioner = new
@@ -140,9 +142,9 @@ int main(int argc, char *argv[])
         prec->Initialize();
         prec->Compute();
         //(dynamic_cast<Ifpack_HyperLU *>(prec))->JustTryIt();
-        cout << " Going to set it in solver" << endl ;
+        //cout << " Going to set it in solver" << endl ;
         solver.SetPrecOperator(prec);
-        cout << " Done setting the solver" << endl ;
+        //cout << " Done setting the solver" << endl ;
     }
     else if (prec_type.compare("ILU") == 0)
     {
@@ -166,12 +168,12 @@ int main(int argc, char *argv[])
     }
 
     solver.SetAztecOption(AZ_solver, AZ_gmres);
-    solver.SetMatrixName(666);
+    solver.SetMatrixName(333);
     //solver.SetAztecOption(AZ_output, 1);
     //solver.SetAztecOption(AZ_conv, AZ_Anorm);
-    cout << "Going to iterate for the global problem" << endl;
+    //cout << "Going to iterate for the global problem" << endl;
 
-    solver.Iterate(500, 1e-9);
+    solver.Iterate(maxiters, tol);
 
     // compute ||Ax - b||
     double Norm;

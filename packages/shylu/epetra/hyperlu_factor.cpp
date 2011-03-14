@@ -268,32 +268,32 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     }
 
 
-    cout << " I am here" << endl;
+    //cout << " I am here" << endl;
     //Create the local matrices
     Epetra_CrsMatrix D(Copy, LocalDRowMap, LocalDColMap, DNumEntriesPerRow, 
                             true);
-    cout << " Created D matrix" << endl;
+    //cout << " Created D matrix" << endl;
     //MPI_Barrier(MPI_COMM_WORLD);
     //Epetra_CrsMatrix S(Copy, SRowMap, SColMap, SNumEntriesPerRow, true);
     Epetra_CrsMatrix S(Copy, SRowMap, SNumEntriesPerRow, true);
-    cout << " Created S matrix" << endl;
+    //cout << " Created S matrix" << endl;
     //Cptr = new Epetra_CrsMatrix(Copy, DRowMap, SColMap, 
                                         //CNumEntriesPerRow, true);
     Cptr = new Epetra_CrsMatrix(Copy, DRowMap, CNumEntriesPerRow, true);
-    cout << " Created C matrix" << endl;
+    //cout << " Created C matrix" << endl;
     Epetra_CrsMatrix R(Copy, SRowMap, DColMap, RNumEntriesPerRow, true);
-    cout << " Created all the matrices" << endl;
+    //cout << " Created all the matrices" << endl;
     //Epetra_CrsGraph Sg(Copy, SRowMap, SColMap, SNumEntriesPerRow, true);
     // Leave the column map out, Let Epetra do the work.
     Epetra_CrsGraph Sg(Copy, SRowMap, SBarNumEntriesPerRow, false);
-    cout << " Created Sbar graph" << endl;
+    //cout << " Created Sbar graph" << endl;
 
     int *LeftIndex = new int[max(Dmaxnnz, Rmaxnnz)];
     double *LeftValues = new double[max(Dmaxnnz, Rmaxnnz)];
     int *RightIndex = new int[max(Cmaxnnz, Smaxnnz)];
     double *RightValues = new double[max(Cmaxnnz, Smaxnnz)];
 
-    cout << "Inserting values in matrices" << endl;
+    //cout << "Inserting values in matrices" << endl;
     int err;
     int lcnt, rcnt ;
     //int debug_row = 0;
@@ -312,9 +312,9 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
             {
                 if (lcnt >= max(Dmaxnnz, Rmaxnnz))
                 {
-                    cout << "nentries= "<< NumEntries << " i=" << i << " gid=" << gid << endl;
-                    cout << lcnt << " " << Dmaxnnz << " " << Rmaxnnz << endl;
-                    cout << rcnt << " " << Cmaxnnz << " " << Smaxnnz << endl;
+                    //cout << "nentries= "<< NumEntries << " i=" << i << " gid=" << gid << endl;
+                    //cout << lcnt << " " << Dmaxnnz << " " << Rmaxnnz << endl;
+                    //cout << rcnt << " " << Cmaxnnz << " " << Smaxnnz << endl;
                 }
                 assert(lcnt < max(Dmaxnnz, Rmaxnnz));
                 LeftIndex[lcnt] = A->GCID(Ai[j]);
@@ -343,23 +343,26 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
             assert(err == 0);
             err = S.InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
             assert(err == 0);
-            err = Sg.InsertGlobalIndices(gid, rcnt, RightIndex);
-            assert(err == 0);
+            if (config->schurApproxMethod == 1)
+            {
+                err = Sg.InsertGlobalIndices(gid, rcnt, RightIndex);
+                assert(err == 0);
+            }
         }
     }
-    cout << "Done Inserting values in matrices" << endl;
+    //cout << "Done Inserting values in matrices" << endl;
     D.FillComplete();
-    cout << "Done D fill complete" << endl;
+    //cout << "Done D fill complete" << endl;
     S.FillComplete();
-    cout << "Done S fill complete" << endl;
+    //cout << "Done S fill complete" << endl;
     //Cptr->FillComplete(SColMap, DRowMap);
     Cptr->FillComplete(SRowMap, DRowMap);
-    cout << "Done C fill complete" << endl;
+    //cout << "Done C fill complete" << endl;
     R.FillComplete(DColMap, SRowMap);
-    cout << "Done R fill complete" << endl;
+    //cout << "Done R fill complete" << endl;
 
     // Add the diagonals to Sg
-    for (int i = 0; i < nrows ; i++)
+    for (int i = 0; config->schurApproxMethod == 1 && i < nrows ; i++)
     {
         gid = rows[i];
         if (gvals[gid] == 1) continue; // not a row in S
@@ -380,6 +383,12 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         err = Sg.InsertGlobalIndices(gid, 1, &gid);
         assert(err == 0);
     }
+
+    for (int i = 0; config->schurApproxMethod == 2 && i < nrows ; i++)
+    {
+        assert(0 == 1);
+    }
+
     Sg.FillComplete();
     // A is no longer needed
     delete[] LeftIndex;
@@ -387,19 +396,19 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     delete[] RightIndex;
     delete[] RightValues;
 
-    cout << msg << "S rows=" << S.NumGlobalRows() << " S cols=" << 
-        S.NumGlobalCols() << "#cols in column map="<< 
-        S.ColMap().NumMyElements() << endl;
+    //cout << msg << "S rows=" << S.NumGlobalRows() << " S cols=" << 
+        //S.NumGlobalCols() << "#cols in column map="<< 
+        //S.ColMap().NumMyElements() << endl;
 
-    cout << msg << "C rows=" << Cptr->NumGlobalRows() << " C cols=" << 
-        Cptr->NumGlobalCols() << "#cols in column map="<< 
-        Cptr->ColMap().NumMyElements() << endl;
-    cout << msg << "D rows=" << D.NumGlobalRows() << " D cols=" << 
-        D.NumGlobalCols() << "#cols in column map="<< 
-        D.ColMap().NumMyElements() << endl;
-    cout << msg << "R rows=" << R.NumGlobalRows() << " R cols=" << 
-        R.NumGlobalCols() << "#cols in column map="<< 
-        R.ColMap().NumMyElements() << endl;
+    //cout << msg << "C rows=" << Cptr->NumGlobalRows() << " C cols=" << 
+        //Cptr->NumGlobalCols() << "#cols in column map="<< 
+        //Cptr->ColMap().NumMyElements() << endl;
+    //cout << msg << "D rows=" << D.NumGlobalRows() << " D cols=" << 
+        //D.NumGlobalCols() << "#cols in column map="<< 
+        //D.ColMap().NumMyElements() << endl;
+    //cout << msg << "R rows=" << R.NumGlobalRows() << " R cols=" << 
+        //R.NumGlobalCols() << "#cols in column map="<< 
+        //R.ColMap().NumMyElements() << endl;
     // ]
 
     // ======================= Numeric factorization =========================
@@ -427,7 +436,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     ftime.start();
 
     Solver->NumericFactorization();
-    cout << "Numeric Factorization" << endl;
+    //cout << "Numeric Factorization" << endl;
 
     data->LP = LP;
     data->Solver = Solver;
@@ -464,18 +473,18 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     Teuchos::ParameterList pList;
     Teuchos::RCP<const Epetra_CrsGraph> rSg = Teuchos::rcpFromRef(Sg);
     Isorropia::Epetra::Prober prober(rSg, pList, false);
-    cout << "Doing coloring" << endl;
+    //cout << "Doing coloring" << endl;
     ftime.start();
     prober.color();
     ftime.stop();
-    cout << "Time to color" << ftime.totalElapsedTime() << endl;
+    //cout << "Time to color" << ftime.totalElapsedTime() << endl;
     ftime.reset();
-    cout << "Doing probing" << endl;
+    //cout << "Doing probing" << endl;
     ftime.start();
     Sbar = prober.probe(probeop);
-    cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << endl;
+    //cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << endl;
     ftime.stop();
-    cout << "Time to probe" << ftime.totalElapsedTime() << endl;
+    //cout << "Time to probe" << ftime.totalElapsedTime() << endl;
     ftime.reset();
 
     data->Sbar  = Sbar;
@@ -502,6 +511,6 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
 
     delete[] gvals;
     //delete A;
-    cout << " Out of factor" << endl ;
+    //cout << " Out of factor" << endl ;
     return 0;
 }

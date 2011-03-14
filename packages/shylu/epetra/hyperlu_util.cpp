@@ -81,8 +81,8 @@ void checkMaps(Epetra_CrsMatrix *A)
     int nrows = ARowMap.NumMyElements();
     int *rows = ARowMap.MyGlobalElements();
 
-    cout <<"In PID ="<< A->Comm().MyPID() <<" #cols="<< ncols << " #rows="<< 
-        nrows <<" #domain elems="<< nelems <<" #range elems="<< npts << endl;
+    //cout <<"In PID ="<< A->Comm().MyPID() <<" #cols="<< ncols << " #rows="<< 
+        //nrows <<" #domain elems="<< nelems <<" #range elems="<< npts << endl;
     // See if domain map == range map == row map
     for (int i = 0; i < nelems ; i++)
     {

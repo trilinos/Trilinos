@@ -62,7 +62,9 @@ int hyperlu_solve(hyperlu_data *data, hyperlu_config *config,
         //solver->SetAztecOption(AZ_diagnostics, AZ_all);
         solver->SetProblem(Problem);
     }
-    solver->Iterate(30, 1e-10);
+
+    // What should be a good inner_tolerance :-) ?
+    solver->Iterate(config->inner_maxiters, config->inner_tolerance);
 
     Epetra_MultiVector Bd(BdMap, nvectors);
     Epetra_Import BdImporter(BdMap, newX->Map());

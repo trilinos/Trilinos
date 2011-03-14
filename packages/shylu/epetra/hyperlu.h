@@ -26,6 +26,10 @@ typedef struct
 {
     int sym;                    // flag for symmetry
     double Sdiagfactor;         // % of diagonals added to Schur complement
+    int schurApproxMethod;      // ==1 implies blockdiagonal + A22
+                                // ==2 implies diagonals
+    int inner_maxiters;         // maximum iterations for inner solver
+    double inner_tolerance;     // relative residual tolerance for inner solver
     string libName;             // library for the outer solver
 } hyperlu_config;
 

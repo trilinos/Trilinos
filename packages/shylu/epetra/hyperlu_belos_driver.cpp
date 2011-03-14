@@ -91,11 +91,8 @@ int main(int argc, char *argv[])
     int blocksize = 1;         // blocksize
     int numrhs = 1;            // number of right-hand sides to solve for
     int maxrestarts = 15;      // maximum number of restarts allowed 
-    int maxiters = 500;        // maximum number of iterations allowed per 
-                               // linear system
     int maxsubspace = 25;      // maximum number of blocks the solver can use 
                                // for the subspace
-    MT tol = 1.0e-9;           // relative residual tolerance
 
 
     int nProcs, myPID ;
@@ -120,6 +117,8 @@ int main(int argc, char *argv[])
     // Get matrix market file name
     string MMFileName = Teuchos::getParameter<string>(pLUList, "mm_file");
     string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
+    int maxiters = Teuchos::getParameter<int>(pLUList, "Outer Solver MaxIters");
+    MT tol = Teuchos::getParameter<double>(pLUList, "Outer Solver Tolerance");
 
     if (myPID == 0)
     {
@@ -134,9 +133,9 @@ int main(int argc, char *argv[])
 
     int err = EpetraExt::MatrixMarketFileToCrsMatrix(MMFileName.c_str(), Comm, 
                                     A);
-    cout <<"Done reading the matrix"<< endl;
+    //cout <<"Done reading the matrix"<< endl;
     int n = A->NumGlobalRows();
-    cout <<"n="<< n << endl;
+    //cout <<"n="<< n << endl;
 
     // Create input vectors
     Epetra_Map vecMap(n, 0, Comm);
@@ -173,9 +172,9 @@ int main(int argc, char *argv[])
         prec->SetParameters(hyperLUList);
         prec->Initialize();
         prec->Compute();
-        cout << " Going to set it in solver" << endl ;
+        //cout << " Going to set it in solver" << endl ;
         //solver.SetPrecOperator(prec);
-        cout << " Done setting the solver" << endl ;
+        //cout << " Done setting the solver" << endl ;
     }
     else if (prec_type.compare("ILU") == 0)
     {
