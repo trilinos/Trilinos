@@ -77,7 +77,7 @@ namespace Tpetra {
       CoordDataReaderBase (Callback& adder) : adder_ (adder) {}
 
       //! Virtual destructor for safety and happy compilers.
-      ~CoordDataReaderBase () {}
+      virtual ~CoordDataReaderBase () {}
 
       /// \brief Read in the data from a single line of the input stream.
       ///
