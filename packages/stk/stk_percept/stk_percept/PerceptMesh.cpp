@@ -2016,7 +2016,7 @@ namespace stk {
                                           surface_node_ids[jnode] = elem_nodes_2[jnode].entity()->identifier();
                                         }
               
-                                      int perm = findPermutation(cell_topo.getTopology()->subcell[surface_rank][iface].topology,
+                                      int perm = findPermutation(cell_topo.getCellTopologyData()->subcell[surface_rank][iface].topology,
                                                                  &element_side[0], &surface_node_ids[0]);
                                       if (perm < 0)
                                         {
