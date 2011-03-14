@@ -2,7 +2,7 @@ To Compile and HyperLU
 ------------------
 
 1. Compile with Trilinos with the following packages enabled. Zoltan,
-Isorropia, Epetra, EpetraExt, AztecOO, Amesos, Ifpack, Teuchos and Belos.
+Isorropia, Epetra, EpetraExt, AztecOO, Amesos, Ifpack, ML, Teuchos and Belos.
 
 Another option is to compile Trilinos with TrilinosCouplings with Isorropia
 and Belos. This will compile more packages than required by HyperLU, but it is
@@ -30,4 +30,8 @@ and the matrix market file name.
 5. mpirun -n np <driver_name> will solve the linear system from the
 matrix market file with a right hand side that is all ones. This is probably
 the best way to run for now if you have the matrices in a matrix market file. 
-Please use Ifpack_HyperLU as your preconditioner otherwise. 
+
+The other option is to use Ifpack_HyperLU as your preconditioner. If
+you use this interface you need to partition and redistribute the matrix
+before you set the matrix in the preconditioner. Please see the driver for an
+example. (This requirement is because of a known bug in AztecOO)
