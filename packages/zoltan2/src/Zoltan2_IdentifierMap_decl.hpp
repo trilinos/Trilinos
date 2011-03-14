@@ -23,6 +23,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <Teuchos_Hashtable.hpp>
 
 /*! Z2
     \brief A namespace for objects that are not part of the Zoltan2 user interface.
@@ -77,10 +78,14 @@ private:
   Teuchos::RCP<std::vector<AppGID> > myGids;  // This proc's global IDs from InputAdapter
   Teuchos::RCP<std::vector<AppLID> > myLids;  // This proc's local IDs from InputAdapter
 
-  Teuchos::RCP<Tpetra::Map<LNO, GNO> > globalMap;
+  // These are RCP'd so the Tpetra::Vectors will be automatically deallocated for us.
 
-  Tpetra::Vector<AppGID, LNO, GNO> *gidList;   // needed if the GNOs are not the AppGIDs
-  Tpetra::Vector<AppLID, LNO, GNO> *lidList;   // needed if local IDs were supplied
+  Teuchos::RCP<Tpetra::Map<LNO, GNO> > globalMap;
+ 
+  Teuchos::RCP<Tpetra::Vector<AppGID, LNO, GNO> > gidList;   // if the GNOs are not AppGIDs
+  Teuchos::RCP<Tpetra::Vector<AppLID, LNO, GNO> > lidList;   // if local IDs were supplied
+
+  Teuchos::RCP<Teuchos::Hashtable<int, GNO> >  gidHash;   // if GNOs are not AppGIDs
 
   bool consecutive;
   GNO base;

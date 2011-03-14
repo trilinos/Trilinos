@@ -22,7 +22,7 @@
 template <typename T> 
 void check_traits(T &val)
 {
-  int key = Z2::IdentifierTraits<T>::key(val);
+  std::string key = Z2::IdentifierTraits<T>::key(val);
   std::string name = Z2::IdentifierTraits<T>::name();
 
   std::cout << name << ", " << key << std::endl;
