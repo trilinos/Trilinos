@@ -15,19 +15,19 @@ namespace cset_unit {
 
 class A {
 public:
-  virtual const int id() const = 0 ;
+  virtual int id() const = 0 ;
   virtual ~A(){}
 };
 
 class B {
 public:
-  virtual const int id() const = 0 ;
+  virtual int id() const = 0 ;
   virtual ~B(){}
 };
 
 class U : public A {
 public:
-  const int id() const 
+  int id() const 
   {
     return (int)ID;
   }
@@ -37,7 +37,7 @@ public:
 
 class V : public B {
 public:
-  const int id() const 
+  int id() const 
   {
     return (int)ID;
   }
@@ -47,7 +47,7 @@ public:
 
 class W : public B {
 public:
-  const int id() const 
+  int id() const 
   {
     return (int)ID;
   }
@@ -57,7 +57,7 @@ public:
 
 class X : public A , public B {
 public:
-  const int id() const
+  int id() const
   {
     return (int)ID;
   }
@@ -67,7 +67,7 @@ public:
 
 class Y : public A , public B {
 public:
-  const int id() const
+  int id() const
   {
     return (int)ID;
   }
@@ -77,7 +77,7 @@ public:
 
 class Z {
 public:
-  const int id() const
+  int id() const
   {
     return (int)ID;
   }

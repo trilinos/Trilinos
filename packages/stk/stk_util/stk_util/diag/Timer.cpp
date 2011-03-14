@@ -111,9 +111,9 @@ private:
    * created timer of the specified <b>name</b> which is subordinate to the
    * <b>parent</b> timer.
    *
-   * @return			a <b>TimerImpl</b> reference to the timer with the
-   *				specified name that is subordinate to the
-   *				<b>parent</b> timer.
+   * @return      a <b>TimerImpl</b> reference to the timer with the
+   *        specified name that is subordinate to the
+   *        <b>parent</b> timer.
    */
   static TimerImpl *reg(const std::string &name, TimerMask timer_mask, TimerImpl *parent_timer, const TimerSet &timer_set) {
     return parent_timer->addSubtimer(name, timer_mask, timer_set);
@@ -122,8 +122,8 @@ private:
   /**
    * Creates a new <b>Timer</b> instance.
    *
-   * @param name		a <b>std::string</b> const reference to the name of
-   *				the timer.
+   * @param name    a <b>std::string</b> const reference to the name of
+   *        the timer.
    *
    */
   TimerImpl(const std::string &name, TimerMask timer_mask, TimerImpl *parent_timer, const TimerSet &timer_set);
@@ -159,7 +159,7 @@ private:
     }
 
   private:
-    std::string		m_name;
+    std::string    m_name;
   };
 #ifdef __INTEL_COMPILER
 #pragma warning(pop)
@@ -169,8 +169,8 @@ public:
   /**
    * Member function <b>getName</b> returns the name of the timer.
    *
-   * @return			a <b>std::string</b> const reference to the timer's
-   *				name.
+   * @return      a <b>std::string</b> const reference to the timer's
+   *        name.
    */
   const std::string &getName() const {
     return m_name;
@@ -179,7 +179,7 @@ public:
   /**
    * Member function <b>getTimerMask</b> returns the timer mask of the timer.
    *
-   * @return			a <b>TimerMask</b> value to the timer mask.
+   * @return      a <b>TimerMask</b> value to the timer mask.
    */
   TimerMask getTimerMask() const {
     return m_timerMask;
@@ -188,7 +188,7 @@ public:
   /**
    * Member function <b>getTimerSet</b> returns the timer set of the timer.
    *
-   * @return			a <b>TimerSet</b> const reference to the timer set.
+   * @return      a <b>TimerSet</b> const reference to the timer set.
    */
   const TimerSet &getTimerSet() const {
     return m_timerSet;
@@ -198,8 +198,8 @@ public:
    * Member function <b>shouldRecord</b> returns true if any of the specified timer
    * bit masks are set in the enable timer bit mask.
    *
-   * @param timer_mask		a <b>TimerMask</b> value to test the enable timer
-   *				bit mask against.
+   * @param timer_mask    a <b>TimerMask</b> value to test the enable timer
+   *        bit mask against.
    *
    */
   bool shouldRecord() const {
@@ -209,8 +209,8 @@ public:
   /**
    * Member function <b>getSubtimerLapCount</b> returns the subtimer lap counter.
    *
-   * @return			a <b>Counter</b> value of the subtimer lap
-   *				counter.
+   * @return      a <b>Counter</b> value of the subtimer lap
+   *        counter.
    */
   double getSubtimerLapCount() const {
     return m_subtimerLapCount;
@@ -224,8 +224,8 @@ public:
    * Member function <b>getLapCount</b> returns the lap counter metric.  The lap
    * count metric is the number of times the stop function has been executed.
    *
-   * @return			a <b>CounterMetric</b> const reference of the lap counter
-   *				metric.
+   * @return      a <b>CounterMetric</b> const reference of the lap counter
+   *        metric.
    */
   template <class T>
   const Timer::Metric<T> &getMetric() const;
@@ -234,8 +234,8 @@ public:
    * Member function <b>getTimerList</b> returns the subtimers associated with
    * this timer.
    *
-   * @return			a <b>TimerList</b> const reference to the sub
-   *				time list.
+   * @return      a <b>TimerList</b> const reference to the sub
+   *        time list.
    */
   const TimerList &getTimerList() const {
     return m_subtimerList;
@@ -272,14 +272,14 @@ public:
   /**
    * Member function <b>start</b> sets the start timer.
    *
-   * @return			a <b>TimerImpl</b> reference to the timer.
+   * @return      a <b>TimerImpl</b> reference to the timer.
    */
   TimerImpl &start();
 
   /**
    * Member function <b>lap</b> sets the stop timer.
    *
-   * @return			a <b>TimerImpl</b> reference to the timer.
+   * @return      a <b>TimerImpl</b> reference to the timer.
    */
   TimerImpl &lap();
 
@@ -287,7 +287,7 @@ public:
    * Member function <b>stop</b> sets the stop timer and sums the just completed lap
    * time to the timer.
    *
-   * @return			a <b>TimerImpl</b> reference to the timer.
+   * @return      a <b>TimerImpl</b> reference to the timer.
    */
   TimerImpl &stop();
 
@@ -295,8 +295,8 @@ public:
    * Member function <b>accumulateSubtimerLapCounts</b> sums the lap counter of all
    * subordinate timers.  This is used to determin which timers have been activated at all.
    *
-   * @return			an <b>int</b> value of the number of subordinate
-   *				timer laps.
+   * @return      an <b>int</b> value of the number of subordinate
+   *        timer laps.
    */
   double accumulateSubtimerLapCounts() const;
 
@@ -307,9 +307,9 @@ public:
    * Member function <b>dump</b> writes the timer to the specified
    * diagnostic writer.
    *
-   * @param dout		a <b>Writer</b> variable reference to write the timer to.
+   * @param dout    a <b>Writer</b> variable reference to write the timer to.
    *
-   * @return			a <b>Writer</b> reference to <it>dout</it>.
+   * @return      a <b>Writer</b> reference to <it>dout</it>.
    */
   Writer &dump(Writer &dout) const;
 
@@ -318,41 +318,41 @@ private:
    * Member function <b>addSubtimer</b> returns a reference to an existing or new
    * subtimer with the specified name.
    *
-   * @param name		a <b>std::string</b> value of the timer's name.
+   * @param name    a <b>std::string</b> value of the timer's name.
    *
-   * @param timer_mask		a <b>TimerMask</b> value of the class of the timer.
+   * @param timer_mask    a <b>TimerMask</b> value of the class of the timer.
    *
-   * @return			a <b>TimerImpl</b> reference to the timer with
-   *				specified name.
+   * @return      a <b>TimerImpl</b> reference to the timer with
+   *        specified name.
    */
   TimerImpl *addSubtimer(const std::string &name, TimerMask timer_mask, const TimerSet &timer_set);
 
 private:
-  std::string			m_name;			///< Name of the timer
-  TimerMask			m_timerMask;		///< Bit mask to enable timer
-  TimerImpl *			m_parentTimer;		///< Parent timer
-  mutable double		m_subtimerLapCount;	///< Sum of subtimer lap counts and m_lapCount
-  unsigned			m_lapStartCount;	///< Number of pending lap stops
+  std::string      m_name;      ///< Name of the timer
+  TimerMask      m_timerMask;    ///< Bit mask to enable timer
+  TimerImpl *      m_parentTimer;    ///< Parent timer
+  mutable double    m_subtimerLapCount;  ///< Sum of subtimer lap counts and m_lapCount
+  unsigned      m_lapStartCount;  ///< Number of pending lap stops
 
-  TimerList			m_subtimerList;		///< List of subordinate timers
+  TimerList      m_subtimerList;    ///< List of subordinate timers
 
   const TimerSet &              m_timerSet;             ///< Timer enabled mask
-  Timer::Metric<LapCount>       m_lapCount;		///< Number of laps accumulated
-  Timer::Metric<CPUTime>        m_cpuTime;		///< CPU time
-  Timer::Metric<WallTime>       m_wallTime;		///< Wall time
-  Timer::Metric<MPICount>       m_MPICount;		///< MPI call count
-  Timer::Metric<MPIByteCount>   m_MPIByteCount;		///< MPI byte count
+  Timer::Metric<LapCount>       m_lapCount;    ///< Number of laps accumulated
+  Timer::Metric<CPUTime>        m_cpuTime;    ///< CPU time
+  Timer::Metric<WallTime>       m_wallTime;    ///< Wall time
+  Timer::Metric<MPICount>       m_MPICount;    ///< MPI call count
+  Timer::Metric<MPIByteCount>   m_MPIByteCount;    ///< MPI byte count
 };
 
 
 /**
  * Member function <b>operator&lt;&lt;</b> ...
  *
- * @param dout			a <b>Writer</b> variable ...
+ * @param dout      a <b>Writer</b> variable ...
  *
- * @param timer			a <b>TimerImpl</b> variable ...
+ * @param timer      a <b>TimerImpl</b> variable ...
  *
- * @return			a <b>Writer</b> ...
+ * @return      a <b>Writer</b> ...
  */
 inline Writer &operator<<(Writer &dout, const TimerImpl &timer) {
   return timer.dump(dout);
@@ -393,9 +393,9 @@ findTimers(Timer root_timer, const std::string &path_tail, std::vector<Timer> &f
 
 
 TimerImpl::TimerImpl(
-  const std::string &	name,
-  TimerMask		timer_mask,
-  TimerImpl *		parent_timer,
+  const std::string &  name,
+  TimerMask    timer_mask,
+  TimerImpl *    parent_timer,
   const TimerSet &      timer_set)
   : m_name(name),
     m_timerMask(timer_mask),
@@ -468,7 +468,7 @@ TimerImpl::reset()
 
 Timer
 TimerImpl::getSubtimer(
-  const std::string &	name)
+  const std::string &  name)
 {
   TimerList::iterator it = std::find_if(m_subtimerList.begin(), m_subtimerList.end(), finder(name));
 
@@ -481,8 +481,8 @@ TimerImpl::getSubtimer(
 
 TimerImpl *
 TimerImpl::addSubtimer(
-  const std::string &	name,
-  TimerMask	        timer_mask,
+  const std::string &  name,
+  TimerMask          timer_mask,
   const TimerSet &      timer_set)
 {
   TimerList::iterator it = std::find_if(m_subtimerList.begin(), m_subtimerList.end(), finder(name));
@@ -653,7 +653,7 @@ TimerImpl::findTimers(
 
 Writer &
 TimerImpl::dump(
-  Writer &		dout) const
+  Writer &    dout) const
 {
   if (dout.shouldPrint()) {
     dout << "TimerImpl" << push << dendl;
@@ -798,7 +798,7 @@ Timer::dump(Writer& dout) const {
 template <class T>
 Writer &
 Timer::Metric<T>::dump(
-  Writer &		dout) const
+  Writer &    dout) const
 {
   if (dout.shouldPrint()) {
     dout << "Timer::Metric<T>" << push << dendl;
@@ -819,9 +819,9 @@ template Writer &Timer::Metric<MPIByteCount>::dump(Writer &) const;
 
 
 TimeBlockSynchronized::TimeBlockSynchronized(
-  Timer &		timer,
-  MPI_Comm		mpi_comm,
-  bool			start_timer)
+  Timer &    timer,
+  MPI_Comm    mpi_comm,
+  bool      start_timer)
   : m_timer(timer),
     m_mpiComm(mpi_comm),
     m_started(start_timer)

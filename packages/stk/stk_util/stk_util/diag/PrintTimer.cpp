@@ -59,23 +59,23 @@ struct Percent
    * Member function <b>operator()</b> writes the percentage as a string to the
    * output stream.
    *
-   * @param os		a <b>std::ostream</b> reference to the output stream
-   *				to write to.
+   * @param os    a <b>std::ostream</b> reference to the output stream
+   *        to write to.
    *
-   * @return			a <b>std::ostream</b> reference to the output stream
-   *				written to.
+   * @return      a <b>std::ostream</b> reference to the output stream
+   *        written to.
    */
   std::ostream &operator()(std::ostream &os) const;
 
 private:
-  double		m_numerator;
-  double		m_denominator;
+  double    m_numerator;
+  double    m_denominator;
 };
 
 
 std::ostream &
 Percent::operator()(
-  std::ostream &	os) const
+  std::ostream &  os) const
 {
   std::ostringstream strout;
 
@@ -100,11 +100,11 @@ Percent::operator()(
 /**
  * Member function <b>operator&lt;&lt;</b> ...
  *
- * @param os			a <b>std::ostream</b> variable ...
+ * @param os      a <b>std::ostream</b> variable ...
  *
- * @param p			a <b>TimerImpl::Percent</b> variable ...
+ * @param p      a <b>TimerImpl::Percent</b> variable ...
  *
- * @return			a <b>std::ostream</b> ...
+ * @return      a <b>std::ostream</b> ...
  */
 inline std::ostream &operator<<(std::ostream &os, const Percent &p) {
   return p(os);
@@ -122,11 +122,11 @@ struct ParallelTimer
         m_max(0.0)
     {}
 
-    typename MetricTraits<T>::Type	m_value;	///< Metric value
-    typename MetricTraits<T>::Type	m_checkpoint;	///< Metric checkpointed value
-    double	                        m_sum;		///< Reduction sum
-    double                              m_min;		///< Reduction min
-    double		                m_max;          ///< Reduction max
+    typename MetricTraits<T>::Type  m_value;  ///< Metric value
+    typename MetricTraits<T>::Type  m_checkpoint;  ///< Metric checkpointed value
+    double                          m_sum;    ///< Reduction sum
+    double                              m_min;    ///< Reduction min
+    double                    m_max;          ///< Reduction max
 
     void accumulate(const Metric<T> &metric, bool checkpoint) {
       double value = static_cast<double>(metric.m_value);
@@ -193,15 +193,15 @@ struct ParallelTimer
   template <class T>
   const Metric<T> &getMetric() const;
 
-  std::string			m_name;			///< Name of the timer
+  std::string      m_name;      ///< Name of the timer
   TimerMask                     m_timerMask;
-  double		        m_subtimerLapCount;	///< Sum of subtimer lap counts and m_lapCount
+  double            m_subtimerLapCount;  ///< Sum of subtimer lap counts and m_lapCount
 
-  Metric<LapCount>              m_lapCount;		///< Number of laps accumulated
-  Metric<CPUTime>               m_cpuTime;		///< CPU time
-  Metric<WallTime>              m_wallTime;		///< Wall time
-  Metric<MPICount>              m_MPICount;		///< MPI call count
-  Metric<MPIByteCount>          m_MPIByteCount;		///< MPI byte count
+  Metric<LapCount>              m_lapCount;    ///< Number of laps accumulated
+  Metric<CPUTime>               m_cpuTime;    ///< CPU time
+  Metric<WallTime>              m_wallTime;    ///< Wall time
+  Metric<MPICount>              m_MPICount;    ///< MPI call count
+  Metric<MPIByteCount>          m_MPIByteCount;    ///< MPI byte count
 
   std::list<ParallelTimer>      m_subtimerList;         ///< Sub timers
 
@@ -397,12 +397,12 @@ collect_timers(
 
 PrintTable &
 printSubtable(
-  PrintTable &			table,
+  PrintTable &      table,
   const Timer &                 root_timer,
   const Timer &                 timer,
-  MetricsMask			metrics_mask,
-  int				depth,
-  bool				timer_checkpoint)
+  MetricsMask      metrics_mask,
+  int        depth,
+  bool        timer_checkpoint)
 {
   if (timer.getSubtimerLapCount() != 0.0) {
     if (timer.shouldRecord()) {
@@ -440,12 +440,12 @@ printSubtable(
 
 PrintTable &
 printSubtable(
-  PrintTable &			table,
+  PrintTable &      table,
   const ParallelTimer &         root_timer,
   const ParallelTimer &         timer,
-  MetricsMask			metrics_mask,
-  int				depth,
-  bool				timer_checkpoint)
+  MetricsMask      metrics_mask,
+  int        depth,
+  bool        timer_checkpoint)
 {
   if (timer.m_subtimerLapCount != 0.0) {
     if (timer.m_timerMask == 0 || timer.getMetric<LapCount>().m_sum > 0) {

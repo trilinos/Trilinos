@@ -227,17 +227,17 @@ const mesh::Field<double, mesh::ElementNode> *get_distribution_factor_field(cons
 void set_distribution_factor_field(mesh::Part &p,
                                    const mesh::Field<double, mesh::ElementNode> &df_field);
 
-/** Returns the Ioss::Field::RoleType of the mesh::Field 'f'.
+/** Returns the Ioss::Field of the mesh::Field 'f'.
  *	This must have earlier been defined using
- *	stk::io::set_field_role().  Returns NULL if the role was not
+ *	stk::io::set_field_attribute().  Returns NULL if the field was not
  *	defined.
  */
-const Ioss::Field::RoleType* get_field_role(const mesh::FieldBase &f);
+const Ioss::Field* get_field_attribute(const mesh::FieldBase &f);
 
-/** Defines the Ioss::Field::RoleType of the mesh::Field 'f' to be
- *	'role'.
+/** Defines the Ioss::Field::RoleType of the mesh::Field 'f' to be 'role'.
  */
-void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
+void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role); // Deprecated
+void set_field_attribute(mesh::FieldBase &f, const Ioss::Field &io_field);
 
 /** Returns whether the mesh::Part 'p' should be output to a
  *	results or restart database. Or, in other words, whether the

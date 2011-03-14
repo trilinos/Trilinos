@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -19,6 +19,7 @@
 
 #include <stk_util/util/StaticAssert.hpp>
 
+#include <stk_util/diag/Trace.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -27,6 +28,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/Trace.hpp>
 
 namespace stk {
 namespace mesh {
@@ -147,6 +149,8 @@ void BulkData::require_metadata_committed() const
 
 bool BulkData::modification_begin()
 {
+  Trace_("stk::mesh::BulkData::modification_begin");
+
   parallel_machine_barrier( m_parallel_machine );
 
   if ( m_sync_state == MODIFIABLE ) return false ;
@@ -180,8 +184,6 @@ bool BulkData::modification_begin()
 // i.e. no bad parts, all supersets included, and
 // owner & used parts match the owner value.
 
-
-
 //----------------------------------------------------------------------
 
 Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
@@ -192,6 +194,8 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   require_good_rank_and_id(ent_rank, ent_id);
 
   EntityKey key( ent_rank , ent_id );
+  TraceIfWatching("stk::mesh::BulkData::declare_entity", LOG_ENTITY, key);
+  DiagIfWatching(LOG_ENTITY, key, "declaring entity with parts " << parts << diag::dendl);
 
   std::pair< Entity * , bool > result = m_entity_repo.internal_create_entity( key );
 
@@ -199,10 +203,12 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
     // A new application-created entity
     m_entity_repo.set_entity_owner_rank( *(result.first), m_parallel_rank);
     m_entity_repo.set_entity_sync_count( *(result.first), m_sync_count);
+    DiagIfWatching(LOG_ENTITY, key, "new entity: " << *result.first << diag::dendl);
   }
   else {
     // An existing entity, the owner must match.
     require_entity_owner( * result.first , m_parallel_rank );
+    DiagIfWatching(LOG_ENTITY, key, "existing entity: " << *result.first << diag::dendl);
   }
 
   //------------------------------
@@ -316,6 +322,12 @@ void BulkData::change_entity_parts(
   const PartVector & add_parts ,
   const PartVector & remove_parts )
 {
+  TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity.key());
+  DiagIfWatching(LOG_ENTITY, entity.key(),
+                 "add_parts: " << add_parts << diag::dendl);
+  DiagIfWatching(LOG_ENTITY, entity.key(),
+                 "remove_parts: " << remove_parts << diag::dendl);
+
   require_ok_to_modify();
 
   require_entity_owner( entity , m_parallel_rank );
@@ -460,6 +472,8 @@ void BulkData::internal_change_entity_parts(
   const PartVector & add_parts ,
   const PartVector & remove_parts )
 {
+  TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
+
   Bucket * const k_old = m_entity_repo.get_entity_bucket( entity );
 
   const unsigned i_old = entity.bucket_ordinal() ;
@@ -553,6 +567,8 @@ bool BulkData::destroy_entity( Entity * & entity_in )
 {
   Entity & entity = *entity_in ;
 
+  TraceIfWatching("stk::mesh::BulkData::destroy_entity", LOG_ENTITY, entity.key());
+
   require_ok_to_modify( );
 
   bool has_upward_relation = false ;
@@ -624,6 +640,8 @@ bool BulkData::destroy_entity( Entity * & entity_in )
 void BulkData::generate_new_entities(const std::vector<size_t>& requests,
                                  std::vector<Entity *>& requested_entities)
 {
+  Trace_("stk::mesh::BulkData::generate_new_entities");
+
   typedef stk::parallel::DistributedIndex::KeyType KeyType;
   std::vector< std::vector<KeyType> >
     requested_key_types;

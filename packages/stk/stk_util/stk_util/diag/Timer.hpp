@@ -36,8 +36,8 @@ typedef unsigned TimerMask;        ///< Timer classification mask
 /**
  * Function <b>getEnabledMetricsMask</b> retruns the timer enable bit mask.
  *
- * @return			a <b>MetricsMask</b> value of the timer enable bit
- *				mask.
+ * @return      a <b>MetricsMask</b> value of the timer enable bit
+ *        mask.
  */
 MetricsMask getEnabledTimerMetricsMask();
 
@@ -45,8 +45,8 @@ MetricsMask getEnabledTimerMetricsMask();
  * Function <b>setEnabledMetricsMask</b> set the timer enable bit mask to
  * <b>timer_mask</b>.
  *
- * @param timer_mask		a <b>MetricsMask</b> value to set the timer enable bit
- *				mask to.
+ * @param timer_mask    a <b>MetricsMask</b> value to set the timer enable bit
+ *        mask to.
  *
  */
 void setEnabledTimerMetricsMask(MetricsMask timer_mask);
@@ -55,7 +55,7 @@ void setEnabledTimerMetricsMask(MetricsMask timer_mask);
  * Function <b>updateRootTimer</b> updates the root timers stop and total
  * metric values with the current time.
  *
- * @param root_timer    	a <b>Timer</b> reference to the root timer.
+ * @param root_timer      a <b>Timer</b> reference to the root timer.
  *
  */
 void updateRootTimer(Timer root_timer);
@@ -68,10 +68,10 @@ void updateRootTimer(Timer root_timer);
  * @param name                  a <b>std::string</b> const reference to the name of the new root
  *                              timer.
  *
- * @param timer_set         	a <b>TimerSet</b> const reference of the timer set of the new root
+ * @param timer_set           a <b>TimerSet</b> const reference of the timer set of the new root
  *                              timer.
  *
- * @return			a <b>Timer</b> value of the new root timer.
+ * @return      a <b>Timer</b> value of the new root timer.
  */
 Timer createRootTimer(const std::string &name, const TimerSet &timer_set);
 
@@ -87,15 +87,15 @@ void deleteRootTimer(Timer timer);
  * @brief Member function <code>findTimer</code> return a vector of timers whose tail of the dot
  * separated name from root_time to leaf matches the specified path_tail.
  *
- * @param root_timer		a <code>Timer</code> value of the root to begin search.
+ * @param root_timer    a <code>Timer</code> value of the root to begin search.
  *
- * @param path_tail		a <code>std::string</code> const reference to the dot separated tail
+ * @param path_tail    a <code>std::string</code> const reference to the dot separated tail
  *                              to match.
  *
- * @param found_timer		a <code>std::vector<Timer></code> reference to the vector to store
+ * @param found_timer    a <code>std::vector<Timer></code> reference to the vector to store
  *                              matching timers.
  *
- * @return			a <code>std::vector<Timer></code> reference to found_timer.
+ * @return      a <code>std::vector<Timer></code> reference to found_timer.
  */
 std::vector<Timer> &findTimers(Timer root_timer, const std::string &path_tail, std::vector<Timer> &found_timers);
 
@@ -129,8 +129,8 @@ public:
   /**
    * Member function <b>getEnabledTimerMask</b> returns the timer enable bit mask.
    *
-   * @return			a <b>TimerMask</b> value of the timer enable bit
-   *				mask.
+   * @return      a <b>TimerMask</b> value of the timer enable bit
+   *        mask.
    */
   TimerMask getEnabledTimerMask() const {
     return m_enabledTimerMask;
@@ -140,8 +140,8 @@ public:
    * Member function <b>setEnabledTimerMask</b> set the timer enable bit mask to
    * <b>timer_mask</b>.
    *
-   * @param timer_mask		a <b>TimerMask</b> value to set the timer enable bit
-   *				mask to.
+   * @param timer_mask    a <b>TimerMask</b> value to set the timer enable bit
+   *        mask to.
    *
    */
   void setEnabledTimerMask(TimerMask timer_mask) {
@@ -152,8 +152,8 @@ public:
    * Member function <b>shouldRecord</b> returns true if any of the specified timer
    * bit masks are set in the enable timer bit mask.
    *
-   * @param timer_mask		a <b>TimerMask</b> value to test the enable timer
-   *				bit mask against.
+   * @param timer_mask    a <b>TimerMask</b> value to test the enable timer
+   *        bit mask against.
    *
    */
   bool shouldRecord(TimerMask timer_mask) const {
@@ -161,11 +161,11 @@ public:
   }
 
 private:
-  TimerMask		m_enabledTimerMask;	///< Bit mask of enabled timer
+  TimerMask    m_enabledTimerMask;  ///< Bit mask of enabled timer
 };
 
 
-typedef std::list<Timer> TimerList;		///< A vector of subordinate timers.
+typedef std::list<Timer> TimerList;    ///< A vector of subordinate timers.
 
 /**
  * @brief Class <b>Timer</b> implements a diagnostic timer and timer container for the
@@ -196,9 +196,9 @@ public:
   {
     Metric()
       : m_lapStart(0),
-	m_lapStop(0),
-	m_accumulatedLap(0),
-	m_checkpoint(0)
+        m_lapStop(0),
+        m_accumulatedLap(0),
+        m_checkpoint(0)
     {}
 
     /**
@@ -212,7 +212,7 @@ public:
     /**
      * Member function <b>addLap</b> adds the most recently completed lap to the total.
      *
-     * @return			a <b>T</b> value of the total.
+     * @return      a <b>T</b> value of the total.
      */
     typename MetricTraits<T>::Type addLap() {
       return m_accumulatedLap += m_lapStop - m_lapStart;
@@ -231,7 +231,7 @@ public:
      * Member function <b>getLap</b> returns the value of the most recently
      * lap.
      *
-     * @return			a <b>T</b> value of the most recent lap.
+     * @return      a <b>T</b> value of the most recent lap.
      */
     typename MetricTraits<T>::Type getLap() const {
       return m_lapStop - m_lapStart;
@@ -240,7 +240,7 @@ public:
     /**
      * Member function <b>getStart</b> returns the start value of the most recent lap.
      *
-     * @return			a <b>T</b> value of the start of the most recent lap.
+     * @return      a <b>T</b> value of the start of the most recent lap.
      */
     typename MetricTraits<T>::Type getStart() const {
       return m_lapStart;
@@ -249,7 +249,7 @@ public:
     /**
      * Member function <b>getStop</b> returns the stop value of the most recent lap.
      *
-     * @return			a <b>T</b> value of the stop of the most recent lap.
+     * @return      a <b>T</b> value of the stop of the most recent lap.
      */
     typename MetricTraits<T>::Type getStop() const {
       return m_lapStop;
@@ -260,44 +260,44 @@ public:
      * If the <b>checkpoint</b> parameter if true, the value returned is the
      * difference between the accumulated value and the checkpointed value.
      *
-     * @param checkpoint	a <b>bool</b> value of true of the checkpointed
-     *				value is to be returned.
+     * @param checkpoint  a <b>bool</b> value of true of the checkpointed
+     *        value is to be returned.
      *
-     * @return			a <b>T</b> value of the accumulated or the
-     *				checkpoint difference.
+     * @return      a <b>T</b> value of the accumulated or the
+     *        checkpoint difference.
      */
     typename MetricTraits<T>::Type getAccumulatedLap(bool arg_checkpoint = false) const {
       if (arg_checkpoint)
-	return m_accumulatedLap - m_checkpoint;
+        return m_accumulatedLap - m_checkpoint;
       else
-	return m_accumulatedLap;
+        return m_accumulatedLap;
     }
 
     /**
      * Member function <b>dump</b> prints the value of the Metric to the
      * diagnostic writer.
      *
-     * @param dout		a <b>Writer</b> reference to the diagnostic
-     *				writer to write to.
+     * @param dout    a <b>Writer</b> reference to the diagnostic
+     *        writer to write to.
      *
-     * @return			a <b>Writer</b> reference to the diagnostic
-     *				writer.
+     * @return      a <b>Writer</b> reference to the diagnostic
+     *        writer.
      */
     Writer &dump(Writer &dout) const;
 
-    typename MetricTraits<T>::Type		m_lapStart;		///< Most recent start time/count
-    typename MetricTraits<T>::Type		m_lapStop;		///< Most recent stop or lap time/count
-    typename MetricTraits<T>::Type		m_accumulatedLap;	///< Accumulated time/count
-    mutable typename MetricTraits<T>::Type      m_checkpoint;		///< Checkpointed time/count
+    typename MetricTraits<T>::Type    m_lapStart;    ///< Most recent start time/count
+    typename MetricTraits<T>::Type    m_lapStop;    ///< Most recent stop or lap time/count
+    typename MetricTraits<T>::Type    m_accumulatedLap;  ///< Accumulated time/count
+    mutable typename MetricTraits<T>::Type      m_checkpoint;    ///< Checkpointed time/count
   };
 
   /**
    * Creates a new <b>Timer</b> instance.
    *
-   * @param name		a <b>std::string</b> const reference to the name of
-   *				the timer.
+   * @param name    a <b>std::string</b> const reference to the name of
+   *        the timer.
    *
-   * @param parent		a <b>Timer</b> value of the parent timer.
+   * @param parent    a <b>Timer</b> value of the parent timer.
    *
    */
   Timer(const std::string &name, const Timer parent);
@@ -305,12 +305,12 @@ public:
   /**
    * Creates a new <b>Timer</b> instance.
    *
-   * @param name		a <b>std::string</b> const reference to the name of
-   *				the timer.
+   * @param name    a <b>std::string</b> const reference to the name of
+   *        the timer.
    *
-   * @param parent		a <b>Timer</b> value of the parent timer.
+   * @param parent    a <b>Timer</b> value of the parent timer.
    *
-   * @param timer_set		a <b>TimerSet</b> value of the timer set used to interpret the
+   * @param timer_set    a <b>TimerSet</b> value of the timer set used to interpret the
    *                            TimerMask's of this and children timers.
    *
    */
@@ -319,12 +319,12 @@ public:
   /**
    * Creates a new <b>Timer</b> instance.
    *
-   * @param name		a <b>std::string</b> const reference to the name of
-   *				the timer.
+   * @param name    a <b>std::string</b> const reference to the name of
+   *        the timer.
    *
-   * @param timer_mask		a <b>TimerMask</b> value which enables this timer.
+   * @param timer_mask    a <b>TimerMask</b> value which enables this timer.
    *
-   * @param parent		a <b>Timer</b> value of the parent timer.
+   * @param parent    a <b>Timer</b> value of the parent timer.
    *
    */
   Timer(const std::string &name, TimerMask timer_mask, const Timer parent);
@@ -332,14 +332,14 @@ public:
   /**
    * Creates a new <b>Timer</b> instance.
    *
-   * @param name		a <b>std::string</b> const reference to the name of
-   *				the timer.
+   * @param name    a <b>std::string</b> const reference to the name of
+   *        the timer.
    *
-   * @param timer_mask		a <b>TimerMask</b> value which enables this timer.
+   * @param timer_mask    a <b>TimerMask</b> value which enables this timer.
    *
-   * @param parent		a <b>Timer</b> value of the parent timer.
+   * @param parent    a <b>Timer</b> value of the parent timer.
    *
-   * @param timer_set		a <b>TimerSet</b> value of the timer set used to interpret the
+   * @param timer_set    a <b>TimerSet</b> value of the timer set used to interpret the
    *                            TimerMask's of this and children timers.
    *
    */
@@ -381,8 +381,8 @@ public:
   /**
    * Member function <b>getName</b> returns the name of the timer.
    *
-   * @return			a <b>std::string</b> const reference to the timer's
-   *				name.
+   * @return      a <b>std::string</b> const reference to the timer's
+   *        name.
    */
   const std::string &getName() const;
 
@@ -390,14 +390,14 @@ public:
   /**
    * Member function <b>getTimerMask</b> returns the timer mask of the timer.
    *
-   * @return			a <b>TimerMask</b> value to the timer mask.
+   * @return      a <b>TimerMask</b> value to the timer mask.
    */
   const TimerSet &getTimerSet() const;
 
   /**
    * Member function <b>getTimerMask</b> returns the timer mask of the timer.
    *
-   * @return			a <b>TimerMask</b> value to the timer mask.
+   * @return      a <b>TimerMask</b> value to the timer mask.
    */
   TimerMask getTimerMask() const;
 
@@ -406,8 +406,8 @@ public:
   /**
    * Member function <b>getSubtimerLapCount</b> returns the subtimer lap counter.
    *
-   * @return			a <b>Counter</b> value of the subtimer lap
-   *				counter.
+   * @return      a <b>Counter</b> value of the subtimer lap
+   *        counter.
    */
   double getSubtimerLapCount() const;
 
@@ -415,8 +415,8 @@ public:
    * Member function <b>getLapCount</b> returns the lap counter metric.  The lap
    * count metric is the number of times the stop function has been executed.
    *
-   * @return			a <b>CounterMetric</b> const reference of the lap counter
-   *				metric.
+   * @return      a <b>CounterMetric</b> const reference of the lap counter
+   *        metric.
    */
   template <class T>
   const Metric<T> &getMetric() const;
@@ -425,21 +425,21 @@ public:
    * Member function <b>accumulateSubtimerLapCounts</b> accumulates the subtimer la
    * counts.
    *
-   * @return			an <b>int</b> value of the count.
+   * @return      an <b>int</b> value of the count.
    */
   double accumulateSubtimerLapCounts() const;
 
   /**
    * Member function <b>start</b> starts the lap timer.
    *
-   * @return			a <b>Timer</b> reference to this timer.
+   * @return      a <b>Timer</b> reference to this timer.
    */
   Timer &start();
 
   /**
    * Member function <b>lap</b> sets the lap stop time.
    *
-   * @return			a <b>Timer</b> reference to the timer.
+   * @return      a <b>Timer</b> reference to the timer.
    */
   Timer &lap();
 
@@ -447,7 +447,7 @@ public:
    * Member function <b>stop</b> sets the lap stop time and sums the just completed
    * lap time to the timer.
    *
-   * @return			a <b>Timer</b> reference to the timer.
+   * @return      a <b>Timer</b> reference to the timer.
    */
   Timer &stop();
 
@@ -462,14 +462,14 @@ public:
    * Member function <b>dump</b> writes the timer to the specified
    * diagnostic writer.
    *
-   * @param dout		a <b>Writer</b> variable reference to write the timer to.
+   * @param dout    a <b>Writer</b> variable reference to write the timer to.
    *
-   * @return			a <b>Writer</b> reference to <i>dout</i>.
+   * @return      a <b>Writer</b> reference to <i>dout</i>.
    */
   Writer &dump(Writer& dout) const;
 
 private:
-  TimerImpl *		m_timerImpl;			///< Reference to the actual timer
+  TimerImpl *    m_timerImpl;      ///< Reference to the actual timer
 };
 
 
@@ -491,11 +491,11 @@ public:
    * case.  If the <b>start</b> value is false, the calling function is
    * responsible for starting the timer at the appropriate time.
    *
-   * @param timer		a <b>Timer</b> reference to the timer accumulate
-   *				block run times.
+   * @param timer    a <b>Timer</b> reference to the timer accumulate
+   *        block run times.
    *
-   * @param start_timer	a <b>bool</b> value to have the timer started on
-   *				construction.
+   * @param start_timer  a <b>bool</b> value to have the timer started on
+   *        construction.
    *
    */
   explicit TimeBlock(Timer &timer, bool start_timer = true)
@@ -552,8 +552,8 @@ public:
   }
 
 private:
-  Timer &               m_timer;	///< Timer to accumulate block run times.
-  bool			m_started;	///< Timer has been started
+  Timer &               m_timer;  ///< Timer to accumulate block run times.
+  bool      m_started;  ///< Timer has been started
 };
 
 /**
@@ -577,11 +577,11 @@ public:
    * <b>start()</b>.  An <b>MPI_Barrier</b> is called to synchronize the
    * start of the timer. The destructor will always stop a started timer.
    *
-   * @param timer		a <b>Timer</b> reference to the timer to start.
+   * @param timer    a <b>Timer</b> reference to the timer to start.
    *
-   * @param mpi_comm		a <b>MPI_Comm</b> value of the mpi communicator.
+   * @param mpi_comm    a <b>MPI_Comm</b> value of the mpi communicator.
 
-   * @param start_timer	a <b>bool</b> value to start the timer on construction.
+   * @param start_timer  a <b>bool</b> value to start the timer on construction.
    *
    */
   TimeBlockSynchronized(Timer &timer, ParallelMachine mpi_comm, bool start_timer = true);
@@ -607,22 +607,22 @@ public:
   void stop();
 
 private:
-  Timer &			m_timer;	////< Timer to accumulate block run times.
-  ParallelMachine		m_mpiComm;	////< MPI comm to synchronize across
-  bool			m_started;	////< Timer has been started
+  Timer &      m_timer;  ////< Timer to accumulate block run times.
+  ParallelMachine    m_mpiComm;  ////< MPI comm to synchronize across
+  bool      m_started;  ////< Timer has been started
 };
 
 
 /**
  * @brief Function <b>operator<<</b> writes a timer to the diagnostic stream.
  *
- * @param dout			a <b>Writer</b> reference to the diagnostic writer to print
- *				to.
+ * @param dout      a <b>Writer</b> reference to the diagnostic writer to print
+ *        to.
  *
- * @param timer			a <b>Timer::Metric</b> const reference to the timer
- *				to print.
+ * @param timer      a <b>Timer::Metric</b> const reference to the timer
+ *        to print.
  *
- * @return			a <b>Writer</b> reference to <b>dout</b>.
+ * @return      a <b>Writer</b> reference to <b>dout</b>.
  */
 template <class T>
 inline Writer &operator<<(Writer &dout, const Timer::Metric<T> &timer) {
@@ -632,13 +632,13 @@ inline Writer &operator<<(Writer &dout, const Timer::Metric<T> &timer) {
 /**
  * Function <b>operator<<</b> writes a timer metric to the diagnostic stream.
  *
- * @param dout			a <b>Writer</b> reference to the diagnostic writer to print
- *				to.
+ * @param dout      a <b>Writer</b> reference to the diagnostic writer to print
+ *        to.
  *
- * @param timer			a <b>Timer::Metric</b> const reference to the timer
- *				to print.
+ * @param timer      a <b>Timer::Metric</b> const reference to the timer
+ *        to print.
  *
- * @return			a <b>Writer</b> reference to <b>dout</b>.
+ * @return      a <b>Writer</b> reference to <b>dout</b>.
  */
 inline Writer &operator<<(Writer &dout, const Timer &timer) {
   return timer.dump(dout);

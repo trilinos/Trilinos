@@ -5,7 +5,6 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#include <gtest/gtest.h>
 
 #include <stdexcept>
 #include <sstream>
@@ -18,6 +17,8 @@
 
 #include <math.h>
 #include <mpi.h>
+
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/PrintTable.hpp>
@@ -74,7 +75,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
-      TEST(regr_uniformRefiner, beam_enrich)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, beam_enrich)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -124,7 +125,7 @@ namespace stk
           }
       }
 
-      TEST(regr_uniformRefiner, beam_refine)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, beam_refine)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -180,7 +181,7 @@ namespace stk
       //===================== Table generation
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, generate_tables)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, generate_tables)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -268,7 +269,7 @@ namespace stk
       //======================================================================================================================
 
 
-      TEST(regr_uniformRefiner, break_quad4_to_quad8_to_quad8_shell)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad4_to_quad8_to_quad8_shell)
       {
         EXCEPTWATCH;
 
@@ -347,7 +348,7 @@ namespace stk
       //======================================================================================================================
 
 
-      TEST(regr_uniformRefiner, break_quad_to_quad_shell)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_quad_shell)
       {
         EXCEPTWATCH;
 
@@ -394,7 +395,7 @@ namespace stk
           }
       }
 
-      TEST(regr_uniformRefiner, break_tri_to_tri_shell)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tri_to_tri_shell)
       {
         EXCEPTWATCH;
 
@@ -449,7 +450,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(unit_uniformRefiner, draw1)
+      STKUNIT_UNIT_TEST(unit_uniformRefiner, draw1)
       {
         //std::cout << Quad4_Quad4_4::draw() << std::endl;
         std::string dir = "./";
@@ -463,7 +464,7 @@ namespace stk
         output_draw(dir+"quad9.dot", Quad9_Quad9_4::draw(true, true));
       }
 
-      TEST(unit_uniformRefiner, draw)
+      STKUNIT_UNIT_TEST(unit_uniformRefiner, draw)
       {
         //std::cout << Quad4_Quad4_4::draw() << std::endl;
         std::string dir = "./";
@@ -500,7 +501,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_quad_to_tri_6)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_tri_6)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -542,7 +543,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_quad_to_tri_4)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_tri_4)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -584,7 +585,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_quad_to_quad)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_quad)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -621,7 +622,7 @@ namespace stk
 
       /// uses the Sierra-ported tables from framework/{element,mesh_modification}
 
-      TEST(regr_uniformRefiner, break_quad_to_quad_sierra)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_quad_sierra)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -656,7 +657,7 @@ namespace stk
 
       /// uses the Sierra-ported tables from framework/{element,mesh_modification}
 
-      TEST(regr_uniformRefiner, break_quad_to_quad_sierra_sidesets)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_quad_sierra_sidesets)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -702,7 +703,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       // FIXME - move and/or copy to unit tests
-      TEST(regr_uniformRefiner, hex8_tet4_24_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex8_tet4_24_1)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -747,7 +748,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex8_tet4_6_12_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex8_tet4_6_12_1)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -789,7 +790,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex8_tet4_6_12_2)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex8_tet4_6_12_2)
       {
 
         EXCEPTWATCH;
@@ -831,7 +832,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, quad4_quad4_4_test_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, quad4_quad4_4_test_1)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -862,7 +863,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_quad_to_quad_sierra_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_quad_sierra_1)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -937,7 +938,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_quad_to_quad_sierra_2)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_quad_sierra_2)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -995,7 +996,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_quad4_to_quad9)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad4_to_quad9)
       {
         EXCEPTWATCH;
 
@@ -1041,7 +1042,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_quad4_to_quad8)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad4_to_quad8)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -1086,7 +1087,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_quad8_to_quad8)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad8_to_quad8)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -1118,7 +1119,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
-      TEST(regr_uniformRefiner, break_quad4_to_quad9_to_quad9_0)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad4_to_quad9_to_quad9_0)
       {
         EXCEPTWATCH;
 
@@ -1183,7 +1184,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
-      TEST(regr_uniformRefiner, break_quad4_to_quad9_to_quad9)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad4_to_quad9_to_quad9)
       {
         EXCEPTWATCH;
 
@@ -1253,7 +1254,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_tri_to_tri_sierra_0)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tri_to_tri_sierra_0)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -1286,7 +1287,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_tri_to_tri_sierra_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tri_to_tri_sierra_1)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -1346,7 +1347,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_tri3_to_tri6_sierra)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tri3_to_tri6_sierra)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -1407,7 +1408,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_tri3_to_tri6_to_tri6_sierra)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tri3_to_tri6_to_tri6_sierra)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -1446,7 +1447,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_tet4_tet4_0)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tet4_tet4_0)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -1471,7 +1472,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_tet4_tet4_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tet4_tet4_1)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -1510,7 +1511,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_tet4_tet10_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tet4_tet10_1)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -1547,7 +1548,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_tet4_tet10_tet10_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tet4_tet10_tet10_1)
       {
         // FIXME
         EXCEPTWATCH;
@@ -1616,7 +1617,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex8_hex8_8_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex8_hex8_8_1)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -1658,7 +1659,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex8_hex8_8_2)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex8_hex8_8_2)
       {
         EXCEPTWATCH;
 
@@ -1700,7 +1701,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex8_hex27_1_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex8_hex27_1_1)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -1738,7 +1739,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex8_hex27_1_2)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex8_hex27_1_2)
       {
         EXCEPTWATCH;
 
@@ -1778,7 +1779,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex8_hex20_1_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex8_hex20_1_1)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -1818,7 +1819,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex8_hex20_1_2)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex8_hex20_1_2)
       {
         EXCEPTWATCH;
 
@@ -1859,7 +1860,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex20_hex20_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex20_hex20_1)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -1898,7 +1899,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex20_hex20_1_2)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex20_hex20_1_2)
       {
         EXCEPTWATCH;
 
@@ -1937,7 +1938,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex27_hex27_0)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex27_hex27_0)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -2003,7 +2004,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, hex8_hex27_hex27_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, hex8_hex27_hex27_1)
       {
         EXCEPTWATCH;
 
@@ -2067,7 +2068,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, wedge6_2)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, wedge6_2)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -2119,7 +2120,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, wedge6_enrich_1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, wedge6_enrich_1)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -2170,7 +2171,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, wedge6_enrich_refine)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, wedge6_enrich_refine)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -2231,7 +2232,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, heterogeneous_mesh)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, heterogeneous_mesh)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -2307,7 +2308,7 @@ namespace stk
 
 
 #if 0
-      TEST(regr_uniformRefiner, beam_refine)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, beam_refine)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -2362,7 +2363,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, biplane_refine)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, biplane_refine)
       {
         EXCEPTWATCH;
 
@@ -2409,7 +2410,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_tet_shell3_tet)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tet_shell3_tet)
       {
         EXCEPTWATCH;
 
@@ -2459,7 +2460,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, break_hex_shell4_hex)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_hex_shell4_hex)
       {
         EXCEPTWATCH;
 
@@ -2503,7 +2504,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, heterogeneous_mesh_enrich)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, heterogeneous_mesh_enrich)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -2581,7 +2582,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, heterogeneous_quadratic_refine)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, heterogeneous_quadratic_refine)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -2626,7 +2627,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(regr_uniformRefiner, wedge6_wedge18_enrich)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, wedge6_wedge18_enrich)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -2688,7 +2689,7 @@ namespace stk
 
 #if 0
 
-      TEST(regr_uniformRefiner, wedge6_18_enrich_refine)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, wedge6_18_enrich_refine)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );

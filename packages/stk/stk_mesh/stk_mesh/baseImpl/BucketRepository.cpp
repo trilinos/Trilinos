@@ -14,6 +14,7 @@
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/base/Trace.hpp>
 
 namespace stk {
 namespace mesh {
@@ -152,6 +153,8 @@ BucketRepository::~BucketRepository()
 
 void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * bucket_to_be_deleted )
 {
+  TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket_to_be_deleted);
+
   ThrowRequireMsg(MetaData::get(m_mesh).check_rank(entity_rank),
                   "Entity rank " << entity_rank << " is invalid");
 
@@ -189,6 +192,8 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
 //----------------------------------------------------------------------
 void BucketRepository::destroy_bucket( Bucket * bucket )
 {
+  TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket);
+
   bucket->~Bucket();
   std::free( bucket );
 }
@@ -199,6 +204,8 @@ void BucketRepository::destroy_bucket( Bucket * bucket )
 void
 BucketRepository::declare_nil_bucket()
 {
+  TraceIf("stk::mesh::impl::BucketRepository::declare_nil_bucket", LOG_BUCKET);
+
   if (m_nil_bucket == NULL) {
     unsigned field_count = MetaData::get(m_mesh).get_fields().size();
 
@@ -290,6 +297,7 @@ BucketRepository::declare_bucket(
   enum { KEY_TMP_BUFFER_SIZE = 64 };
 
   static const char method[] = "stk::mesh::impl::BucketRepository::declare_bucket" ;
+  TraceIf("stk::mesh::impl::BucketRepository::declare_bucket", LOG_BUCKET);
 
   const unsigned max = ~(0u);
   const size_t   num_fields = field_set.size();
@@ -463,18 +471,18 @@ BucketRepository::declare_bucket(
   return bucket ;
 }
 
-
-
 //----------------------------------------------------------------------
 
 void BucketRepository::zero_fields( Bucket & k_dst , unsigned i_dst )
 {
+  TraceIfWatching("stk::mesh::impl::BucketRepository::zero_fields", LOG_BUCKET, &k_dst);
   k_dst.m_bucketImpl.zero_fields(i_dst);
 }
 
 void BucketRepository::copy_fields( Bucket & k_dst , unsigned i_dst ,
-                          Bucket & k_src , unsigned i_src )
+                                    Bucket & k_src , unsigned i_src )
 {
+  TraceIfWatching("stk::mesh::impl::BucketRepository::copy_fields", LOG_BUCKET, &k_dst);
   k_dst.m_bucketImpl.replace_fields(i_dst,k_src,i_src);
 }
 
@@ -482,6 +490,8 @@ void BucketRepository::copy_fields( Bucket & k_dst , unsigned i_dst ,
 
 void BucketRepository::update_field_data_states() const
 {
+  TraceIf("stk::mesh::impl::BucketRepository::update_field_data_states", LOG_BUCKET);
+
   for ( std::vector< std::vector<Bucket*> >::const_iterator
         i = m_buckets.begin() ; i != m_buckets.end() ; ++i ) {
 
@@ -510,6 +520,8 @@ const std::vector<Bucket*> & BucketRepository::buckets( unsigned type ) const
 
 void BucketRepository::internal_sort_bucket_entities()
 {
+  TraceIf("stk::mesh::impl::BucketRepository::internal_sort_bucket_entities", LOG_BUCKET);
+
   for ( unsigned entity_rank = 0 ;
                  entity_rank < m_buckets.size() ; ++entity_rank ) {
 
@@ -616,6 +628,8 @@ void BucketRepository::internal_sort_bucket_entities()
 
 void BucketRepository::remove_entity( Bucket * k , unsigned i )
 {
+  TraceIfWatching("stk::mesh::impl::BucketRepository::remove_entity", LOG_BUCKET, k);
+
   ThrowRequireMsg( k != m_nil_bucket, "Cannot remove entity from nil_bucket" );
 
   const EntityRank entity_rank = k->entity_rank();
@@ -656,6 +670,8 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
 void BucketRepository::internal_propagate_relocation( Entity & entity )
 {
+  TraceIf("stk::mesh::impl::BucketRepository::internal_propagate_relocation", LOG_BUCKET);
+
   const EntityRank erank = entity.entity_rank();
   PairIterRelation rel = entity.relations();
 

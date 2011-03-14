@@ -33,8 +33,6 @@ void memory_zero( unsigned char * dst , unsigned n )
 
 } // namespace
 
-
-
 //----------------------------------------------------------------------
 BucketImpl::BucketImpl( BulkData        & arg_mesh ,
                 unsigned          arg_entity_rank ,
@@ -53,7 +51,6 @@ BucketImpl::BucketImpl( BulkData        & arg_mesh ,
   m_field_map( arg_field_map ) ,
   m_entities( arg_entity_array )
 {}
-
 
 //----------------------------------------------------------------------
 BucketImpl::~BucketImpl()
@@ -207,5 +204,3 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
 } // namespace impl
 } // namespace mesh
 } // namespace stk
-
-

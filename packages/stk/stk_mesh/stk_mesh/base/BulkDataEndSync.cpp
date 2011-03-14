@@ -28,7 +28,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
-#include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/base/Trace.hpp>
 
 //----------------------------------------------------------------------
 
@@ -183,6 +183,8 @@ void communicate_entity_modification( const BulkData & mesh ,
 void BulkData::internal_update_distributed_index(
   std::vector<Entity*> & shared_new )
 {
+  Trace_("stk::mesh::BulkData::internal_update_distributed_index");
+
   std::vector< parallel::DistributedIndex::KeyType >
     local_created_or_modified , // only store locally owned/shared entities
     del_entities_keys ;
@@ -319,6 +321,8 @@ void resolve_shared_removed_from_owned_closure( BulkData & mesh )
 
 void BulkData::internal_resolve_shared_modify_delete()
 {
+  Trace_("stk::mesh::BulkData::internal_resolve_shared_modify_delete");
+
   resolve_shared_removed_from_owned_closure( *this );
 
   std::vector< EntityProcState > remote_mod ;
@@ -445,6 +449,8 @@ void BulkData::internal_resolve_shared_modify_delete()
 
 void BulkData::internal_resolve_ghosted_modify_delete()
 {
+  Trace_("stk::mesh::BulkData::internal_resolve_ghosted_modify_delete");
+
   // Resolve modifications for ghosted entities:
 
   std::vector<EntityProcState > remote_mod ;
@@ -564,6 +570,8 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 //  * m_entity_comm is up-to-date
 void BulkData::internal_resolve_parallel_create()
 {
+  Trace_("stk::mesh::BulkData::internal_resolve_parallel_create");
+
   std::vector<Entity*> shared_modified ;
 
   // Update the parallel index and
@@ -709,6 +717,8 @@ void BulkData::internal_resolve_parallel_create()
 
 bool BulkData::modification_end()
 {
+  Trace_("stk::mesh::BulkData::modification_end");
+
   return internal_modification_end( true );
 }
 
@@ -756,6 +766,8 @@ void print_comm_list( const BulkData & mesh , bool doit )
 
 bool BulkData::internal_modification_end( bool regenerate_aura )
 {
+  Trace_("stk::mesh::BulkData::internal_modification_end");
+
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
 
   // Resolve modification or deletion of shared entities
@@ -930,6 +942,8 @@ void pack_part_memberships( CommAll & comm ,
 
 void BulkData::internal_resolve_shared_membership()
 {
+  Trace_("stk::mesh::BulkData::internal_resolve_shared_membership");
+
   const MetaData & meta  = m_mesh_meta_data ;
   ParallelMachine p_comm = m_parallel_machine ;
   const unsigned  p_rank = m_parallel_rank ;
