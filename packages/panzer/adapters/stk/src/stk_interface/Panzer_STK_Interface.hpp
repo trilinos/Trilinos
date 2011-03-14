@@ -391,6 +391,10 @@ public:
      */
    bool validBlockId(const std::string & blockId) const;
 
+   /** Print a brief description of the STK mesh to a stream.
+     */
+   void print(std::ostream & os) const;
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;

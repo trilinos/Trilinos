@@ -677,4 +677,39 @@ bool STK_Interface::validBlockId(const std::string & blockId) const
    return blkItr!=elementBlocks_.end();
 }
 
+void STK_Interface::print(std::ostream & os) const
+{
+   std::vector<std::string> blockNames, sidesetNames;
+
+   getElementBlockNames(blockNames);
+   getSidesetNames(sidesetNames);
+
+   os << "STK Mesh data:\n";
+   os << "   Spatial dim = " << getDimension() << "\n";
+   if(getDimension()==2) 
+      os << "   Entity counts (Nodes, Edges, Cells) = ( " 
+         << getEntityCounts(getNodeRank()) << ", "
+         << getEntityCounts(getEdgeRank()) << ", "
+         << getEntityCounts(getElementRank()) << " )\n";
+   else if(getDimension()==3) 
+      os << "   Entity counts (Nodes, Edges, Faces, Cells) = ( " 
+         << getEntityCounts(getNodeRank()) << ", "
+         << getEntityCounts(getEdgeRank()) << ", "
+         << getEntityCounts(getSideRank()) << ", "
+         << getEntityCounts(getElementRank()) << " )\n";
+   else
+      os << "   Entity counts (Nodes, Cells) = ( " 
+         << getEntityCounts(getNodeRank()) << ", "
+         << getEntityCounts(getElementRank()) << " )\n";
+
+   os << "   Element blocks = ";
+   for(std::size_t i=0;i<blockNames.size();i++) 
+      os << "\"" << blockNames[i] << "\" ";
+   os << "\n";
+   os << "   Sidesets = ";
+   for(std::size_t i=0;i<sidesetNames.size();i++) 
+      os << "\"" << sidesetNames[i] << "\" ";
+   os << std::endl;
+}
+
 } // end namespace panzer_stk

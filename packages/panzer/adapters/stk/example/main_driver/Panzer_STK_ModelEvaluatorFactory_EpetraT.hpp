@@ -165,6 +165,9 @@ namespace panzer_stk {
       mesh_factory->completeMeshConstruction(*mesh,*(mpi_comm->getRawMpiComm()));
     }
       
+    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    fout.setOutputToRootOnly(0); 
+    mesh->print(fout);
     mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name")); 
 
     // build worksets
