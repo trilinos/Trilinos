@@ -115,14 +115,18 @@ DistributedIndex::DistributedIndex (
   }
 
 #if defined( STK_HAS_MPI )
-  MPI_Bcast( info , 2 , MPI_UNSIGNED , 0 , comm );
+  if (m_comm_size > 1) {
+    MPI_Bcast( info , 2 , MPI_UNSIGNED , 0 , comm );
+  }
 
   if ( 0 < info[0] ) {
     m_key_span.resize( info[0] );
     if ( 0 == parallel_machine_rank( comm ) ) {
       m_key_span = partition_bounds ;
     }
-    MPI_Bcast( & m_key_span[0], info[0] * sizeof(KeySpan), MPI_BYTE, 0, comm );
+    if (m_comm_size > 1) {
+      MPI_Bcast( & m_key_span[0], info[0] * sizeof(KeySpan), MPI_BYTE, 0, comm );
+    }
   }
 #else
   m_key_span = partition_bounds ;
@@ -655,9 +659,14 @@ void DistributedIndex::generate_new_global_key_upper_bound(
   }
 
 #if defined( STK_HAS_MPI )
-  MPI_Allreduce( & local_counts[0] , & global_counts[0] ,
-                 m_span_count + 1 , MPI_UNSIGNED_LONG ,
-                 MPI_SUM , m_comm );
+  if (m_comm_size > 1) {
+    MPI_Allreduce( & local_counts[0] , & global_counts[0] ,
+                   m_span_count + 1 , MPI_UNSIGNED_LONG ,
+                   MPI_SUM , m_comm );
+  }
+  else {
+    global_counts = local_counts ;
+  }
 #else
   global_counts = local_counts ;
 #endif
@@ -799,12 +808,15 @@ void DistributedIndex::generate_new_keys_global_planning(
 
 #if defined( STK_HAS_MPI )
 
-  { // Gather requests into per-process spans
+  if (m_comm_size > 1) { // Gather requests into per-process spans
     // MPI doesn't do 'const' in its interface, but the send buffer is const
     void * send_buf = const_cast<void*>( (void *)( & new_request[0] ));
     void * recv_buf = & new_request_global[0] ;
     MPI_Allgather( send_buf , m_span_count , MPI_LONG ,
                    recv_buf , m_span_count , MPI_LONG , m_comm );
+  }
+  else {
+    new_request_global = new_request ;
   }
 #else
   new_request_global = new_request ;

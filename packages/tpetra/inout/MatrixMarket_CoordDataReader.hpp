@@ -48,19 +48,38 @@
 namespace Tpetra {
   namespace MatrixMarket {
 
+    /// \class CoordDataReaderBase 
+    /// \brief Coordinate-format sparse matrix data reader.
+    ///
+    /// This class is an interface and partial implementation of
+    /// reading coordinate-format sparse matrix data from a Matrix
+    /// Market file.  There are two concrete implementations: one for
+    /// real-valued data, and the other for complex-valued data.
     template<class Callback, class Ordinal, class Scalar, bool isComplex = Teuchos::ScalarTraits<Scalar>::isComplex>
     class CoordDataReaderBase {
     private:
+      //! Closure that knows how to add entries to the sparse matrix.
       Callback& adder_;
 
+      /// \brief Forbid default construction syntactically.
+      /// 
+      /// Default construction would not be sensible for this class,
+      /// since it can't do anything without a closure for adding
+      /// entries to the sparse matrix.  (If you want the closure to
+      /// be a no-op, pass in a no-op explicitly.)
+      CoordDataReaderBase ();
+
     public:
-      /// Constructor
+      /// \brief Constructor.
       /// 
       /// \param adder [in/out] Closure whose operator() adds an entry
       ///   to the sparse matrix on each invocation.
       CoordDataReaderBase (Callback& adder) : adder_ (adder) {}
 
-      /// Read in the data from a single line of the file.
+      //! Virtual destructor for safety and happy compilers.
+      virtual ~CoordDataReaderBase () {}
+
+      /// \brief Read in the data from a single line of the input stream.
       ///
       /// This method has a different implementation, depending on
       /// whether Scalar is complex or not.
@@ -72,6 +91,17 @@ namespace Tpetra {
 		const size_t lineNumber,
 		const bool tolerant) = 0;
 
+      /// \brief Read in all the data from the given input stream.
+      ///
+      /// \param in [in/out] The input stream from which to read
+      ///
+      /// \param startingLineNumber [in] The line number of the file
+      ///   from which we begin reading.  (This is used for
+      ///   informative error output, if an error is detected in the
+      ///   file.)
+      ///
+      /// \param debug [in] If true, print verbose debugging output.
+      ///
       std::pair<bool, std::vector<size_t> >
       read (std::istream& in, 
 	    const size_t startingLineNumber, 
@@ -123,10 +153,30 @@ namespace Tpetra {
 	return std::make_pair (allSucceeded, badLineNumbers);
       }
 
-      /// Read (numRows, numCols, numNonzeros) from the given input
-      /// stream.  Return ((numRows, numCols, numNonzeros), success).
-      /// In tolerant mode, success may be false, meaning that the
-      /// read-in triple may not be valid.
+      /// \brief Read (numRows, numCols, numNonzeros).
+      ///
+      /// Read one line from the given input stream, and parse it into
+      /// the number of rows, the number of columns, and the number of
+      /// nonzeros in the sparse matrix.  We assume that those data
+      /// are in whitespace-delimited format and are read from a
+      /// Matrix Market - format file.
+      ///
+      /// \param in [in/out] The input stream from which to attempt to
+      ///   read one line.
+      /// 
+      /// \param lineNumber The starting line number from which we
+      ///   begin reading from the input stream.  Used for diagnostic
+      ///   error output.
+      ///
+      /// \param tolerant [in] Whether to read "tolerantly" (setting
+      ///   defaults and returning whether we were successful) or
+      ///   "intolerantly" (throwing an exception on any deviation
+      ///   from the expected format).
+      ///
+      /// \return ((numRows, numCols, numNonzeros), success).  In
+      ///   tolerant mode, success may be false, meaning that the
+      ///   read-in triple may not be valid.
+      ///
       std::pair<Teuchos::Tuple<Ordinal, 3>, bool>
       readDimensions (std::istream& in, 
 		      size_t& lineNumber,
@@ -255,12 +305,22 @@ namespace Tpetra {
     };
 
 
+    /// \class CoordDataReader
+    /// \brief Coordinate-format sparse matrix data reader.
+    ///
+    /// This class completes the implementation of
+    /// CoordDataReaderBase.  There are two concrete specializations:
+    /// one for real-valued data, and the other for complex-valued
+    /// data.
     template<class Callback, class Ordinal, class Scalar, bool isComplex = Teuchos::ScalarTraits<Scalar>::isComplex>
     class CoordDataReader :
       public CoordDataReaderBase<Callback, Ordinal, Scalar, isComplex>
     {
     public:
       CoordDataReader (Callback& adder);
+
+      //! Virtual destructor for safety and happy compilers.
+      virtual ~CoordDataReader();
 
       bool
       readLine (const std::string& theLine, 
@@ -280,6 +340,9 @@ namespace Tpetra {
       CoordDataReader (Callback& adder) :
 	CoordDataReaderBase<Callback, Ordinal, Scalar, true>(adder) 
       {}
+
+      //! Virtual destructor for safety and happy compilers.
+      virtual ~CoordDataReader() {};
 
       bool
       readLine (const std::string& theLine, 
@@ -321,6 +384,9 @@ namespace Tpetra {
       CoordDataReader (Callback& adder) :
 	CoordDataReaderBase<Callback, Ordinal, Scalar, false>(adder) 
       {}
+
+      //! Virtual destructor for safety and happy compilers.
+      virtual ~CoordDataReader() {};
 
       bool
       readLine (const std::string& theLine, 

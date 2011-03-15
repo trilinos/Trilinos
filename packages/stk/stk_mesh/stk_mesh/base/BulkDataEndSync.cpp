@@ -329,7 +329,7 @@ void BulkData::internal_resolve_shared_modify_delete()
 
   // Communicate entity modification state for shared entities
   // the resulting vector is sorted by entity and process.
-  {
+  if (parallel_size() > 1) {
     const bool communicate_shared = true ;
     communicate_entity_modification( *this , communicate_shared , remote_mod );
   }
@@ -456,7 +456,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
   std::vector<EntityProcState > remote_mod ;
 
   // Communicate entity modification state for ghost entities
-  {
+  if (parallel_size() > 1) {
     const bool communicate_shared = false ;
     communicate_entity_modification( *this , communicate_shared , remote_mod );
   }
@@ -550,10 +550,15 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
   std::vector< int > ghosting_change_flags_global( ghosting_count , 0 );
 
-  all_reduce_sum( m_parallel_machine ,
-                  & ghosting_change_flags[0] ,
-                  & ghosting_change_flags_global[0] ,
-                  ghosting_change_flags.size() );
+  if (parallel_size() > 1) {
+    all_reduce_sum( m_parallel_machine ,
+                    & ghosting_change_flags[0] ,
+                    & ghosting_change_flags_global[0] ,
+                    ghosting_change_flags.size() );
+  }
+  else {
+    ghosting_change_flags_global = ghosting_change_flags;
+  }
 
   for ( unsigned ic = 0 ; ic < ghosting_change_flags_global.size() ; ++ic ) {
     if ( ghosting_change_flags_global[ic] ) {
@@ -582,7 +587,7 @@ void BulkData::internal_resolve_parallel_create()
   // Claim ownership on all shared_modified entities that I own
   // and which were not created in this modification cycle. All
   // sharing procs will need to be informed of this claim.
-  {
+  if (parallel_size() > 1) {
     CommAll comm_all( m_parallel_machine );
 
     for ( int phase = 0; phase < 2; ++phase ) {
@@ -689,7 +694,7 @@ void BulkData::internal_resolve_parallel_create()
 
   // Parallel-consistent error checking of above loop
   if ( error_flag ) { error_msg << "}\n" ; }
-  all_reduce( m_parallel_machine , ReduceMax<1>( & error_flag ) );
+  if (parallel_size() > 1) all_reduce( m_parallel_machine , ReduceMax<1>( & error_flag ) );
   ThrowErrorMsgIf( error_flag, error_msg.str() );
 
   // ------------------------------------------------------------
@@ -811,8 +816,9 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
   // Unique ownership, communication lists, sharing part membership,
   // application part membership consistency.
   std::ostringstream msg ;
-  ThrowErrorMsgIf( ! comm_mesh_verify_parallel_consistency( *this , msg ),
-                   msg.str() );
+  bool is_consistent = true;
+  is_consistent = comm_mesh_verify_parallel_consistency( *this , msg );
+  ThrowErrorMsgIf( !is_consistent, msg.str() );
 
   // ------------------------------
   // The very last operation performed is to sort the bucket entities.
@@ -974,7 +980,7 @@ void BulkData::internal_resolve_shared_membership()
   //  Shared entities may have been modified due to relationship changes.
   //  Send just the current induced memberships from the sharing to
   //  the owning processes.
-  {
+  if (parallel_size() > 1) {
     CommAll comm( p_comm );
 
     pack_induced_memberships( comm , m_entity_comm );
@@ -1032,7 +1038,7 @@ void BulkData::internal_resolve_shared_membership()
   // Send membership information to sync the shared and ghosted copies.
   // Only need to do this for entities that have actually changed.
 
-  {
+  if (parallel_size() > 1) {
     std::vector<EntityProc> send_list ;
 
     generate_send_list( m_sync_count, p_rank, m_entity_comm, send_list);

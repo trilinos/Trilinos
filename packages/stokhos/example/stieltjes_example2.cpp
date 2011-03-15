@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -33,10 +31,11 @@
 #include <iomanip>
 
 #include "Stokhos.hpp"
-#include "Stokhos_StieltjesPCEBasis.hpp"
+#include "Stokhos_StieltjesBasis.hpp"
 #include "Stokhos_UserDefinedQuadrature.hpp"
 
-typedef Stokhos::LegendreBasis<int,double> basis_type;
+//typedef Stokhos::LegendreBasis<int,double> basis_type;
+typedef Stokhos::ClenshawCurtisLegendreBasis<int,double> basis_type;
 
 struct pce_quad_func {
   pce_quad_func(
@@ -54,6 +53,24 @@ struct pce_quad_func {
   mutable Teuchos::Array<double> vec;
 };
 
+struct sin_func {
+  sin_func(const Stokhos::OrthogPolyApprox<int,double>& pce_) :
+    pce(pce_) {}
+  double operator() (const Teuchos::Array<double>& x) const {
+    return std::sin(pce.evaluate(x));
+  }
+  const Stokhos::OrthogPolyApprox<int,double>& pce;
+};
+
+struct exp_func {
+  exp_func(const Stokhos::OrthogPolyApprox<int,double>& pce_) :
+    pce(pce_) {}
+  double operator() (const Teuchos::Array<double>& x) const {
+    return 1.0 + std::exp(pce.evaluate(x));
+  }
+  const Stokhos::OrthogPolyApprox<int,double>& pce;
+};
+
 double rel_err(double a, double b) {
   return std::abs(a-b)/std::abs(b);
 }
@@ -68,7 +85,6 @@ int main(int argc, char **argv)
     const unsigned int np = pmax-pmin+1;
     bool use_pce_quad_points = false;
     bool normalize = false;
-    bool project_integrals = true;
     bool sparse_grid = true;
 #ifndef HAVE_STOKHOS_DAKOTA
     sparse_grid = false;
@@ -128,14 +144,14 @@ int main(int argc, char **argv)
 	
       // Compute Stieltjes basis
       Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(2);
+      Teuchos::RCP<sin_func> sf = Teuchos::rcp(new sin_func(x));
+      Teuchos::RCP<exp_func> ef = Teuchos::rcp(new exp_func(x));
       st_bases[0] = 
-	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
-		       p, Teuchos::rcp(&u,false), quad, use_pce_quad_points,
-		       normalize, project_integrals, Cijk));
+	Teuchos::rcp(new Stokhos::StieltjesBasis<int,double,sin_func>(
+		       p, sf, quad, use_pce_quad_points, normalize));
       st_bases[1] = 
-	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
-		       p, Teuchos::rcp(&v,false), quad, use_pce_quad_points,
-		       normalize, project_integrals, Cijk));
+	Teuchos::rcp(new Stokhos::StieltjesBasis<int,double,exp_func>(
+		       p, ef, quad, use_pce_quad_points, normalize));
       Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > 
 	st_basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));

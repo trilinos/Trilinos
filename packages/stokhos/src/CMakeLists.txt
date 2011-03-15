@@ -54,6 +54,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_ClenshawCurtisLegendreBasisImp.hpp
   Stokhos_StieltjesPCEBasis.hpp
   Stokhos_StieltjesPCEBasisImp.hpp
+  Stokhos_StieltjesBasis.hpp
+  Stokhos_StieltjesBasisImp.hpp
   Stokhos_PecosOneDOrthogPolyBasis.hpp
   Stokhos_PecosOneDOrthogPolyBasisImp.hpp
   Stokhos_OrthogPolyBasis.hpp

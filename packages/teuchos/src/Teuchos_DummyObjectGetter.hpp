@@ -43,15 +43,11 @@ class DummyObjectGetter{
 
 public:
 
-/** \brief Retrieves a dummy object of type T. */
-static RCP<T> getDummyObject(){
-  static RCP<T> dummyObject;
-  if(dummyObject.is_null()){
-    dummyObject = rcp(new T);
+  /** \brief Retrieves a dummy object of type T. */
+  static RCP<T> getDummyObject(){
+    return rcp(new T);
   }
-  return dummyObject;
-}
-
+  
 };
 
 

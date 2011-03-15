@@ -961,8 +961,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, DependencySerializationExceptions){
 
 /* Testing serialization exceptions for NumberVisualDependencies */
 
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, NumberVisualDepSerializationExceptions)
-{ 
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, NumberVisualDepSerializationExceptions){ 
  
   EXCEPTION_TEST_BOILERPLATE(4, "blah");
   RCP<Dependency> numVisDep =  
@@ -970,19 +969,18 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, NumberVisualDepSerializationExceptions)
   CONVERT_DEP_TO_XML(numVisDep);
   TOO_MANY_DEPENDEE_TEST(numVisDep);
 
-} 
+}
 
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolVisualDepSerializationExceptions)
-{ 
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolVisualDepSerializationExceptions){ 
   EXCEPTION_TEST_BOILERPLATE(true, "blah");
   RCP<Dependency> boolVisDep =  
     rcp(new BoolVisualDependency(dependeeParam1, dependentParam1));
   CONVERT_DEP_TO_XML(boolVisDep);
   TOO_MANY_DEPENDEE_TEST(boolVisDep);
-} 
+}
 
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringVisualDepSerializationExceptions)
-{ 
+{
   EXCEPTION_TEST_BOILERPLATE(std::string("balh"), 4);
   RCP<Dependency> stringVisDep =  
     rcp(new StringVisualDependency(dependeeParam1, dependentParam1, "steve"));
@@ -999,7 +997,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringVisualDepSerializationExceptions)
       missingValuesXML, readerEntryMap, readerValiMap),
     ValuesTagMissingException);
 
-} 
+}
 
 TEUCHOS_UNIT_TEST(
   Teuchos_Dependencies, ConditionVisualDepSerializationExceptions)
