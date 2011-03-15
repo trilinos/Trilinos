@@ -11,11 +11,11 @@
 #include <stdexcept>
 
 #include <stk_mesh/base/Ghosting.hpp>
-
-#include <stk_mesh/baseImpl/EntityImpl.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+
+#include <stk_mesh/baseImpl/EntityImpl.hpp>
 
 namespace stk {
 namespace mesh {
@@ -35,6 +35,7 @@ EntityImpl::EntityImpl( const EntityKey & arg_key )
     m_sync_count(0),
     m_mod_log( EntityLogCreated )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
 }
 
 PairIterRelation EntityImpl::relations( unsigned rank ) const
@@ -84,6 +85,8 @@ PairIterEntityComm EntityImpl::comm( const Ghosting & sub ) const
 
 bool EntityImpl::insert( const EntityCommInfo & val )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::insert", LOG_ENTITY, key());
+
   std::vector< EntityCommInfo >::iterator i =
     std::lower_bound( m_comm.begin() , m_comm.end() , val );
 
@@ -98,6 +101,8 @@ bool EntityImpl::insert( const EntityCommInfo & val )
 
 bool EntityImpl::erase( const EntityCommInfo & val )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::erase(comm)", LOG_ENTITY, key());
+
   std::vector< EntityCommInfo >::iterator i =
     std::lower_bound( m_comm.begin() , m_comm.end() , val );
 
@@ -112,6 +117,8 @@ bool EntityImpl::erase( const EntityCommInfo & val )
 
 bool EntityImpl::erase( const Ghosting & ghost )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::erase(ghost)", LOG_ENTITY, key());
+
   typedef std::vector< EntityCommInfo > EntityComm ;
 
   const EntityCommInfo s_begin( ghost.ordinal() ,     0 );
@@ -134,14 +141,16 @@ bool EntityImpl::erase( const Ghosting & ghost )
 
 void EntityImpl::comm_clear_ghosting()
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::comm_clear_ghosting", LOG_ENTITY, key());
+
   std::vector< EntityCommInfo >::iterator j = m_comm.begin();
   while ( j != m_comm.end() && j->ghost_id == 0 ) { ++j ; }
   m_comm.erase( j , m_comm.end() );
 }
 
-
 void EntityImpl::comm_clear()
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::comm_clear", LOG_ENTITY, key());
   m_comm.clear();
 }
 
@@ -172,6 +181,8 @@ inline bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
 
 void EntityImpl::log_resurrect()
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::log_resurrect", LOG_ENTITY, key());
+
   ThrowErrorMsgIf( EntityLogDeleted != m_mod_log,
       "Trying to resurrect non-deleted entity: " <<
       print_entity_key( MetaData::get( bucket() ), key() ) );
@@ -182,6 +193,8 @@ void EntityImpl::log_resurrect()
 
 void EntityImpl::log_modified_and_propagate()
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::log_modified_and_propagate", LOG_ENTITY, key());
+
   // If already in modified state, return
   if (m_mod_log != EntityLogNoChange) {
     return;
@@ -207,6 +220,8 @@ void EntityImpl::log_modified_and_propagate()
 
 void EntityImpl::log_created_parallel_copy()
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::log_created_parallel_copy", LOG_ENTITY, key());
+
   if ( EntityLogCreated == m_mod_log ) {
     m_mod_log = EntityLogModified ;
   }
@@ -214,6 +229,8 @@ void EntityImpl::log_created_parallel_copy()
 
 bool EntityImpl::destroy_relation( Entity& e_to, const RelationIdentifier local_id )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::destroy_relation", LOG_ENTITY, key());
+
   bool destroyed_relations = false;
   for ( std::vector<Relation>::iterator
         i = m_relation.begin() ; i != m_relation.end() ; ++i ) {
@@ -231,6 +248,8 @@ bool EntityImpl::declare_relation( Entity & e_to,
                                    unsigned sync_count,
                                    bool is_back_relation )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::declare_relation", LOG_ENTITY, key());
+
   const MetaData & meta_data = MetaData::get( bucket() );
 
   const Relation new_relation( e_to , local_id );

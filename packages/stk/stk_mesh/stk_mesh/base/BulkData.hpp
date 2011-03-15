@@ -11,8 +11,6 @@
 
 //----------------------------------------------------------------------
 
-#include <map>
-
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
 
@@ -23,6 +21,8 @@
 #include <stk_mesh/base/Ghosting.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
+
+#include <map>
 
 //----------------------------------------------------------------------
 

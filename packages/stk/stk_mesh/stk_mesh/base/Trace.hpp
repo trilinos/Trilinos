@@ -1,0 +1,128 @@
+#ifndef stk_mesh_Trace_hpp
+#define stk_mesh_Trace_hpp
+
+///////////////////////////////////////////////////////////////////////////////
+// Macros/functions for tracing. This file contains the "layer" between
+// stk_mesh and the stk-util tracing interface; this layer is necessary because
+// one of our goal is to ensure that all tracing code will be compiled-out
+// unless tracing is enabled. We also wanted to support the ability to watch
+// certain objects/values while tracing and this capability is not supported
+// natively in the stk_util interface.
+//
+// No tracing will occur unless STK_MESH_TRACE_ENABLED is defined.
+//
+// (Diag|Trace)If will produce diag/trace output if the given PrintMask is
+// activated.
+//
+// (Diag|Trace)IfWatching will produce diag/trace output if the given key is in
+// the watch list AND the given PrintMask is activated.
+//
+// TODO
+// * Describe the tracing/diagnostic command-line interface
+// * Describe the PrintMask system.
+// * Command-line interface to key watching system?
+// * Would like to see a "watch-all" operation based on type
+// * What if the id's of two different types of objects are the same?
+// * Would be nice if Trace("func") supported printing of arg values too
+// * Would be nice to have some automated way of checking that the method names
+//   are up to date.
+///////////////////////////////////////////////////////////////////////////////
+
+#include <stk_mesh/base/DiagWriter.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
+
+#include <stk_util/diag/WriterExt.hpp>
+
+#include <string>
+#include <typeinfo>
+#include <vector>
+
+namespace stk {
+namespace mesh {
+
+////////////////////// INTERNAL ////////////////////
+
+class Watch
+{
+ public:
+  virtual ~Watch() {}
+  virtual const std::type_info& type() const = 0;
+  virtual bool match(const void* item) const = 0;
+};
+
+std::vector<Watch*>& watch_vector();
+
+template <typename T>
+bool internal_is_watching(const T& item)
+{
+  for (std::vector<Watch*>::const_iterator
+       itr = watch_vector().begin(); itr != watch_vector().end(); ++itr) {
+    if ((*itr)->type() == typeid(T) &&
+        (*itr)->match(&item)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+template <typename T>
+class WatchClass : public Watch
+{
+ public:
+  WatchClass(const T& watch_item) : m_watch_item(watch_item),
+                                    m_type_info(&typeid(T)) {
+    watch_vector().push_back(this);
+  }
+
+  virtual const std::type_info& type() const { return *m_type_info; }
+
+  virtual bool match(const void* item) const {
+    return *(static_cast<const T*>(item)) == m_watch_item;
+  }
+
+ private:
+  T m_watch_item;
+  const std::type_info* m_type_info;
+};
+
+/////////////////// API /////////////////////////
+
+template <typename T>
+void watch(const T& watch_item)
+{
+  // leaks, but who cares
+  new WatchClass<T>(watch_item);
+}
+
+#ifdef STK_MESH_TRACE_ENABLED
+
+#define Trace_(location) stk::mesh::Trace trace__(location)
+
+#define TraceIf(location, mask) stk::mesh::Trace trace__(location, mask)
+
+#define TraceIfWatching(location, mask, item) \
+stk::mesh::Trace trace__(location, mask, stk::mesh::internal_is_watching(item)); \
+DiagIfWatching(mask, item, "Watched item is: " << item << stk::diag::dendl)
+
+#define DiagIfWatching(mask, item, message)                             \
+meshlog.w(stk::mesh::internal_is_watching(item), mask) << message
+
+#define DiagIf(mask, message)                   \
+meshlog.m(mask) << message
+
+/////////////////////////////////////////////////
+
+#else
+
+#define Trace_(location)                         ((void) (0))
+#define TraceIf(location, mask)                  ((void) (0))
+#define TraceIfWatching(location, mask, item)    ((void) (0))
+#define DiagIf(mask, message)                    ((void) (0))
+#define DiagIfWatching(mask, item, message)      ((void) (0))
+
+#endif
+
+} // namespace mesh
+} // namespace stk
+
+#endif

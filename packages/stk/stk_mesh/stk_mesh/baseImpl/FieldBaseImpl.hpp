@@ -20,13 +20,10 @@
 namespace stk {
 namespace mesh {
 
-  class FieldBase;
-  class MetaData;
+class FieldBase;
+class MetaData;
 
 namespace impl {
-
-
-
 
 class FieldBaseImpl {
 public:
@@ -104,11 +101,7 @@ public:
 
 
 
-  void set_field_states( FieldBase ** field_states) {
-    for (unsigned i = 0; i < m_num_states; ++i) {
-      m_field_states[i] = field_states[i];
-    }
-  }
+  void set_field_states( FieldBase ** field_states);
 
   FieldBaseImpl(
       MetaData                   * arg_mesh_meta_data ,
@@ -135,7 +128,7 @@ private:
   const unsigned               m_num_states ;              ///< Number of states
   const FieldState             m_this_state ;              ///< Field state of this field
   unsigned                     m_rank ;                    ///< Number of dimensions
-  FieldRestrictionVector            m_dim_map ;                 ///< Only valid on StateNone
+  FieldRestrictionVector       m_dim_map ;                 ///< Only valid on StateNone
   FieldBase                  * m_field_states[ MaximumFieldStates ];
   const shards::ArrayDimTag  * m_dim_tags[ MaximumFieldDimension ];
 
@@ -157,6 +150,5 @@ std::ostream & print( std::ostream & ,
 } // namespace impl
 } // namespace mesh
 } // namespace stk
-
 
 #endif // stk_mesh_baseImpl_FieldBaseIml_hpp

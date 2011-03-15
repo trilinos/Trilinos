@@ -57,7 +57,7 @@ namespace stk {
           if (0)
             {
               //std::cout << "tmp Colorer::color fromParts= " << *fromParts << std::endl;
-              std::cout << "tmp Colorer::color elementType= " << *elementType << std::endl;
+              //std::cout << "tmp Colorer::color elementType= " << *elementType << std::endl;
               for (unsigned i_part = 0; i_part < fromParts->size(); i_part++)
                 {
                   std::cout << "tmp Colorer::color i_part = " << i_part << " fromParts= " << (*fromParts)[i_part]->name() << std::endl;

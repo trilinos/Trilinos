@@ -108,7 +108,7 @@ namespace stk {
 
     static void print_simple_usage()
     {
-      std::cout << "usage: exe_name [convert|enrich|refine] input_file_name [number_refines]" << std::endl;
+      std::cout << "usage: exe_name [convert|enrich|refine] input_file_name [output_file_name] [number_refines]" << std::endl;
     }
 
     int adapt_main(int argc, char **argv) ;
@@ -140,7 +140,7 @@ namespace stk {
       //         }
 
       int argc = argc_in;
-      if (argc != 2 + simple_options_index && argc != 3 + simple_options_index)
+      if (argc != 2 + simple_options_index && argc != 3 + simple_options_index && argc != 4 + simple_options_index )
         {
           print_simple_usage();
           return 1;
@@ -163,6 +163,17 @@ namespace stk {
         }
       std::string input_mesh = argv[1+simple_options_index];
       std::string number_refines = (argc == 3+simple_options_index? argv[2+simple_options_index] : "1");
+      int nref=0;
+
+      bool isInt = false;
+      try {
+         nref = boost::lexical_cast<int>(number_refines);
+        isInt = true;
+      }
+      catch( ... ) 
+        {
+        }
+
       std::string output_mesh = input_mesh;
       std::string extension = input_mesh.substr(input_mesh.length()-2,input_mesh.length());
       if (debug) std::cout << " extension= " << extension << std::endl;
@@ -173,7 +184,17 @@ namespace stk {
       else
         new_ext += option+"ed_"+extension;
 
-      Util::replace(output_mesh, extension, new_ext);
+      if (!isInt && (argc == 3+simple_options_index))
+        {
+          output_mesh = number_refines;
+          number_refines = (argc == 4+simple_options_index? argv[3+simple_options_index] : "1");
+          //std::cout << "tmp output_mesh= " << output_mesh << std::endl;
+          //std::cout << "tmp number_refines= " << number_refines << std::endl;
+        }
+      else
+        {
+          Util::replace(output_mesh, extension, new_ext);
+        }
       if (debug) std::cout << " output_mesh= " << output_mesh << std::endl;
 
       std::vector<std::string> argv_new;
@@ -191,7 +212,7 @@ namespace stk {
       argv_new.push_back("--remove_original_elements=1");
       argv_new.push_back("--number_refines="+number_refines);
 
-      if (debug) std::cout << "new argv = \n" << argv_new << std::endl;
+      if ( debug) std::cout << "new argv = \n" << argv_new << std::endl;
       int argc_new = argv_new.size();
       char **argv_new_cstr = new char*[argc_new];
       for (int i = 0; i < argc_new; i++)
@@ -357,7 +378,7 @@ namespace stk {
             BlockNamesType block_names(mesh::EntityRankEnd+1u);
             if (block_name_inc.length())
               {
-                block_names = UniformRefiner::getBlockNames(block_name_inc);
+                block_names = UniformRefiner::getBlockNames(block_name_inc, eMesh.getRank());
                 if (1)
                   {
                     eMesh.commit();

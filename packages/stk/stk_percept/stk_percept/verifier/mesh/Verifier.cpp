@@ -1,4 +1,3 @@
-#include <gtest/gtest.h>
 
 #include "Verifier.hpp"
 
@@ -11,10 +10,6 @@ namespace stk
   namespace percept
   {
 
-    TEST(topo, test1)
-    {
-      EXPECT_TRUE(1);
-    }
 
     void Verifier::process_options(RunEnvironment& re)
     {
