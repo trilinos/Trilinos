@@ -528,9 +528,6 @@ void AZ_find_MSR_ordering(int bindx2[],int **ordering,int N,
    AZ_free(mask);
 }
 
-static long srk_azcnt=0;
-static long srk_az_npos=0;
-
 /* temp1 is some nz past the end of bindx[N] */
 int AZ_pos_bin_search( int temp1, int bindx2[], int ordering[], int inv_ordering[],
                        double avg_nz_per_row, int N) 
@@ -634,8 +631,6 @@ int AZ_pos( int index, int bindx[], int position[], int inv_ordering[],
 /******************************************************************************/
 /******************************************************************************/
 
-static int srk_az_mat_reorder=0;
-
 void AZ_mat_reorder(int N, int bindx2_in[], double val2_in[], int ordering[],
 	int inv_ordering[])
 /*******************************************************************************
@@ -674,20 +669,14 @@ void AZ_mat_reorder(int N, int bindx2_in[], double val2_in[], int ordering[],
    int current, temp1;
    double avg_nz_per_row;
 
-   int * __restrict__ bindx2;  
-   double * __restrict__ val2; 
+   int * bindx2;  
+   double * val2; 
 
    bindx2 = &bindx2_in[0];
    val2 = &val2_in[0];
 
    if (N == 0) return;
    avg_nz_per_row = ((double) (bindx2[N] - N))/((double) N);
-
-   if (srk_az_mat_reorder == 0)
-     {
-       AZ_printf_out("avg_nz_per_row = %g N= %d bindx2[N]=nnz %d\n", avg_nz_per_row, N, bindx2[N]);
-     }
-   ++srk_az_mat_reorder;
 
    /* compute where row i's off-diagonals will be  */
    /* stored and put the result in position[i].    */
