@@ -164,7 +164,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     // Find the required no of diagonals
     //int Sdiag = (int) SNumGlobalCols * Sdiagfactor;
     int Sdiag = (int) Snr * Sdiagfactor;
-    Sdiag = MAX(Sdiag, Snr-1);
+    Sdiag = MIN(Sdiag, Snr-1);
     cout << "No of diagonals in Sbar =" << Sdiag << endl;
     //assert (Sdiag <= SNumGlobalCols-1);
     assert (Sdiag <= Snr-1);
