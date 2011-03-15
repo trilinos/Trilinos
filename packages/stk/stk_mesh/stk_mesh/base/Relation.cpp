@@ -45,35 +45,28 @@ operator << ( std::ostream & s , const Relation & rel )
 
 //----------------------------------------------------------------------
 
-Relation::raw_attr_type
-Relation::attribute( unsigned rank , unsigned id )
+Relation::raw_relation_id_type
+Relation::raw_relation_id( unsigned rank , unsigned id )
 {
   ThrowErrorMsgIf( id_mask < id,
                    "For args rank " << rank << ", id " << id << ": " <<
                    "id=" << id << " > id_mask=" << id_mask );
 
-  return ( raw_attr_type(rank) << rank_shift ) | id ;
+  return ( raw_relation_id_type(rank) << id_digits ) | id ;
 }
 
 Relation::Relation( Entity & entity , RelationIdentifier identifier )
-  : m_attr( Relation::attribute( entity.entity_rank() , identifier ) ),
+  : m_raw_relation( Relation::raw_relation_id( entity.entity_rank() , identifier ) ),
     m_entity( & entity )
 {}
 
-Relation::Relation( Relation::raw_attr_type attr , Entity & entity )
-  : m_attr( attr ), m_entity( & entity )
-{
-  ThrowInvalidArgMsgIf( entity_rank() != entity.entity_rank(),
-                        "For entity " << print_entity_key(entity) <<
-                        ", entity_rank incompatible with " << entity_rank() );
-}
 
 bool Relation::operator < ( const Relation & r ) const
 {
   bool result = false;
 
-  if ( m_attr.value != r.m_attr.value ) {
-    result = m_attr.value < r.m_attr.value ;
+  if ( m_raw_relation.value != r.m_raw_relation.value ) {
+    result = m_raw_relation.value < r.m_raw_relation.value ;
   }
   else {
     const EntityKey lhs = m_entity   ? m_entity->key()   : EntityKey() ;

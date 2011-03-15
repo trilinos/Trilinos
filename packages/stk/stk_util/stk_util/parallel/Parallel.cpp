@@ -18,20 +18,30 @@ namespace stk {
 unsigned parallel_machine_size( ParallelMachine parallel_machine )
 {
   int value = 0 ;
-  if ( MPI_SUCCESS != MPI_Comm_size( parallel_machine , &value ) ) { value = 0 ; }
+  if (parallel_machine != MPI_COMM_NULL) {
+    if ( MPI_SUCCESS != MPI_Comm_size( parallel_machine , &value ) ) {
+      value = 0 ;
+    }
+  }
   return value ;
 }
 
 unsigned parallel_machine_rank( ParallelMachine parallel_machine )
 {
   int value = 0 ;
-  if ( MPI_SUCCESS != MPI_Comm_rank( parallel_machine , &value ) ) { value = 0 ; }
+  if (parallel_machine != MPI_COMM_NULL) {
+    if ( MPI_SUCCESS != MPI_Comm_rank( parallel_machine , &value ) ) {
+      value = 0 ;
+    }
+  }
   return value ;
 }
 
 void parallel_machine_barrier( ParallelMachine parallel_machine )
 {
-  MPI_Barrier( parallel_machine );
+  if (parallel_machine != MPI_COMM_NULL) {
+    MPI_Barrier( parallel_machine );
+  }
 }
 
 }

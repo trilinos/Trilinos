@@ -5,7 +5,6 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#include <gtest/gtest.h>
 
 #include <stdexcept>
 #include <sstream>
@@ -16,6 +15,8 @@
 #include <typeinfo>
 
 #include <math.h>
+
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_percept/function/FieldFunction.hpp>
 #include <stk_percept/function/FunctionOperator.hpp>
@@ -63,11 +64,11 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(mesh_colorer, test1)
+      STKUNIT_UNIT_TEST(mesh_colorer, test1)
       {
         EXCEPTWATCH;
 
-        dw().m(percept::LOG_MESH_COLORER) << "TEST::mesh_colorer::test1 " << stk::diag::dendl;
+        dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test1 " << stk::diag::dendl;
 
         const size_t numxyz=3;
         const size_t num_x = numxyz;
@@ -78,7 +79,7 @@ namespace stk
           Ioss::Utils::to_string(num_y) + "x" +
           Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 	
-	percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh;
         eMesh.newMesh(percept::PerceptMesh::GMeshSpec(config_mesh));
         int vectorDimension = 0;
         FieldBase *element_color_field = eMesh.addField("element_colors", mesh::Element, vectorDimension);
@@ -86,7 +87,7 @@ namespace stk
 
         Colorer meshColorer;
         unsigned elementType = 0u;
-        meshColorer.color(eMesh, &elementType, element_color_field);
+        meshColorer.color(eMesh, &elementType, 0, element_color_field);
         eMesh.saveAs("./output_files/cube_colored.e");
         //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
 
@@ -96,13 +97,13 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      TEST(mesh_colorer, test_quad)
+      STKUNIT_UNIT_TEST(mesh_colorer, test_quad)
       {
         EXCEPTWATCH;
 
-        dw().m(percept::LOG_MESH_COLORER) << "TEST::mesh_colorer::test_quad " << stk::diag::dendl;
+        dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test_quad " << stk::diag::dendl;
 
-	percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh;
         if (eMesh.getParallelSize() == 1 || eMesh.getParallelSize() == 3)
           {
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
@@ -112,7 +113,7 @@ namespace stk
 
             Colorer meshColorer;
             unsigned elementType = 0u;
-            meshColorer.color(eMesh, &elementType, element_color_field);
+            meshColorer.color(eMesh, &elementType, 0, element_color_field);
             //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
             eMesh.printInfo();
             eMesh.dump();

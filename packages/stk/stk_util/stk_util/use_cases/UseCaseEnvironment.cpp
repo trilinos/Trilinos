@@ -483,37 +483,36 @@ void UseCaseEnvironment::initialize(int* argc, char*** argv)
     if (s == "-h" || s == "-help" || s == "--help") {
       std::cout << "Usage: " << (*argv)[0] << " [options...]" << std::endl;
       std::cout << stk::get_options_description() << std::endl;
-      std::exit(0);
       return; // So application can handle app-specific options.
     }
   }
 
-// Broadcast argc and argv to all processors.
+  // Broadcast argc and argv to all processors.
   int parallel_rank = stk::parallel_machine_rank(m_comm);
   int parallel_size = stk::parallel_machine_size(m_comm);
 
   stk::BroadcastArg b_arg(m_comm, *argc, *argv);
 
-// Parse broadcast arguments
+  // Parse broadcast arguments
   bopt::variables_map &vm = stk::get_variables_map();
   try {
-    bopt::store(bopt::parse_command_line(b_arg.m_argc, b_arg.m_argv, stk::get_options_description()), vm);
+    bopt::store(bopt::command_line_parser(b_arg.m_argc, b_arg.m_argv).options(stk::get_options_description()).allow_unregistered().run(), vm);
     bopt::notify(vm);
   }
   catch (std::exception &x) {
     stk::RuntimeDoomedSymmetric() << x.what();
   }
 
-// Parse diagnostic messages to display
+  // Parse diagnostic messages to display
   if (vm.count("dw"))
     dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
 
-// Parse timer metrics and classes to display
+  // Parse timer metrics and classes to display
   stk::diag::setEnabledTimerMetricsMask(stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME);
   if (vm.count("timer"))
     timerSet().setEnabledTimerMask(timer_option_mask.parse(vm["timer"].as<std::string>().c_str()));
 
-// Set working directory
+  // Set working directory
   m_workingDirectory = "./";
   if (vm.count("directory"))
     m_workingDirectory = vm["directory"].as<std::string>();
@@ -526,7 +525,7 @@ void UseCaseEnvironment::initialize(int* argc, char*** argv)
 
   dout() << "Output log binding: " << output_description << std::endl;
 
-// Start use case root timer
+  // Start use case root timer
   timer().start();
 }
 

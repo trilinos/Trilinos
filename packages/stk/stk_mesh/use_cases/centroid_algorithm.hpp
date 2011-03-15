@@ -90,8 +90,7 @@ void centroid_algorithm(
   Part & elem_part,
   EntityRank element_rank )
 {
-  // The 'phdmesh' prototype implementation uses the
-  // "homogeneous subset" concept (see the Domain Model document)
+  // Use the "homogeneous subset" concept (see the Domain Model document)
   // for field data storage.  A "homogeneous subset" is called
   // a 'Bucket'.
 
@@ -143,8 +142,7 @@ bool centroid_algorithm_unit_test_dimensions(
   EntityRank element_rank )
 {
   bool result = true;
-  // The 'phdmesh' prototype implementation uses the
-  // "homogeneous subset" concept (see the Domain Model document)
+  // Use the "homogeneous subset" concept (see the Domain Model document)
   // for field data storage.  A "homogeneous subset" is called
   // a 'Bucket'.
 

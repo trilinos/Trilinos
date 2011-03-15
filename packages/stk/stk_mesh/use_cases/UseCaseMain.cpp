@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -17,6 +17,9 @@
 #include <use_cases/UseCase_ChangeOwner.hpp>
 
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/DiagWriter.hpp>
+#include <stk_mesh/base/Trace.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 
@@ -34,7 +37,9 @@ void printStatus(bool status)
 
 int main ( int argc, char * argv[] )
 {
-  stk::ParallelMachine parallel_machine = stk::parallel_machine_init(&argc, &argv);
+  use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
+  stk::ParallelMachine parallel_machine = use_case_environment.m_comm;
+
   const bool single_process =
     stk::parallel_machine_size( parallel_machine ) <= 1 ;
 
@@ -154,8 +159,6 @@ int main ( int argc, char * argv[] )
 
   bool collective_result = use_case::print_status(parallel_machine, status);
   int return_code = collective_result ? 0 : -1;
-
-  stk::parallel_machine_finalize();
 
   return return_code;
 }

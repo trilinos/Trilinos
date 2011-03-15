@@ -9,6 +9,8 @@
 #ifndef stk_mesh_unit_tests_stk_utest_macros_hpp
 #define stk_mesh_unit_tests_stk_utest_macros_hpp
 
+#include <stk_util/use_cases/UseCaseEnvironment.hpp>
+
 #ifndef STK_BUILT_IN_SIERRA
 #include <STK_config.h>
 #else
@@ -94,9 +96,10 @@
 #define STKUNIT_ASSERT_FALSE(A) STKUNIT_EXPECT_FALSE(A)
 #define STKUNIT_ASSERT_DOUBLE_EQ(A,B) \
     {bool success = true; TEUCHOS_TEST_EQUALITY(B,A,std::cout,success); if (!success) throw 1;}
+#define STKUNIT_EXPECT_DOUBLE_EQ(A,B) STKUNIT_ASSERT_DOUBLE_EQ(A,B)
 #define STKUNIT_ASSERT_NEAR(A,B, tol) \
     {bool success = true; TEUCHOS_TEST_FLOATING_EQUALITY(B,A,tol,std::cout,success); if (!success) throw 1;}
-
+#define STKUNIT_EXPECT_NEAR(A,B, tol) STKUNIT_ASSERT_NEAR(A, B, tol)
 
 #define STKUNIT_MAIN(argc,argv) \
 int main(int argc,char**argv) {\
@@ -140,22 +143,20 @@ int main(int argc,char**argv) {\
 #define STKUNIT_ASSERT_TRUE(A) ASSERT_TRUE(A)
 #define STKUNIT_ASSERT_FALSE(A) ASSERT_FALSE(A)
 #define STKUNIT_ASSERT_DOUBLE_EQ(A,B) ASSERT_DOUBLE_EQ(A,B)
+#define STKUNIT_EXPECT_DOUBLE_EQ(A,B) EXPECT_DOUBLE_EQ(A,B)
 #define STKUNIT_ASSERT_NEAR(A,B,tol) ASSERT_NEAR(A,B,tol)
+#define STKUNIT_EXPECT_NEAR(A,B,tol) EXPECT_NEAR(A,B,tol)
 
 #define STKUNIT_UNIT_TEST(testclass,testmethod) TEST(testclass,testmethod)
 
 #define STKUNIT_MAIN(argc,argv) \
 int main(int argc, char **argv) { \
-  if ( MPI_SUCCESS != MPI_Init( & argc , & argv ) ) { \
-    std::cerr << "MPI_Init FAILED" << std::endl ; \
-    std::abort(); \
-  } \
-  std::cout << "Running main() from gtest_main.cc\n"; \
-  testing::InitGoogleTest(&argc, argv); \
+  use_case::UseCaseEnvironment use_case_environment(&argc, &argv); \
+  std::cout << "Running main() from gtest_main.cc\n";              \
+  testing::InitGoogleTest(&argc, argv);                            \
   int error = RUN_ALL_TESTS();                                     \
   RUN_TEST_REDUCE(error);                                          \
-  MPI_Finalize(); \
-  return error; \
+  return error;                                                    \
 }
 
 #define STKUNIT_WITH_SIERRA_MAIN(argc,argv,prod)    \

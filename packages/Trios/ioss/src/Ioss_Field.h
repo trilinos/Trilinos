@@ -70,9 +70,6 @@ namespace Ioss {
     Field(const Field&);
     Field& operator=(const Field&);
 
-    // Compare two fields (used for STL container)
-    bool operator<(const Field& other) const;
-
     ~Field();
 
     bool is_valid()    const {return type_ != INVALID;}
