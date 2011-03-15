@@ -1050,7 +1050,7 @@ namespace Ioss {
     }
   }
 
-  void Region::synchronize_id_and_name(const Region *from)
+  void Region::synchronize_id_and_name(const Region *from, bool sync_attribute_field_names)
   {
     // There is very little connection between an input (mesh) database
     // and an output (results/restart) database.  Basically, the entity
@@ -1147,25 +1147,27 @@ namespace Ioss {
 	    this_ge->property_add(Property(orig_block_order(), offset));
 	  }
 
-	  // If there are any attribute fields, then copy those over
-	  // to the new entity in order to maintain the same order
-	  // since some codes access attributes by implicit order and
-	  // not name... (typically, element blocks only)
-	  Ioss::NameList attr_fields;
-	  ge->field_describe(Ioss::Field::ATTRIBUTE, &attr_fields);
-	  Ioss::NameList::const_iterator IF;
-	  for (IF = attr_fields.begin(); IF != attr_fields.end(); ++IF) {
-	    std::string field_name = *IF;
-	    const Ioss::Field &field = ge->get_fieldref(field_name);
-	    if (this_ge->field_exists(field_name)) {
-	      // If the field is already defined on the entity, make
-	      // sure that the attribute index matches...
-	      int index = field.get_index();
-	      const Ioss::Field &this_field = this_ge->get_fieldref(field_name);
-	      this_field.set_index(index);
-	    } else {
-	      // If the field does not already exist, add it to the output node block
-	      this_ge->field_add(field);
+	  if (sync_attribute_field_names) {
+	    // If there are any attribute fields, then copy those over
+	    // to the new entity in order to maintain the same order
+	    // since some codes access attributes by implicit order and
+	    // not name... (typically, element blocks only)
+	    Ioss::NameList attr_fields;
+	    ge->field_describe(Ioss::Field::ATTRIBUTE, &attr_fields);
+	    Ioss::NameList::const_iterator IF;
+	    for (IF = attr_fields.begin(); IF != attr_fields.end(); ++IF) {
+	      std::string field_name = *IF;
+	      const Ioss::Field &field = ge->get_fieldref(field_name);
+	      if (this_ge->field_exists(field_name)) {
+		// If the field is already defined on the entity, make
+		// sure that the attribute index matches...
+		int index = field.get_index();
+		const Ioss::Field &this_field = this_ge->get_fieldref(field_name);
+		this_field.set_index(index);
+	      } else {
+		// If the field does not already exist, add it to the output node block
+		this_ge->field_add(field);
+	      }
 	    }
 	  }
 	}

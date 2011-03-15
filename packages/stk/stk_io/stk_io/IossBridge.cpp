@@ -1142,7 +1142,7 @@ namespace stk {
       }
 
       if (input_region != NULL)
-	io_region.synchronize_id_and_name(input_region);
+	io_region.synchronize_id_and_name(input_region, true);
 
       io_region.end_mode( Ioss::STATE_DEFINE_MODEL );
     }
