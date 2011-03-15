@@ -85,7 +85,7 @@ private:
   Teuchos::RCP<Tpetra::Vector<AppGID, LNO, GNO> > gidList;   // if the GNOs are not AppGIDs
   Teuchos::RCP<Tpetra::Vector<AppLID, LNO, GNO> > lidList;   // if local IDs were supplied
 
-  Teuchos::RCP<Teuchos::Hashtable<int, GNO> >  gidHash;   // if GNOs are not AppGIDs
+  Teuchos::RCP<Teuchos::Hashtable<std::string, GNO> >  gidHash;   // if GNOs are not AppGIDs
 
   bool consecutive;
   GNO base;

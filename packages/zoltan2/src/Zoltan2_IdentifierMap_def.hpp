@@ -21,6 +21,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_ArrayView.hpp>
+#include <Zoltan2_IdentifierTraits.hpp>
 
 namespace Z2
 {
@@ -76,7 +77,20 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
     lidList = Teuchos::rcp(new Tpetra::Vector<AppLID, LNO, GNO>(globalMap, lidArray));
   }
 
-  gidHash = Teuchos::rcp(new Teuchos::Hashtable<int, GNO>);
+  gidHash = Teuchos::rcp(new Teuchos::Hashtable<std::string, GNO>(numIds[0]));
+
+  // TODO - can we assume this scalars array is identical to our gidArray?  If so we don't
+  //               need to call getData().
+
+  Teuchos::ArrayRCP<const AppGID> scalars = gidList->getData(0);
+
+  for (LNO i=globalMap->getMinLocalIndex(); i < globalMap->getMaxLocalIndex(); i++){
+
+    GNO num = globalMap->getGlobalElement(i);
+    std::string key = Z2::IdentifierTraits<AppGID>::key(scalars[i]);
+
+    gidHash->put(key, num);
+  }
 
   
 
