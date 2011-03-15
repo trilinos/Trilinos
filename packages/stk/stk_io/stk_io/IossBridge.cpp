@@ -11,6 +11,7 @@
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
+#include <Ioss_NullEntity.h>
 
 #include <stk_util/util/tokenize.hpp>
 #include <stk_io/IossBridge.hpp>
@@ -511,12 +512,19 @@ namespace stk {
     }
 
     //----------------------------------------------------------------------
-    struct IOPartAttribute {
-    };
-
-    void put_io_part_attribute(mesh::Part & part)
+    const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part)
     {
-      if (part.attribute<IOPartAttribute>() != NULL) {
+      const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
+      if (!entity || entity->type() == Ioss::INVALID_TYPE) {
+	return NULL;
+      } else {
+	return entity;
+      }
+    }
+
+    void put_io_part_attribute(mesh::Part & part, Ioss::GroupingEntity *entity)
+    {
+      if (part.attribute<Ioss::GroupingEntity>() != NULL) {
 	std::string msg = "stk::io::put_io_part_attribute( ";
 	msg += part.name();
 	msg += " ) FAILED:";
@@ -524,9 +532,13 @@ namespace stk {
 	throw std::runtime_error( msg );
       }
 
-      IOPartAttribute * const attr = new IOPartAttribute();
       mesh::MetaData & meta = mesh::MetaData::get(part);
-      meta.declare_attribute_with_delete( part , attr );
+      if (entity) {
+	meta.declare_attribute_no_delete(part, entity);
+      } else {
+	Ioss::GroupingEntity *attr = new Ioss::NullEntity();
+	meta.declare_attribute_with_delete(part, attr);
+      }
     }
 
     /** Determine whether the field is defined on the specified part
@@ -695,7 +707,7 @@ namespace stk {
     {
       if (include_entity(entity)) {
 	stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
-	stk::io::put_io_part_attribute(part);
+	stk::io::put_io_part_attribute(part, entity);
       }
     }
 
@@ -704,7 +716,7 @@ namespace stk {
     {
       if (include_entity(entity)) {
 	stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
-	stk::io::put_io_part_attribute(part);
+	stk::io::put_io_part_attribute(part, entity);
 
 	const Ioss::ElementTopology *topology = entity->topology();
 	const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
@@ -1440,7 +1452,7 @@ namespace stk {
     //----------------------------------------------------------------------
     bool is_part_io_part(stk::mesh::Part &part)
     {
-      return NULL != part.attribute<IOPartAttribute >();
+      return NULL != part.attribute<Ioss::GroupingEntity>();
     }
 
     const stk::mesh::Field<double, stk::mesh::ElementNode> *get_distribution_factor_field(const stk::mesh::Part &p)
