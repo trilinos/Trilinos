@@ -158,7 +158,9 @@ bool BulkData::modification_begin()
   if ( ! m_meta_data_verified ) {
     require_metadata_committed();
 
-    verify_parallel_consistency( m_mesh_meta_data , m_parallel_machine );
+    if (parallel_size() > 1) {
+      verify_parallel_consistency( m_mesh_meta_data , m_parallel_machine );
+    }
 
     m_meta_data_verified = true ;
 

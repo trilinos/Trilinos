@@ -155,7 +155,9 @@ int Ioss::ParallelUtils::parallel_size() const
 {
   int my_size = 1;
 #ifdef HAVE_MPI
-  MPI_Comm_size(communicator_, &my_size);
+  if (communicator_ != MPI_COMM_NULL) {
+    MPI_Comm_size(communicator_, &my_size);
+  }
 #endif
   return my_size;
 }
@@ -164,7 +166,9 @@ int Ioss::ParallelUtils::parallel_rank() const
 {
   int my_rank = 0;
 #ifdef HAVE_MPI
-  MPI_Comm_rank(communicator_, &my_rank);
+  if (communicator_ != MPI_COMM_NULL) {
+    MPI_Comm_rank(communicator_, &my_rank);
+  }
 #endif
   return my_rank;
 }

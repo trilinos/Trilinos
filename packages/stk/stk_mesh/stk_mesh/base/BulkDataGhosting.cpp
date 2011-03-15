@@ -43,7 +43,7 @@ Ghosting & BulkData::create_ghosting( const std::string & name )
 
   // Verify name is the same on all processors,
   // if not then throw an exception on all processors.
-  {
+  if (parallel_size() > 1) {
     CommBroadcast bc( parallel() , 0 );
 
     if ( bc.parallel_rank() == 0 ) {
@@ -459,7 +459,9 @@ void BulkData::internal_change_ghosting(
       }
     }
 
-    all_reduce( m_parallel_machine , ReduceSum<1>( & error_count ) );
+    if (parallel_size() > 1) {
+      all_reduce( m_parallel_machine , ReduceSum<1>( & error_count ) );
+    }
 
     ThrowErrorMsgIf( error_count, error_msg.str() );
 
