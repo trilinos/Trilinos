@@ -224,8 +224,8 @@ namespace Tpetra {
 
 	// Read in <numRows>
 	{
-	  Ordinal __numRows = 0;
-	  istr >> __numRows;
+	  Ordinal theNumRows = 0;
+	  istr >> theNumRows;
 	  if (istr.fail())
 	    {
 	      if (tolerant)
@@ -237,7 +237,7 @@ namespace Tpetra {
 	      throw std::invalid_argument(os.str());
 	    }
 	  else // Capture the validly read result before checking for eof.
-	    dims[0] = __numRows;
+	    dims[0] = theNumRows;
 	}
 	// There should be two more things to read.
 	if (istr.eof())
@@ -252,8 +252,8 @@ namespace Tpetra {
 	  }
 	// Read in <numCols>
 	{
-	  Ordinal __numCols = 0;
-	  istr >> __numCols;
+	  Ordinal theNumCols = 0;
+	  istr >> theNumCols;
 	  if (istr.fail())
 	    {
 	      if (tolerant)
@@ -265,7 +265,7 @@ namespace Tpetra {
 	      throw std::invalid_argument(os.str());
 	    }
 	  else // Capture the validly read result before checking for eof.
-	    dims[1] = __numCols;
+	    dims[1] = theNumCols;
 	}
 	// There should be one more thing to read.
 	if (istr.eof())
@@ -280,8 +280,8 @@ namespace Tpetra {
 	  }
 	// Read in <numNonzeros>
 	{
-	  Ordinal __numNonzeros = 0;
-	  istr >> __numNonzeros;
+	  Ordinal theNumNonzeros = 0;
+	  istr >> theNumNonzeros;
 	  if (istr.fail())
 	    {
 	      if (tolerant)
@@ -294,7 +294,7 @@ namespace Tpetra {
 	      throw std::invalid_argument(os.str());
 	    }
 	  else // Capture the validly read result
-	    dims[2] = __numNonzeros;
+	    dims[2] = theNumNonzeros;
 	}
 	// It would be nice to validate the read-in data further.  The
 	// only thing we can do now is test if it's negative.  However,
@@ -368,8 +368,8 @@ namespace Tpetra {
 	    // std::complex<Real> -- even though it has to be, if
 	    // STS::isComplex is true (which as of 31 Jan 2011,
 	    // only holds for std::complex<T>).
-	    const std::complex<Real> __value (realPart, imagPart);
-	    value = __value;
+	    const std::complex<Real> theValue (realPart, imagPart);
+	    value = theValue;
 	  }
 	return localSuccess;
       }
