@@ -184,7 +184,8 @@ namespace {
   const stk::mesh::FieldBase *declare_ioss_field(stk::mesh::MetaData &meta,
 						 stk::mesh::EntityRank type,
 						 stk::mesh::Part &part,
-						 const Ioss::Field &io_field)
+						 const Ioss::Field &io_field,
+						 bool use_cartesian_for_scalar)
     {
       stk::mesh::FieldBase *field_ptr = NULL;
       std::string field_type = io_field.transformed_storage()->name();
@@ -192,9 +193,16 @@ namespace {
       int num_components = io_field.transformed_storage()->component_count();
 
       if (field_type == "scalar" || num_components == 1) {
-	stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double> >(name);
-	stk::mesh::put_field(field, type, part);
-	field_ptr = &field;
+	if (!use_cartesian_for_scalar) {
+	  stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double> >(name);
+	  stk::mesh::put_field(field, type, part);
+	  field_ptr = &field;
+	} else {
+	  stk::mesh::Field<double, stk::mesh::Cartesian> & field =
+	    meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(name);
+	  stk::mesh::put_field(field, type, part, 1);
+	  field_ptr = &field;
+	}
       }
       else if (field_type == "vector_2d") {
 	stk::mesh::Field<double, stk::mesh::Cartesian> & field =
@@ -463,7 +471,10 @@ namespace stk {
 	result->first = scalar ;
       }
       else if ( 1 == rank ) {
-	if ( tags[0] == & stk::mesh::Cartesian::tag() && 2 == num_comp ) {
+	if ( tags[0] == & stk::mesh::Cartesian::tag() && 1 == num_comp ) {
+	  result->first = scalar ;
+	}
+	else if ( tags[0] == & stk::mesh::Cartesian::tag() && 2 == num_comp ) {
 	  result->first = vector_2d ;
 	}
 	else if ( tags[0] == & stk::mesh::Cartesian::tag() && 3 == num_comp ) {
@@ -593,8 +604,7 @@ namespace stk {
       if (cell_top == NULL)
 	return extype;
 
-      if(strcmp(cell_top->name, "super") == 0)
-      {
+      if(strcmp(cell_top->name, "super") == 0) {
           std::stringstream oss;
           oss << "super" << cell_top->node_count;
           return oss.str();
@@ -699,15 +709,16 @@ namespace stk {
 	const Ioss::ElementTopology *topology = entity->topology();
 	const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
 	/// \todo IMPLEMENT Determine whether application can work
-	  /// with this topology type... Perhaps map_topology_ioss_to_cell only
-	  /// returns a valid topology if the application has registered
-	  /// that it can handle that specific topology.
+	/// with this topology type... Perhaps map_topology_ioss_to_cell only
+	/// returns a valid topology if the application has registered
+        /// that it can handle that specific topology.
 
-	  if (cell_topology != NULL) {
-	    stk::io::set_cell_topology(part, cell_topology);
-	  } else {
-	    /// \todo IMPLEMENT handle cell_topolgy mapping error...
-	  }
+	if (cell_topology != NULL) {
+	  stk::io::set_cell_topology(part, cell_topology);
+	} else {
+	  /// \todo IMPLEMENT handle cell_topolgy mapping error...
+	}
+	stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE, part, type);
       }
     }
 
@@ -760,6 +771,10 @@ namespace stk {
     {
       stk::mesh::MetaData &meta = mesh::MetaData::get(part);
 
+      bool use_cartesian_for_scalar = false;
+      if (role == Ioss::Field::ATTRIBUTE)
+	use_cartesian_for_scalar = true;
+      
       Ioss::NameList names;
       entity->field_describe(role, &names);
 
@@ -768,20 +783,14 @@ namespace stk {
 	/// (ioss_name -> stk::name)  For now, select all and give the
 	/// stk field the same name as the ioss field.
 
-	/// \todo REFACTOR Kluge -- for now skip the attribute field
-	/// that is named "attribute" since it potentially has a
-	/// different size on each element block which doesn't work...
-	/// Need to either do something similar to the distribution
-	/// factors where the field name is specific to a certain
-	/// element block or component count *OR* refactor the field to
-	/// handle this common case.
+	/// Skip the attribute field that is named "attribute"
 	if (*I == "attribute" && names.size() > 1)
 	  continue;
-
+	
 	/// \todo IMPLEMENT Need to determine whether these are
-	  /// multi-state fields or constant, or interpolated, or ...
-	  Ioss::Field io_field = entity->get_field(*I);
-	  declare_ioss_field(meta, part_type, part, io_field);
+	/// multi-state fields or constant, or interpolated, or ...
+	Ioss::Field io_field = entity->get_field(*I);
+	declare_ioss_field(meta, part_type, part, io_field, use_cartesian_for_scalar);
       }
     }
 
@@ -960,32 +969,32 @@ namespace stk {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
 
 	/// \todo REFACTOR The coordinate field would typically be
-	  /// stored by the app and wouldn't need to be accessed via
-	  /// string lookup.  App infrastructure is not shown here, so
-	  /// lookup by string for the example.
-	  mesh::Field<double, mesh::Cartesian> *coord_field =
-	    meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
-	  assert(coord_field != NULL);
-	  const mesh::FieldBase::Restriction &res = coord_field->restriction(node_rank(meta), part);
+	/// stored by the app and wouldn't need to be accessed via
+	/// string lookup.  App infrastructure is not shown here, so
+	/// lookup by string for the example.
+	mesh::Field<double, mesh::Cartesian> *coord_field =
+	  meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
+	assert(coord_field != NULL);
+	const mesh::FieldBase::Restriction &res = coord_field->restriction(node_rank(meta), part);
+	
+	/** \todo REFACTOR  Need a clear way to query dimensions
+	 *                  from the field restriction.
+	 */
+	const int spatial_dim = res.stride[0] ;
+	io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
 
-	  /** \todo REFACTOR  Need a clear way to query dimensions
-	   *                  from the field restriction.
-	   */
-	  const int spatial_dim = res.stride[0] ;
-	  io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
+	//--------------------------------
+	// Create the special universal node block:
 
-	  //--------------------------------
-	  // Create the special universal node block:
+	mesh::Selector selector = meta.locally_owned_part() | meta.globally_shared_part();
 
-          mesh::Selector selector = meta.locally_owned_part() | meta.globally_shared_part();
+	size_t num_nodes = count_selected_entities(selector, bulk.buckets(node_rank(meta)));
 
-	  size_t num_nodes = count_selected_entities(selector, bulk.buckets(node_rank(meta)));
+	const std::string name("nodeblock_1");
 
-	  const std::string name("nodeblock_1");
-
-	  Ioss::NodeBlock * const nb = new Ioss::NodeBlock(io_region.get_database(),
+	Ioss::NodeBlock * const nb = new Ioss::NodeBlock(io_region.get_database(),
 							   name, num_nodes, spatial_dim);
-	  io_region.add( nb );
+	io_region.add( nb );
       }
 
 
