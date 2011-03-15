@@ -132,6 +132,16 @@ void Filter::copyStiffness(const double* const* elemStiff,
 }
 
 //------------------------------------------------------------------------------
+const NodeDescriptor* Filter::findNode(GlobalID nodeID) const {
+//
+//This function returns a NodeDescriptor ptr, may return NULL.
+//
+  const NodeDescriptor* node = NULL;
+  problemStructure_->getNodeDatabase().getNodeWithID(nodeID, node);
+  return node;
+}
+
+//------------------------------------------------------------------------------
 const NodeDescriptor& Filter::findNodeDescriptor(GlobalID nodeID) const {
 //
 //This function returns a NodeDescriptor reference if nodeID is an active node.
@@ -147,7 +157,6 @@ const NodeDescriptor& Filter::findNodeDescriptor(GlobalID nodeID) const {
 
   return( *node );
 }
-
 //------------------------------------------------------------------------------
 int Filter::calculateResidualNorms(int whichNorm, int numFields,
 				   int* fieldIDs, double* norms,

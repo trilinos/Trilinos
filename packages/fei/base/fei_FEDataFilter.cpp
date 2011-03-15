@@ -519,15 +519,19 @@ int FEDataFilter::initLinSysCore()
     nodeNumbers.resize(nNodes);
 
     for(int k=0; k<nNodes; ++k) {
-      const NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDs[k]);
-      nodeNumbers[k] = node.getNodeNumber();
+      const NodeDescriptor* node = Filter::findNode(nodeIDs[k]);
+      if(node == NULL)
+      {
+        nodeNumbers[k] = -1;
+      }
+      else
+      {
+        nodeNumbers[k] = node->getNodeNumber();
+      }
     }
 
     int offset = constraintNodeOffsets_[index];
-    CHK_ERR( feData_->setConnectivity(blockNum, numRegularElems_+i++,
-                                      nNodes, &nodeNumbers[0],
-                                      &packedFieldSizes_[offset],
-                                      &dof_ids[0]) );
+    CHK_ERR( feData_->setConnectivity(blockNum, numRegularElems_+i++, nNodes, &nodeNumbers[0], &packedFieldSizes_[offset], &dof_ids[0]) );
     ++cr_iter;
   }
 
@@ -1211,8 +1215,9 @@ int FEDataFilter::loadFEDataPenCR(int CRID,
 
   int offset = 0;
   for(int i=0; i<numCRNodes; i++) {
-    NodeDescriptor* node = NULL;
-    CHK_ERR( nodeDB.getNodeWithID(CRNodes[i], node) );
+    NodeDescriptor* node = NULL; 
+    nodeDB.getNodeWithID(CRNodes[i], node);
+    if(node == NULL) continue;
 
     int fieldEqn = -1;
     bool hasField = node->getFieldEqnNumber(CRFields[i], fieldEqn);

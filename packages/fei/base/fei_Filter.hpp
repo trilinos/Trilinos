@@ -254,6 +254,7 @@ class Filter {
                               int* fieldIDs, double* norms,
                               std::vector<double>& residValues);
 
+   const NodeDescriptor* findNode(GlobalID nodeID) const;
    const NodeDescriptor& findNodeDescriptor(GlobalID nodeID) const;
 
    SNL_FEI_Structure* problemStructure_;

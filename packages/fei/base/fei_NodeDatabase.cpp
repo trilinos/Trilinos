@@ -316,9 +316,9 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
     int index = getIndexOfID(nodeID);
     int nDOF = node.getNumNodalDOF();
     if (nDOF <= 0) {
-      FEI_COUT << "localRank " << localRank << ", node "<<nodeID<<" has nDOF="
-           << nDOF<<FEI_ENDL;
-      ERReturn(-1);
+      continue;
+      //FEI_COUT << "localRank " << localRank << ", node "<<nodeID<<" has nDOF=" << nDOF<<FEI_ENDL;
+      //ERReturn(-1);
     }
     int firstEqn = node.getFieldEqnNumbers()[0];
     int insertPoint = fei::sortedListInsert(firstEqn, eqnNumbers_);

@@ -1359,6 +1359,14 @@ NodeDescriptor& SNL_FEI_Structure::findNodeDescriptor(GlobalID nodeID)
 }
 
 //------------------------------------------------------------------------------
+NodeDescriptor* SNL_FEI_Structure::findNode(GlobalID nodeID)
+{
+  NodeDescriptor* node = NULL;
+  nodeDatabase_->getNodeWithID(nodeID, node);
+  return node;
+}
+
+//------------------------------------------------------------------------------
 int SNL_FEI_Structure::initMultCRStructure() 
 {
   FEI_OSTREAM& os = dbgOut();
@@ -1478,13 +1486,17 @@ int SNL_FEI_Structure::initPenCRStructure()
       GlobalID iNodeID = CRNodesPtr[i];
       int iField = CRFieldPtr[i];
 
-      NodeDescriptor& iNode = findNodeDescriptor(iNodeID);
+      NodeDescriptor* iNodePtr = findNode(iNodeID);
+      if(!iNodePtr) continue;
+      NodeDescriptor& iNode = *iNodePtr;
 
       for(int j = 0; j < lenList; j++) {
 	GlobalID jNodeID = CRNodesPtr[j];
 	int jField = CRFieldPtr[j];
 
-	NodeDescriptor& jNode = findNodeDescriptor(jNodeID);
+	NodeDescriptor* jNodePtr = findNode(jNodeID);
+        if(!jNodePtr) continue;
+        NodeDescriptor &jNode = *jNodePtr;
 
 	if (iNode.getOwnerProc() == localProc_) {
 	  //if iNode is local, we'll put equations into the local 
@@ -2999,8 +3011,12 @@ int SNL_FEI_Structure::finalizeActiveNodes()
 
       NodeDescriptor* node = NULL;
       for(int k=0; k<numNodes; ++k) {
-	CHK_ERR( nodeDatabase_->getNodeWithID(nodeIDs[k], node) );
-	CHK_ERR( nodeCommMgr_->informLocal(*node) );
+	 int err = nodeDatabase_->getNodeWithID(nodeIDs[k], node) ;
+         if ( err != -1 ) {
+           nodeCommMgr_->informLocal(*node);
+         }
+	//CHK_ERR( nodeDatabase_->getNodeWithID(nodeIDs[k], node) );
+	//CHK_ERR( nodeCommMgr_->informLocal(*node) );
       }
       ++cr_iter;
     }
