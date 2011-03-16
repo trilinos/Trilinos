@@ -16,11 +16,11 @@
 
 #include <vector>
 #include <ostream>
-#include <Zoltan2_IdentifierMap.hpp>
 #include <Teuchos_GlobalMPISession.hpp>   // So we don't have to #ifdef HAVE_MPI
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Zoltan2_Partitioner.hpp>
 
 #define nobjects 10000
 

@@ -37,10 +37,13 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+  Zoltan2_IdentifierTraits.hpp
   Zoltan2_IdentifierMap.hpp
   Zoltan2_IdentifierMap_def.hpp
   Zoltan2_IdentifierMap_decl.hpp
   Zoltan2_Partitioner.hpp
+  Zoltan2_Hash.hpp
+  Zoltan2_AlltoAll.hpp
   )
 
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)

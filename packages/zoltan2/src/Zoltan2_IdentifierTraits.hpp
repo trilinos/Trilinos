@@ -21,7 +21,8 @@
 
 */
 
-namespace Z2{
+namespace Z2
+{
 
 /*! \struct Z2::IdentifierTraits
   \brief This structure defines the basic traits needed for an identifier.
