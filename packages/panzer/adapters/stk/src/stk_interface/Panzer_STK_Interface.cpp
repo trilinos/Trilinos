@@ -66,7 +66,9 @@ void STK_Interface::addSideset(const std::string & name,const CellTopologyData *
    TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_ASSERT(dimension_!=0);
 
-   stk::mesh::Part * sideset = &metaData_->declare_part(name,getSideRank()); 
+   stk::mesh::Part * sideset = metaData_->get_part(name);
+   if(sideset==NULL)
+      sideset = &metaData_->declare_part(name,getSideRank()); 
    sidesets_.insert(std::make_pair(name,sideset));
    stk::mesh::fem::set_cell_topology(*sideset,stk::mesh::fem::CellTopology(ctData));
 }
