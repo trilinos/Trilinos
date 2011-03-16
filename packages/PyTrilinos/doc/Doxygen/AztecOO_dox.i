@@ -27,7 +27,9 @@ C++ includes: AztecOO.h ";
 
 /*  Constructors/destructors.  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  AztecOO::AztecOO "AztecOO::AztecOO(Epetra_Operator *A, Epetra_MultiVector *X,
 Epetra_MultiVector *B)
@@ -116,7 +118,9 @@ Completely deletes a AztecOO object. ";
 
 /*  Post-construction setup methods.  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  AztecOO::SetProblem "int
 AztecOO::SetProblem(const Epetra_LinearProblem &prob, bool
@@ -270,7 +274,9 @@ stderr. ";
 /*  Explicit preconditioner construction/assessment/destruction
 methods.  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  AztecOO::ConstructPreconditioner "int
 AztecOO::ConstructPreconditioner(double &condest)
@@ -312,7 +318,9 @@ if one exists, returns -1.0 if no estimate. ";
 
 /*  Check/Attribute Access Methods.  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  AztecOO::CheckInput "int AztecOO::CheckInput()
 const
@@ -371,7 +379,9 @@ either Epetra_CrsMatrix or Epetra_VbrMatrix. ";
 
 /*  Standard AztecOO option and parameter setting methods.  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  AztecOO::SetAztecDefaults "int
 AztecOO::SetAztecDefaults()
@@ -455,7 +465,9 @@ Set all Aztec parameter values using an existing Aztec params array.
 
 /*  Standard AztecOO solve methods.  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  AztecOO::Iterate "int AztecOO::Iterate(int
 MaxIters, double Tolerance)
@@ -476,7 +488,9 @@ Tolerance is reached.. ";
 
 /*  Specialist AztecOO solve method.  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  AztecOO::recursiveIterate "int
 AztecOO::recursiveIterate(int MaxIters, double Tolerance)
@@ -497,7 +511,9 @@ AZ_STATUS_SIZE). See the Aztec documenation. ";
 
 /*  Adaptive Solve methods.  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  AztecOO::SetUseAdaptiveDefaultsTrue "int
 AztecOO::SetUseAdaptiveDefaultsTrue()
@@ -553,7 +569,9 @@ Attempts to solve the given linear problem using an adaptive strategy.
 
 /*  Post-solve access functions  */
 
-/* */
+/*
+
+*/
 
 %feature("docstring")  AztecOO::NumIters "int AztecOO::NumIters()
 const
@@ -632,25 +650,6 @@ AztecOO::GetLabel() const
 Get the label describing this AztecOO object.
 
 Returns the string used to define this object. ";
-
-
-// File: structAztecOO_1_1MatrixData.xml
-%feature("docstring") AztecOO::MatrixData "";
-
-%feature("docstring")  AztecOO::MatrixData::MatrixData "AztecOO::MatrixData::MatrixData(Epetra_RowMatrix *inA=0, Epetra_Vector
-*inX=0, Epetra_Vector *inY=0, Epetra_Vector *inSourceVec=0,
-Epetra_Vector *inTargetVec=0) ";
-
-%feature("docstring")  AztecOO::MatrixData::~MatrixData "AztecOO::MatrixData::~MatrixData() ";
-
-
-// File: structAztecOO_1_1OperatorData.xml
-%feature("docstring") AztecOO::OperatorData "";
-
-%feature("docstring")  AztecOO::OperatorData::OperatorData "AztecOO::OperatorData::OperatorData(Epetra_Operator *inA=0,
-Epetra_Vector *inX=0, Epetra_Vector *inY=0) ";
-
-%feature("docstring")  AztecOO::OperatorData::~OperatorData "AztecOO::OperatorData::~OperatorData() ";
 
 
 // File: classAztecOO__Operator.xml
@@ -1356,6 +1355,25 @@ Return condition number computed by last call to
 computeConditionNumber. ";
 
 
+// File: structAztecOO_1_1MatrixData.xml
+%feature("docstring") AztecOO::MatrixData "";
+
+%feature("docstring")  AztecOO::MatrixData::MatrixData "AztecOO::MatrixData::MatrixData(Epetra_RowMatrix *inA=0, Epetra_Vector
+*inX=0, Epetra_Vector *inY=0, Epetra_Vector *inSourceVec=0,
+Epetra_Vector *inTargetVec=0) ";
+
+%feature("docstring")  AztecOO::MatrixData::~MatrixData "AztecOO::MatrixData::~MatrixData() ";
+
+
+// File: structAztecOO_1_1OperatorData.xml
+%feature("docstring") AztecOO::OperatorData "";
+
+%feature("docstring")  AztecOO::OperatorData::OperatorData "AztecOO::OperatorData::OperatorData(Epetra_Operator *inA=0,
+Epetra_Vector *inX=0, Epetra_Vector *inY=0) ";
+
+%feature("docstring")  AztecOO::OperatorData::~OperatorData "AztecOO::OperatorData::~OperatorData() ";
+
+
 // File: AztecOO_8cpp.xml
 %feature("docstring")  AztecOO_uppercase "string
 AztecOO_uppercase(const string &s) ";
@@ -1503,8 +1521,8 @@ Epetra matrices passed in by AztecOO. ";
 %feature("docstring")  AztecOO_Version "string AztecOO_Version() ";
 
 
-// File: dir_0ad82f99e7b685543925bc99d3c3d983.xml
+// File: dir_7894d9566ccc3a34f56a76d817e62719.xml
 
 
-// File: dir_5912e688d6eb8a0beac01aa6b9eaa514.xml
+// File: dir_d2a30b9de7594b3f8f120c191973da80.xml
 
