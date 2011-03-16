@@ -1929,6 +1929,116 @@ namespace stk {
         }
     }
 
+    bool PerceptMesh::
+    isBoundarySurface(mesh::Part& block, mesh::Part& surface)
+    {
+      EntityRank block_rank = block.primary_entity_rank();
+      EntityRank surface_rank = surface.primary_entity_rank();
+      // assert block_rank > surface_rank
+
+      mesh::Selector block_selector(block);
+      mesh::Selector surface_selector(surface);
+
+      const std::vector<Bucket*> & buckets_1 = getBulkData()->buckets( block_rank );
+      const std::vector<Bucket*> & buckets_2 = getBulkData()->buckets( surface_rank );
+
+      static std::vector<unsigned> element_side(27);
+      static std::vector<unsigned> surface_node_ids(27);
+
+      for ( std::vector<Bucket*>::const_iterator k = buckets_1.begin() ; k != buckets_1.end() ; ++k ) 
+        {
+          if (block_selector(**k))   // and locally_owned_part  FIXME
+            {
+              Bucket & bucket = **k ;
+
+              const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(bucket);
+              shards::CellTopology cell_topo(cell_topo_data);
+
+              const unsigned num_elements_in_bucket = bucket.size();
+                
+              for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                {
+                  Entity& element = bucket[iElement];
+
+                  const PairIterRelation& elem_nodes = element.relations( mesh::Node );  
+
+                  bool isCandidate = false;
+                  unsigned num_node = elem_nodes.size(); 
+                  for (unsigned inode=0; inode < num_node; inode++)
+                    {
+                      Entity & node = *elem_nodes[ inode ].entity();
+                      //EntityId nid = node.identifier();
+
+                      // this element is a candidate for sharing a face with surface
+                      if (node.bucket().member(surface))
+                        {
+                          isCandidate = true;
+                          // FIXME at this point we know block shares at least one node with surface, which may be enough to return true here?
+                          break;
+                        }
+                    }
+                  // now check if the higher-rank part shares a face with the elements of surface
+                  if (isCandidate)
+                    {
+                      for (unsigned iface = 0; iface < cell_topo_data->side_count; iface++)
+                        {
+                          unsigned num_nodes_on_face = cell_topo_data->side[iface].topology->vertex_count;
+                          element_side.resize(num_nodes_on_face);
+                          for (unsigned jnode = 0; jnode < num_nodes_on_face; jnode++)
+                            {
+                              element_side[jnode] = elem_nodes[ cell_topo_data->side[iface].node[jnode] ].entity()->identifier();
+                            }
+
+                          // second bucket loop over part2
+                          bool break_bucket_loop = false;
+                          for ( std::vector<Bucket*>::const_iterator k_2 = buckets_2.begin() ; k_2 != buckets_2.end() ; ++k_2 ) 
+                            {
+                              if (break_bucket_loop)
+                                break;
+
+                              if (surface_selector(**k_2))   // and locally_owned_part  FIXME
+                                {
+                                  Bucket & bucket_2 = **k_2 ;
+
+                                  const CellTopologyData * const cell_topo_data_2 = stk::mesh::get_cell_topology(bucket_2);
+                                  shards::CellTopology cell_topo_2(cell_topo_data_2);
+
+                                  const unsigned num_elements_in_bucket_2 = bucket_2.size();
+                
+                                  for (unsigned iElement_2 = 0; iElement_2 < num_elements_in_bucket_2; iElement_2++)
+                                    {
+                                      Entity& element_2 = bucket_2[iElement_2];
+
+                                      const PairIterRelation& elem_nodes_2 = element_2.relations( mesh::Node );  
+                                      surface_node_ids.resize(elem_nodes_2.size());
+                                      for (unsigned jnode = 0; jnode < elem_nodes_2.size(); jnode++)
+                                        {
+                                          surface_node_ids[jnode] = elem_nodes_2[jnode].entity()->identifier();
+                                        }
+              
+                                      int perm = findPermutation(cell_topo.getTopology()->subcell[surface_rank][iface].topology,
+                                                                 &element_side[0], &surface_node_ids[0]);
+                                      if (perm < 0)
+                                        {
+                                          break_bucket_loop = true;
+                                          break;
+                                        }
+                                      else
+                                        {
+                                          //std::cout << "tmp block and surface share: " << block.name() << " " << surface.name() << std::endl;
+                                          return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+      return false;
+    }
+
 
   } // stk
 } // percept

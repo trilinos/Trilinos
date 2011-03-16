@@ -35,6 +35,7 @@
 
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;
+using stk::mesh::EntityVector;
 using stk::mesh::Part;
 using stk::mesh::Relation;
 using stk::mesh::Selector;
@@ -112,7 +113,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     const Ghosting & gg = bulk.create_ghosting( std::string("shared") );
 
     // Test for coverage of comm_procs in EntityComm.cpp
-    stk::mesh::EntityVector nodes;
+    EntityVector nodes;
     stk::mesh::get_entities(bulk, NODE_RANK, nodes);
     std::vector<unsigned> procs ;
     STKUNIT_ASSERT(!nodes.empty());
@@ -151,29 +152,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 
   Entity &cell2 = *(bulk2.buckets (3)[0]->begin());
   Entity &node2 = *(bulk2.buckets (0)[0]->begin());
-
-  STKUNIT_ASSERT_THROW ( Relation r ( Relation::attribute( 2 , 0 ) , cell ) , std::invalid_argument );
-
-  {
-      int ok = 0 ;
-    try {
-
-  unsigned id = 10000*(~(0u));
-
-  Relation r (Relation::attribute( 0 , id ), cell );
-
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitRelation CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestRelation FAILED to catch error for Relation::attribute");
-    }
-  }
 
   STKUNIT_ASSERT_THROW ( bulk.declare_relation ( node , cell , 0 ) , std::runtime_error );
   STKUNIT_ASSERT_THROW ( bulk.declare_relation ( cell , node2 , 0 ) , std::runtime_error );
@@ -333,6 +311,133 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
   for (unsigned i = 0; i < nodes_per_elem; ++i) {
     mesh.destroy_relation( elem, node, i );
     STKUNIT_ASSERT_EQUAL( nodes_per_elem - (i+1), elem.relations().size() );
+  }
+
+  mesh.modification_end();
+}
+
+STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
+{
+  // Test relation attribute
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dim));
+  meta_data.commit();
+  BulkData mesh(meta_data, pm);
+  unsigned p_rank = mesh.parallel_rank();
+
+  // Begin modification cycle so we can create the entities and relations
+  mesh.modification_begin();
+
+  // We're just going to add everything to the universal part
+  stk::mesh::PartVector empty_parts;
+
+  // Create element
+  const EntityRank entity_rank = stk::mesh::fem::element_rank(spatial_dim);
+  Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+
+  // Create node
+  Entity & node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
+
+  mesh.declare_relation( elem, node, 0 );
+
+  const Relation & my_relation = *(elem.relations(NODE_RANK).begin());
+  my_relation.set_attribute(6u);
+
+  STKUNIT_ASSERT_EQUAL( my_relation.attribute(), 6u);
+
+  mesh.modification_end();
+}
+
+STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
+{
+  // It should be legal to declare the same relation between shared
+  // entities on two procs.
+  //
+  // 1---3---5
+  // | 1 | 2 |
+  // 2---4---6
+  //
+  // To test this, we use the mesh above, with elem 1 going on rank 0 and
+  // elem 2 going on rank 1. Nodes 3,4 are shared along with the edge between
+  // nodes 3 and 4. On both procs we declare relations from the shared edge
+  // to the shared nodes on both procs.
+  //
+  // TODO: If we change how declare_relation works, not requiring all
+  // sharers to declare the same relations, but instead allowing just
+  // the owner to declare relations, that should be tested here.
+
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dim));
+  meta_data.commit();
+  BulkData mesh(meta_data, pm);
+  unsigned p_rank = mesh.parallel_rank();
+  unsigned p_size = mesh.parallel_size();
+
+  // Bail if we only have one proc
+  if (p_size == 1) {
+    return;
+  }
+
+  // Begin modification cycle so we can create the entities and relations
+  mesh.modification_begin();
+
+  Entity* elem_ptr = NULL;
+  Entity* edge_ptr = NULL;
+  EntityVector nodes;
+  const unsigned nodes_per_elem = 4, nodes_per_side = 2;
+
+  if (p_rank < 2) {
+    // We're just going to add everything to the universal part
+    stk::mesh::PartVector empty_parts;
+
+    // Create element
+    const EntityRank entity_rank = stk::mesh::fem::element_rank(spatial_dim);
+    Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+    elem_ptr = &elem;
+
+    // Create nodes
+    const unsigned starting_node_id = p_rank * nodes_per_side + 1;
+    for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
+      nodes.push_back(&mesh.declare_entity(NODE_RANK, id, empty_parts));
+    }
+
+    // Add relations to nodes
+    unsigned rel_id = 0;
+    for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
+      mesh.declare_relation( elem, **itr, rel_id );
+    }
+
+    // Create edge
+    const EntityRank edge_rank = stk::mesh::fem::side_rank(spatial_dim);
+    Entity & edge = mesh.declare_entity(edge_rank, 1 /*id*/, empty_parts);
+    edge_ptr = &edge;
+
+    // Set up relation from elem to edge
+    mesh.declare_relation( *elem_ptr, *edge_ptr, 0 /*rel-id*/ );
+  }
+
+  mesh.modification_end();
+
+  mesh.modification_begin();
+
+  if (p_rank < 2) {
+    // Set up relations from edge to nodes
+    unsigned rel_id = 0;
+    const unsigned starting_node_idx = (1 - p_rank) * nodes_per_side;
+    for (unsigned node_idx = starting_node_idx;
+         node_idx < starting_node_idx + nodes_per_side;
+         ++node_idx, ++rel_id) {
+      mesh.declare_relation( *edge_ptr, *nodes[node_idx], rel_id );
+    }
   }
 
   mesh.modification_end();

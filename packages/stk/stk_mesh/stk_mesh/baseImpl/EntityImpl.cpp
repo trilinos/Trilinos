@@ -11,11 +11,11 @@
 #include <stdexcept>
 
 #include <stk_mesh/base/Ghosting.hpp>
-
-#include <stk_mesh/baseImpl/EntityImpl.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+
+#include <stk_mesh/baseImpl/EntityImpl.hpp>
 
 namespace stk {
 namespace mesh {
@@ -24,7 +24,6 @@ namespace impl {
 EntityImpl::~EntityImpl()
 {
 }
-
 
 EntityImpl::EntityImpl( const EntityKey & arg_key )
   : m_key(arg_key),
@@ -36,25 +35,25 @@ EntityImpl::EntityImpl( const EntityKey & arg_key )
     m_sync_count(0),
     m_mod_log( EntityLogCreated )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
 }
-
 
 PairIterRelation EntityImpl::relations( unsigned rank ) const
 {
   std::vector<Relation>::const_iterator i = m_relation.begin();
   std::vector<Relation>::const_iterator e = m_relation.end();
 
-  if ( rank ) {
-    const Relation::raw_attr_type lo_attr = Relation::attribute( rank , 0 );
+  //Nodes
+  if ( rank != 0 ) {
+    const Relation::raw_relation_id_type lo_attr = Relation::raw_relation_id( rank , 0 );
     i = std::lower_bound( i , e , lo_attr , LessRelation() );
   }
 
-  const Relation::raw_attr_type hi_attr = Relation::attribute( rank + 1 , 0 );
+  const Relation::raw_relation_id_type hi_attr = Relation::raw_relation_id( rank + 1 , 0 );
   e = std::lower_bound( i , e , hi_attr , LessRelation() );
 
   return PairIterRelation( i , e );
 }
-
 
 PairIterEntityComm EntityImpl::sharing() const
 {
@@ -67,7 +66,6 @@ PairIterEntityComm EntityImpl::sharing() const
   // Contains everything up the first aura comm (IE, only contains shared comms)
   return PairIterEntityComm( i , e );
 }
-
 
 PairIterEntityComm EntityImpl::comm( const Ghosting & sub ) const
 {
@@ -85,9 +83,10 @@ PairIterEntityComm EntityImpl::comm( const Ghosting & sub ) const
   return PairIterEntityComm( i , e );
 }
 
-
 bool EntityImpl::insert( const EntityCommInfo & val )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::insert", LOG_ENTITY, key());
+
   std::vector< EntityCommInfo >::iterator i =
     std::lower_bound( m_comm.begin() , m_comm.end() , val );
 
@@ -100,9 +99,10 @@ bool EntityImpl::insert( const EntityCommInfo & val )
   return result ;
 }
 
-
 bool EntityImpl::erase( const EntityCommInfo & val )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::erase(comm)", LOG_ENTITY, key());
+
   std::vector< EntityCommInfo >::iterator i =
     std::lower_bound( m_comm.begin() , m_comm.end() , val );
 
@@ -115,9 +115,10 @@ bool EntityImpl::erase( const EntityCommInfo & val )
   return result ;
 }
 
-
 bool EntityImpl::erase( const Ghosting & ghost )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::erase(ghost)", LOG_ENTITY, key());
+
   typedef std::vector< EntityCommInfo > EntityComm ;
 
   const EntityCommInfo s_begin( ghost.ordinal() ,     0 );
@@ -138,20 +139,23 @@ bool EntityImpl::erase( const Ghosting & ghost )
   return result ;
 }
 
-
 void EntityImpl::comm_clear_ghosting()
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::comm_clear_ghosting", LOG_ENTITY, key());
+
   std::vector< EntityCommInfo >::iterator j = m_comm.begin();
   while ( j != m_comm.end() && j->ghost_id == 0 ) { ++j ; }
   m_comm.erase( j , m_comm.end() );
 }
 
-
-void EntityImpl::comm_clear() {
+void EntityImpl::comm_clear()
+{
+  TraceIfWatching("stk::mesh::impl::EntityImpl::comm_clear", LOG_ENTITY, key());
   m_comm.clear();
 }
 
-bool EntityImpl::marked_for_destruction() const {
+bool EntityImpl::marked_for_destruction() const
+{
   // The original implementation of this method checked bucket capacity. In
   // order to ensure that the addition of EntityLogDeleted does not change
   // behavior, we put error check here.
@@ -168,15 +172,17 @@ bool EntityImpl::marked_for_destruction() const {
 
 namespace {
 
-bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
+inline bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
 {
-  return r1.attribute() == r2.attribute() && r1.entity() != r2.entity() ;
+  return r1.raw_relation_id() == r2.raw_relation_id() && r1.entity() != r2.entity() ;
 }
 
 }
 
 void EntityImpl::log_resurrect()
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::log_resurrect", LOG_ENTITY, key());
+
   ThrowErrorMsgIf( EntityLogDeleted != m_mod_log,
       "Trying to resurrect non-deleted entity: " <<
       print_entity_key( MetaData::get( bucket() ), key() ) );
@@ -187,6 +193,8 @@ void EntityImpl::log_resurrect()
 
 void EntityImpl::log_modified_and_propagate()
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::log_modified_and_propagate", LOG_ENTITY, key());
+
   // If already in modified state, return
   if (m_mod_log != EntityLogNoChange) {
     return;
@@ -212,6 +220,8 @@ void EntityImpl::log_modified_and_propagate()
 
 void EntityImpl::log_created_parallel_copy()
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::log_created_parallel_copy", LOG_ENTITY, key());
+
   if ( EntityLogCreated == m_mod_log ) {
     m_mod_log = EntityLogModified ;
   }
@@ -219,6 +229,8 @@ void EntityImpl::log_created_parallel_copy()
 
 bool EntityImpl::destroy_relation( Entity& e_to, const RelationIdentifier local_id )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::destroy_relation", LOG_ENTITY, key());
+
   bool destroyed_relations = false;
   for ( std::vector<Relation>::iterator
         i = m_relation.begin() ; i != m_relation.end() ; ++i ) {
@@ -234,16 +246,19 @@ bool EntityImpl::destroy_relation( Entity& e_to, const RelationIdentifier local_
 bool EntityImpl::declare_relation( Entity & e_to,
                                    const RelationIdentifier local_id,
                                    unsigned sync_count,
-                                   bool is_converse )
+                                   bool is_back_relation )
 {
+  TraceIfWatching("stk::mesh::impl::EntityImpl::declare_relation", LOG_ENTITY, key());
+
   const MetaData & meta_data = MetaData::get( bucket() );
 
   const Relation new_relation( e_to , local_id );
 
-  const std::vector<Relation>::iterator fe = m_relation.end();
-        std::vector<Relation>::iterator fi = m_relation.begin();
+  const std::vector<Relation>::iterator rel_end   = m_relation.end();
+        std::vector<Relation>::iterator rel_begin = m_relation.begin();
+        std::vector<Relation>::iterator lower;
 
-  fi = std::lower_bound( fi , fe , new_relation , LessRelation() );
+  lower = std::lower_bound( rel_begin , rel_end , new_relation , LessRelation() );
 
   // The ordering of the Relations allows for two situations that do
   // not arise often in meshes.  The first situation is 2 relations between
@@ -258,43 +273,39 @@ bool EntityImpl::declare_relation( Entity & e_to,
   // nodes.  The local_id 1 of the edge may point to two different nodes.
   // This situation is disallowed in the mesh.  We now check for it.
 
-  bool found_degenerate_relation = false;
-  EntityKey  degenerate_key;
-  if ( fi != fe )
-  {
-    bool  downstream = fi->entity_rank() < entity_rank();
-    if ( is_degenerate_relation ( new_relation , *fi ) && downstream )
-    {
-      found_degenerate_relation = true;
-      degenerate_key = fi->entity()->key();
+  // "Degenerate" -> case where we have two relations whose attributes
+  // (rel id + rel rank) match but point to different entities. It's
+  // OK for back-relations to be degenerate because there's nothing
+  // wrong with a node having several back-relations (with similar id)
+  // to different elements.
+
+  // Check for bad degenerate relations (degenerate forward relations)
+  // Cannot be degenerate relation if there are no prior relations
+  if ( !m_relation.empty() && !is_back_relation ) {
+    // Since LessRelation takes the related entity into account, we must check
+    // the result of lower_bound AND the iter before to be sure this isn't a
+    // bad degenerate relation.
+    std::vector<Relation>::iterator start, end;
+    start = (lower == rel_begin) ? rel_begin : lower - 1;
+    end   = (lower == rel_end)   ? rel_end   : lower + 1;
+
+    for (std::vector<Relation>::iterator itr = start; itr != end; ++itr) {
+      ThrowErrorMsgIf( is_degenerate_relation ( new_relation , *itr ),
+                       "Could not declare relation from " <<
+                       print_entity_key( meta_data, key() ) << " to " <<
+                       print_entity_key( meta_data, e_to.key() ) << ", with id " <<
+                       local_id << ". Relation already exists to " <<
+                       print_entity_key( meta_data, itr->entity()->key() ));
     }
   }
-  if ( fi != m_relation.begin() )
-  {
-    --fi;
-    bool  downstream = fi->entity_rank() < entity_rank();
-    if ( is_degenerate_relation ( new_relation , *fi ) && downstream )
-    {
-      found_degenerate_relation = true;
-      degenerate_key = fi->entity()->key();
-    }
-    ++fi;
-  }
 
-  ThrowErrorMsgIf( found_degenerate_relation && !is_converse,
-                   "Could not declare relation from " <<
-                   print_entity_key( meta_data, key() ) << " to " <<
-                   print_entity_key( meta_data, e_to.key() ) << ", with id " <<
-                   local_id << ". Relation already exists to " <<
-                   print_entity_key( meta_data, degenerate_key ));
+  bool not_already_exists = (rel_end == lower) ||
+    ( !is_back_relation && new_relation.raw_relation_id() != lower->raw_relation_id() ) ||
+    ( is_back_relation && new_relation != *lower );
 
-  // If the relation is not degenerate, we add it
-
-  if ( ( !is_converse && (fe == fi ||
-                          new_relation.attribute() != fi->attribute() ) ) ||
-       (is_converse && (fe == fi || new_relation != *fi ) ) ) {
-
-    fi = m_relation.insert( fi , new_relation );
+  // If the relation does not already exist, we add it
+  if (not_already_exists) {
+    lower = m_relation.insert( lower , new_relation );
 
     set_sync_count( sync_count );
 

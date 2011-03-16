@@ -51,7 +51,9 @@ bool comm_mesh_verify_parallel_consistency(
 
   result = verify_parallel_attributes( M , error_log );
 
-  all_reduce( M.parallel() , ReduceMin<1>( & result ) );
+  if (M.parallel_size() > 1) {
+    all_reduce( M.parallel() , ReduceMin<1>( & result ) );
+  }
 
   // Verify entities against owner.
 
@@ -68,7 +70,9 @@ bool comm_mesh_verify_parallel_consistency(
 
     result = unpack_not_owned_verify( all , M , error_log );
 
-    all_reduce( M.parallel() , ReduceMin<1>( & result ) );
+    if (M.parallel_size() > 1) {
+      all_reduce( M.parallel() , ReduceMin<1>( & result ) );
+    }
   }
 
   return result == 1 ;

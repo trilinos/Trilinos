@@ -154,7 +154,7 @@ namespace Ioss {
     void transfer_mesh_aliases(Region *to) const;
 
     // Ensure that the 'this' region has the same ids and names as the 'from' region.
-    void synchronize_id_and_name(const Region *from);
+    void synchronize_id_and_name(const Region *from, bool synchronize_attribute_field_names=false);
 
     // Returns true if the passed in name refers to a known Entity
     // defined on this region.  If true, then 'type' (if non-NULL) is

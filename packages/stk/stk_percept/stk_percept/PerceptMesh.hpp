@@ -238,6 +238,9 @@ namespace stk {
       // FIXME
       SameRankRelation& adapt_parent_to_child_relations() { return m_adapt_parent_to_child_relations; }
 
+      bool
+      isBoundarySurface(mesh::Part& block, mesh::Part& surface);
+
     private:
 
       /// reads meta data, commits it, reads bulk data

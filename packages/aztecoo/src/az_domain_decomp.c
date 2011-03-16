@@ -528,22 +528,110 @@ void AZ_find_MSR_ordering(int bindx2[],int **ordering,int N,
    AZ_free(mask);
 }
 
-int AZ_pos( int index, int bindx[], int position[], int inv_ordering[],
-         double avg_nz_per_row, int N) 
+/* temp1 is some nz past the end of bindx[N] */
+int AZ_pos_bin_search( int temp1, int bindx2[], int ordering[], int inv_ordering[],
+                       double avg_nz_per_row, int N) 
 {
-int i = 0;
+#define COND(j) ((bindx2[(j)+1] > temp1))
+#define COND_M(j) ((bindx2[(j)] <= temp1))
+  /* define MY_ASSERT(cond,msg) do { if(!(cond)) { AZ_printf_out("ERROR: %s\n", msg); exit(1);   } } while(0) */
+#define MY_ASSERT(cond,msg) ((void) (0))
 
-i = (int) (((double)(index - N))/avg_nz_per_row);
-   while ( bindx[i+1] <= index ) i++;
-   while ( bindx[i] > index ) i--;
-   return( position[inv_ordering[i]] + (index - bindx[i]) );
+  int irow = 0;
+  int istart;
+  int iend;
+  int ifound = -1;
+  int imid = -1;
+
+  /* start binary search */
+  {
+
+    irow = (int) (((double)(temp1 - N))/avg_nz_per_row);
+
+    istart = irow;
+    iend = N-1;
+    ifound = -1;
+    imid = -1;
+
+    /* forward search */
+    if (COND(istart))
+      {
+        ifound = istart;
+      }
+    else
+      {
+        while (istart < iend - 1)
+          {
+            imid = (istart+iend) >> 1;
+            if ( COND(imid) )
+              {
+                iend = imid;
+              }
+            else
+              {
+                istart = imid;
+              }
+          }
+
+        if (COND(istart)) ifound = istart;
+        if (COND(iend)) ifound = iend;
+      }
+
+    irow = ifound;
+
+    /* backward search */
+    istart = 0;
+    iend = irow;
+    ifound = -1;
+    imid = -1;
+
+    if (COND_M(iend))
+      {
+        ifound = iend;
+      }
+    else
+      {
+        while (istart < iend - 1)
+          {
+            imid = (istart+iend) >> 1;
+            if (COND_M(imid))
+              {
+                istart = imid;
+              }
+            else 
+              {
+                iend = imid;
+              }
+          }
+
+        if (COND_M(istart)) ifound = istart;
+        if (COND_M(iend)) ifound = iend;
+      }
+    irow = ifound;
+  }
+
+  return( ordering[inv_ordering[irow]] + (temp1 - bindx2[irow]) );
+}
+
+/* index is some nz past the end of bindx[N] */
+int AZ_pos( int index, int bindx[], int position[], int inv_ordering[],
+            double avg_nz_per_row, int N) 
+{
+  int i = 0;
+
+  i = (int) (((double)(index - N))/avg_nz_per_row);
+
+  while ( bindx[i+1] <= index ) i++;
+  while ( bindx[i] > index ) i--;
+
+  return( position[inv_ordering[i]] + (index - bindx[i]) );
 }
 
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
 
-void AZ_mat_reorder(int N, int bindx2[], double val2[], int ordering[],
+void AZ_mat_reorder(int N, int bindx2_in[], double val2_in[], int ordering[],
 	int inv_ordering[])
 /*******************************************************************************
  
@@ -568,11 +656,24 @@ void AZ_mat_reorder(int N, int bindx2[], double val2[], int ordering[],
   inv_ordering:    On output, inv_ordering[i] gives the location of row
 */
 {
+  int irow = 0;
+  int istart;
+  int iend;
+  int ifound = -1;
+  int imid = -1;
+  int endNZ = -1;
+
    int count, i, ordi;
    int mv_this_bindx, save_this_bindx;
    double mv_this_val, save_this_val;
    int current, temp1;
    double avg_nz_per_row;
+
+   int * bindx2;  
+   double * val2; 
+
+   bindx2 = &bindx2_in[0];
+   val2 = &val2_in[0];
 
    if (N == 0) return;
    avg_nz_per_row = ((double) (bindx2[N] - N))/((double) N);
@@ -590,12 +691,15 @@ void AZ_mat_reorder(int N, int bindx2[], double val2[], int ordering[],
    /* move the offdiagonal elements in the rows */
 
    current = N+1;
-   while (current < bindx2[N]) {
+   endNZ = bindx2[N];
+   /*while (current < bindx2[N]) {*/
+   while (current < endNZ) {
       mv_this_bindx   = bindx2[current];
       mv_this_val     = val2[current];
       temp1 = current;
       while ( mv_this_bindx >= 0 ) {
-         temp1 = AZ_pos(temp1,bindx2,ordering,inv_ordering,avg_nz_per_row,N);
+         /* temp1 = AZ_pos(temp1,bindx2,ordering,inv_ordering,avg_nz_per_row,N); */
+         temp1 = AZ_pos_bin_search(temp1,bindx2,ordering,inv_ordering,avg_nz_per_row,N); 
          save_this_bindx = bindx2[temp1];
          save_this_val   = val2[temp1];
          bindx2[temp1] = -mv_this_bindx -1; /* encode this as a */
@@ -609,7 +713,8 @@ void AZ_mat_reorder(int N, int bindx2[], double val2[], int ordering[],
 
    /* renumber the columns */
 
-   for (i = N+1 ; i < bindx2[N] ; i++ ) bindx2[i]=inv_ordering[-bindx2[i]-1];
+   /* for (i = N+1 ; i < bindx2[N] ; i++ ) bindx2[i]=inv_ordering[-bindx2[i]-1]; */
+   for (i = N+1 ; i < endNZ ; i++ ) bindx2[i]=inv_ordering[-bindx2[i]-1];
 
    /* renumber the off-diagonal pointers */
 
