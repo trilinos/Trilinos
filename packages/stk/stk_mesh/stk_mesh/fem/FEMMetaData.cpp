@@ -62,6 +62,7 @@ FEMMetaData::FEMMetaData()
 
 void FEMMetaData::FEM_initialize(size_t spatial_dimension, const std::vector<std::string>& entity_rank_names)
 {
+  std::vector<std::string> fake_names(255,"");
   ThrowRequireMsg(!m_fem_initialized,"FEM functionality in FEMMetaData can only be initialized once.");
   if (entity_rank_names.size() == 0u) {
     m_entity_rank_names = default_entity_rank_names(spatial_dimension);
@@ -69,6 +70,7 @@ void FEMMetaData::FEM_initialize(size_t spatial_dimension, const std::vector<std
     ThrowRequireMsg(entity_rank_names.size() >= (spatial_dimension+1), "Entity rank name vector must name every rank");
     m_entity_rank_names = entity_rank_names;
   }
+  m_entity_rank_names = fake_names;
   internal_set_spatial_dimension_and_ranks(spatial_dimension);
   m_meta_data.set_entity_rank_names(m_entity_rank_names);
   m_fem_initialized = true;
