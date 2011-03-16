@@ -3336,9 +3336,9 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
             continue;
           }
 
-	  Epetra_SerialDenseMatrix entry(View, Entries1[j]->A(), Entries1[j]->LDA(),
+	  Epetra_SerialDenseMatrix entry_view(View, Entries1[j]->A(), Entries1[j]->LDA(),
 					 RowDim1, Entries1[j]->N());
-          os << *(Entries1[j]); os << "    ";
+          os << entry_view; os << "    ";
 	  os << endl;
 	}
       }
