@@ -9,7 +9,7 @@
 #ifndef _ZOLTAN2_ALLTOALL_HPP_
 #define _ZOLTAN2_ALLTOALL_HPP_
 
-/*! \file Zoltan2_Hash.hpp
+/*! \file Zoltan2_AlltoAll.hpp
 */
 
 #include <vector>
@@ -40,10 +40,10 @@ namespace Z2
 // TODO error checking
 
 template <typename T, typename GNO, typename LNO>
-void AlltoAll(Teuchos::Comm<int> &comm,
-              Teuchos::ArrayRCP<T> &sendBuf,
-              LNO count,
-              Teuchos::ArrayRCP<T> &recvBuf) 
+void AlltoAll(const Teuchos::Comm<int> &comm,
+              const Teuchos::ArrayRCP<T> &sendBuf,  // input
+              LNO count,                      // input
+              Teuchos::ArrayRCP<T> &recvBuf)  // output - allocated in AlltoAll
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
@@ -51,17 +51,18 @@ void AlltoAll(Teuchos::Comm<int> &comm,
   if (count == 0) return;
 
   T *inbuf = new T [count * nprocs];
-  Teuchos::ArrayRCP<T> inbufPtr(inbuf, 0, size_type(count * nprocs));
-
   T *in = inbuf;
-  T *out = *sendBuf * (count*rank);
+  T *out = sendBuf.get() + (count*rank);
 
-  std::vector<Teuchos::RCP<Teuchos::CommRequest> > req(nprocs-1);
+  // using ArrayView of this (as waitAll documentation tells you to) causes waitAll runtime error
+  // std::vector<Teuchos::RCP<Teuchos::CommRequest> > req(nprocs-1);
 
-  for (int p=0, next=0; p < nprocs; p++){
+  Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> > req(nprocs-1);
+
+  for (int p=0; p < nprocs; p++){
 
     if (p != rank){
-      req[next++] = Teuchos::ireceive(comm, in, p);
+      req.push_back(Teuchos::ireceive(comm, Teuchos::ArrayRCP<T>(in, 0, count, true), p));
     }
     else{
       for (LNO i=0; i < count; i++)
@@ -73,19 +74,29 @@ void AlltoAll(Teuchos::Comm<int> &comm,
 
   Teuchos::barrier(comm);
 
-  for (int p=0, out=*sendBuf; p < nprocs; p++){
+  out = sendBuf.get();
 
-    if (p != rank)
-      Teuchos::readySend(comm, out, p);
+  for (int p=0; p < nprocs; p++){
+
+    if (p != rank){
+      Teuchos::ArrayView<T> view(out, count);
+      Teuchos::readySend<int,T>(comm, view, p);
+      //Teuchos::readySend(comm, view, p);             This doesn't compile
+    }
 
     out += count;
   }
 
-  Teuchos::ArrayView<Teuchos::RCP<Teuchos::CommRequest> > avReq(req);
+  if (req.size() > 0){
 
-  Teuchos::waitAll(comm, avReq);
+    // Using ArrayView of requests causes waitAll runtime error
+    // Teuchos::ArrayView<Teuchos::RCP<Teuchos::CommRequest> > avReq = Teuchos::arrayViewFromVector(req);  
+    // Teuchos::waitAll(comm, avReq);
 
-  recvBuf = inbufPtr;
+    Teuchos::waitAll(comm, req);
+  }
+
+  recvBuf = Teuchos::ArrayRCP<T>(inbuf, 0, count * nprocs, true);
 }
 
 /*! \function Z2::AlltoAllv
@@ -108,11 +119,11 @@ void AlltoAll(Teuchos::Comm<int> &comm,
 // TODO error checking
 
 template <typename T, typename GNO, typename LNO>
-void AlltoAllv(Teuchos::Comm<int> &comm,
-              Teuchos::ArrayRCP<T> &sendBuf,
-              Teuchos::ArrayRCP<GNO> &sendCount,
-              Teuchos::ArrayRCP<T> &recvBuf, 
-              Teuchos::ArrayRCP<GNO> &recvCount)
+void AlltoAllv(const Teuchos::Comm<int> &comm,
+              const Teuchos::ArrayRCP<T> &sendBuf,      // input
+              const Teuchos::ArrayRCP<GNO> &sendCount,  // input
+              Teuchos::ArrayRCP<T> &recvBuf,      // output, allocated in AlltoAllv
+              Teuchos::ArrayRCP<GNO> &recvCount)  // output, allocated in AlltoAllv
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
@@ -130,15 +141,14 @@ void AlltoAllv(Teuchos::Comm<int> &comm,
   }
 
   T *inbuf = new T [totalIn];
-  Teuchos::ArrayRCP<T> inbufPtr(inbuf, 0, size_type(totalIn));
 
   T *in = inbuf;
-  T *out = *sendBuf + offset;
+  T *out = sendBuf.get() + offset;
 
   for (int p=0; p < nprocs; p++){
 
     if (p != rank && recvCount[p] > 0){
-      req.push_back(Teuchos::ireceive(comm, in, p));
+      req.push_back(Teuchos::ireceive(comm, Teuchos::ArrayRCP<T>(in, 0, recvCount[p], true), p));
     }
     else if (p == rank && recvCount[p] > 0){
       for (LNO i=0; i < recvCount[rank]; i++){
@@ -151,17 +161,18 @@ void AlltoAllv(Teuchos::Comm<int> &comm,
 
   Teuchos::barrier(comm);
 
-  for (int p=0, out=*sendBuf; p < nprocs; p++){
+  for (int p=0, out=sendBuf.get(); p < nprocs; p++){
 
     if (p != rank && sendCount[p] > 0)
-      Teuchos::readySend(comm, out, p);
+      Teuchos::readySend(comm, Teuchos::ArrayView<T>(out, sendCount[p]), p);
 
     out += sendCount[p];
   }
 
   Teuchos::ArrayView<Teuchos::RCP<Teuchos::CommRequest> > avReq(req);
   Teuchos::waitAll(comm, avReq);
-  recvBuf = inbufPtr;
+
+  recvBuf = Teuchos::ArrayRCP<T>(in, 0, totalIn, true);
 }
 
 
