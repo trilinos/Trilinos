@@ -155,6 +155,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_SGQuadMPModelEvaluator.hpp
   Stokhos_MPModelEvaluatorAdapter.hpp
   Stokhos_MPInverseModelEvaluator.hpp
+  Stokhos_InterlacedOperator.hpp
+  Stokhos_SGModelEvaluator_Interlaced.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -196,6 +198,8 @@ SET(SOURCES ${SOURCES}
   Stokhos_SGQuadMPModelEvaluator.cpp
   Stokhos_MPModelEvaluatorAdapter.cpp
   Stokhos_MPInverseModelEvaluator.cpp
+  Stokhos_InterlacedOperator.cpp
+  Stokhos_SGModelEvaluator_Interlaced.cpp
   )
 
 # Sacado
