@@ -188,7 +188,8 @@ environment such as:
   $ cd ~
   $ cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
   $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=FALSE  \
-      TDD_DO_SUBMIT=FALSE CTEST_TEST_TYPE=Experimental \
+      TDD_DO_SUBMIT=FALSE TDD_IN_TESTING_MODE=ON \
+      CTEST_TEST_TYPE=Experimental \
       ./cron_driver.sh
 
 Once you are done with the initial run, you can test it out
@@ -196,7 +197,8 @@ interactively in a rapid, iterative process by setting up the
 following additionial environment variables:
 
   $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=FALSE \
-      TDD_DO_SUBMIT=FALSE CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+      TDD_DO_SUBMIT=FALSE TDD_IN_TESTING_MODE=ON \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
       CTEST_TEST_TYPE=Experimental \
       TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade \
       ./cron_driver.sh
