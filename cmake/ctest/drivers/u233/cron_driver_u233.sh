@@ -81,5 +81,5 @@ echo
 echo "Ending nightly Trilinos testing on u233: `date`"
 echo
 
-echo "Finished nightly Trilinos CMake tests u233: http://casl-dev.ornl.gov/CDash/index.php?project=Trilinos" | mailx -s "Nightly CTest: billmp1" bakercg@ornl.gov
-#echo "Finished nightly Trilinos CMake tests u233: http://casl-dev.ornl.gov/CDash/index.php?project=Trilinos" | mailx -s "Nightly CTest: billmp1" -c rabartl@sandia.gov bakercg@ornl.gov
+echo "Finished nightly Trilinos CMake tests u233: http://casl-dev.ornl.gov/CDash/index.php?project=Trilinos" | mailx -s "Nightly CTest: u233" bakercg@ornl.gov
+#echo "Finished nightly Trilinos CMake tests u233: http://casl-dev.ornl.gov/CDash/index.php?project=Trilinos" | mailx -s "Nightly CTest: u233" -c rabartl@sandia.gov bakercg@ornl.gov
