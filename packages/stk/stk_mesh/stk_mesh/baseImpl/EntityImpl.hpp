@@ -15,6 +15,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Relation.hpp>
+#include <stk_mesh/base/Trace.hpp>
 
 namespace stk {
 namespace mesh {
@@ -39,13 +40,18 @@ public:
   PairIterEntityComm comm() const { return PairIterEntityComm( m_comm ); }
   PairIterEntityComm sharing() const ;
   PairIterEntityComm comm( const Ghosting & sub ) const ;
-  Bucket & bucket() const {
+
+  Bucket & bucket() const
+  {
     ThrowAssert(m_bucket); //don't want to return a reference to a null bucket
     return *m_bucket ;
   }
-  Bucket* bucket_ptr() const {
+
+  Bucket* bucket_ptr() const
+  {
     return m_bucket; // allow for NULL return value
   }
+
   bool is_bucket_valid() const { return m_bucket != NULL; }
   unsigned bucket_ordinal() const { return m_bucket_ord ; }
   unsigned owner_rank() const { return m_owner_rank ; }
@@ -58,7 +64,7 @@ public:
   bool declare_relation( Entity & e_to,
                          const RelationIdentifier local_id,
                          unsigned sync_count,
-                         bool is_converse = false);
+                         bool is_back_relation = false);
 
   // Communication info access:
   bool insert( const EntityCommInfo & );
@@ -69,12 +75,17 @@ public:
 
   void set_bucket_and_ordinal( Bucket * bucket, unsigned ordinal )
   {
+    TraceIfWatching("stk::mesh::impl::EntityRepository::set_bucket_and_ordinal", LOG_ENTITY, key());
+
     m_bucket = bucket;
     m_bucket_ord = ordinal;
   }
 
   // return true if entity was actually modified
-  bool set_owner_rank( unsigned owner_rank ) {
+  bool set_owner_rank( unsigned owner_rank )
+  {
+    TraceIfWatching("stk::mesh::impl::EntityRepository::set_owner_rank", LOG_ENTITY, key());
+
     if ( owner_rank != m_owner_rank ) {
       m_owner_rank = owner_rank;
       return true;
@@ -82,18 +93,27 @@ public:
     return false;
   }
 
-  void set_sync_count( size_t sync_count ) {
+  void set_sync_count( size_t sync_count )
+  {
+    TraceIfWatching("stk::mesh::impl::EntityRepository::set_sync_count", LOG_ENTITY, key());
+
     m_sync_count = sync_count;
   }
 
   // Change log access:
   EntityModificationLog log_query() const { return m_mod_log ; }
 
-  void log_clear() {
+  void log_clear()
+  {
+    TraceIfWatching("stk::mesh::impl::EntityRepository::log_clear", LOG_ENTITY, key());
+
     m_mod_log = EntityLogNoChange;
   }
 
-  void log_deleted() {
+  void log_deleted()
+  {
+    TraceIfWatching("stk::mesh::impl::EntityRepository::log_deleted", LOG_ENTITY, key());
+
     m_mod_log = EntityLogDeleted;
   }
 
@@ -145,4 +165,3 @@ public:
 //----------------------------------------------------------------------
 
 #endif /* stk_mesh_EntityImpl_hpp */
-

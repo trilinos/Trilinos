@@ -9,6 +9,7 @@
 #ifndef stk_mesh_baseImpl_EntityRepository_hpp
 #define stk_mesh_baseImpl_EntityRepository_hpp
 
+#include <stk_mesh/base/Trace.hpp>
 
 /// define only one of these to be 1
 #define STK_MESH_ENTITYREPOSITORY_MAP_TYPE_BOOST 0
@@ -158,7 +159,7 @@ class EntityRepository {
   private:
     void internal_expunge_entity( EntityMap::iterator i);
 
-    EntityMap                           m_entities ;
+    EntityMap m_entities;
 
     //disabel copy constructor and assignment operator
     EntityRepository(const EntityRepository &);
@@ -167,26 +168,41 @@ class EntityRepository {
 
 /*---------------------------------------------------------------*/
 
-void EntityRepository::set_entity_sync_count( Entity & e, size_t count) {
+void EntityRepository::set_entity_sync_count( Entity & e, size_t count)
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::set_entity_sync_count", LOG_ENTITY, e.key());
+
   e.m_entityImpl.set_sync_count(count);
 }
 
-void EntityRepository::set_entity_owner_rank( Entity & e, unsigned owner_rank) {
+void EntityRepository::set_entity_owner_rank( Entity & e, unsigned owner_rank)
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::set_entity_owner_rank", LOG_ENTITY, e.key());
+
   bool changed = e.m_entityImpl.set_owner_rank(owner_rank);
   if ( changed ) {
     e.m_entityImpl.log_modified_and_propagate();
   }
 }
 
-void EntityRepository::comm_clear( Entity & e) const {
+void EntityRepository::comm_clear( Entity & e) const
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::comm_clear", LOG_ENTITY, e.key());
+
   e.m_entityImpl.comm_clear();
 }
 
-void EntityRepository::comm_clear_ghosting( Entity & e) const {
+void EntityRepository::comm_clear_ghosting( Entity & e) const
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::comm_clear_ghosting", LOG_ENTITY, e.key());
+
   e.m_entityImpl.comm_clear_ghosting();
 }
 
-void EntityRepository::log_modified( Entity & e ) const {
+void EntityRepository::log_modified( Entity & e ) const
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::log_modified", LOG_ENTITY, e.key());
+
   e.m_entityImpl.log_modified_and_propagate();
 }
 

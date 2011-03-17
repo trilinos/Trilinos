@@ -1,6 +1,3 @@
-#ifndef REDS
-#include <gtest/gtest.h>
-#endif
 
 #include <iostream>
 #include <cmath>
@@ -64,7 +61,7 @@ namespace stk
           operator()(x, y);
           return y;
         }
-        virtual void operator()(const Coord& x, Coord& y) 
+        virtual void operator()(const Coord& x, Coord& y)
         {
           double z = x[2];
           double xnew = x[0]*(z+5)/12;
@@ -167,7 +164,7 @@ namespace stk
         vec1[0] = aa[1];
         if(verbose) std::cout << vec1[0][4] << std::endl;
 
-        // 
+        //
         std::vector<unsigned> vquad(quad4Elems, quad4Elems+numElems*4);
         if(verbose) std::cout << vquad.size() << std::endl;
 
@@ -230,10 +227,10 @@ namespace stk
         // break one of the wedges into tets (note: this creates an inconsistent mesh - for testing purposes only)
         tp2.breakElement<shards_Wedge_6, shards_Tetrahedron_4>(0);
         tp2.breakElement<shards_Wedge_6, shards_Tetrahedron_4>(0);
-  
+
         if(verbose) std::cout << "after wedge/tet break" << std::endl;
         tp2.dump();
-  
+
         //   std::cout << "creating stk mesh 1" << std::endl;
         //   tp2.stkMeshCreate1(parallel_machine);
         //   std::cout << "after creating stk mesh 1" << std::endl;
@@ -269,7 +266,7 @@ namespace stk
 
         // break all of the wedges into tets
         tp2.breakAllElements<shards_Wedge_6, shards_Tetrahedron_4>();
-  
+
         if(verbose) std::cout << "all elems: after all wedge/tet break" << std::endl;
         tp2.dump();
         tp2.stkMeshCreate(parallel_machine);
@@ -357,13 +354,13 @@ namespace stk
         VectorOfCoord dir2;
         //boost::array<double, 3> pt[] = { {{0,0,0}}, {{0, rad*cos(pi/8.), rad*sin(pi/8.)}} };
         boost::array<double, 3> pt[] = { {{0,0,0}}, {{0, 0, rad}} };
-        path2.push_back(pt[0]); 
-        path2.push_back(pt[1]); 
+        path2.push_back(pt[0]);
+        path2.push_back(pt[1]);
         boost::array<double, 3> dr[] = { {{0,0,1}}, {{0, -sin(pi/8.), cos(pi/8.)}} };
         dir2.push_back(dr[0]);
         dir2.push_back(dr[1]);
         tp2.sweep(path2, dir2);
-  
+
 
         if(verbose) std::cout << "path2 elems: after sweep for all hex \n";
         tp2.dump();
@@ -397,7 +394,7 @@ namespace stk
         VectorOfCoord dir3;
 
         boost::array<double, 3> pt0 =  {{0,rad,0}} ;
-        path3.push_back(pt0); 
+        path3.push_back(pt0);
         boost::array<double, 3> dr0 =  {{0,0,1}} ;
         dir3.push_back(dr0);
 
@@ -440,14 +437,14 @@ namespace stk
         tp4.cubeMesh(5, 10, 12, 5., 10., 12.);
         if(verbose) std::cout << "test cube mesh" << std::endl;
         tp4.dump();
-        
+
         XF1 xf11;
         tp4.transform(xf11);
 
         tp4.stkMeshCreate(parallel_machine);
         tp4.writeSTKMesh("tp4-cube.e");
 
-        //MPI_Finalize(); 
+        //MPI_Finalize();
         return 0;
       }
 

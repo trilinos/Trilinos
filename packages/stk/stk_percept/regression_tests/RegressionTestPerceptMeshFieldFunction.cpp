@@ -5,8 +5,6 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#include <gtest/gtest.h>
-
 #include <stdexcept>
 #include <sstream>
 #include <vector>
@@ -18,6 +16,8 @@
 #include <math.h>
 
 #include <stk_mesh/base/FieldParallel.hpp>
+
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_percept/function/StringFunction.hpp>
 #include <stk_percept/function/FieldFunction.hpp>
@@ -33,7 +33,6 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <stk_percept/fixtures/Fixture.hpp>
-#include "RegressionTestMain.hpp"
 
 namespace stk
 {
@@ -50,7 +49,7 @@ namespace stk
       //======================================================================================================================      
       //======================================================================================================================      
       //======================================================================================================================      
-      TEST(perceptMesh, open_new_close_PerceptMesh)
+      STKUNIT_UNIT_TEST(perceptMesh, open_new_close_PerceptMesh)
       {
         EXCEPTWATCH;
 
@@ -93,8 +92,7 @@ namespace stk
 
         // start_demo_open_new_close_PerceptMesh_1
         // open the file we previously saved with the new fields
-        std::cout << "tmp s_working_directory= " << regression_tests::s_working_directory << std::endl;
-        eMesh.openReadOnly(regression_tests::s_working_directory+"./input_files/cube_with_pressure.e");
+        eMesh.openReadOnly("./input_files/cube_with_pressure.e");
 
         // get the pressure field
         pressure_field = eMesh.getField("pressure");
@@ -135,7 +133,7 @@ namespace stk
       //======================================================================================================================      
       //======================================================================================================================      
       //======================================================================================================================      
-      TEST(perceptMesh, open_new_close_PerceptMesh_2)
+      STKUNIT_UNIT_TEST(perceptMesh, open_new_close_PerceptMesh_2)
       {
         EXCEPTWATCH;
 
@@ -207,7 +205,7 @@ namespace stk
       //======================================================================================================================      
       //======================================================================================================================      
       //======================================================================================================================      
-      TEST(perceptMesh, open_new_close_PerceptMesh_3)
+      STKUNIT_UNIT_TEST(perceptMesh, open_new_close_PerceptMesh_3)
       {
         EXCEPTWATCH;
 
@@ -246,7 +244,7 @@ namespace stk
       //======================================================================================================================      
       //======================================================================================================================      
       //======================================================================================================================      
-      TEST(perceptMesh, open_new_reopen_PerceptMesh)
+      STKUNIT_UNIT_TEST(perceptMesh, open_new_reopen_PerceptMesh)
       {
         EXCEPTWATCH;
 

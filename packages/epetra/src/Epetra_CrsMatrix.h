@@ -53,7 +53,7 @@
 #include "Epetra_CrsGraph.h"
 
 #ifdef Epetra_ENABLE_CASK
-#include "cask_kernels.h"
+#include "cask.h"
 #endif
 
 class Epetra_Map;

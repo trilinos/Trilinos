@@ -18,7 +18,8 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-EntityRepository::~EntityRepository() {
+EntityRepository::~EntityRepository()
+{
   try {
     while ( ! m_entities.empty() ) {
       internal_expunge_entity( m_entities.begin() );
@@ -28,6 +29,8 @@ EntityRepository::~EntityRepository() {
 
 void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
 {
+  TraceIfWatching("stk::mesh::impl::EntityRepository::internal_expunge_entity", LOG_ENTITY, i->first);
+
   ThrowErrorMsgIf( i->second == NULL,
                    "For key " << entity_rank(i->first) << " " <<
                    entity_id(i->first) << ", value was NULL");
@@ -44,6 +47,8 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
 std::pair<Entity*,bool>
 EntityRepository::internal_create_entity( const EntityKey & key )
 {
+  TraceIfWatching("stk::mesh::impl::EntityRepository::internal_create_entity", LOG_ENTITY, key);
+
   EntityMap::value_type tmp(key,NULL);
 
   const std::pair< EntityMap::iterator , bool >
@@ -66,6 +71,8 @@ EntityRepository::internal_create_entity( const EntityKey & key )
 
 void EntityRepository::log_created_parallel_copy( Entity & entity )
 {
+  TraceIfWatching("stk::mesh::impl::EntityRepository::log_created_parallel_copy", LOG_ENTITY, entity.key());
+
   entity.m_entityImpl.log_created_parallel_copy();
 }
 
@@ -79,7 +86,9 @@ Entity * EntityRepository::get_entity(const EntityKey &key) const
   return i != m_entities.end() ? i->second : NULL ;
 }
 
-void EntityRepository::clean_changes() {
+void EntityRepository::clean_changes()
+{
+  TraceIf("stk::mesh::impl::EntityRepository::clean_changes", LOG_ENTITY);
 
   for ( EntityMap::iterator
       i = m_entities.begin() ; i != m_entities.end() ; )
@@ -98,21 +107,31 @@ void EntityRepository::clean_changes() {
   }
 }
 
-bool EntityRepository::erase_ghosting( Entity & e, const Ghosting & ghosts) const {
+bool EntityRepository::erase_ghosting( Entity & e, const Ghosting & ghosts) const
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::erase_ghosting", LOG_ENTITY, e.key());
+
   return e.m_entityImpl.erase( ghosts );
 }
 
+bool EntityRepository::erase_comm_info( Entity & e, const EntityCommInfo & comm_info) const
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::erase_comm_info", LOG_ENTITY, e.key());
 
-bool EntityRepository::erase_comm_info( Entity & e, const EntityCommInfo & comm_info) const {
   return e.m_entityImpl.erase( comm_info );
 }
 
-bool EntityRepository::insert_comm_info( Entity & e, const EntityCommInfo & comm_info) const {
+bool EntityRepository::insert_comm_info( Entity & e, const EntityCommInfo & comm_info) const
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::insert_comm_info", LOG_ENTITY, e.key());
+
   return e.m_entityImpl.insert( comm_info );
 }
 
 void EntityRepository::destroy_later( Entity & e, Bucket* nil_bucket )
 {
+  TraceIfWatching("stk::mesh::impl::EntityRepository::destroy_later", LOG_ENTITY, e.key());
+
   ThrowErrorMsgIf( e.log_query() == EntityLogDeleted,
                    "double deletion of entity: " << print_entity_key( e ));
 
@@ -121,7 +140,10 @@ void EntityRepository::destroy_later( Entity & e, Bucket* nil_bucket )
 }
 
 void EntityRepository::change_entity_bucket( Bucket & b, Entity & e,
-                                             unsigned ordinal) {
+                                             unsigned ordinal)
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::change_entity_bucket", LOG_ENTITY, e.key());
+
   const bool modified_parts = ! e.m_entityImpl.is_bucket_valid() ||
                               ! b.equivalent( e.bucket() );
   if ( modified_parts ) {
@@ -140,6 +162,8 @@ void EntityRepository::destroy_relation( Entity & e_from,
                                          Entity & e_to,
                                          const RelationIdentifier local_id )
 {
+  TraceIfWatching("stk::mesh::impl::EntityRepository::destroy_relation", LOG_ENTITY, e_from.key());
+
   bool caused_change_fwd = e_from.m_entityImpl.destroy_relation(e_to, local_id);
 
   // Relationships should always be symmetrical
@@ -164,6 +188,8 @@ void EntityRepository::declare_relation( Entity & e_from,
                                          const RelationIdentifier local_id,
                                          unsigned sync_count )
 {
+  TraceIfWatching("stk::mesh::impl::EntityRepository::declare_relation", LOG_ENTITY, e_from.key());
+
   bool caused_change_fwd =
     e_from.m_entityImpl.declare_relation( e_to, local_id, sync_count);
 

@@ -6,12 +6,15 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cstring>
-#include <sstream>
+#include <stk_mesh/base/Trace.hpp>
+
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
-#include <stdexcept>
+
 #include <stk_util/util/string_case_compare.hpp>
 
+#include <cstring>
+#include <sstream>
+#include <stdexcept>
 
 namespace stk {
 namespace mesh {
@@ -111,6 +114,8 @@ FieldBase * FieldRepository::declare_field(
   unsigned                            arg_num_states ,
   MetaData                          * arg_meta_data )
 {
+  TraceIf("stk::mesh::impl::FieldRepository::declare_field", LOG_FIELD);
+
   static const char reserved_state_suffix[6][8] = {
     "_OLD" , "_N" , "_NM1" , "_NM2" , "_NM3" , "_NM4" };
 
@@ -193,6 +198,8 @@ void FieldRepository::verify_and_clean_restrictions(
     const char       * arg_method ,
     const PartVector & arg_all_parts )
 {
+  TraceIf("stk::mesh::impl::FieldRepository::verify_and_clean_restrictions", LOG_FIELD);
+
   for ( FieldVector::iterator f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
     (*f)->m_impl.verify_and_clean_restrictions( arg_method , arg_all_parts );
   }

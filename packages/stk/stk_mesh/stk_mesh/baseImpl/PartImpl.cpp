@@ -14,8 +14,11 @@
 #include <algorithm>
 
 #include <stk_util/util/string_case_compare.hpp>
+
 #include <stk_mesh/base/PartRelation.hpp>
 #include <stk_mesh/base/Part.hpp>
+#include <stk_mesh/base/Trace.hpp>
+
 #include <stk_mesh/baseImpl/PartImpl.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 
@@ -26,25 +29,36 @@ namespace mesh {
 
 namespace impl {
 
-
 void PartImpl::add_part_to_subset( Part & part)
 {
+  TraceIfWatching("stk::mesh::impl::PartImpl::add_part_to_subset", LOG_PART, m_universe_ordinal);
+  DiagIfWatching(LOG_PART, m_universe_ordinal, "New subset is: " << part );
+
   insert( m_subsets, part );
 }
 
 
 void PartImpl::add_part_to_superset( Part & part )
 {
+  TraceIfWatching("stk::mesh::impl::PartImpl::add_part_to_superset", LOG_PART, m_universe_ordinal);
+  DiagIfWatching(LOG_PART, m_universe_ordinal, "New superset is: " << part );
+
   insert( m_supersets, part );
 }
 
 void PartImpl::add_relation( PartRelation relation )
 {
+  TraceIfWatching("stk::mesh::impl::PartImpl::add_relation", LOG_PART, m_universe_ordinal);
+  DiagIfWatching(LOG_PART, m_universe_ordinal, "New relation from: " << relation.m_root << ", to: " << relation.m_target );
+
   m_relations.push_back(relation);
 }
 
 void PartImpl::set_intersection_of( const PartVector & pv )
 {
+  TraceIfWatching("stk::mesh::impl::PartImpl::set_intersection_of", LOG_PART, m_universe_ordinal);
+  DiagIfWatching(LOG_PART, m_universe_ordinal, "Intersection: " << pv );
+
   m_intersect = pv ;
 }
 
@@ -69,12 +83,12 @@ PartImpl::PartImpl( MetaData          * arg_meta_data ,
 
 void PartImpl::set_primary_entity_rank( EntityRank entity_rank )
 {
+  TraceIfWatching("stk::mesh::impl::PartImpl::set_primary_entity_rank", LOG_PART, m_universe_ordinal);
+
   const bool rank_already_set = m_entity_rank != InvalidEntityRank && entity_rank != m_entity_rank;
-  const bool has_superset_other_than_universal = m_supersets.size() > 1;
   const bool has_subsets = m_subsets.size() > 0;
 
   ThrowErrorMsgIf( rank_already_set, " Error: Different entity rank has already been set on Part");
-  ThrowErrorMsgIf( has_superset_other_than_universal, " Error: Part has supersets other than universal");
   ThrowErrorMsgIf( has_subsets, " Error: Part has subsets");
 
   m_entity_rank = entity_rank;

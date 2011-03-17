@@ -74,6 +74,18 @@ namespace stk {
       return pattern;
     }
 
+
+    /*
+    static const SameRankRelationValue * getChildVectorPtr(  SameRankRelation& repo , Entity *parent)
+    {
+       SameRankRelation::const_iterator i = repo.find( parent );
+      if (i != repo.end()) 
+        return &i->second;
+      else
+        return 0;
+    }
+    */
+
     /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
     void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement, 
                                                                unsigned ordinal, unsigned *numChild)
@@ -89,8 +101,22 @@ namespace stk {
       // eMesh.getBulkData()->declare_relation( newElement, old_owning_elem, 0u);
       //static PerceptEntityVector empty_entity_vector;
 
+      if (0 == &old_owning_elem)
+        {
+          throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations old_owning_elem is null");
+        }
+
       PerceptEntityVector& entity_vector = eMesh.adapt_parent_to_child_relations()[&old_owning_elem];
-     
+      /*
+      const PerceptEntityVector * entity_vector_ptr = getChildVectorPtr(eMesh.adapt_parent_to_child_relations(), &old_owning_elem);
+      if (!entity_vector_ptr)
+        {
+          eMesh.adapt_parent_to_child_relations()[&old_owning_elem] = PerceptEntityVector();
+        }
+      entity_vector_ptr = getChildVectorPtr(eMesh.adapt_parent_to_child_relations(), &old_owning_elem);
+      PerceptEntityVector& entity_vector = *entity_vector_ptr;
+      */
+
       //entity_vector.reserve(getNumNewElemPerElem());
       unsigned nchild = getNumNewElemPerElem();
       if (numChild) nchild = *numChild;

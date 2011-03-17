@@ -17,11 +17,11 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/Trace.hpp>
 
 namespace stk {
 namespace mesh {
@@ -129,6 +129,10 @@ void BulkData::declare_relation( Entity & e_from ,
                                  Entity & e_to ,
                                  const RelationIdentifier local_id )
 {
+  TraceIfWatching("stk::mesh::BulkData::declare_relation", LOG_ENTITY, e_from.key());
+  DiagIfWatching(LOG_ENTITY, e_from.key(),
+                 "to: " << print_entity_key(e_to) << ", " << local_id);
+
   require_ok_to_modify();
 
   require_valid_relation( "declare" , *this , e_from , e_to );
@@ -180,6 +184,10 @@ void BulkData::destroy_relation( Entity & e_from ,
                                  Entity & e_to,
                                  const RelationIdentifier local_id )
 {
+  TraceIfWatching("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, e_from.key());
+  DiagIfWatching(LOG_ENTITY, e_to.key(),
+                 "from: " << print_entity_key(e_from) << ", " << local_id);
+
   require_ok_to_modify();
 
   require_valid_relation( "destroy" , *this , e_from , e_to );
@@ -251,6 +259,8 @@ void BulkData::internal_propagate_part_changes(
   Entity           & entity ,
   const PartVector & removed )
 {
+  Trace_("stk::mesh::BulkData::internal_propagate_part_changes");
+
   const unsigned etype = entity.entity_rank();
 
   PairIterRelation rel = entity.relations();

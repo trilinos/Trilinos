@@ -20,7 +20,7 @@
 namespace stk { 
   namespace percept { 
 
-#define EXPECT_DOUBLE_EQ_APPROX_TOL(expected, actual, tol)                  \
+#define STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(expected, actual, tol)                  \
       {                                                                 \
         if (std::fabs(expected-actual) > 0.5*(std::fabs(expected)+std::fabs(actual))*tol) \
           {                                                             \
@@ -29,11 +29,11 @@ namespace stk {
                       << " 0.5*(std::fabs(expected)+std::fabs(actual))*tol = " \
                       << 0.5*(std::fabs(expected)+std::fabs(actual))*tol \
                       << " tol= " << tol << std::endl;                  \
-            EXPECT_DOUBLE_EQ(expected, actual);                         \
+            STKUNIT_EXPECT_DOUBLE_EQ(expected, actual);                         \
           }                                                             \
       }
 
-#define EXPECT_DOUBLE_EQ_APPROX(expected, actual) EXPECT_DOUBLE_EQ_APPROX_TOL(expected, actual, 1.e-6)
+#define STKUNIT_EXPECT_DOUBLE_EQ_APPROX(expected, actual) STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(expected, actual, 1.e-6)
 
 
 #define TIME_IT(expr,total_time)                \

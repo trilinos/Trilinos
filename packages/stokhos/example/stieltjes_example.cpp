@@ -69,9 +69,16 @@ int main(int argc, char **argv)
     bool use_pce_quad_points = false;
     bool normalize = false;
     bool project_integrals = true;
+    bool sparse_grid = true;
+#ifndef HAVE_STOKHOS_DAKOTA
+    sparse_grid = false;
+#endif
     Teuchos::Array<double> mean(np), mean_st(np), std_dev(np), std_dev_st(np);
+    Teuchos::Array<double> pt(np), pt_st(np);
 
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+    Teuchos::Array<double> eval_pt(d, 0.5);
+    double pt_true;
     
     // Loop over orders
     unsigned int n = 0;
@@ -91,12 +98,20 @@ int main(int argc, char **argv)
       for (unsigned int i=0; i<d; i++) {
 	x.term(i, 1) = 1.0;
       }
+
+      double x_pt = x.evaluate(eval_pt);
+      pt_true = std::sin(x_pt)/(1.0 + exp(x_pt));
       
-      // Tensor product quadrature
-      Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-      	Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
-      // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-      // 	Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
+      // Quadrature
+      Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad;
+#ifdef HAVE_STOKHOS_DAKOTA
+      if (sparse_grid)
+      	quad = 
+	  Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
+#endif
+      if (!sparse_grid)
+	quad = 
+	  Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
 
       // Triple product tensor
       Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
@@ -108,7 +123,8 @@ int main(int argc, char **argv)
       // Compute PCE via quadrature expansion
       quad_exp.sin(u,x);
       quad_exp.exp(v,x);
-      quad_exp.times(w,u,v);
+      quad_exp.plusEqual(v, 1.0);
+      quad_exp.divide(w,u,v);
 	
       // Compute Stieltjes basis
       Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(2);
@@ -139,8 +155,12 @@ int main(int argc, char **argv)
       // Tensor product quadrature
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad;
       if (!use_pce_quad_points) {
-	st_quad = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(st_basis));
-	//st_quad = Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(st_basis, p));
+#ifdef HAVE_STOKHOS_DAKOTA
+	if (sparse_grid)
+	  st_quad = Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(st_basis, p));
+#endif
+	if (!sparse_grid)
+	  st_quad = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(st_basis));
       }
       else {
 	Teuchos::Array<double> st_points_0;
@@ -174,7 +194,7 @@ int main(int argc, char **argv)
 							       st_quad);
       
       // Compute w_st = u_st*v_st in Stieltjes basis
-      st_quad_exp.times(w_st, u_st, v_st);
+      st_quad_exp.divide(w_st, u_st, v_st);
       
       // Project w_st back to original basis
       pce_quad_func st_func(w_st, *st_basis);
@@ -188,24 +208,32 @@ int main(int argc, char **argv)
       mean_st[n] = w2.mean();
       std_dev[n] = w.standard_deviation();
       std_dev_st[n] = w2.standard_deviation();
+      pt[n] = w.evaluate(eval_pt);
+      pt_st[n] = w2.evaluate(eval_pt);
       n++;
     }
 
     n = 0;
+    int wi=10;
     std::cout << "Statistical error:" << std::endl;
-    std::cout << "p\t" 
-	      << std::setw(10) << "mean" << "\t" 
-	      << std::setw(10) << "mean_st" << "\t"
-	      << std::setw(10) << "std_dev" << "\t"
-	      << std::setw(10) << "std_dev_st" << std::endl;
+    std::cout << "p  " 
+	      << std::setw(wi) << "mean" << "  " 
+	      << std::setw(wi) << "mean_st" << "  "
+	      << std::setw(wi) << "std_dev" << "  "
+	      << std::setw(wi) << "std_dev_st" << "  "
+	      << std::setw(wi) << "point" << "  "
+	      << std::setw(wi) << "point_st" << std::endl;
     for (unsigned int p=pmin; p<pmax; p++) {
       std::cout.precision(3);
       std::cout.setf(std::ios::scientific);
-      std::cout << p << "\t" 
-		<< std::setw(10) << rel_err(mean[n], mean[np-1]) << "\t"
-		<< std::setw(10) << rel_err(mean_st[n], mean[np-1]) << "\t"
-		<< std::setw(10) << rel_err(std_dev[n], std_dev[np-1]) << "\t"
-		<< std::setw(10) << rel_err(std_dev_st[n], std_dev[np-1]) 
+      std::cout << p << "  " 
+		<< std::setw(wi) << rel_err(mean[n], mean[np-1]) << "  "
+		<< std::setw(wi) << rel_err(mean_st[n], mean[np-1]) << "  "
+		<< std::setw(wi) << rel_err(std_dev[n], std_dev[np-1]) << "  "
+		<< std::setw(wi) << rel_err(std_dev_st[n], std_dev[np-1]) 
+		<< "  "
+		<< std::setw(wi) << rel_err(pt[n], pt_true) << "  "
+		<< std::setw(wi) << rel_err(pt_st[n], pt_true) 
 		<< std::endl;
       n++;
     }

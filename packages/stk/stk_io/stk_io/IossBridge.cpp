@@ -6,6 +6,9 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#ifdef __CYGWIN__
+#include <strings.h>
+#endif
 #include <string.h>
 #include <iostream>
 
@@ -232,7 +235,7 @@ namespace {
       }
 
       if (field_ptr != NULL) {
-	stk::io::set_field_role(*field_ptr, io_field.get_role());
+	stk::io::set_field_attribute(*field_ptr, io_field);
       }
       return field_ptr;
     }
@@ -529,8 +532,8 @@ namespace stk {
 			     Ioss::Field::RoleType filter_role,
 			     bool add_all)
     {
-      const Ioss::Field::RoleType *role = stk::io::get_field_role(*field);
-      if (!add_all && (role == NULL || *role != filter_role)) {
+      const Ioss::Field *iofield = stk::io::get_field_attribute(*field);
+      if (!add_all && (iofield == NULL || iofield->get_role() != filter_role)) {
 	return false;
       }
 
@@ -592,6 +595,13 @@ namespace stk {
 
       if (cell_top == NULL)
 	return extype;
+
+      if(strcmp(cell_top->name, "super") == 0)
+      {
+          std::stringstream oss;
+          oss << "super" << cell_top->node_count;
+          return oss.str();
+      }
 
       switch( cell_top->key ) {
       case shards::Node::key : extype.assign( "node" ); break ;
@@ -725,13 +735,25 @@ namespace stk {
 	const stk::mesh::FieldBase *f = *I; ++I;
 	if (stk::io::is_valid_part_field(f, part_type, part, universal, filter_role, add_all)) {
 	  const stk::mesh::FieldBase::Restriction &res = f->restriction(part_type, part);
+
+	  // If this field was originally put on the part via the input mesh,
+	  // then the iofield attribute will contain all the data we need;
+	  // however, we can't always count on that.  For now, just using
+	  // this to get the element attribute index order (if any...)
+	  int index = 0;
+	  if (filter_role == Ioss::Field::ATTRIBUTE) {
+	    const Ioss::Field *iofield = stk::io::get_field_attribute(*f);
+	    if (iofield)
+	      index = iofield->get_index();
+	  }
+	  
 	  std::pair<std::string, Ioss::Field::BasicType> field_type;
 	  get_io_field_type(f, res.stride[0], &field_type);
 	  if (field_type.second != Ioss::Field::INVALID) {
 	    int entity_size = entity->get_property("entity_count").get_int();
 	    const std::string& name = f->name();
 	    entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
-					  filter_role, entity_size));
+					  filter_role, entity_size, index));
 	  }
 	}
       }
@@ -1309,8 +1331,8 @@ namespace stk {
 	std::vector<mesh::FieldBase *>::const_iterator I = fields.begin();
 	while (I != fields.end()) {
 	  const mesh::FieldBase *f = *I ; ++I ;
-	  const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
-	  if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
+	  const Ioss::Field *field = stk::io::get_field_attribute(*f);
+	  if (field != NULL && field->get_role() == Ioss::Field::ATTRIBUTE) {
 	    const mesh::FieldBase::Restriction &res = f->restriction(elem_rank, *part);
 	    if (res.stride[0] > 0) {
 	      stk::io::field_data_to_ioss(f, elements, block, f->name());
@@ -1383,7 +1405,7 @@ namespace stk {
     void write_output_db(Ioss::Region& io_region,
 			 const stk::mesh::BulkData& bulk)
     {
-	    const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
+      const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
 
       io_region.begin_mode( Ioss::STATE_MODEL );
 
@@ -1439,25 +1461,35 @@ namespace stk {
       m.declare_attribute_no_delete(p,&df_field);
     }
 
-    const Ioss::Field::RoleType* get_field_role(const stk::mesh::FieldBase &f)
-    {
-      return f.attribute<Ioss::Field::RoleType>();
-    }
-
+    //! \deprecated Use set_field_attribute instead
     void set_field_role(stk::mesh::FieldBase &f, const Ioss::Field::RoleType &role)
     {
-      Ioss::Field::RoleType *my_role = new Ioss::Field::RoleType(role);
+      // Deprecated function, but call through to set_field_attribute with a dummy field to set the role.
+      set_field_attribute(f, Ioss::Field(f.name(), Ioss::Field::REAL, "scalar", role, 1));
+    }
+
+    const Ioss::Field* get_field_attribute(const stk::mesh::FieldBase &f)
+    {
+      return f.attribute<Ioss::Field>();
+    }
+
+    void set_field_attribute(stk::mesh::FieldBase &f, const Ioss::Field &io_field)
+    {
+      Ioss::Field *field_copy = new Ioss::Field(io_field);
       stk::mesh::MetaData &m = mesh::MetaData::get(f);
-      const Ioss::Field::RoleType *check = m.declare_attribute_with_delete(f, my_role);
-      if ( check != my_role ) {
-        if (*check != *my_role) {
-          std::ostringstream msg ;
-	  msg << " FAILED in IossBridge -- set_field_role:"
-	      << " The role type had already been set to " << *check
-	      << ", so it is not possible to change it to " << *my_role;
+      const Ioss::Field *check = m.declare_attribute_with_delete(f, field_copy);
+      if ( check != field_copy ) {
+	// Check that name, role, type, index are the same...
+	if (check->get_name() != field_copy->get_name() ||
+	    check->get_role() != field_copy->get_role() ||
+	    check->get_type() != field_copy->get_type() ||
+	    check->get_index() != field_copy->get_index()) {
+	  std::ostringstream msg ;
+	  msg << " FAILED in IossBridge -- set_field_attribute:"
+	      << " The field attribute had already been set, so it is not possible to change it.";
 	  throw std::runtime_error( msg.str() );
-        }
-        delete my_role;
+	  delete field_copy;
+	}
       }
     }
 
