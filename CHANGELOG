@@ -4,11 +4,29 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.6.3 March 17, 2011
+
+1. AztecOO - Bug: 5117. Fixed segfault when performing an AztecOO linear solve
+             after having done a Nox non-linear solve.
+
+2. Epetra - OpenMP improvements and threading of CrsGraph.
+
+3. Epetra - Fixed issue with deleting static graph in CrsMatrix.
+
+4. Epetra - Fixed bugs in CrsGraph methods InsertIndicesIntoSorted and 
+            OptimizeStorage.
+
+5. Zoltan - Fixed issue with gcc 4.5 over-optimizing.
+
+6. Zoltan - Bug: 5051. Fix build issue with PGI compilers.
+
+-------------------------------------------------------------------------------
+
 Release update 10.6.2 December 9, 2010
 
 1. NOX - Fixed a compile error on VS8
 
-2. Phalanx - FIxed graphviz output for boos versions greater than 1.43
+2. Phalanx - Fixed graphviz output for boos versions greater than 1.43
 
 3. Zoltan - Changed Autotools build to handle all TPLS identically
 
