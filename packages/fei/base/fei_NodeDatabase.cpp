@@ -84,7 +84,10 @@ int NodeDatabase::getNodeWithNumber(int nodeNumber, const NodeDescriptor*& node)
 
   std::map<int,int>::const_iterator iter = nodeNumbers_.find(nodeNumber);
   if (iter == nodeNumbers_.end()) {
-    ERReturn(-1);
+    // The node wasn't found, return a NULL ptr.
+    node = NULL;
+    // Indicate that the node is NULL.
+    return -1;
   }
 
   int index = iter->second;

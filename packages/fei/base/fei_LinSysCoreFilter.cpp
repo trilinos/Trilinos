@@ -489,12 +489,20 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
       int* fieldIDs = &fieldIDs_vec[0];
 
       for(int k=0; k<numNodesPerCR; k++) {
-        const NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDPtr[k]);
-        nodeList[k] = node.getNodeNumber();
+        const NodeDescriptor *node = Filter::findNode(nodeIDPtr[k]);
+        if(node == NULL)
+        {
+          nodeList[k] = -1; // Indicates that the node wasn't found
+        }
+        else
+        {
+          nodeList[k] = node->getNodeNumber();
+        }
 
-        int eqn = -1;
-        if (!node.getFieldEqnNumber(fieldIDs[k], eqn)) voidERReturn;
-
+        int eqn = -1; // Indicates that the equation wasn't found.
+        if ( node ) {
+          node->getFieldEqnNumber(fieldIDs[k], eqn);
+        }
         eqnList[k] = eqn;
       }
 

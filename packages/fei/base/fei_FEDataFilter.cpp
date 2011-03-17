@@ -1221,7 +1221,8 @@ int FEDataFilter::loadFEDataPenCR(int CRID,
 
     int fieldEqn = -1;
     bool hasField = node->getFieldEqnNumber(CRFields[i], fieldEqn);
-    if (!hasField) ERReturn(-1);
+    // If a node doesn't have a field, skip it.
+    if (!hasField) continue;
 
     int fieldSize = problemStructure_->getFieldSize(CRFields[i]);
 
@@ -1780,8 +1781,15 @@ int FEDataFilter::getReducedSolnEntry(int eqnNumber, double& solnValue)
   if (nodeNumber < 0) {solnValue = -999.99; return(FEI_SUCCESS);}
 
   const NodeDescriptor* node = NULL;
-  CHK_ERR( problemStructure_->getNodeDatabase().
-           getNodeWithNumber(nodeNumber, node));
+  problemStructure_->getNodeDatabase().getNodeWithNumber(nodeNumber, node);
+  if(node == NULL) {
+    // KHP: If a node doesn't exist, we still need to
+    // return a solution value....Zero seems like a logical
+    // choice however, FEI_SUCCESS seems wrong however I don't
+    // want to trip any asserts or other error conditions.
+    solnValue = 0.0;
+    return FEI_SUCCESS;
+  }
 
   int eqn = problemStructure_->translateFromReducedEqn(eqnNumber);
   int fieldID, offset;
