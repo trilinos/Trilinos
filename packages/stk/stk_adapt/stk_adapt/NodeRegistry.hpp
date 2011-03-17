@@ -141,7 +141,42 @@ namespace stk {
 
     typedef boost::tuple<NodeIdsOnSubDimEntityType, EntityKey> SubDimCellData;
 
-    typedef SubDimCell<EntityId> SubDimCell_EntityId;
+#define SDS_ENTITY_TYPE_ID 0
+#if SDS_ENTITY_TYPE_ID
+    typedef EntityId SDSEntityType;
+
+    struct CompareSDSEntityType {
+      bool operator() (SDSEntityType i, SDSEntityType j) { return (i < j) ; }
+    };
+
+#else
+    typedef Entity * SDSEntityType;
+
+    struct CompareSDSEntityType {
+      bool operator() (SDSEntityType i, SDSEntityType j) { return (i->identifier() < j->identifier());}
+    };
+
+    template<>
+    int SubDimCell<SDSEntityType, 4, SubDimCellCompare<SDSEntityType> >::hashCode();
+#if 0
+    {
+      typedef stk::percept::NoMallocArray<SDSEntityType,4> base_type;
+
+      std::size_t sum = 0;
+
+      for ( base_type::iterator i = this->begin(); i != this->end(); i++)
+        {
+          //sum += static_cast<std::size_t>(const_cast<T>(*i));
+          sum += static_cast<std::size_t>((*i)->identifier());
+          //sum += (size_t)(*i);
+        }
+      return sum;
+    }
+#endif
+
+#endif
+
+    typedef SubDimCell<SDSEntityType> SubDimCell_SDSEntityType;
 
     inline std::ostream& operator<<(std::ostream& out,  SubDimCellData& val)
     {
@@ -164,12 +199,12 @@ namespace stk {
 #if NODE_REGISTRY_MAP_TYPE_BOOST
 #  ifdef STK_HAVE_TBB
 
-    typedef tbb::scalable_allocator<std::pair<SubDimCell_EntityId const, SubDimCellData> > RegistryAllocator;
-    typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_fast_hash<EntityId,4>, my_fast_equal_to<EntityId,4>, RegistryAllocator > SubDimCellToDataMap;
+    typedef tbb::scalable_allocator<std::pair<SubDimCell_SDSEntityType const, SubDimCellData> > RegistryAllocator;
+    typedef boost::unordered_map<SubDimCell_SDSEntityType, SubDimCellData, my_fast_hash<SDSEntityType, 4>, my_fast_equal_to<SDSEntityType, 4>, RegistryAllocator > SubDimCellToDataMap;
 
 #  else
 
-    typedef boost::unordered_map<SubDimCell_EntityId, SubDimCellData, my_fast_hash<EntityId,4>, my_fast_equal_to<EntityId,4> > SubDimCellToDataMap;
+    typedef boost::unordered_map<SubDimCell_SDSEntityType, SubDimCellData, my_fast_hash<SDSEntityType, 4>, my_fast_equal_to<SDSEntityType, 4> > SubDimCellToDataMap;
     typedef boost::unordered_map<EntityId, EntityPtr > EntityRepo;
 
     typedef boost::tuple<const Entity *, EntityRank, unsigned> ElementSideTuple;
@@ -196,35 +231,35 @@ namespace stk {
 
 #  ifdef STK_HAVE_TBB
 
-    typedef tbb::scalable_allocator<std::pair<SubDimCell_EntityId const, SubDimCellData> > RegistryAllocator;
-    typedef google::sparse_hash_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4>, RegistryAllocator > SubDimCellToDataMap;
+    typedef tbb::scalable_allocator<std::pair<SubDimCell_SDSEntityType const, SubDimCellData> > RegistryAllocator;
+    typedef google::sparse_hash_map<SubDimCell_SDSEntityType, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4>, RegistryAllocator > SubDimCellToDataMap;
     typedef google::sparse_hash_map<EntityId, EntityPtr > EntityRepo;
 
 #  else
 
-    typedef google::sparse_hash_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4> > SubDimCellToDataMap;
+    typedef google::sparse_hash_map<SubDimCell_SDSEntityType, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4> > SubDimCellToDataMap;
     typedef boost::unordered_map<EntityId, EntityPtr > EntityRepo;
 
 #  endif
 #endif
 
 #if NODE_REGISTRY_MAP_TYPE_TR1
-    typedef tr1::unordered_map<SubDimCell_EntityId, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4> > SubDimCellToDataMap;
+    typedef tr1::unordered_map<SubDimCell_SDSEntityType, SubDimCellData, my_hash<EntityId,4>, my_equal_to<EntityId,4> > SubDimCellToDataMap;
     typedef tr1::unordered_map<EntityId, EntityPtr > EntityRepo;
 #endif
 
 #if NODE_REGISTRY_MAP_TYPE_STD
 
 #  if STK_ADAPT_SUBDIMCELL_USES_STL_SET
-    typedef map<SubDimCell_EntityId, SubDimCellData> SubDimCellToDataMap;
+    typedef map<SubDimCell_SDSEntityType, SubDimCellData> SubDimCellToDataMap;
 #  endif
 
 #  if STK_ADAPT_SUBDIMCELL_USES_STL_VECTOR
-    typedef map<SubDimCell_EntityId, SubDimCellData, SubDimCell_compare<EntityId> > SubDimCellToDataMap;
+    typedef map<SubDimCell_SDSEntityType, SubDimCellData, SubDimCell_compare<EntityId> > SubDimCellToDataMap;
 #  endif
 
 #  if STK_ADAPT_SUBDIMCELL_USES_NO_MALLOC_ARRAY
-    typedef map<SubDimCell_EntityId, SubDimCellData, SubDimCell_compare<EntityId> > SubDimCellToDataMap;
+    typedef map<SubDimCell_SDSEntityType, SubDimCellData, SubDimCell_compare<EntityId> > SubDimCellToDataMap;
 #  endif
 
     typedef map<EntityId, EntityPtr > EntityRepo;
@@ -286,11 +321,11 @@ namespace stk {
                                                   m_state(NRS_NONE)
       {
 #if NODE_REGISTRY_MAP_TYPE_GOOGLE
-        //SubDimCell_EntityId empty_key;
+        //SubDimCell_SDSEntityType empty_key;
         //empty_key.insert( std::numeric_limits<EntityId>::max() );
         //m_cell_2_data_map.set_empty_key(empty_key);
 
-        SubDimCell_EntityId deleted_key;
+        SubDimCell_SDSEntityType deleted_key;
         deleted_key.insert( std::numeric_limits<EntityId>::max() - 1u ); 
         m_cell_2_data_map.set_deleted_key(deleted_key);
 #endif
@@ -426,7 +461,7 @@ namespace stk {
 
         for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
           {
-            //const SubDimCell_EntityId& subDimEntity = (*iter).first;
+            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
           
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
@@ -467,9 +502,9 @@ namespace stk {
       /// Register the need for a new node on the sub-dimensional entity @param subDimEntity on element @param element.
       /// If the element is a ghost element, the entity is still registered: the locality/ownership of the new entity
       /// can be determined by the locality of the element (ghost or not).
-      bool registerNeedNewNode(const Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd) // SubDimCell_EntityId* subDimEntity=0, )
+      bool registerNeedNewNode(const Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd) 
       {
-        SubDimCell_EntityId subDimEntity;
+        SubDimCell_SDSEntityType subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
         
         static SubDimCellData empty_SubDimCellData;
@@ -511,7 +546,7 @@ namespace stk {
 
         if (!isGhost) return true;
 
-        SubDimCell_EntityId subDimEntity;
+        SubDimCell_SDSEntityType subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
 
         stk::CommAll& comm_all = m_comm_all;
@@ -781,7 +816,7 @@ namespace stk {
       NodeIdsOnSubDimEntityType& getNewNodesOnSubDimEntity(const Entity& element,  EntityRank& needed_entity_rank, unsigned iSubDimOrd)
       {
         EXCEPTWATCH;
-        static SubDimCell_EntityId subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static  SubDimCellData empty_SubDimCellData;
 
@@ -838,7 +873,7 @@ namespace stk {
           }
 
         unsigned *null_u = 0;
-        static SubDimCell_EntityId subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity;
         //subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static SubDimCellData empty_SubDimCellData;
@@ -916,11 +951,13 @@ namespace stk {
         else
           {
             double dnpts = subDimEntity.size();
-            for (SubDimCell_EntityId::iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ids++)
+            for (SubDimCell_SDSEntityType::iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ids++)
               {
-                EntityId nodeId = *ids;
+                SDSEntityType nodeId = *ids;
+                
                 //Entity * node = m_eMesh.getBulkData()->get_entity(Node, nodeId);
-                Entity * node = get_entity_node_II(*m_eMesh.getBulkData(),Node, nodeId);
+                //!!Entity * node = get_entity_node_II(*m_eMesh.getBulkData(),Node, nodeId);
+                Entity * node = nodeId;
                 if (!node)
                   {
                     throw std::runtime_error("makeCentroid: bad node found 2");
@@ -998,7 +1035,7 @@ namespace stk {
         for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
           {
             EXCEPTWATCH;
-            const SubDimCell_EntityId& subDimEntity = (*iter).first;
+            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
           
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
@@ -1046,8 +1083,9 @@ namespace stk {
                 EXCEPTWATCH;
                 Entity *element_p = 0; 
                 {
-                  EntityId elementId = *subDimEntity.begin();
-                  element_p = get_entity_element(*m_eMesh.getBulkData(), mesh::Element, elementId);
+                  SDSEntityType elementId = *subDimEntity.begin();
+                  //!!element_p = get_entity_element(*m_eMesh.getBulkData(), mesh::Element, elementId);
+                  element_p = elementId;
                   if (!element_p)
                     {
                       throw std::runtime_error("makeCentroid: bad elem found 2");
@@ -1100,11 +1138,12 @@ namespace stk {
                 EXCEPTWATCH;
                 double dnpts = subDimEntity.size();
 
-                for (SubDimCell_EntityId::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
+                for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                   {
-                    EntityId nodeId = *ids;
+                    SDSEntityType nodeId = *ids;
 
-                    Entity * node = get_entity_node_II(*m_eMesh.getBulkData(), mesh::Node, nodeId);
+                    //!!Entity * node = get_entity_node_II(*m_eMesh.getBulkData(), mesh::Node, nodeId);
+                    Entity * node = nodeId;
                     if (!node)
                       {
                         throw std::runtime_error("makeCentroid: bad node found 2.0");
@@ -1181,7 +1220,7 @@ namespace stk {
         unsigned nparts = parts.size();
 
         //CHECK
-        static SubDimCell_EntityId subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity;
         //subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static  SubDimCellData empty_SubDimCellData;
@@ -1248,10 +1287,11 @@ namespace stk {
                 else
                   {
                     //double dnpts = subDimEntity.size();
-                    for (SubDimCell_EntityId::iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
+                    for (SubDimCell_SDSEntityType::iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                       {
-                        EntityId nodeId = *ids;
-                        Entity * node = get_entity_node_II(*m_eMesh.getBulkData(),Node, nodeId);
+                        SDSEntityType nodeId = *ids;
+                        //!!Entity * node = get_entity_node_II(*m_eMesh.getBulkData(),Node, nodeId);
+                        Entity * node = nodeId;
                         if (!node)
                           {
                             throw std::runtime_error("addToExistingParts: bad node found 2.1");
@@ -1322,7 +1362,7 @@ namespace stk {
 
                 for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
                   {
-                    const SubDimCell_EntityId& subDimEntity = (*iter).first;
+                    const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
                     SubDimCellData& nodeId_elementOwnderId = (*iter).second;
 
                     NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
@@ -1362,8 +1402,9 @@ namespace stk {
                           {
                             Entity *element_p = 0; 
                             {
-                              EntityId elementId = *subDimEntity.begin();
-                              element_p = get_entity_element(*m_eMesh.getBulkData(), mesh::Element, elementId);
+                              SDSEntityType elementId = *subDimEntity.begin();
+                              //!!element_p = get_entity_element(*m_eMesh.getBulkData(), mesh::Element, elementId);
+                              element_p = elementId;
                               if (!element_p)
                                 {
                                   throw std::runtime_error("addToExistingParts: bad elem found 2");
@@ -1391,10 +1432,11 @@ namespace stk {
                           }
                         else
                           {
-                            for (SubDimCell_EntityId::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
+                            for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                               {
-                                EntityId nodeId = *ids;
-                                Entity * node = get_entity_node_II(*m_eMesh.getBulkData(), Node, nodeId);
+                                SDSEntityType nodeId = *ids;
+                                //!!Entity * node = get_entity_node_II(*m_eMesh.getBulkData(), Node, nodeId);
+                                Entity * node = nodeId;
                                 if (!node)
                                   {
                                     throw std::runtime_error("addToExistingParts: bad node found 2.3");
@@ -1424,7 +1466,7 @@ namespace stk {
           }
       }
 
-      SubDimCellData& getNewNodeAndOwningElement(SubDimCell_EntityId& subDimEntity)
+      SubDimCellData& getNewNodeAndOwningElement(SubDimCell_SDSEntityType& subDimEntity)
       {
         return m_cell_2_data_map[subDimEntity];
       }
@@ -1432,34 +1474,26 @@ namespace stk {
 
 #define NODE_REGISTRY_MAP_ACCESSORS_INLINED 1
 
-      SubDimCellData * getFromMapPtr(const SubDimCell_EntityId& subDimEntity) const
+      SubDimCellData * getFromMapPtr(const SubDimCell_SDSEntityType& subDimEntity) const
 #if NODE_REGISTRY_MAP_ACCESSORS_INLINED
         {
           const SubDimCellToDataMap::const_iterator i = m_cell_2_data_map.find( subDimEntity );
-          //return *(const_cast<SubDimCellData *>(&(i->second)));
-
           return i != m_cell_2_data_map.end() ? (const_cast<SubDimCellData *>(&(i->second))) : 0 ;
-
-          //return m_cell_2_data_map[subDimEntity];
         }
 #else
       ;
 #endif
 
-      SubDimCellData& getFromMap(const SubDimCell_EntityId& subDimEntity) const
+      SubDimCellData& getFromMap(const SubDimCell_SDSEntityType& subDimEntity) const
 #if NODE_REGISTRY_MAP_ACCESSORS_INLINED
         {
           const SubDimCellToDataMap::const_iterator i = m_cell_2_data_map.find( subDimEntity );
           return * (const_cast<SubDimCellData *>(&(i->second)));
-
-          //return i != m_entities.end() ? i->second : NULL ;
-
-          //return m_cell_2_data_map[subDimEntity];
         }
 #else
       ;
 #endif
-      void putInMap(SubDimCell_EntityId& subDimEntity, SubDimCellData& data)
+      void putInMap(SubDimCell_SDSEntityType& subDimEntity, SubDimCellData& data)
 #if NODE_REGISTRY_MAP_ACCESSORS_INLINED
       {
         m_cell_2_data_map[subDimEntity] = data;
@@ -1504,7 +1538,7 @@ namespace stk {
             for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
               {
                 /// note: at this level of granularity we can do single edge refinement, hanging nodes, etc.
-                //SubDimCell_EntityId subDimEntity;
+                //SubDimCell_SDSEntityType subDimEntity;
                 //getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
                 (this->*function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
 
@@ -1520,13 +1554,14 @@ namespace stk {
       ///    @param needed_entity_rank
       ///
       void //NodeRegistry::
-      getSubDimEntity(SubDimCell_EntityId& subDimEntity, const Entity& element, EntityRank needed_entity_rank, unsigned iSubDimOrd)
+      getSubDimEntity(SubDimCell_SDSEntityType& subDimEntity, const Entity& element, EntityRank needed_entity_rank, unsigned iSubDimOrd)
       {
         subDimEntity.clear();
         // in the case of elements, we don't share any nodes so we just make a map of element id to node
         if (needed_entity_rank == mesh::Element)
           {
-            subDimEntity.insert(element.identifier());
+            subDimEntity.insert( const_cast<Entity*>(&element) );
+            //!!subDimEntity.insert(element.identifier());
             return;
           }
 
@@ -1582,7 +1617,8 @@ namespace stk {
         //subDimEntity.reserve(nSubDimNodes);
         for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
           {
-            subDimEntity.insert(elem_nodes[inodes[jnode]].entity()->identifier());
+            subDimEntity.insert( elem_nodes[inodes[jnode]].entity() );
+            //!!subDimEntity.insert(elem_nodes[inodes[jnode]].entity()->identifier());
           }
 
       }
@@ -1883,7 +1919,7 @@ namespace stk {
             throw std::logic_error("logic: element shouldn't be null in createNodeAndConnect");
           }
                   
-        SubDimCell_EntityId subDimEntity;
+        SubDimCell_SDSEntityType subDimEntity;
         getSubDimEntity(subDimEntity, *element, needed_entity_rank, iSubDimOrd);
         SubDimCellData& subDimCellData = getNewNodeAndOwningElement(subDimEntity);
         // assert it is empty?

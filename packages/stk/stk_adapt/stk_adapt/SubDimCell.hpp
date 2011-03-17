@@ -29,6 +29,13 @@
 namespace stk {
   namespace adapt {
 
+
+    template<class T>
+    struct SubDimCellCompare
+    {
+      bool operator() (T i, T j) { return (i < j) ; }
+    };
+
     // only set one of these
 
 #if STK_ADAPT_SUBDIMCELL_USES_STL_SET
@@ -40,7 +47,7 @@ namespace stk {
 #  endif
 
     /// this class represents the set of node id's defining a sub-dimensional entity of an element (like a face or edge)
-    template<typename Ids=unsigned, std::size_t N=4>
+    template<typename Ids=unsigned, std::size_t N=4, class CompareClass = SubDimCellCompare<T> >
     class SubDimCell : public SubDimCellBaseClass
     {
       std::size_t m_hash;
@@ -71,7 +78,7 @@ namespace stk {
     //typedef array<int, 3> SubDimCell;
 
     /// We assume we don't have any sub-dimensional entities with more than 4 nodes
-    template<class T, std::size_t N=4>
+    template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T> >
     class SubDimCell : public std::vector<T> //: public my_array<T,4> //: public boost::array<T,4>
     {
     public:
@@ -93,7 +100,8 @@ namespace stk {
         if (!found)
           {
             base_type::push_back(val);
-            std::sort( base_type::begin(), base_type::end() );
+            std::sort( base_type::begin(), base_type::end(), CompareClass() );
+            
           }
       }
 
@@ -105,7 +113,7 @@ namespace stk {
     //typedef array<int, 3> SubDimCell;
 
     /// We assume we don't have any sub-dimensional entities with more than 4 nodes
-    template<class T, std::size_t N=4>
+    template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T> >
     class SubDimCell : public stk::percept::NoMallocArray<T,N>
     {
       std::size_t m_hash;
@@ -137,21 +145,13 @@ namespace stk {
           {
             //if (size() > max_size() ) throw std::runtime_error("SubDimCell out of range");
             base_type::insert(val);
-            std::sort( base_type::begin(), base_type::end() );
+            std::sort( base_type::begin(), base_type::end(), CompareClass() );
+            
           }
         m_hash = hashCode();
       }
 
-      int hashCode()
-      {
-        std::size_t sum = 0;
-
-        for (typename base_type::const_iterator i = this->begin(); i != this->end(); i++)
-          {
-            sum += static_cast<std::size_t>(*i);
-          }
-        return sum;
-      }
+      int hashCode();
 
       inline unsigned getHash() const
       {
@@ -199,6 +199,25 @@ namespace stk {
       }
 
     };
+
+    template<class T, std::size_t N, class CompareClass >
+    inline int SubDimCell<T,N,CompareClass>::hashCode()
+    {
+      typedef stk::percept::NoMallocArray<T,N> base_type;
+
+      std::size_t sum = 0;
+
+      for (typename base_type::iterator i = this->begin(); i != this->end(); i++)
+        {
+          //sum += static_cast<std::size_t>(const_cast<T>(*i));
+          //sum += static_cast<std::size_t>((*i)->identifier());
+          sum += (size_t)(*i);
+        }
+      return sum;
+    }
+
+
+
 #endif
 
 #if 1
