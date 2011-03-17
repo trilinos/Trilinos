@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
   int *outBuf = new int [2*nprocs];
   Teuchos::ArrayRCP<int> sendBuf = Teuchos::arcp(outBuf, 0, 2*nprocs);
 
-  for (int i=0; i < 2*nprocs ; i+=2){
-    outBuf[i] = i*10;
-    outBuf[i+1] = i*10 + 1;
+  for (int i=0, j=1; i < 2*nprocs ; i+=2,j++){
+    outBuf[i] = j*10;
+    outBuf[i+1] = j*10 + 1;
   } 
 
   Teuchos::ArrayRCP<int> recvBuf;
@@ -49,9 +49,10 @@ int main(int argc, char *argv[])
 
   bool pass = true;
 
+  int myvals[2] = {(rank+1) * 10, (rank+1) * 10 + 1};
+
   for (int i=0; i < 2*nprocs; i+=2){
-    if ( (inBuf[i] != rank * 10) ||
-         (inBuf[i+1] != rank * 10 + 1) ){
+    if (inBuf[i] != myvals[0] && inBuf[i+1] != myvals[1]){
       pass = false;
       break;
     }

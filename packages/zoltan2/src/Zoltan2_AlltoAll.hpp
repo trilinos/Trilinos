@@ -50,53 +50,35 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
 
   if (count == 0) return;
 
-  T *inbuf = new T [count * nprocs];
-  T *in = inbuf;
-  T *out = sendBuf.get() + (count*rank);
-
-  // using ArrayView of this (as waitAll documentation tells you to) causes waitAll runtime error
-  // std::vector<Teuchos::RCP<Teuchos::CommRequest> > req(nprocs-1);
-
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> > req(nprocs-1);
 
+  Teuchos::ArrayRCP<T> inBuf = Teuchos::arcp<T>(nprocs * count);
+
+  for (LNO i=0, offset = rank*count; i < count; i++, offset++){
+    inBuf.get()[offset] = sendBuf.get()[offset];
+  }
+
   for (int p=0; p < nprocs; p++){
-
     if (p != rank){
-      req.push_back(Teuchos::ireceive(comm, Teuchos::ArrayRCP<T>(in, 0, count, true), p));
-    }
-    else{
-      for (LNO i=0; i < count; i++)
-        in[i] = out[i];
-    }
 
-    in += count;
+      Teuchos::ArrayRCP<T> recvBufPtr(inBuf.get() + p*count, 0, count, false);
+
+      req.push_back(Teuchos::ireceive<int, T>(comm, recvBufPtr, p));
+    }
   }
 
   Teuchos::barrier(comm);
 
-  out = sendBuf.get();
-
   for (int p=0; p < nprocs; p++){
-
-    if (p != rank){
-      Teuchos::ArrayView<T> view(out, count);
-      Teuchos::readySend<int,T>(comm, view, p);
-      //Teuchos::readySend(comm, view, p);             This doesn't compile
-    }
-
-    out += count;
+    if (p != rank)
+      Teuchos::readySend<int, T>(comm, Teuchos::ArrayView<T>(sendBuf.get() + p*count, count), p);
   }
 
   if (req.size() > 0){
-
-    // Using ArrayView of requests causes waitAll runtime error
-    // Teuchos::ArrayView<Teuchos::RCP<Teuchos::CommRequest> > avReq = Teuchos::arrayViewFromVector(req);  
-    // Teuchos::waitAll(comm, avReq);
-
-    Teuchos::waitAll(comm, req);
+    Teuchos::waitAll<int>(comm, req);
   }
 
-  recvBuf = Teuchos::ArrayRCP<T>(inbuf, 0, count * nprocs, true);
+  recvBuf = inBuf;
 }
 
 /*! \function Z2::AlltoAllv
@@ -140,9 +122,9 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
       offset += recvCount[i];
   }
 
-  T *inbuf = new T [totalIn];
+  T *inBuf = new T [totalIn];
 
-  T *in = inbuf;
+  T *in = inBuf;
   T *out = sendBuf.get() + offset;
 
   for (int p=0; p < nprocs; p++){
@@ -170,7 +152,7 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
   }
 
   Teuchos::ArrayView<Teuchos::RCP<Teuchos::CommRequest> > avReq(req);
-  Teuchos::waitAll(comm, avReq);
+  Teuchos::waitAll<int>(comm, avReq);
 
   recvBuf = Teuchos::ArrayRCP<T>(in, 0, totalIn, true);
 }
