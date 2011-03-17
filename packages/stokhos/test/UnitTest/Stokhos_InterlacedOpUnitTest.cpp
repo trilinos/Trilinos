@@ -10,7 +10,11 @@
 #include "Stokhos_SGModelEvaluator_Interlaced.hpp"
 #include "Stokhos_InterlacedOperator.hpp"
 
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Map.h"
 
@@ -18,7 +22,11 @@
 
 TEUCHOS_UNIT_TEST(interlaced_op, test)
 {
+#ifdef HAVE_MPI
    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+   Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_SerialComm);
+#endif
 
    int rank = comm->MyPID();
    int numProc = comm->NumProc();

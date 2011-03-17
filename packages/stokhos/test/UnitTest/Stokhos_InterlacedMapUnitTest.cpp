@@ -9,12 +9,20 @@
 #include "Stokhos_Epetra.hpp"
 #include "Stokhos_SGModelEvaluator_Interlaced.hpp"
 
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
 #include "EpetraExt_BlockVector.h"
 
 TEUCHOS_UNIT_TEST(map_test, uniform_buildInterlacedMap)
 {
+#ifdef HAVE_MPI
    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+   Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_SerialComm);
+#endif
 
    int rank = comm->MyPID();
 
@@ -38,7 +46,11 @@ TEUCHOS_UNIT_TEST(map_test, uniform_buildInterlacedMap)
 
 TEUCHOS_UNIT_TEST(map_test, copyToInterlace)
 {
+#ifdef HAVE_MPI
    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+   Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_SerialComm);
+#endif
 
    int rank = comm->MyPID();
    int numProc = comm->NumProc();

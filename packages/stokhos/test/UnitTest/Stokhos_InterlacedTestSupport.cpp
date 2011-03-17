@@ -5,12 +5,8 @@
 
 #include "Stokhos_Epetra.hpp"
 
-#include "Epetra_MpiComm.h"
 #include "Epetra_LocalMap.h"
 
-// FEApp is defined in Trilinos/packages/sacado/example/FEApp
-// #include "FEApp_ModelEvaluator.hpp"
-  
 Teuchos::RCP<Teuchos::ParameterList> buildAppParams(int num_KL,bool full_expansion)
 {
    Teuchos::RCP<Teuchos::ParameterList> appParams = Teuchos::rcp(new Teuchos::ParameterList);
@@ -81,50 +77,6 @@ Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > buildBasis(int
 
    return basis;
 }
-
-/*
-Teuchos::RCP<EpetraExt::ModelEvaluator> buildFEAppME(int nelem,int num_KL,
-                                                     const Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > & basis,
-                                                     const Teuchos::RCP<const Epetra_Comm> & app_comm,
-                                                     const Teuchos::RCP<Teuchos::ParameterList> & appParams)
-{
-   Teuchos::RCP<const Epetra_Comm> sg_comm = app_comm; // sg comm and application comm are
-                                                       // the same...lost parallelism?!?!
-
-   // build application
-   Teuchos::RCP<FEApp::Application> app;
-   {
-      double h = 1.0/nelem;
-
-      // Create mesh
-      std::vector<double> x(nelem+1);
-      for(int i=0; i<=nelem; i++)
-         x[i] = h*i;
-
-      app = Teuchos::rcp(new FEApp::Application(x, app_comm, appParams, false));
-   }
-
-   // Free parameters (determinisic, e.g., for sensitivities)
-   Teuchos::RefCountPtr< Teuchos::Array<std::string> > free_param_names =
- 	Teuchos::rcp(new Teuchos::Array<std::string>);
-   free_param_names->push_back("Constant Source Function Value");
-
-   // setup some named strings
-   Teuchos::RefCountPtr< Teuchos::Array<std::string> > sg_param_names
-         = Teuchos::rcp(new Teuchos::Array<std::string>);
-   for(int i=0; i<num_KL; i++) {
-      std::stringstream ss;
-      ss << "KL Exponential Function Random Variable " << i;
-      sg_param_names->push_back(ss.str());
-   }
-
-   Teuchos::RCP<EpetraExt::ModelEvaluator> model = 
-        Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
-                                               sg_param_names));
-
-   return model;
-}
-*/
 
 Teuchos::RCP<Stokhos::ParallelData> buildParallelData(bool full_expansion,int num_KL,
                                                       const Teuchos::RCP<const Epetra_Comm> & globalComm,
