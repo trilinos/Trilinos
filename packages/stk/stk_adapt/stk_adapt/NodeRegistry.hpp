@@ -157,7 +157,6 @@ namespace stk {
 namespace stk {
   namespace adapt {
 
-#define NODE_REGISTRY_ENTITY_REPO_V0 0
     typedef Entity *EntityPtr;
 
     /// map of the node ids on a sub-dim entity to the data on the sub-dim entity
@@ -484,8 +483,9 @@ namespace stk {
           (element.identifier()  < stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()))
           || (element.entity_rank() > stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
 
-        // once it's in, the assertion should be:
-        // owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
+        /// once it's in, the assertion should be:
+        ///   owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
+        ///
         if (is_empty || should_put_in)
           {
             // new SubDimCellData SDC_DATA_OWNING_ELEMENT_KEY
@@ -531,7 +531,7 @@ namespace stk {
             std::cout << "subDimEntity= " << subDimEntity << std::endl;
             std::cout << "nodeId_elementOwnderId= " << nodeId_elementOwnderId << std::endl;
             std::cout << "empty_SubDimCellData= " << empty_SubDimCellData << std::endl;
-            throw std::logic_error("hmm....");
+            throw std::logic_error("NodeRegistry::checkForRemote no data (is_empty=true) - logic error.");
             return false;
           }
         else
@@ -551,7 +551,7 @@ namespace stk {
                           << " nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>() = " 
                           << owning_elementId
                           << std::endl;
-                throw std::logic_error("logic: in getNewNode, owning element info is wrong"); 
+                throw std::logic_error("NodeRegistry::checkForRemote logic: owning element info is wrong"); 
               }
 
             unsigned erank = mesh::Element;
@@ -560,7 +560,7 @@ namespace stk {
             Entity * owning_element = get_entity_element(*m_eMesh.getBulkData(), erank, owning_elementId);
 
             if (!owning_element)
-              throw std::logic_error("logic: hmmm #5");
+              throw std::logic_error("NodeRegistry::checkForRemote logic: owning_element is null");
 
             bool owning_element_is_ghost = m_eMesh.isGhostElement(*owning_element);
 
@@ -581,22 +581,31 @@ namespace stk {
                       {
                         throw std::logic_error("logic: hmmm #5.0");
                       }
-                    //Entity * new_node = get_entity_node(*m_eMesh.getBulkData(), Node, nodeIds_onSE[iid]);
 
                     if (nodeIds_onSE.m_entity_id_vector.size() != nodeIds_onSE.size())
                       {
-                        throw std::logic_error("NodeRegistry:: checkForRemote logic err #0.1");
+                        throw std::logic_error("NodeRegistry::checkForRemote logic err #0.1");
                       }
                     if (!nodeIds_onSE.m_entity_id_vector[iid])
                       {
-                        throw std::logic_error("NodeRegistry:: checkForRemote logic err #0.2");
+                        throw std::logic_error("NodeRegistry::checkForRemote logic err #0.2");
                       }
 
-                    Entity * new_node = get_entity_node_I(*m_eMesh.getBulkData(), Node, nodeIds_onSE.m_entity_id_vector[iid]);
                     //Entity * new_node = get_entity_node_Ia(*m_eMesh.getBulkData(), Node, nodeIds_onSE, iid);
-                    //Entity * new_node = nodeIds_onSE[iid];
+                    Entity * new_node = nodeIds_onSE[iid];
+                    if (0)
+                      {
+                        Entity * new_node_1 = get_entity_node_I(*m_eMesh.getBulkData(), Node, nodeIds_onSE.m_entity_id_vector[iid]);
+                        if (new_node != new_node_1)
+                          {
+                            throw std::logic_error("NodeRegistry::checkForRemote logic err #0.3");
+                          }
+                      }
+
                     if (!new_node)
-                      throw std::logic_error("logic: hmmm #5.1");
+                      {
+                        throw std::logic_error("NodeRegistry::checkForRemote logic: new_node is null");
+                      }
 
                     m_nodes_to_ghost.push_back( EntityProc(new_node, owner_proc_rank) );
                   }
@@ -1303,8 +1312,11 @@ namespace stk {
 
             if (part_rank == stk::mesh::Node)
               {
-                std::vector<stk::mesh::Part*> add_parts(1, &part);
-                std::vector<stk::mesh::Part*> remove_parts;
+                //std::vector<stk::mesh::Part*> add_parts(1, &part);
+                //std::vector<stk::mesh::Part*> remove_parts;
+                static std::vector<stk::mesh::Part*> add_parts(1, static_cast<stk::mesh::Part*>(0));
+                static std::vector<stk::mesh::Part*> remove_parts;
+                add_parts[0] = &part;
 
                 SubDimCellToDataMap::iterator iter;
 
