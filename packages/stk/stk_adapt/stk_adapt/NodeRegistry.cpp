@@ -32,22 +32,5 @@ namespace stk {
       }
 #endif
 
-    template<>
-    int SubDimCell<SDSEntityType, 4, SubDimCellCompare<SDSEntityType> >::hashCode()
-    {
-      typedef stk::percept::NoMallocArray<SDSEntityType,4> base_type;
-
-      std::size_t sum = 0;
-
-      for ( base_type::iterator i = this->begin(); i != this->end(); i++)
-        {
-          //sum += static_cast<std::size_t>(const_cast<T>(*i));
-          sum += static_cast<std::size_t>((*i)->identifier());
-          //sum += (size_t)(*i);
-        }
-      return sum;
-    }
-
-
   }
 }

@@ -157,8 +157,8 @@ namespace stk {
     };
 
     template<>
-    int SubDimCell<SDSEntityType, 4, SubDimCellCompare<SDSEntityType> >::hashCode();
-#if 0
+    inline int SubDimCell<SDSEntityType, 4, SubDimCellCompare<SDSEntityType> >::hashCode()
+#if 1
     {
       typedef stk::percept::NoMallocArray<SDSEntityType,4> base_type;
 
@@ -628,6 +628,7 @@ namespace stk {
 
                     //Entity * new_node = get_entity_node_Ia(*m_eMesh.getBulkData(), Node, nodeIds_onSE, iid);
                     Entity * new_node = nodeIds_onSE[iid];
+
                     if (0)
                       {
                         Entity * new_node_1 = get_entity_node_I(*m_eMesh.getBulkData(), Node, nodeIds_onSE.m_entity_id_vector[iid]);
@@ -667,7 +668,7 @@ namespace stk {
       }
 
 
-#define LOCAL_INLINE
+#define LOCAL_INLINE inline
       
       LOCAL_INLINE Entity* get_entity_using_find(EntityRank& rank, const EntityId& id) const
       {
@@ -731,7 +732,6 @@ namespace stk {
 
       LOCAL_INLINE Entity *get_entity_Ib(BulkData& bulk, EntityRank rank, EntityId id)
       {
-
 #if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
         Entity* entity = get_entity_using_find(rank, id);
         if (entity) 
@@ -747,23 +747,6 @@ namespace stk {
 #endif
       }
 
-      LOCAL_INLINE Entity *get_entity_II(BulkData& bulk, EntityRank rank, EntityId id)
-      {
-
-#if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
-        Entity* entity = get_entity_using_find(rank, id);
-        if (entity) 
-          return entity;
-        else
-          {
-            entity = bulk.get_entity(rank, id);
-            m_entity_repo[rank][id] = entity;
-            return entity;
-          }
-#else
-        return bulk.get_entity(rank, id);
-#endif
-      }
 
       LOCAL_INLINE Entity *get_entity_element(BulkData& bulk, EntityRank rank, EntityId id)
       {
@@ -773,44 +756,22 @@ namespace stk {
 
       LOCAL_INLINE Entity *get_entity_node_I(BulkData& bulk, EntityRank rank, EntityId id)
       {
-        m_gen_cnt++;
+        //m_gen_cnt++;
         return get_entity_I(bulk, rank, id);
-      }
-
-      LOCAL_INLINE Entity *get_entity_node_Ib(BulkData& bulk, EntityRank rank, EntityId id)
-      {
-        m_gen_cnt++;
-        return get_entity_Ib(bulk, rank, id);
-      }
-
-      LOCAL_INLINE Entity *get_entity_node_II(BulkData& bulk, EntityRank rank, EntityId id)
-      {
-        m_gen_cnt++;
-        return get_entity_II(bulk, rank, id);
       }
 
       LOCAL_INLINE Entity *get_entity_node_Ia(BulkData& bulk, EntityRank rank, NodeIdsOnSubDimEntityType& nodeIds_onSE, unsigned index)
       {
-        m_gen_cnt++;
-#if 1
+        //m_gen_cnt++;
         //Entity * entity = get_entity(bulk, rank, nodeIds_onSE.m_entity_id_vector[index]);
         Entity * entity = nodeIds_onSE[index];
         return entity;
-#else
+      }
 
-        Entity * entity = 0;
-        Entity * entity_in_vector = nodeIds_onSE.m_entity_vector[index];
-        if (0 && entity_in_vector) 
-          {
-            entity = entity_in_vector;
-          }
-        else
-          {
-            entity = get_entity(bulk, rank, nodeIds_onSE[index]);
-            nodeIds_onSE.m_entity_vector[index] = entity;
-          }
-        return entity;
-#endif
+      LOCAL_INLINE Entity *get_entity_node_Ib(BulkData& bulk, EntityRank rank, EntityId id)
+      {
+        //m_gen_cnt++;
+        return get_entity_Ib(bulk, rank, id);
       }
 
       NodeIdsOnSubDimEntityType& getNewNodesOnSubDimEntity(const Entity& element,  EntityRank& needed_entity_rank, unsigned iSubDimOrd)
