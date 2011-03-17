@@ -133,7 +133,8 @@ int NodeDatabase::getNodeWithEqn(int eqnNumber, const NodeDescriptor*& node) con
 //------------------------------------------------------------------------------
 void NodeDatabase::getNodeAtIndex(int i, const NodeDescriptor*& node) const
 {
-  if (i>=0 && i < nodePtrs_.size()) {
+  int nnodes = nodePtrs_.size();
+  if (i>=0 && i < nnodes) {
     node = nodePtrs_[i];
   }
   else {
@@ -144,7 +145,8 @@ void NodeDatabase::getNodeAtIndex(int i, const NodeDescriptor*& node) const
 //------------------------------------------------------------------------------
 void NodeDatabase::getNodeAtIndex(int i, NodeDescriptor*& node)
 {
-  if (i>=0 && i < nodePtrs_.size()) {
+  int nnodes = nodePtrs_.size();
+  if (i>=0 && i < nnodes) {
     node = nodePtrs_[i];
   }
   else {
