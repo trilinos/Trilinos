@@ -788,7 +788,7 @@ namespace stk {
             EXCEPTWATCH;
             if (ranks[irank] == ranks[0])
               {
-                m_nodeRegistry->addToExistingParts();
+                m_nodeRegistry->addToExistingPartsNew();
                 m_nodeRegistry->makeCentroid(m_eMesh.getCoordinatesField());
                 m_nodeRegistry->interpolateFields();
               }
@@ -1485,12 +1485,17 @@ namespace stk {
               NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element, needed_entity_ranks[ineed_ent].first, iSubDimOrd);
 
               if (!nodeIds_onSE[0]) {
-                std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " 
-                          << " element= " << element
-                          << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
-                          << " iSubDimOrd = " << iSubDimOrd
-                          <<  std::endl;
-                throw std::logic_error("UniformRefiner logic error");
+                Entity * node1 = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE.m_entity_id_vector[0]);
+                if (!node1)
+                  {
+                    std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " 
+                              << " nodeIds_onSE.m_entity_id_vector[0] = " << nodeIds_onSE.m_entity_id_vector[0] << " node1= " << node1
+                              << " element= " << element
+                              << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
+                              << " iSubDimOrd = " << iSubDimOrd
+                              <<  std::endl;
+                    throw std::logic_error("UniformRefiner::createNewNeededNodeIds logic error #0");
+                  }
               }
 
               unsigned num_new_nodes_needed = needed_entity_ranks[ineed_ent].second;
@@ -1525,7 +1530,15 @@ namespace stk {
                 }
               for (unsigned i_new_node = 0; i_new_node < num_new_nodes_needed; i_new_node++)
                 {
-                  new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd][i_new_node] = nodeIds_onSE[i_new_node];
+                  if (!nodeIds_onSE[i_new_node]) {
+                    Entity * node1 = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE.m_entity_id_vector[0]);
+                    if (!node1)
+                      {
+                        throw std::logic_error("UniformRefiner::createNewNeededNodeIds logic err #4");
+                      }
+                    nodeIds_onSE[i_new_node] = node1;
+                  }
+                  new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd][i_new_node] = nodeIds_onSE[i_new_node]->identifier();
                 }
             }
         }

@@ -763,7 +763,7 @@ namespace stk {
       mesh::Entity& createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, EntityId eid)
       {
 #if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
-        mesh::Entity *node_p = nodeRegistry.get_entity_node(*eMesh.getBulkData(), mesh::Node, eid);
+        mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.getBulkData(), mesh::Node, eid);
         if (node_p)
           return *node_p;
         else

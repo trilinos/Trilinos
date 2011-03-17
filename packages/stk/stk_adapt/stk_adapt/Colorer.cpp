@@ -46,7 +46,7 @@ namespace stk {
     void Colorer::
     color(percept::PerceptMesh& eMesh, unsigned * elementType,  PartVector* fromParts, FieldBase *element_color_field)
     {
-      const unsigned MAX_COLORS=100;
+      const unsigned MAX_COLORS=1000;
       vector< ColorerNodeSetType > node_colors(MAX_COLORS+1); 
       m_element_colors = vector< ColorerSetType > (MAX_COLORS+1);
       ColorerElementSetType all_elements; 
@@ -54,7 +54,7 @@ namespace stk {
       mesh::Selector selector(eMesh.getMetaData()->universal_part());
       if (fromParts) 
         {
-          if (0)
+          if (1)
             {
               //std::cout << "tmp Colorer::color fromParts= " << *fromParts << std::endl;
               //std::cout << "tmp Colorer::color elementType= " << *elementType << std::endl;
