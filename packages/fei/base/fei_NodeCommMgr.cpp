@@ -350,7 +350,7 @@ void NodeCommMgr::packLocalNodesAndData(int* data,
       if (index < 0) continue;
 
       if (nodeCounter >= numNodes) {
-	FEI_CERR << "NodeCommMgr::packLocalNodesAndData: ERROR,"
+	fei::console_out() << "NodeCommMgr::packLocalNodesAndData: ERROR,"
 	     << " nodeCounter >= numNodes." << FEI_ENDL;
       }
 
@@ -377,7 +377,7 @@ void NodeCommMgr::packLocalNodesAndData(int* data,
 	data[numNodes+offset++] = fieldIDsPtr[j];
 
 	if (offset >= len) {
-	  FEI_CERR << "NodeCommMgr::packLocalNodesAndData: ERROR,"
+	  fei::console_out() << "NodeCommMgr::packLocalNodesAndData: ERROR,"
 	       << " offset >= len." << FEI_ENDL;
 	}
 
@@ -428,7 +428,7 @@ void NodeCommMgr::packRemoteNodesAndData(GlobalID* data,
       if (thisProc != proc) continue;
 
       if (nodeCounter >= numNodes) {
-         FEI_CERR << localProc_ << ": NodeCommMgr::packRemoteNodesAndData: ERROR,"
+         fei::console_out() << localProc_ << ": NodeCommMgr::packRemoteNodesAndData: ERROR,"
               << " nodeCounter >= numNodes: " << numNodes << FEI_ENDL;
       }
 
@@ -448,7 +448,7 @@ void NodeCommMgr::packRemoteNodesAndData(GlobalID* data,
 
       for(int j=0; j<numFields; j++) {
          if (offset >= len) {
-            FEI_CERR << "NodeCommMgr::packRemoteNodesAndData: ERROR,"
+            fei::console_out() << "NodeCommMgr::packRemoteNodesAndData: ERROR,"
                  << " offset >= len." << FEI_ENDL;
          }
 
@@ -457,7 +457,7 @@ void NodeCommMgr::packRemoteNodesAndData(GlobalID* data,
 
       for(int k=0; k<numBlocks; k++) {
          if (offset >= len) {
-            FEI_CERR << "NodeCommMgr::packRemoteNodesAndData: ERROR,"
+            fei::console_out() << "NodeCommMgr::packRemoteNodesAndData: ERROR,"
                  << " offset >= len." << FEI_ENDL;
          }
 
@@ -534,7 +534,7 @@ int NodeCommMgr::addSharedNodes( const GlobalID* nodeIDs,
 
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -734,7 +734,7 @@ int NodeCommMgr::checkCommArrays(const char* whichCheck,
 	int index = fei::binarySearch(i, &remoteProcs[0], remoteProcs.size());
 	if (index < 0) {
 	  //we don't think proc i shares any nodes that we own.
-	  FEI_CERR << "FEI NodeCommMgr::checkSharedNodeInfo "<<whichCheck
+	  fei::console_out() << "FEI NodeCommMgr::checkSharedNodeInfo "<<whichCheck
 	       << " ERROR. Local proc (" << localProc_ 
 	       << ") doesn't share nodes with proc " << i << " but proc " << i
 	       << " thinks it shares nodes with proc " << localProc_ << FEI_ENDL;
@@ -745,7 +745,7 @@ int NodeCommMgr::checkCommArrays(const char* whichCheck,
 	//shares.
 	int numWeThinkWeShare = nodesPerRemoteProc[index];
 	if (numWeThinkWeShare != numShared) {
-	  FEI_CERR << "FEI NodeCommMgr::checkSharedNodeInfo "<<whichCheck
+	  fei::console_out() << "FEI NodeCommMgr::checkSharedNodeInfo "<<whichCheck
 	       << " ERROR. Local proc (" << localProc_ << ") thinks it shares "
 	       << numWeThinkWeShare << " nodes with proc " << i << ", but proc " 
 	       << i << " thinks it shares " << numShared << " nodes with proc "
@@ -994,7 +994,7 @@ int NodeCommMgr::exchangeSharedRemoteFieldsBlks()
     for(int j=0; j<numNodes; j++) {
       int nIndex = fei::binarySearch(recvData[index][j], &sharedNodeIDs[0], sharedNodeIDs.size());
       if (nIndex < 0) {
-	FEI_CERR << "NodeCommMgr::exchangeSharedRemote...: error, unknown nodeID "
+	fei::console_out() << "NodeCommMgr::exchangeSharedRemote...: error, unknown nodeID "
 	     << (int)recvData[index][j] << ", " << j
 	     << "th node recvd from proc "
 	     <<remoteSharingProcs_[index]
@@ -1032,7 +1032,7 @@ int NodeCommMgr::exchangeSharedRemoteFieldsBlks()
   }
 
   if (numRcvStarted != numCompleted) {
-    FEI_CERR << "NodeCommMgr::exchangeSharedRemote...: recv-send mismatch;"
+    fei::console_out() << "NodeCommMgr::exchangeSharedRemote...: recv-send mismatch;"
          << " numRcvStarted: " << numRcvStarted << ", numCompleted: "
          << numCompleted << FEI_ENDL;
     std::abort();

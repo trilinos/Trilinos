@@ -67,7 +67,7 @@ int beam_main(int argc, char** argv,
   errcode += params.getIntParamValue("DofPerNode", DofPerNode);
 
   if (errcode != 0) {
-    FEI_CERR << "Failed to find one or more required parameters in input-file."
+    fei::console_out() << "Failed to find one or more required parameters in input-file."
 	     << FEI_ENDL << "Required parameters:"<<FEI_ENDL
 	     << "SOLVER_LIBRARY" << FEI_ENDL
 	     << "DATA_SOURCE" << FEI_ENDL

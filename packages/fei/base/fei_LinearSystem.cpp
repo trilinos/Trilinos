@@ -83,7 +83,7 @@ int fei::LinearSystem::loadEssentialBCs(int numIDs,
                               IDs, prescribedValues);
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what()<<FEI_ENDL;
+    fei::console_out() << exc.what()<<FEI_ENDL;
     return(-1);
   }
 
@@ -107,7 +107,7 @@ int fei::LinearSystem::loadEssentialBCs(int numIDs,
                               prescribedValues);
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what()<<FEI_ENDL;
+    fei::console_out() << exc.what()<<FEI_ENDL;
     return(-1);
   }
 

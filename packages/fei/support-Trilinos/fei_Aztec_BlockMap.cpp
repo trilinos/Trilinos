@@ -91,13 +91,13 @@ Aztec_BlockMap::~Aztec_BlockMap(void)  {
 void Aztec_BlockMap::checkInput() {
 
     if (numGlobalBlocks_ <= 0) {
-       FEI_CERR << "Aztec_BlockMap: ERROR, numGlobalBlocks <= 0. Aborting."
+       fei::console_out() << "Aztec_BlockMap: ERROR, numGlobalBlocks <= 0. Aborting."
             << FEI_ENDL;
        abort();
     }
 
     if (localBlockOffset_ < 0) {
-       FEI_CERR << "Aztec_BlockMap: ERROR, negative localBlockOffset. Aborting."
+       fei::console_out() << "Aztec_BlockMap: ERROR, negative localBlockOffset. Aborting."
             << FEI_ENDL;
        abort();
     }

@@ -327,7 +327,7 @@ int SNL_FEI_Structure::getEqnNumber(int nodeNumber, int fieldID)
 
   bool hasField = node->getFieldEqnNumber(fieldID, eqnNumber);
   if (!hasField) {
-    FEI_CERR << "SNL_FEI_Structure::getEqnNumber: ERROR, node with nodeNumber "
+    fei::console_out() << "SNL_FEI_Structure::getEqnNumber: ERROR, node with nodeNumber "
 	 << nodeNumber << " doesn't have fieldID " << fieldID << FEI_ENDL;
     ERReturn(-1);
   }
@@ -458,7 +458,7 @@ int SNL_FEI_Structure::initElemBlock(GlobalID elemBlockID,
 
          int fieldSize = getFieldSize(nodalFieldIDs[j][k]);
          if (fieldSize < 0) {
-	   FEI_CERR << "SNL_FEI_Structure::initElemBlock ERROR: fieldID " << 
+	   fei::console_out() << "SNL_FEI_Structure::initElemBlock ERROR: fieldID " << 
 	     nodalFieldIDs[j][k] << " has negative size. " << FEI_ENDL;
 	   ERReturn(-1);
 	 }
@@ -475,7 +475,7 @@ int SNL_FEI_Structure::initElemBlock(GlobalID elemBlockID,
    for(j=0; j<numElemDofFieldsPerElement; j++) {
       int fieldSize = getFieldSize(elemDofFieldIDs[j]);
       if (fieldSize < 0) {
-	FEI_CERR << "SNL_FEI_Structure::initElemBlock ERROR: elemDoffieldID " << 
+	fei::console_out() << "SNL_FEI_Structure::initElemBlock ERROR: elemDoffieldID " << 
 	  elemDofFieldIDs[j] << " has negative size. " << FEI_ENDL;
 	ERReturn(-1);
       }
@@ -559,7 +559,7 @@ int SNL_FEI_Structure::initElem(GlobalID elemBlockID,
     int offset = elemIndex*numNodes;
     for(int j=0; j<numNodes; j++) {
       if ( conn[offset+j] != elemConn[j]) {
-	FEI_CERR << "SNL_FEI_Structure::initElem ERROR, elemID " << (int)elemID
+	fei::console_out() << "SNL_FEI_Structure::initElem ERROR, elemID " << (int)elemID
 	     << " registered more than once, with differing connectivity."
 	     << FEI_ENDL;
 	return(-1);
@@ -1037,7 +1037,7 @@ int SNL_FEI_Structure::initComplete(bool generateGraph)
       CHK_ERR( slvCommMgr_->exchangeIndices() );
       }
       catch (std::runtime_error& exc) {
-        FEI_CERR << exc.what() << FEI_ENDL;
+        fei::console_out() << exc.what() << FEI_ENDL;
         ERReturn(-1);
       }
 
@@ -1100,7 +1100,7 @@ int SNL_FEI_Structure::formMatrixStructure()
   CHK_ERR( eqnCommMgr_->exchangeIndices(&os) );
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -1119,7 +1119,7 @@ int SNL_FEI_Structure::formMatrixStructure()
   for(i=0; i<numRecvEqns; i++) {
     int eqn = recvEqnNumbers[i];
     if ((reducedStartRow_ > eqn) || (reducedEndRow_ < eqn)) {
-      FEI_CERR << "SNL_FEI_Structure::initComplete: ERROR, recvEqn " << eqn
+      fei::console_out() << "SNL_FEI_Structure::initComplete: ERROR, recvEqn " << eqn
 	   << " out of range. (reducedStartRow_: " << reducedStartRow_
 	   << ", reducedEndRow_: " << reducedEndRow_ << ", localProc_: "
 	   << localProc_ << ")" << FEI_ENDL;
@@ -1284,7 +1284,7 @@ int SNL_FEI_Structure::getMatrixStructure(int** ptColIndices,
       for(int colj=0; colj<rowLength; colj++) {
 	int blkCol = blkEqnMapper_->eqnToBlkEqn(theseColIndices[colj]);
 	if (blkCol < 0) {
-	  FEI_CERR << localProc_
+	  fei::console_out() << localProc_
 	       <<"SNL_FEI_Structure::getMatrixStructure ERROR pt row "
 	       << ptEqn << ", pt col "
 	       << ptColIndices[localPtEqn][colj]
@@ -1350,7 +1350,7 @@ NodeDescriptor& SNL_FEI_Structure::findNodeDescriptor(GlobalID nodeID)
   int err = nodeDatabase_->getNodeWithID(nodeID, node);
 
   if (err != 0) {
-    FEI_CERR << "ERROR, findNodeDescriptor unable to find node " << (int)nodeID
+    fei::console_out() << "ERROR, findNodeDescriptor unable to find node " << (int)nodeID
 	 << FEI_ENDL;
     std::abort();
   }
@@ -1524,7 +1524,7 @@ void SNL_FEI_Structure::storeNodalSendIndex(NodeDescriptor& node, int fieldID,
 
   int numEqns = getFieldSize(fieldID);
   if (numEqns < 1) {
-    FEI_CERR << "FEI error, attempt to store indices for field ("<<fieldID
+    fei::console_out() << "FEI error, attempt to store indices for field ("<<fieldID
 	 <<") with size "<<numEqns<<FEI_ENDL;
     voidERReturn;
   }
@@ -1551,7 +1551,7 @@ void SNL_FEI_Structure::storeNodalSendIndices(NodeDescriptor& iNode, int iField,
    int iNumParams = getFieldSize(iField);
    int jNumParams = getFieldSize(jField);
    if (iNumParams < 1 || jNumParams < 1) {
-     FEI_CERR << "FEI ERROR, attempt to store indices for field with non-positive size"
+     fei::console_out() << "FEI ERROR, attempt to store indices for field with non-positive size"
 	  << " field "<<iField<<", size "<<iNumParams<<", field "<<jField<<", size "
 	  << jNumParams<<FEI_ENDL;
      voidERReturn;
@@ -1583,7 +1583,7 @@ void SNL_FEI_Structure::storeLocalNodeIndices(NodeDescriptor& iNode, int iField,
    int iNumParams = getFieldSize(iField);
    int jNumParams = getFieldSize(jField);
    if (iNumParams < 1 || jNumParams < 1) {
-     FEI_CERR << "FEI ERROR, attempt to store indices for field with non-positive size"
+     fei::console_out() << "FEI ERROR, attempt to store indices for field with non-positive size"
 	  << " field "<<iField<<", size "<<iNumParams<<", field "<<jField<<", size "
 	  << jNumParams<<FEI_ENDL;
      voidERReturn;
@@ -1624,7 +1624,7 @@ void SNL_FEI_Structure::storeNodalColumnIndices(int eqn, NodeDescriptor& node,
 
   int numParams = getFieldSize(fieldID);
   if (numParams < 1) {
-    FEI_CERR << "FEI error, attempt to store indices for field ("<<fieldID
+    fei::console_out() << "FEI error, attempt to store indices for field ("<<fieldID
 	 <<") with size "<<numParams<<FEI_ENDL;
     voidERReturn;
   }
@@ -1656,7 +1656,7 @@ void SNL_FEI_Structure::storeNodalRowIndices(NodeDescriptor& node,
 
   int numParams = getFieldSize(fieldID);
   if (numParams < 1) {
-    FEI_CERR << "FEI error, attempt to store indices for field ("<<fieldID
+    fei::console_out() << "FEI error, attempt to store indices for field ("<<fieldID
 	 <<") with size "<<numParams<<FEI_ENDL;
     voidERReturn;
   }
@@ -1782,7 +1782,7 @@ int SNL_FEI_Structure::createSymmEqnStructure(std::vector<int>& scatterIndices)
 
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -1896,7 +1896,7 @@ int SNL_FEI_Structure::createBlkSymmEqnStructure(std::vector<int>& scatterIndice
 
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -2469,7 +2469,7 @@ int SNL_FEI_Structure::writeEqn2NodeMap()
   FEI_OFSTREAM e2nFile(osstr.str().c_str());
 
   if (!e2nFile) {
-    FEI_CERR << "SNL_FEI_Structure::writeEqn2NodeMap: ERROR, couldn't open file "
+    fei::console_out() << "SNL_FEI_Structure::writeEqn2NodeMap: ERROR, couldn't open file "
          << osstr.str() << FEI_ENDL;
     ERReturn(-1);
   }
@@ -2581,7 +2581,7 @@ void SNL_FEI_Structure::calcGlobalEqnInfo(int numLocallyOwnedNodes,
     glist[2] = numLocalEqnBlks;
     if (MPI_Gather(&glist[0], 3, MPI_INT, &recvList[0], 3,
 		   MPI_INT, masterProc_, comm_) != MPI_SUCCESS) {
-      FEI_CERR << "SNL_FEI_Structure::calcGlobalEqnInfo: ERROR in MPI_Gather" << FEI_ENDL;
+      fei::console_out() << "SNL_FEI_Structure::calcGlobalEqnInfo: ERROR in MPI_Gather" << FEI_ENDL;
       MPI_Abort(comm_, -1);
     }
 
@@ -2641,7 +2641,7 @@ void SNL_FEI_Structure::calcGlobalEqnInfo(int numLocallyOwnedNodes,
 
     if (MPI_Bcast(&blist[0], 3*(numProcs_+1), MPI_INT,
 		  masterProc_, comm_) != MPI_SUCCESS) {
-      FEI_CERR << "SNL_FEI_Structure::calcGlobalEqnInfo: ERROR in MPI_Bcast" << FEI_ENDL;
+      fei::console_out() << "SNL_FEI_Structure::calcGlobalEqnInfo: ERROR in MPI_Bcast" << FEI_ENDL;
       MPI_Abort(comm_, -1);
     }
 
@@ -2807,7 +2807,7 @@ int SNL_FEI_Structure::getBlockDescriptor(GlobalID blockID,
   int index = fei::binarySearch(blockID, blockIDs_);
 
    if (index < 0) {
-      FEI_CERR << "SNL_FEI_Structure::getBlockDescriptor: ERROR, blockID "
+      fei::console_out() << "SNL_FEI_Structure::getBlockDescriptor: ERROR, blockID "
            << (int)blockID << " not found." << FEI_ENDL;
       return(-1);
    }
@@ -2841,7 +2841,7 @@ int SNL_FEI_Structure::allocateBlockConnectivity(GlobalID blockID) {
    int index = fei::binarySearch(blockID, blockIDs_);
 
    if (index < 0) {
-      FEI_CERR << "SNL_FEI_Structure::allocateConnectivityTable: ERROR, blockID "
+      fei::console_out() << "SNL_FEI_Structure::allocateConnectivityTable: ERROR, blockID "
            << (int)blockID << " not found. Aborting." << FEI_ENDL;
       MPI_Abort(comm_, -1);
    }
@@ -2853,7 +2853,7 @@ int SNL_FEI_Structure::allocateBlockConnectivity(GlobalID blockID) {
    int numCols = connTables_[index]->numNodesPerElem;
 
    if ((numRows <= 0) || (numCols <= 0)) {
-      FEI_CERR << "SNL_FEI_Structure::allocateConnectivityTable: ERROR, either "
+      fei::console_out() << "SNL_FEI_Structure::allocateConnectivityTable: ERROR, either "
            << "numElems or numNodesPerElem not yet set for blockID "
            << (int)blockID << ". Aborting." << FEI_ENDL;
       MPI_Abort(comm_, -1);
@@ -2872,7 +2872,7 @@ ConnectivityTable& SNL_FEI_Structure::getBlockConnectivity(GlobalID blockID) {
    int index = fei::binarySearch(blockID, blockIDs_);
 
    if (index < 0) {
-      FEI_CERR << "SNL_FEI_Structure::getBlockConnectivity: ERROR, blockID "
+      fei::console_out() << "SNL_FEI_Structure::getBlockConnectivity: ERROR, blockID "
            << (int)blockID << " not found. Aborting." << FEI_ENDL;
       MPI_Abort(comm_, -1);
    }  
@@ -2956,7 +2956,7 @@ int SNL_FEI_Structure::finalizeActiveNodes()
 	NodeDescriptor* node = NULL;
 	int index = nodeDatabase_->getNodeWithID( elemNodes[n], node );
 	if (index < 0) {
-	  FEI_CERR << "ERROR in SNL_FEI_Structure::initializeActiveNodes, "
+	  fei::console_out() << "ERROR in SNL_FEI_Structure::initializeActiveNodes, "
 	       << FEI_ENDL << "failed to find node "
 	       << (int)(elemNodes[n]) << FEI_ENDL;
 	}
@@ -3229,7 +3229,7 @@ int SNL_FEI_Structure::getEqnNumbers(int numIDs,
       NodeDescriptor* node = NULL;
 
       if ( nodeDatabase_->getNodeWithID(IDs[i], node) != 0 ) {
-        // FEI_CERR << "SNL_FEI_Structure::getEqnNumbers: ERROR getting node " << IDs[i] << FEI_ENDL;
+        // fei::console_out() << "SNL_FEI_Structure::getEqnNumbers: ERROR getting node " << IDs[i] << FEI_ENDL;
         for(int ii=0; ii<fieldSize; ii++) {
           eqnNumbers[offset++] = -1;
         }
@@ -3516,7 +3516,7 @@ int SNL_FEI_Structure::removeCouplings(EqnBuffer& eqnbuf, int& levelsOfCoupling)
       int rowIndex = eqnbuf.isInIndices(eqnNumbers[i]);
 
       if (rowIndex == (int)i) {
-	FEI_CERR <<" SNL_FEI_Structure::removeCouplings ERROR,"
+	fei::console_out() <<" SNL_FEI_Structure::removeCouplings ERROR,"
 	     << " illegal master-slave constraint coupling. Eqn "
 	     << eqnNumbers[i] << " is both master and slave. " << FEI_ENDL;
 	ERReturn(-1);
@@ -3555,7 +3555,7 @@ int SNL_FEI_Structure::removeCouplings(EqnBuffer& eqnbuf, int& levelsOfCoupling)
     else finished = true;
 
     if (levelsOfCoupling>1 && !finished) {
-      FEI_CERR <<" SNL_FEI_Structure::removeCouplings ERROR,"
+      fei::console_out() <<" SNL_FEI_Structure::removeCouplings ERROR,"
 	   << " too many (>1) levels of master-slave constraint coupling. "
 	   << "Hint: coupling is considered infinite if two slaves depend on "
 	   << "each other. This may or may not be the case here." << FEI_ENDL;
@@ -3745,7 +3745,7 @@ void SNL_FEI_Structure::getScatterIndices_ID(GlobalID blockID, GlobalID elemID,
    int index = fei::binarySearch(blockID, blockIDs_);
 
    if (index < 0) {
-      FEI_CERR << "SNL_FEI_Structure::getScatterIndices_ID: ERROR, blockID "
+      fei::console_out() << "SNL_FEI_Structure::getScatterIndices_ID: ERROR, blockID "
            << (int)blockID << " not found. Aborting." << FEI_ENDL;
       std::abort();
    }
@@ -3756,7 +3756,7 @@ void SNL_FEI_Structure::getScatterIndices_ID(GlobalID blockID, GlobalID elemID,
      iter = elemIDs.find(elemID);
 
    if (iter == elemIDs.end()) {
-      FEI_CERR << "SNL_FEI_Structure::getScatterIndices_ID: ERROR, blockID: " 
+      fei::console_out() << "SNL_FEI_Structure::getScatterIndices_ID: ERROR, blockID: " 
            << (int)blockID << ", elemID "
            << (int)elemID << " not found. Aborting." << FEI_ENDL;
       std::abort();
@@ -3778,7 +3778,7 @@ void SNL_FEI_Structure::getScatterIndices_ID(GlobalID blockID, GlobalID elemID,
    int index = fei::binarySearch(blockID, blockIDs_);
 
    if (index < 0) {
-      FEI_CERR << "SNL_FEI_Structure::getScatterIndices_ID: ERROR, blockID "
+      fei::console_out() << "SNL_FEI_Structure::getScatterIndices_ID: ERROR, blockID "
            << (int)blockID << " not found. Aborting." << FEI_ENDL;
       std::abort();
    }
@@ -3789,7 +3789,7 @@ void SNL_FEI_Structure::getScatterIndices_ID(GlobalID blockID, GlobalID elemID,
      iter = elemIDs.find(elemID);
 
    if (iter == elemIDs.end()) {
-      FEI_CERR << "SNL_FEI_Structure::getScatterIndices_ID: ERROR, blockID: " 
+      fei::console_out() << "SNL_FEI_Structure::getScatterIndices_ID: ERROR, blockID: " 
            << (int)blockID << ", elemID "
            << (int)elemID << " not found. Aborting." << FEI_ENDL;
       std::abort();
@@ -3813,7 +3813,7 @@ int SNL_FEI_Structure::getBlkScatterIndices_index(int blockIndex,
   NodeDescriptor** nodes = &work_nodePtrs_[0];
   int err = getElemNodeDescriptors(blockIndex, elemIndex, nodes);
   if (err) {
-    FEI_CERR << "SNL_FEI_Structure::getBlkScatterIndices_index: ERROR getting"
+    fei::console_out() << "SNL_FEI_Structure::getBlkScatterIndices_index: ERROR getting"
 	 << " node descriptors." << FEI_ENDL;
     ERReturn(-1);
   }
@@ -3840,7 +3840,7 @@ void SNL_FEI_Structure::getScatterIndices_index(int blockIndex, int elemIndex,
 
    int err = getElemNodeDescriptors(blockIndex, elemIndex, nodes);
    if (err) {
-      FEI_CERR << "SNL_FEI_Structure::getScatterIndices_index: ERROR getting"
+      fei::console_out() << "SNL_FEI_Structure::getScatterIndices_index: ERROR getting"
            << " node descriptors." << FEI_ENDL;
       std::abort();
    }
@@ -3849,24 +3849,24 @@ void SNL_FEI_Structure::getScatterIndices_index(int blockIndex, int elemIndex,
    if (fieldDatabase_->size() == 1) {
      err = getNodeIndices_simple(nodes, numNodes, fieldIDs[0][0],
 				    scatterIndices, offset);
-     if (err) FEI_CERR << "ERROR in getNodeIndices_simple." << FEI_ENDL;
+     if (err) fei::console_out() << "ERROR in getNodeIndices_simple." << FEI_ENDL;
    }
    else {
      switch (interleaveStrategy) {
      case 0:
        err = getNodeMajorIndices(nodes, numNodes, fieldIDs, fieldsPerNode,
 				 scatterIndices, offset);
-       if (err) FEI_CERR << "ERROR in getNodeMajorIndices." << FEI_ENDL;
+       if (err) fei::console_out() << "ERROR in getNodeMajorIndices." << FEI_ENDL;
        break;
 
      case 1:
        err = getFieldMajorIndices(nodes, numNodes, fieldIDs, fieldsPerNode,
 				  scatterIndices, offset);
-       if (err) FEI_CERR << "ERROR in getFieldMajorIndices." << FEI_ENDL;
+       if (err) fei::console_out() << "ERROR in getFieldMajorIndices." << FEI_ENDL;
        break;
 
      default:
-       FEI_CERR << "ERROR, unrecognized interleaveStrategy." << FEI_ENDL;
+       fei::console_out() << "ERROR, unrecognized interleaveStrategy." << FEI_ENDL;
        break;
      }
    }
@@ -3900,7 +3900,7 @@ void SNL_FEI_Structure::getScatterIndices_index(int blockIndex, int elemIndex,
 
    int err = getElemNodeDescriptors(blockIndex, elemIndex, nodes);
    if (err) {
-      FEI_CERR << "SNL_FEI_Structure::getScatterIndices_index: ERROR getting"
+      fei::console_out() << "SNL_FEI_Structure::getScatterIndices_index: ERROR getting"
            << " node descriptors." << FEI_ENDL;
       std::abort();
    }
@@ -3910,7 +3910,7 @@ void SNL_FEI_Structure::getScatterIndices_index(int blockIndex, int elemIndex,
      err = getNodeIndices_simple(nodes, numNodes, fieldIDs[0][0],
 				 scatterIndices, offset,
 				 blkScatterIndices, blkSizes, blkOffset);
-     if (err) FEI_CERR << "ERROR in getNodeIndices_simple." << FEI_ENDL;
+     if (err) fei::console_out() << "ERROR in getNodeIndices_simple." << FEI_ENDL;
    }
    else {
      switch (interleaveStrategy) {
@@ -3918,17 +3918,17 @@ void SNL_FEI_Structure::getScatterIndices_index(int blockIndex, int elemIndex,
        err = getNodeMajorIndices(nodes, numNodes, fieldIDs, fieldsPerNode,
 				 scatterIndices, offset,
 				 blkScatterIndices, blkSizes, blkOffset);
-       if (err) FEI_CERR << "ERROR in getNodeMajorIndices." << FEI_ENDL;
+       if (err) fei::console_out() << "ERROR in getNodeMajorIndices." << FEI_ENDL;
        break;
 
      case 1:
        err = getFieldMajorIndices(nodes, numNodes, fieldIDs, fieldsPerNode,
 				  scatterIndices, offset);
-       if (err) FEI_CERR << "ERROR in getFieldMajorIndices." << FEI_ENDL;
+       if (err) fei::console_out() << "ERROR in getFieldMajorIndices." << FEI_ENDL;
        break;
 
      default:
-       FEI_CERR << "ERROR, unrecognized interleaveStrategy." << FEI_ENDL;
+       fei::console_out() << "ERROR, unrecognized interleaveStrategy." << FEI_ENDL;
        break;
      }
    }
@@ -4065,7 +4065,7 @@ int SNL_FEI_Structure::getNodeMajorIndices(NodeDescriptor** nodes, int numNodes,
          }
          else {
 	   if (outputLevel_ > 2) {
-	     FEI_CERR << "WARNING, field ID " << fieldIDs[nodeIndex][j]
+	     fei::console_out() << "WARNING, field ID " << fieldIDs[nodeIndex][j]
 		  << " not found for node "
 		  << (int)(node.getGlobalNodeID()) << FEI_ENDL;
 	   }
@@ -4134,7 +4134,7 @@ int SNL_FEI_Structure::getNodeMajorIndices(NodeDescriptor** nodes, int numNodes,
          }
          else {
 	   if (outputLevel_ > 2) {
-	     FEI_CERR << "WARNING, field ID " << fieldIDs[nodeIndex][j]
+	     fei::console_out() << "WARNING, field ID " << fieldIDs[nodeIndex][j]
 		  << " not found for node "
 		  << (int)(node.getGlobalNodeID()) << FEI_ENDL;
 	   }
@@ -4193,7 +4193,7 @@ int SNL_FEI_Structure::getNodeMajorIndices(NodeDescriptor** nodes, int numNodes,
          }
          else {
 	   if (outputLevel_ > 2) {
-	     FEI_CERR << "WARNING, field ID " << fieldID_ind[j]
+	     fei::console_out() << "WARNING, field ID " << fieldID_ind[j]
 		  << " not found for node "
 		  << (int)node.getGlobalNodeID() << FEI_ENDL;
            }
@@ -4316,7 +4316,7 @@ int SNL_FEI_Structure::getFieldMajorIndices(NodeDescriptor** nodes, int numNodes
          }
          else {
 	   if (outputLevel_ > 2) {
-	     FEI_CERR << "WARNING, field ID " << fields[i]
+	     fei::console_out() << "WARNING, field ID " << fields[i]
 		  << " not found for node "
 		  << (int)nodes[nodeIndex]->getGlobalNodeID() << FEI_ENDL;
 	   }

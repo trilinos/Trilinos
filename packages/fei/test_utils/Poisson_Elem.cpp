@@ -211,7 +211,7 @@ void Poisson_Elem::calculateCoords() {
 
 //==============================================================================
 void Poisson_Elem::messageAbort(const char* str) {
-    FEI_CERR << "Poisson_Elem: ERROR: " << str << " Aborting." << FEI_ENDL;
+    fei::console_out() << "Poisson_Elem: ERROR: " << str << " Aborting." << FEI_ENDL;
     std::abort();
 }
 

@@ -96,7 +96,7 @@ int BlockDescriptor::allocateFieldIDsTable()
   }
 
   if (rowsAllZeroLength || numNodesPerElement_ == 0) {
-    FEI_CERR << "BlockDescriptor::allocateFieldIDsTable: ERROR, all rows of"
+    fei::console_out() << "BlockDescriptor::allocateFieldIDsTable: ERROR, all rows of"
 	 << " fieldIDs table have zero length. Set fieldsPerNode entries"
 	 << " first." << FEI_ENDL;
     return(-1);

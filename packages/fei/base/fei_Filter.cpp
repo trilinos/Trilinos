@@ -140,7 +140,7 @@ const NodeDescriptor& Filter::findNodeDescriptor(GlobalID nodeID) const {
   int err = problemStructure_->getNodeDatabase().getNodeWithID(nodeID, node);
 
   if (err != 0) {
-    FEI_CERR << "ERROR, Filter::findNodeDescriptor unable to find node "
+    fei::console_out() << "ERROR, Filter::findNodeDescriptor unable to find node "
 	 << static_cast<int>(nodeID) << FEI_ENDL;
     std::abort();
   }

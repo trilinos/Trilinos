@@ -215,7 +215,7 @@ void AztecDMSR_Matrix::put(double s)
     for(int i=0; i<bindx[N_update_]; i++) val[i] = s;
   }
   else {
-    FEI_CERR << "AztecDMSR_Matrix::put - ERROR, can't do put until allocated"
+    fei::console_out() << "AztecDMSR_Matrix::put - ERROR, can't do put until allocated"
 	 << FEI_ENDL;
   }
   return;
@@ -232,7 +232,7 @@ int AztecDMSR_Matrix::rowLength(int row) const
     return(ADMSR_LOCAL_ROW_ALLOC_LEN(localRow));
   }
   else {
-    FEI_CERR << "AztecDMSR_Matrix::rowLength: ERROR row " << row 
+    fei::console_out() << "AztecDMSR_Matrix::rowLength: ERROR row " << row 
 	 << " not in local update set." << FEI_ENDL;
     abort();
     return(-1);
@@ -245,7 +245,7 @@ int AztecDMSR_Matrix::setDiagEntry(int row, double value)
   int thisRow = row;
   int localRow = -1;
   if(!amap_->inUpdate(thisRow,localRow)){
-    FEI_CERR << "AztecDMSR_Matrix::setDiagEntry: ERROR - row " << row 
+    fei::console_out() << "AztecDMSR_Matrix::setDiagEntry: ERROR - row " << row 
 	 << " not in local update set." << FEI_ENDL;
     abort(); return(-1);
   }
@@ -260,7 +260,7 @@ double AztecDMSR_Matrix::getDiagEntry(int row) const
   int thisRow = row;
   int localRow = -1;
   if(!amap_->inUpdate(thisRow,localRow)){
-    FEI_CERR << "AztecDMSR_Matrix::getDiagEntry: ERROR - row " << row 
+    fei::console_out() << "AztecDMSR_Matrix::getDiagEntry: ERROR - row " << row 
 	 << " not in local update set." << FEI_ENDL;
     abort(); return val[0];
   }
@@ -276,7 +276,7 @@ int AztecDMSR_Matrix::getOffDiagRowPointers(int row, int*& colIndices,
   int thisRow = row;
   int localRow = -1;
   if(!amap_->inUpdate(thisRow,localRow)){
-    FEI_CERR << "AztecDMSR_Matrix::getOffDiagRowPointers: ERROR - row " << row 
+    fei::console_out() << "AztecDMSR_Matrix::getOffDiagRowPointers: ERROR - row " << row 
 	 << " not in local update set." << FEI_ENDL;
     abort(); return(-1);
   }
@@ -308,7 +308,7 @@ void AztecDMSR_Matrix::getRow(int row,
   int thisRow = row;
 
   if(!amap_->inUpdate(thisRow,localRow)){
-    FEI_CERR << "AztecDMSR_Matrix::getRow: ERROR - row " << row 
+    fei::console_out() << "AztecDMSR_Matrix::getRow: ERROR - row " << row 
 	 << " not in local update set." << FEI_ENDL;
     length = 0;
     return;
@@ -359,7 +359,7 @@ int AztecDMSR_Matrix::putRow(int row, int len, const double *coefs,
   int thisRow = row;
 
   if (!amap_->inUpdate(thisRow,localRow)){
-    FEI_CERR << "AztecDMSR_Matrix::putRow: ERROR row " << row
+    fei::console_out() << "AztecDMSR_Matrix::putRow: ERROR row " << row
 	 << " not in local update set." << FEI_ENDL;
     return(-1);
   }
@@ -370,7 +370,7 @@ int AztecDMSR_Matrix::putRow(int row, int len, const double *coefs,
   int offDiagRowAllocLen = rowAllocLen - 1;
 
   if (len > rowAllocLen) {
-    FEI_CERR << "AztecDMSR_Matrix::putRow. too many coefs, row " << row << FEI_ENDL;
+    fei::console_out() << "AztecDMSR_Matrix::putRow. too many coefs, row " << row << FEI_ENDL;
     return(-1);
   }
 
@@ -406,7 +406,7 @@ int AztecDMSR_Matrix::putRow(int row, int len, const double *coefs,
 	val[j] = coefs[i];
       }
       else {
-	FEI_CERR << "AztecDMSR_Matrix::putRow: ERROR didn't "
+	fei::console_out() << "AztecDMSR_Matrix::putRow: ERROR didn't "
 	     << " find col. index " << colInd[i] << " in "
 	     << "row " << row << FEI_ENDL;
 	return(-1);
@@ -420,7 +420,7 @@ int AztecDMSR_Matrix::putRow(int row, int len, const double *coefs,
       int index = fei::binarySearch<int>(col, colInds, offDiagRowLen, insertPoint);
 
       if (index >= offDiagRowAllocLen){ //bad index
-	FEI_CERR << "AztecDMSR_Matrix::putRow, ERROR: " 
+	fei::console_out() << "AztecDMSR_Matrix::putRow, ERROR: " 
 	     << "row " << row << ", colInd["<<i<<"] " << colInd[i]
 	     << ", index = " << index << FEI_ENDL;
 	return(-1);
@@ -436,7 +436,7 @@ int AztecDMSR_Matrix::putRow(int row, int len, const double *coefs,
 	err += insert(coefs[i], insertPoint, rowCoefs,
 		      offDiagRowLen, offDiagRowAllocLen);
 	if (err != 0) {
-	  FEI_CERR << "AztecDMSR_Matrix::putRow ERROR: failed to add "
+	  fei::console_out() << "AztecDMSR_Matrix::putRow ERROR: failed to add "
 	       << "value for index " << col << " to row " << row << FEI_ENDL;
 	  return(-1);
 	}
@@ -473,7 +473,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
     int row = rows[i];
     int localRow;
     if (!amap_->inUpdate(row, localRow)) {
-      FEI_CERR << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
+      fei::console_out() << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
          << " not in local update set [" << amap_->getUpdate()[0] << " ... "
          << amap_->getUpdate()[N_update_-1] << "]." << FEI_ENDL;
       return(-1);
@@ -502,7 +502,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
   for(int i=0; i<numRows; ++i) {
     row = rows[i];
     if (!amap_->inUpdate(row, localRow)) {
-      FEI_CERR << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
+      fei::console_out() << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
          << " not in local update set [" << amap_->getUpdate()[0] << " ... "
          << amap_->getUpdate()[N_update_-1] << "]." << FEI_ENDL;
       return(-1);
@@ -533,7 +533,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
 
     int rowOffset = fei::binarySearch<int>(incol, tmp_array_, rowLen);
     if (rowOffset < 0) {
-       FEI_CERR << "AztecDMSR_Matrix::sumIntoRow, ERROR: "
+       fei::console_out() << "AztecDMSR_Matrix::sumIntoRow, ERROR: "
              << "row " << row << ", col not found: "
              << incol << FEI_ENDL;
       return(-1);
@@ -555,7 +555,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
       while(tmp_array_[rowOffset] != incol) {
         ++rowOffset;
         if (rowOffset >= rowLen) {
-          FEI_CERR << "AztecDMSR_Matrix::sumIntoRow, ERROR, col "
+          fei::console_out() << "AztecDMSR_Matrix::sumIntoRow, ERROR, col "
              << incol << " not found in row " << row << FEI_ENDL;
           return(-1); 
         }
@@ -581,7 +581,7 @@ int AztecDMSR_Matrix::sumIntoRow(int row, int len, const double *coefs,
   int localRow, thisRow = row ;
 
   if (!amap_->inUpdate(thisRow,localRow)) {
-    FEI_CERR << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
+    fei::console_out() << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
 	 << " not in local update set." << FEI_ENDL;
     return(-1);
   }
@@ -618,7 +618,7 @@ int AztecDMSR_Matrix::sumIntoRow(int row, int len, const double *coefs,
     int ioffset = 0;
     int offset = fei::binarySearch<int>(incols[ioffset], tmp_array_, jLen);
     if (offset < 0) {
-      FEI_CERR << "AztecDMSR_Matrix::sumIntoRow, ERROR: "
+      fei::console_out() << "AztecDMSR_Matrix::sumIntoRow, ERROR: "
              << "row " << row << ", col not found: "
              << colInd[ioffset] << FEI_ENDL;
       return(-1);
@@ -633,7 +633,7 @@ int AztecDMSR_Matrix::sumIntoRow(int row, int len, const double *coefs,
       while(tmp_array_[offset] != incol) {
         ++offset;
         if (offset >= jLen) {
-          FEI_CERR << "AztecDMSR_Matrix::sumIntoRow, ERROR, col "
+          fei::console_out() << "AztecDMSR_Matrix::sumIntoRow, ERROR, col "
              << incols[ioffset] << " not found in row " << row << FEI_ENDL;
           return(-1);
         }
@@ -672,7 +672,7 @@ int AztecDMSR_Matrix::sumIntoRow(int row, int len, const double *coefs,
       err += insert(coefs[i], insertPoint, rowCoefs,
                     offDiagRowLen, offDiagRowAllocLen);
       if (err != 0) {
-        FEI_CERR << "AztecDMSR_Matrix::sumIntoRow ERROR: failed to add "
+        fei::console_out() << "AztecDMSR_Matrix::sumIntoRow ERROR: failed to add "
                  << "value for index " << col << " to row " << row << FEI_ENDL;
         return(-1);
       }
@@ -690,7 +690,7 @@ int AztecDMSR_Matrix::addScaledMatrix(double scalar,
   if (N_update_ != source.N_update_ ||
       nnzeros_ != source.nnzeros_ ||
       isFilled_ != source.isFilled_) {
-    FEI_CERR << "AztecDMSR_Matrix::addScaledMatrix ERROR, not compatible"
+    fei::console_out() << "AztecDMSR_Matrix::addScaledMatrix ERROR, not compatible"
 	 << FEI_ENDL;
     return(-1);
   }
@@ -854,7 +854,7 @@ double AztecDMSR_Matrix::rowMax(int row) const {
     double max = 0.0;
 
     if(!amap_->inUpdate(row,localRow)){
-        FEI_CERR << "AztecDMSR_Matrix::rowMax: ERROR row " << row 
+        fei::console_out() << "AztecDMSR_Matrix::rowMax: ERROR row " << row 
              << " not in local update set." << FEI_ENDL;
         return(-1.0);
     }
@@ -888,7 +888,7 @@ void AztecDMSR_Matrix::fillComplete() {
    int globalSize = amap_->globalSize();
    for(int i=N_update_+1; i<nnzeros_+1; i++) {
       if (bindx[i] < 0 || bindx[i] >= globalSize) {
-         FEI_CERR << "AztecDMSR_Matrix: ERROR, bindx["<<i<<"]: " << bindx[i]
+         fei::console_out() << "AztecDMSR_Matrix: ERROR, bindx["<<i<<"]: " << bindx[i]
               << ", globalSize: " << globalSize << FEI_ENDL;
 #ifndef FEI_SER
          MPI_Comm thisComm = amap_->getCommunicator();
@@ -987,13 +987,13 @@ bool AztecDMSR_Matrix::readFromFile(const char *filename)
   FILE *mfp = fopen(filename,"r");
 
   if(!mfp){
-    FEI_CERR << "AztecDMSR_Matrix::readFromFile - couldn't open matrix file."
+    fei::console_out() << "AztecDMSR_Matrix::readFromFile - couldn't open matrix file."
 	 << FEI_ENDL;
     return(false);
   }
 
   if (strstr(filename, ".mtx") == NULL) {
-    FEI_CERR << "AztecDMSR_Matrix::readFromFile: filename doesn't contain "
+    fei::console_out() << "AztecDMSR_Matrix::readFromFile: filename doesn't contain "
 	 << "'.mtx'. File should be a MatrixMarket file." << FEI_ENDL;
     return(false);
   }
@@ -1111,7 +1111,7 @@ bool AztecDMSR_Matrix::writeToFile(const char *fileName) const
 
 //==============================================================================
 void AztecDMSR_Matrix::messageAbort(const char* mesg) {
-    FEI_CERR << "AztecDMSR_Matrix: ERROR: " << mesg << " Aborting." << FEI_ENDL;
+    fei::console_out() << "AztecDMSR_Matrix: ERROR: " << mesg << " Aborting." << FEI_ENDL;
     abort();
 }
 

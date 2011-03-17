@@ -151,7 +151,7 @@ FEDataFilter::FEDataFilter(FEI_Implementation* owner,
     feData_ = wrapper_->getFiniteElementData();
   }
   else {
-    FEI_CERR << "FEDataFilter::FEDataFilter ERROR, must be constructed with a "
+    fei::console_out() << "FEDataFilter::FEDataFilter ERROR, must be constructed with a "
          << "FiniteElementData interface. Aborting." << FEI_ENDL;
 #ifndef FEI_SER
     MPI_Abort(comm_, -1);
@@ -170,7 +170,7 @@ FEDataFilter::FEDataFilter(FEI_Implementation* owner,
     //Now let's pass them into our own parameter-handling mechanism.
     err = parameters(numParams, paramStrings);
     if (err != 0) {
-      FEI_CERR << "FEDataFilter::FEDataFilter ERROR, parameters failed." << FEI_ENDL;
+      fei::console_out() << "FEDataFilter::FEDataFilter ERROR, parameters failed." << FEI_ENDL;
       MPI_Abort(comm_, -1);
     }
   }
@@ -533,7 +533,7 @@ int FEDataFilter::initLinSysCore()
 
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -655,7 +655,7 @@ int FEDataFilter::loadNodeBCs(int numNodes,
   //
   int size = problemStructure_->getFieldSize(fieldID);
   if (size < 1) {
-    FEI_CERR << "FEI Warning: loadNodeBCs called for fieldID "<<fieldID
+    fei::console_out() << "FEI Warning: loadNodeBCs called for fieldID "<<fieldID
          <<", which was defined with size "<<size<<" (should be positive)."<<FEI_ENDL;
     return(0);
   }
@@ -685,7 +685,7 @@ int FEDataFilter::loadNodeBCs(int numNodes,
      NodeDescriptor* node = NULL;
      nodeDB.getNodeWithID(nodeIDs[i], node);
      if (node == NULL) {
-       FEI_CERR << "fei_FEDataFilter::loadNodeBCs ERROR, node " << nodeIDs[i]
+       fei::console_out() << "fei_FEDataFilter::loadNodeBCs ERROR, node " << nodeIDs[i]
            << " not found." << FEI_ENDL;
        ERReturn(-1);
      }
@@ -1436,7 +1436,7 @@ int FEDataFilter::solve(int& status, double& sTime) {
 int FEDataFilter::setNumRHSVectors(int numRHSs, int* rhsIDs){
 
    if (numRHSs < 0) {
-      FEI_CERR << "FEDataFilter::setNumRHSVectors: ERROR, numRHSs < 0." << FEI_ENDL;
+      fei::console_out() << "FEDataFilter::setNumRHSVectors: ERROR, numRHSs < 0." << FEI_ENDL;
       ERReturn(-1);
    }
 
@@ -1751,7 +1751,7 @@ int FEDataFilter::getSharedRemoteSolnEntry(int eqnNumber, double& solnValue)
 
   int index = fei::binarySearch(eqnNumber, remoteEqnNumbers);
   if (index < 0) {
-    FEI_CERR << "FEDataFilter::getSharedRemoteSolnEntry: ERROR, eqn "
+    fei::console_out() << "FEDataFilter::getSharedRemoteSolnEntry: ERROR, eqn "
          << eqnNumber << " not found." << FEI_ENDL;
     ERReturn(-1);
   }
@@ -1795,7 +1795,7 @@ int FEDataFilter::getReducedSolnEntry(int eqnNumber, double& solnValue)
   if (fetiHasNode) {
     int err = feData_->getSolnEntry(nodeNumber, dof_id, solnValue);
     if (err != 0) {
-      FEI_CERR << "FEDataFilter::getReducedSolnEntry: nodeNumber " << nodeNumber
+      fei::console_out() << "FEDataFilter::getReducedSolnEntry: nodeNumber " << nodeNumber
            << " (nodeID " << node->getGlobalNodeID() << "), dof_id "<<dof_id
            << " couldn't be obtained from FETI on proc " << localRank_ << FEI_ENDL;
       ERReturn(-1);
@@ -1832,7 +1832,7 @@ int FEDataFilter::unpackSolution()
      int eqn = recvEqnNumbers[i];
 
      if ((reducedStartRow_ > eqn) || (reducedEndRow_ < eqn)) {
-       FEI_CERR << "FEDataFilter::unpackSolution: ERROR, 'recv' eqn (" << eqn
+       fei::console_out() << "FEDataFilter::unpackSolution: ERROR, 'recv' eqn (" << eqn
              << ") out of local range." << FEI_ENDL;
        MPI_Abort(comm_, -1);
      }
@@ -2032,7 +2032,7 @@ int FEDataFilter::getBlockFieldNodeSolution(GlobalID elemBlockID,
   if (fieldSize <= 0) ERReturn(-1);
 
   if (!block->containsField(fieldID)) {
-    FEI_CERR << "FEDataFilter::getBlockFieldNodeSolution WARNING: fieldID " << fieldID
+    fei::console_out() << "FEDataFilter::getBlockFieldNodeSolution WARNING: fieldID " << fieldID
          << " not contained in element-block " << static_cast<int>(elemBlockID) << FEI_ENDL;
     return(1);
   }
@@ -2094,7 +2094,7 @@ int FEDataFilter::getNodalFieldSolution(int fieldID,
   if (numActiveNodes <= 0) return(0);
 
   if (problemStructure_->numSlaveEquations() != 0) {
-    FEI_CERR << "FEDataFilter::getEqnSolnEntry ERROR FETI-support is not currently"
+    fei::console_out() << "FEDataFilter::getEqnSolnEntry ERROR FETI-support is not currently"
          << " compatible with the FEI's constraint reduction." << FEI_ENDL;
     ERReturn(-1);
   }
@@ -2161,7 +2161,7 @@ int FEDataFilter::getNodalFieldSolution(int fieldID,
 
       err = feData_->getSolnEntry(nodeNumber, dof_id+j, results[offset+j]);
       if (err != 0) {
-        FEI_CERR << "FEDataFilter::getReducedSolnEntry: nodeNumber " << nodeNumber
+        fei::console_out() << "FEDataFilter::getReducedSolnEntry: nodeNumber " << nodeNumber
              << " (nodeID " << nodeID << "), dof_id "<<dof_id
              << " couldn't be obtained from FETI on proc " << localRank_ << FEI_ENDL;
         ERReturn(-1);
@@ -2262,7 +2262,7 @@ int FEDataFilter::putBlockFieldNodeSolution(GlobalID elemBlockID,
 
    if (fieldID >= 0) {
      if (fieldSize < 1) {
-       FEI_CERR << "FEI Warning, putBlockFieldNodeSolution called for field "
+       fei::console_out() << "FEI Warning, putBlockFieldNodeSolution called for field "
             << fieldID<<", which has size "<<fieldSize<<FEI_ENDL;
        return(0);
      }
@@ -2271,7 +2271,7 @@ int FEDataFilter::putBlockFieldNodeSolution(GlobalID elemBlockID,
      data.resize(numNodes*fieldSize);
      }
      catch(std::runtime_error& exc) {
-       FEI_CERR << exc.what()<<FEI_ENDL;
+       fei::console_out() << exc.what()<<FEI_ENDL;
        ERReturn(-1);
      }
    }
@@ -2387,7 +2387,7 @@ int FEDataFilter::putBlockElemSolution(GlobalID elemBlockID,
 
    int DOFPerElement = block->getNumElemDOFPerElement();
    if (DOFPerElement != dofPerElem) {
-     FEI_CERR << "FEI ERROR, putBlockElemSolution called with bad 'dofPerElem' ("
+     fei::console_out() << "FEI ERROR, putBlockElemSolution called with bad 'dofPerElem' ("
           <<dofPerElem<<"), block "<<elemBlockID<<" should have dofPerElem=="
           <<DOFPerElement<<FEI_ENDL;
      ERReturn(-1);
@@ -2470,7 +2470,7 @@ int FEDataFilter::putNodalFieldData(int fieldID,
     int nodeNumber = node->getNodeNumber();
     if (nodeNumber < 0) {
       GlobalID nodeID = nodeIDs[i];
-      FEI_CERR << "FEDataFilter::putNodalFieldData ERROR, node with ID " 
+      fei::console_out() << "FEDataFilter::putNodalFieldData ERROR, node with ID " 
            << static_cast<int>(nodeID) << " doesn't have an associated nodeNumber "
            << "assigned. putNodalFieldData shouldn't be called until after the "
            << "initComplete method has been called." << FEI_ENDL;

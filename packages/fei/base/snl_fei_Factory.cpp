@@ -170,7 +170,7 @@ snl_fei::Factory::createVector(fei::SharedPtr<fei::VectorSpace> vecSpace,
   (void)vecSpace;
   fei::SharedPtr<fei::Vector> dummy;
   if (matrixGraph_.get() == NULL) {
-    FEI_CERR << "snl_fei::Factory ERROR: when using LinearSystemCore or FiniteElementData"
+    fei::console_out() << "snl_fei::Factory ERROR: when using LinearSystemCore or FiniteElementData"
          << ", you must create a MatrixGraph before you can create vectors"<<FEI_ENDL;
     return(dummy);
   }
@@ -194,7 +194,7 @@ snl_fei::Factory::createVector(fei::SharedPtr<fei::VectorSpace> vecSpace,
   fei::SharedPtr<fei::Vector> dummy;
   (void)vecSpace;
   if (matrixGraph_.get() == NULL) {
-    FEI_CERR << "snl_fei::Factory ERROR: when using LinearSystemCore"
+    fei::console_out() << "snl_fei::Factory ERROR: when using LinearSystemCore"
          << ", you must create a MatrixGraph before you can create vectors"<<FEI_ENDL;
     return(dummy);
   }
@@ -252,7 +252,7 @@ snl_fei::Factory::createMatrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
   fei::SharedPtr<fei::Matrix> mptr;
 
   if (matrixGraph_.get() == NULL) {
-    FEI_CERR << "snl_fei::Factory ERROR: when using LinearSystemCore"
+    fei::console_out() << "snl_fei::Factory ERROR: when using LinearSystemCore"
          << ", you must create a MatrixGraph before you can create matrices"<<FEI_ENDL;
     return(mptr);
   }
@@ -276,7 +276,7 @@ snl_fei::Factory::createLinearSystem(fei::SharedPtr<fei::MatrixGraph>& matrixGra
   matrixGraph_ = matrixGraph;
 
   if (matrixGraph_.get() == NULL) {
-    FEI_CERR << "snl_fei::Factory ERROR: you may not create a LinearSystem with "
+    fei::console_out() << "snl_fei::Factory ERROR: you may not create a LinearSystem with "
          << "a NULL MatrixGraph object." << FEI_ENDL;
     fei::SharedPtr<fei::LinearSystem> linsys;
     return(linsys);

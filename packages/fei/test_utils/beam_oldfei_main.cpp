@@ -73,7 +73,7 @@ int beam_oldfei_main(int argc, char** argv,
   errcode += paramset.getIntParamValue("DofPerNode", DofPerNode);
 
   if (errcode != 0) {
-    FEI_CERR << "Failed to find one or more required parameters in input-file."
+    fei::console_out() << "Failed to find one or more required parameters in input-file."
 	     << FEI_ENDL << "Required parameters:"<<FEI_ENDL
 	     << "SOLVER_LIBRARY" << FEI_ENDL
 	     << "DATA_SOURCE" << FEI_ENDL
@@ -125,7 +125,7 @@ int beam_oldfei_main(int argc, char** argv,
       wrapper = fei::create_LibraryWrapper(comm, solverName.c_str());
     }
     catch (std::runtime_error& exc) {
-      FEI_CERR << exc.what() << FEI_ENDL;
+      fei::console_out() << exc.what() << FEI_ENDL;
       ERReturn(-1);
     }
     fei.reset(new FEI_Implementation(wrapper, comm));
@@ -135,13 +135,13 @@ int beam_oldfei_main(int argc, char** argv,
       factory = fei::create_fei_Factory(comm, solverName.c_str());
     }
     catch (std::runtime_error& exc) {
-      FEI_CERR << exc.what() << FEI_ENDL;
+      fei::console_out() << exc.what() << FEI_ENDL;
       ERReturn(-1);
     }
     fei = factory->createFEI(comm);
   }
   else {
-    FEI_CERR << "cube ERROR, value of 'WHICH_FEI' must be 'OLDFEI' or 'fei::FEI_Impl'"<< FEI_ENDL;
+    fei::console_out() << "cube ERROR, value of 'WHICH_FEI' must be 'OLDFEI' or 'fei::FEI_Impl'"<< FEI_ENDL;
     ERReturn(-1);
   }
 

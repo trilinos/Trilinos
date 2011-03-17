@@ -94,7 +94,7 @@ namespace fei {
       if (!mat->Filled()) {
         int err = mat->FillComplete();
         if (err != 0) {
-          FEI_CERR << "MatrixTraits<Epetra_CrsMatrix>::globalAssemble"
+          fei::console_out() << "MatrixTraits<Epetra_CrsMatrix>::globalAssemble"
                    << " ERROR in mat->FillComplete" << FEI_ENDL;
           return(-1);
         }

@@ -171,7 +171,7 @@ void PoissonData::calculateDistribution() {
 
 //==============================================================================
 void PoissonData::messageAbort(const char* message) {
-    FEI_CERR << FEI_ENDL << "PoissonData: " << message 
+    fei::console_out() << FEI_ENDL << "PoissonData: " << message 
          << FEI_ENDL << "  Aborting." << FEI_ENDL;
     std::abort();
 }

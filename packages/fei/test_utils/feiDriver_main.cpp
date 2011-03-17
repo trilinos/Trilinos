@@ -59,7 +59,7 @@ int feiDriver_main(int argc, char** argv,
   int errcode = paramset.getStringParamValue("SOLVER_LIBRARY", solverName);
   errcode += paramset.getStringParamValue("INPUT_FILE", inputFileName);
   if (errcode != 0) {
-    FEI_CERR << "Expected to find both 'SOLVER_NAME' and 'INPUT_FILE' "
+    fei::console_out() << "Expected to find both 'SOLVER_NAME' and 'INPUT_FILE' "
 	     <<"in input-file."<<FEI_ENDL;
     return(-1);
   }
@@ -82,7 +82,7 @@ int feiDriver_main(int argc, char** argv,
     wrapper = fei::create_LibraryWrapper(comm, solverName.c_str());
   }
   catch (std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -112,7 +112,7 @@ int feiDriver_main(int argc, char** argv,
 	wrapper = fei::create_LibraryWrapper(comm, solverName.c_str());
       }
       catch (std::runtime_error& exc) {
-	FEI_CERR << exc.what()<<FEI_ENDL;
+	fei::console_out() << exc.what()<<FEI_ENDL;
 	ERReturn(-1);
       }
 

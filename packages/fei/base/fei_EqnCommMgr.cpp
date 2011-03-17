@@ -135,7 +135,7 @@ void EqnCommMgr::addLocalEqn(int eqnNumber, int srcProc) {
 //it isn't already in, preserving order, etc. 
 //
    if (srcProc == localProc_) {
-      FEI_CERR << "EqnCommMgr::addRecvEqn: ERROR, srcProc == localProc_, "
+      fei::console_out() << "EqnCommMgr::addRecvEqn: ERROR, srcProc == localProc_, "
           << "which is a recipe for a deadlock." << FEI_ENDL;
       std::abort();
    }
@@ -147,7 +147,7 @@ void EqnCommMgr::addLocalEqn(int eqnNumber, int srcProc) {
 void EqnCommMgr::addSolnValues(int* eqnNumbers, double* values, int num)
 {
   if (!exchangeIndicesCalled_) {
-    FEI_CERR << "EqnCommMgr::addSolnValues: ERROR, you may not call this until"
+    fei::console_out() << "EqnCommMgr::addSolnValues: ERROR, you may not call this until"
       " after exchangeIndices has been called." << FEI_ENDL;
     std::abort();
   }
@@ -334,7 +334,7 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
   delete [] indRequests;
 
   if (numRecvsStarted != numCompleted) {
-    FEI_CERR << "EqnCommMgr::exchangeIndices: recv-send mismatch; "
+    fei::console_out() << "EqnCommMgr::exchangeIndices: recv-send mismatch; "
           << "numRecvsStarted: " << numRecvsStarted << ", numCompleted: "
          << numCompleted << FEI_ENDL;
     std::abort();
@@ -398,7 +398,7 @@ int EqnCommMgr::consistencyCheck(const char* caller,
       //that we're not one of proc i's sendProcs.
       for(int j=0; j<size; j++) {
 	if (globalSendProcs[offset+j] == localProc_) {
-	  FEI_CERR << "EqnCommMgr::"<<caller<<" ERROR: proc " << localProc_
+	  fei::console_out() << "EqnCommMgr::"<<caller<<" ERROR: proc " << localProc_
 	       << " is not expecting to receive from proc " << i << " but proc "
 	       << i << " is expecting to send to proc " << localProc_ << FEI_ENDL;
 	  err = -1;
@@ -416,7 +416,7 @@ int EqnCommMgr::consistencyCheck(const char* caller,
 	int sendLength = globalProcSendLengths[offset+j];
 	int recvLength = recvProcTotalLengths[rpIndex];
 	if (sendLength != recvLength) {
-	  FEI_CERR << "EqnCommMgr::"<<caller<<" ERROR: proc " << localProc_
+	  fei::console_out() << "EqnCommMgr::"<<caller<<" ERROR: proc " << localProc_
 	       << " is expecting to receive " << recvLength << " indices from "
 	       << "proc " << i << " but proc " << i << " is expecting to send "
 	       << sendLength << " indices to proc " << localProc_ << FEI_ENDL;
@@ -924,7 +924,7 @@ void EqnCommMgr::addRemoteIndices(int eqnNumber, int destProc,
                                 int* indices, int num)
 {
   if (destProc < 0) {
-    FEI_CERR << "fei: EqnCommMgr::addRemoteIndices ERROR, destProc < 0" << FEI_ENDL;
+    fei::console_out() << "fei: EqnCommMgr::addRemoteIndices ERROR, destProc < 0" << FEI_ENDL;
     std::abort();
   }
 
