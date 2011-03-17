@@ -21,7 +21,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   #SET( CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind )
   #SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS )
 
-  # Only turn on PyTrilinos for shared libraries
+  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+
+  # Turn off SS packages we don't have TPLs for
   SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES PyTrilinos TriKota Optika)
   
   SET_DEFAULT(COMPILER_VERSION "ICPC-11.1.064")
