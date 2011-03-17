@@ -70,6 +70,9 @@ namespace panzer_stk {
   {
     TEST_FOR_EXCEPTION(Teuchos::is_null(this->getParameterList()), std::runtime_error,
 		       "ParameterList must be set before objects can be built!");
+
+    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    fout.setOutputToRootOnly(0); 
    
     // this function will need to be broken up eventually and probably
     // have parts moved back into panzer.  Just need to get something
@@ -161,12 +164,10 @@ namespace panzer_stk {
 	for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr)
 	  mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
       }
-      
+   
       mesh_factory->completeMeshConstruction(*mesh,*(mpi_comm->getRawMpiComm()));
     }
       
-    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
-    fout.setOutputToRootOnly(0); 
     mesh->print(fout);
     mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name")); 
 
@@ -227,10 +228,8 @@ namespace panzer_stk {
     RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);
     std::string solver = p.sublist("Solution Control").get<std::string>("Piro Solver");
     if (solver=="NOX" || solver=="LOCA") {
-      *strat_params = p.sublist("Piro Solver").sublist("NOX").sublist("Direction").
+      *strat_params = p.sublist("Solution Control").sublist("NOX").sublist("Direction").
 	sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos");
-      //stratParams = Teuchos::rcp(&(p.sublist("Piro Solver").sublist("NOX").sublist("Direction").
-      // 			   sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
     }
     else if (solver=="Rythmos") {
       //      stratParams = Teuchos::rcp(&(p.sublist("Solution Control").sublist("Rythmos").sublist("Stratimikos")),false);
