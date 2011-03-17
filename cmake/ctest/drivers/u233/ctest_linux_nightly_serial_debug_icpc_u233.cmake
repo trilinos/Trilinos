@@ -11,10 +11,7 @@ SET(BUILD_DIR_NAME SERIAL_DEBUG_ICPC)
 #SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Tpetra Thyra OptiPack Stratimikos Phalanx Rythmos MOOCHO)
-
 SET( EXTRA_CONFIGURE_OPTIONS
-  "-DTPL_ENABLE_Boost:BOOL=OFF"
   )
 
 #
