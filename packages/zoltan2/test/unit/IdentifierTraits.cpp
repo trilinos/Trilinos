@@ -41,7 +41,9 @@ int main(int argc, char *argv[])
     long unsigned int lui =9;
     long long int lli = 3000000000;
     std::pair<int, int> pairVals(9, 9);
+#ifdef SERIALIZATION_SUPPORTS_VECTORS
     std::vector<int> vecVals(10, 9);
+#endif
     void *iptr = &i;
 
 
@@ -53,7 +55,9 @@ int main(int argc, char *argv[])
     check_traits(lui);
     check_traits(lli);    // TODO only do this when HAVE_LONG_LONG
     check_traits(pairVals);
+#ifdef SERIALIZATION_SUPPORTS_VECTORS
     check_traits(vecVals);
+#endif
     check_traits(iptr);
 
     // TODO: When we can test that a source file fails to compile, we can

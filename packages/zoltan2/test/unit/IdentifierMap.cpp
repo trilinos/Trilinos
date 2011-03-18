@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
   if (rank < leftOver) numLocalObjects++;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
   Teuchos::RCP< std::vector<long> > gids = Teuchos::rcp(new std::vector<long>(numLocalObjects));
   Teuchos::RCP< std::vector<int> > lids = Teuchos::rcp(new std::vector<int>(numLocalObjects));
 

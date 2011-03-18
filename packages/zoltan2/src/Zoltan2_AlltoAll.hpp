@@ -17,6 +17,118 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 
+#ifdef SERIALIZATION_SUPPORTS_VECTORS
+//
+// There is no instantiation for std::vector<> in SerializationTraits.  
+//   Because this represents a fundamental global ID type in the original Zoltan 
+//   (an array of arbitrary size of unsigned ints) we should support it.   
+//   Message passing of std::vector<> will only occur during preprocessing 
+//   and only in the event that the caller's global ID type is std::vector<T>.
+//   Callers will know that this is not efficient.
+//
+// Layout for std::vector<T> -
+//      int numberOfVectors                   /* LNO may be too small, use int */
+//      int offsetToStartOfVectorElements[N]  /* offset (in Ts) from start of buffer */
+//      T *vectorElements                     /* start on a sizeof(T)-aligned boundary */
+//
+// The SerializationTraits class, to support types that can be different sizes, needs methods :
+//
+//   fromObjectsToIndirectBytes
+//   fromIndirectBytesToObjectCount
+//
+// to use instead of:
+//
+//   fromCountToIndirectBytes
+//   fromIndirectBytesToCount
+//
+// The fromObjects method has the objects, not just a count of the objects.
+// The ToObjectCount method has the buffer of chars, not just the size of the buffer. 
+// There may be a better generalization of DirectSerialization_Traits.
+//
+
+#include<Teuchos_SerializationTraits.hpp>
+
+template<typename Ordinal, typename T>
+class SerializationTraits<Ordinal,std::vector<T> >
+{
+  // static Ordinal fromCountToIndirectBytes(const Ordinal count) 
+  static Ordinal fromObjectsToIndirectBytes(const Ordinal count, const std::vector<T> buffer[])
+  {
+    Ordinal nbytes = 0;
+
+    int preamble = sizeof(int) * (1 + count);
+    int extra = preamble % sizeof(T);        // T alignment
+    int numT = 0;
+
+    for (int i=0; i < count; i++)
+      numT += buffer[i].size();
+
+    return preamble + extra + numT * sizeof(T);
+  }
+
+  static void serialize(
+    const Ordinal count, const std::vector<T> buffer[], const Ordinal bytes, char charBuffer[])
+  {
+    int preamble = sizeof(int) * (1 + count);
+    int extra = preamble % sizeof(T); 
+
+    int *info = reinterpret_cast<int *>(charBuffer);
+    int offset = (preamble + extra) / sizeof(T);
+    T* elements = reinterpret_cast<T *>(charBuffer) + offset;
+
+    *info++ = count;
+
+    for (int i=0; i < count; i++){
+      int nelements = buffer[i].size();
+      *info++ = offset;
+
+      for (j=0; j < nelements; j++)
+        *elements++ = buffer[i][j];
+
+      offset += nelements;
+    }
+  }
+
+  static Ordinal fromIndirectBytesToObjectCount(const Ordinal bytes, char charBuffer[]) 
+  {
+    int *buf = reinterpret_cast<int *>charBuffer;
+    return buf[0];
+  }
+
+  static void deserialize(
+    const Ordinal bytes, const char charBuffer[], const Ordinal count, std::vector<T> buffer[])
+  {
+    int preamble = sizeof(int) * (1 + count);
+    int extra = preamble % sizeof(T); 
+    int offset = (preamble + extra) / sizeof(T);
+
+    int *info = reinterpret_cast<int *>(charBuffer);
+    T* elements = reinterpret_cast<T *>(charBuffer) + offset;
+
+    info++;    // skip count
+
+    for (i=0; i < count; i++){
+      int offset = info[i];
+
+      if (i == count-1)   
+        nextOffset = bytes/sizeof(T);
+      else
+        nextOffset = info[i+1];
+
+      int length = nextOffset - offset;
+
+      buffer[i].resize(length);
+      for (int j=0; j < length; j++){
+        buffer[i].push_back(*elements++);
+      }
+    }
+  }
+};
+
+}
+
+#endif
+
 namespace Z2
 {
 
@@ -110,51 +222,54 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
   int nprocs = comm.getSize();
   int rank = comm.getRank();
 
-  std::vector<Teuchos::RCP<Teuchos::CommRequest> > req(nprocs-1);
+  AlltoAll<GNO, GNO, LNO>(comm, sendCount, 1, recvCount);
 
-  AlltoAll(comm, sendCount, 1, recvCount);
-
-  GNO totalIn=0, offset=0;
+  GNO totalIn=0, offsetIn=0, offsetOut=0;
 
   for (int i=0; i < nprocs; i++){
     totalIn += recvCount[i];
-    if (i < rank)
-      offset += recvCount[i];
+    if (i < rank){
+      offsetIn += recvCount[i];
+      offsetOut += sendCount[i];
+    }
   }
 
-  T *inBuf = new T [totalIn];
+  Teuchos::ArrayRCP<T> inBuf = Teuchos::arcp<T>(totalIn);
 
-  T *in = inBuf;
-  T *out = sendBuf.get() + offset;
+  T *in = inBuf.get() + offsetIn;
+  T *out = sendBuf.get() + offsetOut;
+
+  for (LNO i=0; i < recvCount[rank]; i++){
+    in[i] = out[i];
+  }
+
+  Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> > req(nprocs-1);
+
+  offsetIn = 0;
 
   for (int p=0; p < nprocs; p++){
-
     if (p != rank && recvCount[p] > 0){
-      req.push_back(Teuchos::ireceive(comm, Teuchos::ArrayRCP<T>(in, 0, recvCount[p], true), p));
+      Teuchos::ArrayRCP<T> recvBufPtr(inBuf.get() + offsetIn, 0, recvCount[p], false);
+      req.push_back(Teuchos::ireceive<int, T>(comm, recvBufPtr, p));
     }
-    else if (p == rank && recvCount[p] > 0){
-      for (LNO i=0; i < recvCount[rank]; i++){
-        in[i] = out[i];
-      }
-    }
-
-    in += recvCount[p];
+    offsetIn += recvCount[p];
   }
 
   Teuchos::barrier(comm);
 
-  for (int p=0, out=sendBuf.get(); p < nprocs; p++){
+  offsetOut = 0;
 
-    if (p != rank && sendCount[p] > 0)
-      Teuchos::readySend(comm, Teuchos::ArrayView<T>(out, sendCount[p]), p);
-
-    out += sendCount[p];
+  for (int p=0; p < nprocs; p++){
+    if (p != rank && sendCount[p] > 0){
+      Teuchos::ArrayView<T> sendBufView(sendBuf.get() + offsetOut, sendCount[p]);
+      Teuchos::readySend<int, T>(comm, sendBufView, p);
+    }
+    offsetOut += sendCount[p];
   }
 
-  Teuchos::ArrayView<Teuchos::RCP<Teuchos::CommRequest> > avReq(req);
-  Teuchos::waitAll<int>(comm, avReq);
+  Teuchos::waitAll<int>(comm, req);
 
-  recvBuf = Teuchos::ArrayRCP<T>(in, 0, totalIn, true);
+  recvBuf = inBuf;
 }
 
 

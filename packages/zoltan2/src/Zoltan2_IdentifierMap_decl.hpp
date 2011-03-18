@@ -71,7 +71,7 @@ private:
   Teuchos::RCP<std::vector<AppLID> > myLids;  // This proc's local IDs from InputAdapter
 
 #ifdef APPGID_IS_NOT_GNO
-  std::vector<GNO> gnoDist;
+  Teuchos::ArrayRCP<GNO> gnoDist;
   Teuchos::RCP<Teuchos::Hashtable<std::string, LNO> >  gidHash;
 #else
   Teuchos::RCP<Teuchos::Hashtable<AppGID, LNO> >  gidHash;
@@ -81,9 +81,9 @@ private:
 
   bool consecutive;
   GNO base;
-  GNO totalGlobalIds;
-  GNO totalLocalIds;
+  GNO globalNumberOfIds;
   LNO localNumberOfIds;
+  bool haveLocalIds;
 
   void reset();
 

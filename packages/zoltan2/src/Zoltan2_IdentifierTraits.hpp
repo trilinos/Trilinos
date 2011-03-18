@@ -127,6 +127,7 @@ struct IdentifierTraits<std::pair<int, int> > {
   static inline std::string name()     { return("std::pair<int, int>"); }
 };
 
+#ifdef SERIALIZATION_SUPPORTS_VECTORS
 template<>
 struct IdentifierTraits<std::vector<int > > {
   static inline std::string key(const std::vector<int> &v){
@@ -138,6 +139,7 @@ struct IdentifierTraits<std::vector<int > > {
   }  
   static inline std::string name()  { return( "std::vector<int>");}
 };
+#endif
 
 
 
