@@ -300,7 +300,7 @@ int test_MatrixGraph::test1()
     }
 
     if (rowOffsets[i+1]-rowOffsets[i] != correctRowLength) {
-      FEI_CERR << "localProc " << localProc_ << ", i: " << i
+      fei::console_out() << "localProc " << localProc_ << ", i: " << i
 	   << ", correctRowLength: " << correctRowLength << ", "
 	   << "rowOffsets[i+1]-rowOffsets[i]: " << rowOffsets[i+1]-rowOffsets[i] << FEI_ENDL;
       ERReturn(-1);
@@ -418,7 +418,7 @@ int test_MatrixGraph::test3()
     }
 
     if (rowOffsets[i+1]-rowOffsets[i] != correctRowLength) {
-      FEI_CERR << "localProc " << localProc_ << ", i: " << i
+      fei::console_out() << "localProc " << localProc_ << ", i: " << i
 	   << ", correctRowLength: " << correctRowLength << ", "
 	   << "rowOffsets[i+1]-rowOffsets[i]: " << rowOffsets[i+1]-rowOffsets[i] << FEI_ENDL;
       ERReturn(-1);
@@ -508,7 +508,7 @@ int test_MatrixGraph::test4()
     }
 
     if (rowOffsets[i+1]-rowOffsets[i] != correctRowLength) {
-      FEI_CERR << "localProc " << localProc_ << ", i: " << i
+      fei::console_out() << "localProc " << localProc_ << ", i: " << i
 	   << ", correctRowLength: " << correctRowLength << ", "
 	   << "rowOffsets[i+1]-rowOffsets[i]: " << rowOffsets[i+1]-rowOffsets[i] << FEI_ENDL;
       ERReturn(-1);

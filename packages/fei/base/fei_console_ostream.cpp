@@ -1,7 +1,3 @@
-
-#ifndef _fei_chk_mpi_hpp_
-#define _fei_chk_mpi_hpp_
-
 /*--------------------------------------------------------------------*/
 /*    Copyright 2005 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
@@ -10,19 +6,27 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <fei_mpi.h>
+#include "fei_macros.hpp"
+#include "fei_iostream.hpp"
 
-#ifdef CHK_MPI
-#undef CHK_MPI
-#endif
+namespace fei {
 
-static const char fei_mpi_file[] = __FILE__;
+std::ostream* console_ostream_ptr(std::ostream* osptr=NULL)
+{
+  static std::ostream* fei_ostream_ptr = &std::cerr;
+  if (osptr) fei_ostream_ptr = osptr;
+  return fei_ostream_ptr;
+}
 
-#define CHK_MPI(a) { int snl_fei_mpiErrorCode = a; \
-                     if (snl_fei_mpiErrorCode != MPI_SUCCESS) {\
-                      fei::console_out() << fei_mpi_file << ", line " << __LINE__  \
-                           <<" MPI ERROR " << FEI_ENDL; \
-                      return(snl_fei_mpiErrorCode); \
-                    } }
-#endif
+void set_console_ostream(std::ostream& os)
+{
+  console_ostream_ptr(&os);
+}
+
+std::ostream& console_out()
+{
+  return *console_ostream_ptr();
+}
+
+}//namespace fei
 

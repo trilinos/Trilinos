@@ -214,7 +214,7 @@ int FEI_Implementation::setCurrentMatrix(int matID)
 
    //if matID wasn't found, return non-zero (error)
    if (index_current_filter_ == -1) {
-      FEI_CERR << "FEI_Implementation::setCurrentMatrix: ERROR, invalid matrix ID "
+      fei::console_out() << "FEI_Implementation::setCurrentMatrix: ERROR, invalid matrix ID "
            << "supplied" << FEI_ENDL;
       return(-1);
    }
@@ -253,7 +253,7 @@ int FEI_Implementation::setCurrentRHS(int rhsID)
   }
 
   if (!found) {
-    FEI_CERR << "FEI_Implementation::setCurrentRHS: ERROR, invalid RHS ID" 
+    fei::console_out() << "FEI_Implementation::setCurrentRHS: ERROR, invalid RHS ID" 
          << FEI_ENDL;
     ERReturn(-1);
   }
@@ -766,7 +766,7 @@ int FEI_Implementation::setMatScalars(int numScalars,
          matScalars_[index] = scalars[i];
       }
       else {
-         FEI_CERR << "FEI_Implementation::setMatScalars: ERROR, invalid ID supplied"
+         fei::console_out() << "FEI_Implementation::setMatScalars: ERROR, invalid ID supplied"
               << FEI_ENDL;
          return(1);
       }
@@ -795,7 +795,7 @@ int FEI_Implementation::setRHSScalars(int numScalars,
       }
 
       if (!found) {
-         FEI_CERR << "FEI_Implementation::setRHSScalars: ERROR, invalid RHS ID supplied"
+         fei::console_out() << "FEI_Implementation::setRHSScalars: ERROR, invalid RHS ID supplied"
              << FEI_ENDL;
          return(1);
       }
@@ -883,7 +883,7 @@ void FEI_Implementation::setDebugOutput(const char* path, const char* name)
   debugOutput_ = 1;
   dbgFStreamPtr_ = new FEI_OFSTREAM(osstr.str().c_str(), IOS_APP);
   if (!dbgFStreamPtr_ || dbgFStreamPtr_->bad()){
-    FEI_CERR << "couldn't open debug output file: " << osstr.str() << FEI_ENDL;
+    fei::console_out() << "couldn't open debug output file: " << osstr.str() << FEI_ENDL;
     debugOutput_ = 0;
   }
 
@@ -1547,7 +1547,7 @@ int FEI_Implementation::allocateInternalFEIs(){
                                         wrapper_.get(), masterRank_);
         }
         else {
-          FEI_CERR << "FEI_Implementation: ERROR, don't have LinearSystemCore"
+          fei::console_out() << "FEI_Implementation: ERROR, don't have LinearSystemCore"
                << " or FiniteElementData implementation..." << FEI_ENDL;
           ERReturn(-1);
         }
@@ -1598,14 +1598,14 @@ void FEI_Implementation::debugOut(const char* msg, int whichFEI) {
 //==============================================================================
 void FEI_Implementation::messageAbort(const char* msg){
 
-    FEI_CERR << "FEI_Implementation: ERROR " << msg << " Aborting." << FEI_ENDL;
+    fei::console_out() << "FEI_Implementation: ERROR " << msg << " Aborting." << FEI_ENDL;
     MPI_Abort(comm_, -1);
 }
 
 //==============================================================================
 void FEI_Implementation::notAllocatedAbort(const char* name){
 
-    FEI_CERR << name
+    fei::console_out() << name
          << FEI_ENDL << "ERROR, internal data structures not allocated."
          << FEI_ENDL << "'setIDLists' and/or 'setSolveType' must be called"
          << FEI_ENDL << "first to identify solveType and number of matrices"
@@ -1616,7 +1616,7 @@ void FEI_Implementation::notAllocatedAbort(const char* name){
 //==============================================================================
 void FEI_Implementation::needParametersAbort(const char* name){
 
-   FEI_CERR << name
+   fei::console_out() << name
      << FEI_ENDL << "FEI_Implementation: ERROR, numMatrices has not been specified."
      << FEI_ENDL << "FEI_Implementation: 'parameters' must be called up front with"
      << FEI_ENDL << "FEI_Implementation: the string 'numMatrices n' to specify that"
@@ -1627,7 +1627,7 @@ void FEI_Implementation::needParametersAbort(const char* name){
 //==============================================================================
 void FEI_Implementation::badParametersAbort(const char* name){
 
-   FEI_CERR << name
+   fei::console_out() << name
         << FEI_ENDL << "FEI_Implementation: ERROR, inconsistent 'solveType' and"
         << FEI_ENDL << "FEI_Implementation: 'numMatrices' parameters specified."
         << FEI_ENDL << "FEI_Implementation: Aborting."

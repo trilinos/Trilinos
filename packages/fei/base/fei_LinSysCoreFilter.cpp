@@ -124,7 +124,7 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
    //Now let's pass them into our own parameter-handling mechanism.
    err = parameters(numParams, paramStrings);
    if (err != 0) {
-     FEI_CERR << "LinSysCoreFilter::LinSysCoreFilter ERROR, parameters failed." << FEI_ENDL;
+     fei::console_out() << "LinSysCoreFilter::LinSysCoreFilter ERROR, parameters failed." << FEI_ENDL;
      MPI_Abort(comm_, -1);
    }
 
@@ -519,7 +519,7 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
      debugOutput("LinSysCoreFilter calling lscf->setMultCRComplete");
      err = lscf->setMultCRComplete();
      if (err != 0) {
-       FEI_CERR << "LinSysCoreFilter::setLinSysCoreCREqns ERROR returned from "
+       fei::console_out() << "LinSysCoreFilter::setLinSysCoreCREqns ERROR returned from "
             << "lscf->setMultCRComplete()" << FEI_ENDL;
      }
    }
@@ -691,7 +691,7 @@ void LinSysCoreFilter::storePenNodeSendData(const NodeDescriptor& iNode,
    int iNumParams = iFieldSize;
    int jNumParams = jFieldSize;
    if (iNumParams < 1 || jNumParams < 1) {
-     FEI_CERR << "FEI ERROR, attempt to store indices for field with non-positive size"
+     fei::console_out() << "FEI ERROR, attempt to store indices for field with non-positive size"
           << " field "<<iField<<", size "<<iNumParams<<", field "<<jField<<", size "
           << jNumParams<<FEI_ENDL;
      voidERReturn;
@@ -744,7 +744,7 @@ int LinSysCoreFilter::storePenNodeData(const NodeDescriptor& iNode,
    int iNumParams = iFieldSize;
    int jNumParams = jFieldSize;
    if (iNumParams < 1 || jNumParams < 1) {
-     FEI_CERR << "FEI ERROR, attempt to store indices for field with non-positive size"
+     fei::console_out() << "FEI ERROR, attempt to store indices for field with non-positive size"
           << " field "<<iField<<", size "<<iNumParams<<", field "<<jField<<", size "
           << jNumParams<<FEI_ENDL;
      ERReturn(-1);
@@ -816,7 +816,7 @@ int LinSysCoreFilter::deleteMultCRs()
 
   LinSysCore_flexible* lscf = dynamic_cast<LinSysCore_flexible*>(lsc_);
   if (lscf == NULL) {
-//    FEI_CERR << "FEI::LinSysCoreFilter: ERROR deleteMultCRs requested, but "
+//    fei::console_out() << "FEI::LinSysCoreFilter: ERROR deleteMultCRs requested, but "
 //         << "underlying solver doesn't support this operation." << FEI_ENDL;
     return(-1);
   }
@@ -927,7 +927,7 @@ int LinSysCoreFilter::loadNodeBCs(int numNodes,
   //
   int size = problemStructure_->getFieldSize(fieldID);
   if (size < 1) {
-    FEI_CERR << "FEI Warning: loadNodeBCs called for fieldID "<<fieldID
+    fei::console_out() << "FEI Warning: loadNodeBCs called for fieldID "<<fieldID
          <<", which was defined with size "<<size<<" (should be positive)."<<FEI_ENDL;
     return(0);
   }
@@ -1134,7 +1134,7 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
   if (elemFormat != FEI_DENSE_ROW && stiff != NULL) {
     if (elemFormat == FEI_BLOCK_DIAGONAL_ROW ||
         elemFormat == FEI_BLOCK_DIAGONAL_COL) {
-      FEI_CERR << "LinSysCoreFilter::generalElemInput ERROR, elemFormat="
+      fei::console_out() << "LinSysCoreFilter::generalElemInput ERROR, elemFormat="
                << elemFormat << " not supported."<<FEI_ENDL;
       ERReturn(-1);
     }
@@ -1521,7 +1521,7 @@ int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
 
     int eqn = recvEqnNumbers[i];
     if ((reducedStartRow_ > eqn) || (reducedEndRow_ < eqn)) {
-      FEI_CERR << "LinSysCoreFilter::unpackRemoteContributions: ERROR, recvEqn "
+      fei::console_out() << "LinSysCoreFilter::unpackRemoteContributions: ERROR, recvEqn "
            << eqn << " out of range. (localStartRow_: " << reducedStartRow_
            << ", localEndRow_: " << reducedEndRow_ << ", localRank_: "
            << localRank_ << ")" << FEI_ENDL;
@@ -1530,7 +1530,7 @@ int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
 
     for(size_t ii=0; ii<recvEqns[i]->size(); ii++) {
       if (coefs[i][ii] > 1.e+200) {
-        FEI_CERR << localRank_ << ": LinSysCoreFilter::unpackRemoteContributions: "
+        fei::console_out() << localRank_ << ": LinSysCoreFilter::unpackRemoteContributions: "
              << "WARNING, coefs["<<i<<"]["<<ii<<"]: " << coefs[i][ii]
              << FEI_ENDL;
         MPI_Abort(comm_, -1);
@@ -1678,7 +1678,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
 
   int lenList = multCR->getMasters().size();
   if (lenList < 1) {
-    FEI_CERR << "ERROR in FEI, constraint with ID="<<CRID<<" appears to have"
+    fei::console_out() << "ERROR in FEI, constraint with ID="<<CRID<<" appears to have"
          <<" a constrained-node list of length "<<lenList<<", should be > 0."<<FEI_ENDL;
     ERReturn(-1);
   }
@@ -1691,7 +1691,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
 
   for(i=0; i<lenList; i++) {
     if (CRNodePtr[i] != CRNodes[i]) {
-      FEI_CERR << "ERROR in FEI, constraint with ID="<<CRID<<" had different node-list"
+      fei::console_out() << "ERROR in FEI, constraint with ID="<<CRID<<" had different node-list"
            << " in initCRMult than it has in loadCRMult."<<FEI_ENDL;
       ERReturn(-1);
     }
@@ -1702,7 +1702,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
 
   for (i = 0; i < lenList; i++) {
     if (CRFieldPtr[i] != CRFields[i]) {
-      FEI_CERR <<"ERROR in FEI, constraint with CRID="<<CRID<<" had different field-list"
+      fei::console_out() <<"ERROR in FEI, constraint with CRID="<<CRID<<" had different field-list"
            <<" in initCRMult than it has in loadCRMult."<<FEI_ENDL;
       ERReturn(-1);
     }
@@ -1736,7 +1736,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
 
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -1805,7 +1805,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
   int i;
   int lenList = penCR->getMasters().size();
   if (lenList < 1) {
-    FEI_CERR << "ERROR in FEI, constraint with ID="<<CRID<<" appears to have"
+    fei::console_out() << "ERROR in FEI, constraint with ID="<<CRID<<" appears to have"
          <<" a constrained-node list of length "<<lenList<<", should be > 0."<<FEI_ENDL;
     ERReturn(-1);
   }
@@ -1818,7 +1818,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
                                   
   for(int j = 0; j < lenList; j++) {
     if (CRNodePtr[j] != CRNodes[j]) {
-      FEI_CERR << "ERROR in FEI, constraint with ID="<<CRID<<" had different node-list"
+      fei::console_out() << "ERROR in FEI, constraint with ID="<<CRID<<" had different node-list"
            << " in initCRPen than it has in loadCRPen."<<FEI_ENDL;
       ERReturn(-1);
     }
@@ -1853,7 +1853,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
 
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -2084,7 +2084,7 @@ int LinSysCoreFilter::solve(int& status, double& sTime) {
 int LinSysCoreFilter::setNumRHSVectors(int numRHSs, int* rhsIDs){
 
    if (numRHSs < 0) {
-      FEI_CERR << "LinSysCoreFilter::setNumRHSVectors: ERROR, numRHSs < 0." << FEI_ENDL;
+      fei::console_out() << "LinSysCoreFilter::setNumRHSVectors: ERROR, numRHSs < 0." << FEI_ENDL;
       ERReturn(-1);
    }
 
@@ -2343,7 +2343,7 @@ int LinSysCoreFilter::giveToMatrix(int numPtRows, const int* ptRows,
 
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -2854,7 +2854,7 @@ int LinSysCoreFilter::getSharedRemoteSolnEntry(int eqnNumber, double& solnValue)
 
   int index = fei::binarySearch(eqnNumber, remoteEqnNumbers);
   if (index < 0) {
-    FEI_CERR << "LinSysCoreFilter::getSharedRemoteSolnEntry: ERROR, eqn "
+    fei::console_out() << "LinSysCoreFilter::getSharedRemoteSolnEntry: ERROR, eqn "
          << eqnNumber << " not found." << FEI_ENDL;
     ERReturn(-1);
   }
@@ -2901,7 +2901,7 @@ int LinSysCoreFilter::unpackSolution()
     int eqn = recvEqnNumbers[i];
 
     if ((reducedStartRow_ > eqn) || (reducedEndRow_ < eqn)) {
-      FEI_CERR << "LinSysCoreFilter::unpackSolution: ERROR, 'recv' eqn (" << eqn
+      fei::console_out() << "LinSysCoreFilter::unpackSolution: ERROR, 'recv' eqn (" << eqn
            << ") out of local range." << FEI_ENDL;
       MPI_Abort(comm_, -1);
     }
@@ -3102,7 +3102,7 @@ int LinSysCoreFilter::getBlockFieldNodeSolution(GlobalID elemBlockID,
   if (fieldSize <= 0) ERReturn(-1);
 
   if (!block->containsField(fieldID)) {
-    FEI_CERR << "LinSysCoreFilter::getBlockFieldNodeSolution WARNING: fieldID " << fieldID
+    fei::console_out() << "LinSysCoreFilter::getBlockFieldNodeSolution WARNING: fieldID " << fieldID
          << " not contained in element-block " << (int)elemBlockID << FEI_ENDL;
     return(1);
   }
@@ -3514,7 +3514,7 @@ int LinSysCoreFilter::putNodalFieldData(int fieldID,
 
     int nodeNumber = node->getNodeNumber();
     if (nodeNumber < 0) {
-      FEI_CERR << "LinSysCoreFilter::putNodalFieldData ERROR, node with ID " 
+      fei::console_out() << "LinSysCoreFilter::putNodalFieldData ERROR, node with ID " 
            << (int)nodeIDs[i] << " doesn't have an associated nodeNumber "
            << "assigned. putNodalFieldData shouldn't be called until after the "
            << "initComplete method has been called." << FEI_ENDL;

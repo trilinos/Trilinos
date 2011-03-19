@@ -187,7 +187,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::VectorSpace> vecSpace,
                                         isSolutionVector, true));
     }
     catch(std::runtime_error& exc) {
-      FEI_CERR << "Factory_Trilinos::createVector: caught exception '"
+      fei::console_out() << "Factory_Trilinos::createVector: caught exception '"
                << exc.what() << "', re-throwing..." << FEI_ENDL;
       throw exc;
     }
@@ -272,12 +272,12 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                                                   localSize, isSolutionVector, true));
     }
     catch(std::runtime_error& exc) {
-      FEI_CERR << "Factory_Trilinos::createVector: caught exception '"
+      fei::console_out() << "Factory_Trilinos::createVector: caught exception '"
                << exc.what() << "', re-throwing..." << FEI_ENDL;
       throw exc;
     }
 #else
-    FEI_CERR << "fei_Factory_Trilinos::createVector ERROR, HAVE_FEI_EPETRA not defined."
+    fei::console_out() << "fei_Factory_Trilinos::createVector ERROR, HAVE_FEI_EPETRA not defined."
       << FEI_ENDL;
 #endif
   }
@@ -330,7 +330,7 @@ Factory_Trilinos::createMatrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
                                                   reducer_, orderRowsWithLocalColsFirst_)
   );
 #else
-  FEI_CERR << "fei_Factory_Trilinos::createMatrix ERROR, HAVE_FEI_EPETRA "
+  fei::console_out() << "fei_Factory_Trilinos::createMatrix ERROR, HAVE_FEI_EPETRA "
      << "not defined."<<FEI_ENDL;
   return feimat;
 #endif
@@ -350,7 +350,7 @@ Factory_Trilinos::createSolver(const char* name)
         solver.reset(new Solver_AztecOO);
         return(solver);
 #else
-        FEI_CERR << "fei_Factory_Trilinos::createSolver: ERROR, AztecOO not "
+        fei::console_out() << "fei_Factory_Trilinos::createSolver: ERROR, AztecOO not "
            << "available." << FEI_ENDL; 
         return(solver);
 #endif
@@ -359,7 +359,7 @@ Factory_Trilinos::createSolver(const char* name)
 #ifdef HAVE_FEI_AMESOS
     solver.reset(new Solver_Amesos);
 #else
-    FEI_CERR << "fei_Factory_Trilinos::createSolver: ERROR, Amesos requested,"
+    fei::console_out() << "fei_Factory_Trilinos::createSolver: ERROR, Amesos requested,"
       << " but HAVE_FEI_AMESOS is not defined so Amesos is not available."
       <<FEI_ENDL;
     return(solver);
@@ -397,7 +397,7 @@ void Factory_Trilinos::create_LinProbMgr(bool replace_if_already_created)
 
     lpm_epetrabasic_ = newlpm;
 #else
-    FEI_CERR << "fei_Factory_Trilinos::create_LinProbMgr ERROR, HAVE_FEI_EPETRA"
+    fei::console_out() << "fei_Factory_Trilinos::create_LinProbMgr ERROR, HAVE_FEI_EPETRA"
        <<" not defined."<<FEI_ENDL;
 #endif
   }

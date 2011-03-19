@@ -105,7 +105,7 @@ int DataReader::readData(const char* fileName) {
    FEI_IFSTREAM* instr = new FEI_IFSTREAM(fileName);
 
    if (instr->bad()) {
-      FEI_CERR << "DataReader::readData: ERROR opening " << fileName << FEI_ENDL;
+      fei::console_out() << "DataReader::readData: ERROR opening " << fileName << FEI_ENDL;
       return(1);
    }
 // FEI_COUT << "DataReader reading from " << fileName << FEI_ENDL;
@@ -575,7 +575,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
        readData(instr, patt.ID_);
        readData(instr, patt.numRowIDs_);
        if (patt.numRowIDs_ <= 0) {
-	 FEI_CERR << "DataReader ERROR, numRowIDs_ <=0"<<FEI_ENDL;
+	 fei::console_out() << "DataReader ERROR, numRowIDs_ <=0"<<FEI_ENDL;
 	 return;
        }
 
@@ -598,7 +598,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
 
        readData(instr, patt.numColIDsPerRow_);
        if (patt.numColIDsPerRow_ <= 0) {
-	 FEI_CERR << "DataReader ERROR, numColIDsPerRow_ <=0"<<FEI_ENDL;
+	 fei::console_out() << "DataReader ERROR, numColIDsPerRow_ <=0"<<FEI_ENDL;
 	 return;
        }
        
@@ -635,7 +635,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
      }
 
      if (index < 0) {
-       FEI_CERR << "DataReader ERROR, patternID " << patternID << " not found."<<FEI_ENDL;
+       fei::console_out() << "DataReader ERROR, patternID " << patternID << " not found."<<FEI_ENDL;
        return;
      }
 
@@ -656,7 +656,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
      coefAcc.numColIDsPerRow_ = patt.numColIDsPerRow_;
 
      if (coefAcc.numRowIDs_ <= 0 || coefAcc.numColIDsPerRow_ <= 0) {
-       FEI_CERR << "DataReader ERROR, coef-access has 0 rows or cols." << FEI_ENDL;
+       fei::console_out() << "DataReader ERROR, coef-access has 0 rows or cols." << FEI_ENDL;
        return;
      }
 
@@ -817,7 +817,7 @@ int DataReader::getFieldSize(int fieldID) {
       if (fieldID == fieldIDs_[i]) return(fieldSizes_[i]);
    }
 
-   FEI_CERR << "DataReader: ERROR, trying to find size of non-existent field."
+   fei::console_out() << "DataReader: ERROR, trying to find size of non-existent field."
         << FEI_ENDL;
    return(0);
 }

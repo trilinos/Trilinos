@@ -43,6 +43,7 @@ fei_CommMap.hpp
 fei_CommUtils.hpp
 fei_ConnectivityBlock.hpp
 fei_ConnectivityTable.hpp
+fei_console_ostream.hpp
 fei_constants.hpp
 fei_CSRMat.hpp
 fei_CSVec.hpp
@@ -173,6 +174,7 @@ fei_CommUtils.cpp
 fei_ConnectivityBlock.cpp
 fei_CSRMat.cpp
 fei_CSVec.cpp
+fei_console_ostream.cpp
 fei_DirichletBCManager.cpp
 fei_EqnBuffer.cpp
 fei_EqnComm.cpp

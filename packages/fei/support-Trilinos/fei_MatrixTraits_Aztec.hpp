@@ -87,7 +87,7 @@ namespace fei {
       if (!mat->isFilled()) {
         int err = mat->fillComplete();
         if (err != 0) {
-          FEI_CERR << "MatrixTraits<AztecDMSR_Matrix>::globalAssemble"
+          fei::console_out() << "MatrixTraits<AztecDMSR_Matrix>::globalAssemble"
                    << " ERROR in mat->fillComplete" << FEI_ENDL;
           return(-1);
         }

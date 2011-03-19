@@ -25,7 +25,7 @@
 
 #define CHK_ERR(a) { int fei_ErrorCode = a; \
                     if (fei_ErrorCode != 0) { \
-                      FEI_CERR << " FEI ERROR, " << fei_file << ", line " \
+                      fei::console_out() << " FEI ERROR, " << fei_file << ", line " \
                            << __LINE__ << " " << fei_ErrorCode << FEI_ENDL; \
                       return(fei_ErrorCode); \
                    } }
@@ -34,7 +34,7 @@
 #undef ERReturn
 #endif
 
-#define ERReturn(a) { FEI_CERR << " FEI ERROR, " << fei_file << ", line " \
+#define ERReturn(a) { fei::console_out() << " FEI ERROR, " << fei_file << ", line " \
                            << __LINE__ << FEI_ENDL; \
 			   return(-1); }
 
@@ -42,7 +42,7 @@
 #undef voidERReturn
 #endif
 
-#define voidERReturn { FEI_CERR << " FEI ERROR, " << fei_file \
+#define voidERReturn { fei::console_out() << " FEI ERROR, " << fei_file \
 			   << ", line " << __LINE__ << FEI_ENDL; \
 			   return; }
 

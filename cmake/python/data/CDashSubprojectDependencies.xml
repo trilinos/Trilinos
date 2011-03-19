@@ -693,6 +693,7 @@
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Pliris" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="LO"/>
     <Dependency name="Amesos" type="LO"/>
@@ -707,6 +708,7 @@
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Pliris" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="LO"/>
     <Dependency name="Amesos" type="LO"/>

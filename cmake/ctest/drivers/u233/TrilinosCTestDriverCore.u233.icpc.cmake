@@ -7,10 +7,6 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
-  # Point to a different CDash dashboard
-  SET(CTEST_DROP_SITE "casl-dev.ornl.gov")
-  SET(CTEST_DROP_LOCATION "/CDash/submit.php?project=Trilinos")
-
   # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
   SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
 
@@ -21,7 +17,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   #SET( CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind )
   #SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS )
 
-  # Only turn on PyTrilinos for shared libraries
+  # Turn off SS packages we don't have TPLs for
   SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES PyTrilinos TriKota Optika)
   
   SET_DEFAULT(COMPILER_VERSION "ICPC-11.1.064")

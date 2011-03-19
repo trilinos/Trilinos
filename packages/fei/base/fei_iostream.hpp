@@ -31,14 +31,12 @@
 #define FEI_OSTREAM std::ostream
 #define FEI_ISTREAM std::istream
 #define FEI_COUT std::cout
-#define FEI_CERR std::cerr
 #define FEI_ENDL std::endl
 #elif defined(FEI_HAVE_IOSTREAM_H)
 #include <iostream.h>
 #define FEI_OSTREAM ostream
 #define FEI_ISTREAM istream
 #define FEI_COUT cout
-#define FEI_CERR cerr
 #define FEI_ENDL endl
 #else
 #error "must have <iostream> or <iostream.h>"
@@ -77,6 +75,7 @@
 #endif
 //endif for ifdef FEI_HAVE_STD_IOS_FMTFLAGS
 
+#include <fei_console_ostream.hpp>
 #endif
 //endif for ifndef _fei_iostream_hpp_
 

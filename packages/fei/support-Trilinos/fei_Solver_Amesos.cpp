@@ -100,7 +100,7 @@ int Solver_Amesos::solve(fei::LinearSystem* linearSystem,
                                         A, opA, x, b);
 
   if (opA == 0 || x == 0 || b == 0) {
-    FEI_CERR << "Error, couldn't obtain Epetra objects from "
+    fei::console_out() << "Error, couldn't obtain Epetra objects from "
       << "fei container-objects."<<FEI_ENDL;
     return(-1);
   }

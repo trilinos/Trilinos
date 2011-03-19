@@ -23,7 +23,7 @@
 #undef CHK_ERR
 #endif
 #define CHK_ERR(a) {int chkerr; if ((chkerr = a) != 0) { \
-                    FEI_CERR << "file " << __FILE__ << ", line " << __LINE__ \
+                    fei::console_out() << "file " << __FILE__ << ", line " << __LINE__ \
                          << ", err " << chkerr << FEI_ENDL; \
                     return(chkerr); } }
 
@@ -108,7 +108,7 @@ int driverData::readData(const char* fileName)
   instr = new FEI_IFSTREAM(fileName);
 
   if (instr->bad()) {
-    FEI_CERR << "driverData::readData: ERROR opening " << fileName << FEI_ENDL;
+    fei::console_out() << "driverData::readData: ERROR opening " << fileName << FEI_ENDL;
     return(-1);
   }
   FEI_COUT << "driverData reading from " << fileName << FEI_ENDL;
@@ -119,7 +119,7 @@ int driverData::readData(const char* fileName)
     FEI_COUT << "driverData read keyword: " << keyword << FEI_ENDL;
     err = readData(instr, keyword);
     if (err != 0) {
-      FEI_CERR << "driverData: ERROR reading data for keyword: " << keyword << FEI_ENDL;
+      fei::console_out() << "driverData: ERROR reading data for keyword: " << keyword << FEI_ENDL;
       break;
     }
     delete [] keyword;
@@ -139,7 +139,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("setIDLists", method)) {
     if (setIDListsCounter_ >= (int)setIDLists_.size()) {
-      FEI_CERR << "driverData ERROR, can't call setIDLists again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call setIDLists again" << FEI_ENDL;
       return(-1);
     }
 
@@ -151,7 +151,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("setCurrentMatrix", method)) {
     if (setCurrentMatrixCounter_ >= (int)setCurrentMatrix_.size()) {
-      FEI_CERR << "driverData ERROR, can't call setCurrentMatrix again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call setCurrentMatrix again" << FEI_ENDL;
       return(-1);
     }
 
@@ -162,7 +162,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("setCurrentRHS", method)) {
     if (setCurrentRHSCounter_ >= (int)setCurrentRHS_.size()) {
-      FEI_CERR << "driverData ERROR, can't call setCurrentRHS again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call setCurrentRHS again" << FEI_ENDL;
       return(-1);
     }
 
@@ -191,7 +191,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("parameters", method)) {
     if (parametersCounter_ >= (int)parameters_.size()) {
-      FEI_CERR << "driverData ERROR, can't call parameters again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call parameters again" << FEI_ENDL;
       return(-1);
     }
 
@@ -203,7 +203,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("initCRMult", method)) {
     if (initCRMultCounter_ >= (int)initCRMult_.size()) {
-      FEI_CERR << "driverData ERROR, can't call initCRMult again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call initCRMult again" << FEI_ENDL;
       return(-1);
     }
 
@@ -215,7 +215,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("initSharedNodes", method)) {
     if (initSharedNodesCounter_ >= (int)initSharedNodes_.size()) {
-      FEI_CERR << "driverData ERROR, can't call initSharedNodes again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call initSharedNodes again" << FEI_ENDL;
       return(-1);
     }
 
@@ -227,7 +227,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("loadCRMult", method)) {
     if (loadCRMultCounter_ >= (int)loadCRMult_.size()) {
-      FEI_CERR << "driverData ERROR, can't call loadCRMult again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call loadCRMult again" << FEI_ENDL;
       return(-1);
     }
 
@@ -243,7 +243,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("initElem", method)) {
     if (initElemCounter_ >= (int)initElems_.size()) {
-      FEI_CERR << "driverData ERROR, can't call initElem again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call initElem again" << FEI_ENDL;
       return(-1);
     }
 
@@ -274,7 +274,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("sumInElem", method)) {
     if (sumInElemCounter_ >= (int)sumInElems_.size()) {
-      FEI_CERR << "driverData ERROR, can't call sumInElem again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call sumInElem again" << FEI_ENDL;
       return(-1);
     }
 
@@ -286,7 +286,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("sumInElemMatrix", method)) {
     if (sumInElemMatrixCounter_ >= (int)sumInElemMatrix_.size()) {
-      FEI_CERR << "driverData ERROR, can't call sumInElemMatrix again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call sumInElemMatrix again" << FEI_ENDL;
       return(-1);
     }
 
@@ -298,7 +298,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("sumInElemRHS", method)) {
     if (sumInElemRHSCounter_ >= (int)sumInElemRHS_.size()) {
-      FEI_CERR << "driverData ERROR, can't call sumInElemRHS again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call sumInElemRHS again" << FEI_ENDL;
       return(-1);
     }
 
@@ -311,7 +311,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
   if (!std::strcmp("putBlockFieldNodeSolution", method)) {
     if (putBlockFieldNodeSolutionCounter_ >=
 	(int)putBlockFieldNodeSolution_.size()) {
-      FEI_CERR << "driverData ERROR, can't call putBlockFieldNodeSolution again"
+      fei::console_out() << "driverData ERROR, can't call putBlockFieldNodeSolution again"
 	   << FEI_ENDL;
       return(-1);
     }
@@ -328,11 +328,11 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   if (!std::strcmp("loadNodeBCs", method)) {
     if (loadNodeBCsCounter_ >= (int)loadNodeBCs_.size()) {
-      FEI_CERR << "driverData ERROR, can't call loadNodeBCs again" << FEI_ENDL;
+      fei::console_out() << "driverData ERROR, can't call loadNodeBCs again" << FEI_ENDL;
       return(-1);
     }
 
-    FEI_CERR << "driverData: ERROR, loadNodeBCs needs to be re-examined..." << FEI_ENDL;
+    fei::console_out() << "driverData: ERROR, loadNodeBCs needs to be re-examined..." << FEI_ENDL;
     return( -1 );
   }
 
@@ -351,7 +351,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
     return(0);
   }
 
-  FEI_CERR << "driverData: ERROR unrecognized method name '" << method << "'"<<FEI_ENDL;
+  fei::console_out() << "driverData: ERROR unrecognized method name '" << method << "'"<<FEI_ENDL;
   return(1);
 }
 
