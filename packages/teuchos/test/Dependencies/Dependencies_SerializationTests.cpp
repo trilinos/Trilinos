@@ -1155,7 +1155,34 @@ TEUCHOS_UNIT_TEST(
   TOO_MANY_DEPENDEE_TEST(numArrayLengthDep);
 }
 
+/** Specific DependencySheet tests */
+TEUCHOS_UNIT_TEST(
+  Teuchos_Dependencies, DepSheetTests)
+{
+  ParameterList myDepList("String Visual Dep List");
+  std::string dependee1 = "dependee1";
+  std::string dependent1 = "dependent1";
+  RCP<DependencySheet> myDepSheet = rcp(new DependencySheet("My List"));
+  myDepList.set(dependee1, "val1");
+  myDepList.set(dependent1, 2.0);
+  StringVisualDependency::ValueList valList1 = tuple<std::string>("val1");
+  RCP<StringVisualDependency> basicStringVisDep = rcp(
+    new StringVisualDependency(
+      myDepList.getEntryRCP(dependee1),
+      myDepList.getEntryRCP(dependent1),
+      valList1));
+  myDepSheet->addDependency(basicStringVisDep);
 
+  RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet);
+
+  XMLParameterListWriter plWriter;
+  XMLObject xmlOut = plWriter.toXML(myDepList, myDepSheet);
+  out << xmlOut.toString();
+
+  RCP<ParameterList> readInList = 
+    writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
+  TEST_EQUALITY(readInDepSheet->getName(), myDepSheet->getName());
+}
 
 
 } //namespace Teuchos

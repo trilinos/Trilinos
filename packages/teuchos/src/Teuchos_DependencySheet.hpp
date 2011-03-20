@@ -99,6 +99,13 @@ public:
    * @return True if the removal was sucessfull, false otherwise.
    */
   void removeDependency(RCP<Dependency> dependency);
+
+  /**
+   * \brief sets the name of the dependency sheet
+   */
+  void setName(const std::string newName){
+    name_ = newName;
+  }
   
   //@}
 
@@ -133,6 +140,13 @@ public:
    */
   inline const std::string& getName() const{
     return name_;
+  }
+
+  /**
+   * \brief Determines whether or not this dependency sheet has any dependencies.
+   */
+  inline bool empty() const{
+    return dependencies_.empty();
   }
   
   //@}
@@ -181,6 +195,13 @@ public:
    */
   void printDeps(std::ostream& out) const;
 
+
+  /** \brief When serializing to XML, this string should be used as the name
+   * of the name attribute */
+  static const std::string& getNameAttributeName(){
+    static const std::string NAME_ATTRIBUTE_NAME="name";
+    return NAME_ATTRIBUTE_NAME;
+  }
   //@}
 
 private:
@@ -193,7 +214,7 @@ private:
    *
    * Dependencies with multiple dependees will be found in multiple
    * places within the map. Essentially, for each dependee, there will 
-   * be a pointer to for dependency of which it is a part.
+   * be a pointer to each dependency of which it is a part.
    */
   DepMap dependenciesMap_;
 

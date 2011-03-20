@@ -827,6 +827,19 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
 	);
 }
 
+/**
+ * Tests various DependencySheet functions.
+ */
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, DepSheetTest){
+	RCP<DependencySheet> depSheet1 = rcp(new DependencySheet);
+  TEST_ASSERT(depSheet1->empty());
+  depSheet1->addDependency(
+    DummyObjectGetter<BoolVisualDependency>::getDummyObject());
+  TEST_ASSERT(!depSheet1->empty());
+
+
+}
+
 
 } //namespace Teuchos
 

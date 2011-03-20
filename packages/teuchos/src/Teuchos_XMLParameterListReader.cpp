@@ -237,6 +237,10 @@ void XMLParameterListReader::convertDependencies(
   const EntryIDsMap& entryIDsMap,
   const IDtoValidatorMap& validatorIDsMap) const
 {
+  if(xml.hasAttribute(DependencySheet::getNameAttributeName())){
+    depSheet->setName(
+      xml.getAttribute(DependencySheet::getNameAttributeName()));
+  }
   for(int i = 0; i < xml.numChildren(); ++i){
     RCP<Dependency> currentDep = DependencyXMLConverterDB::convertXML(
       xml.getChild(i), 
