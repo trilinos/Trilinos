@@ -9,20 +9,24 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
-namespace Tpetra{
+namespace {
+  static const double defaultEpsilon = 1e-10;
+  bool verbose = false;
+  std::string matnamesFile;
+  bool write_result_hb = false;
 
-static const double defaultEpsilon = 1e-10;
-bool verbose = false;
-std::string matnamesFile;
-bool write_result_hb = false;
+  using Teuchos::null;
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Tpetra::global_size_t;
+  using Teuchos::Comm;
+  using Tpetra::CrsMatrix;
+  using Tpetra::Map;
+  using Teuchos::Array;
+  using Tpetra::Vector;
+  using Tpetra::CrsMatrixMultiplyOp;
+  using Tpetra::DefaultPlatform;
 
-typedef struct add_test_results_struct{
-  double epsilon1;
-//  double epsilon2;
-  double y1Norm;
-  double y2Norm;
-  //double y3Norm;
-} add_test_results;
 
 TEUCHOS_STATIC_SETUP(){
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -33,6 +37,17 @@ TEUCHOS_STATIC_SETUP(){
   clp.setOption("v", "not-verbose", &verbose, 
     "Whether or not to use verbose output");
 }
+
+
+
+typedef struct add_test_results_struct{
+  double epsilon1;
+//  double epsilon2;
+  double y1Norm;
+  double y2Norm;
+  //double y3Norm;
+} add_test_results;
+
 /*
 template<class Ordinal>
 add_test_results add_test(
@@ -109,7 +124,7 @@ double multiply_test(
 
   RCP<CrsMatrix_t> computedC = rcp( new CrsMatrix_t(map, 1));
 
-  MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC);
+  Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC);
 
   Vector_t x1(map), x2(map), x3(map);
   Vector_t y3(map);
@@ -173,7 +188,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, test_find_rows){
   typedef Kokkos::DefaultKernels<double, int, DNode>::SparseOps SpMatOps;
 
   RCP<const Map<int, int, DNode> > map_rows = 
-    MMdetails::find_rows_containing_cols<double, int, int, DNode, SpMatOps>(matrix, colmap);
+    Tpetra::MMdetails::find_rows_containing_cols<double, int, int, DNode, SpMatOps>(matrix, colmap);
 
   TEST_EQUALITY(map_rows->getNodeNumElements(), numglobalrows);
 
@@ -183,10 +198,10 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems = 
     Teuchos::getParametersFromXmlFile(matnamesFile);
-  if(verbose){
-    MMdebug::debug_stream = rcpFromRef(out);
-    MMdebug::debug_level = Teuchos::VERB_HIGH;
-  }
+  /*if(verbose){
+    Tpetra::MMdebug::debug_stream = rcpFromRef(out);
+    Tpetra::MMdebug::debug_level = Teuchos::VERB_HIGH;
+  }*/
   for(
     Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
     it != matrixSystems->end();
@@ -212,8 +227,8 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
     RCP<CrsMatrix<double,int> > A = null;
     RCP<CrsMatrix<double,int> > B = null;
  
-    Utils::readHBMatrix(A_file, comm, Kokkos::DefaultNode::getDefaultNode(), A);
-    Utils::readHBMatrix(B_file, comm, Kokkos::DefaultNode::getDefaultNode(), B);
+    Tpetra::Utils::readHBMatrix(A_file, comm, Kokkos::DefaultNode::getDefaultNode(), A);
+    Tpetra::Utils::readHBMatrix(B_file, comm, Kokkos::DefaultNode::getDefaultNode(), B);
 
     TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
       "Unrecognized Matrix Operation: " << op << "!" << std::endl);
