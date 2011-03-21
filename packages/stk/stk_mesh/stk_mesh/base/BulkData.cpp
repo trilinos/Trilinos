@@ -509,7 +509,7 @@ void BulkData::internal_change_entity_parts(
     const unsigned * parts_begin = bucket_parts.first;
     const unsigned * parts_end   = bucket_parts.second;
 
-    const unsigned num_bucket_parts = parts_begin - parts_end;
+    const unsigned num_bucket_parts = parts_end - parts_begin;
     parts_total.reserve( num_bucket_parts + add_parts.size() );
     parts_total.insert( parts_total.begin(), parts_begin , parts_end);
 

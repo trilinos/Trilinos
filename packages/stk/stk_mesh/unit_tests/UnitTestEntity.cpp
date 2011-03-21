@@ -91,6 +91,11 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   std::vector<stk::mesh::Part *>  add_part;
   meta.commit();
 
+  // bail if not parallel
+  if (size == 1) {
+    return;
+  }
+
   add_part.push_back ( & part );
 
   bulk.modification_begin();
