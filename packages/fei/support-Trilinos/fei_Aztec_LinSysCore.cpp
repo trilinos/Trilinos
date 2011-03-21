@@ -368,7 +368,7 @@ int Aztec_LinSysCore::setMatrixType(const char* name) {
          debugOutput("setMatrixType: chose block matrix");
       }
       else {
-         FEI_CERR << "Aztec_LinSysCore::setMatrixType: WARNING: Too late to choose"
+         fei::console_out() << "Aztec_LinSysCore::setMatrixType: WARNING: Too late to choose"
            << " the DVBR matrix; make this choice before calling "
            << "setMatrixStructure. DMSR will be used." << FEI_ENDL;
       }
@@ -437,7 +437,7 @@ int Aztec_LinSysCore::createMiscStuff()
    azS_ = AZ_scaling_create();
    if (azS_ != NULL) scalingCreated_ = true;
    else {
-     FEI_CERR << "Aztec_LinSysCore::createMiscStuff ERROR: failed to create scaling"
+     fei::console_out() << "Aztec_LinSysCore::createMiscStuff ERROR: failed to create scaling"
           << FEI_ENDL;
      return(-1);
    }
@@ -751,7 +751,7 @@ int Aztec_LinSysCore::getMatrixRow(int row, double* coefs,
     A_ptr_->getRow(row, rowLength, tmpCoefs, tmpIndices);
   }
   else {
-    FEI_CERR << "Aztec_LinSysCore::getMatrixRow: not implemented." << FEI_ENDL;
+    fei::console_out() << "Aztec_LinSysCore::getMatrixRow: not implemented." << FEI_ENDL;
     return(-1);
   }
 
@@ -799,7 +799,7 @@ int Aztec_LinSysCore::sumIntoBlockRow(int numBlkRows, const int* blkRows,
       int err = blkA_ptr_->putBlockRow(blkRows[i], coefs,
                                        (int*)blkCols, numBlkCols);
       if (err != 0) {
-        FEI_CERR << thisProc_ << " DVBR::putBlockRow failed." << FEI_ENDL;
+        fei::console_out() << thisProc_ << " DVBR::putBlockRow failed." << FEI_ENDL;
         return(err);
       }
     }
@@ -807,7 +807,7 @@ int Aztec_LinSysCore::sumIntoBlockRow(int numBlkRows, const int* blkRows,
       int err = blkA_ptr_->sumIntoBlockRow(blkRows[i], coefs,
                                            (int*)blkCols, numBlkCols);
       if (err != 0) {
-        FEI_CERR << thisProc_ << " DVBR::sumIntoBlockRow failed." << FEI_ENDL;
+        fei::console_out() << thisProc_ << " DVBR::sumIntoBlockRow failed." << FEI_ENDL;
         return(err);
       }
     }
@@ -835,7 +835,7 @@ int Aztec_LinSysCore::copyBlockRow(int i, const int* blkRows,
       int err = blkA_ptr_->getBlockSize(blkRows[i], blkCols[b],
                                             rowSize, colSize);
       if (err) {
-         FEI_CERR << "Aztec_LSC:copyBlockRow: ERROR in getBlockSize" << FEI_ENDL;
+         fei::console_out() << "Aztec_LSC:copyBlockRow: ERROR in getBlockSize" << FEI_ENDL;
          return(-1);
       }
 
@@ -931,7 +931,7 @@ int Aztec_LinSysCore::sumIntoPointRow(int numPtRows, const int* ptRows,
   for(i=0; i<numPtCols; i++) {
     blkCols[i] = lookup_->ptEqnToBlkEqn(ptColIndices[i]);
     if (blkCols[i] < 0) {
-      FEI_CERR << thisProc_ << " lookup ptEqnToBlkEqn("<<ptColIndices[i]<<"): "
+      fei::console_out() << thisProc_ << " lookup ptEqnToBlkEqn("<<ptColIndices[i]<<"): "
            << blkCols[i] << FEI_ENDL;
       messageAbort("negative blk-col");
     }
@@ -960,7 +960,7 @@ int Aztec_LinSysCore::sumPointIntoBlockRow(int blkRow, int rowOffset,
 
    int len = rowSize*colSize;
    if (len <= 0) {
-      FEI_CERR << thisProc_ << ", ALSC::spibr: blkRow: " << blkRow << ", blkCol: " << blkCol << ", rowSize: " << rowSize << ", colSize: " << colSize << FEI_ENDL;
+      fei::console_out() << thisProc_ << ", ALSC::spibr: blkRow: " << blkRow << ", blkCol: " << blkCol << ", rowSize: " << rowSize << ", colSize: " << colSize << FEI_ENDL;
       messageAbort("sumPointIntoBlockRow: len <= 0");
    }
 
@@ -972,7 +972,7 @@ int Aztec_LinSysCore::sumPointIntoBlockRow(int blkRow, int rowOffset,
 
    int err = blkA_ptr_->sumIntoBlockRow(blkRow, val, &blkCol, 1);
    if (err != 0) {
-     FEI_CERR << thisProc_ << " DVBR::sumIntoBlockRow failed" << FEI_ENDL;
+     fei::console_out() << thisProc_ << " DVBR::sumIntoBlockRow failed" << FEI_ENDL;
      return(err);
    }
 
@@ -1189,7 +1189,7 @@ int Aztec_LinSysCore::getBlkEqnsAndOffsets(int* ptEqns, int* blkEqns,
    for(int i=0; i<numEqns; i++) {
       blkEqns[i] = lookup_->ptEqnToBlkEqn(ptEqns[i]);
       if (blkEqns[i] < 0) {
-        FEI_CERR << thisProc_ << "ptEqn: " << ptEqns[i] << ", blkEqn: " << blkEqns[i]
+        fei::console_out() << thisProc_ << "ptEqn: " << ptEqns[i] << ", blkEqn: " << blkEqns[i]
              << FEI_ENDL;
         messageAbort("getBlkEqnsAndOffsets: blk-eqn lookup failed.");
       }
@@ -1418,7 +1418,7 @@ int Aztec_LinSysCore::enforceBlkEssentialBC(int* blkEqn,
       err = getBlockRow(blkEqn[i], val, val_length, blkCols, colInd_length,
                         numCols, rowNNZs);
       if (err) {
-         FEI_CERR << "Aztec_LSC: ERROR in getBlockRow" << FEI_ENDL;
+         fei::console_out() << "Aztec_LSC: ERROR in getBlockRow" << FEI_ENDL;
          return(-1);
       }
 
@@ -1491,7 +1491,7 @@ int Aztec_LinSysCore::blkRowEssBCMod(int blkEqn, int blkOffset, double* val,
       err = blkA_ptr_->getBlockSize(blkEqn, blkCols[j], ptRows, ptCols);
 
       if (err) {
-         FEI_CERR << "Aztec_LSC::blkRowEssBCMod: error in getBlockSize" << FEI_ENDL;
+         fei::console_out() << "Aztec_LSC::blkRowEssBCMod: error in getBlockSize" << FEI_ENDL;
          return(1);
       }
 
@@ -1585,7 +1585,7 @@ int Aztec_LinSysCore::blkColEssBCMod(int blkRow, int blkEqn, int blkOffset,
                                     thisRowSize, thisColSize);
 
       if (err) {
-         FEI_CERR << "Aztec_LinSysCore::blkColEssBCMod: ERROR in getBlockSize" << FEI_ENDL;
+         fei::console_out() << "Aztec_LinSysCore::blkColEssBCMod: ERROR in getBlockSize" << FEI_ENDL;
          return(1);
       }
 
@@ -1650,14 +1650,14 @@ int Aztec_LinSysCore::getBlockRow(int blkRow, double*& val, int& valLen,
    numNNZ = 0;
    int err = blkA_ptr_->getNumNonzerosPerRow(blkRow, numNNZ);
    if (err) {
-      FEI_CERR << "Aztec_LSC::getBlockRow: ERROR in getNumNonzerosPerRow" << FEI_ENDL;
+      fei::console_out() << "Aztec_LSC::getBlockRow: ERROR in getNumNonzerosPerRow" << FEI_ENDL;
       return(1);
    }
 
    numNzBlks = 0;
    err = blkA_ptr_->getNumBlocksPerRow(blkRow, numNzBlks);
    if (err) {
-      FEI_CERR << "Aztec_LSC::getBlockRow: ERROR in getNumBlocksPerRow" << FEI_ENDL;
+      fei::console_out() << "Aztec_LSC::getBlockRow: ERROR in getNumBlocksPerRow" << FEI_ENDL;
       return(1);
    }
 
@@ -1802,7 +1802,7 @@ int Aztec_LinSysCore::enforceBlkRemoteEssBCs(int numEqns, int* blkEqns,
       err = getBlockRow(blkEqns[i], val, val_length, blkCols, colInd_length,
                         numCols, rowNNZs);
       if (err) {
-         FEI_CERR << "Aztec_LSC:enforceBlkRemoteEssBC ERROR in getBlockRow" << FEI_ENDL;
+         fei::console_out() << "Aztec_LSC:enforceBlkRemoteEssBC ERROR in getBlockRow" << FEI_ENDL;
          return(-1);
       }
 
@@ -1818,7 +1818,7 @@ int Aztec_LinSysCore::enforceBlkRemoteEssBCs(int numEqns, int* blkEqns,
          err = blkA_ptr_->getBlockSize(blkEqns[i], blkCols[j],
                                        ptRows, ptCols);
          if (err) {
-            FEI_CERR << "Aztec_LSC::enforceBlkRemoteEssBCs: error in getBlockSize"
+            fei::console_out() << "Aztec_LSC::enforceBlkRemoteEssBCs: error in getBlockSize"
                 << FEI_ENDL;
             return(-1);
          }
@@ -1940,7 +1940,7 @@ int Aztec_LinSysCore::sumInMatrix(double scalar, const Data& data) {
 
    if (blockMatrix_) {
      if (strcmp("AztecDVBR_Matrix", data.getTypeName())) {
-       FEI_CERR << "Aztec_LinSysCore::sumInMatrix ERROR, incoming type-string: "
+       fei::console_out() << "Aztec_LinSysCore::sumInMatrix ERROR, incoming type-string: "
             << data.getTypeName() << ", expected AztecDVBR_Matrix." << FEI_ENDL;
        messageAbort("Aborting.");
      }
@@ -2593,7 +2593,7 @@ int Aztec_LinSysCore::launchSolver(int& solveStatus, int& iterations) {
    std::map<std::string,unsigned>::iterator 
      iter = named_solve_counter_.find(name_);
    if (iter == named_solve_counter_.end()) {
-     FEI_CERR << "fei: Aztec_LinSysCore::LaunchSolver: internal error."
+     fei::console_out() << "fei: Aztec_LinSysCore::LaunchSolver: internal error."
       << FEI_ENDL;
    }
    else {
@@ -3004,7 +3004,7 @@ void Aztec_LinSysCore::setDebugOutput(const char* path, const char* name){
    debugFile_ = fopen(dbFileName, "w");
 
    if (!debugFile_){
-      FEI_CERR << "couldn't open debug output file: " << dbFileName << FEI_ENDL;
+      fei::console_out() << "couldn't open debug output file: " << dbFileName << FEI_ENDL;
       debugOutput_ = 0;
       delete [] debugPath_;
       debugPath_ = NULL;
@@ -3092,7 +3092,7 @@ void Aztec_LinSysCore::debugOutput(const char* msg) const {
 
 //==============================================================================
 int Aztec_LinSysCore::messageAbort(const char* msg) const {
-   FEI_CERR << "Aztec_LinSysCore: " << msg << " Aborting." << FEI_ENDL;
+   fei::console_out() << "Aztec_LinSysCore: " << msg << " Aborting." << FEI_ENDL;
 #ifndef FEI_SER
    MPI_Abort(comm_, -1);
 #else

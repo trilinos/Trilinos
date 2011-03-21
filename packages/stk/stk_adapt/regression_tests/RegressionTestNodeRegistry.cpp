@@ -5,7 +5,6 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#include <gtest/gtest.h>
 
 #include <stdexcept>
 #include <sstream>
@@ -21,6 +20,8 @@
 #include <stk_util/util/PrintTable.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
+
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
@@ -46,7 +47,7 @@ namespace stk
       //======================================================================================================================      
       //======================================================================================================================      
 #if 1
-      TEST(nodeRegistry_regr, test_parallel_1)
+      STKUNIT_UNIT_TEST(nodeRegistry_regr, test_parallel_1)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -209,7 +210,7 @@ namespace stk
       //======================================================================================================================      
       //======================================================================================================================      
 #if 1
-      TEST(nodeRegistry_regr, test_parallel_2)
+      STKUNIT_UNIT_TEST(nodeRegistry_regr, test_parallel_2)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );

@@ -28,7 +28,7 @@
 
 
 #ifndef TEUCHOS_STANDARDVALIDATORXMLCONVERTERS_HPP
-#define TEUCHOS_STANDARDVALIDATORXMLCONVERTERSL_HPP
+#define TEUCHOS_STANDARDVALIDATORXMLCONVERTERS_HPP
 
 /*! \file Teuchos_StandardValidatorXMLConverters.hpp
     \brief A collection of standard ValidatorXMLConverters.

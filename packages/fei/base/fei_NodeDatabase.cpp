@@ -56,7 +56,7 @@ int NodeDatabase::getNodeWithID(GlobalID nodeID, const NodeDescriptor*& node) co
 {
   int index = getIndexOfID(nodeID);
   if (index < 0) {
-    //FEI_CERR << "FEI NodeDatabase: node " << (int)nodeID << " not found."<<FEI_ENDL;
+    //fei::console_out() << "FEI NodeDatabase: node " << (int)nodeID << " not found."<<FEI_ENDL;
     return(-1);
   }
 
@@ -69,7 +69,7 @@ int NodeDatabase::getNodeWithID(GlobalID nodeID, NodeDescriptor*& node)
 {
   int index = getIndexOfID(nodeID);
   if (index < 0) {
-    //FEI_CERR << "FEI NodeDatabase: node " << (int)nodeID << " not found."<<FEI_ENDL;
+    //fei::console_out() << "FEI NodeDatabase: node " << (int)nodeID << " not found."<<FEI_ENDL;
     return(-1);
   }
 
@@ -133,7 +133,8 @@ int NodeDatabase::getNodeWithEqn(int eqnNumber, const NodeDescriptor*& node) con
 //------------------------------------------------------------------------------
 void NodeDatabase::getNodeAtIndex(int i, const NodeDescriptor*& node) const
 {
-  if (i>=0 && i < nodePtrs_.size()) {
+  int nnodes = nodePtrs_.size();
+  if (i>=0 && i < nnodes) {
     node = nodePtrs_[i];
   }
   else {
@@ -144,7 +145,8 @@ void NodeDatabase::getNodeAtIndex(int i, const NodeDescriptor*& node) const
 //------------------------------------------------------------------------------
 void NodeDatabase::getNodeAtIndex(int i, NodeDescriptor*& node)
 {
-  if (i>=0 && i < nodePtrs_.size()) {
+  int nnodes = nodePtrs_.size();
+  if (i>=0 && i < nnodes) {
     node = nodePtrs_[i];
   }
   else {

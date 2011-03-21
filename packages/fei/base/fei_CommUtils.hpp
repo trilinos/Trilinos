@@ -100,7 +100,7 @@ int GlobalMax(MPI_Comm comm, std::vector<T>& local, std::vector<T>& global)
     global.resize(local.size());
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what()<<FEI_ENDL;
+    fei::console_out() << exc.what()<<FEI_ENDL;
     return(-1);
   }
 
@@ -240,7 +240,7 @@ int Allgatherv(MPI_Comm comm,
 
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     return(-1);
   }
 #endif
@@ -470,7 +470,7 @@ int exchangeData(MPI_Comm comm,
   }
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     return(-1);
   }
 

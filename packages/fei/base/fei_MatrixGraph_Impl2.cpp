@@ -350,7 +350,7 @@ int fei::MatrixGraph_Impl2::initConnectivityBlock(int blockID,
   }
 
   if (blockID < 0) {
-    FEI_CERR << "fei::MatrixGraph_Impl2::initConnectivityBlock: blockID ("
+    fei::console_out() << "fei::MatrixGraph_Impl2::initConnectivityBlock: blockID ("
          << blockID << ") must be non-negative." << FEI_ENDL;
     ERReturn(-1);
   }

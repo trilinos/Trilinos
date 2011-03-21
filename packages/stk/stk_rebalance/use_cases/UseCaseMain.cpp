@@ -17,6 +17,8 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
+#include <stk_mesh/base/Trace.hpp>
+
 #include <stk_rebalance/Rebalance.hpp>
 
 void printStatus(bool status)
@@ -31,9 +33,8 @@ void printStatus(bool status)
 
 int main ( int argc, char * argv[] )
 {
-  stk::ParallelMachine parallel_machine = stk::parallel_machine_init(&argc, &argv);
-  //const bool single_process =
-  //  stk::parallel_machine_size( parallel_machine ) <= 1 ;
+  use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
+  stk::ParallelMachine parallel_machine = use_case_environment.m_comm;
 
   bool status = true;
   {
@@ -68,8 +69,6 @@ int main ( int argc, char * argv[] )
 
   bool collective_result = use_case::print_status(parallel_machine, status);
   int return_code = collective_result ? 0 : -1;
-
-  stk::parallel_machine_finalize();
 
   return return_code;
 }

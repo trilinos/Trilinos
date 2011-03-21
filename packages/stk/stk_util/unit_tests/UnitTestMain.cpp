@@ -6,8 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <mpi.h>
-
 #include <cstdlib>
 #include <iostream>
 #include <string>

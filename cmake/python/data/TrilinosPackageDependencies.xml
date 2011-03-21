@@ -673,9 +673,9 @@
   </Package>
   <Package name="CTrilinos" dir="CTrilinos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Galeri,Ifpack"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Galeri,Ifpack,Pliris"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Galeri,Ifpack"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Galeri,Ifpack,Pliris"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -687,9 +687,9 @@
   </Package>
   <Package name="ForTrilinos" dir="ForTrilinos">
     <LIB_REQUIRED_DEP_PACKAGES value="CTrilinos,Epetra,Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Galeri,Ifpack"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Galeri,Ifpack,Pliris"/>
     <TEST_REQUIRED_DEP_PACKAGES value="CTrilinos,Epetra,Teuchos"/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Galeri,Ifpack"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Galeri,Ifpack,Pliris"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>

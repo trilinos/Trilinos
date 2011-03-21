@@ -125,7 +125,7 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
                                         crsA, epetra_op, x, b);
 
   if (epetra_op == 0 || x == 0 || b == 0) {
-    FEI_CERR << "Solver_AztecOO::solve Error, couldn't obtain Epetra objects"
+    fei::console_out() << "Solver_AztecOO::solve Error, couldn't obtain Epetra objects"
      << " from fei container-objects."<<FEI_ENDL;
     return(-1);
   }
@@ -164,7 +164,7 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
       precond = snl_epetra_vbr->getMatrix().get();
     }
     else {
-      FEI_CERR << "Solver_AztecOO::solve: ERROR getting epetra row matrix"
+      fei::console_out() << "Solver_AztecOO::solve: ERROR getting epetra row matrix"
 	       << " from preconditioningMatrix."<<FEI_ENDL;
       return(-1);
     }
@@ -200,7 +200,7 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
 #ifdef HAVE_FEI_ML
       setup_ml_operator(*azoo_, crsA);
 #else
-      FEI_CERR <<"Solver_AztecOO::solve ERROR, ML requested but HAVE_FEI_ML not defined."
+      fei::console_out() <<"Solver_AztecOO::solve ERROR, ML requested but HAVE_FEI_ML not defined."
 	       << FEI_ENDL;
       return(-1);
 #endif

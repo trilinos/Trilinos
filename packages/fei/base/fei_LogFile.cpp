@@ -48,7 +48,7 @@ void fei::LogFile::openOutputStream(const char* path,
   output_stream_ = new FEI_OFSTREAM(filename.c_str(), IOS_OUT);
 
   if (output_stream_ == NULL || output_stream_->bad()) {
-    FEI_CERR << "couldn't open debug output file: " << filename << FEI_ENDL;
+    fei::console_out() << "couldn't open debug output file: " << filename << FEI_ENDL;
     delete output_stream_;
     output_stream_ = 0;
   }

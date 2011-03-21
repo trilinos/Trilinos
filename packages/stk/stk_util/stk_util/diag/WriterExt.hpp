@@ -34,13 +34,13 @@ namespace diag {
  * @brief Function <b>operator<<</b> wrties a std::type_info name to the diagnostic
  * writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::type_info object to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::type_info object to.
  *
- * @param t		a <b>std::type_info</b> const reference to the std::typeinfo
- *			object.
+ * @param t    a <b>std::type_info</b> const reference to the std::typeinfo
+ *      object.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 Writer &operator<<(Writer &dout, const std::type_info &t);
 
@@ -48,12 +48,12 @@ Writer &operator<<(Writer &dout, const std::type_info &t);
  * @brief Template function <b>operator<<</b> writes an std::auto_ptr object
  * address and content to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::auto_ptr object.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::auto_ptr object.
  *
- * @param t		a <b>std::auto_ptr</b> const reference to the object.
+ * @param t    a <b>std::auto_ptr</b> const reference to the object.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class T>
 Writer &operator<<(Writer &dout, const std::auto_ptr<T> &t) {
@@ -69,12 +69,12 @@ Writer &operator<<(Writer &dout, const std::auto_ptr<T> &t) {
  * @brief Template function <b>operator<<</b> writes the members of an arbitrary
  * std::pair object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::pair members to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::pair members to.
  *
- * @param pair		a <b>std::pair</b> const reference to the pair of objects.
+ * @param pair    a <b>std::pair</b> const reference to the pair of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class T, class U>
 Writer &operator<<(Writer & dout, const std::pair<T, U> &pair) {
@@ -88,31 +88,31 @@ Writer &operator<<(Writer & dout, const std::pair<T, U> &pair) {
  * @brief Template <b>dump</b> prints the object contained within a std::vector
  * object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::vector to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::vector to.
  *
- * @param t		a <b>std::vector</b> of objects.
+ * @param t    a <b>std::vector</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class T>
 Writer &
 dump(
-  Writer &			dout,
-  const std::vector<T> &	t)
+  Writer &      dout,
+  const std::vector<T> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
 
     if (t.size() <= 10) {
       for (typename std::vector<T>::const_iterator it = t.begin(); it != t.end(); ++it)
-	dout << (*it) << " ";
+        dout << (*it) << " ";
       dout << dendl;
     }
     else {
       int i = 0;
       for (typename std::vector<T>::const_iterator it = t.begin(); it != t.end(); ++it, ++i)
-	dout << "[" << i << "] " << (*it) << dendl;
+        dout << "[" << i << "] " << (*it) << dendl;
     }
 
     dout << pop;
@@ -125,18 +125,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object pointed to that are
  * contained within a std::vector object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::vector to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::vector to.
  *
- * @param t		a <b>std::vector</b> of objects.
+ * @param t    a <b>std::vector</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class T>
 Writer &
 dump(
-  Writer &			dout,
-  const std::vector<T *> &	t)
+  Writer &      dout,
+  const std::vector<T *> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -155,18 +155,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object contained within a
  * std::list object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::list to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::list to.
  *
- * @param t		a <b>std::list</b> of objects.
+ * @param t    a <b>std::list</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class T>
 Writer &
 dump(
-  Writer &			dout,
-  const std::list<T> &		t)
+  Writer &      dout,
+  const std::list<T> &    t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -185,18 +185,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object pointed to that are
  * contained within a std::list object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::list to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::list to.
  *
- * @param t		a <b>std::list</b> of objects.
+ * @param t    a <b>std::list</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class T>
 Writer &
 dump(
-  Writer &			dout,
-  const std::list<T *> &	t)
+  Writer &      dout,
+  const std::list<T *> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -215,18 +215,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object contained within a
  * std::map object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::map to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::map to.
  *
- * @param t		a <b>std::map</b> of objects.
+ * @param t    a <b>std::map</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class T, class L>
 Writer &
 dump(
-  Writer &			dout,
-  const std::map<Key, T, L> &	t)
+  Writer &      dout,
+  const std::map<Key, T, L> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -244,18 +244,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object pointed to that are
  * contained within a std::map to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::map to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::map to.
  *
- * @param t		a <b>std::map</b> of objects.
+ * @param t    a <b>std::map</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class T, class L>
 Writer &
 dump(
-  Writer &			dout,
-  const std::map<Key, T *, L> &	t)
+  Writer &      dout,
+  const std::map<Key, T *, L> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -273,18 +273,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object contained within a
  * std::multimap object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::multimap to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::multimap to.
  *
- * @param t		a <b>std::multimap</b> of objects.
+ * @param t    a <b>std::multimap</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class T, class L>
 Writer &
 dump(
-  Writer &			dout,
-  const std::multimap<Key, T, L> &	t)
+  Writer &      dout,
+  const std::multimap<Key, T, L> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -302,18 +302,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object pointed to that are
  * contained within a std::multimap to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::multimap to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::multimap to.
  *
- * @param t		a <b>std::multimap</b> of objects.
+ * @param t    a <b>std::multimap</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class T, class L>
 Writer &
 dump(
-  Writer &			dout,
-  const std::multimap<Key, T *, L> &	t)
+  Writer &      dout,
+  const std::multimap<Key, T *, L> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -331,18 +331,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object contained within a
  * std::set object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::set to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::set to.
  *
- * @param t		a <b>std::set</b> of objects.
+ * @param t    a <b>std::set</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class L>
 Writer &
 dump(
-  Writer &			dout,
-  const std::set<Key, L> &	t)
+  Writer &      dout,
+  const std::set<Key, L> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -360,18 +360,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object contained within a
  * std::set object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::set to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::set to.
  *
- * @param t		a <b>std::set</b> of objects.
+ * @param t    a <b>std::set</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class L>
 Writer &
 dump(
-  Writer &			dout,
-  const std::set<Key *, L> &	t)
+  Writer &      dout,
+  const std::set<Key *, L> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -389,18 +389,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object contained within a
  * std::multiset object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::multiset to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::multiset to.
  *
- * @param t		a <b>std::multiset</b> of objects.
+ * @param t    a <b>std::multiset</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class L>
 Writer &
 dump(
-  Writer &			dout,
-  const std::multiset<Key, L> &	t)
+  Writer &      dout,
+  const std::multiset<Key, L> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -418,18 +418,18 @@ dump(
  * @brief Template function <b>dump</b> prints the object contained within a
  * std::multiset object to the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::multiset to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::multiset to.
  *
- * @param t		a <b>std::multiset</b> of objects.
+ * @param t    a <b>std::multiset</b> of objects.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class L>
 Writer &
 dump(
-  Writer &			dout,
-  const std::multiset<Key *, L> &	t)
+  Writer &      dout,
+  const std::multiset<Key *, L> &  t)
 {
   if (dout.shouldPrint()) {
     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -447,18 +447,18 @@ dump(
 //  * @brief Template <b>dump</b> prints the object contained within a
 //  * hash_map to the diagnostic writer.
 //  *
-//  * @param dout		a <b>Writer</b> reference to the diagnostic writer to
-//  *			write the hash_map to.
+//  * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+//  *      write the hash_map to.
 //  *
-//  * @param t		a <b>hash_map</b> of objects.
+//  * @param t    a <b>hash_map</b> of objects.
 //  *
-//  * @return		a <b>Writer</b> reference to this object
+//  * @return    a <b>Writer</b> reference to this object
 //  */
 // template <class Key, class T>
 // Writer &
 // dump(
-//   Writer &			dout,
-//   const hash_map<Key, T> &	t)
+//   Writer &      dout,
+//   const hash_map<Key, T> &  t)
 // {
 //   if (dout.shouldPrint()) {
 //     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -476,19 +476,19 @@ dump(
 //  * @brief Template <b>dump</b> prints the object pointed to that are
 //  * contained within a hash_map to the diagnostic writer.
 //  *
-//  * @param dout		a <b>Writer</b> reference to the diagnostic writer to
-//  *			write the hash_map to.
+//  * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+//  *      write the hash_map to.
 //  *
-//  * @param t		a <b>hash_map</b> of objects.
+//  * @param t    a <b>hash_map</b> of objects.
 //  *
-//  * @return		a <b>Writer</b> reference to this object
+//  * @return    a <b>Writer</b> reference to this object
 //  */
 // template <class Key, class T>
 // Writer &
 // dump(
-//   Writer &			dout,
+//   Writer &      dout,
 
-//   const hash_map<Key, T *> &	t)
+//   const hash_map<Key, T *> &  t)
 // {
 //   if (dout.shouldPrint()) {
 //     dout << typeid(t) << ", size " << t.size() << push << dendl;
@@ -516,12 +516,12 @@ Writer &operator<<(Writer &dout, const std::bitset<n> &t) {
  * @brief Member function <b>operator<<</b> write the std::vector object to
  * the diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::list to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::list to.
  *
- * @param t		a <b>std::vector</b> const reference to the std::vector.
+ * @param t    a <b>std::vector</b> const reference to the std::vector.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class T>
 Writer &operator<<(Writer &dout, const std::vector<T> &t) {
@@ -532,12 +532,12 @@ Writer &operator<<(Writer &dout, const std::vector<T> &t) {
  * @brief Template function <b>operator<<</b> write the std::list object to the
  * diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::list to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::list to.
  *
- * @param t		a <b>std::list</b> const reference to the std::list.
+ * @param t    a <b>std::list</b> const reference to the std::list.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class T>
 Writer &operator<<(Writer &dout, const std::list<T> &t) {
@@ -548,12 +548,12 @@ Writer &operator<<(Writer &dout, const std::list<T> &t) {
  * @brief Template function <b>operator<<</b> writes the std::map object to the
  * diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::map to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::map to.
  *
- * @param t		a <b>std::map</b> const reference to the std::map.
+ * @param t    a <b>std::map</b> const reference to the std::map.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class T, class L>
 Writer &operator<<(Writer &dout, const std::map<Key, T, L> &t) {
@@ -564,12 +564,12 @@ Writer &operator<<(Writer &dout, const std::map<Key, T, L> &t) {
  * @brief Template function <b>operator<<</b> writes the std::multimap object to the
  * diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::multimap to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::multimap to.
  *
- * @param t		a <b>std::multimap</b> const reference to the std::multimap.
+ * @param t    a <b>std::multimap</b> const reference to the std::multimap.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class T, class L>
 Writer &operator<<(Writer &dout, const std::multimap<Key, T, L> &t) {
@@ -580,12 +580,12 @@ Writer &operator<<(Writer &dout, const std::multimap<Key, T, L> &t) {
  * @brief Template function <b>operator<<</b> writes the std::set object to the
  * diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::set to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::set to.
  *
- * @param t		a <b>std::set</b> const reference to the std::set.
+ * @param t    a <b>std::set</b> const reference to the std::set.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class L>
 Writer &operator<<(Writer &dout, const std::set<Key, L> &t) {
@@ -596,12 +596,12 @@ Writer &operator<<(Writer &dout, const std::set<Key, L> &t) {
  * @brief Template function <b>operator<<</b> writes the std::multiset object to the
  * diagnostic writer.
  *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the std::multiset to.
+ * @param dout    a <b>Writer</b> reference to the diagnostic writer to
+ *      write the std::multiset to.
  *
- * @param t		a <b>std::multiset</b> const reference to the std::multiset.
+ * @param t    a <b>std::multiset</b> const reference to the std::multiset.
  *
- * @return		a <b>Writer</b> reference to this object
+ * @return    a <b>Writer</b> reference to this object
  */
 template <class Key, class L>
 Writer &operator<<(Writer &dout, const std::multiset<Key, L> &t) {

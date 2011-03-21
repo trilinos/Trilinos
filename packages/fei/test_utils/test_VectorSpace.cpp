@@ -149,7 +149,7 @@ int test_VectorSpace::test1()
   int globalBlkIndex = 0;
   CHK_ERR( vectorSpace.getGlobalBlkIndex(idTypes[0], ids[0], globalBlkIndex) );
   if (globalBlkIndex != correctBlkIndex) {
-    FEI_CERR << "localProc_: " << localProc_ << ", globalBlkIndex: "
+    fei::console_out() << "localProc_: " << localProc_ << ", globalBlkIndex: "
 	 << globalBlkIndex << ", correctBlkIndex: " << correctBlkIndex << FEI_ENDL;
     ERReturn(-1);
   }
@@ -169,7 +169,7 @@ int test_VectorSpace::test1()
   if (localProc_ != 0) correctBlkIndex -= 2;
 
   if (globalBlkIndex != correctBlkIndex) {
-   FEI_CERR << "2localProc_: " << localProc_ << ", globalBlkIndex: "
+   fei::console_out() << "2localProc_: " << localProc_ << ", globalBlkIndex: "
 	 << globalBlkIndex << ", correctBlkIndex: " << correctBlkIndex << FEI_ENDL;
     ERReturn(-1); 
   }

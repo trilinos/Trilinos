@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
       read_input_and_execute_fullsystem_tests(filename, argc, argv, MPI_COMM_WORLD);
     }
     catch(std::runtime_error& exc) {
-      FEI_CERR << "caught fei test error: "<<exc.what() << FEI_ENDL;
+      fei::console_out() << "caught fei test error: "<<exc.what() << FEI_ENDL;
       errcode = -1;
     }
   }
@@ -160,7 +160,7 @@ void read_input_and_execute_fullsystem_tests(const std::string& filename,
       execute_fullsystem_tests(comm, path, name_numproc_pairs);
     }
     catch(std::runtime_error& exc) {
-      FEI_CERR << "caught fei test error: "<<exc.what() << FEI_ENDL;
+      fei::console_out() << "caught fei test error: "<<exc.what() << FEI_ENDL;
       throw;
     }
 
@@ -271,7 +271,7 @@ int execute_named_test(const std::string& testname,
       execute_unit_tests(path, comm);
     }
     catch(std::runtime_error& exc) {
-      FEI_CERR << "caught unit-test error: "<<exc.what() << FEI_ENDL;
+      fei::console_out() << "caught unit-test error: "<<exc.what() << FEI_ENDL;
       return(-1);
     }
   }
@@ -311,7 +311,7 @@ int execute_named_test(const std::string& testname,
         execute_benchmarks(comm);
       }
       catch(std::runtime_error& exc) {
-        FEI_CERR <<"caught exception from benchmarks: "<<exc.what()<<FEI_ENDL;
+        fei::console_out() <<"caught exception from benchmarks: "<<exc.what()<<FEI_ENDL;
         errcode = -1;
       }
     }

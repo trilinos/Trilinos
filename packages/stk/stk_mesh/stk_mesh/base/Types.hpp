@@ -90,7 +90,7 @@ typedef uint64_t EntityId ;
 // Note:  This BaseEntityRank can be considered the leaf of a tree and it
 // represents the furthest out you can go in downward relations.
 static const EntityRank BaseEntityRank = 0;
-static const EntityRank InvalidEntityRank = -1; // std::numeric_limits<EntityRank>::max();
+static const EntityRank InvalidEntityRank = static_cast<EntityRank>(-1); // std::numeric_limits<EntityRank>::max();
 
 
 typedef unsigned Ordinal;

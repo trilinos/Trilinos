@@ -691,7 +691,7 @@ int fei::VectorSpace::getGlobalIndex(int idType,
   catch (std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "VectorSpace::getGlobalIndex caught exception: " << exc.what();
-    FEI_CERR << osstr.str()<<FEI_ENDL;
+    fei::console_out() << osstr.str()<<FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -1706,7 +1706,7 @@ int fei::VectorSpace::synchronizeSharedRecords()
       int err = 0;
       bool quiet = false;
       if (!checkPattern->equal(*sharerPattern, quiet)) {
-        //FEI_CERR << "shared-ID safety-check failed..."
+        //fei::console_out() << "shared-ID safety-check failed..."
         //     << FEI_ENDL;
         err = -1;
       }

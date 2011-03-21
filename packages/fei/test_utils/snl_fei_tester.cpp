@@ -63,7 +63,7 @@ int snl_fei_tester::testInitialization()
       factory_ = fei::create_fei_Factory(comm_, data_->solverLibraryName_.c_str());
     }
     catch (std::runtime_error& exc) {
-      FEI_CERR << exc.what()<<FEI_ENDL;
+      fei::console_out() << exc.what()<<FEI_ENDL;
       return(1);
     }
     if (factory_.get() == NULL) {
@@ -523,7 +523,7 @@ int snl_fei_tester::save_block_node_soln(DataReader& data, fei::Vector* vec,
   FEI_OFSTREAM outfile(str.c_str());
 
   if (!outfile || outfile.bad()) {
-    FEI_CERR << "ERROR opening solution output file " << fileName << FEI_ENDL;
+    fei::console_out() << "ERROR opening solution output file " << fileName << FEI_ENDL;
     return(-1);
   }
 
@@ -591,7 +591,7 @@ int snl_fei_tester::save_block_elem_soln(DataReader& data, fei::Vector* vec,
   FEI_OFSTREAM outfile(str.c_str());
 
   if (!outfile || outfile.bad()) {
-    FEI_CERR << "ERROR opening solution output file " << fileName << FEI_ENDL;
+    fei::console_out() << "ERROR opening solution output file " << fileName << FEI_ENDL;
     return(-1);
   }
 
@@ -668,7 +668,7 @@ int snl_fei_tester::save_multiplier_soln(DataReader& data, fei::Vector* vec,
   FEI_OFSTREAM outfile(str.c_str());
 
   if (!outfile || outfile.bad()) {
-    FEI_CERR << "ERROR opening solution output file " << fileName << FEI_ENDL;
+    fei::console_out() << "ERROR opening solution output file " << fileName << FEI_ENDL;
     return(-1);
   }
 

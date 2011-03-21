@@ -103,6 +103,28 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  InterlacedOpUnitTest 
+  SOURCES Stokhos_InterlacedOpUnitTest.cpp
+          Stokhos_InterlacedTestSupport.cpp
+          Stokhos_InterlacedTestSupport.hpp
+          ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 2
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  InterlacedMapUnitTest 
+  SOURCES Stokhos_InterlacedMapUnitTest.cpp
+          Stokhos_InterlacedTestSupport.cpp
+          Stokhos_InterlacedTestSupport.hpp
+          ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 2
+  )
+
 IF(Stokhos_ENABLE_TriKota)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(

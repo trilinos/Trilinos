@@ -102,8 +102,12 @@ unary_op(const FuncT& func,
 #endif
 
     // Evaluate function
-  for (ordinal_type qp=0; qp<nqp; qp++)
-    fvals[qp] = func(avals[qp])*quad_weights[qp];
+  for (ordinal_type qp=0; qp<nqp; qp++) {
+    if (quad_weights[qp] != value_type(0))
+      fvals[qp] = func(avals[qp])*quad_weights[qp];
+    else
+      fvals[qp] = value_type(0);
+  }
 
   }
 
@@ -163,7 +167,10 @@ binary_op(const FuncT& func,
 
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
-    fvals[qp] = func(avals[qp], bvals[qp])*quad_weights[qp];
+    if (quad_weights[qp] != value_type(0))
+      fvals[qp] = func(avals[qp], bvals[qp])*quad_weights[qp];
+    else
+      fvals[qp] = value_type(0);
 
   }
 
@@ -220,7 +227,10 @@ binary_op(const FuncT& func,
 
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
-    fvals[qp] = func(a, bvals[qp])*quad_weights[qp];
+    if (quad_weights[qp] != value_type(0))
+      fvals[qp] = func(a, bvals[qp])*quad_weights[qp];
+    else
+      fvals[qp] = value_type(0);
 
   }
 
@@ -277,7 +287,10 @@ binary_op(const FuncT& func,
 
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
-    fvals[qp] = func(avals[qp], b)*quad_weights[qp];
+    if (quad_weights[qp] != value_type(0))
+      fvals[qp] = func(avals[qp], b)*quad_weights[qp];
+    else
+      fvals[qp] = value_type(0);
 
   }
 
@@ -356,9 +369,13 @@ nary_op(const FuncT& func,
   // Evaluate function
   value_type val[N];
   for (ordinal_type qp=0; qp<nqp; qp++) {
-    for (int i=0; i<N; i++)
-      val[i] = navals[N][i][qp];
-    fvals[qp] = func(val)*quad_weights[qp];
+    if (quad_weights[qp] != value_type(0)) {
+      for (int i=0; i<N; i++)
+	val[i] = navals[N][i][qp];
+      fvals[qp] = func(val)*quad_weights[qp];
+    }
+    else
+      fvals[qp] = value_type(0);
   }
 
   }

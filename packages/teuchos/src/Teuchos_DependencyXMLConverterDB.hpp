@@ -34,7 +34,11 @@
  * \brief A database for DependencyXMLConverters.
 */
 
-#include "Teuchos_DependencyXMLConverter.hpp"
+//Must include this and not just DependencyXMLConverter.hpp
+//because of convience macros
+#include "Teuchos_StandardDependencyXMLConverters.hpp"
+//Once again, done for the macros.
+#include "Teuchos_StandardDependencies.hpp"
 #include "Teuchos_XMLParameterListReader.hpp"
 
 
@@ -56,7 +60,7 @@ public:
    * will convert.
    * \param convertToAdd The converter to add to the database.
    */
-  static void addConverter(Dependency& dependency,
+  static void addConverter(RCP<const Dependency> dependency,
     RCP<DependencyXMLConverter> converterToAdd);
   
   //@}
@@ -158,8 +162,86 @@ private:
 
 };
 
-
 } // end namespace Teuchos
+
+
+//
+// Helper Macros
+//
+
+/** \brief Adds converter to the list of DependencyXMLConverters
+ * so that all dependencies of DEP_TYPE will be converted using
+ * CONVERTER.
+ */
+#define TEUCHOS_ADD_DEP_CONVERTER(DEP_TYPE, CONVERTER) \
+   Teuchos::DependencyXMLConverterDB::addConverter( \
+        Teuchos::DummyObjectGetter< DEP_TYPE >:: \
+          getDummyObject(), \
+        Teuchos::rcp(new CONVERTER)); 
+
+/**
+ * \brief Adds converters for NumberVisualDepednency,
+ * RangeValidatorDepencny, and NumberArrayLengthDependency 
+ * which are templated on type T to the list of available 
+ * converters.
+ */
+#define TEUCHOS_ADD_TEMPLATED_NUMBER_DEPS(T) \
+  TEUCHOS_ADD_NUMBER_VISUAL_DEP(T); \
+  TEUCHOS_ADD_RANGE_VALIDATOR_DEP(T); \
+  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(T);
+
+/**
+ * \brief Adds a NumberVisualDependencyXMLConverter temeplated on
+ * type T to the list of available converters.
+ */
+#define TEUCHOS_ADD_NUMBER_VISUAL_DEP(T) \
+   Teuchos::DependencyXMLConverterDB::addConverter( \
+      Teuchos::DummyObjectGetter<Teuchos::NumberVisualDependency< T > >:: \
+      getDummyObject(), \
+      Teuchos::rcp(new Teuchos::NumberVisualDependencyXMLConverter< T >));
+
+/**
+ * \brief Adds a RangeValidatorDependencyXMLConverter temeplated on
+ * type T to the list of available converters.
+ */
+#define TEUCHOS_ADD_RANGE_VALIDATOR_DEP(T) \
+   Teuchos::DependencyXMLConverterDB::addConverter( \
+      Teuchos::DummyObjectGetter<Teuchos::RangeValidatorDependency< T > >:: \
+        getDummyObject(), \
+      Teuchos::rcp(new Teuchos::RangeValidatorDependencyXMLConverter< T >));
+/**
+ * \brief Adds a NumberArrayLengthDependencyXMLConverter tmeplated on
+ * type DEPENDEE_TYPE and DEPENDENT_TYPE to the list of available converters.
+ */
+#define TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP(DEPENDEE_TYPE , DEPENDENT_TYPE) \
+   Teuchos::DependencyXMLConverterDB::addConverter( \
+      Teuchos::DummyObjectGetter<Teuchos::NumberArrayLengthDependency< \
+        DEPENDEE_TYPE , DEPENDENT_TYPE > >::getDummyObject(), \
+        Teuchos::rcp(new Teuchos::NumberArrayLengthDependencyXMLConverter< \
+        DEPENDEE_TYPE , DEPENDENT_TYPE >));
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+/**
+ * \brief Adds several NumberArrayLengthDependencyXMLConverter templated on
+ * DEPENDEE_TYPE and several standard dependent types.
+ */
+#define TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(DEPENDEE_TYPE) \
+  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , std::string) \
+  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , int) \
+  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , long long int) \
+  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , double) \
+  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , float) 
+#else
+/**
+ * \brief Adds several NumberArrayLengthDependencyXMLConverter templated on
+ * DEPENDEE_TYPE and several standard dependent types.
+ */
+#define TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(DEPENDEE_TYPE) \
+  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , std::string) \
+  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , int) \
+  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , double) \
+  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , float) 
+#endif
 
 
 #endif // TEUCHOS_DEPENDENCYXMLCONVERTERDB_HPP

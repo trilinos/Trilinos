@@ -110,36 +110,32 @@ namespace {
 
 TEUCHOS_STATIC_SETUP()
 {
-    Teuchos::ParameterEntryXMLConverterDB::ConverterMap& masterMap =
-      Teuchos::ParameterEntryXMLConverterDB::getConverterMap();
     typedef unsigned int uint;
     typedef unsigned short int ushort;
     typedef unsigned long ulong;
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, int);
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, uint);
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, short);
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, ushort);
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, long);
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, ulong);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(int);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(uint);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(short);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ushort);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(long);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ulong);
     #ifdef HAVE_TEUCHOS_LONG_LONG_INT
     typedef long long int llint;
     typedef unsigned long long int ullint;
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, llint);
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, ullint);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(llint);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ullint);
     #endif //HAVE_TEUCHOS_LONG_LONG_INT
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, double);
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, float);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(double);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(float);
 
     typedef std::string myString;
-    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, myString);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(myString);
 
-    TEUCHOS_ADD_TYPE_CONVERTER(masterMap, char);
-    TEUCHOS_ADD_TYPE_CONVERTER(masterMap, bool);
+    TEUCHOS_ADD_TYPE_CONVERTER(char);
+    TEUCHOS_ADD_TYPE_CONVERTER(bool);
 
-    Teuchos::RCP<Teuchos::AnyParameterEntryConverter > anyConverter = 
-      Teuchos::rcp(new Teuchos::AnyParameterEntryConverter); 
-    masterMap.insert(Teuchos::ParameterEntryXMLConverterDB::ConverterPair(anyConverter->getTypeAttributeValue(), 
-      anyConverter)); 
+    Teuchos::ParameterEntryXMLConverterDB::addConverter(
+      Teuchos::rcp(new Teuchos::AnyParameterEntryConverter));
 }
 
 

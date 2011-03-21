@@ -132,18 +132,25 @@ getQuadPoints(ordinal_type quad_order,
   // Call base class
   ordinal_type num_points = 
     static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
+
+  // We can't reliably generate quadrature points of order > 2*p
+  //std::cout << "quad_order = " << quad_order << ", 2*p = " << 2*this->p << std::endl;
   if (quad_order > 2*this->p)
     quad_order = 2*this->p;
   Stokhos::RecurrenceBasis<ordinal_type,value_type>::getQuadPoints(quad_order, 
 								   quad_points, 
 								   quad_weights,
 								   quad_values);
+
+  // Fill in the rest of the points with zero weight
   if (quad_weights.size() < num_points) {
     ordinal_type old_size = quad_weights.size();
     quad_weights.resize(num_points);
     quad_points.resize(num_points);
     quad_values.resize(num_points);
     for (ordinal_type i=old_size; i<num_points; i++) {
+      quad_weights[i] = value_type(0);
+      quad_points[i] = quad_points[0];
       quad_values[i].resize(this->p+1);
       evaluateBases(quad_points[i], quad_values[i]);
     }
@@ -290,8 +297,9 @@ integrateBasisSquaredProj(
 
   // Compute \int \eta phi_k^2(\eta) d\eta
   val2 = value_type(0);
-  typename Cijk_type::k_iterator k_it = Cijk->find_k(k);
-  for (ordinal_type l=0; l<npc; l++) {
+  for (typename Cijk_type::k_iterator k_it = Cijk->k_begin();
+       k_it != Cijk->k_end(); ++k_it) {
+    ordinal_type l = index(k_it);
     for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
 	 j_it != Cijk->j_end(k_it); ++j_it) {
       ordinal_type j = index(j_it);
@@ -299,7 +307,7 @@ integrateBasisSquaredProj(
 	   i_it != Cijk->i_end(j_it); ++i_it) {
 	ordinal_type i = index(i_it);
 	value_type c = value(i_it);
-	val2 += phi_pce_coeffs[l]*phi_pce_coeffs[i]*(*pce)[j]*c;
+	val2 += phi_pce_coeffs[i]*phi_pce_coeffs[j]*(*pce)[l]*c;
       }
     }
   }

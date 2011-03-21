@@ -8,6 +8,7 @@
 #include <iterator>
 #include <exception>
 #include <string>
+#include <cctype>
 
 bool Tpetra::Utils::parseIfmt(Teuchos::ArrayRCP<char> fmt, int &perline, int &width) {
   TEST_FOR_EXCEPT(fmt.size() != 0 && fmt[fmt.size()-1] != '\0');

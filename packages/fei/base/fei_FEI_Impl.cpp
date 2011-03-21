@@ -209,7 +209,7 @@ int fei::FEI_Impl::setIDLists(int numMatrices,
 			       const int* rhsIDs)
 {
   if (numMatrices < 1 || numRHSs < 1) {
-    FEI_CERR << "fei::FEI_Impl::setIDLists ERROR, numMatrices and numRHSs "
+    fei::console_out() << "fei::FEI_Impl::setIDLists ERROR, numMatrices and numRHSs "
 	 << "must both be greater than 0."<<FEI_ENDL;
     ERReturn(-1);
   }
@@ -220,7 +220,7 @@ int fei::FEI_Impl::setIDLists(int numMatrices,
     fei::sortedListInsert(matrixIDs[i], matrixIDs_);
   }
   if ((int)matrixIDs_.size() != numMatrices) {
-    FEI_CERR << "fei::FEI_Impl::setIDLists ERROR creating matrixIDs_ list."<<FEI_ENDL;
+    fei::console_out() << "fei::FEI_Impl::setIDLists ERROR creating matrixIDs_ list."<<FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -230,7 +230,7 @@ int fei::FEI_Impl::setIDLists(int numMatrices,
     fei::sortedListInsert(rhsIDs[i], rhsIDs_);
   }
   if ((int)rhsIDs_.size() != numRHSs) {
-    FEI_CERR << "fei::FEI_Impl::setIDLists ERROR creating rhsIDs_ list."<<FEI_ENDL;
+    fei::console_out() << "fei::FEI_Impl::setIDLists ERROR creating rhsIDs_ list."<<FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -474,7 +474,7 @@ int fei::FEI_Impl::initComplete()
 
       fei::SharedPtr<LinearSystemCore> linsyscore = wrapper_[0]->getLinearSystemCore();
       if (linsyscore.get() == NULL) {
-	FEI_CERR << "fei::FEI_Impl ERROR, multiple matrix/rhs assembly not supported "
+	fei::console_out() << "fei::FEI_Impl ERROR, multiple matrix/rhs assembly not supported "
 	     << "non-null LibraryWrapper holds null LinearSystemCore."<<FEI_ENDL;
 	ERReturn(-1);
       }
@@ -562,7 +562,7 @@ int fei::FEI_Impl::setCurrentMatrix(int matID)
   std::vector<int>::const_iterator
     iter = std::lower_bound(matrixIDs_.begin(), matrixIDs_.end(), matID);
   if (iter == matrixIDs_.end() || *iter != matID) {
-    FEI_CERR << "fei::FEI_Impl::setCurrentMatrix: matID ("<<matID
+    fei::console_out() << "fei::FEI_Impl::setCurrentMatrix: matID ("<<matID
        <<") not found." <<FEI_ENDL;
     return(-1);
   }
@@ -577,7 +577,7 @@ int fei::FEI_Impl::setCurrentRHS(int rhsID)
   std::vector<int>::const_iterator
     iter = std::lower_bound(rhsIDs_.begin(), rhsIDs_.end(), rhsID);
   if (iter == rhsIDs_.end() || *iter != rhsID) {
-    FEI_CERR << "fei::FEI_Impl::setCurrentRHS: rhsID ("<<rhsID<<") not found."
+    fei::console_out() << "fei::FEI_Impl::setCurrentRHS: rhsID ("<<rhsID<<") not found."
 	 << FEI_ENDL;
     return(-1);
   }
@@ -821,7 +821,7 @@ int fei::FEI_Impl::loadComplete(bool applyBCs,
   }
 
   if (linSys_.get() == NULL) {
-    FEI_CERR << "fei::FEI_Impl::loadComplete: loadComplete can not be called"
+    fei::console_out() << "fei::FEI_Impl::loadComplete: loadComplete can not be called"
 	 << " until after initComplete has been called."<<FEI_ENDL;
     return(-1);
   }
@@ -956,7 +956,7 @@ int fei::FEI_Impl::residualNorm(int whichNorm,
       CHK_ERR( linSysCore->formResidual(residValuesPtr, numLocalEqns) );
     }
     else {
-      FEI_CERR << "FEI_Impl::residualNorm: warning: residualNorm not implemented"
+      fei::console_out() << "FEI_Impl::residualNorm: warning: residualNorm not implemented"
 	   << " for FiniteElementData."<<FEI_ENDL;
       int offset = 0;
       for(int ii=0; ii<numFields; ++ii) {
@@ -1005,7 +1005,7 @@ int fei::FEI_Impl::residualNorm(int whichNorm,
 	tmp += val*val;
 	break;
       default:
-	FEI_CERR << "FEI_Impl::residualNorm: whichNorm="<<whichNorm<<" not recognized"
+	fei::console_out() << "FEI_Impl::residualNorm: whichNorm="<<whichNorm<<" not recognized"
 	     << FEI_ENDL;
 	return(-1);
       }
@@ -1462,7 +1462,7 @@ int fei::FEI_Impl::putNodalFieldData(int fieldID,
       for(int i=0; i<numNodes; ++i) {
 	err = rowSpace_->getGlobalBlkIndex(nodeIDType_, nodeIDs[i], numbers[i]);
 	if (err != 0) {
-	  FEI_CERR << "fei::FEI_Impl::putNodalFieldData ERROR, nodeID "
+	  fei::console_out() << "fei::FEI_Impl::putNodalFieldData ERROR, nodeID "
 	       << nodeIDs[i] << " not found."<<FEI_ENDL;
 	  ERReturn(-1);
 	}
@@ -1473,7 +1473,7 @@ int fei::FEI_Impl::putNodalFieldData(int fieldID,
 	fieldSize = rowSpace_->getFieldSize(fieldID);
       }
       catch (std::runtime_error& exc) {
-	FEI_CERR << "fei::FEI_Impl::putNodalFieldData ERROR: " <<exc.what()<<FEI_ENDL;
+	fei::console_out() << "fei::FEI_Impl::putNodalFieldData ERROR: " <<exc.what()<<FEI_ENDL;
 	ERReturn(-1);
       }
 
@@ -1512,7 +1512,7 @@ int fei::FEI_Impl::putNodalFieldData(int fieldID,
 	}
       }
       else {
-	FEI_CERR << "fei::FEI_Impl::putNodalFieldData ERROR, non-null LibraryWrapper"
+	fei::console_out() << "fei::FEI_Impl::putNodalFieldData ERROR, non-null LibraryWrapper"
 	     << " contains neither LinearSystemCore or FiniteElementData. " <<FEI_ENDL;
 	ERReturn(-1);
       }

@@ -86,7 +86,7 @@ int poisson3_main(int argc, char** argv,
   paramset.getIntParamValue("outputLevel", outputLevel);
 
   if (errcode != 0) {
-    FEI_CERR << "Failed to find one or more required parameters in input-file."
+    fei::console_out() << "Failed to find one or more required parameters in input-file."
 	     << FEI_ENDL << "Required parameters:"<<FEI_ENDL
 	     << "SOLVER_LIBRARY" << FEI_ENDL
 	     << "L" << FEI_ENDL;
@@ -259,7 +259,7 @@ int poisson3_main(int argc, char** argv,
       delete [] soln;
     }
     else {
-      FEI_CERR << "allocation of nodeIDs or soln failed." << FEI_ENDL; 
+      fei::console_out() << "allocation of nodeIDs or soln failed." << FEI_ENDL; 
     }
 
   }

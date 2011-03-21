@@ -27,29 +27,19 @@
 // @HEADER
 
 #include "Teuchos_ConditionXMLConverterDB.hpp"
-#include "Teuchos_StandardConditionXMLConverters.hpp"
-#include "Teuchos_StandardConditions.hpp"
 #include "Teuchos_XMLConditionExceptions.hpp"
+#include "Teuchos_StaticSetupMacro.hpp"
 
 
 
 namespace Teuchos {
 
 
-#define ADD_NUMBERCONVERTER(T) \
-  \
-  masterMap.insert(ConverterPair( \
-    DummyObjectGetter<NumberCondition< T > >:: \
-      getDummyObject()->getTypeAttributeValue(), \
-    rcp(new NumberConditionConverter< T >)));
-
-
-
 void ConditionXMLConverterDB::addConverter(
-  Condition& condition,
+  RCP<const Condition> condition,
   RCP<ConditionXMLConverter> converterToAdd){
   getConverterMap().insert(
-    ConverterPair(condition.getTypeAttributeValue(), converterToAdd));
+    ConverterPair(condition->getTypeAttributeValue(), converterToAdd));
 }
 
 
@@ -101,57 +91,62 @@ ConditionXMLConverterDB::ConverterMap&
 ConditionXMLConverterDB::getConverterMap()
 {
   static ConverterMap masterMap;
-  if(masterMap.size() == 0){
-
-    ADD_NUMBERCONVERTER(int);
-    ADD_NUMBERCONVERTER(unsigned int);
-    ADD_NUMBERCONVERTER(short int);
-    ADD_NUMBERCONVERTER(unsigned short int);
-    ADD_NUMBERCONVERTER(long int);
-    ADD_NUMBERCONVERTER(unsigned long int);
-    ADD_NUMBERCONVERTER(double);
-    ADD_NUMBERCONVERTER(float);
-
-    #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-    ADD_NUMBERCONVERTER(long long int);
-    ADD_NUMBERCONVERTER(unsigned long long int);
-    #endif // HAVE_TEUCHOS_LONG_LONG_INT
-
-    masterMap.insert(ConverterPair(
-      DummyObjectGetter<StringCondition>::
-        getDummyObject()->getTypeAttributeValue(),
-      rcp(new StringConditionConverter)));
-
-    masterMap.insert(ConverterPair(
-      DummyObjectGetter<BoolCondition>::
-        getDummyObject()->getTypeAttributeValue(),
-      rcp(new BoolConditionConverter)));
-
-    masterMap.insert(ConverterPair(
-      DummyObjectGetter<OrCondition>::
-        getDummyObject()->getTypeAttributeValue(),
-      rcp(new OrConditionConverter)));
-
-    masterMap.insert(ConverterPair(
-      DummyObjectGetter<AndCondition>::
-        getDummyObject()->getTypeAttributeValue(),
-      rcp(new AndConditionConverter)));
-
-    masterMap.insert(ConverterPair(
-      DummyObjectGetter<EqualsCondition>::
-        getDummyObject()->getTypeAttributeValue(),
-      rcp(new EqualsConditionConverter)));
-
-    masterMap.insert(ConverterPair(
-      DummyObjectGetter<NotCondition>::
-        getDummyObject()->getTypeAttributeValue(),
-      rcp(new NotConditionConverter)));
-
-
-  }
   return masterMap;
 }
 
 
 } // namespace Teuchos
 
+
+namespace {
+
+
+TEUCHOS_STATIC_SETUP()
+{
+    TEUCHOS_ADD_NUMBERCONVERTER(int);
+    TEUCHOS_ADD_NUMBERCONVERTER(unsigned int);
+    TEUCHOS_ADD_NUMBERCONVERTER(short int);
+    TEUCHOS_ADD_NUMBERCONVERTER(unsigned short int);
+    TEUCHOS_ADD_NUMBERCONVERTER(long int);
+    TEUCHOS_ADD_NUMBERCONVERTER(unsigned long int);
+    TEUCHOS_ADD_NUMBERCONVERTER(double);
+    TEUCHOS_ADD_NUMBERCONVERTER(float);
+
+    #ifdef HAVE_TEUCHOS_LONG_LONG_INT
+    TEUCHOS_ADD_NUMBERCONVERTER(long long int);
+    TEUCHOS_ADD_NUMBERCONVERTER(unsigned long long int);
+    #endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+    Teuchos::ConditionXMLConverterDB::addConverter(
+      Teuchos::DummyObjectGetter<Teuchos::StringCondition>::
+        getDummyObject(),
+      Teuchos::rcp(new Teuchos::StringConditionConverter));
+
+    Teuchos::ConditionXMLConverterDB::addConverter(
+      Teuchos::DummyObjectGetter<Teuchos::BoolCondition>::
+        getDummyObject(),
+      Teuchos::rcp(new Teuchos::BoolConditionConverter));
+
+    Teuchos::ConditionXMLConverterDB::addConverter(
+      Teuchos::DummyObjectGetter<Teuchos::OrCondition>::
+        getDummyObject(),
+      Teuchos::rcp(new Teuchos::OrConditionConverter));
+
+    Teuchos::ConditionXMLConverterDB::addConverter(
+      Teuchos::DummyObjectGetter<Teuchos::AndCondition>::
+        getDummyObject(),
+      Teuchos::rcp(new Teuchos::AndConditionConverter));
+
+    Teuchos::ConditionXMLConverterDB::addConverter(
+      Teuchos::DummyObjectGetter<Teuchos::EqualsCondition>::
+        getDummyObject(),
+      Teuchos::rcp(new Teuchos::EqualsConditionConverter));
+
+    Teuchos::ConditionXMLConverterDB::addConverter(
+      Teuchos::DummyObjectGetter<Teuchos::NotCondition>::
+        getDummyObject(),
+      Teuchos::rcp(new Teuchos::NotConditionConverter));
+}
+
+
+} // namespace
