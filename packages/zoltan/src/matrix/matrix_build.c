@@ -159,11 +159,6 @@ printf("KDDKDD USING FAST BUILD use_full_dd %d  matrix->opts.speed %d  request_G
       requested_GNOs[i] = (ZOLTAN_GNO_TYPE)requested_GIDs[i]
                         - fast_build_base;
      
-{int kdd;
- for (kdd = 0; kdd < nX; kdd++) printf("%d %d GID/GNO %d\n", zz->Proc, kdd, xGNO[kdd]);
- for (kdd = 0; kdd < num_requested; kdd++) printf("%d %d requested %d\n", zz->Proc, kdd, requested_GNOs[kdd]);
-}
-
     tmp = (ZOLTAN_GNO_TYPE)nX; 
     MPI_Allreduce(&tmp, &matrix->globalX, 1, zoltan_gno_mpi_type, MPI_SUM, zz->Communicator);
   }
