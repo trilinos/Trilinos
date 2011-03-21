@@ -143,7 +143,7 @@ printf("KDDKDD USING FULL DD use_full_dd %d  matrix->opts.speed %d  request_GNOs
 printf("KDDKDD USING FAST BUILD use_full_dd %d  matrix->opts.speed %d  request_GNOs %d\n", use_full_dd, matrix->opts.speed, request_GNOs); 
     if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(ZOLTAN_ID_TYPE)){
       xGNO = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(nX*sizeof(ZOLTAN_GNO_TYPE));
-      if (xGNO == NULL)
+      if (nX && xGNO == NULL)
         MEMORY_ERROR;
       for (i=0; i < nX; i++)
         xGNO[i] = (ZOLTAN_GNO_TYPE)xGID[i] - fast_build_base;
