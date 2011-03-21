@@ -8,6 +8,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/FEMInterface.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -49,12 +50,6 @@ private:
   CellTopologyPartEntityRankMap m_cellTopologyPartEntityRankMap;
   PartCellTopologyVector        m_partCellTopologyVector;
 };
-
-namespace fem {
-
-std::vector<std::string> entity_rank_names(size_t spatial_dimension);
-
-} // namespace fem
 
 } // namespace mesh
 } // namespace stk
