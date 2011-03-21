@@ -90,6 +90,12 @@ class FEMMetaData {
     return m_fem_initialized;
   }
 
+  // NOTE: This is a temporary function that will be removed once a FEMBulkData exists.
+  /** \brief Getter for MetaData off of a FEMMetaData object.
+   */
+  inline static MetaData & get_meta_data( FEMMetaData & fem_meta )
+    { return fem_meta.m_meta_data; }
+
   /** \brief Returns the spatial dimension that was passed in through FEM_initialize.
    */
   size_t spatial_dimension() const
