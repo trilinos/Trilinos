@@ -2413,6 +2413,7 @@ namespace stk {
 
                 if (!doThisPart)
                   {
+                    // we found one block with a "+", so this means include only the actual specified list of blocks, except for those excluded with "-"
                     if (found_include_only_block) 
                       {
                         doThisPart = false;
@@ -2430,6 +2431,12 @@ namespace stk {
                               }
                           }
                       }
+                    else
+                      // do them all, except for excludes
+                      {
+                        doThisPart = true;
+                      }
+
                     // check for excludes
                     if (doThisPart)
                       {
@@ -2462,7 +2469,6 @@ namespace stk {
                         //std::cout << "cell topo is null for part = " << part->name() << std::endl;
                         //throw std::runtime_error("cell topo is null");
                         doThisPart = false;
-
                       }
                     else
                       {

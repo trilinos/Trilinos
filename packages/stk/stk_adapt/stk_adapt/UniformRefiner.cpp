@@ -90,11 +90,10 @@ namespace stk {
                   }
                 std::string plus_or_minus = (inc?"+":"-");
                 std::string n2 = n1.substr(1, n1.length()-1);
-                //int id_start = 0;
-                //int id_end = 0;
                 std::string id_string_start = "";
                 std::string id_string_end = "";
-                std::string dotdot = ".."; // leave open the possibility for other identifiers for range
+                // leave open the possibility for other identifiers for range
+                std::string dotdot = ".."; 
                 int dotdot_len = dotdot.length();
                 size_t pos_dotdot = n1.find(dotdot);
                 if (pos_dotdot != std::string::npos)
@@ -236,12 +235,16 @@ namespace stk {
                   names = names.substr(ipos+1, names.length()-(ipos+1));
                 }
             }
+
+          
           if (EXTRA_PRINT_UR_GETBLOCKS)
             std::cout << "tmp new_names after post-proc to remove +name if -name exists= " << new_names << std::endl;
           if (new_names.length() && !proc_rank)
             {
-              std::cout << "UniformRefiner:: --block_name option after processing= " << new_names << std::endl;
+              std::cout << "UniformRefiner:: --block_name option after processing for removing -name= " << new_names << std::endl;
             }
+
+          // final step
           names = new_names;
           while(1)
             {
@@ -299,10 +302,9 @@ namespace stk {
     // FIXME move this to a utils class
     /**
      * This method looks for surfaces that share nodes with the blocks specified in @param blocks and if it finds
-     * any surfaces (sidesets), they are added to the blocks so they get refined properly.  If a surface is shared
-     * by more than one block, an error is thrown.
+     * any surfaces (sidesets), they are added to the blocks so they get refined properly.  
+     * TODO: If a surface is shared by more than one block, an error is thrown.
      */
-
 
     BlockNamesType UniformRefiner::correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks)
     {
