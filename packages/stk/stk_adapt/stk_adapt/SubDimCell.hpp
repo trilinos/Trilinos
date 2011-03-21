@@ -314,11 +314,12 @@ namespace stk {
 #if 0
         return x == y;
 #else
-        if (x.size() != y.size()) return false;
         if (x.getHash() != y.getHash()) return false;
+        if (x.size() != y.size()) return false;
         typename  _Tp::const_iterator ix = x.begin();
         typename  _Tp::const_iterator iy = y.begin();
-        for (ix = x.begin(), iy = y.begin(); ix != x.end(); ix++, iy++)
+        //for (ix = x.begin(), iy = y.begin(); ix != x.end(); ix++, iy++)
+        for (; ix != x.end(); ix++, iy++)
           {
             if (*ix != *iy) return false;
           }

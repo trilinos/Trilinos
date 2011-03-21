@@ -46,6 +46,7 @@
 #define STK_ADAPT_URP_LOCAL_NODE_COMPS 0
 
 // set to 1 to turn on some print tracing and cpu/mem tracing
+#define FORCE_TRACE_PRINT_ONLY 0
 #define TRACE_STAGE_PRINT_ON 0
 #define TRACE_STAGE_PRINT (TRACE_STAGE_PRINT_ON && (m_eMesh.getRank()==0))
 
@@ -54,10 +55,16 @@
 #  define TRACE_CPU_TIME_AND_MEM_0(a) do { Util::trace_cpu_time_and_mem_0(a); } while(0)
 #  define TRACE_CPU_TIME_AND_MEM_1(a) do { Util::trace_cpu_time_and_mem_1(a); } while(0)
 #else
-#  define TRACE_PRINT(a) do {} while(0)
+#  if FORCE_TRACE_PRINT_ONLY
+#    define TRACE_PRINT(a) do { trace_print(a); } while(0)
+#  else
+#    define TRACE_PRINT(a) do {} while(0)
+#  endif
 #  define TRACE_CPU_TIME_AND_MEM_0(a) do { } while(0)
 #  define TRACE_CPU_TIME_AND_MEM_1(a) do { } while(0)
 #endif
+
+
 
 namespace stk {
   namespace adapt {
@@ -579,7 +586,6 @@ namespace stk {
 
         CellTopology cell_topo(get_cell_topology(element));
 
-
         // FIXME - need topo dimensions here
         int topoDim = cell_topo.getDimension();
         unsigned cell_topo_key = get_cell_topology(element)->key;
@@ -820,7 +826,7 @@ namespace stk {
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
-                 nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                  nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                  nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
 #endif
@@ -1096,12 +1102,12 @@ namespace stk {
         elems.resize(getNumNewElemPerElem());
 
         CellTopology cell_topo(cell_topo_data);
-        bool linearElement = Util::isLinearElement(cell_topo);
+        bool isLinearElement = Util::isLinearElement(cell_topo);
 
         // SPECIAL CASE ALERT  FIXME
         //if (toTopoKey == topo_key_wedge15)
-        //  linearElement = true;
-        //std::cout << "tmp cell_topo= " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+        //  isLinearElement = true;
+        //std::cout << "tmp cell_topo= " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
         
         const mesh::PairIterRelation elem_nodes = element.relations(Node);
 
@@ -1151,7 +1157,7 @@ namespace stk {
                 //!
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
                 nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
-                if (linearElement)
+                if (isLinearElement)
                   {
                     nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                   }
@@ -1220,7 +1226,7 @@ namespace stk {
 
                 if (0)
                   {
-                    std::cout << "tmp 2 cell_topo                       = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                    std::cout << "tmp 2 cell_topo                       = " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
                     std::cout << "tmp m_primaryEntityRank               = " << m_primaryEntityRank << std::endl;
                     std::cout << "tmp rank_of_subcell                   = " << rank_of_subcell << std::endl;
                     std::cout << "tmp ordinal_of_subcell                = " << ordinal_of_subcell <<  std::endl;
@@ -1284,7 +1290,7 @@ namespace stk {
                               {
                                 if (0)
                                   {
-                                    std::cout << "tmp cell_topo                  = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                                    std::cout << "tmp cell_topo                  = " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
                                     std::cout << "tmp rank_of_subcell            = " << rank_of_subcell << std::endl;
                                     std::cout << "tmp ordinal_of_subcell         = " << ordinal_of_subcell <<  std::endl;
                                     std::cout << "tmp ordinal_of_node_on_subcell = " << ordinal_of_node_on_subcell << std::endl;
@@ -1318,7 +1324,7 @@ namespace stk {
                               {
                                 if (0)
                                   {
-                                    std::cout << "tmp 1 cell_topo                       = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                                    std::cout << "tmp 1 cell_topo                       = " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
                                     std::cout << "tmp m_primaryEntityRank               = " << m_primaryEntityRank << std::endl;
                                     std::cout << "tmp rank_of_subcell                   = " << rank_of_subcell << std::endl;
                                     std::cout << "tmp ordinal_of_subcell                = " << ordinal_of_subcell <<  std::endl;
@@ -1401,11 +1407,12 @@ namespace stk {
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_declare_relation);
               }
 
-            if (!linearElement)
+            if (!isLinearElement)
               {
                 interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0], eMesh.getCoordinatesField() );
-                //FIXME FIXME FIXME
-                //interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0]);
+                interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0]);
+                std::cout << "tmp found !isLinearElement... " << std::endl;
+                                exit(1);
               }
 
             set_parent_child_relations(eMesh, element, newElement, iChild);

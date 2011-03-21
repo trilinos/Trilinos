@@ -149,7 +149,7 @@ namespace stk {
     }
 
     stk::mesh::FieldBase * PerceptMesh::
-    getField(const std::string name)
+    getField(const std::string& name)
     {
       FieldBase *field = m_metaData->get_field<FieldBase>(name);
       return field;
@@ -797,6 +797,7 @@ namespace stk {
         }
       return fdata;
     }
+
 
     // static
     double * PerceptMesh::

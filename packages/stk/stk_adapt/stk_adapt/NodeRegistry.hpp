@@ -97,7 +97,6 @@ namespace stk {
 
       NodeIdsOnSubDimEntityType(unsigned sz=1, NodeIdsOnSubDimEntityTypeQuantum allValues=0) : base_type(sz,allValues),
                                                                                                m_entity_id_vector(sz,0u) {}
-
       void resize(size_t sz) 
       {
         m_entity_id_vector.resize(sz);
@@ -166,9 +165,7 @@ namespace stk {
 
       for ( base_type::iterator i = this->begin(); i != this->end(); i++)
         {
-          //sum += static_cast<std::size_t>(const_cast<T>(*i));
           sum += static_cast<std::size_t>((*i)->identifier());
-          //sum += (size_t)(*i);
         }
       return sum;
     }
@@ -504,9 +501,10 @@ namespace stk {
       /// can be determined by the locality of the element (ghost or not).
       bool registerNeedNewNode(const Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd) 
       {
-        SubDimCell_SDSEntityType subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
         
+        static SubDimCellData new_SubDimCellData;
         static SubDimCellData empty_SubDimCellData;
 
         SubDimCellData* nodeId_elementOwnderId_ptr = getFromMapPtr(subDimEntity);
@@ -524,8 +522,13 @@ namespace stk {
         if (is_empty || should_put_in)
           {
             // new SubDimCellData SDC_DATA_OWNING_ELEMENT_KEY
+            // CHECK
             SubDimCellData data(NodeIdsOnSubDimEntityType(needed_entity_rank.second, 0u), EntityKey(element.entity_rank(), element.identifier()) );
             putInMap(subDimEntity,  data);
+            // new_SubDimCellData.get<0>().init(needed_entity_rank.second, 0u);
+            // new_SubDimCellData.get<1>() = newEntityKey;
+            //m_cell_2_data_map.insert(std::pair<SubDimCell_SDSEntityType, SubDimCellData>(subDimEntity, new_SubDimCellData) );
+            //m_cell_2_data_map.insert(std::pair<SubDimCell_SDSEntityType, SubDimCellData>(subDimEntity, data) );
 
             return true;
           }
@@ -546,7 +549,7 @@ namespace stk {
 
         if (!isGhost) return true;
 
-        SubDimCell_SDSEntityType subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
 
         stk::CommAll& comm_all = m_comm_all;
@@ -805,14 +808,14 @@ namespace stk {
       }
 
       /// makes coordinates of this new node be the centroid of its sub entity
-      void makeCentroid(const Entity& element,  EntityRank needed_entity_rank, unsigned iSubDimOrd)
+      void makeCentroidCoords(const Entity& element,  EntityRank needed_entity_rank, unsigned iSubDimOrd)
       {
-        makeCentroid(element, needed_entity_rank, iSubDimOrd, m_eMesh.getCoordinatesField());
+        makeCentroidField(element, needed_entity_rank, iSubDimOrd, m_eMesh.getCoordinatesField());
       }
 
-      void makeCentroid(const Entity& element,  EntityRank needed_entity_rank, unsigned iSubDimOrd, FieldBase *field)
+      void makeCentroidField(const Entity& element,  EntityRank needed_entity_rank, unsigned iSubDimOrd, FieldBase *field)
       {
-        EXCEPTWATCH;
+        //EXCEPTWATCH;
 
         int spatialDim = m_eMesh.getSpatialDim();
         EntityRank field_rank = mesh::Node;
@@ -848,24 +851,26 @@ namespace stk {
             const CellTopologyData * const cell_topo_data = get_cell_topology(element);
             CellTopology cell_topo(cell_topo_data);
 
-            std::cout << "NodeRegistry::makeCentroid: no node found, cell_topo = " << cell_topo.getName()
+            std::cout << "NodeRegistry::makeCentroidField: no node found, cell_topo = " << cell_topo.getName()
                       << "\n subDimEntity= " << subDimEntity 
                       << "\n element= " << element 
                       << "\n element.entity_rank() = " << element.entity_rank()
                       << "\n needed_entity_rank= " << needed_entity_rank
                       << "\n iSubDimOrd= " << iSubDimOrd << std::endl;
-            throw std::runtime_error("makeCentroid: no node found");
+            throw std::runtime_error("makeCentroidField: no node found");
           }
         NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
         if (nodeIds_onSE.size() != 1)
-          throw std::runtime_error("makeCentroid not ready for multiple nodes");
+          throw std::runtime_error("makeCentroidField not ready for multiple nodes");
         //Entity * c_node = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE[0]);
         //Entity * c_node = get_entity_node(*m_eMesh.getBulkData(), Node, nodeIds_onSE[0]);
-        Entity * c_node = get_entity_node_Ia(*m_eMesh.getBulkData(), Node, nodeIds_onSE, 0u);
+        //Entity * c_node = get_entity_node_Ia(*m_eMesh.getBulkData(), Node, nodeIds_onSE, 0u);
+        Entity * c_node = nodeIds_onSE[0];
+
 
         if (!c_node)
           {
-            throw std::runtime_error("makeCentroid: bad node found 0");
+            throw std::runtime_error("makeCentroidField: bad node found 0");
           }
 
         //std::vector<double> c_p(spatialDim, 0.0);
@@ -885,7 +890,7 @@ namespace stk {
                 Entity * node = elem_nodes[ipts].entity(); //m_eMesh.getBulkData()->get_entity(Node, nodeId);
                 if (!node)
                   {
-                    throw std::runtime_error("makeCentroid: bad node found 1");
+                    throw std::runtime_error("makeCentroidField: bad node found 1");
                   }
                 //double * const coord = stk::mesh::field_data( *field , *node );
                 double *  coord = m_eMesh.field_data(field, *node, null_u);
@@ -895,7 +900,7 @@ namespace stk {
                     const CellTopologyData * const cell_topo_data = get_cell_topology(element);
                     CellTopology cell_topo(cell_topo_data);
 
-                    std::cout << "tmp NodeRegistry::makeCentroid cell_topo = " << cell_topo.getName() << " ipts= " << ipts
+                    std::cout << "tmp NodeRegistry::makeCentroidField cell_topo = " << cell_topo.getName() << " ipts= " << ipts
                               << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
                   }
 
@@ -921,7 +926,7 @@ namespace stk {
                 Entity * node = nodeId;
                 if (!node)
                   {
-                    throw std::runtime_error("makeCentroid: bad node found 2");
+                    throw std::runtime_error("makeCentroidField: bad node found 2");
                   }
                 //double * const coord = stk::mesh::field_data( *field, *node );
                 double *  coord = m_eMesh.field_data(field, *node, null_u);
@@ -950,7 +955,7 @@ namespace stk {
                 const CellTopologyData * const cell_topo_data = get_cell_topology(element);
                 CellTopology cell_topo(cell_topo_data);
 
-                std::cout << "tmp NodeRegistry::makeCentroid cell_topo = " << cell_topo.getName()
+                std::cout << "tmp NodeRegistry::makeCentroidField cell_topo = " << cell_topo.getName()
                       << "\n subDimEntity= " << subDimEntity 
                       << "\n element= " << element 
                       << "\n element.entity_rank() = " << element.entity_rank()
@@ -966,7 +971,7 @@ namespace stk {
       void makeCentroid(FieldBase *field)
       {
         EXCEPTWATCH;
-        unsigned *null_u = 0;
+        //unsigned *null_u = 0;
 
         int spatialDim = m_eMesh.getSpatialDim();
         EntityRank field_rank = mesh::Node;
@@ -987,15 +992,10 @@ namespace stk {
             return;
           }
 
-        if (!field)
-          throw std::runtime_error("NodeRegistry::makeCentroid(field): field is null");
-
-
         SubDimCellToDataMap::iterator iter;
 
         for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
           {
-            EXCEPTWATCH;
             const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
           
@@ -1006,7 +1006,7 @@ namespace stk {
 
             if (is_empty)
               {
-                throw std::runtime_error("makeCentroid empty cell found");
+                throw std::runtime_error("makeCentroid(field) empty cell found");
               }
 
             if (nodeIds_onSE.size() != 1)
@@ -1029,11 +1029,12 @@ namespace stk {
               }
 
             //Entity * c_node = get_entity_node(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE[0]);
-            Entity * c_node = get_entity_node_Ia(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE, 0u);
+            //Entity * c_node = get_entity_node_Ia(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE, 0u);
+            Entity * c_node = nodeIds_onSE[0];
 
             if (!c_node)
               {
-                throw std::runtime_error("makeCentroid: bad node found 0.0");
+                throw std::runtime_error("makeCentroid(field): bad node found 0.0");
               }
 
             double c_p[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -1049,7 +1050,7 @@ namespace stk {
                   element_p = elementId;
                   if (!element_p)
                     {
-                      throw std::runtime_error("makeCentroid: bad elem found 2");
+                      throw std::runtime_error("makeCentroid(field): bad elem found 2");
                     }
                 }
 
@@ -1070,17 +1071,18 @@ namespace stk {
                         Entity * node = elem_nodes[ipts].entity(); 
                         if (!node)
                           {
-                            throw std::runtime_error("makeCentroid: bad node found 1.0");
+                            throw std::runtime_error("makeCentroid(field): bad node found 1.0");
                           }
 
-                        double *  coord = m_eMesh.field_data(field, *node, null_u);
+                        //double *  coord = m_eMesh.field_data(field, *node, null_u);
+                        double *  coord = m_eMesh.field_data_inlined(field, *node);
 
                         if (doPrint && coord)
                           {
                             const CellTopologyData * const cell_topo_data = get_cell_topology(element);
                             CellTopology cell_topo(cell_topo_data);
 
-                            std::cout << "tmp NodeRegistry::makeCentroid cell_topo = " << cell_topo.getName() << " ipts= " << ipts
+                            std::cout << "tmp NodeRegistry::makeCentroid(field) cell_topo = " << cell_topo.getName() << " ipts= " << ipts
                                       << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
                           }
 
@@ -1107,9 +1109,10 @@ namespace stk {
                     Entity * node = nodeId;
                     if (!node)
                       {
-                        throw std::runtime_error("makeCentroid: bad node found 2.0");
+                        throw std::runtime_error("makeCentroid(field): bad node found 2.0");
                       }
-                    double *  coord = m_eMesh.field_data(field, *node, null_u);
+                    //double *  coord = m_eMesh.field_data(field, *node, null_u);
+                    double *  coord = m_eMesh.field_data_inlined(field, *node);
                     if (coord)
                       {
                         for (int isp = 0; isp < spatialDim; isp++)
@@ -1124,8 +1127,8 @@ namespace stk {
             {
               EXCEPTWATCH;
 
-              double *  c_coord = m_eMesh.field_data(field, *c_node, null_u);
-
+              //double *  c_coord = m_eMesh.field_data(field, *c_node, null_u);
+              double *  c_coord = m_eMesh.field_data_inlined(field, *c_node);
 
               if (c_coord)
                 {
@@ -1135,13 +1138,13 @@ namespace stk {
                     }
 
                   if (doPrint)
-                    std::cout << "tmp NodeRegistry::makeCentroid c_coord= " << c_coord[0] << " " << c_coord[1] << " " << c_coord[2] << std::endl;
+                    std::cout << "tmp NodeRegistry::makeCentroid(field) c_coord= " << c_coord[0] << " " << c_coord[1] << " " << c_coord[2] << std::endl;
 
 
                 }
             }
           }
-      }
+      } // makeCentroid(FieldBase *)
   
       /// do interpolation for all fields
       void interpolateFields(const Entity& element,  EntityRank needed_entity_rank, unsigned iSubDimOrd)
@@ -1153,7 +1156,7 @@ namespace stk {
           {
             FieldBase *field = fields[ifld];
             //std::cout << "P[" << m_eMesh.getRank() << "] field = " << field->name() << std::endl;
-            makeCentroid(element, needed_entity_rank, iSubDimOrd, field);
+            makeCentroidField(element, needed_entity_rank, iSubDimOrd, field);
           }
       }
 
@@ -1199,7 +1202,8 @@ namespace stk {
         for (unsigned i_nid = 0; i_nid < nidsz; i_nid++)
           {
             //Entity * c_node = get_entity_node(*m_eMesh.getBulkData(), Node, nodeIds_onSE[i_nid]);
-            Entity * c_node = get_entity_node_Ia(*m_eMesh.getBulkData(), Node, nodeIds_onSE, i_nid);
+            //Entity * c_node = get_entity_node_Ia(*m_eMesh.getBulkData(), Node, nodeIds_onSE, i_nid);
+            Entity * c_node = nodeIds_onSE[i_nid];
 
             if (!c_node)
               {
@@ -1293,13 +1297,16 @@ namespace stk {
       /// this version does it in bulk and thus avoids repeats on shared sub-dim entities
       void addToExistingPartsNew()
       {
+        static std::vector<stk::mesh::Part*> add_parts(1, static_cast<stk::mesh::Part*>(0));
+        static std::vector<stk::mesh::Part*> remove_parts;
+
+        //std::cout << "tmp addToExistingPartsNew... " << std::endl;
         const std::vector< stk::mesh::Part * > & parts = m_eMesh.getMetaData()->get_parts();
 
         unsigned nparts = parts.size();
         for (unsigned ipart=0; ipart < nparts; ipart++)
           {
             Part& part = *parts[ipart];
-            mesh::Selector selector(part);
 
             //std::cout << "P[" << m_eMesh.getRank() << "] NodeRegistry::addToExistingParts Part[" << ipart << "]= " << part.name() << std::endl;
             std::string part_name = part.name();
@@ -1313,106 +1320,93 @@ namespace stk {
 
             if (part_rank == stk::mesh::Node)
               {
-                //std::vector<stk::mesh::Part*> add_parts(1, &part);
-                //std::vector<stk::mesh::Part*> remove_parts;
-                static std::vector<stk::mesh::Part*> add_parts(1, static_cast<stk::mesh::Part*>(0));
-                static std::vector<stk::mesh::Part*> remove_parts;
+                mesh::Selector selector(part);
+
+                //std::cout << "P[" << m_eMesh.getRank() << "] NodeRegistry::addToExistingPartsNew rank=Node = Part[" << ipart << "]= " << part.name() << std::endl;
                 add_parts[0] = &part;
 
                 SubDimCellToDataMap::iterator iter;
-
+                //std::cout << "tmp m_cell_2_data_map.size() = " << m_cell_2_data_map.size() << std::endl;
                 for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
                   {
                     const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
                     SubDimCellData& nodeId_elementOwnderId = (*iter).second;
 
                     NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-                    unsigned nidsz = nodeIds_onSE.size();
+                    //std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() 
+                    //              << " topology = " << (topology?CellTopology(topology).getName():"null")
+                    //              << std::endl;
 
-                    for (unsigned i_nid = 0; i_nid < nidsz; i_nid++)
+                    bool found = true;
+                    EntityRank needed_entity_rank = mesh::Node;
+                    //
+                    // SPECIAL CASE
+                    // SPECIAL CASE
+                    // SPECIAL CASE
+                    //
+                    if( subDimEntity.size() == 1)
                       {
-                        Entity * c_node = 0;
+                        needed_entity_rank = mesh::Element;
+                      }
 
-                        //c_node = get_entity_node(*m_eMesh.getBulkData(), Node, nodeIds_onSE[i_nid]);
-                        c_node = get_entity_node_Ia(*m_eMesh.getBulkData(), Node, nodeIds_onSE, i_nid);
-
-                        if (!c_node)
-                          {
-                            std::cout << "addToExistingParts: " <<  nodeIds_onSE[i_nid] << " i_nid= " << i_nid << " nidsz= " << nidsz 
-                                      << std::endl;
-                            throw std::runtime_error("addToExistingParts: bad node found 0.3");
-                          }
-
-                        //std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() 
-                        //              << " topology = " << (topology?CellTopology(topology).getName():"null")
-                        //              << std::endl;
-
-                        bool found = true;
-                        EntityRank needed_entity_rank = mesh::Node;
-                        //
-                        // SPECIAL CASE
-                        // SPECIAL CASE
-                        // SPECIAL CASE
-                        //
-                        if( subDimEntity.size() == 1)
-                          {
-                            needed_entity_rank = mesh::Element;
-                          }
-
-                        if (needed_entity_rank == mesh::Element)
-                          {
-                            Entity *element_p = 0; 
+                    if (needed_entity_rank == mesh::Element)
+                      {
+                        Entity *element_p = 0; 
+                        {
+                          SDSEntityType elementId = *subDimEntity.begin();
+                          element_p = elementId;
+                          if (!element_p)
                             {
-                              SDSEntityType elementId = *subDimEntity.begin();
-                              //!!element_p = get_entity_element(*m_eMesh.getBulkData(), mesh::Element, elementId);
-                              element_p = elementId;
-                              if (!element_p)
-                                {
-                                  throw std::runtime_error("addToExistingParts: bad elem found 2");
-                                }
+                              throw std::runtime_error("addToExistingParts: bad elem found 2");
                             }
+                        }
 
-                            Entity& element = *element_p;
+                        Entity& element = *element_p;
 
-                            const mesh::PairIterRelation elem_nodes = element.relations(Node);
-                            unsigned npts = elem_nodes.size();
-                            for (unsigned ipts = 0; ipts < npts; ipts++)
+                        const mesh::PairIterRelation elem_nodes = element.relations(Node);
+                        unsigned npts = elem_nodes.size();
+                        for (unsigned ipts = 0; ipts < npts; ipts++)
+                          {
+                            Entity * node = elem_nodes[ipts].entity(); 
+                            if (!selector(*node))
                               {
-                                Entity * node = elem_nodes[ipts].entity(); 
-                                if (!node)
-                                  {
-                                    throw std::runtime_error("addToExistingParts: bad node found 1.3");
-                                  }
-                                if (!selector(*node))
-                                  {
-                                    found = false;
-                                    break;
-                                  }
-                  
+                                found = false;
+                                break;
                               }
                           }
-                        else
+                      }
+                    else
+                      {
+                        for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                           {
-                            for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
+                            SDSEntityType nodeId = *ids;
+                            Entity * node = nodeId;
+                            if (!selector(*node))
                               {
-                                SDSEntityType nodeId = *ids;
-                                //!!Entity * node = get_entity_node_II(*m_eMesh.getBulkData(), Node, nodeId);
-                                Entity * node = nodeId;
-                                if (!node)
-                                  {
-                                    throw std::runtime_error("addToExistingParts: bad node found 2.3");
-                                  }
-                                if (!selector(*node))
-                                  {
-                                    found = false;
-                                    break;
-                                  }
+                                found = false;
+                                break;
                               }
                           }
-                        if (found)
+                      }
+                    if (found)
+                      {
+                        // add to part
+
+                        unsigned nidsz = nodeIds_onSE.size();
+
+                        for (unsigned i_nid = 0; i_nid < nidsz; i_nid++)
                           {
-                            // add to part
+                            Entity * c_node = nodeIds_onSE[i_nid];
+
+                            if (!c_node)
+                              {
+                                std::cout << "addToExistingParts: " <<  nodeIds_onSE[i_nid] << " i_nid= " << i_nid << " nidsz= " << nidsz 
+                                          << std::endl;
+                                throw std::runtime_error("addToExistingParts: bad node found 0.3");
+                              }
+
                             m_eMesh.getBulkData()->change_entity_parts( *c_node, add_parts, remove_parts );
+
                             if (0)
                               {
                                 std::cout << "P[" << m_eMesh.getRank() << "] adding node " << c_node->identifier() << " to   Part[" << ipart << "]= " << part.name() 
@@ -1425,6 +1419,7 @@ namespace stk {
                   }
               }
           }
+        //std::cout << "tmp addToExistingPartsNew...done " << std::endl;
       }
 
       SubDimCellData& getNewNodeAndOwningElement(SubDimCell_SDSEntityType& subDimEntity)
@@ -1868,7 +1863,9 @@ namespace stk {
           {
             //Entity * node = get_entity_node_I(*m_eMesh.getBulkData(),Node, nodeIds_onSE[iid]);
             //nodeIds_onSE.m_entity_vector[iid] = node;
-            Entity * node = get_entity_node_Ia(*m_eMesh.getBulkData(),Node, nodeIds_onSE, iid);
+            //Entity * node = get_entity_node_Ia(*m_eMesh.getBulkData(),Node, nodeIds_onSE, iid);
+            Entity * node = nodeIds_onSE[iid];
+
             // has to be null, right?
             if (node)
               {
@@ -1880,7 +1877,7 @@ namespace stk {
             throw std::logic_error("logic: element shouldn't be null in createNodeAndConnect");
           }
                   
-        SubDimCell_SDSEntityType subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity;
         getSubDimEntity(subDimEntity, *element, needed_entity_rank, iSubDimOrd);
         SubDimCellData& subDimCellData = getNewNodeAndOwningElement(subDimEntity);
         // assert it is empty?

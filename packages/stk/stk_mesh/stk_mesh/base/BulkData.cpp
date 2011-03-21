@@ -662,6 +662,16 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
   add.push_back( owns );
 
   requested_entities.clear();
+  unsigned cnt=0;
+  for (std::vector< std::vector<KeyType> >::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr) {
+    const std::vector<KeyType>& key_types = *itr;
+    for (std::vector<KeyType>::const_iterator
+        kitr = key_types.begin(); kitr != key_types.end(); ++kitr) {
+      ++cnt;
+    }
+  }
+  requested_entities.reserve(cnt);
+
   for (std::vector< std::vector<KeyType> >::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr) {
     const std::vector<KeyType>& key_types = *itr;
     for (std::vector<KeyType>::const_iterator

@@ -72,7 +72,7 @@ namespace stk {
 
           }
 
-        nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), Element, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), Element, 0u);
 
 
 // new_sub_entity_nodes[i][j]
