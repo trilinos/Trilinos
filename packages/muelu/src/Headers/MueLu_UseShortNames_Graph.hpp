@@ -7,6 +7,6 @@ typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               
 typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Aggregates;
 #endif
 
-#ifdef MUELU_AGGREGATIONFACTORY_SHORT
-typedef MueLu::AggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       AggregationFactory;
+#ifdef MUELU_UCAGGREGATIONFACTORY_SHORT
+typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       UCAggregationFactory;
 #endif
