@@ -187,7 +187,13 @@ namespace Belos {
     ///   RCP<const ParameterList> under "TsqrImpl").  Call the
     ///   getDefaultParameters() class method for default parameters
     ///   and their documentation, including TSQR implementation
-    ///   parameters.
+    ///   parameters.  Call the getFastParameters() class method to
+    ///   get documented parameters for faster computation, possibly
+    ///   at the expense of accuracy and robustness.  If params is
+    ///   null, then getDefaultParameters() is used.  Otherwise, we
+    ///   make and store a deep copy of params, so that after the
+    ///   constructor returns, you may change params without affecting
+    ///   the configuration of this TsqrOrthoManagerImpl instance.
     ///
     /// \param label [in] Label for timers.  This only matters if the
     ///   compile-time option for enabling timers is set.
@@ -583,7 +589,10 @@ namespace Belos {
     void
     lazyInit (const MV& X)
     {
+      using Teuchos::Exceptions::InvalidParameter;
       using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::rcpFromRef;
       using Teuchos::RCP;
       using Teuchos::rcp;
 
@@ -591,14 +600,59 @@ namespace Belos {
       // ParameterList>, so we don't have to worry about the sublist
       // going out of scope.
       RCP<const ParameterList> tsqrParams;
+      bool gotTsqrParams = false;
       try {
-	tsqrParams = params_->get< RCP<const ParameterList> >("TsqrImpl");
-      } catch (Teuchos::Exceptions::InvalidParameter&) {
-	RCP<const ParameterList> defaultParams = getDefaultParameters();
-	tsqrParams = defaultParams->get< RCP<const ParameterList> >("TsqrImpl");
-      }	
-      TEST_FOR_EXCEPTION(tsqrParams.is_null(), std::logic_error,
-			 "Should never get here!");
+	tsqrParams = params_->get<RCP<const ParameterList> >("TsqrImpl");
+	gotTsqrParams = true;
+      } catch (InvalidParameter&) {
+	// We'll try to fetch "TsqrImpl" as a sublist instead.
+      }
+      if (! gotTsqrParams)
+	{
+	  try {
+	    // We don't need to make a deep copy, since the
+	    // tsqrAdaptor_ which receives this sublist will fall out
+	    // of scope at the same time as params_, and params_ will
+	    // protect the sublist from falling out of scope.
+	    tsqrParams = rcpFromRef (params_->sublist ("TsqrImpl"));
+	    gotTsqrParams = true;
+	  } catch (InvalidParameter&) {
+	    // We'll try to fetch "TsqrImpl" from the default parameter
+	    // list instead.
+	  }
+	}
+      if (! gotTsqrParams)
+	{      
+	  RCP<const ParameterList> defaultParams = getDefaultParameters();
+	  try {
+	    tsqrParams = defaultParams->get<RCP<const ParameterList> >("TsqrImpl");
+	    gotTsqrParams = true;
+	  } catch (InvalidParameter&) {
+	    // We'll try to fetch "TsqrImpl" as a sublist instead.
+	  }
+	}
+      if (! gotTsqrParams) 
+	{
+	  RCP<const ParameterList> defaultParams = getDefaultParameters();
+	  try {
+	    // We don't need to make a deep copy, since the
+	    // tsqrAdaptor_ which receives this sublist will fall out
+	    // of scope at the same time as params_, and params_ will
+	    // protect the sublist from falling out of scope.
+	    tsqrParams = rcpFromRef (defaultParams->sublist ("TsqrImpl"));
+	    gotTsqrParams = true;
+	  } catch (InvalidParameter&) {
+	    // We've tried to get TsqrImpl in all the ways we could.
+	    // If we haven't gotten it yet, or if we only got null,
+	    // we'll throw an exception below.
+	  }
+	}
+      TEST_FOR_EXCEPTION(!gotTsqrParams || tsqrParams.is_null(), 
+			 std::logic_error,
+			 "Belos::TsqrOrthoManagerImpl::lazyInit: Failed to find"
+			 " \"TsqrImpl\" parameter in either the input parameter"
+			 " list or in the default parameter list.  Please "
+			 "report this bug to the Belos developers.");
       // The TSQR adaptor object requires a specific MV object for
       // initialization.  As long as subsequent MV objects use the
       // same communicator (e.g., the same Teuchos::Comm<int>), we
@@ -761,7 +815,9 @@ namespace Belos {
   TsqrOrthoManagerImpl<Scalar, MV>::
   TsqrOrthoManagerImpl (const Teuchos::RCP<const Teuchos::ParameterList>& params,
 			const std::string& label) :
-    params_ (params.is_null() ? getDefaultParameters() : params),
+    params_ (params.is_null() ? 
+	     getDefaultParameters() : 
+	     Teuchos::rcp_const_cast<const Teuchos::ParameterList> (Teuchos::parameterList (*params))),
     label_ (label),
     tsqrAdaptor_ (Teuchos::null),   // Initialized on demand
     Q_ (Teuchos::null),             // Scratch space for normalize()
@@ -882,10 +938,10 @@ namespace Belos {
     Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
-    // Internal data used by this method require a specific MV
-    // object for initialization (in particular, to get a Map /
-    // communicator object).  Thus, we delay (hence "lazy")
-    // initialization until we get an X.
+    // Internal data used by this method require a specific MV object
+    // for initialization (in particular, to get a Map / communicator
+    // object, and to initialize scratch space).  Thus, we delay
+    // (hence "lazy") initialization until we get an X.
     lazyInit (X);
 
     // MVT returns int for this, even though the "local ordinal
@@ -1687,12 +1743,12 @@ namespace Belos {
     // cautious; MVT::GetNumberVecs() probably shouldn't have any
     // externally visible side effects, unless it is logging to a
     // file or something.)
-    int __ncols_X, __num_Q_blocks, __ncols_Q_total;
-    __num_Q_blocks = Q.size();
-    __ncols_X = MVT::GetNumberVecs (X);
+    int the_ncols_X, the_num_Q_blocks, the_ncols_Q_total;
+    the_num_Q_blocks = Q.size();
+    the_ncols_X = MVT::GetNumberVecs (X);
 
     // Compute the total number of columns of all the Q[i] blocks.
-    __ncols_Q_total = 0;
+    the_ncols_Q_total = 0;
     // You should be angry if your compiler doesn't support type
     // inference ("auto").  That's why I need this awful typedef.
     using Teuchos::ArrayView;
@@ -1701,13 +1757,13 @@ namespace Belos {
     for (iter_type it = Q.begin(); it != Q.end(); ++it)
       {
 	const MV& Qi = **it;
-	__ncols_Q_total += MVT::GetNumberVecs (Qi);
+	the_ncols_Q_total += MVT::GetNumberVecs (Qi);
       }
 
     // Commit temporary values to the output arguments.
-    ncols_X = __ncols_X;
-    num_Q_blocks = __num_Q_blocks;
-    ncols_Q_total = __ncols_Q_total;
+    ncols_X = the_ncols_X;
+    num_Q_blocks = the_num_Q_blocks;
+    ncols_Q_total = the_ncols_Q_total;
   }
 
 

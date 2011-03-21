@@ -121,6 +121,9 @@ namespace Belos {
 				   Teuchos::Array<mat_ptr> C,
 				   mat_ptr B,
 				   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
+
+    //! Trivial virtual destructor, to silence compiler warnings.
+    virtual ~OutOfPlaceNormalizerMixin () {}
   };
 
   /// \class TsqrOrthoManager
@@ -179,12 +182,23 @@ namespace Belos {
       return TsqrOrthoManagerImpl<Scalar, MV>::getFastParameters();
     }
 
-    //! Constructor
+    /// \brief Constructor
+    ///
+    /// \param params [in] List of configuration parameters.  You
+    ///   should get this by calling one of either
+    ///   getDefaultParameters() or getFastParameters(), making a deep
+    ///   copy, modifying what you want to modify, and passing in the
+    ///   resulting list.
+    /// 
+    /// \param label [in] Label for Belos timers (if Belos was build
+    ///   with the corresponding build-time option enabled).
+    /// 
     TsqrOrthoManager (const Teuchos::RCP<const Teuchos::ParameterList>& params, 
 		      const std::string& label = "Belos") :
       impl_ (params, label)
     {}
 
+    //! Virtual destructor
     virtual ~TsqrOrthoManager() {}
 
     //! Compute the (block) inner product Z := <X,Y>
