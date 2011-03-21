@@ -91,7 +91,7 @@ public:
   //                                    its MyPid, the corresponding companion
   //                                    is not altered.
   //
-  int MueLu_ArbitrateAndCommunicate(Cthulhu::Vector<double> &weight_, Cthulhu::Vector<int> &procWinner_, Cthulhu::Vector<int> *companion, const bool perturb) const
+  int ArbitrateAndCommunicate(Cthulhu::Vector<double> &weight_, Cthulhu::Vector<int> &procWinner_, Cthulhu::Vector<int> *companion, const bool perturb) const
   {
     int MyPid = weight_.getMap()->getComm()->getRank(); // TODO:remove the getMap() step
 
@@ -128,7 +128,7 @@ public:
     Teuchos::ArrayRCP<double> postComm = postComm_.getDataNonConst(0);
     postComm_.putScalar(0.0);
 
-    MueLu_NonUnique2NonUnique(weight_, postComm_, Cthulhu::ABSMAX);
+    NonUnique2NonUnique(weight_, postComm_, Cthulhu::ABSMAX);
 
    
     // Let every processor know who is the procWinner. For nonunique
@@ -156,7 +156,7 @@ public:
 
     for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) weight[i]=postComm[i]; 
 
-    MueLu_NonUnique2NonUnique(candidateWinners_, postComm_, Cthulhu::ABSMAX);
+    NonUnique2NonUnique(candidateWinners_, postComm_, Cthulhu::ABSMAX);
 
     // Note: 
     //                      associated CandidateWinners[]
@@ -216,9 +216,9 @@ public:
     return 0; //TODO
   }
 
-  inline int MueLu_ArbitrateAndCommunicate(Cthulhu::Vector<double> &weights, MueLu::Aggregates<int,int> &aggregates, const bool perturb) const
+  inline int ArbitrateAndCommunicate(Cthulhu::Vector<double> &weights, MueLu::Aggregates<int,int> &aggregates, const bool perturb) const
   {
-    return MueLu_ArbitrateAndCommunicate(weights, *aggregates.GetProcWinner(), &*aggregates.GetVertex2AggId(), perturb);
+    return ArbitrateAndCommunicate(weights, *aggregates.GetProcWinner(), &*aggregates.GetVertex2AggId(), perturb);
   }
 
   // Redistribute data in source to dest where both source and dest might have 
@@ -244,7 +244,7 @@ public:
   //                              values associated with the same GlobalId are
   //                              combined into a unique value on all processors.
   //
-  int MueLu_NonUnique2NonUnique(const Cthulhu::Vector<double> &source, Cthulhu::Vector<double> &dest, const Cthulhu::CombineMode what) const
+  int NonUnique2NonUnique(const Cthulhu::Vector<double> &source, Cthulhu::Vector<double> &dest, const Cthulhu::CombineMode what) const
   {
     RCP<Cthulhu::Vector<double> > temp = Cthulhu::VectorFactory<double>::Build(import_->getSourceMap());
      

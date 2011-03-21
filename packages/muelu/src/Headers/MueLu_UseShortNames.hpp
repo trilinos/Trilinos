@@ -30,6 +30,8 @@
 
 #include <Cthulhu_UseShortNames.hpp>
 
+#include "MueLu_UseShortNames_Graph.hpp"
+
 // New definition of types using the types ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
 #ifdef MUELU_LEVEL_SHORT
 typedef MueLu::Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Level;
@@ -103,14 +105,6 @@ typedef MueLu::SaLevel<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  
 typedef MueLu::Utils<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Utils;
 #endif
 
-#ifdef MUELU_GRAPH_SHORT
-typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>                          Graph;
-#endif
-
-#ifdef MUELU_AGGREGATES_SHORT
-typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Aggregates;
-#endif
-
 #ifdef MUELU_GAUSSSEIDEL_SHORT
 typedef MueLu::GaussSeidel<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>          GaussSeidel;
 #endif
@@ -121,8 +115,4 @@ typedef MueLu::IfpackSmoother<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMa
 
 #ifdef MUELU_AMESOS_SMOOTHER_SHORT
 typedef MueLu::AmesosSmoother<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       AmesosSmoother;
-#endif
-
-#ifdef MUELU_AGGREGATIONFACTORY_SHORT
-typedef MueLu::AggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       AggregationFactory;
 #endif
