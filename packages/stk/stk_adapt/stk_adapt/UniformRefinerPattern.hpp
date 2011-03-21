@@ -1411,8 +1411,8 @@ namespace stk {
               {
                 interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0], eMesh.getCoordinatesField() );
                 interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0]);
-                std::cout << "tmp found !isLinearElement... " << std::endl;
-                                exit(1);
+                //std::cout << "tmp found !isLinearElement... " << std::endl;
+                //exit(1);
               }
 
             set_parent_child_relations(eMesh, element, newElement, iChild);
