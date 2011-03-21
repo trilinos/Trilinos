@@ -271,7 +271,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     // views on distributed vectors are freed here.
   }
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+  myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
   distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // Tentatively assign any vertex (ghost or local) which neighbors a root
@@ -300,7 +300,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     // views on distributed vectors are freed here.
   }
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+  myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
   distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // Record the number of aggregated vertices
@@ -366,7 +366,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     // views on distributed vectors are freed here.
   }
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+  myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
   distWeights->putScalar(0.);//All tentatively assigned vertices are now definitive
 
   if ( printFlag < MueLu_PrintLevel()) {
@@ -399,7 +399,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   temp_->putScalar(1.);  
   tempOutput_->putScalar(0.); 
 
-  myWidget.MueLu_NonUnique2NonUnique(*temp_, *tempOutput_, Cthulhu::ADD);
+  myWidget.NonUnique2NonUnique(*temp_, *tempOutput_, Cthulhu::ADD);
    
   std::vector<bool> gidNotShared(exp_nRows);
   for (int i = 0; i < exp_nRows; i++) {
@@ -507,7 +507,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
         }
         // views on distributed vectors are freed here.
       }
-      myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+      myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
       distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
       sumAll(graph.GetComm(), nAggregates, nAggregatesGlobal);
 
@@ -695,7 +695,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       // views on distributed vectors are freed here.
     }
 
-    myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+    myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
     distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
   }
 
@@ -765,7 +765,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     // views on distributed vectors are freed here.
   }
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, false);
+  myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, false);
 
   if (printFlag < MueLu_PrintLevel()) {
     { int total_Nsingle=0;   sumAll(graph.GetComm(), Nsingle, total_Nsingle);     Nsingle = total_Nsingle; }
@@ -870,7 +870,7 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
   }
   nAggregates = NewNAggs;
 
-  myWidget.MueLu_ArbitrateAndCommunicate(*distWeights, aggregates, true);
+  myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
   distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // procWinner is not set correctly for aggregates which have 
