@@ -20,8 +20,7 @@
 #include <MueLu_MatrixFactory.hpp>
 
 // Aggregation
-#include "MueLu_AggAlgorithm.hpp"
-#include "MueLu_AggAlgorithm2.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -60,7 +59,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
-
+  int currentPrintLevel=10;
   int printFlag=6;
   
   MueLu::AggregationOptions aggOptions;
@@ -76,14 +75,13 @@ int main(int argc, char *argv[]) {
   /*                                                                                */
   /**********************************************************************************/
   
-  if (comm->getRank() == 0 && printFlag < MueLu_PrintLevel())
+  if (comm->getRank() == 0 && printFlag < currentPrintLevel)
     printf("main() Aggregate_CoarsenUncoupled : \n");
  
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
-  RCP<Aggregates> aggregates = MueLu_Aggregate_CoarsenUncoupled(aggOptions,*graph);
-
-  std::string name = "UC_CleanUp";
-  MueLu_AggregateLeftOvers(aggOptions, *aggregates, name, *graph);
+  
+  RCP<UCAggregationFactory> AggFact;
+  RCP<Aggregates> aggregates = AggFact->Build(*graph, aggOptions);
   
   /**********************************************************************************/
   /*                                                                                */
