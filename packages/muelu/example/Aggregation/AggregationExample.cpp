@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
  
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
   
-  RCP<UCAggregationFactory> AggFact;
+  RCP<UCAggregationFactory> AggFact = rcp(new UCAggregationFactory());
   RCP<Aggregates> aggregates = AggFact->Build(*graph, aggOptions);
   
   /**********************************************************************************/
