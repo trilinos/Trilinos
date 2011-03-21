@@ -1,4 +1,4 @@
-/ @HEADER
+//@HEADER
 // ***********************************************************************
 //
 //         Zoltan2: Sandia Partitioning Ordering & Coloring Library
@@ -41,25 +41,29 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 {
 
   int nprocs = comm->getSize(); 
-  int rank = comm->getRank(); 
 
-  localNumberOfIds = gids.get().size();
+  localNumberOfIds = gids.get()->size();
 
-  GNO localNum[2] = {lids.get().size(),localNumberOfIds};    // C++2003?
-  GNO total[2] = {0, 0};
+  GNO *val = new GNO [4];
+  val[0] = lids.get()->size();
+  val[1] = localNumberOfIds;
+  val[2] = 0;
+  val[3] = 0;
 
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 2, &localNum, &total);
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 2, val+0, val+2);
 
-  globalNumberOfIds = total[1];
-  haveLocalIds = (total[0] > 0);
+  globalNumberOfIds = val[3];
+  haveLocalIds = (val[2] > 0);
 
-  TEST_FOR_EXCEPTION(haveLocalIds && (lids.get().size() != localNumberOfIds),
-                      std::runtime_error,
-                     "local IDs are provided but number of global IDs"
-                     " does not equal number of local IDs");
+ TEST_FOR_EXCEPTION(haveLocalIds && 
+             (static_cast<LNO>(lids.get()->size()) != localNumberOfIds),
+             std::runtime_error,
+          "local IDs are provided but number of global IDs"
+          " does not equal number of local IDs");
 
   if (haveLocalIds){
-    lidHash = Teuchos::rcp(new Teuchos::Hashtable<std::string, LNO>(localNumberOfIds));
+    lidHash = Teuchos::rcp(new Teuchos::Hashtable<std::string, LNO>
+                (localNumberOfIds));
 
     for (LNO i=0; i < localNumberOfIds; i++){
       lidHash->put(Z2::IdentifierTraits<AppLID>::key((*lids)[i]), i);
@@ -70,9 +74,13 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 
   consecutive = true;
   base = 0;
-  gnoDist = Teuchos::ArrayRCP<GNO>(nprocs+1, 0);
 
-  Teuchos::gatherAll(*comm, 1, &localNumberOfIds, 1, gnoDist.get());
+  gnoDist = Teuchos::ArrayRCP<GNO>(nprocs + 1, 0);
+  GNO *distArray = gnoDist.get();
+
+  distArray[nprocs] = localNumberOfIds;
+
+  Teuchos::gatherAll(*comm, 1, distArray + nprocs, 1, distArray);
 
   gnoDist.get()[nprocs] = globalNumberOfIds;
 
@@ -80,7 +88,8 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
     gnoDist.get()[p] = gnoDist.get()[p+1] - gnoDist.get()[p];
   }
 
-  gidHash = Teuchos::rcp(new Teuchos::Hashtable<std::string, LNO>(localNumberOfIds));
+  gidHash = Teuchos::rcp(new Teuchos::Hashtable<std::string, LNO>
+              (localNumberOfIds));
 
   for (LNO i=0; i < localNumberOfIds; i++){
     gidHash->put(Z2::IdentifierTraits<AppGID>::key((*gids)[i]), i);
@@ -145,7 +154,8 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   /*! Assignment operator */
 template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   IdentifierMap<AppGID,AppLID,GNO,LNO> &
-    IdentifierMap<AppGID,AppLID,GNO,LNO>::operator=(const IdentifierMap<AppGID,AppLID,GNO,LNO> &id)
+    IdentifierMap<AppGID,AppLID,GNO,LNO>::operator=(const IdentifierMap<AppGID,
+                  AppLID,GNO,LNO> &id)
 {
     //TODO
 }
@@ -246,8 +256,8 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   }
 
   TEST_FOR_EXCEPTION(!haveLocalIds,
-                      std::runtime_error,
-                     "local ID translation is requested but none were provided");
+                  std::runtime_error,
+                 "local ID translation is requested but none were provided");
 
   bool getLids = (gno.size() > 0);
 
@@ -291,9 +301,9 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 
 template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   void IdentifierMap<AppGID, AppLID, GNO, LNO>::gidGlobalTranslate(
-    std::vector<AppGID> &gid,          /* input, gids may be repeated in list  */
-    std::vector<GNO> &gno,             /* output */ 
-    std::vector<int> &proc)            /* output */
+    std::vector<AppGID> &gid,    /* input, gids may be repeated in list  */
+    std::vector<GNO> &gno,       /* output */ 
+    std::vector<int> &proc)      /* output */
 {
   // Problem: the following does not compile:
   //    std::map<std::string, std::vector<LNO> >::iterator
@@ -376,11 +386,12 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   for (LNO i=0; i < ids.size(); i++){
     std::string key(Z2::IdentifierTraits<AppGID>::key(ids[i]));
     int p = Z2::Hash<AppGID, int>(key, nprocs);
-    answerProcs.push_back(p)
+    answerProcs.push_back(p);
     msgCount[p]++;
   }
 
-  // Send my GIDs, plus their local index, to the processes that will answer for them
+  // Send my GIDs, plus their local index, 
+  // to the processes that will answer for them
 
   AppGID *sendGidBuf = new AppGID [localNumberOfIds];
   AppGID *sendIndexBuf = new LNO [localNumberOfIds];
@@ -415,7 +426,8 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   Teuchos::ArrayView<AppGID> queryGidsArray(queryGids);
   Teuchos::ArrayView<int> procIdsArray(procIds);
 
-  Tpetra::LookupStatus status = map.getRemoteIndexList(queryGidsArray, procIdsArray);
+  Tpetra::LookupStatus status = map.getRemoteIndexList(queryGidsArray, 
+   procIdsArray);
 
   TEST_FOR_EXCEPTION( status != Tpetra::AllIDsPresent,
                       std::runtime_error,

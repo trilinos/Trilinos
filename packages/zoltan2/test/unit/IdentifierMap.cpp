@@ -11,12 +11,15 @@
 // @HEADER
 
 // TODO: doxygen comments
+//    TODO Z2 could should throw errors and we should catch them
 
 #define APPGID_IS_NOT_GNO
 
 #include <vector>
+#include <string>
 #include <ostream>
-#include <Teuchos_GlobalMPISession.hpp>   // So we don't have to #ifdef HAVE_MPI
+#include <iostream>
+#include <Teuchos_GlobalMPISession.hpp> // So we don't have to #ifdef HAVE_MPI
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
@@ -24,30 +27,100 @@
 
 #define nobjects 10000
 
+typedef long appGlobalId;
+typedef int  appLocalId;
+typedef long gnoType;
+typedef int  lnoType;
+
+template< typename T1, typename T2>
+ void show_result(std::string &msg, std::vector<T1> &v1, std::vector<T2> &v2)
+{
+ std::cout << msg << std::endl;
+ for (int i=0; i < v1.size(); i++){
+    std::cout << v1[i] << "    " << v2[i] << std::endl;
+ }
+}
+
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
   int nprocs = session.getNProc();
   int rank = session.getRank();
 
-  int numLocalObjects = nobjects /  nprocs;
-  int leftOver = nobjects % nprocs;
+  appLocalId numLocalObjects = nobjects /  nprocs;
+  appLocalId leftOver = nobjects % nprocs;
 
   if (rank < leftOver) numLocalObjects++;
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+    Teuchos::DefaultComm<int>::getComm();
 
-  Teuchos::RCP< std::vector<long> > gids = Teuchos::rcp(new std::vector<long>(numLocalObjects));
-  Teuchos::RCP< std::vector<int> > lids = Teuchos::rcp(new std::vector<int>(numLocalObjects));
+  Teuchos::RCP< std::vector<appGlobalId> > gids = 
+    Teuchos::rcp(new std::vector<appGlobalId>(numLocalObjects));
+  Teuchos::RCP< std::vector<appLocalId> > lids = 
+    Teuchos::rcp(new std::vector<appLocalId>(numLocalObjects));
 
-  long base = nobjects * rank;
+  appGlobalId base = nobjects * rank;
 
   for (int i=0; i < numLocalObjects; i++){
     (*gids)[i] = base + i;
     (*lids)[i] = i;
   }
 
-  Z2::IdentifierMap<long, int> idmap(comm, gids, lids);
+  // Test constructor
+
+  Z2::IdentifierMap<appGlobalId, appLocalId> idmap(comm, gids, lids);
+
+  //  Test gnosAreGids() boolean
+
+#ifdef APPGID_IS_NOT_GNO
+  if (idmap.gnosAreGids()) {
+    std::cerr << "Rank " << rank << ": Z2 thinks gnos are gids" << std::endl;
+  }
+#else
+  if (!idmap.gnosAreGids()) {
+    std::cerr << "Rank " << rank << ": Z2 does not know gnos are gids" 
+              << std::endl;
+  }
+#endif
+
+  // Test local gno  look up.
+
+  std::vector<gnoType> gnos(numLocalObjects);
+
+  idmap.gidTranslate(*gids, gnos);    // translate app gids to z2 gnos
+
+  show_result("App GIDs -> Z2 GNOs", *gids, gnos);
+
+  std::vector<gnoType> gnoQuery(10,0);
+
+  for (int i=0; i < 20; i+=2){
+    gnoQuery.push_back(gnos[i]);
+  }
+
+  std::vector<appGlobalId> idsReturned();
+
+  idmap.gidTranslate(idsReturned, gnoQuery);// translate gnos to gids
+
+  show_result("Z2 gnos -> App gids", gnoQuery, idsReturned);
+
+  // Test local gno/lid look up.
+
+  gnos.resize(0);
+
+  idmap.lidTranslate(*lids, gnos);    // translate app lids to z2 gnos
+
+  show_result("App local IDs -> Z2 GNOs", *lids, gnos);
+
+  for (int i=0; i < 20; i+=2){
+    gnoQuery[i] = gnos[i];
+  }
+
+  idsReturned.resize(0);
+  
+  idmap.lidTranslate(idsReturned, gnoQuery);// translate gnos to app lids
+
+  show_result("Z2 GNOs -> Application local IDs", gnoQuery, idsReturned);
 
   std::cout << "PASS" << std::endl;
 }

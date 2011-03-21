@@ -18,7 +18,10 @@
 #include <Teuchos_Hashtable.hpp>
 
 /*! Z2
-    \brief A namespace for objects that are not part of the Zoltan2 user interface.
+    \brief A namespace for Zoltan2 internal objects and methods.
+   
+    Proposal: this namespace could be called SPOCK for Sandia
+     Partitioning Ordering and Coloring Kit.
 */
 
 namespace Z2
@@ -28,31 +31,34 @@ namespace Z2
     \brief An IdentifierMap manages a global space of unique object identifiers.
 
     The Zoltan2 caller may use arbitrary data types for global ID (AppGID) and 
-    local ID (AppLID).  For example, if the objects being partitioned are matrix 
-    non-zeros, the AppGID may be an (i,j) pair.  The AppLID is optional and exists
-    for the convenience of the caller.  It may be for example an index into an array, 
-    or a pointer to memory.  The application may obtain a solution in terms of the 
-    AppLID (if it was provided) or the AppGID.
+    local ID (AppLID).  For example, if the objects being partitioned are 
+    matrix non-zeros, the AppGID may be an (i,j) pair.  The AppLID is optional 
+    and exists for the convenience of the caller.  It may be for example an 
+    index into an array, or a pointer to memory.  The application may obtain 
+    a solution in terms of the AppLID (if it was provided) or the AppGID.
 
-    The Identifier map is templated on the AppGID, AppLID, GNO and LNO.  The GNO
-    and LNO are the global identifier and local count types used internally by Zoltan2.  
+    The Identifier map is templated on the AppGID, AppLID, GNO and LNO.  The 
+    GNO and LNO are the global identifier and local count types used internally
+    by Zoltan2.  
 
     The GNO must be a signed or unsigned char, int or long.  Where long long is
-    available it can be a signed long long.  (It must be type valid for use as a 
-    Tpetra GlobalOrdinal.) The GNO type defaults to the AppGID type.  If the 
-    AppGID is not a GlobalOrdinal type then the Caller must 
-    specify a valid GNO type that is large enough to enumerate all of the application's 
-    global IDs.  It is more efficient to use AppGIDs that are GlobalOrdinal types because
-    if they are not, Zoltan2 must translate back and forth between the application
-    global ID and its internal global identifier.
+    available it can be a signed long long.  (It must be type valid for use 
+    as a Tpetra GlobalOrdinal.) The GNO type defaults to the AppGID type.  
+    If the AppGID is not a GlobalOrdinal type then the Caller must 
+    specify a valid GNO type that is large enough to enumerate all of 
+    the application's global IDs.  It is more efficient to use AppGIDs 
+    that are GlobalOrdinal types because if they are not, Zoltan2 must 
+    translate back and forth between the application global ID and its 
+    internal global identifier.
 
-    Before including this header file in a compilation, the macro APPGID_IS_NOT_GNO
-    must be defined if the application's global ID type is not the same as the GNO type. 
+    Before including this header file in a compilation, the macro 
+    APPGID_IS_NOT_GNO must be defined if the application's global ID type 
+    is not the same as the GNO type. 
 
-    The LNO defaults to a int.  It is used to index and count local objects.  If there
-    is some reason that Zoltan2 could save memory by using a smaller data type, or
-    requires a larger data type to count local objects, then the caller should
-    define a different LNO type.
+    The LNO defaults to a int.  It is used to index and count local objects.  
+    If there is some reason that Zoltan2 could save memory by using a smaller 
+    data type, or requires a larger data type to count local objects, 
+    then the caller should define a different LNO type.
 
     TODO - trim down comments and code once we get it all straight
            replace new/delete with memory wrappers
@@ -60,7 +66,8 @@ namespace Z2
            use Kokkos node 
 */
 
-template<typename AppGID, typename AppLID, typename GNO=AppGID, typename LNO=int>
+template<typename AppGID, typename AppLID, 
+         typename GNO=AppGID, typename LNO=int>
   class IdentifierMap{
 
 private:
