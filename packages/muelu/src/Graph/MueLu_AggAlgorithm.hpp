@@ -69,7 +69,7 @@ enum NodeState {
                    /* to an aggregate.                         */
 };
 
-int MueLu_RandomReorder(Teuchos::ArrayRCP<int> randomVector, const Map &map);
+int MueLu_RandomReorder(Teuchos::ArrayRCP<int> randomVector, const Cthulhu::Map<int,int> &map);
 
 /* ************************************************************************ */
 /* Coarsen Graph by aggregation. In particular, each processor works        */
@@ -409,7 +409,7 @@ MueLu::Graph<int,int> & graph)
 //     list[]      Same integers as on input but in a different order
 //                 that is determined randomly.
 //
-int MueLu_RandomReorder(Teuchos::ArrayRCP<int> list, const Map &map)
+int MueLu_RandomReorder(Teuchos::ArrayRCP<int> list, const Cthulhu::Map<int,int> &map)
 {
 
   TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "RandomReorder: TODO");

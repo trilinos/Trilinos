@@ -19,7 +19,9 @@ namespace MueLu {
   class Graph 
     : public Teuchos::Describable {
     
-#include "MueLu_UseShortNames.hpp"
+// #include "MueLu_UseShortNames.hpp"
+    typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
+    typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 
   public:
 

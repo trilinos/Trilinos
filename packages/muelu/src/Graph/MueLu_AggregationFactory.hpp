@@ -17,7 +17,7 @@ namespace MueLu {
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 class AggregationFactory {
-#include "MueLu_UseShortNames.hpp"
+// #include "MueLu_UseShortNames.hpp"
 
   private:
       //! aggregation algorithm type
