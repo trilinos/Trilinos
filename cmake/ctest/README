@@ -201,10 +201,12 @@ following additionial environment variables:
       TDD_DO_SUBMIT=FALSE TDD_IN_TESTING_MODE=ON \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
       CTEST_TEST_TYPE=Experimental \
-      TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade \
+      TDD_FORCE_CMAKE_INSTALL=0 \
       ./cron_driver.sh
 
 (of course you must use set commands on Windows).
+
+NOTE: Set TDD_FORCE_CMAKE_INSTALL=1 to force a global CMake reinstall.
 
 Work out any kinks you may have in your environment and your scripts
 by running this over and over again.
