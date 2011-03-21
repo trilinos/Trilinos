@@ -36,6 +36,7 @@ static PARAM_VARS graph_type_params[] = {
   { "GRAPH_SYM_WEIGHT", NULL, "STRING", 0 },
   { "GRAPH_BIPARTITE_TYPE", NULL, "STRING", 0},
   { "GRAPH_BUILD_TYPE", NULL, "STRING"},       
+  { "GRAPH_FAST_BUILD_BASE", NULL, "INTEGER"},       
   { "ORDER_METHOD", NULL, "STRING", 0 },
   { "USE_ORDER_INFO", NULL, "INT", 0 },
   {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
