@@ -91,7 +91,8 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   std::vector<stk::mesh::Part *>  add_part;
   meta.commit();
 
-  // bail if not parallel
+  // Bail if not parallel. This test involves inducing errorneous conditions that
+  // are only checked-for in parallel.
   if (size == 1) {
     return;
   }

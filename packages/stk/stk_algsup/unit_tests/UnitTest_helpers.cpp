@@ -10,10 +10,6 @@
 #include <iostream>
 #include <Shards_BasicTopologies.hpp>
 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
