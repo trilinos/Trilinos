@@ -188,6 +188,17 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
   # Custom code in configuration file.
   SET(PACKAGE_CONFIG_CODE "")
 
+  # Import build tree targets into applications.
+  IF(FULL_LIBRARY_SET)
+    SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
+# Import ${PROJECT_NAME} targets
+IF(NOT ${PROJECT_NAME}_TARGETS_IMPORTED)
+  SET(${PROJECT_NAME}_TARGETS_IMPORTED 1)
+  INCLUDE(\"${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake\")
+ENDIF()
+")
+  ENDIF()
+
   # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries. 
   IF(BUILD_SHARED_LIBS)
     STRING(REPLACE ";" ":" SHARED_LIB_RPATH_COMMAND "${LIBRARY_DIRS}")
@@ -243,6 +254,17 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
 
   # Custom code in configuration file.
   SET(PACKAGE_CONFIG_CODE "")
+
+  # Import install tree targets into applications.
+  IF(${PACKAGE_NAME}_HAS_INSTALL_TARGETS)
+    SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
+# Import ${PROJECT_NAME} targets
+IF(NOT ${PROJECT_NAME}_TARGETS_IMPORTED)
+  SET(${PROJECT_NAME}_TARGETS_IMPORTED 1)
+  INCLUDE(\"${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PROJECT_NAME}/${PROJECT_NAME}Targets.cmake\")
+ENDIF()
+")
+  ENDIF()
 
   # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries. 
   IF(BUILD_SHARED_LIBS)
@@ -360,6 +382,19 @@ FUNCTION(PACKAGE_ARCH_WRITE_CONFIG_FILE)
   # Custom code in configuration file.
   SET(PROJECT_CONFIG_CODE "")
 
+  # Export targets from the build tree.
+  IF(FULL_LIBRARY_SET)
+    EXPORT(TARGETS ${FULL_LIBRARY_SET} FILE "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
+    # Import the targets in applications.
+    SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}
+# Import ${PROJECT_NAME} targets
+IF(NOT ${PROJECT_NAME}_TARGETS_IMPORTED)
+  SET(${PROJECT_NAME}_TARGETS_IMPORTED 1)
+  INCLUDE(\"${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake\")
+ENDIF()
+")
+  ENDIF()
+
   # Appending the logic to include each package's config file.
   SET(LOAD_CODE "# Load configurations from enabled packages\n")
   FOREACH(PACKAGE ${FULL_PACKAGE_SET})
@@ -412,6 +447,23 @@ FUNCTION(PACKAGE_ARCH_WRITE_CONFIG_FILE)
 
   # Custom code in configuration file.
   SET(PROJECT_CONFIG_CODE "")
+
+  # Export targets from the install tree.
+  IF(${PROJECT_NAME}_HAS_INSTALL_TARGETS)
+    INSTALL(
+      EXPORT ${PROJECT_NAME}
+      DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PROJECT_NAME}"
+      FILE ${PROJECT_NAME}Targets.cmake
+      )
+    # Import the targets in applications.
+    SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}
+# Import ${PROJECT_NAME} targets
+IF(NOT ${PROJECT_NAME}_TARGETS_IMPORTED)
+  SET(${PROJECT_NAME}_TARGETS_IMPORTED 1)
+  INCLUDE(\"${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PROJECT_NAME}/${PROJECT_NAME}Targets.cmake\")
+ENDIF()
+")
+  ENDIF()
 
   # Appending the logic to include each package's config file.
   SET(LOAD_CODE "# Load configurations from enabled packages\n")
