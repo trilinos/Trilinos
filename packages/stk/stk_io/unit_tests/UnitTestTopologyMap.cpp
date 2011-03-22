@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -109,7 +109,7 @@ int testElement(const std::string &name)
       int face_count = element->number_faces();
       for (int i=0; i < face_count; i++) {
 	Ioss::ElementTopology *face = element->face_type(i+1);
-	const CellTopologyData *cell_face = cell.getTopology(cell.getDimension()-1,i);
+	const CellTopologyData *cell_face = cell.getCellTopologyData(cell.getDimension()-1,i);
 	errors += my_assert(face->name(),
 			    stk::io::map_topology_cell_to_ioss(cell_face,face->spatial_dimension()),
 			    "face type");
@@ -143,7 +143,7 @@ int testElement(const std::string &name)
       int edge_count = element->number_edges();
       for (int i=0; i < edge_count; i++) {
 	Ioss::ElementTopology *edge = element->edge_type(i+1);
-	const CellTopologyData *cell_edge = cell.getTopology(cell.getDimension()-1,i);
+	const CellTopologyData *cell_edge = cell.getCellTopologyData(cell.getDimension()-1,i);
 	errors += my_assert(edge->name(),
 			    stk::io::map_topology_cell_to_ioss(cell_edge, edge->spatial_dimension()),
 			    "edge type");

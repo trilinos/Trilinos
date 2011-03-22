@@ -29,8 +29,8 @@ public:
       EntityRepository & entity_repo
       );
 
-  /** \brief  Query all buckets of a given entity type */
-  const std::vector<Bucket*> & buckets( EntityRank type ) const ;
+  /** \brief  Query all buckets of a given entity rank */
+  const std::vector<Bucket*> & buckets( EntityRank rank ) const ;
 
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts

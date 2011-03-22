@@ -10,7 +10,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <Shards_BasicTopologies.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -67,13 +67,14 @@ STKUNIT_UNIT_TEST( UnitTestAlgorithmRunner, UnitTest)
   STKUNIT_ASSERT( alg_run_nothread != NULL );
 
   const unsigned spatial_dim = 3;
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dim));
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  stk::mesh::DefaultFEM fem(meta_data, spatial_dim);
-#endif
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dim);
+
+  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+
   stk::mesh::BulkData bulk_data( meta_data, comm );
 
-  fill_utest_mesh_meta_data( meta_data );
+  fill_utest_mesh_meta_data( fem_meta );
   fill_utest_mesh_bulk_data( bulk_data );
 
   stk::mesh::Selector selector = meta_data.locally_owned_part() | meta_data.globally_shared_part();

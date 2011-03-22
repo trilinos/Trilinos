@@ -43,7 +43,7 @@ Ghosting & BulkData::create_ghosting( const std::string & name )
 
   // Verify name is the same on all processors,
   // if not then throw an exception on all processors.
-  {
+  if (parallel_size() > 1) {
     CommBroadcast bc( parallel() , 0 );
 
     if ( bc.parallel_rank() == 0 ) {
@@ -366,10 +366,11 @@ void BulkData::internal_change_ghosting(
           j = new_send.begin(); j != new_send.end() ; ++j ) {
 
       Entity & entity = * j->first ;
+      const unsigned int proc =  j->second ;
 
-      if ( ! in_ghost( ghosts , entity , j->second ) ) {
+      if ( ! in_ghost( ghosts , entity , proc ) ) {
         // Not already being sent , must send it.
-        CommBuffer & buf = comm.send_buffer( j->second );
+        CommBuffer & buf = comm.send_buffer( proc );
         buf.pack<unsigned>( entity.entity_rank() );
         pack_entity_info(  buf , entity );
         pack_field_values( buf , entity );
@@ -382,15 +383,18 @@ void BulkData::internal_change_ghosting(
           j = new_send.begin(); j != new_send.end() ; ++j ) {
 
       Entity & entity = * j->first ;
+      const unsigned int proc =  j->second ;
 
-      if ( ! in_ghost( ghosts , entity , j->second ) ) {
+      if ( ! in_ghost( ghosts , entity , proc ) ) {
         // Not already being sent , must send it.
-        CommBuffer & buf = comm.send_buffer( j->second );
+        CommBuffer & buf = comm.send_buffer( proc );
         buf.pack<unsigned>( entity.entity_rank() );
         pack_entity_info(  buf , entity );
         pack_field_values( buf , entity );
 
-        m_entity_repo.insert_comm_info( entity, EntityCommInfo(ghosts.ordinal(),j->second) );
+        m_entity_repo.insert_comm_info( entity,
+                                        EntityCommInfo(ghosts.ordinal(), proc)
+                                        );
 
         m_entity_comm.push_back( & entity );
       }
@@ -432,34 +436,37 @@ void BulkData::internal_change_ghosting(
           std::pair<Entity*,bool> result =
             m_entity_repo.internal_create_entity( key );
 
+          Entity* entity = result.first;
           const bool created   = result.second ;
-          const bool recreated = EntityLogDeleted == result.first->log_query();
+          const bool recreated = EntityLogDeleted == entity->log_query();
 
           if ( created || recreated ) {
-            m_entity_repo.log_created_parallel_copy( *(result.first) );
-            m_entity_repo.set_entity_owner_rank( *(result.first), owner);
+            m_entity_repo.log_created_parallel_copy( *(entity) );
+            m_entity_repo.set_entity_owner_rank( *(entity), owner);
           }
 
-          require_entity_owner( * result.first , owner );
+          require_entity_owner( * entity , owner );
 
-          internal_change_entity_parts( * result.first , parts , PartVector() );
+          internal_change_entity_parts( * entity , parts , PartVector() );
 
-          declare_relation( * result.first , relations );
+          declare_relation( * entity , relations );
 
-          if ( ! unpack_field_values( buf , * result.first , error_msg ) ) {
+          if ( ! unpack_field_values( buf , * entity , error_msg ) ) {
             ++error_count ;
           }
 
           const EntityCommInfo tmp( ghosts.ordinal() , owner );
 
-          if ( m_entity_repo.insert_comm_info( *(result.first), tmp ) ) {
-            m_entity_comm.push_back( result.first );
+          if ( m_entity_repo.insert_comm_info( *entity, tmp ) ) {
+            m_entity_comm.push_back( entity );
           }
         }
       }
     }
 
-    all_reduce( m_parallel_machine , ReduceSum<1>( & error_count ) );
+    if (parallel_size() > 1) {
+      all_reduce( m_parallel_machine , ReduceSum<1>( & error_count ) );
+    }
 
     ThrowErrorMsgIf( error_count, error_msg.str() );
 
@@ -472,8 +479,8 @@ void BulkData::internal_change_ghosting(
       std::sort( i , m_entity_comm.end() , EntityLess() );
       std::inplace_merge( m_entity_comm.begin() , i ,
                           m_entity_comm.end() , EntityLess() );
-      i = std::unique( m_entity_comm.begin() , m_entity_comm.end() );
-      m_entity_comm.erase( i , m_entity_comm.end() );
+      m_entity_comm.erase( std::unique( m_entity_comm.begin() , m_entity_comm.end() ) ,
+                           m_entity_comm.end() );
     }
   }
 

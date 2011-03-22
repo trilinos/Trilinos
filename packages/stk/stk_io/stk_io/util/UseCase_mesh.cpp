@@ -532,7 +532,7 @@ namespace stk {
 
 	  if (stk::io::include_entity(entity)) {
 	    const std::string &name = entity->name();
-      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+	    const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 	    stk::mesh::Part* const part = meta.get_part(name);
 	    assert(part != NULL);
 
@@ -560,6 +560,15 @@ namespace stk {
 	      elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
 	    }
 
+            Ioss::NameList names;
+            entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
+            for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+	      if(*I == "attribute" && names.size() > 1)
+		continue;
+	      stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+	      if (field)
+		stk::io::field_data_from_ioss(field, elements, entity, *I);
+            }
 	  }
 	}
       }

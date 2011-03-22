@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -36,7 +36,7 @@ public:
   EntityId identifier() const { return stk::mesh::entity_id( m_key ); }
   const EntityKey & key() const { return m_key ; }
   PairIterRelation relations() const { return PairIterRelation(m_relation); }
-  PairIterRelation relations( unsigned type ) const ;
+  PairIterRelation relations( unsigned rank ) const ;
   PairIterEntityComm comm() const { return PairIterEntityComm( m_comm ); }
   PairIterEntityComm sharing() const ;
   PairIterEntityComm comm( const Ghosting & sub ) const ;
@@ -73,21 +73,21 @@ public:
   void comm_clear_ghosting(); ///< Clear ghosting
   void comm_clear(); ///< Clear everything
 
-  void set_bucket_and_ordinal( Bucket * bucket, unsigned ordinal )
+  void set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal )
   {
     TraceIfWatching("stk::mesh::impl::EntityRepository::set_bucket_and_ordinal", LOG_ENTITY, key());
 
-    m_bucket = bucket;
+    m_bucket = in_bucket;
     m_bucket_ord = ordinal;
   }
 
   // return true if entity was actually modified
-  bool set_owner_rank( unsigned owner_rank )
+  bool set_owner_rank( unsigned in_owner_rank )
   {
     TraceIfWatching("stk::mesh::impl::EntityRepository::set_owner_rank", LOG_ENTITY, key());
 
-    if ( owner_rank != m_owner_rank ) {
-      m_owner_rank = owner_rank;
+    if ( in_owner_rank != m_owner_rank ) {
+      m_owner_rank = in_owner_rank;
       return true;
     }
     return false;

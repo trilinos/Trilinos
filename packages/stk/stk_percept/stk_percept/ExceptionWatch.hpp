@@ -34,6 +34,11 @@ namespace stk {
 
 #define TOKENPASTE_LOC(x,y) x ## y
 #define TOKENPASTE2_LOC(x,y) TOKENPASTE_LOC(x,y)
+
+#ifndef NDEBUG
 #define EXCEPTWATCH stk::percept::ExceptionWatch TOKENPASTE2_LOC(exception_watch_, __COUNTER__ ) (__LINE__, __FILE__)
+#else
+#define EXCEPTWATCH ((void)0)
+#endif
 
 #endif

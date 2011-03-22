@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------*/
 /*               shards : Shared Discretization Tools                     */
-/*                Copyright (2008) Sandia Corporation                     */
+/*                Copyright (2008, 2011) Sandia Corporation                     */
 /*                                                                        */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
@@ -237,7 +237,7 @@ namespace stk { namespace adapt {
     getCellTopologyId(
                       const CellTopology &  cell_topology)
     {
-      if (cell_topology.getTopology() == 0)
+      if (cell_topology.getCellTopologyData() == 0)
         return INVALID;
   
       IdCellTopologyMap &cell_topology_map = get_id_cell_topology_map();
@@ -265,7 +265,7 @@ namespace stk { namespace adapt {
       if (ordinal >= cell_topology.getEdgeCount())
         return NULL;
   
-      return cell_topology.getTopology(1, ordinal);
+      return cell_topology.getCellTopologyData(1, ordinal);
     }
   
 
@@ -277,7 +277,7 @@ namespace stk { namespace adapt {
       if (ordinal >= cell_topology.getFaceCount())
         return NULL;
   
-      return cell_topology.getTopology(2, ordinal);
+      return cell_topology.getCellTopologyData(2, ordinal);
     }
 
 
@@ -338,8 +338,8 @@ namespace stk { namespace adapt {
         return NULL;
   
       // Get the topology to test the bounds of subcell_dim and subcell_ord.
-      cell_topology.getTopology(1, edge);
-      return cell_topology.getTopology()->subcell[1][edge].node;
+      cell_topology.getCellTopologyData(1, edge);
+      return cell_topology.getCellTopologyData()->subcell[1][edge].node;
     }
 
 
@@ -352,8 +352,8 @@ namespace stk { namespace adapt {
         return NULL;
   
       // Get the topology to test the bounds of subcell_dim and subcell_ord.
-      cell_topology.getTopology(2, face);
-      return cell_topology.getTopology()->subcell[2][face].node;
+      cell_topology.getCellTopologyData(2, face);
+      return cell_topology.getCellTopologyData()->subcell[2][face].node;
     }
 
 
@@ -402,7 +402,7 @@ namespace stk { namespace adapt {
                 unsigned                      face,
                 unsigned                      edge_of_face)
     {
-      return ::mapCellFaceEdge(cell_topology.getBaseTopology(), face, edge_of_face);
+      return ::mapCellFaceEdge(cell_topology.getBaseCellTopologyData(), face, edge_of_face);
     }
 
 
@@ -411,7 +411,7 @@ namespace stk { namespace adapt {
                      const Elem::CellTopology &    cell_topology,
                      UInt                          ordinal) 
     {
-      return (ordinal < cell_topology.getNodeCount()) ? cell_topology.getTopology(0, ordinal) : NULL;
+      return (ordinal < cell_topology.getNodeCount()) ? cell_topology.getCellTopologyData(0, ordinal) : NULL;
     }
 
 
