@@ -2,6 +2,12 @@
 Release Notes for Trilinos Package Kokkos
 -----------------------------------------
 
+Trilinos 10.6.4:
+----------------
+
+* Fixed some bugs in the build system
+* Updates to support CUDA 4.0 and built-in Thrust
+
 Trilinos 10.6.1:
 ----------------
 
