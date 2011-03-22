@@ -185,6 +185,9 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
   SET(LIBRARY_DIRS ${${PACKAGE_NAME}_LIBRARY_DIRS})
   SET(INCLUDE_DIRS ${${PACKAGE_NAME}_INCLUDE_DIRS})
 
+  # Custom code in configuration file.
+  SET(PACKAGE_CONFIG_CODE "")
+
   # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries. 
   IF(BUILD_SHARED_LIBS)
     STRING(REPLACE ";" ":" SHARED_LIB_RPATH_COMMAND "${LIBRARY_DIRS}")
@@ -237,6 +240,9 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
 
   SET(LIBRARY_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
   SET(INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
+
+  # Custom code in configuration file.
+  SET(PACKAGE_CONFIG_CODE "")
 
   # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries. 
   IF(BUILD_SHARED_LIBS)
@@ -351,15 +357,18 @@ FUNCTION(PACKAGE_ARCH_WRITE_CONFIG_FILE)
     SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${SHARED_LIB_RPATH_COMMAND})
   ENDIF()
 
-  CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake )
+  # Custom code in configuration file.
+  SET(PROJECT_CONFIG_CODE "")
 
   # Appending the logic to include each package's config file.
   SET(LOAD_CODE "# Load configurations from enabled packages\n")
   FOREACH(PACKAGE ${FULL_PACKAGE_SET})
     SET(LOAD_CODE "${LOAD_CODE}include(\"${${PACKAGE}_BINARY_DIR}/${PACKAGE}Config.cmake\")\n")
   ENDFOREACH()
-  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake "${LOAD_CODE}")
+  SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}\n${LOAD_CODE}")
+
+  CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake )
 
   IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
     ######
@@ -401,15 +410,18 @@ FUNCTION(PACKAGE_ARCH_WRITE_CONFIG_FILE)
     SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
   ENDIF()
 
-  CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake )
+  # Custom code in configuration file.
+  SET(PROJECT_CONFIG_CODE "")
 
   # Appending the logic to include each package's config file.
   SET(LOAD_CODE "# Load configurations from enabled packages\n")
   FOREACH(PACKAGE ${FULL_PACKAGE_SET})
     SET(LOAD_CODE "${LOAD_CODE}include(\"${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PACKAGE}/${PACKAGE}Config.cmake\")\n")
   ENDFOREACH()
-  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake "${LOAD_CODE}")
+  SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}\n${LOAD_CODE}")
+
+  CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake )
 
   INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake
