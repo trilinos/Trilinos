@@ -13,6 +13,13 @@
 #include <stdio.h>
 #include <stdlib.h>      
 
+#define USE_GETCWD 1
+#if USE_GETCWD
+#include <unistd.h>
+#include <sys/stat.h>
+#include <errno.h>
+#endif
+
 #if defined( STK_HAS_MPI )
 #include <mpi.h>
 #endif
@@ -147,6 +154,8 @@ namespace stk {
 
       return s_timer;
     }
+
+    std::string RunEnvironment::m_workingDirectory = "";
 
     RunEnvironment::RunEnvironment(
                                    int *         argc,
@@ -613,6 +622,45 @@ namespace stk {
       MPI_Barrier( comm );
     }
 
+#if USE_GETCWD
+    static void panic()
+    {
+      (void)perror("Unexpected library error");
+      std::abort();
+    }
+
+#define MAX_PATH 256
+    //: Returns the name of the current working directory
+    std::string RunEnvironment::
+    get_working_directory()
+    {
+      int size = MAX_PATH;
+
+      while(true) {
+        char *ptr = new char[size];
+        if (getcwd(ptr, size-1) != 0) {
+          std::string ret_str(ptr);
+          ret_str = ret_str +"/";
+          delete [] ptr;
+          return ret_str;
+        }
+        if (errno != ERANGE)
+          panic();
+
+        // Need larger char* to store current working directory name.
+        delete [] ptr;
+        size += MAX_PATH;
+      }
+    }
+#else
+    std::string RunEnvironment::get_working_directory()
+    {
+      return m_workingDirectory;
+    }
+
+#endif
+
+
     static void runCommand(std::string command)
     {
       char line[256];
@@ -633,30 +681,92 @@ namespace stk {
     }
 
     void RunEnvironment::
+    setFileNames(std::string& fullmesh, std::string& meshFileName)
+    {
+      fullmesh = get_working_directory() + meshFileName;
+      if (meshFileName[0] == '/')
+        {
+          // already absolute
+          fullmesh = meshFileName;
+        }
+      else if (meshFileName.length() >= 3 && (meshFileName[0] != '.' && meshFileName[1] != '/'))
+        {
+          // make it a relative path
+          fullmesh = get_working_directory() + meshFileName;
+          meshFileName = "./"+meshFileName;
+          //fullmesh = get_working_directory() + meshFileName.substr(2,meshFileName.length()-2);
+        }
+      else if (meshFileName.length() >= 3 && (meshFileName[0] == '.' && meshFileName[1] == '/'))
+        {
+          fullmesh = get_working_directory() + meshFileName.substr(2,meshFileName.length()-2);
+        }
+      else
+        {
+          throw new std::runtime_error("bad format for input file name");
+        }
+
+      size_t found = 0;
+      // strip off the basename + extension
+      found = fullmesh.find_last_of("/");
+      if (found != std::string::npos)
+        {
+          fullmesh = fullmesh.substr(0,found);
+        }
+      if(fullmesh == ".") 
+        fullmesh = "./";
+      else
+        fullmesh += "/";
+
+
+    }
+
+    void RunEnvironment::
     doLoadBalance(stk::ParallelMachine comm, std::string meshFileName)
     {
+
+      if (meshFileName.length() == 0) return;
 
       unsigned p_size = stk::parallel_machine_size(comm);
       unsigned p_rank = stk::parallel_machine_rank(comm);
       if (p_size > 1 && !p_rank)
         {
-
           std::string fullmesh = meshFileName;
-          size_t found = fullmesh.find_last_of("/");
-          fullmesh = fullmesh.substr(0,found);
-          if(fullmesh == ".") fullmesh = "./";
-          std::string base_name = meshFileName.substr(0, meshFileName.length()-2);
 
-          std::string extension = meshFileName.substr(meshFileName.length()-1, meshFileName.length());
+          std::cout << "tmp get_working_directory= " << get_working_directory() << std::endl;
 
-          std::cout << "tmp: extension= " << extension << " fullmesh= " << fullmesh << " base_name= " << base_name << std::endl;
+          setFileNames(fullmesh, meshFileName);
+
+          std::cout << "tmp fullmesh= " << fullmesh << std::endl;
+          std::cout << "tmp meshFileName= " << meshFileName << std::endl;
+
+          //std::string fullmesh = meshFileName;
+
+          //
+          //  file.exo
+          //  file.e
+          unsigned extension_length = 1;
+
+          size_t found = meshFileName.find_last_of(".");
+          if (found == std::string::npos) {
+            throw new std::runtime_error("RunEnvironment::doLoadBalance input file name must have an extension");
+          }
+          extension_length = meshFileName.length() - found - 1;
+          std::string base_name = meshFileName.substr(0, meshFileName.length()-(extension_length+1));
+
+          std::string extension = meshFileName.substr(meshFileName.length()-extension_length, meshFileName.length());
+
+          std::cout << "tmp: extension= " << extension << " meshFileName= " << meshFileName << " fullmesh= " << fullmesh << " base_name= " << base_name << std::endl;
 
           std::string command="loadbal -No_subdirectory -suffix_mesh " + extension+" -suffix_spread "+extension+" -p "+toString(p_size)+ " ";
           command += "-R " +fullmesh+" " + base_name;
+          //command += "-R ./ "  + base_name;
 
           std::cout << "RunEnvironment::doLoadBalance: command= " << command << std::endl;
+
           runCommand(command);
-          command = "./"+meshFileName.substr(0, meshFileName.length()-2)+".spd";
+          //command = "./"+meshFileName.substr(0, meshFileName.length()-2)+".spd";
+          command = meshFileName.substr(0, meshFileName.length()-2)+".spd";
+          
           std::cout << "RunEnvironment::doLoadBalance: command= " << command << std::endl;
           runCommand(command);
         }
