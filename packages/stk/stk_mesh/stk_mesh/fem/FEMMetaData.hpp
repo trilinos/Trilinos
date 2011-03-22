@@ -208,9 +208,10 @@ class FEMMetaData {
   Part &declare_part( const std::string &name, fem::CellTopology cell_topology)
   {
     ThrowRequireMsg(is_FEM_initialized(),"FEMMetaData::declare_part: FEM_initialize() must be called before this function");
-    Part & part = m_meta_data.declare_part(name);
     Part &root_part = get_cell_topology_root_part(cell_topology);
-    m_meta_data.declare_part_subset(root_part, part);
+    EntityRank primary_entity_rank = root_part.primary_entity_rank();
+    Part & part = m_meta_data.declare_part(name, primary_entity_rank);
+    declare_part_subset(root_part, part);
     return part;
   }
 
