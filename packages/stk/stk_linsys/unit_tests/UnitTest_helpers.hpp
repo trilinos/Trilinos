@@ -15,7 +15,7 @@
 typedef stk::mesh::Field<double>                          ScalarField ;
 typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
 
-void fill_utest_mesh_meta_data(stk::mesh::MetaData& meta_data, bool use_temperature=true);
+void fill_utest_mesh_meta_data(stk::mesh::fem::FEMMetaData& fem_meta, bool use_temperature=true);
 void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data);
 
 void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::LinearSystemInterface& ls);

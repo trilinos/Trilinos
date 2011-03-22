@@ -12,10 +12,6 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <Shards_BasicTopologies.hpp>
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 #include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
@@ -101,31 +97,26 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-  stk::mesh::MetaData meta_data2( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk::mesh::fem::FEMMetaData fem_meta;
+  stk::mesh::fem::FEMMetaData fem_meta2;
+  fem_meta.FEM_initialize(spatial_dimension);
+  fem_meta2.FEM_initialize(spatial_dimension);
 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const stk::mesh::EntityRank element_rank = stk::mesh::Element;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-  stk::mesh::DefaultFEM fem(meta_data, spatial_dimension);
-  stk::mesh::DefaultFEM fem2(meta_data2, spatial_dimension);
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk::mesh::MetaData & meta_data2 = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta2);
+
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
   stk::mesh::BulkData bulk_data2( meta_data2, comm, bucket_size );
 
   //create a boundary-condition part for testing later:
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  stk::mesh::Part& bcpart = meta_data.declare_part("bcpart");
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-  stk::mesh::Part& bcpart = declare_part(meta_data, "bcpart");
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  stk::mesh::Part& bcpart = fem_meta.declare_part("bcpart");
 
-  fill_utest_mesh_meta_data( meta_data );
+  fill_utest_mesh_meta_data( fem_meta );
 
   bool use_temperature=false;
-  fill_utest_mesh_meta_data( meta_data2, use_temperature );
+  fill_utest_mesh_meta_data( fem_meta2, use_temperature );
 
   fill_utest_mesh_bulk_data( bulk_data );
   fill_utest_mesh_bulk_data( bulk_data2 );
@@ -273,11 +264,14 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
-  stk::mesh::DefaultFEM fem_data( meta_data, spatial_dimension );
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dimension);
 
-  fill_utest_mesh_meta_data( meta_data );
+  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+
+  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+
+  fill_utest_mesh_meta_data( fem_meta );
 
   fill_utest_mesh_bulk_data( bulk_data );
 
@@ -289,7 +283,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
   stk::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(spatial_dimension);
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],     (unsigned)20 );
@@ -341,11 +335,12 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dimension);
+  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
-  stk::mesh::DefaultFEM fem_data( meta_data, spatial_dimension );
 
-  fill_utest_mesh_meta_data( meta_data );
+  fill_utest_mesh_meta_data( fem_meta );
 
   fill_utest_mesh_bulk_data( bulk_data );
 
@@ -357,7 +352,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
   stk::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(spatial_dimension);
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],     (unsigned)20 );
