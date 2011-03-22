@@ -206,7 +206,11 @@ following additionial environment variables:
 
 (of course you must use set commands on Windows).
 
-NOTE: Set TDD_FORCE_CMAKE_INSTALL=1 to force a global CMake reinstall.
+NOTES:
+
+(*) Set TDD_FORCE_CMAKE_INSTALL=1 to force a global CMake reinstall.
+(*) Set CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=FALSE if you only
+    want to process the exact packages set with Trilinos_PACKAGES
 
 Work out any kinks you may have in your environment and your scripts
 by running this over and over again.
