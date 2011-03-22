@@ -236,6 +236,7 @@ const Ioss::Field* get_field_attribute(const mesh::FieldBase &f);
 
 /** Defines the Ioss::Field::RoleType of the mesh::Field 'f' to be 'role'.
  */
+const Ioss::Field::RoleType* get_field_role(const stk::mesh::FieldBase &f);
 void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role); // Deprecated
 void set_field_attribute(mesh::FieldBase &f, const Ioss::Field &io_field);
 
