@@ -24,6 +24,13 @@ struct thrust_test_constant_int
   int operator()() {return 1;}
 };
 
+void thrust_float_alloc(int N, thrust::device_vector<float> &buff) {
+  buff.resize(N);
+}
+void thrust_int_alloc(int N, thrust::device_vector<int> &buff) {
+  buff.resize(N);
+}
+
 void thrust_float_init(thrust::device_vector<float> &buff) {
   thrust::generate( buff.begin(), buff.end(), thrust_test_constant_float() );
 }
