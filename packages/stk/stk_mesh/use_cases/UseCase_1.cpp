@@ -11,16 +11,14 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 /// end code snippet
 
 //----------------------------------------------------------------------
 
-
-namespace stk{
+namespace stk {
 namespace mesh {
 namespace use_cases {
-
 
 /// doxygen tutorial start source
 enum { field_data_chunk_size = 10 };
@@ -40,8 +38,6 @@ UseCase_1_Mesh::UseCase_1_Mesh( stk::ParallelMachine comm )
 UseCase_1_Mesh::~UseCase_1_Mesh()
 { }
 /// end code snippet
-
-
 
 } //namespace use_cases
 } //namespace mesh
