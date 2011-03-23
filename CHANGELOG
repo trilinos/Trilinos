@@ -4,6 +4,18 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.6.4 March 23, 2011
+
+1. Kokkos - Fixed CUDA build errors with shared libraries and explicit 
+            instantiation.
+
+2. Kokkos - Fixed issue with building with latest CUDA and Thrust libraries
+
+3. Tpetra - Fixed CUDA build errors with shared libraries and explicit 
+            instantiation.
+
+-------------------------------------------------------------------------------
+
 Release update 10.6.3 March 17, 2011
 
 1. AztecOO - Bug: 5117. Fixed segfault when performing an AztecOO linear solve
