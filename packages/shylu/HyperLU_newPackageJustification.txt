@@ -1,0 +1,68 @@
+1.  What is the proposed package's name?   
+
+HyperLU
+
+ 2.  What is the purpose for the package?   
+
+HyperLU is a solver and/or preconditioner for general sparse linear systems.
+HyperLU is based on block partitioning and Schur complements,
+and is typically used as a hybrid direct-iterative method.
+It is primarily designed as a preconditioner (solver) on the compute node.
+It uses a two-level hybrid parallel programming model to 
+effectively use current multicore and emerging manycore systems.
+
+HyperLU is intended both as a subdomain solver or smoother for production use,
+and as a research platform for algorithmic research in hybrid solvers
+and Schur complement preconditioners.
+
+ 3.  Why should this functionality not just be included in an existing 
+Trilinos package?  
+
+HyperLU could be part of Ifpack, but we believe it should be a separate package
+for several reasons:
+
+(a) HyperLU is quite large: 2K lines of source and still growing,
+(b) HyperLU has more dependencies than Ifpack (see below),
+(c) HyperLU can be used as both iterative and direct solver; thus
+    we plan wrappers for both Ifpack and Amesos,
+(d) It should be posssible to use HyperLU directly without going through Ifpack.
+(e) If we add Tpetra support in the future, we can easily make HyperLU
+    accessible from both Ifpack and Ifpack2.
+
+ 4.  What required and optional internal Trilinos packages dependencies will 
+this code have? 
+
+Required dependencies: Epetra, EpetraExt, Isorropia, Zoltan, Teuchos, Amesos, AztecOO.
+Optional dependencies: Belos.
+Future optional dependencies: Tpetra, Kokkos.
+
+ 5. What required and optional external TPL dependencies will this code have?  
+
+Just MPI.
+
+ 6.  Will this be immediately considered Stable code or Experimental Code?  
+
+This code should be stable code by the time it is externally released.
+
+ 7.  What is the long term development, support, and maintenance plan for 
+the new package going to be?  
+
+The code will be developed/maintained long-term as part of Sandia's
+programs in architecture-aware algorithms and exascale solvers.
+
+    *   Who is going to maintain this package?   
+
+Siva Rajamanickam and Erik Boman are the package leads and will
+maintain the package.
+
+    *   Will this package be released and when?  
+
+Yes, the package will first be released internally in preCopyrightTrilinos
+(April 2011). It will be released externally as soon as copyright has been granted.
+
+    *   If the package is released outside of Sandia, who is going to maintain 
+it long term?  
+
+During the research phase, the developers will maintain it. Longer term,
+maintainance should be provided by Trilinos SEMS staff.
+
