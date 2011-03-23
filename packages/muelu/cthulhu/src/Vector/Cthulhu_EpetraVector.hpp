@@ -16,6 +16,8 @@
 #include "Cthulhu_EpetraMultiVector.hpp"
 #include "Cthulhu_EpetraImport.hpp"
 
+#include "Cthulhu_CombineMode.hpp"
+
 #include "Epetra_Vector.h"
 
 
@@ -224,17 +226,8 @@ namespace Cthulhu {
       CTHULHU_DYNAMIC_CAST(const EpetraVector, source, tSource, "Cthulhu::EpetraVector::doImport only accept Cthulhu::EpetraVector as input arguments.");
       CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
-      Epetra_CombineMode tCM;
-      if (CM == Cthulhu::ADD)
-        tCM = Add;
-        else if (CM == Cthulhu::INSERT)
-          tCM = Insert;
-          else if (CM == Cthulhu::ABSMAX)
-            tCM = AbsMax;
-          else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unknow CombineMode value."); 
-
       const Epetra_Vector * v = tSource.getEpetra_Vector();
-      this->EpetraMultiVector::getEpetra_MultiVector()->Import(*v, *tImporter.getEpetra_Import(), tCM); 
+      this->EpetraMultiVector::getEpetra_MultiVector()->Import(*v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
 
     }
 
@@ -245,17 +238,8 @@ namespace Cthulhu {
       CTHULHU_DYNAMIC_CAST(const EpetraVector, dest, tDest, "Cthulhu::EpetraVector::doImport only accept Cthulhu::EpetraVector as input arguments.");
       CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
-      Epetra_CombineMode tCM;
-      if (CM == Cthulhu::ADD)
-        tCM = Add;
-        else if (CM == Cthulhu::INSERT)
-          tCM = Insert;
-          else if (CM == Cthulhu::ABSMAX)
-            tCM = AbsMax;
-          else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unknow CombineMode value."); 
-
       const Epetra_Vector * v = tDest.getEpetra_Vector();
-      this->EpetraMultiVector::getEpetra_MultiVector()->Export(*v, *tImporter.getEpetra_Import(), tCM); 
+      this->EpetraMultiVector::getEpetra_MultiVector()->Export(*v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
 
     }
     

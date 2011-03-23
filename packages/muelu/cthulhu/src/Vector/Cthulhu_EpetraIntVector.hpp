@@ -497,17 +497,8 @@ namespace Cthulhu {
       CTHULHU_DYNAMIC_CAST(const EpetraIntVector, source, tSource, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraIntVector as input arguments.");
       CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
-      Epetra_CombineMode tCM;
-      if (CM == Cthulhu::ADD)
-        tCM = Add;
-      else if (CM == Cthulhu::INSERT)
-        tCM = Insert;
-      else if (CM == Cthulhu::ABSMAX)
-        tCM = AbsMax;
-      else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unknow CombineMode value."); 
-      
       const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
-      vec_->Import(v, *tImporter.getEpetra_Import(), tCM); 
+      vec_->Import(v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
     }
 
     void doExport(const Vector<int, int, int> &dest,
@@ -517,17 +508,8 @@ namespace Cthulhu {
       CTHULHU_DYNAMIC_CAST(const EpetraIntVector, dest, tDest, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraIntVector as input arguments.");
       CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
-      Epetra_CombineMode tCM;
-      if (CM == Cthulhu::ADD)
-        tCM = Add;
-      else if (CM == Cthulhu::INSERT)
-        tCM = Insert;
-      else if (CM == Cthulhu::ABSMAX)
-        tCM = AbsMax;
-      else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unknow CombineMode value."); 
-      
       const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
-      vec_->Import(v, *tImporter.getEpetra_Import(), tCM); 
+      vec_->Import(v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
     }
 
   private:

@@ -18,6 +18,8 @@
 #include "Cthulhu_TpetraMultiVector.hpp"
 #include "Cthulhu_TpetraImport.hpp"
 
+#include "Cthulhu_CombineMode.hpp"
+
 #include "Tpetra_Vector.hpp"
 
 namespace Cthulhu {
@@ -233,33 +235,30 @@ namespace Cthulhu {
     inline void doImport(const Vector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, 
                          const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) { 
       CTHULHU_DEBUG_ME;
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "TODO");
-
+      
       typedef TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TTpetraVector;      
-      //      CTHULHU_DYNAMIC_CAST(const TTpetraVector, source, tSource, "Cthulhu::TpetraVector::doImport only accept Cthulhu::TpetraVector as input arguments.");
-
+      CTHULHU_DYNAMIC_CAST(const TTpetraVector, source, tSource, "Cthulhu::TpetraVector::doImport only accept Cthulhu::TpetraVector as input arguments.");
+      
       typedef TpetraImport<LocalOrdinal, GlobalOrdinal, Node> TTpetraImport;
-      // CTHULHU_DYNAMIC_CAST(const TTpetraImport, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TTpetraImport, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
 
-      // Tpetra::CombineMode tCM;
-      // TODO check if I undrstand that correctly...
-//       if (CM == Cthulhu::ADD)
-//         tCM = Tpetra::;
-//         else if (CM == Cthulhu::INSERT)
-//           tCM = Tpetra::;
-//           else if (CM == Cthulhu::REPLACE)
-//             tCM = Tpetra::;
-//           else  
-            TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Tpetra::CombineMode: unknow CombineMode value."); 
-
-            //      const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node> & v = *tSource.getTpetra_Vector();
-            // this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->doImport(v, *tImporter.getTpetra_Import(), tCM); 
+      const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node> & v = *tSource.getTpetra_Vector();
+      this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->doImport(v, *tImporter.getTpetra_Import(), Cthulhu2Tpetra_CombineMode(CM));
     }
 
     void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) {
       CTHULHU_DEBUG_ME;
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "TODO");
+      
+      typedef TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TTpetraVector;      
+      CTHULHU_DYNAMIC_CAST(const TTpetraVector, dest, tDest, "Cthulhu::TpetraVector::doImport only accept Cthulhu::TpetraVector as input arguments.");
+      
+      typedef TpetraImport<LocalOrdinal, GlobalOrdinal, Node> TTpetraImport;
+      CTHULHU_DYNAMIC_CAST(const TTpetraImport, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+
+      const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node> & v = *tDest.getTpetra_Vector();
+      this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->doExport(v, *tImporter.getTpetra_Import(), Cthulhu2Tpetra_CombineMode(CM)); 
+
     }
 
     
