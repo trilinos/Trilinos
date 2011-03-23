@@ -584,11 +584,11 @@ namespace stk {
 
         unsigned *null_u = 0;
 
-        CellTopology cell_topo(stk::percept::PerceptMesh::my_get_cell_topology(element));
+        CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
 
         // FIXME - need topo dimensions here
         int topoDim = cell_topo.getDimension();
-        unsigned cell_topo_key = stk::percept::PerceptMesh::my_get_cell_topology(element)->key;
+        unsigned cell_topo_key = stk::percept::PerceptMesh::get_cell_topology(element)->key;
 
         getTopoDim(topoDim, cell_topo_key);
 
@@ -789,7 +789,7 @@ namespace stk {
         std::vector<NeededEntityType> needed_entities;
         fillNeededEntities(needed_entities);
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
         typedef boost::array<unsigned, ToTopology::node_count > quadratic_type;
 
@@ -1096,7 +1096,7 @@ namespace stk {
         static std::vector<NeededEntityType> needed_entities;
         fillNeededEntities(needed_entities);
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
         static vector<refined_element_type> elems;
         elems.resize(getNumNewElemPerElem());
@@ -2324,7 +2324,7 @@ namespace stk {
 
       const CellTopologyData * get_effective_topo(mesh::Part& part)
       {
-        const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(part);
+        const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(part);
 
         // check subsets
         if (!part_cell_topo_data)
@@ -2333,7 +2333,7 @@ namespace stk {
             for (unsigned i_subset = 0; i_subset < subsets.size(); i_subset++)
               {
                 mesh::Part& subset = *subsets[i_subset];
-                part_cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(subset);
+                part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(subset);
                 if (part_cell_topo_data) 
                   return part_cell_topo_data;
               }
@@ -2461,7 +2461,7 @@ namespace stk {
 
                 if (!isOldElementsPart)
                   {
-                    //const CellTopologyData * const part_cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(*part);
+                    //const CellTopologyData * const part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*part);
                     const CellTopologyData * part_cell_topo_data = get_effective_topo(*part);
                     
                     if (!part_cell_topo_data)
@@ -2505,7 +2505,7 @@ namespace stk {
                           {
                             block_to = &eMesh.getMetaData()->declare_part(part->name() + m_appendConvertString, part->primary_entity_rank());
                             if (0) std::cout << "tmp setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
-                            mesh::set_cell_topology< ToTopology  >( *block_to );
+                            mesh::fem::set_cell_topology< ToTopology  >( *block_to );
                             stk::io::put_io_part_attribute(*block_to);
                           }
 

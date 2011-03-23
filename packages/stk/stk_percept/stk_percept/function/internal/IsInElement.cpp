@@ -59,7 +59,7 @@ namespace stk
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       const mesh::Bucket & bucket = element.bucket();
-      const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
 
       unsigned numCells = 1; // FIXME
 

@@ -148,7 +148,7 @@ namespace stk
 
       VERIFY_OP(output_field_values.dimension(0), ==, numInterpPoints, "FieldFunction::operator() output_field_values bad dim(0)");
 
-      const CellTopologyData * const cell_topo_data = PerceptMesh::my_get_cell_topology(bucket_or_element);
+      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(bucket_or_element);
 
       unsigned stride = 0;
       //double * fdata_bucket = PerceptMesh::field_data( m_my_field , bucket, &stride);

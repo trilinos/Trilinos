@@ -376,7 +376,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
   // prepare for adding some quadratic elements
   mesh::Part& block_hex_20 = eMesh.getMetaData()->declare_part("block_hex_20", mesh::Element);
   /// set cell topology for the part block_hex_20
-  mesh::set_cell_topology< shards::Hexahedron<20>  >( block_hex_20 );
+  mesh::fem::set_cell_topology< shards::Hexahedron<20>  >( block_hex_20 );
   stk::io::put_io_part_attribute(block_hex_20);
 
   eMesh.commit();
@@ -472,7 +472,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
     eMesh.getBulkData()->modification_begin();
 
     //getCellTopologyData< shards::Node  >()
-    const CellTopologyData *const cell_topo_data =stk::percept::PerceptMesh::my_get_cell_topology(block_hex_20);
+    const CellTopologyData *const cell_topo_data =stk::percept::PerceptMesh::get_cell_topology(block_hex_20);
     CellTopology cell_topo(cell_topo_data);
 
     for (unsigned isd = 0; isd < 12; isd++)
@@ -524,7 +524,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
   // prepare for breaking into tet elements
   mesh::Part& block_tet_4 = eMesh.getMetaData()->declare_part("block_tet_4", mesh::Element);
   /// set cell topology for the part block_tet_4
-  mesh::set_cell_topology< shards::Tetrahedron<4>  >( block_tet_4 );
+  mesh::fem::set_cell_topology< shards::Tetrahedron<4>  >( block_tet_4 );
   stk::io::put_io_part_attribute(block_tet_4);
 
   eMesh.commit();

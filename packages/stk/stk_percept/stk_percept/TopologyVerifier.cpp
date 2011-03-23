@@ -60,7 +60,7 @@ namespace stk
     /// return true if topology is bad
     bool TopologyVerifier::isTopologyBad( mesh::Entity  &elem)
     {
-      const CellTopologyData * const top = stk::percept::PerceptMesh::my_get_cell_topology(elem);
+      const CellTopologyData * const top = stk::percept::PerceptMesh::get_cell_topology(elem);
 
       const mesh::PairIterRelation elem_nodes = elem.relations( mesh::Node );
 
@@ -121,7 +121,7 @@ namespace stk
           if (0) { elem_node_data[0]++;}
 
 #if 1
-          const CellTopologyData * const bucket_cell_topo = stk::percept::PerceptMesh::my_get_cell_topology(bucket);
+          const CellTopologyData * const bucket_cell_topo = stk::percept::PerceptMesh::get_cell_topology(bucket);
           int bucket_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(bucket_cell_topo->name);
 #endif
 
@@ -144,8 +144,8 @@ namespace stk
 
               //const mesh::PairIterRelation node_elems = elem_nodes[0].entity()->relations( mesh::Element );
 
-              //const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::my_get_cell_topology(elem);
-              const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::my_get_cell_topology(elem);
+              //const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
+              const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
               int shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(cell_topo->name);
               if (0) { std::cout << "shardsId= " << shardsId << " name= " << cell_topo->name <<  std::endl; }
 
@@ -188,7 +188,7 @@ namespace stk
                           mesh::Entity & elemOnNode = *node_elems[iele].entity();
                           const mesh::PairIterRelation elemOnNode_nodes = elemOnNode.relations( mesh::Node );
 
-                          const CellTopologyData * const local_cell_topo = stk::percept::PerceptMesh::my_get_cell_topology(elemOnNode);
+                          const CellTopologyData * const local_cell_topo = stk::percept::PerceptMesh::get_cell_topology(elemOnNode);
                           int local_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(local_cell_topo->name);
                           //if (1) { std::cout << "shardsId= " << shardsId << " name= " << cell_topo->name <<  std::endl; }
 

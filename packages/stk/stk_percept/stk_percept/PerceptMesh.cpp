@@ -1,5 +1,3 @@
-//#define SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-
 #include <cmath>
 #include <stdexcept>
 #include <sstream>
@@ -263,8 +261,8 @@ namespace stk {
           for (unsigned ipart=0; ipart < nparts; ipart++)
             {
               Part& part = *parts[ipart];
-              //const CellTopologyData *const topology = PerceptMesh::my_get_cell_topology(part);
-              const CellTopologyData *const topology = stk::percept::PerceptMesh::my_get_cell_topology(part);
+              //const CellTopologyData *const topology = PerceptMesh::get_cell_topology(part);
+              const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(part);
               std::string subsets = "{";
               const stk::mesh::PartVector &part_subsets = part.subsets();
               if (part_subsets.size() > 0) {
@@ -1706,7 +1704,7 @@ namespace stk {
     findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                          FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length)
     {
-      const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::my_get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
 
       CellTopology cell_topo(bucket_cell_topo_data);
       unsigned number_elems = bucket.size();
@@ -1768,7 +1766,7 @@ namespace stk {
       // 09/14/10:  TODO:  tscoffe:  We need an exception here if we don't get a FEMInterface off of MetaData or we need to take one on input.
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       const bool is_side = side_entity_rank != Edge;
-      const CellTopologyData * const elem_top = PerceptMesh::my_get_cell_topology( elem );
+      const CellTopologyData * const elem_top = PerceptMesh::get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       //const fem::FemInterface& fem = MetaData::get(*elem).get_attribute<FemInterface>();
       //const bool is_side = side_entity_rank != fem::edge_rank(fem);
@@ -1831,17 +1829,16 @@ namespace stk {
       EntityRank needed_entity_rank = side.entity_rank();
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      const CellTopologyData * const cell_topo_data = PerceptMesh::my_get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(element);
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       const CellTopologyData * const cell_topo_data = fem::get_cell_topology(element).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-
 
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(Node);
       const mesh::PairIterRelation side_nodes = side.relations(Node);
 
-      CellTopology cell_topo_side(PerceptMesh::my_get_cell_topology(side));
+      CellTopology cell_topo_side(PerceptMesh::get_cell_topology(side));
 
       const unsigned *  inodes = 0;
       unsigned nSubDimNodes = 0;
@@ -1977,7 +1974,7 @@ namespace stk {
             {
               Bucket & bucket = **k ;
 
-              const CellTopologyData * const cell_topo_data = PerceptMesh::my_get_cell_topology(bucket);
+              const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(bucket);
               shards::CellTopology cell_topo(cell_topo_data);
 
               const unsigned num_elements_in_bucket = bucket.size();
@@ -2026,7 +2023,7 @@ namespace stk {
                                 {
                                   Bucket & bucket_2 = **k_2 ;
 
-                                  const CellTopologyData * const cell_topo_data_2 = PerceptMesh::my_get_cell_topology(bucket_2);
+                                  const CellTopologyData * const cell_topo_data_2 = PerceptMesh::get_cell_topology(bucket_2);
                                   shards::CellTopology cell_topo_2(cell_topo_data_2);
 
                                   const unsigned num_elements_in_bucket_2 = bucket_2.size();

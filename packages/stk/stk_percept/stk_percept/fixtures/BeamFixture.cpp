@@ -38,16 +38,16 @@ namespace stk{
 
     BeamFixture::BeamFixture( stk::ParallelMachine comm, bool doCommit ) :
       m_spatial_dimension(3)
-      , m_metaData( fem::entity_rank_names(m_spatial_dimension) )
+      , m_fem(m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) )
+      , m_metaData( stk::mesh::fem::FEMMetaData::get_meta_data(m_fem) )
       , m_bulkData( m_metaData , comm )
-      , m_fem( m_metaData, m_spatial_dimension )
       , m_block_beam( declare_part< Beam2 >(m_metaData,  "block_2" ) )
-      , m_elem_rank( fem::element_rank(m_fem) )
-      , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
-      , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))
-      , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( "temperature" ))
-      , m_volume_field( m_metaData.declare_field< ScalarFieldType >( "volume" ))
-      , m_element_node_coordinates_field( m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
+      , m_elem_rank( m_fem.element_rank() )
+      , m_coordinates_field( m_fem.declare_field< VectorFieldType >( "coordinates" ))
+      , m_centroid_field(    m_fem.declare_field< VectorFieldType >( "centroid" ))
+      , m_temperature_field( m_fem.declare_field< ScalarFieldType >( "temperature" ))
+      , m_volume_field( m_fem.declare_field< ScalarFieldType >( "volume" ))
+      , m_element_node_coordinates_field( m_fem.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
     {
       // Define where fields exist on the mesh:
       Part & universal = m_metaData.universal_part();

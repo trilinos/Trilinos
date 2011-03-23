@@ -24,7 +24,8 @@
 #include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+
 
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -65,9 +66,9 @@ namespace stk {
       void populate();
 
       const int m_spatial_dimension;
-      MetaData m_metaData;
+      fem::FEMMetaData m_fem;
+      MetaData& m_metaData;
       BulkData m_bulkData;
-      DefaultFEM m_fem;
 
       Part & m_block_beam;
       const EntityRank m_elem_rank;

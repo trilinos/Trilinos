@@ -790,7 +790,7 @@ namespace stk {
 
         if (is_empty)
           {
-            const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+            const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
             CellTopology cell_topo(cell_topo_data);
 
             std::cout << "NodeRegistry::getNewNodesOnSubDimEntity: no node found, cell_topo = " << cell_topo.getName()
@@ -848,7 +848,7 @@ namespace stk {
 
         if (is_empty)
           {
-            const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+            const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
             CellTopology cell_topo(cell_topo_data);
 
             std::cout << "NodeRegistry::makeCentroidField: no node found, cell_topo = " << cell_topo.getName()
@@ -897,7 +897,7 @@ namespace stk {
 
                 if (doPrint && coord)
                   {
-                    const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+                    const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                     CellTopology cell_topo(cell_topo_data);
 
                     std::cout << "tmp NodeRegistry::makeCentroidField cell_topo = " << cell_topo.getName() << " ipts= " << ipts
@@ -952,7 +952,7 @@ namespace stk {
               }
             if (doPrint) 
               {
-                const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+                const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 CellTopology cell_topo(cell_topo_data);
 
                 std::cout << "tmp NodeRegistry::makeCentroidField cell_topo = " << cell_topo.getName()
@@ -1079,7 +1079,7 @@ namespace stk {
 
                         if (doPrint && coord)
                           {
-                            const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+                            const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                             CellTopology cell_topo(cell_topo_data);
 
                             std::cout << "tmp NodeRegistry::makeCentroid(field) cell_topo = " << cell_topo.getName() << " ipts= " << ipts
@@ -1273,7 +1273,7 @@ namespace stk {
                     // add to part
                     std::vector<stk::mesh::Part*> add_parts(1, &part);
                     std::vector<stk::mesh::Part*> remove_parts;
-                    const CellTopologyData *const topology = stk::percept::PerceptMesh::my_get_cell_topology(part);
+                    const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(part);
                     const unsigned part_rank = part.primary_entity_rank();
 
                     //if (!topology)
@@ -1315,7 +1315,7 @@ namespace stk {
             if (part_name[0] == '{')
               continue;
 
-            const CellTopologyData *const topology = stk::percept::PerceptMesh::my_get_cell_topology(part);
+            const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(part);
             const unsigned part_rank = part.primary_entity_rank();
 
             if (part_rank == stk::mesh::Node)
@@ -1468,7 +1468,7 @@ namespace stk {
       void //NodeRegistry::
       doForAllSubEntities(ElementFunctionPrototype function, const Entity& element, vector<NeededEntityType>& needed_entity_ranks)
       {
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 
         CellTopology cell_topo(cell_topo_data);
         const mesh::PairIterRelation elem_nodes = element.relations(Node);
@@ -1521,7 +1521,7 @@ namespace stk {
             return;
           }
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 
         //CellTopology cell_topo(cell_topo_data);
         const mesh::PairIterRelation elem_nodes = element.relations(Node);

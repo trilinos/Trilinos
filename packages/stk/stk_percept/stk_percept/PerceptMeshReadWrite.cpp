@@ -108,7 +108,7 @@ namespace stk {
           /// that it can handle that specific topology.
 
           if (cell_topology != NULL) {
-            stk::mesh::set_cell_topology(part, cell_topology);
+            stk::mesh::fem::set_cell_topology(part, cell_topology);
           } else {
             /// \todo IMPLEMENT handle cell_topolgy mapping error...
           }
@@ -204,7 +204,7 @@ namespace stk {
                                       *part,
                                       stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
 
-            const CellTopologyData* cell_topo = stk::percept::PerceptMesh::my_get_cell_topology(*part);
+            const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(*part);
             std::string cell_topo_name = "UNKNOWN";
             if (cell_topo != NULL)
               cell_topo_name = cell_topo->name;
@@ -436,10 +436,10 @@ namespace stk {
             stk::mesh::Part* const part = meta.get_part(name);
             assert(part != NULL);
 
-            const CellTopologyData* cell_topo = stk::percept::PerceptMesh::my_get_cell_topology(*part);
+            const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(*part);
             if (cell_topo == NULL) {
               std::ostringstream msg ;
-              msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from stk::percept::PerceptMesh::my_get_cell_topology()";
+              msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from stk::percept::PerceptMesh::get_cell_topology()";
               throw std::runtime_error( msg.str() );
             }
 

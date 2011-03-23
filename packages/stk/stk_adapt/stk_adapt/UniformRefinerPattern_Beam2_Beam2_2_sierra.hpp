@@ -49,7 +49,7 @@ namespace stk {
                                             proc_rank_field);
             return;
           }
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
         typedef boost::tuple<EntityId, EntityId> line_tuple_type;
         static vector<line_tuple_type> elems(2);
 

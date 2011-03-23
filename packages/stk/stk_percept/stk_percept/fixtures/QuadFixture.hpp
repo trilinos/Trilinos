@@ -23,6 +23,7 @@
 #include <stk_mesh/base/DataTraits.hpp>
 
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
@@ -61,11 +62,13 @@ namespace stk {
 
         QuadFixture( stk::ParallelMachine pm ,
                      unsigned nx , unsigned ny, bool generate_sidesets_in )
-          : meta_data( stk::mesh::fem_entity_rank_names() ),
+          : fem_meta_data(2, stk::mesh::fem_entity_rank_names() ),
+            meta_data( stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta_data) ),
             bulk_data( meta_data , pm ),
             quad_part( meta_data.declare_part("block_1", stk::mesh::Element) ),
-            coord_field( meta_data.declare_field<CoordFieldType>("coordinates") ),
-            coord_gather_field( meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
+            //quad_part( fem_meta_data.declare_part("block_1", fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) ) ),
+            coord_field( fem_meta_data.declare_field<CoordFieldType>("coordinates") ),
+            coord_gather_field( fem_meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
             NX( nx ),
             NY( ny ),
             generate_sidesets(generate_sidesets_in)
@@ -73,7 +76,13 @@ namespace stk {
           enum { SpatialDim = 2 };
 
           // Set topology of the element block part
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
           stk::mesh::set_cell_topology< QuadOrTriTopo >(quad_part);
+#else
+          stk::mesh::fem::set_cell_topology(fem_meta_data, quad_part,  fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
+          // stk::mesh::fem::set_cell_topology< QuadOrTriTopo >(quad_part);
+#endif
+
           stk::io::put_io_part_attribute(quad_part);
 
           //put coord-field on all nodes:
@@ -94,7 +103,13 @@ namespace stk {
 
           // Field relation so coord-gather-field on elements points
           // to coord-field of the element's nodes
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
           meta_data.declare_field_relation( coord_gather_field, element_node_stencil<QuadOrTriTopo>, coord_field);
+#else
+          const EntityRank element_rank = 2;
+
+          fem_meta_data.declare_field_relation( coord_gather_field, fem::element_node_stencil<QuadOrTriTopo, element_rank>, coord_field);
+#endif
 
           if (generate_sidesets)
             generate_sides_meta( );
@@ -209,7 +224,8 @@ namespace stk {
 
         }
 
-        stk::mesh::MetaData    meta_data ;
+        stk::mesh::fem::FEMMetaData    fem_meta_data ;
+        stk::mesh::MetaData &  meta_data ;
         stk::mesh::BulkData    bulk_data ;
         stk::mesh::Part      & quad_part ;
         CoordFieldType       & coord_field ;
@@ -254,13 +270,13 @@ namespace stk {
         {
           for (unsigned i_side = 0; i_side < 4; i_side++)
             {
-              side_parts[i_side] = &meta_data.declare_part(std::string("surface_quad4_edge2d2_")+boost::lexical_cast<std::string>(i_side+1), stk::mesh::Edge);
-              mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), stk::mesh::Edge);
-              stk::mesh::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
+              side_parts[i_side] = &fem_meta_data.declare_part(std::string("surface_quad4_edge2d2_")+boost::lexical_cast<std::string>(i_side+1), stk::mesh::Edge);
+              mesh::Part& side_part = fem_meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), stk::mesh::Edge);
+              stk::mesh::fem::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
               stk::io::put_io_part_attribute(*side_parts[i_side]);
               stk::io::put_io_part_attribute(side_part);
 
-              meta_data.declare_part_subset(side_part, *side_parts[i_side]);
+              fem_meta_data.declare_part_subset(side_part, *side_parts[i_side]);
 
             }
         }

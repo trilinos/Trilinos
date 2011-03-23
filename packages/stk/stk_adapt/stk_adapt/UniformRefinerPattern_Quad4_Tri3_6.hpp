@@ -36,7 +36,7 @@ namespace stk {
                         Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
                         FieldBase *proc_rank_field=0)
       {
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
         typedef boost::tuple<EntityId, EntityId, EntityId> tri_tuple_type;
         static vector<tri_tuple_type> elems(6);
 

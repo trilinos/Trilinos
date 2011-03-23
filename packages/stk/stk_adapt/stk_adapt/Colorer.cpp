@@ -83,7 +83,7 @@ namespace stk {
                     Bucket & bucket = **k ;
 
                     bool doThisBucket = true;
-                    const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(bucket);
+                    const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
                     shards::CellTopology topo(bucket_cell_topo_data);
                     if (elementType && (topo.getKey() != *elementType))
                       {

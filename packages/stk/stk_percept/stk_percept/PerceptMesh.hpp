@@ -1,6 +1,8 @@
 #ifndef stk_percept_PerceptMesh_hpp
 #define stk_percept_PerceptMesh_hpp
 
+//#define SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -257,9 +259,16 @@ namespace stk {
 
       template<class T>
       static
-      const CellTopologyData * const my_get_cell_topology(T& thing) 
+      const CellTopologyData * const get_cell_topology(T& thing) 
       { 
-        return mesh::get_cell_topology(thing);
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      const CellTopologyData * const cell_topo_data = mesh::get_cell_topology(thing);
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      const CellTopologyData * const cell_topo_data = fem::get_cell_topology(thing).getCellTopologyData();
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      return cell_topo_data;
+
+      //return mesh::get_cell_topology(thing);
       }
 
 
@@ -330,7 +339,7 @@ namespace stk {
     }; // class PerceptMesh
 
 //     template<class T>
-//     const CellTopologyData * const my_get_cell_topology(T& thing) { 
+//     const CellTopologyData * const get_cell_topology(T& thing) { 
 //       return mesh::get_cell_topology(thing);
 //     }
 
@@ -353,7 +362,7 @@ namespace stk {
     {
       unsigned number_elems = bucket.size();
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::my_get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
 #else
       const CellTopologyData * const bucket_cell_topo_data = stk::mesh::fem::get_cell_topology(bucket).getCellTopologyData();
 #endif
