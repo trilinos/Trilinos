@@ -47,10 +47,8 @@ UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   , m_elem_rank( m_fem_metaData.element_rank() )
   , m_side_rank( m_fem_metaData.side_rank() )
   , m_node_rank( m_fem_metaData.node_rank() )
-  , m_block_hex27( m_fem_metaData.declare_part( "block_1",
-                                                shards::getCellTopologyData<Hex27>() ))
-  , m_block_wedge18( m_fem_metaData.declare_part( "block_2",
-                                                  shards::getCellTopologyData<Wedge18>() ))
+  , m_block_hex27( stk::mesh::fem::declare_part<Hex27>( m_fem_metaData, "block_1"))
+  , m_block_wedge18( stk::mesh::fem::declare_part<Wedge18>( m_fem_metaData, "block_2"))
   , m_part_vertex_nodes( m_fem_metaData.declare_part("vertex_nodes", m_node_rank ))
   , m_side_part(         m_fem_metaData.declare_part("sideset_1", m_side_rank ))
   , m_coordinates_field(m_fem_metaData.declare_field< VectorFieldType >( "coordinates" ))
