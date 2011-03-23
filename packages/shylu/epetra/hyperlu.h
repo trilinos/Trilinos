@@ -27,7 +27,11 @@ typedef struct
     int sym;                    // flag for symmetry
     double Sdiagfactor;         // % of diagonals added to Schur complement
     int schurApproxMethod;      // ==1 implies blockdiagonal + A22
-                                // ==2 implies diagonals
+                                // ==2 implies dropping based
+
+    double relative_threshold;  // Relative threshold for dropping
+                                // only used if schurApproxMethod == 2
+
     int inner_maxiters;         // maximum iterations for inner solver
     double inner_tolerance;     // relative residual tolerance for inner solver
     string libName;             // library for the outer solver
@@ -35,11 +39,11 @@ typedef struct
 
 int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config 
                 *config);
-/*int HyperLU_factor(Epetra_CrsMatrix *A, int sym,
-        Epetra_LinearProblem *&LP, Amesos_BaseSolver *&Solver, 
-        Epetra_CrsMatrix *&Cptr, int &Dnr, 
-        int *&DRowElems, int &Snr, int *&SRowElems,
-        Teuchos::RCP<Epetra_CrsMatrix>& Sbar, double Sdiagfactor);*/
 
 int hyperlu_solve(hyperlu_data *data, hyperlu_config *config,
     const Epetra_MultiVector& X, Epetra_MultiVector& Y);
+
+Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
+    Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
+    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
+    Epetra_Map *localDRowMap);

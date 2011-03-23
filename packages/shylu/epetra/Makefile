@@ -6,7 +6,7 @@ default: driver belos_driver
 
 include ./Makefile.export.Trilinos_install
 
-OBJ = hyperlu_factor.o hyperlu_util.o Ifpack_HyperLU.o hyperlu_probing_operator.o hyperlu_solve.o
+OBJ = hyperlu_factor.o hyperlu_util.o Ifpack_HyperLU.o hyperlu_probing_operator.o hyperlu_solve.o hyperlu_schur.o
 
 all: driver belos_driver
 
@@ -30,6 +30,9 @@ prober: hyperlu_prober.o
 
 #problem: AztecOO_problem.o
 	#$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) AztecOO_problem.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o AztecOO_problem.exe
+
+#problem: Graph_problem.o
+	#$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) Graph_problem.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o Graph_problem.exe
 
 clean:
 	- rm a.out *.o *.a hyperlu_driver.exe hyperlu_factor.exe hyperlu_belos_driver.exe
@@ -63,6 +66,12 @@ hyperlu_belos_driver.o: ./hyperlu_belos_driver.cpp
 
 hyperlu_solve.o: ./hyperlu_solve.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
+
+hyperlu_schur.o: ./hyperlu_schur.cpp
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
+
+#Graph_problem.o: ./Graph_problem.cpp
+	#$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
 #AztecOO_problem.o: ./AztecOO_problem.cpp
 	#$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@

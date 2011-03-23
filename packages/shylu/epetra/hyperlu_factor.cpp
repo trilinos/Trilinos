@@ -67,6 +67,13 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     int SNumGlobalCols;
     findLocalColumns(A, gvals, SNumGlobalCols);
 
+    // See if you can shrink the separator by assigning more rows/columns to
+    // the block diagonals
+    // TODO: This is because of a bug in coloring remove the if once that is
+    // fixed
+    if (config->schurApproxMethod == 2)
+        findNarrowSeparator(A, gvals);
+
     // 3. Assemble diagonal block and the border in convenient form [
     /* In each processor, we have (in a permuted form)
      *  | D_i    C_i   |
@@ -110,7 +117,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     if (sym)
     {
         findBlockElems(nrows, rows, gvals, Dnr, DRowElems, Snr, SRowElems, 
-                    "D Rows ", "S Rows") ;
+                    msg + "D Rows ", msg + "S Rows") ;
     }
     else
     {
@@ -162,12 +169,15 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     int Dmaxnnz=0, Cmaxnnz=0, Rmaxnnz=0, Smaxnnz=0; // Max nnz in any row
 
     // Find the required no of diagonals
-    //int Sdiag = (int) SNumGlobalCols * Sdiagfactor;
+    /*int Sdiag = (int) SNumGlobalCols * Sdiagfactor;
+    //cout << "No of diagonals in Sbar =" << Sdiag << endl;
+    Sdiag = MIN(Sdiag, SNumGlobalCols-1);*/
     int Sdiag = (int) Snr * Sdiagfactor;
     Sdiag = MIN(Sdiag, Snr-1);
+    Sdiag = MAX(Sdiag, 0);
     cout << "No of diagonals in Sbar =" << Sdiag << endl;
     //assert (Sdiag <= SNumGlobalCols-1);
-    assert (Sdiag <= Snr-1);
+    if (Snr != 0) assert (Sdiag <= Snr-1);
 
     int dcol, ccol, rcol, scol;
     if (sym)
@@ -229,6 +239,8 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
                 }
                 // There should not be a null row in S.
                 assert(scnt != 0);
+                assert(scol < Snr);
+                assert(rcol < Snr);
                 SNumEntriesPerRow[scol++] = scnt;
                 RNumEntriesPerRow[rcol++] = rcnt;
             }
@@ -249,6 +261,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
             { // S row
                 // Add the number of required diagonals in approximate Schur 
                 // complement , +1 below for the main diagonal
+                assert(sbarcol < Snr);
                 SBarNumEntriesPerRow[sbarcol] = SNumEntriesPerRow[sbarcol] 
                                                 + Sdiag*2 + 1;
                 sbarcol++;
@@ -286,6 +299,8 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     //Epetra_CrsGraph Sg(Copy, SRowMap, SColMap, SNumEntriesPerRow, true);
     // Leave the column map out, Let Epetra do the work.
     Epetra_CrsGraph Sg(Copy, SRowMap, SBarNumEntriesPerRow, false);
+    // for all diagonals
+    //Epetra_CrsGraph Sg(Copy, SRowMap, SRowMap, 0, false);
     //cout << " Created Sbar graph" << endl;
 
     int *LeftIndex = new int[max(Dmaxnnz, Rmaxnnz)];
@@ -310,12 +325,6 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
             // Row permutation does not matter here 
             if (gvals[A->GCID(Ai[j])] == 1)
             {
-                if (lcnt >= max(Dmaxnnz, Rmaxnnz))
-                {
-                    //cout << "nentries= "<< NumEntries << " i=" << i << " gid=" << gid << endl;
-                    //cout << lcnt << " " << Dmaxnnz << " " << Rmaxnnz << endl;
-                    //cout << rcnt << " " << Cmaxnnz << " " << Smaxnnz << endl;
-                }
                 assert(lcnt < max(Dmaxnnz, Rmaxnnz));
                 LeftIndex[lcnt] = A->GCID(Ai[j]);
                 LeftValues[lcnt++] = Ax[j];
@@ -339,6 +348,8 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         }
         else
         { // R or S row
+            //assert(lcnt > 0); // TODO: Enable this once using narrow sep.
+            assert(rcnt > 0);
             err = R.InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
             assert(err == 0);
             err = S.InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
@@ -356,7 +367,8 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     S.FillComplete();
     //cout << "Done S fill complete" << endl;
     //Cptr->FillComplete(SColMap, DRowMap);
-    Cptr->FillComplete(SRowMap, DRowMap);
+    Cptr->FillComplete(SRowMap, DRowMap); //TODO: Won't work if permutation is
+                                            // unsymmetric SRowMap
     //cout << "Done C fill complete" << endl;
     R.FillComplete(DColMap, SRowMap);
     //cout << "Done R fill complete" << endl;
@@ -366,6 +378,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     {
         gid = rows[i];
         if (gvals[gid] == 1) continue; // not a row in S
+        if (Snr == 0) assert(0 == 1);
 
         rcnt = 0;
         //TODO Will be trouble if SNumGlobalCols != Snc
@@ -383,13 +396,36 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         err = Sg.InsertGlobalIndices(gid, 1, &gid);
         assert(err == 0);
     }
+    /*// This is for all diagonals, Should remove later
+    int totalElems = SRowMap.NumGlobalElements();
+    cout << "totalElems" << totalElems << endl;
 
+    int *allSGID = new int[totalElems];   // vector of size Schur complement !
+    getAllSGIDs(Snr, SRowElems, allSGID);
+
+    // OUT OF DATE, 2 is used for something else
     for (int i = 0; config->schurApproxMethod == 2 && i < nrows ; i++)
     {
-        assert(0 == 1);
-    }
+        rcnt = 0;
+        cout << msg << "i=" << i ;
+        //for (int j = MAX(i-Sdiag, 0) ; j < MIN(SNumGlobalCols, i+Sdiag); j++)
+        for (int j = MAX(i-Sdiag, 0) ; j < MIN(totalElems, i+Sdiag); j++)
+        {
+            // find the adjacent columns from the row map of S
+            //assert (j >= 0 && j < Snr);
+            RightIndex[rcnt++] = j;
+            cout << "j=" << j ;
+        }
+        err = Sg.InsertMyIndices(i, rcnt, RightIndex);
+        cout << "Error = " << err << endl;
+        assert(err == 0);
+        // Always insert the diagonals, if it is added twice that is fine.
+        err = Sg.InsertMyIndices(i, 1, &i);
+        assert(err == 0);
+    }*/
 
-    Sg.FillComplete();
+    if (config->schurApproxMethod == 1)
+        Sg.FillComplete();
     // A is no longer needed
     delete[] LeftIndex;
     delete[] LeftValues;
@@ -467,25 +503,37 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     }
 #endif
 
-    //Set up the probing operator
-    HyperLU_Probing_Operator probeop(&S, &R, LP, Solver, Cptr, &LocalDRowMap);
+    if (config->schurApproxMethod == 1)
+    {
+        //Set up the probing operator
+        HyperLU_Probing_Operator probeop(&S, &R, LP, Solver, Cptr,
+                                        &LocalDRowMap);
 
-    Teuchos::ParameterList pList;
-    Teuchos::RCP<const Epetra_CrsGraph> rSg = Teuchos::rcpFromRef(Sg);
-    Isorropia::Epetra::Prober prober(rSg, pList, false);
-    //cout << "Doing coloring" << endl;
-    ftime.start();
-    prober.color();
-    ftime.stop();
-    //cout << "Time to color" << ftime.totalElapsedTime() << endl;
-    ftime.reset();
-    //cout << "Doing probing" << endl;
-    ftime.start();
-    Sbar = prober.probe(probeop);
-    //cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << endl;
-    ftime.stop();
-    //cout << "Time to probe" << ftime.totalElapsedTime() << endl;
-    ftime.reset();
+        Teuchos::ParameterList pList;
+        Teuchos::RCP<const Epetra_CrsGraph> rSg = Teuchos::rcpFromRef(Sg);
+        Isorropia::Epetra::Prober prober(rSg, pList, false);
+        cout << Sg << endl;
+        cout << "Doing coloring" << endl;
+        ftime.start();
+        prober.color();
+        ftime.stop();
+        cout << "Time to color" << ftime.totalElapsedTime() << endl;
+        ftime.reset();
+        cout << "Doing probing" << endl;
+        ftime.start();
+        Sbar = prober.probe(probeop);
+        cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << endl;
+        ftime.stop();
+        cout << "Time to probe" << ftime.totalElapsedTime() << endl;
+        ftime.reset();
+    }
+    else if (config->schurApproxMethod == 2)
+    {
+        // Compute and drop the entries in the Schur complement
+        // Ignore the structure of the Schur complement
+        Sbar = computeApproxSchur(config, &S, &R, LP, Solver, Cptr,
+                                        &LocalDRowMap);
+    }
 
     data->Sbar  = Sbar;
 

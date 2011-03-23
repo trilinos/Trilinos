@@ -69,18 +69,26 @@ int Ifpack_HyperLU::Initialize()
     /*double Sdiagfactor = 0.05; // hard code the diagonals
     HyperLU_factor(A_, 1, LP_, Solver_, C_, Dnr_, DRowElems_, Snr_, SRowElems_,
                     Sbar_, Sdiagfactor);*/
-    hlu_config_.Sdiagfactor =  Teuchos::getParameter<double>(List_,
-                                                "Diagonal Factor");
     hlu_config_.sym =  Teuchos::getParameter<int>(List_,
                                                 "Symmetry");
     hlu_config_.libName = Teuchos::getParameter<string>(List_,
                                                 "Outer Solver Library");
     string schurApproxMethod = Teuchos::getParameter<string>(List_,
                                                 "Schur Approximation Method");
+    hlu_config_.relative_threshold =  0.0;
+    hlu_config_.Sdiagfactor =  0.05;
     if (schurApproxMethod == "A22AndBlockDiagonals")
+    {
         hlu_config_.schurApproxMethod = 1;
-    else if (schurApproxMethod == "Diagonal")
+        hlu_config_.Sdiagfactor =  Teuchos::getParameter<double>(List_,
+                                                    "Diagonal Factor");
+    }
+    else if (schurApproxMethod == "Threshold")
+    {
         hlu_config_.schurApproxMethod = 2;
+        hlu_config_.relative_threshold =  Teuchos::getParameter<double>(List_,
+                                                    "Relative Threshold");
+    }
 
     hlu_config_.inner_tolerance =  Teuchos::getParameter<double>(List_,
                                                 "Inner Solver Tolerance");

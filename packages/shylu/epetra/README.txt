@@ -17,14 +17,22 @@ AztecOO based driver (hyperlu_driver.exe) and a Belos based driver
 
 4. Edit HyperLU.xml to set the precondtioner (HyperLU)
 and the matrix market file name.
-    Please leave the parameters "Schur Approximation Method" and "Symmetry" as
-    it is. I will end up doing a symmetric permutation of an unsymmetric
-    matrix for now. The approximation method is currently A22 + a percentage
-    of the block diagonals. Adjust the diagonal factor (0.0 to 1.0) for 
-    better convergence (at the cost of slower setup and more memory usage)
+    Please leave the parameter "Symmetry" as it is. I will end up doing a
+    symmetric permutation of an unsymmetric matrix for now.
+
+    The approximation method for the Schur complement is specified by
+    "Schur Approximation Method". The current supported methods are
+    "A22AndBlockDiagonals"  and "Threshold". "A22AndBlockDiagonals" uses the
+    structure of A22 + a percentage of the block diagonals. Adjust the
+    "Diagonal Factor" (0.0 to 1.0) for better convergence (at the cost of
+    slower setup and more memory usage).
+    If "Schur Approximation Method" is set to "Threshold" then HyperLU
+    computes the entire Schur complement (not all at once) and drops entries
+    based on "Relative Threshold". Setting "Relative Thresold" to 0.0 will
+    compute the entire Schur complement.
 
     The inner solver is currently AztecOO with a domain decomposition 
-    preconditioner. It is not expose in the interface yet. I can do that if
+    preconditioner. It is not exposed in the interface yet. I can do that if
     you need to change that.
 
 5. mpirun -n np <driver_name> will solve the linear system from the

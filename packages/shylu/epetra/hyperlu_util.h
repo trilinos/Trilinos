@@ -62,6 +62,8 @@ void checkMaps(Epetra_CrsMatrix *A);
 
 void findLocalColumns(Epetra_CrsMatrix *A, int *gvals, int &SNumGlobalCols);
 
+void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals);
+
 void findBlockElems(int nrows, int *rows, int *gvals, int Lnr, int *LeftElems, 
         int Rnr, int *RightElems, string s1, string s2);
 
