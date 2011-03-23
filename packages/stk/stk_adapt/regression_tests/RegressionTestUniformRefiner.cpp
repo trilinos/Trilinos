@@ -102,7 +102,7 @@ namespace stk
 
             // enrich
             {
-              stk::percept::PerceptMesh eMesh;
+              stk::percept::PerceptMesh eMesh(3);
               eMesh.open("./input_files/beam_enrich_0.e");
               //URP_Heterogeneous_3D break_pattern(eMesh);
               Beam2_Beam3_1 break_pattern(eMesh);
@@ -152,7 +152,7 @@ namespace stk
 
             // refine
             {
-              stk::percept::PerceptMesh eMesh;
+              stk::percept::PerceptMesh eMesh(3);
               eMesh.open("./input_files/beam_0.e");
               //URP_Heterogeneous_3D break_pattern(eMesh);
               Beam2_Beam2_2 break_pattern(eMesh);
@@ -289,7 +289,7 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2);
             eMesh.open(input_mesh);
 
             ShellQuad4_ShellQuad8_1 break_quad4_to_quad8_1(eMesh);
@@ -318,7 +318,7 @@ namespace stk
         if (1 && p_size <= 1)
           {
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2);
             eMesh.open("./input_files/freshell_quad8_quad8_0.g");
 
             ShellQuad8_ShellQuad8_4 break_quad8_to_quad_8(eMesh);
@@ -368,7 +368,7 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
             eMesh.open(input_mesh);
 
             ShellQuad4_ShellQuad4_4 break_quad_to_quad_4(eMesh);
@@ -415,7 +415,7 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
             eMesh.open(input_mesh);
 
 
@@ -512,7 +512,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_quad_to_tri
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2);
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
 
             typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 6 > Quad4_Tri3_6;
@@ -555,7 +555,7 @@ namespace stk
           {
 
             // start_demo_uniformRefiner_break_quad_to_tri
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2);
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 4, Specialization > break_quad_to_tri_4(eMesh);
@@ -596,7 +596,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_quad_to_quad
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2);
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4 > break_quad_to_quad_4(eMesh);
@@ -632,7 +632,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_quad_to_quad
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2);
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
@@ -669,7 +669,7 @@ namespace stk
         //FIXME
         if (0)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2);
             eMesh.open("./input_files/break_test/quad/sidesets/quad_sidesets.e");
             eMesh.commit();
             eMesh.printInfo("quad mesh");
@@ -678,7 +678,7 @@ namespace stk
         if (p_size == 1 || p_size == 2)
           {
             // start_demo_uniformRefiner_break_quad_to_quad
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2);
             eMesh.open("./input_files/break_test/quad/sidesets/quad_sidesets.e");
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
@@ -710,7 +710,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex8_tet4_24_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
 
         unsigned p_size = eMesh.getParallelSize();
         //unsigned p_rank = eMesh.getRank();
@@ -755,7 +755,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex8_tet4_6_12_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
 
         unsigned p_size = eMesh.getParallelSize();
 
@@ -803,7 +803,7 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
 
             eMesh.open("./input_files/break_test/hex/cylinder/cylinder_hex8.e");
 
@@ -898,7 +898,7 @@ namespace stk
               {
                 std::cout << "\n\n\n ================ tmp Refine Pass = " << iBreak << std::endl;
 
-                percept::PerceptMesh eMesh1;
+                percept::PerceptMesh eMesh1(2);
                 std::string fileName = std::string("./input_files/quad_fixture_")+toString(iBreak)+std::string(".e");
                 eMesh1.open(fileName);
                 UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh1);
@@ -922,7 +922,7 @@ namespace stk
 
                 if (0 && iBreak==0)
                   {
-                    percept::PerceptMesh e1;
+                    percept::PerceptMesh e1(2);
                     std::cout << "\n\n\n ================ tmp eMesh1.openReadOnly(quad_fixture_1.e) \n\n\n " << std::endl;
                     e1.openReadOnly("./input_files/quad_fixture_1.e");
                     e1.printInfo("quad_fixture_1_read.e");
@@ -969,7 +969,7 @@ namespace stk
             eMesh.close();
 
 
-            percept::PerceptMesh eMesh1;
+            percept::PerceptMesh eMesh1(2);
             std::string fileName = std::string("./input_files/quad_fixture_mbreak_0.e");
             eMesh1.open(fileName);
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh1);
@@ -1097,7 +1097,7 @@ namespace stk
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2);
             eMesh.open("./input_files/quad_fixture_quad8_quad8_0.e");
 
             Quad8_Quad8_4 break_quad8_to_quad8_4(eMesh);
@@ -1160,7 +1160,7 @@ namespace stk
             }
 
             {
-              percept::PerceptMesh em1;
+              percept::PerceptMesh em1(2);
               em1.open("./input_files/quad_1x1_quad9_quad9_0.e");
               Quad9_Quad9_4 break_q9_q9(em1);
               int scalarDimension = 0; // a scalar
@@ -1229,7 +1229,7 @@ namespace stk
             }
 
             {
-              percept::PerceptMesh em1;
+              percept::PerceptMesh em1(2);
               em1.open("./input_files/quad_fixture_quad9_quad9_0.e");
               Quad9_Quad9_4 break_q9_q9(em1);
               int scalarDimension = 0; // a scalar
@@ -1334,7 +1334,7 @@ namespace stk
 
             if (0)
               {
-                percept::PerceptMesh e1;
+                percept::PerceptMesh e1(2);
                 e1.openReadOnly("./input_files/quad_fixture_tri3_1.e");
                 e1.printInfo("after read", 3);
               }
@@ -1395,7 +1395,7 @@ namespace stk
 
             if (0)
               {
-                percept::PerceptMesh e1;
+                percept::PerceptMesh e1(2);
                 e1.openReadOnly("./input_files/quad_fixture_tri3_1.e");
                 e1.printInfo("after read", 3);
               }
@@ -1419,7 +1419,7 @@ namespace stk
           {
             // start_demo_break_tri3_to_tri6_to_tri6_sierra
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2);
             eMesh.open("./input_files/quad_fixture_tri6_tri6_0.e");
 
             Tri6_Tri6_4 break_tri6_to_tri6(eMesh);
@@ -1458,7 +1458,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
             eMesh.openReadOnly("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4.e");
 
             eMesh.saveAs("./output_files/cylinder_tet4_0.e");
@@ -1483,7 +1483,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
             eMesh.open("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4_0.e");
 
             Tet4_Tet4_8 break_tet_tet(eMesh);
@@ -1522,7 +1522,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
             eMesh.open("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4_0.e");
 
             Tet4_Tet10_1 break_tet_tet(eMesh);
@@ -1560,7 +1560,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
             eMesh.open("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4_0.e");
 
             Tet4_Tet10_1 break_tet_tet(eMesh);
@@ -1584,7 +1584,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
             eMesh.open("./input_files/cylinder_tet10_1.e");
 
             Tet10_Tet10_8 break_tet_tet(eMesh);
@@ -1624,7 +1624,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex8_hex8_8_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
 
         unsigned p_size = eMesh.getParallelSize();
 
@@ -1671,7 +1671,7 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
 
             eMesh.open("./input_files/break_test/hex/cylinder/cylinder_hex8.e");
 
@@ -1708,7 +1708,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex8_hex27_1_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
 
         unsigned p_size = eMesh.getParallelSize();
 
@@ -1751,7 +1751,7 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
 
             eMesh.open("./input_files/break_test/hex/cylinder/cylinder_hex8.e");
 
@@ -1786,7 +1786,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex8_hex20_1_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
 
         unsigned p_size = eMesh.getParallelSize();
 
@@ -1831,7 +1831,7 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
 
             eMesh.open("./input_files/break_test/hex/cylinder/cylinder_hex8.e");
 
@@ -1867,7 +1867,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex20_hex20_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
 
         unsigned p_size = eMesh.getParallelSize();
 
@@ -1911,7 +1911,7 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
 
             eMesh.open("./input_files/cylinder_hex20_hex20_0.e");
 
@@ -1947,7 +1947,7 @@ namespace stk
 
         int scalarDimension = 0; // a scalar
         {
-          percept::PerceptMesh eMesh;
+          percept::PerceptMesh eMesh(3);
 
           unsigned p_size = eMesh.getParallelSize();
 
@@ -1972,7 +1972,7 @@ namespace stk
 
 
         {
-          percept::PerceptMesh eMesh;
+          percept::PerceptMesh eMesh(3);
 
           unsigned p_size = eMesh.getParallelSize();
           eMesh.open(std::string("./input_files/")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("_0.e"));
@@ -2017,7 +2017,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             {
-              percept::PerceptMesh eMesh;
+              percept::PerceptMesh eMesh(3);
 
               eMesh.open("./input_files/break_test/hex/cylinder/cylinder_hex8.e");
 
@@ -2037,7 +2037,7 @@ namespace stk
             }
 
             {
-              percept::PerceptMesh eMesh;
+              percept::PerceptMesh eMesh(3);
 
               eMesh.open("./input_files/cylinder_hex8_hex27_1.e");
 
@@ -2075,7 +2075,7 @@ namespace stk
 
         // start_demo_regr_uniformRefiner_wedge6_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
 
         unsigned p_size = eMesh.getParallelSize();
         if (p_size == 1)
@@ -2127,7 +2127,7 @@ namespace stk
 
         // start_demo_regr_uniformRefiner_wedge6_enrich_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
 
         unsigned p_size = eMesh.getParallelSize();
         if (p_size == 1)
@@ -2182,7 +2182,7 @@ namespace stk
 
         if (p_size == 1)
           {
-            PerceptMesh eMesh;
+            PerceptMesh eMesh(3);
             percept::WedgeFixture wedgeFixture;
 
             wedgeFixture.createMesh(MPI_COMM_WORLD,
@@ -2204,7 +2204,7 @@ namespace stk
             eMesh.saveAs("./input_files/swept-wedge_enrich_refine_0.e");
           }
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
 
         if (p_size == 1)
           {
@@ -2280,7 +2280,7 @@ namespace stk
             // refine the mesh
             if (1)
               {
-                percept::PerceptMesh eMesh1;
+                percept::PerceptMesh eMesh1(3);
 
                 eMesh1.open("./input_files/heterogeneous_0.e");
 
@@ -2335,7 +2335,7 @@ namespace stk
 
             // refine
             {
-              stk::percept::PerceptMesh eMesh;
+              stk::percept::PerceptMesh eMesh(3);
               eMesh.open("./input_files/beam_0.e");
               //URP_Heterogeneous_3D break_pattern(eMesh);
               Beam2_Beam2_2 break_pattern(eMesh);
@@ -2384,7 +2384,7 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
             eMesh.open(input_mesh);
 
             URP_Heterogeneous_3D break_pattern(eMesh);
@@ -2430,7 +2430,7 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
             eMesh.open(input_mesh);
 
             URP_Heterogeneous_3D break_pattern(eMesh);
@@ -2479,7 +2479,7 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3);
             eMesh.open(input_mesh);
 
             URP_Heterogeneous_3D break_pattern(eMesh);
@@ -2553,7 +2553,7 @@ namespace stk
             // enrich the mesh
             if (1)
               {
-                percept::PerceptMesh eMesh1;
+                percept::PerceptMesh eMesh1(3);
 
                 eMesh1.open("./input_files/heterogeneous_enrich_0.e");
                 //eMesh1.printInfo("hetero_enrich_2", 4);
@@ -2599,7 +2599,7 @@ namespace stk
             // refine the mesh
             if (1)
               {
-                percept::PerceptMesh eMesh1;
+                percept::PerceptMesh eMesh1(3);
 
                 eMesh1.open("./input_files/heterogeneous_quadratic_refine_0.e");
 
@@ -2696,7 +2696,7 @@ namespace stk
 
         // start_demo_regr_uniformRefiner_wedge6_18_enrich_refine
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
 
         unsigned p_size = eMesh.getParallelSize();
         if (p_size == 1)

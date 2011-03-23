@@ -1,3 +1,5 @@
+//#define SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
 #include <cmath>
 #include <stdexcept>
 #include <sstream>
@@ -39,16 +41,18 @@ namespace stk {
       : m_name(name), m_entity_rank(entity_rank), m_dimensions(dimensions), m_part(part) {}
 
 
+    // ctor constructor
     //========================================================================================================================
     /// high-level interface
 
-    PerceptMesh::PerceptMesh(stk::ParallelMachine comm) :
+    PerceptMesh::PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm) :
+      m_femMetaData(NULL),
       m_metaData(NULL),
       m_bulkData(NULL),
       m_fixture(NULL),
       m_iossRegion(NULL),
       m_coordinatesField(NULL),
-      m_spatialDim(0),
+      m_spatialDim(spatialDimension),
       m_ownData(false),
       m_isCommitted(false),
       m_isOpen(false),
@@ -58,7 +62,12 @@ namespace stk {
       m_filename(),
       m_comm(comm)
     {
-        init(m_comm);
+      init( m_comm);
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
+#else
+      //DefaultFEM(MetaData &meta_data, size_t spatial_dimension);
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
     }
 
     /// reads and commits mesh, editing disabled
@@ -83,7 +92,7 @@ namespace stk {
         }
       if (!m_isInitialized)
         {
-          init(m_comm);
+          init( m_comm);
         }
 
       const unsigned p_rank = parallel_machine_rank( getBulkData()->parallel() );
@@ -108,12 +117,12 @@ namespace stk {
         {
           throw std::runtime_error("stk::percept::Mesh::newMesh: mesh is already committed. Internal code error");
         }
-      init(m_comm);
+      init( m_comm);
       createMetaDataNoCommit( gmesh_spec.getName() );
       m_isOpen = true;
       m_isCommitted = false;
       m_isAdopted = false;
-      m_spatialDim = 3;
+      //m_spatialDim = 3;
     }
 
     /// creates a new mesh using the GeneratedMesh fixture with spec @param gmesh_spec, Read Only mode, no edits allowed
@@ -254,7 +263,8 @@ namespace stk {
           for (unsigned ipart=0; ipart < nparts; ipart++)
             {
               Part& part = *parts[ipart];
-              const CellTopologyData *const topology = stk::mesh::get_cell_topology(part);
+              //const CellTopologyData *const topology = PerceptMesh::my_get_cell_topology(part);
+              const CellTopologyData *const topology = stk::percept::PerceptMesh::my_get_cell_topology(part);
               std::string subsets = "{";
               const stk::mesh::PartVector &part_subsets = part.subsets();
               if (part_subsets.size() > 0) {
@@ -508,6 +518,7 @@ namespace stk {
         }
     }
 
+    // ctor constructor
     PerceptMesh::PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) :
       m_metaData(const_cast<mesh::MetaData *>(metaData)),
       m_bulkData(bulkData),
@@ -529,6 +540,7 @@ namespace stk {
 
       setCoordinatesField();
 
+      // FIXME SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       if (m_coordinatesField) {
           const stk::mesh::FieldBase::Restriction & r = m_coordinatesField->restriction(stk::mesh::Node, getMetaData()->universal_part());
           unsigned dataStride = r.stride[0] ;
@@ -542,12 +554,18 @@ namespace stk {
     }
 
     void PerceptMesh::
-    init(stk::ParallelMachine comm)
+    init( stk::ParallelMachine comm)
     {
       m_isInitialized = true;
       m_comm          = comm;
       m_ownData       = true;
+
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       m_metaData      = new MetaData( fem_entity_rank_names() );
+#else
+      m_femMetaData   = new stk::mesh::fem::FEMMetaData( m_spatialDim, stk::mesh::fem::entity_rank_names(m_spatialDim) );
+      m_metaData      = & stk::mesh::fem::FEMMetaData::get_meta_data(*m_femMetaData);
+#endif //  SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       m_bulkData      = new BulkData( *m_metaData , comm );
       m_fixture       = 0;
       m_iossRegion    = 0;
@@ -1688,7 +1706,7 @@ namespace stk {
     findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                          FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length)
     {
-      const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::my_get_cell_topology(bucket);
 
       CellTopology cell_topo(bucket_cell_topo_data);
       unsigned number_elems = bucket.size();
@@ -1750,11 +1768,13 @@ namespace stk {
       // 09/14/10:  TODO:  tscoffe:  We need an exception here if we don't get a FEMInterface off of MetaData or we need to take one on input.
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       const bool is_side = side_entity_rank != Edge;
-      const CellTopologyData * const elem_top = get_cell_topology( elem );
+      const CellTopologyData * const elem_top = PerceptMesh::my_get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      const fem::FemInterface& fem = MetaData::get(*elem).get_attribute<FemInterface>();
-      const bool is_side = side_entity_rank != fem::edge_rank(fem);
-      const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
+      //const fem::FemInterface& fem = MetaData::get(*elem).get_attribute<FemInterface>();
+      //const bool is_side = side_entity_rank != fem::edge_rank(fem);
+      stk::mesh::fem::FEMMetaData& femMeta = stk::mesh::fem::FEMMetaData::get(elem);
+      const bool is_side = side_entity_rank != femMeta.edge_rank();
+      const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
       const unsigned side_count = ! elem_top ? 0 : (
@@ -1810,13 +1830,18 @@ namespace stk {
 
       EntityRank needed_entity_rank = side.entity_rank();
 
-      const CellTopologyData * const cell_topo_data = get_cell_topology(element);
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      const CellTopologyData * const cell_topo_data = PerceptMesh::my_get_cell_topology(element);
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      const CellTopologyData * const cell_topo_data = fem::get_cell_topology(element).getCellTopologyData();
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
 
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(Node);
       const mesh::PairIterRelation side_nodes = side.relations(Node);
 
-      CellTopology cell_topo_side(get_cell_topology(side));
+      CellTopology cell_topo_side(PerceptMesh::my_get_cell_topology(side));
 
       const unsigned *  inodes = 0;
       unsigned nSubDimNodes = 0;
@@ -1952,7 +1977,7 @@ namespace stk {
             {
               Bucket & bucket = **k ;
 
-              const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(bucket);
+              const CellTopologyData * const cell_topo_data = PerceptMesh::my_get_cell_topology(bucket);
               shards::CellTopology cell_topo(cell_topo_data);
 
               const unsigned num_elements_in_bucket = bucket.size();
@@ -2001,7 +2026,7 @@ namespace stk {
                                 {
                                   Bucket & bucket_2 = **k_2 ;
 
-                                  const CellTopologyData * const cell_topo_data_2 = stk::mesh::get_cell_topology(bucket_2);
+                                  const CellTopologyData * const cell_topo_data_2 = PerceptMesh::my_get_cell_topology(bucket_2);
                                   shards::CellTopology cell_topo_2(cell_topo_data_2);
 
                                   const unsigned num_elements_in_bucket_2 = bucket_2.size();

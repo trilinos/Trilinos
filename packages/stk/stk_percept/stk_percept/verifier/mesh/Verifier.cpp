@@ -75,7 +75,7 @@ namespace stk
 
       RunEnvironment::doLoadBalance(run_environment.m_comm, file_name);
 
-      PerceptMesh mesh(run_environment.m_comm);
+      PerceptMesh mesh(3, run_environment.m_comm);
       mesh.openReadOnly(file_name);
       std::cout << "read in file: " << file_name << std::endl;
 

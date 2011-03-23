@@ -252,7 +252,7 @@ namespace stk
 
           const mesh::Bucket & bucket = **ik ;
 
-          const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+          const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(bucket);
           jac_data[bucket_cell_topo_data->name] = jacData();
           }
         }
@@ -276,7 +276,7 @@ namespace stk
               if (0) { elem_node_data[0]++;}
 
 #if 1
-              const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+              const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(bucket);
               int bucket_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(bucket_cell_topo_data->name);
 #endif
 

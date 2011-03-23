@@ -24,6 +24,7 @@
 #include <stk_io/IossBridge.hpp>
 
 #include <stk_percept/RunEnvironment.hpp>
+#include <stk_percept/PerceptMesh.hpp>
 
 #include <iostream>
 #include <assert.h>
@@ -504,7 +505,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
                                 *part,
                                 stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
 
-      const CellTopologyData* cell_topo = stk::mesh::get_cell_topology(*part);
+      const CellTopologyData* cell_topo = stk::percept::PerceptMesh::my_get_cell_topology(*part);
       std::string cell_topo_name = "UNKNOWN";
       if (cell_topo != NULL)
         cell_topo_name = cell_topo->name;
@@ -691,10 +692,10 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
       stk::mesh::Part* const part = meta.get_part(name);
       assert(part != NULL);
 
-      const CellTopologyData* cell_topo = stk::mesh::get_cell_topology(*part);
+      const CellTopologyData* cell_topo = stk::percept::PerceptMesh::my_get_cell_topology(*part);
       if (cell_topo == NULL) {
         std::ostringstream msg ;
-        msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
+        msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from stk::percept::PerceptMesh::my_get_cell_topology()";
         throw std::runtime_error( msg.str() );
       }
 

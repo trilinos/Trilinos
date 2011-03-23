@@ -17,8 +17,9 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
+//#include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
@@ -95,8 +96,9 @@ namespace stk {
       //========================================================================================================================
       /// high-level interface
 
+      // ctor constructor
       /// Create a Mesh object that owns its constituent MetaData and BulkData (which are created by this object)
-      PerceptMesh(stk::ParallelMachine comm =  MPI_COMM_WORLD );
+      PerceptMesh(size_t spatialDimension = 3, stk::ParallelMachine comm =  MPI_COMM_WORLD );
 
       /// reads and commits mesh, editing disabled
       void
@@ -158,7 +160,7 @@ namespace stk {
       PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
 
       ~PerceptMesh() ;
-      void init (stk::ParallelMachine comm);
+      void init ( stk::ParallelMachine comm);
       void destroy();
 
       /// reads the given file into a temporary model and prints info about it
@@ -253,6 +255,14 @@ namespace stk {
       bool
       isBoundarySurface(mesh::Part& block, mesh::Part& surface);
 
+      template<class T>
+      static
+      const CellTopologyData * const my_get_cell_topology(T& thing) 
+      { 
+        return mesh::get_cell_topology(thing);
+      }
+
+
     private:
 
       /// reads meta data, commits it, reads bulk data
@@ -290,6 +300,7 @@ namespace stk {
       //static void transformMesh(GenericFunction& coordinate_transform);
 
     private:
+      stk::mesh::fem::FEMMetaData *         m_femMetaData;
       stk::mesh::MetaData *                 m_metaData;
       stk::mesh::BulkData *                 m_bulkData;
       stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
@@ -318,6 +329,11 @@ namespace stk {
 
     }; // class PerceptMesh
 
+//     template<class T>
+//     const CellTopologyData * const my_get_cell_topology(T& thing) { 
+//       return mesh::get_cell_topology(thing);
+//     }
+
 
 #if 0
     inline
@@ -336,7 +352,11 @@ namespace stk {
                                   ArrayType& cellNodes, unsigned dataStrideArg)
     {
       unsigned number_elems = bucket.size();
-      const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::my_get_cell_topology(bucket);
+#else
+      const CellTopologyData * const bucket_cell_topo_data = stk::mesh::fem::get_cell_topology(bucket).getCellTopologyData();
+#endif
 
       CellTopology cell_topo(bucket_cell_topo_data);
       //unsigned numCells = number_elems;

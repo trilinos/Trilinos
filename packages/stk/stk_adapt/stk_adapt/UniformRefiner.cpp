@@ -321,7 +321,7 @@ namespace stk {
           for (mesh::PartVector::iterator i_surfacePart = all_parts.begin(); i_surfacePart != all_parts.end(); ++i_surfacePart)
             {
               mesh::Part *  surfacePart = *i_surfacePart ;
-              const CellTopologyData * part_cell_topo_data = stk::mesh::get_cell_topology(*surfacePart);
+              const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(*surfacePart);
 
               if (part_cell_topo_data && part->primary_entity_rank() == mesh::Element && surfacePart->primary_entity_rank() == subDimRank)
                 {
@@ -402,7 +402,7 @@ namespace stk {
             //if ( on_locally_owned_part(**k) )
             {
               Bucket & bucket = **k ;
-              const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+              const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(bucket);
               shards::CellTopology topo(bucket_cell_topo_data);
 
               const unsigned num_elements_in_bucket = bucket.size();
@@ -902,7 +902,7 @@ namespace stk {
             }
 
           //Entity* first_element_p = *(elementColors[icolor].begin());
-          //const CellTopologyData * const cell_topo_data = get_cell_topology(*first_element_p);
+          //const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(*first_element_p);
 
           // do in threaded mode FIXME
           for (ColorerSetType::iterator iele = elementColors[icolor].begin();
@@ -977,7 +977,7 @@ namespace stk {
 
           Entity* first_element_p = *(elementColors[icolor].begin());
 
-          const CellTopologyData * const cell_topo_data = get_cell_topology(*first_element_p);
+          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(*first_element_p);
           CellTopology cell_topo(cell_topo_data);
           
           // do in threaded mode FIXME
@@ -1132,13 +1132,13 @@ namespace stk {
               throw std::logic_error("UniformRefiner::fixElementSides1 parent is null");
             }
 
-          const CellTopologyData *parent_topo_data = stk::mesh::get_cell_topology(*parent);
+          const CellTopologyData *parent_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(*parent);
           if (0 == parent_topo_data)
             {
               throw std::logic_error("UniformRefiner::fixElementSides1 parent_topo_data is null");
             }
 
-          shards::CellTopology parent_topo(stk::mesh::get_cell_topology(*parent));
+          shards::CellTopology parent_topo(stk::percept::PerceptMesh::my_get_cell_topology(*parent));
           //unsigned parent_nsides = (unsigned)parent_topo.getSideCount();
 
           for (unsigned i_child = 0; i_child < child_vector.size(); i_child++)
@@ -1151,7 +1151,7 @@ namespace stk {
                   throw std::runtime_error("fixElementSides1: child == null");
                 }
 
-              shards::CellTopology child_topo(stk::mesh::get_cell_topology(*child));
+              shards::CellTopology child_topo(stk::percept::PerceptMesh::my_get_cell_topology(*child));
               unsigned child_nsides = (unsigned)child_topo.getSideCount();
 
               // if parent has any side relations, check if any of the sides' children match the parent's children's faces
@@ -1272,7 +1272,7 @@ namespace stk {
 
       if (1 && oldPart)
         {
-          const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(*oldPart);
+          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(*oldPart);
           std::string ct_name = (cell_topo_data ? cell_topo_data->name : "");
           //std::cout << "tmp removeOldElements::name= " << oldPart->name() << " for rank= " << rank << " topology= " << ct_name << std::endl;
         }
@@ -1370,7 +1370,7 @@ namespace stk {
           Entity *element_p = *itbd;
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
             {
-              CellTopology cell_topo(stk::mesh::get_cell_topology(*element_p));
+              CellTopology cell_topo(stk::percept::PerceptMesh::my_get_cell_topology(*element_p));
               std::cout << "tmp UniformRefiner::removeOldElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
               const mesh::PairIterRelation elem_relations = element_p->relations(element_p->entity_rank()+1);
               std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
@@ -1557,7 +1557,7 @@ namespace stk {
               unsigned num_new_nodes_needed = needed_entity_ranks[ineed_ent].second;
               if (0)
                 {
-                  const CellTopologyData * const cell_topo_data_0 = get_cell_topology(element);
+                  const CellTopologyData * const cell_topo_data_0 = stk::percept::PerceptMesh::my_get_cell_topology(element);
                   CellTopology cell_topo_0(cell_topo_data_0);
 
                   std::cout << "tmp 43 cell_topo= " << cell_topo_0.getName() << " ineed_ent= " << ineed_ent << " needed_entity_ranks[ineed_ent].first/second = " 

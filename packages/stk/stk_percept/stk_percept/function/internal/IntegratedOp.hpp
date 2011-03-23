@@ -89,7 +89,7 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(bucket_or_element);
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::my_get_cell_topology(bucket_or_element);
         CellTopology cell_topo(cell_topo_data);
 
         VectorFieldType& coord_field = *(MetaData::get(bulkData)).get_field<VectorFieldType>("coordinates");

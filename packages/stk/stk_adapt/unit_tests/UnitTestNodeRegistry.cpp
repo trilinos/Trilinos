@@ -472,7 +472,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
     eMesh.getBulkData()->modification_begin();
 
     //getCellTopologyData< shards::Node  >()
-    const CellTopologyData *const cell_topo_data = mesh::get_cell_topology(block_hex_20);
+    const CellTopologyData *const cell_topo_data =stk::percept::PerceptMesh::my_get_cell_topology(block_hex_20);
     CellTopology cell_topo(cell_topo_data);
 
     for (unsigned isd = 0; isd < 12; isd++)
