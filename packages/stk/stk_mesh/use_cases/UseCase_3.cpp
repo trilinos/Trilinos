@@ -23,17 +23,15 @@
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-
 #include <stk_mesh/base/FieldData.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+#include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-
-using stk::mesh::fem::NODE_RANK;
 
 //----------------------------------------------------------------------
 
-namespace stk{
+namespace stk {
 namespace mesh {
 namespace use_cases {
 
@@ -46,28 +44,28 @@ typedef shards::ShellTriangle<3>       ShellTriangle3;
 
 UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   m_spatial_dimension(3)
-  , m_metaData( fem::entity_rank_names(m_spatial_dimension) )
-  , m_bulkData( m_metaData , comm )
-  , m_fem( m_metaData, m_spatial_dimension )
-  , m_block_hex(        declare_part< Hex8 >( m_metaData, "block_1" ))
-  , m_block_wedge(      declare_part< Wedge6 >(m_metaData,  "block_2" ))
-  , m_block_tet(        declare_part< Tet4 >(m_metaData,  "block_3" ))
-  , m_block_pyramid(    declare_part< Pyramid4 >(m_metaData,  "block_4" ))
-  , m_block_quad_shell( declare_part< ShellQuad4 >(m_metaData,  "block_5" ))
-  , m_block_tri_shell(  declare_part< ShellTriangle3 >(m_metaData,  "block_6" ))
-  , m_elem_rank( fem::element_rank(m_fem) )
-  , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
-  , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))
-  , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( "temperature" ))
-  , m_volume_field( m_metaData.declare_field< ScalarFieldType >( "volume" ))
-  , m_element_node_coordinates_field( m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
+  , m_fem_metaData( m_spatial_dimension )
+  , m_bulkData( fem::FEMMetaData::get_meta_data(m_fem_metaData) , comm )
+  , m_block_hex(        m_fem_metaData.declare_part( "block_1", shards::getCellTopologyData<Hex8>() ))
+  , m_block_wedge(      m_fem_metaData.declare_part( "block_2", shards::getCellTopologyData<Wedge6>() ))
+  , m_block_tet(        m_fem_metaData.declare_part( "block_3", shards::getCellTopologyData<Tet4>() ))
+  , m_block_pyramid(    m_fem_metaData.declare_part( "block_4", shards::getCellTopologyData<Pyramid4>() ))
+  , m_block_quad_shell( m_fem_metaData.declare_part( "block_5", shards::getCellTopologyData<ShellQuad4>() ))
+  , m_block_tri_shell(  m_fem_metaData.declare_part( "block_6", shards::getCellTopologyData<ShellTriangle3>() ))
+  , m_elem_rank( m_fem_metaData.element_rank() )
+  , m_node_rank( m_fem_metaData.node_rank() )
+  , m_coordinates_field( m_fem_metaData.declare_field< VectorFieldType >( "coordinates" ))
+  , m_centroid_field(    m_fem_metaData.declare_field< VectorFieldType >( "centroid" ))
+  , m_temperature_field( m_fem_metaData.declare_field< ScalarFieldType >( "temperature" ))
+  , m_volume_field( m_fem_metaData.declare_field< ScalarFieldType >( "volume" ))
+  , m_element_node_coordinates_field( m_fem_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
 {
   // Define where fields exist on the mesh:
-  Part & universal = m_metaData.universal_part();
+  Part & universal = m_fem_metaData.universal_part();
 
-  put_field( m_coordinates_field , NODE_RANK , universal );
+  put_field( m_coordinates_field , m_node_rank , universal );
   put_field( m_centroid_field , m_elem_rank , universal );
-  put_field( m_temperature_field, NODE_RANK, universal );
+  put_field( m_temperature_field, m_node_rank, universal );
   put_field( m_volume_field, m_elem_rank, m_block_hex );
   put_field( m_volume_field, m_elem_rank, m_block_wedge );
   put_field( m_volume_field, m_elem_rank, m_block_tet );
@@ -83,7 +81,7 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   //     elem_node_coord[n][0..2] is the coordinates of element node 'n'
   //     that are attached to that node.
 
-  m_metaData.declare_field_relation(
+  m_fem_metaData.declare_field_relation(
     m_element_node_coordinates_field ,
     fem::get_element_node_stencil(3) ,
     m_coordinates_field
@@ -98,7 +96,7 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   put_field( m_element_node_coordinates_field, m_elem_rank, m_block_tri_shell, ShellTriangle3::node_count );
 
   if (doCommit)
-    m_metaData.commit();
+    m_fem_metaData.commit();
 }
 
 UseCase_3_Mesh::~UseCase_3_Mesh()
@@ -178,32 +176,32 @@ void UseCase_3_Mesh::populate()
   // For each element topology declare elements
 
   for ( unsigned i = 0 ; i < number_hex ; ++i , ++curr_elem_id ) {
-    declare_element( m_bulkData, m_block_hex, curr_elem_id, hex_node_ids[i] );
+    fem::declare_element( m_bulkData, m_block_hex, curr_elem_id, hex_node_ids[i] );
   }
 
   for ( unsigned i = 0 ; i < number_wedge ; ++i , ++curr_elem_id ) {
-    declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
+    fem::declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
   }
 
   for ( unsigned i = 0 ; i < number_tetra ; ++i , ++curr_elem_id ) {
-    declare_element( m_bulkData, m_block_tet, curr_elem_id, tetra_node_ids[i] );
+    fem::declare_element( m_bulkData, m_block_tet, curr_elem_id, tetra_node_ids[i] );
   }
 
   for ( unsigned i = 0 ; i < number_pyramid ; ++i , ++curr_elem_id ) {
-    declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
+    fem::declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
   }
 
   for ( unsigned i = 0 ; i < number_shell_quad ; ++i , ++curr_elem_id ) {
-    declare_element( m_bulkData, m_block_quad_shell, curr_elem_id, shell_quad_node_ids[i]);
+    fem::declare_element( m_bulkData, m_block_quad_shell, curr_elem_id, shell_quad_node_ids[i]);
   }
 
   for ( unsigned i = 0 ; i < number_shell_tri ; ++i , ++curr_elem_id ) {
-    declare_element( m_bulkData, m_block_tri_shell, curr_elem_id, shell_tri_node_ids[i] );
+    fem::declare_element( m_bulkData, m_block_tri_shell, curr_elem_id, shell_tri_node_ids[i] );
   }
 
   // For all nodes assign nodal coordinates
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
-    Entity * const node = m_bulkData.get_entity( NODE_RANK , i + 1 );
+    Entity * const node = m_bulkData.get_entity( m_node_rank , i + 1 );
     double * const coord = field_data( m_coordinates_field , *node );
     coord[0] = node_coord_data[i][0] ;
     coord[1] = node_coord_data[i][1] ;
@@ -254,10 +252,10 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
 
   // Check that all the nodes were allocated.
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
-    Entity * const node = bulkData.get_entity( NODE_RANK , i + 1 );
+    Entity * const node = bulkData.get_entity( mesh.m_node_rank , i + 1 );
     if ( node == NULL ) {
       std::cerr << "Error!  Invalid null pointer for node returned from "
-        << "bulkData.get_entity( NODE_RANK, " << i+1 << " ) " << std::endl;
+        << "bulkData.get_entity( m_node_rank, " << i+1 << " ) " << std::endl;
       result = false;
     }
   }
