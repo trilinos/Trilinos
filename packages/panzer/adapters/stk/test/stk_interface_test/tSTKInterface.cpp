@@ -23,7 +23,7 @@ typedef shards::Quadrilateral<4> QuadTopo;
 Teuchos::RCP<STK_Interface> build2DMesh()
 {
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
-   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseTopology(1,0);
+   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
 
    Teuchos::RCP<STK_Interface> meshPtr = Teuchos::rcp(new STK_Interface(2));
    STK_Interface & mesh = *meshPtr;
@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
   using Teuchos::rcpFromRef;
 
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
-   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseTopology(1,0);
+   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI

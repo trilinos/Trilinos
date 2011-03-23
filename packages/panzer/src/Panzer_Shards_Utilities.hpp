@@ -25,10 +25,10 @@ namespace panzer {
     while ( (side < cell.getSideCount()) && (!found_local_side) ) {
       
       const shards::CellTopology 
-	side_topo(cell.getTopology(cell.getDimension()-1, side));
+	side_topo(cell.getCellTopologyData(cell.getDimension()-1, side));
       
       unsigned num_side_nodes = 
-	cell.getTopology()->side[side].topology->node_count;
+	cell.getCellTopologyData()->side[side].topology->node_count;
  
 
       std::list<unsigned> tmp_side_gid_list;
@@ -89,7 +89,7 @@ namespace panzer {
     while ( (subcell < cell.getSubcellCount(subcell_dim)) && (!found_local_subcell) ) {
   
       unsigned num_subcell_nodes =
-  	cell.getTopology()->subcell[subcell_dim][subcell].topology->node_count;
+  	cell.getCellTopologyData()->subcell[subcell_dim][subcell].topology->node_count;
   
       std::list<unsigned> tmp_subcell_gid_list;
       for (unsigned node = 0; node < num_subcell_nodes; ++node)

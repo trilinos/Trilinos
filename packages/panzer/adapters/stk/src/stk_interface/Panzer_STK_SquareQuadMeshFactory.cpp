@@ -125,7 +125,7 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
 {
    typedef shards::Quadrilateral<4> QuadTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
-   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseTopology(1,0);
+   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
 
    // build meta data
    //mesh.setDimension(2);

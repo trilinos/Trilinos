@@ -34,7 +34,7 @@ IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
 			<< side << " is not in range (0->" << topology->getSideCount()-1 
 			<< ") of topologic entity!");
     
-    side_topology = Teuchos::rcp(new shards::CellTopology(topology->getTopology(topology->getDimension()-1,side)));
+    side_topology = Teuchos::rcp(new shards::CellTopology(topology->getCellTopologyData(topology->getDimension()-1,side)));
   }
 
   TEST_FOR_EXCEPTION(side >= 0 && Teuchos::is_null(side_topology), 

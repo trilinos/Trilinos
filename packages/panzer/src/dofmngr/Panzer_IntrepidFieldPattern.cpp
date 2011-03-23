@@ -129,9 +129,9 @@ void IntrepidFieldPattern::buildSubcellClosure(const shards::CellTopology & cell
       break;
    case 2:
       {
-      unsigned cnt = (shards::CellTopology(cellTopo.getTopology(dim,subCell))).getSubcellCount(dim-1);
+      unsigned cnt = (shards::CellTopology(cellTopo.getCellTopologyData(dim,subCell))).getSubcellCount(dim-1);
       for(unsigned i=0;i<cnt;i++) {
-         int edge = mapCellFaceEdge(cellTopo.getTopology(),subCell,i);
+         int edge = mapCellFaceEdge(cellTopo.getCellTopologyData(),subCell,i);
          buildSubcellClosure(cellTopo,dim-1,edge,closure);
       }
       closure.insert(std::make_pair(2,subCell));

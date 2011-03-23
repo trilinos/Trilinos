@@ -14,7 +14,7 @@ namespace panzer {
   {    
     const shards::CellTopology 
       quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
-    const CellTopologyData* quad_data = quad.getTopology();
+    const CellTopologyData* quad_data = quad.getCellTopologyData();
     
     //cout << quad << endl;
     
@@ -91,7 +91,7 @@ namespace panzer {
   {
     const shards::CellTopology 
       hex(shards::getCellTopologyData<shards::Hexahedron<8> >());
-    const CellTopologyData* hex_data = hex.getTopology();
+    const CellTopologyData* hex_data = hex.getCellTopologyData();
     
     //cout << hex << endl;
     

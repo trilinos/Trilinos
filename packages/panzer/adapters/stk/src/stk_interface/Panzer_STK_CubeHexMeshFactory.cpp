@@ -132,7 +132,7 @@ void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_In
 {
    typedef shards::Hexahedron<8> HexTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<HexTopo>();
-   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseTopology(2,0);
+   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(2,0);
 
    // build meta data
    //mesh.setDimension(2);
