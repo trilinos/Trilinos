@@ -163,8 +163,6 @@ STKUNIT_UNIT_TEST(UnitTestOutputLog, UnitTest)
 
     stk::register_log_ostream(log1, "log");
     
-    STKUNIT_ASSERT_THROW(stk::register_log_ostream(log2, "log"), std::runtime_error);
-
     STKUNIT_ASSERT_THROW(stk::bind_output_streams("badout>log"), std::runtime_error);
     
     STKUNIT_ASSERT_THROW(stk::bind_output_streams("out>badlog"), std::runtime_error);
