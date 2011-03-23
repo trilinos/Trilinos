@@ -16,10 +16,10 @@ cmake \
 -D CMAKE_Fortran_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/ifort \
 -D TPL_BLAS_LIBRARIES:STRING="-L${MKLROOT}/lib/em64t -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_core -lmkl_sequential" \
 -D TPL_LAPACK_LIBRARIES:STRING="-L${MKLROOT}/lib/em64t -lmkl_lapack95_lp64" \
--D TPL_Boost_INCLUDE_DIRS:FILEPATH=/opt/tpls_src/boost_1_46_1 \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D DART_TESTING_TIMEOUT:STRING=180.0 \
 $EXTRA_ARGS \
 ../../../Trilinos
 
 # -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+# -D TPL_Boost_INCLUDE_DIRS:FILEPATH=/opt/tpls_src/boost_1_46_1 \
