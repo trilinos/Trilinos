@@ -236,6 +236,7 @@ const Ioss::Field* get_field_attribute(const mesh::FieldBase &f);
 
 /** Defines the Ioss::Field::RoleType of the mesh::Field 'f' to be 'role'.
  */
+const Ioss::Field::RoleType* get_field_role(const stk::mesh::FieldBase &f);
 void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role); // Deprecated
 void set_field_attribute(mesh::FieldBase &f, const Ioss::Field &io_field);
 
@@ -249,10 +250,12 @@ void set_field_attribute(mesh::FieldBase &f, const Ioss::Field &io_field);
  */
 bool is_part_io_part(mesh::Part &part);
 
-/** Define the IOPartAttribute attribute on the specified part 'part'.
- * \see is_part_io_part()
+/** Define an attribute on the specified part 'part' indicating that
+ * this part should be used for io.  \see is_part_io_part()
  */
-void put_io_part_attribute( mesh::Part &part);
+void put_io_part_attribute( mesh::Part &part, Ioss::GroupingEntity *entity = NULL);
+
+const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part);
 
 void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
                               stk::mesh::EntityRank type);

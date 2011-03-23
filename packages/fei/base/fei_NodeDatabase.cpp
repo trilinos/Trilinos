@@ -84,7 +84,10 @@ int NodeDatabase::getNodeWithNumber(int nodeNumber, const NodeDescriptor*& node)
 
   std::map<int,int>::const_iterator iter = nodeNumbers_.find(nodeNumber);
   if (iter == nodeNumbers_.end()) {
-    ERReturn(-1);
+    // The node wasn't found, return a NULL ptr.
+    node = NULL;
+    // Indicate that the node is NULL.
+    return -1;
   }
 
   int index = iter->second;
@@ -318,9 +321,9 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
     int index = getIndexOfID(nodeID);
     int nDOF = node.getNumNodalDOF();
     if (nDOF <= 0) {
-      FEI_COUT << "localRank " << localRank << ", node "<<nodeID<<" has nDOF="
-           << nDOF<<FEI_ENDL;
-      ERReturn(-1);
+      continue;
+      //FEI_COUT << "localRank " << localRank << ", node "<<nodeID<<" has nDOF=" << nDOF<<FEI_ENDL;
+      //ERReturn(-1);
     }
     int firstEqn = node.getFieldEqnNumbers()[0];
     int insertPoint = fei::sortedListInsert(firstEqn, eqnNumbers_);

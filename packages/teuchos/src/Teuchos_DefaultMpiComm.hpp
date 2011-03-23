@@ -39,6 +39,7 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_as.hpp"
+#include "Teuchos_Assert.hpp"
 #include "mpi.h"
 
 
@@ -334,19 +335,21 @@ void MpiComm<Ordinal>::broadcast(
   
 template<typename Ordinal>
 void MpiComm<Ordinal>::gatherAll(
-    const Ordinal sendBytes, const char sendBuffer[]
-    ,const Ordinal recvBytes, char recvBuffer[]
+  const Ordinal sendBytes, const char sendBuffer[],
+  const Ordinal recvBytes, char recvBuffer[]
   ) const
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::gatherAll(...)"
     );
-  TEST_FOR_EXCEPT(!(sendBytes*size_==recvBytes));
+  TEUCHOS_ASSERT_EQUALITY((sendBytes*size_), recvBytes );
   MPI_Allgather(
-    const_cast<char *>(sendBuffer),sendBytes,MPI_CHAR
-    ,recvBuffer,sendBytes,MPI_CHAR
-    ,*rawMpiComm_
+    const_cast<char *>(sendBuffer), sendBytes, MPI_CHAR,
+    recvBuffer, sendBytes, MPI_CHAR,
+    *rawMpiComm_
     );
+  // NOTE: 'sendBytes' is being sent above for the MPI arg recvcount (which is
+  // very confusing in the MPI documentation) for MPI_Allgether(...).
 }
 
   

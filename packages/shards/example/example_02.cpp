@@ -48,6 +48,7 @@
 */
 #include <iostream>
 #include "Shards_CellTopology.hpp"
+#include "Shards_CellTopologyManagedData.hpp"
 
 
 using namespace std;
@@ -109,7 +110,8 @@ int main(int argc, char *argv[]) {
     *  Line with 5 nodes                                                                           *
     ***********************************************************************************************/
   
-  shards::CellTopology customLine("customLine", 4);
+  shards::CellTopologyManagedData customLineManaged("customLine", 4);
+  shards::CellTopology customLine( & customLineManaged );
   std::cout << customLine << "\n";
   
   
@@ -131,12 +133,13 @@ int main(int argc, char *argv[]) {
   homog_edges_node_map.assign(nodeList, nodeList + 15);
 
   // Custom 2D cell constructor: provide Pentagon<5> as base topology
-  shards::CellTopology Pentagon_10("Pentagon_10",
+  shards::CellTopologyManagedData Pentagon_10_managed("Pentagon_10",
                                    5,
                                    10,
                                    homog_edges,
                                    homog_edges_node_map,
                                    getCellTopologyData<Pentagon<5> >() );
+  shards::CellTopology Pentagon_10( & Pentagon_10_managed);
   
   std::cout << Pentagon_10 
     << "Edge homogeneity = " << Pentagon_10.getSubcellHomogeneity(1) << "\n\n";
@@ -163,12 +166,13 @@ int main(int argc, char *argv[]) {
   std::vector<unsigned>  inhomog_edges_node_map;
   inhomog_edges_node_map.assign(inhomogNodeList, inhomogNodeList + 12);
   
-  shards::CellTopology Pentagon_7("Pentagon_7",
+  shards::CellTopologyManagedData Pentagon_7_managed("Pentagon_7",
                                   5,
                                   7,
                                   inhomog_edges,
                                   inhomog_edges_node_map,
                                   getCellTopologyData<Pentagon<5> >() );
+  shards::CellTopology Pentagon_7( & Pentagon_7_managed );
   
   std::cout << Pentagon_7 
     << "Edge homogeneity = " << Pentagon_7.getSubcellHomogeneity(1) << "\n\n";
@@ -229,13 +233,14 @@ int main(int argc, char *argv[]) {
   beehive_face_node_map.assign(beehive_face_node_list, beehive_face_node_list + 36);
   
   
-  shards::CellTopology Beehive_12("Beehive_12",
+  shards::CellTopologyManagedData Beehive_12_managed( "Beehive_12",
                                    12,
                                    12,
                                    beehive_edges ,
                                    beehive_edge_node_map ,
                                    beehive_faces ,
-                                   beehive_face_node_map);
+                                   beehive_face_node_map, 0);
+  shards::CellTopology Beehive_12( & Beehive_12_managed );
   
   std::cout << Beehive_12 << "\n"
     << "Edge homogeneity = " << Beehive_12.getSubcellHomogeneity(1) << "\n\n";

@@ -17,10 +17,10 @@ namespace stk {
 
 unsigned parallel_machine_size( ParallelMachine parallel_machine )
 {
-  int value = 0 ;
+  int value = 1 ;
   if (parallel_machine != MPI_COMM_NULL) {
     if ( MPI_SUCCESS != MPI_Comm_size( parallel_machine , &value ) ) {
-      value = 0 ;
+      value = 1 ;
     }
   }
   return value ;

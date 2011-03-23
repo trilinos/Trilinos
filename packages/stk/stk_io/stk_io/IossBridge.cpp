@@ -6,14 +6,12 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifdef __CYGWIN__
-#include <strings.h>
-#endif
 #include <string.h>
 #include <iostream>
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
+#include <Ioss_NullEntity.h>
 
 #include <stk_util/util/tokenize.hpp>
 #include <stk_io/IossBridge.hpp>
@@ -187,7 +185,8 @@ namespace {
   const stk::mesh::FieldBase *declare_ioss_field(stk::mesh::MetaData &meta,
 						 stk::mesh::EntityRank type,
 						 stk::mesh::Part &part,
-						 const Ioss::Field &io_field)
+						 const Ioss::Field &io_field,
+						 bool use_cartesian_for_scalar)
     {
       stk::mesh::FieldBase *field_ptr = NULL;
       std::string field_type = io_field.transformed_storage()->name();
@@ -195,9 +194,16 @@ namespace {
       int num_components = io_field.transformed_storage()->component_count();
 
       if (field_type == "scalar" || num_components == 1) {
-	stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double> >(name);
-	stk::mesh::put_field(field, type, part);
-	field_ptr = &field;
+	if (!use_cartesian_for_scalar) {
+	  stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double> >(name);
+	  stk::mesh::put_field(field, type, part);
+	  field_ptr = &field;
+	} else {
+	  stk::mesh::Field<double, stk::mesh::Cartesian> & field =
+	    meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(name);
+	  stk::mesh::put_field(field, type, part, 1);
+	  field_ptr = &field;
+	}
       }
       else if (field_type == "vector_2d") {
 	stk::mesh::Field<double, stk::mesh::Cartesian> & field =
@@ -235,7 +241,7 @@ namespace {
       }
 
       if (field_ptr != NULL) {
-	stk::io::set_field_attribute(*field_ptr, io_field);
+	stk::io::set_field_role(*field_ptr, io_field.get_role());
       }
       return field_ptr;
     }
@@ -466,7 +472,10 @@ namespace stk {
 	result->first = scalar ;
       }
       else if ( 1 == rank ) {
-	if ( tags[0] == & stk::mesh::Cartesian::tag() && 2 == num_comp ) {
+	if ( tags[0] == & stk::mesh::Cartesian::tag() && 1 == num_comp ) {
+	  result->first = scalar ;
+	}
+	else if ( tags[0] == & stk::mesh::Cartesian::tag() && 2 == num_comp ) {
 	  result->first = vector_2d ;
 	}
 	else if ( tags[0] == & stk::mesh::Cartesian::tag() && 3 == num_comp ) {
@@ -503,12 +512,19 @@ namespace stk {
     }
 
     //----------------------------------------------------------------------
-    struct IOPartAttribute {
-    };
-
-    void put_io_part_attribute(mesh::Part & part)
+    const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part)
     {
-      if (part.attribute<IOPartAttribute>() != NULL) {
+      const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
+      if (!entity || entity->type() == Ioss::INVALID_TYPE) {
+	return NULL;
+      } else {
+	return entity;
+      }
+    }
+
+    void put_io_part_attribute(mesh::Part & part, Ioss::GroupingEntity *entity)
+    {
+      if (part.attribute<Ioss::GroupingEntity>() != NULL) {
 	std::string msg = "stk::io::put_io_part_attribute( ";
 	msg += part.name();
 	msg += " ) FAILED:";
@@ -516,9 +532,13 @@ namespace stk {
 	throw std::runtime_error( msg );
       }
 
-      IOPartAttribute * const attr = new IOPartAttribute();
       mesh::MetaData & meta = mesh::MetaData::get(part);
-      meta.declare_attribute_with_delete( part , attr );
+      if (entity) {
+	meta.declare_attribute_no_delete(part, entity);
+      } else {
+	Ioss::GroupingEntity *attr = new Ioss::NullEntity();
+	meta.declare_attribute_with_delete(part, attr);
+      }
     }
 
     /** Determine whether the field is defined on the specified part
@@ -532,8 +552,8 @@ namespace stk {
 			     Ioss::Field::RoleType filter_role,
 			     bool add_all)
     {
-      const Ioss::Field *iofield = stk::io::get_field_attribute(*field);
-      if (!add_all && (iofield == NULL || iofield->get_role() != filter_role)) {
+      const Ioss::Field::RoleType *role = stk::io::get_field_role(*field);
+      if (!add_all && (role == NULL || *role != filter_role)) {
 	return false;
       }
 
@@ -596,8 +616,7 @@ namespace stk {
       if (cell_top == NULL)
 	return extype;
 
-      if(strcmp(cell_top->name, "super") == 0)
-      {
+      if(strcmp(cell_top->name, "super") == 0) {
           std::stringstream oss;
           oss << "super" << cell_top->node_count;
           return oss.str();
@@ -688,7 +707,7 @@ namespace stk {
     {
       if (include_entity(entity)) {
 	stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
-	stk::io::put_io_part_attribute(part);
+	stk::io::put_io_part_attribute(part, entity);
       }
     }
 
@@ -697,20 +716,21 @@ namespace stk {
     {
       if (include_entity(entity)) {
 	stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
-	stk::io::put_io_part_attribute(part);
+	stk::io::put_io_part_attribute(part, entity);
 
 	const Ioss::ElementTopology *topology = entity->topology();
 	const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
 	/// \todo IMPLEMENT Determine whether application can work
-	  /// with this topology type... Perhaps map_topology_ioss_to_cell only
-	  /// returns a valid topology if the application has registered
-	  /// that it can handle that specific topology.
+	/// with this topology type... Perhaps map_topology_ioss_to_cell only
+	/// returns a valid topology if the application has registered
+        /// that it can handle that specific topology.
 
-	  if (cell_topology != NULL) {
-	    stk::io::set_cell_topology(part, cell_topology);
-	  } else {
-	    /// \todo IMPLEMENT handle cell_topolgy mapping error...
-	  }
+	if (cell_topology != NULL) {
+	  stk::io::set_cell_topology(part, cell_topology);
+	} else {
+	  /// \todo IMPLEMENT handle cell_topolgy mapping error...
+	}
+	stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE, part, type);
       }
     }
 
@@ -735,25 +755,13 @@ namespace stk {
 	const stk::mesh::FieldBase *f = *I; ++I;
 	if (stk::io::is_valid_part_field(f, part_type, part, universal, filter_role, add_all)) {
 	  const stk::mesh::FieldBase::Restriction &res = f->restriction(part_type, part);
-
-	  // If this field was originally put on the part via the input mesh,
-	  // then the iofield attribute will contain all the data we need;
-	  // however, we can't always count on that.  For now, just using
-	  // this to get the element attribute index order (if any...)
-	  int index = 0;
-	  if (filter_role == Ioss::Field::ATTRIBUTE) {
-	    const Ioss::Field *iofield = stk::io::get_field_attribute(*f);
-	    if (iofield)
-	      index = iofield->get_index();
-	  }
-	  
 	  std::pair<std::string, Ioss::Field::BasicType> field_type;
 	  get_io_field_type(f, res.stride[0], &field_type);
 	  if (field_type.second != Ioss::Field::INVALID) {
 	    int entity_size = entity->get_property("entity_count").get_int();
 	    const std::string& name = f->name();
 	    entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
-					  filter_role, entity_size, index));
+					  filter_role, entity_size));
 	  }
 	}
       }
@@ -775,6 +783,10 @@ namespace stk {
     {
       stk::mesh::MetaData &meta = mesh::MetaData::get(part);
 
+      bool use_cartesian_for_scalar = false;
+      if (role == Ioss::Field::ATTRIBUTE)
+	use_cartesian_for_scalar = true;
+      
       Ioss::NameList names;
       entity->field_describe(role, &names);
 
@@ -783,20 +795,14 @@ namespace stk {
 	/// (ioss_name -> stk::name)  For now, select all and give the
 	/// stk field the same name as the ioss field.
 
-	/// \todo REFACTOR Kluge -- for now skip the attribute field
-	/// that is named "attribute" since it potentially has a
-	/// different size on each element block which doesn't work...
-	/// Need to either do something similar to the distribution
-	/// factors where the field name is specific to a certain
-	/// element block or component count *OR* refactor the field to
-	/// handle this common case.
+	/// Skip the attribute field that is named "attribute"
 	if (*I == "attribute" && names.size() > 1)
 	  continue;
-
+	
 	/// \todo IMPLEMENT Need to determine whether these are
-	  /// multi-state fields or constant, or interpolated, or ...
-	  Ioss::Field io_field = entity->get_field(*I);
-	  declare_ioss_field(meta, part_type, part, io_field);
+	/// multi-state fields or constant, or interpolated, or ...
+	Ioss::Field io_field = entity->get_field(*I);
+	declare_ioss_field(meta, part_type, part, io_field, use_cartesian_for_scalar);
       }
     }
 
@@ -975,32 +981,32 @@ namespace stk {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
 
 	/// \todo REFACTOR The coordinate field would typically be
-	  /// stored by the app and wouldn't need to be accessed via
-	  /// string lookup.  App infrastructure is not shown here, so
-	  /// lookup by string for the example.
-	  mesh::Field<double, mesh::Cartesian> *coord_field =
-	    meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
-	  assert(coord_field != NULL);
-	  const mesh::FieldBase::Restriction &res = coord_field->restriction(node_rank(meta), part);
+	/// stored by the app and wouldn't need to be accessed via
+	/// string lookup.  App infrastructure is not shown here, so
+	/// lookup by string for the example.
+	mesh::Field<double, mesh::Cartesian> *coord_field =
+	  meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
+	assert(coord_field != NULL);
+	const mesh::FieldBase::Restriction &res = coord_field->restriction(node_rank(meta), part);
+	
+	/** \todo REFACTOR  Need a clear way to query dimensions
+	 *                  from the field restriction.
+	 */
+	const int spatial_dim = res.stride[0] ;
+	io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
 
-	  /** \todo REFACTOR  Need a clear way to query dimensions
-	   *                  from the field restriction.
-	   */
-	  const int spatial_dim = res.stride[0] ;
-	  io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
+	//--------------------------------
+	// Create the special universal node block:
 
-	  //--------------------------------
-	  // Create the special universal node block:
+	mesh::Selector selector = meta.locally_owned_part() | meta.globally_shared_part();
 
-          mesh::Selector selector = meta.locally_owned_part() | meta.globally_shared_part();
+	size_t num_nodes = count_selected_entities(selector, bulk.buckets(node_rank(meta)));
 
-	  size_t num_nodes = count_selected_entities(selector, bulk.buckets(node_rank(meta)));
+	const std::string name("nodeblock_1");
 
-	  const std::string name("nodeblock_1");
-
-	  Ioss::NodeBlock * const nb = new Ioss::NodeBlock(io_region.get_database(),
+	Ioss::NodeBlock * const nb = new Ioss::NodeBlock(io_region.get_database(),
 							   name, num_nodes, spatial_dim);
-	  io_region.add( nb );
+	io_region.add( nb );
       }
 
 
@@ -1148,7 +1154,7 @@ namespace stk {
       }
 
       if (input_region != NULL)
-	io_region.synchronize_id_and_name(input_region);
+	io_region.synchronize_id_and_name(input_region, true);
 
       io_region.end_mode( Ioss::STATE_DEFINE_MODEL );
     }
@@ -1331,8 +1337,8 @@ namespace stk {
 	std::vector<mesh::FieldBase *>::const_iterator I = fields.begin();
 	while (I != fields.end()) {
 	  const mesh::FieldBase *f = *I ; ++I ;
-	  const Ioss::Field *field = stk::io::get_field_attribute(*f);
-	  if (field != NULL && field->get_role() == Ioss::Field::ATTRIBUTE) {
+	  const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
+	  if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
 	    const mesh::FieldBase::Restriction &res = f->restriction(elem_rank, *part);
 	    if (res.stride[0] > 0) {
 	      stk::io::field_data_to_ioss(f, elements, block, f->name());
@@ -1405,7 +1411,7 @@ namespace stk {
     void write_output_db(Ioss::Region& io_region,
 			 const stk::mesh::BulkData& bulk)
     {
-      const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
+	    const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
 
       io_region.begin_mode( Ioss::STATE_MODEL );
 
@@ -1446,7 +1452,7 @@ namespace stk {
     //----------------------------------------------------------------------
     bool is_part_io_part(stk::mesh::Part &part)
     {
-      return NULL != part.attribute<IOPartAttribute >();
+      return NULL != part.attribute<Ioss::GroupingEntity>();
     }
 
     const stk::mesh::Field<double, stk::mesh::ElementNode> *get_distribution_factor_field(const stk::mesh::Part &p)
@@ -1461,35 +1467,25 @@ namespace stk {
       m.declare_attribute_no_delete(p,&df_field);
     }
 
-    //! \deprecated Use set_field_attribute instead
+    const Ioss::Field::RoleType* get_field_role(const stk::mesh::FieldBase &f)
+    {
+      return f.attribute<Ioss::Field::RoleType>();
+    }
+
     void set_field_role(stk::mesh::FieldBase &f, const Ioss::Field::RoleType &role)
     {
-      // Deprecated function, but call through to set_field_attribute with a dummy field to set the role.
-      set_field_attribute(f, Ioss::Field(f.name(), Ioss::Field::REAL, "scalar", role, 1));
-    }
-
-    const Ioss::Field* get_field_attribute(const stk::mesh::FieldBase &f)
-    {
-      return f.attribute<Ioss::Field>();
-    }
-
-    void set_field_attribute(stk::mesh::FieldBase &f, const Ioss::Field &io_field)
-    {
-      Ioss::Field *field_copy = new Ioss::Field(io_field);
+      Ioss::Field::RoleType *my_role = new Ioss::Field::RoleType(role);
       stk::mesh::MetaData &m = mesh::MetaData::get(f);
-      const Ioss::Field *check = m.declare_attribute_with_delete(f, field_copy);
-      if ( check != field_copy ) {
-	// Check that name, role, type, index are the same...
-	if (check->get_name() != field_copy->get_name() ||
-	    check->get_role() != field_copy->get_role() ||
-	    check->get_type() != field_copy->get_type() ||
-	    check->get_index() != field_copy->get_index()) {
-	  std::ostringstream msg ;
-	  msg << " FAILED in IossBridge -- set_field_attribute:"
-	      << " The field attribute had already been set, so it is not possible to change it.";
+      const Ioss::Field::RoleType *check = m.declare_attribute_with_delete(f, my_role);
+      if ( check != my_role ) {
+        if (*check != *my_role) {
+          std::ostringstream msg ;
+	  msg << " FAILED in IossBridge -- set_field_role:"
+	      << " The role type had already been set to " << *check
+	      << ", so it is not possible to change it to " << *my_role;
 	  throw std::runtime_error( msg.str() );
-	  delete field_copy;
-	}
+        }
+        delete my_role;
       }
     }
 

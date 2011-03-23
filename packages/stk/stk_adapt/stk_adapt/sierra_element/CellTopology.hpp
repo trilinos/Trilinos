@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009 Sandia Corporation.                              */
+/*    Copyright 2009, 2011 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -108,21 +108,21 @@ namespace stk {
   } // namespace adapt
 } // namespace stk
 
-namespace shards {
+// namespace shards {
 
-  inline bool operator<(const CellTopology &c1, const CellTopology &c2) {
-    return c1.getTopology() < c2.getTopology();
-  }
+//   inline bool operator<(const CellTopology &c1, const CellTopology &c2) {
+//     return c1.getTopology() < c2.getTopology();
+//   }
 
-  inline bool operator==(const CellTopology &c1, const CellTopology &c2) {
-    return c1.getTopology() == c2.getTopology();
-  }
+//   inline bool operator==(const CellTopology &c1, const CellTopology &c2) {
+//     return c1.getTopology() == c2.getTopology();
+//   }
 
-  inline bool operator!=(const CellTopology &c1, const CellTopology &c2) {
-    return !(c1 == c2);
-  }
+//   inline bool operator!=(const CellTopology &c1, const CellTopology &c2) {
+//     return !(c1 == c2);
+//   }
 
-} // namespace shards
+// } // namespace shards
 
 #endif // stk_adapt_sierra_element_CellTopology_hpp
 

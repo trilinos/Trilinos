@@ -410,7 +410,7 @@ int main(int argc, char *argv[]) {
           
           // This test presently includes only Triangle<3> and Quadrilateral<4> faces. Once we support
           // cells with extended topologies we will add their faces as well.
-          switch( (*cti).getTopology(2, faceOrd) -> key ) {
+          switch( (*cti).getCellTopologyData(2, faceOrd) -> key ) {
             
             case shards::Triangle<3>::key: 
               {
@@ -450,7 +450,7 @@ int main(int argc, char *argv[]) {
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
                         << " Face normal computation by CellTools failed for: \n"
                         << "       Cell Topology = " << (*cti).getName() << "\n"
-                        << "       Face Topology = " << (*cti).getTopology(2, faceOrd) -> name << "\n"
+                        << "       Face Topology = " << (*cti).getCellTopologyData(2, faceOrd) -> name << "\n"
                         << "        Face ordinal = " << faceOrd << "\n"
                         << "   Face point number = " << pt << "\n"
                         << "   Normal coordinate = " << d  << "\n"
@@ -464,7 +464,7 @@ int main(int argc, char *argv[]) {
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
                         << " Side normal computation by CellTools failed for: \n"
                         << "       Cell Topology = " << (*cti).getName() << "\n"
-                        << "       Side Topology = " << (*cti).getTopology(2, faceOrd) -> name << "\n"
+                        << "       Side Topology = " << (*cti).getCellTopologyData(2, faceOrd) -> name << "\n"
                         << "        Side ordinal = " << faceOrd << "\n"
                         << "   Side point number = " << pt << "\n"
                         << "   Normal coordinate = " << d  << "\n"
@@ -522,7 +522,7 @@ int main(int argc, char *argv[]) {
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
                         << " Face normal computation by CellTools failed for: \n"
                         << "       Cell Topology = " << (*cti).getName() << "\n"
-                        << "       Face Topology = " << (*cti).getTopology(2, faceOrd) -> name << "\n"
+                        << "       Face Topology = " << (*cti).getCellTopologyData(2, faceOrd) -> name << "\n"
                         << "        Face ordinal = " << faceOrd << "\n"
                         << "   Face point number = " << pt << "\n"
                         << "   Normal coordinate = " << d  << "\n"
@@ -536,7 +536,7 @@ int main(int argc, char *argv[]) {
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
                         << " Side normal computation by CellTools failed for: \n"
                         << "       Cell Topology = " << (*cti).getName() << "\n"
-                        << "       Side Topology = " << (*cti).getTopology(2, faceOrd) -> name << "\n"
+                        << "       Side Topology = " << (*cti).getCellTopologyData(2, faceOrd) -> name << "\n"
                         << "        Side ordinal = " << faceOrd << "\n"
                         << "   Side point number = " << pt << "\n"
                         << "   Normal coordinate = " << d  << "\n"

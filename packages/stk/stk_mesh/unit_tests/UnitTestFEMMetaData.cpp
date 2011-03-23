@@ -477,7 +477,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, cell_topology_test_5b )
 
   fem_meta.declare_part_subset( WR, E );
   stk::mesh::fem::CellTopology top = fem_meta.get_cell_topology(E);
-  STKUNIT_ASSERT_TRUE( top.is_valid() );
+  STKUNIT_ASSERT_TRUE( top.isValid() );
   fem_meta.declare_part_subset( B, E );
   fem_meta.declare_part_subset( HR, A );
   STKUNIT_ASSERT_THROW( fem_meta.declare_part_subset(A, B), std::runtime_error );

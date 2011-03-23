@@ -122,6 +122,10 @@ namespace stk {
                             int                           parallel_size);
 
 
+      static std::string
+      get_working_directory();
+
+
       // command line options
       Teuchos::CommandLineProcessor clp;
 
@@ -138,9 +142,11 @@ namespace stk {
 
       // data
       const stk::ParallelMachine    m_comm;
-      std::string                   m_workingDirectory;
+      static std::string            m_workingDirectory;
 
     private:
+
+      static void setFileNames(std::string& fullmesh, std::string& meshFileName);
 
       bool                          m_need_to_finalize;
       bool                          m_debug;

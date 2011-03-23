@@ -68,7 +68,7 @@ void test_subcell( const shards::CellTopology & parent )
   typedef typename Subcell::topology SubcellTraits ;
 
   std::cout << "    subcell(" << Dim << "," << Ord << ") = "
-            << parent.getTopology(Dim,Ord)->name << std::endl ;
+            << parent.getCellTopologyData(Dim,Ord)->name << std::endl ;
 
   REQUIRE( SubcellTraits::key          == parent.getKey(Dim,Ord) )
   REQUIRE( SubcellTraits::side_count   == parent.getSideCount(Dim,Ord) )
@@ -124,7 +124,7 @@ void test_cell()
   enum { same_type = shards::SameType< typename Traits::Traits , SelfTraits >::value };
 
   REQUIRE( same_type );
-  REQUIRE( cell_data            == top.getTopology() )
+  REQUIRE( cell_data            == top.getCellTopologyData() )
   REQUIRE( Traits::key          == top.getKey() )
   REQUIRE( Traits::side_count   == top.getSideCount() )
   REQUIRE( Traits::node_count   == top.getNodeCount() )

@@ -15,6 +15,22 @@
 
 STKUNIT_UNIT_TEST(UnitTestOutputLog, UnitTest)
 {
+  // UseCaseEnvironment registers a bunch of things automatically, some of
+  // which conflict with this test. We unregister the conflicting streams
+  // here.
+  if (stk::get_log_ostream("cout") != NULL) {
+    stk::unregister_log_ostream(*stk::get_log_ostream("cout"));
+  }
+  if (stk::get_log_ostream("cerr") != NULL) {
+    stk::unregister_log_ostream(*stk::get_log_ostream("cerr"));
+  }
+  if (stk::get_ostream_ostream("out") != NULL) {
+    stk::unregister_ostream(*stk::get_ostream_ostream("out"));
+  }
+  if (stk::get_ostream_ostream("pout") != NULL) {
+    stk::unregister_ostream(*stk::get_ostream_ostream("pout"));
+  }
+
   // Make cout and cerr available as log stream targets.
   stk::register_log_ostream(std::cout, "cout");
   stk::register_log_ostream(std::cerr, "cerr");

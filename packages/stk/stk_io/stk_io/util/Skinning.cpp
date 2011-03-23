@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -41,7 +41,7 @@ namespace {
   {
     const unsigned side_dimension = elem_top.getDimension() - 1;
 
-    const shards::CellTopology side_top(elem_top.getTopology(elem_top.getDimension() - 1, side_id));
+    const shards::CellTopology side_top(elem_top.getCellTopologyData(elem_top.getDimension() - 1, side_id));
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
     const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::Node );
@@ -135,7 +135,7 @@ namespace {
     int side_id = -1 ;
 
     for ( unsigned i = 0 ; side_id == -1 && i < elem_top.getSideCount() ; ++i ) {
-      const shards::CellTopology side_top(elem_top.getTopology(2, side_id));
+      const shards::CellTopology side_top(elem_top.getCellTopologyData(2, side_id));
 
       if ( side_nodes.size() == side_top.getNodeCount() ) {
 
@@ -221,7 +221,7 @@ namespace {
 	    element.identifier() < elem_neighbor->identifier() ) );
 
       if ( create_side ) {
-	const shards::CellTopology side_top(elem_top.getTopology(2, i));
+	const shards::CellTopology side_top(elem_top.getCellTopologyData(2, i));
 
 	const stk::mesh::EntityRank side_type = static_cast<stk::mesh::EntityRank>(element.entity_rank() - 1);
 
