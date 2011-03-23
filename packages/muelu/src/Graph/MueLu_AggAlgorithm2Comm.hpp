@@ -1,8 +1,9 @@
-#include <Cthulhu_Import.hpp>
-#include <Cthulhu_EpetraImport.hpp> //tmp
-
 #ifndef MUELU_AGGALGORITHM2COMM_HPP
 #define MUELU_AGGALGORITHM2COMM_HPP
+
+#include <Cthulhu_VectorFactory.hpp>
+#include <Cthulhu_ImportFactory.hpp>
+#include <Cthulhu_MapFactory.hpp>
 
 class AggAlgorithm2Comm {
 
@@ -28,7 +29,7 @@ public:
 
   AggAlgorithm2Comm(const RCP<const Cthulhu::Map<int,int> > & uniqueMap, const RCP<const Cthulhu::Map<int,int> > & nonUniqueMap)
   {
-    import_ = rcp ( new Cthulhu::EpetraImport(uniqueMap, nonUniqueMap) );
+    import_ = Cthulhu::ImportFactory<int,int>::Build(uniqueMap, nonUniqueMap);
   }
 
   ~AggAlgorithm2Comm() {}
@@ -96,9 +97,11 @@ public:
     int MyPid = weight_.getMap()->getComm()->getRank(); // TODO:remove the getMap() step
 
     if (perturb) {
-      Cthulhu::EpetraVector perturbWt_(weight_.getMap()); //TODO: remove Epetra
+      RCP<Cthulhu::Vector<double> > perturbWt_ = Cthulhu::VectorFactory<double>::Build(weight_.getMap());
 
-      double largestGlobalWeight = weight_.maxValue();
+      // Note: maxValue() not available for Tpetra
+      //double largestGlobalWeight = weight_.maxValue();
+      double largestGlobalWeight = weight_.normInf();
 
       //TODO
       //    Epetra_Util util;
@@ -106,10 +109,10 @@ public:
       //    for (int i = 0; i < 10; i++) util.SetSeed( (unsigned int) util.RandomInt() );
 
       // perturbWt.SetSeed( (unsigned int) util.RandomInt() );
-      perturbWt_.randomize(); 
+      perturbWt_->randomize(); 
 
       Teuchos::ArrayRCP<double> weight = weight_.getDataNonConst(0);
-      Teuchos::ArrayRCP<double> perturbWt = perturbWt_.getDataNonConst(0);
+      Teuchos::ArrayRCP<double> perturbWt = perturbWt_->getDataNonConst(0);
 
       for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) {
         if (weight[i] == 0.) perturbWt[i] = 0.;
@@ -124,11 +127,12 @@ public:
     // processor should have the same value for PostComm[] even when multiple
     // copies of the same Gid are involved.
 
-    Cthulhu::EpetraVector postComm_(weight_.getMap());
-    Teuchos::ArrayRCP<double> postComm = postComm_.getDataNonConst(0);
-    postComm_.putScalar(0.0);
+    RCP<Cthulhu::Vector<double> > postComm_ = Cthulhu::VectorFactory<double>::Build(weight_.getMap());
 
-    NonUnique2NonUnique(weight_, postComm_, Cthulhu::ABSMAX);
+    Teuchos::ArrayRCP<double> postComm = postComm_->getDataNonConst(0);
+    postComm_->putScalar(0.0);
+
+    NonUnique2NonUnique(weight_, *postComm_, Cthulhu::ABSMAX);
 
    
     // Let every processor know who is the procWinner. For nonunique
@@ -145,9 +149,10 @@ public:
     //      When all weight's for a GID are zero, the associated procWinner's
     //      are left untouched.
 
-    Cthulhu::EpetraVector candidateWinners_(weight_.getMap());
-    Teuchos::ArrayRCP<double> candidateWinners = candidateWinners_.getDataNonConst(0);
-    candidateWinners_.putScalar(0.0);
+    RCP<Cthulhu::Vector<double> > candidateWinners_ = Cthulhu::VectorFactory<double>::Build(weight_.getMap());
+
+    Teuchos::ArrayRCP<double> candidateWinners = candidateWinners_->getDataNonConst(0);
+    candidateWinners_->putScalar(0.0);
 
     Teuchos::ArrayRCP<double> weight = weight_.getDataNonConst(0);
     for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) {
@@ -156,7 +161,7 @@ public:
 
     for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) weight[i]=postComm[i]; 
 
-    NonUnique2NonUnique(candidateWinners_, postComm_, Cthulhu::ABSMAX);
+    NonUnique2NonUnique(*candidateWinners_, *postComm_, Cthulhu::ABSMAX);
 
     // Note: 
     //                      associated CandidateWinners[]
@@ -192,24 +197,22 @@ public:
     
       // Cthulhu::EpetraMap winnerMap(-1, numMyWinners, myWinners, 0, weight_.getMap()->getComm());    
       Cthulhu::global_size_t g = -1; //TODO for Tpetra -1 == ??
-      RCP<Cthulhu::EpetraMap > winnerMap = rcp( new Cthulhu::EpetraMap(g, myWinners(), 0, weight_.getMap()->getComm()) );
+      RCP<Cthulhu::Map<int> > winnerMap = Cthulhu::MapFactory<int>::Build(weight_.getMap()->lib(), g, myWinners(), 0, weight_.getMap()->getComm());
        
       // Pull the Winners out of companion
       //     JustWinners <-- companion[Winners];
    
-      Cthulhu::EpetraIntVector justWinners(winnerMap);
-      Cthulhu::EpetraImport winnerImport(winnerMap,weight_.getMap());
+      RCP<Cthulhu::Vector<int> > justWinners = Cthulhu::VectorFactory<int>::Build(winnerMap);
+      RCP<const Cthulhu::Import<int,int> > winnerImport = Cthulhu::ImportFactory<int>::Build(winnerMap,weight_.getMap());
 
-      const Cthulhu::Import<int,int> & winnerImport2 = winnerImport;
-
-      justWinners.doImport(*companion, winnerImport2, Cthulhu::INSERT);
+      justWinners->doImport(*companion, *winnerImport, Cthulhu::INSERT);
    
       // Put the JustWinner values back into companion so that
       // all nonunique copies of the same Gid have the procWinner's
       // version of the companion.
    
-      Cthulhu::EpetraImport pushWinners(weight_.getMap(), winnerMap);
-      companion->doImport(justWinners, pushWinners, Cthulhu::INSERT);
+      RCP<Cthulhu::Import<int> > pushWinners = Cthulhu::ImportFactory<int>::Build(weight_.getMap(), winnerMap);
+      companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);
 
     }
 

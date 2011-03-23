@@ -10,11 +10,14 @@
 //! Convert a Cthulhu Combine Mode to an Epetra Combine Mode.
 const Epetra_CombineMode Cthulhu2Epetra_CombineMode(const Cthulhu::CombineMode& CM) { CTHULHU_DEBUG_ME;
   
+  if (CM == Cthulhu::ADD)
+    return Add;
   if (CM == Cthulhu::INSERT)
     return Insert;
-  else if (CM == Cthulhu::ABSMAX)
+  if (CM == Cthulhu::ABSMAX)
     return AbsMax;
-  else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unsupported CombineMode."); 
+  
+  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unsupported CombineMode."); 
 
 }
 
@@ -25,14 +28,19 @@ const Epetra_CombineMode Cthulhu2Epetra_CombineMode(const Cthulhu::CombineMode& 
 //! Convert a Cthulhu Combine Mode to a Tpetra Combine Mode.
 const Tpetra::CombineMode Cthulhu2Tpetra_CombineMode(const Cthulhu::CombineMode& CM) { CTHULHU_DEBUG_ME;
   
+  if (CM == Cthulhu::ADD)
+    return Tpetra::ADD;
+  
   if (CM == Cthulhu::INSERT)
     return Tpetra::INSERT;
-  else if (CM == Cthulhu::ABSMAX) {
+  
+  if (CM == Cthulhu::ABSMAX) {
     std::cerr << "Cthulhu2Tpetra_CombineMode ERROR !!!" << std::endl;
     return Tpetra::INSERT;
     //return Tpetra::ABSMAX; //TODO
   }
-  else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Tpetra::CombineMode: unsupported CombineMode."); 
+  
+  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Tpetra::CombineMode: unsupported CombineMode."); 
 
 }
 
