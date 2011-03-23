@@ -6902,7 +6902,8 @@ values:  Sub-matrix of coefficients.
 format:  Optional format specifier, defaults to COLUMN_MAJOR. ";
 
 %feature("docstring")  Epetra_FECrsMatrix::GlobalAssemble "int
-Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete=true)
+Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete=true,
+Epetra_CombineMode combineMode=Add)
 
 Gather any overlapping/shared data into the non-overlapping
 partitioning defined by the Map that was passed to this matrix at
@@ -6930,7 +6931,8 @@ error-code 0 if successful, non-zero if some error occurs ";
 
 %feature("docstring")  Epetra_FECrsMatrix::GlobalAssemble "int
 Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map &domain_map, const
-Epetra_Map &range_map, bool callFillComplete=true)
+Epetra_Map &range_map, bool callFillComplete=true, Epetra_CombineMode
+combineMode=Add)
 
 Gather any overlapping/shared data into the non-overlapping
 partitioning defined by the Map that was passed to this matrix at
