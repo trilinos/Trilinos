@@ -493,62 +493,156 @@ namespace Tpetra {
 			      Ordinal& numRows, 
 			      Ordinal& numCols,
 			      Ordinal& numNonzeros,
-			      const size_t lineNumber,
+			      size_t& lineNumber,
 			      const bool tolerant)
     {
+      using std::endl;
+
       Ordinal the_numRows, the_numCols, the_numNonzeros;
       std::string line;
 
-      if (! getline(in, line))
-	{
-	  std::ostringstream os;
-	  os << "Failed to get data from line " << lineNumber << " of input stream";
-	  throw std::invalid_argument (os.str());
+      // Keep reading lines from the input stream until we find a
+      // non-comment line, or until we run out of lines.  The latter
+      // is an error, since every "coordinate" format Matrix Market
+      // file must have a dimensions line after the banner (even if
+      // the matrix has zero rows or columns, or zero entries).
+      bool commentLine = true;
+      while (commentLine)
+	{ 
+	  // Is it even valid to read from the input stream?
+	  if (in.eof() || in.fail())
+	    {
+	      if (tolerant)
+		return false;
+	      else
+		{
+		  std::ostringstream os;
+		  os << "Unable to get coordinate dimensions line (at all) "
+		    "from (line " << lineNumber << ") of input stream; the "
+		    "input stream claims that it is at \"end-of-file\" or has "
+		    "an otherwise \"fail\"ed state.";
+		  throw std::invalid_argument(os.str());
+		}
+	    }
+	  // Try to get the next line from the input stream.
+	  if (! getline(in, line))
+	    {
+	      if (tolerant)
+		return false;
+	      else
+		{
+		  std::ostringstream os;
+		  os << "Failed to read coordinate dimensions line (at all) "
+		    "from (line " << lineNumber << " from input stream.  The "
+		    "line should contain the coordinate matrix dimensions in "
+		     << " the form \"<numRows> <numCols> <numNonzeros>\".";
+		  throw std::invalid_argument(os.str());
+		}
+	    }
+	  // Is the current line a comment line?  Ignore start and
+	  // size; they are only useful for reading the actual matrix
+	  // entries.  (We could use them here as an optimization, but
+	  // we've chosen not to.)
+	  size_t start = 0, size = 0;
+	  commentLine = checkCommentLine (line, start, size, 
+					  lineNumber, tolerant);
+	  // This ensures that any error messages in this file are
+	  // correct.
+	  if (commentLine)
+	    lineNumber++;
 	}
-      std::istringstream istr (line);
 
+      // The current line is now not a comment line.
+      // Try to read the coordinate dimensions from it.
+      std::istringstream istr (line);
       if (istr.eof() || istr.fail())
 	{
-	  std::ostringstream os;
-	  os << "Unable to read any data from line " << lineNumber << " of input";
-	  throw std::invalid_argument(os.str());
+	  if (tolerant)
+	    return false;
+	  else 
+	    {
+	      std::ostringstream os;
+	      os << "Unable to read any coordinate dimensions data from line " 
+		 << lineNumber << " of input stream.  Offending line:" << endl
+		 << line;
+	      throw std::invalid_argument(os.str());
+	    }
 	}
       istr >> the_numRows;
       if (istr.fail())
 	{
-	  std::ostringstream os;
-	  os << "Failed to get number of rows from line " << lineNumber << " of input";
-	  throw std::invalid_argument(os.str());
+	  if (tolerant)
+	    return false;
+	  else
+	    {
+	      std::ostringstream os;
+	      os << "Failed to get number of rows from the coordinate "
+		"dimensions line (line " << lineNumber << " of input stream)."
+		"   Offending line:" << endl << line;
+	      throw std::invalid_argument(os.str());
+	    }
 	}
       else if (istr.eof())
 	{
-	  std::ostringstream os;
-	  os << "No more data after number of rows on line " << lineNumber << " of input";
-	  throw std::invalid_argument(os.str());
+	  if (tolerant)
+	    return false;
+	  else 
+	    {
+	      std::ostringstream os;
+	      os << "No more data after number of rows, in the coordinate "
+		"dimensions line (line " << lineNumber << " of input stream)."
+		"   Offending line:" << endl << line;
+	      throw std::invalid_argument(os.str());
+	    }
 	}
       istr >> the_numCols;
       if (istr.fail())
 	{
-	  std::ostringstream os;
-	  os << "Failed to get number of columns from line " << lineNumber << " of input";
-	  throw std::invalid_argument(os.str());
+	  if (tolerant)
+	    return false;
+	  else
+	    {
+	      std::ostringstream os;
+	      os << "Failed to get number of columns from the coordinate "
+		"dimensions line (line " << lineNumber << " of input stream)."
+		"   Offending line:" << endl << line;
+	      throw std::invalid_argument(os.str());
+	    }
 	}
       else if (istr.eof())
 	{
-	  std::ostringstream os;
-	  os << "No more data after number of columns on line " << lineNumber << " of input";
-	  throw std::invalid_argument(os.str());
+	  if (tolerant)
+	    return false;
+	  else
+	    {
+	      std::ostringstream os;
+	      os << "No more data after number of columns, in the coordinate "
+		"dimensions line (line " << lineNumber << " of input stream)."
+		"   Offending line:" << endl << line;
+	      throw std::invalid_argument(os.str());
+	    }
 	}
       istr >> the_numNonzeros;
       if (istr.fail())
 	{
-	  std::ostringstream os;
-	  os << "Failed to get number of nonzeros from line " << lineNumber << " of input";
-	  throw std::invalid_argument(os.str());
+	  if (tolerant)
+	    return false;
+	  else
+	    {
+	      std::ostringstream os;
+	      os << "Failed to get number of nonzeros from the coordinate "
+		"dimensions line (line " << lineNumber << " of input stream)."
+		"   Offending line:" << endl << line;
+	      throw std::invalid_argument(os.str());
+	    }
 	}
       numRows = the_numRows;
       numCols = the_numCols;
       numNonzeros = the_numNonzeros;
+      // This function only increments the line number when it reads a
+      // comment line successfully, or when it reads all the
+      // coordinate dimensions successfully.
+      lineNumber++;
       return true;
     }
 
