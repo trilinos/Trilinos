@@ -7,6 +7,11 @@ Trilinos 10.7:
 
 * Added (experimental) Reduction/Transformation Interface (RTI) interface to tpetra/rti, examples in tpetra/examples/RTInterface
 
+Trilinos 10.6.4:
+----------------
+
+* Fixed some bugs in the build system
+* Updates to support CUDA 4.0 and built-in Thrust
 
 Trilinos 10.6.1:
 ----------------
