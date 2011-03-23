@@ -279,8 +279,8 @@ void findBlockElems(int nrows, int *rows, int *gvals, int Lnr, int *LeftElems,
             ssmsg2 << gid << " ";
         }
     }
-    cout << ssmsg1.str() << endl;
-    cout << ssmsg2.str() << endl; // TODO: Enable it only in debug mode
+    //cout << ssmsg1.str() << endl;
+    //cout << ssmsg2.str() << endl; // TODO: Enable it only in debug mode
     ssmsg1.clear(); ssmsg1.str("");
     ssmsg2.clear(); ssmsg2.str("");
 

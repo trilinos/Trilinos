@@ -52,7 +52,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
 
     // Now everyone knows the GIDs in the Schur complement
 
-    cout << rMap << endl;
+    //cout << rMap << endl;
     j = 0;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar = Teuchos::rcp(new Epetra_CrsMatrix(
                                             Copy, rMap, localElems));
