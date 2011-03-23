@@ -6,7 +6,8 @@ HyperLU
 
 HyperLU is a solver and/or preconditioner for general sparse linear systems.
 HyperLU is based on block partitioning and Schur complements,
-and is typically used as a hybrid direct-iterative method.
+and is typically used as a hybrid direct-iterative method (though
+it can also be used as a purely direct or iterative method).
 It is primarily designed as a preconditioner (solver) on the compute node.
 It uses a two-level hybrid parallel programming model to 
 effectively use current multicore and emerging manycore systems.
@@ -21,12 +22,12 @@ Trilinos package?
 HyperLU could be part of Ifpack, but we believe it should be a separate package
 for several reasons:
 
-(a) HyperLU is quite large: 2K lines of source and still growing,
-(b) HyperLU has more dependencies than Ifpack (see below),
+(a) HyperLU is fairly large: 2K lines of source and still growing.
+(b) HyperLU has more dependencies than Ifpack (see below).
 (c) HyperLU can be used as both iterative and direct solver; thus
-    we plan wrappers for both Ifpack and Amesos,
+    we plan wrappers in both Ifpack and Amesos.
 (d) It should be posssible to use HyperLU directly without going through Ifpack.
-(e) If we add Tpetra support in the future, we can easily make HyperLU
+(e) When we add Tpetra support in the future, we can easily make HyperLU
     accessible from both Ifpack and Ifpack2.
 
  4.  What required and optional internal Trilinos packages dependencies will 
