@@ -27,13 +27,13 @@ void GeometryFactory::create_evaluators(PerceptMesh* mesh_data)
         GeometryEvaluator* eval = new GeometryEvaluator;
         geomDatabase->add_evaluator(eval);
         eval->geometry = geometryHandles[i];
-        eval->mesh = get_nodes_in_sideset(mesh_data, mesh);
+        eval->mesh = *get_nodes_in_sideset(mesh_data, mesh);
     }
 }
 
-PointSet& GeometryFactory::get_nodes_in_sideset(PerceptMesh* mesh_data, int sideset)
+PointSet* GeometryFactory::get_nodes_in_sideset(PerceptMesh* mesh_data, int sideset)
 {
-    PointSet points;
+    PointSet* points = new PointSet();
 
     return points;
 }

@@ -22,7 +22,7 @@ protected:
 
     std::vector<GeometryHandle> geometryHandles;
 
-    PointSet& get_nodes_in_sideset(PerceptMesh* mesh_data, int sideset);
+    PointSet* get_nodes_in_sideset(PerceptMesh* mesh_data, int sideset);
 };
 
 #endif // GEOMETRYFACTORY_HPP

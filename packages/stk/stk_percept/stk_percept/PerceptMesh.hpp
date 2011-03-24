@@ -150,7 +150,7 @@ namespace stk {
 
       int
       getNumberElements();
-PerceptMesh* mesh_data
+
       //========================================================================================================================
       /// low-level interfaces
       /// Create a Mesh object thatPerceptMesh* mesh_data doesn't own its constituent MetaData and BulkData, pointers to which are adopted
