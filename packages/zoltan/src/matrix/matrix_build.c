@@ -110,7 +110,6 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
   if (use_full_dd) {
     /* Zoltan computes a translation */
     /* Have to use Data Directory if request_GNOs is true. */
-printf("KDDKDD USING FULL DD use_full_dd %d  matrix->opts.speed %d  request_GNOs %d\n", use_full_dd, matrix->opts.speed, request_GNOs); 
     if (nX) {
       xGNO = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(nX*sizeof(ZOLTAN_GNO_TYPE));
       if (xGNO == NULL)
@@ -129,8 +128,8 @@ printf("KDDKDD USING FULL DD use_full_dd %d  matrix->opts.speed %d  request_GNOs
     /* Make our new numbering public */
     Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, NULL,  NULL, nX);
     if (requested_GNOs) {
-      Zoltan_DD_Find(dd, requested_GIDs, requested_GNOs, NULL, NULL, 
-                     num_requested, NULL);
+      Zoltan_DD_Find(dd, requested_GIDs, (ZOLTAN_ID_PTR) requested_GNOs,
+                     NULL, NULL, num_requested, NULL);
     }
   }
   else { /* We don't want to use the DD */
@@ -140,7 +139,6 @@ printf("KDDKDD USING FULL DD use_full_dd %d  matrix->opts.speed %d  request_GNOs
      * KDDKDD 2/10/11  appropriate parameter to enable this code, the user
      * KDDKDD 2/10/11  knows that his GIDs are compatible with integers.
      */
-printf("KDDKDD USING FAST BUILD use_full_dd %d  matrix->opts.speed %d  request_GNOs %d\n", use_full_dd, matrix->opts.speed, request_GNOs); 
     if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(ZOLTAN_ID_TYPE)){
       xGNO = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(nX*sizeof(ZOLTAN_GNO_TYPE));
       if (nX && xGNO == NULL)
@@ -415,7 +413,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
   if (hypergraph_callbacks) {
     matrix->redist = 1;
-    if (use_full_dd || (*xGNO != *xGID))
+    if (use_full_dd || ((ZOLTAN_ID_PTR) *xGNO != *xGID))
       ZOLTAN_FREE(xGID);
     else
       *xGID = NULL;
@@ -483,7 +481,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
     /* Not Useful anymore */
     ZOLTAN_FREE(xLID);
-    if (use_full_dd || (*xGNO != *xGID))
+    if (use_full_dd || ((ZOLTAN_ID_PTR) *xGNO != *xGID))
       ZOLTAN_FREE(xGID);
     else
       *xGID = NULL;
