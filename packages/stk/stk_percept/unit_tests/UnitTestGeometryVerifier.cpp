@@ -68,7 +68,7 @@ STKUNIT_UNIT_TEST(geom, volume)
     Ioss::Utils::to_string(num_y) + "x" +
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 	
-  PerceptMesh eMesh;
+  PerceptMesh eMesh(3);
   eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
   eMesh.commit();
   // no need for this in create mode: eMesh.readBulkData();

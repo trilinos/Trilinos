@@ -54,7 +54,7 @@ namespace stk
         EXCEPTWATCH;
 
         // start_demo_open_new_close_PerceptMesh
-        PerceptMesh eMesh;
+        PerceptMesh eMesh(3);
         eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
@@ -140,7 +140,7 @@ namespace stk
         double x=0.123, y=0.234, z=0.345, time=0.0;
 
         // start_demo_open_new_close_PerceptMesh_2
-        PerceptMesh eMesh;
+        PerceptMesh eMesh(3);
         // open the file we previously saved with the new fields
         eMesh.openReadOnly("./input_files/cube_with_pressure.e");
 
@@ -210,7 +210,7 @@ namespace stk
         EXCEPTWATCH;
 
         // start_demo_open_new_close_PerceptMesh_3
-        PerceptMesh eMesh;
+        PerceptMesh eMesh(3);
         eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
@@ -249,7 +249,7 @@ namespace stk
         EXCEPTWATCH;
 
         // start_demo_open_new_reopen_PerceptMesh
-        PerceptMesh eMesh;
+        PerceptMesh eMesh(3);
         eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;

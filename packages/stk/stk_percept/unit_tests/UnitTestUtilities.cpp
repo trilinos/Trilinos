@@ -707,11 +707,17 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
       size_t element_count = elem_ids.size();
       int nodes_per_elem = cell_topo->node_count ;
+      std::vector<EntityId> e_connectivity(nodes_per_elem) ;
 
       std::vector<stk::mesh::Entity*> elements(element_count);
       for(size_t i=0; i<element_count; ++i) {
-        int *conn = &connectivity[i*nodes_per_elem];
-        elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
+        int *conn = &(connectivity[i*nodes_per_elem]);
+        for (int j=0; j < nodes_per_elem; j++)
+          {
+            e_connectivity[j] = (EntityId)conn[j];
+          }
+        EntityId* e_conn = &(e_connectivity[0]);
+        elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], e_conn);
       }
 
       // For this example, we are just taking all attribute fields
@@ -811,7 +817,7 @@ void process_surface_entity(const Ioss::GroupingEntity* io ,
         // non-null.
         if (elem != NULL) {
           stk::mesh::Entity& side =
-            stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+            stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
           bulk.change_entity_parts( side, add_parts );
           sides[is] = &side;
         } else {

@@ -12,6 +12,8 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
+#include <stk_mesh/fem/FEMHelpers.hpp>
+
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -680,7 +682,7 @@ void use_encr_case_1_generate_mesh(
 
             const stk::mesh::EntityId elem_id = elem_map[ j ];
 
-            mesh::declare_element( mesh , hex_block , elem_id , node_id );
+            stk::mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
 
             mesh::Entity * const elem = mesh.get_entity( mesh::Element , elem_id );
 

@@ -18,6 +18,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>

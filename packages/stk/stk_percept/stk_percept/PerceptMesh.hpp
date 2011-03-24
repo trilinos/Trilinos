@@ -20,6 +20,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 //#include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
@@ -257,7 +258,6 @@ namespace stk {
       bool
       isBoundarySurface(mesh::Part& block, mesh::Part& surface);
 
-#if 0
       /// here @param thing is a Part, Bucket, Entity, or Field or BulkData
       template<class T>
       static
@@ -268,39 +268,16 @@ namespace stk {
         return fem_meta;
       }
 
+      /// here @param thing is a Part, Bucket, Entity
       template<class T>
       static
       const CellTopologyData * const get_cell_topology(const T& thing) 
       { 
-        //#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-        //      const CellTopologyData * const cell_topo_data = mesh::get_cell_topology(thing);
-        //#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-        //const CellTopologyData * const cell_topo_data = fem::get_cell_topology(thing).getCellTopologyData();
-        const stk::mesh::fem::FEMMetaData & fem_meta = get_fem_meta_data(thing);
-
-        const CellTopologyData * const cell_topo_data = fem_meta.get_cell_topology(thing).getCellTopologyData();
-
-        //fem::CellTopology FEMMetaData::get_cell_topology( const Part & part) const
-
-      //#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return cell_topo_data;
-
-      //return mesh::get_cell_topology(thing);
-      }
-#else
-
-      template<class T>
-      static
-      const CellTopologyData * const get_cell_topology(const T& thing) 
-      { 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-        const CellTopologyData * const cell_topo_data = mesh::get_cell_topology(thing);
-#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-        const CellTopologyData * const cell_topo_data = fem::get_cell_topology(thing).getCellTopologyData();
-#endif
+        const CellTopologyData * const cell_topo_data = fem::get_cell_topology_new(thing).getCellTopologyData();
         return cell_topo_data;
       }
-#endif
+
+
 
     private:
 
@@ -368,10 +345,11 @@ namespace stk {
 
     }; // class PerceptMesh
 
-//     template<class T>
-//     const CellTopologyData * const get_cell_topology(T& thing) { 
-//       return mesh::get_cell_topology(thing);
-//     }
+
+    template<>
+    const CellTopologyData * const 
+    PerceptMesh::get_cell_topology(const Part& part) ;
+
 
 
 #if 0

@@ -24,6 +24,7 @@
 
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
@@ -180,16 +181,16 @@ namespace stk {
 
               if (NodesPerElem == 4)
                 {
-                  stk::mesh::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
+                  stk::mesh::fem::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
                 }
               else
                 {
-                  stk::mesh::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
+                  stk::mesh::fem::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
                   
                   elem_node[0] = node_id( ix   , iy );
                   elem_node[1] = node_id( ix+1 , iy+1 );
                   elem_node[2] = node_id( ix , iy+1 );
-                  stk::mesh::declare_element( bulk_data, quad_part, (NX*NY+1)+elem_id( ix , iy ) , elem_node);
+                  stk::mesh::fem::declare_element( bulk_data, quad_part, (NX*NY+1)+elem_id( ix , iy ) , elem_node);
                 }
               elem_node[0] = node_id( ix   , iy );
               elem_node[1] = node_id( ix+1 , iy );
@@ -350,7 +351,7 @@ namespace stk {
                                             << " element= " << element
                                             << std::endl;
                                 }
-                              stk::mesh::declare_element_side(bulk_data,
+                              stk::mesh::fem::declare_element_side(bulk_data,
                                                               side_id,
                                                               element,
                                                               j_side, // local_side_ord,
@@ -376,7 +377,7 @@ namespace stk {
                                             << " element= " << element
                                             << std::endl;
                                 }
-                              stk::mesh::declare_element_side(bulk_data,
+                              stk::mesh::fem::declare_element_side(bulk_data,
                                                               side_id,
                                                               element,
                                                               j_side, // local_side_ord,

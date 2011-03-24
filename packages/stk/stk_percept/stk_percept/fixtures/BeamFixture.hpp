@@ -25,6 +25,7 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 
 #include <stk_mesh/base/Part.hpp>
@@ -66,7 +67,7 @@ namespace stk {
       void populate();
 
       const int m_spatial_dimension;
-      fem::FEMMetaData m_fem;
+      fem::FEMMetaData m_fem_meta_data;
       MetaData& m_metaData;
       BulkData m_bulkData;
 

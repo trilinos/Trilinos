@@ -19,6 +19,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
 
@@ -478,11 +479,11 @@ namespace stk
       EntityId elem_id = 1;
 
       for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id ) {
-        declare_element( *m_bulkData, *m_block_hex, elem_id, hex_node_ids[i] );
+        stk::mesh::fem::declare_element( *m_bulkData, *m_block_hex, elem_id, hex_node_ids[i] );
       }
 
       for ( unsigned i = 0 ; i < number_wedge ; ++i , ++elem_id ) {
-        declare_element( *m_bulkData, *m_block_wedge, elem_id, wedge_node_ids[i] );
+        stk::mesh::fem::declare_element( *m_bulkData, *m_block_wedge, elem_id, wedge_node_ids[i] );
       }
 
 
@@ -591,7 +592,7 @@ namespace stk
                     }
 
                   //std::cout << "elem_id = " << elem_id << std::endl;
-                  stk::mesh::declare_element( bulkData , part , elem_id , node_ids );
+                  stk::mesh::fem::declare_element( bulkData , part , elem_id , node_ids );
                 }
             }
         }

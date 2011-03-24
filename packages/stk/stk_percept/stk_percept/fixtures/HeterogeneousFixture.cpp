@@ -26,6 +26,7 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
@@ -190,28 +191,28 @@ namespace stk{
           // For each element topology declare elements
 
           for ( unsigned i = 0 ; i < number_hex ; ++i , ++curr_elem_id ) {
-            declare_element( m_bulkData, m_block_hex, curr_elem_id, hex_node_ids[i] );
+            stk::mesh::fem::declare_element( m_bulkData, m_block_hex, curr_elem_id, hex_node_ids[i] );
           }
 
           for ( unsigned i = 0 ; i < number_wedge ; ++i , ++curr_elem_id ) {
-            declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
+            stk::mesh::fem::declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
           }
 
           for ( unsigned i = 0 ; i < number_tetra ; ++i , ++curr_elem_id ) {
-            declare_element( m_bulkData, m_block_tet, curr_elem_id, tetra_node_ids[i] );
+            stk::mesh::fem::declare_element( m_bulkData, m_block_tet, curr_elem_id, tetra_node_ids[i] );
           }
 
 #if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
           for ( unsigned i = 0 ; i < number_pyramid ; ++i , ++curr_elem_id ) {
-            declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
+            stk::mesh::fem::declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
           }
 
           for ( unsigned i = 0 ; i < number_shell_quad ; ++i , ++curr_elem_id ) {
-            declare_element( m_bulkData, m_block_quad_shell, curr_elem_id, shell_quad_node_ids[i]);
+            stk::mesh::fem::declare_element( m_bulkData, m_block_quad_shell, curr_elem_id, shell_quad_node_ids[i]);
           }
 
           for ( unsigned i = 0 ; i < number_shell_tri ; ++i , ++curr_elem_id ) {
-            declare_element( m_bulkData, m_block_tri_shell, curr_elem_id, shell_tri_node_ids[i] );
+            stk::mesh::fem::declare_element( m_bulkData, m_block_tri_shell, curr_elem_id, shell_tri_node_ids[i] );
           }
 #endif
 

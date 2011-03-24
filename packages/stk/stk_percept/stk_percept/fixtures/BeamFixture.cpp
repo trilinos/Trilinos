@@ -38,16 +38,16 @@ namespace stk{
 
     BeamFixture::BeamFixture( stk::ParallelMachine comm, bool doCommit ) :
       m_spatial_dimension(3)
-      , m_fem(m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) )
-      , m_metaData( stk::mesh::fem::FEMMetaData::get_meta_data(m_fem) )
+      , m_fem_meta_data(m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) )
+      , m_metaData( stk::mesh::fem::FEMMetaData::get_meta_data(m_fem_meta_data) )
       , m_bulkData( m_metaData , comm )
       , m_block_beam( declare_part< Beam2 >(m_metaData,  "block_2" ) )
-      , m_elem_rank( m_fem.element_rank() )
-      , m_coordinates_field( m_fem.declare_field< VectorFieldType >( "coordinates" ))
-      , m_centroid_field(    m_fem.declare_field< VectorFieldType >( "centroid" ))
-      , m_temperature_field( m_fem.declare_field< ScalarFieldType >( "temperature" ))
-      , m_volume_field( m_fem.declare_field< ScalarFieldType >( "volume" ))
-      , m_element_node_coordinates_field( m_fem.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
+      , m_elem_rank( m_fem_meta_data.element_rank() )
+      , m_coordinates_field( m_fem_meta_data.declare_field< VectorFieldType >( "coordinates" ))
+      , m_centroid_field(    m_fem_meta_data.declare_field< VectorFieldType >( "centroid" ))
+      , m_temperature_field( m_fem_meta_data.declare_field< ScalarFieldType >( "temperature" ))
+      , m_volume_field( m_fem_meta_data.declare_field< ScalarFieldType >( "volume" ))
+      , m_element_node_coordinates_field( m_fem_meta_data.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
     {
       // Define where fields exist on the mesh:
       Part & universal = m_metaData.universal_part();
@@ -119,7 +119,7 @@ namespace stk{
 
           // For each element topology declare elements
           for ( unsigned i = 0 ; i < number_beam ; ++i , ++curr_elem_id ) {
-            declare_element( m_bulkData, m_block_beam, curr_elem_id, beam_node_ids[i] );
+            stk::mesh::fem::declare_element( m_bulkData, m_block_beam, curr_elem_id, beam_node_ids[i] );
           }
 
           // For all nodes assign nodal coordinates

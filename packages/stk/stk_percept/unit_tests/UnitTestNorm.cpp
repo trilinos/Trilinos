@@ -69,7 +69,7 @@ struct LocalFixture
   StringFunction sfx;
   ConstantFunction sfx_res;
 
-  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0) : eMesh(), bogus_init(init(num_xyz, num_y, num_z)),
+  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0) : eMesh(3), bogus_init(init(num_xyz, num_y, num_z)),
                                                                      metaData(*eMesh.getMetaData()), bulkData(*eMesh.getBulkData()),
                                                                      coords_field( metaData.get_field<FieldBase>("coordinates") ),
                                                                      sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) ),
@@ -570,7 +570,7 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
   using namespace mesh;
 
   /// create a meta data/bulk data empty pair
-  PerceptMesh eMesh;
+  PerceptMesh eMesh(3);
 
   if (1)
   {
