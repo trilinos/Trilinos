@@ -1,69 +1,58 @@
 <ParameterList>
+	<ParameterList name="mult2x2">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/mult2x2a.mtx" type="string"/>
+		<Parameter name="B" value="matrices/mult2x2b.mtx" type="string"/>
+		<Parameter name="C" value="matrices/mult2x2c.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
 	<ParameterList name="cdt_system">
     <Parameter name="op" value="multiply" type="string"/>
-		<Parameter name="A" value="matrices/cdt_m.hb" type="string"/>
-		<Parameter name="B" value="matrices/cdt_tce.hb" type="string"/>
+		<Parameter name="A" value="matrices/cdt_m.mtx" type="string"/>
+		<Parameter name="B" value="matrices/cdt_tce.mtx" type="string"/>
+		<Parameter name="C" value="matrices/cdt_d.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
 	</ParameterList>
 	<ParameterList name="synthetic1">
     <Parameter name="op" value="multiply" type="string"/>
-		<Parameter name="A" value="matrices/gen1a.hb" type="string"/>
-		<Parameter name="B" value="matrices/gen1b.hb" type="string"/>
+		<Parameter name="A" value="matrices/syn1a.mtx" type="string"/>
+		<Parameter name="B" value="matrices/syn1b.mtx" type="string"/>
+		<Parameter name="C" value="matrices/syn1c.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
-		<Parameter name="epsilon" value=".00000001" type="double"/>
 	</ParameterList>
-	<ParameterList name="synthetic2">
+	<ParameterList name="syntheticT">
     <Parameter name="op" value="multiply" type="string"/>
-		<Parameter name="A" value="matrices/gen2a.hb" type="string"/>
-		<Parameter name="B" value="matrices/gen2b.hb" type="string"/>
-		<Parameter name="TransA" value="false" type="bool"/>
-		<Parameter name="TransB" value="false" type="bool"/>
-		<Parameter name="epsilon" value=".00000001" type="double"/>
-	</ParameterList>
-  <ParameterList name="synthetic3">
-    <Parameter name="op" value="multiply" type="string"/>
-		<Parameter name="A" value="matrices/gen3a.hb" type="string"/>
-		<Parameter name="B" value="matrices/gen3b.hb" type="string"/>
-		<Parameter name="TransA" value="false" type="bool"/>
-		<Parameter name="TransB" value="false" type="bool"/>
-		<Parameter name="epsilon" value=".00000001" type="double"/>
-  </ParameterList>
-  <ParameterList name="syntheticAtransB">
-    <Parameter name="op" value="multiply" type="string"/>
-		<Parameter name="A" value="matrices/squareA.hb" type="string"/>
-		<Parameter name="B" value="matrices/squareB.hb" type="string"/>
-		<Parameter name="TransA" value="true" type="bool"/>
-		<Parameter name="TransB" value="false" type="bool"/>
-		<Parameter name="epsilon" value=".00000001" type="double"/>
-  </ParameterList>
-  <ParameterList name="syntheticAtransBtrans">
-    <Parameter name="op" value="multiply" type="string"/>
-		<Parameter name="A" value="matrices/squareA.hb" type="string"/>
-		<Parameter name="B" value="matrices/squareB.hb" type="string"/>
+		<Parameter name="A" value="matrices/synTa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/synTb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/synTc.mtx" type="string"/>
 		<Parameter name="TransA" value="true" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
-		<Parameter name="epsilon" value=".00000001" type="double"/>
-  </ParameterList>
-	<ParameterList name="2x4add">
-    <Parameter name="op" value="add" type="string"/>
-		<Parameter name="A" value="matrices/add2x4A.hb" type="string"/>
-		<Parameter name="B" value="matrices/add2x4B.hb" type="string"/>
-		<Parameter name="TransA" value="false" type="bool"/>
-		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
-	<ParameterList name="bigadd">
-    <Parameter name="op" value="add" type="string"/>
-		<Parameter name="A" value="matrices/bigAddA.hb" type="string"/>
-		<Parameter name="B" value="matrices/bigAddB.hb" type="string"/>
+	<!--  Known to not work at this time, Kurtis Nusbaum 03/24/2011
+  <ParameterList name="syntheticBT">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/synBTa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/synBTb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/synBTc.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="true" type="bool"/>
+	</ParameterList> 
+	<ParameterList name="syntheticAT">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/synATa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/synATb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/synATc.mtx" type="string"/>
+		<Parameter name="TransA" value="true" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
-	</ParameterList>
-	<ParameterList name="medAdd">
-    <Parameter name="op" value="add" type="string"/>
-		<Parameter name="A" value="matrices/medAddA.hb" type="string"/>
-		<Parameter name="B" value="matrices/medAddB.hb" type="string"/>
+	</ParameterList> -->
+	<ParameterList name="syntheticRect">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/synRecta.mtx" type="string"/>
+		<Parameter name="B" value="matrices/synRectb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/synRectc.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>

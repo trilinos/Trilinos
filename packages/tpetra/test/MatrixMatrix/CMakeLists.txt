@@ -21,7 +21,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
   COMM serial mpi
-  DEPLIBS tpetraext
+  DEPLIBS tpetraext tpetrainout
 )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -43,14 +43,12 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
 DEST_FILES
-cdt_m.hb cdt_tce.hb
-gen1a.hb gen1b.hb
-gen2a.hb gen2b.hb
-gen3a.hb gen3b.hb
-add2x4A.hb add2x4B.hb
-bigAddA.hb bigAddB.hb
-medAddA.hb medAddB.hb
-squareA.hb squareB.hb
+cdt_m.mtx cdt_tce.mtx cdt_d.mtx
+syn1a.mtx syn1b.mtx syn1c.mtx 
+synTa.mtx synTb.mtx synTc.mtx
+synBTa.mtx synBTb.mtx synBTc.mtx
+synATa.mtx synATb.mtx synATc.mtx
+synRecta.mtx synRectb.mtx synRectc.mtx
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix/matrices
 DEST_DIR ${PACKAGE_BINARY_DIR}/test/MatrixMatrix/matrices
 EXEDEPS MatrixMatrix_UnitTests

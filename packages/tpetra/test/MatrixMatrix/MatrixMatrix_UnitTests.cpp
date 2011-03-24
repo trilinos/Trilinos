@@ -8,12 +8,13 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+#include <cmath>
 
 namespace {
   static const double defaultEpsilon = 1e-10;
   bool verbose = false;
   std::string matnamesFile;
-  bool write_result_hb = false;
 
   using Teuchos::null;
   using Teuchos::rcp;
@@ -26,14 +27,15 @@ namespace {
   using Tpetra::Vector;
   using Tpetra::CrsMatrixMultiplyOp;
   using Tpetra::DefaultPlatform;
+  using Tpetra::MatrixMarket::Reader;
+  using Teuchos::ArrayView;
+  using Teuchos::FancyOStream;
 
 
 TEUCHOS_STATIC_SETUP(){
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
   clp.setOption("matnames-file", &matnamesFile, 
     "A file containing a list of matricies we'll import", true);
-  clp.setOption("writeresults", "no-write-results", &write_result_hb, 
-    "Whether or not to write the resutling matricies to hb files");
   clp.setOption("v", "not-verbose", &verbose, 
     "Whether or not to use verbose output");
 }
@@ -48,6 +50,30 @@ typedef struct add_test_results_struct{
   //double y3Norm;
 } add_test_results;
 
+typedef struct mult_test_results_struct{
+  double epsilon;
+  double cNorm;
+  double compNorm;
+} mult_test_results;
+
+template<class CrsMatrix_t> double getNorm(RCP<CrsMatrix_t> matrix){
+  double mySum = 0;
+  Array<int> inds(matrix->getNodeMaxNumRowEntries());
+  Array<double> vals(matrix->getNodeMaxNumRowEntries());
+  for(int i =0; ((size_t)i)<matrix->getNodeNumRows(); ++i){
+    size_t numRowEnts = matrix->getNumEntriesInLocalRow(i);
+    ArrayView<const int> indsView = inds();
+    ArrayView<const double> valsView = vals();
+    matrix->getLocalRowView(i, indsView, valsView);
+    for(size_t j=0; ((size_t)j)<numRowEnts; ++j){
+      mySum = valsView[j]*valsView[j];
+    }
+  }
+  double totalSum = 0;
+  Teuchos::reduceAll(*(matrix->getComm()), Teuchos::REDUCE_SUM, 1, &mySum, &totalSum);
+  return sqrt(totalSum);
+
+}
 /*
 template<class Ordinal>
 add_test_results add_test(
@@ -107,51 +133,31 @@ add_test_results add_test(
 }*/
 
 template<class Ordinal>
-double multiply_test(
+mult_test_results multiply_test(
   RCP<CrsMatrix<double, int> > A,
   RCP<CrsMatrix<double, int> > B,
   bool AT,
   bool BT,
-  RCP<const Comm<Ordinal> > comm)
+  RCP<CrsMatrix<double, int> > C,
+  RCP<const Comm<Ordinal> > comm,
+  FancyOStream& out)
 {
 
-  typedef Kokkos::DefaultNode::DefaultNodeType DNode;
   typedef CrsMatrix<double,int> CrsMatrix_t;
   typedef Map<int, int> Map_t;
-  typedef Vector<double> Vector_t;
-  typedef CrsMatrixMultiplyOp<double> CrsMatrixMultiplyOp_t;
   RCP<const Map_t> map = A->getRowMap();
 
   RCP<CrsMatrix_t> computedC = rcp( new CrsMatrix_t(map, 1));
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC);
-
-  Vector_t x1(map), x2(map), x3(map);
-  Vector_t y3(map);
-
-  x1.randomize();
-
-  A->apply(x1,x2);
-  B->apply(x2,x3);
-  computedC->apply(x1,y3);
-  x3.update(1.0,y3,-1.0);
-  /*Vector_t randomVector1(computedC->getDomainMap(), true);
-  randomVector1.randomize();
-  Vector_t y1(computedC->getRangeMap(), true);
-  CrsMatrixMultiplyOp_t cTimesVOp(computedC);
-  cTimesVOp.apply(randomVector1, y1);
-
-  Vector_t intermediateVector(A->getDomainMap(), true);
-  CrsMatrixMultiplyOp_t bTimesVOp(B);
-  bTimesVOp.apply(randomVector1,intermediateVector);
-
-
-  Vector_t y2(A->getRangeMap(), true);
-  CrsMatrixMultiplyOp_t aTimesVOp(A);
-  aTimesVOp.apply(intermediateVector, y2);*/
-
-  return fabs(x3.norm2());
-
+  double cNorm = getNorm(C);
+  Tpetra::MatrixMatrix::Add(*C, false, -1.0, *computedC, 1.0);
+  double compNorm = getNorm(computedC);
+  mult_test_results results;
+  results.epsilon = compNorm/cNorm;
+  results.cNorm = cNorm;
+  results.compNorm = compNorm;
+  return results;
 }
 
 
@@ -196,6 +202,8 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, test_find_rows){
 
 TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<Kokkos::DefaultNode::DefaultNodeType> node = 
+    Kokkos::DefaultNode::getDefaultNode();
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems = 
     Teuchos::getParametersFromXmlFile(matnamesFile);
   /*if(verbose){
@@ -218,17 +226,18 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
     Teuchos::ParameterList currentSystem = matrixSystems->sublist(it->first); 
     std::string A_file = currentSystem.get<std::string>("A");
     std::string B_file = currentSystem.get<std::string>("B");
+    std::string C_file = currentSystem.get<std::string>("C");
     bool AT = currentSystem.get<bool>("TransA");
     bool BT = currentSystem.get<bool>("TransB");
     double epsilon = currentSystem.get<double>("epsilon", defaultEpsilon);
     std::string op = currentSystem.get<std::string>("op");
   
+    out << "A file: " << A_file << std::endl;
 
-    RCP<CrsMatrix<double,int> > A = null;
-    RCP<CrsMatrix<double,int> > B = null;
+    RCP<CrsMatrix<double,int> > A = Reader<CrsMatrix<double, int> >::readFile(A_file, comm, node);
+    RCP<CrsMatrix<double,int> > B = Reader<CrsMatrix<double, int> >::readFile(B_file, comm, node);
+    RCP<CrsMatrix<double,int> > C = Reader<CrsMatrix<double, int> >::readFile(C_file, comm, node);
  
-    Tpetra::Utils::readHBMatrix(A_file, comm, Kokkos::DefaultNode::getDefaultNode(), A);
-    Tpetra::Utils::readHBMatrix(B_file, comm, Kokkos::DefaultNode::getDefaultNode(), B);
 
     TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
       "Unrecognized Matrix Operation: " << op << "!" << std::endl);
@@ -237,8 +246,14 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       if(verbose){
         out << "Running multiply test for " << currentSystem.name() << std::endl;
       }
-      double result = multiply_test(A,B,AT,BT,comm);
-      TEST_COMPARE(result, <, epsilon)
+      mult_test_results results = multiply_test(A,B,AT,BT,C,comm, out);
+      if(verbose){
+        out << "Results:" <<std::endl;
+        out << "\tEpsilon: " << results.epsilon << std::endl;
+        out << "\tcNorm: " << results.cNorm << std::endl;
+        out << "\tcompNorm: " << results.compNorm << std::endl;
+      }
+      TEST_COMPARE(results.epsilon, <, epsilon)
     }
     else if(op == "add"){
 /*      if(verbose){

@@ -273,7 +273,7 @@ void Multiply(
 }
 
 // CGB: check this...
-/*template <class Scalar, 
+template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -361,10 +361,10 @@ void Add(
       }
     }
   }
-}*/
+}
 
 // CGB: check this...
-/*template <class Scalar, 
+template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -460,7 +460,7 @@ void Add(
         }
      }
   }
-}*/
+}
 
 } //End namespace MatrixMatrix
 
@@ -1441,8 +1441,7 @@ Scalar sparsedot(
   MMdetails::find_rows_containing_cols( \
     const CrsMatrix< SCALAR , LO , GO , NODE >& M, \
     RCP<const Map< LO , GO , NODE > > colmap); \
-
-  /*
+\
   template \
   void MatrixMatrix::Add( \
     const CrsMatrix< SCALAR, LO , GO , NODE >& A, \
@@ -1451,14 +1450,14 @@ Scalar sparsedot(
     const CrsMatrix< SCALAR, LO , GO , NODE >& B, \
     bool transposeB, \
     SCALAR scalarB, \
-    RCP<CrsMatrix< SCALAR, LO , GO , NODE > > C); \*/
-
-/*  \
+    RCP<CrsMatrix< SCALAR, LO , GO , NODE > > C); \
+  \
   template <> \
   int MatrixMatrix::Add( \
-  RCP<const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > A, \
-  bool transposeA, \
-  double scalarA, \
-  RCP<CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > B, \
-  double scalarB ) \*/
+    RCP<const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > A, \
+    bool transposeA, \
+    double scalarA, \
+    RCP<CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > B, \
+    double scalarB ) \
+
 #endif // TPETRA_MATRIXMATRIX_DEF_HPP
