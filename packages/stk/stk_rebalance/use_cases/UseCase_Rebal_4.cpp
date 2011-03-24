@@ -279,9 +279,9 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   const stk::mesh::PartVector surfaces(1, &side_part);
   {
     const stk::mesh::PartVector empty_remove_parts;
-    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
-    const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-    stk::mesh::Selector selector2( stk::mesh::MetaData::get(bulk_data).locally_owned_part());
+    stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
+    const stk::mesh::EntityRank side_rank = fem_meta.side_rank();
+    stk::mesh::Selector selector2( fem_meta.locally_owned_part());
     mesh::EntityVector sides;
     mesh::get_selected_entities(selector2, bulk_data.buckets(side_rank), sides);
 
@@ -319,9 +319,9 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     std::cout <<" Number on Boundary:     :"<<nboundary <<std::endl;
     std::cout <<" Number Adjancent:       :"<<nadj      <<std::endl;
     {
-      stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
-      const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-      const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+      stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
+      const stk::mesh::EntityRank side_rank = fem_meta.side_rank();
+      const stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
       const mesh::Entity *s = bulk_data.get_entity(side_rank,7);
       if (s) {
         const mesh::Entity & side = *s;
@@ -361,9 +361,9 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     std::cout << std::endl
      << "Use Case 4: imbalance_threshold after rebalance 2 = " << imbalance_threshold <<", "<<do_rebal << std::endl;
   {
-    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
-    const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-    const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+    stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
+    const stk::mesh::EntityRank side_rank = fem_meta.side_rank();
+    const stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
     mesh::Entity *s = bulk_data.get_entity(side_rank,7);
     if (s) {
       mesh::Entity & side = *s;

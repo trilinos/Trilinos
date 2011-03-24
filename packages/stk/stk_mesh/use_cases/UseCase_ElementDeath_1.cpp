@@ -16,7 +16,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
 
@@ -245,7 +245,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
       const unsigned side_ordinal  = skin[i].side_ordinal;
       stk::mesh::Entity & side   = * (requested_entities[i]);
 
-      stk::mesh::declare_element_side(entity, side, side_ordinal);
+      stk::mesh::fem::declare_element_side(entity, side, side_ordinal);
     }
 
     mesh.modification_end();

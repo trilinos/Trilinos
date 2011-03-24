@@ -53,14 +53,15 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
   const stk::mesh::EntityRank element_rank    = fem_meta.element_rank();
 
-  stk::mesh::Part & quad_part( stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" ) );
-  VectorField & coord_field( meta_data.declare_field< VectorField >( "coordinates" ) );
-  ScalarField & weight_field( meta_data.declare_field< ScalarField >( "element_weights" ) );
+  stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  stk::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
+  VectorField & coord_field( fem_meta.declare_field< VectorField >( "coordinates" ) );
+  ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "element_weights" ) );
 
-  stk::mesh::put_field( coord_field , NODE_RANK , meta_data.universal_part() );
-  stk::mesh::put_field(weight_field , element_rank , meta_data.universal_part() );
+  stk::mesh::put_field( coord_field , NODE_RANK , fem_meta.universal_part() );
+  stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
 
-  meta_data.commit();
+  fem_meta.commit();
 
   const unsigned p_size = bulk_data.parallel_size();
   const unsigned p_rank = bulk_data.parallel_rank();
@@ -111,7 +112,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
     {
       const unsigned iy_left  =  0; 
       const unsigned iy_right = ny; 
-      stk::mesh::PartVector add(1, &meta_data.locally_owned_part());
+      stk::mesh::PartVector add(1, &fem_meta.locally_owned_part());
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid_left  = 1 + ix + iy_left  * nnx ;
         stk::mesh::EntityId nid_right = 1 + ix + iy_right * nnx ;
@@ -149,7 +150,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
 
   {
-    stk::mesh::Selector selector(meta_data.universal_part());
+    stk::mesh::Selector selector(fem_meta.universal_part());
 
     stk::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
   }
@@ -171,7 +172,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   // And verify that all dependent entities are on the same proc as their parent element
   {
     stk::mesh::EntityVector entities;
-    stk::mesh::Selector selector = meta_data.locally_owned_part();
+    stk::mesh::Selector selector = fem_meta.locally_owned_part();
 
     get_selected_entities(selector, bulk_data.buckets(NODE_RANK), entities);
     bool result = stk::rebalance::verify_dependent_ownership(element_rank, entities);

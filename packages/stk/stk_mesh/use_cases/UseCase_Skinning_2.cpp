@@ -14,7 +14,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
 
@@ -112,7 +112,7 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
 
       stk::mesh::EntityId elem_id = 3;
 
-      stk::mesh::declare_element( fixture.m_bulk_data, shell_part, elem_id, elem_node);
+      stk::mesh::fem::declare_element( fixture.m_bulk_data, shell_part, elem_id, elem_node);
     }
     fixture.m_bulk_data.modification_end();
 
