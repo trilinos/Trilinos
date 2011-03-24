@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
@@ -24,7 +23,7 @@
 #include <stk_mesh/base/Ghosting.hpp>
 
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>
 #include <stk_mesh/fixtures/RingFixture.hpp>
@@ -40,13 +39,16 @@ using stk::mesh::Part;
 using stk::mesh::Relation;
 using stk::mesh::Selector;
 using stk::mesh::EntityId;
-using stk::mesh::MetaData;
+using stk::mesh::fem::FEMMetaData;
 using stk::mesh::BulkData;
 using stk::mesh::DefaultFEM;
 using stk::mesh::Ghosting;
 using stk::mesh::fixtures::BoxFixture;
 using stk::mesh::fixtures::RingFixture;
-using stk::mesh::fem::NODE_RANK;
+
+namespace {
+
+const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 {
@@ -70,10 +72,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   BoxFixture fixture1(pm , max_bucket_size, entity_names),
              fixture2(pm , max_bucket_size, entity_names);
 
-  MetaData& meta  = fixture1.meta_data();
-  MetaData& meta2 = fixture2.meta_data();
+  FEMMetaData& meta  = fixture1.meta_data();
+  FEMMetaData& meta2 = fixture2.meta_data();
   const int spatial_dimension = 3;
-  const EntityRank element_rank = stk::mesh::fem::element_rank(fixture1.fem());
+  const EntityRank element_rank = meta.element_rank();
 
   BulkData& bulk  = fixture1.bulk_data();
   BulkData& bulk2 = fixture2.bulk_data();
@@ -172,7 +174,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   const unsigned p_size = stk::parallel_machine_size( pm );
 
   const unsigned nLocalEdge = nPerProc ;
-  MetaData meta3( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  FEMMetaData meta3( spatial_dimension );
 
   meta3.commit();
 
@@ -279,9 +281,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dim));
+  FEMMetaData meta_data(spatial_dim);
   meta_data.commit();
-  BulkData mesh(meta_data, pm);
+  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create the entities and relations
@@ -324,9 +326,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dim));
+  FEMMetaData meta_data(spatial_dim);
   meta_data.commit();
-  BulkData mesh(meta_data, pm);
+  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create the entities and relations
@@ -370,15 +372,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   // sharers to declare the same relations, but instead allowing just
   // the owner to declare relations, that should be tested here.
 
-
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( MPI_COMM_WORLD );
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dim));
+  FEMMetaData meta_data(spatial_dim);
   meta_data.commit();
-  BulkData mesh(meta_data, pm);
+  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
   unsigned p_rank = mesh.parallel_rank();
   unsigned p_size = mesh.parallel_size();
 
@@ -441,4 +442,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   }
 
   mesh.modification_end();
+}
+
 }

@@ -8,7 +8,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 /*----------------------------------------------------------------------------
 
@@ -38,12 +38,12 @@ public:
   Grid2D_Fixture( stk::ParallelMachine );
 
   unsigned                    m_spatial_dimension;
-  stk::mesh::MetaData         m_meta_data;
+  stk::mesh::fem::FEMMetaData m_fem_meta_data;
   stk::mesh::BulkData         m_bulk_data;
-  stk::mesh::DefaultFEM       m_topo_data;
   stk::mesh::Part           & m_quad_part;
   VectorField &               m_coord_field;
   const stk::mesh::EntityRank m_elem_rank;
+  const stk::mesh::EntityRank m_node_rank;
 
   bool test_change_owner( unsigned nx , unsigned ny );
 

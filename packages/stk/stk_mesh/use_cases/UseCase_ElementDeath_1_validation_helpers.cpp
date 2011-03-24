@@ -5,13 +5,11 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Types.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
-
 
 /*
 The grid fixture creates the mesh below and skins it
@@ -212,15 +210,14 @@ namespace {
   };
 }
 
-bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration) {
-
+bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
+{
   enum {
     LEFT   = 0,
     BOTTOM = 1,
     RIGHT  = 2,
     TOP    = 3
   };
-
 
   std::vector<entity_side> live_sides, dead_sides;
   switch(iteration)
