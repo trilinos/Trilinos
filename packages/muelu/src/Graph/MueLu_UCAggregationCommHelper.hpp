@@ -1,11 +1,11 @@
-#ifndef MUELU_AGGALGORITHM2COMM_HPP
-#define MUELU_AGGALGORITHM2COMM_HPP
+#ifndef MUELU_UCAGGREGATIONCOMMHELPER_HPP
+#define MUELU_UCAGGREGATIONCOMMHELPER_HPP
 
 #include <Cthulhu_VectorFactory.hpp>
 #include <Cthulhu_ImportFactory.hpp>
 #include <Cthulhu_MapFactory.hpp>
 
-class AggAlgorithm2Comm {
+class UCAggregationCommHelper {
 
 private:
   RCP<const Cthulhu::Import<int,int> > import_;
@@ -27,12 +27,12 @@ private:
   //
 public:
 
-  AggAlgorithm2Comm(const RCP<const Cthulhu::Map<int,int> > & uniqueMap, const RCP<const Cthulhu::Map<int,int> > & nonUniqueMap)
+  UCAggregationCommHelper(const RCP<const Cthulhu::Map<int,int> > & uniqueMap, const RCP<const Cthulhu::Map<int,int> > & nonUniqueMap)
   {
     import_ = Cthulhu::ImportFactory<int,int>::Build(uniqueMap, nonUniqueMap);
   }
 
-  ~AggAlgorithm2Comm() {}
+  ~UCAggregationCommHelper() {}
 
   //
   // For each GlobalId associated with weight.getMap():
@@ -273,4 +273,4 @@ public:
   }
    
 };
-#endif //ifndef MUELU_AGGALGORITHM2COMM_HPP
+#endif //ifndef MUELU_UCAGGREGATIONCOMMHELPER_HPP

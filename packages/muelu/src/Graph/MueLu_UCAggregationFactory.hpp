@@ -5,7 +5,7 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AggregationOptions.hpp"
 #include "MueLu_Graph.hpp"
-#include "MueLu_AggAlgorithm2Comm.hpp"
+#include "MueLu_UCAggregationCommHelper.hpp"
 
 #include <assert.h>
 #include <stdio.h>
@@ -608,7 +608,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         const RCP<const Cthulhu::Map<LO,GO> > nonUniqueMap = aggregates.GetMap();
         const RCP<const Cthulhu::Map<LO,GO> > uniqueMap = graph.GetDomainMap();
 
-        AggAlgorithm2Comm myWidget(uniqueMap, nonUniqueMap);
+        UCAggregationCommHelper myWidget(uniqueMap, nonUniqueMap);
 
         RCP<Cthulhu::Vector<double> > distWeights = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
 
@@ -1190,7 +1190,7 @@ class UCAggregationFactory : public Teuchos::Describable {
 
       //! @brief Attempt to clean up aggregates that are too small.
       int RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                                RCP<Cthulhu::Vector<double> > & distWeights, const AggAlgorithm2Comm & myWidget) const
+                                RCP<Cthulhu::Vector<double> > & distWeights, const UCAggregationCommHelper & myWidget) const
       {
         int myPid = aggregates.GetMap()->getComm()->getRank();
         
