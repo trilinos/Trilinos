@@ -13,6 +13,8 @@
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/CellTopology.hpp>
+// This is needed for ElementNode class
+#include <stk_mesh/fem/TopologyDimensions.hpp>
 
 namespace stk {
 namespace mesh {
@@ -111,6 +113,58 @@ int get_entity_subcell_id( const Entity            & entity ,
 bool comm_mesh_counts( BulkData & ,
                        std::vector<size_t> & counts ,
                        bool = false );
+
+typedef Field<double*,stk::mesh::ElementNode> ElementNodePointerField ;
+
+/** \brief  Declare an element-to-node-data pointer field.
+ */
+template< class NodeField >
+inline
+ElementNodePointerField &
+declare_element_node_pointer_field(
+  FEMMetaData & fmd , const std::string & s ,
+  NodeField & node_field )
+{
+  const unsigned num_states = node_field.number_of_states();
+
+  ElementNodePointerField & f =
+    fmd.template declare_field< ElementNodePointerField >( s, num_states );
+
+  for ( unsigned i = 0 ; i < num_states ; ++i ) {
+    FieldState state = (FieldState) i;
+    fmd.declare_field_relation(
+      f.field_of_state( state ) ,
+      fem::get_element_node_stencil(fmd.spatial_dimension()) ,
+      node_field.field_of_state( state ) );
+  }
+  
+  return f ;
+}
+
+template< class Traits >
+void get_parts_with_topology(stk::mesh::BulkData& mesh,
+                             stk::mesh::PartVector& parts)
+{
+  parts.clear();
+
+  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(mesh);
+
+  const stk::mesh::PartVector& all_parts = fem_meta.get_parts();
+
+  stk::mesh::PartVector::const_iterator
+    iter = all_parts.begin(),
+    iter_end = all_parts.end();
+
+  const CellTopologyData* topology = shards::getCellTopologyData<Traits>();
+
+  for(; iter!=iter_end; ++iter) {
+    stk::mesh::Part* part =  *iter;
+    if (fem_meta.get_cell_topology(*part).getCellTopologyData() == topology) {
+      parts.push_back(part);
+    }
+  }
+}
+
 /** \} */
 
 } //namespace fem
