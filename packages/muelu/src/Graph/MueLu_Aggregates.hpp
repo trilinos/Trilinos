@@ -55,7 +55,7 @@ namespace MueLu {
      
      inline int GetNumAggregates()                      { return nAggregates_;            }
      inline void SetNumAggregates(int nAggregates)      { nAggregates_ = nAggregates;     }
-     inline RCP<LOVector> & GetVertex2AggId() { return vertex2AggId_;           } // LO or GO ?
+     inline RCP<LOVector> & GetVertex2AggId() { return vertex2AggId_;           } // LocalOrdinal because it's an array of local id
      inline RCP<LOVector> & GetProcWinner()   { return procWinner_;             }
      inline bool IsRoot(int i)                          { return isRoot_[i];              }
      inline void SetIsRoot(int vertex, bool value=true) { isRoot_[vertex] = value; }
@@ -91,13 +91,12 @@ namespace MueLu {
     
     nAggregates_  = 0;
     
-    vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap()); //RTODO
+    vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
     
-    procWinner_ = LOVectorFactory::Build(graph.GetImportMap()); //RTODO
+    procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
     procWinner_->putScalar(MUELU_UNASSIGNED);
     
-    //RTODO
     isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements());
     for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
       isRoot_[i] = false;

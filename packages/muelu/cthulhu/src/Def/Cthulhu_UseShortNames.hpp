@@ -68,6 +68,14 @@ typedef GlobalOrdinalMultiVectorFactory GOMultiVectorFactory;
 typedef Cthulhu::OperatorFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorFactory;
 #endif
 
+#ifdef CTHULHU_IMPORT_SHORT
+typedef Cthulhu::Import<LocalOrdinal, GlobalOrdinal, Node> Import;
+#endif
+
+#ifdef CTHULHU_IMPORTFACTORY_SHORT
+typedef Cthulhu::ImportFactory<LocalOrdinal, GlobalOrdinal, Node> ImportFactory;
+#endif
+
 #ifdef HAVE_CTHULHU_TPETRA
 
 #ifdef CTHULHU_TPETRAMAP_SHORT

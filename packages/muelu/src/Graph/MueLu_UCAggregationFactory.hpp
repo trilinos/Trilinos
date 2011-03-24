@@ -608,7 +608,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         const RCP<const Cthulhu::Map<LO,GO> > nonUniqueMap = aggregates.GetMap();
         const RCP<const Cthulhu::Map<LO,GO> > uniqueMap = graph.GetDomainMap();
 
-        UCAggregationCommHelper myWidget(uniqueMap, nonUniqueMap);
+        UCAggregationCommHelper<> myWidget(uniqueMap, nonUniqueMap);
 
         RCP<Cthulhu::Vector<double> > distWeights = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
 
@@ -1190,7 +1190,7 @@ class UCAggregationFactory : public Teuchos::Describable {
 
       //! @brief Attempt to clean up aggregates that are too small.
       int RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                                RCP<Cthulhu::Vector<double> > & distWeights, const UCAggregationCommHelper & myWidget) const
+                                RCP<Cthulhu::Vector<double> > & distWeights, const UCAggregationCommHelper<> & myWidget) const
       {
         int myPid = aggregates.GetMap()->getComm()->getRank();
         

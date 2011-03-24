@@ -2,6 +2,7 @@
 #define MUELU_GRAPH_HPP
 
 #include <Teuchos_ArrayView.hpp>
+#include <Cthulhu_ConfigDefs.hpp>
 #include <Cthulhu_CrsGraph.hpp>
 
 #include "MueLu_Exceptions.hpp"
@@ -28,30 +29,30 @@ namespace MueLu {
     Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) { setObjectLabel(objectLabel); }
     ~Graph() {}
     
-    inline int GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
-    inline int GetNodeNumEdges() const    { return graph_->getNodeNumEntries();  }
+    inline size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
+    inline size_t GetNodeNumEdges()    const { return graph_->getNodeNumEntries(); }
     
-    inline int GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
+    inline Cthulhu::global_size_t GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
 
     inline const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
     inline const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
     inline const RCP<const Map> GetImportMap() const { return graph_->getColMap(); }
 
     //! Return the list of vertices adjacent to the vertex 'v'
-    inline Teuchos::ArrayView<const int> getNeighborVertices(int v) const { 
-      Teuchos::ArrayView<const int> neighborVertices;
+    inline Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const { 
+      Teuchos::ArrayView<const LocalOrdinal> neighborVertices;
       graph_->getLocalRowView(v, neighborVertices); 
       return neighborVertices;
     }
 
-    int GetNodeNumGhost() const { 
+    size_t GetNodeNumGhost() const { 
       /*
         Ray's comments about nGhost:
         Graph->NGhost == graph_->RowMatrixColMap()->NumMyElements() - graph_->OperatorDomainMap()->NumMyElements()
         is basically right. But we've had some issues about how epetra handles empty columns.
         Probably worth discussing this with Jonathan and Chris to see if this is ALWAYS right. 
       */
-      int nGhost = graph_->getColMap()->getNodeNumElements() - graph_->getDomainMap()->getNodeNumElements();
+      size_t nGhost = graph_->getColMap()->getNodeNumElements() - graph_->getDomainMap()->getNodeNumElements();
       if (nGhost < 0) nGhost = 0;
       
       return nGhost;
