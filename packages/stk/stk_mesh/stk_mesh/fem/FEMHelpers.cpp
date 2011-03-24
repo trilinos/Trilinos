@@ -6,6 +6,8 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
+#include <stk_util/parallel/ParallelReduce.hpp>
+
 #include <sstream>
 #include <stdexcept>
 
@@ -183,6 +185,193 @@ CellTopology get_cell_topology_new( const Bucket & bucket)
 CellTopology get_cell_topology_new( const Entity & entity)
 {
   return get_cell_topology_new(entity.bucket());
+}
+
+void count_entities(
+  const Selector & selector ,
+  const BulkData & mesh ,
+  std::vector< EntityRank > & count )
+{
+  const size_t ntype = fem::FEMMetaData::get(mesh).entity_rank_count();
+
+  count.resize( ntype );
+
+  for ( size_t i = 0 ; i < ntype ; ++i ) {
+    count[i] = 0 ;
+
+    const std::vector<Bucket*> & ks = mesh.buckets( i );
+
+    std::vector<Bucket*>::const_iterator ik ;
+
+    for ( ik = ks.begin() ; ik != ks.end() ; ++ik ) {
+      if ( selector(**ik) ) {
+        count[i] += (*ik)->size();
+      }
+    }
+  }
+}
+
+
+const CellTopologyData * get_subcell_nodes(const Entity & entity ,
+                                           EntityRank subcell_rank ,
+                                           unsigned subcell_identifier ,
+                                           EntityVector & subcell_nodes)
+{
+  subcell_nodes.clear();
+
+  // get cell topology
+  const CellTopologyData* celltopology = fem::get_cell_topology_new(entity).getCellTopologyData();
+
+  //error checking
+  {
+    //no celltopology defined
+    if (celltopology == NULL) {
+      return NULL;
+    }
+
+    // valid ranks fall within the dimension of the cell topology
+    const bool bad_rank = subcell_rank >= celltopology->dimension;
+    ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension\n");
+
+    // subcell_identifier must be less than the subcell count
+    const bool bad_id = subcell_identifier >= celltopology->subcell_count[subcell_rank];
+    ThrowInvalidArgMsgIf( bad_id,   "subcell_id is >= subcell_count\n");
+  }
+
+  // Get the cell topology of the subcell
+  const CellTopologyData * subcell_topology =
+    celltopology->subcell[subcell_rank][subcell_identifier].topology;
+
+  const int num_nodes_in_subcell = subcell_topology->node_count;
+
+  // For the subcell, get it's local nodes ids
+  const unsigned* subcell_node_local_ids =
+    celltopology->subcell[subcell_rank][subcell_identifier].node;
+
+  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(entity);
+  const EntityRank node_rank = fem_meta.node_rank();
+  PairIterRelation node_relations = entity.relations(node_rank);
+
+  subcell_nodes.reserve(num_nodes_in_subcell);
+
+  for (int i = 0; i < num_nodes_in_subcell; ++i ) {
+    subcell_nodes.push_back( node_relations[subcell_node_local_ids[i]].entity() );
+  }
+
+  return subcell_topology;
+}
+
+
+int get_entity_subcell_id( const Entity & entity ,
+                           const EntityRank subcell_rank,
+                           const CellTopologyData * subcell_topology,
+                           const std::vector<Entity*>& subcell_nodes )
+{
+  const int INVALID_SIDE = -1;
+
+  unsigned num_nodes = subcell_topology->node_count;
+
+  if (num_nodes != subcell_nodes.size()) {
+    return INVALID_SIDE;
+  }
+
+  // get topology of elem
+  const CellTopologyData* entity_topology = get_cell_topology_new(entity).getCellTopologyData();
+  if (entity_topology == NULL) {
+    return INVALID_SIDE;
+  }
+
+  // get nodal relations for entity
+  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(entity);
+  const EntityRank node_rank = fem_meta.node_rank();
+  PairIterRelation relations = entity.relations(node_rank);
+
+  const int num_permutations = subcell_topology->permutation_count;
+
+  // Iterate over the subcells of entity...
+  for (unsigned local_subcell_ordinal = 0;
+      local_subcell_ordinal < entity_topology->subcell_count[subcell_rank];
+      ++local_subcell_ordinal) {
+
+    // get topological data for this subcell
+    const CellTopologyData* curr_subcell_topology =
+      entity_topology->subcell[subcell_rank][local_subcell_ordinal].topology;
+
+    // If topologies are not the same, there is no way the subcells are the same
+    if (subcell_topology == curr_subcell_topology) {
+
+      const unsigned* const subcell_node_map = entity_topology->subcell[subcell_rank][local_subcell_ordinal].node;
+
+      // Taking all positive permutations into account, check if this subcell
+      // has the same nodes as the subcell_nodes argument. Note that this
+      // implementation preserves the node-order so that we can take
+      // entity-orientation into account.
+      for (int p = 0; p < num_permutations; ++p) {
+
+        if (curr_subcell_topology->permutation[p].polarity ==
+            CELL_PERMUTATION_POLARITY_POSITIVE) {
+
+          const unsigned * const perm_node =
+            curr_subcell_topology->permutation[p].node ;
+
+          bool all_match = true;
+          for (unsigned j = 0 ; j < num_nodes; ++j ) {
+            if (subcell_nodes[j] !=
+                relations[subcell_node_map[perm_node[j]]].entity()) {
+              all_match = false;
+              break;
+            }
+          }
+
+          // all nodes were the same, we have a match
+          if ( all_match ) {
+            return local_subcell_ordinal ;
+          }
+        }
+      }
+    }
+  }
+
+  return INVALID_SIDE;
+}
+
+bool comm_mesh_counts( BulkData & M ,
+                       std::vector<size_t> & counts ,
+                       bool local_flag )
+{
+  const size_t zero = 0 ;
+
+  // Count locally owned entities
+
+  const FEMMetaData & S = FEMMetaData::get(M);
+  const unsigned entity_rank_count = S.entity_rank_count();
+  const size_t   comm_count        = entity_rank_count + 1 ;
+
+  std::vector<size_t> local(  comm_count , zero );
+  std::vector<size_t> global( comm_count , zero );
+
+  ParallelMachine comm = M.parallel();
+  Part & owns = S.locally_owned_part();
+
+  for ( unsigned i = 0 ; i < entity_rank_count ; ++i ) {
+    const std::vector<Bucket*> & ks = M.buckets( i );
+
+    std::vector<Bucket*>::const_iterator ik ;
+
+    for ( ik = ks.begin() ; ik != ks.end() ; ++ik ) {
+      if ( has_superset( **ik , owns ) ) {
+        local[i] += (*ik)->size();
+      }
+    }
+  }
+
+  local[ entity_rank_count ] = local_flag ;
+
+  stk::all_reduce_sum( comm , & local[0] , & global[0] , comm_count );
+
+  counts.assign( global.begin() , global.begin() + entity_rank_count );
+
+  return 0 < global[ entity_rank_count ] ;
 }
 
 }

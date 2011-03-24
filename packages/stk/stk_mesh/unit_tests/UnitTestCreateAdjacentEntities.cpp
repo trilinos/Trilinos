@@ -12,7 +12,7 @@
 #include <stk_mesh/base/Comm.hpp>
 
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 #include <stk_mesh/fixtures/QuadFixture.hpp>
@@ -38,7 +38,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    stk::mesh::fem::comm_mesh_counts( fixture.m_bulk_data , counts);
 
     STKUNIT_EXPECT_EQ( counts[0] , 16u ); // nodes
     STKUNIT_EXPECT_EQ( counts[1] , 0u );  // edges
@@ -52,7 +52,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    stk::mesh::fem::comm_mesh_counts( fixture.m_bulk_data , counts);
 
     STKUNIT_EXPECT_EQ( counts[0] , 16u );
     STKUNIT_EXPECT_EQ( counts[1] , 28u );
@@ -79,7 +79,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    stk::mesh::fem::comm_mesh_counts( fixture.m_bulk_data , counts);
 
     STKUNIT_EXPECT_EQ( counts[node_rank] , 64u ); // nodes
     STKUNIT_EXPECT_EQ( counts[edge_rank] , 0u );  // edges
@@ -93,7 +93,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    stk::mesh::fem::comm_mesh_counts( fixture.m_bulk_data , counts);
 
     STKUNIT_EXPECT_EQ( 64u, counts[node_rank] ); // nodes
     STKUNIT_EXPECT_EQ( 144u, counts[edge_rank] );  // edges
@@ -162,7 +162,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    stk::mesh::fem::comm_mesh_counts( fixture.m_bulk_data , counts);
 
     STKUNIT_EXPECT_EQ( counts[node_rank] , 16u ); // nodes
     STKUNIT_EXPECT_EQ( counts[edge_rank] , 0u );  // edges
@@ -175,7 +175,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    stk::mesh::fem::comm_mesh_counts( fixture.m_bulk_data , counts);
 
     STKUNIT_EXPECT_EQ( 16u, counts[node_rank] ); // nodes
     STKUNIT_EXPECT_EQ( 24u, counts[edge_rank] );  // edges

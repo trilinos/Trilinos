@@ -69,6 +69,48 @@ Part &declare_part(FEMMetaData& meta_data, const std::string &name) {
   return meta_data.declare_part(name, shards::getCellTopologyData<Top>());
 }
 
+/** \brief  Local count selected entities of each type.
+ *
+ * \param selector
+ * \param mesh
+ * \param count
+ */
+void count_entities(
+                  const Selector & selector ,
+                  const BulkData & mesh ,
+                  std::vector<EntityRank> & count );
+
+/**
+ * Given an entity, subcell_rank, and subcell_id, return the nodes
+ * that make up the subcell in a correct order for the given polarity.
+ *
+ * \param entity
+ * \param subcell_rank
+ * \param subcell_indentifier
+ * \param subcell_nodes EntityVector output of the subcell nodes
+ * \param use_reverse_polarity
+ * \return CellTopologyData * of the requested subcell
+ */
+const CellTopologyData * get_subcell_nodes(
+    const Entity     & entity ,
+    EntityRank         subcell_rank ,
+    unsigned           subcell_identifier ,
+    EntityVector     & subcell_nodes
+    );
+
+/** \brief  Given an entity and collection of nodes, return the
+ *          local id of the subcell that contains those nodes in the
+ *          correct orientation.
+ */
+int get_entity_subcell_id( const Entity            & entity ,
+                           const EntityRank          subcell_rank,
+                           const CellTopologyData  * side_topology,
+                           const EntityVector      & side_nodes );
+
+/** \brief Global counts for a mesh's entities. */
+bool comm_mesh_counts( BulkData & ,
+                       std::vector<size_t> & counts ,
+                       bool = false );
 /** \} */
 
 } //namespace fem

@@ -61,7 +61,7 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
     stk::mesh::EntityId elem_id = 3;
 
     try {
-      stk::mesh::declare_element( fixture.m_bulk_data, shell_part, elem_id, elem_node);
+      stk::mesh::fem::declare_element( fixture.m_bulk_data, shell_part, elem_id, elem_node);
     }
     catch (...) {
       no_throw = false;

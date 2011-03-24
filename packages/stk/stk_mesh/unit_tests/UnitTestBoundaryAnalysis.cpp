@@ -20,6 +20,7 @@
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
 
@@ -110,7 +111,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   // get a count of entities that have already been created
   std::vector<unsigned> count;
   stk::mesh::Selector locally_owned(fem_meta.locally_owned_part());
-  stk::mesh::count_entities(locally_owned, bulk_data, count);
+  stk::mesh::fem::count_entities(locally_owned, bulk_data, count);
   const unsigned num_entities = count[NODE_RANK] + count[element_rank];
 
   // Declare the shell entities, placing them in the shell part

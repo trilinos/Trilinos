@@ -18,8 +18,8 @@
 
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
@@ -47,10 +47,11 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   const stk::mesh::EntityRank constraint_rank = rank_names.size();
   rank_names.push_back("Constraint");
 
-  stk::mesh::MetaData meta_data( rank_names );
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize( spatial_dimension, rank_names );
+  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
   stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
-  stk::mesh::DefaultFEM top_data( meta_data, spatial_dimension );
-  const stk::mesh::EntityRank element_rank    = stk::mesh::fem::element_rank(top_data);
+  const stk::mesh::EntityRank element_rank    = fem_meta.element_rank();
 
   stk::mesh::Part & quad_part( stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" ) );
   VectorField & coord_field( meta_data.declare_field< VectorField >( "coordinates" ) );
@@ -82,7 +83,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::Entity &q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        stk::mesh::Entity &q = stk::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
         quads[ix][iy] = &q; 
       }
     }
@@ -173,9 +174,9 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
     stk::mesh::Selector selector = meta_data.locally_owned_part();
 
     get_selected_entities(selector, bulk_data.buckets(NODE_RANK), entities);
-    bool result = stk::rebalance::verify_dependent_ownership(element_rank, entities, top_data);
+    bool result = stk::rebalance::verify_dependent_ownership(element_rank, entities);
     //get_selected_entities(selector, bulk_data.buckets(constraint_rank), entities);
-    //result &= stk::rebalance::verify_dependent_ownership(element_rank, entities, top_data);
+    //result &= stk::rebalance::verify_dependent_ownership(element_rank, entities);
     STKUNIT_ASSERT( result );
   }
 }

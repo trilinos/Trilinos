@@ -71,22 +71,21 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
 
   stk::mesh::fixtures::HexFixture fixture(pm, nx, ny, nz);
 
-  stk::mesh::MetaData & meta  = fixture.m_meta_data;
+  stk::mesh::fem::FEMMetaData & fem_meta  = fixture.m_fem_meta;
   stk::mesh::BulkData & bulk  = fixture.m_bulk_data;
-  stk::mesh::DefaultFEM & fem = fixture.m_fem;
 
   // Put weights field on all entities
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
-  const stk::mesh::EntityRank face_rank = stk::mesh::fem::face_rank(fem);
-  const stk::mesh::EntityRank edge_rank = stk::mesh::fem::edge_rank(fem);
-  const stk::mesh::EntityRank node_rank = stk::mesh::fem::node_rank(fem);
-  ScalarField & weight_field( meta.declare_field< ScalarField >( "entity_weights" ) );
-  stk::mesh::put_field(weight_field , element_rank , meta.universal_part() );
-  stk::mesh::put_field(weight_field , face_rank , meta.universal_part() );
-  stk::mesh::put_field(weight_field , edge_rank , meta.universal_part() );
-  stk::mesh::put_field(weight_field , node_rank , meta.universal_part() );
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank face_rank = fem_meta.face_rank();
+  const stk::mesh::EntityRank edge_rank = fem_meta.edge_rank();
+  const stk::mesh::EntityRank node_rank = fem_meta.node_rank();
+  ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "entity_weights" ) );
+  stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
+  stk::mesh::put_field(weight_field , face_rank , fem_meta.universal_part() );
+  stk::mesh::put_field(weight_field , edge_rank , fem_meta.universal_part() );
+  stk::mesh::put_field(weight_field , node_rank , fem_meta.universal_part() );
 
-  meta.commit();
+  fem_meta.commit();
 
   // Configure our mesh on proc 0
   std::vector<stk::mesh::EntityId> my_element_ids;
@@ -216,7 +215,7 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
   Teuchos::ParameterList emptyList;
   stk::rebalance::Zoltan zoltan_partition(pm, fixture.m_spatial_dimension, emptyList);
 
-  stk::rebalance::rebalance(bulk, meta.universal_part(), &fixture.m_coord_field, &weight_field, zoltan_partition);
+  stk::rebalance::rebalance(bulk, fem_meta.universal_part(), &fixture.m_coord_field, &weight_field, zoltan_partition);
 
   const double imbalance_threshold = ( 3 == p_size )? 1.45 // Zoltan does not do so well for 3 procs
                                                     : 1.1; // ... but does pretty well for 2 and 4 procs
@@ -233,16 +232,16 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
   // And verify that all dependent entities are on the same proc as their parent element
   {
     stk::mesh::EntityVector entities;
-    stk::mesh::Selector selector = meta.locally_owned_part();
+    stk::mesh::Selector selector = fem_meta.locally_owned_part();
 
     get_selected_entities(selector, bulk.buckets(node_rank), entities);
-    result &= verify_dependent_ownership(element_rank, entities, fem);
+    result &= verify_dependent_ownership(element_rank, entities);
 
     get_selected_entities(selector, bulk.buckets(edge_rank), entities);
-    result &= verify_dependent_ownership(element_rank, entities, fem);
+    result &= verify_dependent_ownership(element_rank, entities);
 
     get_selected_entities(selector, bulk.buckets(face_rank), entities);
-    result &= verify_dependent_ownership(element_rank, entities, fem);
+    result &= verify_dependent_ownership(element_rank, entities);
   }
 
   return result;

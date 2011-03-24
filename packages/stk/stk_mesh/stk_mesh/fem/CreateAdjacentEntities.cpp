@@ -13,8 +13,6 @@
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
 #include <stk_mesh/fem/CellTopology.hpp>
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
@@ -70,7 +68,7 @@ void get_entities_with_given_subcell(
   // nodes compose a valid subcell of the entity
   for (EntityVector::const_iterator eitr = entities.begin();
        eitr != entities.end(); ++eitr) {
-    int local_subcell_num = get_entity_subcell_id(
+    int local_subcell_num = fem::get_entity_subcell_id(
       **eitr,
       subcell_rank,
       subcell_topology,
@@ -114,7 +112,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
   const EntityRank side_rank = fem_meta.side_rank();
   const EntityRank edge_rank = fem_meta.edge_rank();
 
-  Selector select_owned = MetaData::get(mesh).locally_owned_part();
+  Selector select_owned = fem::FEMMetaData::get(mesh).locally_owned_part();
 
 
   BucketVector element_buckets;
@@ -150,7 +148,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
               EntityVector subcell_nodes;
 
               const CellTopologyData * subcell_topology =
-                get_subcell_nodes(
+                fem::get_subcell_nodes(
                     elem,
                     subcell_rank,
                     subcell_id,
@@ -283,7 +281,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
               EntityVector subcell_nodes;
 
               const CellTopologyData * subcell_topology =
-                get_subcell_nodes(
+                fem::get_subcell_nodes(
                     elem,
                     subcell_rank,
                     subcell_id,
@@ -404,7 +402,7 @@ void complete_connectivity( BulkData & mesh ) {
                 EntityVector subcell_nodes;
 
                 const CellTopologyData * subcell_topology =
-                  get_subcell_nodes(
+                  fem::get_subcell_nodes(
                       entity,
                       subcell_rank,
                       subcell_id,

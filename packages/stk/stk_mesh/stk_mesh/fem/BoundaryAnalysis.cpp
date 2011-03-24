@@ -11,7 +11,6 @@
 #include <algorithm>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 
@@ -93,7 +92,7 @@ void get_adjacent_entities( const Entity & entity ,
 
   // Get nodes that make up the subcell we're looking at
   EntityVector subcell_nodes;
-  const CellTopologyData * subcell_topology = get_subcell_nodes(entity,
+  const CellTopologyData * subcell_topology = fem::get_subcell_nodes(entity,
                                                                 subcell_rank,
                                                                 subcell_identifier,
                                                                 subcell_nodes);
@@ -118,10 +117,10 @@ void get_adjacent_entities( const Entity & entity ,
 
   for (EntityVector::const_iterator eitr = potentially_adjacent_entities.begin();
        eitr != potentially_adjacent_entities.end(); ++eitr) {
-    int local_subcell_num = get_entity_subcell_id(**eitr,
-                                                  subcell_rank,
-                                                  subcell_topology,
-                                                  subcell_nodes);
+    int local_subcell_num = fem::get_entity_subcell_id(**eitr,
+                                                       subcell_rank,
+                                                       subcell_topology,
+                                                       subcell_nodes);
     if ( local_subcell_num != -1) {
       adjacent_entities.push_back(EntitySideComponent(*eitr, local_subcell_num));
     }
