@@ -142,8 +142,10 @@ LogStream::~LogStream()
 
 OStreamTeeStreambuf::~OStreamTeeStreambuf()
 {
-  m_ostream->flush();
-  m_ostream->rdbuf(m_origRdbuf);
+  if (m_ostream) {
+    m_ostream->flush();
+    m_ostream->rdbuf(m_origRdbuf);
+  }
 
   // Be sure to remove this from all OStreamTeeStreamBuf's
   OStreamTeeStreambufMap &ostream_tee_streambuf_map = get_ostream_tee_streambuf_map();
