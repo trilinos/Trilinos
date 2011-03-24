@@ -221,7 +221,6 @@ namespace Cthulhu {
     //TODO: replace Tpetra::LocalGlobal by Cthulhu::LocalGlobal
     static RCP<Map> Build(UnderlyingLib lib, global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
                           LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
-      std::cout << lib << std::endl;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra)
         return rcp( new TpetraMap(numGlobalElements, indexBase, comm, lg, node) );

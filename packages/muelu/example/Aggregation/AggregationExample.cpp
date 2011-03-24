@@ -36,8 +36,8 @@ int main(int argc, char *argv[]) {
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor cmdp(false);
   
-  MueLu::Gallery::Parameters matrixParameters(cmdp);   // manage parameters of the test case
-  Cthulhu::Parameters cthulhuParameters(cmdp);  // manage parameters of cthulhu
+  MueLu::Gallery::Parameters matrixParameters(cmdp); // manage parameters of the test case
+  Cthulhu::Parameters cthulhuParameters(cmdp);       // manage parameters of cthulhu
   
   switch (cmdp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
+
   int currentPrintLevel=10;
   int printFlag=6;
   

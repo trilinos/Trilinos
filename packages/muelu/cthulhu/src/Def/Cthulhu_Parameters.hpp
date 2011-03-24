@@ -46,9 +46,8 @@ namespace Cthulhu {
 
       if (lib_ == Cthulhu::UseTpetra)
         std::cout << " * linAlgebra = Tpetra" << std::endl;
-      else if (lib_ == Cthulhu::UseTpetra)
-        std::cout << " *linAlgebra = Epetra" << std::endl;
-        //else
+      else if (lib_ == Cthulhu::UseEpetra)
+        std::cout << " * linAlgebra = Epetra" << std::endl;
 
       std::cout << std::endl;
     }
