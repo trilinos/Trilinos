@@ -362,6 +362,66 @@ namespace stk {
 
       // ========================================================================
       // Thin wrapper to hid Ioss::Region in favor of MeshData.
+
+      void create_input_mesh(const std::string &mesh_type,
+                             const std::string &mesh_filename,
+                             const std::string &working_directory,
+                             MPI_Comm comm,
+                             stk::mesh::fem::FEMMetaData &meta_data,
+                             stk::io::util::MeshData &mesh_data,
+                             bool hex_only ) {
+        create_input_mesh(mesh_type,
+                          mesh_filename,
+                          working_directory,
+                          comm,
+                          meta_data.get_meta_data(meta_data),
+                          mesh_data,
+                          hex_only);
+      }
+
+      void create_output_mesh(const std::string &mesh_filename,
+                              const std::string &mesh_extension,
+                              const std::string &working_directory,
+                              MPI_Comm comm,
+                              stk::mesh::BulkData &bulk_data,
+                              stk::mesh::fem::FEMMetaData &meta_data,
+                              MeshData &mesh_data,
+                              bool add_transient ,
+                              bool add_all_fields )
+      {
+        create_output_mesh(mesh_filename,
+                           mesh_extension,
+                           working_directory,
+                           comm,
+                           bulk_data,
+                           meta_data.get_meta_data(meta_data),
+                           mesh_data,
+                           add_transient,
+                           add_all_fields);
+      }
+      Ioss::Region *create_output_mesh(const std::string &mesh_filename,
+                                       const std::string &mesh_extension,
+                                       const std::string &working_directory,
+                                       MPI_Comm comm,
+                                       stk::mesh::BulkData &bulk_data,
+                                       const Ioss::Region *in_region,
+                                       stk::mesh::fem::FEMMetaData &meta_data,
+                                       bool add_transient ,
+                                       bool add_all_fields ) {
+        return create_output_mesh(mesh_filename,
+                           mesh_extension,
+                           working_directory,
+                           comm,
+                           bulk_data,
+                           in_region,
+                           meta_data.get_meta_data(meta_data),
+                           add_transient,
+                           add_all_fields);
+      }
+
+
+
+
       void create_output_mesh(const std::string &mesh_filename,
 				       const std::string &mesh_extension,
 				       const std::string &working_directory,
@@ -460,6 +520,30 @@ namespace stk {
       }
 
       // ========================================================================
+
+      void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) {
+        process_nodeblocks(region,  meta.get_meta_data(meta));
+      }
+      void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) {
+        process_elementblocks(region, meta.get_meta_data(meta));
+      }
+      void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) {
+         process_edgesets(region, meta.get_meta_data(meta));
+      }
+      void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) {
+        process_facesets(region, meta.get_meta_data(meta));
+      }
+      void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) {
+        process_nodesets(region,meta.get_meta_data(meta));
+      }
+
+
+
+
+
+
+
+
       void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
 	const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();

@@ -11,6 +11,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <Ioss_SubSystem.h>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 namespace stk {
   namespace mesh {
@@ -74,21 +75,52 @@ namespace stk {
 				       bool add_transient = true,
 				       bool add_all_fields = false);
 
+
+      void create_input_mesh(const std::string &mesh_type,
+			     const std::string &mesh_filename,
+			     const std::string &working_directory,
+			     MPI_Comm comm,
+			     stk::mesh::fem::FEMMetaData &meta_data,
+			     stk::io::util::MeshData &mesh_data,
+			     bool hex_only = false) ;
+      void create_output_mesh(const std::string &mesh_filename,
+			      const std::string &mesh_extension,
+			      const std::string &working_directory,
+			      MPI_Comm comm,
+			      stk::mesh::BulkData &bulk_data,
+			      stk::mesh::fem::FEMMetaData &meta_data,
+                              MeshData &mesh_data,
+			      bool add_transient = true,
+			      bool add_all_fields = false);
+      Ioss::Region *create_output_mesh(const std::string &mesh_filename,
+				       const std::string &mesh_extension,
+				       const std::string &working_directory,
+				       MPI_Comm comm,
+				       stk::mesh::BulkData &bulk_data,
+				       const Ioss::Region *in_region,
+				       stk::mesh::fem::FEMMetaData &meta_data,
+				       bool add_transient = true,
+				       bool add_all_fields = false) ;
+
       void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta);
+      void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) ;
       void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
 
       void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta);
+      void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) ;
       void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
 
 
       void process_edgesets(Ioss::Region &region, stk::mesh::BulkData &bulk);
       void process_edgesets(Ioss::Region &region, stk::mesh::MetaData &meta);
-
+      void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) ;
       void process_facesets(Ioss::Region &region, stk::mesh::BulkData &bulk);
       void process_facesets(Ioss::Region &region, stk::mesh::MetaData &meta);
+      void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) ;
 
       void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk);
       void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta);
+      void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) ;
 
       void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 			  stk::mesh::EntityRank part_type,
