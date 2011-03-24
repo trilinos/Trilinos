@@ -187,7 +187,7 @@ public:
       //    int *myGids    = new int[weight_.getMap()->getNodeNumElements()+1];
       //    int *myWinners = new int[numMyWinners+1];
       Teuchos::ArrayView<const int> myGids = weight_.getMap()->getNodeElementList(); //== weight_.getMap()->MyGlobalElements(myGids);
-      Teuchos::ArrayRCP<int> myWinners(numMyWinners+1);
+      Teuchos::ArrayRCP<int> myWinners(numMyWinners);
 
       numMyWinners = 0;
       for (size_t i = 0; i < weight_.getMap()->getNodeNumElements(); i++) {
@@ -251,9 +251,24 @@ public:
   {
     RCP<Cthulhu::Vector<double> > temp = Cthulhu::VectorFactory<double>::Build(import_->getSourceMap());
      
+//      cout << *source.getMap() << endl;
+//      cout << *import_->getTargetMap() << endl;
+
+    TEST_FOR_EXCEPTION(!source.getMap()->isSameAs(*import_->getTargetMap()), std::runtime_error, "Source Maps don't match.");
+
+//     cout << "EXPORT" << std::endl;
+
     temp->doExport(source, *import_, what);
+
+//     cout << "IMPORT" << std::endl;
+
+//     std::cout << *dest.getMap() << std::endl;
+//     std::cout << *import_->getTargetMap() << std::endl;
+
     dest.doImport(*temp,   *import_, Cthulhu::INSERT);
      
+
+
     return 0;
   }
    
