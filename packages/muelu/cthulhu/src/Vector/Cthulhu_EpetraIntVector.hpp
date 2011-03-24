@@ -454,7 +454,7 @@ namespace Cthulhu {
       typedef Kokkos::MultiVector<double> KMV;
       typedef Kokkos::DefaultArithmetic<KMV>   MVT;
 
-      // This implementation come from Tpetra_Vector_def.hpp (without modification)
+      // This implementation come from Tpetra_Vector_def.hpp (without modification) // JG: true?
       using std::endl;
       using std::setw;
       using Teuchos::VERB_DEFAULT;

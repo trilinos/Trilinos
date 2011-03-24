@@ -6,6 +6,8 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include "Teuchos_VerboseObject.hpp"
+#include <Teuchos_FancyOStream.hpp>
 
 // Cthulhu
 #include <Cthulhu_Parameters.hpp>
@@ -100,7 +102,10 @@ int main(int argc, char *argv[]) {
   }
   
   printf("finals\n");
-  cout << *Final_ << endl; sleep(2);
+  //cout << *Final_ << endl; sleep(2);
+
+  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  Final_->describe(*out, Teuchos::VERB_EXTREME);
 
   return EXIT_SUCCESS;
 }

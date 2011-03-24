@@ -151,23 +151,26 @@ namespace Cthulhu {
     inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
       CTHULHU_DEBUG_ME; 
       
-      typedef Kokkos::MultiVector<double> KMV;
-      typedef Kokkos::DefaultArithmetic<KMV>   MVT;
+      if (verbLevel > Teuchos::VERB_NONE)
+        getEpetra_Vector()->Print(out);
 
-      // This implementation come from Tpetra_Vector_def.hpp (without modification)
-      using std::endl;
-      using std::setw;
-      using Teuchos::VERB_DEFAULT;
-      using Teuchos::VERB_NONE;
-      using Teuchos::VERB_LOW;
-      using Teuchos::VERB_MEDIUM;
-      using Teuchos::VERB_HIGH;
-      using Teuchos::VERB_EXTREME;
-      Teuchos::EVerbosityLevel vl = verbLevel;
+//       typedef Kokkos::MultiVector<double> KMV;
+//       typedef Kokkos::DefaultArithmetic<KMV>   MVT;
 
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+//       // This implementation come from Tpetra_Vector_def.hpp (without modification)
+//       using std::endl;
+//       using std::setw;
+//       using Teuchos::VERB_DEFAULT;
+//       using Teuchos::VERB_NONE;
+//       using Teuchos::VERB_LOW;
+//       using Teuchos::VERB_MEDIUM;
+//       using Teuchos::VERB_HIGH;
+//       using Teuchos::VERB_EXTREME;
+//       Teuchos::EVerbosityLevel vl = verbLevel;
 
-      if (vl == VERB_DEFAULT) vl = VERB_LOW;
+//       TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+
+//       if (vl == VERB_DEFAULT) vl = VERB_LOW;
 //       Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
 //       const int myImageID = comm->getRank(),
 //       numImages = comm->getSize();

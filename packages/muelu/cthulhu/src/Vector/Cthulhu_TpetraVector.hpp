@@ -155,75 +155,12 @@ namespace Cthulhu {
     /** \brief Return a simple one-line description of this object. */
     inline std::string description() const { 
       CTHULHU_DEBUG_ME; 
-
-      // This implementation come from Tpetra_Vector_def.hpp (without modification)
-      std::ostringstream oss;
-      oss << Teuchos::Describable::description();
-      oss << "{length="<<this->getGlobalLength()
-          << "}";
-      return oss.str();
-      
+      return getTpetra_Vector()->description();       
     };
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
-      CTHULHU_DEBUG_ME; 
-      
-      typedef Kokkos::MultiVector<Scalar,Node> KMV;
-      typedef Kokkos::DefaultArithmetic<KMV>   MVT;
-
-      // This implementation come from Tpetra_Vector_def.hpp (without modification)
-      using std::endl;
-      using std::setw;
-      using Teuchos::VERB_DEFAULT;
-      using Teuchos::VERB_NONE;
-      using Teuchos::VERB_LOW;
-      using Teuchos::VERB_MEDIUM;
-      using Teuchos::VERB_HIGH;
-      using Teuchos::VERB_EXTREME;
-      Teuchos::EVerbosityLevel vl = verbLevel;
-      if (vl == VERB_DEFAULT) vl = VERB_LOW;
-      Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
-      const int myImageID = comm->getRank(),
-        numImages = comm->getSize();
-      size_t width = 1;
-      for (size_t dec=10; dec<this->getGlobalLength(); dec *= 10) {
-        ++width;
-      }
-      Teuchos::OSTab tab(out);
-      if (vl != VERB_NONE) {
-        // VERB_LOW and higher prints description()
-        if (myImageID == 0) out << this->description() << std::endl; 
-        for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-          if (myImageID == imageCtr) {
-            if (vl != VERB_LOW) {
-              // VERB_MEDIUM and higher prints getLocalLength()
-              out << "node " << setw(width) << myImageID << ": local length=" << this->getLocalLength() << endl;
-              if (vl != VERB_MEDIUM) {
-                // VERB_HIGH and higher prints isConstantStride() and stride()
-                //TODO
-//                 if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
-//                   Teuchos::RCP<Node> node = this->lclMV_.getNode();
-//                   KOKKOS_NODE_TRACE("Vector::describe()")
-//                     Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
-//                                                                                                this->getLocalLength(), 
-//                                                                                                MVT::getValues(this->lclMV_) );
-//                   // VERB_EXTREME prints values
-//                   for (size_t i=0; i<this->getLocalLength(); ++i) {
-//                     out << setw(width) << this->getMap()->getGlobalElement(i) 
-//                         << ": "
-//                         << myview[i] << endl;
-//                   }
-//                   myview = Teuchos::null;
-//                 }
-              }
-              else {
-                out << endl;
-              }
-            }
-          }
-        }
-      }
+      getTpetra_Vector()->describe(out, verbLevel);
     }
 
     //@}
