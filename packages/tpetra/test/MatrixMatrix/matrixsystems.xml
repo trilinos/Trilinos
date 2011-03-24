@@ -1,12 +1,4 @@
 <ParameterList>
-	<ParameterList name="mult2x2">
-    <Parameter name="op" value="multiply" type="string"/>
-		<Parameter name="A" value="matrices/mult2x2a.mtx" type="string"/>
-		<Parameter name="B" value="matrices/mult2x2b.mtx" type="string"/>
-		<Parameter name="C" value="matrices/mult2x2c.mtx" type="string"/>
-		<Parameter name="TransA" value="false" type="bool"/>
-		<Parameter name="TransB" value="false" type="bool"/>
-	</ParameterList>
 	<ParameterList name="cdt_system">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/cdt_m.mtx" type="string"/>

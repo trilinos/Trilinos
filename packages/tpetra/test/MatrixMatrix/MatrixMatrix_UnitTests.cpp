@@ -1,3 +1,4 @@
+#include "Kokkos_SerialNode.hpp"
 #include "Tpetra_MatrixMatrix.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -30,6 +31,10 @@ namespace {
   using Tpetra::MatrixMarket::Reader;
   using Teuchos::ArrayView;
   using Teuchos::FancyOStream;
+  using Teuchos::ParameterList;
+  using Kokkos::SerialNode;
+
+  typedef CrsMatrix<double, int, int, SerialNode> Matrix_t;
 
 
 TEUCHOS_STATIC_SETUP(){
@@ -134,20 +139,19 @@ add_test_results add_test(
 
 template<class Ordinal>
 mult_test_results multiply_test(
-  RCP<CrsMatrix<double, int> > A,
-  RCP<CrsMatrix<double, int> > B,
+  RCP<Matrix_t> A,
+  RCP<Matrix_t> B,
   bool AT,
   bool BT,
-  RCP<CrsMatrix<double, int> > C,
+  RCP<Matrix_t> C,
   RCP<const Comm<Ordinal> > comm,
   FancyOStream& out)
 {
 
-  typedef CrsMatrix<double,int> CrsMatrix_t;
-  typedef Map<int, int> Map_t;
+  typedef Map<int, int, SerialNode> Map_t;
   RCP<const Map_t> map = A->getRowMap();
 
-  RCP<CrsMatrix_t> computedC = rcp( new CrsMatrix_t(map, 1));
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 1));
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC);
   double cNorm = getNorm(C);
@@ -202,8 +206,10 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, test_find_rows){
 
 TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Kokkos::DefaultNode::DefaultNodeType> node = 
-    Kokkos::DefaultNode::getDefaultNode();
+  /*RCP<Kokkos::DefaultNode::DefaultNodeType> node = 
+    Kokkos::DefaultNode::getDefaultNode();*/
+  ParameterList defaultParameters;
+  RCP<SerialNode> node = rcp(new SerialNode(defaultParameters));
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems = 
     Teuchos::getParametersFromXmlFile(matnamesFile);
   /*if(verbose){
@@ -234,9 +240,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
   
     out << "A file: " << A_file << std::endl;
 
-    RCP<CrsMatrix<double,int> > A = Reader<CrsMatrix<double, int> >::readFile(A_file, comm, node);
-    RCP<CrsMatrix<double,int> > B = Reader<CrsMatrix<double, int> >::readFile(B_file, comm, node);
-    RCP<CrsMatrix<double,int> > C = Reader<CrsMatrix<double, int> >::readFile(C_file, comm, node);
+    RCP<Matrix_t > A = Reader<Matrix_t >::readFile(A_file, comm, node);
+    RCP<Matrix_t > B = Reader<Matrix_t >::readFile(B_file, comm, node);
+    RCP<Matrix_t > C = Reader<Matrix_t >::readFile(C_file, comm, node);
  
 
     TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
