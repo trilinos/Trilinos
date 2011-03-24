@@ -3,7 +3,7 @@
 // ************************************************************************
 //
 //                Shards : Shared Discretization Tools
-//                 Copyright 2008 Sandia Corporation
+//                 Copyright 2008, 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -66,7 +66,6 @@ namespace shards {
 /*------------------------------------------------------------------------*/
 
 class CellTopology ;
-class CellTopologyPrivate ;
 
 /** \brief Overloaded << operator for CellTopologyData objects. */
 //std::ostream & operator << ( std::ostream & , const CellTopologyData & );
@@ -168,9 +167,6 @@ int isPredefinedCell(const CellTopology &  cell);
 class CellTopology {
 private:
   
-  /** \brief  Safely deletes m_owned data member */
-  void deleteOwned();
-
   /** \brief Throws runtime_error if CellTopology object is null or hase null 
              base topology   
    */
@@ -207,7 +203,6 @@ private:
                                const unsigned nodeOrd ) const ;
   
   const CellTopologyData    * m_cell ;
-        CellTopologyPrivate * m_owned ;
 
 public:
 
@@ -312,12 +307,17 @@ public:
   
         
   /** \brief  This cell's raw topology data */
-  const CellTopologyData * getTopology() const
+  bool isValid() const
+    { return m_cell != 0 ; }
+
+        
+  /** \brief  This cell's raw topology data */
+  const CellTopologyData * getCellTopologyData() const
     { return m_cell ; }
 
         
   /** \brief  This cell's base cell topology's raw topology data */
-  const CellTopologyData * getBaseTopology() const
+  const CellTopologyData * getBaseCellTopologyData() const
     {
       SHARDS_REQUIRE( requireCell() );
       return m_cell->base ;
@@ -329,8 +329,8 @@ public:
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
    *  \param  subcell_ord    [in]  - subcell ordinal
    */
-  const CellTopologyData * getTopology( const unsigned subcell_dim ,
-                                        const unsigned subcell_ord ) const
+  const CellTopologyData * getCellTopologyData( const unsigned subcell_dim ,
+                                                const unsigned subcell_ord ) const
     {
       SHARDS_REQUIRE( requireCell() );
       SHARDS_REQUIRE( requireDimension(subcell_dim) );
@@ -344,10 +344,10 @@ public:
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
    *  \param  subcell_ord    [in]  - subcell ordinal
    */
-  const CellTopologyData * getBaseTopology( const unsigned subcell_dim ,
-                                            const unsigned subcell_ord ) const
+  const CellTopologyData * getBaseCellTopologyData( const unsigned subcell_dim ,
+                                                    const unsigned subcell_ord ) const
     {
-      return getTopology(subcell_dim,subcell_ord)->base ;
+      return getCellTopologyData(subcell_dim,subcell_ord)->base ;
     }
 
         
@@ -358,7 +358,7 @@ public:
   unsigned getKey( const unsigned subcell_dim ,
                    const unsigned subcell_ord ) const
     {
-      return getTopology(subcell_dim,subcell_ord)->key ;
+      return getCellTopologyData(subcell_dim,subcell_ord)->key ;
     }
 
 
@@ -370,7 +370,7 @@ public:
   const char * getName(const unsigned subcell_dim,   
                        const unsigned subcell_ord) const
     {
-      return getTopology(subcell_dim,subcell_ord) -> name;
+      return getCellTopologyData(subcell_dim,subcell_ord) -> name;
     }
         
         
@@ -381,7 +381,7 @@ public:
   unsigned getNodeCount( const unsigned subcell_dim ,
                          const unsigned subcell_ord ) const
     {
-      return getTopology(subcell_dim,subcell_ord)->node_count ;
+      return getCellTopologyData(subcell_dim,subcell_ord)->node_count ;
     }
 
         
@@ -392,7 +392,7 @@ public:
   unsigned getVertexCount( const unsigned subcell_dim ,
                            const unsigned subcell_ord ) const
     {
-      return getTopology(subcell_dim,subcell_ord)->vertex_count ;
+      return getCellTopologyData(subcell_dim,subcell_ord)->vertex_count ;
     }
 
         
@@ -403,7 +403,7 @@ public:
   unsigned getEdgeCount( const unsigned subcell_dim ,
                          const unsigned subcell_ord ) const
     {
-      return getTopology(subcell_dim,subcell_ord)->edge_count ;
+      return getCellTopologyData(subcell_dim,subcell_ord)->edge_count ;
     }
   
         
@@ -414,7 +414,7 @@ public:
   unsigned getSideCount( const unsigned subcell_dim ,
                          const unsigned subcell_ord ) const
     {
-      return getTopology(subcell_dim,subcell_ord)->side_count ;
+      return getCellTopologyData(subcell_dim,subcell_ord)->side_count ;
     }
 
         
@@ -518,8 +518,8 @@ public:
    *          wraps Triangle<3> and Tetrahedron<10> (defined in Shards_BasicTopologies)
    */
   CellTopology( const CellTopologyData * cell )
-    : m_cell( cell ), m_owned( NULL )
-    {}
+    : m_cell( cell )
+  {}
   
         
   /** \brief  Constructs custom 1-cell (line) with base topology Line<>. 
@@ -617,7 +617,7 @@ int findPermutation( const CellTopology & top ,
                      const id_type * const expected_node ,
                      const id_type * const actual_node )
 {
-  return findPermutation( * top.getTopology() , expected_node , actual_node );
+  return findPermutation( * top.getCellTopologyData() , expected_node , actual_node );
 }
 
 /*------------------------------------------------------------------------*/
@@ -675,6 +675,24 @@ unsigned cellTopologyKey( const unsigned dimension ,
   return key ;
 }
 
+inline
+bool operator==(const CellTopology &left, const CellTopology &right)
+{
+  return left.getCellTopologyData() == right.getCellTopologyData();
+}
+
+inline
+bool operator<(const CellTopology &left, const CellTopology &right)
+{
+  return left.getCellTopologyData() < right.getCellTopologyData();
+// FIXME: Should is be this?  
+//  return left.getKey() < right.getKey(); 
+}
+
+inline
+bool operator!=(const CellTopology &left, const CellTopology &right) {
+  return !(left == right);
+}
 
 
 /** \} */

@@ -510,7 +510,12 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
     }
   }
 
-  all_reduce_sum( m_comm , local_result , global_result , Length );
+  if (m_size > 1) {
+    all_reduce_sum( m_comm , local_result , global_result , Length );
+  }
+  else {
+    Copy<Length>(global_result, local_result);
+  }
 
   bool global_flag ; 
 

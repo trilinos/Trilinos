@@ -64,7 +64,7 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
   Teuchos::RCP< Cubature<double> > myCub;
   double vol = 0.0;
 
-  switch (cellTopology.getBaseTopology()->key) {
+  switch (cellTopology.getBaseCellTopologyData()->key) {
 
     case shards::Line<>::key:
         myCub = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
@@ -100,12 +100,12 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
       break;
 
     default:
-      TEST_FOR_EXCEPTION( ( (cellTopology.getBaseTopology()->key != shards::Line<>::key),
-                            (cellTopology.getBaseTopology()->key != shards::Triangle<>::key),
-                            (cellTopology.getBaseTopology()->key != shards::Tetrahedron<>::key),
-                            (cellTopology.getBaseTopology()->key != shards::Quadrilateral<>::key),
-                            (cellTopology.getBaseTopology()->key != shards::Hexahedron<>::key),
-                            (cellTopology.getBaseTopology()->key != shards::Wedge<>::key) ),
+      TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key),
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key),
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key),
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key),
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Hexahedron<>::key),
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Wedge<>::key) ),
                           std::invalid_argument,
                           ">>> ERROR (Unit Test -- Cubature -- Volume): Invalid cell type.");
   } // end switch

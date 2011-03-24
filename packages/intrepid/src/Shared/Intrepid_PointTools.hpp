@@ -181,7 +181,7 @@ Gauss-Lobatto points on the line).
   */
   class PointTools {
   public:
-    /** \brief Computes the number of pointsin a lattice of a given order
+    /** \brief Computes the number of points in a lattice of a given order
               on a simplex (currently disabled for
               other cell types).
               If offset == 0,
@@ -198,9 +198,43 @@ Gauss-Lobatto points on the line).
         \param  offset       [in]  - the number of boundary layers to omit
 
     */    
-    static int getLatticeSize( const shards::CellTopology& cellType ,
-                              const int order ,
-                              const int offset = 0 );
+   static inline int getLatticeSize( const shards::CellTopology& cellType ,
+                                     const int order ,
+                                     const int offset = 0 )
+    {
+      switch( cellType.getKey() ) {
+      case shards::Tetrahedron<4>::key:
+      case shards::Tetrahedron<8>::key:
+      case shards::Tetrahedron<10>::key:
+        {
+          const int effectiveOrder = order - 4 * offset;
+          if (effectiveOrder < 0) return 0;
+          else return (effectiveOrder+1)*(effectiveOrder+2)*(effectiveOrder+3)/6;
+        }
+        break;
+      case shards::Triangle<3>::key:
+      case shards::Triangle<4>::key:
+      case shards::Triangle<6>::key: 
+        {
+          const int effectiveOrder = order - 3 * offset;
+          if (effectiveOrder < 0) return 0;
+          else return (effectiveOrder+1)*(effectiveOrder+2)/2;
+        }
+        break;
+      case shards::Line<2>::key:
+      case shards::Line<3>::key:
+        {
+          const int effectiveOrder = order - 2 * offset;
+          if (effectiveOrder < 0) return 0;
+          else return (effectiveOrder+1);
+        }
+        break;
+      default:
+        TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+                            ">>> ERROR (Intrepid::PointTools::getLatticeSize): Illegal cell type" );
+      }
+    }
+
 
     /** \brief Computes a lattice of points of a given
               order on a reference simplex (currently disabled for

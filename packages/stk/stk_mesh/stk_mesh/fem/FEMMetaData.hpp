@@ -1,14 +1,15 @@
 #ifndef stk_mesh_FEMMetaData_hpp
 #define stk_mesh_FEMMetaData_hpp
 
-#include <vector>
-#include <string>
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/util/string_case_compare.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp> // TODO:  Remove!
 #include <stk_mesh/fem/CellTopology.hpp>
+
+#include <vector>
+#include <string>
 
 namespace stk {
 namespace mesh {
@@ -35,14 +36,14 @@ namespace fem {
  *     -> Enforced by declare_part_subset
  * 3.  Incompatible cell topologies are prohibited.  I.e. parts with
  *     different cell topologies of the same rank (as the part) cannot be subsets
- *     of each other.  
+ *     of each other.
  *     -> Enforced by declare_part_subset
  *
  */
 
 // 02/10/11 FEMMetaData Todo:
 // * Implement get_cell_topology for Part.
-// * Implement declare_part with cell topology 
+// * Implement declare_part with cell topology
 // Non-critical:
 // * Implement stk::mesh::fem::get namespace to include getters for MetaData,
 //   BulkData, FEMMetaData, FEMBulkData, CellTopology from things like Part,
@@ -55,7 +56,7 @@ class FEMMetaData {
 
   /// CellTopologyPartEntityRankMap maps each Cell Topology to its root cell topology part and its associated rank
   typedef std::map<fem::CellTopology, std::pair<Part *, EntityRank> > CellTopologyPartEntityRankMap;
-  /// PartCellTopologyVector is a fast-lookup vector of size equal to the number of parts 
+  /// PartCellTopologyVector is a fast-lookup vector of size equal to the number of parts
   typedef std::vector<fem::CellTopology> PartCellTopologyVector;
   static const EntityRank NODE_RANK = 0u;
   static const EntityRank INVALID_RANK = stk::mesh::InvalidEntityRank;
@@ -63,17 +64,23 @@ class FEMMetaData {
   FEMMetaData();
   ~FEMMetaData() {}
 
-  /// -------------------------------------------------------------------------------- 
+  /**
+   * \brief Construct and initialize a FEMMetaData
+   */
+  FEMMetaData(size_t spatial_dimension,
+              const std::vector<std::string>& in_entity_rank_names = std::vector<std::string>());
+
+  /// --------------------------------------------------------------------------------
   /// FEMMetaData Specific functions begin:
-  /// -------------------------------------------------------------------------------- 
+  /// --------------------------------------------------------------------------------
   /** \brief Initialize the spatial dimension and an optional list of entity rank names associated with each rank
    *
    * This function can only be called once.
    * To determine if a FEMMetaData class has been initialized, call the is_FEM_initialized function.
    */
   void FEM_initialize(
-      size_t spatial_dimension, 
-      const std::vector<std::string>& entity_rank_names = std::vector<std::string>() 
+      size_t spatial_dimension,
+      const std::vector<std::string>& in_entity_rank_names = std::vector<std::string>()
       );
 
   /** \brief This function returns whether this class has been initialized or not.
@@ -82,6 +89,12 @@ class FEMMetaData {
   {
     return m_fem_initialized;
   }
+
+  // NOTE: This is a temporary function that will be removed once a FEMBulkData exists.
+  /** \brief Getter for MetaData off of a FEMMetaData object.
+   */
+  inline static MetaData & get_meta_data( FEMMetaData & fem_meta )
+    { return fem_meta.m_meta_data; }
 
   /** \brief Returns the spatial dimension that was passed in through FEM_initialize.
    */
@@ -92,7 +105,7 @@ class FEMMetaData {
 
   /** \brief Returns the node rank, which is always zero.
    */
-  EntityRank node_rank() const 
+  EntityRank node_rank() const
   {
     return NODE_RANK;
   }
@@ -113,14 +126,14 @@ class FEMMetaData {
 
   /** \brief Returns the side rank which changes depending on spatial dimension
    */
-  EntityRank side_rank() const 
+  EntityRank side_rank() const
   {
     return m_side_rank;
   }
 
   /** \brief Returns the element rank which is always equal to spatial dimension
    */
-  EntityRank element_rank() const 
+  EntityRank element_rank() const
   {
     return m_element_rank;
   }
@@ -131,14 +144,14 @@ class FEMMetaData {
    *
    * Note:  This function also creates the root cell topology part which is accessible from get_cell_topology_root_part
    */
-  void register_cell_topology(const fem::CellTopology cell_topology, EntityRank entity_rank);
+  void register_cell_topology(const fem::CellTopology cell_topology, EntityRank in_entity_rank);
 
   /** \brief Return the root cell topology part associated with the given cell topology.
    * This Part is created in register_cell_topology
    */
   Part &get_cell_topology_root_part(const fem::CellTopology cell_topology) const;
 
-  /** \brief Return the cell topology associated with the given part.  
+  /** \brief Return the cell topology associated with the given part.
    * The cell topology is set on a part through part subsetting with the root
    * cell topology part.
    */
@@ -152,23 +165,23 @@ class FEMMetaData {
 
   /** \brief Getter for FEMMetaData off of a MetaData object.
    */
-  inline static FEMMetaData & get ( const MetaData & meta ) 
+  inline static FEMMetaData & get ( const MetaData & meta )
     { return *const_cast<FEMMetaData * >(meta.get_attribute<FEMMetaData>()); }
 
   /** \brief Getter for FEMMetaData off of a Part object.
    */
-  inline static FEMMetaData & get( const Part & part ) 
+  inline static FEMMetaData & get( const Part & part )
     { return FEMMetaData::get(MetaData::get(part)); }
 
   /** \brief Getter for FEMMetaData off of a FieldBase object.
    */
-  inline static FEMMetaData & get( const FieldBase & field ) 
+  inline static FEMMetaData & get( const FieldBase & field )
     { return FEMMetaData::get(MetaData::get(field)); }
 
   /** \brief Getter for FEMMetaData off of a PropertyBase object.
    */
-  inline static FEMMetaData & get( const PropertyBase & property ) 
-    { return FEMMetaData::get(MetaData::get(property)); } 
+  inline static FEMMetaData & get( const PropertyBase & property )
+    { return FEMMetaData::get(MetaData::get(property)); }
 
   /** \brief Getter for FEMMetaData off of a BulkData object.
    */
@@ -193,21 +206,29 @@ class FEMMetaData {
   /** \brief  Declare a part with a given cell topology
    */
   Part &declare_part( const std::string &name, fem::CellTopology cell_topology)
-  { 
+  {
     ThrowRequireMsg(is_FEM_initialized(),"FEMMetaData::declare_part: FEM_initialize() must be called before this function");
-    Part & part = m_meta_data.declare_part(name);
     Part &root_part = get_cell_topology_root_part(cell_topology);
-    m_meta_data.declare_part_subset(root_part, part);
+    EntityRank primary_entity_rank = root_part.primary_entity_rank();
+    Part & part = m_meta_data.declare_part(name, primary_entity_rank);
+    declare_part_subset(root_part, part);
     return part;
   }
 
-  /// -------------------------------------------------------------------------------- 
-  /// FEMMetaData Specific functions end
-  /// -------------------------------------------------------------------------------- 
+  /** \brief  Declare a part with a given cell topology
+   */
+  template< class Top >
+  Part &declare_part(const std::string &name) {
+    return declare_part(name, shards::getCellTopologyData<Top>());
+  }
 
-  /// -------------------------------------------------------------------------------- 
+  /// --------------------------------------------------------------------------------
+  /// FEMMetaData Specific functions end
+  /// --------------------------------------------------------------------------------
+
+  /// --------------------------------------------------------------------------------
   /// The following functions are call-throughs to the underlying MetaData class:
-  /// -------------------------------------------------------------------------------- 
+  /// --------------------------------------------------------------------------------
 
   //------------------------------------
   /** \name MetaData predefined parts
@@ -240,15 +261,15 @@ class FEMMetaData {
    */
   /// \todo REFACTOR remove required_by argument
   Part * get_part( const std::string & p_name,
-                   const char * required_by = NULL ) const 
+                   const char * required_by = NULL ) const
     { return m_meta_data.get_part(p_name,required_by); }
 
   /** \brief  Get an existing part by its ordinal */
-  Part & get_part( unsigned ord ) const 
+  Part & get_part( unsigned ord ) const
     { return m_meta_data.get_part(ord); }
 
   /** \brief  Query all parts of the mesh ordered by the parts' ordinal. */
-  const PartVector & get_parts() const 
+  const PartVector & get_parts() const
     { return m_meta_data.get_parts(); }
 
   /** \brief  Declare a part of the given name and entity rank
@@ -269,7 +290,7 @@ class FEMMetaData {
   Part & declare_part( const std::string & p_name)
     { return m_meta_data.declare_part(p_name); }
 
-  /** \brief  Declare a superset-subset relationship between parts 
+  /** \brief  Declare a superset-subset relationship between parts
    *  Note:  Cell Topologies are induced through part subsets.
    *  See the invariants that are enforced by this function in the documentation for FEMMetaData.
    * */
@@ -292,48 +313,48 @@ class FEMMetaData {
   /** \brief Set the entity rank names in a vector.
    * This also currently sets the maximum entity rank.
    */
-  void set_entity_rank_names(const std::vector<std::string> &entity_rank_names)
-  { 
-    m_entity_rank_names = entity_rank_names;
-    m_meta_data.set_entity_rank_names(entity_rank_names);
+  void set_entity_rank_names(const std::vector<std::string> &in_entity_rank_names)
+  {
+    m_entity_rank_names = in_entity_rank_names;
+    m_meta_data.set_entity_rank_names(in_entity_rank_names);
   }
 
   /** \brief Return the rank for the given name that was provided in set_entity_rank_names
    */
   EntityRank entity_rank( const std::string &name ) const
-  { 
-    EntityRank entity_rank = InvalidEntityRank;
+  {
+    EntityRank my_entity_rank = InvalidEntityRank;
 
     for (size_t i = 0; i < m_entity_rank_names.size(); ++i)
       if (equal_case(name, m_entity_rank_names[i])) {
-        entity_rank = i;
+        my_entity_rank = i;
       break;
       }
-    return entity_rank;
+    return my_entity_rank;
   }
 
   /** \brief Return the set of entity rank names specified in set_entity_rank_names
    */
   const std::vector<std::string> & entity_rank_names() const
-  { 
-    return m_entity_rank_names; 
+  {
+    return m_entity_rank_names;
   }
 
   /** \brief Return the maximum entity rank
    */
   std::vector<std::string>::size_type entity_rank_count() const
-  { 
-    return m_entity_rank_names.size(); 
+  {
+    return m_entity_rank_names.size();
   }
 
   /** \brief Return the name for a given entity rank as was specified in set_entity_rank_names
    */
-  const std::string & entity_rank_name( EntityRank entity_rank ) const 
+  const std::string & entity_rank_name( EntityRank in_entity_rank ) const
   {
-    ThrowErrorMsgIf( entity_rank >= m_entity_rank_names.size(),
-        "entity-rank " << entity_rank <<
+    ThrowErrorMsgIf( in_entity_rank >= m_entity_rank_names.size(),
+        "entity-rank " << in_entity_rank <<
         " out of range. Must be in range 0.." << m_entity_rank_names.size());
-    return m_entity_rank_names[entity_rank];
+    return m_entity_rank_names[in_entity_rank];
   }
 
   /** \brief Return true if the given entity rank is valid.
@@ -355,7 +376,7 @@ class FEMMetaData {
    *    if required_by != NULL and a field of that name is not found.
    */
   template< class field_type >
-  field_type * get_field( const std::string & name ) const 
+  field_type * get_field( const std::string & name ) const
     { return m_meta_data.get_field<field_type>(name); }
 
   /** \brief  Get all defined fields */
@@ -414,7 +435,7 @@ class FEMMetaData {
     { m_meta_data.commit(); }
 
   /** \brief  Query if the meta data manager is committed */
-  bool is_commit() const 
+  bool is_commit() const
     { return m_meta_data.is_commit(); }
 
   //------------------------------------
@@ -448,7 +469,7 @@ class FEMMetaData {
 
   private: // data
     MetaData                      m_meta_data;
-    bool                          m_fem_initialized; 
+    bool                          m_fem_initialized;
     size_t                        m_spatial_dimension;
     EntityRank                    m_edge_rank;
     EntityRank                    m_face_rank;
@@ -469,8 +490,10 @@ bool is_cell_topology_root_part(const Part & part);
  */
 void set_cell_topology(FEMMetaData & fem_meta, Part &part, fem::CellTopology cell_topology);
 
-} // namespace fem 
-} // namespace mesh 
-} // namespace stk 
+std::vector<std::string> entity_rank_names(size_t spatial_dimension);
+
+} // namespace fem
+} // namespace mesh
+} // namespace stk
 
 #endif //  stk_mesh_FEMMetaData_hpp

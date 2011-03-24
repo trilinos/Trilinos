@@ -30,14 +30,14 @@ if (RUN_REGULAR_TESTS)
     ctest_linux_nightly_serial_debug_icpc_u233_trilinos.cmake
     RUN_SERIAL
     TIMEOUT_MINUTES 240
-  )
+    )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_RELEASE_ICPC
     ctest_linux_nightly_serial_release_icpc_u233_trilinos.cmake
     RUN_SERIAL
     TIMEOUT_MINUTES 240
-  )
+    )
 
 endif()
 

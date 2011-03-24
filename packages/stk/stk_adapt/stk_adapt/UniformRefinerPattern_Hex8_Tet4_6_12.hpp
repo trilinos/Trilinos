@@ -140,7 +140,7 @@ namespace stk {
 #define CENTROID_N NN(mesh::Element, 0)  
 
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
-        nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), Element, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), Element, 0u);
         nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), Element, 0u);
         nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), Element, 0u);
 #endif

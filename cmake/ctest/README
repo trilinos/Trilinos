@@ -151,9 +151,9 @@ After the local CTest processes are working, just to make sure the
 submit works, you can run a final trial build with:
 
   $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
-     CTEST_TEST_TYPE=Experimental \
+     CTEST_TEST_TYPE=Experimental CTEST_DO_UPDATES=FASLE \
      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
-     CTEST_DO_SUBMIT=ON  CTEST_DO_UPDATES=FALSE \
+     CTEST_DO_SUBMIT=ON \
      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
      ctest -VV -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
@@ -196,14 +196,21 @@ Once you are done with the initial run, you can test it out
 interactively in a rapid, iterative process by setting up the
 following additionial environment variables:
 
-  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=FALSE \
+  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_UPDATES=FASLE \
+      CTEST_DO_SUBMIT=FALSE \
       TDD_DO_SUBMIT=FALSE TDD_IN_TESTING_MODE=ON \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
       CTEST_TEST_TYPE=Experimental \
-      TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade \
+      TDD_FORCE_CMAKE_INSTALL=0 \
       ./cron_driver.sh
 
 (of course you must use set commands on Windows).
+
+NOTES:
+
+(*) Set TDD_FORCE_CMAKE_INSTALL=1 to force a global CMake reinstall.
+(*) Set CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=FALSE if you only
+    want to process the exact packages set with Trilinos_PACKAGES
 
 Work out any kinks you may have in your environment and your scripts
 by running this over and over again.

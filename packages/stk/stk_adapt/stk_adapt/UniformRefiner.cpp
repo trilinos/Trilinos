@@ -90,11 +90,10 @@ namespace stk {
                   }
                 std::string plus_or_minus = (inc?"+":"-");
                 std::string n2 = n1.substr(1, n1.length()-1);
-                //int id_start = 0;
-                //int id_end = 0;
                 std::string id_string_start = "";
                 std::string id_string_end = "";
-                std::string dotdot = ".."; // leave open the possibility for other identifiers for range
+                // leave open the possibility for other identifiers for range
+                std::string dotdot = ".."; 
                 int dotdot_len = dotdot.length();
                 size_t pos_dotdot = n1.find(dotdot);
                 if (pos_dotdot != std::string::npos)
@@ -236,12 +235,16 @@ namespace stk {
                   names = names.substr(ipos+1, names.length()-(ipos+1));
                 }
             }
+
+          
           if (EXTRA_PRINT_UR_GETBLOCKS)
             std::cout << "tmp new_names after post-proc to remove +name if -name exists= " << new_names << std::endl;
           if (new_names.length() && !proc_rank)
             {
-              std::cout << "UniformRefiner:: --block_name option after processing= " << new_names << std::endl;
+              std::cout << "UniformRefiner:: --block_name option after processing for removing -name= " << new_names << std::endl;
             }
+
+          // final step
           names = new_names;
           while(1)
             {
@@ -299,10 +302,9 @@ namespace stk {
     // FIXME move this to a utils class
     /**
      * This method looks for surfaces that share nodes with the blocks specified in @param blocks and if it finds
-     * any surfaces (sidesets), they are added to the blocks so they get refined properly.  If a surface is shared
-     * by more than one block, an error is thrown.
+     * any surfaces (sidesets), they are added to the blocks so they get refined properly.  
+     * TODO: If a surface is shared by more than one block, an error is thrown.
      */
-
 
     BlockNamesType UniformRefiner::correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks)
     {
@@ -375,7 +377,7 @@ namespace stk {
     addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType)
     {
       EXCEPTWATCH;
-      m_eMesh.getBulkData()->modification_begin();
+      //m_eMesh.getBulkData()->modification_begin();
       std::string oldPartName = breakPattern->getOldElementsPartName()+toString(rank);
       mesh::Part *oldPart = m_eMesh.getMetaData()->get_part(oldPartName);
       if (!oldPart)
@@ -435,26 +437,30 @@ namespace stk {
           m_eMesh.getBulkData()->change_entity_parts( *elems[ielem], add_parts, remove_parts );
         }
 
-      m_eMesh.getBulkData()->modification_end();
+      //m_eMesh.getBulkData()->modification_end();
     }
 
     void UniformRefiner::
     trace_print(std::string msg)
     {
-      if (TRACE_STAGE_PRINT) {
-        size_t heap_in_Mb = 0;
-        size_t memory_in_Mb = Util::memory(heap_in_Mb);
-        memory_in_Mb = memory_in_Mb / (1024*1024);
-        heap_in_Mb = heap_in_Mb / (1024*1024);
+      size_t heap_in_Mb = 0;
+      size_t memory_in_Mb = 0;
+      double cpu = 0.0;
 
-        double cpu = Util::cpu_time();
-        std::cout
-          << msg
-          << " mem= " << memory_in_Mb << " [Mb] "
-          //<< " heap= " << heap_in_Mb << " [Mb] "
-          << " cpu_time= " << cpu/(60.) << " [min] "
-          <<std::endl;
-      }
+      if (TRACE_STAGE_PRINT)
+        {
+          memory_in_Mb = Util::memory(heap_in_Mb);
+          memory_in_Mb = memory_in_Mb / (1024*1024);
+          heap_in_Mb = heap_in_Mb / (1024*1024);
+        }
+
+      cpu = Util::cpu_time();
+      std::cout
+        << msg
+        << " cpu_time= " << cpu/(60.) << " [min] "
+        << " mem= " << memory_in_Mb << " [Mb] "
+        //<< " heap= " << heap_in_Mb << " [Mb] "
+        << std::endl;
 
     }
 
@@ -489,6 +495,7 @@ namespace stk {
     void UniformRefiner::
     checkBreakPatternValidityAndBuildRanks(std::vector<EntityRank>& ranks)
     {
+      m_eMesh.getBulkData()->modification_begin();
       for (unsigned ibp = 0; ibp < m_breakPattern.size(); ibp++)
         {
           if (m_breakPattern[ibp])
@@ -513,6 +520,7 @@ namespace stk {
               throw std::logic_error("m_breakPattern is null");
             }
         }
+      m_eMesh.getBulkData()->modification_end();
 
     }
 
@@ -719,6 +727,7 @@ namespace stk {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       // for each element type, in top-down rank order, do the rest of the refinement operations
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      bulkData.modification_begin(); 
       for (unsigned irank = 0; irank < ranks.size(); irank++)
         {
           EXCEPTWATCH;
@@ -739,7 +748,7 @@ namespace stk {
 
           vector<Entity *> new_elements;
 
-          bulkData.modification_begin(); 
+          //bulkData.modification_begin(); 
 
           {
             EXCEPTWATCH;
@@ -786,11 +795,26 @@ namespace stk {
 #if !STK_ADAPT_URP_LOCAL_NODE_COMPS
           {
             EXCEPTWATCH;
-            if (ranks[irank] == ranks[0])
+            //if (ranks[irank] == ranks[0])
+            // only need to do this once: the map is fully built and we loop over the map's faces/edges, which are fixed after the getFromRemote step
+            if (irank == 0) 
               {
-                m_nodeRegistry->addToExistingParts();
+                if (0)
+                  {
+                    shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
+
+                    if (1) std::cout << "tmp UniformRefiner:: calling addToExistingPartsNew() irank = " << irank << " ranks[irank] = " << ranks[irank] 
+                                                     << " cell_topo= " << cell_topo.getName()
+                                                     << std::endl;
+                  }
+
+                m_nodeRegistry->addToExistingPartsNew();
+                //std::cout << "tmp makeCentroid... " << std::endl;
                 m_nodeRegistry->makeCentroid(m_eMesh.getCoordinatesField());
+                //std::cout << "tmp makeCentroid...done " << std::endl;
+                //std::cout << "tmp interpolateFields... " << std::endl;
                 m_nodeRegistry->interpolateFields();
+                //std::cout << "tmp interpolateFields...done " << std::endl;
               }
           }
 #endif
@@ -820,16 +844,18 @@ namespace stk {
           }
 
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start... ");
-          bulkData.modification_end();
+          //FIXME FIXME FIXME 
+          //bulkData.modification_end();
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
 
         } // irank
+
 
       if (m_doRemove)
         {
           EXCEPTWATCH;
 
-          bulkData.modification_begin();
+          //bulkData.modification_begin();
 
           /***********************/                           TRACE_PRINT("UniformRefiner: fixElementSides1 ");
           fixElementSides1();
@@ -844,10 +870,13 @@ namespace stk {
             } 
  
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start ");
-          bulkData.modification_end();
+          //bulkData.modification_end();
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
         }
 
+      /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start... ");
+      bulkData.modification_end();
+      /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
 
       /**/                                                TRACE_PRINT( "UniformRefiner:doBreak ... done");
 
@@ -912,12 +941,32 @@ namespace stk {
       vector<Entity *>::iterator element_pool_it = new_elements_pool.begin();
 
       int jele = 0;
+      int numPrints = 20;
+      
       // create new elements and connect them up
 
       for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
         {
+          // do in threaded mode FIXME
+          jele += elementColors[icolor].size();
+        }
+
+      int nele = jele;
+      jele = 0;
+      int printEvery = nele/numPrints;
+      if (printEvery == 0) printEvery = 1;
+      if (0)
+        {
+          std::cout << "UniformRefiner::createElementsAndNodesAndConnectLocal: rank= " << rank 
+                    << " elementColors.size() = " << elementColors.size() << " num elements = " << nele  
+                    << " printEvery= " << printEvery
+                    << std::endl;
+        }
+
+      for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
+        {
           //std::string msg = 
-          TRACE_PRINT(  "UniformRefiner:connectLocal color= " + percept::toString(icolor) + " [ " +
+          TRACE_PRINT(  "UniformRefiner:createElementsAndNodesAndConnectLocal color= " + percept::toString(icolor) + " [ " +
                         (percept::toString (((double)icolor)/((double)elementColors.size())*100 )).substr(0,4) + " %] ");
           
           if (elementColors[icolor].size() == 0)
@@ -934,10 +983,17 @@ namespace stk {
           // do in threaded mode FIXME
           for (ColorerSetType::iterator iele = elementColors[icolor].begin();  iele !=  elementColors[icolor].end();  iele++)
             {
+
               Entity* element_p = *iele;
               if (!element_p) 
                 {
-                  throw std::runtime_error("UniformRefiner::connectLocal");
+                  throw std::runtime_error("UniformRefiner::createElementsAndNodesAndConnectLocal");
+                }
+
+              if (0 && (jele % printEvery == 0))
+                {
+                  std::cout << "UniformRefiner::createElementsAndNodesAndConnectLocal: element # = " << jele << " [" 
+                            << (((double)jele)/((double)nele)*100.0) << " %]" << std::endl;
                 }
 
               Entity& element = * element_p;
@@ -958,9 +1014,7 @@ namespace stk {
                   if (createNewNeededNodeIds(cell_topo_data, element, needed_entity_ranks, new_sub_entity_nodes))
                     {
                       std::cout << "typeid= " << typeid(*breakPattern).name() << std::endl;
-                      //breakPattern;
                       throw std::logic_error("needed_entity_ranks[ineed_ent].second");
-                      
                     }
                   /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_createNewNeededNodes);
 
@@ -1485,12 +1539,19 @@ namespace stk {
               NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element, needed_entity_ranks[ineed_ent].first, iSubDimOrd);
 
               if (!nodeIds_onSE[0]) {
-                std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " 
-                          << " element= " << element
-                          << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
-                          << " iSubDimOrd = " << iSubDimOrd
-                          <<  std::endl;
-                throw std::logic_error("UniformRefiner logic error");
+                
+                Entity * node1 = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE.m_entity_id_vector[0]);
+                
+                if (!node1)
+                  {
+                    std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " 
+                              << " nodeIds_onSE.m_entity_id_vector[0] = " << nodeIds_onSE.m_entity_id_vector[0] << " node1= " << node1
+                              << " element= " << element
+                              << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
+                              << " iSubDimOrd = " << iSubDimOrd
+                              <<  std::endl;
+                    throw std::logic_error("UniformRefiner::createNewNeededNodeIds logic error #0");
+                  }
               }
 
               unsigned num_new_nodes_needed = needed_entity_ranks[ineed_ent].second;
@@ -1525,7 +1586,18 @@ namespace stk {
                 }
               for (unsigned i_new_node = 0; i_new_node < num_new_nodes_needed; i_new_node++)
                 {
-                  new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd][i_new_node] = nodeIds_onSE[i_new_node];
+                  if (!nodeIds_onSE[i_new_node]) 
+                    {
+                      Entity * node1 = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE.m_entity_id_vector[0]);
+                      //Entity *node1 = m_nodeRegistry->get_entity(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE.m_entity_id_vector[i_new_node])
+
+                        if (!node1)
+                        {
+                          throw std::logic_error("UniformRefiner::createNewNeededNodeIds logic err #4");
+                        }
+                      nodeIds_onSE[i_new_node] = node1;
+                    }
+                  new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd][i_new_node] = nodeIds_onSE[i_new_node]->identifier();
                 }
             }
         }

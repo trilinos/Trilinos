@@ -28,6 +28,7 @@ APPEND_SET(HEADERS
   Shards_Array.hpp
   Shards_ArrayVector.hpp
   Shards_CellTopology.hpp
+  Shards_CellTopologyManagedData.hpp
   Shards_CellTopologyTraits.hpp
   Shards_BasicTopologies.hpp
   Shards_IndexList.hpp
@@ -41,6 +42,7 @@ APPEND_SET(SOURCES
   Shards_Array.cpp
   Shards_CellTopologyData.c
   Shards_CellTopology.cpp
+  Shards_CellTopologyManagedData.cpp
   Shards_BasicTopologies.cpp
   )
 

@@ -90,22 +90,28 @@ main (int argc, char *argv[])
 
   // Name of the Matrix Market sparse matrix file to read.
   std::string filename;
-
+  // Whether to echo the sparse matrix to stdout after reading it
+  // successfully.
+  bool echo = false;
   // Whether to parse the Matrix Market file tolerantly.
   bool tolerant = false;
-
-  bool verbose = false; // Verbosity of output
-  bool debug = false;   // Whether to print debugging-level output
+  // Verbosity of output
+  bool verbose = false; 
+  // Whether to print debugging-level output
+  bool debug = false;   
 
   CommandLineProcessor cmdp (false, true);
+  cmdp.setOption ("filename", &filename,
+		  "Name of the Matrix Market sparse matrix file to read.");
+  cmdp.setOption ("echo", "noecho", &echo, 
+		  "Whether to echo the sparse matrix contents to stdout "
+		  "after reading it successfully.");
+  cmdp.setOption ("tolerant", "strict", &tolerant, 
+		  "Whether to parse the Matrix Market file tolerantly.");
   cmdp.setOption ("verbose", "quiet", &verbose,
 		  "Print messages and results.");
   cmdp.setOption ("debug", "nodebug", &debug,
 		  "Print debugging information.");
-  cmdp.setOption ("filename", &filename,
-		  "Name of the Matrix Market sparse matrix file to read.");
-  cmdp.setOption ("tolerant", "strict", &tolerant, 
-		  "Whether to parse the Matrix Market file tolerantly.");
   // Parse the command-line arguments.
   {
     const CommandLineProcessor::EParseCommandLineReturn parseResult = 
@@ -126,20 +132,39 @@ main (int argc, char *argv[])
 
   // Test reading in the sparse matrix.  If no filename or an empty
   // filename is specified, the test passes trivially.
-  if (filename != "")
+  int success;
+  if (filename == "")
+    success = 1;
+  else
     {
       using Tpetra::MatrixMarket::Raw::Reader;
-
       typedef double scalar_type;
       typedef int ordinal_type;
       typedef Reader<scalar_type, ordinal_type> reader_type;
-      reader_type::readFile (filename, tolerant, debug);
+      const bool theSuccess = 
+	reader_type::readFile (*pComm, filename, echo, tolerant, debug);
+      success = theSuccess ? 1 : 0;
+    }
+  if (debug)
+    {
+      // Make sure that all the processes finish.  This should not be
+      // necessary, since readFile is a collective for which all ranks
+      // agree on the returned Boolean result.
+      Teuchos::barrier (*pComm);
     }
 
   // Only Rank 0 gets to write to cout.
   if (Teuchos::rank(*pComm) == 0)
-    std::cout << "End Result: TEST PASSED" << endl;
-  return EXIT_SUCCESS;
+    {
+      if (success)
+	std::cout << "End Result: TEST PASSED" << endl;
+      else
+	std::cout << "End Result: TEST FAILED" << endl;
+    }
+  if (success)
+    return EXIT_SUCCESS;
+  else
+    return EXIT_FAILURE;
 }
 
 

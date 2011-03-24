@@ -204,13 +204,15 @@ void induced_part_membership( const Entity           & entity_from ,
                               const PartVector       & omit ,
                                     unsigned           entity_rank_to ,
                                     RelationIdentifier relation_identifier ,
-                                    PartVector       & entity_to_parts )
+                                    PartVector       & induced_parts )
 {
   const Bucket   & bucket_from    = entity_from.bucket();
   const BulkData & mesh           = BulkData::get(bucket_from);
   const unsigned local_proc_rank  = mesh.parallel_rank();
   const unsigned entity_rank_from = entity_from.entity_rank();
 
+  // Only induce parts for normal (not back) relations. Can only trust
+  // 'entity_from' to be accurate if it is owned by the local process.
   if ( entity_rank_to < entity_rank_from &&
        local_proc_rank == entity_from.owner_rank() ) {
     const MetaData   & meta        = MetaData::get(mesh);
@@ -220,10 +222,9 @@ void induced_part_membership( const Entity           & entity_from ,
       bucket_superset_ordinals = bucket_from.superset_part_ordinals();
 
     // Contributions of the 'from' entity:
-
     for ( const unsigned * i = bucket_superset_ordinals.first ;
-                           i < bucket_superset_ordinals.second ; ++i ) {
-
+                           i != bucket_superset_ordinals.second ; ++i ) {
+      ThrowAssertMsg( *i < all_parts.size(), "Index " << *i << " out of bounds" );
       Part & part = * all_parts[*i] ;
 
       if ( ! contain( omit , part ) ) {
@@ -231,7 +232,7 @@ void induced_part_membership( const Entity           & entity_from ,
                                  entity_rank_from ,
                                  entity_rank_to ,
                                  relation_identifier ,
-                                 entity_to_parts );
+                                 induced_parts );
       }
     }
   }
@@ -241,7 +242,7 @@ void induced_part_membership( const Entity           & entity_from ,
 
 void induced_part_membership( const Entity     & entity ,
                               const PartVector & omit ,
-                                    PartVector & induced )
+                                    PartVector & induced_parts )
 {
   for ( PairIterRelation
         rel = entity.relations() ; ! rel.empty() ; ++rel ) {
@@ -249,7 +250,7 @@ void induced_part_membership( const Entity     & entity ,
     induced_part_membership( * rel->entity() , omit ,
                              entity.entity_rank() ,
                              rel->identifier() ,
-                             induced );
+                             induced_parts );
   }
 }
 

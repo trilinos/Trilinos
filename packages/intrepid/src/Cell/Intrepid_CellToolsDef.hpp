@@ -2,7 +2,7 @@
 // ************************************************************************
 //
 //                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
+//                 Copyright (2007, 2011) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -463,7 +463,7 @@ namespace Intrepid {
 #endif
     
     // Simply call getReferenceNode with the base topology of the cell
-    return getReferenceNode(cell.getBaseTopology(), vertexOrd);
+    return getReferenceNode(cell.getBaseCellTopologyData(), vertexOrd);
   }
     
   
@@ -503,7 +503,7 @@ namespace Intrepid {
 #endif 
     
     // Simply call getReferenceNodes with the base topology
-    getReferenceSubcellNodes(subcellVertices, subcellDim, subcellOrd, parentCell.getBaseTopology() );
+    getReferenceSubcellNodes(subcellVertices, subcellDim, subcellOrd, parentCell.getBaseCellTopologyData() );
   }  
 
   
@@ -1938,7 +1938,7 @@ int CellTools<Scalar>::checkPointInclusion(const Scalar*                 point,
   // A cell with extended topology has the same reference cell as a cell with base topology. 
   // => testing for inclusion in a reference Triangle<> and a reference Triangle<6> relies on 
   // on the same set of inequalities. To eliminate unnecessary cases we switch on the base topology
-  unsigned key = cellTopo.getBaseTopology() -> key ;
+  unsigned key = cellTopo.getBaseCellTopologyData() -> key ;
   switch( key ) {
     
     case shards::Line<>::key :
@@ -2161,7 +2161,7 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
   
   // For cell topologies with reference cells this test maps the points back to the reference cell
   // and uses the method for reference cells
-  unsigned baseKey = cell.getBaseTopology() -> key;
+  unsigned baseKey = cell.getBaseCellTopologyData() -> key;
   
   switch(baseKey){
     

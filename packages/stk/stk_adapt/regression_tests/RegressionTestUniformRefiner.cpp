@@ -515,7 +515,7 @@ namespace stk
             percept::PerceptMesh eMesh;
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
 
-            typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 6 >                   Quad4_Tri3_6;
+            typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 6 > Quad4_Tri3_6;
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 6 > break_quad_to_tri_6(eMesh);
 
