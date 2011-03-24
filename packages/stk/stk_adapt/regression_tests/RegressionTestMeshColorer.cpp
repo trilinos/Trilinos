@@ -79,7 +79,7 @@ namespace stk
           Ioss::Utils::to_string(num_y) + "x" +
           Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 	
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
         eMesh.newMesh(percept::PerceptMesh::GMeshSpec(config_mesh));
         int vectorDimension = 0;
         FieldBase *element_color_field = eMesh.addField("element_colors", mesh::Element, vectorDimension);
@@ -103,7 +103,7 @@ namespace stk
 
         dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test_quad " << stk::diag::dendl;
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(2);
         if (eMesh.getParallelSize() == 1 || eMesh.getParallelSize() == 3)
           {
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");

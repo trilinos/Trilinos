@@ -558,12 +558,10 @@ namespace stk {
       m_comm          = comm;
       m_ownData       = true;
 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      m_metaData      = new MetaData( fem_entity_rank_names() );
-#else
       m_femMetaData   = new stk::mesh::fem::FEMMetaData( m_spatialDim, stk::mesh::fem::entity_rank_names(m_spatialDim) );
       m_metaData      = & stk::mesh::fem::FEMMetaData::get_meta_data(*m_femMetaData);
-#endif //  SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      std::cout << "tmp m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
+
       m_bulkData      = new BulkData( *m_metaData , comm );
       m_fixture       = 0;
       m_iossRegion    = 0;
@@ -1021,7 +1019,12 @@ namespace stk {
       //----------------------------------
       // Process Entity Types. Subsetting is possible.
       //stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
-      stk::mesh::MetaData& meta_data = *m_metaData;
+      //stk::mesh::MetaData& meta_data = *m_metaData;
+      std::cout << "tmp1.0 m_femMetaData = " << m_femMetaData << std::endl;
+
+      stk::mesh::fem::FEMMetaData& meta_data = *m_femMetaData;
+      std::cout << "tmp1 m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
+
       process_read_elementblocks_meta(in_region, meta_data);
       process_read_nodeblocks_meta(in_region,    meta_data, m_spatialDim);
       process_read_facesets_meta(in_region,      meta_data);
@@ -1383,7 +1386,7 @@ namespace stk {
 
       std::cout << "PerceptMesh::dump: for file = " << file <<  std::endl;
 
-      PerceptMesh eMeshS;
+      PerceptMesh eMeshS(3);  // FIXME
       //PerceptMesh *eMesh = & eMeshS;
       PerceptMesh *eMesh = file.length() > 0 ? &eMeshS : this;
       if (file.length() > 0)
@@ -1764,16 +1767,12 @@ namespace stk {
 
       // 09/14/10:  TODO:  tscoffe:  Will this work in 1D?
       // 09/14/10:  TODO:  tscoffe:  We need an exception here if we don't get a FEMInterface off of MetaData or we need to take one on input.
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      const bool is_side = side_entity_rank != Edge;
-      const CellTopologyData * const elem_top = PerceptMesh::get_cell_topology( elem );
-#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
       //const fem::FemInterface& fem = MetaData::get(*elem).get_attribute<FemInterface>();
       //const bool is_side = side_entity_rank != fem::edge_rank(fem);
       stk::mesh::fem::FEMMetaData& femMeta = stk::mesh::fem::FEMMetaData::get(elem);
       const bool is_side = side_entity_rank != femMeta.edge_rank();
       const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
-#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
       const unsigned side_count = ! elem_top ? 0 : (
                                                     is_side ? elem_top->side_count
@@ -1828,11 +1827,7 @@ namespace stk {
 
       EntityRank needed_entity_rank = side.entity_rank();
 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(element);
-#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       const CellTopologyData * const cell_topo_data = fem::get_cell_topology(element).getCellTopologyData();
-#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(Node);

@@ -695,7 +695,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
       const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(*part);
       if (cell_topo == NULL) {
         std::ostringstream msg ;
-        msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from stk::percept::PerceptMesh::get_cell_topology()";
+        msg << " UnitTestUtilities::process_elementblocks::INTERNAL_ERROR: Part " << part->name() << " returned NULL from stk::percept::PerceptMesh::get_cell_topology()";
         throw std::runtime_error( msg.str() );
       }
 

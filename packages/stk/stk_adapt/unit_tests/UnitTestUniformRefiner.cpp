@@ -175,7 +175,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, hex8_hex8_8_1)
 
   // start_demo_uniformRefiner_hex8_hex8_8_1
 
-  percept::PerceptMesh eMesh;
+  percept::PerceptMesh eMesh(3);
 
   unsigned p_size = eMesh.getParallelSize();
 
@@ -206,7 +206,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, wedge6_1)
 
   // start_demo_uniformRefiner_wedge6_1
 
-  percept::PerceptMesh eMesh;
+  percept::PerceptMesh eMesh(3);
 
   unsigned p_size = eMesh.getParallelSize();
   if (p_size == 1)

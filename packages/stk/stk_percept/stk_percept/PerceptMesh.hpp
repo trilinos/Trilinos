@@ -1,7 +1,7 @@
 #ifndef stk_percept_PerceptMesh_hpp
 #define stk_percept_PerceptMesh_hpp
 
-//#define SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#define SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
 #include <iostream>
 #include <stdexcept>
@@ -100,7 +100,7 @@ namespace stk {
 
       // ctor constructor
       /// Create a Mesh object that owns its constituent MetaData and BulkData (which are created by this object)
-      PerceptMesh(size_t spatialDimension = 3, stk::ParallelMachine comm =  MPI_COMM_WORLD );
+      PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm =  MPI_COMM_WORLD );
 
       /// reads and commits mesh, editing disabled
       void
@@ -257,20 +257,50 @@ namespace stk {
       bool
       isBoundarySurface(mesh::Part& block, mesh::Part& surface);
 
+#if 0
+      /// here @param thing is a Part, Bucket, Entity, or Field or BulkData
       template<class T>
       static
-      const CellTopologyData * const get_cell_topology(T& thing) 
+      const stk::mesh::fem::FEMMetaData& get_fem_meta_data(const T& thing) 
       { 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      const CellTopologyData * const cell_topo_data = mesh::get_cell_topology(thing);
-#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      const CellTopologyData * const cell_topo_data = fem::get_cell_topology(thing).getCellTopologyData();
-#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+        const stk::mesh::MetaData& meta = MetaData::get(thing);
+        const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( meta );
+        return fem_meta;
+      }
+
+      template<class T>
+      static
+      const CellTopologyData * const get_cell_topology(const T& thing) 
+      { 
+        //#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+        //      const CellTopologyData * const cell_topo_data = mesh::get_cell_topology(thing);
+        //#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+        //const CellTopologyData * const cell_topo_data = fem::get_cell_topology(thing).getCellTopologyData();
+        const stk::mesh::fem::FEMMetaData & fem_meta = get_fem_meta_data(thing);
+
+        const CellTopologyData * const cell_topo_data = fem_meta.get_cell_topology(thing).getCellTopologyData();
+
+        //fem::CellTopology FEMMetaData::get_cell_topology( const Part & part) const
+
+      //#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return cell_topo_data;
 
       //return mesh::get_cell_topology(thing);
       }
+#else
 
+      template<class T>
+      static
+      const CellTopologyData * const get_cell_topology(const T& thing) 
+      { 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+        const CellTopologyData * const cell_topo_data = mesh::get_cell_topology(thing);
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+        const CellTopologyData * const cell_topo_data = fem::get_cell_topology(thing).getCellTopologyData();
+#endif
+        return cell_topo_data;
+      }
+#endif
 
     private:
 

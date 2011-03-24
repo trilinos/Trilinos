@@ -77,11 +77,11 @@ namespace stk {
       }
 
       template<class ENTITY>
-      void local_internal_part_processing(ENTITY *entity, stk::mesh::MetaData &meta,
+      void local_internal_part_processing(ENTITY *entity, stk::mesh::fem::FEMMetaData &meta,
                                                  stk::mesh::EntityRank type);
 
       template<>
-      void local_internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
+      void local_internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
                                                  stk::mesh::EntityRank type)
       {
         if (local_include_entity(entity)) {
@@ -92,9 +92,11 @@ namespace stk {
       }
 
       template<>
-      void local_internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta,
-                                                 stk::mesh::EntityRank type)
+      void local_internal_part_processing(Ioss::EntityBlock *entity, 
+                                          stk::mesh::fem::FEMMetaData &meta,
+                                          stk::mesh::EntityRank type)
       {
+
         if (local_include_entity(entity)) {
           //std::cout << "tmp entity name= " << entity->name() << std::endl;
           stk::mesh::Part & part = meta.declare_part(entity->name(), type);
@@ -108,27 +110,31 @@ namespace stk {
           /// that it can handle that specific topology.
 
           if (cell_topology != NULL) {
-            stk::mesh::fem::set_cell_topology(part, cell_topology);
+
+            //stk::mesh::fem::set_cell_topology(part, cell_topology);
+
+            stk::mesh::fem::set_cell_topology(meta, part,  fem::CellTopology(cell_topology) );
+
           } else {
             /// \todo IMPLEMENT handle cell_topolgy mapping error...
           }
         }
       }
 
-      template<> void local_internal_part_processing(Ioss::ElementBlock *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
-      template<> void local_internal_part_processing(Ioss::FaceBlock *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
-      template<> void local_internal_part_processing(Ioss::EdgeBlock *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::ElementBlock *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::FaceBlock *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::EdgeBlock *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
 
-      template<> void local_internal_part_processing(Ioss::EdgeSet *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
-      template<> void local_internal_part_processing(Ioss::FaceSet *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
-      template<> void local_internal_part_processing(Ioss::NodeSet *entity, stk::mesh::MetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::EdgeSet *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::FaceSet *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::NodeSet *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
 
 
 
 #endif
 
       template <typename T>
-      static void local_default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta,
+      static void local_default_part_processing(const std::vector<T*> &entities, stk::mesh::fem::FEMMetaData &meta,
                                                 stk::mesh::EntityRank type)
       {
 #if !USE_LOCAL_PART_PROCESSING
@@ -145,7 +151,7 @@ namespace stk {
       //static int s_spatial_dim = 3;
 
       // ========================================================================
-      void process_read_nodeblocks_meta(Ioss::Region &region, stk::mesh::MetaData &meta, int& spatial_dim)
+      void process_read_nodeblocks_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta, int& spatial_dim)
       {
         const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
         assert(node_blocks.size() == 1);
@@ -172,10 +178,10 @@ namespace stk {
       }
 
       // ========================================================================
-      void process_read_elementblocks_meta(Ioss::Region &region, stk::mesh::MetaData &meta)
+      void process_read_elementblocks_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
       {
         const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-        local_default_part_processing(elem_blocks, meta, stk::mesh::Element);
+        local_default_part_processing(elem_blocks, meta, meta.element_rank() );
 
         // Parts were created above, now handle element block specific
         // information (topology, attributes, ...);
@@ -219,7 +225,7 @@ namespace stk {
       }
 
       // ========================================================================
-      void process_read_nodesets_meta(Ioss::Region &region, stk::mesh::MetaData &meta)
+      void process_read_nodesets_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
       {
         const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
         local_default_part_processing(node_sets, meta, stk::mesh::Node);
@@ -265,7 +271,7 @@ namespace stk {
       }
 
       // ========================================================================
-      void process_read_surface_entity_meta(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
+      void process_read_surface_entity_meta(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
                                             stk::mesh::EntityRank entity_rank)
       {
         assert(entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET);
@@ -324,33 +330,33 @@ namespace stk {
       }
 
       // ========================================================================
-      void process_read_facesets_meta(Ioss::Region &region, stk::mesh::MetaData &meta)
+      void process_read_facesets_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
       {
         const Ioss::FaceSetContainer& face_sets = region.get_facesets();
-        local_default_part_processing(face_sets, meta, stk::mesh::Face);
+        local_default_part_processing(face_sets, meta, meta.face_rank());
 
         for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
             it != face_sets.end(); ++it) {
           Ioss::FaceSet *entity = *it;
 
           if (stk::io::include_entity(entity)) {
-            process_read_surface_entity_meta(entity, meta, stk::mesh::Face);
+            process_read_surface_entity_meta(entity, meta, meta.face_rank());
           }
         }
       }
 
       // ========================================================================
-      void process_read_edgesets_meta(Ioss::Region &region, stk::mesh::MetaData &meta)
+      void process_read_edgesets_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
       {
         const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-        local_default_part_processing(edge_sets, meta, stk::mesh::Edge);
+        local_default_part_processing(edge_sets, meta, meta.edge_rank());
 
         for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
             it != edge_sets.end(); ++it) {
           Ioss::EdgeSet *entity = *it;
 
           if (stk::io::include_entity(entity)) {
-            process_read_surface_entity_meta(entity, meta, stk::mesh::Edge);
+            process_read_surface_entity_meta(entity, meta, meta.edge_rank());
           }
         }
       }
@@ -363,7 +369,7 @@ namespace stk {
       {
         EXCEPTWATCH;
         //std::cout << "PerceptMeshReadWrite::add_other_fields: " << std::endl;
-        using namespace mesh;
+        //using namespace mesh;
         bool printInfo = true;
 
         const MetaData& metaData = MetaData::get(bulk);
@@ -439,7 +445,7 @@ namespace stk {
             const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(*part);
             if (cell_topo == NULL) {
               std::ostringstream msg ;
-              msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from stk::percept::PerceptMesh::get_cell_topology()";
+              msg << " PerceptMeshReadWrite::process_read_elementblocks_bulk: INTERNAL_ERROR: Part " << part->name() << " returned NULL from stk::percept::PerceptMesh::get_cell_topology()";
               throw std::runtime_error( msg.str() );
             }
 
@@ -524,6 +530,7 @@ namespace stk {
       {
         assert(io->type() == Ioss::FACESET || io->type() == Ioss::EDGESET);
         const stk::mesh::MetaData& meta = MetaData::get(bulk);
+        const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( meta );
 
         int block_count = io->block_count();
         for (int i=0; i < block_count; i++) {
@@ -544,7 +551,8 @@ namespace stk {
             std::vector<stk::mesh::Entity*> sides(side_count);
             for(size_t is=0; is<side_count; ++is) {
 
-              stk::mesh::Entity* const elem = bulk.get_entity(stk::mesh::Element, elem_side[is*2]);
+
+              stk::mesh::Entity* const elem = bulk.get_entity(fem_meta.element_rank(), elem_side[is*2]);
               // If NULL, then the element was probably assigned to an
               // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
               // Hence the '-1' in the following line.
