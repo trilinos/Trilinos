@@ -60,7 +60,8 @@ void FEMMetaData::FEM_initialize(size_t spatial_dimension, const std::vector<std
     m_entity_rank_names = fem::entity_rank_names(spatial_dimension);
   }
   else {
-    ThrowRequireMsg(rank_names.size() >= (spatial_dimension+1), "Entity rank name vector must name every rank");
+    ThrowRequireMsg(rank_names.size() >= spatial_dimension+1,
+                    "Entity rank name vector must name every rank");
     m_entity_rank_names = rank_names;
   }
   internal_set_spatial_dimension_and_ranks(spatial_dimension);

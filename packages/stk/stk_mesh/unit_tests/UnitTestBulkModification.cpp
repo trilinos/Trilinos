@@ -212,7 +212,7 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 void UnitTestStkMeshBulkModification::test_all_local_edges()
 {
   BulkData& bulk_data = initialize_ring_fixture();
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(m_ring_mesh.m_fem);
+  const stk::mesh::EntityRank element_rank = m_ring_mesh.m_meta_data.element_rank();
 
   {
     const stk::mesh::Part& universal = m_ring_mesh.m_meta_data.universal_part();

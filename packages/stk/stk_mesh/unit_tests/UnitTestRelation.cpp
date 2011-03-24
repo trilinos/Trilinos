@@ -41,7 +41,6 @@ using stk::mesh::Selector;
 using stk::mesh::EntityId;
 using stk::mesh::fem::FEMMetaData;
 using stk::mesh::BulkData;
-using stk::mesh::DefaultFEM;
 using stk::mesh::Ghosting;
 using stk::mesh::fixtures::BoxFixture;
 using stk::mesh::fixtures::RingFixture;
