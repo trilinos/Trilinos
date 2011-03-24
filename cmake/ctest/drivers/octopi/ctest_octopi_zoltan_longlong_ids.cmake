@@ -9,7 +9,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
 #
 
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME "ZOLTAN_INT_IDS")
+SET(BUILD_DIR_NAME "ZOLTAN_LONGLONG_IDS")
 SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 SET(CTEST_TEST_TIMEOUT "2400")
@@ -74,7 +74,7 @@ SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DTrilinos_ENABLE_Zoltan:BOOL=ON "
     "-DZoltan_ENABLE_EXAMPLES:BOOL=OFF "
     "-DZoltan_ENABLE_TESTS:BOOL=ON "
-    "-DZoltan_ENABLE_UINT_IDS:Bool=ON"
+    "-DZoltan_ENABLE_ULLONG_IDS:Bool=ON"
     "-DZoltan_ENABLE_ParMETIS:BOOL=ON "
     "-DParMETIS_LIBRARY_DIRS:FILEPATH=/Net/local/proj/zoltan/arch/linux64/lib/lam/ParMETIS3" 
     "-DParMETIS_INCLUDE_DIRS:FILEPATH=/Net/local/proj/zoltan/arch/all/src/ParMETIS3" 
