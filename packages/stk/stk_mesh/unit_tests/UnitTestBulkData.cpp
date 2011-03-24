@@ -689,7 +689,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
   {
     bool aura = false;
     BoxFixture fixture( pm, 100 );
-    fixture.meta_data().commit();
+    fixture.fem_meta().commit();
     BulkData & bulk = fixture.bulk_data();
     int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
@@ -705,7 +705,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
   if ( 1 < p_size ) {
     bool aura = false;
     BoxFixture fixture( pm, 100 );
-    fixture.meta_data().commit();
+    fixture.fem_meta().commit();
     BulkData & bulk = fixture.bulk_data();
     int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
@@ -719,7 +719,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
   if ( 1 < p_size ) {
     bool aura = false;
     BoxFixture fixture( pm, 100 );
-    fixture.meta_data().commit();
+    fixture.fem_meta().commit();
     BulkData & bulk = fixture.bulk_data();
     int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
@@ -734,7 +734,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
   if ( 1 < p_size ) {
     BoxFixture fixture( pm, 100 );
     BulkData & bulk = fixture.bulk_data();
-    FEMMetaData & box_meta = fixture.meta_data();
+    FEMMetaData & box_meta = fixture.fem_meta();
     box_meta.commit();
     int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 

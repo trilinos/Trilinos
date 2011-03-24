@@ -33,7 +33,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
 
   stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
 
-  fixture.m_meta_data.commit();
+  fixture.m_fem_meta.commit();
   fixture.generate_mesh();
 
   {
@@ -74,7 +74,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
 
   stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
 
-  fixture.m_meta_data.commit();
+  fixture.m_fem_meta.commit();
   fixture.generate_mesh();
 
   {
@@ -157,7 +157,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
 
   stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, NX, NY);
 
-  fixture.m_meta_data.commit();
+  fixture.m_fem_meta.commit();
   fixture.generate_mesh();
 
   {

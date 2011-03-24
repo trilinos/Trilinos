@@ -12,6 +12,8 @@
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -133,8 +135,8 @@ void boundary_analysis(const BulkData& bulk_data,
                        EntityRank closure_rank,
                        EntitySideVector& boundary)
 {
-  const Selector locally_used = MetaData::get(bulk_data).locally_owned_part()
-                              | MetaData::get(bulk_data).globally_shared_part();
+  const Selector locally_used = fem::FEMMetaData::get(bulk_data).locally_owned_part()
+                              | fem::FEMMetaData::get(bulk_data).globally_shared_part();
 
   // find an iterator that points to the last item in the closure that is of a
   // lower-order than the closure_rank
@@ -149,7 +151,7 @@ void boundary_analysis(const BulkData& bulk_data,
     // some temporaries for clarity
     std::vector<EntitySideComponent > adjacent_entities;
     Entity& curr_entity = **itr;
-    const CellTopologyData* celltopology = fem::get_cell_topology(curr_entity).getCellTopologyData();
+    const CellTopologyData* celltopology = fem::get_cell_topology_new(curr_entity).getCellTopologyData();
     if (celltopology == NULL) {
       continue;
     }

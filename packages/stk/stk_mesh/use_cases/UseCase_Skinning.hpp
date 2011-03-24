@@ -14,6 +14,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 
 bool skinning_use_case_1(stk::ParallelMachine pm);
@@ -22,7 +23,7 @@ bool skinning_use_case_2(stk::ParallelMachine pm);
 
 
 void separate_and_skin_mesh(
-    stk::mesh::MetaData & meta,
+    stk::mesh::fem::FEMMetaData & fem_meta,
     stk::mesh::BulkData & mesh,
     stk::mesh::Part     & skin_part,
     std::vector< stk::mesh::EntityId > elements_to_separate,

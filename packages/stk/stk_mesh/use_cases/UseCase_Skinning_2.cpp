@@ -81,17 +81,18 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
   //number of faces  and particles exist.
   try {
     stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-    const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fixture.m_fem);
-    const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fixture.m_fem);
+    const stk::mesh::EntityRank element_rank = fixture.m_fem_meta.element_rank();
+    const stk::mesh::EntityRank side_rank = fixture.m_fem_meta.side_rank();
 
     const unsigned p_rank = fixture.m_bulk_data.parallel_rank();
     const unsigned p_size = fixture.m_bulk_data.parallel_size();
 
-    stk::mesh::Part & skin_part = declare_part(fixture.m_meta_data, "skin_part");
+    stk::mesh::Part & skin_part = fixture.m_fem_meta.declare_part("skin_part");
 
-    stk::mesh::Part & shell_part = stk::mesh::declare_part<shards::ShellQuadrilateral<4> >(fixture.m_meta_data, "shell_part");
+    stk::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
+    stk::mesh::Part & shell_part = fixture.m_fem_meta.declare_part("shell_part", shell_top);
 
-    fixture.m_meta_data.commit();
+    fixture.m_fem_meta.commit();
 
     fixture.generate_mesh();
 

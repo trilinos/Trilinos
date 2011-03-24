@@ -72,8 +72,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   BoxFixture fixture1(pm , max_bucket_size, entity_names),
              fixture2(pm , max_bucket_size, entity_names);
 
-  FEMMetaData& meta  = fixture1.meta_data();
-  FEMMetaData& meta2 = fixture2.meta_data();
+  FEMMetaData& meta  = fixture1.fem_meta();
+  FEMMetaData& meta2 = fixture2.fem_meta();
   const int spatial_dimension = 3;
   const EntityRank element_rank = meta.element_rank();
 
