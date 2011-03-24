@@ -71,7 +71,8 @@ namespace Tpetra {
       // characters.  Whitespace-only lines are considered "empty."
       start = line.find_first_not_of (" \t");
       if (start == std::string::npos)
-	{ // It's a whitespace-only line
+	{ // It's a whitespace-only line.  We consider those comments
+	  // in tolerant mode, syntax errors otherwise.
 	  if (tolerant)
 	    return true;
 	  else
@@ -81,7 +82,10 @@ namespace Tpetra {
 	      throw std::invalid_argument (os.str());
 	    }
 	}
-      // Position of the first comment character, if any.
+      // Position of the first comment character (if any), relative to
+      // the first non-whitespace character in the line.  (If we got
+      // this far, then the line has at least one non-whitespace
+      // character.)
       const size_t commentPos = line.find_first_of("%#", start);
       if (commentPos == std::string::npos)
 	{ // There are no comment characters in the line.
@@ -90,13 +94,19 @@ namespace Tpetra {
 	  size = std::string::npos;
 	  return false;
 	}
+      else if (commentPos == start)
+	{ // The line has 0 or more whitespace characters, followed by
+	  // a start-of-comment character.  That means it's a comment.
+	  size = 0;
+	  return true;
+	}
       else 
 	{ // [start, start+size-1] is the (inclusive) range of
-	  // characters (if any) between the first nonwhitespace
-	  // character, and the first comment character.
+	  // characters (if any) between the first non-whitespace
+	  // character, and the first comment character.  That range
+	  // could contain valid data, so we don't consider this a
+	  // "comment line."
 	  size = commentPos - start;
-	  // It's not a "comment line," because there could be valid
-	  // data before the first comment character.
 	  return false;
 	}
     }

@@ -72,12 +72,21 @@ and should be used only during debugging).</td>
 
     <tr nosave="" valign="top">
       <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_BUILD_TYPE</i></td>
-      <td nosave="">Type of input, do allow some optimizations in the build process:
+      <td nosave="">Type of input, do allow some optimizations in the build process:<br/>
        NORMAL = graph is generic, no optimization can be performed<br/>
-       FAST = graph global ids are in the interval [0,n-1] <br/>
-       FAST_NO_DUP = graph global ids are in the interval [0,n-1] and there is no duplicate edges and no need of symmetrization.
+       FAST = graph global IDs are in the interval [0,n-1], with IDs [0,a] on process 0, IDs [a+1, b] on process 1, IDs [b+1, c] on process 2, etc. <br/>
+       FAST_NO_DUP = graph global IDs are in the interval [0,n-1] with IDs [0,a] on process 0, IDs [a+1, b] on process 1, IDs [b+1, c] on process 2, etc., and there are no duplicate edges and no need of symmetrization.<br/>
+       See <i>GRAPH_FAST_BUILD_BASE</i> below to allow IDs to that are one-based instead of zero-based.
 </td>
     </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_FAST_BUILD_BASE</i></td>
+      <td nosave="">When using <i>GRAPH_BUILD_TYPE</i> is FAST or FAST_NO_DUP,
+IDs specified are in the range [GRAPH_FAST_BUILD_BASE, n-1+GRAPH_FAST_BUILD_BASE].
+This parameter has no effect when <i>GRAPH_BUILD_TYPE</i> is NORMAL.
+</td>
+</tr>
+
 
 <!--     <tr nosave="" valign="top"> -->
 <!--       <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_BIPARTITE_TYPE</i></td> -->
@@ -114,6 +123,11 @@ and should be used only during debugging).</td>
       <td><br>
       </td>
       <td><i>GRAPH_BUILD_TYPE </i>= NORMAL</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>GRAPH_FAST_BUILD_BASE </i>= 0</td>
     </tr>
 
 <tr>

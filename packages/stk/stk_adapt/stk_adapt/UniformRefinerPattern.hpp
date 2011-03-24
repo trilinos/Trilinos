@@ -46,6 +46,7 @@
 #define STK_ADAPT_URP_LOCAL_NODE_COMPS 0
 
 // set to 1 to turn on some print tracing and cpu/mem tracing
+#define FORCE_TRACE_PRINT_ONLY 0
 #define TRACE_STAGE_PRINT_ON 0
 #define TRACE_STAGE_PRINT (TRACE_STAGE_PRINT_ON && (m_eMesh.getRank()==0))
 
@@ -54,10 +55,16 @@
 #  define TRACE_CPU_TIME_AND_MEM_0(a) do { Util::trace_cpu_time_and_mem_0(a); } while(0)
 #  define TRACE_CPU_TIME_AND_MEM_1(a) do { Util::trace_cpu_time_and_mem_1(a); } while(0)
 #else
-#  define TRACE_PRINT(a) do {} while(0)
+#  if FORCE_TRACE_PRINT_ONLY
+#    define TRACE_PRINT(a) do { trace_print(a); } while(0)
+#  else
+#    define TRACE_PRINT(a) do {} while(0)
+#  endif
 #  define TRACE_CPU_TIME_AND_MEM_0(a) do { } while(0)
 #  define TRACE_CPU_TIME_AND_MEM_1(a) do { } while(0)
 #endif
+
+
 
 namespace stk {
   namespace adapt {
@@ -579,7 +586,6 @@ namespace stk {
 
         CellTopology cell_topo(get_cell_topology(element));
 
-
         // FIXME - need topo dimensions here
         int topoDim = cell_topo.getDimension();
         unsigned cell_topo_key = get_cell_topology(element)->key;
@@ -763,7 +769,7 @@ namespace stk {
       mesh::Entity& createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, EntityId eid)
       {
 #if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
-        mesh::Entity *node_p = nodeRegistry.get_entity_node(*eMesh.getBulkData(), mesh::Node, eid);
+        mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.getBulkData(), mesh::Node, eid);
         if (node_p)
           return *node_p;
         else
@@ -820,7 +826,7 @@ namespace stk {
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
-                 nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                  nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                  nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
 #endif
@@ -855,7 +861,7 @@ namespace stk {
                 for (unsigned i_face = 0; i_face < n_faces; i_face++)
                   {
                     // FIXME assumes face is quadrilateral
-                    shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getTopology( 2, i_face));
+                    shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getCellTopologyData( 2, i_face));
                     if (0)
                       std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << FACE_N(i_face) << " for i_face = " << i_face 
                                 << " face_topo.getNodeCount()= " << face_topo.getNodeCount()
@@ -966,8 +972,8 @@ namespace stk {
 
         const mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
 
-        const unsigned * inodes = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].node;
-        int num_subcell_verts = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology->vertex_count;
+        const unsigned * inodes = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].node;
+        int num_subcell_verts = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology->vertex_count;
 
         // tmp
         //vector_sdcell_global_baseline.resize(num_subcell_verts);
@@ -1041,7 +1047,7 @@ namespace stk {
               }
 
             //! now we have a set of nodes in the right order, use Shards to get the actual permutation
-            perm = findPermutation(cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology,
+            perm = findPermutation(cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology,
                                               &vector_sdcell_global_baseline[0], &subCell_from_element[0]);
 
             //std::cout << "tmp perm = " << perm << std::endl;
@@ -1056,7 +1062,7 @@ namespace stk {
 
             if (0 && num_subcell_verts==3)
               {
-                const unsigned *perm_array = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology->permutation[perm].node;
+                const unsigned *perm_array = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology->permutation[perm].node;
                 for (int iv = 0; iv < num_subcell_verts; iv++)
                   {
                     std::cout << "tmp perm_array[" << iv << "]=  " << perm_array[iv] << std::endl;
@@ -1096,12 +1102,12 @@ namespace stk {
         elems.resize(getNumNewElemPerElem());
 
         CellTopology cell_topo(cell_topo_data);
-        bool linearElement = Util::isLinearElement(cell_topo);
+        bool isLinearElement = Util::isLinearElement(cell_topo);
 
         // SPECIAL CASE ALERT  FIXME
         //if (toTopoKey == topo_key_wedge15)
-        //  linearElement = true;
-        //std::cout << "tmp cell_topo= " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+        //  isLinearElement = true;
+        //std::cout << "tmp cell_topo= " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
         
         const mesh::PairIterRelation elem_nodes = element.relations(Node);
 
@@ -1151,7 +1157,7 @@ namespace stk {
                 //!
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
                 nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
-                if (linearElement)
+                if (isLinearElement)
                   {
                     nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                   }
@@ -1210,17 +1216,17 @@ namespace stk {
                     if (perm_ord < 0)
                       throw std::logic_error("permutation < 0 ");
                     //std::cout << "tmp 0 " << perm_ord << " rank_of_subcell= " << rank_of_subcell << " ordinal_of_subcell= " << ordinal_of_subcell <<  std::endl;
-                    //std::cout << "tmp 0 " << cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology << std::endl;
+                    //std::cout << "tmp 0 " << cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology << std::endl;
                     if (1 <= rank_of_subcell && rank_of_subcell <= 2)
                       {
-                        perm_array = cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology->permutation[perm_ord].node;
+                        perm_array = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology->permutation[perm_ord].node;
                       }
 
                   }
 
                 if (0)
                   {
-                    std::cout << "tmp 2 cell_topo                       = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                    std::cout << "tmp 2 cell_topo                       = " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
                     std::cout << "tmp m_primaryEntityRank               = " << m_primaryEntityRank << std::endl;
                     std::cout << "tmp rank_of_subcell                   = " << rank_of_subcell << std::endl;
                     std::cout << "tmp ordinal_of_subcell                = " << ordinal_of_subcell <<  std::endl;
@@ -1284,7 +1290,7 @@ namespace stk {
                               {
                                 if (0)
                                   {
-                                    std::cout << "tmp cell_topo                  = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                                    std::cout << "tmp cell_topo                  = " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
                                     std::cout << "tmp rank_of_subcell            = " << rank_of_subcell << std::endl;
                                     std::cout << "tmp ordinal_of_subcell         = " << ordinal_of_subcell <<  std::endl;
                                     std::cout << "tmp ordinal_of_node_on_subcell = " << ordinal_of_node_on_subcell << std::endl;
@@ -1318,7 +1324,7 @@ namespace stk {
                               {
                                 if (0)
                                   {
-                                    std::cout << "tmp 1 cell_topo                       = " << cell_topo.getName() << " linearElement= " << linearElement << std::endl;
+                                    std::cout << "tmp 1 cell_topo                       = " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
                                     std::cout << "tmp m_primaryEntityRank               = " << m_primaryEntityRank << std::endl;
                                     std::cout << "tmp rank_of_subcell                   = " << rank_of_subcell << std::endl;
                                     std::cout << "tmp ordinal_of_subcell                = " << ordinal_of_subcell <<  std::endl;
@@ -1401,11 +1407,12 @@ namespace stk {
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_declare_relation);
               }
 
-            if (!linearElement)
+            if (!isLinearElement)
               {
                 interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0], eMesh.getCoordinatesField() );
-                //FIXME FIXME FIXME
-                //interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0]);
+                interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChild),  &ref_topo_x[0]);
+                //std::cout << "tmp found !isLinearElement... " << std::endl;
+                //exit(1);
               }
 
             set_parent_child_relations(eMesh, element, newElement, iChild);
@@ -1942,7 +1949,7 @@ namespace stk {
             for (unsigned i_edge = 0; i_edge < n_edges; i_edge++)
               {
                 // FIXME for 2d
-                shards::CellTopology edge_topo = parent_cell_topo.getDimension()==1? parent_cell_topo : shards::CellTopology(cell_topo.getTopology( 1, i_edge));
+                shards::CellTopology edge_topo = parent_cell_topo.getDimension()==1? parent_cell_topo : shards::CellTopology(cell_topo.getCellTopologyData( 1, i_edge));
 
                 if (edge_topo.getNodeCount() == 3)
                   {
@@ -1958,9 +1965,9 @@ namespace stk {
                       }
                     else
                       {
-                        i0 = child_nodes[cell_topo.getTopology()->edge[i_edge].node[0]];
-                        i1 = child_nodes[cell_topo.getTopology()->edge[i_edge].node[1]];
-                        i2 = child_nodes[cell_topo.getTopology()->edge[i_edge].node[2]];
+                        i0 = child_nodes[cell_topo.getCellTopologyData()->edge[i_edge].node[0]];
+                        i1 = child_nodes[cell_topo.getCellTopologyData()->edge[i_edge].node[1]];
+                        i2 = child_nodes[cell_topo.getCellTopologyData()->edge[i_edge].node[2]];
                       }
 
                     double *param_coord = ref_topo_x[i2].parametric_coordinates;
@@ -1979,7 +1986,7 @@ namespace stk {
             for (unsigned i_face = 0; i_face < n_faces; i_face++)
               {
                 // FIXME for 2d
-                shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getTopology( 2, i_face));
+                shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getCellTopologyData( 2, i_face));
 
                 // skip triangle faces
                 if (face_topo.getVertexCount() == 3)
@@ -1988,7 +1995,7 @@ namespace stk {
                 // NOTE: if this is a serendipity 8-node face, it has no interior node - only 9-noded quad faces have an interior node
                 if (face_topo.getNodeCount() == 9)
                   {
-                    unsigned i0 = cell_topo.getDimension()==2 ? 8 : cell_topo.getTopology()->side[i_face].node[8];
+                    unsigned i0 = cell_topo.getDimension()==2 ? 8 : cell_topo.getCellTopologyData()->side[i_face].node[8];
                     i0 = child_nodes[i0];
 
                     double *param_coord = ref_topo_x[i0].parametric_coordinates;
@@ -1997,7 +2004,7 @@ namespace stk {
                     param_coord[2] = 0.0;
                     for (unsigned i_face_n=0; i_face_n < 4; i_face_n++)
                       {
-                        unsigned i1 = cell_topo.getDimension()==2 ? i_face_n : cell_topo.getTopology()->side[i_face].node[i_face_n];
+                        unsigned i1 = cell_topo.getDimension()==2 ? i_face_n : cell_topo.getCellTopologyData()->side[i_face].node[i_face_n];
                         i1 = child_nodes[i1];
                         param_coord[0] += ref_topo_x[i1].parametric_coordinates[0]/4.;
                         param_coord[1] += ref_topo_x[i1].parametric_coordinates[1]/4.;
@@ -2096,7 +2103,7 @@ namespace stk {
                       {
 
                         // FIXME for 2d
-                        shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getTopology( 2, i_face));
+                        shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getCellTopologyData( 2, i_face));
 
                         // skip triangle faces
                         if (face_topo.getVertexCount() == 3)
@@ -2406,6 +2413,7 @@ namespace stk {
 
                 if (!doThisPart)
                   {
+                    // we found one block with a "+", so this means include only the actual specified list of blocks, except for those excluded with "-"
                     if (found_include_only_block) 
                       {
                         doThisPart = false;
@@ -2423,6 +2431,12 @@ namespace stk {
                               }
                           }
                       }
+                    else
+                      // do them all, except for excludes
+                      {
+                        doThisPart = true;
+                      }
+
                     // check for excludes
                     if (doThisPart)
                       {
@@ -2455,7 +2469,6 @@ namespace stk {
                         //std::cout << "cell topo is null for part = " << part->name() << std::endl;
                         //throw std::runtime_error("cell topo is null");
                         doThisPart = false;
-
                       }
                     else
                       {

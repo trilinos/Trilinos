@@ -88,7 +88,7 @@ namespace stk {
             eMesh.createOrGetNode(EDGE_N(iedge), mp);
           }
         // FIXME
-        nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);
         nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);
 #endif
         nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);

@@ -119,7 +119,7 @@ namespace stk {
       addField(const std::string& name, const unsigned entity_rank, int vectorDimension=0, const std::string part_name="universal_part");
 
       stk::mesh::FieldBase *
-      getField(const std::string name);
+      getField(const std::string& name);
 
       /// commits mesh  - any operations done on a non-committed mesh, except to add fields will throw an exception
       void
@@ -186,6 +186,18 @@ namespace stk {
 
       static double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
       static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity& node, unsigned *stride=0);
+
+      static inline double *
+      field_data_inlined(const FieldBase *field, const mesh::Entity& node)
+      {
+        return field_data(field, node);
+//         return 
+//           field->rank() == 0 ? 
+//           stk::mesh::field_data( *static_cast<const ScalarFieldType *>(field) , node )
+//           :
+//           stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , node );
+      }
+
 
       double * node_field_data(stk::mesh::FieldBase *field, const mesh::EntityId node_id);
 

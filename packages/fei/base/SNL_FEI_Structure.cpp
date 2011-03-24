@@ -1359,6 +1359,14 @@ NodeDescriptor& SNL_FEI_Structure::findNodeDescriptor(GlobalID nodeID)
 }
 
 //------------------------------------------------------------------------------
+NodeDescriptor* SNL_FEI_Structure::findNode(GlobalID nodeID)
+{
+  NodeDescriptor* node = NULL;
+  nodeDatabase_->getNodeWithID(nodeID, node);
+  return node;
+}
+
+//------------------------------------------------------------------------------
 int SNL_FEI_Structure::initMultCRStructure() 
 {
   FEI_OSTREAM& os = dbgOut();
@@ -1399,7 +1407,9 @@ int SNL_FEI_Structure::initMultCRStructure()
       GlobalID nodeID = CRNodePtr[j];
       int fieldID = CRFieldPtr[j];
 
-      NodeDescriptor& node = findNodeDescriptor(nodeID);
+      NodeDescriptor *nodePtr = findNode(nodeID);
+      if(nodePtr==NULL) continue;
+      NodeDescriptor& node = *nodePtr;
 
       //first, store the column indices associated with this node, in
       //the constraint's equation. i.e., position (crEqn, node)
@@ -1478,13 +1488,17 @@ int SNL_FEI_Structure::initPenCRStructure()
       GlobalID iNodeID = CRNodesPtr[i];
       int iField = CRFieldPtr[i];
 
-      NodeDescriptor& iNode = findNodeDescriptor(iNodeID);
+      NodeDescriptor* iNodePtr = findNode(iNodeID);
+      if(!iNodePtr) continue;
+      NodeDescriptor& iNode = *iNodePtr;
 
       for(int j = 0; j < lenList; j++) {
 	GlobalID jNodeID = CRNodesPtr[j];
 	int jField = CRFieldPtr[j];
 
-	NodeDescriptor& jNode = findNodeDescriptor(jNodeID);
+	NodeDescriptor* jNodePtr = findNode(jNodeID);
+        if(!jNodePtr) continue;
+        NodeDescriptor &jNode = *jNodePtr;
 
 	if (iNode.getOwnerProc() == localProc_) {
 	  //if iNode is local, we'll put equations into the local 
@@ -1545,8 +1559,8 @@ void SNL_FEI_Structure::storeNodalSendIndices(NodeDescriptor& iNode, int iField,
    int proc = iNode.getOwnerProc();
 
    int iEqn = -1, jEqn = -1;
-   if (!iNode.getFieldEqnNumber(iField, iEqn)) voidERReturn;
-   if (!jNode.getFieldEqnNumber(jField, jEqn)) voidERReturn;
+   if (!iNode.getFieldEqnNumber(iField, iEqn)) return; //voidERReturn;
+   if (!jNode.getFieldEqnNumber(jField, jEqn)) return; //voidERReturn;
 
    int iNumParams = getFieldSize(iField);
    int jNumParams = getFieldSize(jField);
@@ -1577,8 +1591,8 @@ void SNL_FEI_Structure::storeLocalNodeIndices(NodeDescriptor& iNode, int iField,
 //with jNode at jField.
 //
    int iEqn = -1, jEqn = -1;
-   if (!iNode.getFieldEqnNumber(iField, iEqn)) voidERReturn;
-   if (!jNode.getFieldEqnNumber(jField, jEqn)) voidERReturn;
+   if (!iNode.getFieldEqnNumber(iField, iEqn)) return; //voidERReturn;
+   if (!jNode.getFieldEqnNumber(jField, jEqn)) return; //voidERReturn;
 
    int iNumParams = getFieldSize(iField);
    int jNumParams = getFieldSize(jField);
@@ -2314,7 +2328,12 @@ int SNL_FEI_Structure::initializeBlkEqnMapper()
     NodeDescriptor* node = NULL;
     nodeDatabase_->getNodeAtIndex(iter->second, node);
 
+    // If the node doesn't exist, skip.
     if (node==NULL) continue;
+
+    // If the node doesn't have any fields, skip
+    int numFields  = node->getNumFields();
+    if(numFields == 0) continue;
 
     int firstPtEqn = node->getFieldEqnNumbers()[0];
     int numNodalDOF = node->getNumNodalDOF();
@@ -2999,8 +3018,12 @@ int SNL_FEI_Structure::finalizeActiveNodes()
 
       NodeDescriptor* node = NULL;
       for(int k=0; k<numNodes; ++k) {
-	CHK_ERR( nodeDatabase_->getNodeWithID(nodeIDs[k], node) );
-	CHK_ERR( nodeCommMgr_->informLocal(*node) );
+	 int err = nodeDatabase_->getNodeWithID(nodeIDs[k], node) ;
+         if ( err != -1 ) {
+           nodeCommMgr_->informLocal(*node);
+         }
+	//CHK_ERR( nodeDatabase_->getNodeWithID(nodeIDs[k], node) );
+	//CHK_ERR( nodeCommMgr_->informLocal(*node) );
       }
       ++cr_iter;
     }

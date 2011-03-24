@@ -339,7 +339,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
                 PartVector empty_remove_parts;
 
                 PartVector add_parts = arg_add_parts;
-                add_parts.push_back( & fem::get_part( MetaData::get(mesh), topo.getTopology(subcell_rank,subcell_id)));
+                add_parts.push_back( & fem::get_part( MetaData::get(mesh), topo.getCellTopologyData(subcell_rank,subcell_id)));
 
                 mesh.change_entity_parts(subcell, add_parts, empty_remove_parts);
 

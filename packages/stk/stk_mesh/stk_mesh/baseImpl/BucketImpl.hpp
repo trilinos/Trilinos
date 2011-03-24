@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -119,7 +119,7 @@ class BucketImpl {
   Bucket               * m_bucket ;      // Pointer to head of bucket family, but head points to tail
   DataMap        * const m_field_map ;   // Field value data map, shared
   Entity        ** const m_entities ;    // Array of entity pointers,
-                                         // begining of field value memory.
+                                         // beginning of field value memory.
 
   unsigned char * field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
   {

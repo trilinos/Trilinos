@@ -12,6 +12,7 @@
 #include <Shards_BasicTopologies.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -21,9 +22,9 @@
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+
 #include <use_cases/UseCase_Common.hpp>
 
 /** stk_mesh Use Case 4
@@ -70,17 +71,17 @@ public:
 
   void populate();
 
-  stk::mesh::MetaData m_metaData;
-  stk::mesh::BulkData m_bulkData;
-  stk::mesh::DefaultFEM m_fem;
+  fem::FEMMetaData m_fem_metaData;
+  BulkData m_bulkData;
 
   const EntityRank m_elem_rank;
   const EntityRank m_side_rank;
+  const EntityRank m_node_rank;
 
-  stk::mesh::Part & m_block_hex27;
-  stk::mesh::Part & m_block_wedge18;
-  stk::mesh::Part & m_part_vertex_nodes;
-  stk::mesh::Part & m_side_part;
+  Part & m_block_hex27;
+  Part & m_block_wedge18;
+  Part & m_part_vertex_nodes;
+  Part & m_side_part;
 
   VectorFieldType & m_coordinates_field;
   VectorFieldType & m_velocity_field;

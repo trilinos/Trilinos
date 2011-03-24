@@ -508,6 +508,13 @@ class SNL_FEI_Structure : public Lookup {
 
  private:
 
+   /// Return a pointer to a NodeDescriptor, may return NULL.
+   /// The caller is responsible for checking for a NULL pointer
+   /// and doing the right thing.
+   NodeDescriptor* findNode(GlobalID nodeID);
+   /// Return a reference to a NodeDescriptor, will abort in debug
+   /// with an error and seg-fault in optimized mode if a NodeDescriptor
+   /// object is not found (i.e. it dereferences a NULL ptr).
    NodeDescriptor& findNodeDescriptor(GlobalID nodeID);
 
    int writeEqn2NodeMap();

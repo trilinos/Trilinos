@@ -183,9 +183,13 @@ namespace stk
                           iSubDimOrd = 2u;
                         }
                       NodeIdsOnSubDimEntityType nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, iSubDimOrd);
-                      Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE[0]);
 
-                      EXPECT_EQ(nodeIds_onSE[0], 42u);
+                      //if (!nodeIds_onSE[0])
+                      //  throw std::logic_error("nodeRegistry_regr.parallel_2 logic err3");
+
+                      Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE.m_entity_id_vector[0]);
+
+                      EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 42u);
                       // should be the same node on each proc
                       std::cout << "P[" << p_rank << "] nodeId = " << nodeIds_onSE << " node= " << node << std::endl;
                     }
@@ -355,7 +359,9 @@ namespace stk
                           iSubDimOrd = 2u;
                         }
                       NodeIdsOnSubDimEntityType nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd);
-                      Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE[0]);
+                      if (!nodeIds_onSE[0])
+                        throw std::logic_error("nodeRegistry_regr.parallel_2 logic err1");
+                      Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE[0]->identifier());
 
                       //EXPECT_EQ(nodeId, 42u);
                       // should be the same node on each proc
@@ -367,12 +373,13 @@ namespace stk
                       if (p_rank)
                         {
                           NodeIdsOnSubDimEntityType nodeIds_onSE_1 = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[1].first, 0u);
-                          Entity*  node_1   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_1[0]);
+                          if (!nodeIds_onSE_1[0])
+                            throw std::logic_error("nodeRegistry_regr.parallel_2 logic err2");
+
+                          Entity*  node_1   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_1[0]->identifier());
 
                           std::cout << "P[" << p_rank << "] nodeId_1 = " << nodeIds_onSE_1 << " node_1= " << node_1 << std::endl;
 
-                          if (p_rank==1) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1[0] << "should be 38" << std::endl;
-                          if (p_rank==2) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1[0] << "should be 41" << std::endl;
 
                           unsigned expectedId= 37u;
 #if NODE_REGISTRY_MAP_TYPE_BOOST
@@ -383,9 +390,25 @@ namespace stk
 #if NODE_REGISTRY_MAP_TYPE_GOOGLE
                           expectedId= 39u;
 #endif
+#if SDS_ENTITY_TYPE_ID
+                          expectedId= 37u;
+#else
+                          expectedId= 37u;
+#endif
                           
-                          if (p_rank==1) EXPECT_EQ(nodeIds_onSE_1[0], expectedId); 
-                          if (p_rank==2) EXPECT_EQ(nodeIds_onSE_1[0], 41u);
+
+                          unsigned expectedId_p2= 41u;
+#if SDS_ENTITY_TYPE_ID
+                          expectedId_p2= 41u;
+#else
+                          expectedId_p2= 41u;
+#endif
+
+                          if (p_rank==1) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1.m_entity_id_vector[0] << "should be " << expectedId    << std::endl;
+                          if (p_rank==2) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1.m_entity_id_vector[0] << "should be " << expectedId_p2 << std::endl;
+                          
+                          if (p_rank==1) EXPECT_EQ(nodeIds_onSE_1[0]->identifier(), expectedId); 
+                          if (p_rank==2) EXPECT_EQ(nodeIds_onSE_1[0]->identifier(), expectedId_p2);
                         }
 
                     }

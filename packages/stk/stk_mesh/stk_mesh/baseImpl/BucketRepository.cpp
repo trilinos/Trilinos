@@ -507,12 +507,12 @@ void BucketRepository::update_field_data_states() const
 
 //----------------------------------------------------------------------
 
-const std::vector<Bucket*> & BucketRepository::buckets( unsigned type ) const
+const std::vector<Bucket*> & BucketRepository::buckets( EntityRank rank ) const
 {
-  ThrowRequireMsg( MetaData::get(m_mesh).check_rank(type),
-                   "Invalid entity rank " << type );
+  ThrowRequireMsg( MetaData::get(m_mesh).check_rank(rank),
+                   "Invalid entity rank " << rank );
 
-  return m_buckets[ type ];
+  return m_buckets[ rank ];
 }
 
 //----------------------------------------------------------------------
@@ -522,8 +522,8 @@ void BucketRepository::internal_sort_bucket_entities()
 {
   TraceIf("stk::mesh::impl::BucketRepository::internal_sort_bucket_entities", LOG_BUCKET);
 
-  for ( unsigned entity_rank = 0 ;
-                 entity_rank < m_buckets.size() ; ++entity_rank ) {
+  for ( EntityRank entity_rank = 0 ;
+        entity_rank < m_buckets.size() ; ++entity_rank ) {
 
     std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
 

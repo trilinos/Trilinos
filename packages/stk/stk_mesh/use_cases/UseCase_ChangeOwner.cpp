@@ -14,11 +14,7 @@
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyTraits.hpp>
@@ -27,7 +23,9 @@
 
 namespace {
 
-using stk::mesh::fem::NODE_RANK;
+typedef shards::Quadrilateral<4> Quad4;
+
+const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 const unsigned spatial_dimension = 2;
 
@@ -49,16 +47,16 @@ void print_entity_status( std::ostream & os , stk::mesh::BulkData & mesh , unsig
 }
 
 Grid2D_Fixture::Grid2D_Fixture( stk::ParallelMachine comm )
-  : m_meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) ),
-    m_bulk_data( m_meta_data , comm , 100 ),
-    m_topo_data( m_meta_data, spatial_dimension ),
-    m_quad_part( stk::mesh::declare_part<shards::Quadrilateral<4> >( m_meta_data, "quad")),
-    m_coord_field( m_meta_data.declare_field< VectorField >( "coordinates" ) ),
-    m_elem_rank( stk::mesh::fem::element_rank(m_topo_data) )
+  : m_fem_meta_data( spatial_dimension ),
+    m_bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(m_fem_meta_data) , comm , 100 ),
+    m_quad_part( stk::mesh::fem::declare_part<Quad4>( m_fem_meta_data, "quad")),
+    m_coord_field( m_fem_meta_data.declare_field< VectorField >( "coordinates" ) ),
+    m_elem_rank( m_fem_meta_data.element_rank() ),
+    m_node_rank( m_fem_meta_data.node_rank() )
 {
-  stk::mesh::put_field( m_coord_field , NODE_RANK , m_meta_data.universal_part() );
+  stk::mesh::put_field( m_coord_field , m_node_rank , m_fem_meta_data.universal_part() );
 
-  m_meta_data.commit();
+  m_fem_meta_data.commit();
 }
 
 bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
@@ -82,18 +80,18 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::declare_element( m_bulk_data , m_quad_part , elem , nodes );
+        stk::mesh::fem::declare_element( m_bulk_data , m_quad_part , elem , nodes );
       }
     }
   }
 
   // Only P0 has any nodes or elements
   if ( p_rank == 0 ) {
-    result = ! m_bulk_data.buckets( NODE_RANK ).empty() &&
+    result = ! m_bulk_data.buckets( m_node_rank ).empty() &&
       ! m_bulk_data.buckets( m_elem_rank ).empty();
   }
   else {
-    result = m_bulk_data.buckets( NODE_RANK ).empty() &&
+    result = m_bulk_data.buckets( m_node_rank ).empty() &&
              m_bulk_data.buckets( m_elem_rank ).empty();
   }
 
@@ -110,7 +108,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
           for ( unsigned ix = 0 ; ix < nnx ; ++ix ) {
             stk::mesh::EntityId id = 1 + ix + iy * nnx ;
             unsigned proc = ix < nx/2 ? 1 : 2;
-            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , proc );
+            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( m_node_rank , id ) , proc );
             change.push_back( tmp );
           }
         }
@@ -130,7 +128,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
         for ( unsigned iy = nny / 2 ; iy < nny ; ++iy ) {
           for ( unsigned ix = 0 ; ix < nnx ; ++ix ) {
             stk::mesh::EntityId id = 1 + ix + iy * nnx ;
-            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , 1 );
+            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( m_node_rank , id ) , 1 );
             change.push_back( tmp );
           }
         }
@@ -156,7 +154,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
       for ( unsigned iy = 0 ; iy < nny / 2 ; ++iy ) {
         for ( unsigned ix = 0 ; ix < nnx ; ++ix ) {
           stk::mesh::EntityId id = 1 + ix + iy * nnx ;
-          stk::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , 1 );
+          stk::mesh::EntityProc tmp( m_bulk_data.get_entity( m_node_rank , id ) , 1 );
           change.push_back( tmp );
         }
       }
@@ -183,7 +181,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
           for ( unsigned ix = nx / 2 ; ix < nnx ; ++ix ) {
             stk::mesh::EntityId id = 1 + ix + iy * nnx ;
             unsigned proc = 1;
-            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , proc );
+            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( m_node_rank , id ) , proc );
             change.push_back( tmp );
           }
         }
@@ -204,11 +202,11 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
 
     // Only P1 has any nodes or elements
     if ( p_rank == 1 ) {
-      result = ! m_bulk_data.buckets( NODE_RANK ).empty() &&
+      result = ! m_bulk_data.buckets( m_node_rank ).empty() &&
                ! m_bulk_data.buckets( m_elem_rank ).empty();
     }
     else {
-      result = m_bulk_data.buckets( NODE_RANK ).empty() &&
+      result = m_bulk_data.buckets( m_node_rank ).empty() &&
                m_bulk_data.buckets( m_elem_rank ).empty();
     }
   }
@@ -232,24 +230,25 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
   std::vector<std::string> rank_names = stk::mesh::fem::entity_rank_names(spatial_dimension);
   const stk::mesh::EntityRank constraint_rank = rank_names.size();
   rank_names.push_back("Constraint");
-  stk::mesh::MetaData meta_data( rank_names );
-  stk::mesh::DefaultFEM topo_data( meta_data, spatial_dimension );
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(topo_data);
+  stk::mesh::fem::FEMMetaData fem_meta_data( spatial_dimension, rank_names );
+  const stk::mesh::EntityRank element_rank = fem_meta_data.element_rank();
 
   VectorField * coordinates_field =
     & put_field(
-        meta_data.declare_field<VectorField>("coordinates"),
+        fem_meta_data.declare_field<VectorField>("coordinates"),
         NODE_RANK,
-        meta_data.universal_part() ,
+        fem_meta_data.universal_part() ,
         3
         );
 
-  stk::mesh::Part & owned_part = meta_data.locally_owned_part();
-  stk::mesh::Part & quad_part  = stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" );
+  stk::mesh::Part & owned_part = fem_meta_data.locally_owned_part();
+  stk::mesh::Part & quad_part  = stk::mesh::fem::declare_part<Quad4>( fem_meta_data, "quad");
 
-  meta_data.commit();
+  fem_meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( meta_data, pm, 100 );
+  stk::mesh::BulkData bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta_data),
+                                 pm,
+                                 100 );
   bulk_data.modification_begin();
 
   unsigned nx = 3;
@@ -267,7 +266,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        stk::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
       }
     }
 
@@ -369,23 +368,24 @@ bool test_change_owner_2( stk::ParallelMachine pm )
 
   if ( p_size != 3 ) { return true ; }
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names( spatial_dimension ) );
-  stk::mesh::DefaultFEM topo_data( meta_data, spatial_dimension );
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(topo_data);
+  stk::mesh::fem::FEMMetaData fem_meta_data( spatial_dimension );
+  const stk::mesh::EntityRank element_rank = fem_meta_data.element_rank();
 
   VectorField * coordinates_field =
     & put_field(
-        meta_data.declare_field<VectorField>("coordinates"),
+        fem_meta_data.declare_field<VectorField>("coordinates"),
         NODE_RANK,
-        meta_data.universal_part() ,
+        fem_meta_data.universal_part() ,
         3
         );
 
-  stk::mesh::Part & quad_part  = stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" );
+  stk::mesh::Part & quad_part  = stk::mesh::fem::declare_part<Quad4>( fem_meta_data, "quad");
 
-  meta_data.commit();
+  fem_meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( meta_data, pm, 100 );
+  stk::mesh::BulkData bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta_data),
+                                 pm,
+                                 100 );
   bulk_data.modification_begin();
 
   unsigned nx = 3;
@@ -403,7 +403,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        stk::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
       }
     }
 
@@ -495,23 +495,24 @@ bool test_change_owner_3( stk::ParallelMachine pm )
   const int p_rank = stk::parallel_machine_rank( pm );
   const unsigned p_size = stk::parallel_machine_size( pm );
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-  stk::mesh::DefaultFEM topo_data( meta_data, spatial_dimension );
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(topo_data);
+  stk::mesh::fem::FEMMetaData fem_meta_data( spatial_dimension );
+  const stk::mesh::EntityRank element_rank = fem_meta_data.element_rank();
 
   VectorField * coordinates_field =
     & put_field(
-        meta_data.declare_field<VectorField>("coordinates"),
+        fem_meta_data.declare_field<VectorField>("coordinates"),
         NODE_RANK,
-        meta_data.universal_part() ,
+        fem_meta_data.universal_part() ,
         3
         );
 
-  stk::mesh::Part & quad_part  = stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" );
+  stk::mesh::Part & quad_part  = stk::mesh::fem::declare_part<Quad4>( fem_meta_data, "quad");
 
-  meta_data.commit();
+  fem_meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( meta_data, pm, 100 );
+  stk::mesh::BulkData bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta_data),
+                                 pm,
+                                 100 );
   bulk_data.modification_begin();
 
   unsigned nx = 3;
@@ -529,7 +530,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        stk::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
       }
     }
 

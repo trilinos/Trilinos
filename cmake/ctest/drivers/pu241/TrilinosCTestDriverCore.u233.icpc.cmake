@@ -36,6 +36,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DCMAKE_Fortran_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/ifort"
       "-DTPL_BLAS_LIBRARIES:STRING=-L${MKLROOT}/lib/em64t -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_sequential"
       "-DTPL_LAPACK_LIBRARIES:STRING=-L${MKLROOT}/lib/em64t -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_sequential"
+      "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=/opt/tpls_src/boost_1_46_1"
     )
 
   #   "-DCMAKE_CXX_FLAGS:STRING=-diag-disable 597"

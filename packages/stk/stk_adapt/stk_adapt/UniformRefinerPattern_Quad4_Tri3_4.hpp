@@ -72,7 +72,7 @@ namespace stk {
         //         if (m_eMesh.getSpatialDim() == 2)
         //           my_rank = stk::mesh::Element;
 
-        nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), my_rank, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), my_rank, 0u);
         nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), my_rank, 0u);
         nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), my_rank, 0u);
         

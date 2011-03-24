@@ -198,31 +198,7 @@ get_entity_rank(
   return fem.get_entity_rank(cell_topology);
 }
 
-
-std::vector<std::string>
-entity_rank_names(
-  size_t                spatial_dimension )
-{
-  ThrowInvalidArgMsgIf( spatial_dimension < 1 || 3 < spatial_dimension,
-                        "Invalid spatial dimension = " << spatial_dimension );
-
-  std::vector< std::string > names ;
-
-  names.reserve( spatial_dimension + 1 );
-
-  names.push_back( std::string( "NODE" ) );
-
-  if ( 1 < spatial_dimension ) { names.push_back( std::string("EDGE") ); }
-  if ( 2 < spatial_dimension ) { names.push_back( std::string("FACE") ); }
-
-  names.push_back( std::string("ELEMENT") );
-
-  return names ;
-}
-
 } // namespace fem
-
-
 
 Part &
 declare_part(

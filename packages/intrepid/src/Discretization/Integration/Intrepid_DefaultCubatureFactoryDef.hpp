@@ -2,7 +2,7 @@
 // ************************************************************************
 //
 //                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
+//                 Copyright (2007, 2011) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -43,7 +43,7 @@ Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Sc
   // Create generic cubature.
   Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > pickCubature;
 
-  switch (cellTopology.getBaseTopology()->key) {
+  switch (cellTopology.getBaseCellTopologyData()->key) {
 
     case shards::Line<>::key:
       TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
@@ -98,12 +98,12 @@ Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Sc
       break;
 
     default:
-      TEST_FOR_EXCEPTION( ( (cellTopology.getBaseTopology()->key != shards::Line<>::key)             &&
-                            (cellTopology.getBaseTopology()->key != shards::Triangle<>::key)         &&
-                            (cellTopology.getBaseTopology()->key != shards::Quadrilateral<>::key)    &&
-                            (cellTopology.getBaseTopology()->key != shards::Tetrahedron<>::key)      &&
-                            (cellTopology.getBaseTopology()->key != shards::Hexahedron<>::key)       &&
-                            (cellTopology.getBaseTopology()->key != shards::Wedge<>::key) ),
+      TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key)             &&
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key)         &&
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key)    &&
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key)      &&
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Hexahedron<>::key)       &&
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Wedge<>::key) ),
                           std::invalid_argument,
                           ">>> ERROR (DefaultCubatureFactory): Invalid cell topology prevents cubature creation.");
   }

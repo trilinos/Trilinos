@@ -70,7 +70,7 @@ namespace stk {
           }
 
         // FIXME
-        nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);
         nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);
 
         nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);

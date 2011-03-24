@@ -27,6 +27,7 @@
 
 using stk::mesh::Part;
 using stk::mesh::MetaData;
+using stk::mesh::fem::FEMMetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
@@ -733,7 +734,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
   if ( 1 < p_size ) {
     BoxFixture fixture( pm, 100 );
     BulkData & bulk = fixture.bulk_data();
-    MetaData & box_meta = fixture.meta_data();
+    FEMMetaData & box_meta = fixture.meta_data();
     box_meta.commit();
     int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
