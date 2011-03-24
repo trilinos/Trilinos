@@ -17,7 +17,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
@@ -122,7 +122,7 @@ namespace stk {
             {
               tp2.stkMeshCreateMetaNoCommit(parallel_machine);
             }
-          return tp2.getBulkData();
+          return tp2.get_bulkData();
 
         }
 
@@ -131,7 +131,7 @@ namespace stk {
         createBulkAfterMetaCommit(stk::ParallelMachine parallel_machine)
         {
           m_sweepMesher.stkMeshCreateBulkAfterMetaCommit(parallel_machine);
-          //return m_sweepMesher.getBulkData();
+          //return m_sweepMesher.get_bulkData();
         }
 
         void createFixedSizeMesh(stk::ParallelMachine parallel_machine, std::string output_filename)

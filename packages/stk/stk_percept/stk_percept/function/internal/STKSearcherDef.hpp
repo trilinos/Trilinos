@@ -20,8 +20,8 @@ namespace stk
     void
     STKSearcher<SpatialDim>::setupSearch()
     {
-      mesh::MetaData& metaData = MetaData::get(*(m_fieldFunction->getField()));
-      mesh::BulkData& bulkData = *m_fieldFunction->getBulkData();
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*(m_fieldFunction->getField()));
+      mesh::BulkData& bulkData = *m_fieldFunction->get_bulkData();
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
       PerceptMesh meshUtil(&metaData, &bulkData);
 
@@ -47,8 +47,8 @@ namespace stk
                                          unsigned& found_it, const mesh::Entity *hint_element )
     {
       //return 0;
-      mesh::MetaData& metaData = MetaData::get(*(m_fieldFunction->getField()));
-      mesh::BulkData& bulkData = *m_fieldFunction->getBulkData();
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*(m_fieldFunction->getField()));
+      mesh::BulkData& bulkData = *m_fieldFunction->get_bulkData();
 
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 

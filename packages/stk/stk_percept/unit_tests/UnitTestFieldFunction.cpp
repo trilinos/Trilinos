@@ -58,7 +58,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_read_print)
   PerceptMesh eMesh(3);
   eMesh.newMeshReadOnly(PerceptMesh::GMeshSpec(config_mesh));
 	
-  MetaData& metaData = *eMesh.getMetaData();
+  mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
 
   const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
 
@@ -223,8 +223,8 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
   eMesh.addField("coords_mag_field", mesh::Node, vectorDimension);
   eMesh.commit();
 
-  unsigned p_rank = eMesh.getBulkData()->parallel_rank();
-  //unsigned p_size = eMesh.getBulkData()->parallel_size();
+  unsigned p_rank = eMesh.get_bulkData()->parallel_rank();
+  //unsigned p_size = eMesh.get_bulkData()->parallel_size();
   Util::setRank(p_rank);
 
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
@@ -415,7 +415,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_verify)
   MDArray val1 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords);
   //std::cout << "eval = \n" << val1 << std::endl;
 
-  BulkData& bulkData = *eMesh.getBulkData();
+  BulkData& bulkData = *eMesh.get_bulkData();
 
 
   bool didCatch = false;
@@ -472,8 +472,8 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_timing)
   eMesh.commit();
   // no need for this in create mode: eMesh.readBulkData();
 
-  //unsigned p_rank = eMesh.getBulkData()->parallel_rank();
-  unsigned p_size = eMesh.getBulkData()->parallel_size();
+  //unsigned p_rank = eMesh.get_bulkData()->parallel_rank();
+  unsigned p_size = eMesh.get_bulkData()->parallel_size();
   // FIXME
   if (p_size > 1) return;
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
@@ -549,7 +549,7 @@ int main()
 
   StringFunction sf21dif = sf2-sf1;
 
-  MetaData m;
+  mesh::fem::FEMMetaData m;
   //...  setup field, etc.
   FieldFunction ff1("ff1", part1, field_1);  // can be nodal or elemental
 

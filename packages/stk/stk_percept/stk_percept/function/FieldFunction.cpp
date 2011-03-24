@@ -18,7 +18,7 @@ namespace stk
                   unsigned integration_order) :
 
       Function(name, Dimensions(domain_dimension), Dimensions(codomain_dimension), integration_order),
-      m_my_field(field), m_bulkData(mesh.getBulkData()),
+      m_my_field(field), m_bulkData(mesh.get_bulkData()),
       m_cachedElement(0), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType)
                                 //, m_parallelEval(true)
@@ -32,7 +32,7 @@ namespace stk
     void FieldFunction::interpolateFrom(Function& function)
     {
       EXCEPTWATCH;
-      mesh::MetaData& metaData = MetaData::get(*m_my_field);
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*m_my_field);
       mesh::BulkData& bulkData = *m_bulkData;
 
       PerceptMesh meshUtil(&metaData, &bulkData);
@@ -68,7 +68,7 @@ namespace stk
                                  SearchType searchType,
                                  unsigned integration_order) :
       Function(name, domain_dimensions, codomain_dimensions, integration_order),
-      m_my_field(field), m_bulkData(eMesh.getBulkData()), m_cachedElement(0), m_searcher(0),
+      m_my_field(field), m_bulkData(eMesh.get_bulkData()), m_cachedElement(0), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType)
     {
     }
@@ -79,7 +79,7 @@ namespace stk
         delete m_searcher;
     }
 
-    mesh::BulkData *FieldFunction::getBulkData() {return m_bulkData; }
+    mesh::BulkData *FieldFunction::get_bulkData() {return m_bulkData; }
 
 
 

@@ -43,7 +43,7 @@ namespace stk {
       vector<Entity *> new_elements;
       vector<Entity *> new_nodes;
       
-      eMesh.getBulkData()->modification_begin();
+      eMesh.get_bulkData()->modification_begin();
 
       std::cout << "creating " << n_elements << " elements..." <<std::endl;
       eMesh.createEntities( mesh::Element, n_elements, new_elements);
@@ -64,14 +64,14 @@ namespace stk {
               std::cout << "declare_relation for i_element = " << i_element << " [" << n_elements << "] = " << ((double)i_element)/((double)n_elements)*100 << "%"
                         << std::endl;
             }
-          //Entity& element = eMesh.getBulkData()->get_entity( stk::mesh::Element , i_element+1);
+          //Entity& element = eMesh.get_bulkData()->get_entity( stk::mesh::Element , i_element+1);
           Entity& element = *new_elements[i_element];
 
           for (int j_node = 0; j_node < n_node_per_element; j_node++)
             {
               Entity& node = *new_nodes[i_node];
 
-              eMesh.getBulkData()->declare_relation(element, node, j_node);
+              eMesh.get_bulkData()->declare_relation(element, node, j_node);
               
               i_node++;
               if (i_node >= n_nodes-1)
@@ -80,7 +80,7 @@ namespace stk {
         }
 
       std::cout << " doing modification_end ... " << std::endl;
-      eMesh.getBulkData()->modification_end();
+      eMesh.get_bulkData()->modification_end();
       std::cout << " done modification_end ... " << std::endl;
       
 

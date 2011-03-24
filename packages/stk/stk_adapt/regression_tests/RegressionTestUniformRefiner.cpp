@@ -2660,6 +2660,7 @@ namespace stk
                                       0, 1,
                                       std::string(""));
             //std::string("swept-wedge6_18_enrich_0.e") );
+
             percept::PerceptMesh eMesh(&bulk->mesh_meta_data(), bulk, false);
             //percept::PerceptMesh eMesh;
             //eMesh.open("swept-wedge6_18_enrich_0.e");

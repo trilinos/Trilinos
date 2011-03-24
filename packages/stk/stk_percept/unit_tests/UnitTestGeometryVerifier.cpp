@@ -73,8 +73,8 @@ STKUNIT_UNIT_TEST(geom, volume)
   eMesh.commit();
   // no need for this in create mode: eMesh.readBulkData();
 
-  //MetaData& metaData = *eMesh.getMetaData();
-  BulkData& bulkData = *eMesh.getBulkData();
+  //FEMMetaData& metaData = *eMesh.getFEM_meta_data();
+  BulkData& bulkData = *eMesh.get_bulkData();
 
   eMesh.dump();
   GeometryVerifier geomVerifier(false);

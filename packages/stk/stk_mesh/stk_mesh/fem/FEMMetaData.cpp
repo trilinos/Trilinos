@@ -27,7 +27,8 @@ void assign_cell_topology(
 } // namespace
 
 FEMMetaData::FEMMetaData()
-  : m_fem_initialized(false),
+: m_meta_data(m_meta_data_object),
+    m_fem_initialized(false),
     m_spatial_dimension(0),
     m_edge_rank(INVALID_RANK),
     m_face_rank(INVALID_RANK),
@@ -40,7 +41,8 @@ FEMMetaData::FEMMetaData()
 
 FEMMetaData::FEMMetaData(size_t spatial_dimension,
                          const std::vector<std::string>& in_entity_rank_names)
-  : m_fem_initialized(false),
+  : m_meta_data(m_meta_data_object),
+    m_fem_initialized(false),
     m_spatial_dimension(0),
     m_edge_rank(INVALID_RANK),
     m_face_rank(INVALID_RANK),
@@ -52,6 +54,24 @@ FEMMetaData::FEMMetaData(size_t spatial_dimension,
 
   FEM_initialize(spatial_dimension, in_entity_rank_names);
 }
+
+FEMMetaData::FEMMetaData(mesh::MetaData& meta,
+                        size_t spatial_dimension,
+                        const std::vector<std::string>& in_entity_rank_names)
+  : m_meta_data(meta),
+    m_fem_initialized(false),
+    m_spatial_dimension(0),
+    m_edge_rank(INVALID_RANK),
+    m_face_rank(INVALID_RANK),
+    m_side_rank(INVALID_RANK),
+    m_element_rank(INVALID_RANK)
+{
+  // Attach FEMMetaData as attribute on MetaData to enable "get accessors" to FEMMetaData
+  m_meta_data.declare_attribute_no_delete<FEMMetaData>(this);
+
+  FEM_initialize(spatial_dimension, in_entity_rank_names);
+}
+
 
 void FEMMetaData::FEM_initialize(size_t spatial_dimension, const std::vector<std::string>& rank_names)
 {

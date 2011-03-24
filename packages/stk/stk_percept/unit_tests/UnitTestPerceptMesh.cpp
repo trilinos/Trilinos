@@ -70,7 +70,7 @@ namespace stk
             eMesh.printInfo("quad fixture", 2);
             //eMesh.saveAs("./output_files/quad_fixture.e");
 
-            mesh::MetaData& metaData = *eMesh.getMetaData();
+            mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
 
             const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
 
@@ -81,7 +81,7 @@ namespace stk
             std::string surface_name = "surface_"+toString(surface_id);
             mesh::Part *part = eMesh.getNonConstPart(surface_name);
             mesh::Selector in_surface_selector(*part);
-            mesh::BulkData& bulkData = *eMesh.getBulkData();
+            mesh::BulkData& bulkData = *eMesh.get_bulkData();
             VectorFieldType* coordField = eMesh.getCoordinatesField();
 
             const std::vector<Bucket*> & buckets = bulkData.buckets( (eMesh.getSpatialDim() == 2 ? mesh::Edge : mesh::Face) );  // Note

@@ -20,13 +20,14 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
@@ -191,12 +192,12 @@ namespace stk
           m_elems[i] = source.m_elems[i];
       }
 
-      stk::mesh::BulkData * getBulkData() { return m_bulkData;}
+      stk::mesh::BulkData * get_bulkData() { return m_bulkData;}
 
     private:
       bool m_dump;
 
-      stk::mesh::MetaData * m_metaData;
+      stk::mesh::fem::FEMMetaData * m_metaData;
       stk::mesh::BulkData * m_bulkData;
       std::vector<stk::mesh::Part *> m_parts;
       stk::mesh::Part *m_block_hex;
@@ -572,33 +573,6 @@ namespace stk
           }
       }
 
-
-      // stk::mesh related
-#if 0
-      const stk::mesh::MetaData & metaData() const
-      { return m_metaData; }
-
-      const stk::mesh::BulkData & bulkData() const
-      { return m_bulkData; }
-
-      stk::mesh::BulkData       & modifiableBulkData()
-      { return m_bulkData; }
-
-      stk::mesh::Part & block_hex() const
-      { return m_block_hex; }
-
-      VectorFieldType & coordinates_field()
-      { return *m_coordinates_field; }
-
-      const VectorFieldType & const_coordinates_field() const
-      { return *m_coordinates_field; }
-
-      ElementNodePointerFieldType & element_node_coordinates_field()
-      { return m_element_node_coordinates_field; }
-
-      const ElementNodePointerFieldType & const_element_node_coordinates_field() const
-      { return m_element_node_coordinates_field; }
-#endif
 
       /// create a std::mesh representation of this
       void stkMeshCreate(stk::ParallelMachine& );

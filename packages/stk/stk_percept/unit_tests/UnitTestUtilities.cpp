@@ -14,7 +14,7 @@
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
@@ -53,14 +53,14 @@ namespace stk_example_io {
 /// Declare "coordinates" field and put it on the universal part. This
 /// example also defines all Ioss::Field::TRANSIENT fields that exist on the
 /// Ioss::Nodeblock as fields on the universal part.
-void process_nodeblocks    (Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_nodeblocks    (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
 /// Declare a part for each element block on the Ioss::Region
 /// 'region' unless the element block has the "omitted" property set
 /// to the value 1. The example then iterates each element block and
 /// defines any Ioss::Field::ATTRIBUTE and Ioss::Field::TRANSIENT fields that exist on the
 /// Ioss::ElementBlock as fields on the corresponding part.
-void process_elementblocks (Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_elementblocks (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
 /// Declare a part for each Ioss::NodeSet on the Ioss::Region
 /// 'region' unless the nodeset has the "omitted" property set
@@ -68,7 +68,7 @@ void process_elementblocks (Ioss::Region &region, stk::mesh::MetaData &meta);
 /// defines any "distribution factor" and Ioss::Field::TRANSIENT fields that
 /// exist on the Ioss::NodeSet as fields on the corresponding
 /// part.
-void process_nodesets      (Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_nodesets      (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
 /// Declare a part for each Ioss::FaceSet on the Ioss::Region
 /// 'region' unless the faceset has the "omitted" property set
@@ -83,7 +83,7 @@ void process_nodesets      (Ioss::Region &region, stk::mesh::MetaData &meta);
 /// 1. The example then iterates each faceblock and defines any
 /// "distribution factor" and Ioss::Field::TRANSIENT fields that exist on the
 /// Ioss::FaceBlock as fields on the corresponding part.
-void process_facesets      (Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_facesets      (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
 /// Declare a part for each Ioss::EdgeSet on the Ioss::Region
 /// 'region' unless the edgeset has the "omitted" property set
@@ -98,7 +98,7 @@ void process_facesets      (Ioss::Region &region, stk::mesh::MetaData &meta);
 /// 1. The example then iterates each edgeblock and defines any
 /// "distribution factor" and Ioss::Field::TRANSIENT fields that exist on the
 /// Ioss::EdgeBlock as fields on the corresponding part.
-void process_edgesets      (Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_edgesets      (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
 /// NOTE: This must be called after the process_elementblocks() call
 /// since there may be nodes that exist in the database that are
@@ -267,7 +267,7 @@ void io_example( stk::ParallelMachine comm,
 
   //----------------------------------
   // Process Entity Types. Subsetting is possible.
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  stk::mesh::fem::FEMMetaData meta_data(3, stk::mesh::fem_entity_rank_names() );
   stk::mesh::Part & universal = meta_data.universal_part();
 #if IOTEST
   process_elementblocks(in_region, meta_data);
@@ -341,7 +341,7 @@ void io_example( stk::ParallelMachine comm,
 
   //----------------------------------
   // Process Bulkdata for all Entity Types. Subsetting is possible.
-  stk::mesh::BulkData bulk_data(meta_data, comm);
+  stk::mesh::BulkData bulk_data(mesh::fem::FEMMetaData::get_meta_data(meta_data), comm);
 #if IOTEST
   process_elementblocks(in_region, bulk_data);
   process_nodeblocks(in_region,    bulk_data);
@@ -448,7 +448,7 @@ void io_example( stk::ParallelMachine comm,
 }
 
 // ========================================================================
-void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
@@ -473,10 +473,10 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 }
 
 // ========================================================================
-void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  stk::io::default_part_processing(elem_blocks, meta, stk::mesh::Element);
+  stk::io::default_part_processing(elem_blocks, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk::mesh::Element);
 
   // Parts were created above, now handle element block specific
   // information (topology, attributes, ...);
@@ -518,10 +518,10 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 }
 
 // ========================================================================
-void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-  stk::io::default_part_processing(node_sets, meta, stk::mesh::Node);
+  stk::io::default_part_processing(node_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk::mesh::Node);
 
   /** \todo REFACTOR should "distribution_factor" be a default field
    * that is automatically declared on all objects that it exists
@@ -558,7 +558,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 }
 
 // ========================================================================
-void process_surface_entity(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
+void process_surface_entity(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
                             stk::mesh::EntityRank entity_rank)
 {
   assert(entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET);
@@ -566,12 +566,12 @@ void process_surface_entity(Ioss::GroupingEntity *entity, stk::mesh::MetaData &m
     Ioss::FaceSet *fs = dynamic_cast<Ioss::FaceSet *>(entity);
     assert(fs != NULL);
     const Ioss::FaceBlockContainer& blocks = fs->get_face_blocks();
-    stk::io::default_part_processing(blocks, meta, entity_rank);
+    stk::io::default_part_processing(blocks, stk::mesh::fem::FEMMetaData::get_meta_data(meta), entity_rank);
   } else if (entity->type() == Ioss::EDGESET) {
     Ioss::EdgeSet *es = dynamic_cast<Ioss::EdgeSet *>(entity);
     assert(es != NULL);
     const Ioss::EdgeBlockContainer& blocks = es->get_edge_blocks();
-    stk::io::default_part_processing(blocks, meta, entity_rank);
+    stk::io::default_part_processing(blocks, stk::mesh::fem::FEMMetaData::get_meta_data(meta), entity_rank);
   }
 
   stk::mesh::Part* const fs_part = meta.get_part(entity->name());
@@ -617,10 +617,10 @@ void process_surface_entity(Ioss::GroupingEntity *entity, stk::mesh::MetaData &m
 }
 
 // ========================================================================
-void process_facesets(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::FaceSetContainer& face_sets = region.get_facesets();
-  stk::io::default_part_processing(face_sets, meta, stk::mesh::Face);
+  stk::io::default_part_processing(face_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk::mesh::Face);
 
   for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
       it != face_sets.end(); ++it) {
@@ -633,10 +633,10 @@ void process_facesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 }
 
 // ========================================================================
-void process_edgesets(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-  stk::io::default_part_processing(edge_sets, meta, stk::mesh::Edge);
+  stk::io::default_part_processing(edge_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk::mesh::Edge);
 
   for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
       it != edge_sets.end(); ++it) {
@@ -670,7 +670,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
    * (and others) somewhere after the declaration instead of
    * looking it up each time it is needed.
    */
-  const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+  const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(bulk);
   stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
     meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
@@ -688,7 +688,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
     if (stk::io::include_entity(entity)) {
       const std::string &name = entity->name();
-      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+      const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(bulk);
       stk::mesh::Part* const part = meta.get_part(name);
       assert(part != NULL);
 
@@ -750,7 +750,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
     if (stk::io::include_entity(entity)) {
       const std::string & name = entity->name();
-      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+      const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(bulk);
       stk::mesh::Part* const part = meta.get_part(name);
       assert(part != NULL);
       stk::mesh::PartVector add_parts( 1 , part );
@@ -785,7 +785,7 @@ void process_surface_entity(const Ioss::GroupingEntity* io ,
                             stk::mesh::BulkData & bulk)
 {
   assert(io->type() == Ioss::FACESET || io->type() == Ioss::EDGESET);
-  const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+  const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(bulk);
 
   int block_count = io->block_count();
   for (int i=0; i < block_count; i++) {
@@ -874,7 +874,7 @@ void get_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
   std::vector<stk::mesh::Entity*> entities;
   stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
-  stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
+  stk::mesh::fem::FEMMetaData & meta = stk::mesh::fem::FEMMetaData::get(part);
   stk::mesh::Part &universal = meta.universal_part();
   const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
@@ -894,7 +894,7 @@ void process_input_request(Ioss::Region &region,
   region.begin_state(step);
 
   // Special processing for nodeblock (all nodes in model)...
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
+  const stk::mesh::fem::FEMMetaData & meta = stk::mesh::fem::FEMMetaData::get(bulk);
 
   // ??? Get field data from nodeblock...
   get_field_data(bulk, meta.universal_part(), stk::mesh::Node,
@@ -943,7 +943,7 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
   std::vector<stk::mesh::Entity*> entities;
   stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
-  stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
+  stk::mesh::fem::FEMMetaData & meta = stk::mesh::fem::FEMMetaData::get(part);
   stk::mesh::Part &universal = meta.universal_part();
   const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
@@ -962,7 +962,7 @@ void process_output_request(Ioss::Region &region,
 {
   region.begin_state(step);
   // Special processing for nodeblock (all nodes in model)...
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
+  const stk::mesh::fem::FEMMetaData & meta = stk::mesh::fem::FEMMetaData::get(bulk);
 
   put_field_data(bulk, meta.universal_part(), stk::mesh::Node,
                  region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
@@ -1010,7 +1010,7 @@ void my_test(
   const VectorFieldType & coord_field ,
   const VectorFieldType & elem_centroid_field )
 {
-  const mesh::MetaData & meta_data = stk::mesh::MetaData::get(M);
+  const mesh::fem::FEMMetaData & meta_data = stk::mesh::fem::FEMMetaData::get(M);
 
   // Get vector of buckets ( entities and field data)
   // for which the sides are all locally owned.

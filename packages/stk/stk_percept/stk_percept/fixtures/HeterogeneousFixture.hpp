@@ -14,7 +14,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -65,9 +65,8 @@ namespace stk {
       void populate();
 
       const int m_spatial_dimension;
-      MetaData m_metaData;
+      mesh::fem::FEMMetaData m_metaData;
       BulkData m_bulkData;
-      DefaultFEM m_fem;
 
       Part & m_block_hex;
       Part & m_block_wedge;

@@ -109,7 +109,7 @@ namespace stk {
               {
                 mesh::EntityId eid = elems[ielem][inode];
                 mesh::Entity& node = eMesh.createOrGetNode(eid);
-                eMesh.getBulkData()->declare_relation(newElement, node, inode);
+                eMesh.get_bulkData()->declare_relation(newElement, node, inode);
               }
 
             element_pool++;

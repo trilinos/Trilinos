@@ -45,7 +45,7 @@ namespace stk
           }
         if (field)
           {
-            const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
+            const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, mesh::fem::FEMMetaData::get(*field).universal_part());
             unsigned stride = r.stride[0] ;
             m_nDOFs = stride;
           }
@@ -92,7 +92,7 @@ namespace stk
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket_or_element);
         CellTopology cell_topo(cell_topo_data);
 
-        VectorFieldType& coord_field = *(MetaData::get(bulkData)).get_field<VectorFieldType>("coordinates");
+        VectorFieldType& coord_field = *(mesh::fem::FEMMetaData::get(bulkData)).get_field<VectorFieldType>("coordinates");
 
         // FIXME for fields not on a Node
         unsigned nDOF = m_nDOFs;

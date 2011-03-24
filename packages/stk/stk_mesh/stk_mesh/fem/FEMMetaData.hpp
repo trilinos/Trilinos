@@ -70,6 +70,13 @@ class FEMMetaData {
   FEMMetaData(size_t spatial_dimension,
               const std::vector<std::string>& in_entity_rank_names = std::vector<std::string>());
 
+  /**
+   * \brief Construct and initialize a FEMMetaData by adopting an existing MetaData
+   */
+  FEMMetaData(mesh::MetaData& meta,
+              size_t spatial_dimension,
+              const std::vector<std::string>& in_entity_rank_names = std::vector<std::string>());
+
   /// --------------------------------------------------------------------------------
   /// FEMMetaData Specific functions begin:
   /// --------------------------------------------------------------------------------
@@ -468,7 +475,8 @@ class FEMMetaData {
     void internal_declare_known_cell_topology_parts();
 
   private: // data
-    MetaData                      m_meta_data;
+    MetaData                      m_meta_data_object;
+    MetaData&                     m_meta_data;
     bool                          m_fem_initialized;
     size_t                        m_spatial_dimension;
     EntityRank                    m_edge_rank;

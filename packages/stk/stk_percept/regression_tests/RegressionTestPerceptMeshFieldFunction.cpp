@@ -99,7 +99,7 @@ namespace stk
 
         // FIXME
         std::vector< const mesh::FieldBase * > sync_fields( 1 , pressure_field );
-        mesh::communicate_field_data( eMesh.getBulkData()->shared_aura() , sync_fields );
+        mesh::communicate_field_data( eMesh.get_bulkData()->shared_aura() , sync_fields );
         // FIXME
 
         //if (1 || eMesh.getRank()== 0) eMesh.printFields("Pressure");
@@ -160,7 +160,7 @@ namespace stk
 
         // FIXME
         std::vector< const mesh::FieldBase * > sync_fields( 1 , pressure_field );
-        mesh::communicate_field_data( eMesh.getBulkData()->shared_aura() , sync_fields );
+        mesh::communicate_field_data( eMesh.get_bulkData()->shared_aura() , sync_fields );
         // FIXME
 
         //double * pdata = eMesh.node_field_data(pressure_field, 1);

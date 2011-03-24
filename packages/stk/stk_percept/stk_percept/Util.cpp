@@ -435,7 +435,7 @@ get_heap_info(
             for (unsigned ifr = 0; ifr < nfr; ifr++)
               {
                 const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-                //mesh::Part& frpart = eMesh.getMetaData()->get_part(fr.ordinal());
+                //mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
                 fieldStride = fr.stride[0] ;
               }
           }

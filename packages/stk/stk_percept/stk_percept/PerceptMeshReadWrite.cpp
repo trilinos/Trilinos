@@ -13,7 +13,7 @@
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
@@ -372,7 +372,7 @@ namespace stk {
         //using namespace mesh;
         bool printInfo = true;
 
-        const MetaData& metaData = MetaData::get(bulk);
+        const mesh::fem::FEMMetaData& metaData = mesh::fem::FEMMetaData::get(bulk);
 
         const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
 
@@ -417,7 +417,7 @@ namespace stk {
          * (and others) somewhere after the declaration instead of
          * looking it up each time it is needed.
          */
-        const stk::mesh::MetaData& meta = MetaData::get(bulk);
+        const stk::mesh::fem::FEMMetaData& meta = mesh::fem::FEMMetaData::get(bulk);
         stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
           meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
@@ -438,7 +438,7 @@ namespace stk {
 
           if (stk::io::include_entity(entity)) {
             const std::string &name = entity->name();
-            const stk::mesh::MetaData& meta = MetaData::get(bulk);
+            const stk::mesh::fem::FEMMetaData& meta = mesh::fem::FEMMetaData::get(bulk);
             stk::mesh::Part* const part = meta.get_part(name);
             assert(part != NULL);
 
@@ -500,7 +500,7 @@ namespace stk {
 
           if (stk::io::include_entity(entity)) {
             const std::string & name = entity->name();
-            const stk::mesh::MetaData& meta = MetaData::get(bulk);
+            const stk::mesh::fem::FEMMetaData& meta = mesh::fem::FEMMetaData::get(bulk);
             stk::mesh::Part* const part = meta.get_part(name);
             assert(part != NULL);
             stk::mesh::PartVector add_parts( 1 , part );
@@ -535,8 +535,8 @@ namespace stk {
                                             stk::mesh::BulkData & bulk)
       {
         assert(io->type() == Ioss::FACESET || io->type() == Ioss::EDGESET);
-        const stk::mesh::MetaData& meta = MetaData::get(bulk);
-        const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( meta );
+        const stk::mesh::fem::FEMMetaData& fem_meta = mesh::fem::FEMMetaData::get(bulk);
+        //const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( meta );
 
         int block_count = io->block_count();
         for (int i=0; i < block_count; i++) {
@@ -545,7 +545,7 @@ namespace stk {
             std::vector<int> side_ids ;
             std::vector<int> elem_side ;
 
-            stk::mesh::Part * const fb_part = meta.get_part(block->name());
+            stk::mesh::Part * const fb_part = fem_meta.get_part(block->name());
 
             block->get_field_data("ids", side_ids);
             block->get_field_data("element_side", elem_side);
@@ -628,7 +628,7 @@ namespace stk {
         std::vector<stk::mesh::Entity*> entities;
         stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
-        stk::mesh::MetaData & meta = MetaData::get(part);
+        stk::mesh::fem::FEMMetaData & meta = mesh::fem::FEMMetaData::get(part);
         stk::mesh::Part &universal = meta.universal_part();
         const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
@@ -654,7 +654,7 @@ namespace stk {
           }
 
         // Special processing for nodeblock (all nodes in model)...
-        const stk::mesh::MetaData & meta = MetaData::get(bulk);
+        const stk::mesh::fem::FEMMetaData & meta = mesh::fem::FEMMetaData::get(bulk);
 
         // ??? Get field data from nodeblock...
         get_field_data(bulk, meta.universal_part(), stk::mesh::Node,
@@ -707,7 +707,7 @@ namespace stk {
         std::vector<stk::mesh::Entity*> entities;
         stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
-        stk::mesh::MetaData & meta = MetaData::get(part);
+        stk::mesh::fem::FEMMetaData & meta = mesh::fem::FEMMetaData::get(part);
         stk::mesh::Part &universal = meta.universal_part();
         const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
@@ -731,7 +731,7 @@ namespace stk {
             region.begin_state(step);
           }
         // Special processing for nodeblock (all nodes in model)...
-        const stk::mesh::MetaData & meta = MetaData::get(bulk);
+        const stk::mesh::fem::FEMMetaData & meta = mesh::fem::FEMMetaData::get(bulk);
 
         put_field_data(bulk, meta.universal_part(), stk::mesh::Node,
                        region.get_node_blocks()[0], Ioss::Field::TRANSIENT);

@@ -607,14 +607,14 @@ namespace stk {
               const FieldRestriction& fr = field->restrictions()[ifr];
               fr_type = fr.type();
               fieldStride = fr.stride[0] ;
-              mesh::Part& frpart = eMesh.getMetaData()->get_part(fr.ordinal());
+              mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
               if (EXTRA_PRINT_URP_IF && nfr != 1 ) std::cout << "tmp P[" << 0 << "] info>    number of field restrictions= " << nfr << " fr_type= " << fr_type
                                             << " fieldStride = " << fieldStride << " frpart= " << frpart.name()
                                             << std::endl;
             }
           {
             const stk::mesh::FieldBase::Restriction & r =
-              field->restriction(fr_type, MetaData::get(*field).universal_part());
+              field->restriction(fr_type, mesh::fem::FEMMetaData::get(*field).universal_part());
             fieldStride = r.stride[0];
             if (EXTRA_PRINT_URP_IF) std::cout << "tmp stride = " <<  r.stride[0] << " fieldStride= " << fieldStride
                              << " fr_type= " << fr_type << " mesh::Element= " << mesh::Element<< std::endl;
@@ -753,7 +753,7 @@ namespace stk {
       void interpolateFields(percept::PerceptMesh& eMesh, Entity& element, Entity& newElement, const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x)
       {
-        const FieldVector & fields = eMesh.getMetaData()->get_fields();
+        const FieldVector & fields = eMesh.getFEM_meta_data()->get_fields();
         unsigned nfields = fields.size();
         //std::cout << "P[" << p_rank << "] info>    Number of fields = " << fields.size() << std::endl;
         for (unsigned ifld = 0; ifld < nfields; ifld++)
@@ -769,7 +769,7 @@ namespace stk {
       mesh::Entity& createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, EntityId eid)
       {
 #if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
-        mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.getBulkData(), mesh::Node, eid);
+        mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.get_bulkData(), mesh::Node, eid);
         if (node_p)
           return *node_p;
         else
@@ -925,7 +925,7 @@ namespace stk {
                   }
                 //mesh::Entity& node = eMesh.createOrGetNode(eid);
                 mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
-                eMesh.getBulkData()->declare_relation(newElement, node, inode);
+                eMesh.get_bulkData()->declare_relation(newElement, node, inode);
               }
 
             //set_parent_child_relations(eMesh, element, newElement, ielem);
@@ -1402,7 +1402,7 @@ namespace stk {
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_createOrGetNode);
 
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_declare_relation);
-                eMesh.getBulkData()->declare_relation(newElement, node, inode);
+                eMesh.get_bulkData()->declare_relation(newElement, node, inode);
                 //register_relation(newElement, node, inode);
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_declare_relation);
               }
@@ -2304,11 +2304,11 @@ namespace stk {
                     mesh::Part& from_subset = *from_subsets[i_from_subset];
                     std::string to_subset_name = from_subset.name() + m_appendConvertString;
 
-                    mesh::Part* to_subset_p = eMesh.getMetaData()->get_part(to_subset_name);
+                    mesh::Part* to_subset_p = eMesh.getFEM_meta_data()->get_part(to_subset_name);
                     if (!to_subset_p) throw std::runtime_error("fixSubsets couldn't find part error");
                     mesh::Part& to_subset = *to_subset_p;
 
-                    eMesh.getMetaData()->declare_part_subset(toPart, to_subset);
+                    eMesh.getFEM_meta_data()->declare_part_subset(toPart, to_subset);
 
                     //std::cout << "fixSubsets:: declare_part_subset toPart = " << toPart.name()  << " to_subset= " <<  to_subset.name() << std::endl;
                   }
@@ -2355,7 +2355,7 @@ namespace stk {
 
         if (0)
           {
-            mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+            mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
             for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
               {
                 mesh::Part *  part = *i_part ;
@@ -2371,8 +2371,8 @@ namespace stk {
             std::vector<std::string>& block_names_include = block_names_ranks[irank];
             //if (block_names_include.size() == 0 || m_primaryEntityRank != irank)
 
-            //const mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
-            mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+            //const mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
+            mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
             bool found_include_only_block = false;
             for (unsigned ib = 0; ib < block_names_include.size(); ib++)
               {
@@ -2503,7 +2503,7 @@ namespace stk {
                           }
                         else
                           {
-                            block_to = &eMesh.getMetaData()->declare_part(part->name() + m_appendConvertString, part->primary_entity_rank());
+                            block_to = &eMesh.getFEM_meta_data()->declare_part(part->name() + m_appendConvertString, part->primary_entity_rank());
                             if (0) std::cout << "tmp setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
                             mesh::fem::set_cell_topology< ToTopology  >( *block_to );
                             stk::io::put_io_part_attribute(*block_to);
@@ -2527,7 +2527,7 @@ namespace stk {
 
 
         {
-          mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+          mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
           std::string oldPartName = m_oldElementsPartName+toString(m_primaryEntityRank);
           bool foundOldPart = false;
           for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
@@ -2541,7 +2541,7 @@ namespace stk {
             }
 
           if (!foundOldPart)
-            eMesh.getMetaData()->declare_part(oldPartName, m_primaryEntityRank);
+            eMesh.getFEM_meta_data()->declare_part(oldPartName, m_primaryEntityRank);
         }
 
 
@@ -2568,7 +2568,7 @@ namespace stk {
                               << " rank= " << old_owning_elem.entity_rank()
                               << std::endl;
                   }
-                eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+                eMesh.get_bulkData()->change_entity_parts( newElement, add_parts, remove_parts );
                 //return;
                 found = true;
               }
@@ -2583,7 +2583,7 @@ namespace stk {
               }
             bool found_in_another_part = false;
 
-            mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+            mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
             for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
               {
                 mesh::Part *  part = *i_part ;

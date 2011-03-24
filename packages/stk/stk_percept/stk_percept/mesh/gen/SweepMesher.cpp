@@ -14,7 +14,7 @@
 #include <Shards_CellTopologyData.h>
 #include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -442,8 +442,9 @@ namespace stk
     /// this almost one-for-one replicant of UseCase_3 in stk_mesh/use_cases, just for learning/testing
     void SweepMesher::stkMeshCreate_UseCase_3(stk::ParallelMachine& comm)
     {
-      m_metaData = new MetaData( fem_entity_rank_names() );
-      m_bulkData = new BulkData( *m_metaData , comm );
+      m_metaData = new stk::mesh::fem::FEMMetaData(3, fem_entity_rank_names() );
+      //m_metaData = & stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData);
+      m_bulkData = new BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
       m_block_hex = & m_metaData->declare_part( "block_1", Element );
       m_block_wedge = & m_metaData->declare_part( "block_2", Element );
       m_coordinates_field = & m_metaData->declare_field< VectorFieldType >( "coordinates" );
@@ -513,8 +514,9 @@ namespace stk
 
     void SweepMesher::stkMeshCreateMetaNoCommit(stk::ParallelMachine& comm)
     {
-      m_metaData = new MetaData(fem_entity_rank_names());
-      m_bulkData = new BulkData( *m_metaData , comm );
+      m_metaData = new stk::mesh::fem::FEMMetaData(3, fem_entity_rank_names() );
+      //m_metaData = & stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData);
+      m_bulkData = new BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
       m_parts.resize(NUM_ELEM_TYPES);
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
@@ -673,9 +675,9 @@ namespace stk
 
       Ioss::Init::Initializer init_db;
       Ioss::Region *out_region = stk::io::util::create_output_mesh(out_filename, "", "",
-								   comm,
-								   *m_bulkData, NULL, *m_metaData,
-								   true, false);
+                                                                   comm,
+                                                                   *m_bulkData, NULL, stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData),
+                                                                   true, false);
 
       // Clean up
       delete out_region; out_region = NULL;

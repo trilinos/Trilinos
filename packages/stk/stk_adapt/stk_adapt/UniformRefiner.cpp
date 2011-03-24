@@ -313,7 +313,7 @@ namespace stk {
 
       EntityRank subDimRank = (eMesh.getSpatialDim() == 3 ? mesh::Face : mesh::Edge);
 
-      mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+      mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
       for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
         {
           mesh::Part *  part = *i_part ;
@@ -377,9 +377,9 @@ namespace stk {
     addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType)
     {
       EXCEPTWATCH;
-      //m_eMesh.getBulkData()->modification_begin();
+      //m_eMesh.get_bulkData()->modification_begin();
       std::string oldPartName = breakPattern->getOldElementsPartName()+toString(rank);
-      mesh::Part *oldPart = m_eMesh.getMetaData()->get_part(oldPartName);
+      mesh::Part *oldPart = m_eMesh.getFEM_meta_data()->get_part(oldPartName);
       if (!oldPart)
         {
           std::cout << "oldPartName= " << oldPartName << std::endl;
@@ -388,13 +388,13 @@ namespace stk {
 
       mesh::PartVector add_parts(1, oldPart);
       mesh::PartVector remove_parts;
-      mesh::Selector on_locally_owned_part =  ( m_eMesh.getMetaData()->locally_owned_part() );
+      mesh::Selector on_locally_owned_part =  ( m_eMesh.getFEM_meta_data()->locally_owned_part() );
 
       // The list of Parts that this break pattern will refine.  Only remove elements belonging to these parts.
       mesh::Selector fromPartsSelector = mesh::selectUnion( breakPattern->getFromParts() );
 
       std::vector<Entity*> elems;
-      const vector<Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
+      const vector<Bucket*> & buckets = m_eMesh.get_bulkData()->buckets( rank );
 
       for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
@@ -434,10 +434,10 @@ namespace stk {
       for (unsigned ielem=0; ielem < elems.size(); ielem++)
         {
           //std::cout << "tmp element = " << *elems[ielem] << std::endl;
-          m_eMesh.getBulkData()->change_entity_parts( *elems[ielem], add_parts, remove_parts );
+          m_eMesh.get_bulkData()->change_entity_parts( *elems[ielem], add_parts, remove_parts );
         }
 
-      //m_eMesh.getBulkData()->modification_end();
+      //m_eMesh.get_bulkData()->modification_end();
     }
 
     void UniformRefiner::
@@ -495,7 +495,7 @@ namespace stk {
     void UniformRefiner::
     checkBreakPatternValidityAndBuildRanks(std::vector<EntityRank>& ranks)
     {
-      m_eMesh.getBulkData()->modification_begin();
+      m_eMesh.get_bulkData()->modification_begin();
       for (unsigned ibp = 0; ibp < m_breakPattern.size(); ibp++)
         {
           if (m_breakPattern[ibp])
@@ -520,7 +520,7 @@ namespace stk {
               throw std::logic_error("m_breakPattern is null");
             }
         }
-      m_eMesh.getBulkData()->modification_end();
+      m_eMesh.get_bulkData()->modification_end();
 
     }
 
@@ -538,7 +538,7 @@ namespace stk {
 
       CommDataType buffer_entry;
 
-      BulkData& bulkData = *m_eMesh.getBulkData();
+      BulkData& bulkData = *m_eMesh.get_bulkData();
       static SubDimCellData empty_SubDimCellData;
 
       // color elements
@@ -1234,7 +1234,7 @@ namespace stk {
                                       << " child= " << *child
                                       << " parent_side_child= " << *parent_side_child
                                       <<  std::endl;
-                          m_eMesh.getBulkData()->declare_relation(*child, *parent_side_child, k_child_side);
+                          m_eMesh.get_bulkData()->declare_relation(*child, *parent_side_child, k_child_side);
                           PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
                         }
                       else
@@ -1285,7 +1285,7 @@ namespace stk {
 
       mesh::Selector removePartSelector (*oldPart);
 
-      const vector<Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
+      const vector<Bucket*> & buckets = m_eMesh.get_bulkData()->buckets( rank );
 
       elements_to_be_destroyed_type elements_to_be_destroyed;
 
@@ -1351,7 +1351,7 @@ namespace stk {
       for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed.begin(); itbd != elements_to_be_destroyed.end();  ++itbd)
         {
           Entity *element_p = *itbd;
-          if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
+          if ( ! m_eMesh.get_bulkData()->destroy_entity( element_p ) )
             {
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
               elements_to_be_destroyed_pass2.push_back(element_p);
@@ -1368,7 +1368,7 @@ namespace stk {
            itbd != elements_to_be_destroyed_pass2.end();  ++itbd)
         {
           Entity *element_p = *itbd;
-          if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
+          if ( ! m_eMesh.get_bulkData()->destroy_entity( element_p ) )
             {
               CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(*element_p));
               std::cout << "tmp UniformRefiner::removeOldElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
@@ -1540,7 +1540,7 @@ namespace stk {
 
               if (!nodeIds_onSE[0]) {
                 
-                Entity * node1 = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE.m_entity_id_vector[0]);
+                Entity * node1 = m_eMesh.get_bulkData()->get_entity(Node, nodeIds_onSE.m_entity_id_vector[0]);
                 
                 if (!node1)
                   {
@@ -1588,8 +1588,8 @@ namespace stk {
                 {
                   if (!nodeIds_onSE[i_new_node]) 
                     {
-                      Entity * node1 = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE.m_entity_id_vector[0]);
-                      //Entity *node1 = m_nodeRegistry->get_entity(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE.m_entity_id_vector[i_new_node])
+                      Entity * node1 = m_eMesh.get_bulkData()->get_entity(Node, nodeIds_onSE.m_entity_id_vector[0]);
+                      //Entity *node1 = m_nodeRegistry->get_entity(*m_eMesh.get_bulkData(), mesh::Node, nodeIds_onSE.m_entity_id_vector[i_new_node])
 
                         if (!node1)
                         {

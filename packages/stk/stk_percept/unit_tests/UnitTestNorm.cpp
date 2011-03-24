@@ -6,6 +6,9 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/function/StringFunction.hpp>
 #include <stk_percept/function/FieldFunction.hpp>
@@ -63,14 +66,14 @@ struct LocalFixture
 {
   PerceptMesh eMesh;
   int bogus_init;
-  MetaData& metaData;
+  mesh::fem::FEMMetaData& metaData;
   BulkData& bulkData;
   FieldBase *coords_field;
   StringFunction sfx;
   ConstantFunction sfx_res;
 
   LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0) : eMesh(3), bogus_init(init(num_xyz, num_y, num_z)),
-                                                                     metaData(*eMesh.getMetaData()), bulkData(*eMesh.getBulkData()),
+                                                                     metaData(*eMesh.getFEM_meta_data()), bulkData(*eMesh.get_bulkData()),
                                                                      coords_field( metaData.get_field<FieldBase>("coordinates") ),
                                                                      sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) ),
                                                                      sfx_res (0.0, "sfx_res")
@@ -200,7 +203,7 @@ STKUNIT_UNIT_TEST(norm, volume)
   using namespace mesh;
 
   LocalFixture fix(3,3,12);
-  MetaData& metaData = fix.metaData;
+  mesh::fem::FEMMetaData& metaData = fix.metaData;
   BulkData& bulkData = fix.bulkData;
   PerceptMesh& eMesh = fix.eMesh;
 
@@ -335,7 +338,7 @@ STKUNIT_UNIT_TEST(norm, string_function)
   using namespace mesh;
 
   LocalFixture     fix(4);
-  MetaData&        metaData     = fix.metaData;
+  mesh::fem::FEMMetaData&        metaData     = fix.metaData;
   BulkData&        bulkData     = fix.bulkData;
   PerceptMesh&        eMesh     = fix.eMesh;
   FieldBase*       coords_field = fix.coords_field;
@@ -410,7 +413,7 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
   using namespace mesh;
 
   LocalFixture     fix(4);
-  MetaData&        metaData     = fix.metaData;
+  mesh::fem::FEMMetaData&        metaData     = fix.metaData;
   BulkData&        bulkData     = fix.bulkData;
   PerceptMesh&        eMesh     = fix.eMesh;
   FieldBase*       coords_field = fix.coords_field;
@@ -589,8 +592,8 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
     eMesh.commit();
   }
 
-  MetaData& metaData = *eMesh.getMetaData();
-  BulkData& bulkData = *eMesh.getBulkData();
+  mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
+  BulkData& bulkData = *eMesh.get_bulkData();
 
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
   FieldBase *coords_field = metaData.get_field<FieldBase>("coordinates");
@@ -726,7 +729,7 @@ STKUNIT_UNIT_TEST(norm, field_function)
   using namespace mesh;
 
   LocalFixture     fix(4);
-  MetaData&        metaData     = fix.metaData;
+  mesh::fem::FEMMetaData&        metaData     = fix.metaData;
   BulkData&        bulkData     = fix.bulkData;
   //PerceptMesh&        eMesh     = fix.eMesh;
   FieldBase*       coords_field = fix.coords_field;

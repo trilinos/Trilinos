@@ -47,9 +47,8 @@ namespace stk{
 
     HeterogeneousFixture::HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit ) :
       m_spatial_dimension(3)
-      , m_metaData( fem::entity_rank_names(m_spatial_dimension) )
-      , m_bulkData( m_metaData , comm )
-      , m_fem( m_metaData, m_spatial_dimension )
+      , m_metaData(m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) )
+      , m_bulkData( stk::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
       , m_block_hex(        declare_part< Hex8 >( m_metaData, "block_1" ))
       , m_block_wedge(      declare_part< Wedge6 >(m_metaData,  "block_2" ))
       , m_block_tet(        declare_part< Tet4 >(m_metaData,  "block_3" ))
@@ -60,7 +59,7 @@ namespace stk{
       , m_block_tri_shell(  declare_part< ShellTriangle3 >(m_metaData,  "block_6" ))
 #endif
 
-      , m_elem_rank( fem::element_rank(m_fem) )
+      , m_elem_rank( m_metaData.element_rank() )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
       , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))
       , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( "temperature" ))

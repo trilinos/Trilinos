@@ -232,7 +232,7 @@ namespace stk
      */
     bool GeometryVerifier::isGeometryBad(stk::mesh::BulkData& bulk, bool printTable) //, stk::mesh::Part& mesh_part )
     {
-      const stk::mesh::MetaData& meta = MetaData::get(bulk);
+      const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(bulk);
       const unsigned p_rank = bulk.parallel_rank();
 
       unsigned foundBad=0;

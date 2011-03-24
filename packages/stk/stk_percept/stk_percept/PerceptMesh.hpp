@@ -17,7 +17,7 @@
 #include <stk_util/util/string_case_compare.hpp>
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
@@ -100,7 +100,7 @@ namespace stk {
       /// high-level interface
 
       // ctor constructor
-      /// Create a Mesh object that owns its constituent MetaData and BulkData (which are created by this object)
+      /// Create a Mesh object that owns its constituent FEMMetaData and BulkData (which are created by this object)
       PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm =  MPI_COMM_WORLD );
 
       /// reads and commits mesh, editing disabled
@@ -131,7 +131,7 @@ namespace stk {
       commit();
 
       /// reopens the mesh for editing - warning, this operation writes the mesh to a temp file then re-reads it and
-      /// thus recreates the internal MetaData and BulkData
+      /// thus recreates the internal FEMMetaData and BulkData
       void
       reopen(const std::string temp_file_name="percept_tmp.e");
 
@@ -158,8 +158,9 @@ namespace stk {
 
       //========================================================================================================================
       /// low-level interfaces
-      /// Create a Mesh object thatPerceptMesh* mesh_data doesn't own its constituent MetaData and BulkData, pointers to which are adopted
+      /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted
       /// by this constructor.
+      PerceptMesh(const stk::mesh::fem::FEMMetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
       PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
 
       ~PerceptMesh() ;
@@ -170,8 +171,8 @@ namespace stk {
       void dump(const std::string& file="");
       void dumpElements(const std::string& partName = "");
 
-      unsigned getRank() { return getBulkData()->parallel_rank(); }
-      unsigned getParallelSize() { return getBulkData()->parallel_size(); }
+      unsigned getRank() { return get_bulkData()->parallel_rank(); }
+      unsigned getParallelSize() { return get_bulkData()->parallel_size(); }
       bool isGhostElement(const stk::mesh::Entity& element)
       {
         //throw std::runtime_error("not impl"); // FIXME
@@ -206,8 +207,8 @@ namespace stk {
 
       double * node_field_data(stk::mesh::FieldBase *field, const mesh::EntityId node_id);
 
-      stk::mesh::BulkData * getBulkData();
-      stk::mesh::MetaData * getMetaData();
+      stk::mesh::BulkData * get_bulkData();
+      stk::mesh::fem::FEMMetaData * getFEM_meta_data();
 
       static BasisTypeRCP getBasis(shards::CellTopology& topo);
       static void setupBasisTable();
@@ -263,8 +264,8 @@ namespace stk {
       static
       const stk::mesh::fem::FEMMetaData& get_fem_meta_data(const T& thing) 
       { 
-        const stk::mesh::MetaData& meta = MetaData::get(thing);
-        const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( meta );
+        //const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(thing);
+        const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( thing );
         return fem_meta;
       }
 
@@ -285,12 +286,12 @@ namespace stk {
       void readModel( const std::string& in_filename );
 
       /// read with no commit
-      void readMetaDataNoCommit( const std::string& in_filename );
+      void read_metaDataNoCommit( const std::string& in_filename );
 
       /// create with no commit
-      void createMetaDataNoCommit( const std::string& gmesh_spec);
+      void create_metaDataNoCommit( const std::string& gmesh_spec);
 
-      void commitMetaData();
+      void commit_metaData();
 
       /// read the bulk data (no op in create mode)
       void readBulkData();
@@ -316,8 +317,8 @@ namespace stk {
       //static void transformMesh(GenericFunction& coordinate_transform);
 
     private:
-      stk::mesh::fem::FEMMetaData *         m_femMetaData;
-      stk::mesh::MetaData *                 m_metaData;
+      //stk::mesh::fem::FEMMetaData *         m_fem_meta_data;
+      stk::mesh::fem::FEMMetaData *                 m_metaData;
       stk::mesh::BulkData *                 m_bulkData;
       stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
       Ioss::Region *                        m_iossRegion;
@@ -383,7 +384,7 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
+          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, mesh::fem::FEMMetaData::get(*field).universal_part());
           dataStride = r.stride[0] ;
         }
       //std::cout << "bucket dataStride= " << dataStride << std::endl;
@@ -424,7 +425,7 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
+          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, mesh::fem::FEMMetaData::get(*field).universal_part());
           dataStride = r.stride[0] ;
         }
       //std::cout << "element dataStride= " << dataStride << std::endl;
