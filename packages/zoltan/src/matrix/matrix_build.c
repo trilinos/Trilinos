@@ -127,7 +127,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
 
     /* Make our new numbering public */
     Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, NULL,  NULL, nX);
-    if (requested_GNOs) {
+    if (request_GNOs) {
       Zoltan_DD_Find(dd, requested_GIDs, (ZOLTAN_ID_PTR) requested_GNOs,
                      NULL, NULL, num_requested, NULL);
     }
