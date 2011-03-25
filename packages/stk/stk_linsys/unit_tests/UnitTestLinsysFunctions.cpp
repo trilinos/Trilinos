@@ -12,8 +12,8 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <Shards_BasicTopologies.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/MetaData.hpp>

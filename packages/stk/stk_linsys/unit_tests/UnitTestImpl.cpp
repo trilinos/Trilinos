@@ -11,7 +11,7 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_linsys/FieldIdMap.hpp>
 #include <stk_linsys/ImplDetails.hpp>

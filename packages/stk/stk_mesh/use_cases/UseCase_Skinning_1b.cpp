@@ -15,7 +15,6 @@
 #include <stk_mesh/base/Entity.hpp>
 
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
 
 #include <stk_mesh/fixtures/HexFixture.hpp>

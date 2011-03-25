@@ -25,15 +25,14 @@
 #include <stk_mesh/base/PartRelation.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 using stk::mesh::MetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::PartRelation;
 using stk::mesh::EntityRank;
-using stk::mesh::DefaultFEM;
 using std::cout;
 using std::endl;
 

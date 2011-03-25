@@ -27,7 +27,7 @@
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 using stk::ParallelMachine;
 using stk::mesh::MetaData;
