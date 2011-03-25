@@ -89,3 +89,9 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES parameter_list_object_builders.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  zero_sensitivities
+  SOURCES zero_sensitivities.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
