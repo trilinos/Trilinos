@@ -33,6 +33,7 @@
 #include <algorithm>
 
 using stk::mesh::MetaData;
+using stk::mesh::fem::FEMMetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::PartRelation;
@@ -41,7 +42,6 @@ using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
 using stk::mesh::Selector;
 using stk::mesh::BulkData;
-using stk::mesh::DefaultFEM;
 using stk::ParallelMachine;
 using std::cout;
 using std::endl;
@@ -54,18 +54,18 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   stk::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
-  stk::mesh::MetaData& meta_data = grid_mesh.meta_data();
-  stk::mesh::DefaultFEM& fem = grid_mesh.fem();
-  const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+  stk::mesh::fem::FEMMetaData& fem_meta = grid_mesh.fem_meta();
+  const stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
   
   int  size , rank;
   rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
   size = stk::parallel_machine_size( MPI_COMM_WORLD );
 
   // Create a part for the shells
-  stk::mesh::Part & shell_part = stk::mesh::declare_part<shards::ShellLine<2> >(meta_data, "shell_part");
+  stk::mesh::fem::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());
+  stk::mesh::Part & shell_part = fem_meta.declare_part("shell_part", line_top);
 
-  meta_data.commit();
+  fem_meta.commit();
 
   // Generate the plain grid
   bulk_data.modification_begin();

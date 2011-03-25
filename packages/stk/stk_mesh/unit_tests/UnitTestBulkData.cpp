@@ -27,6 +27,7 @@
 
 using stk::mesh::Part;
 using stk::mesh::MetaData;
+using stk::mesh::fem::FEMMetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
@@ -38,11 +39,12 @@ using stk::mesh::EntityId;
 using stk::mesh::EntityKey;
 using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
-using stk::mesh::DefaultFEM;
 using stk::mesh::fixtures::RingFixture;
 using stk::mesh::fixtures::BoxFixture;
 
 namespace {
+
+const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
 
 void donate_one_element( BulkData & mesh , bool aura )
 {
@@ -688,7 +690,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
   {
     bool aura = false;
     BoxFixture fixture( pm, 100 );
-    fixture.meta_data().commit();
+    fixture.fem_meta().commit();
     BulkData & bulk = fixture.bulk_data();
     int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
@@ -704,7 +706,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
   if ( 1 < p_size ) {
     bool aura = false;
     BoxFixture fixture( pm, 100 );
-    fixture.meta_data().commit();
+    fixture.fem_meta().commit();
     BulkData & bulk = fixture.bulk_data();
     int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
@@ -718,7 +720,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
   if ( 1 < p_size ) {
     bool aura = false;
     BoxFixture fixture( pm, 100 );
-    fixture.meta_data().commit();
+    fixture.fem_meta().commit();
     BulkData & bulk = fixture.bulk_data();
     int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
@@ -733,7 +735,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
   if ( 1 < p_size ) {
     BoxFixture fixture( pm, 100 );
     BulkData & bulk = fixture.bulk_data();
-    MetaData & box_meta = fixture.meta_data();
+    FEMMetaData & box_meta = fixture.fem_meta();
     box_meta.commit();
     int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
@@ -785,7 +787,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
   // Make a ring_mesh and add an extra part
   RingFixture ring_mesh( pm , nPerProc, false /* don't use edge parts */);
   stk::mesh::Part& special_part =
-    declare_part(ring_mesh.m_meta_data,  "special_node_part", stk::mesh::BaseEntityRank );
+    ring_mesh.m_meta_data.declare_part("special_node_part", stk::mesh::BaseEntityRank );
   ring_mesh.m_meta_data.commit();
   BulkData& bulk = ring_mesh.m_bulk_data;
 
@@ -799,7 +801,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
 
   // grab the first edge
   EntityVector edges;
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(ring_mesh.m_fem);
+  const stk::mesh::EntityRank element_rank = ring_mesh.m_meta_data.element_rank();
   stk::mesh::get_entities( ring_mesh.m_bulk_data, element_rank, edges );
   stk::mesh::Entity& edge = *( edges.front() );
 
@@ -839,9 +841,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dim));
+  FEMMetaData meta_data(spatial_dim);
   meta_data.commit();
-  BulkData mesh(meta_data, pm);
+  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
   unsigned p_rank = mesh.parallel_rank();
   unsigned p_size = mesh.parallel_size();
 
@@ -861,7 +863,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
     stk::mesh::PartVector empty_parts;
 
     // Create element
-    const EntityRank elem_rank = stk::mesh::fem::element_rank(spatial_dim);
+    const EntityRank elem_rank = meta_data.element_rank();
     Entity & elem = mesh.declare_entity(elem_rank,
                                         p_rank+1, //elem_id
                                         empty_parts);
@@ -869,7 +871,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
     // Create nodes
     const unsigned starting_node_id = p_rank * nodes_per_side + 1;
     for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-      nodes.push_back(&mesh.declare_entity(stk::mesh::fem::NODE_RANK,
+      nodes.push_back(&mesh.declare_entity(NODE_RANK,
                                            id,
                                            empty_parts));
     }
@@ -935,13 +937,13 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dim));
+  FEMMetaData meta_data(spatial_dim);
   meta_data.commit();
-  BulkData mesh(meta_data, pm);
+  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
   unsigned p_rank = mesh.parallel_rank();
   unsigned p_size = mesh.parallel_size();
-  const EntityRank edge_rank = stk::mesh::fem::edge_rank(spatial_dim);
-  const EntityRank elem_rank = stk::mesh::fem::element_rank(spatial_dim);
+  const EntityRank edge_rank = meta_data.edge_rank();
+  const EntityRank elem_rank = meta_data.element_rank();
 
   // Bail if we have fewer than 3 procs
   if (p_size < 3) {
@@ -972,7 +974,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   EntityVector nodes;
   const unsigned starting_node_id = p_rank * nodes_per_side + 1;
   for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-    nodes.push_back(&mesh.declare_entity(stk::mesh::fem::NODE_RANK,
+    nodes.push_back(&mesh.declare_entity(NODE_RANK,
                                          id,
                                          empty_parts));
   }

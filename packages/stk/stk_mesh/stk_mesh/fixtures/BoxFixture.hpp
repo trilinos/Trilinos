@@ -13,7 +13,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -31,9 +31,8 @@ public:
 
   ~BoxFixture () {}
 
-  MetaData & meta_data () { return m_meta_data; }
+  fem::FEMMetaData & fem_meta () { return m_fem_meta; }
   BulkData & bulk_data () { return m_bulk_data; }
-  DefaultFEM & fem () { return m_fem; }
 
   unsigned  comm_size() const { return m_comm_size; }
   unsigned  comm_rank() const { return m_comm_rank; }
@@ -56,12 +55,11 @@ public:
   Entity  &get_new_entity ( EntityRank rank , EntityId parallel_dependent_id );
 
 protected:
-  MetaData      m_meta_data;
-  BulkData      m_bulk_data;
-  DefaultFEM    m_fem;
+  fem::FEMMetaData m_fem_meta;
+  BulkData         m_bulk_data;
 
-  unsigned      m_comm_rank;
-  unsigned      m_comm_size;
+  unsigned         m_comm_rank;
+  unsigned         m_comm_size;
 
   BulkData::BulkDataSyncState m_previous_state;
 

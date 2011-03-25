@@ -24,13 +24,12 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <use_cases/centroid_algorithm.hpp>
 
 #include <use_cases/UseCase_4.hpp>
 
-using stk::mesh::fem::NODE_RANK;
 enum { SpatialDim   = 3 };
 
 namespace stk{
@@ -43,22 +42,22 @@ typedef shards::Wedge<6>        Wedge6;
 typedef shards::Wedge<18>       Wedge18;
 
 UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm, bool doCommit ) :
-  m_metaData( fem::entity_rank_names(SpatialDim) )
-  , m_bulkData( m_metaData , comm )
-  , m_fem( m_metaData, SpatialDim )
-  , m_elem_rank( fem::element_rank(m_fem) )
-  , m_side_rank( fem::side_rank(m_fem) )
-  , m_block_hex27(       declare_part< Hex27 >( m_metaData, "block_1" ))
-  , m_block_wedge18(     declare_part< Wedge18 >( m_metaData, "block_2" ))
-  , m_part_vertex_nodes( declare_part(m_metaData,  "vertex_nodes", NODE_RANK ))
-  , m_side_part(         declare_part(m_metaData,  "sideset_1", m_side_rank ))
-  , m_coordinates_field(m_metaData.declare_field< VectorFieldType >( "coordinates" ))
-  , m_velocity_field(m_metaData.declare_field< VectorFieldType >( "velocity" ))
-  , m_centroid_field(m_metaData.declare_field< VectorFieldType >( "centroid" ))
-  , m_temperature_field(m_metaData.declare_field< ScalarFieldType >( "temperature" ))
-  , m_pressure_field(m_metaData.declare_field< ScalarFieldType >( "pressure" ))
-  , m_boundary_field(m_metaData.declare_field< VectorFieldType >( "boundary" ))
-  , m_element_node_coordinates_field(m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ) )
+  m_fem_metaData( SpatialDim )
+  , m_bulkData( fem::FEMMetaData::get_meta_data(m_fem_metaData) , comm )
+  , m_elem_rank( m_fem_metaData.element_rank() )
+  , m_side_rank( m_fem_metaData.side_rank() )
+  , m_node_rank( m_fem_metaData.node_rank() )
+  , m_block_hex27( stk::mesh::fem::declare_part<Hex27>( m_fem_metaData, "block_1"))
+  , m_block_wedge18( stk::mesh::fem::declare_part<Wedge18>( m_fem_metaData, "block_2"))
+  , m_part_vertex_nodes( m_fem_metaData.declare_part("vertex_nodes", m_node_rank ))
+  , m_side_part(         m_fem_metaData.declare_part("sideset_1", m_side_rank ))
+  , m_coordinates_field(m_fem_metaData.declare_field< VectorFieldType >( "coordinates" ))
+  , m_velocity_field(m_fem_metaData.declare_field< VectorFieldType >( "velocity" ))
+  , m_centroid_field(m_fem_metaData.declare_field< VectorFieldType >( "centroid" ))
+  , m_temperature_field(m_fem_metaData.declare_field< ScalarFieldType >( "temperature" ))
+  , m_pressure_field(m_fem_metaData.declare_field< ScalarFieldType >( "pressure" ))
+  , m_boundary_field(m_fem_metaData.declare_field< VectorFieldType >( "boundary" ))
+  , m_element_node_coordinates_field(m_fem_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ) )
 {
   //--------------------------------
   // The vertex nodes of the hex and wedge elements are members
@@ -69,7 +68,7 @@ UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   // Declare that the Hexahedron<>  nodes of an element in the
   // hex27 element block are members of the linear part.
 
-  m_metaData.declare_part_relation(
+  m_fem_metaData.declare_part_relation(
     m_block_hex27 ,
     & fem::element_node_stencil< Hex8, SpatialDim > ,
     m_part_vertex_nodes );
@@ -77,27 +76,27 @@ UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   // Declare that the Wedge<>  nodes of an element in the
   // wedge18 element block are members of the vertex part.
 
-  m_metaData.declare_part_relation(
+  m_fem_metaData.declare_part_relation(
     m_block_wedge18 ,
     & fem::element_node_stencil< Wedge6, SpatialDim > ,
     m_part_vertex_nodes );
 
   // Where fields exist on the mesh:
-  Part & universal = m_metaData.universal_part();
+  Part & universal = m_fem_metaData.universal_part();
 
-  put_field( m_coordinates_field , NODE_RANK , universal );
-  put_field( m_velocity_field , NODE_RANK , universal );
+  put_field( m_coordinates_field , m_node_rank , universal );
+  put_field( m_velocity_field , m_node_rank , universal );
   put_field( m_centroid_field , m_elem_rank , universal );
-  put_field( m_temperature_field, NODE_RANK, universal );
+  put_field( m_temperature_field, m_node_rank, universal );
 
   // The pressure field only exists on the vertex nodes:
-  put_field( m_pressure_field, NODE_RANK, m_part_vertex_nodes );
+  put_field( m_pressure_field, m_node_rank, m_part_vertex_nodes );
 
   // The boundary field only exists on nodes in the sideset part
-  put_field( m_boundary_field, NODE_RANK, m_side_part );
+  put_field( m_boundary_field, m_node_rank, m_side_part );
 
   // Set up the relationship between nodal coord field and elem node coord field
-  m_metaData.declare_field_relation(
+  m_fem_metaData.declare_field_relation(
     m_element_node_coordinates_field ,
     fem::get_element_node_stencil(SpatialDim) ,
     m_coordinates_field
@@ -107,7 +106,7 @@ UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   put_field( m_element_node_coordinates_field, m_elem_rank, m_block_wedge18, Wedge18::node_count );
 
   if (doCommit)
-    m_metaData.commit();
+    m_fem_metaData.commit();
 }
 
 UseCase_4_Mesh::~UseCase_4_Mesh()
@@ -196,22 +195,22 @@ void UseCase_4_Mesh::populate()
   // Iterate over the number of desired hexs here and declares them
   for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id , ++face_id ) {
     Entity & elem =
-      declare_element( m_bulkData, m_block_hex27, elem_id, hex_node_ids[i] );
+      fem::declare_element( m_bulkData, m_block_hex27, elem_id, hex_node_ids[i] );
 
-    declare_element_side( m_bulkData, face_id, elem, 0 /*local side id*/, &m_side_part);
+    fem::declare_element_side( m_bulkData, face_id, elem, 0 /*local side id*/, &m_side_part);
   }
 
   // Iterate over the number of desired wedges here and declares the
   for ( unsigned i = 0 ; i < number_wedge ; ++i , ++elem_id , ++face_id ) {
     Entity & elem =
-      declare_element( m_bulkData, m_block_wedge18, elem_id, wedge_node_ids[i] );
+      fem::declare_element( m_bulkData, m_block_wedge18, elem_id, wedge_node_ids[i] );
 
-    declare_element_side( m_bulkData, face_id , elem , 4 /*local side id*/, &m_side_part);
+    fem::declare_element_side( m_bulkData, face_id , elem , 4 /*local side id*/, &m_side_part);
   }
 
   // For all nodes assign nodal coordinates
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
-    Entity * const node = m_bulkData.get_entity( NODE_RANK, i + 1 );
+    Entity * const node = m_bulkData.get_entity( m_node_rank, i + 1 );
     ThrowRequireMsg( node != NULL, i+1 );
 
     double * const coord = field_data( m_coordinates_field , *node );
@@ -264,7 +263,7 @@ bool verify_elem_side_node( const EntityId * const elem_nodes ,
   const CellTopologyData * const side_top = elem_top->side[ local_side ].topology ;
   const unsigned         * const side_node_map = elem_top->side[ local_side ].node ;
 
-  const mesh::PairIterRelation rel = side.relations( NODE_RANK );
+  const mesh::PairIterRelation rel = side.relations( fem::FEMMetaData::NODE_RANK );
 
   // Verify that the node relations are compatible with the cell topology data
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
@@ -285,7 +284,7 @@ bool verify_boundary_field_data( const BulkData & mesh ,
 
   unsigned num_nodes_on_side_of_mesh  = 0 ;
 
-  const std::vector<Bucket*> & buckets = mesh.buckets( NODE_RANK );
+  const std::vector<Bucket*> & buckets = mesh.buckets( fem::FEMMetaData::NODE_RANK );
 
   // Iterate over each bucket and sum the number of nodes
   // into num_nodes_on_side_of_mesh for each bucket which is a subset of side_part.
@@ -376,7 +375,7 @@ bool verify_pressure_velocity_stencil(
             i = bucket.begin() ; i != bucket.end() ; ++i ) {
         Entity & elem = *i ;
 
-        PairIterRelation rel = elem.relations( NODE_RANK );
+        PairIterRelation rel = elem.relations( fem::FEMMetaData::NODE_RANK );
 
         // Check that the nodal relation size is the same as the element topology
         // node count.

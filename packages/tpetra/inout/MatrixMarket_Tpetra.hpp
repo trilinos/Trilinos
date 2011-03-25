@@ -244,7 +244,6 @@ namespace Tpetra {
 	    dims[0] = numRows;
 	    dims[1] = numCols;
 	    dims[2] = numNonzeros;
-	    lineNumber++;
 	  }
 	// Only Rank 0 did the reading, so it decides success.
 	//
@@ -252,9 +251,9 @@ namespace Tpetra {
 	// to send bools.  For now, we convert to/from int instead,
 	// using the usual "true is 1, false is 0" encoding.
 	{
-	  int __success = success ? 1 : 0; // only matters on MPI Rank 0
-	  Teuchos::broadcast (*pComm, 0, &__success);
-	  success = (__success == 1);
+	  int the_success = success ? 1 : 0; // only matters on MPI Rank 0
+	  Teuchos::broadcast (*pComm, 0, &the_success);
+	  success = (the_success == 1);
 	}
 	if (success)
 	  // Broadcast (numRows, numCols, numNonzeros) from Rank 0
@@ -285,12 +284,12 @@ namespace Tpetra {
       /// make because you're stuck using ancient compilers that don't
       /// support useful widgets like tuple (a.k.a. tr1::tuple).
       struct MatrixTriple {
-	MatrixTriple (const map_ptr& __pDomainMap, 
-		      const map_ptr& __pRangeMap, 
-		      const sparse_matrix_ptr& __pMatrix) : 
-	  pDomainMap (__pDomainMap), 
-	  pRangeMap (__pRangeMap), 
-	  pMatrix (__pMatrix) {}
+	MatrixTriple (const map_ptr& the_pDomainMap, 
+		      const map_ptr& the_pRangeMap, 
+		      const sparse_matrix_ptr& the_pMatrix) : 
+	  pDomainMap (the_pDomainMap), 
+	  pRangeMap (the_pRangeMap), 
+	  pMatrix (the_pMatrix) {}
 
 	map_ptr pDomainMap, pRangeMap;
 	sparse_matrix_ptr pMatrix;
@@ -481,9 +480,9 @@ namespace Tpetra {
 	// to send bools.  For now, we convert to/from int instead,
 	// using the usual "true is 1, false is 0" encoding.
 	{
-	  int __readSuccess = readSuccess ? 1 : 0; // only matters on MPI Rank 0
-	  Teuchos::broadcast (*pComm, 0, &__readSuccess);
-	  readSuccess = (__readSuccess == 1);
+	  int the_readSuccess = readSuccess ? 1 : 0; // only matters on MPI Rank 0
+	  Teuchos::broadcast (*pComm, 0, &the_readSuccess);
+	  readSuccess = (the_readSuccess == 1);
 	}
 	// TODO (mfh 01 Feb 2011)
 	//

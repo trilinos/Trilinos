@@ -31,7 +31,8 @@
 #include <stk_mesh/base/Transaction.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
 
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_mesh/baseImpl/BucketImpl.hpp>
 
@@ -39,6 +40,7 @@
 
 #include <Shards_BasicTopologies.hpp>
 
+using stk::mesh::fem::FEMMetaData;
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Part;
@@ -53,10 +55,12 @@ using stk::mesh::Selector;
 using stk::mesh::Field;
 using stk::mesh::FieldBase;
 using stk::mesh::put_field;
-using stk::mesh::DefaultFEM;
-using stk::mesh::fem::NODE_RANK;
 
 typedef Field<double> ScalarFieldType;
+
+namespace {
+
+const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
 
 STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
 {
@@ -78,10 +82,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
   // Create MetaData, BulkData
   unsigned max_bucket_size = 4;
   stk::mesh::fixtures::BoxFixture fixture(pm, max_bucket_size, entity_names);
-  MetaData& meta = fixture.meta_data();
+  FEMMetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
-  DefaultFEM& fem = fixture.fem();
-  const EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+  const EntityRank element_rank = meta.element_rank();
   // Create two scalar fields, temperature and volume. Put temperature
   // on all the nodes and put volume on all the elements.
   unsigned number_of_states = 4;
@@ -173,18 +176,17 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
 
   const int spatial_dimension = 3;
 
-  MetaData meta ( stk::mesh::fem::entity_rank_names ( spatial_dimension ) );
-  DefaultFEM fem( meta, spatial_dimension );
-  const EntityRank element_rank = stk::mesh::fem::element_rank(fem);
-  const EntityRank edge_rank    = stk::mesh::fem::edge_rank(fem);
+  FEMMetaData meta( spatial_dimension );
+  const EntityRank element_rank = meta.element_rank();
+  const EntityRank edge_rank    = meta.edge_rank();
 
   PartVector involved_parts(2) ;
   involved_parts[0] = & meta.universal_part();
   involved_parts[1] = & meta.locally_owned_part();
 
-  Part & partLeft_1 = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" );
+  Part & partLeft_1 = stk::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" );
 
-  Part & partLeft_2 = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_left_2" );
+  Part & partLeft_2 = stk::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_2" );
 
   meta.commit();
 
@@ -192,7 +194,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   union_parts.push_back(&partLeft_1);
   union_parts.push_back(&partLeft_2);
 
-  BulkData bulk( meta , pm , 100 );
+  BulkData bulk( FEMMetaData::get_meta_data(meta) , pm , 100 );
   PartVector add_part4, no_part;
   add_part4.push_back ( &partLeft_1 );
 
@@ -232,8 +234,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
 
   // tests on throw_error and BucketIterator in bucket.cpp/hpp
 
-  MetaData meta2 (stk::mesh::fem::entity_rank_names(spatial_dimension));
-  BulkData bulk2( meta2 , pm , 4 );
+  FEMMetaData meta2 (spatial_dimension);
+  BulkData bulk2( FEMMetaData::get_meta_data(meta2) , pm , 4 );
 
   unsigned number_of_states = 4;
 
@@ -279,21 +281,20 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
   MPI_Barrier( pm );
 
   const int spatial_dimension = 3;
-  MetaData meta ( stk::mesh::fem::entity_rank_names ( spatial_dimension ) );
-  DefaultFEM fem( meta, spatial_dimension );
-  const EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+  FEMMetaData meta( spatial_dimension );
+  const EntityRank element_rank = meta.element_rank();
 
   PartVector involved_parts(2) ;
   involved_parts[0] = & meta.universal_part();
   involved_parts[1] = & meta.locally_owned_part();
 
-  Part & partLeft_1 = declare_part(meta, "block_left_1", element_rank);
+  Part & partLeft_1 = meta.declare_part("block_left_1", element_rank);
 
-  Part & partLeft_3 = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_left_3" );
+  Part & partLeft_3 = stk::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_3" );
 
   meta.commit();
 
-  BulkData bulk( meta , pm , 100 );
+  BulkData bulk( FEMMetaData::get_meta_data(meta) , pm , 100 );
   std::vector<Part *>  add_part4;
   add_part4.push_back ( &partLeft_1 );
 
@@ -402,13 +403,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
   MPI_Barrier( pm );
 
   const int spatial_dimension = 3;
-  MetaData meta ( stk::mesh::fem::entity_rank_names ( spatial_dimension ) );
-  DefaultFEM fem( meta, spatial_dimension );
+  FEMMetaData meta( spatial_dimension );
   
-  BulkData bulk ( meta , pm , 100 );
+  BulkData bulk ( FEMMetaData::get_meta_data(meta) , pm , 100 );
   std::vector<Part *>  add_part4;
 
-  Part & partLeft_1 = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" );
+  Part & partLeft_1 = stk::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" );
   meta.commit();
 
   add_part4.push_back ( &partLeft_1 );
@@ -465,4 +465,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
      STKUNIT_ASSERT_EQUAL( result , true );
   }
   cout << endl << "Bucket test line 7" << endl ;  */
+}
+
 }

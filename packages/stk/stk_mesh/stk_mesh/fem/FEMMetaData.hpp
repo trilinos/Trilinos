@@ -215,6 +215,13 @@ class FEMMetaData {
     return part;
   }
 
+  /** \brief  Declare a part with a given cell topology
+   */
+  template< class Top >
+  Part &declare_part(const std::string &name) {
+    return declare_part(name, shards::getCellTopologyData<Top>());
+  }
+
   /// --------------------------------------------------------------------------------
   /// FEMMetaData Specific functions end
   /// --------------------------------------------------------------------------------

@@ -33,8 +33,8 @@ void destroy_entity_and_create_particles(
     stk::mesh::Entity * elem
     )
 {
-  stk::mesh::fem::FEMInterface &fem = fixture.m_fem;
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+  stk::mesh::fem::FEMMetaData &fem_meta = fixture.m_fem_meta;
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   const unsigned p_rank = fixture.m_bulk_data.parallel_rank();
 
@@ -42,7 +42,7 @@ void destroy_entity_and_create_particles(
   const stk::mesh::EntityRank particle_rank = element_rank;
 
   // forumlate request for 8 particles on owning process
-  std::vector<size_t> requests(fixture.m_meta_data.entity_rank_count(), 0);
+  std::vector<size_t> requests(fixture.m_fem_meta.entity_rank_count(), 0);
   if ( elem != NULL && p_rank == elem->owner_rank() ) {
     requests[particle_rank] = 8;
   }
@@ -115,19 +115,19 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
       stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-      const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fixture.m_fem);
+      const stk::mesh::EntityRank element_rank = fixture.m_fem_meta.element_rank();
 
       const stk::mesh::EntityRank particle_rank = element_rank;
 
       stk::mesh::Part & skin_part =
-        declare_part(fixture.m_meta_data, "skin_part");
+        fixture.m_fem_meta.declare_part("skin_part");
 
       stk::mesh::put_field( fixture.m_coord_field,
                             particle_rank,
-                            fixture.m_meta_data.universal_part(),
+                            fixture.m_fem_meta.universal_part(),
                             3 );
 
-      fixture.m_meta_data.commit();
+      fixture.m_fem_meta.commit();
 
       fixture.generate_mesh();
 

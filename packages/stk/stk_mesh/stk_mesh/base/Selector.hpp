@@ -67,7 +67,7 @@ public:
     { Selector S( *this ); return S.complement(); }
 
   /** \brief  Is this bucket a subset of the
-   *          set defined by the selector expression.
+   *          set defined by thePerceptMesh* mesh_data selector expression.
    */
   bool operator()( const Bucket & candidate ) const ;
 

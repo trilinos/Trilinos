@@ -29,9 +29,8 @@ namespace fixtures {
 BoxFixture::BoxFixture( stk::ParallelMachine pm ,
                         unsigned block_size,
                         const std::vector<std::string>& entity_names )
-  : m_meta_data ( entity_names ),
-    m_bulk_data ( m_meta_data , pm , block_size ),
-    m_fem ( m_meta_data , spatial_dimension ),
+  : m_fem_meta ( spatial_dimension, entity_names ),
+    m_bulk_data ( fem::FEMMetaData::get_meta_data(m_fem_meta) , pm , block_size ),
     m_comm_rank( stk::parallel_machine_rank( pm ) ),
     m_comm_size( stk::parallel_machine_size( pm ) ),
     m_previous_state ( stk::mesh::BulkData::MODIFIABLE )

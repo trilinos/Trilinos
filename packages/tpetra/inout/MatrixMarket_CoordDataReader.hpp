@@ -191,20 +191,55 @@ namespace Tpetra {
 	dims[1] = 0;
 	dims[2] = 0;
 
-	// Fetch the current line of text from the input stream.
+	// Keep reading lines from the input stream until we find a
+	// non-comment line, or until we run out of lines.  The latter
+	// is an error, since every "coordinate" format Matrix Market
+	// file must have a dimensions line after the banner (even if
+	// the matrix has zero rows or columns, or zero entries).
 	std::string line;
-	if (! getline(in, line))
+	bool commentLine = true;
+	while (commentLine)
 	  {
-	    if (tolerant)
-	      return std::make_pair (dims, false);
-	    std::ostringstream os;
-	    os << "Failed to read line " << lineNumber << " from input "
-	      "stream; the line should contain the coordinate matrix "
-	       << "dimensions \"<numRows> <numCols> <numNonzeros>\".";
-	    throw std::invalid_argument (os.str());
+	    // Is it even valid to read from the input stream?
+	    if (in.eof() || in.fail())
+	      {
+		if (tolerant)
+		  return std::make_pair (dims, false);
+		else
+		  {
+		    std::ostringstream os;
+		    os << "Unable to get coordinate dimensions line (at all) "
+		      "from (line " << lineNumber << ") of input stream; the "
+		      "input stream claims that it is at \"end-of-file\" or has "
+		      "an otherwise \"fail\"ed state.";
+		    throw std::invalid_argument(os.str());
+		  }
+	      }
+	    // Try to get the next line from the input stream.
+	    if (getline(in, line))
+	      lineNumber++; // We did actually read a line
+	    else
+	      {
+		if (tolerant)
+		  return std::make_pair (dims, false);
+		else
+		  {
+		    std::ostringstream os;
+		    os << "Failed to read coordinate dimensions line (at all) "
+		      "from (line " << lineNumber << " from input stream.  The "
+		      "line should contain the coordinate matrix dimensions in "
+		       << " the form \"<numRows> <numCols> <numNonzeros>\".";
+		    throw std::invalid_argument (os.str());
+		  }
+	      }
+	    // Is the current line a comment line?  Ignore start and
+	    // size; they are only useful for reading the actual matrix
+	    // entries.  (We could use them here as an optimization, but
+	    // we've chosen not to.)
+	    size_t start = 0, size = 0;
+	    commentLine = checkCommentLine (line, start, size, 
+					    lineNumber, tolerant);
 	  }
-	else 
-	  lineNumber++; // We did actually read a line
 	//
 	// Read in <numRows> <numCols> <numNonzeros> from input line
 	//
@@ -221,7 +256,6 @@ namespace Tpetra {
 	       << "dimensions \"<numRows> <numCols> <numNonzeros>\".";
 	    throw std::invalid_argument(os.str());
 	  }
-
 	// Read in <numRows>
 	{
 	  Ordinal theNumRows = 0;
