@@ -65,7 +65,7 @@ namespace stk {
                      unsigned nx , unsigned ny, bool generate_sidesets_in )
           : meta_data(2, stk::mesh::fem_entity_rank_names() ),
             bulk_data(  stk::mesh::fem::FEMMetaData::get_meta_data(meta_data) , pm ),
-            quad_part( meta_data.declare_part("block_1", stk::mesh::Element) ),
+            quad_part( meta_data.declare_part("block_1", meta_data.element_rank() ) ),
             coord_field( meta_data.declare_field<CoordFieldType>("coordinates") ),
             coord_gather_field( meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
             NX( nx ),
@@ -74,14 +74,15 @@ namespace stk {
         {
           enum { SpatialDim = 2 };
 
-          // Set topology of the element block part
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-          stk::mesh::set_cell_topology< QuadOrTriTopo >(quad_part);
-#else
-          stk::mesh::fem::set_cell_topology(meta_data, quad_part,  fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
-          // stk::mesh::fem::set_cell_topology< QuadOrTriTopo >(quad_part);
-#endif
+          std::cout << "tmp meta_data.node_rank()= " << meta_data.node_rank() << std::endl;
+          std::cout << "tmp meta_data.edge_rank()= " << meta_data.edge_rank() << std::endl;
+          std::cout << "tmp meta_data.face_rank()= " << meta_data.face_rank() << std::endl;
+          std::cout << "tmp meta_data.element_rank()= " << meta_data.element_rank() << std::endl;
+          //exit(1);
 
+          // Set topology of the element block part
+          //stk::mesh::fem::set_cell_topology(meta_data, quad_part,  fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
+          stk::mesh::fem::set_cell_topology<QuadOrTriTopo>(meta_data, quad_part);
           stk::io::put_io_part_attribute(quad_part);
 
           //put coord-field on all nodes:
@@ -95,20 +96,16 @@ namespace stk {
           //put coord-gather-field on all elements:
           put_field(
                     coord_gather_field,
-                    Element,
+                    meta_data.element_rank(),
                     meta_data.universal_part(),
                     NodesPerElem
                     );
 
           // Field relation so coord-gather-field on elements points
           // to coord-field of the element's nodes
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-          meta_data.declare_field_relation( coord_gather_field, element_node_stencil<QuadOrTriTopo>, coord_field);
-#else
-          const EntityRank element_rank = 2;
 
+          const EntityRank element_rank = 2;
           meta_data.declare_field_relation( coord_gather_field, fem::element_node_stencil<QuadOrTriTopo, element_rank>, coord_field);
-#endif
 
           if (generate_sidesets)
             generate_sides_meta( );
@@ -261,16 +258,20 @@ namespace stk {
         }
 
         stk::mesh::Entity * elem( unsigned ix , unsigned iy ) const
-        { return bulk_data.get_entity( stk::mesh::Element , elem_id(ix,iy) ); }
+      { return bulk_data.get_entity( meta_data.element_rank() , elem_id(ix,iy) ); }
 
 
         void generate_sides_meta()
         {
           for (unsigned i_side = 0; i_side < 4; i_side++)
             {
-              side_parts[i_side] = &meta_data.declare_part(std::string("surface_quad4_edge2d2_")+boost::lexical_cast<std::string>(i_side+1), stk::mesh::Edge);
-              mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), stk::mesh::Edge);
-              stk::mesh::fem::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
+              side_parts[i_side] = &meta_data.declare_part(std::string("surface_quad4_edge2d2_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
+              mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
+              //void set_cell_topology(FEMMetaData & fem_meta, Part &part, fem::CellTopology cell_topology);
+
+              //stk::mesh::fem::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
+              //stk::mesh::fem::set_cell_topology(meta_data, *side_parts[i_side], fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
+              stk::mesh::fem::set_cell_topology< shards::Line<2> >(meta_data, *side_parts[i_side]);
               stk::io::put_io_part_attribute(*side_parts[i_side]);
               stk::io::put_io_part_attribute(side_part);
 
@@ -359,7 +360,7 @@ namespace stk {
                         }
                       if (NodesPerElem == 3 && elem(ix,iy) && i_side >=2 )
                         {
-                          mesh::Entity& element = *bulk_data.get_entity(mesh::Element, (NX*NY+1)+elem_id(ix, iy));
+                          mesh::Entity& element = *bulk_data.get_entity(meta_data.element_rank(), (NX*NY+1)+elem_id(ix, iy));
 
                           if (end != std::find(ibegin, end, elem_id(ix,iy)) )
                             {

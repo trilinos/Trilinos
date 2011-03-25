@@ -498,6 +498,12 @@ bool is_cell_topology_root_part(const Part & part);
  */
 void set_cell_topology(FEMMetaData & fem_meta, Part &part, fem::CellTopology cell_topology);
 
+template<class Topology>
+inline void set_cell_topology(FEMMetaData & fem_meta, Part & part)
+{
+  set_cell_topology(fem_meta, part, fem::CellTopology(shards::getCellTopologyData<Topology>()));
+}
+
 std::vector<std::string> entity_rank_names(size_t spatial_dimension);
 
 } // namespace fem

@@ -370,11 +370,7 @@ namespace stk {
                                   ArrayType& cellNodes, unsigned dataStrideArg)
     {
       unsigned number_elems = bucket.size();
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
-#else
       const CellTopologyData * const bucket_cell_topo_data = stk::mesh::fem::get_cell_topology(bucket).getCellTopologyData();
-#endif
 
       CellTopology cell_topo(bucket_cell_topo_data);
       //unsigned numCells = number_elems;

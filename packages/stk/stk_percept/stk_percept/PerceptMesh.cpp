@@ -532,7 +532,6 @@ namespace stk {
 
       setCoordinatesField();
 
-      // FIXME SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       if (m_coordinatesField) {
           const stk::mesh::FieldBase::Restriction & r = m_coordinatesField->restriction(stk::mesh::Node, getFEM_meta_data()->universal_part());
           unsigned dataStride = r.stride[0] ;
@@ -569,7 +568,6 @@ namespace stk {
 
       setCoordinatesField();
 
-      // FIXME SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       if (m_coordinatesField) {
           const stk::mesh::FieldBase::Restriction & r = m_coordinatesField->restriction(stk::mesh::Node, metaData->universal_part());
           unsigned dataStride = r.stride[0] ;
@@ -1074,7 +1072,7 @@ namespace stk {
       m_fixture = new stk::io::util::Gmesh_STKmesh_Fixture(MPI_COMM_WORLD, gmesh_spec);
 
       //!< m_metaData = &m_fixture->getMetaData();
-      m_metaData = 0;
+      m_metaData = new stk::mesh::fem::FEMMetaData(m_fixture->getMetaData(), 3);
       m_bulkData = &m_fixture->getBulkData();
       m_ownData = false;
     }

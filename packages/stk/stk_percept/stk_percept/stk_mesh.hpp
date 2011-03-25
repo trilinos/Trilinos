@@ -5,10 +5,6 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 
-//#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-//#include <stk_mesh/fem/FieldTraits.hpp>
-//#else
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-//#endif
 
 #include <stk_mesh/fem/EntityRanks.hpp>
