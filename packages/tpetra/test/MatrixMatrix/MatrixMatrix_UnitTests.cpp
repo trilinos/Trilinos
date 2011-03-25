@@ -48,11 +48,11 @@ TEUCHOS_STATIC_SETUP(){
 
 
 typedef struct add_test_results_struct{
+  double correctNorm;
+  double norm1;
+  double norm2;
   double epsilon1;
-//  double epsilon2;
-  double y1Norm;
-  double y2Norm;
-  //double y3Norm;
+  double epsilon2;
 } add_test_results;
 
 typedef struct mult_test_results_struct{
@@ -79,63 +79,37 @@ template<class CrsMatrix_t> double getNorm(RCP<CrsMatrix_t> matrix){
   return sqrt(totalSum);
 
 }
-/*
+
 template<class Ordinal>
 add_test_results add_test(
-    RCP<CrsMatrix<double,int> > A,
-    RCP<CrsMatrix<double,int> > B,
+    RCP<Matrix_t > A,
+    RCP<Matrix_t > B,
     bool AT,
     bool BT,
-    RCP<const Comm<Ordinal> > comm)
+    RCP<Matrix_t > C,
+    RCP<const Comm<Ordinal> > comm,
+    Teuchos::FancyOStream& out)
 {
-  typedef Kokkos::DefaultNode::DefaultNodeType DNode;
-  typedef Vector<double> Vector_t;
-  typedef CrsMatrixMultiplyOp<double> CrsMatrixMultiplyOp_t;
   add_test_results toReturn;
+  toReturn.correctNorm = getNorm(C);
 
+  RCP<const Map<int,int, Kokkos::SerialNode> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, 1));
 
-  RCP<CrsMatrix<double,int> > computedC = null;
-  RCP<const Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
-
-  computedC = rcp( new CrsMatrix<double,int>(rowmap, 1));
-
-  MatrixMatrix::Add(*A, false, 1.0, *B, false, 1.0, computedC);
+  Tpetra::MatrixMatrix::Add(*A, false, 1.0, *B, false, 1.0, computedC);
 
   computedC->fillComplete(A->getDomainMap(), A->getRangeMap());
-
-
-  Vector_t randomVector1(computedC->getDomainMap(), true);
-  randomVector1.randomize();
-
-  Vector_t y1(computedC->getRangeMap());
-  CrsMatrixMultiplyOp_t cMultiOp(computedC);
-  cMultiOp.apply(randomVector1, y1);
-
-  Vector_t ax(A->getRangeMap());
-  CrsMatrixMultiplyOp_t aMultiOp(A);
-  aMultiOp.apply(randomVector1, ax);
+  toReturn.norm1 = getNorm(computedC);
+  toReturn.epsilon1 = fabs(toReturn.correctNorm - toReturn.norm1);
   
-  Vector_t bx(B->getRangeMap());
-  CrsMatrixMultiplyOp_t bMultiOp(B);
-  bMultiOp.apply(randomVector1, bx);
-
-  Vector_t* y2 = &bx;
-  y2->update(1,ax,1);
-
-  toReturn.epsilon1 = fabs(y2->norm2()-y1.norm2());
-
-  MatrixMatrix::Add(*A, false, 1.0, *B, 1.0);
-  Vector_t randomVector3(B->getDomainMap());
-  randomVector3.doImport(randomVector1, importer, REPLACE);
-  Vector_t y3(B->getRangeMap());
-  bMultiOp.apply(randomVector3, y3);
-  toReturn.epsilon2 = fabs(y2->norm2()-y3.norm2());
-
-  
+  Tpetra::MatrixMatrix::Add(*A, false, 1.0, *B, 1.0);
+  B->describe(out, Teuchos::VERB_EXTREME);
+  toReturn.norm2 = getNorm(B);
+  toReturn.epsilon2 = fabs(toReturn.correctNorm - toReturn.norm2);
 
   return toReturn;
 
-}*/
+}
 
 template<class Ordinal>
 mult_test_results multiply_test(
@@ -237,8 +211,6 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
     bool BT = currentSystem.get<bool>("TransB");
     double epsilon = currentSystem.get<double>("epsilon", defaultEpsilon);
     std::string op = currentSystem.get<std::string>("op");
-  
-    out << "A file: " << A_file << std::endl;
 
     RCP<Matrix_t > A = Reader<Matrix_t >::readFile(A_file, comm, node);
     RCP<Matrix_t > B = Reader<Matrix_t >::readFile(B_file, comm, node);
@@ -262,15 +234,15 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       TEST_COMPARE(results.epsilon, <, epsilon)
     }
     else if(op == "add"){
-/*      if(verbose){
+      if(verbose){
         out << "Running add test for " << currentSystem.name() << std::endl;
       }
-      add_test_results results = add_test(A,B,AT,BT,comm);
+      add_test_results results = add_test(A,B,AT,BT,C,comm, out);
       TEST_COMPARE(results.epsilon1, <, epsilon)
- //     TEST_COMPARE(results.epsilon2, <, epsilon)
-      out << "Norm 1: " << results.y1Norm << std::endl;
-      out << "Norm 2: " << results.y2Norm << std::endl;
-//      out << "Norm 3: " << results.y3Norm << std::endl;*/
+      TEST_COMPARE(results.epsilon2, <, epsilon)
+      out << "Correct Norm: " << results.correctNorm << std::endl;
+      out << "Norm 1: " << results.norm1 << std::endl;
+      out << "Norm 2: " << results.norm2 << std::endl;
     }
   }   
 }

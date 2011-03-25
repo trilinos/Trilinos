@@ -1,5 +1,5 @@
 <ParameterList>
-	<ParameterList name="cdt_system">
+<!--	<ParameterList name="cdt_system">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/cdt_m.mtx" type="string"/>
 		<Parameter name="B" value="matrices/cdt_tce.mtx" type="string"/>
@@ -22,7 +22,7 @@
 		<Parameter name="C" value="matrices/synTc.mtx" type="string"/>
 		<Parameter name="TransA" value="true" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
-	</ParameterList>
+	</ParameterList> -->
 	<!--  Known to not work at this time, Kurtis Nusbaum 03/24/2011
   <ParameterList name="syntheticBT">
     <Parameter name="op" value="multiply" type="string"/>
@@ -40,12 +40,29 @@
 		<Parameter name="TransA" value="true" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList> -->
-	<ParameterList name="syntheticRect">
+	<!-- <ParameterList name="syntheticRect">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/synRecta.mtx" type="string"/>
 		<Parameter name="B" value="matrices/synRectb.mtx" type="string"/>
 		<Parameter name="C" value="matrices/synRectc.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList> 
+	<ParameterList name="synthetic add">
+    <Parameter name="op" value="add" type="string"/>
+		<Parameter name="A" value="matrices/synadd1a.mtx" type="string"/>
+		<Parameter name="B" value="matrices/synadd1b.mtx" type="string"/>
+		<Parameter name="C" value="matrices/synadd1c.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>  -->
+	<ParameterList name="small add">
+    <Parameter name="op" value="add" type="string"/>
+		<Parameter name="A" value="matrices/smallAdda.mtx" type="string"/>
+		<Parameter name="B" value="matrices/smallAddb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/smallAddc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+    <Parameter name="epsilon" value="1e-20" type="double"/>
 	</ParameterList>
 </ParameterList>

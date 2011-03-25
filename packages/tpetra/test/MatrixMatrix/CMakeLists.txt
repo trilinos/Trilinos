@@ -49,6 +49,8 @@ synTa.mtx synTb.mtx synTc.mtx
 synBTa.mtx synBTb.mtx synBTc.mtx
 synATa.mtx synATb.mtx synATc.mtx
 synRecta.mtx synRectb.mtx synRectc.mtx
+synadd1a.mtx synadd1b.mtx synadd1c.mtx
+smallAdda.mtx smallAddb.mtx smallAddc.mtx
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix/matrices
 DEST_DIR ${PACKAGE_BINARY_DIR}/test/MatrixMatrix/matrices
 EXEDEPS MatrixMatrix_UnitTests
