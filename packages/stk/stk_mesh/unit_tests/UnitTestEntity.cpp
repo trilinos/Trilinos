@@ -23,9 +23,9 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
+#include <stk_mesh/base/Field.hpp>
 
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
-#include <stk_mesh/base/Field.hpp>
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
 

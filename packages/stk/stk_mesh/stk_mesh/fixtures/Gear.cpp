@@ -25,7 +25,7 @@
 
 namespace {
 
-using stk::mesh::fem::NODE_RANK;
+const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 }
 

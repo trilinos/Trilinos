@@ -77,7 +77,7 @@ class HexFixture
    * position. Return NULL if this process doesn't know about this node.
    */
   Entity * node( unsigned x , unsigned y , unsigned z ) const {
-    return m_bulk_data.get_entity( fem::NODE_RANK , node_id(x, y, z) );
+    return m_bulk_data.get_entity( fem::FEMMetaData::NODE_RANK , node_id(x, y, z) );
   }
 
   /**

@@ -84,8 +84,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
   part_vector.push_back(& pd);
 
   //Part * const intersection_part = &
-  declare_part(metadata, part_vector);
-
+  metadata.declare_part(part_vector);
 
   //Test declare_part_subset
   STKUNIT_ASSERT_THROW(  metadata.declare_part_subset( pe, pe), std::runtime_error);
@@ -129,7 +128,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
 
   //Test Entity repository - covering EntityRepository.cpp/hpp
   stk::mesh::MetaData meta ( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-  stk::mesh::Part & part = stk::mesh::declare_part(meta, "another part");
+  stk::mesh::Part & part = meta.declare_part("another part");
 
   meta.commit();
 
