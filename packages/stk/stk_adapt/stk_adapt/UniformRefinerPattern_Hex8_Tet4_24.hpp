@@ -80,7 +80,7 @@ namespace stk {
        {
          EXCEPTWATCH;
 
-         m_primaryEntityRank = mesh::Element;
+         m_primaryEntityRank = eMesh.element_rank();
 
          setNeededParts(eMesh, block_names, false);
 
@@ -96,8 +96,8 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(2);
-        needed_entities[0].first = stk::mesh::Face;
-        needed_entities[1].first = stk::mesh::Element;  
+        needed_entities[0].first = m_eMesh.face_rank();
+        needed_entities[1].first = m_eMesh.element_rank();  
         setToOne(needed_entities);
 
       }

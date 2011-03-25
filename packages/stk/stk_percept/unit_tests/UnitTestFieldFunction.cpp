@@ -13,6 +13,7 @@
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
 #include <stk_percept/fixtures/Fixture.hpp>
+#include <stk_percept/fixtures/QuadFixture.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/PrintTable.hpp>
@@ -39,6 +40,29 @@ namespace unit_tests {
 //=============================================================================
 //=============================================================================
 //=============================================================================
+
+STKUNIT_UNIT_TEST(function, fieldFunction_demo_1_0_0)
+{
+  EXCEPTWATCH;
+
+  // start_demo_fieldFunction_1
+  PerceptMesh eMesh(3);
+  eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
+  eMesh.commit();
+  eMesh.printInfo("fieldFunction_demo_1_0_0", 2);
+
+  // the coordinates field is always created by the PerceptMesh read operation, here we just get the field
+  FieldBase *f_coords = eMesh.getField("coordinates");
+
+  // create a field function from the existing coordinates field
+  FieldFunction ff_coords("ff_coords", f_coords, eMesh, 3, 3);
+
+  // here we could evaluate this field function
+  double x=0.123, y=0.234, z=0.345, time=0.0;
+  evalVec3Print(x, y, z, time, ff_coords);
+  // end_demo
+
+}
 
 STKUNIT_UNIT_TEST(function, fieldFunction_read_print)
 {
@@ -132,6 +156,14 @@ public:
 STKUNIT_UNIT_TEST(function, fieldFunction_demo_1)
 {
   EXCEPTWATCH;
+
+  
+  {
+    stk::io::util::Gmesh_STKmesh_Fixture gms(MPI_COMM_WORLD, "3x3x3|bbox:0,0,0,1,1,1");
+    std::cout << "gms= " << &gms << std::endl;
+  }
+
+  std::cout << "gms= end"  << std::endl;
 
   // start_demo_fieldFunction_1
   PerceptMesh eMesh(3);

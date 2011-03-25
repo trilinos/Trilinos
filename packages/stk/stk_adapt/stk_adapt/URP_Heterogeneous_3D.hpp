@@ -23,7 +23,7 @@ namespace stk {
 
       URP_Heterogeneous_3D(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  m_eMesh(eMesh) 
       {
-        m_primaryEntityRank = mesh::Element;
+        m_primaryEntityRank = eMesh.element_rank();
 
         //!setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();

@@ -1,8 +1,6 @@
 #ifndef stk_percept_PerceptMesh_hpp
 #define stk_percept_PerceptMesh_hpp
 
-#define SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -161,7 +159,7 @@ namespace stk {
       /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted
       /// by this constructor.
       PerceptMesh(const stk::mesh::fem::FEMMetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
-      PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
+      //PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
 
       ~PerceptMesh() ;
       void init ( stk::ParallelMachine comm);
@@ -178,6 +176,39 @@ namespace stk {
         //throw std::runtime_error("not impl"); // FIXME
         bool isGhost = element.owner_rank() != getRank();
         return isGhost;
+      }
+
+      EntityRank node_rank() const
+      {
+        return m_metaData->node_rank();
+      }
+
+      /** \brief Returns the edge rank which changes depending on spatial dimension
+       */
+      EntityRank edge_rank() const
+      {
+        return m_metaData->edge_rank();
+      }
+
+      /** \brief Returns the face rank which changes depending on spatial dimension
+       */
+      EntityRank face_rank() const
+      {
+        return m_metaData->face_rank();
+      }
+
+      /** \brief Returns the side rank which changes depending on spatial dimension
+       */
+      EntityRank side_rank() const
+      {
+        return m_metaData->side_rank();
+      }
+
+      /** \brief Returns the element rank which is always equal to spatial dimension
+       */
+      EntityRank element_rank() const
+      {
+        return m_metaData->element_rank();
       }
 
       stk::mesh::Entity & createOrGetNode(stk::mesh::EntityId nid, double* x=0);

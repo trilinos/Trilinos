@@ -349,6 +349,8 @@ namespace stk {
       void process_read_edgesets_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
       {
         const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
+        //EntityRank stk_mesh_Edge = 1;
+        //local_default_part_processing(edge_sets, meta, meta.edge_rank());
         local_default_part_processing(edge_sets, meta, meta.edge_rank());
 
         for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();

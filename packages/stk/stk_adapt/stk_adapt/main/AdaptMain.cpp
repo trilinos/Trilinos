@@ -64,7 +64,6 @@ namespace stk {
               std::cout << "declare_relation for i_element = " << i_element << " [" << n_elements << "] = " << ((double)i_element)/((double)n_elements)*100 << "%"
                         << std::endl;
             }
-          //Entity& element = eMesh.get_bulkData()->get_entity( stk::mesh::Element , i_element+1);
           Entity& element = *new_elements[i_element];
 
           for (int j_node = 0; j_node < n_node_per_element; j_node++)

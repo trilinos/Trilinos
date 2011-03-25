@@ -476,7 +476,8 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  stk::io::default_part_processing(elem_blocks, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk::mesh::Element);
+  EntityRank stk_mesh_Element = 3;
+  stk::io::default_part_processing(elem_blocks, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk_mesh_Element);
 
   // Parts were created above, now handle element block specific
   // information (topology, attributes, ...);
@@ -620,7 +621,9 @@ void process_surface_entity(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMet
 void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::FaceSetContainer& face_sets = region.get_facesets();
-  stk::io::default_part_processing(face_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk::mesh::Face);
+  //!<
+  EntityRank stk_mesh_Face = 2;
+  stk::io::default_part_processing(face_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk_mesh_Face);
 
   for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
       it != face_sets.end(); ++it) {
@@ -636,14 +639,16 @@ void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-  stk::io::default_part_processing(edge_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk::mesh::Edge);
+  //!<
+  EntityRank stk_mesh_Edge = 1;
+  stk::io::default_part_processing(edge_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk_mesh_Edge);
 
   for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
       it != edge_sets.end(); ++it) {
     Ioss::EdgeSet *entity = *it;
 
     if (stk::io::include_entity(entity)) {
-      process_surface_entity(entity, meta, stk::mesh::Edge);
+      process_surface_entity(entity, meta, stk_mesh_Edge);
     }
   }
 }
@@ -806,7 +811,9 @@ void process_surface_entity(const Ioss::GroupingEntity* io ,
       std::vector<stk::mesh::Entity*> sides(side_count);
       for(size_t is=0; is<side_count; ++is) {
 
-        stk::mesh::Entity* const elem = bulk.get_entity(stk::mesh::Element, elem_side[is*2]);
+        EntityRank stk_mesh_Element = 3;
+
+        stk::mesh::Entity* const elem = bulk.get_entity(stk_mesh_Element, elem_side[is*2]);
         // If NULL, then the element was probably assigned to an
         // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
         // Hence the '-1' in the following line.

@@ -70,12 +70,15 @@ class FEMMetaData {
   FEMMetaData(size_t spatial_dimension,
               const std::vector<std::string>& in_entity_rank_names = std::vector<std::string>());
 
+#define FEMMETADATA_ADOPT 0
+#if FEMMETADATA_ADOPT
   /**
    * \brief Construct and initialize a FEMMetaData by adopting an existing MetaData
    */
   FEMMetaData(mesh::MetaData& meta,
               size_t spatial_dimension,
               const std::vector<std::string>& in_entity_rank_names = std::vector<std::string>());
+#endif
 
   /// --------------------------------------------------------------------------------
   /// FEMMetaData Specific functions begin:
@@ -144,6 +147,8 @@ class FEMMetaData {
   {
     return m_element_rank;
   }
+  //  void check_topo_db();
+  
 
   /** \brief This function is used to register new cell topologies and their associated ranks with FEMMetaData.
    * Currently, several shards Cell Topologies are registered with appropriate ranks at initialization time.
@@ -475,8 +480,12 @@ class FEMMetaData {
     void internal_declare_known_cell_topology_parts();
 
   private: // data
+#if FEMMETADATA_ADOPT
     MetaData                      m_meta_data_object;
     MetaData&                     m_meta_data;
+#else
+    MetaData                      m_meta_data;
+#endif
     bool                          m_fem_initialized;
     size_t                        m_spatial_dimension;
     EntityRank                    m_edge_rank;

@@ -498,6 +498,12 @@ namespace stk
 
       const mesh::Bucket & bucket = element.bucket();
       const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
+      if (!bucket_cell_topo_data)
+        {
+          EntityRank bucket_rank = bucket.entity_rank();
+          std::cout << "bucket_rank = " << bucket_rank << std::endl;
+          throw std::runtime_error("IntrepidManager::bogus topology");
+        }
 
       unsigned numCells = 1; // FIXME
 

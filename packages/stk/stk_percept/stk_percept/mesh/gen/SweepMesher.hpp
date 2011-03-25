@@ -193,6 +193,7 @@ namespace stk
       }
 
       stk::mesh::BulkData * get_bulkData() { return m_bulkData;}
+      stk::mesh::fem::FEMMetaData * get_metaData() { return m_metaData; }
 
     private:
       bool m_dump;

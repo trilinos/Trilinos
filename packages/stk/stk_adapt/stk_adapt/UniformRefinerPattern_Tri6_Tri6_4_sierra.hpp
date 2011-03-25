@@ -28,7 +28,7 @@ namespace stk {
       {
         m_primaryEntityRank = mesh::Face;
         if (m_eMesh.getSpatialDim() == 2)
-          m_primaryEntityRank = mesh::Element;
+          m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
@@ -72,8 +72,8 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(2);
-        needed_entities[0] = NeededEntityType(stk::mesh::Edge, 3u);
-        needed_entities[1] = NeededEntityType( (m_eMesh.getSpatialDim() == 2 ? stk::mesh::Element : stk::mesh::Face), 3u);
+        needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u);
+        needed_entities[1] = NeededEntityType( (m_eMesh.getSpatialDim() == 2 ? m_eMesh.element_rank() : m_eMesh.face_rank()), 3u);
         //setToOne(needed_entities);
       }
 

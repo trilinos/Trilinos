@@ -82,7 +82,7 @@ namespace stk
         percept::PerceptMesh eMesh(3);
         eMesh.newMesh(percept::PerceptMesh::GMeshSpec(config_mesh));
         int vectorDimension = 0;
-        FieldBase *element_color_field = eMesh.addField("element_colors", mesh::Element, vectorDimension);
+        FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
         eMesh.commit();
 
         Colorer meshColorer;
@@ -108,7 +108,7 @@ namespace stk
           {
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
             int vectorDimension = 0;
-            FieldBase *element_color_field = eMesh.addField("element_colors", mesh::Element, vectorDimension);
+            FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
             eMesh.commit();
 
             Colorer meshColorer;

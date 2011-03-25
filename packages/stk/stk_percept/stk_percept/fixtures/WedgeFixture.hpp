@@ -122,9 +122,12 @@ namespace stk {
             {
               tp2.stkMeshCreateMetaNoCommit(parallel_machine);
             }
+
           return tp2.get_bulkData();
 
         }
+
+        mesh::fem::FEMMetaData *get_metaData() { return m_sweepMesher.get_metaData() ; }
 
         //stk::mesh::BulkData* 
         void

@@ -544,46 +544,6 @@ namespace stk {
         }
     }
 
-    // ctor constructor
-    PerceptMesh::PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) :
-
-      m_metaData(0),
-      m_bulkData(bulkData),
-        m_fixture(NULL),
-        m_iossRegion(NULL),
-        m_coordinatesField(NULL),
-        m_spatialDim(3),
-        m_ownData(false),
-        m_isCommitted(isCommitted),
-        m_isOpen(true),
-        m_isInitialized(true),
-        m_isAdopted(true),
-        m_dontCheckState(false),
-        m_filename(),
-        m_comm()
-    {
-      if (!bulkData)
-        throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
-
-
-      setCoordinatesField();
-
-      if (m_coordinatesField) {
-          const stk::mesh::FieldBase::Restriction & r = m_coordinatesField->restriction(stk::mesh::Node, metaData->universal_part());
-          unsigned dataStride = r.stride[0] ;
-          m_spatialDim = dataStride;
-          if (m_spatialDim != 2 && m_spatialDim != 3)
-            {
-              std::cout << "m_spatialDim= " << m_spatialDim << std::endl;
-              throw std::runtime_error("PerceptMesh::PerceptMesh(adopt form): bad spatial dim");
-            }
-        }
-
-      mesh::MetaData *metaDataNonConst = const_cast<mesh::MetaData *>(metaData);
-      m_metaData = new mesh::fem::FEMMetaData(*metaDataNonConst, (unsigned)m_spatialDim);
-
-    }
-
     void PerceptMesh::
     init( stk::ParallelMachine comm)
     {
@@ -1071,8 +1031,7 @@ namespace stk {
       EXCEPTWATCH;
       m_fixture = new stk::io::util::Gmesh_STKmesh_Fixture(MPI_COMM_WORLD, gmesh_spec);
 
-      //!< m_metaData = &m_fixture->getMetaData();
-      m_metaData = new stk::mesh::fem::FEMMetaData(m_fixture->getMetaData(), 3);
+      m_metaData = &m_fixture->getFEMMetaData();
       m_bulkData = &m_fixture->getBulkData();
       m_ownData = false;
     }
@@ -1473,7 +1432,7 @@ namespace stk {
             continue;
 
           std::cout << "tmp UniformRefiner::dumpElements: part = " << part.name() << std::endl;
-          const std::vector<Bucket*> & buckets = get_bulkData()->buckets( mesh::Element );
+          const std::vector<Bucket*> & buckets = get_bulkData()->buckets( element_rank() );
 
           for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
             {
@@ -1512,7 +1471,7 @@ namespace stk {
       // FIXME consider caching the coords_field in FieldFunction
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
-      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::Element );
+      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::get(bulkData).element_rank() );
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
@@ -1549,7 +1508,7 @@ namespace stk {
       // FIXME consider caching the coords_field in FieldFunction
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
-      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::Element );
+      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( element_rank() );
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {

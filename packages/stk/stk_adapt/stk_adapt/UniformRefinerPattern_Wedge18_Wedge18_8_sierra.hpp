@@ -28,7 +28,7 @@ namespace stk {
 
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Wedge<18>, shards::Wedge<18>  >(eMesh)
       {
-        m_primaryEntityRank = mesh::Element;
+        m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
@@ -62,9 +62,9 @@ namespace stk {
         // FIXME need to take into account the mixed topology nature of the faces
         needed_entities.resize(3);
 
-        needed_entities[0] = NeededEntityType(stk::mesh::Edge, 3u);
-        needed_entities[1] = NeededEntityType(stk::mesh::Face, 9u); 
-        needed_entities[2] = NeededEntityType(stk::mesh::Element, 18u);
+        needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u);
+        needed_entities[1] = NeededEntityType(m_eMesh.face_rank(), 9u); 
+        needed_entities[2] = NeededEntityType(m_eMesh.element_rank(), 18u);
 
       }
 

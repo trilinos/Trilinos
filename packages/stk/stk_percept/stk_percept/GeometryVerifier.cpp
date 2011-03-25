@@ -244,7 +244,7 @@ namespace stk
 
       mesh::Selector select_owned( meta.locally_owned_part() );
 
-      const std::vector<mesh::Bucket*> & buckets = bulk.buckets( stk::mesh::Element );
+      const std::vector<mesh::Bucket*> & buckets = bulk.buckets( meta.element_rank() );
 
       for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
         {
