@@ -37,20 +37,23 @@ int main(int argc, char *argv[])
 
     // test of Z2::AlltoAll using a ordinal type
   
-    int *outBuf = new int [2*nprocs];
-    Teuchos::ArrayRCP<int> sendBuf = Teuchos::arcp(outBuf, 0, 2*nprocs);
+    int *sendBuf = new int [2*nprocs];
+    
+    Teuchos::ArrayView<int> sendBufView(sendBuf, 2*nprocs);
   
     for (int i=0, j=1; i < 2*nprocs ; i+=2,j++){
-      outBuf[i] = j*10;
-      outBuf[i+1] = j*10 + 1;
+      sendBuf[i] = j*10;
+      sendBuf[i+1] = j*10 + 1;
     } 
   
     Teuchos::ArrayRCP<int> recvBuf;
     
     Z2::AlltoAll<int, long, int>(*comm, 
-                  sendBuf,    // ints to send from this process to all the others
-                  2,          // two ints per process
-                  recvBuf);   // will be allocated and filled in AlltoAll
+        sendBufView,    // ints to send from this process to all the others
+        2,              // two ints per process
+        recvBuf);       // will be allocated and filled in AlltoAll
+
+    delete [] sendBuf;
   
     int *inBuf = recvBuf.get();
   
@@ -70,7 +73,7 @@ int main(int argc, char *argv[])
   
     std::pair<int, int> *outBufPair = new std::pair<int, int> [nprocs];
 
-    Teuchos::ArrayRCP< std::pair<int, int> > sendBufPair = Teuchos::arcp(outBufPair, 0, nprocs);
+    Teuchos::ArrayView< std::pair<int, int> > sendBufPair(outBufPair, nprocs);
   
     for (int i=0,j=1; i < nprocs ; i++,j++){
       outBufPair[i].first = j*10;
@@ -80,9 +83,11 @@ int main(int argc, char *argv[])
     Teuchos::ArrayRCP< std::pair<int, int> > recvBufPair;
     
     Z2::AlltoAll<std::pair<int, int> , long, int>(*comm, 
-                  sendBufPair,    // ints to send from this process to all the others
-                  1,              // one pair per process
-                  recvBufPair);   // will be allocated and filled in AlltoAll
+        sendBufPair,    // ints to send from this process to all the others
+        1,              // one pair per process
+        recvBufPair);   // will be allocated and filled in AlltoAll
+
+    delete [] outBufPair;
   
     std::pair<int, int > *inBufPair = recvBufPair.get();
 
@@ -109,10 +114,10 @@ int main(int argc, char *argv[])
       totalOut += outMsgSizes[p];
     }
 
-    Teuchos::ArrayRCP<long> sendCount = Teuchos::arcp(outMsgSizes, 0, nprocs);
+    Teuchos::ArrayView<long> sendCount(outMsgSizes, nprocs);
   
     int *outBuf = new int [totalOut];
-    Teuchos::ArrayRCP<int> sendBuf = Teuchos::arcp(outBuf, 0, totalOut);
+    Teuchos::ArrayView<int> sendBuf(outBuf, totalOut);
   
     int *out = outBuf;
     for (int p=0; p < nprocs; p++){
@@ -129,6 +134,9 @@ int main(int argc, char *argv[])
                   sendCount,   
                   recvBuf,
                   recvCount);
+
+    delete [] outBuf;
+    delete [] outMsgSizes;
   
     long *inMsgSizes = recvCount.get();
     int *inBuf = recvBuf.get();
@@ -143,11 +151,10 @@ int main(int argc, char *argv[])
     }
   }
 
-#ifdef SERIALIZATION_SUPPORTS_VECTORS
-
   if (pass){
 
-    // test of Z2::AlltoAllv (different sized messages) using a non-ordinal type
+    // test of Z2::AlltoAllv using vectors - which can not
+    //    be serialized by Teuchos (so they can't be Scalars).
 
     long myMsgSizeBase=rank*nprocs + 1;
     long *outMsgSizes = new long [nprocs];
@@ -158,10 +165,10 @@ int main(int argc, char *argv[])
       totalOut += outMsgSizes[p];
     }
 
-    Teuchos::ArrayRCP<long> sendCount = Teuchos::arcp(outMsgSizes, 0, nprocs);
+    Teuchos::ArrayView<long> sendCount(outMsgSizes, nprocs);
   
     std::vector<float> *outBuf = new std::vector<float> [totalOut];
-    Teuchos::ArrayRCP<std::vector<float> > sendBuf = Teuchos::arcp(outBuf, 0, totalOut);
+    Teuchos::ArrayView<std::vector<float> > sendBuf(outBuf, totalOut);
   
     std::vector<float> *out = outBuf;
     for (int p=0; p < nprocs; p++){
@@ -179,6 +186,9 @@ int main(int argc, char *argv[])
                   sendCount,   
                   recvBuf,
                   recvCount);
+
+    delete [] outMsgSizes;
+    delete [] outBuf;
   
     long *inMsgSizes = recvCount.get();
     std::vector<float> *inBuf = recvBuf.get();

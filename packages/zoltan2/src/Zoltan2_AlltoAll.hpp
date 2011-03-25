@@ -17,118 +17,6 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 
-#ifdef SERIALIZATION_SUPPORTS_VECTORS
-//
-// There is no instantiation for std::vector<> in SerializationTraits.  
-//   Because this represents a fundamental global ID type in the original Zoltan 
-//   (an array of arbitrary size of unsigned ints) we should support it.   
-//   Message passing of std::vector<> will only occur during preprocessing 
-//   and only in the event that the caller's global ID type is std::vector<T>.
-//   Callers will know that this is not efficient.
-//
-// Layout for std::vector<T> -
-//      int numberOfVectors                   /* LNO may be too small, use int */
-//      int offsetToStartOfVectorElements[N]  /* offset (in Ts) from start of buffer */
-//      T *vectorElements                     /* start on a sizeof(T)-aligned boundary */
-//
-// The SerializationTraits class, to support types that can be different sizes, needs methods :
-//
-//   fromObjectsToIndirectBytes
-//   fromIndirectBytesToObjectCount
-//
-// to use instead of:
-//
-//   fromCountToIndirectBytes
-//   fromIndirectBytesToCount
-//
-// The fromObjects method has the objects, not just a count of the objects.
-// The ToObjectCount method has the buffer of chars, not just the size of the buffer. 
-// There may be a better generalization of DirectSerialization_Traits.
-//
-
-#include<Teuchos_SerializationTraits.hpp>
-
-template<typename Ordinal, typename T>
-class SerializationTraits<Ordinal,std::vector<T> >
-{
-  // static Ordinal fromCountToIndirectBytes(const Ordinal count) 
-  static Ordinal fromObjectsToIndirectBytes(const Ordinal count, const std::vector<T> buffer[])
-  {
-    Ordinal nbytes = 0;
-
-    int preamble = sizeof(int) * (1 + count);
-    int extra = preamble % sizeof(T);        // T alignment
-    int numT = 0;
-
-    for (int i=0; i < count; i++)
-      numT += buffer[i].size();
-
-    return preamble + extra + numT * sizeof(T);
-  }
-
-  static void serialize(
-    const Ordinal count, const std::vector<T> buffer[], const Ordinal bytes, char charBuffer[])
-  {
-    int preamble = sizeof(int) * (1 + count);
-    int extra = preamble % sizeof(T); 
-
-    int *info = reinterpret_cast<int *>(charBuffer);
-    int offset = (preamble + extra) / sizeof(T);
-    T* elements = reinterpret_cast<T *>(charBuffer) + offset;
-
-    *info++ = count;
-
-    for (int i=0; i < count; i++){
-      int nelements = buffer[i].size();
-      *info++ = offset;
-
-      for (j=0; j < nelements; j++)
-        *elements++ = buffer[i][j];
-
-      offset += nelements;
-    }
-  }
-
-  static Ordinal fromIndirectBytesToObjectCount(const Ordinal bytes, char charBuffer[]) 
-  {
-    int *buf = reinterpret_cast<int *>charBuffer;
-    return buf[0];
-  }
-
-  static void deserialize(
-    const Ordinal bytes, const char charBuffer[], const Ordinal count, std::vector<T> buffer[])
-  {
-    int preamble = sizeof(int) * (1 + count);
-    int extra = preamble % sizeof(T); 
-    int offset = (preamble + extra) / sizeof(T);
-
-    int *info = reinterpret_cast<int *>(charBuffer);
-    T* elements = reinterpret_cast<T *>(charBuffer) + offset;
-
-    info++;    // skip count
-
-    for (i=0; i < count; i++){
-      int offset = info[i];
-
-      if (i == count-1)   
-        nextOffset = bytes/sizeof(T);
-      else
-        nextOffset = info[i+1];
-
-      int length = nextOffset - offset;
-
-      buffer[i].resize(length);
-      for (int j=0; j < length; j++){
-        buffer[i].push_back(*elements++);
-      }
-    }
-  }
-};
-
-}
-
-#endif
-
 namespace Z2
 {
 
@@ -153,9 +41,9 @@ namespace Z2
 
 template <typename T, typename GNO, typename LNO>
 void AlltoAll(const Teuchos::Comm<int> &comm,
-              const Teuchos::ArrayRCP<T> &sendBuf,  // input
+              const Teuchos::ArrayView<T> &sendBuf,  // input
               LNO count,                      // input
-              Teuchos::ArrayRCP<T> &recvBuf)  // output - allocated in AlltoAll
+              Teuchos::ArrayRCP<T> &recvBuf)  // output - allocated here
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
@@ -167,7 +55,7 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
   Teuchos::ArrayRCP<T> inBuf = Teuchos::arcp<T>(nprocs * count);
 
   for (LNO i=0, offset = rank*count; i < count; i++, offset++){
-    inBuf.get()[offset] = sendBuf.get()[offset];
+    inBuf.get()[offset] = sendBuf.getRawPtr()[offset];
   }
 
   for (int p=0; p < nprocs; p++){
@@ -183,7 +71,7 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
 
   for (int p=0; p < nprocs; p++){
     if (p != rank)
-      Teuchos::readySend<int, T>(comm, Teuchos::ArrayView<T>(sendBuf.get() + p*count, count), p);
+      Teuchos::readySend<int, T>(comm, sendBuf.view(p*count, count), p);
   }
 
   if (req.size() > 0){
@@ -214,10 +102,10 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
 
 template <typename T, typename GNO, typename LNO>
 void AlltoAllv(const Teuchos::Comm<int> &comm,
-              const Teuchos::ArrayRCP<T> &sendBuf,      // input
-              const Teuchos::ArrayRCP<GNO> &sendCount,  // input
-              Teuchos::ArrayRCP<T> &recvBuf,      // output, allocated in AlltoAllv
-              Teuchos::ArrayRCP<GNO> &recvCount)  // output, allocated in AlltoAllv
+              const Teuchos::ArrayView<T> &sendBuf,      // input
+              const Teuchos::ArrayView<GNO> &sendCount,  // input
+              Teuchos::ArrayRCP<T> &recvBuf,      // output, allocated here
+              Teuchos::ArrayRCP<GNO> &recvCount)  // output, allocated here
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
@@ -237,7 +125,7 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
   Teuchos::ArrayRCP<T> inBuf = Teuchos::arcp<T>(totalIn);
 
   T *in = inBuf.get() + offsetIn;
-  T *out = sendBuf.get() + offsetOut;
+  T *out = sendBuf.getRawPtr() + offsetOut;
 
   for (LNO i=0; i < recvCount[rank]; i++){
     in[i] = out[i];
@@ -249,7 +137,8 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
 
   for (int p=0; p < nprocs; p++){
     if (p != rank && recvCount[p] > 0){
-      Teuchos::ArrayRCP<T> recvBufPtr(inBuf.get() + offsetIn, 0, recvCount[p], false);
+      Teuchos::ArrayRCP<T> recvBufPtr(inBuf.get() + offsetIn, 
+        0, recvCount[p], false);
       req.push_back(Teuchos::ireceive<int, T>(comm, recvBufPtr, p));
     }
     offsetIn += recvCount[p];
@@ -261,8 +150,8 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
 
   for (int p=0; p < nprocs; p++){
     if (p != rank && sendCount[p] > 0){
-      Teuchos::ArrayView<T> sendBufView(sendBuf.get() + offsetOut, sendCount[p]);
-      Teuchos::readySend<int, T>(comm, sendBufView, p);
+      Teuchos::readySend<int, T>(comm, 
+        sendBuf.view(offsetOut, sendCount[p]), p);
     }
     offsetOut += sendCount[p];
   }
@@ -272,6 +161,176 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
   recvBuf = inBuf;
 }
 
+// A version of AlltoAllv for sending std::vector<T>.
+//
+// There is no instantiation for std::vector<> in Teuchos::SerializationTraits. 
+// These four methods are what it might look like.
+//
+// Layout for std::vector<T> of size N -
+//      int numberOfVectors      
+//      int offsetToStartOfVectorElements[N] 
+//      T *vectorElements 
+//
+
+template <typename T>
+  size_t fromObjectsToIndirectBytes(const LNO count, std::vector<T> const v[])
+{
+  size_t nbytes = 0;
+
+  nbytes += sizeof(int) * (1 + count);   // preamble
+  nbytes += preamble % sizeof(T);        // T alignment
+
+  for (int i=0; i < count; i++)
+    nbytes += v[i].size();
+
+  return nbytes;
+}
+
+template <typename T>
+  void serialize(
+    const LNO count, const std::vector<T> v[], const size_t bytes, char buf[])
+{
+  int preamble = sizeof(int) * (1 + count);   // TODO make the ints LNOs
+  int extra = preamble % sizeof(T); 
+
+  int *info = reinterpret_cast<int *>(buf);
+  int offset = (preamble + extra) / sizeof(T);
+  T* elements = reinterpret_cast<T *>(buf) + offset;
+
+  *info++ = count;
+
+  for (int i=0; i < count; i++){
+    int nelements = v[i].size();
+    *info++ = offset;
+
+    for (j=0; j < nelements; j++)
+      *elements++ = v[i][j];
+
+    offset += nelements;
+  }
+}
+
+template <typename T>
+int fromIndirectBytesToObjectCount(const size_t bytes, char buf[]) 
+{
+  int *count = reinterpret_cast<int *>buf;
+  return buf[0];
+}
+
+template <typename T>
+  void deserialize(const size_t bytes, const char buf[], 
+     const LNO count, std::vector<T> v[])
+{
+  int preamble = sizeof(int) * (1 + count);
+  int extra = preamble % sizeof(T); 
+  int offset = (preamble + extra) / sizeof(T);
+
+  int *info = reinterpret_cast<int *>(buf);
+  T* elements = reinterpret_cast<T *>(buf) + offset;
+
+  info++;    // skip count
+
+  for (i=0; i < count; i++){
+    int offset = info[i];
+
+    if (i == count-1)   
+      nextOffset = bytes/sizeof(T);
+    else
+      nextOffset = info[i+1];
+
+    int length = nextOffset - offset;
+
+    v[i].clear();
+    v[i].resize(length);
+    for (int j=0; j < length; j++){
+      v[i].push_back(*elements++);
+    }
+  }
+}
+
+template <typename T, typename GNO, typename LNO>
+void AlltoAllv(const Teuchos::Comm<int> &comm,
+  const Teuchos::ArrayView<std::vector<T> > &sendBuf,
+  const Teuchos::ArrayView<LNO>             &sendCount,
+  Teuchos::ArrayRCP<std::vector<T> >        &recvBuf,
+  Teuchos::ArrayRCP<LNO>                    &recvCount)
+{
+  int nprocs = comm.getSize();
+
+  GNO *sendSize = new GNO [nprocs];
+  GNO totalSendSize = 0;
+
+  std::vector<T> *vptr = sendBuf.getRawPtr();
+
+  for (int p=0; p < nprocs; p++){
+    if (sendCount[p] > 0){
+      sendSize[p] = 
+        static_cast<GNO>(fromObjectsToIndirectBytes(sendCount[p], vptr));
+
+      vptr += sendCount[p];
+      totalSendSize += sendSize[p];
+    }
+    else{
+      sendSize[p] = 0;
+    }
+  }
+
+  char *sendChars = *buf = new char [totalSendSize];
+  vptr = sendBuf.getRawPtr();
+
+  for (int p=0; p < nprocs; p++){
+    if (sendCount[p] > 0){
+      serialize<T>(sendCount[p], vptr, sendSize[p], buf)
+      vptr += sendCount[p];
+      buf += sendSize[p];
+    }
+  }
+
+  Teuchos::ArrayView<char> sendCharsView(sendChars, totalSendSize);
+  Teuchos::ArrayView<GNO> sendSizeView(sendSize, nprocs);
+  Teuchos::ArrayRCP<char> recvChars;
+  Teuchos::ArrayRCP<GNO> recvSize;
+
+  AlltoAllv<char, GNO, LNO>(comm, sendCharsView, sendSizeView,
+                            recvChars, recvSize);
+
+  delete [] sendChars;
+  delete [] sendSize;
+
+  LNO *inCount = new LNO [nprocs];
+  buf = recvChars.get();
+  LNO totalInCount = 0;
+
+  for (int p=0; p < nprocs; p++){
+    if (recvSize[p] > 0){
+      inCount[p] = 
+        fromIndirectBytesToObjectCount(recvSize[p], buf);
+
+      buf += recvSize[p];
+      totalInCount += inCount[p];
+    }
+    else{
+      inCount[p] = 0;
+    }
+  }
+
+  std::vector<T> *inVectors = new std::vector<T> [totalInCount];
+
+  buf = recvChars.get();
+  vptr = inVectors;
+
+  for (int p=0; p < nprocs; p++){
+    if (recvSize[p] > 0){
+      deserialize(recvSize[p], buf, inCount[p], vptr);
+
+      buf += recvSize[p];
+      vptr += inCount[p];
+    }
+  }
+
+  recvBuf = Teuchos::ArrayRCP<std::vector<T> >(inVectors, totalInCount);
+  recvCount = Teuchos::ArrayRCP<LNO>(inCount, nprocs);
+}
 
 }                   // namespace Z2
 #endif
