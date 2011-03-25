@@ -19,7 +19,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
@@ -50,9 +50,8 @@ class HexFixture
   const unsigned                m_nx;
   const unsigned                m_ny;
   const unsigned                m_nz;
-  MetaData                      m_meta_data;
+  fem::FEMMetaData              m_fem_meta;
   BulkData                      m_bulk_data;
-  DefaultFEM                    m_fem;
   Part &                        m_hex_part;
   CoordFieldType &              m_coord_field ;
   CoordGatherFieldType &        m_coord_gather_field ;
@@ -87,7 +86,7 @@ class HexFixture
    * element.
    */
   Entity * elem( unsigned x , unsigned y , unsigned z ) const {
-    return m_bulk_data.get_entity( fem::element_rank(m_fem), elem_id(x, y, z) );
+    return m_bulk_data.get_entity( m_fem_meta.element_rank(), elem_id(x, y, z) );
   }
 
   /**

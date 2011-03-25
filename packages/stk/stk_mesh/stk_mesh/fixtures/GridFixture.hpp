@@ -13,7 +13,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -26,9 +26,8 @@ public:
 
   ~GridFixture();
 
-  MetaData& meta_data() { return m_meta_data; }
+  fem::FEMMetaData& fem_meta() { return m_fem_meta; }
   BulkData& bulk_data() { return m_bulk_data; }
-  DefaultFEM& fem() { return m_fem; }
 
   Part* quad_part() const { return & m_quad_part; }
   Part* dead_part() const { return & m_dead_part; }
@@ -37,11 +36,10 @@ public:
 
   const unsigned m_spatial_dimension;
 
-  MetaData      m_meta_data;
-  BulkData      m_bulk_data;
-  DefaultFEM    m_fem;
-  Part &        m_quad_part;
-  Part &        m_dead_part;
+  fem::FEMMetaData  m_fem_meta;
+  BulkData          m_bulk_data;
+  Part &            m_quad_part;
+  Part &            m_dead_part;
 };
 
 } // fixtures

@@ -10,6 +10,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -373,8 +374,8 @@ void Callback_Centroid_Coord( void *data,
 void getNeighbors( const mesh::Entity & entity,
                    std::set<const mesh::Entity*> & nodes )
 {
-  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(entity);
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+  stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(entity);
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   nodes.clear();
 
@@ -382,7 +383,7 @@ void getNeighbors( const mesh::Entity & entity,
 
   for ( ; iElem.first != iElem.second; ++iElem.first ) {
     mesh::Entity * elem = iElem.first->entity();
-    mesh::PairIterRelation iNode = elem->relations(stk::mesh::fem::NODE_RANK);
+    mesh::PairIterRelation iNode = elem->relations(fem_meta.node_rank());
     for ( ; iNode.first != iNode.second; ++iNode.first ) {
       mesh::Entity * node = iNode.first->entity();
       if (&entity != node) nodes.insert( node );

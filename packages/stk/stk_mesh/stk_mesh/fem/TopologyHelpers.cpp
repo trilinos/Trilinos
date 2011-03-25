@@ -21,6 +21,7 @@
 #include <stk_mesh/base/Bucket.hpp>
 
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
 
@@ -275,7 +276,7 @@ const CellTopologyData * get_subcell_nodes(const Entity & entity ,
   subcell_nodes.clear();
 
   // get cell topology
-  const CellTopologyData* celltopology = fem::get_cell_topology(entity).getCellTopologyData();
+  const CellTopologyData* celltopology = fem::get_cell_topology_new(entity).getCellTopologyData();
 
   //error checking
   {

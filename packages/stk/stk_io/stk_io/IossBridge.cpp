@@ -702,6 +702,17 @@ namespace stk {
       return extype ;
     }
 
+    void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
+				  stk::mesh::EntityRank type)
+    {
+      internal_part_processing(entity, meta.get_meta_data(meta), type);
+    }
+    void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta,
+				  stk::mesh::EntityRank type)
+    {
+      internal_part_processing(entity, meta.get_meta_data(meta), type);
+    }
+
     void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
 				  stk::mesh::EntityRank type)
     {

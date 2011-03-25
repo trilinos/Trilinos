@@ -16,13 +16,17 @@
 
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 
+using stk::mesh::fem::FEMMetaData;
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::Entity;
 using stk::mesh::EntityProc;
 using stk::mesh::fixtures::RingFixture;
-using stk::mesh::fem::NODE_RANK;
+
+namespace {
+
+const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
 {
@@ -34,10 +38,10 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   // Create the ring fixture we'll be testing
 
   RingFixture fixture(pm);
-  MetaData& meta = fixture.m_meta_data;
+  FEMMetaData& meta = fixture.m_meta_data;
   BulkData& bulk = fixture.m_bulk_data;
 
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fixture.m_fem);
+  const stk::mesh::EntityRank element_rank = meta.element_rank();
 
   meta.commit();
 
@@ -134,12 +138,14 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   }
 }
 
+}
+
 namespace stk {
 namespace unit_test {
 
 void test_shift_ring( RingFixture& ring, bool generate_aura=true )
 {
-  MetaData& meta = ring.m_meta_data;
+  FEMMetaData& meta = ring.m_meta_data;
   BulkData& bulk = ring.m_bulk_data;
 
   const unsigned p_rank     = bulk.parallel_rank();

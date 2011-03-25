@@ -56,7 +56,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
   BoxFixture::BOX local_box = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
   BoxFixture fixture(pm);
-  FEMMetaData& meta = fixture.meta_data();
+  FEMMetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
 
   const EntityRank element_rank = meta.element_rank();

@@ -18,6 +18,8 @@
 #include <stk_mesh/base/EntityComm.hpp>
 
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -195,7 +197,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 } // empty namespace
 
 void separate_and_skin_mesh(
-    stk::mesh::MetaData & meta,
+    stk::mesh::fem::FEMMetaData & fem_meta,
     stk::mesh::BulkData & mesh,
     stk::mesh::Part     & skin_part,
     std::vector< stk::mesh::EntityId > elements_to_separate,
@@ -219,13 +221,13 @@ void separate_and_skin_mesh(
       entities_to_separate,
       entities_closure);
 
-  stk::mesh::Selector select_owned = meta.locally_owned_part();
+  stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
 
   stk::mesh::EntityVector nodes;
   find_owned_nodes_with_relations_outside_closure( entities_closure, select_owned, nodes);
 
   //ask for new nodes to represent the copies
-  std::vector<size_t> requests(meta.entity_rank_count(), 0);
+  std::vector<size_t> requests(fem_meta.entity_rank_count(), 0);
   requests[NODE_RANK] = nodes.size();
 
   mesh.modification_begin();

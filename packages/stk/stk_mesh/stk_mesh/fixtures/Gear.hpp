@@ -15,7 +15,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
@@ -64,7 +64,7 @@ class Gear {
 
  public:
   Gear(
-       MetaData & meta,
+       fem::FEMMetaData & meta,
        BulkData & bulk,
        Part & gear,
        Part & cylindrical_coord,
@@ -96,8 +96,8 @@ class Gear {
   const size_t num_elements;
   const size_t num_nodes;
 
-  MetaData & meta_data;
-  BulkData & bulk_data;
+  fem::FEMMetaData & meta_data;
+  BulkData         & bulk_data;
 
   Part & gear_part;
 

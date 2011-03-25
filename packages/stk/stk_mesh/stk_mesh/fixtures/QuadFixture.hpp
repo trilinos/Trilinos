@@ -21,7 +21,7 @@
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -49,9 +49,8 @@ class QuadFixture
   ~QuadFixture() {}
 
   const unsigned                m_spatial_dimension;
-  MetaData                      m_meta_data ;
+  fem::FEMMetaData              m_fem_meta ;
   BulkData                      m_bulk_data ;
-  DefaultFEM                    m_fem;
   Part &                        m_quad_part ;
   CoordFieldType &              m_coord_field ;
   CoordGatherFieldType &        m_coord_gather_field ;
@@ -86,7 +85,7 @@ class QuadFixture
    * this element.
    */
   Entity * elem( unsigned x , unsigned y ) const
-  { return m_bulk_data.get_entity( fem::element_rank(m_fem), elem_id(x, y)); }
+  { return m_bulk_data.get_entity( m_fem_meta.element_rank(), elem_id(x, y)); }
 
   /**
    * Thinking in terms of a 2D grid of nodes, compute the (x, y) position
