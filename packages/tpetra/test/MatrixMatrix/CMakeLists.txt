@@ -20,7 +20,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     MatrixMatrix_UnitTests.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
-  COMM serial mpi
+  COMM serial
   DEPLIBS tpetraext tpetrainout
 )
 
@@ -40,7 +40,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix
 #EXEDEPS SimpleMatrixMatrix_test
 #)
-
+IF(NOT ${Trilinos_ENABLE_MPI})
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
 DEST_FILES
 cdt_m.mtx cdt_tce.mtx cdt_d.mtx
@@ -62,6 +62,7 @@ matrixsystems.xml
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix
 EXEDEPS MatrixMatrix_UnitTests
 )
+ENDIF(NOT ${Trilinos_ENABLE_MPI})
 
 
 
