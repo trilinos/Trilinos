@@ -49,7 +49,7 @@ Entity & declare_element( BulkData & mesh ,
                           const EntityId elem_id ,
                           const EntityId node_id[] )
 {
-  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(mesh);
+  FEMMetaData & fem_meta = FEMMetaData::get(mesh);
   const CellTopologyData * const top = fem_meta.get_cell_topology( part ).getCellTopologyData();
 
   ThrowErrorMsgIf(top == NULL,
@@ -192,7 +192,7 @@ void count_entities(
   const BulkData & mesh ,
   std::vector< EntityRank > & count )
 {
-  const size_t ntype = fem::FEMMetaData::get(mesh).entity_rank_count();
+  const size_t ntype = FEMMetaData::get(mesh).entity_rank_count();
 
   count.resize( ntype );
 
@@ -220,7 +220,7 @@ const CellTopologyData * get_subcell_nodes(const Entity & entity ,
   subcell_nodes.clear();
 
   // get cell topology
-  const CellTopologyData* celltopology = fem::get_cell_topology_new(entity).getCellTopologyData();
+  const CellTopologyData* celltopology = get_cell_topology_new(entity).getCellTopologyData();
 
   //error checking
   {
@@ -248,7 +248,7 @@ const CellTopologyData * get_subcell_nodes(const Entity & entity ,
   const unsigned* subcell_node_local_ids =
     celltopology->subcell[subcell_rank][subcell_identifier].node;
 
-  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(entity);
+  FEMMetaData & fem_meta = FEMMetaData::get(entity);
   const EntityRank node_rank = fem_meta.node_rank();
   PairIterRelation node_relations = entity.relations(node_rank);
 
@@ -282,7 +282,7 @@ int get_entity_subcell_id( const Entity & entity ,
   }
 
   // get nodal relations for entity
-  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(entity);
+  FEMMetaData & fem_meta = FEMMetaData::get(entity);
   const EntityRank node_rank = fem_meta.node_rank();
   PairIterRelation relations = entity.relations(node_rank);
 
@@ -372,6 +372,45 @@ bool comm_mesh_counts( BulkData & M ,
   counts.assign( global.begin() , global.begin() + entity_rank_count );
 
   return 0 < global[ entity_rank_count ] ;
+}
+
+bool element_side_polarity( const Entity & elem ,
+                            const Entity & side , int local_side_id )
+{
+  // 09/14/10:  TODO:  tscoffe:  Will this work in 1D?
+  FEMMetaData &fem_meta = FEMMetaData::get(elem);
+  const bool is_side = side.entity_rank() != fem_meta.edge_rank();
+  const CellTopologyData * const elem_top = get_cell_topology_new( elem ).getCellTopologyData();
+
+  const unsigned side_count = ! elem_top ? 0 : (
+                                is_side ? elem_top->side_count
+                                        : elem_top->edge_count );
+
+  ThrowErrorMsgIf( elem_top == NULL,
+                   "For Element[" << elem.identifier() << "], element has no defined topology");
+
+  ThrowErrorMsgIf( local_side_id < 0 || static_cast<int>(side_count) <= local_side_id,
+    "For Element[" << elem.identifier() << "], " <<
+    "side: " << print_entity_key(side) << ", " <<
+    "local_side_id = " << local_side_id <<
+    " ; unsupported local_side_id");
+
+  const CellTopologyData * const side_top =
+    is_side ? elem_top->side[ local_side_id ].topology
+            : elem_top->edge[ local_side_id ].topology ;
+
+  const unsigned * const side_map =
+    is_side ? elem_top->side[ local_side_id ].node
+            : elem_top->edge[ local_side_id ].node ;
+
+  const PairIterRelation elem_nodes = elem.relations( FEMMetaData::NODE_RANK );
+  const PairIterRelation side_nodes = side.relations( FEMMetaData::NODE_RANK );
+
+  bool good = true ;
+  for ( unsigned j = 0 ; good && j < side_top->node_count ; ++j ) {
+    good = side_nodes[j].entity() == elem_nodes[ side_map[j] ].entity();
+  }
+  return good ;
 }
 
 }

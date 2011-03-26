@@ -48,6 +48,12 @@ Entity & declare_element_side( BulkData & mesh ,
                                const unsigned local_side_id ,
                                Part * part = NULL );
 
+/** \brief  Determine the polarity of the local side,
+ *          more efficient if the local_side_id is known.
+ */
+bool element_side_polarity( const Entity & elem ,
+                            const Entity & side , int local_side_id = -1 );
+
 /** \brief  Create (or find) an element side.
  *
  *  The element must be a member of a Part with a CellTopology.

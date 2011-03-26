@@ -903,7 +903,10 @@ namespace stk {
         const stk::mesh::EntityRank edgerank = edge_rank(mesh::MetaData::get(part));
 	ThrowRequire(type == siderank || type == edgerank);
 
-	const CellTopologyData *const ef_topology = stk::io::get_cell_topology(part);
+	const CellTopologyData *const ef_topology = 
+              stk::io::get_cell_topology(part) ?
+              stk::io::get_cell_topology(part) :
+              stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
 	if (ef_topology == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part.name() << " returned NULL from get_cell_topology()";
@@ -1029,7 +1032,10 @@ namespace stk {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
         const stk::mesh::EntityRank elem_rank = element_rank(meta);
 
-	const CellTopologyData * const cell_top = stk::io::get_cell_topology( part );
+	const CellTopologyData * const cell_top = 
+              stk::io::get_cell_topology(part) ?
+              stk::io::get_cell_topology(part) :
+              stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
 	if (cell_top == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part.name() << " returned NULL from get_cell_topology()";
@@ -1308,7 +1314,10 @@ namespace stk {
 	std::vector<mesh::Entity *> elements;
 	size_t num_elems = get_entities(*part, bulk, elements);
 
-	const CellTopologyData * cell_topo = stk::io::get_cell_topology(*part);
+	const CellTopologyData * cell_topo = 
+              stk::io::get_cell_topology(*part) ?
+              stk::io::get_cell_topology(*part) :
+              stk::mesh::fem::FEMMetaData::get(*part).get_cell_topology(*part).getCellTopologyData();
 	if (cell_topo == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
