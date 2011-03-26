@@ -1413,20 +1413,20 @@ Scalar sparsedot(
 \
   template \
   void MatrixMatrix::Add( \
-    const CrsMatrix< SCALAR, LO , GO , NODE >& A, \
+    const CrsMatrix< SCALAR , LO , GO , NODE >& A, \
     bool transposeA, \
     SCALAR scalarA, \
-    const CrsMatrix< SCALAR, LO , GO , NODE >& B, \
+    const CrsMatrix< SCALAR , LO , GO , NODE >& B, \
     bool transposeB, \
     SCALAR scalarB, \
-    RCP<CrsMatrix< SCALAR, LO , GO , NODE > > C); \
+    RCP<CrsMatrix< SCALAR , LO , GO , NODE > > C); \
   \
-  template <> \
-  int MatrixMatrix::Add( \
-    RCP<const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > A, \
+  template  \
+  void MatrixMatrix::Add( \
+    const CrsMatrix<SCALAR, LO, GO, NODE>& A, \
     bool transposeA, \
-    double scalarA, \
-    RCP<CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > B, \
-    double scalarB ) \
+    SCALAR scalarA, \
+    CrsMatrix<SCALAR, LO, GO, NODE>& B, \
+    SCALAR scalarB ); \
 
 #endif // TPETRA_MATRIXMATRIX_DEF_HPP
