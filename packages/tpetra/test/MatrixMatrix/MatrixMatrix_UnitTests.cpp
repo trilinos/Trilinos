@@ -143,9 +143,11 @@ mult_test_results multiply_test(
 
   RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 1));
 
-  Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC);
+  Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, false);
+  computedC->globalAssemble();
   double cNorm = getNorm(C);
   Tpetra::MatrixMatrix::Add(*C, false, -1.0, *computedC, 1.0);
+  computedC->fillComplete();
   double compNorm = getNorm(computedC);
   mult_test_results results;
   results.epsilon = compNorm/cNorm;
