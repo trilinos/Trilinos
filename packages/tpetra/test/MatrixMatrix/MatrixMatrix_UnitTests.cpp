@@ -50,9 +50,7 @@ TEUCHOS_STATIC_SETUP(){
 typedef struct add_test_results_struct{
   double correctNorm;
   double norm1;
-  double norm2;
-  double epsilon1;
-  double epsilon2;
+  double epsilon;
 } add_test_results;
 
 typedef struct mult_test_results_struct{
@@ -81,14 +79,13 @@ template<class CrsMatrix_t> double getNorm(RCP<CrsMatrix_t> matrix){
 }
 
 template<class Ordinal>
-add_test_results add_test(
+add_test_results regular_add_test(
     RCP<Matrix_t > A,
     RCP<Matrix_t > B,
     bool AT,
     bool BT,
     RCP<Matrix_t > C,
-    RCP<const Comm<Ordinal> > comm,
-    Teuchos::FancyOStream& out)
+    RCP<const Comm<Ordinal> > comm)
 {
   add_test_results toReturn;
   toReturn.correctNorm = getNorm(C);
@@ -100,15 +97,34 @@ add_test_results add_test(
 
   computedC->fillComplete(A->getDomainMap(), A->getRangeMap());
   toReturn.norm1 = getNorm(computedC);
-  toReturn.epsilon1 = fabs(toReturn.correctNorm - toReturn.norm1);
+  toReturn.epsilon = fabs(toReturn.correctNorm - toReturn.norm1);
   
-  Tpetra::MatrixMatrix::Add(*A, false, 1.0, *B, 1.0);
-  B->describe(out, Teuchos::VERB_EXTREME);
-  toReturn.norm2 = getNorm(B);
-  toReturn.epsilon2 = fabs(toReturn.correctNorm - toReturn.norm2);
 
   return toReturn;
 
+}
+
+template<class Ordinal>
+add_test_results add_into_test(
+    RCP<Matrix_t > A,
+    RCP<Matrix_t > B,
+    bool AT,
+    bool BT,
+    RCP<Matrix_t > C,
+    RCP<const Comm<Ordinal> > comm)
+{
+  add_test_results toReturn;
+  toReturn.correctNorm = getNorm(C);
+
+  RCP<const Map<int,int, Kokkos::SerialNode> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, 1));
+  
+  Tpetra::MatrixMatrix::Add(*A, false, 1.0, *B, 1.0);
+  B->fillComplete();
+  toReturn.norm1 = getNorm(B);
+  toReturn.epsilon = fabs(toReturn.correctNorm - toReturn.norm1);
+
+  return toReturn;
 }
 
 template<class Ordinal>
@@ -237,12 +253,19 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       if(verbose){
         out << "Running add test for " << currentSystem.name() << std::endl;
       }
-      add_test_results results = add_test(A,B,AT,BT,C,comm, out);
-      TEST_COMPARE(results.epsilon1, <, epsilon)
-      TEST_COMPARE(results.epsilon2, <, epsilon)
-      out << "Correct Norm: " << results.correctNorm << std::endl;
-      out << "Norm 1: " << results.norm1 << std::endl;
-      out << "Norm 2: " << results.norm2 << std::endl;
+      add_test_results results = regular_add_test(A,B,AT,BT,C,comm);
+      TEST_COMPARE(results.epsilon, <, epsilon)
+      out << "Regular Add Test Results: " << std::endl;
+      out << "\tCorrect Norm: " << results.correctNorm << std::endl;
+      out << "\tNorm 1: " << results.norm1 << std::endl;
+      out << "\tEpsilon: " << results.epsilon << std::endl;
+      B = Reader<Matrix_t >::readFile(B_file, comm, node, false);
+      results = add_into_test(A,B,AT,BT,C,comm);
+      TEST_COMPARE(results.epsilon, <, epsilon)
+      out << "Add Into Test Results: " << std::endl;
+      out << "\tCorrect Norm: " << results.correctNorm << std::endl;
+      out << "\tNorm 1: " << results.norm1 << std::endl;
+      out << "\tEpsilon: " << results.epsilon << std::endl;
     }
   }   
 }

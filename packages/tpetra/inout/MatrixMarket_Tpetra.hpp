@@ -425,17 +425,19 @@ namespace Tpetra {
       readFile (const std::string& filename,
 		const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
 		const Teuchos::RCP<node_type>& pNode,
+    const bool fillComplete=true,
 		const bool tolerant=false,
 		const bool debug=false)
       {
 	std::ifstream in (filename.c_str());
-	return read (in, pComm, pNode, tolerant, debug);
+	return read (in, pComm, pNode, fillComplete, tolerant, debug);
       }
       
       static Teuchos::RCP<sparse_matrix_type>
       read (std::istream& in,	
 	    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
 	    const Teuchos::RCP<node_type>& pNode,
+      const bool fillComplete=true,
 	    const bool tolerant=false,
 	    const bool debug=false)
       {
@@ -496,7 +498,7 @@ namespace Tpetra {
 	
 	// Call fillComplete() with the appropriate domain and range
 	// maps, and return the sparse matrix.
-	return completeMatrix (triple);
+	return fillComplete ? completeMatrix (triple) : triple.pMatrix;
       }
     };
     

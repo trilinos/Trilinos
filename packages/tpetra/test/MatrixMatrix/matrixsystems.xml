@@ -47,7 +47,7 @@
 		<Parameter name="C" value="matrices/synRectc.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
-	</ParameterList> 
+	</ParameterList>  -->
 	<ParameterList name="synthetic add">
     <Parameter name="op" value="add" type="string"/>
 		<Parameter name="A" value="matrices/synadd1a.mtx" type="string"/>
@@ -55,7 +55,7 @@
 		<Parameter name="C" value="matrices/synadd1c.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
-	</ParameterList>  -->
+	</ParameterList>
 	<ParameterList name="small add">
     <Parameter name="op" value="add" type="string"/>
 		<Parameter name="A" value="matrices/smallAdda.mtx" type="string"/>
@@ -63,6 +63,5 @@
 		<Parameter name="C" value="matrices/smallAddc.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
-    <Parameter name="epsilon" value="1e-20" type="double"/>
 	</ParameterList>
 </ParameterList>

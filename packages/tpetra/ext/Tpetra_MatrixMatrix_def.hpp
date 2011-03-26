@@ -285,9 +285,12 @@ void Add(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
   Scalar scalarB )
 {
-  //
-  //This method forms the matrix-matrix sum B = scalarA * op(A) + scalarB * B, where
-
+  TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
+    "MatrixMatrix::Add ERROR, input matrix A.isFillComplete() is false; it is required to be true. (Result matrix B is not required to be isFillComplete()).");
+  TEST_FOR_EXCEPTION(B.isFillComplete() , std::runtime_error,
+    "MatrixMatrix::Add ERROR, input matrix B must not be fill complete!");
+  TEST_FOR_EXCEPTION(B.getProfileType()!=DynamicProfile, std::runtime_error,
+    "MatrixMatrix::Add ERROR, input matrix B must have a dynamic profile!");
   //Convience typedef
   typedef CrsMatrix<
     Scalar, 
@@ -295,70 +298,36 @@ void Add(
     GlobalOrdinal,
     Node,
     SpMatOps> CrsMatrix_t;
-
-  //A should already be Filled. It doesn't matter whether B is
-  //already Filled, but if it is, then its graph must already contain
-  //all nonzero locations that will be referenced in forming the
-  //sum.
-
-  TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix A.isFillComplete() is false; it is required to be true. (Result matrix B is not required to be isFillComplete()).");
-
-  //explicit tranpose A formed as necessary
   RCP<const CrsMatrix_t> Aprime = null;
-  if( transposeA )
-  {
-    RCP<CrsMatrix_t > transposeResult = null;
+  if( transposeA ){
+    RCP<CrsMatrix_t> transpose = null;
 	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
-      theTransposer.createTranspose(DoOptimizeStorage, transposeResult);
-    Aprime = transposeResult;
+    theTransposer.createTranspose(DoOptimizeStorage, transpose);
+    Aprime = transpose;
   }
   else{
     Aprime = rcpFromRef(A);
   }
+  size_t a_numEntries;
+  Array<GlobalOrdinal> a_inds(A.getNodeMaxNumRowEntries());
+  Array<Scalar> a_vals(A.getNodeMaxNumRowEntries());
+  GlobalOrdinal row;
 
-  size_t A_NumEntries;
-  Array<GlobalOrdinal> A_Indices(Aprime->getGlobalMaxNumRowEntries());
-  Array<Scalar> A_Values(Aprime->getGlobalMaxNumRowEntries());
-  ArrayView<const GlobalOrdinal> B_Indices;
-  ArrayView<const Scalar> B_Values;
-
-  size_t NumMyRows = B.getNodeNumRows();
-  GlobalOrdinal Row;
-
-  if( scalarB != ScalarTraits<Scalar>::zero() &&
-    scalarB != ScalarTraits<Scalar>::one())
-  {
+  if(scalarB != 1.0){
     B.scale(scalarB);
   }
-  
-  if( scalarA != ScalarTraits<Scalar>::zero()){
-    //Loop over B's rows and sum into
-    for( 
-      size_t i = OrdinalTraits<size_t>::zero(); 
-      i < NumMyRows;
-      ++i )
-    {
-	    Row = B.getRowMap()->getGlobalElement(i);
-      A_NumEntries = Aprime->getNumEntriesInGlobalRow(Row);
-      A_Indices.resize(A_NumEntries);
-      A_Values.resize(A_NumEntries);
-	    Aprime->getGlobalRowCopy(Row, A_Indices(), A_Values(), A_NumEntries);
-      if (scalarA != ScalarTraits<Scalar>::one()) {
-        for( 
-          size_t j = OrdinalTraits<size_t>::zero(); 
-          j < A_NumEntries; 
-          ++j ) 
-        {
-          A_Values[j] *= scalarA;
+
+  size_t numMyRows = B.getNodeNumRows();
+  if(scalarA){
+    for(LocalOrdinal i = 0; (size_t)i < numMyRows; ++i){
+      row = B.getRowMap()->getGlobalElement(i);
+      Aprime->getGlobalRowCopy(row, a_inds(), a_vals(), a_numEntries);
+      if(scalarA != 1.0){
+        for(size_t j =0; j<a_numEntries; ++j){
+          a_vals[j] *= scalarA;
         }
-      } 
-      if( B.isFillComplete() ) {//Sum In Values
-        B.sumIntoGlobalValues( Row, A_Indices, A_Values );
       }
-      else {
-        B.insertGlobalValues( Row, A_Indices, A_Values);
-      }
+      B.insertGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
     }
   }
 }
