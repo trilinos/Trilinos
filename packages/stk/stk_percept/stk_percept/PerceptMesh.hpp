@@ -401,7 +401,8 @@ namespace stk {
                                   ArrayType& cellNodes, unsigned dataStrideArg)
     {
       unsigned number_elems = bucket.size();
-      const CellTopologyData * const bucket_cell_topo_data = stk::mesh::fem::get_cell_topology(bucket).getCellTopologyData();
+      //const CellTopologyData * const bucket_cell_topo_data = stk::mesh::fem::get_cell_topology(bucket).getCellTopologyData();
+      const CellTopologyData * const bucket_cell_topo_data = get_cell_topology(bucket);
 
       CellTopology cell_topo(bucket_cell_topo_data);
       //unsigned numCells = number_elems;

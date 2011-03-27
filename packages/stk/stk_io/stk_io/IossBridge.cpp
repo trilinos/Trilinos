@@ -411,20 +411,34 @@ namespace stk {
 
     void set_cell_topology(stk::mesh::Part &part, const CellTopologyData * const cell_topology)
     {
+#ifdef USE_FEMMETADATA
+      //void set_cell_topology_new( Part &part, const CellTopologyData * const cell_topology);
+
+
+      stk::mesh::fem::set_cell_topology_new(part, cell_topology);
+#else
+
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       stk::mesh::set_cell_topology(part, cell_topology);
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       stk::mesh::fem::set_cell_topology(part, cell_topology);
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+
+#endif
     }
 
     const CellTopologyData *get_cell_topology(const stk::mesh::Part &part)
     {
+#ifdef USE_FEMMETADATA
+      return stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
+#else
+
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return stk::mesh::get_cell_topology(part);
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       return stk::mesh::fem::get_cell_topology(part).getCellTopologyData();
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#endif
     }
 
     void initialize_spatial_dimension(stk::mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names)

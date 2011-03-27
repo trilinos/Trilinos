@@ -69,6 +69,8 @@ CellTopology get_cell_topology_new( const Bucket & bucket);
 // TODO: Move to FEMBulkData once we create it. Remove the _new part of the func name
 CellTopology get_cell_topology_new( const Entity & entity);
 
+void set_cell_topology_new( Part &part, const CellTopologyData * const cell_topology);
+
 /** \brief  Declare a part with a given cell topology. This is just a convenient
             function that wraps FEMMetaData's declare_part.
  */

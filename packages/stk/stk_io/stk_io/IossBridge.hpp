@@ -14,6 +14,13 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
+
+// TODO: remove this and uses of USE_FEMMETADATA once the migration is done (srkenno@sandia.gov)
+#define USE_FEMMETADATA
+#ifdef USE_FEMMETADATA
+#include <stk_mesh/fem/FEMHelpers.hpp>
+#endif
+
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <Ioss_DBUsage.h>
 #include <Ioss_Field.h>
