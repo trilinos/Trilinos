@@ -46,6 +46,7 @@ namespace unit_tests {
 
 #define EXTRA_PRINT 0
 
+#if 0
 STKUNIT_UNIT_TEST(unit_uniformRefiner, hex8_hex8_8_1_0)
 {
   EXCEPTWATCH;
@@ -73,6 +74,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, hex8_hex8_8_1_0)
   eMesh.saveAs("junk.e");
   // end_demo
 }
+#endif
 
 //=============================================================================
 //=============================================================================

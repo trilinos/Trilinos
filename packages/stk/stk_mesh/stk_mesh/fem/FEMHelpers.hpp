@@ -71,6 +71,12 @@ CellTopology get_cell_topology_new( const Entity & entity);
 
 void set_cell_topology_new( Part &part, const CellTopologyData * const cell_topology);
 
+template<class Topology>
+inline void set_cell_topology_new(Part & part)
+{
+  stk::mesh::fem::set_cell_topology(stk::mesh::fem::FEMMetaData::get(part), part, fem::CellTopology(shards::getCellTopologyData<Topology>()));
+}
+
 /** \brief  Declare a part with a given cell topology. This is just a convenient
             function that wraps FEMMetaData's declare_part.
  */

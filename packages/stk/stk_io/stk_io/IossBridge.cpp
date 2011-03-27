@@ -407,8 +407,8 @@ namespace stk {
     stk::mesh::EntityRank side_rank(const stk::mesh::MetaData &meta)
     {
 #ifdef USE_FEMMETADATA
-      return stk::mesh::fem::FEMMetaData::get(meta).side_rank();
-
+      // TODO return stk::mesh::fem::FEMMetaData::get(meta).side_rank();
+      return stk::mesh::Face;
 #else
 #  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return stk::mesh::Face;
@@ -422,7 +422,10 @@ namespace stk {
     stk::mesh::EntityRank face_rank(const stk::mesh::MetaData &meta)
     {
 #ifdef USE_FEMMETADATA
-      return stk::mesh::fem::FEMMetaData::get(meta).face_rank();
+      // TODO
+      //return stk::mesh::fem::FEMMetaData::get(meta).face_rank();
+
+      return stk::mesh::Face;
 
 #else
 #  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -437,7 +440,9 @@ namespace stk {
     stk::mesh::EntityRank edge_rank(const stk::mesh::MetaData &meta)
     {
 #ifdef USE_FEMMETADATA
-      return stk::mesh::fem::FEMMetaData::get(meta).edge_rank();
+      // TODO
+      // return stk::mesh::fem::FEMMetaData::get(meta).edge_rank();
+      return stk::mesh::Edge;
 
 #else
 #  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -466,9 +471,6 @@ namespace stk {
     void set_cell_topology(stk::mesh::Part &part, const CellTopologyData * const cell_topology)
     {
 #ifdef USE_FEMMETADATA
-      //void set_cell_topology_new( Part &part, const CellTopologyData * const cell_topology);
-
-
       stk::mesh::fem::set_cell_topology_new(part, cell_topology);
 #else
 

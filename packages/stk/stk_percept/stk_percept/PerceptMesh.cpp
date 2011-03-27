@@ -1763,7 +1763,8 @@ namespace stk {
 
       stk::mesh::fem::FEMMetaData& femMeta = stk::mesh::fem::FEMMetaData::get(elem);
       const bool is_side = side_entity_rank != femMeta.edge_rank();
-      const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
+      //const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
+      const CellTopologyData * const elem_top = PerceptMesh::get_cell_topology(elem);
 
       const unsigned side_count = ! elem_top ? 0 : (
                                                     is_side ? elem_top->side_count
@@ -1818,7 +1819,8 @@ namespace stk {
 
       EntityRank needed_entity_rank = side.entity_rank();
 
-      const CellTopologyData * const cell_topo_data = fem::get_cell_topology(element).getCellTopologyData();
+      //const CellTopologyData * const cell_topo_data = fem::get_cell_topology(element).getCellTopologyData();
+      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(element);
 
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(Node);

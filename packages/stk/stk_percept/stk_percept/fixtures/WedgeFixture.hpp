@@ -94,14 +94,14 @@ namespace stk {
 
           SweepMesher quadMeshCopy;
           quadMeshCopy.CopyFromBasicMesh(tp2);
-          tp2.stkMeshCreate(parallel_machine);
+          //tp2.stkMeshCreate(parallel_machine);
           //tp2.writeSTKMesh("wedge-quad-0.e");
 
           // break all of the quads into tris
           tp2.breakAllElements<shards_Quadrilateral_4, shards_Triangle_3>();
           if(verbose) std::cout << "after break quad to tri\n";
           tp2.dump(true);
-          tp2.stkMeshCreate(parallel_machine);
+          //tp2.stkMeshCreate(parallel_machine);
           //tp2.writeSTKMesh("tp2-quad-tri.e");
 
           // sweep again to make a  wedge mesh
@@ -186,7 +186,7 @@ namespace stk {
 
           SweepMesher quadMeshCopy;
           quadMeshCopy.CopyFromBasicMesh(tp2);
-          tp2.stkMeshCreate(parallel_machine);
+          //tp2.stkMeshCreate(parallel_machine);
           //tp2.writeSTKMesh("wedge-quad-0.e");
 
           // break all of the quads into tris
@@ -195,7 +195,7 @@ namespace stk {
           if(verbose) std::cout << "after break quad to tri\n";
           tp2.dump(verbose);
           tp2.dump();
-          tp2.stkMeshCreate(parallel_machine);
+          //tp2.stkMeshCreate(parallel_machine);
           //tp2.writeSTKMesh("tp2-quad-tri.e");
 
           // sweep again to make a  wedge mesh
