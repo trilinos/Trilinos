@@ -72,7 +72,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, quad4_quad4_4_test_1)
     fixture.generate_mesh();
 
     percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-    eMesh.printInfo("quad fixture");
+    eMesh.printInfo("quad fixture", 2);
     eMesh.saveAs("quad_fixture.e");
   }
 }
