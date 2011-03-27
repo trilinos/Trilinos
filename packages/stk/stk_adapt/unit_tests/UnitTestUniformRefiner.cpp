@@ -46,6 +46,34 @@ namespace unit_tests {
 
 #define EXTRA_PRINT 0
 
+STKUNIT_UNIT_TEST(unit_uniformRefiner, hex8_hex8_8_1_0)
+{
+  EXCEPTWATCH;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  // start_demo_uniformRefiner_hex8_hex8_8_1
+
+  percept::PerceptMesh eMesh(3);
+
+  unsigned p_size = eMesh.getParallelSize();
+
+  // generate a 4x4x(4*p_size) mesh
+  std::string gmesh_spec = std::string("4x4x")+toString(4*p_size)+std::string("|bbox:0,0,0,1,1,1");
+  eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+
+//   Hex8_Hex8_8 break_hex_to_hex(eMesh);
+
+//   int scalarDimension = 0; // a scalar
+//   FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+
+  eMesh.commit();
+
+  //  UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+  //  breaker.doBreak();
+  eMesh.saveAs("junk.e");
+  // end_demo
+}
+
 //=============================================================================
 //=============================================================================
 //=============================================================================
