@@ -934,10 +934,15 @@ namespace stk {
         const stk::mesh::EntityRank edgerank = edge_rank(mesh::MetaData::get(part));
 	ThrowRequire(type == siderank || type == edgerank);
 
+#ifdef USE_FEMMETADATA
+        const CellTopologyData *const ef_topology = 
+          stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
+#else
 	const CellTopologyData *const ef_topology = 
               stk::io::get_cell_topology(part) ?
               stk::io::get_cell_topology(part) :
               stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
+#endif
 	if (ef_topology == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part.name() << " returned NULL from get_cell_topology()";
@@ -1063,10 +1068,15 @@ namespace stk {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
         const stk::mesh::EntityRank elem_rank = element_rank(meta);
 
+#ifdef USE_FEMMETADATA
+        const CellTopologyData * const cell_top = 
+          stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
+#else
 	const CellTopologyData * const cell_top = 
               stk::io::get_cell_topology(part) ?
               stk::io::get_cell_topology(part) :
               stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
+#endif
 	if (cell_top == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part.name() << " returned NULL from get_cell_topology()";
