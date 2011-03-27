@@ -34,13 +34,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS tpetraext
 )
 
-#PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
-#DEST_FILES
-#A.hb B.hb C.hb
-#SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix
-#EXEDEPS SimpleMatrixMatrix_test
-#)
-IF(NOT ${Trilinos_ENABLE_MPI})
+IF(NOT TPL_ENABLE_MPI )
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
 DEST_FILES
 cdt_m.mtx cdt_tce.mtx cdt_d.mtx
@@ -62,7 +56,7 @@ matrixsystems.xml
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix
 EXEDEPS MatrixMatrix_UnitTests
 )
-ENDIF(NOT ${Trilinos_ENABLE_MPI})
+ENDIF(NOT TPL_ENABLE_MPI )
 
 
 
