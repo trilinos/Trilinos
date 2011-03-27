@@ -331,31 +331,50 @@ namespace stk {
 
     bool invalid_rank(stk::mesh::EntityRank rank)
     {
+#ifdef USE_FEMMETADATA
+      return rank == mesh::InvalidEntityRank;
+#else
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return rank == (unsigned)mesh::EntityRankUndefined;
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       return rank == mesh::InvalidEntityRank;
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#endif
     }
 
     stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
     {
       if (mesh::MetaData::get(part).universal_part() == part) {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#ifdef USE_FEMMETADATA
+        return stk::mesh::fem::NODE_RANK;
+#else
+
+#  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 	return stk::mesh::Node;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 	return stk::mesh::fem::NODE_RANK;
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+
+#endif
       }
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return mesh::fem_entity_rank( part.primary_entity_rank() );
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#ifdef USE_FEMMETADATA
       return part.primary_entity_rank();
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#else
+
+#  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      return mesh::fem_entity_rank( part.primary_entity_rank() );
+#  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      return part.primary_entity_rank();
+#  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+
+#endif
+
     }
 
     stk::mesh::EntityRank element_rank(const stk::mesh::MetaData &meta)
     {
+#define SRK_FIXME 1
+#if SRK_FIXME
       stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
       if( fem_meta )
         return fem_meta->element_rank();
@@ -368,45 +387,80 @@ namespace stk {
         return stk::mesh::fem::element_rank(fem);
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       }
+
+#else
+
+#ifdef USE_FEMMETADATA
+      return stk::mesh::fem::FEMMetaData::get(meta).element_rank();
+#else
+#  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      return stk::mesh::Element;
+#  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
+      return stk::mesh::fem::element_rank(fem);
+#  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#endif
+
+#endif
     }
 
     stk::mesh::EntityRank side_rank(const stk::mesh::MetaData &meta)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#ifdef USE_FEMMETADATA
+      return stk::mesh::fem::FEMMetaData::get(meta).side_rank();
+
+#else
+#  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return stk::mesh::Face;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
       return stk::mesh::fem::side_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#endif
     }
 
     stk::mesh::EntityRank face_rank(const stk::mesh::MetaData &meta)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#ifdef USE_FEMMETADATA
+      return stk::mesh::fem::FEMMetaData::get(meta).face_rank();
+
+#else
+#  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return stk::mesh::Face;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
       return stk::mesh::fem::face_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#endif
     }
 
     stk::mesh::EntityRank edge_rank(const stk::mesh::MetaData &meta)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#ifdef USE_FEMMETADATA
+      return stk::mesh::fem::FEMMetaData::get(meta).edge_rank();
+
+#else
+#  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return stk::mesh::Edge;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
       return stk::mesh::fem::edge_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#endif
     }
 
-    stk::mesh::EntityRank node_rank(const stk::mesh::MetaData&)
+    stk::mesh::EntityRank node_rank(const stk::mesh::MetaData& meta)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#ifdef USE_FEMMETADATA
+      return stk::mesh::fem::FEMMetaData::get(meta).node_rank();
+#else
+
+#  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return stk::mesh::Node;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       return stk::mesh::fem::NODE_RANK;
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#endif
     }
 
     void set_cell_topology(stk::mesh::Part &part, const CellTopologyData * const cell_topology)
@@ -1239,6 +1293,7 @@ namespace stk {
 				    mesh::Part * const part ,
 				    const mesh::BulkData & bulk_data )
       {
+        //std::cout << "tmp write_side_data_to_ioss part= " << part->name() << std::endl;
 	const mesh::MetaData & meta_data = mesh::MetaData::get(*part);
 
 	std::vector<mesh::Entity *> sides ;
@@ -1443,6 +1498,7 @@ namespace stk {
       void output_face_set(Ioss::FaceSet *fs,
 			   const stk::mesh::BulkData &bulk)
       {
+        //std::cout << "tmp output_face_set " << std::endl;
 	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	size_t block_count = fs->block_count();
 	for (size_t i=0; i < block_count; i++) {
@@ -1457,6 +1513,7 @@ namespace stk {
       void output_edge_set(Ioss::EdgeSet *es,
 			   const stk::mesh::BulkData &bulk)
       {
+        //std::cout << "tmp output_edge_set " << std::endl;
 	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	size_t block_count = es->block_count();
 	for (size_t i=0; i < block_count; i++) {
