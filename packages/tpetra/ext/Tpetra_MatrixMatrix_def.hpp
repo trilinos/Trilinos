@@ -313,16 +313,16 @@ void Add(
   Array<Scalar> a_vals(A.getNodeMaxNumRowEntries());
   GlobalOrdinal row;
 
-  if(scalarB != 1.0){
+  if(scalarB != ScalarTraits<Scalar>::one()){
     B.scale(scalarB);
   }
 
   size_t numMyRows = B.getNodeNumRows();
-  if(scalarA){
+  if(scalarA != ScalarTraits<Scalar>::zero()){
     for(LocalOrdinal i = 0; (size_t)i < numMyRows; ++i){
       row = B.getRowMap()->getGlobalElement(i);
       Aprime->getGlobalRowCopy(row, a_inds(), a_vals(), a_numEntries);
-      if(scalarA != 1.0){
+      if(scalarA != ScalarTraits<Scalar>::one()){
         for(size_t j =0; j<a_numEntries; ++j){
           a_vals[j] *= scalarA;
         }
