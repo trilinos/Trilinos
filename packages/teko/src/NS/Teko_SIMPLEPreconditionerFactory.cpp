@@ -133,7 +133,8 @@ LinearOp SIMPLEPreconditionerFactory
      RCP<Epetra_FECrsMatrix> Hcrs=rcp(Hstate.BDP_->CreateFECrsMatrix());
      H=Thyra::epetraLinearOp(Hcrs);
 
-     buildExplicitSchurComplement = true;//NTS: Do I need this?
+     buildExplicitSchurComplement = true; // NTS: Do I need this? 
+                                          // Answer - no, but it is documenting whats going on here.
    }
    else {
       // get generic diagonal

@@ -55,51 +55,44 @@ using Teuchos::RCP;
 
 namespace Teko {
 
-DiagonalPrecondState::DiagonalPrecondState(){}
+DiagonalPrecondState::DiagonalPrecondState() {}
 
 /*****************************************************/
 
+DiagonalPreconditionerFactory::DiagonalPreconditionerFactory() {}
 
-DiagonalPreconditionerFactory::DiagonalPreconditionerFactory(){
+RCP<PreconditionerState>  DiagonalPreconditionerFactory::buildPreconditionerState() const
+{
+   return Teuchos::rcp(new DiagonalPrecondState()); 
 }
 
-
-RCP<PreconditionerState>  DiagonalPreconditionerFactory::buildPreconditionerState() const{
-   DiagonalPrecondState*  mystate = new DiagonalPrecondState(); 
-   return rcp(mystate);
-}
-
-
-LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,PreconditionerState & state) const{
-
+LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,PreconditionerState & state) const
+{
   // Sanity check the state
-  DiagonalPrecondState *MyState = dynamic_cast<DiagonalPrecondState *> (&state);
-  TEUCHOS_ASSERT(MyState != 0);
+  DiagonalPrecondState & MyState = Teuchos::dyn_cast<DiagonalPrecondState>(state);
 
   // Get the underlying Epetra_CrsMatrix, if we have one
-  RCP<const Epetra_Operator> eo=Thyra::get_Epetra_Operator(*lo);
+  Teuchos::RCP<const Epetra_Operator> eo=Thyra::get_Epetra_Operator(*lo);
   TEUCHOS_ASSERT(eo!=Teuchos::null);
-  const Epetra_CrsMatrix *MAT=dynamic_cast<const Epetra_CrsMatrix*>(&*eo);
-  TEUCHOS_ASSERT(MAT);
+  Teuchos::RCP<const Epetra_CrsMatrix> MAT = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(eo);
+  TEUCHOS_ASSERT(MAT!=Teuchos::null);
 
   // Create a new EpetraExt_PointToBlockDiagPermute for the state object, if we don't have one
-  EpetraExt_PointToBlockDiagPermute *BDP;
-  if(MyState->BDP_==Teuchos::null){
-    BDP=new EpetraExt_PointToBlockDiagPermute(*MAT);
+  Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP;
+  if(MyState.BDP_==Teuchos::null) {
+    BDP = Teuchos::rcp(new EpetraExt_PointToBlockDiagPermute(*MAT));
     BDP->SetParameters(List_);
     BDP->Compute();
-    MyState->BDP_=rcp(BDP);
+    MyState.BDP_ = BDP;
   }
 
   // Build the LinearOp object  (NTS: swapping the range and domain)
-  DiagonalPreconditionerOp *MyOp=new DiagonalPreconditionerOp(MyState->BDP_,lo->domain(),lo->range());
-  return rcp(MyOp);
+  LinearOp MyOp = Teuchos::rcp(new DiagonalPreconditionerOp(MyState.BDP_,lo->domain(),lo->range()));
+  return MyOp;
 }
 
-
-
-
-void DiagonalPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl){
+void DiagonalPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
+{
   List_=pl;
 
   // Reset default to invert mode if the user hasn't specified something else
@@ -107,6 +100,4 @@ void DiagonalPreconditionerFactory::initializeFromParameterList(const Teuchos::P
   SubList.set("apply mode",SubList.get("apply mode","invert"));
 }
 
-
 } // end namespace Teko
-

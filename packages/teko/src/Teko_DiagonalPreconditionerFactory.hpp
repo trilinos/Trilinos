@@ -71,8 +71,6 @@ public:
   Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP_;
 };
 
-
-
 /** \brief Preconditioner factory that for (block) diagonals of explicit operators.
   *
   * Preconditioner factory that for (block) diagonals of explicit operators.
@@ -86,10 +84,7 @@ public:
   //! @name Constructors.
   //@{
   
-  /** Build an empty Gauss-Seidel preconditioner factory
-   */
   DiagonalPreconditionerFactory();
-
 
   //@}
   
@@ -107,8 +102,6 @@ public:
 protected: 
   //! some members
   mutable Teuchos::ParameterList List_;
-  
-
 };
 
 } // end namespace Teko
