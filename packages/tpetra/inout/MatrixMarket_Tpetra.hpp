@@ -43,6 +43,7 @@
 #define __MatrixMarket_Tpetra_hpp
 
 #include "Tpetra_CrsMatrix.hpp"
+#include "MatrixMarket_raw.hpp"
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
 #include "MatrixMarket_util.hpp"
@@ -57,73 +58,6 @@
 
 namespace Tpetra {
   namespace MatrixMarket {
-
-    /// \class Adder
-    /// \author Mark Hoemmen
-    /// \brief Add entries read from file to Tpetra::CrsMatrix.
-    ///
-    /// This Adder assumes that entries are read in on MPI Rank 0.
-    /// fillComplete() will be called later (after this Adder is done)
-    /// to distribute the entries.  A more memory-scalable technique
-    /// would be to buffer and distribute (i,j,Aij) triples in
-    /// round-robin fashion, for each MPI rank to add.  We don't do
-    /// this here.
-    ///
-    /// Wrap this with a SymmetrizingAdder to get the desired
-    /// symmetrizing behavior.
-    template<class SparseMatrixType>
-    class Adder {
-    public:
-      typedef SparseMatrixType sparse_matrix_type;
-      typedef typename SparseMatrixType::scalar_type value_type;
-      /// \typedef index_type
-      ///
-      /// Indices of the sparse matrix are read in as global ordinals,
-      /// since Matrix Market files represent the whole matrix and
-      /// don't have a notion of distribution.
-      typedef typename SparseMatrixType::global_ordinal_type index_type;
-
-      /// Constructor
-      /// 
-      /// \param pMatrix [in/out] The sparse matrix to which to add
-      ///   entries.  Currently this only needs to be nonnull and
-      ///   valid on MPI Rank 0.  More advanced implementations may
-      ///   choose to do more clever things for memory scalability,
-      ///   though, so this should be nonnull and valid on all MPI
-      ///   ranks that partake of the sparse matrix.  (It normally
-      ///   would be, for a Tpetra::CrsMatrix.)
-      Adder (const Teuchos::RCP<sparse_matrix_type>& pMatrix) :
-	pMatrix_ (pMatrix), 
-	myRank_ (Teuchos::rank (*(pMatrix->getComm())))
-      {}
-
-      //! Set entry (i,j) of the sparse matrix to Aij
-      void 
-      operator() (const index_type i, const index_type j, const value_type& Aij)
-      {
-	using Teuchos::tuple;
-	if (myTurnToAdd())
-	  {
-	    TEST_FOR_EXCEPTION(pMatrix_.is_null(), std::logic_error, 
-			       "The sparse matrix has not been set up yet.  "
-			       "Call prepare() with the global number of rows "
-			       "in the sparse matrix, before calling operator().");
-	    // Matrix Market indices are 1-based, but
-	    // Tpetra::CrsMatrix wants zero-based indices.
-	    pMatrix_->insertGlobalValues (i-1, tuple(j-1), tuple(Aij));
-	  }
-      }
-
-    private:
-      //! Whether this MPI process should add the current matrix entry
-      bool myTurnToAdd () const { return myRank_ == 0; }
-
-      //! The sparse matrix to which to add entries
-      Teuchos::RCP<sparse_matrix_type> pMatrix_;
-      //! This MPI process' MPI rank
-      int myRank_;
-    };
-
 
     /// \class Reader
     /// \author Mark Hoemmen
@@ -284,15 +218,15 @@ namespace Tpetra {
       /// make because you're stuck using ancient compilers that don't
       /// support useful widgets like tuple (a.k.a. tr1::tuple).
       struct MatrixTriple {
-	MatrixTriple (const map_ptr& the_pDomainMap, 
-		      const map_ptr& the_pRangeMap, 
-		      const sparse_matrix_ptr& the_pMatrix) : 
-	  pDomainMap (the_pDomainMap), 
-	  pRangeMap (the_pRangeMap), 
-	  pMatrix (the_pMatrix) {}
+	MatrixTriple (const map_ptr& pDomainMap, 
+		      const map_ptr& pRangeMap, 
+		      const sparse_matrix_ptr& pMatrix) : 
+	  pDomainMap_ (pDomainMap), 
+	  pRangeMap_ (pRangeMap), 
+	  pMatrix_ (pMatrix) {}
 
-	map_ptr pDomainMap, pRangeMap;
-	sparse_matrix_ptr pMatrix;
+	map_ptr pDomainMap_, pRangeMap_;
+	sparse_matrix_ptr pMatrix_;
       };
 
       /// \brief Set up domain and range map and the sparse matrix.
@@ -316,10 +250,15 @@ namespace Tpetra {
       static MatrixTriple
       setUpMatrix (const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
 		   const Teuchos::RCP<node_type>& pNode,
-		   const Teuchos::Tuple<global_ordinal_type, 3>& dims)
+		   const Teuchos::Tuple<global_ordinal_type, 3>& dims,
+		   const bool debug=false)
       {
+	using Teuchos::null;
 	using Teuchos::RCP;
 	using Teuchos::rcp;
+	using std::cerr;
+	using std::endl;
+
 	// using Tpetra::createUniformContigMapWithNode;
 	// using Tpetra::createContigMapWithNode;
 	typedef local_ordinal_type LO;
@@ -328,6 +267,18 @@ namespace Tpetra {
 
 	const global_ordinal_type numRows = dims[0];
 	const global_ordinal_type numCols = dims[1];
+	
+	if (debug && Teuchos::rank (*pComm) == 0)
+	  {
+	    cerr << "-- Range map w/ numRows = " << numRows << endl;
+	    if (numRows == numCols)
+	      cerr << "-- Matrix is square: range map == domain map == row map" << endl;
+	    else
+	      {
+		cerr << "Domain map w/ numCols  = " << numCols << endl;
+		cerr << "Column map w/ numCols  = " << numCols << endl;
+	      }
+	  }
 
 	// Map to represent the range of the sparse matrix.  In our
 	// case, it also represents the distribution of rows of the
@@ -335,28 +286,44 @@ namespace Tpetra {
 	// because we are using a block row distribution, regardless
 	// of whether or not the matrix is square.  The row Map is
 	// always 1-1.
-	RCP<const map_type> pRangeMap = 
+	map_ptr pRangeMap = 
 	  createUniformContigMapWithNode<LO, GO, NT> (numRows, pComm, pNode);
+	  //createUniformContigMap<LO, GO> (numRows, pComm);
 
+	TEST_FOR_EXCEPTION(pRangeMap->getGlobalNumElements() != static_cast<global_size_t>(numRows),
+			   std::logic_error,
+			   "Range map claims to have " << pRangeMap->getGlobalNumElements() 
+			   << " elements, but there are " << numRows << " rows in the matrix."
+			   "  Please report this bug to the Tpetra developers.");
+	
 	// Map to represent the domain of the sparse matrix.  We only
-	// need this if the matrix is not square (numRows != numCols).
-	RCP<const map_type> pDomainMap =
+	// need this to be different than pRangeMap if the matrix is
+	// not square (numRows != numCols).
+	map_ptr pDomainMap = (numRows == numCols) ? pRangeMap : 
 	  createUniformContigMapWithNode<LO, GO, NT> (numCols, pComm, pNode);
 
+	TEST_FOR_EXCEPTION(pDomainMap->getGlobalNumElements() != static_cast<global_size_t>(numCols),
+			   std::logic_error,
+			   "Domain map claims to have " << pDomainMap->getGlobalNumElements() 
+			   << " elements, but there are " << numCols << " columns in the matrix."
+			   "  Please report this bug to the Tpetra developers.");
+
 	// (Column) Map to represent the set of columns owned by this
-	// MPI rank.  We don't need this if the matrix is square,
-	// since we can use the default in that case.  The column Map
-	// is _not_ 1-1 unless there is only 1 MPI rank.
+	// MPI rank.  We don't need this if the matrix is square, in
+	// which case we set it to null.  The column Map is _not_ 1-1
+	// unless there is only 1 MPI rank.
 	//
 	// Since we're setting up a block row distribution, each MPI
-	// rank owns all the columns: the local number of elements
-	// is the same as the global number of elements.
+	// rank owns all the columns: the local number of elements is
+	// the same as the global number of elements.  This means that
+	// the "elements" are "locally replicated," hence the "local
+	// map."
 	//
 	// FIXME (mfh 01 Feb 2011) Should check that casting numCols
 	// to size_t (the second argument) doesn't overflow.  It
 	// probably doesn't for the usual global_ordinal_type types.
-	RCP<const map_type> pColMap = 
-	  createContigMapWithNode<LO, GO, NT> (numCols, numCols, pComm, pNode);
+	map_ptr pColMap = (numRows == numCols) ? null : 
+	  createLocalMapWithNode<LO, GO, NT> (numCols, pComm, pNode);
 
 	// Set up the sparse matrix.  The range Map is the same as the
 	// row Map in this case, but the column Map may be different
@@ -385,6 +352,8 @@ namespace Tpetra {
       ///   the sparse matrix will be distributed)
       /// \param banner [in, nonnull and valid on Rank 0 only]
       /// \param triple [in/out, all MPI ranks]
+      /// \param debug [in] Whether to print verbose debug output
+      ///   to stderr.
       ///
       /// \return adder object [nonnull and valid on Rank 0 only]
       ///
@@ -392,7 +361,9 @@ namespace Tpetra {
       static Teuchos::RCP<adder_type>
       makeAdder (const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
 		 Teuchos::RCP<const Banner>& pBanner, 
-		 const MatrixTriple& triple)
+		 const Teuchos::Tuple<global_ordinal_type, 3>& dims,
+		 const MatrixTriple& triple,
+		 const bool debug=false)
       {
 	if (Teuchos::rank (*pComm) == 0)
 	  {
@@ -400,7 +371,7 @@ namespace Tpetra {
 	    using Teuchos::rcp;
 	    typedef Adder<sparse_matrix_type> raw_adder_type;
 
-	    RCP<raw_adder_type> pRaw (new raw_adder_type (triple.pMatrix));
+	    RCP<raw_adder_type> pRaw (new raw_adder_type (triple.pMatrix_, dims[0], dims[1], debug));
 	    return rcp (new adder_type (pRaw, pBanner->symmType()));
 	  }
 	else
@@ -413,10 +384,26 @@ namespace Tpetra {
       ///
       /// \note To be called globally (on all MPI ranks)
       static sparse_matrix_ptr
-      completeMatrix (const MatrixTriple& triple)
+      completeMatrix (const MatrixTriple& triple, const bool debug=false)
       {
-	triple.pMatrix->fillComplete (triple.pDomainMap, triple.pRangeMap);
-	return triple.pMatrix;
+	using std::cerr;
+	using std::endl;
+
+	// If the domain and range maps are identical, we can use the
+	// default fillComplete().
+	if (triple.pDomainMap_ == triple.pRangeMap_)
+	  {
+	    if (debug)
+	      cerr << "-- Calling fillComplete() with 0 arguments" << endl;
+	    triple.pMatrix_->fillComplete ();
+	  }
+	else
+	  { 
+	    if (debug)
+	      cerr << "-- Calling fillComplete(domainMap, rangeMap) with 2 arguments" << endl;
+	    triple.pMatrix_->fillComplete (triple.pDomainMap_, triple.pRangeMap_);
+	  }
+	return triple.pMatrix_;
       }
 
     public:
@@ -442,6 +429,9 @@ namespace Tpetra {
 	using Teuchos::RCP;
 	using Teuchos::rcp;
 	using Teuchos::Tuple;
+	using std::cerr;
+	using std::endl;
+
 	typedef Teuchos::ScalarTraits<scalar_type> STS;
 	const int myRank = Teuchos::rank (*pComm);
 
@@ -452,8 +442,8 @@ namespace Tpetra {
 	RCP<const Banner> pBanner = readBanner (in, lineNumber, pComm, tolerant);
 	Tuple<global_ordinal_type, 3> dims = 
 	  readCoordDims (in, lineNumber, pBanner, pComm, tolerant);
-	MatrixTriple triple = setUpMatrix (pComm, pNode, dims);
-	RCP<adder_type> pAdder = makeAdder (pComm, pBanner, triple);
+	MatrixTriple triple = setUpMatrix (pComm, pNode, dims, debug);
+	RCP<adder_type> pAdder = makeAdder (pComm, pBanner, dims, triple, debug);
 
 	// Read the sparse matrix entries.
 	//
@@ -496,7 +486,57 @@ namespace Tpetra {
 	
 	// Call fillComplete() with the appropriate domain and range
 	// maps, and return the sparse matrix.
-	return completeMatrix (triple);
+	sparse_matrix_ptr pMatrix = completeMatrix (triple, debug);
+	if (debug)
+	  {
+	    using Tpetra::global_size_t;
+	    
+	    // You're not supposed to call these until after
+	    // fillComplete() has been called, which is why we wait
+	    // until after completeMatrix() (which calls
+	    // fillComplete()) has been called.
+	    const global_size_t globalNumRows = pMatrix->getGlobalNumRows();
+	    const global_size_t globalNumCols = pMatrix->getGlobalNumCols();
+
+	    if (myRank == 0)
+	      {
+		cerr << "-- Matrix is "
+		     << pMatrix->getGlobalNumRows() 
+		     << " x " 
+		     << pMatrix->getGlobalNumCols()
+		     << " with " 
+		     << pMatrix->getGlobalNumEntries()
+		     << " entries, and index base " 
+		     << pMatrix->getIndexBase()
+		     << "." << endl;
+	      }
+	    Teuchos::barrier (*pComm);
+	    for (int p = 0; p < Teuchos::size (*pComm); ++p)
+	      {
+		if (myRank == p)
+		  {
+		    cerr << "-- Proc " << p << " owns " 
+			 << pMatrix->getNodeNumCols() 
+			 << " columns, and " 
+			 << pMatrix->getNodeNumEntries()
+			 << " entries." << endl;
+		  }
+		Teuchos::barrier (*pComm);
+	      }
+
+	    // Casting a positive signed integer (global_ordinal_type)
+	    // to an unsigned integer of no fewer bits (global_size_t)
+	    // shouldn't overflow.
+	    TEST_FOR_EXCEPTION(globalNumRows != static_cast<global_size_t>(dims[0]) || 
+			       globalNumCols != static_cast<global_size_t>(dims[1]),
+			       std::logic_error, 
+			       "The newly created Tpetra::CrsMatrix claims it is " 
+			       << globalNumRows << " x " << globalNumCols << ", "
+			       "but the Matrix Market file says it is " << dims[0]
+			       << " x " << dims[1] << ".  Please report this bug "
+			       "to the Tpetra developers.");
+	  }
+	return pMatrix;
       }
     };
     

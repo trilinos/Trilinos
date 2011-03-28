@@ -61,7 +61,19 @@ namespace Tpetra {
 
       /// \class Element
       /// \author Mark Hoemmen
-      /// \brief One structural nonzero of a sparse matrix
+      /// \brief An Element stores one entry of a sparse matrix.
+      ///
+      /// An array of Elements implements the so-called "array of
+      /// structs" representation of a coordinate format sparse
+      /// matrix.  An Element has a row and column index (each of type
+      /// Ordinal) and a value (of type Scalar).  Elements also have
+      /// equality and ordering comparisons.  The equality comparison
+      /// only tests the row and column index, and is intended to
+      /// simplify merging matrix entries with the same row and column
+      /// indices.  The ordering comparison means that std::sort of a
+      /// sequence of Elements will put them in an order suitable for
+      /// extracting the CSR (compressed sparse row) representation of
+      /// the sparse matrix.
       ///
       template<class Scalar, class Ordinal>
       class Element {
@@ -94,6 +106,11 @@ namespace Tpetra {
 	  }
 	}
 
+	/// \brief Merge rhs into this Element.
+	///
+	/// "Replace" means replace this Element's value with that of
+	/// rhs.  Otherwise, this Element's value is added to rhs's
+	/// value.
 	void merge (const Element& rhs, const bool replace=false) {
 	  if (rowIndex() != rhs.rowIndex() || colIndex() != rhs.colIndex())
 	    throw std::logic_error("Can only merge elements at the same "
@@ -104,8 +121,13 @@ namespace Tpetra {
 	    value_ += rhs.value_;
 	}
 
+	//! Row index (zero-based) of this Element.
 	Ordinal rowIndex() const { return rowIndex_; }
+
+	//! Column index (zero-based) of this Element.
 	Ordinal colIndex() const { return colIndex_; }
+
+	//! Value (A(rowIndex(), colIndex()) of this Element.
 	Scalar value() const { return value_; }
 
       private:
@@ -113,7 +135,16 @@ namespace Tpetra {
 	Scalar value_;
       };
 
-      //! Print out an Element to the given output stream
+      /// \brief Print out an Element to the given output stream.
+      ///
+      /// This method is suitable for printing a sparse matrix to a
+      /// Matrix Market file.  We try to print out floating-point
+      /// values with enough digits to reproduce the results, but in
+      /// general this routine does not promise that the matrix entry
+      /// later read in from this printing will be bitwise identical
+      /// to the matrix entry supplied as input.  There _are_ printing
+      /// algorithms that make this guarantee; we just haven't
+      /// implemented them yet here.
       template<class Scalar, class Ordinal>
       std::ostream& 
       operator<< (std::ostream& out, const Element<Scalar, Ordinal>& elt) 
@@ -158,7 +189,11 @@ namespace Tpetra {
 	    // Precision to which a Scalar should be written.
 	    out << std::setprecision (numDigits);
 	  }
-	out << elt.rowIndex() << " " << elt.colIndex() << " " << elt.value();
+	out << elt.rowIndex() << " " << elt.colIndex() << " ";
+	if (STS::isComplex)
+	  out << STS::real(elt.value()) << " " << STS::imag(elt.value());
+	else
+	  out << elt.value();
 	return out;
       }
 
@@ -170,20 +205,99 @@ namespace Tpetra {
 	typedef Element<Scalar, Ordinal> element_type;
 	typedef typename std::vector<element_type>::size_type size_type;
 
-	Adder () : numRows_(0), numCols_(0), numNonzeros_(0) {}
+	/// \brief Default constructor.
+	///
+	/// If you call the default constructor, we assume that you
+	/// want tolerant mode (in which the Adder tries to infer the
+	/// matrix dimensions and number of entries from the actual
+	/// matrix data, not from any metadata).  Tolerant mode is
+	/// similar to what Matlab does if you give it an ASCII file
+	/// of (i,j,Aij) triples.  It may get the matrix dimensions
+	/// (m,n) wrong if the lower right entry of the matrix is zero
+	/// and is not supplied explicitly by calling operator().
+	Adder () : 
+	  expectedNumRows_(0), 
+	  expectedNumCols_(0), 
+	  expectedNumEntries_(0), 
+	  seenNumRows_(0),
+	  seenNumCols_(0),
+	  seenNumEntries_(0), 
+	  tolerant_ (true),
+	  debug_ (false)
+	{}
 
-	//! Add an element to the sparse matrix at location (i,j) (one-based indexing).
-	void operator() (const Ordinal i, const Ordinal j, const Scalar& Aij) {
-	  // i and j are 1-based
+	/// \brief Standard constructor.
+	///
+	/// \param expectedNumRows [in] Number of rows in the matrix,
+	///   as specified by the matrix metadata.
+	///
+	/// \param expectedNumCols [in] Number of columns in the
+	///   matrix, as specified by the matrix metadata.
+	///
+	/// \param expectedNumEntries [in] Number of entries in the
+	///   matrix, as specified by the matrix metadata.
+	/// 
+	/// \param tolerant [in] Whether the "expected" metadata is
+	///   required to match what the read-in matrix entries tell
+	///   us.
+	///
+	/// \param debug [in] If true, we may print copious status
+	///   output for debugging purposes.
+	Adder (const Ordinal expectedNumRows, 
+	       const Ordinal expectedNumCols, 
+	       const Ordinal expectedNumEntries,
+	       const bool tolerant=false,
+	       const bool debug=false) : 
+	  expectedNumRows_(expectedNumRows), 
+	  expectedNumCols_(expectedNumCols), 
+	  expectedNumEntries_(expectedNumEntries), 
+	  seenNumRows_(0),
+	  seenNumCols_(0),
+	  seenNumEntries_(0), 
+	  tolerant_ (tolerant),
+	  debug_ (debug)
+	{}
+
+	/// \brief Add an entry to the sparse matrix.
+	///
+	/// If tolerant==false, this method will perform error
+	/// checking to ensure that the matrix data matches the
+	/// metadata.  For example, it will check that i and j are in
+	/// bounds, and that we haven't added more than the expected
+	/// number of matrix entries.  Regardless, this method will
+	/// update the "actual" metadata.
+	///
+	/// \param i [in] (1-based) row index
+	/// \param j [in] (1-based) column index	
+	/// \param Aij [in] Value of the entry A(i,j)
+	void 
+	operator() (const Ordinal i, const Ordinal j, const Scalar& Aij) 
+	{
+	  // Keep track of the rightmost column containing a matrix
+	  // entry, and the bottommost row containing a matrix entry.
+	  // This gives us a lower bound for the dimensions of the
+	  // matrix, and a check for the reported dimensions of the
+	  // matrix in the Matrix Market file.
+	  seenNumRows_ = std::max (seenNumRows_, i);
+	  seenNumCols_ = std::max (seenNumCols_, j);
+	  seenNumEntries_++;
+
+	  if (! tolerant)
+	    {
+	      TEST_FOR_EXCEPTION(i < 1 || j < 1 || i > seenNumRows_ || j > seenNumCols_, 
+				 std::invalid_argument, 
+				 "Matrix is " << seenNumRows_ << " x " << seenNumCols_ 
+				 << ", so entry A(" << i << "," << j << ") = " 
+				 << Aij << " is out of range.");
+	      TEST_FOR_EXCEPTION(seenNumEntries_ >= expectedNumEntries_, 
+				 std::invalid_argument,
+				 "Cannot add entry A(" << i << "," << j << ") = " 
+				 << Aij << " to matrix; already have expected "
+				 "number of entries " << expectedNumEntries_ 
+				 << ".");
+	    }
+	  // i and j are 1-based indices, but we store them as 0-based.
 	  elts_.push_back (element_type (i-1, j-1, Aij));
-	  // Keep track of the rightmost column containing a nonzero,
-	  // and the bottommost row containing a nonzero.  This gives us
-	  // a lower bound for the dimensions of the matrix, and a check
-	  // for the reported dimensions of the matrix in the Matrix
-	  // Market file.
-	  numRows_ = std::max(numRows_, i);
-	  numCols_ = std::max(numCols_, j);
-	  numNonzeros_++;
 	}
 
 	/// \brief Print the sparse matrix data.  
@@ -195,7 +309,9 @@ namespace Tpetra {
 	/// \param doMerge [in] Whether to merge entries before printing
 	/// \param replace [in] If merging, whether to replace duplicate
 	///   entries; otherwise their values are added together.
-	void print (std::ostream& out, const bool doMerge, const bool replace=false) {
+	void 
+	print (std::ostream& out, const bool doMerge, const bool replace=false) 
+	{
 	  if (doMerge)
 	    merge (replace);
 	  else
@@ -205,29 +321,47 @@ namespace Tpetra {
 	  std::copy (elts_.begin(), elts_.end(), iter_type (out, "\n"));
 	}
 
-	/// \brief Merge duplicate elements 
+	/// \brief Merge duplicate elements.
 	///
-	/// Merge duplicate elements of the sparse matrix, where
-	/// "duplicate" means at the same (i,j) location in the sparse
-	/// matrix.  Resize the array of elements to fit just the
-	/// "unique" (meaning "nonduplicate") elements.
+	/// Merge elements of the sparse matrix that have the same row
+	/// and column indices ("duplicates").  Resize the array of
+	/// elements to fit just the "unique" (not duplicate)
+	/// elements.
+	///
+	/// \param replace [in] If true, replace each duplicate
+	///   element with the next element sharing the same row and
+	///   column index.  This means that results will depend on
+	///   the order in which the duplicate elements were added.
+	///   Otherwise, duplicate elements have their values added
+	///   together; in that case, the result is independent (in
+	///   exact arithmetic, not in finite-precision arithmetic) of
+	///   their order.
 	///
 	/// \return (# unique elements, # removed elements)
+	///
+	/// \note This method does not change the "expected" or "seen"
+	///   numbers of entries, since both of those count entries
+	///   with the same row and column indices as separate
+	///   entries.
 	std::pair<size_type, size_type>
 	merge (const bool replace=false) 
 	{
 	  typedef typename std::vector<element_type>::iterator iter_type;
 
-	  // Start with a sorted container.  It may be sorted already,
-	  // but we just do the extra work.  Element objects sort in
-	  // lexicographic order of their (row, column) indices.
+	  // Start with a sorted container.  Element objects sort in
+	  // lexicographic order of their (row, column) indices, for
+	  // easy conversion to CSR format.  If you expect that the
+	  // elements will usually be sorted in the desired order, you
+	  // can check first whether they are already sorted.  We have
+	  // no such expectation, so we don't even bother to spend the
+	  // extra O(# entries) operations to check.
 	  std::sort (elts_.begin(), elts_.end());
 
-	  // Walk through the array in place, merging duplicates and
-	  // pushing unique elements up to the front of the array.  We
-	  // can't use std::unique for this because it doesn't let us
-	  // merge duplicate elements; it only removes them from the
-	  // sequence.
+	  // Walk through the array of elements in place, merging
+	  // duplicates and pushing unique elements up to the front of
+	  // the array.  We can't use std::unique for this because it
+	  // doesn't let us merge duplicate elements; it only removes
+	  // them from the sequence.
 	  size_type numUnique = 0;
 	  iter_type cur = elts_.begin();
 	  if (cur == elts_.end())
@@ -258,12 +392,34 @@ namespace Tpetra {
 	  }
 	}
 
+	//! A temporary const view of the entries of the matrix.
+	const std::vector<element_type>& getEntries() const { 
+	  return elts_; 
+	}
+
+	//! Clear all the added matrix entries and reset metadata.
+	void clear() {
+	  seenNumRows_ = 0;
+	  seenNumCols_ = 0;
+	  seenNumEntries_ = 0;
+	  elts_.resize (0);
+	}
+
       private:
-	Ordinal numRows_, numCols_, numNonzeros_;
+	Ordinal expectedNumRows_, expectedNumCols_, expectedNumEntries_;
+	Ordinal seenNumRows_, seenNumCols_, seenNumEntries_;
+	bool tolerant_;
+	bool debug_;
 	std::vector<element_type> elts_;
       };
 
-
+      /// \class Reader
+      /// \brief "Raw" reader for debugging a Matrix Market file.
+      ///
+      /// This class' methods are useful for examining the contents of
+      /// a Matrix Market file, and checking the integrity of its
+      /// data.  See MatrixMarket_Tpetra.hpp for a Matrix Market
+      /// reader that constructs a Tpetra::CrsMatrix object.
       template<class Scalar, class Ordinal>
       class Reader {
       public:
@@ -438,7 +594,9 @@ namespace Tpetra {
 	      err << "Failed to get first (banner) line";
 	      return std::make_pair (false, err.str());
 	    }
-
+	  // Construct and validate the "Banner" (matrix metadata,
+	  // including type and symmetry information, but not
+	  // dimensions).
 	  Banner banner (line, tolerant);
 	  if (banner.matrixType() != "coordinate")
 	    {
@@ -450,9 +608,10 @@ namespace Tpetra {
 	    }
 	  else if (! STS::isComplex && banner.dataType() == "complex")
 	    {
-	      err << "Matrix Market file contains complex-"
-		"valued data, but your chosen Scalar "
-		"type is real.";
+	      err << "The Matrix Market sparse matrix file contains complex-"
+		"valued data, but you are try to read the data into a sparse "
+		"matrix containing real values (your matrix's Scalar type is "
+		"real).";
 	      return std::make_pair (false, err.str());
 	    }
 	  else if (banner.dataType() != "real" && banner.dataType() != "complex")
@@ -463,11 +622,37 @@ namespace Tpetra {
 	    }
 	  if (debug)
 	    {
-	      cout << "Banner line:" << endl
-		   << banner << endl;
+	      cerr << "Banner line:" << endl << banner << endl;
 	    }
+	  
 	  // The rest of the file starts at line 2, after the banner line.
 	  size_t lineNumber = 2;
+
+	  // Read in the dimensions of the sparse matrix: (# rows, #
+	  // columns, # matrix entries (counting duplicates as
+	  // separate entries)).  The second element of the pair tells
+	  // us whether the values were gotten successfully.
+	  std::pair<Teuchos::Tuple<Ordinal, 3>, bool> dims = 
+	    reader.readDimensions (in, lineNumber, tolerant);
+	  if (! dims.second)
+	    {
+	      err << "Error reading Matrix Market sparse matrix "
+		"file: failed to read coordinate dimensions.";
+	      return std::make_pair (false, err.str());
+	    }
+	  // These are "expected" values.  The actual matrix entries
+	  // read from the input stream might not conform to their
+	  // constraints.  We allow such nonconformity only in
+	  // "tolerant" mode.
+	  const Ordinal numRows = dims.first[0];
+	  const Ordinal numCols = dims.first[1];
+	  const Ordinal numEntries = dims.first[2];
+	  if (debug)
+	    {
+	      cerr << "Reported dimensions: " << numRows << " x " << numCols 
+		   << ", with " << numEntries << " entries (counting possible "
+		   << "duplicates)." << endl;
+	    }
 
 	  // Make an "Adder" that knows how to add sparse matrix entries,
 	  // given a line of data from the file.
@@ -477,54 +662,33 @@ namespace Tpetra {
 	  // in symmetrically, if the Matrix Market banner line
 	  // specified a symmetry type other than "general".
 	  typedef SymmetrizingAdder<raw_adder_type> adder_type;
-	  RCP<raw_adder_type> rawAdder (new raw_adder_type);
+
+	  // The "raw" adder knows about the expected matrix
+	  // dimensions, but doesn't know about symmetry.
+	  RCP<raw_adder_type> rawAdder = 
+	    rcp (new raw_adder_type (numRows, numCols, numEntries, 
+				     tolerant, debug));
+	  // The symmetrizing adder knows about symmetry.
 	  adder_type adder (rawAdder, banner.symmType());
 
-	  if (banner.dataType() == "complex" && ! STS::isComplex)
-	    {
-	      err << "The Matrix Market sparse matrix file contains "
-		"complex-valued data, but you are trying to read"
-		" the data into a sparse matrix of real values.";
-	      return std::make_pair (false, err.str());
-	    }
 	  // Make a reader that knows how to read "coordinate" format
-	  // sparse matrix data.
+	  // sparse matrix data from the input stream.  It uses the
+	  // adder to add each entry to the sparse matrix as it is
+	  // read from the input stream.
 	  typedef CoordDataReader<adder_type, Ordinal, Scalar, STS::isComplex> reader_type;
 	  reader_type reader (adder);
 
-	  // Read in the dimensions of the sparse matrix:
-	  // (# rows, # columns, # structural nonzeros).
-	  // The second element of the pair tells us whether the values
-	  // were gotten successfully.
-	  std::pair<Teuchos::Tuple<Ordinal, 3>, bool> dims = 
-	    reader.readDimensions (in, lineNumber, tolerant);
-	  if (! dims.second)
-	    {
-	      err << "Error reading Matrix Market sparse matrix "
-		"file: failed to read coordinate dimensions.";
-	      return std::make_pair (false, err.str());
-	    }
-	  if (debug)
-	    {
-	      const Ordinal numRows = dims.first[0];
-	      const Ordinal numCols = dims.first[1];
-	      const Ordinal numNonzeros = dims.first[2];
-	      cout << "Dimensions of matrix: " << numRows << " x " << numCols 
-		   << ", with " << numNonzeros << " reported structural "
-		"nonzeros." << endl;
-	    }
-
 	  // Read the sparse matrix entries.  "results" just tells us if
 	  // and where there were any bad lines of input.  The actual
-	  // sparse matrix entries are stored in the Adder object.
+	  // sparse matrix entries are stored in the (raw) Adder object.
 	  std::pair<bool, std::vector<size_t> > results = 
 	    reader.read (in, lineNumber, tolerant, debug);
 	  if (debug)
 	    {
 	      if (results.first)
-		cout << "Matrix Market file successfully read" << endl;
+		cerr << "Matrix Market file successfully read" << endl;
 	      else 
-		cout << "Failed to read Matrix Market file" << endl;
+		cerr << "Failed to read Matrix Market file" << endl;
 	    }
 
 	  // Report any bad line number(s).
@@ -538,16 +702,16 @@ namespace Tpetra {
 		  return std::make_pair (false, err.str());
 		}
 	    }
-	  // We're done reading in the sparse matrix.  Now print out the
-	  // nonzero entry/ies.
+	  // We're done reading in the sparse matrix.  If we're in
+	  // "echo" mode, print out the matrix entries to stdout.  The
+	  // entries will have been symmetrized if applicable.
 	  if (echo)
 	    {
 	      const bool doMerge = false;
 	      const bool replace = false;
 	      rawAdder->print (cout, doMerge, replace);
+	      cout << endl;
 	    }
-	  cout << endl;
-
 	  return std::make_pair (true, err.str());
 	}
 
