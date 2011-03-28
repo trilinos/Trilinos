@@ -9,6 +9,8 @@
 #ifndef stk_algsup_CudaCall_hpp
 #define stk_algsup_CudaCall_hpp
 
+#ifdef STK_HAVE_CUDA
+
 #include <cuda.h>
 #include <cuda_runtime.h>
 
@@ -24,6 +26,7 @@ void stk_cuda_call(cudaError err , const char* name )
 
 #define CUDA_CALL( cuda_fn ) stk_cuda_call( cuda_fn , #cuda_fn )
 
+#endif
 
 #endif
 
