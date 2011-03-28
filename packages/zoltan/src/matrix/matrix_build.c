@@ -68,7 +68,10 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
   int i;
   int gno_size_for_dd;
   MPI_Datatype zoltan_gno_mpi_type;
-  int use_full_dd = (matrix->opts.speed == MATRIX_FULL_DD || request_GNOs);
+  int use_full_dd = (opt->speed == MATRIX_FULL_DD);
+  int fast_build_base = opt->fast_build_base;
+  matrix->opts.speed = opt->speed;  
+  matrix->opts.fast_build_base = opt->fast_build_base;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -124,33 +127,35 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
 
     /* Make our new numbering public */
     Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, NULL,  NULL, nX);
-    if (requested_GNOs) {
-      Zoltan_DD_Find(dd, requested_GIDs, (ZOLTAN_ID_PTR)requested_GNOs, NULL, NULL, 
-                     num_requested, NULL);
+    if (request_GNOs) {
+      Zoltan_DD_Find(dd, requested_GIDs, (ZOLTAN_ID_PTR) requested_GNOs,
+                     NULL, NULL, num_requested, NULL);
     }
   }
   else { /* We don't want to use the DD */
-    /* KDDKDD 2/10/11  Upon inspection of the code, I cannot understand
-     * KDDKDD 2/10/11  how this code can work when NUM_GID_ENTRIES>1.
-     * KDDKDD 2/10/11  I guess the assumption is that, if a user sets the
+     /*
+     * KDDKDD 2/10/11  This code cannot work when NUM_GID_ENTRIES>1.
+     * KDDKDD 2/10/11  The assumption is that, if a user sets the
      * KDDKDD 2/10/11  appropriate parameter to enable this code, the user
      * KDDKDD 2/10/11  knows that his GIDs are compatible with integers.
-     *
-     * This code only executes if GRAPH_BUILD_TYPE is FAST (meaning gids are
-     *   are integers from 0 to ngids-1) or NO_REDIST (FAST + there are no
-     *   duplicate edges).   LARIESEN
      */
     if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(ZOLTAN_ID_TYPE)){
       xGNO = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(nX*sizeof(ZOLTAN_GNO_TYPE));
-      if (xGNO == NULL)
+      if (nX && xGNO == NULL)
         MEMORY_ERROR;
-      for (i=0; i < nX; i++){
-        xGNO[i] = (ZOLTAN_GNO_TYPE)xGID[i];
-      }
+      for (i=0; i < nX; i++)
+        xGNO[i] = (ZOLTAN_GNO_TYPE)xGID[i] - fast_build_base;
     }
-    else{
+    else {
       xGNO = (ZOLTAN_GNO_TYPE *)xGID;
+      if (fast_build_base)
+        for (i = 0; i < nX; i++)
+          xGNO[i] -= fast_build_base;
     }
+
+    for (i = 0; i < num_requested; i++)
+      requested_GNOs[i] = (ZOLTAN_GNO_TYPE)requested_GIDs[i]
+                        - fast_build_base;
      
     tmp = (ZOLTAN_GNO_TYPE)nX; 
     MPI_Allreduce(&tmp, &matrix->globalX, 1, zoltan_gno_mpi_type, MPI_SUM, zz->Communicator);
@@ -232,13 +237,16 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
       if (matrix->nPins && !matrix->pinGNO){
         MEMORY_ERROR;
       }
-      for (i=0; i < matrix->nPins; i++){
-        matrix->pinGNO[i] = (ZOLTAN_GNO_TYPE)pinID[i];
-      }
+      for (i=0; i < matrix->nPins; i++)
+        matrix->pinGNO[i] = (ZOLTAN_GNO_TYPE)pinID[i] - fast_build_base;
+      
       ZOLTAN_FREE(&pinID);
     }
     else{
       matrix->pinGNO = (ZOLTAN_GNO_TYPE *) pinID;
+      if (fast_build_base)
+        for (i=0; i < matrix->nPins; i++)
+          matrix->pinGNO[i] -= fast_build_base;
       pinID = NULL;
     }
   }
@@ -302,8 +310,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
  End:
   ZOLTAN_FREE(&xpid);
   ZOLTAN_FREE(&xLID);
-  if (xGNO != (ZOLTAN_GNO_TYPE *)xGID)
-    ZOLTAN_FREE(&xGNO);
+  ZOLTAN_FREE(&xGNO);
   ZOLTAN_FREE(&xGID);
   ZOLTAN_FREE(&xwgt);
   ZOLTAN_FREE(&Input_Parts);
@@ -406,7 +413,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
   if (hypergraph_callbacks) {
     matrix->redist = 1;
-    if (use_full_dd)
+    if (use_full_dd || ((ZOLTAN_ID_PTR) *xGNO != *xGID))
       ZOLTAN_FREE(xGID);
     else
       *xGID = NULL;
@@ -474,7 +481,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
     /* Not Useful anymore */
     ZOLTAN_FREE(xLID);
-    if (use_full_dd)
+    if (use_full_dd || ((ZOLTAN_ID_PTR) *xGNO != *xGID))
       ZOLTAN_FREE(xGID);
     else
       *xGID = NULL;

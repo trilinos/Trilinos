@@ -149,7 +149,7 @@ void separate_BC_eqns(const fei::FillableMat& mat,
         bcVals.insert(viter, val);
       }
       catch(...) {
-        FEI_CERR << "separate_BC_eqns ERROR, failed to find coef for eqn " << eqn;
+        fei::console_out() << "separate_BC_eqns ERROR, failed to find coef for eqn " << eqn;
         throw;
       }
     }
@@ -244,7 +244,7 @@ int remove_couplings(fei::FillableMat& mat)
   }
 
   if (levelsOfCoupling > 1) {
-    FEI_CERR << "fei::removeCouplings WARNING, levelsOfCoupling="
+    fei::console_out() << "fei::removeCouplings WARNING, levelsOfCoupling="
       << levelsOfCoupling << " (Each level of coupling means that a slave DOF "
       << "depends on a master which is itself a slave.) Behavior is not well "
       << "understood for levelsOfCoupling greater than 1..."<<FEI_ENDL;

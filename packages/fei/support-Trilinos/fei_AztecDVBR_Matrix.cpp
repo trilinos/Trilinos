@@ -201,7 +201,7 @@ int AztecDVBR_Matrix::getNumBlocksPerRow(int blkRow, int& nnzBlksPerRow) const {
    int index;
 
    if (!inUpdate(blkRow, index)) {
-      FEI_CERR << "AztecDVBR_Matrix::getNumBlocksPerRow: ERROR: blkRow "
+      fei::console_out() << "AztecDVBR_Matrix::getNumBlocksPerRow: ERROR: blkRow "
            << blkRow << " not in local update list." << FEI_ENDL;
       return(1);
    }
@@ -239,7 +239,7 @@ int AztecDVBR_Matrix::getNumNonzerosPerRow(int blkRow, int& nnzPerRow) const {
    int index;
 
    if (!inUpdate(blkRow, index)) {
-      FEI_CERR << "AztecDVBR_Matrix::getNumNonzerosPerRow: ERROR: blkRow "
+      fei::console_out() << "AztecDVBR_Matrix::getNumNonzerosPerRow: ERROR: blkRow "
            << blkRow << " not in local update list." << FEI_ENDL;
       return(1);
    }
@@ -276,7 +276,7 @@ int AztecDVBR_Matrix::getBlockSize(int blkRow, int blkCol,
    ptCols = 0;
 
    if (!inUpdate(blkRow, index)) {
-      FEI_CERR << "AztecDVBR_Matrix::getBlockSize: ERROR: blkRow "
+      fei::console_out() << "AztecDVBR_Matrix::getBlockSize: ERROR: blkRow "
            << blkRow << " not in local update list." << FEI_ENDL;
       return(1);
    }
@@ -337,7 +337,7 @@ int AztecDVBR_Matrix::getBlockRow(int blkRow,
    int index;
 
    if (!inUpdate(blkRow, index)) {
-      FEI_CERR << "AztecDVBR_Matrix::getBlockRow: ERROR: blkRow "
+      fei::console_out() << "AztecDVBR_Matrix::getBlockRow: ERROR: blkRow "
            << blkRow << " not in local update list." << FEI_ENDL;
       return(1);
    }
@@ -399,7 +399,7 @@ int AztecDVBR_Matrix::putBlockRow(int blkRow,
    int index;
 
    if (!inUpdate(blkRow, index)) {
-      FEI_CERR << "AztecDVBR_Matrix::putBlockRow: ERROR: blkRow "
+      fei::console_out() << "AztecDVBR_Matrix::putBlockRow: ERROR: blkRow "
            << blkRow << " not in local update list." << FEI_ENDL;
       return(1);
    }
@@ -447,7 +447,7 @@ int AztecDVBR_Matrix::sumIntoBlockRow(int blkRow,
   int index;
 
   if (!inUpdate(blkRow, index)) {
-    FEI_CERR << "AztecDVBR_Matrix::sumIntoBlockRow: ERROR: blkRow "
+    fei::console_out() << "AztecDVBR_Matrix::sumIntoBlockRow: ERROR: blkRow "
 	 << blkRow << " not in local update list." << FEI_ENDL;
     return(1);
   }
@@ -465,7 +465,7 @@ int AztecDVBR_Matrix::sumIntoBlockRow(int blkRow,
 			      Amat_->bpntr[index], Amat_->bpntr[index+1]-1);
 
     if (indb < 0) {
-      FEI_CERR << "AztecDVBR_Matrix::sumIntoBlockRow: blk col "
+      fei::console_out() << "AztecDVBR_Matrix::sumIntoBlockRow: blk col "
 	   << blkColInds[blk] << " not found in row " << blkRow << FEI_ENDL;
       abort();
     }
@@ -912,7 +912,7 @@ void AztecDVBR_Matrix::setBindx(int nnzBlks, int* blkColInds) {
 
 //==============================================================================
 void AztecDVBR_Matrix::messageAbort(const char* mesg) const {
-   FEI_CERR << "AztecDVBR_Matrix: ERROR: " << mesg << " Aborting." << FEI_ENDL;
+   fei::console_out() << "AztecDVBR_Matrix: ERROR: " << mesg << " Aborting." << FEI_ENDL;
    abort();
 }
 

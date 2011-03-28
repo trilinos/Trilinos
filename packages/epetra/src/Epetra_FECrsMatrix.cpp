@@ -556,15 +556,16 @@ int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int* rows,
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
+int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete, Epetra_CombineMode combineMode)
 {
-  return( GlobalAssemble(DomainMap(), RangeMap(), callFillComplete) );
+  return( GlobalAssemble(DomainMap(), RangeMap(), callFillComplete), combineMode );
 }
 
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
                                        const Epetra_Map& range_map,
-                                       bool callFillComplete)
+                                       bool callFillComplete,
+                                       Epetra_CombineMode combineMode)
 {
   if (Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
     if (callFillComplete) {
@@ -658,7 +659,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
 
   Epetra_Export* exporter = new Epetra_Export(tempMat->RowMap(), RowMap());
 
-  EPETRA_CHK_ERR(Export(*tempMat, *exporter, Add));
+  EPETRA_CHK_ERR(Export(*tempMat, *exporter, combineMode));
 
   if(callFillComplete) {
     EPETRA_CHK_ERR(FillComplete(domain_map, range_map));
@@ -668,8 +669,8 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
   if (!useNonlocalMatrix_) {
     for(int i=0; i<numNonlocalRows_; ++i) {
       for(int j=0; j<nonlocalRowLengths_[i]; ++j) {
- nonlocalCols_[i][j] = 0;
- nonlocalCoefs_[i][j] = 0.0;
+        nonlocalCols_[i][j] = 0;
+        nonlocalCoefs_[i][j] = 0.0;
       }
       nonlocalRowLengths_[i] = 0;
     }

@@ -45,6 +45,7 @@
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
 #include "MatrixMarket_util.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 #include <algorithm>
@@ -94,7 +95,7 @@ namespace Tpetra {
 	}
 
 	void merge (const Element& rhs, const bool replace=false) {
-	  if (*this != rhs)
+	  if (rowIndex() != rhs.rowIndex() || colIndex() != rhs.colIndex())
 	    throw std::logic_error("Can only merge elements at the same "
 				   "location in the sparse matrix");
 	  else if (replace)
@@ -218,7 +219,8 @@ namespace Tpetra {
 	  typedef typename std::vector<element_type>::iterator iter_type;
 
 	  // Start with a sorted container.  It may be sorted already,
-	  // but we just do the extra work.
+	  // but we just do the extra work.  Element objects sort in
+	  // lexicographic order of their (row, column) indices.
 	  std::sort (elts_.begin(), elts_.end());
 
 	  // Walk through the array in place, merging duplicates and
@@ -265,21 +267,156 @@ namespace Tpetra {
       template<class Scalar, class Ordinal>
       class Reader {
       public:
-	static void
-	readFile (const std::string& filename,
-		  const bool tolerant=false,
+	/// \brief Read the sparse matrix from the given file.
+	///
+	/// This is a collective operation.  Only Rank 0 opens the
+	/// file and reads data from it, but all ranks participate and
+	/// wait for the final result.
+	///
+	/// \note This whole "raw" reader is meant for debugging and
+	///   diagnostics of syntax errors in the Matrix Market file;
+	///   it's not performance-oriented.  That's why we do all the
+	///   broadcasts of and checks for "success".
+	static bool
+	readFile (const Teuchos::Comm<int>& comm,
+		  const std::string& filename,
+		  const bool echo,
+		  const bool tolerant,
 		  const bool debug=false)
 	{
-	  std::ifstream in (filename.c_str());
-	  TEST_FOR_EXCEPTION(!in, std::runtime_error,
+	  using std::cerr;
+	  using std::endl;
+
+	  const int myRank = Teuchos::rank (comm);
+	  // Teuchos::broadcast doesn't accept a bool; we use an int
+	  // instead, with the usual 1->true, 0->false Boolean
+	  // interpretation.
+	  int readFile = 0;
+	  Teuchos::RCP<std::ifstream> in; // only valid on Rank 0
+	  if (myRank == 0)
+	    {
+	      if (debug)
+		cerr << "Attempting to open file \"" << filename 
+		     << "\" on Rank 0...";
+	      in = Teuchos::rcp (new std::ifstream (filename.c_str()));
+	      if (! *in)
+		{
+		  readFile = 0;
+		  if (debug)
+		    cerr << "failed." << endl;
+		}
+	      else
+		{
+		  readFile = 1;
+		  if (debug)
+		    cerr << "succeeded." << endl;
+		}
+	    }
+	  Teuchos::broadcast (comm, 0, &readFile);
+	  TEST_FOR_EXCEPTION(! readFile, std::runtime_error,
 			     "Failed to open input file \"" + filename + "\".");
-	  return read (in, tolerant, debug);
+	  // Only Rank 0 will try to dereference "in".
+	  return read (comm, in, echo, tolerant, debug);
 	}
-      
-	static void
-	read (std::istream& in,	
-	      const bool tolerant=false,
+
+
+	/// \brief Read the sparse matrix from the given input stream.
+	///
+	/// This is a collective operation.  Only Rank 0 reads from
+	/// the given input stream, but all ranks participate and wait
+	/// for the final result.
+	///
+	/// \note This whole "raw" reader is meant for debugging and
+	///   diagnostics of syntax errors in the Matrix Market file;
+	///   it's not performance-oriented.  That's why we do all the
+	///   broadcasts of and checks for "success".
+	static bool
+	read (const Teuchos::Comm<int>& comm,
+	      const Teuchos::RCP<std::istream>& in,
+	      const bool echo,
+	      const bool tolerant,
 	      const bool debug=false)
+	{
+	  using std::cerr;
+	  using std::endl;
+
+	  const int myRank = Teuchos::rank (comm);
+	  std::pair<bool, std::string> result;
+	  int msgSize = 0; // Size of error message (if any)
+	  if (myRank == 0)
+	    {
+	      if (in.is_null())
+		{
+		  result.first = false;
+		  result.second = "Input stream is null on Rank 0";
+		}
+	      else
+		{
+		  if (debug)
+		    cerr << "About to read from input stream on Rank 0" << endl;
+		  result = readOnRank0 (*in, echo, tolerant, debug);
+		  if (debug)
+		    {
+		      if (result.first)
+			cerr << "Successfully read sparse matrix from "
+			  "input stream on Rank 0" << endl;
+		      else
+			cerr << "Failed to read sparse matrix from input "
+			  "stream on Rank 0" << endl;
+		    }
+		}
+	      if (result.first)
+		msgSize = 0;
+	      else
+		msgSize = result.second.size();
+	    }
+	  int success = result.first ? 1 : 0;
+	  Teuchos::broadcast (comm, 0, &success);
+	  if (! success)
+	    {
+	      if (! tolerant)
+		{
+		  // Tell all ranks how long the error message is, so
+		  // they can make space for it in order to receive
+		  // the broadcast of the error message.
+		  Teuchos::broadcast (comm, 0, &msgSize);
+
+		  if (msgSize > 0)
+		    {
+		      std::string errMsg (msgSize, ' ');
+		      if (myRank == 0)
+			std::copy (result.second.begin(), result.second.end(),
+				   errMsg.begin());
+		      Teuchos::broadcast (comm, 0, static_cast<int>(msgSize), 
+					  static_cast<char* const> (&errMsg[0]));
+		      TEST_FOR_EXCEPTION(! success, std::runtime_error, errMsg);
+		    }
+		  else
+		    TEST_FOR_EXCEPTION(! success, std::runtime_error, 
+				       "Unknown error when reading Matrix "
+				       "Market sparse matrix file; the error "
+				       "is \"unknown\" because the error "
+				       "message has length 0.");
+		}
+	      else if (myRank == 0)
+		{
+		  using std::cerr;
+		  using std::endl;
+		  cerr << "The following error occurred when reading the "
+		    "sparse matrix: " << result.second << endl;
+		}
+	    }
+	  return success;
+	}
+
+      private:
+
+        //! To be called only on MPI Rank 0.
+	static std::pair<bool, std::string>
+	readOnRank0 (std::istream& in,	
+		     const bool echo,
+		     const bool tolerant,
+		     const bool debug=false)
 	{
 	  using std::cerr;
 	  using std::cout;
@@ -288,29 +425,42 @@ namespace Tpetra {
 	  using Teuchos::Tuple;
 	  typedef Teuchos::ScalarTraits<Scalar> STS;
 
-	  // FIXME (mfh 01 Feb 2011) What about MPI?  Should only do
-	  // this on Rank 0.
-	  TEST_FOR_EXCEPTION(!in, std::invalid_argument,
-			     "Input stream appears to be in an invalid state.");
+	  std::ostringstream err;
 
+	  if (! in)
+	    {
+	      err << "Input stream appears to be in an invalid state.";
+	      return std::make_pair (false, err.str());
+	    }
 	  std::string line;
 	  if (! getline (in, line))
-	    throw std::invalid_argument ("Failed to get first (banner) line");
+	    {
+	      err << "Failed to get first (banner) line";
+	      return std::make_pair (false, err.str());
+	    }
 
 	  Banner banner (line, tolerant);
 	  if (banner.matrixType() != "coordinate")
-	    throw std::invalid_argument ("Matrix Market input file must contain a "
-					 "\"coordinate\"-format sparse matrix in "
-					 "order to create a sparse matrix object "
-					 "from it.");
+	    {
+	      err << "Matrix Market input file must contain a "
+		"\"coordinate\"-format sparse matrix in "
+		"order to create a sparse matrix object "
+		"from it.";
+	      return std::make_pair (false, err.str());
+	    }
 	  else if (! STS::isComplex && banner.dataType() == "complex")
-	    throw std::invalid_argument ("Matrix Market file contains complex-"
-					 "valued data, but your chosen Scalar "
-					 "type is real.");
+	    {
+	      err << "Matrix Market file contains complex-"
+		"valued data, but your chosen Scalar "
+		"type is real.";
+	      return std::make_pair (false, err.str());
+	    }
 	  else if (banner.dataType() != "real" && banner.dataType() != "complex")
-	    throw std::invalid_argument ("Only real or complex data types (no "
-					 "pattern or integer matrices) are "
-					 "currently supported");
+	    {
+	      err << "Only real or complex data types (no pattern or integer "
+		"matrices) are currently supported.";
+	      return std::make_pair (false, err.str());
+	    }
 	  if (debug)
 	    {
 	      cout << "Banner line:" << endl
@@ -329,11 +479,14 @@ namespace Tpetra {
 	  typedef SymmetrizingAdder<raw_adder_type> adder_type;
 	  RCP<raw_adder_type> rawAdder (new raw_adder_type);
 	  adder_type adder (rawAdder, banner.symmType());
-	  TEST_FOR_EXCEPTION(banner.dataType() == "complex" && ! STS::isComplex,
-			     std::invalid_argument,
-			     "The Matrix Market sparse matrix file contains "
-			     "complex-valued data, but you are trying to read"
-			     " the data into a sparse matrix of real values.");
+
+	  if (banner.dataType() == "complex" && ! STS::isComplex)
+	    {
+	      err << "The Matrix Market sparse matrix file contains "
+		"complex-valued data, but you are trying to read"
+		" the data into a sparse matrix of real values.";
+	      return std::make_pair (false, err.str());
+	    }
 	  // Make a reader that knows how to read "coordinate" format
 	  // sparse matrix data.
 	  typedef CoordDataReader<adder_type, Ordinal, Scalar, STS::isComplex> reader_type;
@@ -345,9 +498,12 @@ namespace Tpetra {
 	  // were gotten successfully.
 	  std::pair<Teuchos::Tuple<Ordinal, 3>, bool> dims = 
 	    reader.readDimensions (in, lineNumber, tolerant);
-	  TEST_FOR_EXCEPTION(! dims.second, std::invalid_argument,
-			     "Error reading Matrix Market sparse matrix "
-			     "file: failed to read coordinate dimensions.");
+	  if (! dims.second)
+	    {
+	      err << "Error reading Matrix Market sparse matrix "
+		"file: failed to read coordinate dimensions.";
+	      return std::make_pair (false, err.str());
+	    }
 	  if (debug)
 	    {
 	      const Ordinal numRows = dims.first[0];
@@ -363,29 +519,39 @@ namespace Tpetra {
 	  // sparse matrix entries are stored in the Adder object.
 	  std::pair<bool, std::vector<size_t> > results = 
 	    reader.read (in, lineNumber, tolerant, debug);
-	  if (results.first)
-	    cout << "Matrix Market file successfully read" << endl;
-	  else 
-	    cout << "Failed to read Matrix Market file" << endl;
+	  if (debug)
+	    {
+	      if (results.first)
+		cout << "Matrix Market file successfully read" << endl;
+	      else 
+		cout << "Failed to read Matrix Market file" << endl;
+	    }
 
-	  // In tolerant mode, report any bad line number(s)
+	  // Report any bad line number(s).
 	  if (! results.first)
 	    {
-	      reportBadness (std::cerr, results);
+	      if (debug)
+		reportBadness (cerr, results);
 	      if (! tolerant)
-		throw std::invalid_argument("Invalid Matrix Market file");
+		{
+		  err << "Invalid Matrix Market file";
+		  return std::make_pair (false, err.str());
+		}
 	    }
 	  // We're done reading in the sparse matrix.  Now print out the
 	  // nonzero entry/ies.
-	  if (debug)
+	  if (echo)
 	    {
 	      const bool doMerge = false;
 	      const bool replace = false;
-	      rawAdder->print (std::cout, doMerge, replace);
+	      rawAdder->print (cout, doMerge, replace);
 	    }
-	  std::cout << std::endl;
+	  cout << endl;
+
+	  return std::make_pair (true, err.str());
 	}
 
+        //! To be called only on MPI Rank 0.
 	static void 
 	reportBadness (std::ostream& out, 
 		       const std::pair<bool, std::vector<size_t> >& results) 
@@ -393,7 +559,8 @@ namespace Tpetra {
 	  using std::endl;
 	  const size_t numErrors = results.second.size();
 	  const size_t maxNumErrorsToReport = 100;
-	  out << numErrors << " errors when reading Matrix Market sparse matrix file." << endl;
+	  out << numErrors << " errors when reading Matrix Market sparse "
+	    "matrix file." << endl;
 	  if (numErrors > maxNumErrorsToReport)
 	    out << "-- We do not report individual errors when there "
 	      "are more than " << maxNumErrorsToReport << ".";

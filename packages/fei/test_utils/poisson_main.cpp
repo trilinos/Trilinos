@@ -88,7 +88,7 @@ int poisson_main(int argc, char** argv,
   errcode += paramset.getIntParamValue("L", L);
 
   if (errcode != 0) {
-    FEI_CERR << "Failed to find one or more required parameters in input-file."
+    fei::console_out() << "Failed to find one or more required parameters in input-file."
 	     << FEI_ENDL << "Required parameters:"<<FEI_ENDL
 	     << "SOLVER_LIBRARY" << FEI_ENDL
 	     << "WHICH_FEI" << FEI_ENDL
@@ -138,7 +138,7 @@ int poisson_main(int argc, char** argv,
       wrapper = fei::create_LibraryWrapper(comm, solverName.c_str());
     }
     catch (std::runtime_error& exc) {
-      FEI_CERR << exc.what()<<FEI_ENDL;
+      fei::console_out() << exc.what()<<FEI_ENDL;
       ERReturn(-1);
     }
     fei.reset(new FEI_Implementation(wrapper, comm));
@@ -148,13 +148,13 @@ int poisson_main(int argc, char** argv,
       factory = fei::create_fei_Factory(comm, solverName.c_str());
     }
     catch (std::runtime_error& exc) {
-      FEI_CERR << exc.what()<<FEI_ENDL;
+      fei::console_out() << exc.what()<<FEI_ENDL;
       ERReturn(-1);
     }
     fei = factory->createFEI(comm);
   }
   else {
-    FEI_CERR << "poisson_main ERROR, value of 'WHICH_FEI' must be 'OLDFEI' or 'fei::FEI_Impl'"<< FEI_ENDL;
+    fei::console_out() << "poisson_main ERROR, value of 'WHICH_FEI' must be 'OLDFEI' or 'fei::FEI_Impl'"<< FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -272,7 +272,7 @@ int poisson_main(int argc, char** argv,
       delete [] soln;
     }
     else {
-      FEI_CERR << "allocation of nodeIDs or soln failed." << FEI_ENDL; 
+      fei::console_out() << "allocation of nodeIDs or soln failed." << FEI_ENDL; 
     }
 
   }

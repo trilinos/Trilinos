@@ -149,7 +149,7 @@ namespace stk {
     }
 
     stk::mesh::FieldBase * PerceptMesh::
-    getField(const std::string name)
+    getField(const std::string& name)
     {
       FieldBase *field = m_metaData->get_field<FieldBase>(name);
       return field;
@@ -757,7 +757,7 @@ namespace stk {
     void PerceptMesh::
     createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity *>& requested_entities)
     {
-      std::vector<size_t> requests( stk::mesh::EntityRankEnd, 0 );
+      std::vector<size_t> requests(  m_metaData->entity_rank_count(), 0 );
       requests[entityRank] = count;
       getBulkData()->generate_new_entities( requests, requested_entities );
     }
@@ -797,6 +797,7 @@ namespace stk {
         }
       return fdata;
     }
+
 
     // static
     double * PerceptMesh::

@@ -984,7 +984,8 @@ int Epetra_VbrMatrix::OptimizeStorage() {
   if ( ConstantShape ) {
 
     int numMyNonzeros = Graph_->NumMyNonzeros();
-    All_Values_ = new double[numMyNonzeros];
+    int coef_len = MyColDim*MyRowDim*numMyNonzeros;
+    All_Values_ = new double[coef_len];
     All_Values_Orig_ = All_Values_ ;
     for (i=0; i<NumMyBlockRows_; i++) {
       int NumBlockEntries = NumBlockEntriesPerRow_[i];

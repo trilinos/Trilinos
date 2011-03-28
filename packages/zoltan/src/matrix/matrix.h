@@ -63,6 +63,8 @@ typedef struct Zoltan_matrix_options_ {
   int symmetrize;              /* What kind of symmetry we have to apply, not used yet */
   int keep_distribution;       /* Conserve the original distribution, cannot work with randomize */
   SpeedOpt speed;
+  int fast_build_base;         /* smallest GID (typically 0 or 1); for fast
+                                  builds only.  User-specified. */
 } Zoltan_matrix_options;
 
 

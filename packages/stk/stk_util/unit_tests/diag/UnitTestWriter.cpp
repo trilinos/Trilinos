@@ -20,8 +20,6 @@
 #include <bitset>
 #include <memory>
 
-#include <mpi.h>
-
 #include <stk_util/util/IndentStreambuf.hpp>
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/WriterManip.hpp>

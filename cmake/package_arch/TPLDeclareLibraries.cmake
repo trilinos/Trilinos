@@ -11,18 +11,49 @@ INCLUDE(ParseVariableArguments)
 # Function that sets up cache variables for users to specify where to
 # find a TPL's headers and libraries.
 #
-# This function only sets global varibles as a way to return state
-# so it can be called from anywhere in the call stack.
-#
 # This function can set up a with header files and/or libraries.
 #
-# The following cache variables defined that are intended for the user
-# to set:
+# The input arguments to this function are:
 #
-#   ${TPL_NAME}_INCLUDE_DIRS:  A list of common-separated directory paths
-#       that will be searched ...
+#   REQUIRED_HEADERS:  List of header files that are searched for the TPL
+#     using FIND_PATH(...).
 #
-# ToDO: Finish this documentation.
+#   MUST_FIND_ALL_HEADERS:  If TRUE, then all of the header files listed in
+#     REQUIRED_HEADERS must be found in order for TPL_${TPL_NAME}_INCLUDE_DIRS
+#     to be defined.
+#
+#   REQUIRED_LIBS_NAMES: List of libraries that are searched for when
+#     looked for the TPLs libraries with FIND_LIBRARY(...).
+#
+#   MUST_FIND_ALL_LIBS:  If TRUE, then all of the library files listed in
+#     REQUIRED_LIBS_NAMES must be found or the TPL is considered not
+#     found!
+#
+# The input cmake cache variables that this funciton uses (if defined) are:
+#
+#   ${TPL_NAME}_INCLUDE_DIRS:PATH: List of paths to search first for header
+#      files defined in REQUIRED_HEADERS.
+#
+#   ${TPL_NAME}_LIBRARY_DIRS:PATH: The list of directories to search first
+#      for libraies defined in REQUIRED_LIBS_NAMES.
+#
+#   ${TPL_NAME}_LIBRARY_NAMES:STIRNG: List of library names to be looked for
+#      instead of what is specified in REQUIRED_LIBS_NAMES.
+#
+# This function only sets global varibles as a way to return state so it can
+# be called from anywhere in the call stack.  The following cache variables
+# defined that are intended for the user to set and/or use:
+#
+#   TPL_${TPL_NAME}_INCLUDE_DIRS:  A list of common-separated full directory paths
+#     that contain the TPLs headers.  If this varible is set before calling
+#     this function, then no headers are searched for and this variable will
+#     be assumed to have the correct list of header paths.
+#
+#   TPL_${TPL_NAME}_LIBRARY_DIRS:  A list of commons-seprated full library
+#     names (output from FIND_LIBRARY(...)) for all of the libraries found
+#     for the TPL.  IF this varible is set before calling this function,
+#     no libraries are searched for and this varaible will be assumed to
+#     have the correct list of libraries to link to.
 #
 
 FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
@@ -34,9 +65,9 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
      #prefix
      PARSE
      #lists
-     "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES;LIBRARY_DIR_HINT"
+     "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES"
      #options
-     "MUST_FIND_ALL_LIBS"
+     "MUST_FIND_ALL_LIBS;MUST_FIND_ALL_HEADERS"
      ${ARGN}
      )
 
@@ -126,6 +157,10 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     # Libraries
   
     IF (NOT TPL_${TPL_NAME}_LIBRARIES)
+
+      IF (PARSE_MUST_FIND_ALL_LIBS)
+        MESSAGE(STATUS "  Must find all libraries in \"${PARSE_REQUIRED_LIBS_NAMES}\"")
+      ENDIF()
 
       IF (${TPL_NAME}_LIBRARY_DIRS)
         MESSAGE(STATUS "  ${TPL_NAME}_LIBRARY_DIRS='${${TPL_NAME}_LIBRARY_DIRS}'")
@@ -233,18 +268,23 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   IF (PARSE_REQUIRED_HEADERS)
 
     IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
+
+      IF (PARSE_MUST_FIND_ALL_HEADERS)
+        MESSAGE(STATUS "  Must find all headers in \"${PARSE_REQUIRED_HEADERS}\"")
+      ENDIF()
     
       FOREACH(INCLUDE_FILE_SET ${PARSE_REQUIRED_HEADERS})
-        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-          PRINT_VAR(INCLUDE_FILE_SET)
+
+        IF (PARSE_MUST_FIND_ALL_HEADERS)
+          MESSAGE(STATUS "  Searching for headers \"${INCLUDE_FILE_SET}\"")
         ENDIF()
         
         SET(INCLUDE_FILE_LIST ${INCLUDE_FILE_SET})
         SEPARATE_ARGUMENTS(INCLUDE_FILE_LIST)
-        
-        SET(INCLUDE_PATHS)
+        SET(INCLUDE_FILE_SET_PATH) # Start out as empty list
         
         FOREACH(INCLUDE_FILE ${INCLUDE_FILE_LIST})
+
           IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
             PRINT_VAR(INCLUDE_FILE)
           ENDIF()
@@ -263,10 +303,22 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
           ENDIF()
           
           IF(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
-            MESSAGE(STATUS "  Found ${TPL_NAME} TPL header: ${_${TPL_NAME}_${INCLUDE_FILE}_PATH}/${INCLUDE_FILE}")
-            SET(INCLUDE_FILE_SET_PATH ${_${TPL_NAME}_${INCLUDE_FILE}_PATH})
-            BREAK()
+            MESSAGE(STATUS "    Found ${TPL_NAME} TPL header: ${_${TPL_NAME}_${INCLUDE_FILE}_PATH}/${INCLUDE_FILE}")
+            APPEND_SET(INCLUDE_FILE_SET_PATH ${_${TPL_NAME}_${INCLUDE_FILE}_PATH})
+            IF(NOT PARSE_MUST_FIND_ALL_HEADERS)
+              BREAK()
+            ENDIF()
+          ELSE()
+            SET(USERMSG "    Did not find ${TPL_NAME} TPL header: ${INCLUDE_FILE}")
+            IF(PARSE_MUST_FIND_ALL_HEADERS)
+              SET(_${TPL_NAME}_ENABLE_SUCCESS FALSE)
+              MESSAGE(${ERROR_MSG_MODE} ${USERMSG})
+              BREAK()
+            ELSE()
+              MESSAGE(STATUS ${USERMSG})
+            ENDIF()
           ENDIF()
+
         ENDFOREACH()
         
         IF(NOT INCLUDE_FILE_SET_PATH)
@@ -276,10 +328,10 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
             " ${TPL_NAME}_INCLUDE_DIRS and or just"
             " TPL_${TPL_NAME}_INCLUDE_DIRS to point to the ${TPL_NAME} includes!")
         ENDIF()
-        
+
         APPEND_SET(INCLUDES_FOUND ${INCLUDE_FILE_SET_PATH})
 
-      ENDFOREACH()
+      ENDFOREACH(INCLUDE_FILE_SET ${PARSE_REQUIRED_HEADERS})
     
       IF (INCLUDES_FOUND)
         LIST(REMOVE_DUPLICATES INCLUDES_FOUND)

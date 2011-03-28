@@ -10,12 +10,8 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <Shards_BasicTopologies.hpp>
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
-#endif /* ! SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -42,17 +38,16 @@ void testDofMapper( MPI_Comm comm )
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
-  const stk::mesh::EntityRank element_rank = stk::mesh::Element;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-  stk::mesh::DefaultFEM fem(meta_data, spatial_dimension);
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dimension);
+
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+
+  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
 
-  fill_utest_mesh_meta_data( meta_data );
+  fill_utest_mesh_meta_data( fem_meta );
   fill_utest_mesh_bulk_data( bulk_data );
 
   stk::mesh::Selector selector = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;

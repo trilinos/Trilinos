@@ -163,12 +163,12 @@ create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
 					 rowLengths[i],
 					 &(packedColumnIndices[offset]));
     if (err != 0) {
-      FEI_CERR << "proc " << localProc << " err-return " << err
+      fei::console_out() << "proc " << localProc << " err-return " << err
                << " inserting row " << firstLocalEqn+i<<", cols ";
       for(int ii=0; ii<rowLengths[i]; ++ii) {
-	FEI_CERR << packedColumnIndices[offset+ii]<<",";
+	fei::console_out() << packedColumnIndices[offset+ii]<<",";
       }
-      FEI_CERR << FEI_ENDL;
+      fei::console_out() << FEI_ENDL;
       throw std::runtime_error("... occurred in create_Epetra_CrsGraph");
     }
 
@@ -217,7 +217,7 @@ create_from_Epetra_Matrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     }
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << "Trilinos_Helpers::create_from_Epetra_Matrix ERROR, "
+    fei::console_out() << "Trilinos_Helpers::create_from_Epetra_Matrix ERROR, "
            << "caught exception: '" << exc.what() << "', rethrowing..."
            << FEI_ENDL;
     throw exc;

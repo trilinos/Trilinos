@@ -38,44 +38,6 @@
 
 namespace Intrepid {
 
-  int PointTools::getLatticeSize( const shards::CellTopology& cellType ,
-                                  const int order ,
-                                  const int offset )
-  {
-    switch( cellType.getKey() ) {
-    case shards::Tetrahedron<4>::key:
-    case shards::Tetrahedron<8>::key:
-    case shards::Tetrahedron<10>::key:
-      {
-        const int effectiveOrder = order - 4 * offset;
-        if (effectiveOrder < 0) return 0;
-        else return (effectiveOrder+1)*(effectiveOrder+2)*(effectiveOrder+3)/6;
-      }
-      break;
-    case shards::Triangle<3>::key:
-    case shards::Triangle<4>::key:
-    case shards::Triangle<6>::key: 
-      {
-        const int effectiveOrder = order - 3 * offset;
-        if (effectiveOrder < 0) return 0;
-        else return (effectiveOrder+1)*(effectiveOrder+2)/2;
-      }
-      break;
-    case shards::Line<2>::key:
-    case shards::Line<3>::key:
-      {
-        const int effectiveOrder = order - 2 * offset;
-        if (effectiveOrder < 0) return 0;
-        else return (effectiveOrder+1);
-      }
-      break;
-    default:
-      TEST_FOR_EXCEPTION( true , std::invalid_argument ,
-                          ">>> ERROR (Intrepid::PointTools::getLatticeSize): Illegal cell type" );
-
-    }
-  }
-
   template<class Scalar, class ArrayType>
   void PointTools::getLattice(ArrayType &pts ,
                               const shards::CellTopology& cellType ,

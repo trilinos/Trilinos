@@ -697,7 +697,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
     if (haveBlockMatrix()) {
       if (format != FEI_DENSE_ROW && format != FEI_DENSE_COL &&
           format != FEI_BLOCK_DIAGONAL_ROW) {
-        FEI_CERR << "fei::Matrix_Impl::sumIn ERROR, for block-matrix, format must"
+        fei::console_out() << "fei::Matrix_Impl::sumIn ERROR, for block-matrix, format must"
                  << " be FEI_DENSE_ROW or FEI_DENSE_COL."<<FEI_ENDL;
         ERReturn(-1);
       }

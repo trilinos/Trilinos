@@ -17,7 +17,7 @@
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 #include <stk_mesh/fem/FieldDeclarations.hpp>
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
@@ -42,6 +42,7 @@ namespace stk {
 	CartesianField   & model_coord ;
 
 	GearFields( stk::mesh::MetaData & S );
+	GearFields( stk::mesh::fem::FEMMetaData & S );
 
       private:
 	GearFields();
@@ -51,6 +52,18 @@ namespace stk {
 
       class Gear {
       public:
+	Gear( stk::mesh::fem::FEMMetaData & S ,
+	      const std::string & name ,
+	      const GearFields & gear_fields ,
+	      const double   center[] ,
+	      const double   rad_min ,
+	      const double   rad_max ,
+	      const size_t   rad_num ,
+	      const double   z_min ,
+	      const double   z_max ,
+	      const size_t   z_num ,
+	      const size_t   angle_num ,
+	      const int      turn_direction );
 	Gear( stk::mesh::MetaData & S ,
 	      const std::string & name ,
 	      const GearFields & gear_fields ,
@@ -67,6 +80,7 @@ namespace stk {
 	void mesh( stk::mesh::BulkData &M );
 	void turn( double turn_angle ) const ;
 
+	stk::mesh::fem::FEMMetaData *m_mesh_fem_meta_data ;
 	stk::mesh::MetaData & m_mesh_meta_data ;
 #ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
         stk::mesh::DefaultFEM m_topo_data;

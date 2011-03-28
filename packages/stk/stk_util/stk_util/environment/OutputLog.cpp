@@ -142,8 +142,10 @@ LogStream::~LogStream()
 
 OStreamTeeStreambuf::~OStreamTeeStreambuf()
 {
-  m_ostream->flush();
-  m_ostream->rdbuf(m_origRdbuf);
+  if (m_ostream) {
+    m_ostream->flush();
+    m_ostream->rdbuf(m_origRdbuf);
+  }
 
   // Be sure to remove this from all OStreamTeeStreamBuf's
   OStreamTeeStreambufMap &ostream_tee_streambuf_map = get_ostream_tee_streambuf_map();
@@ -200,10 +202,13 @@ register_log_ostream(
     std::ostringstream s;
     s << "Log ostream " << name << " has already been registered";
 
-    throw std::runtime_error(s.str());
+    //Do we really want to throw if a stream is registered multiple times?
+    //I don't think so... commenting this out.
+    //throw std::runtime_error(s.str());
   }
-
-  file_stream_map[name] = new LogStream(name, &os, 0);
+  else {
+    file_stream_map[name] = new LogStream(name, &os, 0);
+  }
 }
 
 

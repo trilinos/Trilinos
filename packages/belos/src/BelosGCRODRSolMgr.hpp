@@ -387,7 +387,7 @@ namespace Belos {
     Teuchos::RCP<ParameterList> params_;
 
     // Default solver values.
-    static const MagnitudeType convtol_default_;
+    static const MagnitudeType convTol_default_;
     static const MagnitudeType orthoKappa_default_;
     static const int maxRestarts_default_;
     static const int maxIters_default_;
@@ -404,7 +404,7 @@ namespace Belos {
     static const Teuchos::RCP<std::ostream> outputStream_default_;
 
     // Current solver values.
-    MagnitudeType convtol_, orthoKappa_;
+    MagnitudeType convTol_, orthoKappa_;
     int maxRestarts_, maxIters_, numIters_;
     int verbosity_, outputStyle_, outputFreq_;
     std::string orthoType_; 
@@ -457,7 +457,7 @@ namespace Belos {
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename GCRODRSolMgr<ScalarType,MV,OP>::MagnitudeType GCRODRSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename GCRODRSolMgr<ScalarType,MV,OP>::MagnitudeType GCRODRSolMgr<ScalarType,MV,OP>::convTol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
 const typename GCRODRSolMgr<ScalarType,MV,OP>::MagnitudeType GCRODRSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = 0.0;
@@ -511,26 +511,34 @@ GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr() {
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr( 
-					     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-					     const Teuchos::RCP<Teuchos::ParameterList> &pl ) {
-
-  // initialize local pointers to null and local vars to default values
+GCRODRSolMgr<ScalarType,MV,OP>::
+GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+	     const Teuchos::RCP<Teuchos::ParameterList> &pl ) 
+{
+  // Initialize local pointers to null, and initialize local variables
+  // to default values.
   init();
 
-  TEST_FOR_EXCEPTION(problem == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEST_FOR_EXCEPTION(problem == Teuchos::null, std::invalid_argument, 
+		     "Belos::GCRODRSolMgr constructor: The solver manager's "
+		     "constructor needs the linear problem argument 'problem' "
+		     "to be non-null.");
   problem_ = problem;
 
-  // set the parameters using the list that was passed in.
-  if (!is_null(pl))
-    setParameters( pl );  
+  // Set the parameters using the list that was passed in.  If null,
+  // we defer initialization until a non-null list is set (by the
+  // client calling setParameters(), or by calling solve() -- in
+  // either case, a null parameter list indicates that default
+  // parameters should be used).
+  if (! is_null (pl))
+    setParameters (pl);
 }
 
 // Common instructions executed in all constructors
 template<class ScalarType, class MV, class OP>
 void GCRODRSolMgr<ScalarType,MV,OP>::init() {
   outputStream_ = outputStream_default_;
-  convtol_ = convtol_default_;
+  convTol_ = convTol_default_;
   orthoKappa_ = orthoKappa_default_;
   maxRestarts_ = maxRestarts_default_;
   maxIters_ = maxIters_default_;
@@ -578,6 +586,10 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
 
+  // The default parameter list contains all parameters that
+  // GCRODRSolMgr understands, and none that it doesn't understand.
+  RCP<const ParameterList> defaultParams = getValidParameters();
+
   // Create the internal parameter list if one doesn't already exist.
   //
   // (mfh 28 Feb 2011, 10 Mar 2011) At the time this code was written,
@@ -585,7 +597,9 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // This is why the code below carefully validates the parameters one
   // by one and fills in defaults.  This code could be made a lot
   // shorter by using validators.  To do so, we would have to define
-  // appropriate validators for all the parameters.
+  // appropriate validators for all the parameters.  (This would more
+  // or less just move all that validation code out of this routine
+  // into to getValidParameters().)
   //
   // For an analogous reason, GCRODRSolMgr defines default parameter
   // values as class data, as well as in the default ParameterList.
@@ -593,9 +607,57 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // parameter values only in the default ParameterList (which
   // documents each parameter as well -- handy!).
   if (params_.is_null()) {
-    params_ = parameterList (*getValidParameters ());
+    params_ = parameterList (*defaultParams);
   } else {
-    params->validateParameters (*getValidParameters ());
+    // A common case for setParameters() is for it to be called at the
+    // beginning of the solve() routine.  This follows the Belos
+    // pattern of delaying initialization until the last possible
+    // moment (when the user asks Belos to perform the solve).  In
+    // this common case, we save ourselves a deep copy of the input
+    // parameter list.
+    if (params_ != params)
+      {
+	// Make a deep copy of the input parameter list.  This allows
+	// the caller to modify or change params later, without
+	// affecting the behavior of this solver.  This solver will
+	// then only change its internal parameters if setParameters()
+	// is called again.
+	params_ = parameterList (*params);
+      }
+
+    // Fill in any missing parameters and their default values.  Also,
+    // throw an exception if the parameter list has any misspelled or
+    // "extra" parameters.  If you don't like this behavior, you'll
+    // want to replace the line of code below with your desired
+    // validation scheme.  Note that Teuchos currently only implements
+    // two options: 
+    //
+    // 1. validateParameters() requires that params_ has all the
+    //    parameters that the default list has, and none that it
+    //    doesn't have.
+    //
+    // 2. validateParametersAndSetDefaults() fills in missing
+    //    parameters in params_ using the default list, but requires
+    //    that any parameter provided in params_ is also in the
+    //    default list.
+    //
+    // Here is an easy way to ignore any "extra" or misspelled
+    // parameters: Make a deep copy of the default list, fill in any
+    // "missing" parameters from the _input_ list, and then validate
+    // the input list using the deep copy of the default list.  We
+    // show this in code:
+    //
+    // RCP<ParameterList> defaultCopy = parameterList (*getValidParameters ());
+    // defaultCopy->validateParametersAndSetDefaults (params);
+    // params->validateParametersAndSetDefaults (defaultCopy);
+    //
+    // This method is not entirely robust, because the input list may
+    // have incorrect validators set for existing parameters in the
+    // default list.  This would then cause "validation" of the
+    // default list to throw an exception.  As a result, we've chosen
+    // for now to be intolerant of misspellings and "extra" parameters
+    // in the input list.
+    params_->validateParametersAndSetDefaults (*defaultParams);
   }
 
   // Check for maximum number of restarts.
@@ -804,7 +866,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     if (! gotOrthoParams) {
       try { // Could it be a sublist?
 	const ParameterList& _orthoParams = 
-	  params->sublist("Orthogonalization Parameters");
+//	  params->sublist("Orthogonalization Parameters");
+	  params_->sublist("Orthogonalization Parameters");
 	// A deep copy is the only safe way to ensure that
 	// orthoParams doesn't "go away," since params doesn't
 	// belong to the solution manager and may fall out of
@@ -890,14 +953,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get ("Convergence Tolerance", convtol_default_);
+    convTol_ = params->get ("Convergence Tolerance", convTol_default_);
 
     // Update parameter in our list and residual tests.
-    params_->set ("Convergence Tolerance", convtol_);
+    params_->set ("Convergence Tolerance", convTol_);
     if (! impConvTest_.is_null())
-      impConvTest_->setTolerance (convtol_);
+      impConvTest_->setTolerance (convTol_);
     if (! expConvTest_.is_null())
-      expConvTest_->setTolerance (convtol_);
+      expConvTest_->setTolerance (convTol_);
   }
  
   // Check for a change in scaling, if so we need to build new residual tests.
@@ -973,14 +1036,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // Implicit residual test, using the native residual to determine if
   // convergence was achieved.
   if (impConvTest_.is_null()) {
-    impConvTest_ = rcp (new StatusTestResNorm_t (convtol_));
+    impConvTest_ = rcp (new StatusTestResNorm_t (convTol_));
     impConvTest_->defineScaleForm (convertStringToScaleType (impResScale_), 
 				   Belos::TwoNorm);
   }
 
   // Explicit residual test once the native residual is below the tolerance
   if (expConvTest_.is_null()) {
-    expConvTest_ = rcp (new StatusTestResNorm_t (convtol_));
+    expConvTest_ = rcp (new StatusTestResNorm_t (convTol_));
     expConvTest_->defineResForm (StatusTestResNorm_t::Explicit, Belos::TwoNorm);
     expConvTest_->defineScaleForm (convertStringToScaleType (expResScale_), 
 				   Belos::TwoNorm);
@@ -1029,7 +1092,7 @@ Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getVa
   if (is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     // Set all the valid parameters and their default values.
-    pl->set("Convergence Tolerance", convtol_default_,
+    pl->set("Convergence Tolerance", convTol_default_,
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
     pl->set("Maximum Restarts", maxRestarts_default_,

@@ -95,11 +95,13 @@ int main(int argc, char *argv[])
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids; 
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
 
+#ifdef HOST_LINUX
   signal(SIGSEGV, meminfo_signal_handler);
   signal(SIGINT, meminfo_signal_handler);
   signal(SIGTERM, meminfo_signal_handler);
   signal(SIGABRT, meminfo_signal_handler);
   signal(SIGFPE, meminfo_signal_handler);
+#endif
 
   /******************************************************************
   ** Problem size

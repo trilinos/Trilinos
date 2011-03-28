@@ -49,7 +49,7 @@ class Filter {
                    const int* /*offsetsIntoField*/,
                    const double* /*prescribedValues*/)
    {
-      FEI_CERR << "fei ERROR, Filter::loadNodeBCs not overridden."<<FEI_ENDL;
+      fei::console_out() << "fei ERROR, Filter::loadNodeBCs not overridden."<<FEI_ENDL;
       return -1;
    }
 
@@ -254,6 +254,7 @@ class Filter {
                               int* fieldIDs, double* norms,
                               std::vector<double>& residValues);
 
+   const NodeDescriptor* findNode(GlobalID nodeID) const;
    const NodeDescriptor& findNodeDescriptor(GlobalID nodeID) const;
 
    SNL_FEI_Structure* problemStructure_;

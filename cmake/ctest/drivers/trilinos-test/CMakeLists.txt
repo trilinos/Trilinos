@@ -53,7 +53,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     ctest_linux_nightly_serial_development_opt_pgi_11.1_trilinos-test.cmake
     CTEST_INSTALLER_TYPE dev
     RUN_SERIAL
-    TIMEOUT_MINUTES 450
+    TIMEOUT_MINUTES 600
   )
 
 ELSE()

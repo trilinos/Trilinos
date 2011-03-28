@@ -132,6 +132,16 @@ void Filter::copyStiffness(const double* const* elemStiff,
 }
 
 //------------------------------------------------------------------------------
+const NodeDescriptor* Filter::findNode(GlobalID nodeID) const {
+//
+//This function returns a NodeDescriptor ptr, may return NULL.
+//
+  const NodeDescriptor* node = NULL;
+  problemStructure_->getNodeDatabase().getNodeWithID(nodeID, node);
+  return node;
+}
+
+//------------------------------------------------------------------------------
 const NodeDescriptor& Filter::findNodeDescriptor(GlobalID nodeID) const {
 //
 //This function returns a NodeDescriptor reference if nodeID is an active node.
@@ -140,14 +150,13 @@ const NodeDescriptor& Filter::findNodeDescriptor(GlobalID nodeID) const {
   int err = problemStructure_->getNodeDatabase().getNodeWithID(nodeID, node);
 
   if (err != 0) {
-    FEI_CERR << "ERROR, Filter::findNodeDescriptor unable to find node "
+    fei::console_out() << "ERROR, Filter::findNodeDescriptor unable to find node "
 	 << static_cast<int>(nodeID) << FEI_ENDL;
     std::abort();
   }
 
   return( *node );
 }
-
 //------------------------------------------------------------------------------
 int Filter::calculateResidualNorms(int whichNorm, int numFields,
 				   int* fieldIDs, double* norms,

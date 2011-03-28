@@ -138,7 +138,7 @@ void ProcEqns::setProcEqnLengths(int* eqnNumbers, int* eqnLengths, int len)
 					    eqnNumbers, len, ins);
 
          if (index < 0) {
-            FEI_CERR << "fei: ProcEqns::setProcEqnLengths: ERROR, "
+            fei::console_out() << "fei: ProcEqns::setProcEqnLengths: ERROR, "
                  << eqn_j << " not found." << FEI_ENDL;
             std::abort();
          }

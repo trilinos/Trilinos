@@ -130,7 +130,7 @@ int EqnBuffer::addRHS(int eqnNumber, int rhsIndex, double value,
    int index = fei::binarySearch(eqnNumber, eqnNumbers_);
 
    if (index < 0) {
-      FEI_CERR << "(deep in FEI) EqnBuffer::addRHS: ERROR, eqnNumber " << eqnNumber
+      fei::console_out() << "(deep in FEI) EqnBuffer::addRHS: ERROR, eqnNumber " << eqnNumber
            << " not found in send eqns." << FEI_ENDL;
       return(-1);
    }
@@ -315,7 +315,7 @@ int EqnBuffer::insertNewEqn(int eqn, int insertPoint)
     rhsCoefs_.insert(rhsCoefs_.begin()+insertPoint, newRhsCoefRow);
   }
   catch (std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     return(-1);
   }
 

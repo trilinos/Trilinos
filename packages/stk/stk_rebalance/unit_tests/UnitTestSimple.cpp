@@ -17,8 +17,8 @@
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 // relevant headers
 #include <stk_rebalance/Rebalance.hpp>
@@ -44,11 +44,10 @@ class MockPartition : public stk::rebalance::Partition
         SECOND,
         THIRD   };
 
-  MockPartition( stk::mesh::MetaData & md, stk::mesh::BulkData & bd ) :
+  MockPartition( stk::mesh::fem::FEMMetaData & fmd, stk::mesh::BulkData & bd ) :
       stk::rebalance::Partition(bd.parallel()),
-      m_meta_data(md),
+      m_fem_meta(fmd),
       m_bulk_data(bd),
-      m_fem(stk::mesh::fem::get_fem_interface(m_meta_data)),
       m_step(FIRST)
     {  }
 
@@ -76,9 +75,8 @@ class MockPartition : public stk::rebalance::Partition
   private:
 
     unsigned total_number_entities_;
-    stk::mesh::MetaData & m_meta_data;
+    stk::mesh::fem::FEMMetaData & m_fem_meta;
     stk::mesh::BulkData & m_bulk_data;
-    stk::mesh::fem::FEMInterface & m_fem;
     BALANCE_TEST_STEP m_step;
 };
 
@@ -87,7 +85,7 @@ MockPartition::get_new_partition(std::vector<stk::mesh::EntityProc> &new_partiti
 {
   const unsigned p_size = m_bulk_data.parallel_size();
   const unsigned p_rank = m_bulk_data.parallel_rank();
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(m_fem);
+  const stk::mesh::EntityRank element_rank = m_fem_meta.element_rank();
 
   new_partition.clear();
 
@@ -202,18 +200,20 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
 #endif
 
   unsigned spatial_dimension = 2;
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
   stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
-  stk::mesh::DefaultFEM top_data( meta_data, spatial_dimension );
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(top_data);
-  stk::mesh::Part & quad_part( stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" ) );
-  VectorField & coord_field( meta_data.declare_field< VectorField >( "coordinates" ) );
-  ScalarField & weight_field( meta_data.declare_field< ScalarField >( "element_weights" ) );
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  stk::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
+  VectorField & coord_field( fem_meta.declare_field< VectorField >( "coordinates" ) );
+  ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "element_weights" ) );
 
-  stk::mesh::put_field( coord_field , NODE_RANK , meta_data.universal_part() );
-  stk::mesh::put_field(weight_field , element_rank , meta_data.universal_part() );
+  stk::mesh::put_field( coord_field , NODE_RANK , fem_meta.universal_part() );
+  stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
 
-  meta_data.commit();
+  fem_meta.commit();
 
   const unsigned p_size = bulk_data.parallel_size();
   const unsigned p_rank = bulk_data.parallel_rank();
@@ -232,7 +232,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        stk::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
       }
     }
     // end create initial mesh
@@ -262,8 +262,8 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
   bulk_data.modification_end();
 
   // Create our Partition and Selector objects
-  MockPartition partition(meta_data, bulk_data);
-  stk::mesh::Selector selector(meta_data.universal_part());
+  MockPartition partition(fem_meta, bulk_data);
+  stk::mesh::Selector selector(fem_meta.universal_part());
 
   partition.set_balance_step(MockPartition::FIRST);
   // Exercise the threshhold calculation by using imblance_threshhold > 1.0

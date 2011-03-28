@@ -23,6 +23,7 @@
 
 using stk::mesh::Part;
 using stk::mesh::MetaData;
+using stk::mesh::fem::FEMMetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Entity;
 using stk::mesh::Selector;
@@ -46,8 +47,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // Single process, no sharing
 
   // Meta data with entity ranks [0..9]
-  std::vector<std::string> entity_names(10);
-  for ( size_t i = 0 ; i < 10 ; ++i ) {
+  const unsigned spatial_dimension = 10;
+  std::vector<std::string> entity_names(spatial_dimension+1);
+  for ( size_t i = 0 ; i <= spatial_dimension ; ++i ) {
     std::ostringstream name ;
     name << "EntityRank_" << i ;
     entity_names[i] = name.str();
@@ -55,20 +57,20 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
 
   // Create a mesh with a bunch of parts
 
-  MetaData meta( entity_names );
-  BulkData bulk( meta , pm , 100 );
+  FEMMetaData meta( spatial_dimension, entity_names );
+  BulkData bulk( FEMMetaData::get_meta_data(meta) , pm , 100 );
 
   Part & part_univ   = meta.universal_part();
   Part & part_owns   = meta.locally_owned_part();
   Part & part_shared = meta.globally_shared_part();
 
-  Part & part_A_0 = declare_part(meta,  std::string("A_0"), 0 /*entity_rank*/);
-  Part & part_A_1 = declare_part(meta,  std::string("A_1"), 1 /*entity_rank*/);
-  Part & part_A_2 = declare_part(meta,  std::string("A_2"), 2 /*entity_rank*/);
-  Part & part_A_3 = declare_part(meta,  std::string("A_3"), 3 /*entity_rank*/);
+  Part & part_A_0 = meta.declare_part(std::string("A_0"), 0 /*entity_rank*/);
+  Part & part_A_1 = meta.declare_part(std::string("A_1"), 1 /*entity_rank*/);
+  Part & part_A_2 = meta.declare_part(std::string("A_2"), 2 /*entity_rank*/);
+  Part & part_A_3 = meta.declare_part(std::string("A_3"), 3 /*entity_rank*/);
 
-  Part & part_B_0 = declare_part(meta,  std::string("B_0"), 0 /*entity_rank*/);
-  Part & part_B_2 = declare_part(meta,  std::string("B_2"), 2 /*entity_rank*/);
+  Part & part_B_0 = meta.declare_part(std::string("B_0"), 0 /*entity_rank*/);
+  Part & part_B_2 = meta.declare_part(std::string("B_2"), 2 /*entity_rank*/);
 
   meta.commit();
   bulk.modification_begin();

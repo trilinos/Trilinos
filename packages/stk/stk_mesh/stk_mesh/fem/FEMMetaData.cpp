@@ -1,4 +1,3 @@
-
 #include <set>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
@@ -13,41 +12,21 @@ namespace mesh {
 namespace fem {
 
 namespace {
-  void assign_cell_topology(
-    FEMMetaData::PartCellTopologyVector & part_cell_topology_vector,
-    size_t                   part_ordinal,
-    const fem::CellTopology  cell_topology)
-  {
-    if (part_ordinal >= part_cell_topology_vector.size())
-      part_cell_topology_vector.resize(part_ordinal + 1);
 
-    part_cell_topology_vector[part_ordinal] = cell_topology;
-  }
+void assign_cell_topology(
+  FEMMetaData::PartCellTopologyVector & part_cell_topology_vector,
+  size_t                   part_ordinal,
+  const fem::CellTopology  cell_topology)
+{
+  if (part_ordinal >= part_cell_topology_vector.size())
+    part_cell_topology_vector.resize(part_ordinal + 1);
 
-  std::vector<std::string>
-    default_entity_rank_names( size_t spatial_dimension )
-    {
-      ThrowInvalidArgMsgIf( spatial_dimension < 1 || 3 < spatial_dimension,
-          "Invalid spatial dimension = " << spatial_dimension );
+  part_cell_topology_vector[part_ordinal] = cell_topology;
+}
 
-      std::vector< std::string > names ;
+} // namespace
 
-      names.reserve( spatial_dimension + 1 );
-
-      names.push_back( std::string( "NODE" ) );
-
-      if ( 1 < spatial_dimension ) { names.push_back( std::string("EDGE") ); }
-      if ( 2 < spatial_dimension ) { names.push_back( std::string("FACE") ); }
-
-      names.push_back( std::string("ELEMENT") );
-
-      return names ;
-    }
-
-} // namespace 
-
-
-FEMMetaData::FEMMetaData() 
+FEMMetaData::FEMMetaData()
   : m_fem_initialized(false),
     m_spatial_dimension(0),
     m_edge_rank(INVALID_RANK),
@@ -55,20 +34,36 @@ FEMMetaData::FEMMetaData()
     m_side_rank(INVALID_RANK),
     m_element_rank(INVALID_RANK)
 {
-  // Attach FEMMetaData as attribute on MetaData to enable "get accessors" to FEMMetaData 
+  // Attach FEMMetaData as attribute on MetaData to enable "get accessors" to FEMMetaData
   m_meta_data.declare_attribute_no_delete<FEMMetaData>(this);
 }
 
+FEMMetaData::FEMMetaData(size_t spatial_dimension,
+                         const std::vector<std::string>& in_entity_rank_names)
+  : m_fem_initialized(false),
+    m_spatial_dimension(0),
+    m_edge_rank(INVALID_RANK),
+    m_face_rank(INVALID_RANK),
+    m_side_rank(INVALID_RANK),
+    m_element_rank(INVALID_RANK)
+{
+  // Attach FEMMetaData as attribute on MetaData to enable "get accessors" to FEMMetaData
+  m_meta_data.declare_attribute_no_delete<FEMMetaData>(this);
 
-void FEMMetaData::FEM_initialize(size_t spatial_dimension, const std::vector<std::string>& entity_rank_names)
+  FEM_initialize(spatial_dimension, in_entity_rank_names);
+}
+
+void FEMMetaData::FEM_initialize(size_t spatial_dimension, const std::vector<std::string>& rank_names)
 {
   std::vector<std::string> fake_names(255,"");
   ThrowRequireMsg(!m_fem_initialized,"FEM functionality in FEMMetaData can only be initialized once.");
-  if (entity_rank_names.size() == 0u) {
-    m_entity_rank_names = default_entity_rank_names(spatial_dimension);
-  } else {
-    ThrowRequireMsg(entity_rank_names.size() >= (spatial_dimension+1), "Entity rank name vector must name every rank");
-    m_entity_rank_names = entity_rank_names;
+  if ( rank_names.empty() ) {
+    m_entity_rank_names = fem::entity_rank_names(spatial_dimension);
+  }
+  else {
+    ThrowRequireMsg(rank_names.size() >= spatial_dimension+1,
+                    "Entity rank name vector must name every rank");
+    m_entity_rank_names = rank_names;
   }
   m_entity_rank_names = fake_names;
   internal_set_spatial_dimension_and_ranks(spatial_dimension);
@@ -77,12 +72,11 @@ void FEMMetaData::FEM_initialize(size_t spatial_dimension, const std::vector<std
   internal_declare_known_cell_topology_parts();
 }
 
-
 void FEMMetaData::internal_set_spatial_dimension_and_ranks(size_t spatial_dimension)
-{ 
+{
   ThrowRequireMsg( spatial_dimension != 0, "FEMMetaData::internal_set_spatial_dimension_and_ranks: spatial_dimension == 0!");
-  m_spatial_dimension = spatial_dimension; 
-  
+  m_spatial_dimension = spatial_dimension;
+
   // TODO:  Decide on correct terminology for the FEM Entity Ranks (consider topological vs spatial names and incompatibilities).
   // spatial_dimension = 1
   // node = 0, edge = 0, face = 0, side = 0, element = 1
@@ -98,7 +92,6 @@ void FEMMetaData::internal_set_spatial_dimension_and_ranks(size_t spatial_dimens
   m_element_rank = m_spatial_dimension;
 
 }
-
 
 void FEMMetaData::internal_declare_known_cell_topology_parts()
 {
@@ -179,7 +172,6 @@ void FEMMetaData::internal_declare_known_cell_topology_parts()
   }
 }
 
-
 void FEMMetaData::register_cell_topology(const fem::CellTopology cell_topology, EntityRank entity_rank)
 {
   ThrowRequireMsg(is_FEM_initialized(),"FEMMetaData::register_cell_topology: FEM_initialize() must be called before this function");
@@ -196,7 +188,7 @@ void FEMMetaData::register_cell_topology(const fem::CellTopology cell_topology, 
   ThrowErrorMsgIf(duplicate && existing_rank != entity_rank,
     "For args: cell_topolgy " << cell_topology.getName() << " and entity_rank " << entity_rank << ", " <<
     "previously declared rank = " << existing_rank );
-  
+
   if (! duplicate) {
     std::string part_name = std::string("{FEM_ROOT_CELL_TOPOLOGY_PART_") + std::string(cell_topology.getName()) + std::string("}");
     Part &part = declare_part(part_name, entity_rank);
@@ -205,7 +197,6 @@ void FEMMetaData::register_cell_topology(const fem::CellTopology cell_topology, 
     assign_cell_topology(m_partCellTopologyVector, part.mesh_meta_data_ordinal(), cell_topology);
   }
 }
-
 
 Part &FEMMetaData::get_cell_topology_root_part(const fem::CellTopology cell_topology) const
 {
@@ -217,7 +208,6 @@ Part &FEMMetaData::get_cell_topology_root_part(const fem::CellTopology cell_topo
 
   return *(*it).second.first;
 }
-
 
 /// Note:  This function only uses the PartCellTopologyVector to look up the
 /// cell topology for a given part.
@@ -244,7 +234,7 @@ bool root_part_in_subset(stk::mesh::Part & part)
 {
   if (is_cell_topology_root_part(part)) {
     return true;
-  } 
+  }
   const PartVector & subsets = part.subsets();
   for (PartVector::const_iterator it=subsets.begin() ; it != subsets.end() ; ++it) {
     if (is_cell_topology_root_part( **it )) {
@@ -270,40 +260,39 @@ void find_cell_topologies_in_part_and_subsets_of_same_rank(const Part & part, En
   }
 }
 
-} // namespace 
-
+} // namespace
 
 void FEMMetaData::declare_part_subset( Part & superset , Part & subset )
-{ 
+{
   ThrowRequireMsg(is_FEM_initialized(),"FEMMetaData::declare_part_subset: FEM_initialize() must be called before this function");
   fem::CellTopology superset_top = get_cell_topology(superset);
 
   const bool no_superset_topology = !superset_top.isValid();
   if ( no_superset_topology ) {
-    m_meta_data.declare_part_subset(superset,subset); 
+    m_meta_data.declare_part_subset(superset,subset);
     return;
-  } 
+  }
   // Check for cell topology root parts in subset or subset's subsets
   const bool subset_has_root_part = root_part_in_subset(subset);
   ThrowErrorMsgIf( subset_has_root_part, "FEMMetaData::declare_part_subset:  Error, root cell topology part found in subset or below." );
-  
+
   std::set<fem::CellTopology> cell_topologies;
   find_cell_topologies_in_part_and_subsets_of_same_rank(subset,superset.primary_entity_rank(),cell_topologies);
 
-  ThrowErrorMsgIf( cell_topologies.size() > 1, 
-      "FEMMetaData::declare_part_subset:  Error, multiple cell topologies of rank " 
-      << superset.primary_entity_rank() 
-      << " defined below subset" 
+  ThrowErrorMsgIf( cell_topologies.size() > 1,
+      "FEMMetaData::declare_part_subset:  Error, multiple cell topologies of rank "
+      << superset.primary_entity_rank()
+      << " defined below subset"
       );
   const bool non_matching_cell_topology = ((cell_topologies.size() == 1) && (*cell_topologies.begin() != superset_top));
-  ThrowErrorMsgIf( non_matching_cell_topology, 
-      "FEMMetaData::declare_part_subset:  Error, superset topology = " 
-      << superset_top.getName() << " does not match the topology = " 
-      << cell_topologies.begin()->getName() 
-      << " coming from the subset part" 
+  ThrowErrorMsgIf( non_matching_cell_topology,
+      "FEMMetaData::declare_part_subset:  Error, superset topology = "
+      << superset_top.getName() << " does not match the topology = "
+      << cell_topologies.begin()->getName()
+      << " coming from the subset part"
       );
   // Everything is Okay!
-  m_meta_data.declare_part_subset(superset,subset); 
+  m_meta_data.declare_part_subset(superset,subset);
   // Update PartCellTopologyVector for "subset" and same-rank subsets, ad nauseum
   if (subset.primary_entity_rank() == superset.primary_entity_rank()) {
     assign_cell_topology(m_partCellTopologyVector, subset.mesh_meta_data_ordinal(), superset_top);
@@ -317,8 +306,6 @@ void FEMMetaData::declare_part_subset( Part & superset , Part & subset )
   }
 }
 
-
-
 EntityRank FEMMetaData::get_entity_rank(
   const fem::CellTopology       cell_topology) const
 {
@@ -328,12 +315,10 @@ EntityRank FEMMetaData::get_entity_rank(
   else
     return (*it).second.second;
 }
- 
 
 //--------------------------------------------------------------------------------
 // Free Functions
 //--------------------------------------------------------------------------------
-
 
 bool is_cell_topology_root_part(const Part & part) {
   fem::FEMMetaData & fem_meta = fem::FEMMetaData::get(part);
@@ -341,7 +326,7 @@ bool is_cell_topology_root_part(const Part & part) {
   if (top.isValid()) {
     const Part & root_part = fem_meta.get_cell_topology_root_part(top);
     return (root_part == part);
-  } 
+  }
   return false;
 }
 
@@ -360,8 +345,26 @@ void set_cell_topology(
   fem_meta.declare_part_subset(root_part, part);
 }
 
+std::vector<std::string>
+entity_rank_names( size_t spatial_dimension )
+{
+  ThrowInvalidArgMsgIf( spatial_dimension < 1 || 3 < spatial_dimension,
+                        "Invalid spatial dimension = " << spatial_dimension );
 
+  std::vector< std::string > names ;
 
-} // namespace fem 
-} // namespace mesh 
-} // namespace stk 
+  names.reserve( spatial_dimension + 1 );
+
+  names.push_back( std::string( "NODE" ) );
+
+  if ( 1 < spatial_dimension ) { names.push_back( std::string("EDGE") ); }
+  if ( 2 < spatial_dimension ) { names.push_back( std::string("FACE") ); }
+
+  names.push_back( std::string("ELEMENT") );
+
+  return names ;
+}
+
+} // namespace fem
+} // namespace mesh
+} // namespace stk

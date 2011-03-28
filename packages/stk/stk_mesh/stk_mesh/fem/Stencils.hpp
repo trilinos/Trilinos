@@ -14,8 +14,10 @@
 #endif
 
 #include <stk_util/util/StaticAssert.hpp>
+
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
+
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -35,7 +37,7 @@ int element_node_stencil( EntityRank from_type , EntityRank to_type , unsigned i
   int ordinal = -1 ;
 
   if ( element_rank == from_type &&
-       NODE_RANK    == to_type &&
+       FEMMetaData::NODE_RANK == to_type &&
        identifier < number_node ) {
     ordinal = static_cast<int>(identifier);
   }

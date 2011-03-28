@@ -48,14 +48,13 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     //setup the mesh
     stk::mesh::fixtures::HexFixture fixture(pm,3,3,3);
 
-    stk::mesh::MetaData & meta = fixture.m_meta_data;
+    stk::mesh::fem::FEMMetaData & fem_meta = fixture.m_fem_meta;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
-    stk::mesh::fem::FEMInterface &fem = fixture.m_fem;
-    const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
-    const stk::mesh::EntityRank side_rank    = stk::mesh::fem::side_rank(fem);
+    const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+    const stk::mesh::EntityRank side_rank    = fem_meta.side_rank();
 
-    stk::mesh::Part & skin_part = declare_part(meta, "skin_part");
-    meta.commit();
+    stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");
+    fem_meta.commit();
 
     fixture.generate_mesh();
 
@@ -67,7 +66,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     elements_to_separate.push_back(fixture.elem_id(1,1,1));
 
     separate_and_skin_mesh(
-        meta,
+        fem_meta,
         mesh,
         skin_part,
         elements_to_separate,
@@ -111,14 +110,13 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     //setup the mesh
     stk::mesh::fixtures::HexFixture fixture(pm,3,3,3);
 
-    stk::mesh::MetaData & meta = fixture.m_meta_data;
+    stk::mesh::fem::FEMMetaData & fem_meta = fixture.m_fem_meta;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
-    stk::mesh::fem::FEMInterface &fem = fixture.m_fem;
-    const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
-    const stk::mesh::EntityRank side_rank    = stk::mesh::fem::side_rank(fem);
+    const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+    const stk::mesh::EntityRank side_rank    = fem_meta.side_rank();
 
-    stk::mesh::Part & skin_part = meta.declare_part("skin_part");
-    meta.commit();
+    stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");
+    fem_meta.commit();
 
     fixture.generate_mesh();
 
@@ -138,7 +136,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     elements_to_separate.push_back(fixture.elem_id(1,2,2));
 
     separate_and_skin_mesh(
-        meta,
+        fem_meta,
         mesh,
         skin_part,
         elements_to_separate,

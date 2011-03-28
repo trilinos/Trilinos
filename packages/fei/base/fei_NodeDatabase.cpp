@@ -56,7 +56,7 @@ int NodeDatabase::getNodeWithID(GlobalID nodeID, const NodeDescriptor*& node) co
 {
   int index = getIndexOfID(nodeID);
   if (index < 0) {
-    //FEI_CERR << "FEI NodeDatabase: node " << (int)nodeID << " not found."<<FEI_ENDL;
+    //fei::console_out() << "FEI NodeDatabase: node " << (int)nodeID << " not found."<<FEI_ENDL;
     return(-1);
   }
 
@@ -69,7 +69,7 @@ int NodeDatabase::getNodeWithID(GlobalID nodeID, NodeDescriptor*& node)
 {
   int index = getIndexOfID(nodeID);
   if (index < 0) {
-    //FEI_CERR << "FEI NodeDatabase: node " << (int)nodeID << " not found."<<FEI_ENDL;
+    //fei::console_out() << "FEI NodeDatabase: node " << (int)nodeID << " not found."<<FEI_ENDL;
     return(-1);
   }
 
@@ -84,7 +84,10 @@ int NodeDatabase::getNodeWithNumber(int nodeNumber, const NodeDescriptor*& node)
 
   std::map<int,int>::const_iterator iter = nodeNumbers_.find(nodeNumber);
   if (iter == nodeNumbers_.end()) {
-    ERReturn(-1);
+    // The node wasn't found, return a NULL ptr.
+    node = NULL;
+    // Indicate that the node is NULL.
+    return -1;
   }
 
   int index = iter->second;
@@ -133,7 +136,8 @@ int NodeDatabase::getNodeWithEqn(int eqnNumber, const NodeDescriptor*& node) con
 //------------------------------------------------------------------------------
 void NodeDatabase::getNodeAtIndex(int i, const NodeDescriptor*& node) const
 {
-  if (i>=0 && i < nodePtrs_.size()) {
+  int nnodes = nodePtrs_.size();
+  if (i>=0 && i < nnodes) {
     node = nodePtrs_[i];
   }
   else {
@@ -144,7 +148,8 @@ void NodeDatabase::getNodeAtIndex(int i, const NodeDescriptor*& node) const
 //------------------------------------------------------------------------------
 void NodeDatabase::getNodeAtIndex(int i, NodeDescriptor*& node)
 {
-  if (i>=0 && i < nodePtrs_.size()) {
+  int nnodes = nodePtrs_.size();
+  if (i>=0 && i < nnodes) {
     node = nodePtrs_[i];
   }
   else {
@@ -316,9 +321,9 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
     int index = getIndexOfID(nodeID);
     int nDOF = node.getNumNodalDOF();
     if (nDOF <= 0) {
-      FEI_COUT << "localRank " << localRank << ", node "<<nodeID<<" has nDOF="
-           << nDOF<<FEI_ENDL;
-      ERReturn(-1);
+      continue;
+      //FEI_COUT << "localRank " << localRank << ", node "<<nodeID<<" has nDOF=" << nDOF<<FEI_ENDL;
+      //ERReturn(-1);
     }
     int firstEqn = node.getFieldEqnNumbers()[0];
     int insertPoint = fei::sortedListInsert(firstEqn, eqnNumbers_);

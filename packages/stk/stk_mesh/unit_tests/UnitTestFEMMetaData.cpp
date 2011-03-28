@@ -9,8 +9,8 @@
 #include <stdexcept>
 #include <algorithm>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 using stk::mesh::fem::FEMMetaData;
 

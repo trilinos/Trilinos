@@ -11,7 +11,8 @@
 #include <algorithm>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -22,11 +23,13 @@ namespace mesh {
 
 namespace {
 
+const EntityRank NODE_RANK = fem::FEMMetaData::NODE_RANK;
+
 void filter_superimposed_entities(const Entity & entity, EntityVector & entities)
 {
   // Get the node entities for the nodes that make up the entity, we'll
   // use this to check for superimposed entities
-  PairIterRelation irel = entity.relations(fem::NODE_RANK);
+  PairIterRelation irel = entity.relations(NODE_RANK);
   EntityVector entity_nodes;
   entity_nodes.reserve(irel.size());
   for ( ; !irel.empty(); ++irel ) {
@@ -41,7 +44,7 @@ void filter_superimposed_entities(const Entity & entity, EntityVector & entities
   EntityVector::iterator itr = entities.begin();
   while ( itr != entities.end() ) {
     Entity * current_entity = *itr;
-    PairIterRelation relations = current_entity->relations(fem::NODE_RANK);
+    PairIterRelation relations = current_entity->relations(NODE_RANK);
 
     if (current_entity == &entity) {
       // Superimposed with self by definition
@@ -91,7 +94,7 @@ void get_adjacent_entities( const Entity & entity ,
 
   // Get nodes that make up the subcell we're looking at
   EntityVector subcell_nodes;
-  const CellTopologyData * subcell_topology = get_subcell_nodes(entity,
+  const CellTopologyData * subcell_topology = fem::get_subcell_nodes(entity,
                                                                 subcell_rank,
                                                                 subcell_identifier,
                                                                 subcell_nodes);
@@ -116,10 +119,10 @@ void get_adjacent_entities( const Entity & entity ,
 
   for (EntityVector::const_iterator eitr = potentially_adjacent_entities.begin();
        eitr != potentially_adjacent_entities.end(); ++eitr) {
-    int local_subcell_num = get_entity_subcell_id(**eitr,
-                                                  subcell_rank,
-                                                  subcell_topology,
-                                                  subcell_nodes);
+    int local_subcell_num = fem::get_entity_subcell_id(**eitr,
+                                                       subcell_rank,
+                                                       subcell_topology,
+                                                       subcell_nodes);
     if ( local_subcell_num != -1) {
       adjacent_entities.push_back(EntitySideComponent(*eitr, local_subcell_num));
     }
@@ -133,8 +136,8 @@ void boundary_analysis(const BulkData& bulk_data,
                        EntityRank closure_rank,
                        EntitySideVector& boundary)
 {
-  const Selector locally_used = MetaData::get(bulk_data).locally_owned_part()
-                              | MetaData::get(bulk_data).globally_shared_part();
+  const Selector locally_used = fem::FEMMetaData::get(bulk_data).locally_owned_part()
+                              | fem::FEMMetaData::get(bulk_data).globally_shared_part();
 
   // find an iterator that points to the last item in the closure that is of a
   // lower-order than the closure_rank
@@ -149,13 +152,13 @@ void boundary_analysis(const BulkData& bulk_data,
     // some temporaries for clarity
     std::vector<EntitySideComponent > adjacent_entities;
     Entity& curr_entity = **itr;
-    const CellTopologyData* celltopology = fem::get_cell_topology(curr_entity).getCellTopologyData();
+    const CellTopologyData* celltopology = fem::get_cell_topology_new(curr_entity).getCellTopologyData();
     if (celltopology == NULL) {
       continue;
     }
 
     unsigned subcell_rank = closure_rank - 1;
-    PairIterRelation relations = curr_entity.relations(fem::NODE_RANK);
+    PairIterRelation relations = curr_entity.relations(NODE_RANK);
 
     // iterate over the subcells of the current entity
     for (unsigned nitr = 0; nitr < celltopology->subcell_count[subcell_rank]; ++nitr) {

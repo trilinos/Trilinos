@@ -51,7 +51,7 @@ snl_fei::LinearSystem_FEData::~LinearSystem_FEData()
 //----------------------------------------------------------------------------
 bool snl_fei::LinearSystem_FEData::eqnIsEssentialBC(int globalEqnIndex) const
 {
-  FEI_CERR << "LinearSystem_FEData::eqnIsEssentialBC NOT IMPLEMENTED!!"<<FEI_ENDL;
+  fei::console_out() << "LinearSystem_FEData::eqnIsEssentialBC NOT IMPLEMENTED!!"<<FEI_ENDL;
   return(false);
 }
 
@@ -59,7 +59,7 @@ bool snl_fei::LinearSystem_FEData::eqnIsEssentialBC(int globalEqnIndex) const
 void snl_fei::LinearSystem_FEData::getEssentialBCs(std::vector<int>& bcEqns,
                                               std::vector<double>& bcVals) const
 {
-  FEI_CERR << "LinearSystem_FEData::getEssentialBC_Eqns NOT IMPLEMENTED!!"<<FEI_ENDL;
+  fei::console_out() << "LinearSystem_FEData::getEssentialBC_Eqns NOT IMPLEMENTED!!"<<FEI_ENDL;
 }
 
 //----------------------------------------------------------------------------
@@ -80,7 +80,7 @@ int snl_fei::LinearSystem_FEData::loadComplete(bool applyBCs,
   if (matrix_.get() != NULL && globalAssemble) {
     err = matrix_->gatherFromOverlap();
     if (err != 0) {
-      FEI_CERR << "snl_fei::LinearSystem_FEData::loadComplete, ERROR in matrix."
+      fei::console_out() << "snl_fei::LinearSystem_FEData::loadComplete, ERROR in matrix."
 	   << "gatherFromOverlap(), data may be incorrect."<<FEI_ENDL;
     }
   }
@@ -90,7 +90,7 @@ int snl_fei::LinearSystem_FEData::loadComplete(bool applyBCs,
   if (rhs_.get() != NULL && globalAssemble) {
     err = rhs_->gatherFromOverlap();
     if (err != 0) {
-      FEI_CERR << "snl_fei::LinearSystem_FEData::loadComplete, ERROR rhs."
+      fei::console_out() << "snl_fei::LinearSystem_FEData::loadComplete, ERROR rhs."
         << "gatherFromOverlap(), data may be incorrect."<<FEI_ENDL;
     }
   }

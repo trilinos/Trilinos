@@ -225,7 +225,7 @@ int fei::Vector_core::copyOut(int numValues,
       int insertPoint = -1;
       int idx = fei::binarySearch(ind, remote[proc]->indices(), insertPoint);
       if (idx < 0) {
-	FEI_CERR << "fei::Vector_core::copyOut: proc " << fei::localProc(comm_)
+	fei::console_out() << "fei::Vector_core::copyOut: proc " << fei::localProc(comm_)
 	     << ", index " << ind << " not in remotelyOwned_ vec object for proc "
             <<proc<<FEI_ENDL;
 	ERReturn(-1);
@@ -280,7 +280,7 @@ int fei::Vector_core::giveToVector(int numValues,
     else {
       int err = giveToUnderlyingVector(1, &ind, &val, sumInto, vectorIndex);
       if (err != 0) {
-	FEI_CERR << "giveToVector sumIn ERROR, ind: " << ind
+	fei::console_out() << "giveToVector sumIn ERROR, ind: " << ind
 	     << ", val: " << val << FEI_ENDL;
 	ERReturn(-1);
       }

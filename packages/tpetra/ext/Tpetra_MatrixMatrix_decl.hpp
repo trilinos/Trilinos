@@ -61,6 +61,8 @@ namespace MatrixMatrix {
     /** Given CrsMatrix objects A, B and C, form the product C = A*B.
   In a parallel setting, A and B need not have matching distributions,
   but C needs to have the same row-map as A.
+  At this time C=AT*B and C=A*BT are known to not work. However,
+  C=A*B and C=AT*BT are known to work, Kurtis Nusbaum 03/24/2011
 
     @param A Input, must already have had 'FillComplete()' called.
     @param transposeA Input, whether to use transpose of matrix A.
@@ -106,7 +108,7 @@ void Multiply(
     @param scalarB Input, scalar multiplier for matrix B.
 
      */
-/*template <class Scalar, 
+template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -116,7 +118,7 @@ void Add(
   bool transposeA,
   Scalar scalarA,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
-  Scalar scalarB );*/
+  Scalar scalarB );
 
     /** Given CrsMatrix objects A and B, form the sum C = a*A + b*B
 
@@ -133,7 +135,7 @@ void Add(
              returns without calling FillComplete on C.
 
      */
-/*template <class Scalar, 
+template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -145,7 +147,7 @@ void Add(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
   bool transposeB,
   Scalar scalarB,
-  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > C);*/
+  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > C);
 } //End Namespace MatrixMatrxix
 
 namespace MMdetails{

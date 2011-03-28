@@ -23,11 +23,11 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
-
-#include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/baseImpl/EntityRepository.hpp>
+
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 using stk::ParallelMachine;
 using stk::mesh::MetaData;
@@ -90,6 +90,12 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   const int size = stk::parallel_machine_size( pm );
   std::vector<stk::mesh::Part *>  add_part;
   meta.commit();
+
+  // Bail if not parallel. This test involves inducing errorneous conditions that
+  // are only checked-for in parallel.
+  if (size == 1) {
+    return;
+  }
 
   add_part.push_back ( & part );
 

@@ -63,7 +63,7 @@ HexBeam::HexBeam(int W, int D, int DofPerNode,
   case HexBeam::TwoD:
   case HexBeam::ThreeD:
   default:
-    FEI_CERR << "HexBeam: invalid decomp option: " << decomp
+    fei::console_out() << "HexBeam: invalid decomp option: " << decomp
 	 <<" aborting." << FEI_ENDL;
     std::abort();
   }

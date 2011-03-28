@@ -33,6 +33,7 @@ static PARAM_VARS ZG_params[] = {
 	{ "GRAPH_SYM_WEIGHT", NULL, "STRING", 0 },
 	{ "GRAPH_BIPARTITE_TYPE", NULL, "STRING", 0},
 	{ "GRAPH_BUILD_TYPE", NULL, "STRING", 0},
+	{ "GRAPH_FAST_BUILD_BASE", NULL, "INTEGER", 0},
 	{ NULL, NULL, NULL, 0 } };
 
 #define AFFECT_NOT_NULL(ptr, src) do { if ((ptr) != NULL) (*(ptr)) = (src); } while (0)
@@ -61,6 +62,7 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local,
   char bipartite_type[MAX_PARAM_STRING_LEN+1];
   char weigth_type[MAX_PARAM_STRING_LEN+1];
   char matrix_build_type[MAX_PARAM_STRING_LEN+1];
+  int graph_fast_build_base;
   int bipartite = 0;
 #ifdef CC_TIMERS
   double times[9]={0.,0.,0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
@@ -79,12 +81,14 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local,
   Zoltan_Bind_Param(ZG_params, "GRAPH_SYM_WEIGHT", (void *) &weigth_type);
   Zoltan_Bind_Param(ZG_params, "GRAPH_BIPARTITE_TYPE", (void *) &bipartite_type);
   Zoltan_Bind_Param(ZG_params, "GRAPH_BUILD_TYPE", (void*) &matrix_build_type);
+  Zoltan_Bind_Param(ZG_params, "GRAPH_FAST_BUILD_BASE", (void*) &graph_fast_build_base);
 
   /* Set default values */
   strncpy(symmetrization, "NONE", MAX_PARAM_STRING_LEN);
   strncpy(bipartite_type, "OBJ", MAX_PARAM_STRING_LEN);
   strncpy(weigth_type, "ADD", MAX_PARAM_STRING_LEN);
   strncpy(matrix_build_type, "NORMAL", MAX_PARAM_STRING_LEN);
+  graph_fast_build_base = 0;
 
   Zoltan_Assign_Param_Vals(zz->Params, ZG_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
@@ -116,6 +120,7 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local,
     opt.speed = MATRIX_NO_REDIST;
   else
     opt.speed = MATRIX_FULL_DD;
+  opt.fast_build_base = graph_fast_build_base;
 
 #ifdef CC_TIMERS
   times[1] = Zoltan_Time(zz->Timer);
@@ -148,27 +153,19 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local,
     CHECK_IERR;
   }
 
-  /* Redistribute gets rid of duplicate edges?  So unneeded if
-   *   if we know there are no duplicate edges?
-   */
-
-/*  if (opt.speed != MATRIX_NO_REDIST){      This is the idea, but it doesn't work */
-
 #ifdef CC_TIMERS
-    times[4] = Zoltan_Time(zz->Timer);
+  times[4] = Zoltan_Time(zz->Timer);
 #endif
 
-    ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
-    CHECK_IERR;
+  ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
+  CHECK_IERR;
 
 #ifdef CC_TIMERS
-    times[5] = Zoltan_Time(zz->Timer);
-    MPI_Barrier(zz->Communicator);
+  times[5] = Zoltan_Time(zz->Timer);
+  MPI_Barrier(zz->Communicator);
 #endif
-    ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0);
-    CHECK_IERR;
-
-/*  } */
+  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0);
+  CHECK_IERR;
 
 #ifdef CC_TIMERS
   times[6] = Zoltan_Time(zz->Timer);

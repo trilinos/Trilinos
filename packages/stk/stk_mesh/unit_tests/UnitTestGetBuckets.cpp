@@ -14,7 +14,8 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 
@@ -27,7 +28,8 @@ namespace {
 using stk::mesh::Bucket;
 using stk::mesh::Part;
 using stk::mesh::Selector;
-using stk::mesh::fem::NODE_RANK;
+
+const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 void sort_and_compare_eq(std::vector<Bucket*>& results,
                          std::vector<Bucket*>& expected_results)

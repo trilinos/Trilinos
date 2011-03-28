@@ -198,7 +198,7 @@ void Aztec_LSVector::assign(const Aztec_LSVector& rhs) {
 
    if ((amap_->globalSize() != rhs.amap_->globalSize()) ||
       (amap_->localSize() != rhs.amap_->localSize()) ) {
-      FEI_CERR << "Aztec_LSVector::assign: ERROR, incompatible maps."
+      fei::console_out() << "Aztec_LSVector::assign: ERROR, incompatible maps."
            << " Aborting assignment." << FEI_ENDL;
       return;
    }
@@ -232,7 +232,7 @@ bool Aztec_LSVector::readFromFile(const char *fileName) {
    char line[128];
 
    if (fileName == NULL) {
-      FEI_CERR << "Aztec_LSVector::readFromFile: ERROR, NULL fileName." << FEI_ENDL;
+      fei::console_out() << "Aztec_LSVector::readFromFile: ERROR, NULL fileName." << FEI_ENDL;
       return(false);
    }
 
@@ -240,14 +240,14 @@ bool Aztec_LSVector::readFromFile(const char *fileName) {
       binaryData = false;
    }
    else {
-      FEI_CERR << "Aztec_LSVector::readFromFile: fileName doesn't contain "
+      fei::console_out() << "Aztec_LSVector::readFromFile: fileName doesn't contain "
            << "'.txt', assuming binary data..." << FEI_ENDL;
       binaryData = true;
    }
 
    FILE *file = fopen(fileName,"r");
    if (!file){
-      FEI_CERR << "Aztec_LSVector: Error opening " << fileName << FEI_ENDL;
+      fei::console_out() << "Aztec_LSVector: Error opening " << fileName << FEI_ENDL;
       return false;
    }
 
@@ -262,9 +262,9 @@ bool Aztec_LSVector::readFromFile(const char *fileName) {
       sscanf(line,"%d",&nn);
    }
    if (nn != globalSize) {
-      FEI_CERR << "ERROR in Aztec_LSVector::readFromFile." << FEI_ENDL;
-      FEI_CERR << "Vector in file has wrong dimension." << FEI_ENDL;
-      FEI_CERR << "amap_->globalSize():" << globalSize << " file n:" << nn << FEI_ENDL;
+      fei::console_out() << "ERROR in Aztec_LSVector::readFromFile." << FEI_ENDL;
+      fei::console_out() << "Vector in file has wrong dimension." << FEI_ENDL;
+      fei::console_out() << "amap_->globalSize():" << globalSize << " file n:" << nn << FEI_ENDL;
       return(false);
    }
 

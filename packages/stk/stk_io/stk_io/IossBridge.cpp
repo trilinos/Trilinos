@@ -11,6 +11,7 @@
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
+#include <Ioss_NullEntity.h>
 
 #include <stk_util/util/tokenize.hpp>
 #include <stk_io/IossBridge.hpp>
@@ -511,12 +512,19 @@ namespace stk {
     }
 
     //----------------------------------------------------------------------
-    struct IOPartAttribute {
-    };
-
-    void put_io_part_attribute(mesh::Part & part)
+    const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part)
     {
-      if (part.attribute<IOPartAttribute>() != NULL) {
+      const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
+      if (!entity || entity->type() == Ioss::INVALID_TYPE) {
+	return NULL;
+      } else {
+	return entity;
+      }
+    }
+
+    void put_io_part_attribute(mesh::Part & part, Ioss::GroupingEntity *entity)
+    {
+      if (part.attribute<Ioss::GroupingEntity>() != NULL) {
 	std::string msg = "stk::io::put_io_part_attribute( ";
 	msg += part.name();
 	msg += " ) FAILED:";
@@ -524,9 +532,13 @@ namespace stk {
 	throw std::runtime_error( msg );
       }
 
-      IOPartAttribute * const attr = new IOPartAttribute();
       mesh::MetaData & meta = mesh::MetaData::get(part);
-      meta.declare_attribute_with_delete( part , attr );
+      if (entity) {
+	meta.declare_attribute_no_delete(part, entity);
+      } else {
+	Ioss::GroupingEntity *attr = new Ioss::NullEntity();
+	meta.declare_attribute_with_delete(part, attr);
+      }
     }
 
     /** Determine whether the field is defined on the specified part
@@ -690,12 +702,23 @@ namespace stk {
       return extype ;
     }
 
+    void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
+				  stk::mesh::EntityRank type)
+    {
+      internal_part_processing(entity, meta.get_meta_data(meta), type);
+    }
+    void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta,
+				  stk::mesh::EntityRank type)
+    {
+      internal_part_processing(entity, meta.get_meta_data(meta), type);
+    }
+
     void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
 				  stk::mesh::EntityRank type)
     {
       if (include_entity(entity)) {
 	stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
-	stk::io::put_io_part_attribute(part);
+	stk::io::put_io_part_attribute(part, entity);
       }
     }
 
@@ -704,7 +727,7 @@ namespace stk {
     {
       if (include_entity(entity)) {
 	stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
-	stk::io::put_io_part_attribute(part);
+	stk::io::put_io_part_attribute(part, entity);
 
 	const Ioss::ElementTopology *topology = entity->topology();
 	const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
@@ -880,7 +903,10 @@ namespace stk {
         const stk::mesh::EntityRank edgerank = edge_rank(mesh::MetaData::get(part));
 	ThrowRequire(type == siderank || type == edgerank);
 
-	const CellTopologyData *const ef_topology = stk::io::get_cell_topology(part);
+	const CellTopologyData *const ef_topology = 
+              stk::io::get_cell_topology(part) ?
+              stk::io::get_cell_topology(part) :
+              stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
 	if (ef_topology == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part.name() << " returned NULL from get_cell_topology()";
@@ -1006,7 +1032,10 @@ namespace stk {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
         const stk::mesh::EntityRank elem_rank = element_rank(meta);
 
-	const CellTopologyData * const cell_top = stk::io::get_cell_topology( part );
+	const CellTopologyData * const cell_top = 
+              stk::io::get_cell_topology(part) ?
+              stk::io::get_cell_topology(part) :
+              stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
 	if (cell_top == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part.name() << " returned NULL from get_cell_topology()";
@@ -1285,7 +1314,10 @@ namespace stk {
 	std::vector<mesh::Entity *> elements;
 	size_t num_elems = get_entities(*part, bulk, elements);
 
-	const CellTopologyData * cell_topo = stk::io::get_cell_topology(*part);
+	const CellTopologyData * cell_topo = 
+              stk::io::get_cell_topology(*part) ?
+              stk::io::get_cell_topology(*part) :
+              stk::mesh::fem::FEMMetaData::get(*part).get_cell_topology(*part).getCellTopologyData();
 	if (cell_topo == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
@@ -1440,7 +1472,7 @@ namespace stk {
     //----------------------------------------------------------------------
     bool is_part_io_part(stk::mesh::Part &part)
     {
-      return NULL != part.attribute<IOPartAttribute >();
+      return NULL != part.attribute<Ioss::GroupingEntity>();
     }
 
     const stk::mesh::Field<double, stk::mesh::ElementNode> *get_distribution_factor_field(const stk::mesh::Part &p)

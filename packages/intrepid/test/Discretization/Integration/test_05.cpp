@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
       testInt.assign(numPoly[cellCt], tmparray);
       analyticInt.assign(numAnalytic[cellCt], tmparray);
 
-      *outStream << "\nIntegrals of monomials on a reference " << cellType[cellCt].getBaseTopology()->name << ":\n";
+      *outStream << "\nIntegrals of monomials on a reference " << cellType[cellCt].getBaseCellTopologyData()->name << ":\n";
       std::ifstream filecompare(&filename[cellCt][0]);
       // compute integrals
       for (int cubDeg=0; cubDeg <= maxDeg[cellCt]; cubDeg++) {

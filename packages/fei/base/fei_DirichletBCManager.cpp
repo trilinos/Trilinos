@@ -53,7 +53,7 @@ DirichletBCManager::getEqnNumber(int IDType, int ID, int fieldID, int offsetInto
     osstr << "fei::DirichletBCManager::finalizeBCEqns caught exception: "
        << exc.what() << " BC IDType="<<IDType<<", ID="<<ID
        << ", fieldID="<<fieldID;
-    FEI_CERR << osstr.str() << FEI_ENDL;
+    fei::console_out() << osstr.str() << FEI_ENDL;
     ERReturn(-1);
   }
 

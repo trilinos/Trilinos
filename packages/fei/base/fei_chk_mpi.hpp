@@ -20,7 +20,7 @@ static const char fei_mpi_file[] = __FILE__;
 
 #define CHK_MPI(a) { int snl_fei_mpiErrorCode = a; \
                      if (snl_fei_mpiErrorCode != MPI_SUCCESS) {\
-                      FEI_CERR << fei_mpi_file << ", line " << __LINE__  \
+                      fei::console_out() << fei_mpi_file << ", line " << __LINE__  \
                            <<" MPI ERROR " << FEI_ENDL; \
                       return(snl_fei_mpiErrorCode); \
                     } }

@@ -26,7 +26,7 @@ HexBeamCR::HexBeamCR(int W, int D, int DofPerNode,
   switch(decomp) {
   case HexBeamCR::OneD:
     if (D < numProcs) {
-      FEI_CERR << "HexBeamCR: too many processors." << FEI_ENDL;
+      fei::console_out() << "HexBeamCR: too many processors." << FEI_ENDL;
       inErrorState_ = true;
       break;
     }
@@ -56,7 +56,7 @@ HexBeamCR::HexBeamCR(int W, int D, int DofPerNode,
   case HexBeamCR::TwoD:
   case HexBeamCR::ThreeD:
   default:
-    FEI_CERR << "HexBeamCR: invalid decomp option: " << decomp
+    fei::console_out() << "HexBeamCR: invalid decomp option: " << decomp
 	 <<" aborting." << FEI_ENDL;
     std::abort();
   }

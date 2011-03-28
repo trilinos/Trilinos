@@ -13,7 +13,6 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
@@ -46,16 +45,15 @@ bool test_unequal_weights( stk::ParallelMachine pm )
 
   stk::mesh::fixtures::HexFixture fixture(pm, nx, ny, nz);
 
-  stk::mesh::MetaData & meta  = fixture.m_meta_data;
+  stk::mesh::fem::FEMMetaData & fem_meta  = fixture.m_fem_meta;
   stk::mesh::BulkData & bulk  = fixture.m_bulk_data;
-  stk::mesh::DefaultFEM & fem = fixture.m_fem;
 
   // Put weights field on all elements
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
-  ScalarField & weight_field( meta.declare_field< ScalarField >( "element_weights" ) );
-  stk::mesh::put_field(weight_field , element_rank , meta.universal_part() );
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "element_weights" ) );
+  stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
 
-  meta.commit();
+  fem_meta.commit();
 
   bulk.modification_begin();
 
@@ -92,7 +90,7 @@ bool test_unequal_weights( stk::ParallelMachine pm )
   Teuchos::ParameterList emptyList;
   stk::rebalance::Zoltan zoltan_partition(pm, fixture.m_spatial_dimension, emptyList);
 
-  stk::mesh::Selector selector(meta.universal_part());
+  stk::mesh::Selector selector(fem_meta.universal_part());
 
   stk::rebalance::rebalance(bulk, selector, &fixture.m_coord_field, &weight_field, zoltan_partition);
 
@@ -103,7 +101,7 @@ bool test_unequal_weights( stk::ParallelMachine pm )
     std::cerr << std::endl 
      << "imbalance_threshold after rebalance = " << imbalance_threshold << ", " << do_rebal << std::endl;
 
-  stk::mesh::Selector owned_selector = meta.locally_owned_part();
+  stk::mesh::Selector owned_selector = fem_meta.locally_owned_part();
   size_t num_local_elems = stk::mesh::count_selected_entities(owned_selector, bulk.buckets(element_rank));
 
   // Check that we satisfy our threshhold

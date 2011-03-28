@@ -13,7 +13,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <Ioss_DBUsage.h>
 #include <Ioss_Field.h>
@@ -69,6 +69,7 @@ bool include_entity(Ioss::GroupingEntity *entity);
  *	stk::io::define_output_db()) which will cause the part to be output to a
  *	results or restart file.
  */
+
 template <typename T>
 void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta,
                              stk::mesh::EntityRank type)
@@ -77,6 +78,12 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
     T* entity = entities[i];
     internal_part_processing(entity, meta, type);
   }
+}
+template <typename T>
+void default_part_processing(const std::vector<T*> &entities, stk::mesh::fem::FEMMetaData &meta,
+                             stk::mesh::EntityRank type)
+{
+  default_part_processing (entities, meta.get_meta_data(meta), type);
 }
 
 /** Given the newly created Ioss::Region 'io_region', define the
@@ -249,10 +256,18 @@ void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
  */
 bool is_part_io_part(mesh::Part &part);
 
-/** Define the IOPartAttribute attribute on the specified part 'part'.
- * \see is_part_io_part()
+/** Define an attribute on the specified part 'part' indicating that
+ * this part should be used for io.  \see is_part_io_part()
  */
-void put_io_part_attribute( mesh::Part &part);
+void put_io_part_attribute( mesh::Part &part, Ioss::GroupingEntity *entity = NULL);
+
+const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part);
+
+void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
+                              stk::mesh::EntityRank type);
+
+void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta,
+                              stk::mesh::EntityRank type);
 
 void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
                               stk::mesh::EntityRank type);

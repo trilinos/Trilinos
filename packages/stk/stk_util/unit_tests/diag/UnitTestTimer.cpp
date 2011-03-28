@@ -13,8 +13,6 @@
 #include <cmath>
 #include <unistd.h>
 
-#include <mpi.h>
-
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Writer.hpp>
@@ -144,9 +142,6 @@ struct Object
 
 STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
 {
-  int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
   stk::diag::TimeBlock root_time_block(unitTestTimer());
 
   std::ostringstream strout;

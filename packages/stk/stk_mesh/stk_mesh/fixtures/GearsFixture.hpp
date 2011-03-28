@@ -19,11 +19,9 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/fem/DefaultFEM.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-
 
 namespace stk {
 namespace mesh {
@@ -46,9 +44,8 @@ class GearsFixture{
 
   const size_t NUM_GEARS;
 
-  MetaData  meta_data;
-  DefaultFEM fem_data;
-  BulkData  bulk_data;
+  fem::FEMMetaData meta_data;
+  BulkData         bulk_data;
 
   const EntityRank element_rank;
 

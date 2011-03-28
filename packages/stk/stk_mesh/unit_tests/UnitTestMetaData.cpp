@@ -25,15 +25,14 @@
 #include <stk_mesh/base/PartRelation.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 using stk::mesh::MetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::PartRelation;
 using stk::mesh::EntityRank;
-using stk::mesh::DefaultFEM;
 using std::cout;
 using std::endl;
 
@@ -85,8 +84,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
   part_vector.push_back(& pd);
 
   //Part * const intersection_part = &
-  declare_part(metadata, part_vector);
-
+  metadata.declare_part(part_vector);
 
   //Test declare_part_subset
   STKUNIT_ASSERT_THROW(  metadata.declare_part_subset( pe, pe), std::runtime_error);
@@ -130,7 +128,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
 
   //Test Entity repository - covering EntityRepository.cpp/hpp
   stk::mesh::MetaData meta ( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-  stk::mesh::Part & part = stk::mesh::declare_part(meta, "another part");
+  stk::mesh::Part & part = meta.declare_part("another part");
 
   meta.commit();
 

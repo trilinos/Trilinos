@@ -34,7 +34,7 @@ std::string construct_filename(int argc, char** argv)
   int dashIarg = whichArg(argc, argv, "-i");
 
   if (dashIarg < 0) {
-    FEI_CERR << "fei_test_utils::construct_filename: argument '-i' not found."
+    fei::console_out() << "fei_test_utils::construct_filename: argument '-i' not found."
              << FEI_ENDL;
     return(result);
   }
@@ -184,7 +184,7 @@ int get_filename_and_read_input(int argc, char** argv,
     read_input_file(filename.c_str(), comm, stdstrings);
   }
   catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
+    fei::console_out() << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
 
