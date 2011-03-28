@@ -83,8 +83,10 @@ namespace stk {
     public:
 
 
-      Colorer(std::vector< ColorerSetType >& element_colors, std::vector<EntityRank> ranks = std::vector<EntityRank>());
-      Colorer(std::vector<EntityRank> ranks = std::vector<EntityRank>());
+      //Colorer(std::vector< ColorerSetType >& element_colors, std::vector<EntityRank> ranks = std::vector<EntityRank>());
+      //Colorer(std::vector<EntityRank> ranks = std::vector<EntityRank>());
+      Colorer(std::vector< ColorerSetType >& element_colors, std::vector<EntityRank> ranks);
+      Colorer(std::vector<EntityRank> ranks );
       void color(percept::PerceptMesh& eMesh, unsigned *elementType = 0,  PartVector* fromParts = 0, FieldBase *element_color_field=0);
 
       std::vector< ColorerSetType >& getElementColors();

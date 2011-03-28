@@ -74,7 +74,8 @@ STKUNIT_UNIT_TEST(mesh_colorer, test1)
   FieldBase *element_color_field = eMesh.addField("element_colors", mesh::Element, vectorDimension);
   eMesh.commit();
 
-  Colorer meshColorer;
+  std::vector<mesh::EntityRank> mer;  mer.push_back(stk::mesh::Element);
+  Colorer meshColorer(mer);
   unsigned elementType = 0u;
   meshColorer.color(eMesh, &elementType, 0, element_color_field);
   //eMesh.saveAs("./cube_colored.e");

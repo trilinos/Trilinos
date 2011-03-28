@@ -85,7 +85,8 @@ namespace stk
         FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
         eMesh.commit();
 
-        Colorer meshColorer;
+        std::vector<mesh::EntityRank> mer;  mer.push_back(stk::mesh::Element);
+        Colorer meshColorer(mer);
         unsigned elementType = 0u;
         meshColorer.color(eMesh, &elementType, 0, element_color_field);
         eMesh.saveAs("./output_files/cube_colored.e");
@@ -111,7 +112,8 @@ namespace stk
             FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
             eMesh.commit();
 
-            Colorer meshColorer;
+            std::vector<mesh::EntityRank> mer;  mer.push_back(stk::mesh::Face);
+            Colorer meshColorer(mer);
             unsigned elementType = 0u;
             meshColorer.color(eMesh, &elementType, 0, element_color_field);
             //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
