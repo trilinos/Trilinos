@@ -23,11 +23,13 @@ namespace mesh {
 
 namespace {
 
+const EntityRank NODE_RANK = fem::FEMMetaData::NODE_RANK;
+
 void filter_superimposed_entities(const Entity & entity, EntityVector & entities)
 {
   // Get the node entities for the nodes that make up the entity, we'll
   // use this to check for superimposed entities
-  PairIterRelation irel = entity.relations(fem::NODE_RANK);
+  PairIterRelation irel = entity.relations(NODE_RANK);
   EntityVector entity_nodes;
   entity_nodes.reserve(irel.size());
   for ( ; !irel.empty(); ++irel ) {
@@ -42,7 +44,7 @@ void filter_superimposed_entities(const Entity & entity, EntityVector & entities
   EntityVector::iterator itr = entities.begin();
   while ( itr != entities.end() ) {
     Entity * current_entity = *itr;
-    PairIterRelation relations = current_entity->relations(fem::NODE_RANK);
+    PairIterRelation relations = current_entity->relations(NODE_RANK);
 
     if (current_entity == &entity) {
       // Superimposed with self by definition
@@ -156,7 +158,7 @@ void boundary_analysis(const BulkData& bulk_data,
     }
 
     unsigned subcell_rank = closure_rank - 1;
-    PairIterRelation relations = curr_entity.relations(fem::NODE_RANK);
+    PairIterRelation relations = curr_entity.relations(NODE_RANK);
 
     // iterate over the subcells of the current entity
     for (unsigned nitr = 0; nitr < celltopology->subcell_count[subcell_rank]; ++nitr) {

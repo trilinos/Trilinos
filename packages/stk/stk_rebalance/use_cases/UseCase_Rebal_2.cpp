@@ -16,7 +16,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>

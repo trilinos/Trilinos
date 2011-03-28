@@ -77,7 +77,7 @@ class QuadFixture
    * this node.
    */
   Entity * node( unsigned x , unsigned y ) const
-  { return m_bulk_data.get_entity( fem::NODE_RANK , node_id(x, y) ); }
+  { return m_bulk_data.get_entity( fem::FEMMetaData::NODE_RANK , node_id(x, y) ); }
 
   /**
    * Thinking in terms of rows and columns of elements, get the element in

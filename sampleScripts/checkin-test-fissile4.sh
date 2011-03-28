@@ -24,7 +24,7 @@ echo "
 -DCMAKE_C_COMPILER:PATH=$TRILINOS_TOOLSET_BASE/bin/gcc
 " > SERIAL_RELEASE.config
 
-../../Trilinos/checkin-test.py \
+../../../Trilinos/checkin-test.py \
 -j16 \
 --ctest-timeout=180 \
 $EXTRA_ARGS  

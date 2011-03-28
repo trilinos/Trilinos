@@ -9,10 +9,9 @@
 #include <stdexcept>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 #include <stk_mesh/fixtures/HexFixture.hpp>
-
-using stk::mesh::fem::NODE_RANK;
 
 //----------------------------------------------------------------------------
 
@@ -135,7 +134,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
     const stk::mesh::PartVector no_parts;
 
     // create a new node
-    stk::mesh::Entity & new_node = mesh.declare_entity(NODE_RANK, new_node_id, no_parts);
+    stk::mesh::Entity & new_node = mesh.declare_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, new_node_id, no_parts);
 
     // destroy right_element's relation to old_node, replace with a
     // relation to new node
