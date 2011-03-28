@@ -42,6 +42,10 @@
 #ifndef __MatrixMarket_Tpetra_hpp
 #define __MatrixMarket_Tpetra_hpp
 
+/// \file MatrixMarket_Tpetra.hpp
+/// \brief Matrix Market file reader for Tpetra::CrsMatrix.
+///
+
 #include "Tpetra_CrsMatrix.hpp"
 #include "MatrixMarket_raw.hpp"
 #include "MatrixMarket_Banner.hpp"
@@ -250,15 +254,15 @@ namespace Tpetra {
       ///   for row k.  On output, the reference is invalidated to save
       ///   space.
       /// 
-      void
+      static void
       distribute (ArrayRCP<size_type>& myNumEntriesPerRow,
 		  ArrayRCP<global_ordinal_type>& myColInd,
-		  ArrayRCP<Scalar>& myValues,
+		  ArrayRCP<scalar_type>& myValues,
 		  const Teuchos::RCP<const map_type>& pRowMap,
 		  ArrayRCP<size_type>& numEntriesPerRow,
 		  ArrayRCP<size_type>& rowPtr,
 		  ArrayRCP<global_ordinal_type>& colInd,
-		  ArrayRCP<Scalar>& values)
+		  ArrayRCP<scalar_type>& values)
       {
 	using Teuchos::arcp;
 	using Teuchos::ArrayRCP;
@@ -472,9 +476,9 @@ namespace Tpetra {
       /// 
       /// Each proc inserts its data into the sparse matrix, and then
       /// all procs call fillComplete().
-      sparse_matrix_ptr
-      makeMatrix (Teuchos::ArrayRCP<typename Teuchos::ArrayRCP<global_ordinal_type>::size_type>& myNumEntriesPerRow,
-		  Teuchos::ArrayRCP<typename Teuchos::ArrayRCP<global_ordinal_type>::size_type>& myRowPtr,
+      static sparse_matrix_ptr
+      makeMatrix (Teuchos::ArrayRCP<size_type>& myNumEntriesPerRow,
+		  Teuchos::ArrayRCP<size_type>& myRowPtr,
 		  Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
 		  Teuchos::ArrayRCP<scalar_type>& myValues,
 		  const map_ptr& pRowMap,
@@ -483,25 +487,27 @@ namespace Tpetra {
 	using Teuchos::ArrayRCP;
 	using Teuchos::ArrayView;
 	using Teuchos::rcp;
-	typedef global_ordinal_type GO;
-	typedef typename Teuchos::ArrayRCP<global_ordinal_type>::size_type size_type;
 
 	// Create with DynamicProfile, so that the
 	// fillComplete(DoOptimizeStorage) can do first-touch reallocation.
-	sparse_matrix_ptr A = rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow, DynamicProfile));
-
+	sparse_matrix_ptr A = 
+	  rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow, 
+				       DynamicProfile));
 	// List of the global indices of my rows.
 	// They may or may not be contiguous.
-	ArrayView<const GO> myRows = pRowMap->getNodeElementList();
+	ArrayView<const global_ordinal_type> myRows = 
+	  pRowMap->getNodeElementList();
 	const size_type myNumRows = myRows.size();
 
+	// Add this processor's matrix entries to the CrsMatrix.
 	for (size_type k = 0; k < myNumRows; ++k)
 	  A->insertGlobalValues (myRows[k], 
 				 myColInd(myRowPtr[k], myNumEntriesPerRow[k]),
 				 myValues(myRowPtr[k], myNumEntriesPerRow[k]));
-	// We've entered in all our matrix entries, so we can delete the
-	// original data.  This will save memory when we call
-	// fillComplete().
+	// We've entered in all our matrix entries, so we can delete
+	// the original data.  This will save memory when we call
+	// fillComplete(), so that we never keep more than two copies
+	// of the matrix's data in memory at once.
 	myNumEntriesPerRow = null;
 	myRowPtr = null;
 	myColInd = null;
@@ -528,7 +534,7 @@ namespace Tpetra {
       static Teuchos::RCP<const Banner>
       readBanner (std::istream& in,
 		  size_t& lineNumber,
-		  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+		  const comm_ptr& pComm,
 		  const bool tolerant=false,
 		  const bool debug=false)
       {
@@ -723,21 +729,51 @@ namespace Tpetra {
 
     public:
 
-      static Teuchos::RCP<sparse_matrix_type>
+      /// \brief Read the sparse matrix from the given file.
+      ///
+      /// This is a collective operation.  Only Rank 0 opens the file
+      /// and reads data from it, but all ranks participate and wait
+      /// for the final result.
+      /// 
+      /// \param filename [in] Name of the Matrix Market file.
+      /// \param pComm [in] Communicator containing all processor(s)
+      ///   over which the sparse matrix will be distributed.
+      /// \param pNode [in] Kokkos Node object.
+      /// \param tolerant [in] Whether to read the data tolerantly
+      ///   from the file.
+      /// \param debug [in] Whether to produce copious status output
+      ///   useful for Tpetra developers, but probably not useful for
+      ///   anyone else.
+      static sparse_matrix_ptr
       readFile (const std::string& filename,
-		const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
-		const Teuchos::RCP<node_type>& pNode,
+		const comm_ptr& pComm,
+		const node_ptr& pNode,
 		const bool tolerant=false,
 		const bool debug=false)
       {
 	std::ifstream in (filename.c_str());
 	return read (in, pComm, pNode, tolerant, debug);
       }
-      
-      static Teuchos::RCP<sparse_matrix_type>
+
+      /// \brief Read the sparse matrix from the given input stream.
+      ///
+      /// This is a collective operation.  Only Rank 0 reads data from
+      /// the input stream, but all ranks participate and wait for the
+      /// final result.
+      ///
+      /// \param filename [in] The input stream from which to read.
+      /// \param pComm [in] Communicator containing all processor(s)
+      ///   over which the sparse matrix will be distributed.
+      /// \param pNode [in] Kokkos Node object.
+      /// \param tolerant [in] Whether to read the data tolerantly
+      ///   from the file.
+      /// \param debug [in] Whether to produce copious status output
+      ///   useful for Tpetra developers, but probably not useful for
+      ///   anyone else.
+      static sparse_matrix_ptr
       read (std::istream& in,	
-	    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
-	    const Teuchos::RCP<node_type>& pNode,
+	    const comm_ptr& pComm,
+	    const node_ptr& pNode,
 	    const bool tolerant=false,
 	    const bool debug=false)
       {
