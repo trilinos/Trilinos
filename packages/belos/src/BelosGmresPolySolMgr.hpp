@@ -296,7 +296,7 @@ private:
   Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
     
   // Current parameter list.
-  Teuchos::RCP<ParameterList> params_;
+  Teuchos::RCP<Teuchos::ParameterList> params_;
 
   // Default solver values.
   static const MagnitudeType polytol_default_;

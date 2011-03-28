@@ -1889,6 +1889,7 @@ namespace Belos {
   restart (const int maxIterCount)
   {
     using Teuchos::RCP;
+    using Teuchos::null;
     const Scalar zero = STS::zero();
 
     // This would be the place where subclasses may implement things

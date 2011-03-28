@@ -320,7 +320,7 @@ namespace Belos {
     void initializeStateStorage();
 
     // Compute updated recycle space given existing recycle space and newly generated Krylov space
-    void buildRecycleSpace2(RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter);
+    void buildRecycleSpace2(Teuchos::RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter);
 
     //  Computes harmonic eigenpairs of projected matrix created during the priming solve.
     //  HH is the projected problem from the initial cycle of Gmres, it is (at least) of dimension m+1 x m.
@@ -384,7 +384,7 @@ namespace Belos {
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
     
     // Current parameter list.
-    Teuchos::RCP<ParameterList> params_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
 
     // Default solver values.
     static const MagnitudeType convTol_default_;
@@ -1784,7 +1784,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
 //  Given existing recycle space and Krylov space, build new recycle space
 template<class ScalarType, class MV, class OP>
-void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter) {
+void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(Teuchos::RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter) {
 
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -1803,7 +1803,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(RCP<GCRODRIter<ScalarTyp
   {
     index.resize(keff);
     for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
-    RCP<MV> Utmp  = MVT::CloneViewNonConst( *U_, index );
+    Teuchos::RCP<MV> Utmp  = MVT::CloneViewNonConst( *U_, index );
     d.resize(keff);
     MVT::MvNorm( *Utmp, d );
     for (int i=0; i<keff; ++i) {
@@ -1813,7 +1813,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(RCP<GCRODRIter<ScalarTyp
   }
 
   // Get view into current "full" upper Hessnburg matrix
-  RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H2tmp = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, p+keff+1, p+keff ) );
+  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H2tmp = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, p+keff+1, p+keff ) );
 
   // Insert D into the leading keff x keff  block of H2
   for (int i=0; i<keff; ++i) {
@@ -1832,11 +1832,11 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(RCP<GCRODRIter<ScalarTyp
   // U = [U V(:,1:p)] * P; (in two steps)
 
   // U(:,1:keff) = matmul(U(:,1:keff_old),PP(1:keff_old,1:keff)) (step 1)
-  RCP<MV> U1tmp;
+  Teuchos::RCP<MV> U1tmp;
   {
     index.resize( keff );
     for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
-    RCP<const MV> Utmp  = MVT::CloneView( *U_,  index );
+    Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_,  index );
     index.resize( keff_new );
     for (int ii=0; ii<keff_new; ++ii) { index[ii] = ii; }
     U1tmp  = MVT::CloneViewNonConst( *U1_,  index );
@@ -1848,7 +1848,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(RCP<GCRODRIter<ScalarTyp
   {
     index.resize(p);
     for (int ii=0; ii < p; ii++) { index[ii] = ii; }
-    RCP<const MV> Vtmp = MVT::CloneView( *V_, index );
+    Teuchos::RCP<const MV> Vtmp = MVT::CloneView( *V_, index );
     Teuchos::SerialDenseMatrix<int,ScalarType> PPtmp( Teuchos::View, *PP_, p, keff_new, keff );
     MVT::MvTimesMatAddMv( one, *Vtmp, PPtmp, one, *U1tmp );
   }
@@ -1883,11 +1883,11 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(RCP<GCRODRIter<ScalarTyp
 
   // C(:,1:keff) = matmul(C(:,1:keff_old),QQ(1:keff_old,1:keff))
   {
-    RCP<MV> C1tmp;
+    Teuchos::RCP<MV> C1tmp;
     {
       index.resize(keff);
       for (int i=0; i < keff; i++) { index[i] = i; }
-      RCP<const MV> Ctmp  = MVT::CloneView( *C_,  index );
+      Teuchos::RCP<const MV> Ctmp  = MVT::CloneView( *C_,  index );
       index.resize(keff_new);
       for (int i=0; i < keff_new; i++) { index[i] = i; }
       C1tmp  = MVT::CloneViewNonConst( *C1_,  index );
@@ -1898,7 +1898,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(RCP<GCRODRIter<ScalarTyp
     {
       index.resize( p+1 );
       for (int i=0; i < p+1; ++i) { index[i] = i; }
-      RCP<const MV> Vtmp = MVT::CloneView( *V_, index );
+      Teuchos::RCP<const MV> Vtmp = MVT::CloneView( *V_, index );
       Teuchos::SerialDenseMatrix<int,ScalarType> PPtmp( Teuchos::View, *HP_, p+1, keff_new, keff, 0 );
       MVT::MvTimesMatAddMv( one, *Vtmp, PPtmp, one, *C1tmp );
     }
@@ -1922,7 +1922,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(RCP<GCRODRIter<ScalarTyp
   {
     index.resize(keff_new);
     for (int i=0; i < keff_new; i++) { index[i] = i; }
-    RCP<MV> Utmp  = MVT::CloneViewNonConst( *U_,  index );
+    Teuchos::RCP<MV> Utmp  = MVT::CloneViewNonConst( *U_,  index );
     MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
   }
 

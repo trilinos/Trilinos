@@ -283,7 +283,7 @@ namespace Belos {
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
     // Current parameter list.
-    Teuchos::RCP<ParameterList> params_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
     
     // Default solver values.
     static const MagnitudeType convtol_default_;
