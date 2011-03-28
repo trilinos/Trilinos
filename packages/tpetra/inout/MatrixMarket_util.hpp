@@ -99,8 +99,10 @@ namespace Tpetra {
 	}
       }
 
-      //! Persisting const view of the underlying AdderType object.
-      Teuchos::RCP<const AdderType> getAdder() const {
+      /// \brief Persisting non-const view of the underlying adder object.
+      ///
+      /// This violates encapsulation, so please be careful with this.
+      Teuchos::RCP<AdderType> getAdder() const {
 	return adder_;
       }
 

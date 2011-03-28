@@ -282,7 +282,7 @@ namespace Tpetra {
 	  seenNumCols_ = std::max (seenNumCols_, j);
 	  seenNumEntries_++;
 
-	  if (! tolerant)
+	  if (! tolerant_)
 	    {
 	      TEST_FOR_EXCEPTION(i < 1 || j < 1 || i > seenNumRows_ || j > seenNumCols_, 
 				 std::invalid_argument, 
@@ -573,6 +573,67 @@ namespace Tpetra {
 
       private:
 
+
+	/// \brief Read in the Banner line from the given input stream.
+	///
+	/// Only call this method on Rank 0.
+	///
+	/// \param in [in/out] Input stream from which to read the 
+	///   Banner line.
+	///
+	/// \param lineNumber [in/out] On input: Current line number
+	///   of the input stream.  On output: if any line(s) were
+	///   successfully read from the input stream, this is
+	///   incremented by the number of line(s) read.  (This
+	///   includes comment lines.)
+	///
+	/// \return Banner [non-null]
+	static Teuchos::RCP<const Banner>
+	readBanner (std::istream& in,
+		    size_t& lineNumber,
+		    const bool tolerant=false,
+		    const bool debug=false)
+	{
+	  using Teuchos::RCP;
+	  using Teuchos::rcp;
+	  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+	  // The pointer will be non-null on return only on MPI Rank 0.
+	  // Using a pointer lets the data persist outside the
+	  // "myRank==0" scopes.
+	  RCP<Banner> pBanner;
+
+	  // Keep reading lines until we get a noncomment line.
+	  std::string line;
+	  size_t numLinesRead = 0;
+	  bool commentLine = false;
+	  do {
+	    // Try to read a line from the input stream.
+	    const bool readFailed = ! getline(in, line);
+	    TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
+			       "Failed to get Matrix Market banner line "
+			       "from input, after reading " << numLinesRead
+			       << "line" << (numLinesRead != 1 ? "s." : "."));
+	    // We read a line from the input stream.
+	    lineNumber++; 
+	    numLinesRead++;
+	    size_t start, size; // Output args of checkCommentLine
+	    commentLine = checkCommentLine (line, start, size, 
+					    lineNumber, tolerant);
+	  } while (commentLine); // Loop until we find a noncomment line.
+
+	  // Assume that the noncomment line we found is the banner line.
+	  try {
+	    pBanner = rcp (new Banner (line, tolerant));
+	  } catch (std::exception& e) {
+	    TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+			       "Matrix Market banner line contains syntax "
+			       "error(s): " << e.what());
+	  }
+	  return pBanner;
+	}
+
+
         //! To be called only on MPI Rank 0.
 	static std::pair<bool, std::string>
 	readOnRank0 (std::istream& in,	
@@ -587,24 +648,33 @@ namespace Tpetra {
 	  using Teuchos::Tuple;
 	  typedef Teuchos::ScalarTraits<Scalar> STS;
 
-	  std::ostringstream err;
+	  // This "Adder" knows how to add sparse matrix entries,
+	  // given a line of data from the file.  It also stores the
+	  // entries and can sort them.
+	  typedef Adder<Scalar, Ordinal> raw_adder_type;
+	  // SymmetrizingAdder "advices" (yes, I'm using that as a verb)
+	  // the original Adder, so that additional entries are filled
+	  // in symmetrically, if the Matrix Market banner line
+	  // specified a symmetry type other than "general".
+	  typedef SymmetrizingAdder<raw_adder_type> adder_type;
 
-	  if (! in)
-	    {
-	      err << "Input stream appears to be in an invalid state.";
-	      return std::make_pair (false, err.str());
-	    }
-	  std::string line;
-	  if (! getline (in, line))
-	    {
-	      err << "Failed to get first (banner) line";
-	      return std::make_pair (false, err.str());
-	    }
-	  // Construct and validate the "Banner" (matrix metadata,
-	  // including type and symmetry information, but not
-	  // dimensions).
-	  Banner banner (line, tolerant);
-	  if (banner.matrixType() != "coordinate")
+	  // Current line number of the input stream.
+	  size_t lineNumber = 1;
+
+	  // Construct the "Banner" (matrix metadata, including type
+	  // and symmetry information, but not dimensions).
+	  std::ostringstream err;
+	  RCP<const Banner> pBanner;
+	  try {
+	    pBanner = readBanner (in, lineNumber, tolerant, debug);
+	  } catch (std::exception& e) {
+	    err << "Failed to read Banner: " << e.what();
+	    return std::make_pair (false, err.str());
+	  }
+	  //
+	  // Validate the metadata in the Banner.
+	  //
+	  if (pBanner->matrixType() != "coordinate")
 	    {
 	      err << "Matrix Market input file must contain a "
 		"\"coordinate\"-format sparse matrix in "
@@ -612,7 +682,7 @@ namespace Tpetra {
 		"from it.";
 	      return std::make_pair (false, err.str());
 	    }
-	  else if (! STS::isComplex && banner.dataType() == "complex")
+	  else if (! STS::isComplex && pBanner->dataType() == "complex")
 	    {
 	      err << "The Matrix Market sparse matrix file contains complex-"
 		"valued data, but you are try to read the data into a sparse "
@@ -620,19 +690,22 @@ namespace Tpetra {
 		"real).";
 	      return std::make_pair (false, err.str());
 	    }
-	  else if (banner.dataType() != "real" && banner.dataType() != "complex")
+	  else if (pBanner->dataType() != "real" && 
+		   pBanner->dataType() != "complex")
 	    {
 	      err << "Only real or complex data types (no pattern or integer "
 		"matrices) are currently supported.";
 	      return std::make_pair (false, err.str());
 	    }
 	  if (debug)
-	    {
-	      cerr << "Banner line:" << endl << banner << endl;
-	    }
+	    cerr << "Banner line:" << endl << *pBanner << endl;
 	  
-	  // The rest of the file starts at line 2, after the banner line.
-	  size_t lineNumber = 2;
+	  // The reader will invoke the adder (see below) once for
+	  // each matrix entry it reads from the input stream.
+	  typedef CoordDataReader<adder_type, Ordinal, Scalar, 
+	    STS::isComplex> reader_type;
+	  // We will set the adder below, after calling readDimensions().
+	  reader_type reader;
 
 	  // Read in the dimensions of the sparse matrix: (# rows, #
 	  // columns, # matrix entries (counting duplicates as
@@ -646,10 +719,11 @@ namespace Tpetra {
 		"file: failed to read coordinate dimensions.";
 	      return std::make_pair (false, err.str());
 	    }
-	  // These are "expected" values.  The actual matrix entries
-	  // read from the input stream might not conform to their
-	  // constraints.  We allow such nonconformity only in
-	  // "tolerant" mode.
+	  // These are "expected" values read from the input stream's
+	  // metadata.  The actual matrix entries read from the input
+	  // stream might not conform to their constraints.  We allow
+	  // such nonconformity only in "tolerant" mode; otherwise, we
+	  // throw an exception.
 	  const Ordinal numRows = dims.first[0];
 	  const Ordinal numCols = dims.first[1];
 	  const Ordinal numEntries = dims.first[2];
@@ -660,29 +734,17 @@ namespace Tpetra {
 		   << "duplicates)." << endl;
 	    }
 
-	  // Make an "Adder" that knows how to add sparse matrix entries,
-	  // given a line of data from the file.
-	  typedef Adder<Scalar, Ordinal> raw_adder_type;
-	  // SymmetrizingAdder "advices" (yes, I'm using that as a verb)
-	  // the original Adder, so that additional entries are filled
-	  // in symmetrically, if the Matrix Market banner line
-	  // specified a symmetry type other than "general".
-	  typedef SymmetrizingAdder<raw_adder_type> adder_type;
-
 	  // The "raw" adder knows about the expected matrix
 	  // dimensions, but doesn't know about symmetry.
 	  RCP<raw_adder_type> rawAdder = 
 	    rcp (new raw_adder_type (numRows, numCols, numEntries, 
 				     tolerant, debug));
 	  // The symmetrizing adder knows about symmetry.
-	  adder_type adder (rawAdder, banner.symmType());
+	  RCP<adder_type> adder = 
+	    rcp (new adder_type (rawAdder, pBanner->symmType()));
 
-	  // Make a reader that knows how to read "coordinate" format
-	  // sparse matrix data from the input stream.  It uses the
-	  // adder to add each entry to the sparse matrix as it is
-	  // read from the input stream.
-	  typedef CoordDataReader<adder_type, Ordinal, Scalar, STS::isComplex> reader_type;
-	  reader_type reader (adder);
+	  // Give the adder to the reader.
+	  reader.setAdder (adder);
 
 	  // Read the sparse matrix entries.  "results" just tells us if
 	  // and where there were any bad lines of input.  The actual
@@ -700,12 +762,18 @@ namespace Tpetra {
 	  // Report any bad line number(s).
 	  if (! results.first)
 	    {
-	      if (debug)
-		reportBadness (cerr, results);
 	      if (! tolerant)
 		{
-		  err << "Invalid Matrix Market file";
+		  err << "The Matrix Market input stream had syntax error(s)."
+		    "  Here is the error report." << endl;
+		  reportBadness (err, results);
+		  err << endl;
 		  return std::make_pair (false, err.str());
+		}
+	      else
+		{
+		  if (debug)
+		    reportBadness (cerr, results);
 		}
 	    }
 	  // We're done reading in the sparse matrix.  If we're in
@@ -728,7 +796,7 @@ namespace Tpetra {
 	{
 	  using std::endl;
 	  const size_t numErrors = results.second.size();
-	  const size_t maxNumErrorsToReport = 100;
+	  const size_t maxNumErrorsToReport = 20;
 	  out << numErrors << " errors when reading Matrix Market sparse "
 	    "matrix file." << endl;
 	  if (numErrors > maxNumErrorsToReport)

@@ -43,6 +43,7 @@
 #define __MatrixMarket_CoordDataReader_hpp
 
 #include "MatrixMarket_generic.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Tuple.hpp"
 
 namespace Tpetra {
@@ -59,25 +60,42 @@ namespace Tpetra {
     class CoordDataReaderBase {
     private:
       //! Closure that knows how to add entries to the sparse matrix.
-      Callback& adder_;
-
-      /// \brief Forbid default construction syntactically.
-      /// 
-      /// Default construction would not be sensible for this class,
-      /// since it can't do anything without a closure for adding
-      /// entries to the sparse matrix.  (If you want the closure to
-      /// be a no-op, pass in a no-op explicitly.)
-      CoordDataReaderBase ();
+      Teuchos::RCP<Callback> adder_;
 
     public:
-      /// \brief Constructor.
+      /// \brief Constructor with "adder" argument.
+      ///
+      /// This is the favored way to construct an instance of this
+      /// type.  Only use the no-argument constructor if you have a
+      /// "chicken-and-egg" problem (where the adder needs the matrix
+      /// dimensions).
       /// 
       /// \param adder [in/out] Closure whose operator() adds an entry
       ///   to the sparse matrix on each invocation.
-      CoordDataReaderBase (Callback& adder) : adder_ (adder) {}
+      CoordDataReaderBase (const Teuchos::RCP<Callback>& adder) : 
+	adder_ (adder) {}
+
+      /// \brief No-argument constructor.
+      ///
+      /// We offer this option in case the adder's constructor needs
+      /// the matrix dimensions, so that it's necessary to call
+      /// readDimensions() first before constructing the adder.  You
+      /// should call setAdder() with a non-null argument before
+      /// calling read() or readLine().
+      CoordDataReaderBase () : adder_ (Teuchos::null) {}
 
       //! Virtual destructor for safety and happy compilers.
       virtual ~CoordDataReaderBase () {}
+
+      /// \brief Set the Adder object.
+      /// 
+      /// Please don't call this after calling read() or readLine().
+      /// The right time to call this is right after calling the
+      /// no-argument constructor, if it's not possible to supply an
+      /// Adder object before calling readDimensions().
+      void setAdder (const Teuchos::RCP<Callback>& adder) {
+	adder_ = adder;
+      }
 
       /// \brief Read in the data from a single line of the input stream.
       ///
@@ -99,6 +117,11 @@ namespace Tpetra {
       ///   from which we begin reading.  (This is used for
       ///   informative error output, if an error is detected in the
       ///   file.)
+      ///
+      /// \param tolerant [in] If true, parse tolerantly.  The
+      ///   resulting read-in data may be incorrect, but the parser
+      ///   won't throw an exception if it can just let bad data
+      ///   through and continue.
       ///
       /// \param debug [in] If true, print verbose debugging output.
       ///
@@ -146,7 +169,7 @@ namespace Tpetra {
 	      badLineNumbers.push_back (lineNumber);
 	    else
 	      {
-		adder_ (rowIndex, colIndex, value);
+		(*adder_) (rowIndex, colIndex, value);
 		validDataLines++;
 	      }
 	  }
@@ -351,7 +374,8 @@ namespace Tpetra {
       public CoordDataReaderBase<Callback, Ordinal, Scalar, isComplex>
     {
     public:
-      CoordDataReader (Callback& adder);
+      CoordDataReader (const Teuchos::RCP<Callback>& adder);
+      CoordDataReader ();
 
       //! Virtual destructor for safety and happy compilers.
       virtual ~CoordDataReader();
@@ -371,8 +395,12 @@ namespace Tpetra {
       public CoordDataReaderBase<Callback, Ordinal, Scalar, true>
     {
     public:
-      CoordDataReader (Callback& adder) :
-	CoordDataReaderBase<Callback, Ordinal, Scalar, true>(adder) 
+      CoordDataReader (const Teuchos::RCP<Callback>& adder) :
+	CoordDataReaderBase<Callback, Ordinal, Scalar, true> (adder)
+      {}
+
+      CoordDataReader() : 
+	CoordDataReaderBase<Callback, Ordinal, Scalar, true> (Teuchos::null)
       {}
 
       //! Virtual destructor for safety and happy compilers.
@@ -415,8 +443,12 @@ namespace Tpetra {
       public CoordDataReaderBase<Callback, Ordinal, Scalar, false>
     {
     public:
-      CoordDataReader (Callback& adder) :
-	CoordDataReaderBase<Callback, Ordinal, Scalar, false>(adder) 
+      CoordDataReader (const Teuchos::RCP<Callback>& adder) :
+	CoordDataReaderBase<Callback, Ordinal, Scalar, false> (adder)
+      {}
+
+      CoordDataReader() : 
+	CoordDataReaderBase<Callback, Ordinal, Scalar, false> (Teuchos::null)
       {}
 
       //! Virtual destructor for safety and happy compilers.

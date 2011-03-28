@@ -82,22 +82,9 @@ namespace Tpetra {
       ///   distribute the returned Tpetra::CrsMatrix.
       /// \param tolerant [in] Whether or not to parse the file 
       ///   tolerantly
+      /// \param verbose [in] Whether to print verbose output
+      /// \param debug [in] Whether to print debugging output 
       ///
-      /// \return Tpetra::CrsMatrix read in from the file 
-      template<class SparseMatrixType>
-      Teuchos::RCP<SparseMatrixType>
-      readFile (const std::string& filename,
-		const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
-		const bool tolerant,
-		const bool debug)
-      {
-	typedef typename SparseMatrixType::node_type node_type;
-	Teuchos::RCP<node_type> pNode = getNode<node_type>();
-      
-	typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
-	return reader_type::readFile (filename, pComm, pNode, tolerant, debug);
-      }
-
       void
       testReadFile (const std::string& filename, 
 		    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
@@ -106,6 +93,7 @@ namespace Tpetra {
 		    const bool debug)
       {
 	using Teuchos::RCP;
+	using std::cerr;
 	using std::cout;
 	using std::endl;
 
@@ -119,15 +107,20 @@ namespace Tpetra {
 	typedef Kokkos::SerialNode node_type;
 	// #endif // defined(HAVE_KOKKOS_TBB)
 
-	typedef CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
+	// Get a Kokkos Node instance for the particular Node type.
+	RCP<node_type> pNode = getNode<node_type>();
+
+	typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
+	  global_ordinal_type, node_type> sparse_matrix_type;
 	const int myRank = Teuchos::rank (*pComm);
 	if (verbose && myRank == 0)
 	  cout << "About to read Matrix Market file \"" << filename << "\":" << endl;
 
 	// Read the sparse matrix from the given Matrix Market file.
 	// This routine acts like an MPI barrier.
-	RCP<sparse_matrix_type> pMatrix = 
-	  readFile<sparse_matrix_type> (filename, pComm, tolerant, debug);
+	typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+	RCP<sparse_matrix_type> pMatrix =
+	  reader_type::readFile (filename, pComm, pNode, tolerant, debug);
 	if (! pMatrix.is_null())
 	  {
 	    if (verbose && myRank == 0)
