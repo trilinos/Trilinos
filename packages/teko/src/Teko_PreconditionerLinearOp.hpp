@@ -194,6 +194,16 @@ void PreconditionerLinearOp<ScalarT>::describe(Teuchos::FancyOStream & out_arg,
    }
 }
 
+inline Teko::LinearOp extractOperatorFromPrecOp(const Teko::LinearOp & lo)
+{
+   Teuchos::RCP<const Teko::PreconditionerLinearOp<double> > plo = 
+      Teuchos::rcp_dynamic_cast<const Teko::PreconditionerLinearOp<double> >(lo); 
+   if(plo!=Teuchos::null)
+      return plo->getOperator();
+   else
+      return lo;
+}
+
 } // end namespace Teko
 
 #endif
