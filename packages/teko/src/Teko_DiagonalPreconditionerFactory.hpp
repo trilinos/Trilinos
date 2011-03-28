@@ -71,11 +71,12 @@ public:
   Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP_;
 };
 
-/** \brief Preconditioner factory that for (block) diagonals of explicit operators.
+/** \brief Preconditioner factory for building explcit inverse of diagonal operators.
+  *        This includes block operators.
   *
-  * Preconditioner factory that for (block) diagonals of explicit operators.
-  * These operators need to be Epetra_CrsMatrices under the hood or this will bomb.
-  * Uses EpetraExt_PointToBlockDiagPermute.
+  * Preconditioner factory for building explicit inverse diagonal operators, including
+  * block diagonals. These operators need to be Epetra_CrsMatrices under the hood or
+  * this will bomb. Uses EpetraExt_PointToBlockDiagPermute.
   */
 class DiagonalPreconditionerFactory 
    : public virtual Teko::PreconditionerFactory {
@@ -102,6 +103,8 @@ public:
 protected: 
   //! some members
   mutable Teuchos::ParameterList List_;
+
+  DiagonalType diagonalType_;
 };
 
 } // end namespace Teko
