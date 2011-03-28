@@ -252,6 +252,10 @@ Actually, the script will not allow you to change TPL enables in these
 standard *.config files because to do so deviates from a consistent build
 configuration for Primary Stable Code.
 
+NOTE: All tentatively-enabled TPLs (e.g. Pthreads and BinUtils) are hard
+disabled in order to avoid different behaviors between machines where they
+would be enabled and machines where they would be disabled.
+
 NOTE: If you want to add extra build/test cases that do not conform to the
 standard build/test configurations described above, then you need to create
 extra builds with the --extra-builds option (see below).
