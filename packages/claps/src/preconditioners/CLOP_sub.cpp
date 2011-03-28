@@ -309,14 +309,19 @@ void CLOP_sub::genpu(const Epetra_IntVector *LD,
   //
   Edof = new double[ndof];
   TRANSA = 'N';
+  double Edof_max(0), tol_Edof(1e-8);
   for (i=0; i<ndof; i++) {
     for (j=0; j<nrhs; j++) sol_sol[j] = sol[i+j*ndof];
     EB.GEMV(TRANSA, nrhs, nrhs, ALPHA, rhs, nrhs,
 	    sol_sol, BETA, rhs_sol);
     Edof[i] = EB.DOT(nrhs, sol_sol, rhs_sol);
-    assert(Edof[i] >= 0);
+    if (Edof[i] > Edof_max) Edof_max = Edof[i];
+    //    assert(Edof[i] >= 0);
   }
-  for (i=0; i<ndof; i++) Edof_sub[subdofs[i]] += Edof[i];
+  for (i=0; i<ndof; i++) {
+    if (Edof[i] < tol_Edof*Edof_max) Edof[i] = tol_Edof*Edof_max;
+    Edof_sub[subdofs[i]] += Edof[i];
+  }
   /*
   if (MyPID == 0) {
     cout << "xcent, ycent = " << xcent << " " << ycent << endl;
