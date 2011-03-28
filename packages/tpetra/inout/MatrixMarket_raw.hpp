@@ -405,6 +405,12 @@ namespace Tpetra {
 	  elts_.resize (0);
 	}
 
+	//! Computed number of rows.
+	const Ordinal numRows() const { return seenNumRows_; }
+
+	//! Computed number of columns.
+	const Ordinal numCols() const { return seenNumCols_; }
+
       private:
 	Ordinal expectedNumRows_, expectedNumCols_, expectedNumEntries_;
 	Ordinal seenNumRows_, seenNumCols_, seenNumEntries_;
