@@ -250,7 +250,7 @@ namespace Anasazi {
       }
     }
 
-    r0_norm = MAT::squareroot( ginner(*this->R_) );
+    r0_norm = MAT::squareroot( RTRBase<ScalarType,MV,OP>::ginner(*this->R_) );
     //
     // kappa (linear) convergence
     // theta (superlinear) convergence
@@ -318,12 +318,12 @@ namespace Anasazi {
             tuple<PSDM>(null),                                     // don't care about coeffs
             null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*BV, but do have B*V
       }
-      ginnersep(*this->R_,*this->Z_,z_r);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->R_,*this->Z_,z_r);
     }
     else {
       // Z = R
       MVT::MvAddMv(ONE,*this->R_,ZERO,*this->R_,*this->Z_);
-      ginnersep(*this->R_,z_r);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->R_,z_r);
     }
 
     if (this->om_->isVerbosity( Debug )) {
@@ -361,7 +361,7 @@ namespace Anasazi {
         OPT::Apply(*this->AOp_,*this->X_,*this->Z_);
         this->counterAOp_ += this->blockSize_;
       }
-      ginnersep(*this->eta_,*this->Z_,eAx);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*this->Z_,eAx);
       // compute A*eta and <eta,A*eta>
       {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
@@ -370,7 +370,7 @@ namespace Anasazi {
         OPT::Apply(*this->AOp_,*this->eta_,*this->Z_);
         this->counterAOp_ += this->blockSize_;
       }
-      ginnersep(*this->eta_,*this->Z_,d_eAe);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*this->Z_,d_eAe);
       // compute B*eta and <eta,B*eta>
       if (this->hasBOp_) {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
@@ -382,7 +382,7 @@ namespace Anasazi {
       else {
         MVT::MvAddMv(ONE,*this->eta_,ZERO,*this->eta_,*this->Z_);
       }
-      ginnersep(*this->eta_,*this->Z_,d_eBe);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*this->Z_,d_eBe);
       // compute model:
       //    m_x(eta) = theta + 2*eta'*A*x + eta'*A*eta - eta'*B*eta*theta
       if (this->leftMost_) {
@@ -433,8 +433,8 @@ namespace Anasazi {
       }
       // while we have B*delta, compute <eta,B*delta> and <delta,B*delta>
       // these will be needed below
-      ginnersep(*this->eta_  ,*this->Hdelta_,eBd);
-      ginnersep(*this->delta_,*this->Hdelta_,dBd);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_  ,*this->Hdelta_,eBd);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->delta_,*this->Hdelta_,dBd);
       // put 2*A*d - 2*B*d*theta --> Hd
       {
         std::vector<ScalarType> theta_comp(this->theta_.begin(),this->theta_.end());
@@ -457,7 +457,7 @@ namespace Anasazi {
             tuple<PSDM>(null),                                    // don't care about coeffs
             null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));      // don't have B*BV, but do have B*V
       }
-      ginnersep(*this->delta_,*this->Hdelta_,d_Hd);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->delta_,*this->Hdelta_,d_Hd);
 
 
       // compute update step
@@ -560,7 +560,7 @@ namespace Anasazi {
           OPT::Apply(*this->AOp_,*this->X_,*this->Z_);
           this->counterAOp_ += this->blockSize_;
         }
-        ginnersep(*this->eta_,*this->Z_,eAx);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*this->Z_,eAx);
         // compute A*eta and <eta,A*eta>
         {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
@@ -569,7 +569,7 @@ namespace Anasazi {
           OPT::Apply(*this->AOp_,*this->eta_,*this->Z_);
           this->counterAOp_ += this->blockSize_;
         }
-        ginnersep(*this->eta_,*this->Z_,d_eAe);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*this->Z_,d_eAe);
         // compute B*eta and <eta,B*eta>
         if (this->hasBOp_) {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
@@ -581,7 +581,7 @@ namespace Anasazi {
         else {
           MVT::MvAddMv(ONE,*this->eta_,ZERO,*this->eta_,*this->Z_);
         }
-        ginnersep(*this->eta_,*this->Z_,d_eBe);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*this->Z_,d_eBe);
         // compute model:
         //    m_x(eta) = theta + 2*eta'*A*x + eta'*A*eta - eta'*B*eta*theta
         if (this->leftMost_) {
@@ -628,7 +628,7 @@ namespace Anasazi {
 
       //
       // check convergence
-      MagnitudeType r_norm = MAT::squareroot(ginner(*this->R_,*this->R_));
+      MagnitudeType r_norm = MAT::squareroot(RTRBase<ScalarType,MV,OP>::ginner(*this->R_,*this->R_));
 
       //
       // check local convergece 
@@ -683,12 +683,12 @@ namespace Anasazi {
               tuple<PSDM>(null),                                     // don't care about coeffs
               null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*BV, but do have B*V
         }
-        ginnersep(*this->R_,*this->Z_,z_r);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->R_,*this->Z_,z_r);
       }
       else {
         // Z = R
         MVT::MvAddMv(ONE,*this->R_,ZERO,*this->R_,*this->Z_);
-        ginnersep(*this->R_,z_r);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->R_,z_r);
       }
 
       // compute new search direction
@@ -950,7 +950,7 @@ namespace Anasazi {
           this->counterAOp_ += this->blockSize_;
         }
         // compute A part of second order decrease into rhoden
-        rhoden = -ginner(*this->eta_,*AX);
+        rhoden = -RTRBase<ScalarType,MV,OP>::ginner(*this->eta_,*AX);
         if (this->hasBOp_) {
           // compute B*eta into AX
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
@@ -965,14 +965,14 @@ namespace Anasazi {
         }
         // we need this below for computing individual rho, get it now
         std::vector<MagnitudeType> eBe(this->blockSize_);
-        ginnersep(*this->eta_,*AX,eBe);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*AX,eBe);
         // scale B*eta by theta
         {
           std::vector<ScalarType> oldtheta_complex(oldtheta.begin(),oldtheta.end());
           MVT::MvScale( *AX, oldtheta_complex);
         }
         // accumulate B part of second order decrease into rhoden
-        rhoden += ginner(*this->eta_,*AX);
+        rhoden += RTRBase<ScalarType,MV,OP>::ginner(*this->eta_,*AX);
         {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           TimeMonitor lcltimer( *this->timerAOp_ );
@@ -981,7 +981,7 @@ namespace Anasazi {
           this->counterAOp_ += this->blockSize_;
         }
         // accumulate first-order decrease of model into rhoden
-        rhoden += -2.0*ginner(*AX,*this->eta_);
+        rhoden += -2.0*RTRBase<ScalarType,MV,OP>::ginner(*AX,*this->eta_);
 
         mxeta = oldfx - rhoden;
         this->rho_ = rhonum / rhoden;

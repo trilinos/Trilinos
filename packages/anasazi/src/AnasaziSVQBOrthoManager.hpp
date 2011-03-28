@@ -306,7 +306,7 @@ namespace Anasazi {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
-    innerProdMat(X,X,xTx,MX,MX);
+    MatOrthoManager<ScalarType,MV,OP>::innerProdMat(X,X,xTx,MX,MX);
     for (int i=0; i<rank; i++) {
       xTx(i,i) -= ONE;
     }
@@ -326,7 +326,7 @@ namespace Anasazi {
     int r1 = MVT::GetNumberVecs(X);
     int r2 = MVT::GetNumberVecs(Y);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(r1,r2);
-    innerProdMat(X,Y,xTx,MX,MY);
+    MatOrthoManager<ScalarType,MV,OP>::innerProdMat(X,Y,xTx,MX,MY);
     return xTx.normFrobenius();
   }
 
@@ -572,7 +572,7 @@ namespace Anasazi {
         // Compute the norms of the vectors
         {
           std::vector<MagnitudeType> normX_mag(xc);
-          normMat(X,normX_mag,MX);
+          MatOrthoManager<ScalarType,MV,OP>::normMat(X,normX_mag,MX);
           for (int i=0; i<xc; ++i) {
             normX[i] = normX_mag[i];
             invnormX[i] = (normX_mag[i] == ZERO) ? ZERO : MONE/normX_mag[i]; 
@@ -588,7 +588,7 @@ namespace Anasazi {
           std::vector<MagnitudeType> nrm2(xc);
           std::cout << dbgstr << "max post-scale norm: (with/without MX) : ";
           MagnitudeType maxpsnw = ZERO, maxpsnwo = ZERO;
-          normMat(X,nrm2,MX);
+          MatOrthoManager<ScalarType,MV,OP>::normMat(X,nrm2,MX);
           for (int i=0; i<xc; i++) {
             maxpsnw = (nrm2[i] > maxpsnw ? nrm2[i] : maxpsnw);
           }
@@ -600,7 +600,7 @@ namespace Anasazi {
         }
         // project the vectors onto the Qi
         for (int i=0; i<nq; i++) {
-          innerProdMat(*Q[i],X,*newC[i],Teuchos::null,MX);
+          MatOrthoManager<ScalarType,MV,OP>::innerProdMat(*Q[i],X,*newC[i],Teuchos::null,MX);
         }
         // remove the components in Qi from X
         for (int i=0; i<nq; i++) {
@@ -676,7 +676,7 @@ namespace Anasazi {
           numSVQB++;
 
           // compute X^T Op X
-          innerProdMat(X,X,XtMX,MX,MX);
+          MatOrthoManager<ScalarType,MV,OP>::innerProdMat(X,X,XtMX,MX,MX);
 
           // compute scaling matrix for XtMX: D^{.5} and D^{-.5} (D-half  and  D-half-inv)
           std::vector<MagnitudeType> Dh(xc), Dhi(xc);
