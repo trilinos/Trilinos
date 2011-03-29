@@ -17,16 +17,17 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-using stk::mesh::MetaData;
+using stk::mesh::fem::FEMMetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::Entity;
 using stk::mesh::EntityId;
 using stk::mesh::EntityRank;
 using stk::mesh::fixtures::BoxFixture;
-using stk::mesh::fem::NODE_RANK;
 
 namespace {
+
+const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
 
 class ExposePartition : public BoxFixture
 {
@@ -55,10 +56,10 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
   BoxFixture::BOX local_box = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
   BoxFixture fixture(pm);
-  MetaData& meta = fixture.meta_data();
+  FEMMetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
 
-  const EntityRank element_rank = stk::mesh::fem::element_rank(fixture.fem());
+  const EntityRank element_rank = meta.element_rank();
 
   const unsigned p_rank = bulk.parallel_rank();
   const unsigned p_size = bulk.parallel_size();

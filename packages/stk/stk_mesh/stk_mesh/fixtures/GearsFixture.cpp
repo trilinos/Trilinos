@@ -28,17 +28,14 @@
 #include <stk_mesh/fixtures/Gear.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
 namespace {
 
-using stk::mesh::fem::NODE_RANK;
+const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 const unsigned ONE_STATE = 1;
 const unsigned TWO_STATE = 2;
@@ -54,13 +51,12 @@ namespace fixtures {
 
 GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears)
   : NUM_GEARS(num_gears)
-  , meta_data( fem::entity_rank_names(SpatialDimension) )
-  , fem_data( meta_data, SpatialDimension )
-  , bulk_data( meta_data , pm )
-  , element_rank( fem::element_rank(fem_data) )
+  , meta_data( SpatialDimension )
+  , bulk_data( fem::FEMMetaData::get_meta_data(meta_data) , pm )
+  , element_rank( meta_data.element_rank() )
   , cylindrical_coord_part( meta_data.declare_part("cylindrical_coord_part", element_rank))
-  , hex_part( declare_part<Hex8>(meta_data, "hex8_part"))
-  , wedge_part( declare_part<Wedge6>(meta_data, "wedge6_part"))
+  , hex_part( fem::declare_part<Hex8>(meta_data, "hex8_part"))
+  , wedge_part( fem::declare_part<Wedge6>(meta_data, "wedge6_part"))
   , cartesian_coord_field( meta_data.declare_field<CartesianField>("coordinates", ONE_STATE))
   , displacement_field( meta_data.declare_field<CartesianField>("displacement", TWO_STATE))
   , translation_field( meta_data.declare_field<CartesianField>("translation", ONE_STATE))

@@ -331,7 +331,7 @@ namespace Anasazi {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
-    innerProdMat(X,X,xTx,MX,MX);
+    MatOrthoManager<ScalarType,MV,OP>::innerProdMat(X,X,xTx,MX,MX);
     for (int i=0; i<rank; i++) {
       xTx(i,i) -= ONE;
     }
@@ -348,7 +348,7 @@ namespace Anasazi {
     int r1 = MVT::GetNumberVecs(X1);
     int r2  = MVT::GetNumberVecs(X2);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(r1,r2);
-    innerProdMat(X1,X2,xTx,MX1,MX2);
+    MatOrthoManager<ScalarType,MV,OP>::innerProdMat(X1,X2,xTx,MX1,MX2);
     return xTx.normFrobenius();
   }
 
@@ -467,7 +467,7 @@ namespace Anasazi {
     // Define the product Q^T * (Op*X)
     for (int i=0; i<nq; i++) {
       // Multiply Q' with MX
-      innerProdMat(*Q[i],X,*C[i],MQ[i],MX);
+      MatOrthoManager<ScalarType,MV,OP>::innerProdMat(*Q[i],X,*C[i],MQ[i],MX);
       // Multiply by Q and subtract the result in X
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG
       *out << "Applying projector P_Q[" << i << "]...\n";
@@ -516,7 +516,7 @@ namespace Anasazi {
           Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
           
           // Apply another step of classical Gram-Schmidt
-          innerProdMat(*Q[i],X,C2,MQ[i],MX);
+          MatOrthoManager<ScalarType,MV,OP>::innerProdMat(*Q[i],X,C2,MQ[i],MX);
           *C[i] += C2;
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG
           *out << "Applying projector P_Q[" << i << "]...\n";
@@ -898,7 +898,7 @@ namespace Anasazi {
         // Save old MXj vector and compute Op-norm
         //
         Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
-        normMat(*Xj,origNorm,MXj);
+        MatOrthoManager<ScalarType,MV,OP>::normMat(*Xj,origNorm,MXj);
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG
         *out << "origNorm = " << origNorm[0] << "\n";
 #endif
@@ -907,7 +907,7 @@ namespace Anasazi {
           // Apply the first step of Gram-Schmidt
 
           // product <- prevX^T MXj
-          innerProdMat(*prevX,*Xj,product,Teuchos::null,MXj);
+          MatOrthoManager<ScalarType,MV,OP>::innerProdMat(*prevX,*Xj,product,Teuchos::null,MXj);
 
           // Xj <- Xj - prevX prevX^T MXj   
           //     = Xj - prevX product
@@ -928,7 +928,7 @@ namespace Anasazi {
           }
 
           // Compute new Op-norm
-          normMat(*Xj,newNorm,MXj);
+          MatOrthoManager<ScalarType,MV,OP>::normMat(*Xj,newNorm,MXj);
           MagnitudeType product_norm = product.normOne();
           
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG
@@ -949,7 +949,7 @@ namespace Anasazi {
             // Apply the second step of Gram-Schmidt
             // This is the same as above
             Teuchos::SerialDenseMatrix<int,ScalarType> P2(numX,1);
-            innerProdMat(*prevX,*Xj,P2,Teuchos::null,MXj);
+            MatOrthoManager<ScalarType,MV,OP>::innerProdMat(*prevX,*Xj,P2,Teuchos::null,MXj);
             product += P2;
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG 
             *out << "Orthogonalizing X[" << j << "]...\n";
@@ -962,7 +962,7 @@ namespace Anasazi {
               MVT::MvTimesMatAddMv( -ONE, *prevMX, P2, ONE, *MXj );
             }
             // Compute new Op-norms
-            normMat(*Xj,newNorm2,MXj);
+            MatOrthoManager<ScalarType,MV,OP>::normMat(*Xj,newNorm2,MXj);
             product_norm = P2.normOne();
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG
             *out << "newNorm2 = " << newNorm2[0] << "\n";
@@ -1000,7 +1000,7 @@ namespace Anasazi {
         }
 
         // Check if Xj has any directional information left after the orthogonalization.
-        normMat(*Xj,newNorm,MXj);
+        MatOrthoManager<ScalarType,MV,OP>::normMat(*Xj,newNorm,MXj);
         if ( newNorm[0] != ZERO && newNorm[0] > SCT::sfmin() ) {
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG
           *out << "Normalizing X[" << j << "], norm(X[" << j << "]) = " << newNorm[0] << "\n";

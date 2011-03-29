@@ -7,8 +7,8 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
 
+#include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -16,7 +16,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
 
@@ -155,10 +155,10 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
   stk::mesh::fixtures::GridFixture fixture(pm);
 
   stk::mesh::BulkData& mesh = fixture.bulk_data();
-  stk::mesh::MetaData& meta_data = fixture.meta_data();
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fixture.m_fem);
+  stk::mesh::fem::FEMMetaData& fem_meta = fixture.fem_meta();
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
 
-  meta_data.commit();
+  fem_meta.commit();
 
   mesh.modification_begin();
   fixture.generate_grid();
@@ -212,7 +212,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     // of the boundary is both live and owned and
     // a side separating the live and dead doesn't
     // already exist.
-    stk::mesh::Selector select_owned = meta_data.locally_owned_part();
+    stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
     stk::mesh::Selector select_live = ! dead_part ;
     stk::mesh::Selector select_live_and_owned = select_live & select_owned;
 
@@ -231,7 +231,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
 
     // Ask for new entities to represent the sides between the live and dead entities
     //
-    std::vector<size_t> requests(meta_data.entity_rank_count(), 0);
+    std::vector<size_t> requests(fem_meta.entity_rank_count(), 0);
     requests[mesh_rank-1] = skin.size();
 
     // generate_new_entities creates new blank entities of the requested ranks
@@ -245,7 +245,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
       const unsigned side_ordinal  = skin[i].side_ordinal;
       stk::mesh::Entity & side   = * (requested_entities[i]);
 
-      stk::mesh::declare_element_side(entity, side, side_ordinal);
+      stk::mesh::fem::declare_element_side(entity, side, side_ordinal);
     }
 
     mesh.modification_end();

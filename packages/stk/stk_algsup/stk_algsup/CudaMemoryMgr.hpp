@@ -9,8 +9,6 @@
 #ifndef stk_algsup_CudaMemoryMgr_hpp
 #define stk_algsup_CudaMemoryMgr_hpp
 
-#ifdef STK_HAVE_CUDA
-
 #include <stdio.h>
 #include <stdexcept>
 #include <map>
@@ -43,6 +41,8 @@ class CudaMemoryMgr {
      * it was tracking.
      */
     virtual ~CudaMemoryMgr();
+
+#ifdef STK_HAVE_CUDA
 
     /** Return a device-pointer corresponding to the given host-ptr and size.
      * The returned device-pointer points to a buffer which has been allocated 
@@ -85,10 +85,14 @@ class CudaMemoryMgr {
 
     static CudaMemoryMgr& get_singleton();
 
+#endif
+
  private:
   std::map<const void*,void*> host_to_device_map;
   std::map<const void*,const void*> device_to_host_map;
 };//class CudaMemoryMgr
+
+#ifdef STK_HAVE_CUDA
 
 //------------------------------------------------------------------------------
 template<class T>
@@ -176,9 +180,9 @@ void CudaMemoryMgr::copy_from_buffer(T* host_ptr, size_t buf_size, const T* devi
   CUDA_CALL( cudaMemcpy( host_ptr, device_ptr, sizeof(T)*buf_size, cudaMemcpyDeviceToHost) );
 }
 
-}//namespace stk
-
 #endif
+
+}//namespace stk
 
 #endif
 

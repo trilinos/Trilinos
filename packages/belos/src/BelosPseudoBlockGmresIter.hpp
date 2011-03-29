@@ -360,10 +360,10 @@ namespace Belos {
     std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,MagnitudeType> > > cs_;
     
     // Pointers to a work std::vector used to improve aggregate performance.
-    RCP<MV> U_vec_, AU_vec_;    
+    Teuchos::RCP<MV> U_vec_, AU_vec_;    
 
     // Pointers to the current right-hand side and solution multivecs being solved for.
-    RCP<MV> cur_block_rhs_, cur_block_sol_;
+    Teuchos::RCP<MV> cur_block_rhs_, cur_block_sol_;
 
     // 
     // Current solver state
@@ -444,7 +444,7 @@ namespace Belos {
     // If this is the first iteration of the Arnoldi factorization, 
     // there is no update, so return Teuchos::null. 
     //
-    RCP<MV> currentUpdate = Teuchos::null;
+    Teuchos::RCP<MV> currentUpdate = Teuchos::null;
     if (curDim_==0) { 
       return currentUpdate; 
     } else {
@@ -459,7 +459,7 @@ namespace Belos {
       
       for (int i=0; i<numRHS_; ++i) {
         index[0] = i;
-        RCP<MV> cur_block_copy_vec = MVT::CloneViewNonConst( *currentUpdate, index );
+        Teuchos::RCP<MV> cur_block_copy_vec = MVT::CloneViewNonConst( *currentUpdate, index );
         //
         //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
         //
@@ -471,7 +471,7 @@ namespace Belos {
 	           Teuchos::NON_UNIT_DIAG, curDim_, 1, one,  
 		   H_[i]->values(), H_[i]->stride(), y.values(), y.stride() );
 	
-	RCP<const MV> Vjp1 = MVT::CloneView( *V_[i], index2 );
+	Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_[i], index2 );
 	MVT::MvTimesMatAddMv( one, *Vjp1, y, zero, *cur_block_copy_vec );
       }
     }
@@ -707,8 +707,8 @@ namespace Belos {
 
     for (int i=0; i<numRHS_; ++i) {
       index2[0] = i;
-      RCP<const MV> tmp_vec = MVT::CloneView( *V_[i], index );
-      RCP<MV> U_vec_view = MVT::CloneViewNonConst( *U_vec, index2 );
+      Teuchos::RCP<const MV> tmp_vec = MVT::CloneView( *V_[i], index );
+      Teuchos::RCP<MV> U_vec_view = MVT::CloneViewNonConst( *U_vec, index2 );
       MVT::MvAddMv( one, *tmp_vec, zero, *tmp_vec, *U_vec_view );
     }
     
@@ -740,22 +740,22 @@ namespace Belos {
 	//
 	// Get previous Krylov vectors.
 	//
-	RCP<const MV> V_prev = MVT::CloneView( *V_[i], index );
-	Teuchos::Array< RCP<const MV> > V_array( 1, V_prev );
+	Teuchos::RCP<const MV> V_prev = MVT::CloneView( *V_[i], index );
+	Teuchos::Array< Teuchos::RCP<const MV> > V_array( 1, V_prev );
 	//
 	// Get a view of the new candidate std::vector.
 	//
 	index2[0] = i;
-	RCP<MV> V_new = MVT::CloneViewNonConst( *AU_vec, index2 );
+	Teuchos::RCP<MV> V_new = MVT::CloneViewNonConst( *AU_vec, index2 );
 	//
 	// Get a view of the current part of the upper-hessenberg matrix.
 	//
-	RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > h_new 
+	Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > h_new 
 	  = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
 			  ( Teuchos::View, *H_[i], num_prev, 1, 0, curDim_ ) );
-	Teuchos::Array< RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > h_array( 1, h_new );
+	Teuchos::Array< Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > h_array( 1, h_new );
 	
-	RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > r_new
+	Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > r_new
 	  = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
 			  ( Teuchos::View, *H_[i], 1, 1, num_prev, curDim_ ) );
 	//
@@ -768,14 +768,14 @@ namespace Belos {
 	// be copied back in when V_new is changed.  
 	//
 	index2[0] = curDim_+1;
-	RCP<MV> tmp_vec = MVT::CloneViewNonConst( *V_[i], index2 );
+	Teuchos::RCP<MV> tmp_vec = MVT::CloneViewNonConst( *V_[i], index2 );
 	MVT::MvAddMv( one, *V_new, zero, *V_new, *tmp_vec );
       }
       // 
       // Now _AU_vec is the new _U_vec, so swap these two vectors.
       // NOTE: This alleviates the need for allocating a std::vector for AU_vec each iteration.
       // 
-      RCP<MV> tmp_AU_vec = U_vec;
+      Teuchos::RCP<MV> tmp_AU_vec = U_vec;
       U_vec = AU_vec;
       AU_vec = tmp_AU_vec;
       //

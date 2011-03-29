@@ -5,13 +5,11 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Types.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
-
 
 /*
 The grid fixture creates the mesh below and skins it
@@ -212,15 +210,14 @@ namespace {
   };
 }
 
-bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration) {
-
+bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
+{
   enum {
     LEFT   = 0,
     BOTTOM = 1,
     RIGHT  = 2,
     TOP    = 3
   };
-
 
   std::vector<entity_side> live_sides, dead_sides;
   switch(iteration)
@@ -534,7 +531,7 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration) 
 
   stk::mesh::BulkData& mesh = fixture.bulk_data();
   stk::mesh::Part & dead_part = *fixture.dead_part();
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fixture.fem());
+  const stk::mesh::EntityRank element_rank = fixture.fem_meta().element_rank();
 
   // Select live or dead from owned, shared, and ghosted
   stk::mesh::Selector select_dead = dead_part ;
@@ -603,12 +600,12 @@ bool validate_iteration( stk::ParallelMachine pm, stk::mesh::fixtures::GridFixtu
   }
 
   stk::mesh::BulkData& mesh = fixture.bulk_data();
-  stk::mesh::MetaData& meta_data = fixture.meta_data();
+  stk::mesh::fem::FEMMetaData& fem_meta = fixture.fem_meta();
 
   stk::mesh::Part & dead_part = *fixture.dead_part();
 
-  stk::mesh::Selector select_dead = dead_part & meta_data.locally_owned_part();
-  stk::mesh::Selector select_live = !dead_part & meta_data.locally_owned_part();
+  stk::mesh::Selector select_dead = dead_part & fem_meta.locally_owned_part();
+  stk::mesh::Selector select_live = !dead_part & fem_meta.locally_owned_part();
 
   int num_dead[NUM_RANK] = {0, 0, 0};
   int num_live[NUM_RANK] = {0, 0, 0};

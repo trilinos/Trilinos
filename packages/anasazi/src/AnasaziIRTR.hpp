@@ -259,7 +259,7 @@ namespace Anasazi {
       }
     }
 
-    r0_norm = MAT::squareroot( ginner(*this->R_) );
+    r0_norm = MAT::squareroot( RTRBase<ScalarType,MV,OP>::ginner(*this->R_) );
     //
     // kappa (linear) convergence
     // theta (superlinear) convergence
@@ -327,10 +327,10 @@ namespace Anasazi {
             tuple<PSDM>(null),                                     // don't care about coeffs
             null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*BV, but do have B*V
       }
-      ginnersep(*this->R_,*this->Z_,z_r);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->R_,*this->Z_,z_r);
     }
     else {
-      ginnersep(*this->R_,z_r);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->R_,z_r);
     }
 
     if (this->om_->isVerbosity( Debug )) {
@@ -377,8 +377,8 @@ namespace Anasazi {
 
       std::vector<MagnitudeType> eg(this->blockSize_),
                                 eHe(this->blockSize_);
-      ginnersep(*this->eta_,*this->AX_,eg);
-      ginnersep(*this->eta_,*Heta,eHe);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*this->AX_,eg);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*Heta,eHe);
       if (this->leftMost_) {
         for (int j=0; j<this->blockSize_; ++j) {
           eg[j] = this->theta_[j] + 2*eg[j] + .5*eHe[j];
@@ -427,8 +427,8 @@ namespace Anasazi {
       }
       // compute <eta,B*delta> and <delta,B*delta>
       // these will be needed below
-      ginnersep(*this->eta_  ,*this->Bdelta_,eBd);
-      ginnersep(*this->delta_,*this->Bdelta_,dBd);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_  ,*this->Bdelta_,eBd);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->delta_,*this->Bdelta_,dBd);
       // put 2*A*d - 2*B*d*theta --> Hd
       MVT::MvAddMv(ONE,*this->Bdelta_,ZERO,*this->Bdelta_,*this->Hdelta_);
       {
@@ -452,7 +452,7 @@ namespace Anasazi {
             tuple<PSDM>(null),                                    // don't care about coeffs
             null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));      // don't have B*BV, but do have B*V
       }
-      ginnersep(*this->delta_,*this->Hdelta_,d_Hd);
+      RTRBase<ScalarType,MV,OP>::ginnersep(*this->delta_,*this->Hdelta_,d_Hd);
 
 
       // compute update step
@@ -574,8 +574,8 @@ namespace Anasazi {
 
         std::vector<MagnitudeType> eg(this->blockSize_),
                                    eHe(this->blockSize_);
-        ginnersep(*this->eta_,*this->AX_,eg);
-        ginnersep(*this->eta_,*Heta,eHe);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*this->AX_,eg);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*Heta,eHe);
         if (this->leftMost_) {
           for (int j=0; j<this->blockSize_; ++j) {
             eg[j] = this->theta_[j] + 2*eg[j] + .5*eHe[j];
@@ -620,7 +620,7 @@ namespace Anasazi {
 
       //
       // check convergence
-      MagnitudeType r_norm = MAT::squareroot(ginner(*this->R_,*this->R_));
+      MagnitudeType r_norm = MAT::squareroot(RTRBase<ScalarType,MV,OP>::ginner(*this->R_,*this->R_));
 
       //
       // check local convergece 
@@ -675,10 +675,10 @@ namespace Anasazi {
               tuple<PSDM>(null),                                     // don't care about coeffs
               null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*BV, but do have B*V
         }
-        ginnersep(*this->R_,*this->Z_,z_r);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->R_,*this->Z_,z_r);
       }
       else {
-        ginnersep(*this->R_,z_r);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->R_,z_r);
       }
 
       // compute new search direction
@@ -782,7 +782,7 @@ namespace Anasazi {
         chk.checkBEta = true;
         this->om_->print( Debug, this->accuracyCheck(chk, "in iterate() after solveTRSubproblem()") );
         this->om_->stream(Debug) 
-          << " >> norm(Eta) : " << MAT::squareroot(ginner(*this->eta_)) << endl
+          << " >> norm(Eta) : " << MAT::squareroot(RTRBase<ScalarType,MV,OP>::ginner(*this->eta_)) << endl
           << endl;
       }
 
@@ -896,14 +896,14 @@ namespace Anasazi {
         //
         MagnitudeType rhonum, rhoden, mxeta;
         std::vector<MagnitudeType> eBe(this->blockSize_);
-        ginnersep(*this->eta_,*this->Beta_,eBe);
+        RTRBase<ScalarType,MV,OP>::ginnersep(*this->eta_,*this->Beta_,eBe);
         //
         // compute rhonum
         rhonum = oldfx - this->fx_;
         //
         // compute rhoden
-        rhoden = -2.0*ginner(*this->AX_  ,*this->eta_) 
-                 -ginner(*this->Aeta_,*this->eta_);
+        rhoden = -2.0*RTRBase<ScalarType,MV,OP>::ginner(*this->AX_  ,*this->eta_) 
+                 -RTRBase<ScalarType,MV,OP>::ginner(*this->Aeta_,*this->eta_);
         for (int i=0; i<this->blockSize_; ++i) {
           rhoden += eBe[i]*oldtheta[i];
         }

@@ -64,10 +64,8 @@ typedef shards::Hexahedron<8>  ElementTraits ;
 UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
   m_fem_metaData( SpatialDim )
   , m_bulkData( fem::FEMMetaData::get_meta_data(m_fem_metaData) , comm , field_data_chunk_size )
-  , m_partLeft( m_fem_metaData.declare_part( "block_left",
-                                             shards::getCellTopologyData<ElementTraits>() ))
-  , m_partRight( m_fem_metaData.declare_part( "block_right",
-                                              shards::getCellTopologyData<ElementTraits>() ))
+  , m_partLeft( fem::declare_part<ElementTraits>( m_fem_metaData, "block_left"))
+  , m_partRight( fem::declare_part<ElementTraits>( m_fem_metaData, "block_right"))
   , m_coordinates_field( m_fem_metaData.declare_field< VectorFieldType >( "coordinates" ))
   , m_temperature_field( m_fem_metaData.declare_field< ScalarFieldType >( "temperature" ))
   , m_volume_field( m_fem_metaData.declare_field< ScalarFieldType >( "volume" ))

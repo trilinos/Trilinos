@@ -18,6 +18,8 @@
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 /*
 The following fixture creates the mesh below
@@ -42,11 +44,10 @@ namespace fixtures {
 
 GridFixture::GridFixture(stk::ParallelMachine pm)
   : m_spatial_dimension(2)
-  , m_meta_data( fem::entity_rank_names(m_spatial_dimension) )
-  , m_bulk_data( m_meta_data , pm )
-  , m_fem(  m_meta_data, m_spatial_dimension )
-  , m_quad_part( declare_part<shards::Quadrilateral<4> >(m_meta_data, "quad_part") )
-  , m_dead_part( declare_part(m_meta_data, "dead_part"))
+  , m_fem_meta( m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) )
+  , m_bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(m_fem_meta) , pm )
+  , m_quad_part( fem::declare_part<shards::Quadrilateral<4> >(m_fem_meta, "quad_part") )
+  , m_dead_part( m_fem_meta.declare_part("dead_part"))
 {}
 
 GridFixture::~GridFixture()
@@ -58,7 +59,7 @@ void GridFixture::generate_grid()
   const unsigned num_quad_faces = 16;
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned p_size = m_bulk_data.parallel_size();
-  const EntityRank element_rank = fem::element_rank(m_fem);
+  const EntityRank element_rank = m_fem_meta.element_rank();
   std::vector<Entity*> all_entities;
 
   // assign ids, quads, nodes, then shells

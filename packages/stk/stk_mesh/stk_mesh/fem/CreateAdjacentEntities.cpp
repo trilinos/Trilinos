@@ -11,8 +11,8 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Relation.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/CellTopology.hpp>
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
@@ -68,7 +68,7 @@ void get_entities_with_given_subcell(
   // nodes compose a valid subcell of the entity
   for (EntityVector::const_iterator eitr = entities.begin();
        eitr != entities.end(); ++eitr) {
-    int local_subcell_num = get_entity_subcell_id(
+    int local_subcell_num = fem::get_entity_subcell_id(
       **eitr,
       subcell_rank,
       subcell_topology,
@@ -107,12 +107,12 @@ bool relation_exist( const Entity & entity, EntityRank subcell_rank, RelationIde
 
 void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & entities_to_request) {
 
-  fem::FEMInterface & fem_interface = fem::get_fem_interface(mesh);
-  const EntityRank element_rank = fem::element_rank(fem_interface);
-  const EntityRank side_rank = fem::side_rank(fem_interface);
-  const EntityRank edge_rank = fem::edge_rank(fem_interface);
+  fem::FEMMetaData & fem_meta = fem::FEMMetaData::get(mesh);
+  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank side_rank = fem_meta.side_rank();
+  const EntityRank edge_rank = fem_meta.edge_rank();
 
-  Selector select_owned = MetaData::get(mesh).locally_owned_part();
+  Selector select_owned = fem::FEMMetaData::get(mesh).locally_owned_part();
 
 
   BucketVector element_buckets;
@@ -126,7 +126,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
         ++bitr)
     {
       Bucket & b = **bitr;
-      const fem::CellTopology topo = fem::get_cell_topology(b);
+      const fem::CellTopology topo = fem::get_cell_topology_new(b);
 
       ThrowErrorMsgIf( is_degenerate(topo),
           "stk::mesh::create_adjacent_entities(...) does not yet support degenerate topologies (i.e. shells and beams)");
@@ -148,7 +148,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
               EntityVector subcell_nodes;
 
               const CellTopologyData * subcell_topology =
-                get_subcell_nodes(
+                fem::get_subcell_nodes(
                     elem,
                     subcell_rank,
                     subcell_id,
@@ -207,7 +207,8 @@ void request_entities(
    std::vector<size_t> & entities_to_request,
    std::vector< EntityVector > & requested_entities)
 {
-  const size_t num_ranks = MetaData::get(mesh).entity_rank_count();
+  fem::FEMMetaData & fem_meta = fem::FEMMetaData::get(mesh);
+  const size_t num_ranks = fem_meta.entity_rank_count();
 
   requested_entities.clear();
   requested_entities.resize(num_ranks);
@@ -229,14 +230,14 @@ void request_entities(
 
 void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_add_parts, std::vector<size_t> & entities_to_request) {
 
-  fem::FEMInterface & fem_interface = fem::get_fem_interface(mesh);
-  const EntityRank element_rank = fem::element_rank(fem_interface);
-  const EntityRank side_rank = fem::side_rank(fem_interface);
-  const EntityRank edge_rank = fem::edge_rank(fem_interface);
+  fem::FEMMetaData & fem_meta = fem::FEMMetaData::get(mesh);
+  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank side_rank = fem_meta.side_rank();
+  const EntityRank edge_rank = fem_meta.edge_rank();
 
-  const size_t num_ranks = MetaData::get(mesh).entity_rank_count();
+  const size_t num_ranks = fem_meta.entity_rank_count();
 
-  Selector select_owned = MetaData::get(mesh).locally_owned_part();
+  Selector select_owned = fem_meta.locally_owned_part();
 
   BucketVector element_buckets;
 
@@ -262,7 +263,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
         ++bitr)
     {
       Bucket & b = **bitr;
-      const fem::CellTopology topo = fem::get_cell_topology(b);
+      const fem::CellTopology topo = fem::get_cell_topology_new(b);
 
       if ( !is_degenerate(topo) ) { // don't loop over shell elements
 
@@ -280,7 +281,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
               EntityVector subcell_nodes;
 
               const CellTopologyData * subcell_topology =
-                get_subcell_nodes(
+                fem::get_subcell_nodes(
                     elem,
                     subcell_rank,
                     subcell_id,
@@ -339,7 +340,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
                 PartVector empty_remove_parts;
 
                 PartVector add_parts = arg_add_parts;
-                add_parts.push_back( & fem::get_part( MetaData::get(mesh), topo.getCellTopologyData(subcell_rank,subcell_id)));
+                add_parts.push_back( & fem_meta.get_cell_topology_root_part(topo.getCellTopologyData(subcell_rank,subcell_id)));
 
                 mesh.change_entity_parts(subcell, add_parts, empty_remove_parts);
 
@@ -356,12 +357,12 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
 
 void complete_connectivity( BulkData & mesh ) {
 
-  fem::FEMInterface & fem_interface = fem::get_fem_interface(mesh);
-  const EntityRank element_rank = fem::element_rank(fem_interface);
-  const EntityRank side_rank = fem::side_rank(fem_interface);
-  const EntityRank edge_rank = fem::edge_rank(fem_interface);
+  fem::FEMMetaData & fem_meta = fem::FEMMetaData::get(mesh);
+  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank side_rank = fem_meta.side_rank();
+  const EntityRank edge_rank = fem_meta.edge_rank();
 
-  Selector select_owned_or_shared = MetaData::get(mesh).locally_owned_part() | MetaData::get(mesh).globally_shared_part();
+  Selector select_owned_or_shared = fem_meta.locally_owned_part() | fem_meta.globally_shared_part();
 
   BucketVector element_buckets;
 
@@ -386,7 +387,7 @@ void complete_connectivity( BulkData & mesh ) {
           ++bitr)
       {
         Bucket & b = **bitr;
-        const fem::CellTopology topo = fem::get_cell_topology(b);
+        const fem::CellTopology topo = fem::get_cell_topology_new(b);
 
         {
           for (size_t i = 0; i<b.size(); ++i) {
@@ -401,7 +402,7 @@ void complete_connectivity( BulkData & mesh ) {
                 EntityVector subcell_nodes;
 
                 const CellTopologyData * subcell_topology =
-                  get_subcell_nodes(
+                  fem::get_subcell_nodes(
                       entity,
                       subcell_rank,
                       subcell_id,
@@ -455,7 +456,8 @@ void create_adjacent_entities( BulkData & mesh, PartVector & arg_add_parts)
   complete_connectivity(mesh);
 
 
-  const size_t num_ranks = MetaData::get(mesh).entity_rank_count();
+  fem::FEMMetaData & fem_meta = fem::FEMMetaData::get(mesh);
+  const size_t num_ranks = fem_meta.entity_rank_count();
   std::vector<size_t> entities_to_request(num_ranks, 0);
 
   internal_count_entities_to_create( mesh, entities_to_request);

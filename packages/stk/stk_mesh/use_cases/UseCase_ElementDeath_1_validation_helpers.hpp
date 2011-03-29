@@ -16,12 +16,13 @@
 namespace stk {
 namespace mesh {
 
-  class Entity;
-  class BulkData;
+class Entity;
+class BulkData;
 
 namespace fixtures {
 
-  class GridFixture;
+class GridFixture;
+
 }
 
 }

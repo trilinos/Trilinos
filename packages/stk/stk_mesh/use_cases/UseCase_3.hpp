@@ -21,10 +21,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <use_cases/UseCase_Common.hpp>
 
@@ -49,9 +46,8 @@ public:
   void populate();
 
   const int m_spatial_dimension;
-  MetaData m_metaData;
+  fem::FEMMetaData m_fem_metaData;
   BulkData m_bulkData;
-  DefaultFEM m_fem;
 
   Part & m_block_hex;
   Part & m_block_wedge;
@@ -61,6 +57,7 @@ public:
   Part & m_block_tri_shell;
 
   const EntityRank m_elem_rank;
+  const EntityRank m_node_rank;
 
   VectorFieldType & m_coordinates_field;
   VectorFieldType & m_centroid_field;

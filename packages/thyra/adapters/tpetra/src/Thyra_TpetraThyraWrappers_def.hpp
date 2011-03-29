@@ -103,7 +103,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Thyra::VectorBase<Scalar> >
 Thyra::createVector(
   const RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVector_in,
-  const RCP<const VectorSpaceBase<Scalar> > space_in = Teuchos::null
+  const RCP<const VectorSpaceBase<Scalar> > space_in
   )
 {
   return tpetraVector(
@@ -117,7 +117,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 Thyra::createConstVector(
   const RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVector_in,
-  const RCP<const VectorSpaceBase<Scalar> > space = Teuchos::null
+  const RCP<const VectorSpaceBase<Scalar> > space
   )
 {
   return constTpetraVector(
@@ -131,8 +131,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
 Thyra::createMultiVector(
   const RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraMultiVector_in,
-  const RCP<const VectorSpaceBase<Scalar> > rangeSpace = Teuchos::null,
-  const RCP<const VectorSpaceBase<Scalar> > domainSpace = Teuchos::null
+  const RCP<const VectorSpaceBase<Scalar> > rangeSpace,
+  const RCP<const VectorSpaceBase<Scalar> > domainSpace
   )
 {
   return tpetraMultiVector(
@@ -151,8 +151,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
 Thyra::createConstMultiVector(
   const RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraMultiVector_in,
-  const RCP<const VectorSpaceBase<Scalar> > rangeSpace = Teuchos::null,
-  const RCP<const VectorSpaceBase<Scalar> > domainSpace = Teuchos::null
+  const RCP<const VectorSpaceBase<Scalar> > rangeSpace,
+  const RCP<const VectorSpaceBase<Scalar> > domainSpace
   )
 {
   return constTpetraMultiVector(
@@ -171,8 +171,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::createLinearOp(
   const RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraOperator_in,
-  const RCP<const VectorSpaceBase<Scalar> > rangeSpace = Teuchos::null,
-  const RCP<const VectorSpaceBase<Scalar> > domainSpace = Teuchos::null
+  const RCP<const VectorSpaceBase<Scalar> > rangeSpace,
+  const RCP<const VectorSpaceBase<Scalar> > domainSpace
   )
 {
   return tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
@@ -187,8 +187,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::createConstLinearOp(
   const RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraOperator_in,
-  const RCP<const VectorSpaceBase<Scalar> > rangeSpace = Teuchos::null,
-  const RCP<const VectorSpaceBase<Scalar> > domainSpace = Teuchos::null
+  const RCP<const VectorSpaceBase<Scalar> > rangeSpace,
+  const RCP<const VectorSpaceBase<Scalar> > domainSpace
   )
 {
   return constTpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(

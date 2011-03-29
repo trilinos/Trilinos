@@ -325,11 +325,26 @@ Luis Gervasio<br>
 <b> Zoltan News:</b><br>
 <ul>
 <li>
-<a href="#ZOLTAN33">Zoltan v3.3</a> was released in July 2010 as 
-part of the <a href="http://trilinos.sandia.gov">Trilinos</a> project. You can 
-download as a <a href="http://www.cs.sandia.gov/~web1400/1400_download.html">stand-alone package</a> or 
-in the <a href="http://trilinos.sandia.gov">Trilinos</a>
-distribution.<br><br>
+Zoltan v3.5 was released in March 2011.  This release
+differs from the Trilinos 10.6 release by including the following features:
+<ul>
+<li>
+Fix in Fortran90 interface that causes compilation and run-time problems
+with gcc 4.5 and later when compiler optimization is enabled.
+</li>
+<li>
+Support for 64-bit builds of Zoltan, enabling operation on more than 2B objects.
+See details for building in the <a href="ug_html/ug_usage.html">Zoltan User's Guide</a>.
+</li>
+<li>
+Faster graph builds for very specific input types.  See parameter 
+<a href="ug_html/ug_graph_build.html">GRAPH_BUILD_TYPE</a>.
+</li>
+</ul>
+
+You can download this release as a <a href="http://www.cs.sandia.gov/~web1400/1400_download.html">stand-alone package</a>; these features will be included in
+Trilinos release 10.8 this summer.
+<br><br>
 </li>
 <li>
 <b>"Getting Started with Zoltan:  A Short Tutorial."</b><br>
@@ -400,9 +415,31 @@ Contact:  Karen Devine<br>
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
 <hr width="100%">
-<a NAME="ZOLTAN33"></a>
-<b>Now available:  Zoltan 3.3</b>  <br>
+<b>Now available:  Zoltan 3.5</b>  <br>
+
 <p>
+<a NAME="ZOLTAN35"></a>
+New Features in Zoltan v3.5, released March 2011:
+<a href="ug_html/ug_release.html">Release Notes</a> 
+&nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp;
+<a href="ug_html/ug_backward.html">Backward Compatibility</a>
+<ul>
+<li>
+Fix in Fortran90 interface that causes compilation and run-time problems
+with gcc 4.5 and later when compiler optimization is enabled.
+</li>
+<li>
+Support for 64-bit builds of Zoltan, enabling operation on more than 2B objects.
+See details for building in the <a href="ug_html/ug_usage.html">Zoltan User's Guide</a>.
+</li>
+<li>
+Faster graph builds for very specific input types.  See parameter 
+<a href="ug_html/ug_graph_build.html">GRAPH_BUILD_TYPE</a>.
+</li>
+</ul>
+
+<p>
+<a NAME="ZOLTAN33"></a>
 New Features in Zoltan v3.3, released July 2010:
 
 <a href="ug_html/ug_release.html">Release Notes</a> 

@@ -20,20 +20,18 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_mesh/fixtures/RingFixture.hpp>
 
 #include <algorithm>
 
 using stk::mesh::BulkData;
-using stk::mesh::DefaultFEM;
 using stk::mesh::Bucket;
 using stk::mesh::BucketIterator;
 using stk::mesh::Entity;
+using stk::mesh::EntityRank;
 using stk::mesh::fixtures::RingFixture;
-using stk::mesh::fem::NODE_RANK;
 
 class UnitTestStkMeshBulkModification {
  public:
@@ -73,6 +71,8 @@ class UnitTestStkMeshBulkModification {
 };
 
 namespace {
+
+const EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 STKUNIT_UNIT_TEST( UnitTestBulkDataNotSyrncronized , testUnit )
 {
@@ -212,7 +212,7 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 void UnitTestStkMeshBulkModification::test_all_local_edges()
 {
   BulkData& bulk_data = initialize_ring_fixture();
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(m_ring_mesh.m_fem);
+  const stk::mesh::EntityRank element_rank = m_ring_mesh.m_meta_data.element_rank();
 
   {
     const stk::mesh::Part& universal = m_ring_mesh.m_meta_data.universal_part();

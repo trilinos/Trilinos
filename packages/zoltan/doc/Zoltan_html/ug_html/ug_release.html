@@ -34,6 +34,7 @@
 releases of Zoltan:
 </a>
 <blockquote>
+  <a href="#Release3.5">Zoltan Release v3.5</a><br>
   <a href="#Release3.3">Zoltan Release v3.3</a><br>
   <a href="#Release3.2">Zoltan Release v3.2</a><br>
   <a href="#Release3.1">Zoltan Release v3.1</a><br>
@@ -52,6 +53,23 @@ releases of Zoltan:
   <br>
   <a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
+<hr>
+<h2><a name="Release3.5">Zoltan Release Notes v3.5: March 24, 2011</a></h2>
+Features:
+<ul>
+<li>
+Fix in Fortran90 interface that causes compilation and run-time problems
+with gcc 4.5 and later when compiler optimization is enabled.
+</li>
+<li>
+Support for 64-bit builds of Zoltan, enabling operation on more than 2B objects.
+See details for building in the <a href="ug_usage.html">Zoltan User's Guide</a>.
+</li>
+<li>
+Faster graph builds for very specific input types.  See parameter 
+<a href="ug_graph_build.html">GRAPH_BUILD_TYPE</a>.
+</li>
+</ul>
 <hr>
 <h2><a name="Release3.3">Zoltan Release Notes v3.3: July 31, 2010</a></h2>
 

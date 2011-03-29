@@ -3,7 +3,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 #include <stk_mesh/fem/DefaultFEM.hpp>
@@ -88,11 +88,17 @@ class Gmesh_STKmesh_Fixture
 
   /**
    * Get a reference to the meta data for the stk-mesh.
-   */
   const stk::mesh::MetaData & getMetaData() const
-  { return m_meta_data; }
+  { return m_meta_data.get_meta_data(m_meta_data); }
+   */
 
   stk::mesh::MetaData & getMetaData()
+  { return m_meta_data.get_meta_data(m_meta_data); }
+
+  const stk::mesh::fem::FEMMetaData & getFEMMetaData() const
+  { return m_meta_data; }
+
+  stk::mesh::fem::FEMMetaData & getFEMMetaData()
   { return m_meta_data; }
 
   /**
@@ -117,7 +123,7 @@ class Gmesh_STKmesh_Fixture
 
  private:
   ///> The meta data for the stk-mesh
-  stk::mesh::MetaData m_meta_data;
+  stk::mesh::fem::FEMMetaData m_meta_data;
 
 #ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   ///> The topological data for the stk-mesh

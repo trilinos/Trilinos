@@ -137,3 +137,12 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  DiagonalPreconditionerFactory 
+  SOURCES
+    unit_tests/tDiagonalPreconditionerFactory.cpp
+    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  )

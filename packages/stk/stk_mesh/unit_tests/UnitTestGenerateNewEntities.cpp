@@ -17,10 +17,11 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
-using stk::mesh::fem::NODE_RANK;
+namespace {
+
+const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 STKUNIT_UNIT_TEST( UnitTestStkMeshGenerateNewEntities , testUnit )
 {
@@ -29,9 +30,8 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshGenerateNewEntities , testUnit )
   stk::ParallelMachine pm(MPI_COMM_WORLD);
 
   const int spatial_dimension = 3;
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-  stk::mesh::BulkData bulk_data( meta_data , pm );
-  stk::mesh::DefaultFEM top_data( meta_data, spatial_dimension );
+  stk::mesh::fem::FEMMetaData meta_data( spatial_dimension );
+  stk::mesh::BulkData bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(meta_data) , pm );
 
   meta_data.commit();
 
@@ -62,4 +62,6 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshGenerateNewEntities , testUnit )
   }
 
   bulk_data.modification_end();
+}
+
 }

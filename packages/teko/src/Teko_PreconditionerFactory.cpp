@@ -59,6 +59,7 @@
 #include "Teko_IterativePreconditionerFactory.hpp"
 #include "Teko_DiagnosticPreconditionerFactory.hpp"
 #include "Teko_DiagonallyScaledPreconditionerFactory.hpp"
+#include "Teko_DiagonalPreconditionerFactory.hpp"
 #include "Teko_ProbingPreconditionerFactory.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
@@ -305,6 +306,9 @@ void PreconditionerFactory::initializePrecFactoryBuilder()
 
    clone = rcp(new AutoClone<IterativePreconditionerFactory>());
    precFactoryBuilder_.addClone("Iterative Preconditioner",clone);
+
+   clone = rcp(new AutoClone<DiagonalPreconditionerFactory>());
+   precFactoryBuilder_.addClone("Explicit Diagonal Preconditioner",clone);
 
    clone = rcp(new AutoClone<DiagnosticPreconditionerFactory>());
    precFactoryBuilder_.addClone("Diagnostic Inverse",clone);

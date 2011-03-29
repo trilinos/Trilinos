@@ -144,8 +144,10 @@ make everything <br>
 make install 
 </blockquote>
 <p>
-The configure script also allows you to specify the data type for a global identifier.  The choices are
-unsigned int, unsigned long, and unsigned long long.  The default data type is unsigned int.  If your
+The configure script also allows you to specify the data type for a 
+global identifier.  The choices are
+unsigned int, unsigned long, and unsigned long long.  
+The default data type is unsigned int.  If your
 space of global identifiers requires more than 32 bits, you can specify a 64-bit data type.  
 <p>
 <blockquote>
@@ -154,10 +156,11 @@ space of global identifiers requires more than 32 bits, you can specify a 64-bit
   --with-id-type=ullong<br>
 </blockquote>
 <p>
-Support of 64-bit identifiers is new as of Zoltan version 3.4.
+Support of 64-bit identifiers is new as of Zoltan version 3.5.
 At this point in time all methods except for
 <a href="ug_alg_reftree.html">refinement tree partitioning</a>
-have been modified to work with 64-bit identifiers.
+have been modified to work with 64-bit identifiers.  Zoltan's 
+Fortran90 interface does not yet support 64-bit identifiers.
 <p>
 More examples are in the directory zoltan/SampleConfigurationScripts.
 <p>
@@ -186,6 +189,9 @@ make <br>
 make install <br>
 </blockquote>
 <p>
+CMake also allows you to specify the data type for a 
+global identifier.  The choices are
+unsigned int, unsigned long, and unsigned long long.  
 The default data type for a global identifier is unsigned int.  The options to set the global identifier
 data type are shown below.
 <p>
@@ -195,10 +201,11 @@ data type are shown below.
 -D Zoltan_ENABLE_ULLONG_IDS:Bool=ON<br>
 </blockquote>
 <p>
-Support of 64-bit identifiers is new as of Zoltan version 3.4.
+Support of 64-bit identifiers is new as of Zoltan version 3.5.
 At this point in time all methods except for
 <a href="ug_alg_reftree.html">refinement tree partitioning</a>
-have been modified to work with 64-bit identifiers.
+have been modified to work with 64-bit identifiers.  Zoltan's Fortran90
+interface does not yet support 64-bit identifiers.
 <p>
 <b>Serial</b> builds are the default in Trilinos; for serial builds, Zoltan
 builds and links with the siMPI library provided by Pat Miller in the Zoltan
@@ -351,22 +358,25 @@ build options that were used when Zoltan was built.
 Application query functions and application callable library functions
 use global and local identifiers (IDs) for objects. <i>All objects to be
 used in load balancing must have unique global IDs.</i> Zoltan stores an
-ID as an array of unsigned integers. The number of entries in these arrays
+ID as an array of ZOLTAN_ID_TYPE.  The default for ZOLTAN_ID_TYPE, but 
+configuration parameters can select unsigned long or unsigned long long
+as the type; see above for the appropriate configuration flags for
+<a href="#Autotools">Autotools</a> and <a href="#CMake">CMake</a>.
+The number of entries in these arrays
 can be set using the <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
 and <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> parameters;
-by default, one unsigned integer represents an ID. Applications may use
+by default, one ZOLTAN_ID_TYPE represents an ID. Applications may use
 whatever format is most convenient to store their IDs; the IDs can then
 be converted to and from Zoltan's ID format in the <a href="ug_query.html">application-registered
 query functions</a>.
-<p>The following type definitions are defined in <i>include/zoltan_types.h</i>; they can
+<p>
+Definitions of ZOLTAN_ID_TYPE and ZOLTAN_ID_MPI_TYPE
+are in <i>include/zoltan_types.h</i>; they can
 be used by an application for memory allocation, MPI communication, and
 as arguments to
 <a href="ug_interface.html">load-balancing interface functions</a>
 and
 <a href="ug_query.html">application-registered query functions</a>.
-<blockquote>typedef unsigned int <b>ZOLTAN_ID_TYPE</b>;
-<br>typedef <b>ZOLTAN_ID_TYPE</b> *<b>ZOLTAN_ID_PTR</b>;
-<br>#define <b>ZOLTAN_ID_MPI_TYPE</b> MPI_UNSIGNED</blockquote>
 In the Fortran interface, IDs are passed as arrays of integers since unsigned
 integers are not supported in Fortran. See the description of the <a href="ug_fortran_api.html#fortran ug api IDs">Fortran
 interface</a> for more details.

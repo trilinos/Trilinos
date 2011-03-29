@@ -296,7 +296,7 @@ private:
   Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
     
   // Current parameter list.
-  Teuchos::RCP<ParameterList> params_;
+  Teuchos::RCP<Teuchos::ParameterList> params_;
 
   // Default solver values.
   static const MagnitudeType polytol_default_;
@@ -1161,7 +1161,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
 	
 	// Get a matrix to hold the orthonormalization coefficients.
 	Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 = 
-	  rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
+	  Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
 	
 	// Orthonormalize the new V_0
 	int rank = ortho_->normalize( *V_0, z_0 );

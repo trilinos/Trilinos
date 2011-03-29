@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
   MPI_Init(&argc,&argv); 	
 #endif
   //
+  using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
   //

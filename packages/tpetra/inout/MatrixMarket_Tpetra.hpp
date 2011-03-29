@@ -920,13 +920,13 @@ namespace Tpetra {
       ///   anyone else.
       static sparse_matrix_ptr
       readFile (const std::string& filename,
-		const comm_ptr& pComm,
-		const node_ptr& pNode,
+		const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
+		const Teuchos::RCP<node_type>& pNode,
 		const bool tolerant=false,
 		const bool debug=false)
       {
 	std::ifstream in (filename.c_str());
-	return read (in, pComm, pNode, tolerant, debug);
+	return read (in, pComm, pNode, fillComplete, tolerant, debug);
       }
 
       /// \brief Read the sparse matrix from the given input stream.
@@ -946,8 +946,8 @@ namespace Tpetra {
       ///   anyone else.
       static sparse_matrix_ptr
       read (std::istream& in,	
-	    const comm_ptr& pComm,
-	    const node_ptr& pNode,
+	    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
+	    const Teuchos::RCP<node_type>& pNode,
 	    const bool tolerant=false,
 	    const bool debug=false)
       {

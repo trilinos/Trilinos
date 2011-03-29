@@ -16,9 +16,9 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
-#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
@@ -151,12 +151,12 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
 
   reset_dest_proc_data();
 
-  stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data_));
-  const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-  const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data_);
+  const stk::mesh::EntityRank side_rank = fem_meta.side_rank();
+  const stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
 
   // Select active ghosted side faces.
-  stk::mesh::Selector selector(!stk::mesh::MetaData::get(bulk_data_).locally_owned_part() &
+  stk::mesh::Selector selector(!fem_meta.locally_owned_part() &
                                 stk::mesh::selectIntersection(surfaces_));
 
   mesh::EntityVector sides;
@@ -207,21 +207,24 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
 {
   unsigned spatial_dimension = 2;
   std::vector<std::string> rank_names = stk::mesh::fem::entity_rank_names(spatial_dimension);
-  stk::mesh::MetaData meta_data( rank_names );
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dimension, rank_names);
+  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
   stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
-  stk::mesh::DefaultFEM top_data( meta_data, spatial_dimension );
-  const stk::mesh::EntityRank element_rank    = stk::mesh::fem::element_rank(top_data);
-  const stk::mesh::EntityRank node_rank       = stk::mesh::fem::node_rank(top_data);
+  const stk::mesh::EntityRank element_rank    = fem_meta.element_rank();
+  const stk::mesh::EntityRank node_rank       = fem_meta.node_rank();
 
-  stk::mesh::Part & quad_part( stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" ) );
-  stk::mesh::Part & side_part( stk::mesh::declare_part<shards::Line<2> >         ( meta_data, "line" ) );
-  VectorField & coord_field( meta_data.declare_field< VectorField >( "coordinates" ) );
-  ScalarField & weight_field( meta_data.declare_field< ScalarField >( "element_weights" ) );
+  stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  stk::mesh::fem::CellTopology line_top(shards::getCellTopologyData<shards::Line<2> >());
+  stk::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
+  stk::mesh::Part & side_part( fem_meta.declare_part("line", line_top ) );
+  VectorField & coord_field( fem_meta.declare_field< VectorField >( "coordinates" ) );
+  ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "element_weights" ) );
 
-  stk::mesh::put_field( coord_field , node_rank , meta_data.universal_part() );
-  stk::mesh::put_field(weight_field , element_rank , meta_data.universal_part() );
+  stk::mesh::put_field( coord_field , node_rank , fem_meta.universal_part() );
+  stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
 
-  meta_data.commit();
+  fem_meta.commit();
   const unsigned p_rank = bulk_data.parallel_rank();
   bulk_data.modification_begin();
 
@@ -240,7 +243,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::Entity &q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        stk::mesh::Entity &q = stk::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
         quads[ix][iy] = &q;
       }
     }
@@ -276,9 +279,9 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   const stk::mesh::PartVector surfaces(1, &side_part);
   {
     const stk::mesh::PartVector empty_remove_parts;
-    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
-    const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-    stk::mesh::Selector selector2( stk::mesh::MetaData::get(bulk_data).locally_owned_part());
+    stk::mesh::fem::FEMMetaData & fmeta = stk::mesh::fem::FEMMetaData::get(bulk_data);
+    const stk::mesh::EntityRank side_rank = fmeta.side_rank();
+    stk::mesh::Selector selector2( fmeta.locally_owned_part());
     mesh::EntityVector sides;
     mesh::get_selected_entities(selector2, bulk_data.buckets(side_rank), sides);
 
@@ -297,7 +300,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   // Other specializations are possible.
   Teuchos::ParameterList emptyList;
   stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
-  stk::mesh::Selector selector3(meta_data.locally_owned_part());
+  stk::mesh::Selector selector3(fem_meta.locally_owned_part());
   stk::rebalance::rebalance(bulk_data, selector3, &coord_field, NULL, zoltan_partition);
   {
     const int  print_stats = 1;
@@ -316,9 +319,9 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     std::cout <<" Number on Boundary:     :"<<nboundary <<std::endl;
     std::cout <<" Number Adjancent:       :"<<nadj      <<std::endl;
     {
-      stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
-      const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-      const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+      stk::mesh::fem::FEMMetaData & fmeta = stk::mesh::fem::FEMMetaData::get(bulk_data);
+      const stk::mesh::EntityRank side_rank = fmeta.side_rank();
+      const stk::mesh::EntityRank elem_rank = fmeta.element_rank();
       const mesh::Entity *s = bulk_data.get_entity(side_rank,7);
       if (s) {
         const mesh::Entity & side = *s;
@@ -348,7 +351,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
 
   {
     stk::rebalance::use_cases::GreedySideset greedy_sideset(comm, surfaces, bulk_data);
-    stk::mesh::Selector selector4(meta_data.locally_owned_part());
+    stk::mesh::Selector selector4(fem_meta.locally_owned_part());
     stk::rebalance::rebalance(bulk_data, selector4, &coord_field, NULL, greedy_sideset);
   }
 
@@ -358,9 +361,9 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     std::cout << std::endl
      << "Use Case 4: imbalance_threshold after rebalance 2 = " << imbalance_threshold <<", "<<do_rebal << std::endl;
   {
-    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
-    const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-    const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+    stk::mesh::fem::FEMMetaData & fmeta = stk::mesh::fem::FEMMetaData::get(bulk_data);
+    const stk::mesh::EntityRank side_rank = fmeta.side_rank();
+    const stk::mesh::EntityRank elem_rank = fmeta.element_rank();
     mesh::Entity *s = bulk_data.get_entity(side_rank,7);
     if (s) {
       mesh::Entity & side = *s;
@@ -384,12 +387,12 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   // And verify that all dependent entities are on the same proc as their parent element
   {
     stk::mesh::EntityVector entities;
-    stk::mesh::Selector selector5 = meta_data.locally_owned_part();
+    stk::mesh::Selector selector5 = fem_meta.locally_owned_part();
 
     get_selected_entities(selector5, bulk_data.buckets(node_rank), entities);
-    result &= verify_dependent_ownership(element_rank, entities, top_data);
-    get_selected_entities(selector5, bulk_data.buckets(stk::mesh::fem::side_rank(top_data)), entities);
-    result &= verify_dependent_ownership(element_rank, entities, top_data);
+    result &= verify_dependent_ownership(element_rank, entities);
+    get_selected_entities(selector5, bulk_data.buckets(fem_meta.side_rank()), entities);
+    result &= verify_dependent_ownership(element_rank, entities);
   }
 
 

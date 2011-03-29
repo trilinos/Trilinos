@@ -25,16 +25,21 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
+
 #include <use_cases/UseCase_Common.hpp>
 
-using stk::mesh::fem::NODE_RANK;
+namespace {
+
+const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 enum { SpatialDim = 3 };
+
+}
 
 //----------------------------------------------------------------------
 
-namespace stk{
+namespace stk {
 namespace mesh {
 namespace use_cases {
 
@@ -45,7 +50,7 @@ bool verify_elem_node_coord(
   const unsigned node_count )
 {
   bool result = true;
-  mesh::PairIterRelation rel = elem.relations( fem::NODE_RANK );
+  mesh::PairIterRelation rel = elem.relations( NODE_RANK );
 
   if( (unsigned) rel.size() != node_count ) {
     std::cerr << "Error!  relation size == " << rel.size() << " != "
