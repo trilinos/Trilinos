@@ -118,7 +118,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
     Bucket *b1 = bulk.buckets(0)[0];
     std::stringstream  out1_str;
     out1_str << (*b1);
-    STKUNIT_ASSERT_EQUAL ( gold1, out1_str.str() );
+    bool equal = (gold1 == out1_str.str());
+    STKUNIT_ASSERT_EQUAL ( equal, true );
   }
 
   // Second, update state of bucket until circular cue is filled

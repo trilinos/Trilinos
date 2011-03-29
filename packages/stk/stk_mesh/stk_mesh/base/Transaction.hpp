@@ -24,6 +24,10 @@ class BulkData;
 class Entity;
 class Part;
 
+    /** \brief Bucket containers used to sort mesh entities by state
+     *         so that they can be accessed after modification_end()
+     */
+    typedef std::vector<Bucket *>                 BucketList;
 
 /** \addtogroup stk_mesh_module
  *  \{
@@ -56,10 +60,6 @@ class Transaction
     enum TransactionType { INCREMENTAL = 1 , BULK = 2 };
 
   public:
-    /** \brief Bucket containers used to sort mesh entities by state
-     *         so that they can be accessed after modification_end()
-     */
-    typedef std::vector<Bucket *>                 BucketList;
 
     /** \brief Bucket containers used to sort mesh entities by state
      *         so that they can be accessed after modification_end()
@@ -125,9 +125,6 @@ class Transaction
     /** \brief Pretty print helper
      */
     void  print_transaction ( unsigned , std::ostream & ) const;
-    /** \brief Pretty print helper
-     */
-    void  print_bucket_list ( const BucketList & , std::ostream & ) const;
 
     Transaction ();
     Transaction ( BulkData & , TransactionType );
@@ -247,6 +244,9 @@ inline std::ostream &operator<< ( std::ostream &os , const Transaction &rhs )
   return rhs.print_stream ( os );
 }
 
+/** \brief Pretty print helper
+ */
+void  print_bucket_list ( const BucketList & , std::ostream & );
 /*
  * \}
  */

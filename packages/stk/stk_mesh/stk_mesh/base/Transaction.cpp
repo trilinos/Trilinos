@@ -7,12 +7,6 @@
 /*------------------------------------------------------------------------*/
 
 
-/**  Disabled to resolve inconsistently destroyed mesh entities.
- *   Revisit when development is driven by a use case.
- */
-#if 0
-
-#include <unistd.h> // For sleep
 #include <stdexcept>
 
 
@@ -26,23 +20,30 @@ namespace stk {
 namespace mesh {
 
 
-void Transaction::print_bucket_list ( const BucketList &bl , std::ostream &os ) const
+void print_bucket_list ( const BucketList &bl , std::ostream &os )
 {
   BucketList::const_iterator  cur_bucket = bl.begin();
   while ( cur_bucket != bl.end() )
   {
     os << "Bucket key: ";
-    for ( unsigned i = 0 ; i <= (*cur_bucket)->m_key[0] ; i++ )
-      os << (*cur_bucket)->m_key[i] << " ";
-    os << "\n";
-    os << "Entities: ";
-    for ( unsigned i = 0 ; i != (*cur_bucket)->m_size ; i++ )
-      os << (*cur_bucket)->m_entities[i]->identifier() << " ";
-    os << "\n-------------------\n";
+//This is bad code, no longer works. Re-visit this if/when the
+//Transaction class is ever resurrected.
+//    for ( unsigned i = 0 ; i <= (*cur_bucket)->m_key[0] ; i++ )
+//      os << (*cur_bucket)->m_key[i] << " ";
+//    os << "\n";
+//    os << "Entities: ";
+//    for ( unsigned i = 0 ; i != (*cur_bucket)->m_size ; i++ )
+//      os << (*cur_bucket)->m_entities[i]->identifier() << " ";
+//    os << "\n-------------------\n";
     cur_bucket++;
   }
 }
 
+/**  Disabled to resolve inconsistently destroyed mesh entities.
+ *   Revisit when development is driven by a use case.
+ */
+
+#if 0
 
 void Transaction::print_transaction ( unsigned type , std::ostream &os ) const
 {
@@ -405,9 +406,9 @@ void Transaction::remove_entity_from_bucket ( Entity &e , BucketList &buckets )
   e.m_trans_bucket = NULL;
 }
 
-
-}
-}
-
 #endif
+
+
+}
+}
 

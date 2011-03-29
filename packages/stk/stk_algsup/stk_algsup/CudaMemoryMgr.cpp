@@ -6,11 +6,11 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifdef STK_HAVE_CUDA
-
 #include <stk_algsup/CudaMemoryMgr.hpp>
 
 namespace stk {
+
+#ifdef STK_HAVE_CUDA
 
 CudaMemoryMgr& get_singleton()
 {
@@ -18,8 +18,11 @@ CudaMemoryMgr& get_singleton()
   return cuda_memory_mgr;
 }
 
+#endif
+
 CudaMemoryMgr::~CudaMemoryMgr()
 {
+#ifdef STK_HAVE_CUDA
   std::map<const void*,const void*>::iterator
     iter = device_to_host_map.begin(),
     iter_end = device_to_host_map.end();
@@ -29,9 +32,8 @@ CudaMemoryMgr::~CudaMemoryMgr()
     void* dev_ptr = const_cast<void*>(iter->first);
     CUDA_CALL( cudaFree(dev_ptr) );
   }
+#endif
 }
 
 }//namespace stk
-
-#endif
 

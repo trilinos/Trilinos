@@ -141,7 +141,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, get_cell_topology_trivial )
   stk::mesh::Part & hex_part = fem_meta.get_cell_topology_root_part(hex_top);
   STKUNIT_EXPECT_EQUAL( hex_part.primary_entity_rank(), spatial_dimension );
   stk::mesh::fem::CellTopology topology = fem_meta.get_cell_topology(hex_part);
-  STKUNIT_EXPECT_EQUAL( topology, hex_top );
+  STKUNIT_EXPECT_EQUAL( (topology == hex_top), true );
 }
 
 
@@ -155,7 +155,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, get_cell_topology_simple )
   stk::mesh::Part & A = fem_meta.declare_part("Part A", fem_meta.element_rank() );
   fem_meta.declare_part_subset( hex_part, A );
   stk::mesh::fem::CellTopology topology = fem_meta.get_cell_topology(A);
-  STKUNIT_ASSERT_EQUAL( topology, hex_top );
+  STKUNIT_ASSERT_EQUAL( (topology == hex_top), true );
 }
 
 
