@@ -273,20 +273,11 @@ namespace Tpetra {
 	void 
 	operator() (const Ordinal i, const Ordinal j, const Scalar& Aij) 
 	{
-	  // Keep track of the rightmost column containing a matrix
-	  // entry, and the bottommost row containing a matrix entry.
-	  // This gives us a lower bound for the dimensions of the
-	  // matrix, and a check for the reported dimensions of the
-	  // matrix in the Matrix Market file.
-	  seenNumRows_ = std::max (seenNumRows_, i);
-	  seenNumCols_ = std::max (seenNumCols_, j);
-	  seenNumEntries_++;
-
 	  if (! tolerant_)
 	    {
-	      TEST_FOR_EXCEPTION(i < 1 || j < 1 || i > seenNumRows_ || j > seenNumCols_, 
+	      TEST_FOR_EXCEPTION(i < 1 || j < 1 || i > expectedNumRows_ || j > expectedNumCols_, 
 				 std::invalid_argument, 
-				 "Matrix is " << seenNumRows_ << " x " << seenNumCols_ 
+				 "Matrix is " << expectedNumRows_ << " x " << expectedNumCols_ 
 				 << ", so entry A(" << i << "," << j << ") = " 
 				 << Aij << " is out of range.");
 	      TEST_FOR_EXCEPTION(seenNumEntries_ >= expectedNumEntries_, 
@@ -298,6 +289,15 @@ namespace Tpetra {
 	    }
 	  // i and j are 1-based indices, but we store them as 0-based.
 	  elts_.push_back (element_type (i-1, j-1, Aij));
+
+	  // Keep track of the rightmost column containing a matrix
+	  // entry, and the bottommost row containing a matrix entry.
+	  // This gives us a lower bound for the dimensions of the
+	  // matrix, and a check for the reported dimensions of the
+	  // matrix in the Matrix Market file.
+	  seenNumRows_ = std::max (seenNumRows_, i);
+	  seenNumCols_ = std::max (seenNumCols_, j);
+	  seenNumEntries_++;
 	}
 
 	/// \brief Print the sparse matrix data.  

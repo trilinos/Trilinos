@@ -172,7 +172,7 @@ namespace Tpetra {
 	  }
       }
 
-      /// \brief Compute initial domain map.
+      /// \brief Compute domain map.
       /// 
       /// \param pRowMap [in] Valid row / range map of the matrix, 
       ///   as returned by \c makeRowMap().
@@ -218,6 +218,11 @@ namespace Tpetra {
       ///   the same way, so that myNumEntriesPerRow[k] is the number of
       ///   entries in row pRowMap->getNodeElementList()[k].
       ///
+      /// \param myRowPtr [out] The row pointer array for the rows
+      ///   that belong to me.  This array has one more entry than
+      ///   myNumEntriesPerRow, and is the prefix sum (with
+      ///   myRowPtr[0] = 0) of myNumEntriesPerRow.
+      ///
       /// \param myColInd [out] My rows' column indices.  If myRows =
       ///   pRowMap->getNodeElementList(), start = sum(myNumEntriesPerRow[0
       ///   .. k-1]), and end = start + myNumEntriesPerRow[k], then 
@@ -256,6 +261,7 @@ namespace Tpetra {
       /// 
       static void
       distribute (ArrayRCP<size_t>& myNumEntriesPerRow,
+		  ArrayRCP<size_type>& myRowPtr,
 		  ArrayRCP<global_ordinal_type>& myColInd,
 		  ArrayRCP<scalar_type>& myValues,
 		  const Teuchos::RCP<const map_type>& pRowMap,
@@ -264,234 +270,306 @@ namespace Tpetra {
 		  ArrayRCP<global_ordinal_type>& colInd,
 		  ArrayRCP<scalar_type>& values)
       {
-	using Teuchos::arcp;
-	using Teuchos::ArrayRCP;
-	using Teuchos::Array;
-	using Teuchos::ArrayView;
-	using Teuchos::CommRequest;
-	using Teuchos::Comm;
-	using Teuchos::RCP;
-	using Teuchos::rcpFromRef;
-	using Teuchos::receive;
-	using Teuchos::send;
+	 using Teuchos::arcp;
+	 using Teuchos::ArrayRCP;
+	 using Teuchos::Array;
+	 using Teuchos::ArrayView;
+	 using Teuchos::CommRequest;
+	 using Teuchos::Comm;
+	 using Teuchos::RCP;
+	 using Teuchos::rcpFromRef;
+	 using Teuchos::receive;
+	 using Teuchos::send;
+	 using std::cerr;
+	 using std::endl;
 
-	comm_ptr pComm = pRowMap->getComm();
-	const int numProcs = Teuchos::size (*pComm);
-	const int myRank = Teuchos::rank (*pComm);
-	const int rootRank = 0;
+	 const bool debug = false;
 
-	// List of the global indices of my rows.
-	// They may or may not be contiguous.
-	ArrayView<const global_ordinal_type> myRows = 
-	  pRowMap->getNodeElementList();
-	const size_type myNumRows = myRows.size();
+	 comm_ptr pComm = pRowMap->getComm();
+	 const int numProcs = Teuchos::size (*pComm);
+	 const int myRank = Teuchos::rank (*pComm);
+	 const int rootRank = 0;
 
-	// Space for my proc's number of entries per row.  
-	// Will be filled in below.
-	myNumEntriesPerRow = arcp<size_t> (myNumRows);
+	 // List of the global indices of my rows.
+	 // They may or may not be contiguous.
+	 ArrayView<const global_ordinal_type> myRows = 
+	   pRowMap->getNodeElementList();
+	 const size_type myNumRows = myRows.size();
 
-	// Teuchos::receive() returns an int; here is space for it.
-	int recvResult = 0;
+	 // Space for my proc's number of entries per row.  
+	 // Will be filled in below.
+	 myNumEntriesPerRow = arcp<size_t> (myNumRows);
 
-	if (myRank != rootRank)
-	  {
-	    // Tell the root how many rows we have.  If we're sending none,
-	    // then we don't have anything else to send, nor does the root
-	    // have to receive anything else.
-	    send (*pComm, myNumRows, rootRank);
-	    if (myNumRows != 0)
-	      {
-		// Now send my rows' global indices.  Hopefully the
-		// cast to int doesn't overflow.  This is unlikely,
-		// since it should fit in a local_ordinal_type, even
-		// though it is a global_ordinal_type.
-		send (*pComm, static_cast<int> (myNumRows), 
-		      myRows.getRawPtr(), rootRank);
+	 // Teuchos::receive() returns an int; here is space for it.
+	 int recvResult = 0;
 
-		// I (this proc) don't care if my global row indices are
-		// contiguous, though the root proc does (since otherwise it
-		// needs to pack noncontiguous data into contiguous storage
-		// before sending).  That's why we don't check for
-		// contiguousness here.
+	 if (myRank != rootRank)
+	   {
+	     // Tell the root how many rows we have.  If we're sending none,
+	     // then we don't have anything else to send, nor does the root
+	     // have to receive anything else.
+	     send (*pComm, myNumRows, rootRank);
+	     if (myNumRows != 0)
+	       {
+		 // Now send my rows' global indices.  Hopefully the
+		 // cast to int doesn't overflow.  This is unlikely,
+		 // since it should fit in a local_ordinal_type, even
+		 // though it is a global_ordinal_type.
+		 send (*pComm, static_cast<int> (myNumRows), 
+		       myRows.getRawPtr(), rootRank);
 
-		// Ask the root processor for my part of the array of the
-		// number of entries per row.
-		recvResult = receive (*pComm, rootRank, 
-				      static_cast<int> (myNumRows),
-				      myNumEntriesPerRow.getRawPtr());
+		 // I (this proc) don't care if my global row indices are
+		 // contiguous, though the root proc does (since otherwise it
+		 // needs to pack noncontiguous data into contiguous storage
+		 // before sending).  That's why we don't check for
+		 // contiguousness here.
 
-		// Use the resulting array to figure out how many column
-		// indices and values for which I should ask from the root
-		// processor.  
-		const size_t myNumEntries = 
-		  std::accumulate (myNumEntriesPerRow.begin(), 
-				   myNumEntriesPerRow.end(), 
-				   static_cast<size_t> (0));
-		// Make space for my entries of the sparse matrix.  Note that
-		// they don't have to be sorted by row index.  Iterating through
-		// all my rows requires computing a running sum over
-		// myNumEntriesPerRow.
-		myColInd = arcp<global_ordinal_type> (myNumEntries);
-		myValues = arcp<scalar_type> (myNumEntries);
-		if (myNumEntries > 0)
-		  { // Ask for that many column indices and values, if there are any.
-		    recvResult = receive (*pComm, rootRank, 
-					  static_cast<int> (myNumEntries), 
-					  myColInd.getRawPtr());
-		    recvResult = receive (*pComm, rootRank, 
-					  static_cast<int> (myNumEntries), 
-					  myValues.getRawPtr());
-		  }
-	      } // If I own at least one row
-	  } // If I am not the root processor
-	else // I _am_ the root processor
-	  {
-	    // Proc 0 (the root processor) still needs to (allocate,
-	    // if not done already) and fill its part of the matrix
-	    // (my*).
-	    for (size_type k = 0; k < myNumRows; ++k)
-	      myNumEntriesPerRow[k] = numEntriesPerRow[myRows[k]];
-	    const size_t myNumEntries = 
-	      std::accumulate (myNumEntriesPerRow.begin(), 
-			       myNumEntriesPerRow.end(), 
-			       static_cast<size_t> (0));
-	    myColInd = arcp<global_ordinal_type> (myNumEntries);
-	    myValues = arcp<scalar_type> (myNumEntries);
-	    // Copy Proc 0's part of the matrix into the my* arrays.
-	    size_t curPos = 0;
-	    for (size_type k = 0; k < myNumRows; ++k, curPos += myNumEntriesPerRow[k])
-	      {
-		ArrayView<global_ordinal_type> colIndView = 
-		  colInd(myRows[k], myNumEntriesPerRow[k]);
-		ArrayView<global_ordinal_type> myColIndView = 
-		  myColInd(curPos, myNumEntriesPerRow[k]);
-		std::copy (colIndView.begin(), colIndView.end(), myColInd.begin());
+		 // Ask the root processor for my part of the array of the
+		 // number of entries per row.
+		 recvResult = receive (*pComm, rootRank, 
+				       static_cast<int> (myNumRows),
+				       myNumEntriesPerRow.getRawPtr());
 
-		ArrayView<scalar_type> valuesView = 
-		  values(myRows[k], myNumEntriesPerRow[k]);
-		ArrayView<scalar_type> myValuesView = 
-		  myValues(curPos, myNumEntriesPerRow[k]);
-		std::copy (valuesView.begin(), valuesView.end(), myValues.begin());
-	      }
+		 // Use the resulting array to figure out how many column
+		 // indices and values for which I should ask from the root
+		 // processor.  
+		 const size_t myNumEntries = 
+		   std::accumulate (myNumEntriesPerRow.begin(), 
+				    myNumEntriesPerRow.end(), 
+				    static_cast<size_t> (0));
 
-	    // Proc 0 just finished with its own rows above, so we count
-	    // those as "done."  Now Proc 0 has to finish the rows belonging
-	    // to all the other procs.
-	    size_type numRowsDone = myNumRows;
+		 // Make space for my entries of the sparse matrix.  Note that
+		 // they don't have to be sorted by row index.  Iterating through
+		 // all my rows requires computing a running sum over
+		 // myNumEntriesPerRow.
+		 myColInd = arcp<global_ordinal_type> (myNumEntries);
+		 myValues = arcp<scalar_type> (myNumEntries);
+		 if (myNumEntries > 0)
+		   { // Ask for that many column indices and values, if there are any.
+		     recvResult = receive (*pComm, rootRank, 
+					   static_cast<int> (myNumEntries), 
+					   myColInd.getRawPtr());
+		     recvResult = receive (*pComm, rootRank, 
+					   static_cast<int> (myNumEntries), 
+					   myValues.getRawPtr());
+		   }
+	       } // If I own at least one row
+	   } // If I am not the root processor
+	 else // I _am_ the root processor
+	   {
+	     // Proc 0 (the root processor) still needs to (allocate,
+	     // if not done already) and fill its part of the matrix
+	     // (my*).
+	     for (size_type k = 0; k < myNumRows; ++k)
+	       myNumEntriesPerRow[k] = numEntriesPerRow[myRows[k]];
+	     if (false && debug)
+	       {
+		 cerr << "Proc " << Teuchos::rank (*(pRowMap->getComm())) 
+		      << ": myNumEntriesPerRow[0.." << (myNumRows-1) << "] = [";
+		 for (size_type k = 0; k < myNumRows; ++k)
+		   {
+		     cerr << myNumEntriesPerRow[k];
+		     if (k < myNumRows-1)
+		       cerr << " ";
+		   }
+		 cerr << "]" << endl;
+	       }
+	     // The total number of matrix entries that my proc owns.
+	     const size_t myNumEntries = 
+	       std::accumulate (myNumEntriesPerRow.begin(), 
+				myNumEntriesPerRow.end(), 
+				static_cast<size_t> (0));
+	     myColInd = arcp<global_ordinal_type> (myNumEntries);
+	     myValues = arcp<scalar_type> (myNumEntries);
 
-	    // Proc 0 processes each other proc p in turn.
-	    for (int p = 1; p < numProcs; ++p)
-	      {
-		size_type theirNumRows = 0;
-		// Ask Proc p how many rows it has.  If it doesn't have any,
-		// we can move on to the next proc.  This has to be a
-		// standard receive so that we can avoid the degenerate case
-		// of sending zero data.
-		recvResult = receive (*pComm, p, &theirNumRows);
-		if (theirNumRows != 0)
-		  {
-		    // Ask Proc p which rows it owns.  The resulting
-		    // global row indices are not guaranteed to be
-		    // contiguous or sorted.  Global row indices are
-		    // themselves indices into the numEntriesPerRow
-		    // array.
-		    ArrayRCP<size_type> theirRows = arcp<size_type> (theirNumRows);
-		    recvResult = receive (*pComm, p, 
-					  static_cast<int> (theirNumRows), 
-					  theirRows.getRawPtr());
-		    // Check if Proc p's rows are contiguous.  If so, we can
-		    // extract Proc p's data easily.  Otherwise we have to do a
-		    // little more work.
-		    bool contiguous = true;
-		    for (size_type k = 1; k < theirRows.size(); ++k)
-		      {
-			if (theirRows[k-1] + 1 != theirRows[k])
-			  contiguous = false;
-		      }
+	     // Copy Proc 0's part of the matrix into the my* arrays.
+	     // It's important that myCurPos be updated _before_ k,
+	     // otherwise myCurPos will get the wrong number of entries
+	     // per row (it should be for the row in the just-completed
+	     // iteration, not for the next iteration's row).
+	     size_t myCurPos = 0;
+	     for (size_type k = 0; k < myNumRows; 
+		  myCurPos += myNumEntriesPerRow[k], ++k)
+	       {
+		 const size_t curNumEntries = myNumEntriesPerRow[k];
+		 const global_ordinal_type myRow = myRows[k];
+		 const size_t curPos = rowPtr[myRow];
+		 if (false && debug)
+		   {
+		     cerr << "k = " << k << ", myRow = " << myRow << ": colInd(" 
+			  << curPos << "," << curNumEntries << "), myColInd(" 
+			  << myCurPos << "," << curNumEntries << ")" << endl;
+		   }
+		 // Only copy if there are entries to copy, in order
+		 // not to construct empty ranges for the ArrayRCP
+		 // views.
+		 if (curNumEntries > 0)
+		   {
+		     ArrayView<global_ordinal_type> colIndView = 
+		       colInd(curPos, curNumEntries);
+		     ArrayView<global_ordinal_type> myColIndView = 
+		       myColInd(myCurPos, curNumEntries);
+		     std::copy (colIndView.begin(), colIndView.end(), 
+				myColIndView.begin());
 
-		    ArrayRCP<size_t> theirNumEntriesPerRow;
-		    if (contiguous)
-		      theirNumEntriesPerRow = 
-			numEntriesPerRow.persistingView (numRowsDone, theirNumRows);
-		    else
-		      {
-			// Collect the number of entries in each of Proc p's rows.
-			theirNumEntriesPerRow = arcp<size_t> (theirNumRows);
-			for (size_type k = 0; k < theirNumRows; ++k)
-			  theirNumEntriesPerRow[k] = numEntriesPerRow[theirRows[k]];
-		      }
-		    // Tell Proc p the number of entries in each of
-		    // its rows.  Hopefully the cast to int doesn't
-		    // overflow.  This is unlikely, since it should
-		    // fit in a local_ordinal_type, even though it is
-		    // a global_ordinal_type.
-		    send (*pComm, static_cast<int> (theirNumRows), 
-			  theirNumEntriesPerRow.getRawPtr(), p);
+		     ArrayView<scalar_type> valuesView = 
+		       values(curPos, curNumEntries);
+		     ArrayView<scalar_type> myValuesView = 
+		       myValues(myCurPos, curNumEntries);
+		     std::copy (valuesView.begin(), valuesView.end(), 
+				myValuesView.begin());
+		   }
+	       }
 
-		    // Figure out how many entries Proc p owns.
-		    const size_t theirNumEntries = 
-		      std::accumulate (theirNumEntriesPerRow.begin(),
-				       theirNumEntriesPerRow.end(), 
-				       static_cast<size_t> (0));
-		    if (theirNumEntries == 0)
-		      continue; // No entries to send, so we're done with proc p
+	     // Proc 0 just finished with its own rows above, so we count
+	     // those as "done."  Now Proc 0 has to finish the rows belonging
+	     // to all the other procs.
+	     size_type numRowsDone = myNumRows;
 
-		    // Construct (views of) proc p's column indices and values.
-		    ArrayRCP<global_ordinal_type> theirColInd;
-		    ArrayRCP<scalar_type> theirValues;
-		    if (contiguous)
-		      { // Current position in which to look in colInd and values for
-			// Proc p's entries, assuming contiguous storage.
-			const size_type rowStart = rowPtr[numRowsDone];
-			theirColInd = colInd.persistingView(rowStart, theirNumEntries);
-			theirValues = values.persistingView(rowStart, theirNumEntries);
-		      }
-		    else
-		      {
-			theirColInd = arcp<global_ordinal_type> (theirNumEntries);
-			theirValues = arcp<scalar_type> (theirNumEntries);
-			size_t curPos = 0;
-			for (size_type k = 0; k < theirNumRows; 
-			     ++k, curPos += theirNumEntriesPerRow[k])
-			  {
-			    const size_type rowStart = rowPtr[theirRows[k]];
+	     // Proc 0 processes each other proc p in turn.
+	     for (int p = 1; p < numProcs; ++p)
+	       {
+		 size_type theirNumRows = 0;
+		 // Ask Proc p how many rows it has.  If it doesn't have any,
+		 // we can move on to the next proc.  This has to be a
+		 // standard receive so that we can avoid the degenerate case
+		 // of sending zero data.
+		 recvResult = receive (*pComm, p, &theirNumRows);
+		 if (theirNumRows != 0)
+		   {
+		     // Ask Proc p which rows it owns.  The resulting
+		     // global row indices are not guaranteed to be
+		     // contiguous or sorted.  Global row indices are
+		     // themselves indices into the numEntriesPerRow
+		     // array.
 
-			    ArrayView<global_ordinal_type> colIndView = 
-			      colInd(rowStart, theirNumEntriesPerRow[k]);
-			    ArrayView<global_ordinal_type> theirColIndView = 
-			      theirColInd(curPos, theirNumEntriesPerRow[k]);
-			    std::copy (colIndView.begin(), colIndView.end(), 
-				       theirColInd.begin());
+		     ArrayRCP<size_type> theirRows = arcp<size_type> (theirNumRows);
+		     recvResult = receive (*pComm, p, 
+					   static_cast<int> (theirNumRows), 
+					   theirRows.getRawPtr());
+		     // Perhaps we could save a little work if we
+		     // check whether Proc p's row indices are
+		     // contiguous.  That would make lookups in the
+		     // global data arrays faster.  For now, we just
+		     // implement the general case and don't
+		     // prematurely optimize.  (Remember that you're
+		     // making Proc 0 read the whole file, so you've
+		     // already lost scalability.)
 
-			    ArrayView<scalar_type> valuesView = 
-			      values(rowStart, theirNumEntriesPerRow[k]);
-			    ArrayView<scalar_type> theirValuesView = 
-			      theirValues(curPos, theirNumEntriesPerRow[k]);
-			    std::copy (valuesView.begin(), valuesView.end(), 
-				       theirValues.begin());
-			  }
-		      }
+		     // Compute the number of entries in each of Proc
+		     // p's rows.  (Proc p will compute its row
+		     // pointer array on its own, after it gets the
+		     // data from Proc 0.)
+		     ArrayRCP<size_t> theirNumEntriesPerRow;
+		     theirNumEntriesPerRow = arcp<size_t> (theirNumRows);
+		     for (size_type k = 0; k < theirNumRows; ++k)
+		       theirNumEntriesPerRow[k] = numEntriesPerRow[theirRows[k]];
 
-		    // Send Proc p its column indices and values.
-		    // Hopefully the cast to int doesn't overflow.
-		    // This is unlikely, since it should fit in a
-		    // local_ordinal_type, even though it is a
-		    // global_ordinal_type.
-		    send (*pComm, static_cast<int> (theirNumEntries), 
-			  theirColInd.getRawPtr(), p);
-		    send (*pComm, static_cast<int> (theirNumEntries), 
-			  theirValues.getRawPtr(), p);
-		    numRowsDone += theirNumRows;
-		  } // If proc p owns at least one row
-	      } // For each proc p not the root proc 0
-	  } // If I'm (not) the root proc 0
+		     // Tell Proc p the number of entries in each of
+		     // its rows.  Hopefully the cast to int doesn't
+		     // overflow.  This is unlikely, since it should
+		     // fit in a local_ordinal_type, even though it is
+		     // a global_ordinal_type.
+		     send (*pComm, static_cast<int> (theirNumRows), 
+			   theirNumEntriesPerRow.getRawPtr(), p);
 
-	// Invalidate the input data to save space, since we don't
-	// need it anymore.
-	numEntriesPerRow = null;
-	rowPtr = null;
-	colInd = null;
-	values = null;
+		     // Figure out how many entries Proc p owns.
+		     const size_t theirNumEntries = 
+		       std::accumulate (theirNumEntriesPerRow.begin(),
+					theirNumEntriesPerRow.end(), 
+					static_cast<size_t> (0));
+		     // If there are no entries to send, then we're
+		     // done with Proc p.
+		     if (theirNumEntries == 0)
+		       continue; 
+
+		     // Construct (views of) proc p's column indices
+		     // and values.  Later, we might like to optimize
+		     // for the (common) contiguous case, for which we
+		     // don't need to copy data into separate "their*"
+		     // arrays (we can just use contiguous views of
+		     // the global arrays).
+		     ArrayRCP<global_ordinal_type> theirColInd = 
+		       arcp<global_ordinal_type> (theirNumEntries);
+		     ArrayRCP<scalar_type> theirValues = 
+		       arcp<scalar_type> (theirNumEntries);
+		     // Copy Proc p's part of the matrix into the
+		     // their* arrays.  It's important that
+		     // theirCurPos be updated _before_ k, otherwise
+		     // theirCurPos will get the wrong number of
+		     // entries per row (it should be for the row in
+		     // the just-completed iteration, not for the next
+		     // iteration's row).
+		     size_t theirCurPos = 0;
+		     for (size_type k = 0; k < theirNumRows; 
+			  theirCurPos += theirNumEntriesPerRow[k], k++)
+		       {
+			 const size_t curNumEntries = theirNumEntriesPerRow[k];
+			 const global_ordinal_type theirRow = theirRows[k];
+			 const size_t curPos = rowPtr[theirRow];
+
+			 // Only copy if there are entries to copy, in
+			 // order not to construct empty ranges for
+			 // the ArrayRCP views.
+			 if (curNumEntries > 0)
+			   {
+			     ArrayView<global_ordinal_type> colIndView = 
+			       colInd(curPos, curNumEntries);
+			     ArrayView<global_ordinal_type> theirColIndView = 
+			       theirColInd(theirCurPos, curNumEntries);
+			     std::copy (colIndView.begin(), colIndView.end(), 
+					theirColIndView.begin());
+			 
+			     ArrayView<scalar_type> valuesView = 
+			       values(curPos, curNumEntries);
+			     ArrayView<scalar_type> theirValuesView = 
+			       theirValues(theirCurPos, curNumEntries);
+			     std::copy (valuesView.begin(), valuesView.end(), 
+					theirValuesView.begin());
+			   }
+		       }
+		     // Send Proc p its column indices and values.
+		     // Hopefully the cast to int doesn't overflow.
+		     // This is unlikely, since it should fit in a
+		     // local_ordinal_type, even though it is a
+		     // global_ordinal_type.
+		     send (*pComm, static_cast<int> (theirNumEntries), 
+			   theirColInd.getRawPtr(), p);
+		     send (*pComm, static_cast<int> (theirNumEntries), 
+			   theirValues.getRawPtr(), p);
+		     numRowsDone += theirNumRows;
+		   } // If proc p owns at least one row
+	       } // For each proc p not the root proc 0
+	   } // If I'm (not) the root proc 0
+
+	 // Invalidate the input data to save space, since we don't
+	 // need it anymore.
+	 numEntriesPerRow = null;
+	 rowPtr = null;
+	 colInd = null;
+	 values = null;
+
+	 // Allocate and fill in myRowPtr (the row pointer array for
+	 // my rank's rows).  We delay this until the end because we
+	 // don't need it to compute anything else in distribute().
+	 // Each proc can do this work for itself, since it only needs
+	 // myNumEntriesPerRow to do so.
+	 myRowPtr = arcp<size_type> (myNumRows+1);
+	 myRowPtr[0] = 0;
+	 for (size_type k = 1; k < myNumRows+1; ++k)
+	   myRowPtr[k] = myRowPtr[k-1] + myNumEntriesPerRow[k-1];
+	 if (false && debug)
+	   {
+	     cerr << "Proc " << Teuchos::rank (*(pRowMap->getComm())) 
+		  << ": myRowPtr[0.." << myNumRows << "] = [";
+	     for (size_type k = 0; k < myNumRows+1; ++k)
+	       {
+		 cerr << myRowPtr[k];
+		 if (k < myNumRows)
+		   cerr << " ";
+	       }
+	     cerr << "]" << endl << endl;
+	   }
       }
 
       /// \brief Given my proc's data, return the completed sparse matrix.
@@ -509,12 +587,78 @@ namespace Tpetra {
 	using Teuchos::ArrayRCP;
 	using Teuchos::ArrayView;
 	using Teuchos::rcp;
+	using std::cerr;
+	using std::endl;
+
+	const bool debug = false;
+
+	// The row pointer array always has at least one entry, even
+	// if the matrix has zero rows.  myNumEntriesPerRow, myColInd,
+	// and myValues would all be empty arrays in that degenerate
+	// case, but the row and domain maps would still be nonnull
+	// (though they would be trivial maps).
+	TEST_FOR_EXCEPTION(myRowPtr.is_null(), std::logic_error,
+			   "makeMatrix: myRowPtr array is null.  "
+			   "Please report this bug to the Tpetra developers.");
+	TEST_FOR_EXCEPTION(pRowMap.is_null(), std::logic_error,
+			   "makeMatrix: row map is null.  "
+			   "Please report this bug to the Tpetra developers.");
+	TEST_FOR_EXCEPTION(pDomMap.is_null(), std::logic_error,
+			   "makeMatrix: domain map is null.  "
+			   "Please report this bug to the Tpetra developers.");
+
+	// Handy for debugging output; not needed otherwise.
+	const int numProcs = Teuchos::size (*(pRowMap->getComm()));
+	const int myRank = Teuchos::rank (*(pRowMap->getComm()));
+
+	if (false && debug)
+	  {
+	    cerr << "Proc " << myRank << ":" << endl
+		 << "-- myRowPtr = [ ";
+	    std::copy (myRowPtr.begin(), myRowPtr.end(), 
+		       std::ostream_iterator<size_type>(cerr, " "));
+	    cerr << "]" << endl << "-- myColInd = [ ";
+	    std::copy (myColInd.begin(), myColInd.end(), 
+		       std::ostream_iterator<size_type>(cerr, " "));
+	    cerr << "]" << endl << endl;
+	  }
+
+	// Go through all of my columns, and see if any are not in the
+	// domain map.  This is possible if numProcs > 1, otherwise
+	// not.
+	if (false && debug)
+	  {
+	    size_type numRemote = 0;
+	    std::vector<global_ordinal_type> remoteGIDs;
+
+	    typedef typename ArrayRCP<global_ordinal_type>::const_iterator iter_type;
+	    for (iter_type it = myColInd.begin(); it != myColInd.end(); ++it)
+	      {
+		if (! pDomMap->isNodeGlobalElement (*it))
+		  {
+		    numRemote++;
+		    remoteGIDs.push_back (*it);
+		  }
+	      }
+	    if (numRemote > 0)
+	      {
+		cerr << "Proc " << myRank << ": " << numRemote 
+		     << " remote GIDs = [ " << endl;
+		std::copy (remoteGIDs.begin(), remoteGIDs.end(),
+			   std::ostream_iterator<global_ordinal_type>(cerr, " "));
+		cerr << "]" << endl;
+	      }
+	  }
 
 	// Create with DynamicProfile, so that the
 	// fillComplete(DoOptimizeStorage) can do first-touch reallocation.
 	sparse_matrix_ptr A = 
 	  rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow, 
 				       DynamicProfile));
+	TEST_FOR_EXCEPTION(A.is_null(), std::logic_error,
+			   "makeMatrix: Initial allocation of CrsMatrix failed"
+			   ".  Please report this bug to the Tpetra developers"
+			   ".");
 	// List of the global indices of my rows.
 	// They may or may not be contiguous.
 	ArrayView<const global_ordinal_type> myRows = 
@@ -523,9 +667,23 @@ namespace Tpetra {
 
 	// Add this processor's matrix entries to the CrsMatrix.
 	for (size_type k = 0; k < myNumRows; ++k)
-	  A->insertGlobalValues (myRows[k], 
-				 myColInd(myRowPtr[k], myNumEntriesPerRow[k]),
-				 myValues(myRowPtr[k], myNumEntriesPerRow[k]));
+	  {
+	    const size_type myCurPos = myRowPtr[k];
+	    const size_t curNumEntries = myNumEntriesPerRow[k];
+
+	    if (false && debug)
+	      {
+		cerr << "Proc " << myRank << ": k = " << k 
+		     << ", myCurPos = " << myCurPos
+		     << ", curNumEntries = " << curNumEntries
+		     << endl;
+	      }
+	    // Avoid constructing empty views of ArrayRCP objects.
+	    if (curNumEntries > 0)
+	      A->insertGlobalValues (myRows[k], 
+				     myColInd(myCurPos, curNumEntries),
+				     myValues(myCurPos, curNumEntries));
+	  }
 	// We've entered in all our matrix entries, so we can delete
 	// the original data.  This will save memory when we call
 	// fillComplete(), so that we never keep more than two copies
@@ -562,6 +720,9 @@ namespace Tpetra {
       {
 	using Teuchos::RCP;
 	using Teuchos::rcp;
+	using std::cerr;
+	using std::endl;
+
 	const int myRank = Teuchos::rank (*pComm);
 
 	// The pointer will be non-null on return only on MPI Rank 0.
@@ -572,26 +733,16 @@ namespace Tpetra {
 	  {
 	    typedef Teuchos::ScalarTraits<scalar_type> STS;
 
-	    // Keep reading lines until we get a noncomment line.
 	    std::string line;
-	    size_t numLinesRead = 0;
-	    bool commentLine = false;
-	    do {
-	      // Try to read a line from the input stream.
-	      const bool readFailed = ! getline(in, line);
-	      TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
-				 "Failed to get Matrix Market banner line "
-				 "from input, after reading " << numLinesRead
-				 << "line" << (numLinesRead != 1 ? "s." : "."));
-	      // We read a line from the input stream.
-	      lineNumber++; 
-	      numLinesRead++;
-	      size_t start, size; // Output args of checkCommentLine
-	      commentLine = checkCommentLine (line, start, size, 
-					      lineNumber, tolerant);
-	    } while (commentLine); // Loop until we find a noncomment line.
+	    // Try to read a line from the input stream.
+	    const bool readFailed = ! getline(in, line);
+	    TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
+			       "Failed to get Matrix Market banner line "
+			       "from input.");
+	    // We read a line from the input stream.
+	    lineNumber++; 
 
-	    // Assume that the noncomment line we found is the banner line.
+	    // Assume that the line we found is the banner line.
 	    try {
 	      pBanner = rcp (new Banner (line, tolerant));
 	    } catch (std::exception& e) {
@@ -633,7 +784,8 @@ namespace Tpetra {
 		     size_t& lineNumber,
 		     const Teuchos::RCP<const Banner>& pBanner,
 		     const comm_ptr& pComm,
-		     const bool tolerant = false) // ignored except on Rank 0
+		     const bool tolerant = false,
+		     const bool debug = false)
       {
 	// Packed coordinate matrix dimensions (numRows, numCols,
 	// numNonzeros); computed on Rank 0 and broadcasted to all MPI
@@ -817,12 +969,12 @@ namespace Tpetra {
 	// The "Banner" tells you whether the input stream represents
 	// a sparse matrix, the symmetry type of the matrix, and the
 	// type of the data it contains.
-	RCP<const Banner> pBanner = readBanner (in, lineNumber, pComm, tolerant);
+	RCP<const Banner> pBanner = readBanner (in, lineNumber, pComm, tolerant, debug);
 
 	// dims = (numRows, numCols, numEntries) (all global),
 	// as read from the Matrix Market metadata.
 	Tuple<global_ordinal_type, 3> dims = 
-	  readCoordDims (in, lineNumber, pBanner, pComm, tolerant);
+	  readCoordDims (in, lineNumber, pBanner, pComm, tolerant, debug);
 
 	// "Adder" object for collecting all the sparse matrix entries
 	// from the input stream.
@@ -919,8 +1071,27 @@ namespace Tpetra {
 	    typedef Raw::Element<scalar_type, global_ordinal_type> element_type;
 	    typedef typename std::vector<element_type>::const_iterator iter_type;
 
+	    if (false && debug)
+	      {
+		std::ofstream out ("before.mtx");
+		// Print out the read-in matrix entries before the merge.
+		const std::vector<element_type>& entries = 
+		  pAdder->getAdder()->getEntries();
+		std::copy (entries.begin(), entries.end(), 
+			   std::ostream_iterator<element_type>(out, "\n"));
+	      }
 	    // Additively merge duplicate matrix entries.
 	    pAdder->getAdder()->merge ();
+
+	    if (false && debug)
+	      {
+		std::ofstream out ("after.mtx");
+		// Print out the read-in matrix entries after the merge.
+		const std::vector<element_type>& entries = 
+		  pAdder->getAdder()->getEntries();
+		std::copy (entries.begin(), entries.end(), 
+			   std::ostream_iterator<element_type>(out, "\n"));
+	      }
 	    // Get a temporary const view of the merged matrix entries.
 	    const std::vector<element_type>& entries = 
 	      pAdder->getAdder()->getEntries();
@@ -929,40 +1100,61 @@ namespace Tpetra {
 	    // Number of matrix entries (after merging).
 	    const size_type numEntries = entries.size();
 
-	    // Make space for the CSR matrix data.
+	    // Make space for the CSR matrix data.  The conversion to
+	    // CSR algorithm is easier if we fill numEntriesPerRow
+	    // with zeros at first.
 	    numEntriesPerRow = arcp<size_t> (numRows);
-	    rowPtr = arcp<size_type> (numRows+1);	    
-	    colInd = arcp<global_ordinal_type> (numEntries);	    
-	    values = arcp<scalar_type> (numEntries);	    
+	    std::fill (numEntriesPerRow.begin(), numEntriesPerRow.end(), 
+		       static_cast<size_t>(0));
+	    rowPtr = arcp<size_type> (numRows+1);
+	    std::fill (rowPtr.begin(), rowPtr.end(), 
+		       static_cast<size_type>(0));
+	    colInd = arcp<global_ordinal_type> (numEntries);
+	    values = arcp<scalar_type> (numEntries);
 
-	    if (entries.size() > 0)
+	    // Convert from array-of-structs coordinate format to CSR
+	    // (compressed sparse row) format.
+	    {
+	      global_ordinal_type prvRow = 0;
+	      size_type curPos = 0;
+	      rowPtr[0] = 0;
+	      for (curPos = 0; curPos < numEntries; ++curPos)
+		{
+		  const element_type& curEntry = entries[curPos];
+		  const global_ordinal_type curRow = curEntry.rowIndex();
+		  TEST_FOR_EXCEPTION(curRow < prvRow, std::logic_error,
+				     "Row indices out of order, even though "
+				     "they are supposed to be sorted.  curRow"
+				     " = " << curRow << ", prvRow = " 
+				     << prvRow << ", at curPos = " << curPos 
+				     << ".  Please report this bug to the "
+				     "Tpetra developers.");
+		  if (curRow > prvRow)
+		    {
+		      for (size_type r = prvRow+1; r <= curRow; ++r)
+			rowPtr[r] = curPos;
+		      prvRow = curRow;
+		    }
+		  numEntriesPerRow[curRow]++;
+		  colInd[curPos] = curEntry.colIndex();
+		  values[curPos] = curEntry.value();
+		}
+	      // rowPtr has one more entry than numEntriesPerRow.  The
+	      // last entry of rowPtr is the number of entries in colInd
+	      // and values.
+	      rowPtr[numRows] = numEntries;
+	    }
+	    if (false && debug)
 	      {
-		size_type numUniqueRowsSeen = 0;
-		global_ordinal_type curRow = 
-		  Teuchos::OrdinalTraits<global_ordinal_type>::invalid();
-
-		for (size_type curPos = 0; curPos < numEntries; ++curPos)
-		  {
-		    const element_type& curEntry = entries[curPos];
-
-		    if (curEntry.rowIndex() != curRow)
-		      { // We're starting a new row.
-			rowPtr[numUniqueRowsSeen] = curPos;
-			numEntriesPerRow[numUniqueRowsSeen] = 0;
-			numUniqueRowsSeen++;
-			curRow = curEntry.rowIndex();
-		      }
-		    else
-		      { // We're continuing the same row.
-			numEntriesPerRow[numUniqueRowsSeen]++;
-		      }
-		    colInd[curPos] = curEntry.colIndex();
-		    values[curPos] = curEntry.value();
-		  }
+		cerr << "Proc 0: numEntriesPerRow = [ ";
+		for (size_type k = 0; k < numRows; ++k)
+		  cerr << numEntriesPerRow[k] << " ";
+		cerr << "]" << endl;
+		cerr << "Proc 0: rowPtr = [ ";
+		for (size_type k = 0; k < numRows+1; ++k)
+		  cerr << rowPtr[k] << " ";
+		cerr << "]" << endl;
 	      }
-	    // The last entry of rowPtr is the number of entries
-	    // in colInd and values.
-	    rowPtr[numRows] = numEntries;
 	  }
 	// Now we're done with the Adder, so we can release the
 	// reference ("free" it) to save space.
@@ -992,7 +1184,7 @@ namespace Tpetra {
 	ArrayRCP<global_ordinal_type> myColInd;
 	ArrayRCP<scalar_type> myValues;
 	// Distribute the matrix data.
-	distribute (myNumEntriesPerRow, myColInd, myValues, 
+	distribute (myNumEntriesPerRow, myRowPtr, myColInd, myValues, 
 		    pRowMap, numEntriesPerRow, rowPtr, colInd, values);
 
 	// Each processor inserts its part of the matrix data, and
@@ -1005,15 +1197,18 @@ namespace Tpetra {
 	sparse_matrix_ptr pMatrix = 
 	  makeMatrix (myNumEntriesPerRow, myRowPtr, myColInd, myValues,
 		      pRowMap, pDomMap);
+	TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
+			   "makeMatrix() returned a null pointer.  Please "
+			   "report this bug to the Tpetra developers.");
+
 	// You're not supposed to call these until after
 	// fillComplete() has been called, which is why we wait
 	// until after completeMatrix() (which calls
 	// fillComplete()) has been called.
 	const global_size_t globalNumRows = pMatrix->getGlobalNumRows();
 	const global_size_t globalNumCols = pMatrix->getGlobalNumCols();
-	if (debug)
+	if (false && debug)
 	  {
-
 	    if (myRank == 0)
 	      {
 		cerr << "-- Matrix is "
@@ -1039,7 +1234,7 @@ namespace Tpetra {
 		  }
 		Teuchos::barrier (*pComm);
 	      }
-	  } // if (debug)
+	  } // if (false && debug)
 
 	// Casting a positive signed integer (global_ordinal_type)
 	// to an unsigned integer of no fewer bits (global_size_t)
