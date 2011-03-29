@@ -201,7 +201,7 @@ STKUNIT_UNIT_TEST(norm, volume)
 
   dw().m(LOG_NORM) << "TEST::norm::volume " << stk::diag::dendl;
 
-  using namespace mesh;
+  //using namespace mesh;
 
   LocalFixture fix(3,3,12);
   mesh::fem::FEMMetaData& metaData = fix.metaData;
@@ -336,7 +336,7 @@ STKUNIT_UNIT_TEST(norm, string_function)
 
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
-  using namespace mesh;
+  //using namespace mesh;
 
   LocalFixture     fix(4);
   mesh::fem::FEMMetaData&        metaData     = fix.metaData;
@@ -411,7 +411,7 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
 
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
-  using namespace mesh;
+  //using namespace mesh;
 
   LocalFixture     fix(4);
   mesh::fem::FEMMetaData&        metaData     = fix.metaData;
@@ -571,7 +571,7 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
 
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
-  using namespace mesh;
+  //using namespace mesh;
 
   /// create a meta data/bulk data empty pair
   PerceptMesh eMesh(3);
@@ -727,7 +727,7 @@ STKUNIT_UNIT_TEST(norm, field_function)
 
   dw().m(LOG_NORM) << "TEST.norm.field_function " << stk::diag::dendl;
 
-  using namespace mesh;
+  //using namespace mesh;
 
   LocalFixture     fix(4);
   mesh::fem::FEMMetaData&        metaData     = fix.metaData;

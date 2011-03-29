@@ -38,7 +38,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag1 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag3 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag4 )
 
-using namespace stk::mesh;
+//using namespace stk::mesh;
 
 namespace stk
 {
@@ -66,31 +66,31 @@ namespace stk
       { 0 , 2 , -1 } , { 1 , 2 , -1 } ,
       { 1 , 1 , -2 } };
 
-    static const EntityId hex_node_ids[3][ shards::Hexahedron<> ::node_count ] = {
+    static const stk::mesh::EntityId hex_node_ids[3][ shards::Hexahedron<> ::node_count ] = {
       { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
       { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
       { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
 
-    static const EntityId wedge_node_ids[3][ shards::Wedge<> ::node_count ] = {
+    static const stk::mesh::EntityId wedge_node_ids[3][ shards::Wedge<> ::node_count ] = {
       { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
       { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
       { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
-    static const EntityId tetra_node_ids[3][ shards::Tetrahedron<> ::node_count ] = {
+    static const stk::mesh::EntityId tetra_node_ids[3][ shards::Tetrahedron<> ::node_count ] = {
       { 15 , 19 , 16 , 21 } ,
       { 19 , 20 , 16 , 21 } ,
       { 16 , 20 , 17 , 21 } };
 
-    static const EntityId pyramid_node_ids[2][ shards::Pyramid<> ::node_count ] = {
+    static const stk::mesh::EntityId pyramid_node_ids[2][ shards::Pyramid<> ::node_count ] = {
       { 11 , 15 , 16 , 12 , 21 } ,
       { 12 , 16 , 17 , 13 , 21 } };
 
-    static const EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<> ::node_count ]={
+    static const stk::mesh::EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<> ::node_count ]={
       { 9 , 6 , 16 , 19 } ,
       { 6 , 7 , 17 , 16 } ,
       { 7 , 8 , 18 , 17 } };
 
-    static const EntityId shell_tri_node_ids[3][ shards::ShellTriangle<> ::node_count ] ={
+    static const stk::mesh::EntityId shell_tri_node_ids[3][ shards::ShellTriangle<> ::node_count ] ={
       { 19 , 16 , 21 } ,
       { 16 , 17 , 21 } ,
       { 17 , 13 , 21 } };
@@ -449,9 +449,9 @@ namespace stk
 
     void SweepMesher::stkMeshCreateMetaNoCommit(stk::ParallelMachine& comm)
     {
-      m_metaData = new stk::mesh::fem::FEMMetaData(3, fem_entity_rank_names() );
+      m_metaData = new stk::mesh::fem::FEMMetaData(3); //  stk::mesh::fem::fem_entity_rank_names() );
       //m_metaData = & stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData);
-      m_bulkData = new BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
+      m_bulkData = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
       m_parts.resize(NUM_ELEM_TYPES);
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
@@ -476,13 +476,13 @@ namespace stk
         }
 
       // Field restrictions:
-      Part & universal = m_metaData->universal_part();
+      stk::mesh::Part & universal = m_metaData->universal_part();
 
       put_field( *m_coordinates_field , stk::mesh::Node , universal );
   
       m_metaData->declare_field_relation(
                                          *m_element_node_coordinates_field ,
-                                         & element_node_stencil<void> ,
+                                         & stk::mesh::element_node_stencil<void> ,
                                          *m_coordinates_field 
                                          );
 
@@ -496,7 +496,7 @@ namespace stk
               std::cout << "shards::Wedge<> ::node_count = " << shards::Wedge<> ::node_count 
                         << " " << m_elemInfo[ieletype].node_count << std::endl;
 #endif
-              put_field( *m_element_node_coordinates_field, Element, *m_parts[ieletype], m_elemInfo[ieletype].node_count);
+              put_field( *m_element_node_coordinates_field, stk::mesh::Element, *m_parts[ieletype], m_elemInfo[ieletype].node_count);
             }
         }
     }
@@ -536,7 +536,7 @@ namespace stk
 
       unsigned node_count_1 = m_node_coords.size();
       for ( unsigned i = 0 ; i < node_count_1 ; ++i ) {
-        Entity * const node = m_bulkData->get_entity( stk::mesh::Node , i + 1 );
+        stk::mesh::Entity * const node = m_bulkData->get_entity( stk::mesh::Node , i + 1 );
         double * const coord = field_data( *m_coordinates_field , *node );
 
         coord[0] = m_node_coords[i][0];

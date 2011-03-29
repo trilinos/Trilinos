@@ -30,7 +30,7 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
-using stk::mesh::fem::NODE_RANK;
+//using stk::mesh::fem::NODE_RANK;
 
 //----------------------------------------------------------------------
 
@@ -69,9 +69,9 @@ namespace stk{
       // Define where fields exist on the mesh:
       Part & universal = m_metaData.universal_part();
 
-      put_field( m_coordinates_field , NODE_RANK , universal );
+      put_field( m_coordinates_field , stk::mesh::fem::NODE_RANK , universal );
       put_field( m_centroid_field , m_elem_rank , universal );
-      put_field( m_temperature_field, NODE_RANK, universal );
+      put_field( m_temperature_field, stk::mesh::fem::NODE_RANK, universal );
       put_field( m_volume_field, m_elem_rank, m_block_hex );
       put_field( m_volume_field, m_elem_rank, m_block_wedge );
       put_field( m_volume_field, m_elem_rank, m_block_tet );
@@ -217,7 +217,7 @@ namespace stk{
 
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < node_count ; ++i ) {
-            Entity * const node = m_bulkData.get_entity( NODE_RANK , i + 1 );
+            Entity * const node = m_bulkData.get_entity( stk::mesh::fem::NODE_RANK , i + 1 );
             double * const coord = field_data( m_coordinates_field , *node );
             coord[0] = node_coord_data[i][0] ;
             coord[1] = node_coord_data[i][1] ;
@@ -273,10 +273,10 @@ namespace stk{
 
       // Check that all the nodes were allocated.
       for ( unsigned i = 0 ; i < node_count ; ++i ) {
-        Entity * const node = bulkData.get_entity( NODE_RANK , i + 1 );
+        Entity * const node = bulkData.get_entity( stk::mesh::fem::NODE_RANK , i + 1 );
         if ( node == NULL ) {
           std::cerr << "Error!  Invalid null pointer for node returned from "
-                    << "bulkData.get_entity( NODE_RANK, " << i+1 << " ) " << std::endl;
+                    << "bulkData.get_entity( stk::mesh::fem::NODE_RANK, " << i+1 << " ) " << std::endl;
           result = false;
         }
       }
