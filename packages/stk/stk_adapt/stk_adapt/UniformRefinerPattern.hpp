@@ -70,7 +70,6 @@ namespace stk {
   namespace adapt {
 
     using std::vector;
-    //using namespace stk::mesh;
     using namespace stk::percept;
 
     typedef std::vector<std::vector<std::string> > BlockNamesType;

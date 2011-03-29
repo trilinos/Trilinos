@@ -371,7 +371,6 @@ namespace stk {
       {
         EXCEPTWATCH;
         //std::cout << "PerceptMeshReadWrite::add_other_fields: " << std::endl;
-        //using namespace mesh;
         bool printInfo = true;
 
         const mesh::fem::FEMMetaData& metaData = mesh::fem::FEMMetaData::get(bulk);

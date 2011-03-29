@@ -8,7 +8,6 @@ namespace stk {
   namespace adapt {
 
     using namespace std;
-    //using namespace mesh;
 
     template<typename STD_Set, typename Key > bool contains(STD_Set& set, Key key) { return set.find(key) != set.end(); }
 

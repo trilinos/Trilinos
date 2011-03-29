@@ -27,7 +27,6 @@ namespace stk {
 
     using namespace io_util;
 
-    //using namespace stk::mesh;
 
     //std::string PerceptMesh::s_omit_part = "_urp_original";
     //std::string PerceptMesh::s_omit_part = "_urporig";
@@ -225,7 +224,6 @@ namespace stk {
         << std::endl;
 
       std::cout << "P[" << p_rank << "] PerceptMesh::printInfo: " << header << std::endl;
-      //using namespace mesh;
       bool printInfo = true;
 
 
@@ -362,7 +360,6 @@ namespace stk {
 
       if (print_level>1)
       {
-        //using namespace stk::mesh;
         using std::vector;
         const vector<stk::mesh::Bucket*> & buckets = get_bulkData()->buckets( stk::mesh::Element );
         std::cout  << "P[" << p_rank << "] info> num buckets = " << buckets.size() << std::endl;
@@ -436,7 +433,6 @@ namespace stk {
       const unsigned p_rank = parallel_machine_rank( eMesh.get_bulkData()->parallel() );
 
       std::cout << "P[" << p_rank << "] PerceptMesh::printFields: " << header << std::endl;
-      //using namespace mesh;
       bool printInfo = true;
 
       stk::mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
@@ -1095,7 +1091,6 @@ namespace stk {
     void PerceptMesh::createFields(bool print, FieldCreateOrderVec create_field)
     {
       checkStateSpec("createFields", m_isOpen);
-      //using namespace mesh;
 
       /// create a meta data/bulk data empty pair
       stk::mesh::fem::FEMMetaData& metaData = *getFEM_meta_data();
@@ -1375,7 +1370,6 @@ namespace stk {
     void PerceptMesh::dump(const std::string& file)
     {
       //checkState("dump");
-      //using namespace mesh;
 
       std::cout << "PerceptMesh::dump: for file = " << file <<  std::endl;
 

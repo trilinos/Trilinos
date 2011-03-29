@@ -44,7 +44,6 @@ namespace stk
   {
     namespace unit_tests
     {
-      //using namespace stk::mesh;
 
       static stk::diag::Writer &
       dw()

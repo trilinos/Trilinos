@@ -18,7 +18,6 @@ namespace stk {
   namespace adapt {
 
     using namespace std;
-    using namespace mesh;
     using namespace percept;
 
     UniformRefiner::UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
@@ -394,14 +393,14 @@ namespace stk {
       mesh::Selector fromPartsSelector = mesh::selectUnion( breakPattern->getFromParts() );
 
       std::vector<stk::mesh::Entity*> elems;
-      const vector<Bucket*> & buckets = m_eMesh.get_bulkData()->buckets( rank );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulkData()->buckets( rank );
 
-      for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
           if (on_locally_owned_part(**k) && fromPartsSelector(**k) ) 
             //if ( on_locally_owned_part(**k) )
             {
-              Bucket & bucket = **k ;
+              stk::mesh::Bucket & bucket = **k ;
               const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
               shards::CellTopology topo(bucket_cell_topo_data);
 
@@ -581,7 +580,7 @@ namespace stk {
           std::vector<stk::mesh::EntityRank> ranks_one(1, ranks[irank]);
 
           // this gives a list of colored elements for this element type only
-          PartVector * fromParts = 0;
+          stk::mesh::PartVector * fromParts = 0;
           fromParts = &(m_breakPattern[irank]->getFromParts());
           
           //!FIXME add part info
@@ -1285,17 +1284,17 @@ namespace stk {
 
       mesh::Selector removePartSelector (*oldPart);
 
-      const vector<Bucket*> & buckets = m_eMesh.get_bulkData()->buckets( rank );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulkData()->buckets( rank );
 
       elements_to_be_destroyed_type elements_to_be_destroyed;
 
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
       unsigned nel = 0u;
-      for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
           if (removePartSelector(**k)) 
             {
-              Bucket & bucket = **k ;
+              stk::mesh::Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
 
               nel += num_elements_in_bucket;
@@ -1304,17 +1303,17 @@ namespace stk {
       elements_to_be_destroyed.reserve(nel);
 #endif
       
-      for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
           if (removePartSelector(**k)) 
             {
-              Bucket & bucket = **k ;
+              stk::mesh::Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
 
               if (0)
                 {
                   std::string str;
-                  PartVector pv;
+                  stk::mesh::PartVector pv;
                   bucket.supersets(pv);
                   for (unsigned ip = 0; ip < pv.size(); ip++)
                     {
@@ -1385,7 +1384,7 @@ namespace stk {
     fixSurfaceAndEdgeSetNames(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
     {
       EXCEPTWATCH;
-      PartVector toParts = breakPattern->getToParts();
+      stk::mesh::PartVector toParts = breakPattern->getToParts();
 
       //std::cout << "toParts.size()= " << toParts.size() << " typeid= " << typeid(*breakPattern).name()  << std::endl;
 
@@ -1441,8 +1440,8 @@ namespace stk {
     renameNewParts(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
     {
       EXCEPTWATCH;
-      PartVector toParts = breakPattern->getToParts();
-      PartVector fromParts = breakPattern->getFromParts();
+      stk::mesh::PartVector toParts = breakPattern->getToParts();
+      stk::mesh::PartVector fromParts = breakPattern->getFromParts();
 
       if (0)
         {

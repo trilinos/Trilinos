@@ -18,7 +18,6 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 
-//using namespace stk::mesh;
 //using namespace Intrepid;
 using namespace shards;
 

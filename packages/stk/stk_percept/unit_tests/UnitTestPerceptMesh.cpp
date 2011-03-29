@@ -34,7 +34,6 @@
 
 namespace stk 
 {
-  using namespace mesh;
   namespace percept 
   {
     namespace unit_tests 
@@ -70,7 +69,7 @@ namespace stk
             eMesh.printInfo("quad fixture", 2);
             //eMesh.saveAs("./output_files/quad_fixture.e");
 
-            mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
+            stk::mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
 
             const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
 
@@ -79,19 +78,19 @@ namespace stk
 
             int surface_id = 2;
             std::string surface_name = "surface_"+toString(surface_id);
-            mesh::Part *part = eMesh.getNonConstPart(surface_name);
-            mesh::Selector in_surface_selector(*part);
-            mesh::BulkData& bulkData = *eMesh.get_bulkData();
+            stk::mesh::Part *part = eMesh.getNonConstPart(surface_name);
+            stk::mesh::Selector in_surface_selector(*part);
+            stk::mesh::BulkData& bulkData = *eMesh.get_bulkData();
             VectorFieldType* coordField = eMesh.getCoordinatesField();
 
-            const std::vector<Bucket*> & buckets = bulkData.buckets( (eMesh.getSpatialDim() == 2 ? mesh::Edge : mesh::Face) );  // Note
+            const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( (eMesh.getSpatialDim() == 2 ? stk::mesh::Edge : stk::mesh::Face) );  // Note
             double sum = 0.0;
 
-            for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 if (in_surface_selector(**k)) 
                   {
-                    Bucket & bucket = **k ;
+                    stk::mesh::Bucket & bucket = **k ;
 
                     // in case the cell topology is needed
                     const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
@@ -101,15 +100,15 @@ namespace stk
                 
                     for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                       {
-                        Entity& element = bucket[iElement];
+                        stk::mesh::Entity& element = bucket[iElement];
 
-                        const PairIterRelation& elem_nodes = element.relations( mesh::Node );  
+                        const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::Node );  
 
                         unsigned num_node = elem_nodes.size(); 
                         for (unsigned inode=0; inode < num_node; inode++)
                           {
-                            Entity & node = *elem_nodes[ inode ].entity();
-                            //EntityId nid = node.identifier();
+                            stk::mesh::Entity & node = *elem_nodes[ inode ].entity();
+                            //stk::mesh::EntityId nid = node.identifier();
 
                             double * const coord = stk::mesh::field_data( *coordField , node );
                             // do something with coord's

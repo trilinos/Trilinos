@@ -39,7 +39,6 @@
 namespace stk {
   namespace adapt {
 
-    //using namespace stk::mesh;
     using std::vector;
     using std::map;
     using std::set;

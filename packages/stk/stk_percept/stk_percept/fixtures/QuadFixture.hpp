@@ -39,7 +39,6 @@
 namespace stk {
   namespace percept {
 
-    //using namespace stk::mesh;
 
       // copied from stk_mesh/fixtures - had to copy because stk_mesh couldn't depend on stk_io, for example, so the changes I required
       // had to be done on a copy 

@@ -70,7 +70,6 @@
 namespace stk {
   namespace adapt {
 
-    //using namespace stk::mesh;
     using namespace stk::percept;
     using std::vector;
     using std::map;

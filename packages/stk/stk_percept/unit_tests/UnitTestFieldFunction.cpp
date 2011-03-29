@@ -68,7 +68,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_read_print)
 {
   EXCEPTWATCH;
   // just reads a mesh file and prints some info about the meta data
-  //using namespace mesh;
+
   bool printInfo = false;
 
   const size_t num_x = 3;
@@ -239,7 +239,6 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
 {
   EXCEPTWATCH;
   // more i/o; adding a field; writing the resulting mesh; creating a FieldFunction, invoking interpolateFrom
-  //using namespace mesh;
 
   const size_t num_x = 3;
   const size_t num_y = 3;
@@ -420,7 +419,6 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_verify)
 {
   EXCEPTWATCH;
   /// test evaluation of field function at a point
-  //using namespace mesh;
 
   const size_t num_x = 3;
   const size_t num_y = 3;
@@ -488,7 +486,6 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_timing)
   MPI_Barrier( MPI_COMM_WORLD );
 
   /// test evaluation of field function at a point
-  //using namespace mesh;
 
   const size_t num_x = 3;
   const size_t num_y = 3;
