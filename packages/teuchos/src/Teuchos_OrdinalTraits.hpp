@@ -96,8 +96,8 @@ struct OrdinalTraits<char> {
   static const bool hasMachineParameters = false;
   static inline char zero()                   {return(0);}
   static inline char one()                    {return(1);}
-  static inline char invalid()                {return(-1);}
-  static inline char max()                    {return(std::numeric_limits<char>::max());}
+  static inline char invalid()                {return(std::numeric_limits<char>::max());}
+  static inline char max()                    {return(std::numeric_limits<char>::max()-one());}
   static inline std::string name()            {return("char");}
 };
 
