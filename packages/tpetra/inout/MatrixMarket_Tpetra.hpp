@@ -968,8 +968,9 @@ namespace Tpetra {
 	using Teuchos::null;
 	using std::cerr;
 	using std::endl;
-
 	typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+	const bool extraDebug = false;
 	const int myRank = Teuchos::rank (*pComm);
 
 	// Current line number in the input stream.  Various calls
@@ -1082,7 +1083,7 @@ namespace Tpetra {
 	    typedef Raw::Element<scalar_type, global_ordinal_type> element_type;
 	    typedef typename std::vector<element_type>::const_iterator iter_type;
 
-	    if (false && debug)
+	    if (extraDebug && debug)
 	      {
 		std::ofstream out ("before.mtx");
 		// Print out the read-in matrix entries before the merge.
@@ -1094,7 +1095,7 @@ namespace Tpetra {
 	    // Additively merge duplicate matrix entries.
 	    pAdder->getAdder()->merge ();
 
-	    if (false && debug)
+	    if (extraDebug && debug)
 	      {
 		std::ofstream out ("after.mtx");
 		// Print out the read-in matrix entries after the merge.
@@ -1155,7 +1156,7 @@ namespace Tpetra {
 	      // and values.
 	      rowPtr[numRows] = numEntries;
 	    }
-	    if (false && debug)
+	    if (extraDebug && debug)
 	      {
 		cerr << "Proc 0: numEntriesPerRow = [ ";
 		for (size_type k = 0; k < numRows; ++k)
@@ -1212,55 +1213,59 @@ namespace Tpetra {
 			   "makeMatrix() returned a null pointer.  Please "
 			   "report this bug to the Tpetra developers.");
 
-	// You're not supposed to call these until after
-	// fillComplete() has been called, which is why we wait
-	// until after completeMatrix() (which calls
-	// fillComplete()) has been called.
-	const global_size_t globalNumRows = pMatrix->getGlobalNumRows();
-	const global_size_t globalNumCols = pMatrix->getGlobalNumCols();
-	if (false && debug)
+	// We can't call getGlobalNum{Rows,Cols}() until after
+	// fillComplete() is called.  Thus, we can't do the sanity
+	// check (dimentions read from the Matrix Market data,
+	// vs. dimensions reported by the CrsMatrix unless the user
+	// asked makeMatrix() to call fillComplete().
+	if (callFillComplete)
 	  {
-	    if (myRank == 0)
+	    const global_size_t globalNumRows = pMatrix->getGlobalNumRows();
+	    const global_size_t globalNumCols = pMatrix->getGlobalNumCols();
+	    if (extraDebug && debug)
 	      {
-		cerr << "-- Matrix is "
-		     << pMatrix->getGlobalNumRows() 
-		     << " x " 
-		     << pMatrix->getGlobalNumCols()
-		     << " with " 
-		     << pMatrix->getGlobalNumEntries()
-		     << " entries, and index base " 
-		     << pMatrix->getIndexBase()
-		     << "." << endl;
-	      }
-	    Teuchos::barrier (*pComm);
-	    for (int p = 0; p < Teuchos::size (*pComm); ++p)
-	      {
-		if (myRank == p)
+		if (myRank == 0)
 		  {
-		    cerr << "-- Proc " << p << " owns " 
-			 << pMatrix->getNodeNumCols() 
-			 << " columns, and " 
-			 << pMatrix->getNodeNumEntries()
-			 << " entries." << endl;
+		    cerr << "-- Matrix is "
+			 << pMatrix->getGlobalNumRows() 
+			 << " x " 
+			 << pMatrix->getGlobalNumCols()
+			 << " with " 
+			 << pMatrix->getGlobalNumEntries()
+			 << " entries, and index base " 
+			 << pMatrix->getIndexBase()
+			 << "." << endl;
 		  }
 		Teuchos::barrier (*pComm);
-	      }
-	  } // if (false && debug)
+		for (int p = 0; p < Teuchos::size (*pComm); ++p)
+		  {
+		    if (myRank == p)
+		      {
+			cerr << "-- Proc " << p << " owns " 
+			     << pMatrix->getNodeNumCols() 
+			     << " columns, and " 
+			     << pMatrix->getNodeNumEntries()
+			     << " entries." << endl;
+		      }
+		    Teuchos::barrier (*pComm);
+		  }
+	      } // if (extraDebug && debug)
 
-#if 0
-	// Casting a positive signed integer (global_ordinal_type)
-	// to an unsigned integer of no fewer bits (global_size_t)
-	// shouldn't overflow.
-	TEST_FOR_EXCEPTION(globalNumRows != static_cast<global_size_t>(dims[0]) || 
-			   globalNumCols != static_cast<global_size_t>(dims[1]),
-			   std::logic_error, 
-			   "The newly created Tpetra::CrsMatrix claims it is " 
-			   << globalNumRows << " x " << globalNumCols << ", "
-			   "but the data in the Matrix Market input stream "
-			   "says the matrix is " << dims[0] << " x "
-			   << dims[1] << ".  Please report this bug to the "
-			   "Tpetra developers.");
-#endif // 0
+	    // Casting a positive signed integer (global_ordinal_type)
+	    // to an unsigned integer of no fewer bits (global_size_t)
+	    // shouldn't overflow.
+	    TEST_FOR_EXCEPTION(globalNumRows != static_cast<global_size_t>(dims[0]) || 
+			       globalNumCols != static_cast<global_size_t>(dims[1]),
+			       std::logic_error, 
+			       "The newly created Tpetra::CrsMatrix claims it is " 
+			       << globalNumRows << " x " << globalNumCols << ", "
+			       "but the data in the Matrix Market input stream "
+			       "says the matrix is " << dims[0] << " x "
+			       << dims[1] << ".  We have already called "
+			       "fillComplete() on the CrsMatrix.  Please report "
+			       "this bug to the Tpetra developers.");
+	  } // if (callFillComplete)
+
 	return pMatrix;
       }
     };
