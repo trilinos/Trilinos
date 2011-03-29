@@ -132,17 +132,17 @@ namespace {
   template<class SparseMatrixType>
   Teuchos::RCP<SparseMatrixType>
   readSparseFile (const std::string& filename,
-	    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
-	    const bool tolerant,
-	    const bool debug)
+		  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
+		  const bool tolerant,
+		  const bool debug)
   {
     typedef typename SparseMatrixType::node_type node_type;
     Teuchos::RCP<node_type> pNode = getNode<node_type>();
     
     typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
     const bool callFillComplete = true;
-    return reader_type::readFile (filename, pComm, pNode, 
-				  callFillComplete, tolerant, debug);
+    return reader_type::readSparseFile (filename, pComm, pNode, 
+					callFillComplete, tolerant, debug);
   }
 
   template<class Ordinal, class Scalar>
@@ -655,7 +655,7 @@ main (int argc, char *argv[])
       const bool tolerant = false;
       if (debug && myRank == 0)
 	cerr << "Reading sparse matrix A from file \"" << filename << "\"...";
-      A = readFile<sparse_matrix_type> (filename, pComm, tolerant, debug);
+      A = readSparseFile<sparse_matrix_type> (filename, pComm, tolerant, debug);
       if (debug && myRank == 0)
 	cerr << "done." << endl;
       // The matrix A must be square, and have a nonzero number of
