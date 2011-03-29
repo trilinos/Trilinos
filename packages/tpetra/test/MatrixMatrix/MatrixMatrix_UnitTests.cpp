@@ -230,9 +230,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
     double epsilon = currentSystem.get<double>("epsilon", defaultEpsilon);
     std::string op = currentSystem.get<std::string>("op");
 
-    RCP<Matrix_t > A = Reader<Matrix_t >::readFile(A_file, comm, node);
-    RCP<Matrix_t > B = Reader<Matrix_t >::readFile(B_file, comm, node);
-    RCP<Matrix_t > C = Reader<Matrix_t >::readFile(C_file, comm, node);
+    RCP<Matrix_t > A = Reader<Matrix_t >::readSparseFile(A_file, comm, node);
+    RCP<Matrix_t > B = Reader<Matrix_t >::readSparseFile(B_file, comm, node);
+    RCP<Matrix_t > C = Reader<Matrix_t >::readSparseFile(C_file, comm, node);
  
 
     TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
@@ -261,7 +261,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       out << "\tCorrect Norm: " << results.correctNorm << std::endl;
       out << "\tNorm 1: " << results.norm1 << std::endl;
       out << "\tEpsilon: " << results.epsilon << std::endl;
-      B = Reader<Matrix_t >::readFile(B_file, comm, node, false);
+      B = Reader<Matrix_t >::readSparseFile(B_file, comm, node, false);
       results = add_into_test(A,B,AT,BT,C,comm);
       TEST_COMPARE(results.epsilon, <, epsilon)
       out << "Add Into Test Results: " << std::endl;

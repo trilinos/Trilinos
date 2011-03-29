@@ -574,15 +574,18 @@ namespace Tpetra {
 
       /// \brief Given my proc's data, return the completed sparse matrix.
       /// 
-      /// Each proc inserts its data into the sparse matrix, and then
-      /// all procs call fillComplete().
+      /// Each proc inserts its data into the sparse matrix, and then,
+      /// if callFillComplete is true, all procs call fillComplete().
+      /// (For whatever reason, you might not be done with the matrix
+      /// yet, so you might want to call fillComplete() yourself.)
       static sparse_matrix_ptr
       makeMatrix (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
 		  Teuchos::ArrayRCP<size_type>& myRowPtr,
 		  Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
 		  Teuchos::ArrayRCP<scalar_type>& myValues,
 		  const map_ptr& pRowMap,
-		  const map_ptr& pDomMap)
+		  const map_ptr& pDomMap,
+		  const bool callFillComplete = true)
       {
 	using Teuchos::ArrayRCP;
 	using Teuchos::ArrayView;
@@ -692,7 +695,8 @@ namespace Tpetra {
 	myColInd = null;
 	myValues = null;
 
-	A->fillComplete (pDomMap, pRowMap, DoOptimizeStorage);
+	if (callFillComplete)
+	  A->fillComplete (pDomMap, pRowMap, DoOptimizeStorage);
 	return A;
       }
 
@@ -912,6 +916,9 @@ namespace Tpetra {
       /// \param pComm [in] Communicator containing all processor(s)
       ///   over which the sparse matrix will be distributed.
       /// \param pNode [in] Kokkos Node object.
+      /// \param callFillComplete [in] Whether to call fillComplete()
+      ///   on the Tpetra::CrsMatrix, after adding all the entries 
+      ///   read in from the input stream.
       /// \param tolerant [in] Whether to read the data tolerantly
       ///   from the file.
       /// \param debug [in] Whether to produce copious status output
@@ -921,11 +928,12 @@ namespace Tpetra {
       readSparseFile (const std::string& filename,
 		      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
 		      const Teuchos::RCP<node_type>& pNode,
+		      const bool callFillComplete=true,
 		      const bool tolerant=false,
 		      const bool debug=false)
       {
 	std::ifstream in (filename.c_str());
-	return readSparse (in, pComm, pNode, tolerant, debug);
+	return readSparse (in, pComm, pNode, callFillComplete, tolerant, debug);
       }
 
       /// \brief Read the sparse matrix from the given input stream.
@@ -938,6 +946,9 @@ namespace Tpetra {
       /// \param pComm [in] Communicator containing all processor(s)
       ///   over which the sparse matrix will be distributed.
       /// \param pNode [in] Kokkos Node object.
+      /// \param callFillComplete [in] Whether to call fillComplete()
+      ///   on the Tpetra::CrsMatrix, after adding all the entries 
+      ///   read in from the input stream.
       /// \param tolerant [in] Whether to read the data tolerantly
       ///   from the file.
       /// \param debug [in] Whether to produce copious status output
@@ -947,6 +958,7 @@ namespace Tpetra {
       readSparse (std::istream& in,	
 		  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
 		  const Teuchos::RCP<node_type>& pNode,
+		  const bool callFillComplete=true,
 		  const bool tolerant=false,
 		  const bool debug=false)
       {
@@ -1195,7 +1207,7 @@ namespace Tpetra {
 	// promises.
 	sparse_matrix_ptr pMatrix = 
 	  makeMatrix (myNumEntriesPerRow, myRowPtr, myColInd, myValues,
-		      pRowMap, pDomMap);
+		      pRowMap, pDomMap, callFillComplete);
 	TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
 			   "makeMatrix() returned a null pointer.  Please "
 			   "report this bug to the Tpetra developers.");

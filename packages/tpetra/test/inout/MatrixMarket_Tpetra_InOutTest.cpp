@@ -118,9 +118,11 @@ namespace Tpetra {
 
 	// Read the sparse matrix from the given Matrix Market file.
 	// This routine acts like an MPI barrier.
+	const bool callFillComplete = true;
 	typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 	RCP<sparse_matrix_type> pMatrix =
-	  reader_type::readSparseFile (filename, pComm, pNode, tolerant, debug);
+	  reader_type::readSparseFile (filename, pComm, pNode, 
+				       callFillComplete, tolerant, debug);
 	if (! pMatrix.is_null())
 	  {
 	    if (verbose && myRank == 0)
