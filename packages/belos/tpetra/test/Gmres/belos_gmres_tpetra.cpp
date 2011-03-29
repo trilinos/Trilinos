@@ -119,7 +119,7 @@ namespace {
   }
 #endif // defined(HAVE_KOKKOS_TBB)
   
-  /// Test Tpetra::MatrixMarket::Reader::readFile()
+  /// Test Tpetra::MatrixMarket::Reader::readSparseFile()
   ///
   /// \param filename [in] Name of the Matrix Market format sparse
   ///   matrix file to read (on MPI Rank 0 only)
@@ -131,7 +131,7 @@ namespace {
   /// \return Tpetra::CrsMatrix read in from the file 
   template<class SparseMatrixType>
   Teuchos::RCP<SparseMatrixType>
-  readFile (const std::string& filename,
+  readSparseFile (const std::string& filename,
 	    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
 	    const bool tolerant,
 	    const bool debug)
@@ -140,7 +140,9 @@ namespace {
     Teuchos::RCP<node_type> pNode = getNode<node_type>();
     
     typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
-    return reader_type::readFile (filename, pComm, pNode, tolerant, debug);
+    const bool callFillComplete = true;
+    return reader_type::readFile (filename, pComm, pNode, 
+				  callFillComplete, tolerant, debug);
   }
 
   template<class Ordinal, class Scalar>
