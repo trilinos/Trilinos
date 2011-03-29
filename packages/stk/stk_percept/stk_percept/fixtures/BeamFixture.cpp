@@ -40,7 +40,7 @@ namespace stk{
       m_spatial_dimension(3)
       , m_metaData(m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) )
       , m_bulkData( stk::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
-      , m_block_beam( declare_part< Beam2 >(m_metaData,  "block_2" ) )
+      , m_block_beam( m_metaData.declare_part< Beam2 >( "block_2" ) )
       , m_elem_rank( m_metaData.element_rank() )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
       , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))

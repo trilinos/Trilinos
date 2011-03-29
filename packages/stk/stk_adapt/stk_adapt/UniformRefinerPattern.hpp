@@ -2505,7 +2505,7 @@ namespace stk {
                           {
                             block_to = &eMesh.getFEM_meta_data()->declare_part(part->name() + m_appendConvertString, part->primary_entity_rank());
                             if (0) std::cout << "tmp setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
-                            mesh::fem::set_cell_topology< ToTopology  >( *block_to );
+                            mesh::fem::set_cell_topology_new< ToTopology  >( *block_to );
                             stk::io::put_io_part_attribute(*block_to);
                           }
 

@@ -38,7 +38,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag1 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag3 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag4 )
 
-  using namespace stk::mesh;
+//  using namespace stk::mesh;
 
 namespace stk
 {
@@ -458,7 +458,7 @@ namespace stk
         {
           if (m_elems[ieletype].size() > 0)
             {
-              m_parts[ieletype] = &(m_metaData->declare_part( std::string("block_").append(std::string(m_elemInfo[ieletype].name)) , Element ));
+              m_parts[ieletype] = &(m_metaData->declare_part( std::string("block_").append(std::string(m_elemInfo[ieletype].name)) , stk::mesh::Element ));
             }
         }
       m_coordinates_field = &m_metaData->declare_field< VectorFieldType >( "coordinates" );

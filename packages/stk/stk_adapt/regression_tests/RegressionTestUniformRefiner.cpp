@@ -289,7 +289,7 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh(2);
+            percept::PerceptMesh eMesh(3);
             eMesh.open(input_mesh);
 
             ShellQuad4_ShellQuad8_1 break_quad4_to_quad8_1(eMesh);
@@ -318,7 +318,7 @@ namespace stk
         if (1 && p_size <= 1)
           {
 
-            percept::PerceptMesh eMesh(2);
+            percept::PerceptMesh eMesh(3);
             eMesh.open("./input_files/freshell_quad8_quad8_0.g");
 
             ShellQuad8_ShellQuad8_4 break_quad8_to_quad_8(eMesh);
