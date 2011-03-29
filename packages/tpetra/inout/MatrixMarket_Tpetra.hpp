@@ -906,7 +906,7 @@ namespace Tpetra {
 
     public:
 
-      /// \brief Read the sparse matrix from the given file.
+      /// \brief Read sparse matrix from the given Harwell-Boeing file.
       ///
       /// This is a collective operation.  Only Rank 0 opens the file
       /// and reads data from it, but all ranks participate and wait
@@ -936,7 +936,7 @@ namespace Tpetra {
 	return readSparse (in, pComm, pNode, callFillComplete, tolerant, debug);
       }
 
-      /// \brief Read the sparse matrix from the given input stream.
+      /// \brief Read sparse matrix from the given Harwell-Boeing input stream.
       ///
       /// This is a collective operation.  Only Rank 0 reads data from
       /// the input stream, but all ranks participate and wait for the
