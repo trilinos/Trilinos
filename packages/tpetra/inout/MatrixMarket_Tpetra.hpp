@@ -1247,6 +1247,7 @@ namespace Tpetra {
 	      }
 	  } // if (false && debug)
 
+#if 0
 	// Casting a positive signed integer (global_ordinal_type)
 	// to an unsigned integer of no fewer bits (global_size_t)
 	// shouldn't overflow.
@@ -1259,6 +1260,7 @@ namespace Tpetra {
 			   "says the matrix is " << dims[0] << " x "
 			   << dims[1] << ".  Please report this bug to the "
 			   "Tpetra developers.");
+#endif // 0
 	return pMatrix;
       }
     };
