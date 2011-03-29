@@ -26,7 +26,7 @@ namespace stk {
 
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Quadrilateral<4>, shards::Quadrilateral<4>  >(eMesh)
       {
-        m_primaryEntityRank = eMesh.face_rank(); // stk::mesh::Face;
+        m_primaryEntityRank = eMesh.face_rank(); 
         if (m_eMesh.getSpatialDim() == 2)
           m_primaryEntityRank = eMesh.element_rank();
 

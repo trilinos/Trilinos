@@ -16,7 +16,7 @@ namespace stk {
 
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Line<2>, shards::Line<2>  >(eMesh)
       {
-        m_primaryEntityRank = stk::mesh::Edge;
+        m_primaryEntityRank = m_eMesh.edge_rank();
         if (m_eMesh.getSpatialDim() == 1)
           m_primaryEntityRank = eMesh.element_rank();
 
@@ -133,7 +133,7 @@ namespace stk {
             stk::mesh::Entity& newElement = *(*element_pool);
 
 #if 0
-            if (proc_rank_field && proc_rank_field->rank() == stk::mesh::Edge) //&& m_eMesh.getSpatialDim()==1)
+            if (proc_rank_field && proc_rank_field->rank() == m_eMesh.edge_rank()) //&& m_eMesh.getSpatialDim()==1)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.getRank());

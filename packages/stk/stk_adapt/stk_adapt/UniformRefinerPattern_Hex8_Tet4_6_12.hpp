@@ -137,7 +137,7 @@ namespace stk {
         // for cases that have a single center node, we just compute the new node's quantities here instead of globally
         //stk::mesh::Entity * node = get_bulkData()->get_entity( Node, node_id );
 
-#define CENTROID_N NN(mesh::Element, 0)  
+#define CENTROID_N NN(m_eMesh.element_rank(), 0)  
 
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
         nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), Element, 0u);

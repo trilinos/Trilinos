@@ -18,7 +18,7 @@ namespace stk {
 //       }
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : URP<shards::Quadrilateral<4>, shards::Quadrilateral<4>  >(eMesh)
       {
-        m_primaryEntityRank = eMesh.face_rank(); //stk::mesh::Face;
+        m_primaryEntityRank = eMesh.face_rank(); 
         if (m_eMesh.getSpatialDim() == 2)
           m_primaryEntityRank = eMesh.element_rank();
 
@@ -72,7 +72,7 @@ namespace stk {
 
           }
 
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Element, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
 
 
 // new_sub_entity_nodes[i][j]

@@ -105,18 +105,11 @@ namespace stk {
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
       {
         EXCEPTWATCH;
-        //bp.resize(mesh::EntityRankEnd);
-        bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
-        //bp = std::vector<UniformRefinerPatternBase *>(mesh::Element+1u, 0);
+        bp = std::vector<UniformRefinerPatternBase *>(1u, 0);
         bp[0] = this;
 
 #if USE_FACE_BREAKER
-        if (1)
-          {
-            //             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 4, Specialization > *face_breaker = 
-            //               new UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 4, Specialization > (eMesh);
-            bp[1] = m_face_breaker;
-          }
+        bp.push_back( m_face_breaker);
 #endif
       }
 
@@ -158,20 +151,20 @@ namespace stk {
             //stk::mesh::Entity& new_node =eMesh.createOrGetNode(FACE_N(i_face), mp);
 
             eMesh.createOrGetNode(FACE_N(i_face), mp);
-            nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Face, i_face);
-            nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Face, i_face);
+            nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.face_rank(), i_face);
+            nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.face_rank(), i_face);
 
           }
 
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Element, 0u);
-        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Element, 0u);
-        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Element, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
         
 
         //#define C 14
 
 // new_sub_entity_nodes[i][j]
-#define CENTROID_N NN(mesh::Element, 0)  
+#define CENTROID_N NN(m_eMesh.element_rank(), 0)  
 
         unsigned iele = 0;
         for (unsigned i_face = 0; i_face < 6; i_face++)
