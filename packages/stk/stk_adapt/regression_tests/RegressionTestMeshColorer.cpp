@@ -84,7 +84,7 @@ namespace stk
         stk::mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
         eMesh.commit();
 
-        std::vector<mesh::EntityRank> mer;  mer.push_back(stk::mesh::Element);
+        std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.element_rank());
         Colorer meshColorer(mer);
         unsigned elementType = 0u;
         meshColorer.color(eMesh, &elementType, 0, element_color_field);
@@ -111,7 +111,7 @@ namespace stk
             stk::mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
             eMesh.commit();
 
-            std::vector<mesh::EntityRank> mer;  mer.push_back(stk::mesh::Face);
+            std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.face_rank());
             Colorer meshColorer(mer);
             unsigned elementType = 0u;
             meshColorer.color(eMesh, &elementType, 0, element_color_field);

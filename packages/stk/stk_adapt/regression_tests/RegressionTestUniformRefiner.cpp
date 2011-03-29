@@ -1311,7 +1311,7 @@ namespace stk
             stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             //stk::mesh::FieldBase* proc_rank_field_edge =
-            eMesh.addField("proc_rank_edge", mesh::Edge, scalarDimension);
+            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
 
             //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
             //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
@@ -1371,7 +1371,7 @@ namespace stk
             stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             //stk::mesh::FieldBase* proc_rank_field_edge =
-            eMesh.addField("proc_rank_edge", mesh::Edge, scalarDimension);
+            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
 
             //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
             //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
@@ -1427,7 +1427,7 @@ namespace stk
             stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             //stk::mesh::FieldBase* proc_rank_field_edge =
-            eMesh.addField("proc_rank_edge", mesh::Edge, scalarDimension);
+            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             eMesh.printInfo("tri mesh tri6");

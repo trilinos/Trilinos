@@ -65,8 +65,6 @@ namespace stk {
               }
 
             eMesh.createOrGetNode(EDGE_N(iedge), mp);
-            //nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), Face, i_face);
-            //nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), Edge, iedge);
           }
 
         // FIXME

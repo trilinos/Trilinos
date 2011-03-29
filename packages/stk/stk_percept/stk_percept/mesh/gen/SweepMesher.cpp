@@ -457,7 +457,7 @@ namespace stk
         {
           if (m_elems[ieletype].size() > 0)
             {
-              m_parts[ieletype] = &(m_metaData->declare_part( std::string("block_").append(std::string(m_elemInfo[ieletype].name)) , stk::mesh::Element ));
+              m_parts[ieletype] = &(m_metaData->declare_part( std::string("block_").append(std::string(m_elemInfo[ieletype].name)) , m_metaData->element_rank() ));
             }
         }
       m_coordinates_field = &m_metaData->declare_field< VectorFieldType >( "coordinates" );
@@ -495,7 +495,7 @@ namespace stk
               std::cout << "shards::Wedge<> ::node_count = " << shards::Wedge<> ::node_count 
                         << " " << m_elemInfo[ieletype].node_count << std::endl;
 #endif
-              put_field( *m_element_node_coordinates_field, stk::mesh::Element, *m_parts[ieletype], m_elemInfo[ieletype].node_count);
+              put_field( *m_element_node_coordinates_field, m_metaData->element_rank(), *m_parts[ieletype], m_elemInfo[ieletype].node_count);
             }
         }
     }
@@ -572,15 +572,15 @@ namespace stk
               std::vector<unsigned> entity_counts;
               stk::mesh::Selector selector(part);
               stk::mesh::count_entities( selector, bulkData , entity_counts );
-              if (0) std::cout << "num_nodes = " << entity_counts[stk::mesh::Node] << " " << expected_num_nodes << std::endl;
-              if (0) std::cout << "num_elems = " << entity_counts[stk::mesh::Element] << " " << expected_num_elems << std::endl;
+              if (0) std::cout << "num_nodes = " << entity_counts[0] << " " << expected_num_nodes << std::endl;
+              if (0) std::cout << "num_elems = " << entity_counts[m_metaData->element_rank()] << " " << expected_num_elems << std::endl;
                 
 
               if (
                   //(entity_counts[stk::mesh::Node] != expected_num_nodes) ||  
                   //(entity_counts[Edge] != expected_num_edges) ||
                   //(entity_counts[Face] != expected_num_faces) ||
-                  (entity_counts[stk::mesh::Element] != expected_num_elems)
+                  (entity_counts[m_metaData->element_rank()] != expected_num_elems)
                   ) {
                 std::cerr<< "Error, the  entity counts are incorrect!" << std::endl;
                 result = false;

@@ -302,10 +302,8 @@ void io_example( stk::ParallelMachine comm,
 
   mesh::Part * block_1 = meta_data.get_part("block_1");
   stk::mesh::put_field(
-    elem_centroid_field2 , mesh::Element , *block_1 , SpatialDim );
+                       elem_centroid_field2 , meta_data.element_rank() , *block_1 , SpatialDim );
 
-  //stk::mesh::put_field(
-  //  face_field , mesh::Face , universal , SpatialDim );
 
   //--------------------------------
   // Declare an aggressive "gather" field which is an
@@ -332,7 +330,7 @@ void io_example( stk::ParallelMachine comm,
   // This size is different for each element block.
 
   stk::mesh::put_field(
-    elem_node_coord , mesh::Element , universal , shards::Hexahedron<8> ::node_count );
+                       elem_node_coord , meta_data.element_rank() , universal , shards::Hexahedron<8> ::node_count );
 
 
   //----------------------------------
@@ -349,11 +347,7 @@ void io_example( stk::ParallelMachine comm,
   process_edgesets(in_region,      bulk_data);
   process_nodesets(in_region,      bulk_data);
 #endif
-  //use_case_13_algorithm( mesh_bulk_data , mesh::Face ,
-  //                               face_field , elem_centroid );
 
-
-  //my_test (bulk_data, mesh::Element, coordinates_field, elem_centroid_field);
 
   //----------------------------------
   // OUTPUT...Create the output "mesh" portion
@@ -438,7 +432,7 @@ void io_example( stk::ParallelMachine comm,
     process_input_request(in_region, bulk_data, step);
 
     // execute()
-    my_test (bulk_data, mesh::Element, coordinates_field, elem_centroid_field);
+    my_test (bulk_data, meta_data.element_rank() , coordinates_field, elem_centroid_field);
 
     // Write data from the stk::mesh fields out to the output database.a
     int out_step = out_region.add_state(time);
@@ -630,7 +624,7 @@ void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
     Ioss::FaceSet *entity = *it;
 
     if (stk::io::include_entity(entity)) {
-      process_surface_entity(entity, meta, stk::mesh::Face);
+      process_surface_entity(entity, meta, stk_mesh_Face);  // FIXME
     }
   }
 }

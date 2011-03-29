@@ -89,12 +89,12 @@ namespace stk {
     /// 2D array new_sub_entity_nodes[entity_rank][ordinal_of_node_on_sub_dim_entity]
 
 #define VERT_N(i) elem_nodes[i].entity()->identifier()
-#define EDGE_N(i) new_sub_entity_nodes[stk::mesh::Edge][i][0]
-#define FACE_N(i) new_sub_entity_nodes[stk::mesh::Face][i][0]
+#define EDGE_N(i) new_sub_entity_nodes[m_eMesh.edge_rank()][i][0]
+#define FACE_N(i) new_sub_entity_nodes[m_eMesh.face_rank()][i][0]
 #define NN(i_entity_rank, j_ordinal_on_subDim_entity) new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity][0]
 
-#define EDGE_N_Q(iedge, inode_on_edge) new_sub_entity_nodes[stk::mesh::Edge][iedge][inode_on_edge]
-#define FACE_N_Q(iface, inode_on_face) new_sub_entity_nodes[stk::mesh::Face][iface][inode_on_face]
+#define EDGE_N_Q(iedge, inode_on_edge) new_sub_entity_nodes[m_eMesh.edge_rank()][iedge][inode_on_edge]
+#define FACE_N_Q(iface, inode_on_face) new_sub_entity_nodes[m_eMesh.face_rank()][iface][inode_on_face]
 #define NN_Q(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity) \
     new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][k_ordinal_of_node_on_entity]
 
@@ -123,7 +123,7 @@ namespace stk {
       UniformRefinerPatternBase() : m_appendConvertString("_urpconv"),
                                     m_appendOriginalString(percept::PerceptMesh::s_omit_part+"_1000"),  // _100000
                                     m_oldElementsPartName("urp_oldElements"),
-                                    m_primaryEntityRank(stk::mesh::Element)
+                                    m_primaryEntityRank(stk::mesh::fem::INVALID_RANK)  
       {
         Elem::StdMeshObjTopologies::bootstrap();
 
@@ -141,7 +141,7 @@ namespace stk {
       /// must be provided by derived classes
       /// ------------------------------------------------------------------------------------------------------------------------
 
-      /// supplies the ranks of the sub entities needed during refinement (eg. stk::mesh::Face, stk::mesh::Edge,..)
+      /// supplies the ranks of the sub entities needed during refinement (eg. m_eMesh.face_rank(), m_eMesh.edge_rank(),..)
       /// 10/02/10 and the number of nodes needed for each sub entity
       virtual void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)=0;
 
@@ -616,7 +616,7 @@ namespace stk {
               field->restriction(fr_type, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
             fieldStride = r.stride[0];
             if (EXTRA_PRINT_URP_IF) std::cout << "tmp stride = " <<  r.stride[0] << " fieldStride= " << fieldStride
-                             << " fr_type= " << fr_type << " stk::mesh::Element= " << stk::mesh::Element<< std::endl;
+                                              << " fr_type= " << fr_type << std::endl;
           }
         }
         // FIXME
@@ -813,11 +813,11 @@ namespace stk {
         for (unsigned i_need = 0; i_need < needed_entities.size(); i_need++)
           {
             unsigned nSubDimEntities = 1;
-            if (needed_entities[i_need].first == stk::mesh::Edge)
+            if (needed_entities[i_need].first == m_eMesh.edge_rank())
               {
                 nSubDimEntities = cell_topo_data->edge_count;
               }
-            else if (needed_entities[i_need].first == stk::mesh::Face)
+            else if (needed_entities[i_need].first == m_eMesh.face_rank())
               {
                 nSubDimEntities = cell_topo_data->side_count;
               }
@@ -846,7 +846,7 @@ namespace stk {
 
         for (unsigned i_need = 0; i_need < needed_entities.size(); i_need++)
           {
-            if (needed_entities[i_need].first == stk::mesh::Edge)
+            if (needed_entities[i_need].first == m_eMesh.edge_rank())
               {
                 for (unsigned i_edge = 0; i_edge < n_edges; i_edge++)
                   {
@@ -855,7 +855,7 @@ namespace stk {
                     EN[edge_ord] = inode;
                   }
               }
-            else if (needed_entities[i_need].first == stk::mesh::Face)
+            else if (needed_entities[i_need].first == m_eMesh.face_rank())
               {
                 for (unsigned i_face = 0; i_face < n_faces; i_face++)
                   {
@@ -891,7 +891,7 @@ namespace stk {
                       }
                   }
               }
-            else if (needed_entities[i_need].first == stk::mesh::Element)
+            else if (needed_entities[i_need].first == m_eMesh.element_rank())
               {
                 EN[ centroid_node ] = CENTROID_N;
               }
@@ -904,7 +904,7 @@ namespace stk {
             stk::mesh::Entity& newElement = *(*element_pool);
 
             // FIXME
-            if (m_primaryEntityRank == stk::mesh::Element &&  proc_rank_field)
+            if (m_primaryEntityRank == m_eMesh.element_rank() &&  proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
@@ -1136,15 +1136,15 @@ namespace stk {
         for (unsigned i_need = 0; i_need < needed_entities.size(); i_need++)
           {
             unsigned nSubDimEntities = 0;
-            if (needed_entities[i_need].first == stk::mesh::Edge)
+            if (needed_entities[i_need].first == m_eMesh.edge_rank())
               {
                 nSubDimEntities = cell_topo_data->edge_count;
               }
-            else if (needed_entities[i_need].first == stk::mesh::Face)
+            else if (needed_entities[i_need].first == m_eMesh.face_rank())
               {
                 nSubDimEntities = cell_topo_data->side_count;
               }
-            else if (needed_entities[i_need].first == stk::mesh::Element)
+            else if (needed_entities[i_need].first == m_eMesh.element_rank())
               {
                 nSubDimEntities = 1;
               }
@@ -1232,17 +1232,19 @@ namespace stk {
                     std::cout << "tmp ordinal_of_node_on_subcell        = " << ordinal_of_node_on_subcell << std::endl;
                     std::cout << "tmp num_nodes_on_subcell              = " << num_nodes_on_subcell << std::endl;
                     std::cout << "tmp new_sub_entity_nodes.size()       = " << new_sub_entity_nodes.size() << std::endl;
-                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[stk::mesh::Face].size() << std::endl;
-                    if (new_sub_entity_nodes[stk::mesh::Face].size())
+                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[m_eMesh.face_rank()].size() << std::endl;
+                    if (new_sub_entity_nodes[m_eMesh.face_rank()].size())
                       {
                         std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
-                                  << new_sub_entity_nodes[stk::mesh::Face][ordinal_of_subcell].size() << std::endl;
+                                  << new_sub_entity_nodes[m_eMesh.face_rank()][ordinal_of_subcell].size() << std::endl;
                       }
 
                     //std::cout << "tmp new_sub_entity_nodes = \n" << new_sub_entity_nodes << std::endl;
                   }
 
 
+                // FIXME these ranks are hardcoded because there is a basic assumption in the table generation code that
+                //    assumes these ranks are used
                 switch (rank_of_subcell)
                   {
                   case 0:
@@ -1252,9 +1254,9 @@ namespace stk {
                   case 1:
                     if (usePerm) // FIXME
                       if (num_nodes_on_subcell > 1)
-                        inode = NN_Q_P(stk::mesh::Edge, ordinal_of_subcell, ordinal_of_node_on_subcell, perm_array);
+                        inode = NN_Q_P(m_eMesh.edge_rank(), ordinal_of_subcell, ordinal_of_node_on_subcell, perm_array);
                       else
-                        inode = NN_Q(stk::mesh::Edge, ordinal_of_subcell, ordinal_of_node_on_subcell);
+                        inode = NN_Q(m_eMesh.edge_rank(), ordinal_of_subcell, ordinal_of_node_on_subcell);
                     else
                       inode = EDGE_N_Q(ordinal_of_subcell, ordinal_of_node_on_subcell);
 
@@ -1301,15 +1303,15 @@ namespace stk {
                                       }
                                   
                                     std::cout << "tmp new_sub_entity_nodes.size() = " << new_sub_entity_nodes.size() << std::endl;
-                                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[stk::mesh::Face].size() << std::endl;
-                                    if (new_sub_entity_nodes[stk::mesh::Face].size())
+                                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[m_eMesh.face_rank()].size() << std::endl;
+                                    if (new_sub_entity_nodes[m_eMesh.face_rank()].size())
                                       {
                                         std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
-                                                  << new_sub_entity_nodes[stk::mesh::Face][ordinal_of_subcell].size() << std::endl;
+                                                  << new_sub_entity_nodes[m_eMesh.face_rank()][ordinal_of_subcell].size() << std::endl;
                                       }
 
                                     std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell] = \n" 
-                                              << new_sub_entity_nodes[stk::mesh::Face][ordinal_of_subcell] << std::endl;
+                                              << new_sub_entity_nodes[m_eMesh.face_rank()][ordinal_of_subcell] << std::endl;
 
                                     std::cout << "tmp new_sub_entity_nodes = \n" 
                                               << new_sub_entity_nodes << std::endl;
@@ -1317,7 +1319,7 @@ namespace stk {
                                     std::cout << "tmp  pa = " << (usePerm ? perm_array[ordinal_of_node_on_subcell] : ordinal_of_node_on_subcell) << std::endl;
 
                                   }
-                                inode = NN_Q_P(stk::mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell, perm_array);
+                                inode = NN_Q_P(m_eMesh.face_rank(), ordinal_of_subcell, ordinal_of_node_on_subcell, perm_array);
                               }
                             else
                               {
@@ -1330,22 +1332,22 @@ namespace stk {
                                     std::cout << "tmp ordinal_of_node_on_subcell        = " << ordinal_of_node_on_subcell << std::endl;
                                     std::cout << "tmp num_nodes_on_subcell              = " << num_nodes_on_subcell << std::endl;
                                     std::cout << "tmp new_sub_entity_nodes.size()       = " << new_sub_entity_nodes.size() << std::endl;
-                                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[stk::mesh::Face].size() << std::endl;
-                                    if (new_sub_entity_nodes[stk::mesh::Face].size())
+                                    std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[m_eMesh.face_rank()].size() << std::endl;
+                                    if (new_sub_entity_nodes[m_eMesh.face_rank()].size())
                                       {
                                         std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
-                                                  << new_sub_entity_nodes[stk::mesh::Face][ordinal_of_subcell].size() << std::endl;
+                                                  << new_sub_entity_nodes[m_eMesh.face_rank()][ordinal_of_subcell].size() << std::endl;
                                       }
 
                                     std::cout << "tmp new_sub_entity_nodes = \n" << new_sub_entity_nodes << std::endl;
                                   }
 
-                                inode = NN_Q(stk::mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell);
+                                inode = NN_Q(m_eMesh.face_rank(), ordinal_of_subcell, ordinal_of_node_on_subcell);
                               }
                           } 
                         else
                           {
-                            inode = NN_Q(stk::mesh::Face, ordinal_of_subcell, ordinal_of_node_on_subcell);
+                            inode = NN_Q(m_eMesh.face_rank(), ordinal_of_subcell, ordinal_of_node_on_subcell);
                           }
 
                       }
@@ -1374,7 +1376,7 @@ namespace stk {
           {
             stk::mesh::Entity& newElement = *(*element_pool);
 
-            if (m_primaryEntityRank == stk::mesh::Element &&  proc_rank_field)
+            if (m_primaryEntityRank == m_eMesh.element_rank() &&  proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
@@ -2289,11 +2291,11 @@ namespace stk {
           {
             stk::mesh::Part& fromPart = *m_fromParts[i_fromPart];
 
-            switch( fromPart.primary_entity_rank() ) {
+            stk::mesh::EntityRank switch_fromPart_primary_entity_rank  = fromPart.primary_entity_rank();
 
-              //case stk::mesh::Element:
-            case stk::mesh::Edge:
-            case stk::mesh::Face:
+              //case 
+            if(switch_fromPart_primary_entity_rank == eMesh.edge_rank() ||
+               switch_fromPart_primary_entity_rank == eMesh.face_rank() )
               {
                 stk::mesh::Part& toPart = *m_toParts[i_fromPart];
 
@@ -2312,8 +2314,6 @@ namespace stk {
                     //std::cout << "fixSubsets:: declare_part_subset toPart = " << toPart.name()  << " to_subset= " <<  to_subset.name() << std::endl;
                   }
               }
-              break;
-            }
           }
       }
 
@@ -2408,7 +2408,7 @@ namespace stk {
                   continue;
 
                 //bool doThisPart = (block_names_include.size() == 0);
-                bool doThisPart = (block_names_ranks[stk::mesh::Element].size() == 0);
+                bool doThisPart = (block_names_ranks[m_eMesh.element_rank()].size() == 0);
 
                 if (!doThisPart)
                   {
@@ -2489,11 +2489,11 @@ namespace stk {
 
                 if (doThisPart)
                   {
-                    switch( part->primary_entity_rank() ) {
+                    stk::mesh::EntityRank switch_part_primary_entity_rank  =  part->primary_entity_rank() ;
 
-                    case stk::mesh::Edge:
-                    case stk::mesh::Element:
-                    case stk::mesh::Face:
+                    if (switch_part_primary_entity_rank == eMesh.edge_rank() ||
+                        switch_part_primary_entity_rank == eMesh.element_rank() || 
+                        switch_part_primary_entity_rank == eMesh.face_rank())
                       {
                         stk::mesh::Part *  block_to=0;
                         if (sameTopology)
@@ -2517,8 +2517,6 @@ namespace stk {
                             m_toParts.push_back(block_to);
                           }
                       }
-                      break;
-                    }
                   }
               }
           }

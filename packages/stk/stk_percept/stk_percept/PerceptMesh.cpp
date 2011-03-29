@@ -235,10 +235,10 @@ namespace stk {
         count_entities( selector, *eMesh.get_bulkData(), count );
 
         std::cout << "P[" << p_rank << "] Uses {" ;
-        std::cout << " Node = " << count[ stk::mesh::Node ] ;
-        std::cout << " Edge = " << count[ stk::mesh::Edge ] ;
-        std::cout << " Face = " << count[ stk::mesh::Face ] ;
-        std::cout << " Elem = " << count[ stk::mesh::Element ] ;
+        std::cout << " Node = " << count[ 0 ] ;
+        std::cout << " Edge = " << count[ 1 ] ;
+        std::cout << " Face = " << count[ 2 ] ;
+        std::cout << " Elem = " << count[ 3 ] ;
         std::cout << " }" << std::endl ;
         std::cout.flush();
       }
@@ -283,10 +283,10 @@ namespace stk {
 
                 std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() ;
                 std::cout <<  " : Uses {" ;
-                std::cout << " Node = " << count[ stk::mesh::Node ] ;
-                std::cout << " Edge = " << count[ stk::mesh::Edge ] ;
-                std::cout << " Face = " << count[ stk::mesh::Face ] ;
-                std::cout << " Elem = " << count[ stk::mesh::Element ] ;
+                std::cout << " Node = " << count[ 0 ] ;
+                std::cout << " Edge = " << count[ 1 ] ;
+                std::cout << " Face = " << count[ 2 ] ;
+                std::cout << " Elem = " << count[ 3 ] ;
                 std::cout << " }" << std::endl ;
                 std::cout.flush();
               }
@@ -361,7 +361,7 @@ namespace stk {
       if (print_level>1)
       {
         using std::vector;
-        const vector<stk::mesh::Bucket*> & buckets = get_bulkData()->buckets( stk::mesh::Element );
+        const vector<stk::mesh::Bucket*> & buckets = get_bulkData()->buckets( element_rank()  );
         std::cout  << "P[" << p_rank << "] info> num buckets = " << buckets.size() << std::endl;
 
         int ibucket = 0;
@@ -484,11 +484,11 @@ namespace stk {
       std::vector<unsigned> count ;
       stk::mesh::Selector selector(getFEM_meta_data()->universal_part());
       count_entities( selector, *get_bulkData(), count );
-      return count[ stk::mesh::Element ];
-      //         std::cout << " Node = " << count[ stk::mesh::Node ] ;
-      //         std::cout << " Edge = " << count[ stk::mesh::Edge ] ;
-      //         std::cout << " Face = " << count[ stk::mesh::Face ] ;
-      //         std::cout << " Elem = " << count[ stk::mesh::Element ] ;
+      return count[ element_rank() ];
+      //         std::cout << " Node = " << count[  0 ] ;
+      //         std::cout << " Edge = " << count[  1 ] ;
+      //         std::cout << " Face = " << count[  2 ] ;
+      //         std::cout << " Elem = " << count[  3 ] ;
       //         std::cout << " }" << std::endl ;
       //         std::cout.flush();
       }
@@ -1828,8 +1828,9 @@ namespace stk {
       static const unsigned face_nodes_3[3] = {0,1,2};
       static const unsigned face_nodes_4[4] = {0,1,2,3};
 
+      stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(element);
       // special case for faces in 3D
-      if (needed_entity_rank == stk::mesh::Face && needed_entity_rank == element.entity_rank())
+      if (needed_entity_rank == meta.face_rank() && needed_entity_rank == element.entity_rank())
         {
           nSubDimNodes = cell_topo_data->vertex_count;
 
@@ -1840,7 +1841,7 @@ namespace stk {
             inodes = face_nodes_4;
         }
       // special case for edges in 2D
-      else if (needed_entity_rank == stk::mesh::Edge && needed_entity_rank == element.entity_rank())
+      else if (needed_entity_rank == meta.edge_rank() && needed_entity_rank == element.entity_rank())
         {
           nSubDimNodes = cell_topo_data->vertex_count;
 
@@ -1853,12 +1854,12 @@ namespace stk {
               throw std::runtime_error("NodeRegistry bad for edges");
             }
         }
-      else if (needed_entity_rank == stk::mesh::Edge)
+      else if (needed_entity_rank == meta.edge_rank())
         {
           inodes = cell_topo_data->edge[iSubDimOrd].node;
           nSubDimNodes = 2;
         }
-      else if (needed_entity_rank == stk::mesh::Face)
+      else if (needed_entity_rank == meta.face_rank() )
         {
           nSubDimNodes = cell_topo_data->side[iSubDimOrd].topology->vertex_count;
           // note, some cells have sides with both 3 and 4 nodes (pyramid, prism)

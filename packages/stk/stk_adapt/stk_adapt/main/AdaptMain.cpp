@@ -46,11 +46,11 @@ namespace stk {
       eMesh.get_bulkData()->modification_begin();
 
       std::cout << "creating " << n_elements << " elements..." <<std::endl;
-      eMesh.createEntities( mesh::Element, n_elements, new_elements);
+      eMesh.createEntities( eMesh.element_rank(), n_elements, new_elements);
       std::cout << "... done creating " << n_elements << " elements" << std::endl;
 
       std::cout << "creating " << n_nodes << " nodes..." <<std::endl;
-      eMesh.createEntities( mesh::Node, n_nodes, new_nodes);
+      eMesh.createEntities( stk::mesh::fem::NODE_RANK, n_nodes, new_nodes);
       std::cout << "... done creating " << n_nodes << " nodes" << std::endl;
 
       int num_prints = 100;
@@ -377,7 +377,7 @@ namespace stk {
             BlockNamesType block_names(stk::mesh::EntityRankEnd+1u);
             if (block_name_inc.length())
               {
-                block_names = UniformRefiner::getBlockNames(block_name_inc, eMesh.getRank());
+                block_names = UniformRefiner::getBlockNames(block_name_inc, eMesh.getRank(), eMesh);
                 if (1)
                   {
                     eMesh.commit();
@@ -407,7 +407,7 @@ namespace stk {
 
         stk::mesh::FieldBase* proc_rank_field_ptr = 0;
         if (proc_rank_field)
-          eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+          eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
 

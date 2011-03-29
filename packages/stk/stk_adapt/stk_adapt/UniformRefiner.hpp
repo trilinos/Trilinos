@@ -93,7 +93,7 @@ namespace stk {
       getRemoveOldElements();
       
       static BlockNamesType 
-      getBlockNames(std::string& block_name, unsigned proc_rank);
+      getBlockNames(std::string& block_name, unsigned proc_rank, percept::PerceptMesh& eMesh);
 
       static BlockNamesType 
       correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks);

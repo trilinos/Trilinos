@@ -65,7 +65,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, hex8_hex8_8_1_0)
 //   Hex8_Hex8_8 break_hex_to_hex(eMesh);
 
 //   int scalarDimension = 0; // a scalar
-//   FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+//   FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
   eMesh.commit();
 
@@ -137,7 +137,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, break_quad_to_quad_sierra)
     UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
     // FIXME
     int scalarDimension = 0; // a scalar
-    stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+    stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
     //fixture.meta_data.commit();
     eMesh.commit();
@@ -176,7 +176,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, break_tri_to_tri_sierra)
     //             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_tri_to_tri_4(eMesh);
     //             // FIXME
     //             int scalarDimension = 0; // a scalar
-    //             FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+    //             FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
     //fixture.meta_data.commit();
     eMesh.commit();
@@ -216,7 +216,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, hex8_hex8_8_1)
   Hex8_Hex8_8 break_hex_to_hex(eMesh);
 
   int scalarDimension = 0; // a scalar
-  stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+  stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
   eMesh.commit();
 

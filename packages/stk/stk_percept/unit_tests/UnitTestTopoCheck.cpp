@@ -463,7 +463,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     // with each element block.
 
     mesh::Part & universal = mesh_meta_data.universal_part();
-    mesh::Part & block_hex = mesh_meta_data.declare_part("block_1",mesh::Element);
+    mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", mesh_meta_data.element_rank());
 
     /// set cell topology for the part block_1
     mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( block_hex );
@@ -478,21 +478,6 @@ void use_encr_case_1_driver( MPI_Comm comm )
       coordinates_field , mesh::Node , universal , SpatialDim );
 
     //--------------------------------
-
-#if 0
-    VectorFieldType & face_field =
-      mesh_meta_data.declare_field< VectorFieldType >( "face_flux" );
-
-    VectorFieldType & elem_field =
-      mesh_meta_data.declare_field< VectorFieldType >( "elem_flux" );
-
-    stk::mesh::put_field(
-      elem_field , mesh::Element , block_hex , SpatialDim );
-
-    stk::mesh::put_field(
-      face_field , mesh::Face , universal , SpatialDim );
-
-#endif
 
     //--------------------------------
     // Declare an aggressive "gather" field which is an
@@ -519,7 +504,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     // This size is different for each element block.
 
     stk::mesh::put_field(
-      elem_node_coord , mesh::Element , block_hex , shards::Hexahedron<8> ::node_count );
+                         elem_node_coord , mesh_meta_data.element_rank() , block_hex , shards::Hexahedron<8> ::node_count );
 
     //--------------------------------
     // Commit (finalize) the meta data.  Is now ready to be used
@@ -552,10 +537,10 @@ void use_encr_case_1_driver( MPI_Comm comm )
       count_entities( selector, mesh_bulk_data, count );
 
       std::cout << "  P" << p_rank << ": Uses {" ;
-      std::cout << " Node = " << count[ mesh::Node ] ;
-      std::cout << " Edge = " << count[ mesh::Edge ] ;
-      std::cout << " Face = " << count[ mesh::Face ] ;
-      std::cout << " Elem = " << count[ mesh::Element ] ;
+      std::cout << " Node = " << count[ 0 ] ;
+      std::cout << " Edge = " << count[ 1 ] ;
+      std::cout << " Face = " << count[ 2 ] ;
+      std::cout << " Elem = " << count[ 3 ] ;
       std::cout << " }" << std::endl ;
       std::cout.flush();
     }
@@ -576,8 +561,6 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
 
 
-    //use_encr_case_1_algorithm( mesh_bulk_data , mesh::Face ,
-    //                               face_field , elem_field );
 
     //------------------------------------------------------------------
 
@@ -684,7 +667,7 @@ void use_encr_case_1_generate_mesh(
 
             stk::mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
 
-            mesh::Entity * const elem = mesh.get_entity( mesh::Element , elem_id );
+            mesh::Entity * const elem = mesh.get_entity( stk::mesh::fem::FEMMetaData::get(mesh).element_rank() , elem_id );
 
 
             if (!topoVerifier.isTopologyBad(*elem))

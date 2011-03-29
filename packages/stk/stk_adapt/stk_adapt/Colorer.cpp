@@ -20,8 +20,8 @@ namespace stk {
           }
         else
           {
-//             m_entityRanks.push_back(mesh::Face);
-//             m_entityRanks.push_back(mesh::Element);
+            //             m_entityRanks.push_back(stk_mesh_Face);
+            //             m_entityRanks.push_back(stk_mesh_Element);
             throw std::runtime_error("Colorer:: you must pass in non-zero length ranks");
           }
       }
@@ -35,8 +35,8 @@ namespace stk {
         }
       else
         {
-//           m_entityRanks.push_back(mesh::Face);
-//           m_entityRanks.push_back(mesh::Element);
+//           m_entityRanks.push_back(stk_mesh_Face);
+//           m_entityRanks.push_back(stk_mesh_Element);
             throw std::runtime_error("Colorer:: you must pass in non-zero length ranks");
         }
     }

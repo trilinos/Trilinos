@@ -31,7 +31,7 @@ namespace stk {
 #define EXTRA_PRINT_UR_GETBLOCKS 0
  
     // FIXME move this to a utils class
-    BlockNamesType UniformRefiner::getBlockNames(std::string& block_name, unsigned proc_rank)
+    BlockNamesType UniformRefiner::getBlockNames(std::string& block_name, unsigned proc_rank, percept::PerceptMesh& eMesh)
     {
       BlockNamesType blocks(stk::mesh::EntityRankEnd+1u);
       if (block_name.length() == 0)
@@ -49,9 +49,9 @@ namespace stk {
               if (block[0] != '#')
                 {
                   if (block.substr(0,6) == "block_")
-                    blocks[stk::mesh::Element].push_back(block);
+                    blocks[eMesh.element_rank()].push_back(block);
                   else if (block.substr(0,8) == "surface_")
-                    blocks[stk::mesh::Face].push_back(block);
+                    blocks[eMesh.face_rank()].push_back(block);
                 }
                   
             }
@@ -273,13 +273,13 @@ namespace stk {
                 
                 //std::cout << "n1= " << n1 << " n2= " << n2 << std::endl;
                 if (n1.length() > 6 && n1.substr(1,6) == "block_")
-                  blocks[stk::mesh::Element].push_back(n1);
+                  blocks[eMesh.element_rank()].push_back(n1);
                 else if (n1.length() > 8 && n1.substr(1,8) == "surface_")
-                  blocks[stk::mesh::Face].push_back(n1);
+                  blocks[eMesh.face_rank()].push_back(n1);
                 else
                   {
                     std::string pm = (inc?"+":"-");
-                    blocks[stk::mesh::Element].push_back(pm+"block_"+n2);
+                    blocks[eMesh.element_rank()].push_back(pm+"block_"+n2);
                   }
                 if (last_one) 
                   {
@@ -307,10 +307,10 @@ namespace stk {
 
     BlockNamesType UniformRefiner::correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks)
     {
-      if (blocks[stk::mesh::Element].size() == 0)
+      if (blocks[eMesh.element_rank()].size() == 0)
         return blocks;
 
-      stk::mesh::EntityRank subDimRank = (eMesh.getSpatialDim() == 3 ? stk::mesh::Face : stk::mesh::Edge);
+      stk::mesh::EntityRank subDimRank = (eMesh.getSpatialDim() == 3 ? eMesh.face_rank() : eMesh.edge_rank());
 
       mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
       for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
@@ -322,12 +322,12 @@ namespace stk {
               mesh::Part *  surfacePart = *i_surfacePart ;
               const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*surfacePart);
 
-              if (part_cell_topo_data && part->primary_entity_rank() == stk::mesh::Element && surfacePart->primary_entity_rank() == subDimRank)
+              if (part_cell_topo_data && part->primary_entity_rank() == eMesh.element_rank() && surfacePart->primary_entity_rank() == subDimRank)
                 {
                   std::string partNamePlus = "+" + part->name();
-                  std::vector<std::string>::iterator partInBlocks = std::find(blocks[stk::mesh::Element].begin(), blocks[stk::mesh::Element].end(), partNamePlus);
+                  std::vector<std::string>::iterator partInBlocks = std::find(blocks[eMesh.element_rank()].begin(), blocks[eMesh.element_rank()].end(), partNamePlus);
                   // if this part is not in the blocks list, skip it
-                  if (partInBlocks == blocks[stk::mesh::Element].end())
+                  if (partInBlocks == blocks[eMesh.element_rank()].end())
                     {
                       continue;
                     }
@@ -618,7 +618,7 @@ namespace stk {
       
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
-              //if (ranks[irank] >= stk::mesh::Face)
+              //if (ranks[irank] >= m_eMesh.face_rank())
               {
                 EXCEPTWATCH;
 
@@ -649,7 +649,7 @@ namespace stk {
           unsigned num_elem = 0;
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
-              //if (ranks[irank] >= stk::mesh::Face)
+              //if (ranks[irank] >= m_eMesh.face_rank())
               {
                 EXCEPTWATCH;
 
@@ -692,7 +692,7 @@ namespace stk {
           unsigned num_elem = 0;
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
-              //if (ranks[irank] >= stk::mesh::Face)
+              //if (ranks[irank] >= m_eMesh.face_rank())
               {
                 EXCEPTWATCH;
 
@@ -997,7 +997,7 @@ namespace stk {
 
               stk::mesh::Entity& element = * element_p;
 
-              if (m_proc_rank_field && rank == stk::mesh::Element)
+              if (m_proc_rank_field && rank == m_eMesh.element_rank())
                 {
                   //exit(1);  // FIXME FIXME FIXME
                   double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
@@ -1054,12 +1054,12 @@ namespace stk {
 
       if (m_eMesh.getSpatialDim() == 3)
         {
-          fixElementSides1(stk::mesh::Face);
+          fixElementSides1(m_eMesh.face_rank());
         }
       // FIXME
       else if (m_eMesh.getSpatialDim() == 2)
         {
-          fixElementSides1(stk::mesh::Edge);
+          fixElementSides1(m_eMesh.edge_rank());
         }
     }
 
@@ -1155,7 +1155,7 @@ namespace stk {
 
               // if parent has any side relations, check if any of the sides' children match the parent's children's faces
               mesh::PairIterRelation parent_sides = parent->relations(side_rank);
-              mesh::PairIterRelation side_to_parent = parent->relations(stk::mesh::Element);
+              mesh::PairIterRelation side_to_parent = parent->relations(m_eMesh.element_rank());
 
               //std::cout << "tmp here 1 child_nsides= " << child_nsides 
               //          << " parent_sides.size()=" << parent_sides.size() <<  " side_to_parent.size() = " << side_to_parent.size() << std::endl;
@@ -1506,15 +1506,15 @@ namespace stk {
             {
               numSubDimNeededEntities = 1;
             }
-          else if (needed_entity_ranks[ineed_ent].first == stk::mesh::Edge)
+          else if (needed_entity_ranks[ineed_ent].first == m_eMesh.edge_rank())
             {
               numSubDimNeededEntities = cell_topo_data->edge_count;
             }
-          else if (needed_entity_ranks[ineed_ent].first == stk::mesh::Face)
+          else if (needed_entity_ranks[ineed_ent].first == m_eMesh.face_rank())
             {
               numSubDimNeededEntities = cell_topo_data->side_count;
             }
-          else if (needed_entity_ranks[ineed_ent].first == stk::mesh::Element)
+          else if (needed_entity_ranks[ineed_ent].first == m_eMesh.element_rank())
             {
               numSubDimNeededEntities = 1;
             }

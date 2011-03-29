@@ -142,8 +142,6 @@ namespace stk
               if (0) std::cout << "elemOfBucket= " << elem << std::endl;
               const mesh::PairIterRelation elem_nodes = elem.relations( mesh::Node );
 
-              //const mesh::PairIterRelation node_elems = elem_nodes[0].entity()->relations( mesh::Element );
-
               //const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
               const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
               int shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(cell_topo->name);
@@ -180,7 +178,7 @@ namespace stk
                     {
                       unsigned inodeOnPotBadEdgeInElem = cell_topo->edge[iedgeOrd].node[inodeOnPotBadEdge];
 
-                      const mesh::PairIterRelation node_elems = elem_nodes[inodeOnPotBadEdgeInElem].entity()->relations( mesh::Element );
+                      const mesh::PairIterRelation node_elems = elem_nodes[inodeOnPotBadEdgeInElem].entity()->relations( meta.element_rank() );
                       unsigned num_elems_on_node = node_elems.size();
 
                       for (unsigned iele = 0; iele < num_elems_on_node; iele++)

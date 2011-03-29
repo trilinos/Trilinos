@@ -83,7 +83,7 @@ namespace stk
             stk::mesh::BulkData& bulkData = *eMesh.get_bulkData();
             VectorFieldType* coordField = eMesh.getCoordinatesField();
 
-            const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( (eMesh.getSpatialDim() == 2 ? stk::mesh::Edge : stk::mesh::Face) );  // Note
+            const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( (eMesh.getSpatialDim() == 2 ? eMesh.edge_rank() : eMesh.face_rank() ) );  // Note
             double sum = 0.0;
 
             for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 

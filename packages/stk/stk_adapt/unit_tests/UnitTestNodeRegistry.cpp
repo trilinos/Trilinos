@@ -379,7 +379,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
   eMesh.newMesh(percept::PerceptMesh::GMeshSpec(std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,1")));
 
   // prepare for adding some quadratic elements
-  mesh::Part& block_hex_20 = eMesh.getFEM_meta_data()->declare_part("block_hex_20", mesh::Element);
+  mesh::Part& block_hex_20 = eMesh.getFEM_meta_data()->declare_part("block_hex_20", eMesh.element_rank());
   /// set cell topology for the part block_hex_20
   mesh::fem::set_cell_topology_new< shards::Hexahedron<20>  >( block_hex_20 );
   stk::io::put_io_part_attribute(block_hex_20);
@@ -528,7 +528,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
   eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
 
   // prepare for breaking into tet elements
-  mesh::Part& block_tet_4 = eMesh.getFEM_meta_data()->declare_part("block_tet_4", mesh::Element);
+  mesh::Part& block_tet_4 = eMesh.getFEM_meta_data()->declare_part("block_tet_4", eMesh.element_rank());
   /// set cell topology for the part block_tet_4
   mesh::fem::set_cell_topology_new< shards::Tetrahedron<4>  >( block_tet_4 );
   stk::io::put_io_part_attribute(block_tet_4);
