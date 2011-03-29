@@ -608,7 +608,6 @@ namespace Tpetra {
 			   "Please report this bug to the Tpetra developers.");
 
 	// Handy for debugging output; not needed otherwise.
-	const int numProcs = Teuchos::size (*(pRowMap->getComm()));
 	const int myRank = Teuchos::rank (*(pRowMap->getComm()));
 
 	if (false && debug)
