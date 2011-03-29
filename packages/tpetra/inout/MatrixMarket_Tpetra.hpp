@@ -66,12 +66,12 @@ namespace Tpetra {
     /// \class Reader
     /// \brief Matrix Market file reader for Tpetra::CrsMatrix.
     ///
-    /// The readFile() and read() class methods read in a Matrix
-    /// Market "coordinate" format sparse matrix file resp. input
-    /// stream (valid on MPI Rank 0), and return a Tpetra::CrsMatrix
-    /// sparse matrix (SparseMatrixType) distributed in block row
-    /// fashion over all the MPI ranks represented in the given
-    /// communicator.
+    /// The readSparse() and readSparseFile() class methods read in a
+    /// Matrix Market "coordinate" format sparse matrix input stream
+    /// resp. file (valid on MPI Rank 0), and return a
+    /// Tpetra::CrsMatrix sparse matrix (SparseMatrixType) distributed
+    /// in block row fashion over all the MPI ranks represented in the
+    /// given communicator.
     template<class SparseMatrixType>
     class Reader {
     public:
@@ -919,14 +919,14 @@ namespace Tpetra {
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
       static sparse_matrix_ptr
-      readFile (const std::string& filename,
-		const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
-		const Teuchos::RCP<node_type>& pNode,
-		const bool tolerant=false,
-		const bool debug=false)
+      readSparseFile (const std::string& filename,
+		      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
+		      const Teuchos::RCP<node_type>& pNode,
+		      const bool tolerant=false,
+		      const bool debug=false)
       {
 	std::ifstream in (filename.c_str());
-	return read (in, pComm, pNode, fillComplete, tolerant, debug);
+	return readSparse (in, pComm, pNode, tolerant, debug);
       }
 
       /// \brief Read the sparse matrix from the given input stream.
@@ -945,11 +945,11 @@ namespace Tpetra {
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
       static sparse_matrix_ptr
-      read (std::istream& in,	
-	    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
-	    const Teuchos::RCP<node_type>& pNode,
-	    const bool tolerant=false,
-	    const bool debug=false)
+      readSparse (std::istream& in,	
+		  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
+		  const Teuchos::RCP<node_type>& pNode,
+		  const bool tolerant=false,
+		  const bool debug=false)
       {
 	using Teuchos::RCP;
 	using Teuchos::rcp;

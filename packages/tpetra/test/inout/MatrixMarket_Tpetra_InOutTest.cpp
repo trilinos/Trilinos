@@ -74,7 +74,7 @@ namespace Tpetra {
       }
 #endif // defined(HAVE_KOKKOS_TBB)
 
-      /// Test Tpetra::MatrixMarket::Reader::readFile()
+      /// Test Tpetra::MatrixMarket::Reader::readSparseFile()
       ///
       /// \param filename [in] Name of the Matrix Market format sparse
       ///   matrix file to read (on MPI Rank 0 only)
@@ -86,11 +86,11 @@ namespace Tpetra {
       /// \param debug [in] Whether to print debugging output 
       ///
       void
-      testReadFile (const std::string& filename, 
-		    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-		    const bool tolerant, 
-		    const bool verbose,
-		    const bool debug)
+      testReadSparseFile (const std::string& filename, 
+			  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+			  const bool tolerant, 
+			  const bool verbose,
+			  const bool debug)
       {
 	using Teuchos::RCP;
 	using std::cerr;
@@ -120,7 +120,7 @@ namespace Tpetra {
 	// This routine acts like an MPI barrier.
 	typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 	RCP<sparse_matrix_type> pMatrix =
-	  reader_type::readFile (filename, pComm, pNode, tolerant, debug);
+	  reader_type::readSparseFile (filename, pComm, pNode, tolerant, debug);
 	if (! pMatrix.is_null())
 	  {
 	    if (verbose && myRank == 0)
@@ -188,8 +188,8 @@ main (int argc, char *argv[])
   // "TEST PASSED" message.
   if (filename != "")
     {
-      using Tpetra::MatrixMarket::Test::testReadFile;
-      testReadFile (filename, pComm, tolerant, verbose, debug);
+      using Tpetra::MatrixMarket::Test::testReadSparseFile;
+      testReadSparseFile (filename, pComm, tolerant, verbose, debug);
     }
 
   // Only Rank 0 gets to write to cout.
