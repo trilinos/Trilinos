@@ -1220,8 +1220,6 @@ namespace Tpetra {
 	// asked makeMatrix() to call fillComplete().
 	if (callFillComplete)
 	  {
-	    const global_size_t globalNumRows = pMatrix->getGlobalNumRows();
-	    const global_size_t globalNumCols = pMatrix->getGlobalNumCols();
 	    if (extraDebug && debug)
 	      {
 		if (myRank == 0)
@@ -1252,6 +1250,9 @@ namespace Tpetra {
 	      } // if (extraDebug && debug)
 
 #if 0
+	    const global_size_t globalNumRows = pMatrix->getGlobalNumRows();
+	    const global_size_t globalNumCols = pMatrix->getGlobalNumCols();
+
 	    // Casting a positive signed integer (global_ordinal_type)
 	    // to an unsigned integer of no fewer bits (global_size_t)
 	    // shouldn't overflow.
