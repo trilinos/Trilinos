@@ -374,12 +374,12 @@ namespace stk
     IntrepidManager::FieldValues::
     FieldValues(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag)) {}
 
-    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, FieldBase* field)
+    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field)
     {
       ComputeFieldValues cfv;
       cfv.getFieldValues(element, transformed_basis_values, field, *this);
     }
-    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, FieldBase* field, MDArray& output_field_values)
+    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
     {
       ComputeFieldValues cfv;
       cfv.getFieldValues(element, transformed_basis_values, field, output_field_values);
@@ -500,7 +500,7 @@ namespace stk
       const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
       if (!bucket_cell_topo_data)
         {
-          EntityRank bucket_rank = bucket.entity_rank();
+          mesh::EntityRank bucket_rank = bucket.entity_rank();
           std::cout << "bucket_rank = " << bucket_rank << std::endl;
           throw std::runtime_error("IntrepidManager::bogus topology");
         }

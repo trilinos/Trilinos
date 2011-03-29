@@ -178,35 +178,35 @@ namespace stk {
         return isGhost;
       }
 
-      EntityRank node_rank() const
+      stk::mesh::EntityRank node_rank() const
       {
         return m_metaData->node_rank();
       }
 
       /** \brief Returns the edge rank which changes depending on spatial dimension
        */
-      EntityRank edge_rank() const
+      stk::mesh::EntityRank edge_rank() const
       {
         return m_metaData->edge_rank();
       }
 
       /** \brief Returns the face rank which changes depending on spatial dimension
        */
-      EntityRank face_rank() const
+      stk::mesh::EntityRank face_rank() const
       {
         return m_metaData->face_rank();
       }
 
       /** \brief Returns the side rank which changes depending on spatial dimension
        */
-      EntityRank side_rank() const
+      stk::mesh::EntityRank side_rank() const
       {
         return m_metaData->side_rank();
       }
 
       /** \brief Returns the element rank which is always equal to spatial dimension
        */
-      EntityRank element_rank() const
+      stk::mesh::EntityRank element_rank() const
       {
         return m_metaData->element_rank();
       }
@@ -225,7 +225,7 @@ namespace stk {
       static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity& node, unsigned *stride=0);
 
       static inline double *
-      field_data_inlined(const FieldBase *field, const mesh::Entity& node)
+      field_data_inlined(const mesh::FieldBase *field, const mesh::Entity& node)
       {
         return field_data(field, node);
 //         return 
@@ -259,7 +259,7 @@ namespace stk {
       static void fillCellNodes( const stk::mesh::Bucket &bucket,
                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
-                                 FieldBase* field,
+                                 mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
       /// \brief see comment for fillCellNodes(Bucket& ...)
@@ -267,7 +267,7 @@ namespace stk {
       static void fillCellNodes( const stk::mesh::Entity &element,
                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
-                                 FieldBase* field,
+                                 mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
       static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
@@ -279,10 +279,10 @@ namespace stk {
       }
 
       static void
-      element_side_nodes( const Entity & elem , int local_side_id, EntityRank side_entity_rank, std::vector<Entity *>& side_node_entities );
+      element_side_nodes( const mesh::Entity & elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity *>& side_node_entities );
 
       static void
-      element_side_permutation(const Entity& element, const Entity& side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity);
+      element_side_permutation(const mesh::Entity& element, const mesh::Entity& side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity);
 
       // FIXME
       SameRankRelation& adapt_parent_to_child_relations() { return m_adapt_parent_to_child_relations; }
@@ -305,7 +305,7 @@ namespace stk {
       static
       const CellTopologyData * const get_cell_topology(const T& thing) 
       { 
-        const CellTopologyData * const cell_topo_data = fem::get_cell_topology_new(thing).getCellTopologyData();
+        const CellTopologyData * const cell_topo_data = mesh::fem::get_cell_topology_new(thing).getCellTopologyData();
         return cell_topo_data;
       }
 
@@ -380,7 +380,7 @@ namespace stk {
 
     template<>
     const CellTopologyData * const 
-    PerceptMesh::get_cell_topology(const Part& part) ;
+    PerceptMesh::get_cell_topology(const mesh::Part& part) ;
 
 
 
@@ -397,7 +397,7 @@ namespace stk {
     void PerceptMesh::fillCellNodes( const mesh::Bucket &bucket,
                                   //stk::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
-                                  FieldBase* field,
+                                  mesh::FieldBase* field,
                                   ArrayType& cellNodes, unsigned dataStrideArg)
     {
       unsigned number_elems = bucket.size();
@@ -446,7 +446,7 @@ namespace stk {
     void PerceptMesh::fillCellNodes( const stk::mesh::Entity &element,
                                   //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
-                                  FieldBase* field,
+                                  mesh::FieldBase* field,
                                   ArrayType& cellNodes,
                                   unsigned dataStrideArg )
     {

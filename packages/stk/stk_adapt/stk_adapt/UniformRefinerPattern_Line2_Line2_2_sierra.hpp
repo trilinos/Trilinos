@@ -16,7 +16,7 @@ namespace stk {
 
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Line<2>, shards::Line<2>  >(eMesh)
       {
-        m_primaryEntityRank = mesh::Edge;
+        m_primaryEntityRank = stk::mesh::Edge;
         if (m_eMesh.getSpatialDim() == 1)
           m_primaryEntityRank = eMesh.element_rank();
 
@@ -37,15 +37,15 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
-                        FieldBase *proc_rank_field=0)
+                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-        typedef boost::tuple<EntityId, EntityId> line_tuple_type;
+        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId> line_tuple_type;
         static vector<line_tuple_type> elems(2);
 
         CellTopology cell_topo(cell_topo_data);
-        const mesh::PairIterRelation elem_nodes = element.relations(Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
 
         std::vector<stk::mesh::Part*> add_parts;
         std::vector<stk::mesh::Part*> remove_parts;
@@ -65,15 +65,15 @@ namespace stk {
               }
 
             eMesh.createOrGetNode(EDGE_N(iedge), mp);
-            //nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), Face, i_face);
-            //nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), Edge, iedge);
+            //nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), Face, i_face);
+            //nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), Edge, iedge);
           }
 
         // FIXME
-        nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);
-        nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
 
-        nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo);
@@ -130,10 +130,10 @@ namespace stk {
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            Entity& newElement = *(*element_pool);
+            stk::mesh::Entity& newElement = *(*element_pool);
 
 #if 0
-            if (proc_rank_field && proc_rank_field->rank() == mesh::Edge) //&& m_eMesh.getSpatialDim()==1)
+            if (proc_rank_field && proc_rank_field->rank() == stk::mesh::Edge) //&& m_eMesh.getSpatialDim()==1)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.getRank());

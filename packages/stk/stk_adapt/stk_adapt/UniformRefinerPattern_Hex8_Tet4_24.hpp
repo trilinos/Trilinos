@@ -124,16 +124,16 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                        Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
-                        FieldBase *proc_rank_field=0)
+                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::FieldBase *proc_rank_field=0)
       {
         EXCEPTWATCH;
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-        typedef boost::tuple<EntityId, EntityId, EntityId, EntityId> tet_tuple_type;
+        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tet_tuple_type;
         static vector<tet_tuple_type> elems(24);
 
         CellTopology cell_topo(cell_topo_data);
-        const mesh::PairIterRelation elem_nodes = element.relations(Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
 
 
         // FIXME - maybe the computation of node coorinates should go in the calling code?
@@ -155,17 +155,17 @@ namespace stk {
                       << mp[0] << " " << mp[1] << " " << mp[2] <<  std::endl;
 #endif
 
-            //Entity& new_node =eMesh.createOrGetNode(FACE_N(i_face), mp);
+            //stk::mesh::Entity& new_node =eMesh.createOrGetNode(FACE_N(i_face), mp);
 
             eMesh.createOrGetNode(FACE_N(i_face), mp);
-            nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), Face, i_face);
-            nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), Face, i_face);
+            nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Face, i_face);
+            nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Face, i_face);
 
           }
 
-        nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), Element, 0u);
-        nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), Element, 0u);
-        nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), Element, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Element, 0u);
+        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Element, 0u);
+        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::Element, 0u);
         
 
         //#define C 14
@@ -199,10 +199,10 @@ namespace stk {
         
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            //Entity& newElement = eMesh.get_bulkData()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
-            //Entity& newElement = eMesh.get_bulkData()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk::mesh::Entity& newElement = eMesh.get_bulkData()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk::mesh::Entity& newElement = eMesh.get_bulkData()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
 
-            Entity& newElement = *(*element_pool);
+            stk::mesh::Entity& newElement = *(*element_pool);
 
             if (proc_rank_field)
               {

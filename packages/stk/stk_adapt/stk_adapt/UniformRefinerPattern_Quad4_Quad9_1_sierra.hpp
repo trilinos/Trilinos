@@ -28,7 +28,7 @@ namespace stk {
 
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : URP<shards::Quadrilateral<4> , shards::Quadrilateral<9> >(eMesh)
       {
-        m_primaryEntityRank = mesh::Face;
+        m_primaryEntityRank = stk::mesh::Face;
         if (m_eMesh.getSpatialDim() == 2)
           m_primaryEntityRank = eMesh.element_rank();
 
@@ -83,8 +83,8 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
-                        FieldBase *proc_rank_field=0)
+                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::FieldBase *proc_rank_field=0)
       {
         genericEnrich_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool,

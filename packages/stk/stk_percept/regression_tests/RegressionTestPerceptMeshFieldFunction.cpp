@@ -59,7 +59,7 @@ namespace stk
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 
-        FieldBase* pressure_field = eMesh.addField("pressure", mesh::Node, scalarDimension);
+        mesh::FieldBase* pressure_field = eMesh.addField("pressure", mesh::Node, scalarDimension);
         eMesh.addField("velocity", mesh::Node, vectorDimension);
         eMesh.addField("element_volume", mesh::Element, scalarDimension);
 
@@ -147,7 +147,7 @@ namespace stk
         eMesh.printInfo("Info after reading mesh");
 
         //eMesh.printFields();
-        FieldBase *f_coords = eMesh.getField("coordinates");
+        mesh::FieldBase *f_coords = eMesh.getField("coordinates");
 
         // create a field function from the existing coordinates field
         FieldFunction ff_coords("ff_coords", f_coords, eMesh, 3, 3);
@@ -156,7 +156,7 @@ namespace stk
         evalVec3Print(x, y, z, time, ff_coords);
 
         // get the pressure field
-        FieldBase* pressure_field = eMesh.getField("pressure");
+        mesh::FieldBase* pressure_field = eMesh.getField("pressure");
 
         // FIXME
         std::vector< const mesh::FieldBase * > sync_fields( 1 , pressure_field );
@@ -215,7 +215,7 @@ namespace stk
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 
-        FieldBase* pressure_field = eMesh.addField("pressure", mesh::Node, scalarDimension);
+        mesh::FieldBase* pressure_field = eMesh.addField("pressure", mesh::Node, scalarDimension);
         eMesh.addField("velocity", mesh::Node, vectorDimension);
         eMesh.addField("element_volume", mesh::Element, scalarDimension);
 
@@ -262,11 +262,11 @@ namespace stk
 
         /// reopen the mesh to allow for more fields to be added - note that this involves a db write/read operation
         eMesh.reopen("./output_files/optional_temp_filename.e");
-        FieldBase* momentum_field = eMesh.addField("momentum", mesh::Node, vectorDimension);
+        mesh::FieldBase* momentum_field = eMesh.addField("momentum", mesh::Node, vectorDimension);
         eMesh.commit();
 
         // create a field function from the new pressure field
-        FieldBase *pressure_field = eMesh.getField("pressure");
+        mesh::FieldBase *pressure_field = eMesh.getField("pressure");
         FieldFunction ff_pressure("ff_pressure", pressure_field, eMesh, 3, 1);
 
         // set the value of the pressure field to a constant everywhere

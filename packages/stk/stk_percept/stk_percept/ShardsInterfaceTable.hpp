@@ -23,7 +23,7 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
-using namespace stk::mesh;
+//using namespace stk::mesh;
 
 namespace stk {
   namespace percept {

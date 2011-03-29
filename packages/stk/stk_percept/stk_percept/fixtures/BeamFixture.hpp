@@ -43,7 +43,7 @@
 namespace stk {
   namespace percept {
 
-    using namespace stk::mesh;
+    using namespace stk::mesh; // FIXME
 
     typedef Field<double,Cartesian>    VectorFieldType ;
     typedef Field<double>              ScalarFieldType ;

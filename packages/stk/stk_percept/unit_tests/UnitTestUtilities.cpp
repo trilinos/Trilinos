@@ -476,7 +476,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  EntityRank stk_mesh_Element = 3;
+  mesh::EntityRank stk_mesh_Element = 3;
   stk::io::default_part_processing(elem_blocks, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk_mesh_Element);
 
   // Parts were created above, now handle element block specific
@@ -622,7 +622,7 @@ void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::FaceSetContainer& face_sets = region.get_facesets();
   //!<
-  EntityRank stk_mesh_Face = 2;
+  mesh::EntityRank stk_mesh_Face = 2;
   stk::io::default_part_processing(face_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk_mesh_Face);
 
   for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
@@ -640,7 +640,7 @@ void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
   //!<
-  EntityRank stk_mesh_Edge = 1;
+  mesh::EntityRank stk_mesh_Edge = 1;
   stk::io::default_part_processing(edge_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk_mesh_Edge);
 
   for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
@@ -712,16 +712,16 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
       size_t element_count = elem_ids.size();
       int nodes_per_elem = cell_topo->node_count ;
-      std::vector<EntityId> e_connectivity(nodes_per_elem) ;
+      std::vector<mesh::EntityId> e_connectivity(nodes_per_elem) ;
 
       std::vector<stk::mesh::Entity*> elements(element_count);
       for(size_t i=0; i<element_count; ++i) {
         int *conn = &(connectivity[i*nodes_per_elem]);
         for (int j=0; j < nodes_per_elem; j++)
           {
-            e_connectivity[j] = (EntityId)conn[j];
+            e_connectivity[j] = (mesh::EntityId)conn[j];
           }
-        EntityId* e_conn = &(e_connectivity[0]);
+        mesh::EntityId* e_conn = &(e_connectivity[0]);
         elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], e_conn);
       }
 
@@ -811,7 +811,7 @@ void process_surface_entity(const Ioss::GroupingEntity* io ,
       std::vector<stk::mesh::Entity*> sides(side_count);
       for(size_t is=0; is<side_count; ++is) {
 
-        EntityRank stk_mesh_Element = 3;
+        mesh::EntityRank stk_mesh_Element = 3;
 
         stk::mesh::Entity* const elem = bulk.get_entity(stk_mesh_Element, elem_side[is*2]);
         // If NULL, then the element was probably assigned to an

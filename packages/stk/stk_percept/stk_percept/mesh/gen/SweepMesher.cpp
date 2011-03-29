@@ -38,7 +38,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag1 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag3 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag4 )
 
-//  using namespace stk::mesh;
+using namespace stk::mesh;
 
 namespace stk
 {

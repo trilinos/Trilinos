@@ -82,7 +82,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
 
     const stk::mesh::Entity* element_1_p = eMesh.get_bulkData()->get_entity(eMesh.element_rank(), elem_num);
     dw() << "P["<<p_rank<<"] element_1_p = " << element_1_p << DWENDL;
-    EntityRank stk_mesh_Edge = 1;
+    stk::mesh::EntityRank stk_mesh_Edge = 1;
 
     NeededEntityType entity_rank(stk_mesh_Edge, 1u);
     unsigned iSubDimOrd = 0u;
@@ -118,7 +118,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
 
     const stk::mesh::Entity* element_1_p = eMesh.get_bulkData()->get_entity(eMesh.element_rank(), elem_num);
     std::cout << "P["<<p_rank<<"] element_1_p = " << element_1_p << std::endl;
-    EntityRank stk_mesh_Edge = 1;
+    stk::mesh::EntityRank stk_mesh_Edge = 1;
 
     NeededEntityType entity_rank(stk_mesh_Edge, 1u);
     unsigned iSubDimOrd = 0u;
@@ -231,7 +231,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_0)
     std::cout << "P["<<p_rank<<"] element_local = " << element_local << std::endl;
     std::cout << "P["<<p_rank<<"] element_ghost = " << element_ghost << std::endl;
 
-    EntityRank stk_mesh_Edge = 1;
+    stk::mesh::EntityRank stk_mesh_Edge = 1;
 
     stk::mesh::EntityRank needed_entity_rank = stk_mesh_Edge;
     for (unsigned iSubDimOrd = 0; iSubDimOrd < 12; iSubDimOrd++)
@@ -296,7 +296,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1)
 
     // choose edges to be used for new node locations (i.e., this would model a serendipity-like element with only edge Lagrange nodes)
 
-    EntityRank stk_mesh_Edge = 1;
+    stk::mesh::EntityRank stk_mesh_Edge = 1;
     NeededEntityType needed_entity_rank( stk_mesh_Edge, 1u);
     std::vector<NeededEntityType> needed_entity_ranks(1, needed_entity_rank);
 
@@ -342,7 +342,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1)
       iSubDimOrd = 0u;
     }
     NodeIdsOnSubDimEntityType nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, iSubDimOrd);
-    Entity*  node   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE[0]->identifier());
+    stk::mesh::Entity*  node   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE[0]->identifier());
 
     // should be the same node on each proc
     std::cout << "P[" << p_rank << "] nodeId = " << nodeIds_onSE << " node= " << node << std::endl;
@@ -419,7 +419,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
     std::cout << "P["<<p_rank<<"] element_ghost = " << element_ghost << std::endl;
 
     // choose edges to be used for new node locations (i.e., this would model a serendipity-like element with only edge Lagrange nodes)
-    EntityRank stk_mesh_Edge = 1;
+    stk::mesh::EntityRank stk_mesh_Edge = 1;
     NeededEntityType needed_entity_rank( stk_mesh_Edge, 1u);
     std::vector<NeededEntityType> needed_entity_ranks(1, needed_entity_rank);
 
@@ -465,7 +465,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
       iSubDimOrd = 0u;
     }
     NodeIdsOnSubDimEntityType nodeIds_onSE_0 = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, iSubDimOrd);
-    Entity*  node_0   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_0[0]->identifier());
+    stk::mesh::Entity*  node_0   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_0[0]->identifier());
 
     // should be the same node on each proc
     std::cout << "P[" << p_rank << "] nodeId_0 = " << nodeIds_onSE_0 << " node_0= " << node_0 << std::endl;
@@ -486,7 +486,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
       nodeRegistry.makeCentroidCoords(element_local, needed_entity_rank.first, isd);
       NodeIdsOnSubDimEntityType nodeIds_onSE_0_loc = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, isd);
 
-      Entity*  node   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_0_loc[0]->identifier());
+      stk::mesh::Entity*  node   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_0_loc[0]->identifier());
 
       unsigned edge_ord = 8u + isd;
       //unsigned n_edge_ord = cell_topo_data->edge[isd].topology->node_count;
@@ -615,7 +615,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
       iSubDimOrd = 4u;
     }
     NodeIdsOnSubDimEntityType nodeIds_onSE_0 = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd);
-    Entity*  node_0   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_0[0]->identifier());
+    stk::mesh::Entity*  node_0   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_0[0]->identifier());
 
     // should be the same node on each proc
     std::cout << "P[" << p_rank << "] nodeId_0 = " << nodeIds_onSE_0 << " node_0= " << node_0 << std::endl;
@@ -632,7 +632,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
     if (p_rank == 0)
     {
       NodeIdsOnSubDimEntityType nodeIds_onSE_1 = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[1].first, 0u);
-      Entity*  node_1   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_1[0]->identifier());
+      stk::mesh::Entity*  node_1   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_1[0]->identifier());
       std::cout << "P[" << p_rank << "] nodeId_1 = " << nodeIds_onSE_1 << " node_1= " << node_1 << std::endl;
       if (p_size == 2)
       {

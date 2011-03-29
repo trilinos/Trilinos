@@ -36,7 +36,7 @@ namespace stk
     {
     public:
 
-      IntegratedOp(Function& integrand,  TurboOption turboOpt=TURBO_NONE, FieldBase *field=0) :
+      IntegratedOp(Function& integrand,  TurboOption turboOpt=TURBO_NONE, mesh::FieldBase *field=0) :
         m_nDOFs(1), m_accumulation_buffer(), m_count_elems(0), m_is_field(false), m_integrand(integrand), m_turboOpt(turboOpt)
       {
         if (typeid(integrand) == typeid(FieldFunction))

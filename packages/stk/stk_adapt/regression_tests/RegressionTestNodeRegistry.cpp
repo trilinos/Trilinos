@@ -187,7 +187,7 @@ namespace stk
                       //if (!nodeIds_onSE[0])
                       //  throw std::logic_error("nodeRegistry_regr.parallel_2 logic err3");
 
-                      Entity*  node   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE.m_entity_id_vector[0]);
+                      stk::mesh::Entity*  node   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE.m_entity_id_vector[0]);
 
                       EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 42u);
                       // should be the same node on each proc
@@ -360,7 +360,7 @@ namespace stk
                       NodeIdsOnSubDimEntityType nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd);
                       if (!nodeIds_onSE[0])
                         throw std::logic_error("nodeRegistry_regr.parallel_2 logic err1");
-                      Entity*  node   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE[0]->identifier());
+                      stk::mesh::Entity*  node   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE[0]->identifier());
 
                       //EXPECT_EQ(nodeId, 42u);
                       // should be the same node on each proc
@@ -375,7 +375,7 @@ namespace stk
                           if (!nodeIds_onSE_1[0])
                             throw std::logic_error("nodeRegistry_regr.parallel_2 logic err2");
 
-                          Entity*  node_1   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_1[0]->identifier());
+                          stk::mesh::Entity*  node_1   = eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_1[0]->identifier());
 
                           std::cout << "P[" << p_rank << "] nodeId_1 = " << nodeIds_onSE_1 << " node_1= " << node_1 << std::endl;
 

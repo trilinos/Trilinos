@@ -71,7 +71,7 @@ STKUNIT_UNIT_TEST(mesh_colorer, test1)
   percept::PerceptMesh eMesh(3);
   eMesh.newMesh(percept::PerceptMesh::GMeshSpec(config_mesh));
   int vectorDimension = 0;
-  FieldBase *element_color_field = eMesh.addField("element_colors", mesh::Element, vectorDimension);
+  mesh::FieldBase *element_color_field = eMesh.addField("element_colors", mesh::Element, vectorDimension);
   eMesh.commit();
 
   std::vector<mesh::EntityRank> mer;  mer.push_back(stk::mesh::Element);

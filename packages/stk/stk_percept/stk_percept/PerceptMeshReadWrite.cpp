@@ -113,7 +113,7 @@ namespace stk {
 
             //stk::mesh::fem::set_cell_topology(part, cell_topology);
 
-            stk::mesh::fem::set_cell_topology(meta, part,  fem::CellTopology(cell_topology) );
+            stk::mesh::fem::set_cell_topology(meta, part,  mesh::fem::CellTopology(cell_topology) );
 
           } else {
             /// \todo IMPLEMENT handle cell_topolgy mapping error...
@@ -381,14 +381,14 @@ namespace stk {
         unsigned nparts = parts.size();
         if (printInfo) std::cout << "info>    Number of parts = " << nparts << std::endl;
 
-        const FieldVector & fields =  metaData.get_fields();
+        const mesh::FieldVector & fields =  metaData.get_fields();
         unsigned nfields = fields.size();
         if (printInfo)
           {
             std::cout << "info>    Number of fields = " << fields.size() << std::endl;
             for (unsigned ifld = 0; ifld < nfields; ifld++)
               {
-                FieldBase *field = fields[ifld];
+                mesh::FieldBase *field = fields[ifld];
                 if (printInfo) std::cout << "info>    Field[" << ifld << "]= " << field->name() << " rank= " << field->rank() << std::endl;
                 if (printInfo) std::cout << "info>    " << *field << std::endl;
 
@@ -459,16 +459,16 @@ namespace stk {
 
             size_t element_count = elem_ids.size();
             int nodes_per_elem = cell_topo->node_count ;
-            std::vector<EntityId> e_connectivity(nodes_per_elem) ;
+            std::vector<mesh::EntityId> e_connectivity(nodes_per_elem) ;
 
             std::vector<stk::mesh::Entity*> elements(element_count);
             for(size_t i=0; i<element_count; ++i) {
               int *conn = &connectivity[i*nodes_per_elem];
               for (int j=0; j < nodes_per_elem; j++)
                 {
-                  e_connectivity[j] = (EntityId)conn[j];
+                  e_connectivity[j] = (mesh::EntityId)conn[j];
                 }
-              EntityId* e_conn = &(e_connectivity[0]);
+              mesh::EntityId* e_conn = &(e_connectivity[0]);
               elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], e_conn);
             }
 

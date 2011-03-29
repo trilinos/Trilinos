@@ -18,7 +18,7 @@
 #include "Edge.hpp"
 #include "ShardsInterfaceTable.hpp"
 
-using namespace stk::mesh;
+//using namespace stk::mesh;
 
 namespace stk
 {
