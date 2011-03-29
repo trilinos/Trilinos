@@ -66,7 +66,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testCartesian)
 
   std::string to_str = cartesian_tag.to_string(3 /*size*/, 1 /*idx*/);
   std::string expected_str("y");
-  STKUNIT_ASSERT_EQUAL( to_str, expected_str);
+  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true);
 
   //should throw if we supply a size < 3:
   STKUNIT_ASSERT_THROW( cartesian_tag.to_string(2 /*size*/, 1 /*idx*/),
@@ -89,7 +89,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testCylindrical)
 
   std::string to_str = cylindrical_tag.to_string(3 /*size*/, 1 /*idx*/);
   std::string expected_str("a");
-  STKUNIT_ASSERT_EQUAL( to_str, expected_str );
+  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true );
 
   //should throw if we supply a size < 3:
   STKUNIT_ASSERT_THROW( cylindrical_tag.to_string(2 /*size*/, 1 /*idx*/),
@@ -112,7 +112,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFullTensor)
 
   std::string to_str = fulltensor_tag.to_string(9 /*size*/, 1 /*idx*/);
   std::string expected_str("yx");
-  STKUNIT_ASSERT_EQUAL( to_str, expected_str );
+  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true );
 
   //should throw if we supply a size < 9:
   STKUNIT_ASSERT_THROW( fulltensor_tag.to_string(2 /*size*/, 1 /*idx*/),
@@ -136,7 +136,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testSymmetricTensor)
 
   std::string to_str = symmetrictensor_tag.to_string(9 /*size*/, 1 /*idx*/);
   std::string expected_str("yx");
-  STKUNIT_ASSERT_EQUAL( to_str, expected_str);
+  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true);
 
   //should throw if we supply a size < 9:
   STKUNIT_ASSERT_THROW( symmetrictensor_tag.to_string(2 /*size*/, 1 /*idx*/),

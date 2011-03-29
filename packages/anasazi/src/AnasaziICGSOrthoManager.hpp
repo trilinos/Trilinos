@@ -425,7 +425,7 @@ namespace Anasazi {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
-    innerProdMat(X,X,xTx,MX,MX);
+    MatOrthoManager<ScalarType,MV,OP>::innerProdMat(X,X,xTx,MX,MX);
     for (int i=0; i<rank; i++) {
       xTx(i,i) -= ONE;
     }
@@ -442,7 +442,7 @@ namespace Anasazi {
     int r1 = MVT::GetNumberVecs(X1);
     int r2  = MVT::GetNumberVecs(X2);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(r1,r2);
-    innerProdMat(X1,X2,xTx,MX1,MX2);
+    MatOrthoManager<ScalarType,MV,OP>::innerProdMat(X1,X2,xTx,MX1,MX2);
     return xTx.normFrobenius();
   }
 
@@ -769,7 +769,7 @@ namespace Anasazi {
         *out << "Computing YMX[" << i << "] and its Cholesky factorization...\n";
 #endif
         YMX[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xyc[i],xyc[i]) );
-        innerProdMat(*Y[i],*X[i],*YMX[i],MY[i],MX[i]);
+        MatOrthoManager<ScalarType,MV,OP>::innerProdMat(*Y[i],*X[i],*YMX[i],MY[i],MX[i]);
 #ifdef ANASAZI_ICGS_DEBUG
         // YMX should be symmetric positive definite
         // the cholesky will check the positive definiteness, but it looks only at the upper half
@@ -798,7 +798,7 @@ namespace Anasazi {
     // Compute the initial Op-norms
 #ifdef ANASAZI_ICGS_DEBUG
     std::vector<MagnitudeType> oldNorms(sc);
-    normMat(S,oldNorms,MS);
+    MatOrthoManager<ScalarType,MV,OP>::normMat(S,oldNorms,MS);
     *out << "oldNorms = { ";
     std::copy(oldNorms.begin(), oldNorms.end(), std::ostream_iterator<MagnitudeType>(*out, " "));
     *out << "}\n";
@@ -820,7 +820,7 @@ namespace Anasazi {
       // Define the product Y[i]'*Op*S
       for (int i=0; i<numxy; i++) {
         // Compute Y[i]'*M*S
-        innerProdMat(*Y[i],S,Ccur[i],MY[i],MS);
+        MatOrthoManager<ScalarType,MV,OP>::innerProdMat(*Y[i],S,Ccur[i],MY[i],MS);
         if (isBiortho == false) {
           // C[i] = inv(YMX[i])*(Y[i]'*M*S)
           int info;
@@ -859,7 +859,7 @@ namespace Anasazi {
       // Compute new Op-norms
 #ifdef ANASAZI_ICGS_DEBUG
       std::vector<MagnitudeType> newNorms(sc);
-      normMat(S,newNorms,MS);
+      MatOrthoManager<ScalarType,MV,OP>::normMat(S,newNorms,MS);
       *out << "newNorms = { ";
       std::copy(newNorms.begin(), newNorms.end(), std::ostream_iterator<MagnitudeType>(*out, " "));
       *out << "}\n";
@@ -1335,7 +1335,7 @@ namespace Anasazi {
         // Save old MXj vector and compute Op-norm
         //
         Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
-        normMat(*Xj,origNorm,MXj);
+        MatOrthoManager<ScalarType,MV,OP>::normMat(*Xj,origNorm,MXj);
 #ifdef ANASAZI_ICGS_DEBUG
         *out << "origNorm = " << origNorm[0] << "\n";
 #endif
@@ -1344,7 +1344,7 @@ namespace Anasazi {
           // Apply the first step of Gram-Schmidt
 
           // product <- prevX^T MXj
-          innerProdMat(*prevX,*Xj,product,Teuchos::null,MXj);
+          MatOrthoManager<ScalarType,MV,OP>::innerProdMat(*prevX,*Xj,product,Teuchos::null,MXj);
 
           // Xj <- Xj - prevX prevX^T MXj   
           //     = Xj - prevX product
@@ -1365,7 +1365,7 @@ namespace Anasazi {
           }
 
           // Compute new Op-norm
-          normMat(*Xj,newNorm,MXj);
+          MatOrthoManager<ScalarType,MV,OP>::normMat(*Xj,newNorm,MXj);
           MagnitudeType product_norm = product.normOne();
           
 #ifdef ANASAZI_ICGS_DEBUG
@@ -1386,7 +1386,7 @@ namespace Anasazi {
             // Apply the second step of Gram-Schmidt
             // This is the same as above
             Teuchos::SerialDenseMatrix<int,ScalarType> P2(numX,1);
-            innerProdMat(*prevX,*Xj,P2,Teuchos::null,MXj);
+            MatOrthoManager<ScalarType,MV,OP>::innerProdMat(*prevX,*Xj,P2,Teuchos::null,MXj);
             product += P2;
 #ifdef ANASAZI_ICGS_DEBUG
             *out << "Orthogonalizing X[" << j << "]...\n";
@@ -1399,7 +1399,7 @@ namespace Anasazi {
               MVT::MvTimesMatAddMv( -ONE, *prevMX, P2, ONE, *MXj );
             }
             // Compute new Op-norms
-            normMat(*Xj,newNorm2,MXj);
+            MatOrthoManager<ScalarType,MV,OP>::normMat(*Xj,newNorm2,MXj);
             product_norm = P2.normOne();
 #ifdef ANASAZI_ICGS_DEBUG
             *out << "newNorm2 = " << newNorm2[0] << "\n";
@@ -1437,7 +1437,7 @@ namespace Anasazi {
         }
 
         // Check if Xj has any directional information left after the orthogonalization.
-        normMat(*Xj,newNorm,MXj);
+        MatOrthoManager<ScalarType,MV,OP>::normMat(*Xj,newNorm,MXj);
         if ( newNorm[0] != ZERO && newNorm[0] > SCT::sfmin() ) {
 #ifdef ANASAZI_ICGS_DEBUG
           *out << "Normalizing X[" << j << "], norm(X[" << j << "]) = " << newNorm[0] << "\n";

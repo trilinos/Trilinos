@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
   (void)mpiFinalize;
 #endif
   //
+  using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
   //

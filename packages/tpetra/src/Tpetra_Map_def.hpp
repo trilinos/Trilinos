@@ -871,19 +871,6 @@ Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numE
   return createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements,localNumElements,comm,node);
 }
 
-//! Returns true if \c map is identical to this Map. Implemented in isSameAs().
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2) {
-  return map1.isSameAs(map2);
-}
-
-//! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2) {
-  return !map1.isSameAs(map2);
-}
-
-
 //
 // Explicit instantiation macro
 //

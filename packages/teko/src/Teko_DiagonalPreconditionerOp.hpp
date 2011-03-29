@@ -54,12 +54,6 @@ class EpetraExt_PointToBlockDiagPermute;
 
 namespace Teko {
 
-/** \brief A virtual class that simplifies the construction
-  *        of custom operators. 
-  *
-  * A virtual class that simplifies the construction
-  * of custom operators. 
-  */
 class DiagonalPreconditionerOp :public ImplicitLinearOp  {
 public:
 
@@ -90,26 +84,12 @@ public:
    virtual void describe(Teuchos::FancyOStream &out_arg,
                          const Teuchos::EVerbosityLevel verbLevel) const;
   
-   EpetraExt_PointToBlockDiagPermute* get_BDP() const {return &*BDP_;} 
+   Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> get_BDP() const {return BDP_;} 
   
 private:
-  //! Functions required by Thyra::LinearOpBase 
-  //@{ 
-  virtual bool opSupportedImpl(const Thyra::EOpTransp M_trans) const;
-  
-  virtual void applyImpl(
-    const Thyra::EOpTransp M_trans,
-    const Thyra::MultiVectorBase<double> & x,
-    const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & y,
-    const double alpha,
-    const double beta
-    ) const;
-  //@}
 
-  
-
-  Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP_;
-  const VectorSpace range_, domain_;
+   Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP_;
+   const VectorSpace range_, domain_;
 };
 
 } // end namespace Teko

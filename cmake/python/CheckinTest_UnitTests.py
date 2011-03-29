@@ -672,7 +672,9 @@ class test_checkin_test(unittest.TestCase):
          +"Enabled all Forward Packages\n" \
          ),
       ("MPI_DEBUG/do-configure.base",
-       "\-DTPL_ENABLE_MPI:BOOL=ON\n" \
+       "\-DTPL_ENABLE_Pthread:BOOL=OFF\n" \
+       +"\-DTPL_ENABLE_BinUtils:BOOL=OFF\n" \
+       +"\-DTPL_ENABLE_MPI:BOOL=ON\n" \
        +"\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
        +"\-DCMAKE_BUILD_TYPE:STRING=RELEASE\n" \
        +"\-DTrilinos_ENABLE_DEBUG:BOOL=ON\n" \
@@ -684,7 +686,9 @@ class test_checkin_test(unittest.TestCase):
        +"\-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON\n" \
        +"\-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON\n"),
       ("SERIAL_RELEASE/do-configure.base",
-       "\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
+       "\-DTPL_ENABLE_Pthread:BOOL=OFF\n" \
+       +"\-DTPL_ENABLE_BinUtils:BOOL=OFF\n" \
+       +"\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
        +"\-DCMAKE_BUILD_TYPE:STRING=RELEASE\n" \
        +"\-DTrilinos_ENABLE_DEBUG:BOOL=OFF\n" \
        +"\-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF\n" \

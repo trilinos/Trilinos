@@ -1382,8 +1382,16 @@ def checkinTest(inOptions):
 
   buildTestCaseList = []
 
+  # Must hard turn off tentatively enabled TPLs in order to make all machines
+  # more uniform.
+  commonConfigOptions = [
+    "-DTPL_ENABLE_Pthread:BOOL=OFF",
+    "-DTPL_ENABLE_BinUtils:BOOL=OFF"
+    ]
+
   setBuildTestCaseInList( buildTestCaseList,
     "MPI_DEBUG", inOptions.withMpiDebug, True,
+    commonConfigOptions +
     [
       "-DTPL_ENABLE_MPI:BOOL=ON",
       "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
@@ -1397,6 +1405,7 @@ def checkinTest(inOptions):
 
   setBuildTestCaseInList( buildTestCaseList,
     "SERIAL_RELEASE", inOptions.withSerialRelease, True,
+    commonConfigOptions +
     [
       "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
       "-DTrilinos_ENABLE_DEBUG:BOOL=OFF",

@@ -61,12 +61,12 @@ namespace Teko {
 DiagonalPreconditionerOp::DiagonalPreconditionerOp(Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP, const VectorSpace range, const VectorSpace domain):
   BDP_(BDP),
   range_(range),
-  domain_(domain){}
-
+  domain_(domain)
+{}
 
 void DiagonalPreconditionerOp::implicitApply(const MultiVector & x, MultiVector & y,
-					      const double alpha, const double beta) const{
-
+					      const double alpha, const double beta) const
+{
   // Get the Multivectors into Epetra land
   // NTS: Thyra inexplicably wants maps, even when they are completely unecessary.
   const Epetra_Map & rangemap_=BDP_->OperatorRangeMap();
@@ -90,39 +90,7 @@ void DiagonalPreconditionerOp::implicitApply(const MultiVector & x, MultiVector 
   }
 }
 
-bool DiagonalPreconditionerOp::opSupportedImpl(const Thyra::EOpTransp M_trans) const
-{
-  return (M_trans == Thyra::NOTRANS);
-}
-
-void DiagonalPreconditionerOp::applyImpl(
-  const Thyra::EOpTransp M_trans,
-  const Thyra::MultiVectorBase<double> & x,
-  const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & y,
-  const double alpha,
-  const double beta
-  ) const
-{
-   TEST_FOR_EXCEPTION(M_trans!=Thyra::NOTRANS, std::runtime_error,
-     "Linear operators of inherited type ImplicitLinearOp "
-     "cannot handle conjugation (yet!)");
-
-   // cast source vector
-   RCP<const MultiVectorBase<double> > src =
-     rcp_dynamic_cast<const MultiVectorBase<double> >(rcpFromRef(x));
-   MultiVector srcX = rcp_const_cast<MultiVectorBase<double> >(src);
-
-   // cast destination vector
-   MultiVector destY =
-     Teuchos::rcp_dynamic_cast<MultiVectorBase<double> >(rcpFromPtr(y));
-
-   // call apply
-   implicitApply(srcX,destY,alpha,beta);
-}
-
-
-
- void DiagonalPreconditionerOp::describe(Teuchos::FancyOStream & out_arg,
+void DiagonalPreconditionerOp::describe(Teuchos::FancyOStream & out_arg,
                                       const Teuchos::EVerbosityLevel verbLevel) const
 {
   using Teuchos::OSTab;
@@ -144,4 +112,3 @@ void DiagonalPreconditionerOp::applyImpl(
 }
 
 } // end namespace Teko
-

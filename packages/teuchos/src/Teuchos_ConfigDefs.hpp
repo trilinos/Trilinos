@@ -49,9 +49,12 @@
 #  define TEUCHOS_NO_ZERO_ITERATOR_CONVERSION
 #endif
 
-#if defined(_AIX) || defined(__IBMC__)
+#if defined(__IBMC__) || defined(__IBMCPP__)
 #  ifndef TEMPLATE_FRIENDS_NOT_SUPPORTED
 #    define TEMPLATE_FRIENDS_NOT_SUPPORTED
+#  endif
+#  ifndef TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
+#    define TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
 #  endif
 #endif
 
