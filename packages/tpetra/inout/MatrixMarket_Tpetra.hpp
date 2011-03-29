@@ -1251,6 +1251,7 @@ namespace Tpetra {
 		  }
 	      } // if (extraDebug && debug)
 
+#if 0
 	    // Casting a positive signed integer (global_ordinal_type)
 	    // to an unsigned integer of no fewer bits (global_size_t)
 	    // shouldn't overflow.
@@ -1264,6 +1265,7 @@ namespace Tpetra {
 			       << dims[1] << ".  We have already called "
 			       "fillComplete() on the CrsMatrix.  Please report "
 			       "this bug to the Tpetra developers.");
+#endif // 0
 	  } // if (callFillComplete)
 
 	return pMatrix;
