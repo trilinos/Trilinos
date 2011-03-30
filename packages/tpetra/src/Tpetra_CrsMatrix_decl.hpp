@@ -244,7 +244,7 @@ namespace Tpetra {
 
           \post <tt>isFillActive() == false<tt>
           \post <tt>isFillComplete() == true<tt>
-          \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
+          \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
        */ 
       void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage);
 
@@ -259,7 +259,7 @@ namespace Tpetra {
 
           \post <tt>isFillActive() == false<tt>
           \post <tt>isFillComplete() == true<tt>
-          \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
+          \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
        */
       void fillComplete(OptimizeOption os = DoOptimizeStorage);
 
