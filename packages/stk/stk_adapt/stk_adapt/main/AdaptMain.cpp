@@ -362,9 +362,9 @@ namespace stk {
 
         //unsigned p_size = eMesh.getParallelSize();
         
-        Util::setRank(eMesh.getRank());
-
         eMesh.open(input_mesh);
+
+        Util::setRank(eMesh.getRank());
 
         Teuchos::RCP<UniformRefinerPatternBase> pattern;
 

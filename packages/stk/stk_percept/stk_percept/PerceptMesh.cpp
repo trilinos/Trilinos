@@ -105,7 +105,8 @@ namespace stk {
           init( m_comm);
         }
 
-      const unsigned p_rank = parallel_machine_rank( get_bulkData()->parallel() );
+      //const unsigned p_rank = parallel_machine_rank( get_bulkData()->parallel() );
+      const unsigned p_rank = parallel_machine_rank( m_comm );
 
       if (p_rank == 0)  std::cout << "PerceptMesh:: opening "<< in_filename << std::endl;
       read_metaDataNoCommit(in_filename);
@@ -988,7 +989,8 @@ namespace stk {
       //                   << " Use Case: Subsetting with df and attribute field input/output          \n"
       //                   << "========================================================================\n";
 
-      const stk::ParallelMachine& comm = m_bulkData->parallel();
+      //const stk::ParallelMachine& comm = m_bulkData->parallel();
+      const stk::ParallelMachine& comm = m_comm;
 
       std::string dbtype("exodusII");
       Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(dbtype, in_filename, Ioss::READ_MODEL,
