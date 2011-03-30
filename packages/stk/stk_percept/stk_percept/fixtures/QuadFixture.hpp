@@ -75,12 +75,6 @@ namespace stk {
         {
           enum { SpatialDim = 2 };
 
-          std::cout << "tmp meta_data.node_rank()= " << meta_data.node_rank() << std::endl;
-          std::cout << "tmp meta_data.edge_rank()= " << meta_data.edge_rank() << std::endl;
-          std::cout << "tmp meta_data.face_rank()= " << meta_data.face_rank() << std::endl;
-          std::cout << "tmp meta_data.element_rank()= " << meta_data.element_rank() << std::endl;
-          //exit(1);
-
           // Set topology of the element block part
           //stk::mesh::fem::set_cell_topology(meta_data, quad_part,  fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
           stk::mesh::fem::set_cell_topology<QuadOrTriTopo>(meta_data, quad_part);

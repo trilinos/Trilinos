@@ -42,6 +42,25 @@ namespace stk {
     //========================================================================================================================
     /// high-level interface
 
+    PerceptMesh::PerceptMesh( stk::ParallelMachine comm) :
+      m_metaData(NULL),
+      m_bulkData(NULL),
+      m_fixture(NULL),
+      m_iossRegion(NULL),
+      m_coordinatesField(NULL),
+      m_spatialDim(0),
+      m_ownData(false),
+      m_isCommitted(false),
+      m_isOpen(false),
+      m_isInitialized(false),
+      m_isAdopted(false),
+      m_dontCheckState(false),
+      m_filename(),
+      m_comm(comm)
+    {
+      init( m_comm);
+    }
+
     PerceptMesh::PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm) :
       m_metaData(NULL),
       m_bulkData(NULL),
@@ -541,17 +560,34 @@ namespace stk {
     }
 
     void PerceptMesh::
+    setSpatialDim( int sd )
+    {
+      m_spatialDim = sd;
+    }
+
+    void PerceptMesh::
     init( stk::ParallelMachine comm)
     {
+//       if (m_spatialDim ==0)
+//         {
+//           // postpone init until we know the spatial dimension
+//           return;
+//         }
       m_isInitialized = true;
       m_comm          = comm;
       m_ownData       = true;
 
-      m_metaData   = new stk::mesh::fem::FEMMetaData( m_spatialDim, stk::mesh::fem::entity_rank_names(m_spatialDim) );
-      //m_metaData      = & stk::mesh::fem::FEMMetaData::get_meta_data(*m_fem_meta_data);
-      std::cout << "tmp m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
+      if (m_spatialDim)
+        {
+          m_metaData   = new stk::mesh::fem::FEMMetaData( m_spatialDim, stk::mesh::fem::entity_rank_names(m_spatialDim) );
+          m_bulkData   = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
+        }
+      else
+        {
+          m_metaData   = new stk::mesh::fem::FEMMetaData( );
+        }
+      //std::cout << "tmp m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
 
-      m_bulkData      = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
       m_fixture       = 0;
       m_iossRegion    = 0;
       m_isCommitted   = false;
@@ -576,7 +612,7 @@ namespace stk {
           delete m_fixture;
           m_fixture = 0;
         }
-      m_spatialDim = 0;
+      //m_spatialDim = 0;
       m_coordinatesField = NULL;
     }
 
@@ -1014,8 +1050,18 @@ namespace stk {
       stk::mesh::fem::FEMMetaData& meta_data = *m_metaData;
       std::cout << "tmp1 m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
 
-      process_read_elementblocks_meta(in_region, meta_data);
+#if 0
+       process_read_elementblocks_meta(in_region, meta_data);
+       process_read_nodeblocks_meta(in_region,    meta_data, m_spatialDim);
+#else
+      bool meta_is_init = meta_data.is_FEM_initialized();
       process_read_nodeblocks_meta(in_region,    meta_data, m_spatialDim);
+      process_read_elementblocks_meta(in_region, meta_data);
+      if (!meta_is_init)
+        {
+          m_bulkData   = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , m_comm );
+        }
+#endif
       process_read_facesets_meta(in_region,      meta_data);
       process_read_edgesets_meta(in_region,      meta_data);
       process_read_nodesets_meta(in_region,      meta_data);

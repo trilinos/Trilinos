@@ -161,6 +161,12 @@ namespace stk {
         assert(nb->field_exists("mesh_model_coordinates"));
         Ioss::Field coordinates = nb->get_field("mesh_model_coordinates");
         spatial_dim = coordinates.transformed_storage()->component_count();
+#if 1
+        if (!meta.is_FEM_initialized())
+          {
+            meta.FEM_initialize(spatial_dim);
+          }
+#endif
         //s_spatial_dim = spatial_dim;
         //std::cout << "PerceptMeshReadWrite::process_read_nodeblocks_meta: spatial_dim= " << spatial_dim << std::endl;
 

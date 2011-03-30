@@ -99,6 +99,7 @@ namespace stk {
 
       // ctor constructor
       /// Create a Mesh object that owns its constituent FEMMetaData and BulkData (which are created by this object)
+      PerceptMesh( stk::ParallelMachine comm =  MPI_COMM_WORLD );
       PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm =  MPI_COMM_WORLD );
 
       /// reads and commits mesh, editing disabled
@@ -162,8 +163,11 @@ namespace stk {
       //PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
 
       ~PerceptMesh() ;
-      void init ( stk::ParallelMachine comm);
-      void destroy();
+      void init ( stk::ParallelMachine comm  =  MPI_COMM_WORLD );      // FIXME - make private
+      void destroy();       // FIXME - make private
+
+      // allow setting spatial dim after creation (for compatability with new FEMMetaData)
+      void setSpatialDim(int sd);
 
       /// reads the given file into a temporary model and prints info about it
       void dump(const std::string& file="");

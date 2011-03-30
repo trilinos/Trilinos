@@ -75,6 +75,52 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+#if 0
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, biplane_refine)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced?
+
+        if (p_size <= 1)
+          {
+            // start_demo_biplane_refine
+            std::string input_mesh = "./input_files/salinas/biplane.e";
+
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh(3);
+            eMesh.open(input_mesh);
+
+            URP_Heterogeneous_3D break_pattern(eMesh);
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.commit();
+
+            eMesh.printInfo("biplane", 2);
+            eMesh.saveAs("./output_files/biplane_0.e");
+
+            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            //breaker.setRemoveOldElements(false);
+            breaker.setIgnoreSideSets(false);
+            breaker.doBreak();
+
+            //eMesh.printInfo("biplane", 2);
+            eMesh.saveAs("./output_files/biplane_1.e");
+
+          }
+      }
+#endif
+
       STKUNIT_UNIT_TEST(regr_uniformRefiner, beam_enrich)
       {
         EXCEPTWATCH;
@@ -2362,6 +2408,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+#if 0
 
       STKUNIT_UNIT_TEST(regr_uniformRefiner, biplane_refine)
       {
@@ -2406,6 +2453,7 @@ namespace stk
           }
       }
 
+#endif
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================

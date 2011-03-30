@@ -358,7 +358,7 @@ namespace stk {
             RunEnvironment::doLoadBalance(run_environment.m_comm, input_mesh);
           }
 
-        percept::PerceptMesh eMesh(3);  // FIXME
+        percept::PerceptMesh eMesh;  // FIXME
 
         //unsigned p_size = eMesh.getParallelSize();
         
