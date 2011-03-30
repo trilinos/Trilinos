@@ -18,6 +18,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
@@ -603,7 +604,11 @@ namespace stk {
       void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
 	const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-	stk::io::default_part_processing(elem_blocks, meta, element_rank(meta));
+        stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
+        if( fem_meta )
+          stk::io::default_part_processing(elem_blocks, meta, fem_meta->element_rank());
+        else
+          stk::io::default_part_processing(elem_blocks, meta, element_rank(meta));
       }
 
       void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
@@ -613,6 +618,8 @@ namespace stk {
 	for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
 	    it != elem_blocks.end(); ++it) {
 	  Ioss::ElementBlock *entity = *it;
+
+          stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(bulk.mesh_meta_data().get_attribute<stk::mesh::fem::FEMMetaData>());
 
 	  if (stk::io::include_entity(entity)) {
 	    const std::string &name = entity->name();
@@ -641,7 +648,15 @@ namespace stk {
 	      /// \todo REFACTOR cast from int to unsigned is unsafe and ugly.
 	      /// change function to take int[] argument.
               int *conn = &connectivity[i*nodes_per_elem];
-	      elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
+              if( fem_meta )
+              {
+                std::vector<stk::mesh::EntityId> id_vec;
+                for( int k = 0; k < nodes_per_elem; ++k )
+                  id_vec.push_back(conn[k]);
+                elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
+              }
+              else
+                elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
 	    }
 
             Ioss::NameList names;

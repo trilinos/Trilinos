@@ -356,12 +356,18 @@ namespace stk {
 
     stk::mesh::EntityRank element_rank(const stk::mesh::MetaData &meta)
     {
+      stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
+      if( fem_meta )
+        return fem_meta->element_rank();
+      else
+      {
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return stk::mesh::Element;
+        return stk::mesh::Element;
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
-      return stk::mesh::fem::element_rank(fem);
+        stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
+        return stk::mesh::fem::element_rank(fem);
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      }
     }
 
     stk::mesh::EntityRank side_rank(const stk::mesh::MetaData &meta)
@@ -726,8 +732,14 @@ namespace stk {
 				  stk::mesh::EntityRank type)
     {
       if (include_entity(entity)) {
-	stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
-	stk::io::put_io_part_attribute(part, entity);
+        stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
+        //const stk::mesh::fem::FEMMetaData * fem_meta = meta.get_attribute<stk::mesh::fem::FEMMetaData>();
+        stk::mesh::Part * part = NULL;
+        if( fem_meta )
+          part = &fem_meta->declare_part(entity->name(), type);
+        else
+          part = &stk::mesh::declare_part(meta, entity->name(), type);
+	stk::io::put_io_part_attribute(*part, entity);
 
 	const Ioss::ElementTopology *topology = entity->topology();
 	const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
@@ -736,12 +748,17 @@ namespace stk {
 	/// returns a valid topology if the application has registered
         /// that it can handle that specific topology.
 
-	if (cell_topology != NULL) {
-	  stk::io::set_cell_topology(part, cell_topology);
-	} else {
+        if (cell_topology != NULL) {
+          if( fem_meta )
+          {
+            const stk::mesh::fem::CellTopology cell_topo(cell_topology);
+            stk::mesh::fem::set_cell_topology(*fem_meta, *part, cell_topo);
+          }
+          stk::io::set_cell_topology(*part, cell_topology);
+        } else {
 	  /// \todo IMPLEMENT handle cell_topolgy mapping error...
 	}
-	stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE, part, type);
+	stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE, *part, type);
       }
     }
 
