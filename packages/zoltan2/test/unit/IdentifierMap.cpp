@@ -33,10 +33,10 @@ typedef long gnoType;
 typedef int  lnoType;
 
 template< typename T1, typename T2>
- void show_result(std::string &msg, std::vector<T1> &v1, std::vector<T2> &v2)
+ void show_result(std::string msg, std::vector<T1> &v1, std::vector<T2> &v2)
 {
  std::cout << msg << std::endl;
- for (int i=0; i < v1.size(); i++){
+ for (size_t i=0; i < v1.size(); i++){
     std::cout << v1[i] << "    " << v2[i] << std::endl;
  }
 }
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP< std::vector<appLocalId> > lids = 
     Teuchos::rcp(new std::vector<appLocalId>(numLocalObjects));
 
-  appGlobalId base = nobjects * rank;
+  appGlobalId base = nobjects * rank;   // nonconsecutive gids
 
   for (int i=0; i < numLocalObjects; i++){
     (*gids)[i] = base + i;
@@ -69,7 +69,8 @@ int main(int argc, char *argv[])
 
   // Test constructor
 
-  Z2::IdentifierMap<appGlobalId, appLocalId> idmap(comm, gids, lids);
+  Z2::IdentifierMap<appGlobalId, appLocalId, gnoType, lnoType> idmap(
+    comm, gids, lids);
 
   //  Test gnosAreGids() boolean
 
@@ -84,13 +85,14 @@ int main(int argc, char *argv[])
   }
 #endif
 
-  // Test local gno  look up.
+  // Test local gno look up.
 
   std::vector<gnoType> gnos(numLocalObjects);
 
   idmap.gidTranslate(*gids, gnos);    // translate app gids to z2 gnos
 
-  show_result("App GIDs -> Z2 GNOs", *gids, gnos);
+  show_result<appGlobalId, gnoType>(std::string("App GIDs -> Z2 GNOs"), 
+    *gids, gnos);
 
   std::vector<gnoType> gnoQuery(10,0);
 
@@ -98,11 +100,12 @@ int main(int argc, char *argv[])
     gnoQuery.push_back(gnos[i]);
   }
 
-  std::vector<appGlobalId> idsReturned();
+  std::vector<appGlobalId> gidsReturned;
 
-  idmap.gidTranslate(idsReturned, gnoQuery);// translate gnos to gids
+  idmap.gidTranslate(gidsReturned, gnoQuery);// translate gnos to gids
 
-  show_result("Z2 gnos -> App gids", gnoQuery, idsReturned);
+  //show_result<gnoType, appGlobalId>(std::string("Z2 gnos -> App gids"), 
+    //gnoQuery, gidsReturned);
 
   // Test local gno/lid look up.
 
@@ -110,17 +113,20 @@ int main(int argc, char *argv[])
 
   idmap.lidTranslate(*lids, gnos);    // translate app lids to z2 gnos
 
-  show_result("App local IDs -> Z2 GNOs", *lids, gnos);
+  //show_result<appLocalId, gnoType>(std::string("App local IDs -> Z2 GNOs"), 
+    //*lids, gnos);
 
   for (int i=0; i < 20; i+=2){
     gnoQuery[i] = gnos[i];
   }
 
-  idsReturned.resize(0);
+  std::vector<appLocalId> lidsReturned;
   
-  idmap.lidTranslate(idsReturned, gnoQuery);// translate gnos to app lids
+  idmap.lidTranslate(lidsReturned, gnoQuery);// translate gnos to app lids
 
-  show_result("Z2 GNOs -> Application local IDs", gnoQuery, idsReturned);
+  //show_result<gnoType, appGlobalId>(
+   // std::string("Z2 GNOs -> Application local IDs"), 
+    //gnoQuery, lidsReturned);
 
   std::cout << "PASS" << std::endl;
 }
