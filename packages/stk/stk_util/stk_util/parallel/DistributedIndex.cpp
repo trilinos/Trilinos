@@ -11,10 +11,6 @@
 #include <algorithm>
 #include <limits>
 #include <stdint.h>
-#include <iostream>
-
-// for timings
-#include <sys/time.h>
 
 #include <stk_util/environment/ReportHandler.hpp>
 

@@ -38,8 +38,10 @@
 #ifndef STK_UTIL_UTIL_RADIXSORT_HPP
 #define STK_UTIL_UTIL_RADIXSORT_HPP
 
-namespace stk {
-namespace util {
+//
+// Internal implementation
+//
+namespace { // anonymous namespace
 
 // Swap that does not check for self-assignment.
 template< class T >
@@ -52,7 +54,7 @@ inline void swap_impl( T& a, T& b )
 
 // insertion sort similar to STL with no self-assignment
 template <class T>
-void insertion_sort_impl( T* a, size_t a_size )
+inline void insertion_sort_impl( T* a, size_t a_size )
 {
   for ( size_t i = 1; i < a_size; ++i )
   {
@@ -120,20 +122,36 @@ inline void radix_sort_unsigned_impl( T* a, long last, T bitMask, unsigned long 
   }
 }
 
+} // end anonymous namespace
+
+//
+// Public API
+//
+namespace stk {
+namespace util {
+
 /**
  * Sort a contiguous array of unsigned 8-, 16-, 32- or 64-bit integers in place,
- * using the radix sort algorithm.
- *
- * Performance is O(N). Runtime is typically 2-5 times faster than the comparison sort used
- * by the std::sort().
- *
- * Internal storage required is 3*(M+1)*sizeof(long), where M is PowerOfTwoRadix.
+ * using an unstable MSD radix sort algorithm.
+ * <p>
+ * This MSD radix sort algorithm is O(N k/d), where N is the number of items to be sorted,
+ * k, the size of each key, and d, the digit size used by the implementation. Additional
+ * memory used is (k/d 2^d) (k/d recursion levels, 2^d for count array).
+ * </p>
+ * <p>
+ * For comparison, the std::sort algorithm is O(N logN), and uses (log N) additional memory.
+ * The MSD radix sort on unsigned integers typically outperforms the std::sort by using less
+ * than half the CPU time for 64-bit integers.
+ * </p>
+ * <p>
+ * TODO: Also consider the threaded TBB implementation below of the MSD radix sort.
+ * </p>
  *
  * @param a       pointer to the start of a contiguous array of unsigned or signed type
  * @param a_size  length of the array (must be less than MAX_LONG)
  */
 template< class T >
-inline void radix_sort_unsigned( T* a, size_t a_size )
+void radix_sort_unsigned( T* a, size_t a_size )
 {
   const long Threshold                      =  25;  // smaller array sections sorted by insertion sort
   const unsigned long PowerOfTwoRadix       = 256;  // Radix - must be a power of 2
@@ -153,6 +171,10 @@ inline void radix_sort_unsigned( T* a, size_t a_size )
   else
     insertion_sort_impl( a, a_size );
 }
+
+} // namespace util
+} // namespace stk
+
 
 //--------------------------------------
 // PARALLEL RADIX SORT using TBB library
@@ -320,8 +342,6 @@ inline void RadixSortParallel( T* a, unsigned long a_size )
 
 */
 
-} // namespace util
-} // namespace stk
 
 
 #endif /* STK_UTIL_UTIL_RADIXSORT_HPP */
