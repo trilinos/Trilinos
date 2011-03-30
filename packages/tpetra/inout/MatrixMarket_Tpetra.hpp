@@ -258,6 +258,10 @@ namespace Tpetra {
       ///   numEntriesPerRow[k], then values[start .. end-1] are the values
       ///   for row k.  On output, the reference is invalidated to save
       ///   space.
+      ///
+      /// \param debug [in] If true, print copious debugging output to
+      ///   stderr on Rank 0.  This option is unlikely to be useful to
+      ///   anyone but a Tpetra developer debugging this code.
       /// 
       static void
       distribute (ArrayRCP<size_t>& myNumEntriesPerRow,
@@ -268,7 +272,8 @@ namespace Tpetra {
 		  ArrayRCP<size_t>& numEntriesPerRow,
 		  ArrayRCP<size_type>& rowPtr,
 		  ArrayRCP<global_ordinal_type>& colInd,
-		  ArrayRCP<scalar_type>& values)
+		  ArrayRCP<scalar_type>& values,
+		  const bool debug=false)
       {
 	 using Teuchos::arcp;
 	 using Teuchos::ArrayRCP;
@@ -283,8 +288,7 @@ namespace Tpetra {
 	 using std::cerr;
 	 using std::endl;
 
-	 const bool debug = false;
-
+	 const bool extraDebug = false;
 	 comm_ptr pComm = pRowMap->getComm();
 	 const int numProcs = Teuchos::size (*pComm);
 	 const int myRank = Teuchos::rank (*pComm);
@@ -357,12 +361,15 @@ namespace Tpetra {
 	   } // If I am not the root processor
 	 else // I _am_ the root processor
 	   {
+	     if (debug)
+	       cerr << "-- Proc 0: Copying my data from global arrays" << endl;
+
 	     // Proc 0 (the root processor) still needs to (allocate,
 	     // if not done already) and fill its part of the matrix
 	     // (my*).
 	     for (size_type k = 0; k < myNumRows; ++k)
 	       myNumEntriesPerRow[k] = numEntriesPerRow[myRows[k]];
-	     if (false && debug)
+	     if (extraDebug && debug)
 	       {
 		 cerr << "Proc " << Teuchos::rank (*(pRowMap->getComm())) 
 		      << ": myNumEntriesPerRow[0.." << (myNumRows-1) << "] = [";
@@ -379,6 +386,10 @@ namespace Tpetra {
 	       std::accumulate (myNumEntriesPerRow.begin(), 
 				myNumEntriesPerRow.end(), 
 				static_cast<size_t> (0));
+	     if (debug)
+	       cerr << "-- Proc 0: I own " << myNumRows << " rows and " 
+		    << myNumEntries << " entries" << endl;
+
 	     myColInd = arcp<global_ordinal_type> (myNumEntries);
 	     myValues = arcp<scalar_type> (myNumEntries);
 
@@ -394,7 +405,7 @@ namespace Tpetra {
 		 const size_t curNumEntries = myNumEntriesPerRow[k];
 		 const global_ordinal_type myRow = myRows[k];
 		 const size_t curPos = rowPtr[myRow];
-		 if (false && debug)
+		 if (extraDebug && debug)
 		   {
 		     cerr << "k = " << k << ", myRow = " << myRow << ": colInd(" 
 			  << curPos << "," << curNumEntries << "), myColInd(" 
@@ -429,12 +440,18 @@ namespace Tpetra {
 	     // Proc 0 processes each other proc p in turn.
 	     for (int p = 1; p < numProcs; ++p)
 	       {
+		 if (debug)
+		   cerr << "-- Proc 0: Processing proc " << p << endl;
+
 		 size_type theirNumRows = 0;
 		 // Ask Proc p how many rows it has.  If it doesn't have any,
 		 // we can move on to the next proc.  This has to be a
 		 // standard receive so that we can avoid the degenerate case
 		 // of sending zero data.
 		 recvResult = receive (*pComm, p, &theirNumRows);
+		 if (debug)
+		   cerr << "-- Proc 0: Proc " << p << " owns " 
+			<< theirNumRows << " rows" << endl;
 		 if (theirNumRows != 0)
 		   {
 		     // Ask Proc p which rows it owns.  The resulting
@@ -443,10 +460,50 @@ namespace Tpetra {
 		     // themselves indices into the numEntriesPerRow
 		     // array.
 
-		     ArrayRCP<size_type> theirRows = arcp<size_type> (theirNumRows);
+		     ArrayRCP<global_ordinal_type> theirRows = 
+		       arcp<global_ordinal_type> (theirNumRows);
 		     recvResult = receive (*pComm, p, 
 					   static_cast<int> (theirNumRows), 
 					   theirRows.getRawPtr());
+		     // Extra test to make sure that the rows we
+		     // received are all sensible.  This is a good
+		     // idea since we are going to use the global row
+		     // indices we've received to index into the
+		     // numEntriesPerRow array.  Better to catch any
+		     // bugs here and print a sensible error message,
+		     // rather than segfault and print a cryptic error
+		     // message.
+		     {
+		       const global_size_t numRows = 
+			 pRowMap->getGlobalNumElements();
+		       bool theirRowsValid = true;
+		       for (size_type k = 0; k < theirNumRows; ++k)
+			 {
+			   // global_ordinal_t is generally a signed type.
+			   if (theirRows[k] < 0)
+			     theirRowsValid = false;
+			   // Signed to unsigned cast should not
+			   // overflow.  We cast in order to avoid
+			   // compiler warnings about comparing signed
+			   // and unsigned types, in case
+			   // global_size_t is unsigned.
+			   else if (static_cast<global_size_t> (theirRows[k]) >= numRows)
+			     theirRowsValid = false;
+			 }
+		       if (! theirRowsValid)
+			 {
+			   std::ostringstream os;
+			   std::copy (theirRows.begin(), theirRows.end(), 
+				      std::ostream_iterator<global_ordinal_type>(os, " "));
+			   TEST_FOR_EXCEPTION(! theirRowsValid, 
+					      std::logic_error,
+					      "Proc " << p << " has at least "
+					      "one invalid row index.  Here are"
+					      " all of them: [ " << os.str() 
+					      << "]");
+			 }
+		     }
+
 		     // Perhaps we could save a little work if we
 		     // check whether Proc p's row indices are
 		     // contiguous.  That would make lookups in the
@@ -478,6 +535,11 @@ namespace Tpetra {
 		       std::accumulate (theirNumEntriesPerRow.begin(),
 					theirNumEntriesPerRow.end(), 
 					static_cast<size_t> (0));
+
+		     if (debug)
+		       cerr << "-- Proc 0: Proc " << p << " owns " 
+			    << theirNumEntries << " entries" << endl;
+
 		     // If there are no entries to send, then we're
 		     // done with Proc p.
 		     if (theirNumEntries == 0)
@@ -538,6 +600,9 @@ namespace Tpetra {
 		     send (*pComm, static_cast<int> (theirNumEntries), 
 			   theirValues.getRawPtr(), p);
 		     numRowsDone += theirNumRows;
+
+		     if (debug)
+		       cerr << "-- Proc 0: Finished with proc " << p << endl;
 		   } // If proc p owns at least one row
 	       } // For each proc p not the root proc 0
 	   } // If I'm (not) the root proc 0
@@ -549,6 +614,9 @@ namespace Tpetra {
 	 colInd = null;
 	 values = null;
 
+	 if (debug && myRank == 0)
+	   cerr << "-- Proc 0: About to fill in myRowPtr" << endl;
+
 	 // Allocate and fill in myRowPtr (the row pointer array for
 	 // my rank's rows).  We delay this until the end because we
 	 // don't need it to compute anything else in distribute().
@@ -558,7 +626,7 @@ namespace Tpetra {
 	 myRowPtr[0] = 0;
 	 for (size_type k = 1; k < myNumRows+1; ++k)
 	   myRowPtr[k] = myRowPtr[k-1] + myNumEntriesPerRow[k-1];
-	 if (false && debug)
+	 if (extraDebug && debug)
 	   {
 	     cerr << "Proc " << Teuchos::rank (*(pRowMap->getComm())) 
 		  << ": myRowPtr[0.." << myNumRows << "] = [";
@@ -570,6 +638,9 @@ namespace Tpetra {
 	       }
 	     cerr << "]" << endl << endl;
 	   }
+
+	 if (debug && myRank == 0)
+	   cerr << "-- Proc 0: Done with distribute" << endl;
       }
 
       /// \brief Given my proc's data, return the completed sparse matrix.
@@ -978,20 +1049,33 @@ namespace Tpetra {
 	// read from the input stream.
 	size_t lineNumber = 1; 	
 
+	if (debug && myRank == 0)
+	  cerr << "About to read Matrix Market banner line" << endl;
+
 	// The "Banner" tells you whether the input stream represents
 	// a sparse matrix, the symmetry type of the matrix, and the
 	// type of the data it contains.
-	RCP<const Banner> pBanner = readBanner (in, lineNumber, pComm, tolerant, debug);
+	RCP<const Banner> pBanner = readBanner (in, lineNumber, pComm, 
+						tolerant, debug);
+
+	if (debug && myRank == 0)
+	  cerr << "About to read Matrix Market dimensions line" << endl;
 
 	// dims = (numRows, numCols, numEntries) (all global),
 	// as read from the Matrix Market metadata.
 	Tuple<global_ordinal_type, 3> dims = 
 	  readCoordDims (in, lineNumber, pBanner, pComm, tolerant, debug);
 
+	if (debug && myRank == 0)
+	  cerr << "About to make Adder for collecting matrix data" << endl;
+
 	// "Adder" object for collecting all the sparse matrix entries
 	// from the input stream.
 	RCP<adder_type> pAdder = 
 	  makeAdder (pComm, pBanner, dims, tolerant, debug);
+
+	if (debug && myRank == 0)
+	  cerr << "About to read matrix data" << endl;
 
 	// Read the sparse matrix entries from the input stream.
 	//
@@ -1038,6 +1122,8 @@ namespace Tpetra {
 	// did not succeed?
 	TEST_FOR_EXCEPTION(! readSuccess, std::invalid_argument, 
 			   "Failed to read in the Matrix Market sparse matrix.");
+	if (debug && myRank == 0)
+	  cerr << "Successfully read the Matrix Market data" << endl;
 
 	// In tolerant mode, we need to rebroadcast the matrix
 	// dimensions, since they may be different after reading the
@@ -1050,6 +1136,13 @@ namespace Tpetra {
 	// number of entries.
 	if (tolerant)
 	  {
+	    if (debug && myRank == 0)
+	      {
+		cerr << "Tolerant mode: rebroadcasting matrix dimensions" 
+		     << endl
+		     << "-- Dimensions before: " << dims[0] << " x " << dims[1]
+		     << endl;
+	      }
 	    // Packed coordinate matrix dimensions (numRows, numCols).
 	    Teuchos::Tuple<global_ordinal_type, 2> updatedDims;
 	    if (myRank == 0)
@@ -1060,7 +1153,15 @@ namespace Tpetra {
 	    Teuchos::broadcast (*pComm, 0, updatedDims);
 	    dims[0] = updatedDims[0];
 	    dims[1] = updatedDims[1];
+	    if (debug && myRank == 0)
+	      {
+		cerr << "-- Dimensions after: " << dims[0] << " x " << dims[1]
+		     << endl;
+	      }
 	  }
+
+	if (debug && myRank == 0)
+	  cerr << "Converting matrix data into CSR format on Proc 0" << endl;
 
 	// Now that we've read in all the matrix entries from the
 	// input stream into the adder on Rank 0, post-process them
@@ -1172,6 +1273,9 @@ namespace Tpetra {
 	// reference ("free" it) to save space.
 	pAdder = null;
 
+	if (debug && myRank == 0)
+	  cerr << "Making row/range and domain maps" << endl;
+
 	// Make the maps that describe the distribution of the
 	// matrix's range and domain.
 	//
@@ -1179,6 +1283,9 @@ namespace Tpetra {
 	map_ptr pRowMap = makeRowMap (null, pComm, pNode, dims[0]);
 	// Domain map.
 	map_ptr pDomMap = makeDomainMap (pRowMap, dims[0], dims[1]);
+
+	if (debug && myRank == 0)
+	  cerr << "Distributing the matrix data" << endl;
 
 	// Distribute the matrix data.  Each processor has to add the
 	// rows that it owns.  If you try to make Rank 0 call
@@ -1196,9 +1303,16 @@ namespace Tpetra {
 	ArrayRCP<global_ordinal_type> myColInd;
 	ArrayRCP<scalar_type> myValues;
 	// Distribute the matrix data.
-	distribute (myNumEntriesPerRow, myRowPtr, myColInd, myValues, 
-		    pRowMap, numEntriesPerRow, rowPtr, colInd, values);
+	distribute (myNumEntriesPerRow, myRowPtr, myColInd, myValues, pRowMap,
+		    numEntriesPerRow, rowPtr, colInd, values, debug);
 
+	if (debug && myRank == 0)
+	  {
+	    cerr << "Inserting matrix entries on each processor";
+	    if (callFillComplete)
+	      cerr << " and calling fillComplete()";
+	    cerr << endl;
+	  }
 	// Each processor inserts its part of the matrix data, and
 	// then they all call fillComplete().  This method invalidates
 	// the my* distributed matrix data before calling
@@ -1268,6 +1382,10 @@ namespace Tpetra {
 			       "this bug to the Tpetra developers.");
 #endif // 0
 	  } // if (callFillComplete)
+
+	if (debug && myRank == 0)
+	  cerr << "Done creating the Tpetra::CrsMatrix from the Matrix Market "
+	    "data" << endl;
 
 	return pMatrix;
       }
