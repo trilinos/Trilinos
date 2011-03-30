@@ -54,4 +54,6 @@ ${CMAKE_INSTALL_PREFIX}/include/stk_io/)
 # AGS: I moved this to the bottom so that the link order was correct
 # with  -lstk_io_uti before -lstk_io.  I think the DEPLIBS added in
 # util/CMakeLists.txt should have done this, but it didn't work for me.
-ADD_SUBDIRECTORY(util)
+IF (${PACKAGE_NAME}_ENABLE_TESTS)
+  ADD_SUBDIRECTORY(util)
+ENDIF(${PACKAGE_NAME}_ENABLE_TESTS)
