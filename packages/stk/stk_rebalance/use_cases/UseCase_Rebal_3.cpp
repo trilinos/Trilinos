@@ -16,7 +16,8 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
  
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
@@ -67,22 +68,26 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
   const stk::mesh::EntityRank constraint_rank = rank_names.size();
   rank_names.push_back("Constraint");
 
-  stk::mesh::MetaData meta_data( rank_names );
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dimension, rank_names);
+
+  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
   stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
-  stk::mesh::DefaultFEM top_data( meta_data, spatial_dimension );
-  const stk::mesh::EntityRank element_rank    = stk::mesh::fem::element_rank(top_data);
-  const stk::mesh::EntityRank side_rank       = stk::mesh::fem::side_rank(top_data);
-  const stk::mesh::EntityRank node_rank       = stk::mesh::fem::node_rank(top_data);
+  const stk::mesh::EntityRank element_rank    = fem_meta.element_rank();
+  const stk::mesh::EntityRank side_rank       = fem_meta.side_rank();
+  const stk::mesh::EntityRank node_rank       = fem_meta.node_rank();
 
-  stk::mesh::Part & quad_part( stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" ) );
-  stk::mesh::Part & side_part( stk::mesh::declare_part<shards::Line<2> >         ( meta_data, "line" ) );
-  VectorField & coord_field( meta_data.declare_field< VectorField >( "coordinates" ) );
-  ScalarField & weight_field( meta_data.declare_field< ScalarField >( "element_weights" ) );
+  stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  stk::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
+  stk::mesh::fem::CellTopology side_top(shards::getCellTopologyData<shards::Line<2> >());
+  stk::mesh::Part & side_part( fem_meta.declare_part("line", side_top ) );
+  VectorField & coord_field( fem_meta.declare_field< VectorField >( "coordinates" ) );
+  ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "element_weights" ) );
 
-  stk::mesh::put_field( coord_field , node_rank , meta_data.universal_part() );
-  stk::mesh::put_field(weight_field , element_rank , meta_data.universal_part() );
+  stk::mesh::put_field( coord_field , node_rank , fem_meta.universal_part() );
+  stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
 
-  meta_data.commit();
+  fem_meta.commit();
 
   //const unsigned p_size = bulk_data.parallel_size();
   const unsigned p_rank = bulk_data.parallel_rank();
@@ -106,9 +111,9 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::Entity &q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        stk::mesh::Entity &q = stk::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
         if (0==ix) {
-          stk::mesh::declare_element_side( bulk_data, face_id, q, 0 /*local side id*/, &side_part);
+          stk::mesh::fem::declare_element_side( bulk_data, face_id, q, 0 /*local side id*/, &side_part);
           ++face_id;
         }
         quads[ix][iy] = &q; 
@@ -138,7 +143,7 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
     {
       const unsigned iy_bottom  =  0;
       const unsigned iy_top = ny;
-      stk::mesh::PartVector add(1, &meta_data.locally_owned_part());
+      stk::mesh::PartVector add(1, &fem_meta.locally_owned_part());
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid_bottom  = 1 + ix + iy_bottom  * nnx ;
         stk::mesh::EntityId nid_top = 1 + ix + iy_top * nnx ;
@@ -156,7 +161,7 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
   bulk_data.modification_end();
 
   stk::mesh::Selector selector(side_part);
-  selector &=  meta_data.locally_owned_part();
+  selector &=  fem_meta.locally_owned_part();
   // Coordinates are passed to support geometric-based load balancing algorithms
   // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
   // Other specializations are possible.
