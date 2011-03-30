@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Used to test Trilinos on u233.ornl.gov
+# Used to test Trilinos on any of the ORNL fissle 4 machines
+# (e.g. u233, u235, pu239, and pu241).
 
 # NOTE: To use this, you must first prepend /opt/trilinos-toolset/bin
 # to your path to find eg and cmake!
@@ -23,6 +24,33 @@ echo "
 -DCMAKE_CXX_COMPILER:PATH=$TRILINOS_TOOLSET_BASE/bin/g++
 -DCMAKE_C_COMPILER:PATH=$TRILINOS_TOOLSET_BASE/bin/gcc
 " > SERIAL_RELEASE.config
+
+#
+# Extra intel builds added with --extra-builds=INTEL_11064_SERIAL_DEBUG,...
+#
+# NOTE: You must do 'source /opt/casldev/env/casl_dev_env.sh' before
+# using the intel builds.
+
+echo "
+-DCMAKE_BUILD_TYPE:STRING=DEBUG
+-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
+-DBUILD_SHARED_LIBS:BOOL=ON
+-DTPL_ENABLE_Boost:BOOL=ON
+-DBoost_INCLUDE_DIRS:FILEPATH=/opt/tpls_src/boost_1_46_1
+-DTPL_ENABLE_BinUtils:BOOL=ON
+-DCMAKE_C_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/icc
+-DCMAKE_CXX_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/icpc
+-DCMAKE_Fortran_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/ifort
+-DTPL_BLAS_LIBRARIES:STRING='-L${MKLROOT}/lib/em64t -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_core -lmkl_sequential'
+-DTPL_LAPACK_LIBRARIES:STRING='-L${MKLROOT}/lib/em64t -lmkl_lapack95_lp64'
+-DTrilinos_ENABLE_TESTS:BOOL=ON
+-DDART_TESTING_TIMEOUT:STRING=180.0
+-DTeuchos_ENABLE_STACKTRACE:BOOL=ON
+" > INTEL_11064_SERIAL_DEBUG.config
+
+#
+# Invocation
+#
 
 ../../../Trilinos/checkin-test.py \
 -j16 \
