@@ -177,6 +177,14 @@ namespace stk {
 	stk::mesh::fem::set_cell_topology< Hex >( m_gear );
 	stk::mesh::fem::set_cell_topology< Quad>( m_surf );
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+        stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(S.get_attribute<stk::mesh::fem::FEMMetaData>());
+        if( fem_meta )
+        {
+          stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<Hex>());
+          stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<Quad>());
+          stk::mesh::fem::set_cell_topology( *fem_meta, m_gear, hex_top );
+          stk::mesh::fem::set_cell_topology( *fem_meta, m_surf, quad_top );
+        }
 
 	// Meshing parameters for this gear:
 
