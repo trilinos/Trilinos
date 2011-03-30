@@ -145,13 +145,20 @@ namespace {
 	    // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
 	    int side_ordinal = elem_side[is*2+1] - 1;
 
-#ifdef USE_FEMMETADATA
-	    stk::mesh::Entity& side =
-	      stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-#else
-	    stk::mesh::Entity& side =
-	      stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-#endif
+      stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(stk::mesh::MetaData::get(bulk).get_attribute<stk::mesh::fem::FEMMetaData>());
+	    stk::mesh::Entity* side_ptr = NULL;
+      if (fem_meta)
+        {
+          side_ptr =
+            &stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+        }
+      else
+        {
+          side_ptr =
+            &stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+        }
+	    stk::mesh::Entity& side = *side_ptr;
+
 	    bulk.change_entity_parts( side, add_parts );
 	    sides[is] = &side;
 	  } else {
