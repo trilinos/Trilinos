@@ -29,7 +29,6 @@
 
 #include "Teuchos_ParameterEntry.hpp" // class definition
 #include "Teuchos_ParameterList.hpp"	 // for sublists
-#include "Teuchos_OrdinalTraits.hpp"
 
 
 namespace Teuchos {
@@ -104,7 +103,6 @@ bool ParameterEntry::isList() const
   return ( val_.empty() ? false : val_.type() == typeid(ParameterList) );
 }
 
-
 std::ostream& ParameterEntry::leftshift(std::ostream& os, bool printFlags) const
 {
   if( !this->isList() ) os << val_;
@@ -118,6 +116,19 @@ std::ostream& ParameterEntry::leftshift(std::ostream& os, bool printFlags) const
 
   return os;
 }
+
+bool ParameterEntry::isArray() const{ 
+  std::string formatString = getArrayTypeNameTraitsFormat();
+  size_t starPos = formatString.find("*");
+  std::string prefix = formatString.substr(0,starPos);
+  std::string postfix = formatString.substr(starPos+1);
+  std::string valueTypeName = val_.typeName();
+  size_t prePos = valueTypeName.find(prefix);
+  size_t postPos = valueTypeName.find(postfix);
+  return (prePos != std::string::npos) 
+    && (postPos != std::string::npos) && (prePos < postPos);
+}
+
 
 // private
 
