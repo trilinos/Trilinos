@@ -264,7 +264,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 bool
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasTransposeApply() const
 {
-  return false;
+  return true;
 }
 
 //-------------------------------------------------------------------
