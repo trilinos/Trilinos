@@ -139,7 +139,7 @@ namespace stk {
 
     std::ostream &operator<<(std::ostream& out, const stk::mesh::Entity& entity)
     {
-      if (entity.entity_rank() == mesh::Element || entity.entity_rank() == mesh::Face || entity.entity_rank() == mesh::Edge  )
+      if (entity.entity_rank() != stk::mesh::fem::NODE_RANK)
         {
           out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: ";
 
@@ -426,7 +426,7 @@ get_heap_info(
 
     void Util::printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field)
     {
-      if (entity.entity_rank() == mesh::Element || entity.entity_rank() == mesh::Face || entity.entity_rank() == mesh::Edge  )
+      if (entity.entity_rank() != stk::mesh::fem::NODE_RANK)
         {
           int fieldStride = 3;
           {
@@ -435,7 +435,7 @@ get_heap_info(
             for (unsigned ifr = 0; ifr < nfr; ifr++)
               {
                 const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-                //mesh::Part& frpart = eMesh.getMetaData()->get_part(fr.ordinal());
+                //mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
                 fieldStride = fr.stride[0] ;
               }
           }

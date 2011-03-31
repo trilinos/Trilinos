@@ -8,35 +8,36 @@ namespace stk {
   namespace adapt {
 
     using namespace std;
-    using namespace mesh;
 
     template<typename STD_Set, typename Key > bool contains(STD_Set& set, Key key) { return set.find(key) != set.end(); }
 
-    Colorer::Colorer(std::vector< ColorerSetType >& element_colors, std::vector<EntityRank> ranks ) : m_element_colors(element_colors), m_entityRanks()
+    Colorer::Colorer(std::vector< ColorerSetType >& element_colors, std::vector<stk::mesh::EntityRank> ranks ) : m_element_colors(element_colors), m_entityRanks()
       {
-        //EntityRank ranks[2] = {Face, Element};
+        //stk::mesh::EntityRank ranks[2] = {Face, Element};
         if (ranks.size())
           {
             m_entityRanks = ranks;
           }
         else
           {
-            m_entityRanks.push_back(mesh::Face);
-            m_entityRanks.push_back(mesh::Element);
+            //             m_entityRanks.push_back(stk_mesh_Face);
+            //             m_entityRanks.push_back(stk_mesh_Element);
+            throw std::runtime_error("Colorer:: you must pass in non-zero length ranks");
           }
       }
 
-    Colorer::Colorer(std::vector<EntityRank> ranks ) : m_element_colors(m_element_colors_internal), m_entityRanks()
+    Colorer::Colorer(std::vector<stk::mesh::EntityRank> ranks ) : m_element_colors(m_element_colors_internal), m_entityRanks()
     {
-      //EntityRank ranks[2] = {Face, Element};
+      //stk::mesh::EntityRank ranks[2] = {Face, Element};
       if (ranks.size())
         {
           m_entityRanks = ranks;
         }
       else
         {
-          m_entityRanks.push_back(mesh::Face);
-          m_entityRanks.push_back(mesh::Element);
+//           m_entityRanks.push_back(stk_mesh_Face);
+//           m_entityRanks.push_back(stk_mesh_Element);
+            throw std::runtime_error("Colorer:: you must pass in non-zero length ranks");
         }
     }
 
@@ -44,14 +45,14 @@ namespace stk {
     getElementColors() { return m_element_colors; }
 
     void Colorer::
-    color(percept::PerceptMesh& eMesh, unsigned * elementType,  PartVector* fromParts, FieldBase *element_color_field)
+    color(percept::PerceptMesh& eMesh, unsigned * elementType,  stk::mesh::PartVector* fromParts, stk::mesh::FieldBase *element_color_field)
     {
       const unsigned MAX_COLORS=1000;
       vector< ColorerNodeSetType > node_colors(MAX_COLORS+1); 
       m_element_colors = vector< ColorerSetType > (MAX_COLORS+1);
       ColorerElementSetType all_elements; 
 
-      mesh::Selector selector(eMesh.getMetaData()->universal_part());
+      mesh::Selector selector(eMesh.getFEM_meta_data()->universal_part());
       if (fromParts) 
         {
           if (0)
@@ -67,7 +68,7 @@ namespace stk {
           selector = mesh::selectUnion(*fromParts);
         }
 
-      BulkData& bulkData = *eMesh.getBulkData();
+      stk::mesh::BulkData& bulkData = *eMesh.get_bulkData();
       int ncolor = 0;
       int nelem = 0;
       for (unsigned icolor = 0; icolor < MAX_COLORS; icolor++)
@@ -75,15 +76,15 @@ namespace stk {
           int num_colored_this_pass = 0;
           for (unsigned irank = 0; irank < m_entityRanks.size(); irank++)
             {
-              const vector<Bucket*> & buckets = bulkData.buckets( m_entityRanks[irank] );
-              for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              const vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( m_entityRanks[irank] );
+              for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
                 {
                   if (selector(**k))  
                   {
-                    Bucket & bucket = **k ;
+                    stk::mesh::Bucket & bucket = **k ;
 
                     bool doThisBucket = true;
-                    const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+                    const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
                     shards::CellTopology topo(bucket_cell_topo_data);
                     if (elementType && (topo.getKey() != *elementType))
                       {
@@ -103,25 +104,25 @@ namespace stk {
                 
                         for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                           {
-                            Entity& element = bucket[iElement];
+                            stk::mesh::Entity& element = bucket[iElement];
 
                             if (0)
                               std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
                                         << " elementId = " << element.identifier() << " element = " << element << std::endl;
 
-                            EntityId elem_id = element.identifier();
+                            stk::mesh::EntityId elem_id = element.identifier();
                             if (contains(all_elements, elem_id))
                               continue;
 
-                            const PairIterRelation elem_nodes = element.relations( mesh::Node );  //! check for reference
+                            const stk::mesh::PairIterRelation elem_nodes = element.relations( mesh::Node );  //! check for reference
                             unsigned num_node = elem_nodes.size(); 
                             bool none_in_this_color = true;
-                            static std::vector<EntityId> node_ids(100);
+                            static std::vector<stk::mesh::EntityId> node_ids(100);
                             node_ids.reserve(num_node);
                             for (unsigned inode=0; inode < num_node; inode++)
                               {
-                                Entity & node = *elem_nodes[ inode ].entity();
-                                EntityId nid = node.identifier();
+                                stk::mesh::Entity & node = *elem_nodes[ inode ].entity();
+                                stk::mesh::EntityId nid = node.identifier();
                                 node_ids[inode] = nid;
                                 if (contains(node_colors[icolor], nid))
                                   {

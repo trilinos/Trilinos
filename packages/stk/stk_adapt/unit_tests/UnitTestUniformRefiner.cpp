@@ -46,6 +46,36 @@ namespace unit_tests {
 
 #define EXTRA_PRINT 0
 
+#if 0
+STKUNIT_UNIT_TEST(unit_uniformRefiner, hex8_hex8_8_1_0)
+{
+  EXCEPTWATCH;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  // start_demo_uniformRefiner_hex8_hex8_8_1
+
+  percept::PerceptMesh eMesh(3);
+
+  unsigned p_size = eMesh.getParallelSize();
+
+  // generate a 4x4x(4*p_size) mesh
+  std::string gmesh_spec = std::string("4x4x")+toString(4*p_size)+std::string("|bbox:0,0,0,1,1,1");
+  eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+
+//   Hex8_Hex8_8 break_hex_to_hex(eMesh);
+
+//   int scalarDimension = 0; // a scalar
+//   FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+
+  eMesh.commit();
+
+  //  UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+  //  breaker.doBreak();
+  eMesh.saveAs("junk.e");
+  // end_demo
+}
+#endif
+
 //=============================================================================
 //=============================================================================
 //=============================================================================
@@ -72,7 +102,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, quad4_quad4_4_test_1)
     fixture.generate_mesh();
 
     percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-    eMesh.printInfo("quad fixture");
+    eMesh.printInfo("quad fixture", 2);
     eMesh.saveAs("quad_fixture.e");
   }
 }
@@ -107,7 +137,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, break_quad_to_quad_sierra)
     UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
     // FIXME
     int scalarDimension = 0; // a scalar
-    FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+    stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
     //fixture.meta_data.commit();
     eMesh.commit();
@@ -146,7 +176,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, break_tri_to_tri_sierra)
     //             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_tri_to_tri_4(eMesh);
     //             // FIXME
     //             int scalarDimension = 0; // a scalar
-    //             FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+    //             FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
     //fixture.meta_data.commit();
     eMesh.commit();
@@ -175,7 +205,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, hex8_hex8_8_1)
 
   // start_demo_uniformRefiner_hex8_hex8_8_1
 
-  percept::PerceptMesh eMesh;
+  percept::PerceptMesh eMesh(3);
 
   unsigned p_size = eMesh.getParallelSize();
 
@@ -186,7 +216,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, hex8_hex8_8_1)
   Hex8_Hex8_8 break_hex_to_hex(eMesh);
 
   int scalarDimension = 0; // a scalar
-  FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+  stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
   eMesh.commit();
 
@@ -206,7 +236,7 @@ STKUNIT_UNIT_TEST(unit_uniformRefiner, wedge6_1)
 
   // start_demo_uniformRefiner_wedge6_1
 
-  percept::PerceptMesh eMesh;
+  percept::PerceptMesh eMesh(3);
 
   unsigned p_size = eMesh.getParallelSize();
   if (p_size == 1)

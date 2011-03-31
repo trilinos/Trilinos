@@ -22,12 +22,20 @@ void assign_cell_topology(
     part_cell_topology_vector.resize(part_ordinal + 1);
 
   part_cell_topology_vector[part_ordinal] = cell_topology;
+
+  if (!cell_topology.getCellTopologyData())
+    { 
+      std::cout << "bad topology in FEMMetaData::assign_cell_topology" << std::endl;
+    }
+
+  ThrowRequireMsg(cell_topology.getCellTopologyData(), "bad topology in FEMMetaData::assign_cell_topology");
 }
 
 } // namespace
 
 FEMMetaData::FEMMetaData()
-  : m_fem_initialized(false),
+: 
+    m_fem_initialized(false),
     m_spatial_dimension(0),
     m_edge_rank(INVALID_RANK),
     m_face_rank(INVALID_RANK),
@@ -40,7 +48,8 @@ FEMMetaData::FEMMetaData()
 
 FEMMetaData::FEMMetaData(size_t spatial_dimension,
                          const std::vector<std::string>& in_entity_rank_names)
-  : m_fem_initialized(false),
+  : 
+    m_fem_initialized(false),
     m_spatial_dimension(0),
     m_edge_rank(INVALID_RANK),
     m_face_rank(INVALID_RANK),
@@ -52,6 +61,25 @@ FEMMetaData::FEMMetaData(size_t spatial_dimension,
 
   FEM_initialize(spatial_dimension, in_entity_rank_names);
 }
+
+#if FEMMETADATA_ADOPT
+FEMMetaData::FEMMetaData(mesh::MetaData& meta,
+                        size_t spatial_dimension,
+                        const std::vector<std::string>& in_entity_rank_names)
+  : m_meta_data(meta),
+    m_fem_initialized(false),
+    m_spatial_dimension(0),
+    m_edge_rank(INVALID_RANK),
+    m_face_rank(INVALID_RANK),
+    m_side_rank(INVALID_RANK),
+    m_element_rank(INVALID_RANK)
+{
+  // Attach FEMMetaData as attribute on MetaData to enable "get accessors" to FEMMetaData
+  m_meta_data.declare_attribute_no_delete<FEMMetaData>(this);
+
+  FEM_initialize(spatial_dimension, in_entity_rank_names);
+}
+#endif
 
 void FEMMetaData::FEM_initialize(size_t spatial_dimension, const std::vector<std::string>& rank_names)
 {
@@ -194,6 +222,7 @@ void FEMMetaData::register_cell_topology(const fem::CellTopology cell_topology, 
 
     assign_cell_topology(m_partCellTopologyVector, part.mesh_meta_data_ordinal(), cell_topology);
   }
+  //check_topo_db();
 }
 
 Part &FEMMetaData::get_cell_topology_root_part(const fem::CellTopology cell_topology) const
@@ -219,12 +248,34 @@ fem::CellTopology FEMMetaData::get_cell_topology( const Part & part) const
 
   PartOrdinal part_ordinal = part.mesh_meta_data_ordinal();
   if (part_ordinal < m_partCellTopologyVector.size())
-    cell_topology = m_partCellTopologyVector[part_ordinal];
+    {
+      cell_topology = m_partCellTopologyVector[part_ordinal];
+    }
 
   return cell_topology;
 }
 
+#if 0
+  void FEMMetaData::check_topo_db()
+  {
+    std::cout << "FEMMetaData::check_topo_db... m_partCellTopologyVector.size() = " << m_partCellTopologyVector.size() <<  std::endl;
 
+  fem::CellTopology cell_topology;
+
+  for (unsigned i = 0; i <  m_partCellTopologyVector.size(); i++)
+    {
+      cell_topology = m_partCellTopologyVector[i];
+  if (!cell_topology.getCellTopologyData())
+    { 
+      std::cout << "bad topology in FEMMetaData::check_topo_db" << std::endl;
+    }
+      ThrowRequireMsg(cell_topology.getCellTopologyData(), "bad topology in FEMMetaData::check_topo_db");
+
+    }
+    std::cout << "FEMMetaData::check_topo_db...done" << std::endl;
+
+  }
+#endif
 
 namespace {
 

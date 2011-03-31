@@ -17,9 +17,9 @@ namespace stk {
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : URP<shards::Quadrilateral<4> , shards::Triangle<3> >(eMesh)
        {
          EXCEPTWATCH;
-         m_primaryEntityRank = mesh::Face;
+         m_primaryEntityRank = eMesh.face_rank();
          if (m_eMesh.getSpatialDim() == 2)
-           m_primaryEntityRank = mesh::Element;
+           m_primaryEntityRank = eMesh.element_rank();
 
          setNeededParts(eMesh, block_names, false);
 
@@ -30,7 +30,7 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        needed_entities[0].first = (m_eMesh.getSpatialDim() == 2 ? stk::mesh::Element :  stk::mesh::Face);
+        needed_entities[0].first = (m_eMesh.getSpatialDim() == 2 ? m_eMesh.element_rank() :  m_eMesh.face_rank());
         setToOne(needed_entities);
       }
 
@@ -46,15 +46,15 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
-                        FieldBase *proc_rank_field=0)
+                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::FieldBase *proc_rank_field=0)
       {
-        const CellTopologyData * const cell_topo_data = get_cell_topology(element);
-        typedef boost::tuple<EntityId, EntityId, EntityId> tri_tuple_type;
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
         static vector<tri_tuple_type> elems(4);
 
         CellTopology cell_topo(cell_topo_data);
-        const mesh::PairIterRelation elem_nodes = element.relations(Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
 
         //stk::mesh::Part & active = mesh->ActivePart();
         //stk::mesh::Part & quad4  = mesh->QuadPart();
@@ -66,15 +66,11 @@ namespace stk {
         
         //std::cout << "P["<< m_eMesh.getRank() << "] add_parts = " << add_parts << std::endl;
 
-        EntityRank my_rank = m_primaryEntityRank;
+        stk::mesh::EntityRank my_rank = m_primaryEntityRank;
 
-        //         EntityRank my_rank = stk::mesh::Face;
-        //         if (m_eMesh.getSpatialDim() == 2)
-        //           my_rank = stk::mesh::Element;
-
-        nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), my_rank, 0u);
-        nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), my_rank, 0u);
-        nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), my_rank, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), my_rank, 0u);
+        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), my_rank, 0u);
+        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), my_rank, 0u);
         
 #define CENTROID_N NN(m_primaryEntityRank, 0)  
 
@@ -100,10 +96,10 @@ namespace stk {
         
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            Entity& newElement = *(*element_pool);
+            stk::mesh::Entity& newElement = *(*element_pool);
 
             //std::cout << "P["<< m_eMesh.getRank() << "] urp tmp 3 "  << proc_rank_field << std::endl;
-            if (proc_rank_field && element.entity_rank() == mesh::Element)
+            if (proc_rank_field && element.entity_rank() == m_eMesh.element_rank())
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
@@ -125,9 +121,9 @@ namespace stk {
             }
             //std::cout << "P["<< m_eMesh.getRank() << "] urp tmp 6 "  << std::endl;
 
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
+            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
+            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
+            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
 
             //std::cout << "P["<< m_eMesh.getRank() << "] urp tmp 7 "  << std::endl;
 

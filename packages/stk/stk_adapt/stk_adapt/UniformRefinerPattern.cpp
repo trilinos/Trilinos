@@ -87,7 +87,7 @@ namespace stk {
     */
 
     /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
-    void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, Entity& old_owning_elem, Entity& newElement, 
+    void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement, 
                                                                unsigned ordinal, unsigned *numChild)
     {
 #if NEW_FIX_ELEMENT_SIDES
@@ -95,10 +95,10 @@ namespace stk {
       VERIFY_OP(&old_owning_elem, != , 0, "set_parent_child_relations: old_owning_elem is null");
       VERIFY_OP(&newElement, != , 0, "set_parent_child_relations: newElement is null");
 
-      //eMesh.getBulkData()->declare_relation( old_owning_elem, newElement, ordinal);
+      //eMesh.get_bulkData()->declare_relation( old_owning_elem, newElement, ordinal);
       
       // is this necessary?
-      // eMesh.getBulkData()->declare_relation( newElement, old_owning_elem, 0u);
+      // eMesh.get_bulkData()->declare_relation( newElement, old_owning_elem, 0u);
       //static PerceptEntityVector empty_entity_vector;
 
       if (0 == &old_owning_elem)

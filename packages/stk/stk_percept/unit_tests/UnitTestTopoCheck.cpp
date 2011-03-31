@@ -12,7 +12,9 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -22,7 +24,7 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
@@ -161,7 +163,7 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
   // verify valid topology
   bool isBad = false;
   if(verbose) std::cout << "verify this is a good topology " << std::endl;
-  isBad = topoVerifier.isTopologyBad( *tp2.getBulkData() );
+  isBad = topoVerifier.isTopologyBad( *tp2.get_bulkData() );
   STKUNIT_EXPECT_FALSE(isBad);
 
   //------- a bad topology with a duplicated node
@@ -186,7 +188,7 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
   tp2.writeSTKMesh("topo-badQuadDupl.e");
 
   // verify bad topology
-  isBad = topoVerifier.isTopologyBad( *tp2.getBulkData() );
+  isBad = topoVerifier.isTopologyBad( *tp2.get_bulkData() );
   STKUNIT_EXPECT_TRUE(isBad);
 
   //------ create a bad topology with crossed elements
@@ -211,7 +213,7 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
   tp2.writeSTKMesh("topo-badQuadCrossed.e");
 
   // verify bad topology
-  isBad = topoVerifier.isTopologyBad( *tp2.getBulkData() );
+  isBad = topoVerifier.isTopologyBad( *tp2.get_bulkData() );
   STKUNIT_EXPECT_TRUE(isBad);
 }
 
@@ -285,7 +287,7 @@ STKUNIT_UNIT_TEST(geom, geomPrints)
   // verify valid geometry
   bool isBad = false;
   if(verbose) std::cout << "verify this is a good geometry " << std::endl;
-  isBad = geomVerifier.isGeometryBad( *tp2.getBulkData() );
+  isBad = geomVerifier.isGeometryBad( *tp2.get_bulkData() );
   STKUNIT_EXPECT_FALSE(isBad);
 
   /////////////// path test 3
@@ -318,13 +320,13 @@ STKUNIT_UNIT_TEST(geom, geomPrints)
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("geom-all-hex-path3.e");
   geomVerifier = GeometryVerifier(false);
-  geomVerifier.isGeometryBad(*tp2.getBulkData() );
+  geomVerifier.isGeometryBad(*tp2.get_bulkData() );
 
   // break path3 of the hexes into tets
   tp2.breakAllElements<shards_Hexahedron_8, shards_Tetrahedron_4>();
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("geom-all-hex-tet-path3.e");
-  geomVerifier.isGeometryBad(*tp2.getBulkData() );
+  geomVerifier.isGeometryBad(*tp2.get_bulkData() );
 
 }
 
@@ -366,7 +368,7 @@ STKUNIT_UNIT_TEST(geom, geomEqui)
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("equi-tet.e");
   geomVerifier = GeometryVerifier(false);
-  geomVerifier.isGeometryBad(*tp2.getBulkData(), true );
+  geomVerifier.isGeometryBad(*tp2.get_bulkData(), true );
 
   //------ scale the mesh
   double sf= 4.0;
@@ -383,7 +385,7 @@ STKUNIT_UNIT_TEST(geom, geomEqui)
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("equi-tet-scaled.e");
   geomVerifier = GeometryVerifier(false);
-  geomVerifier.isGeometryBad(*tp2.getBulkData(), true );
+  geomVerifier.isGeometryBad(*tp2.get_bulkData(), true );
 
 }
 #endif
@@ -452,7 +454,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    mesh::MetaData mesh_meta_data( mesh::fem_entity_rank_names() );
+    mesh::fem::FEMMetaData mesh_meta_data(3, mesh::fem_entity_rank_names() );
 
     //--------------------------------
     // Element-block declarations typically occur when reading the
@@ -461,10 +463,10 @@ void use_encr_case_1_driver( MPI_Comm comm )
     // with each element block.
 
     mesh::Part & universal = mesh_meta_data.universal_part();
-    mesh::Part & block_hex = mesh_meta_data.declare_part("block_1",mesh::Element);
+    mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", mesh_meta_data.element_rank());
 
     /// set cell topology for the part block_1
-    mesh::set_cell_topology< shards::Hexahedron<8>  >( block_hex );
+    mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( block_hex );
 
     //--------------------------------
     // Declare coordinates field on all nodes with 3D:
@@ -476,21 +478,6 @@ void use_encr_case_1_driver( MPI_Comm comm )
       coordinates_field , mesh::Node , universal , SpatialDim );
 
     //--------------------------------
-
-#if 0
-    VectorFieldType & face_field =
-      mesh_meta_data.declare_field< VectorFieldType >( "face_flux" );
-
-    VectorFieldType & elem_field =
-      mesh_meta_data.declare_field< VectorFieldType >( "elem_flux" );
-
-    stk::mesh::put_field(
-      elem_field , mesh::Element , block_hex , SpatialDim );
-
-    stk::mesh::put_field(
-      face_field , mesh::Face , universal , SpatialDim );
-
-#endif
 
     //--------------------------------
     // Declare an aggressive "gather" field which is an
@@ -517,7 +504,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     // This size is different for each element block.
 
     stk::mesh::put_field(
-      elem_node_coord , mesh::Element , block_hex , shards::Hexahedron<8> ::node_count );
+                         elem_node_coord , mesh_meta_data.element_rank() , block_hex , shards::Hexahedron<8> ::node_count );
 
     //--------------------------------
     // Commit (finalize) the meta data.  Is now ready to be used
@@ -528,7 +515,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
     // mesh::BulkData bulk data conforming to the meta data.
 
-    mesh::BulkData mesh_bulk_data( mesh_meta_data , MPI_COMM_WORLD );
+    mesh::BulkData mesh_bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(mesh_meta_data) , MPI_COMM_WORLD );
 
     // In a typical app, the mesh would be read from file at this point.
     // But in this use-case, we generate the mesh and initialize
@@ -550,10 +537,10 @@ void use_encr_case_1_driver( MPI_Comm comm )
       count_entities( selector, mesh_bulk_data, count );
 
       std::cout << "  P" << p_rank << ": Uses {" ;
-      std::cout << " Node = " << count[ mesh::Node ] ;
-      std::cout << " Edge = " << count[ mesh::Edge ] ;
-      std::cout << " Face = " << count[ mesh::Face ] ;
-      std::cout << " Elem = " << count[ mesh::Element ] ;
+      std::cout << " Node = " << count[ 0 ] ;
+      std::cout << " Edge = " << count[ 1 ] ;
+      std::cout << " Face = " << count[ 2 ] ;
+      std::cout << " Elem = " << count[ 3 ] ;
       std::cout << " }" << std::endl ;
       std::cout.flush();
     }
@@ -574,8 +561,6 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
 
 
-    //use_encr_case_1_algorithm( mesh_bulk_data , mesh::Face ,
-    //                               face_field , elem_field );
 
     //------------------------------------------------------------------
 
@@ -680,9 +665,9 @@ void use_encr_case_1_generate_mesh(
 
             const stk::mesh::EntityId elem_id = elem_map[ j ];
 
-            mesh::declare_element( mesh , hex_block , elem_id , node_id );
+            stk::mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
 
-            mesh::Entity * const elem = mesh.get_entity( mesh::Element , elem_id );
+            mesh::Entity * const elem = mesh.get_entity( stk::mesh::fem::FEMMetaData::get(mesh).element_rank() , elem_id );
 
 
             if (!topoVerifier.isTopologyBad(*elem))
