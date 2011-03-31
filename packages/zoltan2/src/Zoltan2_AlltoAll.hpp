@@ -42,13 +42,13 @@ public:
 };
 
 // Align a buffer, return the new pointer and create special deallocator
-//   for Teuchos::RCP.
+//   for Teuchos::RCP.  The size of the buffer is >= nbytes.
 
-char *align(char *buf, int nbytes, DeallocateAlignedBuffer<char> *&dealloc)
+char *align(char *buf, int nbytes, DeallocateAlignedBuffer *&dealloc)
 {
   intptr_t ptr = reinterpret_cast<intptr_t>(buf);
 
-  dealloc = new DeallocateAlignedBuffer<char>;
+  dealloc = new DeallocateAlignedBuffer;
 
   if (nbytes < 2)
     return buf;
