@@ -1,0 +1,148 @@
+#!/usr/netpub/python-2.7/bin/python
+
+# TODO: how to ensure python 2.7 is installed everywhere?
+#       then use !/usr/bin/env python
+# TODO: make a python .egg and have users install it?
+
+"""Main function for the Percept command line tool.
+
+This program provides functionality for a number of Percept tasks from
+the command line.
+
+Example usage:
+# Uniformly refine a mesh containing different element types."
+percept refine -n "Summer Vacation 2009" -t Vermont ~/photos/vacation2009/*
+
+# blah blah
+percept refine
+
+# Convert a mesh of hexahedral elements to a mesh of tetrahedra
+percept convert
+
+# Convert a mesh of linear elements, e.g., HEX8,  TET4, QUAD4, TRI3,
+# into a mesh of quadratic elements, e.g., HEX27, TET8, QUAD9, TRI6
+percept enrich 
+
+Some terminology in use:
+  task: What the client wants done (e.g. refine, enrich, convert).
+
+"""
+import argparse
+
+def setup_parser():
+    """Set up the parser.
+
+    Returns:
+      argparse.ArgumentParser with all options configured.
+    """
+    parser = argparse.ArgumentParser(prog='percept', description='Percept verification tool.')
+
+    # version number of this script
+    # TODO: get the version from percept
+    parser.add_argument('--version', action='version', version='%(prog)s 1.0')
+
+    subparsers = parser.add_subparsers()
+
+    # the block argument can be used with multiple tasks, predefine string here
+    blocks_arg_list = ('-b', '--blocks')
+    blocks_arg_dict = {'metavar':'STRING', 'help':'include or exclude block numbers in a quoted, comma delimited string.'}
+        #(1) empty string or option not specified: convert all blocks in the input mesh file
+        #(2) file:my_filename.my_ext (e.g. file:filelist.dat) which will read input block names from the given file
+        #(3) [+]block_name_1,[+]block_name_2, etc ,block_name_n to include only these blocks, plus sign is optional
+        #(4) a single input block name (e.g. block_3) to be converted 
+        #(5) -block_3,-block_5 to exclude blocks from those included (all blocks or include-only blocks), minus sign is mandatory
+        #(6) block_1..block_10 include the range of blocks #1 to #10 
+        #(7) any combination of [+] and - options and range (..) option can be specified 
+        #Note: wherever you specify block_number this can be replaced with just the #, e.g. "1,2,4,5" 
+        
+    blocks_file_arg_list = ('-B','--blocks-from')
+    blocks_file_arg_dict = {'metavar':'FILE', 'help':'include or exclude block numbers listed in a file.'}
+    
+    original_arg_list = ('--keep-original-elements',)
+    original_arg_dict = {'action':'store_true', 'default':False, 'help':'Keep the original mesh embedded in the output file.'}
+
+    # Tasks:
+    # each task has a subparser and task specific options
+    
+    # refine
+    parser_refine = subparsers.add_parser('refine')
+    parser_refine.add_argument('-n', '--number-refines', type=int, default=1, help='Number of refinements (default: %(default)s).')
+    parser_refine.add_argument(*blocks_arg_list, **blocks_arg_dict)
+    parser_refine.add_argument(*blocks_file_arg_list, **blocks_file_arg_dict)
+    parser_refine.add_argument(*original_arg_list, **original_arg_dict)
+
+    # convert
+    parser_convert = subparsers.add_parser('convert')
+    parser_convert.add_argument(*blocks_arg_list, **blocks_arg_dict)
+    parser_convert.add_argument(*blocks_file_arg_list, **blocks_file_arg_dict)
+    parser_convert.add_argument(*original_arg_list, **original_arg_dict)
+
+    # enrich
+    parser_enrich = subparsers.add_parser('enrich')
+    parser_enrich.add_argument(*blocks_arg_list, **blocks_arg_dict)
+    parser_enrich.add_argument(*blocks_file_arg_list, **blocks_file_arg_dict)
+    parser_enrich.add_argument(*original_arg_list, **original_arg_dict)
+
+    # infile and outfile
+    parser.add_argument('infile', nargs=1, type=file, help='Input mesh file name.')
+    parser.add_argument('outfile', nargs='?', type=file, help='Output mesh file name.')
+
+    # Other options
+    other = parser.add_argument_group('other options')
+    # NOTE: -d is now -D
+    other.add_argument('-C','--directory', default=argparse.SUPPRESS, metavar='DIR', help='Change working directory.')
+    
+    # Parallel operation
+    parallel = parser.add_argument_group('parallel control')
+    # NOTE: --load-balance is taken care of by number of processes argument
+    parallel.add_argument('-j', '--num-proc', type=int, default=1, metavar='NP', help='Number of processors to use (default: %(default)s).')
+    parallel.add_argument('--proc-rank-field', action='store_true', default=False, help='Store the processor-rank in an element field on mesh output.')
+
+    # Informative output
+    informative = parser.add_argument_group('informative output')
+    # NOTE: --print-info N is now verbose
+    informative.add_argument('-v', '--verbose', type=int, default=0, help='Print more verbose information int >= 0  (default: %(default)s).')
+    informative.add_argument('--echo-command-line', default=False, action='store_true', help='Output original command line and continue as normal.')
+    informative.add_argument('-o','--output-log', default='%(prog)s.log', help='Path where output log file will be written (default: %(prog)s.log).')
+    informative.add_argument('--show-defaults', action='store_true', default=False, help='Show %(prog)s defaults.')
+
+    # diagnostic and debugging options
+    diagnostic = parser.add_argument_group('diagnostic and debugging')
+    diagnostic.add_argument('--pause-for-debugging', default=False, action='store_true', help='Wait for your input to allow attaching debugger.')
+    diagnostic.add_argument('--pout', default='-', help='Path where per processor log files will be written (default: %(default)s).')
+    diagnostic.add_argument('--dout', default='cout', help='Path, or stream (one of cout, cerr), where diagnostic log file will be written (default: %(default)s).')
+    diagnostic.add_argument('--dw', metavar='WRITER', default=argparse.SUPPRESS, help='Name of the diagnostic writer, for example "all"')
+    diagnostic.add_argument('--timer', default=argparse.SUPPRESS, help='Name of the diagnostic timer, for example "mesh".')
+    diagnostic.add_argument('--test-memory-elements', metavar='NUM-ELEMS', type=int, default=0, help='Specify number of elements (default: %(default)s).')
+    diagnostic.add_argument('--test-memory-nodes', metavar='NUM-NODES', type=int, default=0, help='Specify number of nodes (default: %(default)s).')
+
+    return parser
+
+def main():
+    """Entry point for Percept script."""
+    parser = setup_parser()
+    #(options, args) = parser.parse_args()
+    args = parser.parse_args()
+    # TODO: setup_logger(options)
+    if not args:
+        # TODO: run_interactive(parser)
+        print 'Interactive mode not yet working.'
+    else:
+        print 'expand_args'
+        #args = expand_args(args)
+
+        try:
+            print args
+        #  run_once(options, args)
+        except KeyboardInterrupt:
+            print 'Interrupted.'
+
+def exit_from_int(*args):
+    """Handler for SIGINT signal."""
+    print ''
+    exit(0)
+
+if __name__ == '__main__':
+    import signal
+    signal.signal(signal.SIGINT, exit_from_int)
+    main()
