@@ -8,6 +8,17 @@
 
 EXTRA_ARGS=$@
 
+# The default location for this directory tree is:
+#
+#  Trilinos.base
+#    Trilinos
+#    BUILDS
+#      CHECKIN
+#
+if [ "$TRILINOS_BASE_DIR" == "" ] ; then
+  TRILINOS_BASE_DIR=../..
+fi
+
 TRILINOS_TOOLSET_BASE=/opt/gcc-4.5.1/trilinos-toolset
 
 echo "
@@ -52,7 +63,7 @@ echo "
 # Invocation
 #
 
-../../../Trilinos/checkin-test.py \
+$TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 -j16 \
 --ctest-timeout=180 \
 $EXTRA_ARGS  
