@@ -225,12 +225,13 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   GNO firstGNO = gnoDist[comm->getRank()];
 
   if (getGids){
-    for (LNO i=0; i < gno.size(); i++){
-      gid.push_back(myGids.get()[gno[i] - firstGNO]);
+    std::vector<AppGID> &procGids = *myGids;
+    for (LNO i=0; i < LNO(gno.size()); i++){
+      gid.push_back(procGids[gno[i] - firstGNO]);
     }
   }
   else{
-    for (LNO i=0; i < gid.size(); i++){
+    for (LNO i=0; i < LNO(gid.size()); i++){
       const LNO &idx = gidHash->get(Z2::IdentifierTraits<AppGID>::key(gid[i]));
       gno.push_back(firstGNO + idx);
     }
@@ -272,12 +273,13 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   GNO firstGNO = gnoDist[comm->getRank()];
 
   if (getLids){
-    for (LNO i=0; i < gno.size(); i++){
-      lid.push_back(myLids.get()[gno[i] - firstGNO]);
+    std::vector<AppLID> &procLids = *myLids;
+    for (LNO i=0; i < LNO(gno.size()); i++){
+      lid.push_back(procLids[gno[i] - firstGNO]);
     }
   }
   else{
-    for (LNO i=0; i < lid.size(); i++){
+    for (LNO i=0; i < LNO(lid.size()); i++){
       const LNO &idx = lidHash->get(Z2::IdentifierTraits<AppLID>::key(lid[i]));
       gno.push_back(firstGNO + idx);
     }
@@ -286,12 +288,12 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 #else
 
   if (getLids){
-    for (LNO i=0; i < gno.size(); i++)
+    for (LNO i=0; i < LNO(gno.size()); i++)
       const LNO &idx = gidHash->get(gno[i]);
       lid.push_back(myLids.get()[idx]);
   }
   else{
-    for (LNO i=0; i < lid.size(); i++){
+    for (LNO i=0; i < LNO(lid.size()); i++){
       const LNO &idx = lidHash->get(Z2::IdentifierTraits<AppLID>::key(lid[i]));
       gno.push_back(myGids.get()[idx]);
     }
@@ -329,7 +331,7 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   gno.reserve(gid.size());
   proc.reserve(gid.size());
 
-  for (int i=0; i < gid.size(); i++){
+  for (LNO i=0; i < LNO(gid.size()); i++){
 
 #ifdef APPGID_IS_NOT_GNO
     std::string key(Z2::IdentifierTraits<AppGID>::key(gid[i]));
@@ -383,7 +385,7 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   std::vector<int> answerProcs(localNumberOfIds);
   std::vector<int> msgCount(nprocs,0);
 
-  for (LNO i=0; i < ids.size(); i++){
+  for (LNO i=0; i < LNO(ids.size()); i++){
     std::string key(Z2::IdentifierTraits<AppGID>::key(ids[i]));
     int p = Z2::Hash<AppGID, int>(key, nprocs);
     answerProcs.push_back(p);
@@ -400,7 +402,7 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
     sendGidOffsets[i+1] = sendGidOffsets[i] + msgCount[i];
   }
 
-  for (LNO i=0; i < ids.size(); i++){
+  for (LNO i=0; i < LNO(ids.size()); i++){
     int p = answerProcs[i];
     sendGidBuf[sendGidOffsets[p]] = ids[i];
     sendIndexBuf[sendGidOffsets[p]] = i;
@@ -442,7 +444,7 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
     int gidOwner = *nextProc++;
     AppGID &gno = next->first;
     std::vector<int> &indices = next->second;
-    for (int i=0; i < indices.size(); i++){
+    for (LNO i=0; i < indices.size()); i++){
       gno[indices[i]] = gno;
       proc[indices[i]] = gidOwner;
     }

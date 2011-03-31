@@ -31,11 +31,14 @@ int main(int argc, char *argv[])
   int nprocs = session.getNProc();
   bool pass = true;
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+    Teuchos::DefaultComm<int>::getComm();
+
+  // In this test, our local IDs are ints and our global IDs are longs.
 
   if (pass){
 
-    // test of Z2::AlltoAll using a ordinal type
+    // test of Z2::AlltoAll using a Scalar type (ints)
   
     int *sendBuf = new int [2*nprocs];
     
@@ -48,7 +51,7 @@ int main(int argc, char *argv[])
   
     Teuchos::ArrayRCP<int> recvBuf;
     
-    Z2::AlltoAll<int, long, int>(*comm, 
+    Z2::AlltoAll<int, int>(*comm, 
         sendBufView,    // ints to send from this process to all the others
         2,              // two ints per process
         recvBuf);       // will be allocated and filled in AlltoAll
@@ -69,7 +72,8 @@ int main(int argc, char *argv[])
 
   if (pass){
 
-    // test of Z2::AlltoAll using a non-ordinal type
+    // test of Z2::AlltoAll using a non-Scalar type for which
+    //  SerializationTraits are defined in Teuchos (std::pair).
   
     std::pair<int, int> *outBufPair = new std::pair<int, int> [nprocs];
 
@@ -82,7 +86,7 @@ int main(int argc, char *argv[])
   
     Teuchos::ArrayRCP< std::pair<int, int> > recvBufPair;
     
-    Z2::AlltoAll<std::pair<int, int> , long, int>(*comm, 
+    Z2::AlltoAll<std::pair<int, int> , int>(*comm, 
         sendBufPair,    // ints to send from this process to all the others
         1,              // one pair per process
         recvBufPair);   // will be allocated and filled in AlltoAll
@@ -103,10 +107,10 @@ int main(int argc, char *argv[])
 
   if (pass){
 
-    // test of Z2::AlltoAllv (different sized messages) using a ordinal type
+    // test of Z2::AlltoAllv (different sized messages) using a Scalar type
 
-    long myMsgSizeBase=rank*nprocs + 1;
-    long *outMsgSizes = new long [nprocs];
+    int myMsgSizeBase=rank*nprocs + 1;
+    int *outMsgSizes = new int [nprocs];
     long totalOut = 0;
 
     for (int p=0; p < nprocs; p++){
@@ -114,7 +118,7 @@ int main(int argc, char *argv[])
       totalOut += outMsgSizes[p];
     }
 
-    Teuchos::ArrayView<long> sendCount(outMsgSizes, nprocs);
+    Teuchos::ArrayView<int> sendCount(outMsgSizes, nprocs);
   
     int *outBuf = new int [totalOut];
     Teuchos::ArrayView<int> sendBuf(outBuf, totalOut);
@@ -126,10 +130,10 @@ int main(int argc, char *argv[])
       }
     }
   
-    Teuchos::ArrayRCP<long> recvCount;
+    Teuchos::ArrayRCP<int> recvCount;
     Teuchos::ArrayRCP<int> recvBuf;
     
-    Z2::AlltoAllv<int, long, int>(*comm, 
+    Z2::AlltoAllv<int, int>(*comm, 
                   sendBuf,    
                   sendCount,   
                   recvBuf,
@@ -138,7 +142,7 @@ int main(int argc, char *argv[])
     delete [] outBuf;
     delete [] outMsgSizes;
   
-    long *inMsgSizes = recvCount.get();
+    int *inMsgSizes = recvCount.get();
     int *inBuf = recvBuf.get();
 
     for (int p=0; p < nprocs; p++){
@@ -154,10 +158,10 @@ int main(int argc, char *argv[])
   if (pass){
 
     // test of Z2::AlltoAllv using vectors - which can not
-    //    be serialized by Teuchos (so they can't be Scalars).
+    //    be serialized by Teuchos.
 
-    long myMsgSizeBase=rank*nprocs + 1;
-    long *outMsgSizes = new long [nprocs];
+    int myMsgSizeBase=rank*nprocs + 1;
+    int *outMsgSizes = new int [nprocs];
     long totalOut = 0;
 
     for (int p=0; p < nprocs; p++){
@@ -165,37 +169,39 @@ int main(int argc, char *argv[])
       totalOut += outMsgSizes[p];
     }
 
-    Teuchos::ArrayView<long> sendCount(outMsgSizes, nprocs);
+    Teuchos::ArrayView<int> sendCount(outMsgSizes, nprocs);
   
     std::vector<float> *outBuf = new std::vector<float> [totalOut];
     Teuchos::ArrayView<std::vector<float> > sendBuf(outBuf, totalOut);
   
     std::vector<float> *out = outBuf;
     for (int p=0; p < nprocs; p++){
-      for (int i=0; i < outMsgSizes[p]; i++){
+      for (int i=0; i < outMsgSizes[p]; i++, out++){
+        (*out).resize(2);
         (*out).push_back(p+rank);
         (*out).push_back(p+rank + 0.5);
       }
     }
   
-    Teuchos::ArrayRCP<long> recvCount;
+    Teuchos::ArrayRCP<int> recvCount;
     Teuchos::ArrayRCP<std::vector<float> > recvBuf;
     
-    Z2::AlltoAllv<std::vector<float> , long, int>(*comm, 
-                  sendBuf,    
-                  sendCount,   
-                  recvBuf,
-                  recvCount);
+    Z2::AlltoAllv<float , int>(*comm, 
+        sendBuf,    
+        sendCount,   
+        recvBuf,
+        recvCount,
+        2);        // optimization: all vectors are size 2
 
     delete [] outMsgSizes;
     delete [] outBuf;
   
-    long *inMsgSizes = recvCount.get();
+    int *inMsgSizes = recvCount.get();
     std::vector<float> *inBuf = recvBuf.get();
 
     for (int p=0; p < nprocs; p++){
-      for (int i=0; i < inMsgSizes[p]; i++){
-        std::vector<float> &v = *inBuf++;
+      for (int i=0; i < inMsgSizes[p]; i++, inBuf++){
+        std::vector<float> &v = *inBuf;
         if ( (v[0] != rank + p) || (v[1] != rank +p +0.5)){
           pass = false;
           break;
@@ -203,7 +209,6 @@ int main(int argc, char *argv[])
       }
     }
   }
-#endif
 
   if (!pass)
     std::cout << "FAIL" << std::endl;
