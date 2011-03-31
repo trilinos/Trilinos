@@ -70,6 +70,16 @@ class FEMMetaData {
   FEMMetaData(size_t spatial_dimension,
               const std::vector<std::string>& in_entity_rank_names = std::vector<std::string>());
 
+#define FEMMETADATA_ADOPT 0
+#if FEMMETADATA_ADOPT
+  /**
+   * \brief Construct and initialize a FEMMetaData by adopting an existing MetaData
+   */
+  FEMMetaData(mesh::MetaData& meta,
+              size_t spatial_dimension,
+              const std::vector<std::string>& in_entity_rank_names = std::vector<std::string>());
+#endif
+
   /// --------------------------------------------------------------------------------
   /// FEMMetaData Specific functions begin:
   /// --------------------------------------------------------------------------------
@@ -137,6 +147,8 @@ class FEMMetaData {
   {
     return m_element_rank;
   }
+  //  void check_topo_db();
+  
 
   /** \brief This function is used to register new cell topologies and their associated ranks with FEMMetaData.
    * Currently, several shards Cell Topologies are registered with appropriate ranks at initialization time.
@@ -468,7 +480,12 @@ class FEMMetaData {
     void internal_declare_known_cell_topology_parts();
 
   private: // data
+#if FEMMETADATA_ADOPT
+    MetaData                      m_meta_data_object;
+    MetaData&                     m_meta_data;
+#else
     MetaData                      m_meta_data;
+#endif
     bool                          m_fem_initialized;
     size_t                        m_spatial_dimension;
     EntityRank                    m_edge_rank;
@@ -489,6 +506,13 @@ bool is_cell_topology_root_part(const Part & part);
 /** \brief This convenience function simply calles FEMMetaData::declare_part_subset with the appropriate root cell topology part
  */
 void set_cell_topology(FEMMetaData & fem_meta, Part &part, fem::CellTopology cell_topology);
+
+template<class Topology>
+inline void set_cell_topology(FEMMetaData & fem_meta, Part & part)
+{
+  set_cell_topology(fem_meta, part, fem::CellTopology(shards::getCellTopologyData<Topology>()));
+}
+
 
 std::vector<std::string> entity_rank_names(size_t spatial_dimension);
 

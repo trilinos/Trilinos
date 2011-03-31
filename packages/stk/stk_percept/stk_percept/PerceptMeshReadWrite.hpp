@@ -15,7 +15,11 @@
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
@@ -45,14 +49,14 @@ namespace stk {
       /// Declare "coordinates" field and put it on the universal part. This
       /// example also defines all Ioss::Field::TRANSIENT fields that exist on the
       /// Ioss::Nodeblock as fields on the universal part.
-      void process_read_nodeblocks_meta    (Ioss::Region &region, stk::mesh::MetaData &meta, int& spatial_dim);
+      void process_read_nodeblocks_meta    (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta, int& spatial_dim);
 
       /// Declare a part for each element block on the Ioss::Region
       /// 'region' unless the element block has the "omitted" property set
       /// to the value 1. The example then iterates each element block and
       /// defines any Ioss::Field::ATTRIBUTE and Ioss::Field::TRANSIENT fields that exist on the
       /// Ioss::ElementBlock as fields on the corresponding part.
-      void process_read_elementblocks_meta (Ioss::Region &region, stk::mesh::MetaData &meta);
+      void process_read_elementblocks_meta (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
       /// Declare a part for each Ioss::NodeSet on the Ioss::Region
       /// 'region' unless the nodeset has the "omitted" property set
@@ -60,7 +64,7 @@ namespace stk {
       /// defines any "distribution factor" and Ioss::Field::TRANSIENT fields that
       /// exist on the Ioss::NodeSet as fields on the corresponding
       /// part.
-      void process_read_nodesets_meta      (Ioss::Region &region, stk::mesh::MetaData &meta);
+      void process_read_nodesets_meta      (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
       /// Declare a part for each Ioss::FaceSet on the Ioss::Region
       /// 'region' unless the faceset has the "omitted" property set
@@ -75,7 +79,7 @@ namespace stk {
       /// 1. The example then iterates each faceblock and defines any
       /// "distribution factor" and Ioss::Field::TRANSIENT fields that exist on the
       /// Ioss::FaceBlock as fields on the corresponding part.
-      void process_read_facesets_meta      (Ioss::Region &region, stk::mesh::MetaData &meta);
+      void process_read_facesets_meta      (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
       /// Declare a part for each Ioss::EdgeSet on the Ioss::Region
       /// 'region' unless the edgeset has the "omitted" property set
@@ -90,7 +94,7 @@ namespace stk {
       /// 1. The example then iterates each edgeblock and defines any
       /// "distribution factor" and Ioss::Field::TRANSIENT fields that exist on the
       /// Ioss::EdgeBlock as fields on the corresponding part.
-      void process_read_edgesets_meta      (Ioss::Region &region, stk::mesh::MetaData &meta);
+      void process_read_edgesets_meta      (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
       /// NOTE: This must be called after the process_read_elementblocks() call
       /// since there may be nodes that exist in the database that are

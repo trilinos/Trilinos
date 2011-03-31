@@ -61,8 +61,6 @@
 #include "BelosBlockCGSolMgr.hpp"
 
 #include "Teuchos_ParameterList.hpp"
-using Teuchos::RCP;
-using Teuchos::ParameterList;
 
 /*! \class Belos::EpetraOperator
     \brief This class provides and interface to the Epetra_Operator class, so Belos can be 
@@ -86,8 +84,8 @@ public:
   //@{ 
   
   //! Constructor
-  EpetraOperator( const RCP<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp, 
-		  const RCP<ParameterList>& plist,
+  EpetraOperator( const Teuchos::RCP<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp, 
+		  const Teuchos::RCP<Teuchos::ParameterList>& plist,
                   bool initSolnVec = false );
   
   //! Destructor
@@ -141,9 +139,9 @@ public:
   //@}	   
 private:
 
-  RCP<SolverManager<double,Epetra_MultiVector,Epetra_Operator> > solver_;
-  RCP<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > lp_;
-  RCP<ParameterList> plist_;
+  Teuchos::RCP<SolverManager<double,Epetra_MultiVector,Epetra_Operator> > solver_;
+  Teuchos::RCP<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > lp_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
 
   std::vector<char> Solver;
   bool initSolnVec_;

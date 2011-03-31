@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
   // Get update list and number of local equations from newly created map.
   const size_t numMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const Ordinal> myGlobalElements = map->getNodeElementList();
-  // Create an OTeger vector NumNz that is used to build the Petra Matrix.
+  // Create an integer vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
   // on this processor
   Teuchos::ArrayRCP<size_t> NumNz = Teuchos::arcp<size_t>(numMyElements);

@@ -6,6 +6,9 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/function/StringFunction.hpp>
 #include <stk_percept/function/FieldFunction.hpp>
@@ -41,6 +44,7 @@ namespace stk {
 namespace percept {
 namespace unit_tests {
 
+
 #if 0
 static stk::diag::Writer &
 dw()
@@ -63,15 +67,15 @@ struct LocalFixture
 {
   PerceptMesh eMesh;
   int bogus_init;
-  MetaData& metaData;
-  BulkData& bulkData;
-  FieldBase *coords_field;
+  mesh::fem::FEMMetaData& metaData;
+  mesh::BulkData& bulkData;
+  mesh::FieldBase *coords_field;
   StringFunction sfx;
   ConstantFunction sfx_res;
 
-  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0) : eMesh(), bogus_init(init(num_xyz, num_y, num_z)),
-                                                                     metaData(*eMesh.getMetaData()), bulkData(*eMesh.getBulkData()),
-                                                                     coords_field( metaData.get_field<FieldBase>("coordinates") ),
+  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0) : eMesh(3), bogus_init(init(num_xyz, num_y, num_z)),
+                                                                     metaData(*eMesh.getFEM_meta_data()), bulkData(*eMesh.get_bulkData()),
+                                                                     coords_field( metaData.get_field<mesh::FieldBase>("coordinates") ),
                                                                      sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) ),
                                                                      sfx_res (0.0, "sfx_res")
 
@@ -197,14 +201,12 @@ STKUNIT_UNIT_TEST(norm, volume)
 
   dw().m(LOG_NORM) << "TEST::norm::volume " << stk::diag::dendl;
 
-  using namespace mesh;
-
   LocalFixture fix(3,3,12);
-  MetaData& metaData = fix.metaData;
-  BulkData& bulkData = fix.bulkData;
+  mesh::fem::FEMMetaData& metaData = fix.metaData;
+  mesh::BulkData& bulkData = fix.bulkData;
   PerceptMesh& eMesh = fix.eMesh;
 
-  FieldBase *coords_field = fix.coords_field;
+  mesh::FieldBase *coords_field = fix.coords_field;
 
   /// create a field function from the existing coordinates field
   FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
@@ -332,13 +334,11 @@ STKUNIT_UNIT_TEST(norm, string_function)
 
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
-  using namespace mesh;
-
   LocalFixture     fix(4);
-  MetaData&        metaData     = fix.metaData;
-  BulkData&        bulkData     = fix.bulkData;
+  mesh::fem::FEMMetaData&        metaData     = fix.metaData;
+  mesh::BulkData&        bulkData     = fix.bulkData;
   PerceptMesh&        eMesh     = fix.eMesh;
-  FieldBase*       coords_field = fix.coords_field;
+  mesh::FieldBase*       coords_field = fix.coords_field;
   StringFunction   sfx          = fix.sfx;
   ConstantFunction sfx_res      = fix.sfx_res;
 
@@ -407,13 +407,11 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
 
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
-  using namespace mesh;
-
   LocalFixture     fix(4);
-  MetaData&        metaData     = fix.metaData;
-  BulkData&        bulkData     = fix.bulkData;
+  mesh::fem::FEMMetaData&        metaData     = fix.metaData;
+  mesh::BulkData&        bulkData     = fix.bulkData;
   PerceptMesh&        eMesh     = fix.eMesh;
-  FieldBase*       coords_field = fix.coords_field;
+  mesh::FieldBase*       coords_field = fix.coords_field;
   StringFunction   sfx          = fix.sfx;
   ConstantFunction sfx_res      = fix.sfx_res;
 
@@ -567,10 +565,8 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
 
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
-  using namespace mesh;
-
   /// create a meta data/bulk data empty pair
-  PerceptMesh eMesh;
+  PerceptMesh eMesh(3);
 
   if (1)
   {
@@ -589,11 +585,11 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
     eMesh.commit();
   }
 
-  MetaData& metaData = *eMesh.getMetaData();
-  BulkData& bulkData = *eMesh.getBulkData();
+  mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
+  mesh::BulkData& bulkData = *eMesh.get_bulkData();
 
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
-  FieldBase *coords_field = metaData.get_field<FieldBase>("coordinates");
+  mesh::FieldBase *coords_field = metaData.get_field<mesh::FieldBase>("coordinates");
 
   /// create a field function from the existing coordinates field
   FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
@@ -723,13 +719,11 @@ STKUNIT_UNIT_TEST(norm, field_function)
 
   dw().m(LOG_NORM) << "TEST.norm.field_function " << stk::diag::dendl;
 
-  using namespace mesh;
-
   LocalFixture     fix(4);
-  MetaData&        metaData     = fix.metaData;
-  BulkData&        bulkData     = fix.bulkData;
+  mesh::fem::FEMMetaData&        metaData     = fix.metaData;
+  mesh::BulkData&        bulkData     = fix.bulkData;
   //PerceptMesh&        eMesh     = fix.eMesh;
-  FieldBase*       coords_field = fix.coords_field;
+  mesh::FieldBase*       coords_field = fix.coords_field;
 
   /// Create the operator that will do the work
   /// get the l2 norm

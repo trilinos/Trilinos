@@ -14,7 +14,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -24,7 +24,9 @@
 #include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+
 
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -41,11 +43,10 @@
 namespace stk {
   namespace percept {
 
-    using namespace stk::mesh;
 
-    typedef Field<double,Cartesian>    VectorFieldType ;
-    typedef Field<double>              ScalarFieldType ;
-    typedef Field<double*,ElementNode> ElementNodePointerFieldType ;
+    typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
+    typedef stk::mesh::Field<double>                          ScalarFieldType ;
+    typedef stk::mesh::Field<double*, stk::mesh::ElementNode> ElementNodePointerFieldType ;
 
     /** Use case with mixed element topologies and
      *  field relations to provide fast access to node field data
@@ -65,12 +66,11 @@ namespace stk {
       void populate();
 
       const int m_spatial_dimension;
-      MetaData m_metaData;
-      BulkData m_bulkData;
-      DefaultFEM m_fem;
+      stk::mesh::fem::FEMMetaData m_metaData;
+      stk::mesh::BulkData m_bulkData;
 
-      Part & m_block_beam;
-      const EntityRank m_elem_rank;
+      stk::mesh::Part & m_block_beam;
+      const stk::mesh::EntityRank m_elem_rank;
 
       VectorFieldType & m_coordinates_field;
       VectorFieldType & m_centroid_field;

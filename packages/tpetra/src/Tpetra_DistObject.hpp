@@ -253,8 +253,8 @@ namespace Tpetra {
   void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
                                             const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, CombineMode CM) 
   {
-    TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( A.getMap() != importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    TEST_FOR_EXCEPTION(   *getMap() != *importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( *A.getMap() != *importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
     size_t numSameIDs = importer.getNumSameIDs();
     const Teuchos::ArrayView<const LocalOrdinal> exportLIDs      = importer.getExportLIDs();
     const Teuchos::ArrayView<const LocalOrdinal> remoteLIDs      = importer.getRemoteLIDs();
@@ -268,8 +268,8 @@ namespace Tpetra {
   void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doExport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
                                             const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, CombineMode CM) 
   {
-    TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( A.getMap() != exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    TEST_FOR_EXCEPTION(   *getMap() != *exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
     size_t numSameIDs = exporter.getNumSameIDs();
     Teuchos::ArrayView<const LocalOrdinal> exportLIDs      = exporter.getExportLIDs();
     Teuchos::ArrayView<const LocalOrdinal> remoteLIDs      = exporter.getRemoteLIDs();
@@ -284,8 +284,8 @@ namespace Tpetra {
                                                 const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
                                                 const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
                                                 CombineMode CM) {
-    TEST_FOR_EXCEPTION( getMap() != exporter.getSourceMap(), std::runtime_error, "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( A.getMap() != exporter.getTargetMap(), std::runtime_error, "Source Maps don't match.");
+    TEST_FOR_EXCEPTION(  * getMap() != *exporter.getSourceMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getTargetMap(), std::runtime_error, "Source Maps don't match.");
     size_t numSameIDs = exporter.getNumSameIDs();
     Teuchos::ArrayView<const LocalOrdinal> exportLIDs      = exporter.getRemoteLIDs();
     Teuchos::ArrayView<const LocalOrdinal> remoteLIDs      = exporter.getExportLIDs();
@@ -299,8 +299,8 @@ namespace Tpetra {
   void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doExport(
                                                 const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
                                                 const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, CombineMode CM) {
-    TEST_FOR_EXCEPTION( getMap() != importer.getSourceMap(), std::runtime_error, "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( A.getMap() != importer.getTargetMap(), std::runtime_error, "Source Maps don't match.");
+    TEST_FOR_EXCEPTION( *  getMap() != *importer.getSourceMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( *A.getMap() != *importer.getTargetMap(), std::runtime_error, "Source Maps don't match.");
     size_t numSameIDs = importer.getNumSameIDs();
     Teuchos::ArrayView<const LocalOrdinal> exportLIDs      = importer.getRemoteLIDs();
     Teuchos::ArrayView<const LocalOrdinal> remoteLIDs      = importer.getExportLIDs();

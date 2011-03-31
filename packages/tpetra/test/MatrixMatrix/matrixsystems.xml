@@ -7,14 +7,15 @@
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
-	<ParameterList name="syntheticT">
+<!-- Not working right not due to matrix reader issues
+     <ParameterList name="syntheticT">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/synTa.mtx" type="string"/>
 		<Parameter name="B" value="matrices/synTb.mtx" type="string"/>
 		<Parameter name="C" value="matrices/synTc.mtx" type="string"/>
 		<Parameter name="TransA" value="true" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
-	</ParameterList>
+	</ParameterList> -->
 	<!--  Known to not work at this time, Kurtis Nusbaum 03/24/2011
   <ParameterList name="syntheticBT">
     <Parameter name="op" value="multiply" type="string"/>

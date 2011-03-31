@@ -17,6 +17,8 @@
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
 
+#include <stk_util/util/RadixSort.hpp>
+
 namespace stk {
 namespace parallel {
 
@@ -25,13 +27,6 @@ namespace parallel {
 namespace {
 
 struct KeyProcLess {
-
-  bool operator()( const DistributedIndex::KeyProc & lhs ,
-                   const DistributedIndex::KeyProc & rhs ) const
-  {
-    return lhs.first != rhs.first ? lhs.first  < rhs.first
-                                  : lhs.second < rhs.second ;
-  }
 
   bool operator()( const DistributedIndex::KeyProc & lhs ,
                    const DistributedIndex::KeyType & rhs ) const
@@ -45,7 +40,7 @@ void sort_unique( std::vector<DistributedIndex::KeyProc> & key_usage )
     i = key_usage.begin() ,
     j = key_usage.end() ;
 
-  std::sort( i , j , KeyProcLess() );
+  std::sort( i , j );
 
   i = std::unique( i , j );
 
@@ -54,15 +49,57 @@ void sort_unique( std::vector<DistributedIndex::KeyProc> & key_usage )
 
 void sort_unique( std::vector<DistributedIndex::KeyType> & keys )
 {
+  stk::util::radix_sort_unsigned(&keys[0], keys.size());
+
   std::vector<DistributedIndex::KeyType>::iterator
     i = keys.begin() ,
     j = keys.end() ;
 
-  std::sort( i , j );
-
   i = std::unique( i , j );
-
   keys.erase( i , j );
+}
+
+// reserve vector size (current size + rev_buffer remaining)
+template < class T >
+inline void reserve_for_recv_buffer( const CommAll& all, const DistributedIndex::ProcType& comm_size, std::vector<T>& v)
+{
+  unsigned num_remote = 0;
+  for (DistributedIndex::ProcType p = 0 ; p < comm_size ; ++p ) {
+    CommBuffer & buf = all.recv_buffer( p );
+    num_remote += buf.remaining() / sizeof(T);
+  }
+  v.reserve(v.size() + num_remote);
+}
+
+// unpack buffer into vector
+template < class T >
+inline void unpack_recv_buffer( const CommAll& all, const DistributedIndex::ProcType& comm_size, std::vector<T>& v)
+{
+  reserve_for_recv_buffer(all, comm_size, v);
+  for (DistributedIndex::ProcType p = 0 ; p < comm_size ; ++p ) {
+    CommBuffer & buf = all.recv_buffer( p );
+    while ( buf.remaining() ) {
+      T kp;
+      buf.unpack( kp );
+      v.push_back( kp );
+    }
+  }
+}
+
+// unpack buffer into vector, where pair.second is the processor
+template < class T >
+inline void unpack_with_proc_recv_buffer( const CommAll& all, const DistributedIndex::ProcType& comm_size, std::vector<std::pair<T,DistributedIndex::ProcType> >& v)
+{
+  reserve_for_recv_buffer(all, comm_size, v);
+  for ( DistributedIndex::ProcType p = 0 ; p < comm_size ; ++p ) {
+    CommBuffer & buf = all.recv_buffer( p );
+    std::pair<T,DistributedIndex::ProcType> kp;
+    kp.second = p;
+    while ( buf.remaining() ) {
+      buf.unpack( kp.first );
+      v.push_back( kp );
+    }
+  }
 }
 
 } // namespace <unnamed>
@@ -225,14 +262,7 @@ void DistributedIndex::query(
 
   all.communicate();
 
-  for ( ProcType p = 0 ; p < m_comm_size ; ++p ) {
-    CommBuffer & buf = all.recv_buffer( p );
-    while ( buf.remaining() ) {
-      KeyProc kp ;
-      buf.unpack( kp );
-      sharing_of_keys.push_back( kp );
-    }
-  }
+  unpack_recv_buffer(all, m_comm_size, sharing_of_keys);
 
   std::sort( sharing_of_keys.begin() , sharing_of_keys.end() );
 }
@@ -280,16 +310,7 @@ void DistributedIndex::query(
 
     all.communicate();
 
-    for ( ProcType p = 0 ; p < m_comm_size ; ++p ) {
-      CommBuffer & buf = all.recv_buffer( p );
-      KeyProc kp ;
-      kp.second = p ;
-
-      while ( buf.remaining() ) {
-        buf.unpack<KeyType>( kp.first );
-        request.push_back( kp );
-      }
-    }
+    unpack_with_proc_recv_buffer(all, m_comm_size, request);
   }
 
   sort_unique( request );
@@ -334,14 +355,7 @@ void DistributedIndex::query_to_usage(
 
     all.communicate();
 
-    for ( ProcType p = 0 ; p < m_comm_size ; ++p ) {
-      CommBuffer & buf = all.recv_buffer( p );
-      KeyType key ;
-      while ( buf.remaining() ) {
-        buf.unpack<KeyType>( key );
-        request.push_back( key );
-      }
-    }
+    unpack_recv_buffer(all, m_comm_size, request);
   }
 
   sort_unique( request );
@@ -357,14 +371,7 @@ void DistributedIndex::query_to_usage(
 
     all.communicate();
 
-    for ( ProcType p = 0 ; p < m_comm_size ; ++p ) {
-      CommBuffer & buf = all.recv_buffer( p );
-      while ( buf.remaining() ) {
-        KeyProc kp ;
-        buf.unpack( kp );
-        sharing_keys.push_back( kp );
-      }
-    }
+    unpack_recv_buffer(all, m_comm_size, sharing_keys);
 
     std::sort( sharing_keys.begin() , sharing_keys.end() );
   }
@@ -385,7 +392,7 @@ struct RemoveKeyProc {
   {
     std::vector<DistributedIndex::KeyProc>::iterator
       i = std::lower_bound( key_usage.begin(),
-                            key_usage.end(), kp , KeyProcLess() );
+                            key_usage.end(), kp );
     if ( i != key_usage.end() && kp == *i ) {
       i->second = -1 ;
     }
@@ -564,7 +571,7 @@ void DistributedIndex::update_keys(
   // Merge local_key_usage and m_key_usage into temp_key
   std::vector<KeyProc> temp_key ;
   temp_key.reserve(local_key_usage.size() + m_key_usage.size());
-  std::sort( local_key_usage.begin(), local_key_usage.end(), KeyProcLess() );
+  std::sort( local_key_usage.begin(), local_key_usage.end() );
   std::merge( m_key_usage.begin(),
               m_key_usage.end(),
               local_key_usage.begin(),
@@ -573,28 +580,10 @@ void DistributedIndex::update_keys(
 
   // Unpack and append for remote keys:
   std::vector<KeyProc> remote_key_usage ;
-  {
-    unsigned num_remote_adds = 0;
-    for ( int p = 0 ; p < m_comm_size ; ++p ) {
-      CommBuffer & buf = all.recv_buffer( p );
-      num_remote_adds += buf.remaining() / sizeof(KeyProc);
-    }
 
-    remote_key_usage.reserve(num_remote_adds);
-  }
-  for ( int p = 0 ; p < m_comm_size ; ++p ) {
-    CommBuffer & buf = all.recv_buffer( p );
+  unpack_with_proc_recv_buffer(all, m_comm_size, remote_key_usage);
 
-    KeyProc kp ;
-    kp.second = p ;
-
-    while ( buf.remaining() ) {
-      buf.unpack<KeyType>( kp.first );
-      remote_key_usage.push_back( kp );
-    }
-  }
-
-  std::sort( remote_key_usage.begin(), remote_key_usage.end(), KeyProcLess() );
+  std::sort( remote_key_usage.begin(), remote_key_usage.end() );
 
   m_key_usage.clear();
   m_key_usage.reserve(temp_key.size() + remote_key_usage.size());
@@ -934,7 +923,7 @@ void DistributedIndex::generate_new_keys(
   // Plan is done, communicate the new keys.
   //--------------------------------------------------------------------
   // Put key this process is keeping into the index.
-
+  m_key_usage.reserve(m_key_usage.size() + new_keys.size());
   for ( std::vector<KeyType>::iterator i = new_keys.begin();
         i != new_keys.end() ; ++i ) {
     m_key_usage.push_back( KeyProc( *i , m_comm_rank ) );
@@ -979,17 +968,9 @@ void DistributedIndex::generate_new_keys(
   all.communicate();
 
   // Unpacking
+  unpack_recv_buffer( all, m_comm_size, new_keys);
 
-  for ( int p = 0 ; p < m_comm_size ; ++p ) {
-    CommBuffer & buf = all.recv_buffer( p );
-    while ( buf.remaining() ) {
-      KeyType key;
-      buf.unpack<KeyType>( key );
-      new_keys.push_back( key );
-    }
-  }
-
-  std::sort( new_keys.begin() , new_keys.end() );
+  stk::util::radix_sort_unsigned(&new_keys[0], new_keys.size());
 
   requested_keys.resize( m_span_count );
 

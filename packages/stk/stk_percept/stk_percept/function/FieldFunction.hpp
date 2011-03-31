@@ -14,9 +14,9 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <stk_percept/function/Function.hpp>
@@ -106,7 +106,7 @@ namespace stk
       void helper(MDArray& input_phy_points, MDArray& output_field_values,
                   const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional);
 
-      mesh::BulkData *getBulkData();
+      mesh::BulkData *get_bulkData();
 
       //void setBulkData(mesh::BulkData *bulk) { m_bulkData = bulk; }
       bool getFoundOnLocalOwnedPart() { return m_found_on_local_owned_part; }
@@ -148,7 +148,7 @@ namespace stk
 
       VERIFY_OP(output_field_values.dimension(0), ==, numInterpPoints, "FieldFunction::operator() output_field_values bad dim(0)");
 
-      const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(bucket_or_element);
+      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(bucket_or_element);
 
       unsigned stride = 0;
       //double * fdata_bucket = PerceptMesh::field_data( m_my_field , bucket, &stride);

@@ -40,6 +40,7 @@
 #include "Teuchos_StandardConditions.hpp"
 #include "Teuchos_StandardFunctionObjects.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 
 namespace Teuchos{

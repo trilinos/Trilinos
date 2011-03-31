@@ -16,9 +16,9 @@ namespace stk {
 
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::ShellLine<2>, shards::ShellLine<3>  >(eMesh)
       {
-        m_primaryEntityRank = mesh::Edge;
+        m_primaryEntityRank = m_eMesh.edge_rank();
         if (m_eMesh.getSpatialDim() == 1)
-          m_primaryEntityRank = mesh::Element;
+          m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, false);  // different topologies
         Elem::StdMeshObjTopologies::bootstrap();
@@ -44,8 +44,8 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        //needed_entities[0].first = stk::mesh::Edge; 
-        needed_entities[0].first = (m_eMesh.getSpatialDim() == 1 ? stk::mesh::Element : stk::mesh::Edge);
+        //needed_entities[0].first = m_eMesh.edge_rank(); 
+        needed_entities[0].first = (m_eMesh.getSpatialDim() == 1 ? m_eMesh.element_rank() : m_eMesh.edge_rank());
         setToOne(needed_entities);
       }
 
@@ -53,8 +53,8 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
-                        FieldBase *proc_rank_field=0)
+                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::FieldBase *proc_rank_field=0)
       {
         genericEnrich_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool,

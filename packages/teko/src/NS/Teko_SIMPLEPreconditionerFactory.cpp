@@ -127,13 +127,16 @@ LinearOp SIMPLEPreconditionerFactory
      DiagonalPreconditionerFactory Hfact;
      DiagonalPrecondState Hstate;
      Hfact.initializeFromParameterList(BlkDiagList_);           
-     LinearOp Hop=Hfact.buildPreconditionerOperator(matF,Hstate); 
+     H = Hfact.buildPreconditionerOperator(matF,Hstate); 
 
+/*
      // Get a FECrsMarix out of the BDP
      RCP<Epetra_FECrsMatrix> Hcrs=rcp(Hstate.BDP_->CreateFECrsMatrix());
      H=Thyra::epetraLinearOp(Hcrs);
+*/
 
-     buildExplicitSchurComplement = true;//NTS: Do I need this?
+     buildExplicitSchurComplement = true; // NTS: Do I need this? 
+                                          // Answer - no, but it is documenting whats going on here.
    }
    else {
       // get generic diagonal

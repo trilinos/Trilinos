@@ -126,9 +126,14 @@ specific items to form TrilinosPlatform_config.h
 #define STDC_HEADERS 1
 
 #if defined(__IBMC__) || defined(__IBMCPP__)
-#  define TEMPLATE_FRIENDS_NOT_SUPPORTED
-#  define TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
+#  ifndef TEMPLATE_FRIENDS_NOT_SUPPORTED
+#    define TEMPLATE_FRIENDS_NOT_SUPPORTED
+#  endif
+#  ifndef TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
+#    define TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
+#  endif
 #endif
+
 #ifdef _AIX
 #  define HAS_C99_TR1_CMATH
 #endif

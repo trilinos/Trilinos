@@ -17,13 +17,15 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
 #include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <stk_mesh/base/FieldData.hpp>
@@ -36,6 +38,7 @@
 
 namespace stk {
   namespace percept {
+
 
       // copied from stk_mesh/fixtures - had to copy because stk_mesh couldn't depend on stk_io, for example, so the changes I required
       // had to be done on a copy 
@@ -53,17 +56,17 @@ namespace stk {
         typedef Topology QuadOrTriTopo ;
         enum { NodesPerElem = QuadOrTriTopo::node_count };
 
-        typedef Field<Scalar, Cartesian>    CoordFieldType;
-        typedef Field<Scalar*,ElementNode>  CoordGatherFieldType;
+        typedef stk::mesh::Field<Scalar, stk::mesh::Cartesian>    CoordFieldType;
+        typedef stk::mesh::Field<Scalar*,stk::mesh::ElementNode>  CoordGatherFieldType;
 
         ~QuadFixture()
         {}
 
         QuadFixture( stk::ParallelMachine pm ,
                      unsigned nx , unsigned ny, bool generate_sidesets_in )
-          : meta_data( stk::mesh::fem_entity_rank_names() ),
-            bulk_data( meta_data , pm ),
-            quad_part( meta_data.declare_part("block_1", stk::mesh::Element) ),
+          : meta_data(2, stk::mesh::fem_entity_rank_names() ),
+            bulk_data(  stk::mesh::fem::FEMMetaData::get_meta_data(meta_data) , pm ),
+            quad_part( meta_data.declare_part("block_1", meta_data.element_rank() ) ),
             coord_field( meta_data.declare_field<CoordFieldType>("coordinates") ),
             coord_gather_field( meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
             NX( nx ),
@@ -73,7 +76,8 @@ namespace stk {
           enum { SpatialDim = 2 };
 
           // Set topology of the element block part
-          stk::mesh::set_cell_topology< QuadOrTriTopo >(quad_part);
+          //stk::mesh::fem::set_cell_topology(meta_data, quad_part,  fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
+          stk::mesh::fem::set_cell_topology<QuadOrTriTopo>(meta_data, quad_part);
           stk::io::put_io_part_attribute(quad_part);
 
           //put coord-field on all nodes:
@@ -87,14 +91,16 @@ namespace stk {
           //put coord-gather-field on all elements:
           put_field(
                     coord_gather_field,
-                    Element,
+                    meta_data.element_rank(),
                     meta_data.universal_part(),
                     NodesPerElem
                     );
 
           // Field relation so coord-gather-field on elements points
           // to coord-field of the element's nodes
-          meta_data.declare_field_relation( coord_gather_field, element_node_stencil<QuadOrTriTopo>, coord_field);
+
+          const stk::mesh::EntityRank element_rank = 2;
+          meta_data.declare_field_relation( coord_gather_field, stk::mesh::fem::element_node_stencil<QuadOrTriTopo, element_rank>, coord_field);
 
           if (generate_sidesets)
             generate_sides_meta( );
@@ -102,28 +108,28 @@ namespace stk {
         }
 
         void generate_mesh() {
-          std::vector<EntityId> element_ids_on_this_processor;
+          std::vector<stk::mesh::EntityId> element_ids_on_this_processor;
 
           const unsigned p_size = bulk_data.parallel_size();
           const unsigned p_rank = bulk_data.parallel_rank();
           const unsigned num_elems = NX * NY;
 
-          const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
-          const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
+          const stk::mesh::EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
+          const stk::mesh::EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
 
-          for ( EntityId i = beg_elem; i != end_elem; ++i) {
+          for ( stk::mesh::EntityId i = beg_elem; i != end_elem; ++i) {
             element_ids_on_this_processor.push_back(i);
           }
 
           generate_mesh(element_ids_on_this_processor);
         }
 
-        void generate_mesh(std::vector<EntityId> & element_ids_on_this_processor) {
+        void generate_mesh(std::vector<stk::mesh::EntityId> & element_ids_on_this_processor) {
 
           {
             //sort and unique the input elements
-            std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
-            std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
+            std::vector<stk::mesh::EntityId>::iterator ib = element_ids_on_this_processor.begin();
+            std::vector<stk::mesh::EntityId>::iterator ie = element_ids_on_this_processor.end();
 
             std::sort( ib, ie);
             ib = std::unique( ib, ie);
@@ -133,10 +139,10 @@ namespace stk {
           bulk_data.modification_begin();
 
           {
-            std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
-            const std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
+            std::vector<stk::mesh::EntityId>::iterator ib = element_ids_on_this_processor.begin();
+            const std::vector<stk::mesh::EntityId>::iterator ie = element_ids_on_this_processor.end();
             for (; ib != ie; ++ib) {
-              EntityId entity_id = *ib;
+              stk::mesh::EntityId entity_id = *ib;
               unsigned ix = 0, iy = 0;
               elem_ix_iy(entity_id, ix, iy);
 
@@ -165,16 +171,16 @@ namespace stk {
 
               if (NodesPerElem == 4)
                 {
-                  stk::mesh::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
+                  stk::mesh::fem::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
                 }
               else
                 {
-                  stk::mesh::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
+                  stk::mesh::fem::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
                   
                   elem_node[0] = node_id( ix   , iy );
                   elem_node[1] = node_id( ix+1 , iy+1 );
                   elem_node[2] = node_id( ix , iy+1 );
-                  stk::mesh::declare_element( bulk_data, quad_part, (NX*NY+1)+elem_id( ix , iy ) , elem_node);
+                  stk::mesh::fem::declare_element( bulk_data, quad_part, (NX*NY+1)+elem_id( ix , iy ) , elem_node);
                 }
               elem_node[0] = node_id( ix   , iy );
               elem_node[1] = node_id( ix+1 , iy );
@@ -209,7 +215,7 @@ namespace stk {
 
         }
 
-        stk::mesh::MetaData    meta_data ;
+        stk::mesh::fem::FEMMetaData    meta_data ;
         stk::mesh::BulkData    bulk_data ;
         stk::mesh::Part      & quad_part ;
         CoordFieldType       & coord_field ;
@@ -228,7 +234,7 @@ namespace stk {
         stk::mesh::Entity * node( unsigned ix , unsigned iy ) const
         { return bulk_data.get_entity( stk::mesh::Node , node_id(ix,iy) ); }
 
-        void node_ix_iy( EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
+        void node_ix_iy( stk::mesh::EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
           entity_id -= 1;
 
           ix = entity_id % (NX+1);
@@ -237,7 +243,7 @@ namespace stk {
           iy = entity_id;
         }
 
-        void elem_ix_iy( EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
+        void elem_ix_iy( stk::mesh::EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
           entity_id -= 1;
 
           ix = entity_id % NX;
@@ -247,16 +253,20 @@ namespace stk {
         }
 
         stk::mesh::Entity * elem( unsigned ix , unsigned iy ) const
-        { return bulk_data.get_entity( stk::mesh::Element , elem_id(ix,iy) ); }
+      { return bulk_data.get_entity( meta_data.element_rank() , elem_id(ix,iy) ); }
 
 
         void generate_sides_meta()
         {
           for (unsigned i_side = 0; i_side < 4; i_side++)
             {
-              side_parts[i_side] = &meta_data.declare_part(std::string("surface_quad4_edge2d2_")+boost::lexical_cast<std::string>(i_side+1), stk::mesh::Edge);
-              mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), stk::mesh::Edge);
-              stk::mesh::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
+              side_parts[i_side] = &meta_data.declare_part(std::string("surface_quad4_edge2d2_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
+              mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
+              //void set_cell_topology(FEMMetaData & fem_meta, Part &part, fem::CellTopology cell_topology);
+
+              //stk::mesh::fem::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
+              //stk::mesh::fem::set_cell_topology(meta_data, *side_parts[i_side], fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
+              stk::mesh::fem::set_cell_topology< shards::Line<2> >(meta_data, *side_parts[i_side]);
               stk::io::put_io_part_attribute(*side_parts[i_side]);
               stk::io::put_io_part_attribute(side_part);
 
@@ -265,12 +275,12 @@ namespace stk {
             }
         }
 
-        void generate_sides_bulk( std::vector<EntityId> & element_ids_on_this_processor )
+        void generate_sides_bulk( std::vector<stk::mesh::EntityId> & element_ids_on_this_processor )
         {
           bulk_data.modification_begin();
 
-          std::vector<EntityId>::iterator ibegin = element_ids_on_this_processor.begin();
-          std::vector<EntityId>::iterator end = element_ids_on_this_processor.end();
+          std::vector<stk::mesh::EntityId>::iterator ibegin = element_ids_on_this_processor.begin();
+          std::vector<stk::mesh::EntityId>::iterator end = element_ids_on_this_processor.end();
 
           // FIXME - a simple side_id server
           unsigned side_id = 0 + bulk_data.parallel_rank() * (NX+1) * (NY+1);
@@ -334,7 +344,7 @@ namespace stk {
                                             << " element= " << element
                                             << std::endl;
                                 }
-                              stk::mesh::declare_element_side(bulk_data,
+                              stk::mesh::fem::declare_element_side(bulk_data,
                                                               side_id,
                                                               element,
                                                               j_side, // local_side_ord,
@@ -345,7 +355,7 @@ namespace stk {
                         }
                       if (NodesPerElem == 3 && elem(ix,iy) && i_side >=2 )
                         {
-                          mesh::Entity& element = *bulk_data.get_entity(mesh::Element, (NX*NY+1)+elem_id(ix, iy));
+                          mesh::Entity& element = *bulk_data.get_entity(meta_data.element_rank(), (NX*NY+1)+elem_id(ix, iy));
 
                           if (end != std::find(ibegin, end, elem_id(ix,iy)) )
                             {
@@ -360,7 +370,7 @@ namespace stk {
                                             << " element= " << element
                                             << std::endl;
                                 }
-                              stk::mesh::declare_element_side(bulk_data,
+                              stk::mesh::fem::declare_element_side(bulk_data,
                                                               side_id,
                                                               element,
                                                               j_side, // local_side_ord,

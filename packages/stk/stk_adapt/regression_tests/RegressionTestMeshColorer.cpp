@@ -44,7 +44,6 @@ namespace stk
   {
     namespace unit_tests
     {
-      using namespace stk::mesh;
 
       static stk::diag::Writer &
       dw()
@@ -79,13 +78,14 @@ namespace stk
           Ioss::Utils::to_string(num_y) + "x" +
           Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 	
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3);
         eMesh.newMesh(percept::PerceptMesh::GMeshSpec(config_mesh));
         int vectorDimension = 0;
-        FieldBase *element_color_field = eMesh.addField("element_colors", mesh::Element, vectorDimension);
+        stk::mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
         eMesh.commit();
 
-        Colorer meshColorer;
+        std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.element_rank());
+        Colorer meshColorer(mer);
         unsigned elementType = 0u;
         meshColorer.color(eMesh, &elementType, 0, element_color_field);
         eMesh.saveAs("./output_files/cube_colored.e");
@@ -103,15 +103,16 @@ namespace stk
 
         dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test_quad " << stk::diag::dendl;
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(2);
         if (eMesh.getParallelSize() == 1 || eMesh.getParallelSize() == 3)
           {
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
             int vectorDimension = 0;
-            FieldBase *element_color_field = eMesh.addField("element_colors", mesh::Element, vectorDimension);
+            stk::mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
             eMesh.commit();
 
-            Colorer meshColorer;
+            std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.face_rank());
+            Colorer meshColorer(mer);
             unsigned elementType = 0u;
             meshColorer.color(eMesh, &elementType, 0, element_color_field);
             //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;

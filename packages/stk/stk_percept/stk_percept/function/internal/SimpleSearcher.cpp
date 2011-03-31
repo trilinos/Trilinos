@@ -26,8 +26,8 @@ namespace stk
       VERIFY_OP(input_phy_points.rank(), ==, found_parametric_coordinates.rank(), "SimpleSearcher::findElement bad dims");
       VERIFY_OP(input_phy_points.rank(), ==, 2, "SimpleSearcher::findElement bad rank");
 
-      mesh::MetaData& metaData = MetaData::get( *(m_fieldFunction->getField()));
-      mesh::BulkData& bulkData = *m_fieldFunction->getBulkData();
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get( *(m_fieldFunction->getField()));
+      mesh::BulkData& bulkData = *m_fieldFunction->get_bulkData();
 
       // FIXME consider caching the coords_field
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");

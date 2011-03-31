@@ -59,7 +59,8 @@ namespace Teko {
   *        like a linear operator.
   *        
   * Class that wraps a <code>PreconditionerBase</code> object it makes it behave
-  * like a linear operator.
+  * like a linear operator. Note that this is useful because it stores the neccessary
+  * state information for reconstructing a preconditioner. 
   */
 template <typename ScalarT>
 class PreconditionerLinearOp : public Thyra::LinearOpBase<ScalarT> {
@@ -114,6 +115,20 @@ protected:
 
    Teuchos::ConstNonconstObjectContainer<Thyra::PreconditionerBase<ScalarT> > preconditioner_;
 };
+
+/** \brief Extract the underlying operator from the preconditioner operator
+  *        if appropriate.
+  *
+  * This function will determine if the argument is a PreconditionerLinearOp object,
+  * and if so, it will return the underlying preconditioner operator. Otherwise this
+  * function simply returns the passed in argument.
+  * 
+  * \param[in] Linear operator to extract the preconditioner operator from
+  *
+  * \returns Extracted preconditioner operator if appropriate, otherwise the
+  *          argument is returned.
+  */
+inline Teko::LinearOp extractOperatorFromPrecOp(const Teko::LinearOp & lo);
 
 } // end namespace Teko
 

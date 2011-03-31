@@ -40,17 +40,17 @@ namespace stk {
     //extern void test_memory(int, int);
     void test_memory(percept::PerceptMesh& eMesh, int n_elements, int n_nodes)
     {
-      vector<Entity *> new_elements;
-      vector<Entity *> new_nodes;
+      vector<stk::mesh::Entity *> new_elements;
+      vector<stk::mesh::Entity *> new_nodes;
       
-      eMesh.getBulkData()->modification_begin();
+      eMesh.get_bulkData()->modification_begin();
 
       std::cout << "creating " << n_elements << " elements..." <<std::endl;
-      eMesh.createEntities( mesh::Element, n_elements, new_elements);
+      eMesh.createEntities( eMesh.element_rank(), n_elements, new_elements);
       std::cout << "... done creating " << n_elements << " elements" << std::endl;
 
       std::cout << "creating " << n_nodes << " nodes..." <<std::endl;
-      eMesh.createEntities( mesh::Node, n_nodes, new_nodes);
+      eMesh.createEntities( stk::mesh::fem::NODE_RANK, n_nodes, new_nodes);
       std::cout << "... done creating " << n_nodes << " nodes" << std::endl;
 
       int num_prints = 100;
@@ -64,14 +64,13 @@ namespace stk {
               std::cout << "declare_relation for i_element = " << i_element << " [" << n_elements << "] = " << ((double)i_element)/((double)n_elements)*100 << "%"
                         << std::endl;
             }
-          //Entity& element = eMesh.getBulkData()->get_entity( stk::mesh::Element , i_element+1);
-          Entity& element = *new_elements[i_element];
+          stk::mesh::Entity& element = *new_elements[i_element];
 
           for (int j_node = 0; j_node < n_node_per_element; j_node++)
             {
-              Entity& node = *new_nodes[i_node];
+              stk::mesh::Entity& node = *new_nodes[i_node];
 
-              eMesh.getBulkData()->declare_relation(element, node, j_node);
+              eMesh.get_bulkData()->declare_relation(element, node, j_node);
               
               i_node++;
               if (i_node >= n_nodes-1)
@@ -80,7 +79,7 @@ namespace stk {
         }
 
       std::cout << " doing modification_end ... " << std::endl;
-      eMesh.getBulkData()->modification_end();
+      eMesh.get_bulkData()->modification_end();
       std::cout << " done modification_end ... " << std::endl;
       
 
@@ -359,13 +358,13 @@ namespace stk {
             RunEnvironment::doLoadBalance(run_environment.m_comm, input_mesh);
           }
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh;  // FIXME
 
         //unsigned p_size = eMesh.getParallelSize();
         
-        Util::setRank(eMesh.getRank());
-
         eMesh.open(input_mesh);
+
+        Util::setRank(eMesh.getRank());
 
         Teuchos::RCP<UniformRefinerPatternBase> pattern;
 
@@ -375,10 +374,10 @@ namespace stk {
             //             block_names = UniformRefiner::correctBlockNamesForPartPartConsistency(eMesh, block_names);
 
             // FIXME move this next block of code to a method on UniformRefiner
-            BlockNamesType block_names(mesh::EntityRankEnd+1u);
+            BlockNamesType block_names(stk::mesh::EntityRankEnd+1u);
             if (block_name_inc.length())
               {
-                block_names = UniformRefiner::getBlockNames(block_name_inc, eMesh.getRank());
+                block_names = UniformRefiner::getBlockNames(block_name_inc, eMesh.getRank(), eMesh);
                 if (1)
                   {
                     eMesh.commit();
@@ -406,9 +405,9 @@ namespace stk {
 
         int scalarDimension = 0; // a scalar
 
-        FieldBase* proc_rank_field_ptr = 0;
+        stk::mesh::FieldBase* proc_rank_field_ptr = 0;
         if (proc_rank_field)
-          eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+          eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
 

@@ -71,6 +71,7 @@
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
 
 // TriUtils includes
 #include "Trilinos_Util_CrsMatrixGallery.h"
@@ -188,13 +189,16 @@ bool tDiagonalPreconditionerFactory::test_initializePrec(int verbosity,std::ostr
   pstate=new DiagonalPrecondState();
   pop=fact->buildPreconditionerOperator(F_,*pstate);
   
-  const DiagonalPreconditionerOp *dop=dynamic_cast<const DiagonalPreconditionerOp*>(&*pop);
-  if(!dop) return false;
-  //  dop->get_BDP()->Print(cout);
+  // const DiagonalPreconditionerOp *dop=dynamic_cast<const DiagonalPreconditionerOp*>(&*pop);
+  // if(!dop) return false;
+  if(Thyra::get_Epetra_Operator(*pop)==Teuchos::null) 
+     return false;
+
+  //  pstate->BDP_->Print(cout);
   return true;
 }
 
-  bool tDiagonalPreconditionerFactory::test_createPrec(int verbosity,std::ostream & os,int blocksize)
+bool tDiagonalPreconditionerFactory::test_createPrec(int verbosity,std::ostream & os,int blocksize)
 {
   buildParameterList(blocksize);
  
@@ -222,11 +226,12 @@ bool tDiagonalPreconditionerFactory::test_canApply(int verbosity,std::ostream & 
   MultiVector tY=Thyra::create_Vector(Y,F_->range());
   
   // Do the apply via thrya
-  const DiagonalPreconditionerOp *dop=dynamic_cast<const DiagonalPreconditionerOp*>(&*pop);
-  dop->implicitApply(tX,tY,1.0,0.0);
+  //   const DiagonalPreconditionerOp *dop=dynamic_cast<const DiagonalPreconditionerOp*>(&*pop);
+  //   dop->implicitApply(tX,tY,1.0,0.0);
+  Teko::applyOp(pop,tX,tY,1.0,0.0);
   
   // Do the apply via epetra
-  dop->get_BDP()->ApplyInverse(*X,Z);
+  pstate->BDP_->ApplyInverse(*X,Z);
 
   // Compare solutions
   double znrm,ynrm,dnrm;

@@ -1198,6 +1198,7 @@ namespace Belos {
     using Teuchos::rcp_const_cast;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
+    using Teuchos::null;
 
     const char prefix[] = "Belos::GmresSolMgr::rebuildOrthoManager: ";
     TEST_FOR_EXCEPTION(outMan_.is_null(), std::logic_error,
@@ -1352,6 +1353,7 @@ namespace Belos {
   ReturnType
   GmresSolMgr<Scalar,MV,OP>::solve ()
   {
+    using Teuchos::RCP;
     using std::endl;
     using std::make_pair;
     using std::pair;

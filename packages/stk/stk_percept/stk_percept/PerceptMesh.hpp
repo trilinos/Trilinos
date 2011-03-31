@@ -15,10 +15,12 @@
 #include <stk_util/util/string_case_compare.hpp>
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
+//#include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
@@ -95,8 +97,10 @@ namespace stk {
       //========================================================================================================================
       /// high-level interface
 
-      /// Create a Mesh object that owns its constituent MetaData and BulkData (which are created by this object)
-      PerceptMesh(stk::ParallelMachine comm =  MPI_COMM_WORLD );
+      // ctor constructor
+      /// Create a Mesh object that owns its constituent FEMMetaData and BulkData (which are created by this object)
+      PerceptMesh( stk::ParallelMachine comm =  MPI_COMM_WORLD );
+      PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm =  MPI_COMM_WORLD );
 
       /// reads and commits mesh, editing disabled
       void
@@ -126,7 +130,7 @@ namespace stk {
       commit();
 
       /// reopens the mesh for editing - warning, this operation writes the mesh to a temp file then re-reads it and
-      /// thus recreates the internal MetaData and BulkData
+      /// thus recreates the internal FEMMetaData and BulkData
       void
       reopen(const std::string temp_file_name="percept_tmp.e");
 
@@ -153,25 +157,62 @@ namespace stk {
 
       //========================================================================================================================
       /// low-level interfaces
-      /// Create a Mesh object thatPerceptMesh* mesh_data doesn't own its constituent MetaData and BulkData, pointers to which are adopted
+      /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted
       /// by this constructor.
-      PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
+      PerceptMesh(const stk::mesh::fem::FEMMetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
+      //PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
 
       ~PerceptMesh() ;
-      void init (stk::ParallelMachine comm);
-      void destroy();
+      void init ( stk::ParallelMachine comm  =  MPI_COMM_WORLD );      // FIXME - make private
+      void destroy();       // FIXME - make private
+
+      // allow setting spatial dim after creation (for compatability with new FEMMetaData)
+      void setSpatialDim(int sd);
 
       /// reads the given file into a temporary model and prints info about it
       void dump(const std::string& file="");
       void dumpElements(const std::string& partName = "");
 
-      unsigned getRank() { return getBulkData()->parallel_rank(); }
-      unsigned getParallelSize() { return getBulkData()->parallel_size(); }
+      unsigned getRank() { return get_bulkData()->parallel_rank(); }
+      unsigned getParallelSize() { return get_bulkData()->parallel_size(); }
       bool isGhostElement(const stk::mesh::Entity& element)
       {
         //throw std::runtime_error("not impl"); // FIXME
         bool isGhost = element.owner_rank() != getRank();
         return isGhost;
+      }
+
+      stk::mesh::EntityRank node_rank() const
+      {
+        return m_metaData->node_rank();
+      }
+
+      /** \brief Returns the edge rank which changes depending on spatial dimension
+       */
+      stk::mesh::EntityRank edge_rank() const
+      {
+        return m_metaData->edge_rank();
+      }
+
+      /** \brief Returns the face rank which changes depending on spatial dimension
+       */
+      stk::mesh::EntityRank face_rank() const
+      {
+        return m_metaData->face_rank();
+      }
+
+      /** \brief Returns the side rank which changes depending on spatial dimension
+       */
+      stk::mesh::EntityRank side_rank() const
+      {
+        return m_metaData->side_rank();
+      }
+
+      /** \brief Returns the element rank which is always equal to spatial dimension
+       */
+      stk::mesh::EntityRank element_rank() const
+      {
+        return m_metaData->element_rank();
       }
 
       stk::mesh::Entity & createOrGetNode(stk::mesh::EntityId nid, double* x=0);
@@ -188,7 +229,7 @@ namespace stk {
       static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity& node, unsigned *stride=0);
 
       static inline double *
-      field_data_inlined(const FieldBase *field, const mesh::Entity& node)
+      field_data_inlined(const mesh::FieldBase *field, const mesh::Entity& node)
       {
         return field_data(field, node);
 //         return 
@@ -201,8 +242,8 @@ namespace stk {
 
       double * node_field_data(stk::mesh::FieldBase *field, const mesh::EntityId node_id);
 
-      stk::mesh::BulkData * getBulkData();
-      stk::mesh::MetaData * getMetaData();
+      stk::mesh::BulkData * get_bulkData();
+      stk::mesh::fem::FEMMetaData * getFEM_meta_data();
 
       static BasisTypeRCP getBasis(shards::CellTopology& topo);
       static void setupBasisTable();
@@ -222,7 +263,7 @@ namespace stk {
       static void fillCellNodes( const stk::mesh::Bucket &bucket,
                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
-                                 FieldBase* field,
+                                 mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
       /// \brief see comment for fillCellNodes(Bucket& ...)
@@ -230,7 +271,7 @@ namespace stk {
       static void fillCellNodes( const stk::mesh::Entity &element,
                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
-                                 FieldBase* field,
+                                 mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
       static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
@@ -242,10 +283,10 @@ namespace stk {
       }
 
       static void
-      element_side_nodes( const Entity & elem , int local_side_id, EntityRank side_entity_rank, std::vector<Entity *>& side_node_entities );
+      element_side_nodes( const mesh::Entity & elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity *>& side_node_entities );
 
       static void
-      element_side_permutation(const Entity& element, const Entity& side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity);
+      element_side_permutation(const mesh::Entity& element, const mesh::Entity& side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity);
 
       // FIXME
       SameRankRelation& adapt_parent_to_child_relations() { return m_adapt_parent_to_child_relations; }
@@ -253,18 +294,39 @@ namespace stk {
       bool
       isBoundarySurface(mesh::Part& block, mesh::Part& surface);
 
+      /// here @param thing is a Part, Bucket, Entity, or Field or BulkData
+      template<class T>
+      static
+      const stk::mesh::fem::FEMMetaData& get_fem_meta_data(const T& thing) 
+      { 
+        //const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(thing);
+        const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( thing );
+        return fem_meta;
+      }
+
+      /// here @param thing is a Part, Bucket, Entity
+      template<class T>
+      static
+      const CellTopologyData * const get_cell_topology(const T& thing) 
+      { 
+        const CellTopologyData * const cell_topo_data = mesh::fem::get_cell_topology_new(thing).getCellTopologyData();
+        return cell_topo_data;
+      }
+
+
+
     private:
 
       /// reads meta data, commits it, reads bulk data
       void readModel( const std::string& in_filename );
 
       /// read with no commit
-      void readMetaDataNoCommit( const std::string& in_filename );
+      void read_metaDataNoCommit( const std::string& in_filename );
 
       /// create with no commit
-      void createMetaDataNoCommit( const std::string& gmesh_spec);
+      void create_metaDataNoCommit( const std::string& gmesh_spec);
 
-      void commitMetaData();
+      void commit_metaData();
 
       /// read the bulk data (no op in create mode)
       void readBulkData();
@@ -290,7 +352,8 @@ namespace stk {
       //static void transformMesh(GenericFunction& coordinate_transform);
 
     private:
-      stk::mesh::MetaData *                 m_metaData;
+      //stk::mesh::fem::FEMMetaData *         m_fem_meta_data;
+      stk::mesh::fem::FEMMetaData *                 m_metaData;
       stk::mesh::BulkData *                 m_bulkData;
       stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
       Ioss::Region *                        m_iossRegion;
@@ -319,6 +382,12 @@ namespace stk {
     }; // class PerceptMesh
 
 
+    template<>
+    const CellTopologyData * const 
+    PerceptMesh::get_cell_topology(const mesh::Part& part) ;
+
+
+
 #if 0
     inline
     std::string &operator<<(std::string& out, const char *str)
@@ -332,11 +401,12 @@ namespace stk {
     void PerceptMesh::fillCellNodes( const mesh::Bucket &bucket,
                                   //stk::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
-                                  FieldBase* field,
+                                  mesh::FieldBase* field,
                                   ArrayType& cellNodes, unsigned dataStrideArg)
     {
       unsigned number_elems = bucket.size();
-      const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+      //const CellTopologyData * const bucket_cell_topo_data = stk::mesh::fem::get_cell_topology(bucket).getCellTopologyData();
+      const CellTopologyData * const bucket_cell_topo_data = get_cell_topology(bucket);
 
       CellTopology cell_topo(bucket_cell_topo_data);
       //unsigned numCells = number_elems;
@@ -346,7 +416,7 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
+          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, mesh::fem::FEMMetaData::get(*field).universal_part());
           dataStride = r.stride[0] ;
         }
       //std::cout << "bucket dataStride= " << dataStride << std::endl;
@@ -380,14 +450,14 @@ namespace stk {
     void PerceptMesh::fillCellNodes( const stk::mesh::Entity &element,
                                   //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
-                                  FieldBase* field,
+                                  mesh::FieldBase* field,
                                   ArrayType& cellNodes,
                                   unsigned dataStrideArg )
     {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, MetaData::get(*field).universal_part());
+          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, mesh::fem::FEMMetaData::get(*field).universal_part());
           dataStride = r.stride[0] ;
         }
       //std::cout << "element dataStride= " << dataStride << std::endl;

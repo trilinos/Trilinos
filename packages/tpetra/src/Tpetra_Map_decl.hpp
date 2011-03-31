@@ -343,12 +343,14 @@ namespace Tpetra {
 /** \brief  Returns true if \c map is identical to this map. Implemented in Tpetra::Map::isSameAs().
     \relates Tpetra::Map */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
+bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
+{ return map1.isSameAs(map2); }
 
 /** \brief Returns true if \c map is not identical to this map. Implemented in Tpetra::Map::isSameAs().
     \relates Tpetra::Map */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
+bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
+{ return !map1.isSameAs(map2); }
 
 #endif // TPETRA_MAP_DECL_HPP
 

@@ -8,7 +8,7 @@
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/diag/IdentProc.hpp>
 
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 
 #include <Intrepid_FunctionSpaceTools.hpp>

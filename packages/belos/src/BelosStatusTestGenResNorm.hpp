@@ -491,7 +491,7 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
     // Otherwise the native residual is assumed to be stored in the resvector_.
     //
     std::vector<MagnitudeType> tmp_resvector( curBlksz_ );
-    RCP<const MV> residMV = iSolver->getNativeResiduals( &tmp_resvector );     
+    Teuchos::RCP<const MV> residMV = iSolver->getNativeResiduals( &tmp_resvector );     
     if ( residMV != Teuchos::null ) { 
       tmp_resvector.resize( MVT::GetNumberVecs( *residMV ) );
       MVT::MvNorm( *residMV, tmp_resvector, resnormtype_ );    
@@ -514,9 +514,9 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
     //
     // Request the true residual for this block of right-hand sides.
     //
-    RCP<MV> cur_update = iSolver->getCurrentUpdate();
+    Teuchos::RCP<MV> cur_update = iSolver->getCurrentUpdate();
     curSoln_ = lp.updateSolution( cur_update );
-    RCP<MV> cur_res = MVT::Clone( *curSoln_, MVT::GetNumberVecs( *curSoln_ ) );
+    Teuchos::RCP<MV> cur_res = MVT::Clone( *curSoln_, MVT::GetNumberVecs( *curSoln_ ) );
     lp.computeCurrResVec( &*cur_res, &*curSoln_ );
     std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
     MVT::MvNorm( *cur_res, tmp_resvector, resnormtype_ );
@@ -650,19 +650,19 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( It
     firstcallCheckStatus_ = false;
 
     if (scaletype_== NormOfRHS) {
-      RCP<const MV> rhs = lp.getRHS();
+      Teuchos::RCP<const MV> rhs = lp.getRHS();
       numrhs_ = MVT::GetNumberVecs( *rhs );
       scalevector_.resize( numrhs_ );
       MVT::MvNorm( *rhs, scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
-      RCP<const MV> init_res = lp.getInitResVec();
+      Teuchos::RCP<const MV> init_res = lp.getInitResVec();
       numrhs_ = MVT::GetNumberVecs( *init_res );
       scalevector_.resize( numrhs_ );
       MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfPrecInitRes) {
-      RCP<const MV> init_res = lp.getInitPrecResVec();
+      Teuchos::RCP<const MV> init_res = lp.getInitPrecResVec();
       numrhs_ = MVT::GetNumberVecs( *init_res );
       scalevector_.resize( numrhs_ );
       MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );

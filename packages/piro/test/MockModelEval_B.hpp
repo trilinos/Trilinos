@@ -95,6 +95,8 @@ class MockModelEval_B
   /** \brief . */
   Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   /** \brief . */
+  Teuchos::RCP<const Epetra_Vector> get_x_dot_init() const;
+  /** \brief . */
   Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
   /** \brief . */
   Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
@@ -106,6 +108,7 @@ class MockModelEval_B
    //These are set in the constructor and used in evalModel
    Teuchos::RCP<Epetra_Map> x_map;
    Teuchos::RCP<Epetra_Vector> x_vec;
+   Teuchos::RCP<Epetra_Vector> x_dot_vec;
    Teuchos::RCP<Epetra_Map> p_map;
    Teuchos::RCP<Epetra_Vector> p_init;
    Teuchos::RCP<Epetra_Map> g_map;

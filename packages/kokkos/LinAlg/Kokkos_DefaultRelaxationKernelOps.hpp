@@ -241,11 +241,10 @@ namespace Kokkos {
     size_t xstride, bstride;
 
     inline KERNEL_PREFIX void execute(size_t i) {
-#define MIN(x,y) (((x)<(y))?(x):(y))
       const size_t chunk = i % numChunks;
       const size_t rhs = (i - chunk) / numChunks;
       const size_t start_r = chunk * numRows / numChunks;
-      const size_t stop_r  = MIN((chunk+1)*numRows/numChunks,numRows);
+      const size_t stop_r  = TEUCHOS_MIN((chunk+1)*numRows/numChunks,numRows);
       Scalar       *xj = x + rhs * xstride;
       const Scalar *bj = b + rhs * bstride;
       for (size_t row=start_r;row<stop_r;row++){
@@ -277,11 +276,10 @@ namespace Kokkos {
     size_t xstride, bstride;
 
     inline KERNEL_PREFIX void execute(size_t i) {
-#define MIN(x,y) (((x)<(y))?(x):(y))
       const size_t chunk = i % numChunks;
       const size_t rhs = (i - chunk) / numChunks;
       const size_t start_r = chunk * numRows / numChunks;
-      const size_t stop_r  = MIN((chunk+1)*numRows/numChunks,numRows);
+      const size_t stop_r  = TEUCHOS_MIN((chunk+1)*numRows/numChunks,numRows);
       Scalar       *xj = x + rhs * xstride;
       const Scalar *bj = b + rhs * bstride;
       for (size_t row=start_r;row<stop_r;row++){
