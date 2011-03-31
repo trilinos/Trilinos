@@ -312,6 +312,7 @@ namespace stk {
 			     bool hex_only)
       {
 	Ioss::Region *in_region = NULL;
+        stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta_data.get_attribute<stk::mesh::fem::FEMMetaData>());
 	if (mesh_type == "exodusii" || mesh_type == "generated" || mesh_type == "pamgen" ) {
 
 	  // Prepend the working directory onto the mesh filename iff the
@@ -365,11 +366,17 @@ namespace stk {
 	// so, all exposed faces are generated and put in a part named
 	// "skin"
 	if (mesh_data.m_generateSkinFaces) {
-	  stk::mesh::Part &skin_part = stk::mesh::declare_part(meta_data, "skin", side_rank(meta_data));
-	  stk::io::put_io_part_attribute(skin_part);
-
-	  /** \todo REFACTOR Query all parts to determine topology of the skin. */
-	  stk::io::set_cell_topology(skin_part, shards::getCellTopologyData<shards::Quadrilateral<4> >());
+          if( fem_meta ) {
+	    stk::mesh::Part &skin_part = fem_meta->declare_part("skin", fem_meta->side_rank());
+	    stk::io::put_io_part_attribute(skin_part);
+	    /** \todo REFACTOR Query all parts to determine topology of the skin. */
+	    stk::mesh::fem::set_cell_topology(*fem_meta, skin_part, shards::getCellTopologyData<shards::Quadrilateral<4> >());
+          } else {
+	    stk::mesh::Part &skin_part = stk::mesh::declare_part(meta_data, "skin", side_rank(meta_data));
+	    stk::io::put_io_part_attribute(skin_part);
+	    /** \todo REFACTOR Query all parts to determine topology of the skin. */
+	    stk::io::set_cell_topology(skin_part, shards::getCellTopologyData<shards::Quadrilateral<4> >());
+          }
 	}
       }
 
@@ -929,9 +936,15 @@ namespace stk {
 	}
 
 	if (mesh_data.m_generateSkinFaces) {
-    const stk::mesh::MetaData & meta_data = stk::mesh::MetaData::get(bulk_data);
-	  stk::mesh::Part* const skin_part = meta_data.get_part("skin");
-	  stk::io::util::generate_sides(bulk_data, *skin_part, true);
+          const stk::mesh::MetaData & meta_data = stk::mesh::MetaData::get(bulk_data);
+          stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta_data.get_attribute<stk::mesh::fem::FEMMetaData>());
+          if (fem_meta) {
+	    stk::mesh::Part* const skin_part = fem_meta->get_part("skin");
+	    stk::io::util::generate_sides(bulk_data, *skin_part, true);
+          } else {
+	    stk::mesh::Part* const skin_part = meta_data.get_part("skin");
+	    stk::io::util::generate_sides(bulk_data, *skin_part, true);
+          }
 	}
       }
     } // namespace util
