@@ -712,6 +712,16 @@ void STK_Interface::print(std::ostream & os) const
    for(std::size_t i=0;i<sidesetNames.size();i++) 
       os << "\"" << sidesetNames[i] << "\" ";
    os << std::endl;
+
+   // print out periodic boundary conditions
+   const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & bcVector 
+         = getPeriodicBCVector();
+   if(bcVector.size()!=0) {
+      os << "   Periodic BCs:\n";
+      for(std::size_t i=0;i<bcVector.size();i++)
+         os << "      " << bcVector[i]->getString() << "\n";
+      os << std::endl;
+   }
 }
 
 } // end namespace panzer_stk

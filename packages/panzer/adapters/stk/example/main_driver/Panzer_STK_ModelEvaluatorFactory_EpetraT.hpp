@@ -86,8 +86,9 @@ namespace panzer_stk {
     Teuchos::RCP<panzer_stk::STK_Interface> mesh;
     if (mesh_params.get<std::string>("Source") ==  "Exodus File") {
       TEUCHOS_ASSERT(true);
-      mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory(mesh_params.sublist("Exodus File").get<std::string>("File Name")));
-      
+      // mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory(mesh_params.sublist("Exodus File").get<std::string>("File Name")));
+      mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory());
+      mesh_factory->setParameterList(Teuchos::rcp(new Teuchos::ParameterList(mesh_params.sublist("Exodus File"))));
     }
     else if (mesh_params.get<std::string>("Source") ==  "Inline Mesh") {
 
