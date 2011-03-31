@@ -42,10 +42,10 @@ def setup_parser():
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 
     subparsers = parser.add_subparsers()
-
+    
     # the block argument can be used with multiple tasks, predefine string here
     blocks_arg_list = ('-b', '--blocks')
-    blocks_arg_dict = {'metavar':'STRING', 'help':'include or exclude block numbers in a quoted, comma delimited string.'}
+    blocks_arg_dict = {'metavar':'BLOCK_LIST', 'help':'include or exclude block numbers in a quoted, comma delimited string.'}
         #(1) empty string or option not specified: convert all blocks in the input mesh file
         #(2) file:my_filename.my_ext (e.g. file:filelist.dat) which will read input block names from the given file
         #(3) [+]block_name_1,[+]block_name_2, etc ,block_name_n to include only these blocks, plus sign is optional
@@ -56,65 +56,69 @@ def setup_parser():
         #Note: wherever you specify block_number this can be replaced with just the #, e.g. "1,2,4,5" 
         
     blocks_file_arg_list = ('-B','--blocks-from')
-    blocks_file_arg_dict = {'metavar':'FILE', 'help':'include or exclude block numbers listed in a file.'}
+    blocks_file_arg_dict = {'metavar':'BLOCK_FILE', 'help':'include or exclude block numbers listed in a file.'}
     
-    original_arg_list = ('--keep-original-elements',)
-    original_arg_dict = {'action':'store_true', 'default':False, 'help':'Keep the original mesh embedded in the output file.'}
+    # hide the --remove-original-elements argument, for now
+    #original_arg_list = ('--keep-original-elements',)
+    #original_arg_dict = {'action':'store_true', 'default':False, 'help':'Keep the original mesh embedded in the output file.'}
 
     # Tasks:
-    # each task has a subparser and task specific options
+    # each task has a subparser and possibly task specific options
     
     # refine
     parser_refine = subparsers.add_parser('refine')
-    parser_refine.add_argument('-n', '--number-refines', type=int, default=1, help='Number of refinements (default: %(default)s).')
+    parser_refine.add_argument('-n', '--number-refines', type=int, default=1, help='number of refinements (default: %(default)s)')
+    parser_refine.add_argument('-t', '--refine-type', default='', metavar='REFINE_TYPE', help='type of elements to refine into another type (one of: Quad4_Quad4_4, Tri3_Tri3_4, Tet4_Tet4_8, Hex8_Hex8_8, Wedge6_Wedge6_8, Tri6_Tri6_4, Quad9_Quad9_4, Hex27_Hex27_8, Tet10_Tet10_8, Wedge18_Wedge18_8, ShellTri3_ShellTri3_4, ShellQuad4_ShellQuad4_4)')
     parser_refine.add_argument(*blocks_arg_list, **blocks_arg_dict)
     parser_refine.add_argument(*blocks_file_arg_list, **blocks_file_arg_dict)
-    parser_refine.add_argument(*original_arg_list, **original_arg_dict)
+    #parser_refine.add_argument(*original_arg_list, **original_arg_dict)
 
     # convert
     parser_convert = subparsers.add_parser('convert')
+    parser_convert.add_argument('-t', '--convert-type', metavar='CONVERT_TYPE', help='type of elements to convert to another type (one of: Hex8_Tet4_24, Hex8_Tet4_6, Quad4_Tri3_2, Quad4_Tri3_6, Quad4_Tri3_4)')
     parser_convert.add_argument(*blocks_arg_list, **blocks_arg_dict)
     parser_convert.add_argument(*blocks_file_arg_list, **blocks_file_arg_dict)
-    parser_convert.add_argument(*original_arg_list, **original_arg_dict)
+    #parser_convert.add_argument(*original_arg_list, **original_arg_dict)
 
     # enrich
     parser_enrich = subparsers.add_parser('enrich')
+    parser_enrich.add_argument('-t', '--enrich-type', default='', metavar='ENRICH_TYPE', help='type of elements to convert to another type (one of: Quad4_Quad8_1, Quad4_Quad9_1, Tri3_Tri6_1, Tet4_Tet10_1, Hex8_Hex20_1, Hex8_Hex27_1, Wedge6_Wedge15_1, Wedge6_Wedge18_1)')
     parser_enrich.add_argument(*blocks_arg_list, **blocks_arg_dict)
     parser_enrich.add_argument(*blocks_file_arg_list, **blocks_file_arg_dict)
-    parser_enrich.add_argument(*original_arg_list, **original_arg_dict)
+    #parser_enrich.add_argument(*original_arg_list, **original_arg_dict)
 
     # infile and outfile
-    parser.add_argument('infile', nargs=1, type=file, help='Input mesh file name.')
-    parser.add_argument('outfile', nargs='?', type=file, help='Output mesh file name.')
+    parser.add_argument('infile', nargs=1, type=file, help='input mesh file name')
+    parser.add_argument('outfile', nargs='?', type=file, help='output mesh file name')
 
     # Other options
-    other = parser.add_argument_group('other options')
-    # NOTE: -d is now -D
-    other.add_argument('-C','--directory', default=argparse.SUPPRESS, metavar='DIR', help='Change working directory.')
+    parser.add_argument('-C','--directory', default=argparse.SUPPRESS, metavar='DIR', help='change working directory')
     
     # Parallel operation
     parallel = parser.add_argument_group('parallel control')
     # NOTE: --load-balance is taken care of by number of processes argument
-    parallel.add_argument('-j', '--num-proc', type=int, default=1, metavar='NP', help='Number of processors to use (default: %(default)s).')
-    parallel.add_argument('--proc-rank-field', action='store_true', default=False, help='Store the processor-rank in an element field on mesh output.')
+    parallel.add_argument('-j', '--num-proc', type=int, default=1, metavar='NP', help='number of processors to use (default: %(default)s)')
+    parallel.add_argument('--proc-rank-field', action='store_true', default=False, help='store the processor-rank in an element field on mesh output')
 
     # Informative output
     informative = parser.add_argument_group('informative output')
     # NOTE: --print-info N is now verbose
-    informative.add_argument('-v', '--verbose', type=int, default=0, help='Print more verbose information int >= 0  (default: %(default)s).')
-    informative.add_argument('--echo-command-line', default=False, action='store_true', help='Output original command line and continue as normal.')
-    informative.add_argument('-o','--output-log', default='%(prog)s.log', help='Path where output log file will be written (default: %(prog)s.log).')
-    informative.add_argument('--show-defaults', action='store_true', default=False, help='Show %(prog)s defaults.')
+    informative.add_argument('-v', '--verbose', type=int, default=0, help='print more verbose information int >= 0  (default: %(default)s)')
+    informative.add_argument('--echo-command-line', default=False, action='store_true', help='output original command line and continue as normal')
+    informative.add_argument('-o','--output-log', default='%(prog)s.log', help='path where output log file will be written (default: %(prog)s.log)')
+    informative.add_argument('--show-defaults', action='store_true', default=False, help='show %(prog)s defaults')
 
     # diagnostic and debugging options
     diagnostic = parser.add_argument_group('diagnostic and debugging')
-    diagnostic.add_argument('--pause-for-debugging', default=False, action='store_true', help='Wait for your input to allow attaching debugger.')
-    diagnostic.add_argument('--pout', default='-', help='Path where per processor log files will be written (default: %(default)s).')
-    diagnostic.add_argument('--dout', default='cout', help='Path, or stream (one of cout, cerr), where diagnostic log file will be written (default: %(default)s).')
-    diagnostic.add_argument('--dw', metavar='WRITER', default=argparse.SUPPRESS, help='Name of the diagnostic writer, for example "all"')
-    diagnostic.add_argument('--timer', default=argparse.SUPPRESS, help='Name of the diagnostic timer, for example "mesh".')
-    diagnostic.add_argument('--test-memory-elements', metavar='NUM-ELEMS', type=int, default=0, help='Specify number of elements (default: %(default)s).')
-    diagnostic.add_argument('--test-memory-nodes', metavar='NUM-NODES', type=int, default=0, help='Specify number of nodes (default: %(default)s).')
+    diagnostic.add_argument('--pause-for-debugging', default=False, action='store_true', help='wait for your input to allow attaching debugger')
+    diagnostic.add_argument('--pout', default='-', help='path where per processor log files will be written (default: %(default)s)')
+    diagnostic.add_argument('--dout', default='cout', help='path, or stream (one of cout, cerr), where diagnostic log file will be written (default: %(default)s)')
+    # NOTE: -dw is now --writer
+    diagnostic.add_argument('--writer', metavar='WRITER', default=argparse.SUPPRESS, help='name of the diagnostic writer, for example "all"')
+    diagnostic.add_argument('--timer', default=argparse.SUPPRESS, help='name of the diagnostic timer, for example "mesh"')
+    # NOTE: for now hide more esoteric diagnostics
+    #diagnostic.add_argument('--test-memory-elements', metavar='NUM-ELEMS', type=int, default=0, help='specify number of elements (default: %(default)s)')
+    #diagnostic.add_argument('--test-memory-nodes', metavar='NUM-NODES', type=int, default=0, help='specify number of nodes (default: %(default)s)')
 
     return parser
 
