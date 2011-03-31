@@ -805,8 +805,14 @@ namespace stk {
 				  stk::mesh::EntityRank type)
     {
       if (include_entity(entity)) {
-	stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
-	stk::io::put_io_part_attribute(part, entity);
+        stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
+        if (fem_meta) {
+	  stk::mesh::Part & part = fem_meta->declare_part(entity->name(), type);
+	  stk::io::put_io_part_attribute(part, entity);
+        } else {
+	  stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
+	  stk::io::put_io_part_attribute(part, entity);
+        }
       }
     }
 
@@ -1132,7 +1138,7 @@ namespace stk {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
         const stk::mesh::EntityRank elem_rank = element_rank(meta);
 
-      const CellTopologyData * const cell_top = 
+        const CellTopologyData * const cell_top = 
         stk::io::get_cell_topology(part) ?
         stk::io::get_cell_topology(part) :
         stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
