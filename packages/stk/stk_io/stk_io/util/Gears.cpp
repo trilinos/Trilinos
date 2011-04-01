@@ -16,13 +16,9 @@
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_io/IossBridge.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/EntityRanks.hpp>
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 #include <stk_mesh/fem/FEMInterface.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
@@ -46,16 +42,6 @@ namespace stk {
 	  model_coord(         S.get_meta_data(S).declare_field<CartesianField>( std::string("coordinates") ) )
       {
 	const stk::mesh::Part & universe = S.get_meta_data(S).universal_part();
-
-	stk::mesh::put_field( gear_coord    , stk::mesh::fem::NODE_RANK , universe , SpatialDimension );
-	stk::mesh::put_field( model_coord   , stk::mesh::fem::NODE_RANK , universe , SpatialDimension );
-      }
-
-      GearFields::GearFields( stk::mesh::MetaData & S )
-	: gear_coord(          S.declare_field<CylindricalField>( std::string("gear_coordinates") ) ),
-	  model_coord(         S.declare_field<CartesianField>( std::string("coordinates") ) )
-      {
-	const stk::mesh::Part & universe = S.universal_part();
 
 	stk::mesh::put_field( gear_coord    , stk::mesh::fem::NODE_RANK , universe , SpatialDimension );
 	stk::mesh::put_field( model_coord   , stk::mesh::fem::NODE_RANK , universe , SpatialDimension );
@@ -132,83 +118,8 @@ namespace stk {
         m_z_num     = z_num ;
         m_angle_num = angle_num ;
         m_turn_dir  = turn_direction ;
-      }   
-
-
-
-      Gear::Gear( stk::mesh::MetaData & S ,
-		  const std::string & name ,
-		  const GearFields & gear_fields ,
-		  const double center[] ,
-		  const double rad_min ,
-		  const double rad_max ,
-		  const size_t rad_num ,
-		  const double z_min ,
-		  const double z_max ,
-		  const size_t z_num ,
-		  const size_t angle_num ,
-		  const int      turn_direction )
-	: m_mesh_fem_meta_data(NULL),
-	  m_mesh_meta_data( S ),
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-          m_topo_data( S, GearFields::SpatialDimension),
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-	  m_mesh( NULL ),
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-	  m_gear( S.declare_part(std::string("Gear_").append(name), stk::mesh::Element) ),
-	  m_surf( S.declare_part(std::string("Surf_").append(name), stk::mesh::Face) ),
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-	  m_gear( stk::mesh::declare_part(S, std::string("Gear_").append(name), stk::mesh::fem::element_rank(m_topo_data)) ),
-	  m_surf( stk::mesh::declare_part(S, std::string("Surf_").append(name), stk::mesh::fem::side_rank(m_topo_data)) ),
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-	  m_gear_coord( gear_fields.gear_coord ),
-	  m_model_coord(gear_fields.model_coord )
-      {
-	typedef shards::Hexahedron<> Hex ;
-	typedef shards::Quadrilateral<> Quad ;
-	enum { SpatialDimension = GearFields::SpatialDimension };
-
-	stk::io::put_io_part_attribute(m_gear);
-	stk::io::put_io_part_attribute(m_surf);
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-	stk::mesh::set_cell_topology< Hex >( m_gear );
-	stk::mesh::set_cell_topology< Quad>( m_surf );
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-	stk::mesh::fem::set_cell_topology< Hex >( m_gear );
-	stk::mesh::fem::set_cell_topology< Quad>( m_surf );
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-        stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(S.get_attribute<stk::mesh::fem::FEMMetaData>());
-        if( fem_meta )
-        {
-          stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<Hex>());
-          stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<Quad>());
-          stk::mesh::fem::set_cell_topology( *fem_meta, m_gear, hex_top );
-          stk::mesh::fem::set_cell_topology( *fem_meta, m_surf, quad_top );
-        }
-
-	// Meshing parameters for this gear:
-
-	const double TWO_PI = 2.0 * acos( static_cast<double>(-1.0) );
-
-	m_center[0] = center[0] ;
-	m_center[1] = center[1] ;
-	m_center[2] = center[2] ;
-
-	m_z_min     = z_min ;
-	m_z_max     = z_max ;
-	m_z_inc     = (z_max - z_min) / static_cast<double>(z_num - 1);
-
-	m_rad_min   = rad_min ;
-	m_rad_max   = rad_max ;
-	m_rad_inc   = (rad_max - rad_min) / static_cast<double>(rad_num - 1);
-
-	m_ang_inc   = TWO_PI / static_cast<double>(angle_num) ;
-
-	m_rad_num   = rad_num ;
-	m_z_num     = z_num ;
-	m_angle_num = angle_num ;
-	m_turn_dir  = turn_direction ;
       }
+
 
       //----------------------------------------------------------------------
 
