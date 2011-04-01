@@ -1,7 +1,9 @@
 
 #include "Epetra_CrsMatrix.h" 
+#include "Epetra_Map.h" 
 #include "Epetra_MultiVector.h" 
 #include "Epetra_LinearProblem.h" 
+#include "Epetra_SerialComm.h"
 #include "Amesos_BaseSolver.h" 
 #include "AztecOO.h"
 
@@ -18,6 +20,11 @@ typedef struct
     int Snr;                    // #remote rows
     int *DRowElems;             // local rows
     int *SRowElems;             // remote rows
+    Epetra_SerialComm *SComm;   // Serial comm for block diagonals
+    Epetra_Map *LDRowMap;       // RowMap for block diagonals
+    Epetra_Map *LDColMap;       // ColMap for block diagonals
+    Epetra_CrsMatrix *D;        // Actual D Matrix, not reqd for Amesos_KLU
+                                // but required for Amesos_Pardiso
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     AztecOO *innersolver;            // inner solver
 } hyperlu_data;
