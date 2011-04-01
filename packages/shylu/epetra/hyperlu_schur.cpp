@@ -104,6 +104,10 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
     }
     Sbar->FillComplete();
     cout << "#dropped entries" << dropped << endl;
+    delete[] allSGID;
+    delete[] mySGID;
+    delete[] values;
+    delete[] indices;
 
     return Sbar;
 }

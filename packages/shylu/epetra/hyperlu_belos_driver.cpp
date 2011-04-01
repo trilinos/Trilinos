@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
     RCP<Belos::EpetraPrecOp> belosPrec = rcp(new Belos::EpetraPrecOp(rcpPrec));
 
     const int NumGlobalElements = rcpb->GlobalLength();
-    ParameterList belosList;
+    Teuchos::ParameterList belosList;
     belosList.set( "Num Blocks", maxsubspace );// Maximum number of blocks in Krylov factorization
     belosList.set( "Block Size", blocksize );  // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters ); // Maximum number of iterations allowed
