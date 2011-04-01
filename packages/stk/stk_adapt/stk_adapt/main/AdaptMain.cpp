@@ -255,6 +255,7 @@ namespace stk {
     
       // NOTE: Options --directory --output-log --runtest are handled/defined in RunEnvironment
       std::string input_mesh="";
+      std::string input_geometry="";
       std::string output_mesh="";
       std::string block_name_inc = "";
       std::string block_name_exc = "";
@@ -317,6 +318,7 @@ namespace stk {
 #endif
       run_environment.clp.setOption("proc_rank_field"          , &proc_rank_field          , " add an element field to show processor rank");
       run_environment.clp.setOption("remove_original_elements" , &remove_original_elements , " remove original (converted) elements (default=true)");
+      run_environment.clp.setOption("input_geometry"           , &input_geometry           , "input geometry name");
 
       run_environment.processCommandLine(&argc, &argv);
 
@@ -439,6 +441,8 @@ namespace stk {
         if (doRefineMesh)
           {
             UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
+            if (input_geometry != "")
+                breaker.setGeometryFile(input_geometry);
             breaker.setRemoveOldElements(remove_original_elements);
             //breaker.setIgnoreSideSets(true);
 

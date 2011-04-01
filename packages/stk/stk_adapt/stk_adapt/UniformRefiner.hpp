@@ -89,6 +89,9 @@ namespace stk {
       void 
       setRemoveOldElements(bool do_remove);
 
+      void
+      setGeometryFile(std::string file_name);
+
       bool 
       getRemoveOldElements();
       
@@ -170,6 +173,8 @@ namespace stk {
       bool m_doRemove;
 
       std::vector<stk::mesh::EntityRank> m_ranks;
+      bool m_geomSnap;
+      std::string m_geomFile;
       bool m_ignoreSideSets;
     };
 

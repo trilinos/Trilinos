@@ -1,15 +1,20 @@
 #ifndef MESHGEOMETRY_HPP
 #define MESHGEOMETRY_HPP
 
+#include <stk_percept/PerceptMesh.hpp>
 #include "GeometryKernel.hpp"
 
 typedef std::vector<double> PointSet;
 typedef int GeometryHandle;
+using namespace stk;
+using namespace mesh;
+using namespace percept;
 
 struct GeometryEvaluator
 {
-    GeometryHandle geometry;
-    PointSet mesh;
+    GeometryEvaluator(Part* part) : mMesh(Selector(*part)) {}
+    GeometryHandle mGeometry;
+    Selector mMesh;
 };
 
 class MeshGeometry
@@ -21,7 +26,7 @@ public:
     void add_evaluator(GeometryEvaluator* evaluator);
     void add_evaluators(std::vector<GeometryEvaluator*> evaluators);
 
-    void snap_points_to_geometry();
+    void snap_points_to_geometry(PerceptMesh* mesh_data);
 
 protected:
     std::vector<GeometryEvaluator*> geomEvaluators;

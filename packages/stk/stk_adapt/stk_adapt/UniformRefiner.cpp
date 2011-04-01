@@ -8,6 +8,9 @@
 #endif
 
 #include <stk_adapt/UniformRefiner.hpp>
+#include "GeometryKernelStupid.hpp"
+#include "MeshGeometry.hpp"
+#include "GeometryFactory.hpp"
 
 // FIXME
 // #include <stk_mesh/baseImpl/EntityImpl.hpp>
@@ -22,6 +25,7 @@ namespace stk {
 
     UniformRefiner::UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
       m_eMesh(eMesh), m_breakPattern(), 
+      m_geomFile(""), m_geomSnap(false),
       m_nodeRegistry(0), 
       m_proc_rank_field(proc_rank_field), m_doRemove(true), m_ranks(), m_ignoreSideSets(false)
     {
@@ -356,6 +360,10 @@ namespace stk {
 
     void UniformRefiner::
     setRemoveOldElements(bool do_remove) { m_doRemove = do_remove; }
+
+    void UniformRefiner::
+            setGeometryFile(std::string file_name) { m_geomFile = file_name;
+                                                     m_geomSnap = true; }
 
     bool UniformRefiner::
     getRemoveOldElements() { return m_doRemove; }
@@ -872,6 +880,15 @@ namespace stk {
           //bulkData.modification_end();
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
         }
+
+      if (m_geomSnap)
+      {
+          GeometryKernelStupid gk;
+          MeshGeometry mesh_geometry(&gk);
+          GeometryFactory factory(&gk, &mesh_geometry);
+          factory.read_file(m_geomFile, &m_eMesh);
+          mesh_geometry.snap_points_to_geometry(&m_eMesh);
+      }
 
       /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start... ");
       bulkData.modification_end();
