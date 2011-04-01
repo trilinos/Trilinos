@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010 - 2011 Sandia Corporation.              */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -25,6 +25,7 @@
 #include <stk_mesh/fem/TopologyHelpersDeprecated.hpp>
 
 #include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
 
@@ -41,14 +42,21 @@ const CellTopologyData * get_cell_topology_deprecated( const Part & p )
 // DEPRECATED: 09/15/10 FEM refactor
 const CellTopologyData * get_cell_topology( const Part & p )
 {
-  const fem::FEMInterface * fem = MetaData::get(p).get_attribute<fem::FEMInterface>();
   const CellTopologyData * cell_topology_data = NULL;
-  if (fem) {
-    cell_topology_data = fem::get_cell_topology(p).getCellTopologyData();
+  const fem::FEMMetaData * fem_meta_data = p.mesh_meta_data().get_attribute<fem::FEMMetaData>();
+  if (fem_meta_data) {
+    cell_topology_data = fem_meta_data->get_cell_topology(p).getCellTopologyData();
   }
-  if (cell_topology_data == NULL) {
-    cell_topology_data = get_cell_topology_deprecated(p);
+  else {  
+    const fem::FEMInterface * fem = MetaData::get(p).get_attribute<fem::FEMInterface>();
+    if (fem) {
+      cell_topology_data = fem::get_cell_topology(p).getCellTopologyData();
+    }
+    if (cell_topology_data == NULL) {
+      cell_topology_data = get_cell_topology_deprecated(p);
+    }
   }
+
   return cell_topology_data;
 }
 

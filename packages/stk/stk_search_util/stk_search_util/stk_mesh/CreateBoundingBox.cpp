@@ -19,6 +19,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMInterface.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -239,12 +240,15 @@ void build_axis_bbox(stk::mesh::Part &part,
                      const stk::search_util::Op &op)
 {
   const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
+  stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta_data.get_attribute<stk::mesh::fem::FEMMetaData>());
 
+  const CellTopologyData * cell_topo = NULL;
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const cell_topo = stk::mesh::get_cell_topology(part);
+  cell_topo = stk::mesh::get_cell_topology(part);
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-  const CellTopologyData * const cell_topo = stk::mesh::fem::get_cell_topology(part).getCellTopologyData();
+  cell_topo = stk::mesh::fem::get_cell_topology(part).getCellTopologyData();
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  if (fem_meta && !cell_topo) cell_topo = fem_meta->get_cell_topology(part).getCellTopologyData();
   if (cell_topo == NULL)
     return;
 
