@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -14,11 +14,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/FieldDeclarations.hpp>
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 #include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
@@ -82,9 +78,6 @@ namespace stk {
 
 	stk::mesh::fem::FEMMetaData *m_mesh_fem_meta_data ;
 	stk::mesh::MetaData & m_mesh_meta_data ;
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-        stk::mesh::DefaultFEM m_topo_data;
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 	stk::mesh::BulkData * m_mesh ;
 	stk::mesh::Part & m_gear ;
 	stk::mesh::Part & m_surf ;

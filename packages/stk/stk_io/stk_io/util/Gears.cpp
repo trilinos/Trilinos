@@ -257,15 +257,11 @@ namespace stk {
         if (m_mesh_fem_meta_data) {
           element_rank = m_mesh_fem_meta_data->element_rank();
           side_rank    = m_mesh_fem_meta_data->side_rank();
-        } else {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-          element_rank = stk::mesh::Element;
-          side_rank    = stk::mesh::Face;
-#else
-          stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(M);
-          element_rank = stk::mesh::fem::element_rank(fem);
-          side_rank    = stk::mesh::fem::side_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+        }
+        else {
+          stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(M);
+          element_rank = fem.element_rank();
+          side_rank    = fem.side_rank();
         }
 
         M.modification_begin();

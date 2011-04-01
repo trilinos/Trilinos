@@ -303,10 +303,6 @@ namespace stk {
         mesh.modification_begin();
 
 	const stk::mesh::MetaData& meta_data = mesh::MetaData::get(mesh);
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-        stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-
 	const stk::mesh::PartVector & all_parts = meta_data.get_parts();
 	for (stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip) {
 	  stk::mesh::Part *part = *ip;
