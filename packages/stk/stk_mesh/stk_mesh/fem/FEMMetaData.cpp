@@ -414,6 +414,50 @@ entity_rank_names( size_t spatial_dimension )
   return names ;
 }
 
+
+CellTopology
+get_cell_topology(
+  const Bucket &                bucket)
+{
+  const BulkData   & bulk_data = BulkData::get(bucket);
+  const MetaData   & meta_data = MetaData::get(bulk_data);
+  const PartVector & all_parts = meta_data.get_parts();
+
+  FEMMetaData &fem = FEMMetaData::get(meta_data);
+
+  CellTopology cell_topology;
+
+  const std::pair< const unsigned *, const unsigned * > supersets = bucket.superset_part_ordinals();
+
+  if (supersets.first != supersets.second) {
+    const Part *first_found_part = 0;
+
+    for ( const unsigned * it = supersets.first ; it != supersets.second ; ++it ) {
+
+      const Part & part = * all_parts[*it] ;
+
+      if ( part.primary_entity_rank() == bucket.entity_rank() ) {
+
+        CellTopology top = fem.get_cell_topology( part );
+
+        if ( ! cell_topology.getCellTopologyData() ) {
+          cell_topology = top ;
+
+          if (!first_found_part)
+            first_found_part = &part;
+        }
+        else {
+          ThrowErrorMsgIf( top.getCellTopologyData() && top != cell_topology,
+            "Cell topology is ambiguously defined. It is defined as " << cell_topology.getName() <<
+            " on part " << first_found_part->name() << " and as " << top.getName() << " on its superset part " << part.name() );
+        }
+      }
+    }
+  }
+
+  return cell_topology ;
+}
+
 } // namespace fem
 } // namespace mesh
 } // namespace stk

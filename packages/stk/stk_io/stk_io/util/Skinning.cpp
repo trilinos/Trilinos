@@ -22,6 +22,10 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#include <stk_mesh/fem/TopologyHelpersDeprecated.hpp>
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
 namespace use_case {
 #if 0
   std::ostream &pout();               ///< Per-processor output stream

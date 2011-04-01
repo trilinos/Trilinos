@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010 - 2011 Sandia Corporation.              */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -14,11 +14,7 @@
 #include <Shards_CellTopologyTraits.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
-
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/TopologyHelpersDeprecated.hpp>
-#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -49,7 +45,7 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
   for(; iter!=iter_end; ++iter) {
     stk::mesh::Part* part =  *iter;
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-    if (get_cell_topology(*part) == topology) {
+    if (stk::mesh::fem::FEMMetaData::get(mesh).get_cell_topology(*part).getCellTopologyData() == topology) {
       parts.push_back(part);
     }
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -72,7 +68,8 @@ Entity & declare_element( BulkData & mesh ,
                           const IdType node_id[] )
 {
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const top = get_cell_topology( part );
+//  const CellTopologyData * const top = get_cell_topology( part );
+  const CellTopologyData * const top = stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const top = fem::get_cell_topology( part ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -84,7 +81,8 @@ Entity & declare_element( BulkData & mesh ,
   PartVector add( 1 ); add[0] = & part ;
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const EntityRank entity_rank = element_rank_deprecated(MetaData::get(part));
+//  const EntityRank entity_rank = element_rank_deprecated(MetaData::get(part));
+  const EntityRank entity_rank = stk::mesh::fem::FEMMetaData::get(part).element_rank();
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const EntityRank entity_rank = fem::get_entity_rank(MetaData::get(part), top);
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -93,9 +91,9 @@ Entity & declare_element( BulkData & mesh ,
 
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
     //declare node if it doesn't already exist
-    Entity * node = mesh.get_entity( fem::NODE_RANK , node_id[i]);
+    Entity * node = mesh.get_entity( fem::FEMMetaData::NODE_RANK , node_id[i]);
     if ( NULL == node) {
-      node = & mesh.declare_entity( fem::NODE_RANK , node_id[i], empty );
+      node = & mesh.declare_entity( fem::FEMMetaData::NODE_RANK , node_id[i], empty );
     }
 
     mesh.declare_relation( elem , *node , i );
@@ -113,7 +111,8 @@ Entity & declare_element( BulkData & mesh ,
                           Entity * node[] )
 {
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const top = get_cell_topology( part );
+//  const CellTopologyData * const top = get_cell_topology( part );
+  const CellTopologyData * const top =  stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const top = fem::get_cell_topology( part ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -124,7 +123,8 @@ Entity & declare_element( BulkData & mesh ,
   PartVector add( 1 ); add[0] = & part ;
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const EntityRank entity_rank = element_rank_deprecated(MetaData::get(part));
+//  const EntityRank entity_rank = element_rank_deprecated(MetaData::get(part));
+  const EntityRank entity_rank = stk::mesh::fem::FEMMetaData::get(part).element_rank();
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const EntityRank entity_rank = top->dimension;
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
