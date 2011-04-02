@@ -43,8 +43,9 @@ template<class ArgType, class ReturnType>
 class SingleArguementFunctionObject : public FunctionObject<ReturnType>{
 
 public:
+  SingleArguementFunctionObject(){}
 
-  SingleArguementFunctionObject(ArgType arguementValue = 0):
+  SingleArguementFunctionObject(ArgType arguementValue):
     arguementValue_(arguementValue){}
 
   inline ArgType getArguementValue() const{
@@ -62,33 +63,73 @@ private:
 };
 
 template<class OperandType>
-class SubtractionFunction : 
+class SingleOperatorFunction : 
   public SingleArguementFunctionObject<OperandType, OperandType>
 {
 public:
-  SubtractionFunction(
-    OperandType amountToSubtract,
-    OperandType arguementValue = 0):
+  SingleOperatorFunction(OperandType modifyingOperand):
+    SingleArguementFunctionObject<OperandType, OperandType>(),
+    _modifyingOperand(modifyingOperand){}
+
+  SingleOperatorFunction(
+    OperandType modifyingOperand,
+    OperandType arguementValue):
     SingleArguementFunctionObject<OperandType, OperandType>(arguementValue),
-    _amountToSubtract(amountToSubtract){}
+    _modifyingOperand(modifyingOperand){}
 
-  inline OperandType runFunction() const{
-    return SingleArguementFunctionObject<OperandType,OperandType>::
-      getArguementValue()-_amountToSubtract;
+  inline OperandType getModifiyingOperand() const{
+    return _modifyingOperand;
   }
 
-  inline OperandType getAmountToSubtract() const{
-    return _amountToSubtract;
-  }
-
-  inline OperandType setAmountToSubtract(OperandType newAmount){
-    _amountToSubtract = newAmount;
+  inline OperandType setModifyingOperand(OperandType newOperand){
+    _modifyingOperand = newOperand;
   }
 
 private:
-  OperandType _amountToSubtract;
+  OperandType _modifyingOperand;
 };
 
+template<class OperandType>
+class SubtractionFunction :
+  public SingleOperatorFunction<OperandType>
+{
+public:
+  SubtractionFunction(OperandType amountToSubtract):
+    SingleOperatorFunction<OperandType>(amountToSubtract){}
+
+  SubtractionFunction(
+    OperandType amountToSubtract,
+    OperandType arguementValue):
+    SingleOperatorFunction<OperandType>(amountToSubtract, arguementValue){}
+
+  inline OperandType runFunction() const{
+    return 
+      SingleArguementFunctionObject<OperandType, OperandType>::getArguementValue()
+      -
+      SingleOperatorFunction<OperandType>::getModifiyingOperand();
+  }
+};
+
+template<class OperandType>
+class AdditionFunction :
+  public SingleOperatorFunction<OperandType>
+{
+public:
+  AdditionFunction(OperandType amountToAdd):
+    SingleOperatorFunction<OperandType>(amountToAdd){}
+
+  AdditionFunction(
+    OperandType amountToAdd,
+    OperandType arguementValue):
+    SingleOperatorFunction<OperandType>(amountToAdd, arguementValue){}
+
+  inline OperandType runFunction() const{
+    return 
+      SingleArguementFunctionObject<OperandType, OperandType>::getArguementValue()
+      +
+      SingleOperatorFunction<OperandType>::getModifiyingOperand();
+  }
+};
 
 } // namespace Teuchos
 
