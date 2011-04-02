@@ -749,7 +749,7 @@ bool NumberVisualDependency<T>::getDependeeState() const{
 
 template<class T>
 std::string NumberVisualDependency<T>::getTypeAttributeValue() const{
-  return "NumberVisualDependency<" + TypeNameTraits<T>::name() + ">";
+  return "NumberVisualDependency(" + TypeNameTraits<T>::name() + ")";
 }
 
 template<class T>
@@ -953,9 +953,9 @@ std::string
 NumberArrayLengthDependency<DependeeType, DependentType>::getTypeAttributeValue()
 const
 {
-  return "NumberArrayLengthDependency<" +
+  return "NumberArrayLengthDependency(" +
     TypeNameTraits<DependeeType>::name() + ", " +
-    TypeNameTraits<DependentType>::name() +">";
+    TypeNameTraits<DependentType>::name() +")";
 }
 
 template<class DependeeType, class DependentType>
@@ -1533,7 +1533,7 @@ RangeValidatorDependency<T>::RangeValidatorDependency(
 template<class T>
 std::string RangeValidatorDependency<T>::getTypeAttributeValue() const
 {
-  return "RangeValidatorDependency<" + TypeNameTraits<T>::name() + ">";
+  return "RangeValidatorDependency(" + TypeNameTraits<T>::name() + ")";
 }
   
 

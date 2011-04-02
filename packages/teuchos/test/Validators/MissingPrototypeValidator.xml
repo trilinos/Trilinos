@@ -1,6 +1,6 @@
 <ParameterList>
   <Validators>
-    <Validator type="ArrayValidator&lt;filenameValidator, string>" validatorId="0" prototypeId="1"/>
+    <Validator type="ArrayValidator(filenameValidator, string)" validatorId="0" prototypeId="1"/>
   </Validators>
   <ParameterList>
     <Parameter name="blah" value="balh" type="string"/>

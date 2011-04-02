@@ -324,7 +324,7 @@ public:
   //@{
 
   std::string getTypeAttributeValue() const{
-    return "NumberCondition<" + TypeNameTraits<T>::name() + ">";
+    return "NumberCondition(" + TypeNameTraits<T>::name() + ")";
   }
   
   //@}

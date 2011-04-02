@@ -2,12 +2,12 @@
   <Parameter isDefault="false" isUsed="true" name="defaultsti" type="string" validatorId="0" value="value1"/>
   <Parameter isDefault="false" isUsed="true" name="sti" type="string" validatorId="1" value="value3"/>
   <Validators>
-    <Validator type="StringIntegralValidator&lt;int>" defaultParameterName="sti" integralValue="float" validatorId="0">
+    <Validator type="StringIntegralValidator(int)" defaultParameterName="sti" integralValue="float" validatorId="0">
       <badness integralValue="0" stringValue="value1"/>
       <String integralValue="1" stringValue="value2"/>
       <String integralValue="2" stringValue="value3"/>
     </Validator>
-    <Validator type="StringIntegralValidator&lt;int>" defaultParameterName="sti" integralValue="float" validatorId="1">
+    <Validator type="StringIntegralValidator(int)" defaultParameterName="sti" integralValue="float" validatorId="1">
       <String integralValue="3" stringDoc="the third value" stringValue="value3"/>
       <String integralValue="4" stringDoc="the fourth value" stringValue="value4"/>
       <String integralValue="5" stringDoc="the fifth value" stringValue="value5"/>
