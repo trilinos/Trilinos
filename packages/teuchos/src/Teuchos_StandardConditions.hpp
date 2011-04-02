@@ -334,7 +334,7 @@ public:
 
   bool evaluateParameter() const{
     if(!func_.is_null()){
-      func_->setParameterValue(getValue<T>(*getParameter()));
+      func_->setArguementValue(getValue<T>(*getParameter()));
       return func_->runFunction() > 0;
     }
     else{

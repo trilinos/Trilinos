@@ -44,21 +44,49 @@ class SingleArguementFunctionObject : public FunctionObject<ReturnType>{
 
 public:
 
-  SingleArguementFunctionObject(const ArgType parameterValue = 0):
-    parameterValue_(parameterValue){}
+  SingleArguementFunctionObject(ArgType arguementValue = 0):
+    arguementValue_(arguementValue){}
 
-  inline ArgType getParameterValue() const{
-    return parameterValue_;
+  inline ArgType getArguementValue() const{
+    return arguementValue_;
   }
 
-  inline void setParameterValue(ArgType parameterValue){
-    parameterValue_ = parameterValue;
+  inline void setArguementValue(ArgType arguementValue){
+    arguementValue_ = arguementValue;
   }
 
 private:
 
-  ArgType parameterValue_;
+  ArgType arguementValue_;
 
+};
+
+template<class OperandType>
+class SubtractionFunction : 
+  public SingleArguementFunctionObject<OperandType, OperandType>
+{
+public:
+  SubtractionFunction(
+    OperandType amountToSubtract,
+    OperandType arguementValue = 0):
+    SingleArguementFunctionObject<OperandType, OperandType>(arguementValue),
+    _amountToSubtract(amountToSubtract){}
+
+  inline OperandType runFunction() const{
+    return SingleArguementFunctionObject<OperandType,OperandType>::
+      getArguementValue()-_amountToSubtract;
+  }
+
+  inline OperandType getAmountToSubtract() const{
+    return _amountToSubtract;
+  }
+
+  inline OperandType setAmountToSubtract(OperandType newAmount){
+    _amountToSubtract = newAmount;
+  }
+
+private:
+  OperandType _amountToSubtract;
 };
 
 

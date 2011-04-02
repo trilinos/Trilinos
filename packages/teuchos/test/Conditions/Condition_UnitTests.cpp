@@ -38,7 +38,7 @@ namespace Teuchos{
 class DoubleTesterFunc : public SingleArguementFunctionObject<double, double>{
 public:
   double runFunction() const{
-    return getParameterValue() - 100.0;
+    return getArguementValue() - 100.0;
   }
 };
 

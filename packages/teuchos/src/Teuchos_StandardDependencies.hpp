@@ -741,7 +741,7 @@ NumberVisualDependency<T>::NumberVisualDependency(
 template<class T>
 bool NumberVisualDependency<T>::getDependeeState() const{
   if(!func_.is_null()){
-    func_->setParameterValue(getFirstDependeeValue<T>());
+    func_->setArguementValue(getFirstDependeeValue<T>());
     return func_->runFunction() > ScalarTraits<T>::zero() ? true : false;
   }
   return getFirstDependeeValue<T>();
@@ -998,7 +998,7 @@ void
 NumberArrayLengthDependency<DependeeType, DependentType>::evaluate(){
   DependeeType newLength;
   if(!func_.is_null()){
-    func_->setParameterValue(getFirstDependeeValue<DependeeType>());
+    func_->setArguementValue(getFirstDependeeValue<DependeeType>());
     newLength = func_->runFunction();
   }
   else{
