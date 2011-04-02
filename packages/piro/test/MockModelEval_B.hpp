@@ -113,6 +113,7 @@ class MockModelEval_B
    Teuchos::RCP<Epetra_Vector> p_init;
    Teuchos::RCP<Epetra_Map> g_map;
    Teuchos::RCP<Epetra_Comm> Comm;
+   Teuchos::RCP<Epetra_CrsMatrix> W;
 
 };
 

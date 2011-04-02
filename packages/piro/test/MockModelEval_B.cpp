@@ -60,6 +60,13 @@ MockModelEval_B::MockModelEval_B(const MPI_Comm appComm)
     p_init = rcp(new Epetra_Vector(*p_map));
     for (int i=0; i<numParameters; i++) (*p_init)[i]= 1.0;
 
+    Epetra_CrsGraph graph(Copy, *x_map, 1);
+    int z=0;
+    graph.InsertGlobalIndices(0,1,&z);
+    graph.FillComplete();
+
+    W = Teuchos::rcp(new Epetra_CrsMatrix(Copy, graph));
+
 }
 
 MockModelEval_B::~MockModelEval_B()
@@ -78,7 +85,7 @@ RCP<const Epetra_Map> MockModelEval_B::get_f_map() const
 
 RCP<Epetra_Operator> MockModelEval_B::create_W() const
 {
-  return Teuchos::null;
+  return W;
 }
 
 RCP<const Epetra_Map> MockModelEval_B::get_p_map(int l) const
@@ -148,7 +155,10 @@ EpetraExt::ModelEvaluator::InArgs MockModelEval_B::createInArgs() const
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(1);
   inArgs.setSupports(IN_ARG_x,true);
+  inArgs.setSupports(IN_ARG_x_dot,true);
   inArgs.setSupports(IN_ARG_t,true);
+  inArgs.setSupports(IN_ARG_alpha,true);
+  inArgs.setSupports(IN_ARG_beta,true);
   return inArgs;
 }
 
@@ -159,6 +169,11 @@ EpetraExt::ModelEvaluator::OutArgs MockModelEval_B::createOutArgs() const
   outArgs.set_Np_Ng(1, 1);
 
   outArgs.setSupports(OUT_ARG_f,true);
+  outArgs.setSupports(OUT_ARG_W,true);
+  outArgs.setSupports(OUT_ARG_W,true);
+  outArgs.set_W_properties( DerivativeProperties(
+      DERIV_LINEARITY_UNKNOWN, DERIV_RANK_FULL, true));
+
   return outArgs;
 }
 
@@ -174,16 +189,32 @@ void MockModelEval_B::evalModel( const InArgs& inArgs,
   if (!x_in.get()) cout << "ERROR: MockModelEval_B requires x as inargs" << endl;
   int myVecLength = x_in->MyLength();
 
+  RCP<const Epetra_Vector> x_dot_in = inArgs.get_x_dot();
+  double alpha = inArgs.get_alpha();
+  double beta  = inArgs.get_beta();
+
   // Parse OutArgs
 
   RCP<Epetra_Vector> f_out = outArgs.get_f(); 
   RCP<Epetra_Vector> g_out = outArgs.get_g(0); 
+  RCP<Epetra_CrsMatrix> W_out = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(outArgs.get_W()); 
 
   if (f_out != Teuchos::null) {
     for (int i=0; i<myVecLength; i++) {
       int gid = x_in->Map().GID(i);
-       (*f_out)[i] = 0.0*( (*x_in)[i] - gid ) - (*p_in)[0];
+       (*f_out)[i] = -(*p_in)[0];
     }
+    if (x_dot_in != Teuchos::null) {
+       for (int i=0; i<myVecLength; i++) {
+       (*f_out)[i] = (*x_dot_in)[i] - (*f_out)[i];
+       }
+    }
+  }
+  if (W_out != Teuchos::null) {
+    int z=0;
+    if (alpha==0.0) throw "alpha=0.0";
+    W_out->ReplaceGlobalValues(0, 1, &alpha, &z);
+    W_out->FillComplete();
   }
 
   if (g_out != Teuchos::null) x_in->MeanValue(&(*g_out)[0]);
