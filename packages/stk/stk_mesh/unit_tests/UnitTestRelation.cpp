@@ -47,7 +47,7 @@ using stk::mesh::fixtures::RingFixture;
 
 namespace {
 
-const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
+static const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 {
@@ -292,7 +292,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank entity_rank = stk::mesh::fem::element_rank(spatial_dim);
+  const EntityRank entity_rank = meta_data.element_rank();
   Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
@@ -337,7 +337,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank entity_rank = stk::mesh::fem::element_rank(spatial_dim);
+  const EntityRank entity_rank = meta_data.element_rank();
   Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
@@ -400,7 +400,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
     stk::mesh::PartVector empty_parts;
 
     // Create element
-    const EntityRank entity_rank = stk::mesh::fem::element_rank(spatial_dim);
+    const EntityRank entity_rank = meta_data.element_rank();
     Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
     elem_ptr = &elem;
 
@@ -417,7 +417,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
     }
 
     // Create edge
-    const EntityRank edge_rank = stk::mesh::fem::side_rank(spatial_dim);
+    const EntityRank edge_rank = meta_data.side_rank();
     Entity & edge = mesh.declare_entity(edge_rank, 1 /*id*/, empty_parts);
     edge_ptr = &edge;
 
