@@ -412,14 +412,6 @@ std::string BoolValidatorDependency::getTypeAttributeValue() const{
 
 void BoolValidatorDependency::validateDep() const{
 
-  #ifdef TEUCHOS_DEBUG
-  if(falseValidator_.is_null() && trueValidator_.is_null()){
-    std::cerr << "WARNING: Both the true and false validators " <<
-    "for a BoolValidatorDependency seem to be null. You sure you want that?" <<
-    std::endl << std::endl;
-  }
-  #endif
-
   TEST_FOR_EXCEPTION(!getFirstDependee()->isType<bool>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "

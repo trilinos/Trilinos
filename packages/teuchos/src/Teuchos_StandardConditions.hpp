@@ -280,7 +280,8 @@ public:
 
 /**
  * \brief A Number Condition is a Parameter Condition that evaluates
- * whether or not a number parameter is greater than 0. 
+ * whether or not a number parameter is greater than 0 (or some other number
+ * based on a given function). 
  * If the parameter is  greater than 0 this is interperted as the condition 
  * being "true". Otherwise the oncidiont is interperted as false.
  */
