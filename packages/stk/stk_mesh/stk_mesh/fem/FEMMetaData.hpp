@@ -513,8 +513,9 @@ inline void set_cell_topology(FEMMetaData & fem_meta, Part & part)
   set_cell_topology(fem_meta, part, fem::CellTopology(shards::getCellTopologyData<Topology>()));
 }
 
-
 std::vector<std::string> entity_rank_names(size_t spatial_dimension);
+
+CellTopology get_cell_topology(const Bucket &bucket);
 
 } // namespace fem
 } // namespace mesh

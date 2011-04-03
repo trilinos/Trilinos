@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -28,6 +28,10 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <Shards_BasicTopologies.hpp>
+
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#include <stk_mesh/fem/TopologyHelpersDeprecated.hpp>
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
 namespace {
 
@@ -331,68 +335,24 @@ namespace stk {
 
     bool invalid_rank(stk::mesh::EntityRank rank)
     {
-#ifdef USE_FEMMETADATA
-      return rank == mesh::InvalidEntityRank;
-#else
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return rank == (unsigned)mesh::EntityRankUndefined;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      return rank == mesh::InvalidEntityRank;
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-#endif
+      return rank == mesh::fem::FEMMetaData::INVALID_RANK;
     }
 
     stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
     {
-      stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(stk::mesh::MetaData::get(part).get_attribute<stk::mesh::fem::FEMMetaData>());
+      stk::mesh::fem::FEMMetaData& fem_meta = stk::mesh::fem::FEMMetaData::get(part);
 
-      if (mesh::MetaData::get(part).universal_part() == part) {
-        if( fem_meta )
-          {
-            return stk::mesh::fem::NODE_RANK;
-          }
-        else
-          {
-
-#  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-            return stk::mesh::Node;
-#  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-            return stk::mesh::fem::NODE_RANK;
-#  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-
-          }
+      if (fem_meta.universal_part() == part) {
+        return fem_meta.node_rank();
       }
-      if (fem_meta)
-        {
-          return part.primary_entity_rank();
-        }
-      else
-        {
-#  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-          return mesh::fem_entity_rank( part.primary_entity_rank() );
-#  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-          return part.primary_entity_rank();
-#  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
-        }
-
+      return part.primary_entity_rank();
     }
 
     stk::mesh::EntityRank element_rank(const stk::mesh::MetaData &meta)
     {
-      stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
-      if( fem_meta )
-        return fem_meta->element_rank();
-      else
-      {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-        return stk::mesh::Element;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-        stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
-        return stk::mesh::fem::element_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      }
-
+      stk::mesh::fem::FEMMetaData& fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
+      return fem_meta.element_rank();
     }
 
     stk::mesh::EntityRank side_rank(const stk::mesh::MetaData &meta)

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -39,7 +39,8 @@ void verify_declare_element_side(
     )
 {
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const elem_top = get_cell_topology( elem );
+//  const CellTopologyData * const elem_top = get_cell_topology( elem );
+  const CellTopologyData * const elem_top = fem::get_cell_topology(elem.bucket()).getCellTopologyData();
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -76,7 +77,8 @@ Entity & declare_element_side(
   verify_declare_element_side(mesh, elem, local_side_id);
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const elem_top = get_cell_topology( elem );
+//  const CellTopologyData * const elem_top = get_cell_topology( elem );
+  const CellTopologyData * const elem_top = fem::get_cell_topology(elem.bucket()).getCellTopologyData();
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -122,7 +124,8 @@ Entity & declare_element_side(
   verify_declare_element_side(mesh, elem, local_side_id);
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const elem_top = get_cell_topology( elem );
+//  const CellTopologyData * const elem_top = get_cell_topology( elem );
+  const CellTopologyData * const elem_top = fem::get_cell_topology(elem.bucket()).getCellTopologyData();
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -151,7 +154,8 @@ bool element_side_polarity( const Entity & elem ,
   // 09/14/10:  TODO:  tscoffe:  We need an exception here if we don't get a TopologicalMetaData off of MetaData or we need to take one on input.
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const bool is_side = side.entity_rank() != Edge;
-  const CellTopologyData * const elem_top = get_cell_topology( elem );
+//  const CellTopologyData * const elem_top = get_cell_topology( elem );
+  const CellTopologyData * const elem_top = fem::get_cell_topology(elem.bucket()).getCellTopologyData();
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(elem);
   const bool is_side = side.entity_rank() != fem::edge_rank(fem);
@@ -206,7 +210,8 @@ int get_entity_subcell_id( const Entity & entity ,
 
   // get topology of elem
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData* entity_topology = get_cell_topology(entity);
+//  const CellTopologyData* entity_topology = get_cell_topology(entity);
+  const CellTopologyData * const entity_topology = fem::get_cell_topology(entity.bucket()).getCellTopologyData();
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData* entity_topology = fem::get_cell_topology(entity).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
