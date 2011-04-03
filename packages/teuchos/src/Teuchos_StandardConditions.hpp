@@ -71,7 +71,9 @@ public:
    * set to false if the parameter
    * evaluates to false, then the condition will evaluate to true.
    */
-  ParameterCondition(RCP<ParameterEntry> parameter, bool whenParamEqualsValue);
+  ParameterCondition(
+    RCP<ParameterEntry> parameter, 
+    bool whenParamEqualsValue=true);
 
   virtual ~ParameterCondition(){}
   
@@ -297,11 +299,6 @@ public:
    * \brief Constructs a Number Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
-   * @param func A function to run the value of the parameter through. 
-   * If the function returns a value
-   * greater than 0, this will be interperted as the condition being "true". 
-   * If the function returns a value of 0 or less, this will be interperted 
-   * as the condition being false.
    * @param whenParamEqualsValue Indicates whether the condition should be 
    * true when the evaluation results in a true or when the evaluation results 
    * in a false. When set to true, if the parameter evaluates to true then 
@@ -310,10 +307,26 @@ public:
    */
   NumberCondition(
     RCP<ParameterEntry> parameter,
-    RCP<SingleArguementFunctionObject<T,T> > func=null,
     bool whenParamEqualsValue=true):
     ParameterCondition(parameter, whenParamEqualsValue), 
-    func_(func)
+    func_(null)
+  {}
+
+  /**
+   * \brief Constructs a Number Condition.
+   *
+   * @param parameterName The name of the parameter to be evaluated.
+   * @param func A function to run the value of the parameter through. 
+   * If the function returns a value
+   * greater than 0, this will be interperted as the condition being "true". 
+   * If the function returns a value of 0 or less, this will be interperted 
+   * as the condition being false.
+   */
+  NumberCondition(
+    RCP<ParameterEntry> parameter,
+    RCP<const FunctionObject<T,T> > func):
+    ParameterCondition(parameter), 
+    func_(null)
   {}
 
   virtual ~NumberCondition(){}
@@ -333,13 +346,11 @@ public:
   //@{
 
   bool evaluateParameter() const{
+    T value = getValue<T>(*getParameter());
     if(!func_.is_null()){
-      func_->setArguementValue(getValue<T>(*getParameter()));
-      return func_->runFunction() > 0;
+      value = func_->runFunction(value);
     }
-    else{
-      return getValue<T>(*getParameter()) > 0;
-    }
+    return value > 0;
   }
   
   //@}
@@ -350,7 +361,7 @@ private:
   //@{
   
   /** \brief . */
-  RCP<SingleArguementFunctionObject<T,T> > func_;
+  RCP<FunctionObject<T,T> > func_;
   
   //@}
 

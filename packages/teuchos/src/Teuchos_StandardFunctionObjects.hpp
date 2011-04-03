@@ -38,43 +38,21 @@
 
 namespace Teuchos{
 
-
-template<class ArgType, class ReturnType>
-class SingleArguementFunctionObject : public FunctionObject<ReturnType>{
-
+template<class DataType>
+class IdentityFunction: public FunctionObject<DataType, DataType>{
 public:
-  SingleArguementFunctionObject(){}
-
-  SingleArguementFunctionObject(ArgType arguementValue):
-    arguementValue_(arguementValue){}
-
-  inline ArgType getArguementValue() const{
-    return arguementValue_;
+  DataType runFunction(DataType arguement) const{
+    return arguement;
   }
-
-  inline void setArguementValue(ArgType arguementValue){
-    arguementValue_ = arguementValue;
-  }
-
-private:
-
-  ArgType arguementValue_;
-
 };
 
 template<class OperandType>
 class SingleOperatorFunction : 
-  public SingleArguementFunctionObject<OperandType, OperandType>
+  public FunctionObject<OperandType, OperandType>
 {
 public:
   SingleOperatorFunction(OperandType modifyingOperand):
-    SingleArguementFunctionObject<OperandType, OperandType>(),
-    _modifyingOperand(modifyingOperand){}
-
-  SingleOperatorFunction(
-    OperandType modifyingOperand,
-    OperandType arguementValue):
-    SingleArguementFunctionObject<OperandType, OperandType>(arguementValue),
+    FunctionObject<OperandType, OperandType>(),
     _modifyingOperand(modifyingOperand){}
 
   inline OperandType getModifiyingOperand() const{
@@ -97,17 +75,13 @@ public:
   SubtractionFunction(OperandType amountToSubtract):
     SingleOperatorFunction<OperandType>(amountToSubtract){}
 
-  SubtractionFunction(
-    OperandType amountToSubtract,
-    OperandType arguementValue):
-    SingleOperatorFunction<OperandType>(amountToSubtract, arguementValue){}
-
-  inline OperandType runFunction() const{
+  OperandType runFunction(OperandType arguement) const{
     return 
-      SingleArguementFunctionObject<OperandType, OperandType>::getArguementValue()
+      arguement
       -
       SingleOperatorFunction<OperandType>::getModifiyingOperand();
   }
+
 };
 
 template<class OperandType>
@@ -118,14 +92,9 @@ public:
   AdditionFunction(OperandType amountToAdd):
     SingleOperatorFunction<OperandType>(amountToAdd){}
 
-  AdditionFunction(
-    OperandType amountToAdd,
-    OperandType arguementValue):
-    SingleOperatorFunction<OperandType>(amountToAdd, arguementValue){}
-
-  inline OperandType runFunction() const{
+  OperandType runFunction(OperandType arguement) const{
     return 
-      SingleArguementFunctionObject<OperandType, OperandType>::getArguementValue()
+      arguement
       +
       SingleOperatorFunction<OperandType>::getModifiyingOperand();
   }

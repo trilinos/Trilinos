@@ -33,40 +33,6 @@
 #include "Teuchos_StandardConditions.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
-class IntVisualTester : public Teuchos::SingleArguementFunctionObject<int, int>{
-
-public:
-  int runFunction() const;
-};
-
-int IntVisualTester::runFunction() const{
-	if(getArguementValue() <= 32){
-		return 1;
-	}
-	else{
-		return 0;
-	}
-}
-
-class IntFuncTester : public Teuchos::SingleArguementFunctionObject<int, int>{
-
-public:
-  int runFunction() const;
-};
-
-int IntFuncTester::runFunction() const{
-  return getArguementValue() + 10;
-}
-
-class FondueTempTester : public Teuchos::SingleArguementFunctionObject<double, double>{
-
-public:
-  double runFunction() const;
-};
-
-double FondueTempTester::runFunction() const{
-	return getArguementValue()-100;
-}
 
 namespace Teuchos{
 
@@ -360,7 +326,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
     "Temperature",101.0, "The temperature of the fondue");
 	doubleVisualDepList.set(
     "Cheese to Fondue", "Swiss", "The cheese to fondue");
-	RCP<FondueTempTester> fondueFunc(new FondueTempTester);
+  RCP<SubtractionFunction<double> > fondueFunc = rcp(new
+    SubtractionFunction<double>(100));
 
 	RCP<NumberVisualDependency<double> > fondueDep = 
 	RCP<NumberVisualDependency<double> >(
@@ -493,7 +460,6 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	/*
 	 * Another test of the NumberVisualDependency.
 	 */
-	RCP<IntVisualTester> intVisualTester(new IntVisualTester());
 	ParameterList
     numberVisDepList = My_deplist->sublist(
 		"Number Visual Dependency List", 
@@ -502,7 +468,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	);
 	numberVisDepList.set("Ice", 50, "Ice stuff");
 	numberVisDepList.set("Room Temp", 10, "Room temperature");
-  RCP<IntVisualTester> visFunc = rcp(new IntVisualTester);
+  RCP<SubtractionFunction<int> > visFunc = rcp(new
+    SubtractionFunction<int>(32));
 	RCP<NumberVisualDependency<int> > 
 	iceDep = RCP<NumberVisualDependency<int> >(
 		new NumberVisualDependency<int>(
@@ -513,10 +480,10 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	);
 	depSheet1->addDependency(iceDep);
 	iceDep->evaluate();
-	TEST_ASSERT(iceDep->isDependentVisible());
+	TEST_ASSERT(!iceDep->isDependentVisible());
 	numberVisDepList.set("Room Temp", 33);
 	iceDep->evaluate();
-	TEST_ASSERT(!iceDep->isDependentVisible());
+	TEST_ASSERT(iceDep->isDependentVisible());
 
 	/*
 	 * Test condition visual dependency
@@ -528,7 +495,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	conVisDepList->set("string param", "blah", "a string parameter");
 	RCP<NumberCondition<double> > numberCon = 
     rcp( new NumberCondition<double>(
-      conVisDepList->getEntryRCP("double param"), null, true));
+      conVisDepList->getEntryRCP("double param")));
 	RCP<BoolCondition> boolCon = 
     rcp(new BoolCondition(conVisDepList->getEntryRCP("bool param")));
 	Condition::ConstConditionList conList = 
@@ -605,7 +572,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
 	list1->set("array parameter", doubleArray, "array parameter");
 	list1->set("bool parameter", true, "bool parameter");
 
-  RCP<IntFuncTester> intFuncTester(new IntFuncTester());
+  RCP<AdditionFunction<int> > intFuncTester = rcp(new
+    AdditionFunction<int>(10));
 	TEST_THROW(RCP<NumberVisualDependency<int> > numValiDep = 
     rcp(
       new NumberVisualDependency<int>(

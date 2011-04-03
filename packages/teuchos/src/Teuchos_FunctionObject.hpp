@@ -39,11 +39,11 @@
 
 namespace Teuchos{
 
-template<class ReturnType>
+template<class ReturnType, class ArgType>
 class FunctionObject: public Describable {
 
 public:
-  virtual ReturnType runFunction() const=0;
+  virtual ReturnType runFunction(ArgType arguement) const=0;
 
 };
 

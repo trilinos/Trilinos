@@ -315,7 +315,7 @@ public:
     bool whenParamEqualsValue) const
   {
     return rcp(new NumberCondition<T>(
-      parameterEntry, null, whenParamEqualsValue));
+      parameterEntry, whenParamEqualsValue));
   }
 
   /** \brief . */
