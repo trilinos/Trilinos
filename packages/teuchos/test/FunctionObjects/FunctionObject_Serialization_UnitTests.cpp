@@ -35,7 +35,7 @@
 namespace Teuchos{
 
 /**
- * Tests for subtraction functions
+ * Serialization Tests for subtraction functions
  */
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, SubtractionTests){
   RCP<SubtractionFunction<int> > intTester = rcp(
@@ -50,6 +50,16 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, SubtractionTests){
   int operand = subFuncXML.getRequired<int>(
     SimpleFunctionXMLConverter<int>::getOperandAttributeName());
   TEST_ASSERT(operand == intTester->getModifiyingOperand());
+
+  RCP<FunctionObject> readIn = 
+    FunctionObjectXMLConverterDB::convertXML(subFuncXML);
+  RCP<SubtractionFunction<int> > readInCasted = 
+    rcp_dynamic_cast<SubtractionFunction<int> >(readIn);
+  TEST_ASSERT(readInCasted.get() != NULL);
+  TEST_ASSERT(
+    readInCasted->getModifiyingOperand()
+    ==
+    intTester->getModifiyingOperand());
 }
 
 
