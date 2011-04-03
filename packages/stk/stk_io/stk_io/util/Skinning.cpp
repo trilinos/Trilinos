@@ -38,7 +38,7 @@ namespace use_case {
 
 namespace {
 
-  static const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+  using stk::mesh::fem::NODE_RANK;
 
   stk::mesh::Entity *
   get_side_neighbor(const shards::CellTopology &  elem_top ,
@@ -49,12 +49,20 @@ namespace {
 
     const shards::CellTopology side_top(elem_top.getCellTopologyData(elem_top.getDimension() - 1, side_id));
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+    const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::Node );
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
     const stk::mesh::PairIterRelation elem_nodes = elem.relations( NODE_RANK);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
     // Find other element that shares this side...
     stk::mesh::Entity & node = * elem_nodes[ elem_top.getNodeMap(side_dimension, side_id, 0) ].entity();
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+    const stk::mesh::PairIterRelation node_elems = node.relations( stk::mesh::Element );
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
     const stk::mesh::PairIterRelation node_elems = node.relations( elem.entity_rank());
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
     stk::mesh::Entity * neighbor = NULL ;
 
@@ -62,7 +70,11 @@ namespace {
 
       neighbor = node_elems[i].entity();
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+      const stk::mesh::PairIterRelation neighbor_nodes = neighbor->relations( stk::mesh::Node );
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       const stk::mesh::PairIterRelation neighbor_nodes = neighbor->relations( NODE_RANK);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
       if ( & elem == neighbor ) { neighbor = NULL ; }
 
@@ -80,6 +92,30 @@ namespace {
 	if ( ! found ) { neighbor = NULL ; }
       }
 
+#if 0
+      if ( NULL != neighbor ) {
+	use_case::pout() << "neighbors( " ;
+	use_case::pout() << " Element[ " ;
+	use_case::pout() << elem.identifier();
+	use_case::pout() << " ]{" ;
+	for ( size_t i = 0 ; i < elem_nodes.size() ; ++i ) {
+	  use_case::pout() << " " << elem_nodes[i].entity()->identifier();
+	}
+	use_case::pout() << " } , Element[ " ;
+	use_case::pout() << neighbor->identifier();
+	use_case::pout() << " ]{" ;
+	for ( size_t i = 0 ; i < neighbor_nodes.size() ; ++i ) {
+	  use_case::pout() << " " << neighbor_nodes[i].entity()->identifier();
+	}
+	use_case::pout() << " } , Share { " ;
+	for ( unsigned j = 0 ; j < side_top.getNodeCount() ; ++j ) {
+	  Entity * const next_node = elem_nodes[ elem_top.getNodeMap(side_dimension, side_id, j) ].entity();
+	  use_case::pout() << " " << next_node->identifier();
+	}
+	use_case::pout() << " } )" ;
+	use_case::pout() << std::endl ;
+      }
+#endif
     }
 
     return neighbor ;
