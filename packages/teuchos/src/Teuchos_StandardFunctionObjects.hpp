@@ -43,7 +43,7 @@ namespace Teuchos{
  * returns the value that is given as an arguement.
  */
 template<class DataType>
-class IdentityFunction: public FunctionObject<DataType, DataType>{
+class IdentityFunction: public FunctionObject{
 public:
   
   //! @name Overridden from FunctionObject
@@ -70,22 +70,28 @@ public:
  * using a specific operator.
  */
 template<class OperandType>
-class SingleOperatorFunction : 
-  public FunctionObject<OperandType, OperandType>
+class SimpleFunctionObject : public FunctionObject
 {
 public:
 
   //! @name Constructors/Destructors
   //@{
+
+  /**
+   * \brief Constructs a SimpleFunctionObject.
+   *
+   */
+  SimpleFunctionObject():
+    FunctionObject(){}
   
   /**
-   * \brief Constructs a SingleOperatorFunction.
+   * \brief Constructs a SimpleFunctionObject.
    *
    * @param modifyingOperand The operand that will be 
    * modifying the arguement given in the runFuction function.
    */
-  SingleOperatorFunction(OperandType modifyingOperand):
-    FunctionObject<OperandType, OperandType>(),
+  SimpleFunctionObject(OperandType modifyingOperand):
+    FunctionObject(),
     _modifyingOperand(modifyingOperand){}
 
   //@}
@@ -112,6 +118,15 @@ public:
 
   //@}
 
+  /**
+   * Runs the desired function on the arguement and returns the
+   * result.
+   *
+   * @param arguement Arguement on which the function should be run.
+   * @return The result of running the function on the give arguement.
+   */
+  virtual OperandType runFunction(OperandType arguement) const=0;
+
 private:
   //! @name Private Members
   //@{
@@ -131,7 +146,7 @@ private:
  */
 template<class OperandType>
 class SubtractionFunction :
-  public SingleOperatorFunction<OperandType>
+  public SimpleFunctionObject<OperandType>
 {
 public:
   //! @name Constructors/Destructors
@@ -139,12 +154,17 @@ public:
   
   /**
    * \brief Constructs a SubtractionFunction.
+   */
+  SubtractionFunction():SimpleFunctionObject<OperandType>(){}
+
+  /**
+   * \brief Constructs a SubtractionFunction.
    *
    * @param amountToSubtract The amound to be subtracted
    * from a given arguement in the runFunction function.
    */
   SubtractionFunction(OperandType amountToSubtract):
-    SingleOperatorFunction<OperandType>(amountToSubtract){}
+    SimpleFunctionObject<OperandType>(amountToSubtract){}
   
   //@}
 
@@ -156,7 +176,7 @@ public:
     return 
       arguement
       -
-      SingleOperatorFunction<OperandType>::getModifiyingOperand();
+      SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
 
   /** \brief. */
@@ -177,11 +197,16 @@ public:
  */
 template<class OperandType>
 class AdditionFunction :
-  public SingleOperatorFunction<OperandType>
+  public SimpleFunctionObject<OperandType>
 {
 public:
   //! @name Constructors/Destructors
   //@{
+
+  /**
+   * \brief Constructs a AdditionFunction.
+   */
+  AdditionFunction():SimpleFunctionObject<OperandType>(){}
 
   /**
    * \brief Constructs a AdditionFunction.
@@ -190,7 +215,7 @@ public:
    * to a given arguement in the runFunction function.
    */
   AdditionFunction(OperandType amountToAdd):
-    SingleOperatorFunction<OperandType>(amountToAdd){}
+    SimpleFunctionObject<OperandType>(amountToAdd){}
 
   //@}
 
@@ -202,7 +227,7 @@ public:
     return 
       arguement
       +
-      SingleOperatorFunction<OperandType>::getModifiyingOperand();
+      SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
 
   /** \brief. */
@@ -223,11 +248,17 @@ public:
  */
 template<class OperandType>
 class MultiplicationFunction :
-  public SingleOperatorFunction<OperandType>
+  public SimpleFunctionObject<OperandType>
 {
 public:
   //! @name Constructors/Destructors
   //@{
+
+  /**
+   * \brief Constructs a MultiplicationFunction.
+   *
+   */
+  MultiplicationFunction():SimpleFunctionObject<OperandType>(){}
 
   /**
    * \brief Constructs a MultiplicationFunction.
@@ -237,7 +268,7 @@ public:
    * function should be multiplied.
    */
   MultiplicationFunction(OperandType amountToMultiplyBy):
-    SingleOperatorFunction<OperandType>(amountToMultiplyBy){}
+    SimpleFunctionObject<OperandType>(amountToMultiplyBy){}
 
   //@}
   
@@ -249,7 +280,7 @@ public:
     return 
       arguement
       *
-      SingleOperatorFunction<OperandType>::getModifiyingOperand();
+      SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
 
   /** \brief. */
@@ -269,7 +300,7 @@ public:
  */
 template<class OperandType>
 class DivisionFunction :
-  public SingleOperatorFunction<OperandType>
+  public SimpleFunctionObject<OperandType>
 {
 public:
 
@@ -279,12 +310,18 @@ public:
   /**
    * \brief Constructs a DivisionFunction.
    *
+   */
+  DivisionFunction():SimpleFunctionObject<OperandType>(){}
+
+  /**
+   * \brief Constructs a DivisionFunction.
+   *
    * @param amoundToDivideBy The amound to be by
    * which the given arguement in the runFunction
    * function should be divided.
    */
   DivisionFunction(OperandType amountToDivideBy):
-    SingleOperatorFunction<OperandType>(amountToDivideBy){}
+    SimpleFunctionObject<OperandType>(amountToDivideBy){}
 
   //@}
   
@@ -296,7 +333,7 @@ public:
     return 
       arguement
       /
-      SingleOperatorFunction<OperandType>::getModifiyingOperand();
+      SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
 
   /** \brief. */

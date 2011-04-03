@@ -324,7 +324,7 @@ public:
    */
   NumberCondition(
     RCP<ParameterEntry> parameter,
-    RCP<const FunctionObject<T,T> > func):
+    RCP<const SimpleFunctionObject<T> > func):
     ParameterCondition(parameter), 
     func_(null)
   {}
@@ -361,7 +361,7 @@ private:
   //@{
   
   /** \brief . */
-  RCP<FunctionObject<T,T> > func_;
+  RCP<SimpleFunctionObject<T> > func_;
   
   //@}
 

@@ -26,46 +26,36 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Teuchos_FUNCTION_OBJECT_H
-#define Teuchos_FUNCTION_OBJECT_H
 
-#include "Teuchos_Describable.hpp"
+#ifndef TEUCHOS_XMLFUNCTIONOBJECTEXCEPTIONS_HPP_
+#define TEUCHOS_XMLFUNCTIONOBJECTEXCEPTIONS_HPP_
 
-
-/*! \file Teuchos_FunctionObject.hpp
-    \brief An object representation of a function
-*/
-
-
-namespace Teuchos{
-
-
-/**
- * \brief A function object represents an arbitrary function
- * that takes a single arguement (ArgType) and returns
- * a single value (ReturnType).
+/*! \file Teuchos_XMLFunctionObjectExceptions.hpp
+ * \brief A collection of Exceptions thrown
+ * when converting FunctionObjects to and from
+ * XML.
  */
-class FunctionObject: public Describable {
+#include <stdexcept>
+
+namespace Teuchos {
+
+/** \brief Thrown when an appropriate FunctionObject Converter can't be found */
+class CantFindFunctionObjectConverterException : public std::logic_error{
 
 public:
-  
-  /** \brief Returns the string to be used for the value of the 
-   * type attribute when converting the function to XML.
-   */
-  virtual std::string getTypeAttributeValue() const=0;
 
-  /** \brief Returns the name of the XML tag used to indicate
-   * a funciton object.
+  /**
+   * \brief Constructs an CantFindFunctionObjectConverterException.
+   *
+   * @param what_arg The error message to be associated with this error.
    */
-  static const std::string& getXMLTagName(){
-    static const std::string funcitonTagName = "Function";
-    return funcitonTagName;
-  }
+  CantFindFunctionObjectConverterException(const std::string& what_arg):
+    std::logic_error(what_arg){}
 
 };
 
 
+
 } // namespace Teuchos
+#endif //TEUCHOS_XMLFUNCTIONOBJECTEXCEPTIONS_HPP_
 
-
-#endif

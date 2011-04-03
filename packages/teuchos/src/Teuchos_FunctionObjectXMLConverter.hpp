@@ -48,7 +48,6 @@ namespace Teuchos {
 /** \brief An abstract base class for converting FunctionObjects to
  * and from XML.
  */
-template<class ReturnType, class ArgType>
 class FunctionObjectXMLConverter : public Describable {
 
 public:
@@ -61,8 +60,7 @@ public:
    * @param xmlObj The XMLObject to convert to a FunctionObject.
    * @return The converted FunctionObject.
    */
-  RCP<FunctionObject<ReturnType, ArgType> >
-  fromXMLtoFunctionObject(const XMLObject& xmlObj) const;
+  RCP<FunctionObject> fromXMLtoFunctionObject(const XMLObject& xmlObj) const;
 
   /** \brief Preforms any and all special xml conversion that 
    * is specific to a
@@ -71,17 +69,15 @@ public:
    * @param xmlObj The xml to be converted.
    * @return The converted FunctionObject.
    */
-  virtual RCP<FunctionObject<ReturnType, ArgType> > 
-    convertXML(const XMLObject& xmlObj) const=0;
+  virtual RCP<FunctionObject> convertXML(const XMLObject& xmlObj) const=0;
 
   /** \brief Converters a given FunctionObject to XML.
    *
    * @param function The FunctionObject to be converted to XML.
    * @return An XML representation of the given FunctionObject.
    */
-  XMLObject fromFunctiontoXML(
-    const RCP<const FunctionObject<ReturnType, ArgType> > function
-    ) const;
+  XMLObject fromFunctionObjecttoXML(
+    const RCP<const FunctionObject> function) const;
 
   /** \brief Preforms any and all special funciton conversion that is
    * specific to a particlar FunctionObject.
@@ -89,8 +85,8 @@ public:
    * @param function The FunctionObject to be converted.
    * @param xmlObj The XMLObject to store all serialization in.
    */
-  virtual void convertValidator(
-    const RCP<const FunctionObject<ReturnType, ArgType> > validator,
+  virtual void convertFunctionObject(
+    const RCP<const FunctionObject> function,
     XMLObject& xmlObj) const = 0;
   
   //@}
@@ -108,27 +104,8 @@ public:
 
 };
 
-template<class ReturnType, class ArgType> 
-RCP<FunctionObject<ReturnType, ArgType> >
-FunctionObjectXMLConverter<ReturnType, ArgType>::fromXMLtoFunctionObject(
-  const XMLObject &xmlObj) const
-{
-  return convertXML(xmlObj);
-}
-
-template<class ReturnType, class ArgType> 
-XMLObject
-FunctionObjectXMLConverter<ReturnType, ArgType>::fromFunctionObjecttoXML(
-  const RCP<const FunctionObject<ReturnType, ArgType> > function) const
-{
-  XMLObject toReturn(FunctionObject::getXMLTagName());
-  toReturn.addAttribute(
-    getTypeAttributeName(), function->getTypeAttributeValue());
-  convertFunction(condition, toReturn);
-  return toReturn;
-}
 
 } // namespace Teuchos
 
 
-#endif // TEUCHOS_VALIDATORXMLCONVERTER_HPP
+#endif // TEUCHOS_FUNCTIONOBJECTXMLCONVERTER_HPP

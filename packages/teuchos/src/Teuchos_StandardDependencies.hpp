@@ -651,7 +651,7 @@ public:
   NumberVisualDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RCP<FunctionObject<T,T> > func=null);
+    RCP<SimpleFunctionObject<T> > func=null);
 
   /**
    * \brief Constructs a NumberVisualDependency.
@@ -670,7 +670,7 @@ public:
   NumberVisualDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependents,
-    RCP<FunctionObject<T,T> > func=null);
+    RCP<SimpleFunctionObject<T> > func=null);
 
   //@}
 
@@ -693,7 +693,7 @@ public:
   //@{
   
   /** \brief Const version of function getter. */
-  RCP<const FunctionObject<T,T> > getFunctionObject() const;
+  RCP<const SimpleFunctionObject<T> > getFunctionObject() const;
 
   //@}
 
@@ -716,7 +716,7 @@ private:
    * \brief the function used to determine the
    * visibility of the dependent.
    */
-    RCP<FunctionObject<T,T> > func_;
+    RCP<SimpleFunctionObject<T> > func_;
   
   //@}
   //
@@ -726,7 +726,7 @@ template<class T>
 NumberVisualDependency<T>::NumberVisualDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  RCP<FunctionObject<T,T> > func)
+  RCP<SimpleFunctionObject<T> > func)
   :VisualDependency(dependee, dependent),
   func_(func)
 {
@@ -737,7 +737,7 @@ template<class T>
 NumberVisualDependency<T>::NumberVisualDependency(
   RCP<const ParameterEntry> dependee,
   ParameterEntryList dependents,
-  RCP<FunctionObject<T,T> > func)
+  RCP<SimpleFunctionObject<T> > func)
   :VisualDependency(dependee, dependents),
   func_(func)
 {
@@ -759,7 +759,7 @@ std::string NumberVisualDependency<T>::getTypeAttributeValue() const{
 }
 
 template<class T>
-RCP<const FunctionObject<T,T> > 
+RCP<const SimpleFunctionObject<T> > 
   NumberVisualDependency<T>::getFunctionObject() const
 {
   return func_.getConst();
@@ -849,7 +849,7 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RCP<FunctionObject<DependeeType, DependeeType> > func=null);
+    RCP<SimpleFunctionObject<DependeeType> > func=null);
 
 
   /**
@@ -863,7 +863,7 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependent,
-    RCP<FunctionObject<DependeeType, DependeeType> > func=null);
+    RCP<SimpleFunctionObject<DependeeType> > func=null);
 
   //@}
 
@@ -882,7 +882,7 @@ public:
   //@{
 
   /** \brief Const version of function getter. */
-  RCP<const FunctionObject<DependeeType, DependeeType> > 
+  RCP<const SimpleFunctionObject<DependeeType> > 
     getFunctionObject() const;
 
   //@}
@@ -905,7 +905,7 @@ private:
    * \brief The function used to calculate the new value of the
    * arrays length.
    */
-    RCP<FunctionObject<DependeeType, DependeeType> > func_;
+    RCP<SimpleFunctionObject<DependeeType> > func_;
   
   /**
    * \brief Modifies the length of an array.
@@ -924,7 +924,7 @@ template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  RCP<FunctionObject<DependeeType, DependeeType> > func):
+  RCP<SimpleFunctionObject<DependeeType> > func):
   Dependency(dependee, dependent),
   func_(func)
 {
@@ -935,7 +935,7 @@ template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
   ParameterEntryList dependents,
-  RCP<FunctionObject<DependeeType, DependeeType> > func):
+  RCP<SimpleFunctionObject<DependeeType> > func):
   Dependency(dependee, dependents),
   func_(func)
 {
@@ -954,7 +954,7 @@ const
 }
 
 template<class DependeeType, class DependentType>
-RCP<const FunctionObject<DependeeType, DependeeType> >
+RCP<const SimpleFunctionObject<DependeeType> >
 NumberArrayLengthDependency<DependeeType, DependentType>::getFunctionObject()
 const
 {

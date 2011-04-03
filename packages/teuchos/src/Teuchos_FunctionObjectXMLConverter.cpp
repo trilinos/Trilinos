@@ -25,47 +25,28 @@
 // 
 // ***********************************************************************
 // @HEADER
-
-#ifndef Teuchos_FUNCTION_OBJECT_H
-#define Teuchos_FUNCTION_OBJECT_H
-
-#include "Teuchos_Describable.hpp"
-
-
-/*! \file Teuchos_FunctionObject.hpp
-    \brief An object representation of a function
-*/
-
+#include "Teuchos_FunctionObjectXMLConverter.hpp"
 
 namespace Teuchos{
 
 
-/**
- * \brief A function object represents an arbitrary function
- * that takes a single arguement (ArgType) and returns
- * a single value (ReturnType).
- */
-class FunctionObject: public Describable {
+RCP<FunctionObject>
+FunctionObjectXMLConverter::fromXMLtoFunctionObject(
+  const XMLObject &xmlObj) const
+{
+  return convertXML(xmlObj);
+}
 
-public:
-  
-  /** \brief Returns the string to be used for the value of the 
-   * type attribute when converting the function to XML.
-   */
-  virtual std::string getTypeAttributeValue() const=0;
-
-  /** \brief Returns the name of the XML tag used to indicate
-   * a funciton object.
-   */
-  static const std::string& getXMLTagName(){
-    static const std::string funcitonTagName = "Function";
-    return funcitonTagName;
-  }
-
-};
+XMLObject
+FunctionObjectXMLConverter::fromFunctionObjecttoXML(
+  const RCP<const FunctionObject> function) const
+{
+  XMLObject toReturn(FunctionObject::getXMLTagName());
+  toReturn.addAttribute(
+    getTypeAttributeName(), function->getTypeAttributeValue());
+  convertFunctionObject(function, toReturn);
+  return toReturn;
+}
 
 
-} // namespace Teuchos
-
-
-#endif
+} //namespace teuchos

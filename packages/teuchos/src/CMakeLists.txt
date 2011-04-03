@@ -255,6 +255,7 @@ APPEND_SET(HEADERS
     Teuchos_FileInputSource.hpp
     Teuchos_FileInputStream.hpp
     Teuchos_FunctionObjectXMLConverter.hpp
+    Teuchos_FunctionObjectXMLConverterDB.hpp
     Teuchos_HashSet.hpp
     Teuchos_Hashtable.hpp
     Teuchos_HashUtils.hpp
@@ -276,6 +277,7 @@ APPEND_SET(HEADERS
     Teuchos_ValidatorXMLConverterDB.hpp
     Teuchos_XMLConditionExceptions.hpp
     Teuchos_XMLDependencyExceptions.hpp
+    Teuchos_XMLFunctionObjectExceptions.hpp
     Teuchos_XMLInputSource.hpp
     Teuchos_XMLInputStream.hpp
     Teuchos_XMLObject.hpp
@@ -295,6 +297,8 @@ APPEND_SET(HEADERS
     Teuchos_ExpatHandlerAdapter.cpp
     Teuchos_FileInputSource.cpp
     Teuchos_FileInputStream.cpp
+    Teuchos_FunctionObjectXMLConverter.cpp
+    Teuchos_FunctionObjectXMLConverterDB.cpp
     Teuchos_HashUtils.cpp
     Teuchos_Libxml2HandlerAdapter.cpp
     Teuchos_ParameterXMLFileReader.cpp

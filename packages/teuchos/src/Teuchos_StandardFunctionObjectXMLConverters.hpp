@@ -41,11 +41,9 @@
 namespace Teuchos {
 
 
-/** \brief An xml converter for SingleOperatorFunctions */
+/** \brief An xml converter for SimpleFunctionObjects */
 template<class OperandType>
-class SingleOperatorFunctionXMLConverter : 
-  public FunctionObjectXMLConverter<OperandType, OperandType>
-{
+class SimpleFunctionXMLConverter : public FunctionObjectXMLConverter{
 
 public:
 
@@ -53,13 +51,13 @@ public:
   //@{
 
   /**
-   * \brief Gets the specific SingleOperatorFunction to be returned
+   * \brief Gets the specific SimpleFunction to be returned
    *  by this converter when converting from XML.
    *
-   *  @parameter operand The operand to be used with the SingleOperatorFunction.
+   *  @parameter operand The operand to be used with the SimpleFunction.
    */
-  virtual RCP<SingleOperatorFunction<OperandType> > 
-    getSpecificSingleOperatorFunction(OperandType operand) const = 0;
+  virtual RCP<SimpleFunctionObject<OperandType> > 
+    getSpecificSimpleFunction(OperandType operand) const = 0;
 
   /**
    * \brief Add and extra XML traits that are specific to a certain
@@ -68,8 +66,8 @@ public:
    * @param functionObject The function object being convertered.
    * @param xmlObj The XMLObject to which any special traits should be added.
    */
-  virtual void getSpecialSingleOperatorFunctionXMLTraits(
-    const RCP<const SingleOperatorFunction<OperandType> > functionObject,
+  virtual void getSpecialSimpleFunctionXMLTraits(
+    const RCP<const SimpleFunctionObject<OperandType> > functionObject,
     XMLObject& xmlObj) const{}
 
   //@}
@@ -78,12 +76,12 @@ public:
   //@{
 
   /** \brief . */
-  RCP<FunctionObject<OperandType, OperandType> > 
+  RCP<FunctionObject> 
     convertXML(const XMLObject& xmlObj) const;
 
   /** \brief . */
-  void convertFunction(
-    const RCP<const FunctionObject<OperandType, OperandType> > functionObject, 
+  void convertFunctionObject(
+    const RCP<const FunctionObject> functionObject, 
     XMLObject& xmlObj) const;
   
   //@}
@@ -102,114 +100,121 @@ private:
   
 };
 
-RCP<FunctionObject<OperandType, OperandType> > 
-  SingleOperatorFunctionXMLConverter::convertXML(const XMLObject& xmlObj) const
+template<class OperandType>
+RCP<FunctionObject> 
+SimpleFunctionXMLConverter<OperandType>::convertXML(
+  const XMLObject& xmlObj) const
 {
   OperandType operand = 
     xmlObj.getRequired<OperandType>(getOperandAttributeName());
-  return getSpecificSingleOperatorFunction(operand);
+  return getSpecificSimpleFunction(operand);
 }
 
-void convertFunction(
-  const RCP<const FunctionObject<OperandType, OperandType> > functionObject, 
+template<class OperandType>
+void SimpleFunctionXMLConverter<OperandType>::convertFunctionObject(
+  const RCP<const FunctionObject> functionObject, 
   XMLObject& xmlObj) const
 {
-  RCP<const SingleOperatorFunctions<OperandType> > castedFunction =
-    rcp_dynamic_cast<const SingleOperatorFunction<OperandType> >(
+  RCP<const SimpleFunctionObject<OperandType> > castedFunction =
+    rcp_dynamic_cast<const SimpleFunctionObject<OperandType> >(
       functionObject, true); 
   OperandType operand = castedFunction->getModifiyingOperand();
   xmlObj.addAttribute(getOperandAttributeName(),operand);
-  getSpecialSingleOperatorFunctionXMLTraits(xmlObj, castedFunction);
+  getSpecialSimpleFunctionXMLTraits(castedFunction, xmlObj);
 }
 
 template<class OperandType>
 class SubtractionFunctionXMLConverter :
-  public SingleOperatorFunctionXMLConverter<OperandType>
+  public SimpleFunctionXMLConverter<OperandType>
 {
 public:
 
-  /** \name Overridden from SingleOperatorFunctionXMLConverter */
+  /** \name Overridden from SimpleFunctionXMLConverter */
   //@{
   
   /** \brief. */
-  RCP<SingleOperatorFunction<OperandType> > 
-    getSpecificSingleOperatorFunction(OperandType operand) const;
+  RCP<SimpleFunctionObject<OperandType> > 
+    getSpecificSimpleFunction(OperandType operand) const;
 
   //@}
 };
 
 template<class OperandType>
-RCP<SingleOperatorFunction<OperandType> >
-  getSpecificSingleOperatorFunction(OperandType operand) const
+RCP<SimpleFunctionObject<OperandType> >
+SubtractionFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
+  OperandType operand) const
 {
   return rcp(new SubtractionFunction<OperandType>(operand));
 }
 
 template<class OperandType>
 class AdditionFunctionXMLConverter :
-  public SingleOperatorFunctionXMLConverter<OperandType>
+  public SimpleFunctionXMLConverter<OperandType>
 {
 public:
 
-  /** \name Overridden from SingleOperatorFunctionXMLConverter */
+  /** \name Overridden from SimpleFunctionXMLConverter */
   //@{
   
   /** \brief. */
-  RCP<SingleOperatorFunction<OperandType> > 
-    getSpecificSingleOperatorFunction(OperandType operand) const;
+  RCP<SimpleFunctionObject<OperandType> > 
+    getSpecificSimpleFunction(OperandType operand) const;
 
   //@}
 };
 
 template<class OperandType>
-RCP<SingleOperatorFunction<OperandType> >
-  getSpecificSingleOperatorFunction(OperandType operand) const
+RCP<SimpleFunctionObject<OperandType> >
+AdditionFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
+  OperandType operand) const
 {
   return rcp(new AdditionFunction<OperandType>(operand));
 }
 
 template<class OperandType>
 class MultiplicationFunctionXMLConverter :
-  public SingleOperatorFunctionXMLConverter<OperandType>
+  public SimpleFunctionXMLConverter<OperandType>
 {
 public:
 
-  /** \name Overridden from SingleOperatorFunctionXMLConverter */
+  /** \name Overridden from SimpleFunctionXMLConverter */
   //@{
   
   /** \brief. */
-  RCP<SingleOperatorFunction<OperandType> > 
-    getSpecificSingleOperatorFunction(OperandType operand) const;
+  RCP<SimpleFunctionObject<OperandType> > 
+    getSpecificSimpleFunction(OperandType operand) const;
 
   //@}
 };
 
 template<class OperandType>
-RCP<SingleOperatorFunction<OperandType> >
-  getSpecificSingleOperatorFunction(OperandType operand) const
+RCP<SimpleFunctionObject<OperandType> >
+MultiplicationFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
+  OperandType operand) const
 {
   return rcp(new MultiplicationFunction<OperandType>(operand));
 }
 
 template<class OperandType>
 class DivisionFunctionXMLConverter :
-  public SingleOperatorFunctionXMLConverter<OperandType>
+  public SimpleFunctionXMLConverter<OperandType>
 {
 public:
 
-  /** \name Overridden from SingleOperatorFunctionXMLConverter */
+  /** \name Overridden from SimpleFunctionXMLConverter */
   //@{
   
   /** \brief. */
-  RCP<SingleOperatorFunction<OperandType> > 
-    getSpecificSingleOperatorFunction(OperandType operand) const;
+  RCP<SimpleFunctionObject<OperandType> > 
+    getSpecificSimpleFunction(OperandType operand) const;
 
   //@}
 };
 
 template<class OperandType>
-RCP<SingleOperatorFunction<OperandType> >
-  getSpecificSingleOperatorFunction(OperandType operand) const
+RCP<SimpleFunctionObject<OperandType> >
+DivisionFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
+  OperandType operand) const
 {
   return rcp(new DivisionFunction<OperandType>(operand));
 }
