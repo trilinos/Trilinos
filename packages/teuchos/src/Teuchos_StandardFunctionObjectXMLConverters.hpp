@@ -85,10 +85,8 @@ public:
     XMLObject& xmlObj) const;
   
   //@}
- 
-private:
 
-  //! \name Private mebers.
+  //! \name Constant getting function
   //@{
 
   static std::string getOperandAttributeName(){
