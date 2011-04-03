@@ -49,6 +49,7 @@ template<class ReturnType, class ArgType>
 class FunctionObject: public Describable {
 
 public:
+
   /**
    * \brief Runs the function with the given arguement and returns
    * the return value of the function.
@@ -63,6 +64,14 @@ public:
    * type attribute when converting the function to XML.
    */
   virtual std::string getTypeAttributeValue() const=0;
+
+  /** \brief Returns the name of the XML tag used to indicate
+   * a funciton object.
+   */
+  static const std::string& getXMLTagName(){
+    static const std::string funcitonTagName = "Function";
+    return funcitonTagName;
+  }
 
 };
 

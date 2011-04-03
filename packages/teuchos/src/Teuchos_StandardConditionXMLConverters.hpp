@@ -50,8 +50,8 @@ public:
   /** \name Special Converter Functions */
   //@{
 
-  /** \brief 
-   * Gets the specific BinaryLogicalCondition to be returned 
+  /** 
+   * \brief Gets the specific BinaryLogicalCondition to be returned 
    * by this conveter when converting from XML.
    *
    * @param conditions The condition list for the BinaryLogical converter 

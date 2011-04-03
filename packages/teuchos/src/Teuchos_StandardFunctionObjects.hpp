@@ -45,9 +45,23 @@ namespace Teuchos{
 template<class DataType>
 class IdentityFunction: public FunctionObject<DataType, DataType>{
 public:
+  
+  //! @name Overridden from FunctionObject
+  //@{
+
+  /** \brief. */
   DataType runFunction(DataType arguement) const{
     return arguement;
   }
+
+  /** \brief. */
+  std::string getTypeAttributeValue() const{
+    return 
+      "SubtractionFunction(" 
+      + TypeNameTraits<DataType>::name()
+      +")";
+  }
+  //@}
 };
 
 /**
@@ -61,6 +75,9 @@ class SingleOperatorFunction :
 {
 public:
 
+  //! @name Constructors/Destructors
+  //@{
+  
   /**
    * \brief Constructs a SingleOperatorFunction.
    *
@@ -70,6 +87,11 @@ public:
   SingleOperatorFunction(OperandType modifyingOperand):
     FunctionObject<OperandType, OperandType>(),
     _modifyingOperand(modifyingOperand){}
+
+  //@}
+
+  //! @name Getters/Setters
+  //@{
 
   /**
    * \brief Returns the modifying operand.
@@ -88,11 +110,18 @@ public:
     _modifyingOperand = newOperand;
   }
 
+  //@}
+
 private:
+  //! @name Private Members
+  //@{
+
   /**
    * \brief The modifying operand.
    */
   OperandType _modifyingOperand;
+  
+  //@}
 };
 
 /**
@@ -105,6 +134,9 @@ class SubtractionFunction :
   public SingleOperatorFunction<OperandType>
 {
 public:
+  //! @name Constructors/Destructors
+  //@{
+  
   /**
    * \brief Constructs a SubtractionFunction.
    *
@@ -113,7 +145,13 @@ public:
    */
   SubtractionFunction(OperandType amountToSubtract):
     SingleOperatorFunction<OperandType>(amountToSubtract){}
+  
+  //@}
 
+  //! @name Overridden from FunctionObject
+  //@{
+
+  /** \brief. */
   OperandType runFunction(OperandType arguement) const{
     return 
       arguement
@@ -121,6 +159,7 @@ public:
       SingleOperatorFunction<OperandType>::getModifiyingOperand();
   }
 
+  /** \brief. */
   std::string getTypeAttributeValue() const{
     return 
       "SubtractionFunction(" 
@@ -128,6 +167,7 @@ public:
       +")";
   }
 
+  //@}
 };
 
 /**
@@ -140,6 +180,9 @@ class AdditionFunction :
   public SingleOperatorFunction<OperandType>
 {
 public:
+  //! @name Constructors/Destructors
+  //@{
+
   /**
    * \brief Constructs a AdditionFunction.
    *
@@ -149,6 +192,12 @@ public:
   AdditionFunction(OperandType amountToAdd):
     SingleOperatorFunction<OperandType>(amountToAdd){}
 
+  //@}
+
+  //! @name Overridden from FunctionObject
+  //@{
+
+  /** \brief. */
   OperandType runFunction(OperandType arguement) const{
     return 
       arguement
@@ -156,12 +205,15 @@ public:
       SingleOperatorFunction<OperandType>::getModifiyingOperand();
   }
 
+  /** \brief. */
   std::string getTypeAttributeValue() const{
     return 
       "AdditionFunction("
       + TypeNameTraits<OperandType>::name()
       +")";
   }
+  
+  //@}
 };
 
 /**
@@ -174,6 +226,9 @@ class MultiplicationFunction :
   public SingleOperatorFunction<OperandType>
 {
 public:
+  //! @name Constructors/Destructors
+  //@{
+
   /**
    * \brief Constructs a MultiplicationFunction.
    *
@@ -184,6 +239,12 @@ public:
   MultiplicationFunction(OperandType amountToMultiplyBy):
     SingleOperatorFunction<OperandType>(amountToMultiplyBy){}
 
+  //@}
+  
+  //! @name Overridden from FunctionObject
+  //@{
+
+  /** \brief. */
   OperandType runFunction(OperandType arguement) const{
     return 
       arguement
@@ -191,11 +252,14 @@ public:
       SingleOperatorFunction<OperandType>::getModifiyingOperand();
   }
 
+  /** \brief. */
   std::string getTypeAttributeValue() const{
     return "MultiplicationFunction(" + 
       TypeNameTraits<OperandType>::name()
       +")";
   }
+
+  //@}
 };
 
 /**
@@ -208,6 +272,10 @@ class DivisionFunction :
   public SingleOperatorFunction<OperandType>
 {
 public:
+
+  //! @name Constructors/Destructors
+  //@{
+ 
   /**
    * \brief Constructs a DivisionFunction.
    *
@@ -218,6 +286,12 @@ public:
   DivisionFunction(OperandType amountToDivideBy):
     SingleOperatorFunction<OperandType>(amountToDivideBy){}
 
+  //@}
+  
+  //! @name Overridden from FunctionObject
+  //@{
+
+  /** \brief. */
   OperandType runFunction(OperandType arguement) const{
     return 
       arguement
@@ -225,11 +299,14 @@ public:
       SingleOperatorFunction<OperandType>::getModifiyingOperand();
   }
 
+  /** \brief. */
   std::string getTypeAttributeValue() const{
     return "DivisionFunction(" + TypeNameTraits<OperandType>::name()
       +")";
   }
 
+  //@}
+  
 };
 
 } // namespace Teuchos
