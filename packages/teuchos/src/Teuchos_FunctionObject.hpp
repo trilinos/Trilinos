@@ -39,13 +39,33 @@
 
 namespace Teuchos{
 
+
+/**
+ * \brief A function object represents an arbitrary function
+ * that takes a single arguement (ArgType) and returns
+ * a single value (ReturnType).
+ */
 template<class ReturnType, class ArgType>
 class FunctionObject: public Describable {
 
 public:
+  /**
+   * \brief Runs the function with the given arguement and returns
+   * the return value of the function.
+   *
+   * @param arguement Arguement to give to the function.
+   * @return The return value of the function given the specified
+   * arguement.
+   */
   virtual ReturnType runFunction(ArgType arguement) const=0;
+  
+  /** \brief Returns the string to be used for the value of the 
+   * type attribute when converting the function to XML.
+   */
+  virtual std::string getTypeAttributeValue() const=0;
 
 };
+
 
 } // namespace Teuchos
 

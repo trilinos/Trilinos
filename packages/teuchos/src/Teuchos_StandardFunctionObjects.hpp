@@ -38,6 +38,10 @@
 
 namespace Teuchos{
 
+/**
+ * \brief A simple function object that simply
+ * returns the value that is given as an arguement.
+ */
 template<class DataType>
 class IdentityFunction: public FunctionObject<DataType, DataType>{
 public:
@@ -46,32 +50,67 @@ public:
   }
 };
 
+/**
+ * \brief A simple function object that
+ * applies a given operand to the spcified arguement
+ * using a specific operator.
+ */
 template<class OperandType>
 class SingleOperatorFunction : 
   public FunctionObject<OperandType, OperandType>
 {
 public:
+
+  /**
+   * \brief Constructs a SingleOperatorFunction.
+   *
+   * @param modifyingOperand The operand that will be 
+   * modifying the arguement given in the runFuction function.
+   */
   SingleOperatorFunction(OperandType modifyingOperand):
     FunctionObject<OperandType, OperandType>(),
     _modifyingOperand(modifyingOperand){}
 
+  /**
+   * \brief Returns the modifying operand.
+   */
   inline OperandType getModifiyingOperand() const{
     return _modifyingOperand;
   }
 
+  /**
+   * \brief Sets the modifyingOperand.
+   *
+   * @param newOperand The new modifyingOperand
+   * to use.
+   */
   inline OperandType setModifyingOperand(OperandType newOperand){
     _modifyingOperand = newOperand;
   }
 
 private:
+  /**
+   * \brief The modifying operand.
+   */
   OperandType _modifyingOperand;
 };
 
+/**
+ * \brief A simple function object that subtracts
+ * a specififed value from the given arguement
+ * in the runFunction function.
+ */
 template<class OperandType>
 class SubtractionFunction :
   public SingleOperatorFunction<OperandType>
 {
 public:
+  /**
+   * \brief Constructs a SubtractionFunction.
+   *
+   * @param amountToSubtract The amound to be subtracted
+   * from a given arguement in the runFunction function.
+   */
   SubtractionFunction(OperandType amountToSubtract):
     SingleOperatorFunction<OperandType>(amountToSubtract){}
 
@@ -82,13 +121,31 @@ public:
       SingleOperatorFunction<OperandType>::getModifiyingOperand();
   }
 
+  std::string getTypeAttributeValue() const{
+    return 
+      "SubtractionFunction(" 
+      + TypeNameTraits<OperandType>::name()
+      +")";
+  }
+
 };
 
+/**
+ * \brief A simple function object that adds
+ * a specififed value from the given arguement
+ * in the runFunction function.
+ */
 template<class OperandType>
 class AdditionFunction :
   public SingleOperatorFunction<OperandType>
 {
 public:
+  /**
+   * \brief Constructs a AdditionFunction.
+   *
+   * @param amountToAdd The amound to be added
+   * to a given arguement in the runFunction function.
+   */
   AdditionFunction(OperandType amountToAdd):
     SingleOperatorFunction<OperandType>(amountToAdd){}
 
@@ -98,6 +155,81 @@ public:
       +
       SingleOperatorFunction<OperandType>::getModifiyingOperand();
   }
+
+  std::string getTypeAttributeValue() const{
+    return 
+      "AdditionFunction("
+      + TypeNameTraits<OperandType>::name()
+      +")";
+  }
+};
+
+/**
+ * \brief A simple function object that multiplys
+ * a specififed value from the given arguement
+ * in the runFunction function.
+ */
+template<class OperandType>
+class MultiplicationFunction :
+  public SingleOperatorFunction<OperandType>
+{
+public:
+  /**
+   * \brief Constructs a MultiplicationFunction.
+   *
+   * @param amountToMultiplyBy The amound to be by
+   * which the given arguement in the runFunction
+   * function should be multiplied.
+   */
+  MultiplicationFunction(OperandType amountToMultiplyBy):
+    SingleOperatorFunction<OperandType>(amountToMultiplyBy){}
+
+  OperandType runFunction(OperandType arguement) const{
+    return 
+      arguement
+      *
+      SingleOperatorFunction<OperandType>::getModifiyingOperand();
+  }
+
+  std::string getTypeAttributeValue() const{
+    return "MultiplicationFunction(" + 
+      TypeNameTraits<OperandType>::name()
+      +")";
+  }
+};
+
+/**
+ * \brief A simple function object that divides
+ * a specififed value from the given arguement
+ * in the runFunction function.
+ */
+template<class OperandType>
+class DivisionFunction :
+  public SingleOperatorFunction<OperandType>
+{
+public:
+  /**
+   * \brief Constructs a DivisionFunction.
+   *
+   * @param amoundToDivideBy The amound to be by
+   * which the given arguement in the runFunction
+   * function should be divided.
+   */
+  DivisionFunction(OperandType amountToDivideBy):
+    SingleOperatorFunction<OperandType>(amountToDivideBy){}
+
+  OperandType runFunction(OperandType arguement) const{
+    return 
+      arguement
+      /
+      SingleOperatorFunction<OperandType>::getModifiyingOperand();
+  }
+
+  std::string getTypeAttributeValue() const{
+    return "DivisionFunction(" + TypeNameTraits<OperandType>::name()
+      +")";
+  }
+
 };
 
 } // namespace Teuchos
