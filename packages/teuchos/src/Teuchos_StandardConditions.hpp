@@ -326,7 +326,7 @@ public:
     RCP<ParameterEntry> parameter,
     RCP<const SimpleFunctionObject<T> > func):
     ParameterCondition(parameter), 
-    func_(null)
+    func_(func)
   {}
 
   virtual ~NumberCondition(){}
@@ -345,6 +345,7 @@ public:
   /** \name Overridden from ParameterCondition */
   //@{
 
+  /** \brief. */
   bool evaluateParameter() const{
     T value = getValue<T>(*getParameter());
     if(!func_.is_null()){
@@ -354,6 +355,18 @@ public:
   }
   
   //@}
+  
+  /** \name Getters/Setters */
+  //@{
+
+  /** \brief Gets the funciton this NumberCondition is using.
+   * Returns null if the NumberCondition is not using one.
+   */
+  RCP<const SimpleFunctionObject<T> > getFunctionObject() const{
+    return func_.getConst();
+  }
+
+  //@}
 
 private:
 
@@ -361,7 +374,7 @@ private:
   //@{
   
   /** \brief . */
-  RCP<SimpleFunctionObject<T> > func_;
+  RCP<const SimpleFunctionObject<T> > func_;
   
   //@}
 

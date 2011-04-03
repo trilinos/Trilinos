@@ -166,29 +166,51 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, BoolConditionSerialization){
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Conditions, NumberConditionSerialization, T){
   ConditionXMLConverterDB::printKnownConverters(out);
-  std::string paramName1 = "bool param";
+  std::string paramName1 = "T param";
+  std::string paramName2 = "T param 2";
   std::string dependent1Name = "dependent1";
+  std::string dependent2Name = "dependent2";
   T paramValue = ScalarTraits< T >::one();
+  T ten = 10 * ScalarTraits< T >::one();
   std::string dependentValue = "hi there!";
   ParameterList testList("Condition Test List");
   testList.set(paramName1, paramValue); 
+  testList.set(paramName2, paramValue); 
   testList.set(dependent1Name, dependentValue);
+  testList.set(dependent2Name, dependentValue);
+
   RCP<NumberCondition< T > > numberCon = 
     rcp(new NumberCondition< T >(testList.getEntryRCP(paramName1)));
+
+  RCP<SubtractionFunction< T > > funcTester = 
+    rcp(new SubtractionFunction< T >(ten));
+
+  RCP<NumberCondition< T > > numberFuncCon = 
+    rcp(new NumberCondition< T >(testList.getEntryRCP(paramName2), funcTester));
   
   RCP<ConditionVisualDependency> numberConDep = 
     rcp(new ConditionVisualDependency(
       numberCon, 
       testList.getEntryRCP(dependent1Name)));
 
+  RCP<ConditionVisualDependency> funcNumberConDep = 
+    rcp(new ConditionVisualDependency(
+      numberFuncCon, 
+      testList.getEntryRCP(dependent2Name)));
+
   RCP<DependencySheet> depSheet1 = rcp(new DependencySheet);
   depSheet1->addDependency(numberConDep);
+  depSheet1->addDependency(funcNumberConDep);
 
   RCP<DependencySheet> depSheetIn = rcp(new DependencySheet);
   RCP<ParameterList> readinList = 
     writeThenReadPL(testList, depSheet1, depSheetIn);
   
   RCP<ParameterEntry> readInDependee1 = readinList->getEntryRCP(paramName1);
+  RCP<ParameterEntry> readInDependee2 = readinList->getEntryRCP(paramName2);
+
+
+
 
   RCP<ConditionVisualDependency> simpleReadInDep = 
     rcp_dynamic_cast<ConditionVisualDependency>(
@@ -203,6 +225,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Conditions, NumberConditionSerializati
   TEST_EQUALITY(
     simpleReadInCon->getWhenParamEqualsValue(), 
     numberCon->getWhenParamEqualsValue());
+
+
+  RCP<ConditionVisualDependency> funcReadInDep = 
+    rcp_dynamic_cast<ConditionVisualDependency>(
+      *(depSheetIn->getDependenciesForParameter(readInDependee2)->begin()));
+  TEST_ASSERT(funcReadInDep != null);
+
+  RCP<const NumberCondition< T > > funcReadInCon = 
+    rcp_dynamic_cast<const NumberCondition< T > >(funcReadInDep->getCondition());
+
+  TEST_ASSERT(funcReadInCon != null);
+
+  RCP<const SubtractionFunction< T > > funcReadInFunc = 
+    rcp_dynamic_cast<const SubtractionFunction< T > >(
+      funcReadInCon->getFunctionObject());
+  TEST_ASSERT(funcReadInFunc != null);
+  TEST_EQUALITY(
+    funcReadInFunc->getModifiyingOperand(),
+    funcTester->getModifiyingOperand());
+
+
 }
 
 #define NUMBER_PARAM_TYPE_TEST( T ) \
