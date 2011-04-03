@@ -23,7 +23,7 @@
 
 #include <unit_tests/UnitTest_helpers.hpp>
 
-using stk::mesh::fem::NODE_RANK;
+static const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 class MyAlg {
 public:
