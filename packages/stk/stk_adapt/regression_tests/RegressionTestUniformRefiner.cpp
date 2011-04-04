@@ -76,7 +76,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-#if 1
+#if 0
       STKUNIT_UNIT_TEST(regr_uniformRefiner, biplane_refine)
       {
         EXCEPTWATCH;
@@ -2709,7 +2709,7 @@ namespace stk
                                       std::string(""));
             //std::string("swept-wedge6_18_enrich_0.e") );
 
-            percept::PerceptMesh eMesh(wedgeFixture.get_metaData(), bulk, false);
+            percept::PerceptMesh eMesh(wedgeFixture.getMetaData(), bulk, false);
             //percept::PerceptMesh eMesh;
             //eMesh.open("swept-wedge6_18_enrich_0.e");
 

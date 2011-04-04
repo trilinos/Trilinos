@@ -512,8 +512,8 @@ namespace stk {
                   e_connectivity[j] = (mesh::EntityId)conn[j];
                 }
               mesh::EntityId* e_conn = &(e_connectivity[0]);
-              //elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], e_conn);
-              elements[i] = &my_declare_element(bulk, *part, elem_ids[i], e_conn);
+              elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], e_conn);
+              //elements[i] = &my_declare_element(bulk, *part, elem_ids[i], e_conn);
             }
 
             // For this example, we are just taking all attribute fields

@@ -121,9 +121,9 @@ namespace stk {
             }
             //std::cout << "P["<< m_eMesh.getRank() << "] urp tmp 6 "  << std::endl;
 
-            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
+            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
+            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
+            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
 
             //std::cout << "P["<< m_eMesh.getRank() << "] urp tmp 7 "  << std::endl;
 

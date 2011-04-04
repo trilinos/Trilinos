@@ -123,18 +123,18 @@ namespace stk {
               tp2.stkMeshCreateMetaNoCommit(parallel_machine);
             }
 
-          return tp2.get_bulkData();
+          return tp2.getBulkData();
 
         }
 
-        mesh::fem::FEMMetaData *get_metaData() { return m_sweepMesher.get_metaData() ; }
+        mesh::fem::FEMMetaData *getMetaData() { return m_sweepMesher.getMetaData() ; }
 
         //stk::mesh::BulkData* 
         void
         createBulkAfterMetaCommit(stk::ParallelMachine parallel_machine)
         {
           m_sweepMesher.stkMeshCreateBulkAfterMetaCommit(parallel_machine);
-          //return m_sweepMesher.get_bulkData();
+          //return m_sweepMesher.getBulkData();
         }
 
         void createFixedSizeMesh(stk::ParallelMachine parallel_machine, std::string output_filename)
