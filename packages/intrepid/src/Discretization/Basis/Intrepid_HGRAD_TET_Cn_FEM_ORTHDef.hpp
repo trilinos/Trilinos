@@ -221,7 +221,7 @@ namespace Intrepid {
         for (int q=1;q<deg-p;q++) {
           Scalar aq,bq,cq;
 
-          jrc((Scalar)(2.0*p+1.0),(Scalar)(0),q,aq,bq,cq);
+          jrc<Scalar>(2.0*p+1.0 ,0 ,q, aq, bq, cq);
           int idxpqp1 = idx(p,q+1,0);
           int idxpq = idx(p,q,0);
           int idxpqm1 = idx(p,q-1,0);
@@ -251,7 +251,7 @@ namespace Intrepid {
             int idxpqrp1 = idx(p,q,r+1);
             int idxpqr = idx(p,q,r);
             int idxpqrm1 = idx(p,q,r-1);
-            jrc((Scalar)(2.0*p+2.0*q+2.0),(Scalar)(0.0),r,ar,br,cr);
+            jrc<Scalar>(2.0*p+2.0*q+2.0, 0.0, r, ar, br, cr);
             for (int i=0;i<np;i++) {
               outputValues(idxpqrp1,i) = (ar * (2.0*z(i,2)-1.0) + br) * outputValues( idxpqr , i ) - cr * outputValues(idxpqrm1,i);
             }
