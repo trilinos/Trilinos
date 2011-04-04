@@ -28,6 +28,7 @@ Some terminology in use:
 
 """
 import argparse
+import textwrap
 
 def setup_parser():
     """Set up the parser.
@@ -35,7 +36,19 @@ def setup_parser():
     Returns:
       argparse.ArgumentParser with all options configured.
     """
-    parser = argparse.ArgumentParser(prog='percept', description='Percept verification tool.')
+    
+    epilog_txt = textwrap.dedent('''\
+        Some commonly used %(prog)s commands are:
+           refine    Divide blocks of elements uniformly
+           convert   Convert blocks of elements to another specified type of element
+           enrich    Add more nodes to blocks of elements to increase polynomial order
+        
+        See "%(prog)s COMMAND --help" for more information on a specific command.
+        ''')
+    
+    parser = argparse.ArgumentParser(prog='percept', formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description='Percept is a tool for verifying modeling and simulation codes and solutions.',
+                                     epilog=epilog_txt)
 
     # version number of this script
     # TODO: get the version from percept
