@@ -335,10 +335,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   dependentList.insert(myDepList.getEntryRCP(dependent1));
   dependentList.insert(myDepList.getEntryRCP(dependent2));
 
+  T ten = ScalarTraits<T>::one() *10;
+  RCP<SubtractionFunction<T> > subFunction = rcp(new SubtractionFunction<T>(ten));
   RCP<NumberVisualDependency<T> > complexNumVisDep = rcp(
     new NumberVisualDependency<T>(
       myDepList.getEntryRCP(dependee2),
-      dependentList));
+      dependentList,
+      subFunction));
 
   myDepSheet->addDependency(simpleNumVisDep);
   myDepSheet->addDependency(complexNumVisDep);
@@ -380,6 +383,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
 
   TEST_EQUALITY(castedDep1->getShowIf(), simpleNumVisDep->getShowIf());
   TEST_EQUALITY(castedDep2->getShowIf(), complexNumVisDep->getShowIf());
+
+  RCP<const SimpleFunctionObject<T> > functionObject = 
+    castedDep2->getFunctionObject();
+  TEST_ASSERT(functionObject != null);
+  RCP<const SubtractionFunction<T> > castedFunction =
+    rcp_dynamic_cast<const SubtractionFunction<T> >(functionObject);
+  TEST_ASSERT(castedFunction != null);
+  TEST_EQUALITY(
+    castedFunction->getModifiyingOperand(), 
+    subFunction->getModifiyingOperand());
 }
 
 #define NUMBER_VIS_TEST(T) \
