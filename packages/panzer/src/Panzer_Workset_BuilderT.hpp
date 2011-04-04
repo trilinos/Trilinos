@@ -210,10 +210,8 @@ panzer::buildBCWorkset(const panzer::BC& bc,
   // *****************
   // New BCs only work for Intrepid elements!!
   // *****************
-  using std::vector;
   using std::map;
   using std::string;
-  using Teuchos::RCP;
   using Teuchos::rcp;
    
   RCP< vector<int> > rcp_ir_degrees = rcp(new vector<int>(0));
