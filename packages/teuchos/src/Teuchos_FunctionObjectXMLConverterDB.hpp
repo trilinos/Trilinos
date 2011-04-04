@@ -34,15 +34,13 @@
  * \brief A database for FunctionObjectXMLConverters.
 */
 
-// Both includes needed for convience macros below 
+// All includes needed for convience macros below 
 #include "Teuchos_StandardFunctionObjectXMLConverters.hpp"
 #include "Teuchos_StandardFunctionObjects.hpp"
 #include "Teuchos_DummyObjectGetter.hpp"
 
 
 namespace Teuchos {
-
-class FunctionObject;
 
 /** 
  * \brief Provides ability to lookup FunctionObjectXMLConverters
@@ -56,7 +54,7 @@ public:
   
   /** \brief Add a converter to the database.
    *
-   * \param function A dummy function Object representing the type of function
+   * \param function A dummy FunctionObject representing the type of function
    * this converter will convert.
    * \param convertToAdd The converter to add to the database.
    */
@@ -142,7 +140,7 @@ private:
   typedef std::pair<std::string, RCP<FunctionObjectXMLConverter> > ConverterPair;
 
   /** \brief Gets the default converter to be used to convert
-   * Conditions.
+   * FunctionObjects.
    */
   static ConverterMap& getConverterMap();
   
@@ -157,8 +155,9 @@ private:
 // Helper Macros
 //
 
-/** \brief Adds a NumberCondition of type T */
-
+/** \brief Adds a SubtractionFunction, AdditionFunction, MultiplicationFunction,
+ * and DivisionFunction of type T to the Database
+ */
 #define TEUCHOS_ADD_SIMPLEFUNCTIONCONVERTERS(T) \
   Teuchos::FunctionObjectXMLConverterDB::addConverter( \
     Teuchos::rcp(new Teuchos::SubtractionFunction< T >), \

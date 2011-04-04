@@ -86,7 +86,7 @@ public:
   
   //@}
 
-  //! \name Constant getting function
+  //! \name Constant Retrieving Functions
   //@{
 
   static std::string getOperandAttributeName(){
@@ -221,5 +221,5 @@ DivisionFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
 } // namespace Teuchos
 
 
-#endif // TEUCHOS_STANDARDCONDITIONXMLCONVERTERS_HPP
+#endif // TEUCHOS_STANDARDFUNCTIONOBJECTXMLCONVERTERS_HPP
 

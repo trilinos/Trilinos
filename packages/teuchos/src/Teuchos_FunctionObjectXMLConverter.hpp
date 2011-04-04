@@ -79,7 +79,7 @@ public:
   XMLObject fromFunctionObjecttoXML(
     const RCP<const FunctionObject> function) const;
 
-  /** \brief Preforms any and all special funciton conversion that is
+  /** \brief Preforms any and all special FunctionObject conversion that is
    * specific to a particlar FunctionObject.
    *
    * @param function The FunctionObject to be converted.

@@ -39,35 +39,8 @@
 namespace Teuchos{
 
 /**
- * \brief A simple function object that simply
- * returns the value that is given as an arguement.
- */
-template<class DataType>
-class IdentityFunction: public FunctionObject{
-public:
-  
-  //! @name Overridden from FunctionObject
-  //@{
-
-  /** \brief. */
-  DataType runFunction(DataType arguement) const{
-    return arguement;
-  }
-
-  /** \brief. */
-  std::string getTypeAttributeValue() const{
-    return 
-      "SubtractionFunction(" 
-      + TypeNameTraits<DataType>::name()
-      +")";
-  }
-  //@}
-};
-
-/**
  * \brief A simple function object that
- * applies a given operand to the spcified arguement
- * using a specific operator.
+ * applies a given operand to a spcified arguement using a specific operator.
  */
 template<class OperandType>
 class SimpleFunctionObject : public FunctionObject
@@ -96,6 +69,15 @@ public:
 
   //@}
 
+  /**
+   * Runs the desired function on the arguement and returns the
+   * result.
+   *
+   * @param arguement Arguement on which the function should be run.
+   * @return The result of running the function on the give arguement.
+   */
+  virtual OperandType runFunction(OperandType arguement) const=0;
+
   //! @name Getters/Setters
   //@{
 
@@ -117,15 +99,6 @@ public:
   }
 
   //@}
-
-  /**
-   * Runs the desired function on the arguement and returns the
-   * result.
-   *
-   * @param arguement Arguement on which the function should be run.
-   * @return The result of running the function on the give arguement.
-   */
-  virtual OperandType runFunction(OperandType arguement) const=0;
 
 private:
   //! @name Private Members
@@ -168,7 +141,7 @@ public:
   
   //@}
 
-  //! @name Overridden from FunctionObject
+  //! @name Overridden from SimpleFunctionObject
   //@{
 
   /** \brief. */
@@ -178,6 +151,11 @@ public:
       -
       SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
+
+  //@}
+  
+  //! @name Overridden from FunctionObject
+  //@{
 
   /** \brief. */
   std::string getTypeAttributeValue() const{
@@ -219,7 +197,7 @@ public:
 
   //@}
 
-  //! @name Overridden from FunctionObject
+  //! @name Overridden from SimpleFunctionObject
   //@{
 
   /** \brief. */
@@ -229,6 +207,11 @@ public:
       +
       SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
+
+  //@}
+  
+  //! @name Overridden from FunctionObject
+  //@{
 
   /** \brief. */
   std::string getTypeAttributeValue() const{
@@ -272,7 +255,7 @@ public:
 
   //@}
   
-  //! @name Overridden from FunctionObject
+  //! @name Overridden from SimpleFunctionObject
   //@{
 
   /** \brief. */
@@ -282,6 +265,11 @@ public:
       *
       SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
+
+  //@}
+  
+  //! @name Overridden from FunctionObject
+  //@{
 
   /** \brief. */
   std::string getTypeAttributeValue() const{
@@ -325,7 +313,7 @@ public:
 
   //@}
   
-  //! @name Overridden from FunctionObject
+  //! @name Overridden from SimpleFunctionObject
   //@{
 
   /** \brief. */
@@ -336,9 +324,16 @@ public:
       SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
 
+  //@}
+  
+  //! @name Overridden from FunctionObject
+  //@{
+
   /** \brief. */
   std::string getTypeAttributeValue() const{
-    return "DivisionFunction(" + TypeNameTraits<OperandType>::name()
+    return 
+      "DivisionFunction(" 
+      + TypeNameTraits<OperandType>::name()
       +")";
   }
 

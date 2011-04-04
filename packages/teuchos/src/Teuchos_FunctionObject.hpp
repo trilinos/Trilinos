@@ -41,14 +41,15 @@ namespace Teuchos{
 
 
 /**
- * \brief A function object represents an arbitrary function
- * that takes a single arguement (ArgType) and returns
- * a single value (ReturnType).
+ * \brief A function object represents an arbitrary function.
  */
 class FunctionObject: public Describable {
 
 public:
   
+  /** \name XMLSerialiation Functions */
+  //@{
+
   /** \brief Returns the string to be used for the value of the 
    * type attribute when converting the function to XML.
    */
@@ -62,6 +63,8 @@ public:
     return funcitonTagName;
   }
 
+  //@}
+  
 };
 
 
