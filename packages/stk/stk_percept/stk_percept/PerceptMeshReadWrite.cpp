@@ -148,9 +148,32 @@ namespace stk {
 
           if (cell_topology != NULL) {
 
+#define PERCEPT_ALLOW_PART_RANK_SUBDIM 0
+
+#if PERCEPT_ALLOW_PART_RANK_SUBDIM
             stk::mesh::Part & part = meta.declare_part(entity->name(),  mesh::fem::CellTopology(cell_topology) );
+#else
+            if (0 && cell_topology->dimension != type)
+              {
+                std::cout << "tmp type= " << type << " dimension= " << cell_topology->dimension << std::endl;
+              }
+            stk::mesh::Part & part = meta.declare_part(entity->name(), type);
+#endif
             stk::io::put_io_part_attribute(part);
 
+#if PERCEPT_ALLOW_PART_RANK_SUBDIM
+#else
+
+            const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(part);
+            std::string ctname="null";
+            if (cell_topo)
+              {
+                ctname=cell_topo->name;
+              }
+            //std::cout << "tmp part = " << part.name() << " ctname= " << ctname << " cellTopo= " << mesh::fem::CellTopology(cell_topology).getName() << std::endl;
+            stk::mesh::fem::set_cell_topology(meta, part,  mesh::fem::CellTopology(cell_topology) );
+
+#endif
           } else {
             /// \todo IMPLEMENT handle cell_topolgy mapping error...
             stk::mesh::Part & part = meta.declare_part(entity->name(), type);
@@ -513,7 +536,9 @@ namespace stk {
                 }
               mesh::EntityId* e_conn = &(e_connectivity[0]);
               elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], e_conn);
+#if PERCEPT_ALLOW_PART_RANK_SUBDIM
               //elements[i] = &my_declare_element(bulk, *part, elem_ids[i], e_conn);
+#endif
             }
 
             // For this example, we are just taking all attribute fields
@@ -604,14 +629,16 @@ namespace stk {
             for(size_t is=0; is<side_count; ++is) {
 
 
-              if (fem_meta.element_rank() != fb_part->primary_entity_rank())
+#if PERCEPT_ALLOW_PART_RANK_SUBDIM
+              if (0 && fem_meta.element_rank() != fb_part->primary_entity_rank())
                 {
                   std::cout << "tmp fem_meta.element_rank()= " << fem_meta.element_rank() <<
                     " fb_part->primary_entity_rank() = " <<  fb_part->primary_entity_rank() << std::endl;
                 }
-              //stk::mesh::Entity* const elem = bulk.get_entity(fem_meta.element_rank(), elem_side[is*2]);
               stk::mesh::Entity* const elem = bulk.get_entity(fb_part->primary_entity_rank(), elem_side[is*2]);
-
+#else
+              stk::mesh::Entity* const elem = bulk.get_entity(fem_meta.element_rank(), elem_side[is*2]);
+#endif
               // If NULL, then the element was probably assigned to an
               // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
               // Hence the '-1' in the following line.
