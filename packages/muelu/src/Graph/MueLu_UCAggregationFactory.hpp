@@ -71,7 +71,10 @@ enum NodeState {
   that can include unknowns from more than one process.
 */
 
-template<class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal  = int, 
+            class GlobalOrdinal = LocalOrdinal, 
+            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
 class UCAggregationFactory : public Teuchos::Describable {
 #include "MueLu_UseShortNames_Graph.hpp"
 
