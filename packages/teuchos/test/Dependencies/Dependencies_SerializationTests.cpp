@@ -531,7 +531,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
       myDepList.getEntryRCP(dependee1),
       myDepList.getEntryRCP(dependent1)));
 
+  DependeeType one = ScalarTraits< DependeeType >::one();
+  RCP<AdditionFunction< DependeeType > > functionTester = 
+    rcp(new AdditionFunction<DependeeType>(one));
+
+  RCP<NumberArrayLengthDependency<DependeeType, DependentType> > funcArrayDep =
+    rcp(new NumberArrayLengthDependency<DependeeType, DependentType>(
+      myDepList.getEntryRCP(dependee2),
+      myDepList.getEntryRCP(dependent2),
+      functionTester));
+  
+
   myDepSheet->addDependency(basicArrayDep);
+  myDepSheet->addDependency(funcArrayDep);
 
   RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet);
 
@@ -549,15 +561,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
   
   RCP<Dependency> readinDep1 =
     *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin());
+  RCP<Dependency> readinDep2 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
 
   typedef NumberArrayLengthDependency<DependeeType, DependentType> deptype;
   BASIC_DEPENDENCY_TEST(readinDep1, deptype, 1, 1);
   VERIFY_DEPENDEE(readinDep1, readinDependee1);
   VERIFY_DEPENDENT(readinDep1, readinDependent1);
 
+  BASIC_DEPENDENCY_TEST(readinDep2, deptype, 1, 1);
+  VERIFY_DEPENDEE(readinDep2, readinDependee2);
+  VERIFY_DEPENDENT(readinDep2, readinDependent2);
+
   RCP<NumberArrayLengthDependency<DependeeType, DependentType> > castedDep1 =
     rcp_dynamic_cast<NumberArrayLengthDependency<DependeeType, DependentType> >(
-      readinDep1, true);
+      readinDep1);
+  TEST_ASSERT(castedDep1 != null);
+
+  RCP<NumberArrayLengthDependency<DependeeType, DependentType> > castedDep2 =
+    rcp_dynamic_cast<NumberArrayLengthDependency<DependeeType, DependentType> >(
+      readinDep2);
+  TEST_ASSERT(castedDep2 != null);
+
+  RCP<const SimpleFunctionObject< DependeeType > > readInFunc =
+    castedDep2->getFunctionObject();
+  TEST_ASSERT(readInFunc != null);
+
+  RCP<const AdditionFunction< DependeeType > > castedFunc = 
+    rcp_dynamic_cast<const AdditionFunction< DependeeType > >(readInFunc);
+  TEST_ASSERT(castedFunc != null);
+  TEST_EQUALITY(
+    castedFunc->getModifiyingOperand(), 
+    functionTester->getModifiyingOperand());
 }
 
 #define NUM_ARRAY_LENGTH_TEST(DependeeType, DependentType) \
