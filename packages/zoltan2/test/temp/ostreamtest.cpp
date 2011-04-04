@@ -13,13 +13,15 @@
 
 using namespace std;
 
-// Our ProblemParameters object would have the information that's in this struct.
-// Objects that want to stream debug or timing data would get the Fancy streamer
-// from the ProblemParameters object. 
+// Our ProblemParameters object would have the information that's in the
+// class test_parameters defined below.
+//
+// Objects in Zoltan2 that want to stream debug or timing data would get the 
+// Fancy streamer from the ProblemParameters object. 
 //
 // An object that wants to indent further than the current indent would:
 //     Problem::getDebugFancyOStream().getTabIndentStr()
-//     Problem::getDebugFancy)Stream().setTabIndentStr() to a bigger indent
+//     Problem::getDebugFancyOStream().setTabIndentStr() to a bigger indent
 //
 // The caller's interface would be:
 //
@@ -28,8 +30,6 @@ using namespace std;
 //
 // instead of setting it in a Teuchos::ParameterList.
 
-
-using Teuchos::ENull;
 
 class test_parameters{
 
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 {
   std::ofstream f;
   std::ostringstream oss;
-  Teuchos::RCP<std::basic_ostream<char> > os;
+  Teuchos::RCP<Teuchos::basic_FancyOStream<char> > os;
 
   test_parameters TestParameters;
 
@@ -81,7 +81,9 @@ int main(int argc, char *argv[])
 
   TestParameters.setDebugOutputStream(f);
 
-  os = TestParameters.getDebugOStream();
+  os = TestParameters.getDebugFancyOStream();
+  os->setShowProcRank(true);
+  os->setTabIndentStr(std::string("---->"));
 
   *os << "TESTING OUTPUT TO FILE\n";
 
@@ -93,7 +95,8 @@ int main(int argc, char *argv[])
   // Set debug output to ostringstream.
 
   TestParameters.setDebugOutputStream(oss);
-  os = TestParameters.getDebugOStream();
+  os = TestParameters.getDebugFancyOStream();
+  os->setShowLinePrefix(true);
 
   *os << "TESTING OUTPUT TO STRINGSTREAM\n";
   std::cout << oss.str() << std::endl;
@@ -101,21 +104,31 @@ int main(int argc, char *argv[])
   // Set debug output to std::cout
 
   TestParameters.setDebugOutputStream(std::cout);
-  os = TestParameters.getDebugOStream();
+  os = TestParameters.getDebugFancyOStream();
 
+  *os << "TESTING OUTPUT TO std::cout\n" << std::endl;
+
+  os->pushTab();
+  *os << "TESTING OUTPUT TO std::cout\n" << std::endl;
+  os->pushTab();
+  *os << "TESTING OUTPUT TO std::cout\n" << std::endl;
+  os->popTab();
+  *os << "TESTING OUTPUT TO std::cout\n" << std::endl;
+  os->popTab();
   *os << "TESTING OUTPUT TO std::cout\n" << std::endl;
 
   // Set debug output to std::cerr
 
   TestParameters.setDebugOutputStream(std::cerr);
-  os = TestParameters.getDebugOStream();
+  os = TestParameters.getDebugFancyOStream();
+  os->setShowAllFrontMatter(true);
 
   *os << "TESTING OUTPUT TO std::cerr\n" << std::endl;
 
   // Set debug output to std::clog
 
   TestParameters.setDebugOutputStream(std::clog);
-  os = TestParameters.getDebugOStream();
+  os = TestParameters.getDebugFancyOStream();
 
   *os<< "TESTING OUTPUT TO std::clog\n" << std::endl;
 }
