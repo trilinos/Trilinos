@@ -48,6 +48,42 @@ namespace stk {
   namespace percept {
     namespace io_util {
 
+      // same as FEMHelper::declare_element, except the rank is chosen from the part, not defaulted to element_rank()
+
+      stk::mesh::Entity & my_declare_element( stk::mesh::BulkData & mesh ,
+                                              stk::mesh::Part & part ,
+                                              const stk::mesh::EntityId elem_id ,
+                                              const stk::mesh::EntityId node_id[] )
+      {
+        stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(mesh);
+        const CellTopologyData * const top = fem_meta.get_cell_topology( part ).getCellTopologyData();
+
+        ThrowErrorMsgIf(top == NULL,
+                        "Part " << part.name() << " does not have a local topology");
+
+        stk::mesh::PartVector empty ;
+        stk::mesh::PartVector add( 1 ); add[0] = & part ;
+
+        //const stk::mesh::EntityRank entity_rank = fem_meta.element_rank();
+        const stk::mesh::EntityRank entity_rank = part.primary_entity_rank();
+
+        stk::mesh::Entity & elem = mesh.declare_entity( entity_rank, elem_id, add );
+
+        const stk::mesh::EntityRank node_rank = fem_meta.node_rank();
+
+        for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
+          //declare node if it doesn't already exist
+          stk::mesh::Entity * node = mesh.get_entity( node_rank , node_id[i]);
+          if ( NULL == node) {
+            node = & mesh.declare_entity( node_rank , node_id[i], empty );
+          }
+
+          mesh.declare_relation( elem , *node , i );
+        }
+        return elem ;
+      }
+
+
       //#define USE_LOCAL_PART_PROCESSING !defined(__IBMCPP__)
 #define USE_LOCAL_PART_PROCESSING 1
 #if USE_LOCAL_PART_PROCESSING
@@ -99,8 +135,9 @@ namespace stk {
 
         if (local_include_entity(entity)) {
           //std::cout << "tmp entity name= " << entity->name() << std::endl;
-          stk::mesh::Part & part = meta.declare_part(entity->name(), type);
-          stk::io::put_io_part_attribute(part);
+
+          //stk::mesh::Part & part = meta.declare_part(entity->name(), type);
+          //stk::io::put_io_part_attribute(part);
 
           const Ioss::ElementTopology *topology = entity->topology();
           const CellTopologyData * const cell_topology = stk::io::map_topology_ioss_to_cell(topology);
@@ -111,12 +148,13 @@ namespace stk {
 
           if (cell_topology != NULL) {
 
-            //stk::mesh::fem::set_cell_topology(part, cell_topology);
-
-            stk::mesh::fem::set_cell_topology(meta, part,  mesh::fem::CellTopology(cell_topology) );
+            stk::mesh::Part & part = meta.declare_part(entity->name(),  mesh::fem::CellTopology(cell_topology) );
+            stk::io::put_io_part_attribute(part);
 
           } else {
             /// \todo IMPLEMENT handle cell_topolgy mapping error...
+            stk::mesh::Part & part = meta.declare_part(entity->name(), type);
+            stk::io::put_io_part_attribute(part);
           }
         }
       }
@@ -474,7 +512,8 @@ namespace stk {
                   e_connectivity[j] = (mesh::EntityId)conn[j];
                 }
               mesh::EntityId* e_conn = &(e_connectivity[0]);
-              elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], e_conn);
+              //elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], e_conn);
+              elements[i] = &my_declare_element(bulk, *part, elem_ids[i], e_conn);
             }
 
             // For this example, we are just taking all attribute fields
@@ -565,7 +604,14 @@ namespace stk {
             for(size_t is=0; is<side_count; ++is) {
 
 
-              stk::mesh::Entity* const elem = bulk.get_entity(fem_meta.element_rank(), elem_side[is*2]);
+              if (fem_meta.element_rank() != fb_part->primary_entity_rank())
+                {
+                  std::cout << "tmp fem_meta.element_rank()= " << fem_meta.element_rank() <<
+                    " fb_part->primary_entity_rank() = " <<  fb_part->primary_entity_rank() << std::endl;
+                }
+              //stk::mesh::Entity* const elem = bulk.get_entity(fem_meta.element_rank(), elem_side[is*2]);
+              stk::mesh::Entity* const elem = bulk.get_entity(fb_part->primary_entity_rank(), elem_side[is*2]);
+
               // If NULL, then the element was probably assigned to an
               // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
               // Hence the '-1' in the following line.
