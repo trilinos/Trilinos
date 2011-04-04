@@ -661,10 +661,15 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertXML
     TooManyDependeesException,
     "A NumberArrayLengthDependency can only have 1 dependee!" <<
     std::endl << std::endl);
-  
+  RCP<SimpleFunctionObject<DependeeType> > functionObject = null;
+  int functionIndex = xmlObj.findFirstChild(FunctionObject::getXMLTagName());
+  if(functionIndex != -1){
+    functionObject = rcp_dynamic_cast<SimpleFunctionObject<DependeeType> >(
+      FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionIndex)));
+  }
   return rcp(
     new NumberArrayLengthDependency<DependeeType, DependentType>(
-      *(dependees.begin()), dependents));
+      *(dependees.begin()), dependents, functionObject));
 }
 
 template<class DependeeType, class DependentType>
@@ -675,7 +680,16 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertDep
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const
 {
-  
+  RCP<const NumberArrayLengthDependency<DependeeType, DependentType> > castedDep =
+    rcp_dynamic_cast<const NumberArrayLengthDependency<DependeeType, DependentType> >(
+      dependency);
+  RCP<const SimpleFunctionObject<DependeeType> > functionObject = 
+    castedDep->getFunctionObject();
+  if(functionObject != null){
+    XMLObject functionXML = FunctionObjectXMLConverterDB::convertFunctionObject(
+      functionObject);
+    xmlObj.addChild(functionXML);
+  }
 }
 
 
