@@ -200,9 +200,9 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
   void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
 
     // First check to see if this test is a combination test
-    Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(test);
-    TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be a Belos::StatusTestCombo.");
-    std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = tmpComboTest->getStatusTests();
+    Teuchos::RCP<StatusTestCombo_t> comboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(test);
+    TEST_FOR_EXCEPTION(comboTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be a Belos::StatusTestCombo.");
+    std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = comboTest->getStatusTests();
     
     // Get the number of tests.
     int numTests = tmpVec.size();
