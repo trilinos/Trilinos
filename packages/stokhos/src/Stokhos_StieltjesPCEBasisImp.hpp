@@ -323,3 +323,11 @@ transformCoeffsFromStieltjes(const value_type *in, value_type *out) const
 	    fromStieltjesMat.numCols(), 1.0, fromStieltjesMat.values(), 
 	    fromStieltjesMat.numRows(), in, 1, 0.0, out, 1);
 }
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
+Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
+cloneWithOrder(ordinal_type p) const
+{
+   return Teuchos::rcp(new Stokhos::StieltjesPCEBasis<ordinal_type,value_type>(p,pce,quad,use_pce_quad_points,this->normalize,project_integrals,Cijk));
+}

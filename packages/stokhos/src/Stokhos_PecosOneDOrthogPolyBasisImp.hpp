@@ -249,3 +249,11 @@ getQuadPoints(ordinal_type quad_order,
     evaluateBases(quad_points[i], quad_values[i]);
   }
 }
+
+template <typename ordinal_type, typename value_type, typename func_type>
+Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
+Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>::
+cloneWithOrder(ordinal_type p) const
+{
+   return Teuchos::rcp(new Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>(name,pecosPoly,p));
+}
