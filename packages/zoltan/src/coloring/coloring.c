@@ -31,7 +31,6 @@ extern "C" {
 /* when sending new colored vertices to processors,
    sent only the "relevant" ones; i.e., send the color info if the processors has
    D1 neighbour */
-#define RELEVANT_COLORS
 
 #define COLORTAG     1001
 #define SNTAG        1002
@@ -52,7 +51,6 @@ static int InternalColoring(ZZ *zz, char coloring_problem, int *nColor,
 			    int nVtx, int *visit, int * xadj, int *adj,
 			    int *color, int *mark, int mark_size, char coloring_method);
 
-#ifdef RELEVANT_COLORS
 static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj,
 			       int *isbound, int ss, int *nColor, int *color,
 			       ZOLTAN_GNO_TYPE **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
@@ -60,14 +58,6 @@ static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj
 			       int *replies, MPI_Request *sreqs, MPI_Request *rreqs,
 			       MPI_Status *stats,
 			       int *xadjproc, int *adjproc, ZOLTAN_GNO_TYPE **persSbuf, int *Ssize, int plstcnt, int *plst);
-#else
-static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj,
-			       int *isbound, int ss, int *nColor, int *color,
-			       ZOLTAN_GNO_TYPE **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
-			       char coloring_method, char comm_pattern, int *rreqfrom,
-			       int *replies, MPI_Request *sreqs, MPI_Request *rreqs,
-			       MPI_Status *stats);
-#endif
 
 static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p, ZOLTAN_GNO_TYPE **srp, int *xadj, int *adj, int *xadjnl, int *adjnl, int *forbsizeS, int **xforbiddenS, int **forbiddenS, int *nColor, int *color, int *mark, int *confChk, int sncnt, int *wset, int *wsize, MPI_Request *sreqsFx, MPI_Request *sreqsF);
 static int waitPtrAndForbiddenColors(ZZ* zz, int rreqcntFx, MPI_Request *rreqsFx, int *rreqfromFx, MPI_Status *stats, int *forbsize, int **xforbidden, int **forbidden, int **xfp, MPI_Request *rreqsF);
@@ -569,7 +559,6 @@ static int D1coloring(
     double times[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
     int get_times;               /* (1) Measure timings (0) Don't */
     int ierr;
-#ifdef RELEVANT_COLORS
     int j, k;
     int *pmark=NULL;
     ZOLTAN_GNO_TYPE **persSbuf=NULL; /* personalized send buffers */
@@ -577,7 +566,6 @@ static int D1coloring(
     int *relproc=NULL;
     int *xrelproc=NULL;
     int *plst=NULL, plstcnt=0;
-#endif
 
     /* Memory allocation */
     isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
@@ -647,13 +635,11 @@ static int D1coloring(
 	    MEMORY_ERROR;
 	memset(newcolored[i], 0, 2 * ss * sizeof(ZOLTAN_GNO_TYPE));
     }
-#ifdef RELEVANT_COLORS
     persSbuf = (ZOLTAN_GNO_TYPE **) ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE *) * zz->Num_Proc);
     Ssize = (int *) ZOLTAN_MALLOC(sizeof(int) * zz->Num_Proc);
     plst = (int *) ZOLTAN_MALLOC(sizeof(int) * zz->Num_Proc);
     for (i=0; i<zz->Num_Proc; i++)
 	persSbuf[i] = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * 2*ss);
-#endif
 
     /* Generate random numbers associated with global numbers of the vertices */
     /* All processors generate the same random number corresponding
@@ -710,7 +696,6 @@ static int D1coloring(
 
     if (zz->Num_Proc >= 2) {
 
-#ifdef RELEVANT_COLORS
 	/*** Determine which processors each vertex is connected to ***/
 	/*** Updated color info of a vertex will only be sent to the connected processors ***/
 	pmark = (int *) ZOLTAN_MALLOC(sizeof(int) * zz->Num_Proc);
@@ -766,25 +751,15 @@ static int D1coloring(
 	printf("\n");
 #endif
 
-
-#endif
-
 	do {
 	    int *tp = visit;
 
 	    memset(mark, 0xff, (1+nColor) * sizeof(int)); /* reset dirty entries */
-#ifdef RELEVANT_COLORS
 	    ierr = D1ParallelColoring(zz, nConflict, visit, xadj, adj, isbound, ss,
 				      &nColor, color, newcolored, mark, gmaxdeg, hash,
 				      coloring_method, comm_pattern, rreqfrom, replies,
 				      sreqs, rreqs, stats,
 				      xrelproc, relproc, persSbuf, Ssize, plstcnt, plst);
-#else
-	    ierr = D1ParallelColoring(zz, nConflict, visit, xadj, adj, isbound, ss,
-				      &nColor, color, newcolored, mark, gmaxdeg, hash,
-				      coloring_method, comm_pattern, rreqfrom, replies,
-				      sreqs, rreqs, stats);
-#endif
 	    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
 		ZOLTAN_COLOR_ERROR(ierr, "Error in D1ParallelColoring");
 	    nConflict = D1DetectConflicts(zz, nConflict, visit, xadj, xbadj, adj,
@@ -844,8 +819,6 @@ static int D1coloring(
 
 	End:
 
-
-#ifdef RELEVANT_COLORS
     for (i=0; i<zz->Num_Proc; i++)
 	ZOLTAN_FREE(&persSbuf[i]);
     ZOLTAN_FREE(&persSbuf);
@@ -855,8 +828,6 @@ static int D1coloring(
     ZOLTAN_FREE(&pmark);
     ZOLTAN_FREE(&relproc);
     ZOLTAN_FREE(&xrelproc);
-#endif
-
     ZOLTAN_FREE(&mark);
     ZOLTAN_FREE(&conflicts);
     ZOLTAN_FREE(&replies);
@@ -1476,16 +1447,6 @@ static int InternalColoring(
 
 /*****************************************************************************/
 /* Parallel coloring of boundary vertices */
-
-#ifdef RELEVANT_COLORS
-static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj,
-			       int *isbound, int ss, int *nColor, int *color,
-			       ZOLTAN_GNO_TYPE **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
-			       char coloring_method, char comm_pattern, int *rreqfrom,
-			       int *replies, MPI_Request *sreqs, MPI_Request *rreqs,
-			       MPI_Status *stats,
-			       int *xrelproc, int *relproc, ZOLTAN_GNO_TYPE **persSbuf, int *Ssize, int plstcnt, int *plst)
-#else
 static int D1ParallelColoring (
     ZZ *zz,
     int nvtx,         /* number of vertices to be colored in this round */
@@ -1515,9 +1476,9 @@ static int D1ParallelColoring (
     int *replies,
     MPI_Request *sreqs,
     MPI_Request *rreqs,
-    MPI_Status *stats
+    MPI_Status *stats,
+    int *xrelproc, int *relproc, ZOLTAN_GNO_TYPE **persSbuf, int *Ssize, int plstcnt, int *plst
 )
-#endif
 {
     static char *yo="D1ParallelColoring";
     int colortag=1001, i, j, p, q, l;
@@ -1529,14 +1490,11 @@ static int D1ParallelColoring (
 
     gno_mpi_type = Zoltan_mpi_gno_type();
 
-#ifdef RELEVANT_COLORS
     memset(Ssize, 0, sizeof(int) * zz->Num_Proc);
-#endif
 
     colored = newcolored[zz->Proc];
 
     /* Issue async recvs */
-#ifdef RELEVANT_COLORS
     for (rreqcnt = i = 0; i < plstcnt; ++i) {
 	p = plst[i];
 	rreqfrom[rreqcnt] = p;
@@ -1544,15 +1502,6 @@ static int D1ParallelColoring (
 	    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "MPI_Irecv failed.");
 	++rreqcnt;
     }
-#else
-    for (rreqcnt = p = 0; p < zz->Num_Proc; ++p)
-	if (p != zz->Proc) {
-	    rreqfrom[rreqcnt] = p;
-	    if (MPI_Irecv(newcolored[p], 2*ss, gno_mpi_type, p, colortag, zz->Communicator, &rreqs[rreqcnt]))
-		ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "MPI_Irecv failed.");
-	    ++rreqcnt;
-	}
-#endif
 
     /* Coloring */
     for (i=0; i<nvtx; ++i) {
@@ -1572,22 +1521,15 @@ static int D1ParallelColoring (
 	    continue;
 
 	gu = Zoltan_G2LHash_L2G(hash, u);
-#ifdef RELEVANT_COLORS
 	for (j=xrelproc[isbound[u]-1]; j<xrelproc[isbound[u]]; ++j) {
 	    int ap = relproc[j];
 	    persSbuf[ap][Ssize[ap]++] = gu;
 	    persSbuf[ap][Ssize[ap]++] = (ZOLTAN_GNO_TYPE)color[u];
 	}
 	n += 2;
-#else
-
-	colored[n++] = gu;
-	colored[n++] = (ZOLTAN_GNO_TYPE)color[u];
-#endif
 
 	/* If superstep is finished, communicate */
 	if (n >= 2*ss) {
-#ifdef RELEVANT_COLORS
 	    for (sreqcnt = j = 0; j<plstcnt; ++j) {
 		p = plst[j];
                 if (Ssize[p] || (comm_pattern == 'S')) {
@@ -1599,13 +1541,6 @@ static int D1ParallelColoring (
                     Ssize[p] = 0;
                     }
 	    }
-#else
-	    for (sreqcnt = p = 0; p < zz->Num_Proc; ++p)
-		if (p != zz->Proc) {
-		    MPI_Isend(colored, 2*ss, gno_mpi_type, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
-		    ++sreqcnt;
-		}
-#endif
 
 	    /* Wait color lists from other processors */
 	    if (comm_pattern == 'S') { /* wait all results if sync communication*/
@@ -1653,29 +1588,16 @@ static int D1ParallelColoring (
     }
 
     /* Mark that coloring is finished on zz->Proc and send the last color list*/
-#ifdef RELEVANT_COLORS
     for (j=0; j<plstcnt; ++j) {
 	p = plst[j];
 	persSbuf[p][Ssize[p]++] = -1;
 	persSbuf[p][Ssize[p]++] = -1;
     }
-#else
-    colored[n++] = -1;
-    colored[n++] = -1;
-#endif
 
-#ifdef RELEVANT_COLORS
     for (sreqcnt = j = 0; j<plstcnt; ++j) {
 	p = plst[j];
 	MPI_Isend(persSbuf[p], Ssize[p], gno_mpi_type, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
     }
-#else
-    for (sreqcnt = p = 0; p < zz->Num_Proc; ++p)
-	if (p != zz->Proc) {
-	    MPI_Isend(colored, 2*ss, gno_mpi_type, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
-	    ++sreqcnt;
-	}
-#endif
 
     /* Receive the remaining color lists from other processors */
     while (rreqcnt) {
