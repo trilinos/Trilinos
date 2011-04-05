@@ -163,7 +163,7 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
   // verify valid topology
   bool isBad = false;
   if(verbose) std::cout << "verify this is a good topology " << std::endl;
-  isBad = topoVerifier.isTopologyBad( *tp2.get_bulkData() );
+  isBad = topoVerifier.isTopologyBad( *tp2.getBulkData() );
   STKUNIT_EXPECT_FALSE(isBad);
 
   //------- a bad topology with a duplicated node
@@ -188,7 +188,7 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
   tp2.writeSTKMesh("topo-badQuadDupl.e");
 
   // verify bad topology
-  isBad = topoVerifier.isTopologyBad( *tp2.get_bulkData() );
+  isBad = topoVerifier.isTopologyBad( *tp2.getBulkData() );
   STKUNIT_EXPECT_TRUE(isBad);
 
   //------ create a bad topology with crossed elements
@@ -213,7 +213,7 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
   tp2.writeSTKMesh("topo-badQuadCrossed.e");
 
   // verify bad topology
-  isBad = topoVerifier.isTopologyBad( *tp2.get_bulkData() );
+  isBad = topoVerifier.isTopologyBad( *tp2.getBulkData() );
   STKUNIT_EXPECT_TRUE(isBad);
 }
 
@@ -287,7 +287,7 @@ STKUNIT_UNIT_TEST(geom, geomPrints)
   // verify valid geometry
   bool isBad = false;
   if(verbose) std::cout << "verify this is a good geometry " << std::endl;
-  isBad = geomVerifier.isGeometryBad( *tp2.get_bulkData() );
+  isBad = geomVerifier.isGeometryBad( *tp2.getBulkData() );
   STKUNIT_EXPECT_FALSE(isBad);
 
   /////////////// path test 3
@@ -320,13 +320,13 @@ STKUNIT_UNIT_TEST(geom, geomPrints)
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("geom-all-hex-path3.e");
   geomVerifier = GeometryVerifier(false);
-  geomVerifier.isGeometryBad(*tp2.get_bulkData() );
+  geomVerifier.isGeometryBad(*tp2.getBulkData() );
 
   // break path3 of the hexes into tets
   tp2.breakAllElements<shards_Hexahedron_8, shards_Tetrahedron_4>();
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("geom-all-hex-tet-path3.e");
-  geomVerifier.isGeometryBad(*tp2.get_bulkData() );
+  geomVerifier.isGeometryBad(*tp2.getBulkData() );
 
 }
 
@@ -368,7 +368,7 @@ STKUNIT_UNIT_TEST(geom, geomEqui)
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("equi-tet.e");
   geomVerifier = GeometryVerifier(false);
-  geomVerifier.isGeometryBad(*tp2.get_bulkData(), true );
+  geomVerifier.isGeometryBad(*tp2.getBulkData(), true );
 
   //------ scale the mesh
   double sf= 4.0;
@@ -385,7 +385,7 @@ STKUNIT_UNIT_TEST(geom, geomEqui)
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("equi-tet-scaled.e");
   geomVerifier = GeometryVerifier(false);
-  geomVerifier.isGeometryBad(*tp2.get_bulkData(), true );
+  geomVerifier.isGeometryBad(*tp2.getBulkData(), true );
 
 }
 #endif

@@ -68,7 +68,7 @@ namespace stk {
           selector = mesh::selectUnion(*fromParts);
         }
 
-      stk::mesh::BulkData& bulkData = *eMesh.get_bulkData();
+      stk::mesh::BulkData& bulkData = *eMesh.getBulkData();
       int ncolor = 0;
       int nelem = 0;
       for (unsigned icolor = 0; icolor < MAX_COLORS; icolor++)

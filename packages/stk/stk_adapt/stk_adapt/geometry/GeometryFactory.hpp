@@ -4,7 +4,7 @@
 #include <string>
 #include "GeometryKernel.hpp"
 #include "MeshGeometry.hpp"
-#include "PerceptMesh.hpp"
+#include <stk_percept/PerceptMesh.hpp>
 using namespace stk;
 using namespace mesh;
 using namespace percept;

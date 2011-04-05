@@ -95,10 +95,10 @@ namespace stk {
       VERIFY_OP(&old_owning_elem, != , 0, "set_parent_child_relations: old_owning_elem is null");
       VERIFY_OP(&newElement, != , 0, "set_parent_child_relations: newElement is null");
 
-      //eMesh.get_bulkData()->declare_relation( old_owning_elem, newElement, ordinal);
+      //eMesh.getBulkData()->declare_relation( old_owning_elem, newElement, ordinal);
       
       // is this necessary?
-      // eMesh.get_bulkData()->declare_relation( newElement, old_owning_elem, 0u);
+      // eMesh.getBulkData()->declare_relation( newElement, old_owning_elem, 0u);
       //static PerceptEntityVector empty_entity_vector;
 
       if (0 == &old_owning_elem)

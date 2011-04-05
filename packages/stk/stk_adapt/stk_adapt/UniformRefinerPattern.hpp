@@ -768,7 +768,7 @@ namespace stk {
       stk::mesh::Entity& createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, stk::mesh::EntityId eid)
       {
 #if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
-        stk::mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.get_bulkData(), stk::mesh::Node, eid);
+        stk::mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.getBulkData(), stk::mesh::Node, eid);
         if (node_p)
           return *node_p;
         else
@@ -924,7 +924,7 @@ namespace stk {
                   }
                 //stk::mesh::Entity& node = eMesh.createOrGetNode(eid);
                 stk::mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
-                eMesh.get_bulkData()->declare_relation(newElement, node, inode);
+                eMesh.getBulkData()->declare_relation(newElement, node, inode);
               }
 
             //set_parent_child_relations(eMesh, element, newElement, ielem);
@@ -1403,7 +1403,7 @@ namespace stk {
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_createOrGetNode);
 
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_declare_relation);
-                eMesh.get_bulkData()->declare_relation(newElement, node, inode);
+                eMesh.getBulkData()->declare_relation(newElement, node, inode);
                 //register_relation(newElement, node, inode);
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_declare_relation);
               }
@@ -2565,7 +2565,7 @@ namespace stk {
                               << " rank= " << old_owning_elem.entity_rank()
                               << std::endl;
                   }
-                eMesh.get_bulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+                eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
                 //return;
                 found = true;
               }
