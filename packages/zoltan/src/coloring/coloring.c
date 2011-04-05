@@ -1538,6 +1538,7 @@ static int D1ParallelColoring (
                         persSbuf[p][Ssize[p]++] = -2;
                     }
                     MPI_Isend(persSbuf[p], Ssize[p], gno_mpi_type, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
+                    sreqcnt++;
                     Ssize[p] = 0;
                     }
 	    }
@@ -1597,6 +1598,7 @@ static int D1ParallelColoring (
     for (sreqcnt = j = 0; j<plstcnt; ++j) {
 	p = plst[j];
 	MPI_Isend(persSbuf[p], Ssize[p], gno_mpi_type, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
+        sreqcnt++;
     }
 
     /* Receive the remaining color lists from other processors */
