@@ -37,10 +37,17 @@ extern "C" {
 #define XFORBIDTAG   1003
 #define FORBIDTAG    1004
 #define RECOLORTAG   1005
+#define FORWARD        11
+#define REVERSE        12
+#define NONDECREASING  13
+#define NONINCREASING  14
+#define SYNCHRONOUS    21
+#define ASYNCHRONOUS   22
 
 /* Function prototypes */
 static int D1coloring(ZZ *zz, char coloring_problem, char coloring_order, char coloring_method, char comm_pattern, int ss,
-		      int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color);
+		      int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color, int recoloring_permutation,
+                      int recoloring_type, int recoloring_num_of_iterations);
 static int D2coloring(ZZ *zz, char coloring_problem, char coloring_order, char coloring_method, char comm_pattern, int ss,
 		      int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color, int *partialD2);
 
@@ -64,6 +71,18 @@ static int waitPtrAndForbiddenColors(ZZ* zz, int rreqcntFx, MPI_Request *rreqsFx
 static int D2ParallelColoring (ZZ *zz, int nvtx, int nlvtx, int *visit, int *xadj, int *adj, int *xbadj, int *xadjnl, int *adjnl, int *adjproc, int *isbound, int ss, int *nColor, int *color, ZOLTAN_GNO_TYPE **newcolored, int *mark, int gmaxdeg, G2LHash *hash, int **forbidden, int **xforbidden, int **forbiddenS, int **xforbiddenS, int *forbsize, int *forbsizeS, char coloring_problem, char coloring_method, char comm_pattern, int *rreqfromC, int *repliesC, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromF, int *repliesF, MPI_Request *sreqsF, MPI_Request *rreqsF, int *rreqfromFx, int *repliesFx, MPI_Request *sreqsFx, MPI_Request *rreqsFx, MPI_Status *stats, int *confChk, int *ssendsize, int *srecsize, ZOLTAN_GNO_TYPE **ssendbuf, ZOLTAN_GNO_TYPE **srecbuf, ZOLTAN_GNO_TYPE  ** ssp,  ZOLTAN_GNO_TYPE **srp, int **xfp, int *xfpMark, int *wset, int *wsize);
 static int D1DetectConflicts(ZZ *, int, int *, int *, int *, int *, int *, int *, int *, G2LHash *);
 static int D2DetectConflicts(ZZ *zz, char coloring_problem, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, ZOLTAN_GNO_TYPE **rcsendbuf, ZOLTAN_GNO_TYPE  **rcrecbuf, int *rcsendsize, int *rcrecsize, ZOLTAN_GNO_TYPE **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict);
+static int Recoloring (ZZ *zz, int recoloring_permutation, int recoloring_type,
+                       int recoloring_num_of_iterations, int nvtx, int carrierbufsize, int *nConflict,
+                       int *confCont, int *nTotConflict, int *nRound,int lastlno, int globmaxnvtx,
+                       int *nColor, int *color, int *visit,int *xadj, int *adj, int *xbadj,
+                       int *conflicts, int *rand_key, G2LHash *hash, int *isbound, 
+                       ZOLTAN_GNO_TYPE **newcolored, int *mark, int gmaxdeg,
+                       char coloring_method, char comm_pattern, int *rreqfrom, int *replies,
+                       MPI_Request *sreqs, MPI_Request *rreqs, MPI_Status *stats,
+                       int *xrelproc, int *relproc, ZOLTAN_GNO_TYPE **persSbuf,
+                       int *Ssize, int plstcnt, int *plst);
+static int pairofintsup_ind_nd (const void *a, const void *b);
+static int pairofintsup_ind_ni (const void *a, const void *b);
 
 /*****************************************************************************/
 /*  Parameters structure for Color method.  Used in  */
@@ -74,6 +93,9 @@ static PARAM_VARS Color_params[] = {
 		  { "COMM_PATTERN",     NULL, "CHAR", 0 },
 		  { "VERTEX_VISIT_ORDER",   NULL, "CHAR", 0 },
 		  { "COLORING_METHOD",  NULL, "CHAR", 0},
+                  { "RECOLORING_TYPE", NULL, "STRING", 0},
+                  { "RECOLORING_PERMUTATION", NULL, "STRING", 0},
+                  { "RECOLORING_NUM_OF_ITERATIONS", NULL, "INT", 0}
 		  { NULL, NULL, NULL, 0 } };
 
 /*****************************************************************************/
@@ -144,7 +166,11 @@ int Zoltan_Color(
 			   (B) boundary vertices first (U) interleaved = (N) natural,
                            (L) largest degree first, (S) smallest degree last */
   char coloring_method;    /* Coloring method. (F) First fit */
-
+  char recoloring_permutationStr[MAX_PARAM_STRING_LEN];
+  int recoloring_permutation; /* FORWARD, REVERSE, NONDECREASING, NONINCREASING, default is NONDECREASING */
+  char recoloring_typeStr[MAX_PARAM_STRING_LEN];
+  int recoloring_type; /* ASYNCHRONOUS, SYNCHRONOUS, default is SYNCHRONOUS */
+  int recoloring_num_of_iterations; /* must be a positive number, default is 1 if not specified */
   static char *yo = "Zoltan_Color";
   ZOLTAN_GNO_TYPE *vtxdist=NULL, *adjncy=NULL;
   int *itmp, *xadj=NULL;
@@ -190,6 +216,9 @@ int Zoltan_Color(
   Zoltan_Bind_Param(Color_params, "COMM_PATTERN",       (void *) &comm_pattern);
   Zoltan_Bind_Param(Color_params, "VERTEX_VISIT_ORDER", (void *) &coloring_order);
   Zoltan_Bind_Param(Color_params, "COLORING_METHOD",    (void *) &coloring_method);
+  Zoltan_Bind_Param(Color_params, "RECOLORING_PERMUTATION", (void *) &recoloring_permutationStr);
+  Zoltan_Bind_Param(Color_params, "RECOLORING_TYPE",        (void *) &recoloring_typeStr);
+  Zoltan_Bind_Param(Color_params, "RECOLORING_NUM_OF_ITERATIONS", (void *) &recoloring_num_of_iterations);
 
   /* Set default values */
   strncpy(coloring_problemStr, "distance-1", MAX_PARAM_STRING_LEN);
@@ -198,6 +227,11 @@ int Zoltan_Color(
   coloring_method = 'F';
   coloring_order = 'I';
   comm_pattern = 'S';
+  strncpy(recoloring_permutationStr, "NONDECREASING", MAX_PARAM_STRING_LEN);
+  strncpy(recoloring_typeStr, "SYNCHRONOUS", MAX_PARAM_STRING_LEN);
+  recoloring_permutation = NONDECREASING;
+  recoloring_type = SYNCHRONOUS;
+  recoloring_num_of_iterations = 0;
 
   Zoltan_Assign_Param_Vals(zz->Params, Color_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
@@ -237,6 +271,34 @@ int Zoltan_Color(
   if (coloring_method !='F') {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring method. Using first fit method (F).");
       coloring_method = 'F';
+  }
+  if (recoloring_num_of_iterations > 0) {
+      if (!strcasecmp(recoloring_permutationStr, "FORWARD"))
+          recoloring_permutation = FORWARD;
+      else if (!strcasecmp(recoloring_permutationStr, "REVERSE"))
+          recoloring_permutation = REVERSE;
+      else if (!strcasecmp(recoloring_permutationStr, "NONDECREASING"))
+          recoloring_permutation = NONDECREASING;
+      else if (!strcasecmp(recoloring_permutationStr, "NONINCREASING"))
+          recoloring_permutation = NONINCREASING;
+      else {
+          ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid recoloring permutation. Using NONDECREASING  recoloring permutation.");
+          recoloring_permutation = NONDECREASING;
+      }
+      if (zz->Num_Proc > 1) {
+          if (!strcasecmp(recoloring_typeStr, "SYNCHRONOUS"))
+              recoloring_type = SYNCHRONOUS;
+          else if (!strcasecmp(recoloring_typeStr, "ASYNCHRONOUS"))
+              recoloring_type = ASYNCHRONOUS;
+          else {
+              ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid recoloring type. Using SYNCHRONOUS recoloring type ");
+              recoloring_type = SYNCHRONOUS;
+          }
+      }
+  }
+  else if (recoloring_num_of_iterations < 0) {
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid recoloring number of iterations. Using 1 iteration for recoloring.");
+    recoloring_num_of_iterations = 0;
   }
 
 
@@ -358,7 +420,8 @@ int Zoltan_Color(
 #endif
   /* Select Coloring algorithm and perform the coloring */
   if (coloring_problem == '1')
-      D1coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, (int *)adjncy, adjproc, color);
+      D1coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, (int *)adjncy, adjproc, color,
+		 recoloring_permutation, recoloring_type, recoloring_num_of_iterations);
   else if (coloring_problem == '2' || coloring_problem == 'P')
       D2coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, (int *)adjncy, adjproc, color, partialD2);
 #ifdef _DEBUG_TIMES    
@@ -519,6 +582,10 @@ static int D1coloring(
     int *adjproc,
     int *color         /* return array to store colors of local and D1
 			  neighbor vertices */
+    int recoloring_permutation, /* recoloring permutation type; FORWARD, 
+                                     REVERSE, NONDECREASING, NONINCREASING */
+    int recoloring_type, /* recoloring type; SYNCHRONOUS or ASYNCHRONOUS */
+    int recoloring_num_of_iterations
 )
 {
     static char *yo = "D1coloring";
@@ -566,6 +633,8 @@ static int D1coloring(
     int *relproc=NULL;
     int *xrelproc=NULL;
     int *plst=NULL, plstcnt=0;
+    int globmaxnvtx = 0; /* maximum number of vertices in all the procs */
+    int carrierbufsize = 0; /* size of the buffer to transfer data between procs, it was same as superstep before, now it depends */
 
     /* Memory allocation */
     isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
@@ -617,6 +686,13 @@ static int D1coloring(
     MPI_Allreduce(&lmaxdeg, &gmaxdeg, 1, MPI_INT, MPI_MAX, zz->Communicator);
     /* gmaxdeg+1 is the upper bound for #colors and colors start at one */
     gmaxdeg += 2;
+    /* if recoloring is enabled, maximum number of vertices is computed and carrierbufsize is set accordingly for allocation purposes */
+    if (recoloring_num_of_iterations > 0) {
+        MPI_Allreduce(&nvtx, &globmaxnvtx, 1, MPI_INT, MPI_MAX, zz->Communicator);
+        carrierbufsize = globmaxnvtx;
+        if (recoloring_type == ASYNCHRONOUS)
+            carrierbufsize = ss;
+    }
 
     /* Memory allocation */
     mark = (int *) ZOLTAN_CALLOC(gmaxdeg, sizeof(int));
@@ -630,16 +706,16 @@ static int D1coloring(
     if (!mark || !conflicts || !replies || !stats || !rreqs || !sreqs || !rreqfrom || !newcolored)
 	MEMORY_ERROR;
     for (i=0; i<zz->Num_Proc; ++i) {
-	newcolored[i] = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(2 * ss * sizeof(ZOLTAN_GNO_TYPE));
+	newcolored[i] = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(2 * carrierbufsize * sizeof(ZOLTAN_GNO_TYPE));
 	if (!newcolored[i])
 	    MEMORY_ERROR;
-	memset(newcolored[i], 0, 2 * ss * sizeof(ZOLTAN_GNO_TYPE));
+	memset(newcolored[i], 0, 2 * carrierbufsize * sizeof(ZOLTAN_GNO_TYPE));
     }
     persSbuf = (ZOLTAN_GNO_TYPE **) ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE *) * zz->Num_Proc);
     Ssize = (int *) ZOLTAN_MALLOC(sizeof(int) * zz->Num_Proc);
     plst = (int *) ZOLTAN_MALLOC(sizeof(int) * zz->Num_Proc);
     for (i=0; i<zz->Num_Proc; i++)
-	persSbuf[i] = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * 2*ss);
+	persSbuf[i] = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * 2 * carrierbufsize);
 
     /* Generate random numbers associated with global numbers of the vertices */
     /* All processors generate the same random number corresponding
@@ -751,11 +827,13 @@ static int D1coloring(
 	printf("\n");
 #endif
 
+	if (recoloring_num_of_iterations > 0)
+	    carrierbufsize = ss;
 	do {
 	    int *tp = visit;
 
 	    memset(mark, 0xff, (1+nColor) * sizeof(int)); /* reset dirty entries */
-	    ierr = D1ParallelColoring(zz, nConflict, visit, xadj, adj, isbound, ss,
+	    ierr = D1ParallelColoring(zz, nConflict, visit, xadj, adj, isbound, carrierbufsize,
 				      &nColor, color, newcolored, mark, gmaxdeg, hash,
 				      coloring_method, comm_pattern, rreqfrom, replies,
 				      sreqs, rreqs, stats,
@@ -780,6 +858,22 @@ static int D1coloring(
     /* Color internal vertices after boundaries if boundary first ordering */
     if (coloring_order == 'B')
 	InternalColoring(zz, coloring_problem, &nColor, nvtx-nbound, visitIntern, xadj, adj, color, mark, gmaxdeg, coloring_method);
+
+    /* Recoloring is run if enabled,i.e. num of iters is greater than 0 */
+    if (recoloring_num_of_iterations > 0) {
+        ierr = Recoloring(zz, recoloring_permutation, recoloring_type,
+                          recoloring_num_of_iterations, nvtx, carrierbufsize, &nConflict,
+                          &confCont, &nTotConflict, &nRound, lastlno, globmaxnvtx,
+                          &nColor, color, visit, xadj, adj, xbadj,
+                          conflicts, rand_key, hash, isbound,
+                          newcolored, mark, gmaxdeg,
+                          coloring_method, comm_pattern, rreqfrom, replies,
+                          sreqs, rreqs, stats,
+                          xrelproc, relproc, persSbuf,
+                          Ssize, plstcnt, plst);
+        if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+            ZOLTAN_COLOR_ERROR(ierr, "Error in Recoloring");
+    }
 
 #if 0
     printf("[%d] vtx(gno)->color: ", zz->Proc);
@@ -1488,6 +1582,7 @@ static int D1ParallelColoring (
     MPI_Datatype gno_mpi_type;
     ZOLTAN_GNO_TYPE *colored=NULL;
 
+    int flag = 0; /* if set to one, will color all the vertices with color 1 */
     gno_mpi_type = Zoltan_mpi_gno_type();
 
     memset(Ssize, 0, sizeof(int) * zz->Num_Proc);
@@ -1503,19 +1598,30 @@ static int D1ParallelColoring (
 	++rreqcnt;
     }
 
+    /* at first iteration of recoloring nColor is set to -1 to enable flag so that color 1 is manually assigned */
+    if (*nColor < 0) {
+        flag = 1;
+        *nColor = 0;
+    }
     /* Coloring */
     for (i=0; i<nvtx; ++i) {
-	int u = visit[i];
+        int u = visit[i];
         ZOLTAN_GNO_TYPE gu;
-	for (j=xadj[u]; j<xadj[u+1]; ++j) {
-	    int gv = adj[j], c;
-	    if ((c = color[gv]) != 0) {
-		while (*nColor < c) /* if nColor < c, set nColor to c and reset intermediate mark entries. May be done better. */
-		    mark[++(*nColor)] = -1;
-		mark[c] = u;
-	    }
-	}
-	color[u] = PickColor(zz, coloring_method, u, color[u], nColor, mark);
+        if (!flag) {
+            for (j=xadj[u]; j<xadj[u+1]; ++j) {
+                int gv = adj[j], c;
+                if ((c = color[gv]) != 0) {
+                    while (*nColor < c) /* if nColor < c, set nColor to c and reset intermediate mark entries. May be done better. */
+                        mark[++(*nColor)] = -1;
+                    mark[c] = u;
+                }
+            }
+            color[u] = PickColor(zz, coloring_method, u, color[u], nColor, mark);
+        }
+        else { /* at first iteration of recoloring, all vertices in that color class is colored with 1, in order not to lose time */
+            color[u] = 1;
+            *nColor = 1;
+        }
 
 	if (!isbound[u]) /* send only boundary vertices */
 	    continue;
@@ -2185,4 +2291,232 @@ static int D2DetectConflicts(ZZ *zz, char coloring_problem, G2LHash *hash, int n
  End:
 
     return ierr;
+}
+
+/* sorting functions for NONDECREASING and NONINCREASING permutations */
+static int pairofintsup_ind_nd(const void* a, const void* b)
+{
+  const struct foo{int x,y;} *pa = a, *pb = b;
+  return pa->y - pb->y;
+}
+
+static int pairofintsup_ind_ni(const void* a, const void* b)
+{
+  const struct foo{int x,y;} *pa = a, *pb = b;
+  return pb->y - pa->y;
+}
+
+static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type, 
+		      int recoloring_num_of_iterations, int nvtx, int carrierbufsize, int *nConflict,
+		      int *confCont, int *nTotConflict, int *nRound, int lastlno, int globmaxnvtx,
+		      int *nColor, int *color, int *visit,int *xadj, int *adj, int *xbadj,
+		      int *conflicts, int *rand_key, G2LHash *hash, int *isbound,
+		      ZOLTAN_GNO_TYPE **newcolored, int *mark, int gmaxdeg,
+		      char coloring_method, char comm_pattern, int *rreqfrom, int *replies,
+		      MPI_Request *sreqs, MPI_Request *rreqs, MPI_Status *stats, 
+		      int *xrelproc, int *relproc, ZOLTAN_GNO_TYPE **persSbuf,
+		      int *Ssize, int plstcnt, int *plst)
+{
+  int i, j, isSequential;
+  int ierr = ZOLTAN_OK;
+  static char *yo = "Recoloring";
+  int globnumofcolor = 0;
+  int numofcolor = 0; 
+  int marksize, nStart, nEnd, length, color_of_i;
+  int *howmanynodeinthatcolor = NULL; /* number of vertices in the color classes of a proc*/
+  int *howmanynodeinthatcolorglobal = NULL; /* number of vertices in the color classes of all procs */
+  int *sorted_color = NULL; /* sorted colors wrt to number of vertices at them */
+  int *permutation = NULL; /* permutation of colors to be used in recoloring permuatations */
+  int *dummy = NULL; 
+  int *prefixcount = NULL; /* count of vertices at each color classes in the specif ird recoloring permutation order  */
+  int *colorindex = NULL; /* starting indexes of color classes */
+  int *tp = NULL;
+  int *dummyvisit = NULL;
+  
+  if (zz->Num_Proc == 1)
+      isSequential = 1;
+  else
+      isSequential = 0;
+  
+  for (j=0; j<recoloring_num_of_iterations; j++) {
+      /* number of colors iin a proc is calculated */
+      for (i=0; i<nvtx; i++) {
+          if (color[i] > numofcolor)
+	      numofcolor = color[i];
+      }
+      /* total number of colors in all procs is calculated */
+      if (isSequential)
+          globnumofcolor = numofcolor;
+      else
+          MPI_Allreduce(&numofcolor, &globnumofcolor, 1, MPI_INT, MPI_MAX, zz->Communicator);
+      
+      howmanynodeinthatcolorglobal = (int *)ZOLTAN_MALLOC(sizeof(int) * (globnumofcolor + 1));
+      memset(howmanynodeinthatcolorglobal, 0, sizeof(int) * (globnumofcolor + 1));
+      
+      /* number of vertices at each color classes in a proc is calculated */
+      if (isSequential) {
+          for (i=0; i<nvtx; i++)
+	      howmanynodeinthatcolorglobal[color[i]]++;
+      }
+      else {
+          howmanynodeinthatcolor = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
+          memset(howmanynodeinthatcolor, 0, sizeof(int) * (globnumofcolor+1));
+          for (i=0; i<nvtx; i++)
+              howmanynodeinthatcolor[color[i]]++;
+      }
+      
+      /* color classes are sorted wrt specif ied recoloring permuatation */
+      if ((recoloring_permutation == NONDECREASING) || (recoloring_permutation == NONINCREASING)) {
+          /* number of vertices at each color classes in all procs is calculated */
+          if (!isSequential)
+              MPI_Allreduce(howmanynodeinthatcolor, howmanynodeinthatcolorglobal, globnumofcolor+1, MPI_INT, MPI_SUM, zz->Communicator);
+          
+          sorted_color = (int *)ZOLTAN_MALLOC(sizeof(int) * 2 * (globnumofcolor));
+          permutation = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
+          
+          /* colors are sorted based on their counts */
+          for (i=0; i < 2*globnumofcolor; i+=2) {
+              sorted_color[i] = i/2+1;
+              sorted_color[i+1] = howmanynodeinthatcolorglobal[i/2+1];
+          }
+          
+          if (recoloring_permutation == NONDECREASING)
+              qsort (sorted_color, globnumofcolor, 2 * sizeof(int), pairofintsup_ind_nd);
+          else
+              qsort (sorted_color, globnumofcolor, 2 * sizeof(int), pairofintsup_ind_ni);
+      
+          for (i=0; i<2*globnumofcolor; i+=2)
+	      permutation[sorted_color[i]] = i/2+1;
+      
+          dummy = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
+          memset(dummy, 0, sizeof(int) * (globnumofcolor+1));
+          /* color ids are changed acc to new permutation calculated */
+          for (i=0; i<lastlno; i++)
+	      color[i] = permutation[color[i]];
+          if (isSequential) {
+	      for (i=1; i<globnumofcolor+1; i++)
+	          dummy[permutation[i]] = howmanynodeinthatcolorglobal[i];
+	      for (i=1; i<globnumofcolor+1; i++)
+                  howmanynodeinthatcolorglobal[i] = dummy[i];
+          }
+          else {
+              for (i=1; i<globnumofcolor+1; i++)
+                  dummy[permutation[i]] = howmanynodeinthatcolor[i];
+              memset(howmanynodeinthatcolor, 0, sizeof(int) * (globnumofcolor+1));
+              for (i=1; i<globnumofcolor+1; i++)
+                  howmanynodeinthatcolor[i] = dummy[i];
+          }  
+      }   
+    
+      /* color indexes are stored to keep track of each color classes */
+      prefixcount = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
+      colorindex = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
+      memset(prefixcount, 0, sizeof(int) * (globnumofcolor+1));
+      memset(colorindex, 0, sizeof(int) * (globnumofcolor+1));
+      colorindex[0] = prefixcount[0]=0;
+      for (i=1; i<globnumofcolor+1; ++i) {
+          if (isSequential)
+              colorindex[i] = prefixcount[i]=prefixcount[i-1]+howmanynodeinthatcolorglobal[i];
+          else
+              colorindex[i] = prefixcount[i]=prefixcount[i-1]+howmanynodeinthatcolor[i];
+      }
+      for (i=0; i<nvtx; ++i) {
+          color_of_i = color[i];
+          prefixcount[color_of_i]--;
+          visit[prefixcount[color_of_i]] = i;
+      }                   
+      memset(color, 0, sizeof(int) * lastlno);
+    
+      if (!isSequential) {
+          tp = visit;
+          /* for  synchronous coloring, recoloring is done for  each color classes separately,i.e. relevant neigs wait each other while  coloring same colored vertices*/
+          if (recoloring_type == SYNCHRONOUS) {
+              carrierbufsize = globmaxnvtx;
+              marksize = *nColor;
+              *nColor = -1;
+              for (i=1; i<globnumofcolor+1; i++) {
+                  nStart, nEnd;
+                  if (recoloring_permutation == REVERSE) {
+                      nStart = colorindex[globnumofcolor-i];
+                      nEnd = colorindex[globnumofcolor-i+1];
+                  }
+                  else {
+                      nStart = colorindex[i-1];
+                      nEnd = colorindex[i];
+                  }	  
+                  length = nEnd-nStart;
+                  memset(mark, 0xff, (1+*nColor) * sizeof(int));
+                  ierr = D1ParallelColoring(zz, length, visit+nStart, xadj, adj, isbound, carrierbufsize,
+                                            nColor, color, newcolored, mark, gmaxdeg, hash,
+                                            coloring_method, comm_pattern, rreqfrom, replies,
+                                            sreqs, rreqs, stats, xrelproc, relproc, persSbuf,
+                                            Ssize, plstcnt, plst);
+                  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+                      ZOLTAN_COLOR_ERROR(ierr, "Error in D1ParallelColoring");
+              }
+          }
+          /* for  asynchronous coloring, a new visiting order is obtained based on previous coloring and recoloring is done just like previous coloring */
+          else if (recoloring_type == ASYNCHRONOUS) {
+              if (recoloring_permutation == REVERSE) {
+                  dummyvisit = (int *)ZOLTAN_MALLOC(nvtx * sizeof(int));
+                  for (i=0; i<nvtx; i++)
+                      dummyvisit[nvtx-i-1] = visit[i];
+                  for (i=0; i<nvtx; i++)
+                      visit[i] = dummyvisit[i];
+              }
+              
+              *nConflict = nvtx;
+              *confCont = 1; /* dummy to put asynch into while  loop */
+              while (*confCont) {
+                  tp = visit;
+                  memset(mark, 0xff, (1+*nColor) * sizeof(int)); /* reset dirty entries */
+                  ierr = D1ParallelColoring(zz, *nConflict, visit, xadj, adj, isbound, carrierbufsize,
+                                            nColor, color, newcolored, mark, gmaxdeg, hash,
+                                            coloring_method, comm_pattern, rreqfrom, replies,
+                                            sreqs, rreqs, stats, xrelproc, relproc, persSbuf,
+                                            Ssize, plstcnt, plst);
+                  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+                      ZOLTAN_COLOR_ERROR(ierr, "Error in D1ParallelColoring");
+                  
+                  *nConflict = D1DetectConflicts(zz, *nConflict, visit, xadj, xbadj, adj, color, conflicts, rand_key, hash);
+                  visit = conflicts;
+                  conflicts = tp;
+                  *confCont = 0;
+                  MPI_Allreduce(nConflict, confCont, 1, MPI_INT, MPI_SUM, zz->Communicator);
+                  *nTotConflict += *confCont;
+                  ++(*nRound);
+              }
+          }
+      }
+      else {
+	  *nColor = 0;
+          if (recoloring_permutation == REVERSE) {
+              dummyvisit = (int *)ZOLTAN_MALLOC(nvtx*sizeof(int));asdf
+              for (i=0; i<nvtx; i++)
+                  dummyvisit[nvtx-i-1] = visit[i];
+              for (i=0; i<nvtx; i++)
+                  visit[i] = dummyvisit[i];
+          }  
+          InternalColoring(zz, '1', nColor, nvtx, visit, xadj, adj, color, mark, gmaxdeg, coloring_method);
+      }
+  }
+  
+  ierr = ZOLTAN_OK;
+  
+End:
+  
+  ZOLTAN_FREE(&howmanynodeinthatcolorglobal);
+  ZOLTAN_FREE(&sorted_color);
+  if (permutation)
+      ZOLTAN_FREE(&permutation);
+  if (dummy)
+      ZOLTAN_FREE(&dummy);
+  if (!isSequential)
+      ZOLTAN_FREE(&howmanynodeinthatcolor);
+  ZOLTAN_FREE(&prefixcount);
+  ZOLTAN_FREE(&colorindex);
+  if (dummyvisit)
+      ZOLTAN_FREE(&dummyvisit);
+  
+  return ierr;
 }
