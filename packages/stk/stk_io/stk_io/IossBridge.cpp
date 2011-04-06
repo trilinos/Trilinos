@@ -515,12 +515,10 @@ namespace stk {
 
     void initialize_spatial_dimension(stk::mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names)
     {
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
-
-      meta.set_entity_rank_names(entity_rank_names);
-      fem.set_spatial_dimension(spatial_dimension);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
+      if (!fem_meta.is_FEM_initialized() ) {
+        fem_meta.FEM_initialize(spatial_dimension, entity_rank_names);
+      }
     }
 
     void get_io_field_type(const stk::mesh::FieldBase *field, int num_comp, std::pair<std::string, Ioss::Field::BasicType> *result)
@@ -859,7 +857,7 @@ namespace stk {
 	    throw std::runtime_error( msg.str() );
 	  }
 	}
-	    
+
 	const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
 	/// \todo IMPLEMENT Determine whether application can work
 	/// with this topology type... Perhaps map_topology_ioss_to_cell only
@@ -932,7 +930,7 @@ namespace stk {
       bool use_cartesian_for_scalar = false;
       if (role == Ioss::Field::ATTRIBUTE)
 	use_cartesian_for_scalar = true;
-      
+
       Ioss::NameList names;
       entity->field_describe(role, &names);
 
@@ -944,7 +942,7 @@ namespace stk {
 	/// Skip the attribute field that is named "attribute"
 	if (*I == "attribute" && names.size() > 1)
 	  continue;
-	
+
 	/// \todo IMPLEMENT Need to determine whether these are
 	/// multi-state fields or constant, or interpolated, or ...
 	Ioss::Field io_field = entity->get_field(*I);
@@ -1138,7 +1136,7 @@ namespace stk {
 	  meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
 	assert(coord_field != NULL);
 	const mesh::FieldBase::Restriction &res = coord_field->restriction(node_rank(meta), part);
-	
+
 	/** \todo REFACTOR  Need a clear way to query dimensions
 	 *                  from the field restriction.
 	 */
@@ -1168,7 +1166,7 @@ namespace stk {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
         const stk::mesh::EntityRank elem_rank = element_rank(meta);
 
-        const CellTopologyData * const cell_top = 
+        const CellTopologyData * const cell_top =
         stk::io::get_cell_topology(part) ?
         stk::io::get_cell_topology(part) :
         stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
@@ -1452,7 +1450,7 @@ namespace stk {
 	std::vector<mesh::Entity *> elements;
 	size_t num_elems = get_entities(*part, bulk, elements);
 
-	const CellTopologyData * cell_topo = 
+	const CellTopologyData * cell_topo =
               stk::io::get_cell_topology(*part) ?
               stk::io::get_cell_topology(*part) :
               stk::mesh::fem::FEMMetaData::get(*part).get_cell_topology(*part).getCellTopologyData();

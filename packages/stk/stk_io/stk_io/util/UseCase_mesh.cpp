@@ -407,7 +407,7 @@ void create_output_mesh(const std::string &mesh_filename,
                         const std::string &working_directory,
                         stk::ParallelMachine comm,
                         stk::mesh::BulkData &bulk_data,
-                        stk::mesh::MetaData &meta_data,
+                        stk::mesh::fem::FEMMetaData &meta_data,
                         MeshData &mesh_data,
                         bool add_transient,
                         bool add_all_fields)
