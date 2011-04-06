@@ -1456,17 +1456,53 @@ namespace Tpetra {
       /// it only writes to the output stream on Rank 0.
       static void
       writeSparse (std::ostream& out,
-		   Teuchos::RCP<const sparse_matrix_type>& pMatrix)
+		   const Teuchos::RCP<const sparse_matrix_type>& pMatrix)
       {
 	using Teuchos::Comm;
 	using Teuchos::RCP;
 	using std::endl;
 	typedef typename Teuchos::ScalarTraits<scalar_type> STS;
+	typedef typename STS::magnitudeType magnitude_type;
+	typedef typename Teuchos::ScalarTraits<magnitude_type> STM;
 	typedef typename ArrayView<scalar_type>::size_type size_type;
 
 	RCP<const Comm<int> > pComm = pMatrix->getComm();
 	const int numProcs = Teuchos::size (*pComm);
 	const int myRank = Teuchos::rank (*pComm);
+
+	//
+	// Set up the output stream.
+	//
+	// Print floating-point values in scientific notation.
+	out << std::scientific;
+
+	// We're writing decimal digits, so compute the number of
+	// digits we need to get reasonable accuracy when reading
+	// values back in.
+	//
+	// There is actually an algorithm, due to Guy Steele (yes,
+	// _that_ Guy Steele) et al., for idempotent printing of
+	// finite-length floating-point values.  We should actually
+	// implement that algorithm, but I don't have time for that
+	// now.  Currently, I just print no more than (one decimal
+	// digit more than (the number of decimal digits justified by
+	// the precision of magnitude_type)).
+	{
+	  // FIXME (mfh 06 Apr 2011) This will only work if log10 is
+	  // defined for magnitude_type inputs.  Teuchos::ScalarTraits
+	  // does not currently have an log10() class method.
+	  const magnitude_type numDecDigits = 
+	    STM::t() * std::log10 (STM::base());
+
+	  // Round and add one. Hopefully this doesn't overflow...
+	  const magnitude_type one = STM::one();
+	  const magnitude_type two = one + one;
+	  const int prec = 1 + static_cast<int> ((two*numDecDigits + one) / two);
+
+	  // Set the number of (decimal) digits after the decimal
+	  // point to print.
+	  out.precision (prec);
+	}	
 
 	// Number of errors encountered while printing out the matrix.
 	int numPrintErrors = 0;
@@ -1551,10 +1587,33 @@ namespace Tpetra {
 		      numPrintErrors++;
 		    else
 		      {
+			// This will convert the current row index to
+			// the one-based indices that Matrix Market
+			// files want.  Ditto for the column index
+			// code within the for loop.
+			const global_ordinal_type indexBase = 
+			  pMatrix->getIndexBase();
+			const global_ordinal_type curRowIdx = 
+			  curRow +
+			  static_cast<global_ordinal_type>(1) - 
+			  indexBase;
+			// Loop over all entries in the current row,
+			// printing each entry on a separate line.
 			for (size_t j = 0; j < numEntries; ++j)
-			  out << curRow << " " 
-			      << indicesView[j] << " "
-			      << valuesView[j] << endl;
+			  {
+			    const global_ordinal_type curColIdx = 
+			      indicesView[j] + 
+			      static_cast<global_ordinal_type>(1) - 
+			      indexBase;
+			    out << curRowIdx << " " 
+				<< curColIdx << " ";
+			    if (STS::isComplex)
+			      out << STS::real(valuesView[j]) << " " 
+				  << STS::imag(valuesView[j]);
+			    else
+			      out << valuesView[j];
+			    out << endl;
+			  }
 		      }
 		  }
 		Teuchos::barrier (*pComm);
