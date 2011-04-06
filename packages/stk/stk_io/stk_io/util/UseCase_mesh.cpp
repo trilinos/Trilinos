@@ -333,7 +333,7 @@ void create_input_mesh(const std::string &mesh_type,
     // NOTE: 'in_region' owns 'dbi' pointer at this time...
     in_region = new Ioss::Region(dbi, "input_model");
     size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
-    initialize_spatial_dimension(meta_data, spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
+    fem_meta.FEM_initialize(spatial_dimension);
 
     // Filter out all non-hex8 element blocks...
     if (hex_only) {
@@ -407,7 +407,7 @@ void create_output_mesh(const std::string &mesh_filename,
                         const std::string &working_directory,
                         stk::ParallelMachine comm,
                         stk::mesh::BulkData &bulk_data,
-                        stk::mesh::MetaData &meta_data,
+                        stk::mesh::fem::FEMMetaData &meta_data,
                         MeshData &mesh_data,
                         bool add_transient,
                         bool add_all_fields)
