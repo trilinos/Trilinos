@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -19,7 +19,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
 
@@ -43,8 +42,8 @@ namespace stk {
       {
 	const stk::mesh::Part & universe = S.get_meta_data(S).universal_part();
 
-	stk::mesh::put_field( gear_coord    , stk::mesh::fem::NODE_RANK , universe , SpatialDimension );
-	stk::mesh::put_field( model_coord   , stk::mesh::fem::NODE_RANK , universe , SpatialDimension );
+	stk::mesh::put_field( gear_coord    , stk::mesh::fem::FEMMetaData::NODE_RANK , universe , SpatialDimension );
+	stk::mesh::put_field( model_coord   , stk::mesh::fem::FEMMetaData::NODE_RANK , universe , SpatialDimension );
       }
 
       //----------------------------------------------------------------------
@@ -143,7 +142,7 @@ namespace stk {
 	stk::mesh::EntityId id_gear = identifier( m_z_num, m_rad_num, iz, ir, ia );
 	stk::mesh::EntityId id = node_id_base + id_gear ;
 
-	stk::mesh::Entity & node = m_mesh->declare_entity( stk::mesh::fem::NODE_RANK, id , parts );
+	stk::mesh::Entity & node = m_mesh->declare_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, id , parts );
 
 	double * const gear_data    = field_data( m_gear_coord , node );
 	double * const model_data   = field_data( m_model_coord , node );
@@ -188,7 +187,7 @@ namespace stk {
 	// max_id is no longer available from comm_mesh_stats.
 	// If we assume uniform numbering from 1.., then max_id
 	// should be equal to counts...
-	const stk::mesh::EntityId node_id_base = counts[ stk::mesh::fem::NODE_RANK ] + 1 ;
+	const stk::mesh::EntityId node_id_base = counts[ stk::mesh::fem::FEMMetaData::NODE_RANK ] + 1 ;
 	const stk::mesh::EntityId elem_id_base = counts[ element_rank ] + 1 ;
 
 	const unsigned long elem_id_gear_max =

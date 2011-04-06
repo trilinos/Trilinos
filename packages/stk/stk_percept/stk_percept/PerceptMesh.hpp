@@ -99,8 +99,8 @@ namespace stk {
 
       // ctor constructor
       /// Create a Mesh object that owns its constituent FEMMetaData and BulkData (which are created by this object)
-      PerceptMesh( stk::ParallelMachine comm =  MPI_COMM_WORLD );
-      PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm =  MPI_COMM_WORLD );
+      //PerceptMesh( stk::ParallelMachine comm =  MPI_COMM_WORLD );
+      PerceptMesh(size_t spatialDimension = 3u, stk::ParallelMachine comm =  MPI_COMM_WORLD );
 
       /// reads and commits mesh, editing disabled
       void

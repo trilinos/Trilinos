@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009, 2010 Sandia Corporation.                        */
+/*    Copyright 2009, 2010, 2011 Sandia Corporation.                        */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -466,7 +466,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", mesh_meta_data.element_rank());
 
     /// set cell topology for the part block_1
-    mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( block_hex );
+    stk::mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( mesh_meta_data, block_hex );
 
     //--------------------------------
     // Declare coordinates field on all nodes with 3D:

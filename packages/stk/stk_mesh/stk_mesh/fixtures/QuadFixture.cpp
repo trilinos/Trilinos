@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -44,7 +44,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
   //put coord-field on all nodes:
   put_field(
       m_coord_field,
-      fem::NODE_RANK,
+      fem::FEMMetaData::NODE_RANK,
       m_fem_meta.universal_part(),
       m_spatial_dimension
       );
@@ -138,7 +138,7 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
 
       stk::mesh::fem::declare_element( m_bulk_data, m_quad_part, elem_id( ix , iy ) , elem_nodes);
       for (unsigned i = 0; i<4; ++i) {
-        stk::mesh::Entity * const node = m_bulk_data.get_entity( fem::NODE_RANK , elem_nodes[i] );
+        stk::mesh::Entity * const node = m_bulk_data.get_entity( fem::FEMMetaData::NODE_RANK , elem_nodes[i] );
 
         ThrowRequireMsg( node != NULL,
           "This process should know about the nodes that make up its element");

@@ -93,7 +93,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
 
       STKUNIT_ASSERT( cell_topology );
 
-      stk::mesh::PairIterRelation rel = face.relations( stk::mesh::fem::NODE_RANK );
+      stk::mesh::PairIterRelation rel = face.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
       STKUNIT_ASSERT_EQUAL( cell_topology->node_count, rel.size() );
 

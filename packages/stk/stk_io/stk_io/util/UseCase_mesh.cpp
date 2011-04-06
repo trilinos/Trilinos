@@ -39,7 +39,7 @@
 #include <limits>
 
 namespace {
-  using stk::mesh::fem::NODE_RANK;
+static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
   void generate_gears(stk::ParallelMachine comm,
 		      const std::string &parameters,

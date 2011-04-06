@@ -42,6 +42,7 @@ namespace stk {
     //========================================================================================================================
     /// high-level interface
 
+#if 0
     PerceptMesh::PerceptMesh( stk::ParallelMachine comm) :
       m_metaData(NULL),
       m_bulkData(NULL),
@@ -60,6 +61,7 @@ namespace stk {
     {
       init( m_comm);
     }
+#endif
 
     PerceptMesh::PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm) :
       m_metaData(NULL),
@@ -1838,8 +1840,8 @@ namespace stk {
         is_side ? elem_top->side[ local_side_id ].node
         : elem_top->edge[ local_side_id ].node ;
 
-      const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::fem::NODE_RANK );
-      //const PairIterRelation side_nodes = side.relations( NODE_RANK );
+      const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+      //const PairIterRelation side_nodes = side.relations( FEMMetaData::NODE_RANK );
 
       //if (side_node_ids.size() !=
       side_node_entities.resize(side_top->node_count);

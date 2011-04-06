@@ -217,6 +217,9 @@ void FEMMetaData::register_cell_topology(const fem::CellTopology cell_topology, 
 
   if (! duplicate) {
     std::string part_name = std::string("{FEM_ROOT_CELL_TOPOLOGY_PART_") + std::string(cell_topology.getName()) + std::string("}");
+
+    ThrowErrorMsgIf(get_part(part_name) != 0, "Cannot register topology with same name as existing part '" << cell_topology.getName() << "'" );
+  
     Part &part = declare_part(part_name, entity_rank);
     m_cellTopologyPartEntityRankMap[cell_topology] = CellTopologyPartEntityRankMap::mapped_type(&part, entity_rank);
 
@@ -224,6 +227,21 @@ void FEMMetaData::register_cell_topology(const fem::CellTopology cell_topology, 
   }
   //check_topo_db();
 }
+
+
+fem::CellTopology
+FEMMetaData::get_cell_topology(
+  const std::string &   topology_name) const 
+{
+  std::string part_name = std::string("{FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name + std::string("}");
+
+  Part *part = get_part(part_name);
+  if (part)
+    return get_cell_topology(*part);
+  else
+    return fem::CellTopology();
+}
+
 
 Part &FEMMetaData::get_cell_topology_root_part(const fem::CellTopology cell_topology) const
 {

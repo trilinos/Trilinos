@@ -54,7 +54,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
   EXCEPTWATCH;
   MPI_Barrier( MPI_COMM_WORLD );
 
-  percept::PerceptMesh eMesh(3);
+  percept::PerceptMesh eMesh(3u);
   eMesh.newMesh(percept::PerceptMesh::GMeshSpec("3x3x12|bbox:0,0,0,1,1,1"));  // create a 3x3x12 hex mesh in the unit cube
   //int scalarDimension = 0; // a scalar
   //int vectorDimension = 3;
@@ -192,7 +192,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_0)
   */
 
   // start_demo_nodeRegistry_test_parallel_0
-  percept::PerceptMesh eMesh(3);
+  percept::PerceptMesh eMesh(3u);
   eMesh.newMesh(percept::PerceptMesh::GMeshSpec("3x3x12|bbox:0,0,0,1,1,1"));  // create a 3x3x12 hex mesh in the unit cube
   eMesh.commit();
   eMesh.printInfo();
@@ -255,7 +255,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1)
 
   // start_demo_nodeRegistry_test_parallel_1
 
-  percept::PerceptMesh eMesh(3);
+  percept::PerceptMesh eMesh(3u);
   eMesh.newMesh(percept::PerceptMesh::GMeshSpec("3x3x12|bbox:0,0,0,1,1,1"));  // create a 3x3x12 hex mesh in the unit cube
   eMesh.commit();
   eMesh.printInfo();
@@ -370,7 +370,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
 
   // start_demo_nodeRegistry_test_parallel_1
 
-  percept::PerceptMesh eMesh(3);
+  percept::PerceptMesh eMesh(3u);
 
   unsigned p_size = eMesh.getParallelSize();
   unsigned p_rank = eMesh.getRank();
@@ -518,7 +518,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
 
   // start_demo_nodeRegistry_test_serial_hex8_tet4_24_1
 
-  percept::PerceptMesh eMesh(3);
+  percept::PerceptMesh eMesh(3u);
 
   unsigned p_size = eMesh.getParallelSize();
   unsigned p_rank = eMesh.getRank();

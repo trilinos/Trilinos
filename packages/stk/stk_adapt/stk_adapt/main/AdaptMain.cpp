@@ -1,6 +1,6 @@
 
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -50,7 +50,7 @@ namespace stk {
       std::cout << "... done creating " << n_elements << " elements" << std::endl;
 
       std::cout << "creating " << n_nodes << " nodes..." <<std::endl;
-      eMesh.createEntities( stk::mesh::fem::NODE_RANK, n_nodes, new_nodes);
+      eMesh.createEntities( stk::mesh::fem::FEMMetaData::NODE_RANK, n_nodes, new_nodes);
       std::cout << "... done creating " << n_nodes << " nodes" << std::endl;
 
       int num_prints = 100;
@@ -360,7 +360,8 @@ namespace stk {
             RunEnvironment::doLoadBalance(run_environment.m_comm, input_mesh);
           }
 
-        percept::PerceptMesh eMesh;  // FIXME
+        percept::PerceptMesh eMesh(0);  // FIXME
+        //percept::PerceptMesh eMesh;  // FIXME
 
         //unsigned p_size = eMesh.getParallelSize();
         
