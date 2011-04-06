@@ -78,7 +78,7 @@
 
 #include "tStridedEpetraOperator.hpp"
 
-#include "Epetra/Teko_StridedEpetraOperator.hpp"
+#include "Teko_StridedEpetraOperator.hpp"
 
 
 namespace Teko {

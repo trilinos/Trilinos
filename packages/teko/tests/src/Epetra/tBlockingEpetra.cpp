@@ -78,7 +78,7 @@
 
 #include "tBlockingEpetra.hpp"
 
-#include "Epetra/Teko_BlockingEpetra.hpp"
+#include "Teko_BlockingEpetra.hpp"
 
 using namespace Teko::Epetra;
 

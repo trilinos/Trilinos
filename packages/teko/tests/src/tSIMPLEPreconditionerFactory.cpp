@@ -46,8 +46,8 @@
 
 #include "Teko_Config.h"
 #include "tSIMPLEPreconditionerFactory.hpp"
-#include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
-#include "NS/Teko_LSCPreconditionerFactory.hpp"
+#include "Teko_SIMPLEPreconditionerFactory.hpp"
+#include "Teko_LSCPreconditionerFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
 
 // Teuchos includes

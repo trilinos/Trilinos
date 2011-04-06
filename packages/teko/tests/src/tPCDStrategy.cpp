@@ -74,7 +74,7 @@
 #include "Test_Utils.hpp"
 
 // Teko includes
-#include "NS/Teko_PCDStrategy.hpp"
+#include "Teko_PCDStrategy.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_StaticRequestCallback.hpp"
 
