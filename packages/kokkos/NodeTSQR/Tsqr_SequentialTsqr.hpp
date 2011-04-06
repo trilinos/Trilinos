@@ -37,6 +37,7 @@
 #include <Tsqr_Combine.hpp>
 #include <Tsqr_Util.hpp>
 
+#include <Teuchos_Describable.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <algorithm>
@@ -162,6 +163,19 @@ namespace TSQR {
       strategy_ (cacheBlockSize) 
     {}
 
+    /// \brief One-line description of this object.
+    ///
+    /// This implements Teuchos::Describable::description().  For now,
+    /// SequentialTsqr uses the default implementation of
+    /// Teuchos::Describable::describe().
+    std::string description () const {
+      std::ostringstream os;
+      os << "Intranode Tall Skinny QR (TSQR): sequential cache-blocked "
+	"implementation with cache block size " << this->cache_block_size() 
+	 << " bytes.";
+      return os.str();
+    }
+
     /// Whether or not the R factor from the QR factorization has a
     /// nonnegative diagonal.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
@@ -169,10 +183,13 @@ namespace TSQR {
       return combine_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
-    /// \return Cache block size in bytes
-    size_t
-    cache_block_size () const { return strategy_.cache_block_size(); }
+    //! Cache block size in bytes.
+    size_t cache_block_size () const { 
+      return strategy_.cache_block_size(); 
+    }
 
+    /// \brief Compute QR factorization (implicitly stored Q factor) of A.
+    ///
     /// Compute the QR factorization in place of the nrows by ncols
     /// matrix A, with nrows >= ncols, stored either in column-major
     /// order (the default) or as contiguous column-major cache
@@ -182,6 +199,20 @@ namespace TSQR {
     /// below the upper triangle of A is overwritten with part of the
     /// implicit representation of the Q factor.  The other part of
     /// that representation is returned.
+    ///
+    /// \param nrows [in] Number of rows in A
+    /// \param ncols [in] Number of columns in A 
+    /// \param A [in/out] On input: nrows by ncols dense matrix to
+    ///   factor.  On output: partial representation of the implicitly
+    ///   stored Q factor.
+    /// \param lda [in] Leading dimension of A, if A is stored in
+    ///   column-major order.  Otherwise not read.
+    /// \param contiguous_cache_blocks [in] Whether the matrix A is
+    ///   stored in a contiguously cache-blocked format.
+    ///
+    /// \return Partial representation of the implicitly stored Q
+    ///   factor.  The complete representation includes A (on output).
+    ///   The FactorOutput and A go together.
     FactorOutput
     factor (const LocalOrdinal nrows,
 	    const LocalOrdinal ncols,
@@ -222,7 +253,7 @@ namespace TSQR {
       return tau_arrays;
     }
 
-    /// Extract R factor from factor() results.
+    //! Extract R factor from factor() results.
     void
     extract_R (const LocalOrdinal nrows,
 	       const LocalOrdinal ncols,
@@ -302,8 +333,7 @@ namespace TSQR {
     }
 
 
-    /// \brief Number of cache blocks that factor() would use.
-    ///
+    //! Number of cache blocks that factor() would use.
     LocalOrdinal
     factor_num_cache_blocks (const LocalOrdinal nrows,
 			     const LocalOrdinal ncols,
@@ -329,7 +359,7 @@ namespace TSQR {
       return count;
     }
 
-
+    //! Apply implicit Q factor stored in Q and factor_output to C.
     void
     apply (const ApplyType& apply_type,
 	   const LocalOrdinal nrows,
@@ -468,6 +498,7 @@ namespace TSQR {
 	}
     }
 
+    //! Compute explicit Q factor from result of factor().
     void
     explicit_Q (const LocalOrdinal nrows,
 		const LocalOrdinal ncols_Q,
@@ -502,7 +533,7 @@ namespace TSQR {
     }
 
 
-    /// \brief Compute Q*B
+    /// \brief Compute Q*B.
     ///
     /// Compute matrix-matrix product Q*B, where Q is nrows by ncols
     /// and B is ncols by ncols.  Respect cache blocks of Q.
@@ -550,6 +581,8 @@ namespace TSQR {
 	}
     }
 
+    /// \brief Reveal rank of the R factor from \c factor().
+    ///
     /// Compute SVD \f$R = U \Sigma V^*\f$, not in place.  Use the
     /// resulting singular values to compute the numerical rank of R,
     /// with respect to the relative tolerance tol.  If R is full
@@ -723,7 +756,7 @@ namespace TSQR {
       return rank;
     }
 
-    /// \brief Rank-revealing decomposition
+    /// \brief Rank-revealing decomposition.
     ///
     /// Using the R factor from factor() and the explicit Q factor
     /// from explicit_Q(), compute the SVD of R (\f$R = U \Sigma
@@ -763,7 +796,16 @@ namespace TSQR {
       return rank;
     }
 
-    /// Cache-block the given A_in matrix, writing the results to A_out.
+    /// \brief Cache block A_in into A_out.
+    ///
+    /// \param nrows [in] Number of rows in A_in and A_out.
+    /// \param ncols [in] Number of columns in A_in and A_out.
+    /// \param A_out [out] Result of cache-blocking A_in.
+    /// \param A_in [in] Matrix to cache block, stored in column-major
+    ///   order with leading dimension lda_in.
+    /// \param lda_in [in] Leading dimension of A_in.  (See the LAPACK
+    ///   documentation for a definition of "leading dimension.")
+    ///   lda_in >= nrows.
     void
     cache_block (const LocalOrdinal nrows,
 		 const LocalOrdinal ncols,
@@ -775,7 +817,22 @@ namespace TSQR {
       blocker.cache_block (nrows, ncols, A_out, A_in, lda_in);
     }
 
-    /// "Un"-cache-block the given A_in matrix, writing the results to A_out.
+    /// \brief Un - cache block A_in into A_out.
+    ///
+    /// A_in is a matrix produced by \c cache_block().  It is
+    /// organized as contiguously stored cache blocks.  This method
+    /// reorganizes A_in into A_out as an ordinary matrix stored in
+    /// column-major order with leading dimension lda_out.
+    ///
+    /// \param nrows [in] Number of rows in A_in and A_out.
+    /// \param ncols [in] Number of columns in A_in and A_out.
+    /// \param A_out [out] Result of un-cache-blocking A_in.
+    ///   Matrix stored in column-major order with leading
+    ///   dimension lda_out.
+    /// \param lda_out [in] Leading dimension of A_out.  (See the
+    ///   LAPACK documentation for a definition of "leading
+    ///   dimension.")  lda_out >= nrows.
+    /// \param A_in [in] Matrix to un-cache-block.
     void
     un_cache_block (const LocalOrdinal nrows,
 		    const LocalOrdinal ncols,
@@ -824,7 +881,7 @@ namespace TSQR {
     /// follows:
     /// \code 
     /// MatrixViewType top = this->top_block (C, contig);
-    /// MatView< LocalOrdinal, Scalar > square (ncols, ncols, top.get(), top.lda());
+    /// MatView<LocalOrdinal, Scalar> square (ncols, ncols, top.get(), top.lda());
     /// \endcode
     template< class MatrixViewType >
     MatrixViewType
@@ -850,6 +907,7 @@ namespace TSQR {
     }
 
   private:
+    //! Strategy object that helps us cache block matrices.
     CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_;
   };
   
