@@ -24,14 +24,14 @@
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Zoltan2_IdentifierTraits.hpp>
-#include <Zoltan2_Hash.hpp>
+#include <Zoltan2_Util.hpp>
 #include <Zoltan2_AlltoAll.hpp>
 
 namespace Z2
 {
 
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
-  IdentifierMap<AppGID,AppLID,GNO,LNO>::IdentifierMap(
+template<typename AppLID, typename AppGID, typename LNO, typename GNO> 
+  IdentifierMap<AppLID,AppGID,LNO,GNO>::IdentifierMap(
     Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
     Teuchos::RCP<std::vector<AppGID> > &gids, 
     Teuchos::RCP<std::vector<AppLID> > &lids) 
@@ -62,8 +62,7 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
           " does not equal number of local IDs");
 
   if (haveLocalIds){
-    lidHash = Teuchos::rcp(new Teuchos::Hashtable<std::string, LNO>
-                (localNumberOfIds));
+    lidHash = Teuchos::rcp(new Teuchos::Hashtable<int, LNO> (localNumberOfIds));
 
     for (LNO i=0; i < localNumberOfIds; i++){
       lidHash->put(Z2::IdentifierTraits<AppLID>::key((*lids)[i]), i);
@@ -130,7 +129,7 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 }
 
   /*! Constructor */
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
+template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   IdentifierMap<AppGID,AppLID,GNO,LNO>::IdentifierMap()  
          : comm(), myGids(), myLids(),
            consecutive(false), base(0), 
@@ -139,20 +138,20 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 }
 
   /*! Destructor */
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
+template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   IdentifierMap<AppGID,AppLID,GNO,LNO>::~IdentifierMap() 
   {
   }
 
   /*! Copy Constructor */
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
+template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   IdentifierMap<AppGID,AppLID,GNO,LNO>::IdentifierMap(const IdentifierMap &id)
 {
     //TODO
 }
 
   /*! Assignment operator */
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
+template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   IdentifierMap<AppGID,AppLID,GNO,LNO> &
     IdentifierMap<AppGID,AppLID,GNO,LNO>::operator=(const IdentifierMap<AppGID,
                   AppLID,GNO,LNO> &id)
@@ -160,7 +159,7 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
     //TODO
 }
 
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
+template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppGID,AppLID,GNO,LNO>::initialize(
     Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
     Teuchos::RCP<std::vector<AppGID> > &gids, 
@@ -170,8 +169,8 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
     this->IdentifierMap(in_comm, gids, lids);
 }
 
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
-  void IdentifierMap<AppGID, AppLID, GNO, LNO>::reset()
+template<typename AppLID, typename AppGID, typename LNO, typename GNO>
+  void IdentifierMap<AppLID, AppGID, LNO, GNO>::reset()
 {
   if (!comm.is_null())
     comm.release();
@@ -194,18 +193,14 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
   haveLocalIds = false;
 }
 
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
-  bool IdentifierMap<AppGID, AppLID, GNO, LNO>::gnosAreGids()
+template<typename AppLID, typename AppGID, typename LNO, typename GNO>
+  bool IdentifierMap<AppLID, AppLID, LNO, GNO>::gnosAreGids()
 {
-#ifdef APPGID_IS_NOT_GNO
-  return false;
-#else
-  return true;
-#endif
+  return isGlobalOrdinalType<AppGID>;
 }
 
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
-  void IdentifierMap<AppGID, AppLID, GNO, LNO>::gidTranslate(
+template<typename AppLID, typename AppGID, typename LNO, typename GNO>
+  void IdentifierMap<AppLID, AppGID, LNO, GNO>::gidTranslate(
     std::vector<AppGID> &gid,          // input or output, take your pick
     std::vector<GNO> &gno)             // output or input
 {
@@ -247,8 +242,8 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 #endif
 }
 
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
-  void IdentifierMap<AppGID, AppLID, GNO, LNO>::lidTranslate(
+template<typename AppLID, typename AppGID, typename LNO, typename GNO>
+  void IdentifierMap<AppLID, AppGID, LNO, GNO>::lidTranslate(
     std::vector<AppLID> &lid,          // input or output, take your pick
     std::vector<GNO> &gno)             // output or input
 {
@@ -301,8 +296,8 @@ template<typename AppGID, typename AppLID, typename GNO, typename LNO>
 #endif
 }
 
-template<typename AppGID, typename AppLID, typename GNO, typename LNO>
-  void IdentifierMap<AppGID, AppLID, GNO, LNO>::gidGlobalTranslate(
+template<typename AppLID, typename AppGID, typename LNO, typename GNO>
+  void IdentifierMap<AppLID, AppGID, LNO, GNO>::gidGlobalTranslate(
     std::vector<AppGID> &gid,    /* input, gids may be repeated in list  */
     std::vector<GNO> &gno,       /* output */ 
     std::vector<int> &proc)      /* output */

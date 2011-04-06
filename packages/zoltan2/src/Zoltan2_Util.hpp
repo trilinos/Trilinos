@@ -6,24 +6,23 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _ZOLTAN2_HASH_HPP_
-#define _ZOLTAN2_HASH_HPP_
+#ifndef _ZOLTAN2_UTIL_HPP_
+#define _ZOLTAN2_UTIL_HPP_
 
-/*! \file Zoltan2_Hash.hpp
+/*! \file Zoltan2_Util.hpp
 */
 
-#include <Teuchos_HashUtils.hpp>
+#include <Zoltan2_IdentifierTraits.hpp>
 
 namespace Z2
 {
 
 template <typename T1, typename T2>
-T2 Hash(T1 &key, T2 n)
+inline T2 Hash(T1 &key, T2 n)
 {
-  int ikey = Teuchos::hashCode(key);
-
-  return T2(ikey % n);
+  return T2(IdentifierTraits<T1>(key) % n);
 }
+
 
 }                   // namespace Z2
 

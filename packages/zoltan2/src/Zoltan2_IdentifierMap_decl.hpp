@@ -66,25 +66,33 @@ namespace Z2
            use Kokkos node 
 */
 
-template<typename AppGID, typename AppLID, 
-         typename GNO=AppGID, typename LNO=int>
-  class IdentifierMap{
+template<typename AppLID, typename AppGID, typename LNO=int, 
+  typename GNO=AppGID> 
+    class IdentifierMap{
 
 private:
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm;        // Get this from InputAdapter
+  // Input communicator
 
-  Teuchos::RCP<std::vector<AppGID> > myGids;  // This proc's global IDs from InputAdapter
-  Teuchos::RCP<std::vector<AppLID> > myLids;  // This proc's local IDs from InputAdapter
+  Teuchos::RCP<const Teuchos::Comm<int> > comm;
 
-#ifdef APPGID_IS_NOT_GNO
+  // Application global and local IDs
+
+  Teuchos::RCP<std::vector<AppGID> > myGids; 
+  Teuchos::RCP<std::vector<AppLID> > myLids;
+
+  // In the case of consecutive ordinal application global IDs,
+  // gnoDist[p] is the first global number on process p.
+
   Teuchos::ArrayRCP<GNO> gnoDist;
-  Teuchos::RCP<Teuchos::Hashtable<std::string, LNO> >  gidHash;
-#else
-  Teuchos::RCP<Teuchos::Hashtable<AppGID, LNO> >  gidHash;
-#endif
 
-  Teuchos::RCP<Teuchos::Hashtable<std::string, LNO> >  lidHash;
+  // A hash table from application global ID key to our local index.
+
+  Teuchos::RCP<Teuchos::Hashtable<int, LNO> >  gidHash;
+
+  // A hash table from application local ID key to our local index.
+
+  Teuchos::RCP<Teuchos::Hashtable<int, LNO> >  lidHash;
 
   bool consecutive;
   GNO base;
