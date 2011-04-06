@@ -43,7 +43,7 @@ namespace stk {
       vector<stk::mesh::Entity *> new_elements;
       vector<stk::mesh::Entity *> new_nodes;
       
-      eMesh.get_bulkData()->modification_begin();
+      eMesh.getBulkData()->modification_begin();
 
       std::cout << "creating " << n_elements << " elements..." <<std::endl;
       eMesh.createEntities( eMesh.element_rank(), n_elements, new_elements);
@@ -70,7 +70,7 @@ namespace stk {
             {
               stk::mesh::Entity& node = *new_nodes[i_node];
 
-              eMesh.get_bulkData()->declare_relation(element, node, j_node);
+              eMesh.getBulkData()->declare_relation(element, node, j_node);
               
               i_node++;
               if (i_node >= n_nodes-1)
@@ -79,7 +79,7 @@ namespace stk {
         }
 
       std::cout << " doing modification_end ... " << std::endl;
-      eMesh.get_bulkData()->modification_end();
+      eMesh.getBulkData()->modification_end();
       std::cout << " done modification_end ... " << std::endl;
       
 

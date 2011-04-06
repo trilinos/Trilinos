@@ -173,8 +173,8 @@ namespace stk {
       void dump(const std::string& file="");
       void dumpElements(const std::string& partName = "");
 
-      unsigned getRank() { return get_bulkData()->parallel_rank(); }
-      unsigned getParallelSize() { return get_bulkData()->parallel_size(); }
+      unsigned getRank() { return getBulkData()->parallel_rank(); }
+      unsigned getParallelSize() { return getBulkData()->parallel_size(); }
       bool isGhostElement(const stk::mesh::Entity& element)
       {
         //throw std::runtime_error("not impl"); // FIXME
@@ -242,7 +242,7 @@ namespace stk {
 
       double * node_field_data(stk::mesh::FieldBase *field, const mesh::EntityId node_id);
 
-      stk::mesh::BulkData * get_bulkData();
+      stk::mesh::BulkData * getBulkData();
       stk::mesh::fem::FEMMetaData * getFEM_meta_data();
 
       static BasisTypeRCP getBasis(shards::CellTopology& topo);

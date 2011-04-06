@@ -1,6 +1,6 @@
 #include "GeometryFactory.hpp"
-#include "PerceptMesh.hpp"
-#include "Util.hpp"
+#include <stk_percept/PerceptMesh.hpp>
+#include <stk_percept/Util.hpp>
 
 using namespace stk;
 using namespace mesh;

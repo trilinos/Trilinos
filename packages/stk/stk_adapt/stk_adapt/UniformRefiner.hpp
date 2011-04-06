@@ -173,9 +173,9 @@ namespace stk {
       bool m_doRemove;
 
       std::vector<stk::mesh::EntityRank> m_ranks;
-      bool m_geomSnap;
-      std::string m_geomFile;
       bool m_ignoreSideSets;
+      std::string m_geomFile;
+      bool m_geomSnap;
     };
 
   }

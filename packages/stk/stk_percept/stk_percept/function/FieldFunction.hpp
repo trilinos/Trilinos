@@ -106,7 +106,7 @@ namespace stk
       void helper(MDArray& input_phy_points, MDArray& output_field_values,
                   const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional);
 
-      mesh::BulkData *get_bulkData();
+      mesh::BulkData *getBulkData();
 
       //void setBulkData(mesh::BulkData *bulk) { m_bulkData = bulk; }
       bool getFoundOnLocalOwnedPart() { return m_found_on_local_owned_part; }

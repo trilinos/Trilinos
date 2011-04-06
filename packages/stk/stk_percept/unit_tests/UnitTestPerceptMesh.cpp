@@ -80,7 +80,7 @@ namespace stk
             std::string surface_name = "surface_"+toString(surface_id);
             stk::mesh::Part *part = eMesh.getNonConstPart(surface_name);
             stk::mesh::Selector in_surface_selector(*part);
-            stk::mesh::BulkData& bulkData = *eMesh.get_bulkData();
+            stk::mesh::BulkData& bulkData = *eMesh.getBulkData();
             VectorFieldType* coordField = eMesh.getCoordinatesField();
 
             const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( (eMesh.getSpatialDim() == 2 ? eMesh.edge_rank() : eMesh.face_rank() ) );  // Note

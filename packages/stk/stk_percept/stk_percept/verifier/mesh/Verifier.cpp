@@ -80,14 +80,14 @@ namespace stk
       std::cout << "read in file: " << file_name << std::endl;
 
       TopologyVerifier topoVerifier;
-      bool isBad= topoVerifier.isTopologyBad( *mesh.get_bulkData() );
+      bool isBad= topoVerifier.isTopologyBad( *mesh.getBulkData() );
       if (isBad)
         {
           std::cout << "found bad topology" << std::endl;
         }
 
       GeometryVerifier geomVerifier(fullJacobianPrints);
-      isBad= geomVerifier.isGeometryBad( *mesh.get_bulkData(), printTable );
+      isBad= geomVerifier.isGeometryBad( *mesh.getBulkData(), printTable );
       if (isBad)
         {
           std::cout << "found bad jacobian" << std::endl;

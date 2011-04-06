@@ -8,9 +8,9 @@
 #endif
 
 #include <stk_adapt/UniformRefiner.hpp>
-#include "GeometryKernelStupid.hpp"
-#include "MeshGeometry.hpp"
-#include "GeometryFactory.hpp"
+#include <stk_adapt/geometry/GeometryKernelStupid.hpp>
+#include <stk_adapt/geometry/MeshGeometry.hpp>
+#include <stk_adapt/geometry/GeometryFactory.hpp>
 
 // FIXME
 // #include <stk_mesh/baseImpl/EntityImpl.hpp>
@@ -25,9 +25,9 @@ namespace stk {
 
     UniformRefiner::UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
       m_eMesh(eMesh), m_breakPattern(), 
-      m_geomFile(""), m_geomSnap(false),
       m_nodeRegistry(0), 
-      m_proc_rank_field(proc_rank_field), m_doRemove(true), m_ranks(), m_ignoreSideSets(false)
+      m_proc_rank_field(proc_rank_field), m_doRemove(true), m_ranks(), m_ignoreSideSets(false),
+      m_geomFile(""), m_geomSnap(false)
     {
       bp.setSubPatterns(m_breakPattern, eMesh);
     }
@@ -362,8 +362,8 @@ namespace stk {
     setRemoveOldElements(bool do_remove) { m_doRemove = do_remove; }
 
     void UniformRefiner::
-            setGeometryFile(std::string file_name) { m_geomFile = file_name;
-                                                     m_geomSnap = true; }
+    setGeometryFile(std::string file_name) { m_geomFile = file_name;
+      m_geomSnap = true; }
 
     bool UniformRefiner::
     getRemoveOldElements() { return m_doRemove; }
@@ -384,7 +384,7 @@ namespace stk {
     addOldElementsToPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType)
     {
       EXCEPTWATCH;
-      //m_eMesh.get_bulkData()->modification_begin();
+      //m_eMesh.getBulkData()->modification_begin();
       std::string oldPartName = breakPattern->getOldElementsPartName()+toString(rank);
       mesh::Part *oldPart = m_eMesh.getFEM_meta_data()->get_part(oldPartName);
       if (!oldPart)
@@ -401,7 +401,7 @@ namespace stk {
       mesh::Selector fromPartsSelector = mesh::selectUnion( breakPattern->getFromParts() );
 
       std::vector<stk::mesh::Entity*> elems;
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulkData()->buckets( rank );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
 
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
@@ -441,10 +441,10 @@ namespace stk {
       for (unsigned ielem=0; ielem < elems.size(); ielem++)
         {
           //std::cout << "tmp element = " << *elems[ielem] << std::endl;
-          m_eMesh.get_bulkData()->change_entity_parts( *elems[ielem], add_parts, remove_parts );
+          m_eMesh.getBulkData()->change_entity_parts( *elems[ielem], add_parts, remove_parts );
         }
 
-      //m_eMesh.get_bulkData()->modification_end();
+      //m_eMesh.getBulkData()->modification_end();
     }
 
     void UniformRefiner::
@@ -502,7 +502,7 @@ namespace stk {
     void UniformRefiner::
     checkBreakPatternValidityAndBuildRanks(std::vector<stk::mesh::EntityRank>& ranks)
     {
-      m_eMesh.get_bulkData()->modification_begin();
+      m_eMesh.getBulkData()->modification_begin();
       for (unsigned ibp = 0; ibp < m_breakPattern.size(); ibp++)
         {
           if (m_breakPattern[ibp])
@@ -527,7 +527,7 @@ namespace stk {
               throw std::logic_error("m_breakPattern is null");
             }
         }
-      m_eMesh.get_bulkData()->modification_end();
+      m_eMesh.getBulkData()->modification_end();
 
     }
 
@@ -545,7 +545,7 @@ namespace stk {
 
       CommDataType buffer_entry;
 
-      stk::mesh::BulkData& bulkData = *m_eMesh.get_bulkData();
+      stk::mesh::BulkData& bulkData = *m_eMesh.getBulkData();
       static SubDimCellData empty_SubDimCellData;
 
       // color elements
@@ -1250,7 +1250,7 @@ namespace stk {
                                       << " child= " << *child
                                       << " parent_side_child= " << *parent_side_child
                                       <<  std::endl;
-                          m_eMesh.get_bulkData()->declare_relation(*child, *parent_side_child, k_child_side);
+                          m_eMesh.getBulkData()->declare_relation(*child, *parent_side_child, k_child_side);
                           PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
                         }
                       else
@@ -1301,7 +1301,7 @@ namespace stk {
 
       mesh::Selector removePartSelector (*oldPart);
 
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulkData()->buckets( rank );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
 
       elements_to_be_destroyed_type elements_to_be_destroyed;
 
@@ -1367,7 +1367,7 @@ namespace stk {
       for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed.begin(); itbd != elements_to_be_destroyed.end();  ++itbd)
         {
           stk::mesh::Entity *element_p = *itbd;
-          if ( ! m_eMesh.get_bulkData()->destroy_entity( element_p ) )
+          if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
             {
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
               elements_to_be_destroyed_pass2.push_back(element_p);
@@ -1384,7 +1384,7 @@ namespace stk {
            itbd != elements_to_be_destroyed_pass2.end();  ++itbd)
         {
           stk::mesh::Entity *element_p = *itbd;
-          if ( ! m_eMesh.get_bulkData()->destroy_entity( element_p ) )
+          if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
             {
               CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(*element_p));
               std::cout << "tmp UniformRefiner::removeOldElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
@@ -1556,7 +1556,7 @@ namespace stk {
 
               if (!nodeIds_onSE[0]) {
                 
-                stk::mesh::Entity * node1 = m_eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE.m_entity_id_vector[0]);
+                stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE.m_entity_id_vector[0]);
                 
                 if (!node1)
                   {
@@ -1604,8 +1604,8 @@ namespace stk {
                 {
                   if (!nodeIds_onSE[i_new_node]) 
                     {
-                      stk::mesh::Entity * node1 = m_eMesh.get_bulkData()->get_entity(stk::mesh::Node, nodeIds_onSE.m_entity_id_vector[0]);
-                      //stk::mesh::Entity *node1 = m_nodeRegistry->get_entity(*m_eMesh.get_bulkData(), mesh::Node, nodeIds_onSE.m_entity_id_vector[i_new_node])
+                      stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE.m_entity_id_vector[0]);
+                      //stk::mesh::Entity *node1 = m_nodeRegistry->get_entity(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE.m_entity_id_vector[i_new_node])
 
                         if (!node1)
                         {

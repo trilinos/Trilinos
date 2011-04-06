@@ -105,7 +105,7 @@ namespace stk {
           init( m_comm);
         }
 
-      //const unsigned p_rank = parallel_machine_rank( get_bulkData()->parallel() );
+      //const unsigned p_rank = parallel_machine_rank( getBulkData()->parallel() );
       const unsigned p_rank = parallel_machine_rank( m_comm );
 
       if (p_rank == 0)  std::cout << "PerceptMesh:: opening "<< in_filename << std::endl;
@@ -234,7 +234,7 @@ namespace stk {
       checkStateSpec("printInfo", m_isOpen, m_isInitialized);
       PerceptMesh& eMesh = *this;
 
-      //const unsigned p_rank = stk::parallel_machine_rank( eMesh.get_bulkData()->parallel() );
+      //const unsigned p_rank = stk::parallel_machine_rank( eMesh.getBulkData()->parallel() );
       const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
 
       std::cout
@@ -252,7 +252,7 @@ namespace stk {
       {
         std::vector<unsigned> count ;
         stk::mesh::Selector selector(metaData.universal_part());
-        count_entities( selector, *eMesh.get_bulkData(), count );
+        count_entities( selector, *eMesh.getBulkData(), count );
 
         std::cout << "P[" << p_rank << "] Uses {" ;
         std::cout << " Node = " << count[ 0 ] ;
@@ -299,7 +299,7 @@ namespace stk {
               {
                 std::vector<unsigned> count ;
                 stk::mesh::Selector selector(part);
-                count_entities( selector, *eMesh.get_bulkData(), count );
+                count_entities( selector, *eMesh.getBulkData(), count );
 
                 std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() ;
                 std::cout <<  " : Uses {" ;
@@ -343,7 +343,7 @@ namespace stk {
                   stk::mesh::Selector on_locally_owned_part =  ( getFEM_meta_data()->locally_owned_part() );
                   //EntityRank rank = field->rank();
                   stk::mesh::EntityRank rank = field_rank;
-                  const std::vector<stk::mesh::Bucket*> & buckets = get_bulkData()->buckets( rank );
+                  const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( rank );
                   std::cout  << "P[" << p_rank << "] info> num buckets = " << buckets.size() << " for rank= " << rank << std::endl;
 
                   for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -381,7 +381,7 @@ namespace stk {
       if (print_level>1)
       {
         using std::vector;
-        const vector<stk::mesh::Bucket*> & buckets = get_bulkData()->buckets( element_rank()  );
+        const vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank()  );
         std::cout  << "P[" << p_rank << "] info> num buckets = " << buckets.size() << std::endl;
 
         int ibucket = 0;
@@ -450,7 +450,7 @@ namespace stk {
 
       PerceptMesh& eMesh = *this;
 
-      const unsigned p_rank = parallel_machine_rank( eMesh.get_bulkData()->parallel() );
+      const unsigned p_rank = parallel_machine_rank( eMesh.getBulkData()->parallel() );
 
       std::cout << "P[" << p_rank << "] PerceptMesh::printFields: " << header << std::endl;
       bool printInfo = true;
@@ -503,7 +503,7 @@ namespace stk {
     {
       std::vector<unsigned> count ;
       stk::mesh::Selector selector(getFEM_meta_data()->universal_part());
-      count_entities( selector, *get_bulkData(), count );
+      count_entities( selector, *getBulkData(), count );
       return count[ element_rank() ];
       //         std::cout << " Node = " << count[  0 ] ;
       //         std::cout << " Edge = " << count[  1 ] ;
@@ -622,9 +622,9 @@ namespace stk {
       destroy();
     }
 
-    stk::mesh::BulkData * PerceptMesh::get_bulkData()
+    stk::mesh::BulkData * PerceptMesh::getBulkData()
     {
-      //checkState("get_bulkData");
+      //checkState("getBulkData");
       return m_bulkData;
     }
     stk::mesh::fem::FEMMetaData * PerceptMesh::getFEM_meta_data()
@@ -741,7 +741,7 @@ namespace stk {
         exit(1);
       }
 
-      stk::mesh::Entity * node = get_bulkData()->get_entity( stk::mesh::Node, node_id );
+      stk::mesh::Entity * node = getBulkData()->get_entity( stk::mesh::Node, node_id );
       if (node)
         {
           double * const coord = stk::mesh::field_data( *getCoordinatesField() , *node );
@@ -761,7 +761,7 @@ namespace stk {
       else
         {
           stk::mesh::PartVector empty ;
-          stk::mesh::Entity & node_0 = get_bulkData()->declare_entity( stk::mesh::Node, node_id, empty );
+          stk::mesh::Entity & node_0 = getBulkData()->declare_entity( stk::mesh::Node, node_id, empty );
 
           double * const coord = stk::mesh::field_data( *getCoordinatesField() , node_0 );
 
@@ -799,7 +799,7 @@ namespace stk {
     {
       std::vector<size_t> requests(  m_metaData->entity_rank_count(), 0 );
       requests[entityRank] = count;
-      get_bulkData()->generate_new_entities( requests, requested_entities );
+      getBulkData()->generate_new_entities( requests, requested_entities );
     }
 
     // static
@@ -881,8 +881,8 @@ namespace stk {
     {
       EXCEPTWATCH;
       checkState("node_field_data");
-      //field_data( const_cast<std::mesh::FieldBase *>(field),  get_bulkData()->get_entity(stk::mesh::Node, node_id);
-      return field_data( field, *(get_bulkData()->get_entity(stk::mesh::Node, node_id) ) );
+      //field_data( const_cast<std::mesh::FieldBase *>(field),  getBulkData()->get_entity(stk::mesh::Node, node_id);
+      return field_data( field, *(getBulkData()->get_entity(stk::mesh::Node, node_id) ) );
     }
 
 #if 0
@@ -1306,7 +1306,7 @@ namespace stk {
 
     void PerceptMesh::writeModel( const std::string& out_filename)
     {
-      const unsigned p_rank = parallel_machine_rank( get_bulkData()->parallel() );
+      const unsigned p_rank = parallel_machine_rank( getBulkData()->parallel() );
 
       if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << std::endl;
       //checkState("writeModel" );
@@ -1428,7 +1428,7 @@ namespace stk {
         eMesh->readModel(file);
 
       stk::mesh::fem::FEMMetaData& metaData = *eMesh->getFEM_meta_data();
-      //BulkData& bulkData = *eMesh.get_bulkData();
+      //BulkData& bulkData = *eMesh.getBulkData();
 
       const stk::mesh::PartVector & parts = metaData.get_parts();
 
@@ -1474,7 +1474,7 @@ namespace stk {
             continue;
 
           std::cout << "tmp UniformRefiner::dumpElements: part = " << part.name() << std::endl;
-          const std::vector<stk::mesh::Bucket*> & buckets = get_bulkData()->buckets( element_rank() );
+          const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank() );
 
           for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
             {
@@ -1993,8 +1993,8 @@ namespace stk {
       stk::mesh::Selector block_selector(block);
       stk::mesh::Selector surface_selector(surface);
 
-      const std::vector<stk::mesh::Bucket*> & buckets_1 = get_bulkData()->buckets( block_rank );
-      const std::vector<stk::mesh::Bucket*> & buckets_2 = get_bulkData()->buckets( surface_rank );
+      const std::vector<stk::mesh::Bucket*> & buckets_1 = getBulkData()->buckets( block_rank );
+      const std::vector<stk::mesh::Bucket*> & buckets_2 = getBulkData()->buckets( surface_rank );
 
       static std::vector<unsigned> element_side(27);
       static std::vector<unsigned> surface_node_ids(27);
