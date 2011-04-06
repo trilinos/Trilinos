@@ -866,7 +866,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     if (! gotOrthoParams) {
       try { // Could it be a sublist?
 	const ParameterList& _orthoParams = 
-//	  params->sublist("Orthogonalization Parameters");
 	  params_->sublist("Orthogonalization Parameters");
 	// A deep copy is the only safe way to ensure that
 	// orthoParams doesn't "go away," since params doesn't
