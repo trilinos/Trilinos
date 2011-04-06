@@ -51,17 +51,18 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    using Teuchos::rcp;
 
    RCP<STK_Interface> mesh = rcp(new STK_Interface());
-   RCP<stk::mesh::MetaData> metaData = mesh->getMetaData();
+   RCP<stk::mesh::fem::FEMMetaData> femMetaData = mesh->getMetaData();
+   stk::mesh::MetaData & metaData = stk::mesh::fem::FEMMetaData::get_meta_data(*femMetaData);
 
    // read in meta data
    Ioss::Init::Initializer io;
    stk::io::util::MeshData * meshData = new stk::io::util::MeshData;
    stk::io::util::create_input_mesh("exodusii", fileName_, "", parallelMach,
-                                    *metaData, *meshData, false); 
+                                    *femMetaData, *meshData, false); 
 
    // store mesh data pointer for later use in initializing 
    // bulk data
-   metaData->declare_attribute_with_delete(meshData);
+   metaData.declare_attribute_with_delete(meshData);
 
    mesh->initializeFromMetaData();
 
@@ -83,12 +84,14 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
       mesh.initialize(parallelMach);
 
    // grab mesh data pointer to build the bulk data
+   stk::mesh::MetaData & metaData = stk::mesh::fem::FEMMetaData::get_meta_data(*mesh.getMetaData());
    stk::io::util::MeshData * meshData = 
-         const_cast<stk::io::util::MeshData *>(mesh.getMetaData()->get_attribute<stk::io::util::MeshData>());
+         const_cast<stk::io::util::MeshData *>(metaData.get_attribute<stk::io::util::MeshData>());
          // if const_cast is wrong ... why does it feel so right?
          // I believe this is safe since we are basically hiding this object under the covers
          // until the mesh construction can be completed...below I cleanup the object myself.
-   TEUCHOS_ASSERT(mesh.getMetaData()->remove_attribute(meshData)); // remove the MeshData attribute
+   TEUCHOS_ASSERT(metaData.remove_attribute(meshData)); 
+      // remove the MeshData attribute
 
    RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
    mesh.beginModification();
@@ -144,7 +147,8 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io
 {
    using Teuchos::RCP;
 
-   RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+   RCP<stk::mesh::fem::FEMMetaData> femMetaData = mesh.getMetaData();
+   stk::mesh::MetaData & metaData = stk::mesh::fem::FEMMetaData::get_meta_data(*femMetaData);
 
    // here we use the Ioss interface because they don't add
    // "bonus" element blocks and its easier to determine
@@ -154,7 +158,7 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io
       Ioss::GroupingEntity * entity = *itr;
       const std::string & name = entity->name(); 
 
-      const stk::mesh::Part * part = metaData->get_part(name);
+      const stk::mesh::Part * part = femMetaData->get_part(name);
       const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
 
       TEUCHOS_ASSERT(ct!=0);
@@ -176,7 +180,7 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::uti
 {
    using Teuchos::RCP;
 
-   RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+   RCP<stk::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
    const stk::mesh::PartVector & parts = metaData->get_parts();
 
    std::cout << std::endl;

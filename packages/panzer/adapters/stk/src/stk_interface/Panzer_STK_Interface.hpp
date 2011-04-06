@@ -10,8 +10,9 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
+// #include <stk_mesh/fem/DefaultFEM.hpp>
+// #include <stk_mesh/fem/FEMInterface.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
 #include <Shards_CellTopology.hpp>
@@ -188,7 +189,7 @@ public:
    //////////////////////////////////////////
  
    Teuchos::RCP<stk::mesh::BulkData> getBulkData() const { return bulkData_; }
-   Teuchos::RCP<stk::mesh::MetaData> getMetaData() const { return metaData_; }
+   Teuchos::RCP<stk::mesh::fem::FEMMetaData> getMetaData() const { return metaData_; }
 
    bool isWritable() const;
 
@@ -340,13 +341,13 @@ public:
    template <typename ArrayT>
    void getElementVertices(std::vector<std::size_t> & localIds, ArrayT & vertices) const;
 
-   const stk::mesh::fem::FEMInterface & getFEMInterface() const 
-   { return *femPtr_; }
+   // const stk::mesh::fem::FEMInterface & getFEMInterface() const 
+   // { return *femPtr_; }
 
-   const stk::mesh::EntityRank getElementRank() const { return stk::mesh::fem::element_rank(*femPtr_); }
-   const stk::mesh::EntityRank getSideRank() const { return stk::mesh::fem::side_rank(*femPtr_); }
-   const stk::mesh::EntityRank getEdgeRank() const { return stk::mesh::fem::edge_rank(*femPtr_); }
-   const stk::mesh::EntityRank getNodeRank() const { return stk::mesh::fem::node_rank(*femPtr_); }
+   const stk::mesh::EntityRank getElementRank() const { return metaData_->element_rank(); }
+   const stk::mesh::EntityRank getSideRank() const { return metaData_->side_rank(); }
+   const stk::mesh::EntityRank getEdgeRank() const { return metaData_->edge_rank(); }
+   const stk::mesh::EntityRank getNodeRank() const { return metaData_->node_rank(); }
 
    /** Build fields and parts from the meta data
      */
@@ -412,7 +413,7 @@ protected:
 
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
 
-   Teuchos::RCP<stk::mesh::MetaData> metaData_;
+   Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
    Teuchos::RCP<stk::mesh::BulkData> bulkData_;
 
    std::map<std::string, stk::mesh::Part*> elementBlocks_;   // Element blocks
@@ -445,7 +446,7 @@ protected:
    unsigned procRank_;
    std::size_t currentLocalId_;
 
-   Teuchos::RCP<stk::mesh::DefaultFEM> femPtr_;
+   // Teuchos::RCP<stk::mesh::DefaultFEM> femPtr_;
 
 #ifdef HAVE_IOSS
    // I/O support
@@ -476,7 +477,6 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
 {
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
-   // SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(fieldName); // if no blockId is specified you can get the field like this!
    SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
 
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
@@ -503,7 +503,6 @@ void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std
 
    solutionValues.resize(localElementIds.size(),elements[localElementIds[0]]->relations(getNodeRank()).size());
 
-   // SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(fieldName); // if no blockId is specified you can get the field like this!
    SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
 
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
@@ -533,7 +532,7 @@ void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementId
 
    // get *master* cell toplogy...(belongs to first element)
    unsigned masterVertexCount 
-      = stk::mesh::fem::get_cell_topology(*elements[localElementIds[0]]).getCellTopologyData()->vertex_count;
+      = stk::mesh::fem::get_cell_topology(elements[localElementIds[0]]->bucket()).getCellTopologyData()->vertex_count;
 
    // allocate space
    vertices.resize(localElementIds.size(),masterVertexCount,getDimension());
@@ -545,7 +544,7 @@ void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementId
       TEUCHOS_ASSERT(element!=0);
  
       unsigned vertexCount 
-         = stk::mesh::fem::get_cell_topology(*element).getCellTopologyData()->vertex_count;
+         = stk::mesh::fem::get_cell_topology(element->bucket()).getCellTopologyData()->vertex_count;
       TEST_FOR_EXCEPTION(vertexCount!=masterVertexCount,std::runtime_error,
                          "In call to STK_Interface::getElementVertices all elements "
                          "must have the same vertex count!");

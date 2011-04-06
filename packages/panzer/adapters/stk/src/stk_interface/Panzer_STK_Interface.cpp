@@ -48,15 +48,15 @@ const std::string STK_Interface::edgesString = "edges";
 STK_Interface::STK_Interface()
    : dimension_(0), initialized_(false), currentLocalId_(0)
 {
-   metaData_ = rcp(new stk::mesh::MetaData());
-   femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_));
+   metaData_ = rcp(new stk::mesh::fem::FEMMetaData());
+   // femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_));
 }
 
 STK_Interface::STK_Interface(unsigned dim)
    : dimension_(dim), initialized_(false), currentLocalId_(0)
 {
-   metaData_ = rcp(new stk::mesh::MetaData(stk::mesh::fem::entity_rank_names(dimension_)));
-   femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_,dimension_));
+   metaData_ = rcp(new stk::mesh::fem::FEMMetaData(dimension_));
+   // femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_,dimension_));
 
    initializeFromMetaData();
 }
@@ -93,6 +93,8 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 {
    TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_ASSERT(dimension_!=0); // no zero dimensional meshes!
+
+   metaData_->FEM_initialize(dimension_);
 
    stk::mesh::EntityRank elementRank = getElementRank();
    stk::mesh::EntityRank nodeRank = getNodeRank();
@@ -151,7 +153,7 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 #endif
 
    metaData_->commit();
-   bulkData_ = rcp(new stk::mesh::BulkData(*metaData_,parallelMach));
+   bulkData_ = rcp(new stk::mesh::BulkData(stk::mesh::fem::FEMMetaData::get_meta_data(*metaData_),parallelMach));
 
    initialized_ = true;
 }
@@ -624,7 +626,7 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
 
 void STK_Interface::initializeFromMetaData()
 {
-   dimension_ = femPtr_->get_spatial_dimension();   
+   dimension_ = metaData_->spatial_dimension();   
 
    // declare coordinates and node parts
    coordinatesField_ = &metaData_->declare_field<VectorFieldType>(coordsString);
