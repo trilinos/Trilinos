@@ -221,7 +221,7 @@ MACRO(SETUP_TRILINOS_PACKAGES)
   SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
   SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR "${CTEST_BINARY_DIRECTORY}")
 
-  # Ignore missing extra repos in case some messed up the git URL or
+  # Ignore missing extra repos in case someone messed up the git URL or
   # something.  We don't want a sloppy commit to bring down automated testing.
   SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES ON)
 
