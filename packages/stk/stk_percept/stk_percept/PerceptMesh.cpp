@@ -2097,12 +2097,12 @@ namespace stk {
 
 
     template<>
-    const CellTopologyData * const 
+    const CellTopologyData *
     PerceptMesh::get_cell_topology(const stk::mesh::Part& part) 
     { 
       const stk::mesh::fem::FEMMetaData & fem_meta = get_fem_meta_data(part);
 
-      const CellTopologyData * const cell_topo_data = fem_meta.get_cell_topology(part).getCellTopologyData();
+      const CellTopologyData * cell_topo_data = fem_meta.get_cell_topology(part).getCellTopologyData();
       return cell_topo_data;
     }
 

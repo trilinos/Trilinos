@@ -307,9 +307,9 @@ namespace stk {
       /// here @param thing is a Part, Bucket, Entity
       template<class T>
       static
-      const CellTopologyData * const get_cell_topology(const T& thing) 
+      const CellTopologyData * get_cell_topology(const T& thing) 
       { 
-        const CellTopologyData * const cell_topo_data = mesh::fem::get_cell_topology_new(thing).getCellTopologyData();
+        const CellTopologyData * cell_topo_data = mesh::fem::get_cell_topology_new(thing).getCellTopologyData();
         return cell_topo_data;
       }
 
@@ -383,7 +383,7 @@ namespace stk {
 
 
     template<>
-    const CellTopologyData * const 
+    const CellTopologyData *
     PerceptMesh::get_cell_topology(const mesh::Part& part) ;
 
 
