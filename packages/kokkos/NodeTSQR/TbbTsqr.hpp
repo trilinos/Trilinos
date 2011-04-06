@@ -59,15 +59,17 @@ namespace TSQR {
     ///   (the operations on each CPU core within the thread-parallel
     ///   implementation).
     template< class LocalOrdinal, class Scalar, class TimerType = Teuchos::Time >
-    class TbbTsqr {
+    class TbbTsqr : public Teuchos::Describable {
     private:
-      // Note: this is NOT a use of the pImpl idiom.  TbbRecursiveTsqr
-      // is a nonparallel implementation that emulates the control
-      // flow of the parallel implementation TbbParallelTsqr.  The
-      // latter depends on the Intel Threading Building Blocks
-      // library.
-      //
-      //TbbRecursiveTsqr< LocalOrdinal, Scalar > impl_;
+      /// \brief Implementation of TBB TSQR.
+      ///
+      /// If you don't have TBB available, you can test this class by
+      /// substituting in a TbbRecursiveTsqr<LocalOrdinal, Scalar>
+      /// object.  That is a nonparallel implementation that emulates
+      /// the control flow of TbbParallelTsqr.  If you do this, you
+      /// should also change the FactorOutput public typedef.
+      ///
+      /// \note This is NOT a use of the pImpl idiom.  
       TbbParallelTsqr< LocalOrdinal, Scalar, TimerType > impl_;
 
       // Collected running statistcs on various computations
@@ -80,16 +82,23 @@ namespace TSQR {
       typedef Scalar scalar_type;
       typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
       typedef LocalOrdinal ordinal_type;
-      // typedef typename TbbRecursiveTsqr< LocalOrdinal, Scalar >::FactorOutput FactorOutput;
-      typedef typename TbbParallelTsqr< LocalOrdinal, Scalar, TimerType >::FactorOutput FactorOutput;
 
-      /// (Max) number of cores used for the factorization.
+      /// \typedef FactorOutput
+      /// \brief Type of partial output of TBB TSQR.
+      ///
+      /// If you don't have TBB available, you can test this class by
+      /// substituting in "typename TbbRecursiveTsqr<LocalOrdinal,
+      /// Scalar>::FactorOutput" for the typedef's definition.  If you
+      /// do this, you should also change the type of \c impl_ above.
+      typedef typename TbbParallelTsqr<LocalOrdinal, Scalar, TimerType>::FactorOutput FactorOutput;
+
+      //! (Max) number of cores used for the factorization.
       size_t ncores() const { return impl_.ncores(); }
 
-      /// Cache block size (in bytes) used for the factorization.
+      //! Cache block size (in bytes) used for the factorization.
       size_t cache_block_size() const { return impl_.cache_block_size(); }
 
-      /// Constructor; sets up tuning parameters
+      /// Constructor; sets up tuning parameters.
       ///
       /// \param numCores [in] Maximum number of processing cores to use
       ///   when factoring the matrix.  Fewer cores may be used if the
@@ -116,6 +125,23 @@ namespace TSQR {
       static bool QR_produces_R_factor_with_nonnegative_diagonal() {
 	typedef TbbParallelTsqr< LocalOrdinal, Scalar, TimerType > impl_type;
 	return impl_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      }
+
+      /// \brief One-line description of this object.
+      ///
+      /// This implements Teuchos::Describable::description().  For now,
+      /// SequentialTsqr uses the default implementation of
+      /// Teuchos::Describable::describe().
+      std::string description () const {
+	// SequentialTsqr also implements Describable, so if you
+	// decide to implement describe(), you could call
+	// SequentialTsqr's describe() and get a nice hierarchy of
+	// descriptions.
+	std::ostringstream os;
+	os << "Intranode Tall Skinny QR (TSQR): Intel TBB implementation "
+	  "using " << impl_.ncores() << "-way parallelism and cache blocks "
+	  "of " << impl_.cache_block_size() << " bytes each";
+	return os.str();
       }
 
       void
