@@ -297,8 +297,8 @@ int Zoltan_Color(
       }
   }
   else if (recoloring_num_of_iterations < 0) {
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid recoloring number of iterations. Using 1 iteration for recoloring.");
-    recoloring_num_of_iterations = 0;
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid recoloring number of iterations. Using 1 iteration for recoloring.");
+      recoloring_num_of_iterations = 0;
   }
 
 
@@ -312,7 +312,7 @@ int Zoltan_Color(
   zz->Num_LID = gcomm[1];
 
   if (num_gid_entries != zz->Num_GID)
-    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "num_gid_entries is not consistent with the queries.");
+      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "num_gid_entries is not consistent with the queries.");
 
   /* Return if this processor is not in the Zoltan structure's
      communicator. */
@@ -336,7 +336,7 @@ int Zoltan_Color(
                            req_objs, requested_GNOs);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
+      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
 
   ierr = Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, 
@@ -344,7 +344,7 @@ int Zoltan_Color(
 		     NULL, NULL);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
+      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
 #ifdef _DEBUG_TIMES
   times[2] = Zoltan_Time(zz->Timer);
 #endif
@@ -634,7 +634,8 @@ static int D1coloring(
     int *xrelproc=NULL;
     int *plst=NULL, plstcnt=0;
     int globmaxnvtx = 0; /* maximum number of vertices in all the procs */
-    int carrierbufsize = 0; /* size of the buffer to transfer data between procs, it was same as superstep before, now it depends */
+    int carrierbufsize = ss; /* size of the buffer to transfer data between procs,
+                                it is either superstep size or globmaxnvtx */
 
     /* Memory allocation */
     isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
@@ -686,12 +687,11 @@ static int D1coloring(
     MPI_Allreduce(&lmaxdeg, &gmaxdeg, 1, MPI_INT, MPI_MAX, zz->Communicator);
     /* gmaxdeg+1 is the upper bound for #colors and colors start at one */
     gmaxdeg += 2;
-    /* if recoloring is enabled, maximum number of vertices is computed and carrierbufsize is set accordingly for allocation purposes */
+    /* if recoloring is enabled, maximum number of vertices is computed and
+       carrierbufsize is set accordingly for allocation purposes */
     if (recoloring_num_of_iterations > 0) {
         MPI_Allreduce(&nvtx, &globmaxnvtx, 1, MPI_INT, MPI_MAX, zz->Communicator);
         carrierbufsize = globmaxnvtx;
-        if (recoloring_type == ASYNCHRONOUS)
-            carrierbufsize = ss;
     }
 
     /* Memory allocation */
