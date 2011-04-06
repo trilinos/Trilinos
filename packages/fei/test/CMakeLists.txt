@@ -21,6 +21,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ARGS "-d . -test unit_tests"
   COMM serial mpi
   NUM_MPI_PROCS 1
+  DEPLIBS fei_test_utils
   )
 
 IF(FEI_ENABLE_AztecOO)
