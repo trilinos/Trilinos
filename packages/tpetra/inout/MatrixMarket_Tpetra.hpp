@@ -1405,6 +1405,173 @@ namespace Tpetra {
 	return pMatrix;
       }
     };
+
+
+
+    /// \class Writer
+    /// \brief Matrix Market file writer for Tpetra::CrsMatrix.
+    ///
+    /// The writeSparse() and writeSparseFile() class methods write a
+    /// Tpetra::CrsMatrix sparse matrix to a Matrix Market
+    /// "coordinate" format sparse matrix output stream resp. file.
+    /// Currently, they assume that all ranks can write to the output
+    /// stream; this may be fixed in the future, so that they only
+    /// write to the output stream on Rank 0.
+    template<class SparseMatrixType>
+    class Writer {
+    public:
+      typedef SparseMatrixType sparse_matrix_type;
+      typedef Teuchos::RCP<sparse_matrix_type> sparse_matrix_ptr;
+      /// \typedef scalar_type
+      /// \brief Type of the entries of the sparse matrix.
+      typedef typename SparseMatrixType::scalar_type scalar_type;
+      /// \typedef local_ordinal_type
+      /// \brief Only used to define map_type.
+      typedef typename SparseMatrixType::local_ordinal_type local_ordinal_type;
+      /// \typedef global_ordinal_type
+      /// \brief Type of indices as read from the Matrix Market file.
+      ///
+      /// Indices of the sparse matrix are stored as global ordinals,
+      /// since Matrix Market files represent the whole matrix and
+      /// don't have a notion of distribution.
+      typedef typename SparseMatrixType::global_ordinal_type global_ordinal_type;
+      typedef typename SparseMatrixType::node_type node_type;
+
+      static void
+      writeSparseFile (const std::string& filename,
+		       Teuchos::RCP<const sparse_matrix_type>& pMatrix)
+      {
+	TEST_FOR_EXCEPTION(true, std::logic_error, 
+			   "Not implemented yet.  First, we need to change "
+			   "writeSparse() so that it only writes to the output "
+			   "stream argument on Rank 0.");
+      }
+
+      /// \brief Print the sparse matrix in Matrix Market format.
+      ///
+      /// Write the given Tpetra::CrsMatrix sparse matrix to a Matrix
+      /// Market "coordinate" format sparse matrix output stream.
+      /// Currently, this method assumes that all ranks can write to
+      /// the output stream; this will be fixed in the future, so that
+      /// it only writes to the output stream on Rank 0.
+      static void
+      writeSparse (std::ostream& out,
+		   Teuchos::RCP<const sparse_matrix_type>& pMatrix)
+      {
+	using Teuchos::Comm;
+	using Teuchos::RCP;
+	using std::endl;
+	typedef typename Teuchos::ScalarTraits<scalar_type> STS;
+	typedef typename ArrayView<scalar_type>::size_type size_type;
+
+	RCP<const Comm<int> > pComm = pMatrix->getComm();
+	const int numProcs = Teuchos::size (*pComm);
+	const int myRank = Teuchos::rank (*pComm);
+
+	// Number of errors encountered while printing out the matrix.
+	int numPrintErrors = 0;
+
+	// Rank 0: Print the banner line and the dimensions line to out.
+	if (myRank == 0)
+	  {
+	    out << "%%MatrixMarket matrix coordinate ";
+	    if (STS::isComplex)
+	      out << "complex ";
+	    else
+	      out << "real ";
+	    out << "general" << endl;
+
+	    // getGlobalNum{Rows,Cols}() does not return what you
+	    // think it should return.  Instead, ask the range
+	    // resp. domain map for the number of rows
+	    // resp. columns in the matrix.
+	    out << pMatrix->getRangeMap()->getGlobalNumElements() 
+		<< " "
+		<< pMatrix->getDomainMap()->getGlobalNumElements() 
+		<< " "
+		<< pMatrix->getGlobalNumEntries()
+		<< endl;
+	  }
+	Teuchos::barrier (*pComm);
+
+	// Let each processor in turn print its rows to out.  We
+	// assume that all processors can print to out.  We do
+	// _not_ assume here that the row map is one-to-one;
+	// printing should work just fine, as long as nonzeros
+	// themselves are not stored redundantly.
+	for (int p = 0; p < numProcs; ++p)
+	  {
+	    if (myRank == p)
+	      {
+		// Storage for column indices and values in each
+		// row.  Will be resized as necessary.  (Proc p
+		// may not own any rows, in which case Proc p
+		// won't need to allocate these at all.
+		Array<global_ordinal_type> indices;
+		Array<scalar_type> values;
+		
+		// List of the rows with storage on Proc p.
+		ArrayView<const global_ordinal_type> myRows = 
+		  pMatrix->getRowMap()->getNodeElementList();
+		// Number of rows with storage on Proc p.
+		const size_type myNumRows = myRows.size();
+		
+		// For each row that Proc p owns, print its entries.
+		for (size_type k = 0; k < myNumRows; ++k)
+		  {
+		    const global_ordinal_type curRow = myRows[k];
+		    size_t numEntries = 
+		      pMatrix->getNumEntriesInGlobalRow (curRow);
+		    
+		    // Resize (if necessary) the arrays for holding
+		    // column indices and values for the current row.
+		    //
+		    // Signed to unsigned integer conversion, for
+		    // integers of the same size, shouldn't overflow.
+		    if (static_cast<size_t> (indices.size()) < numEntries)
+		      indices.resize (numEntries);
+		    if (static_cast<size_t> (values.size()) < numEntries)
+		      values.resize (numEntries);
+		    // This views are exactly the right length to hold
+		    // the data for the current row.  indices and
+		    // values may be longer than necessary; that's an
+		    // optimization, to avoid resizing them with every
+		    // row.
+		    ArrayView<global_ordinal_type> indicesView = 
+		      indices.view (0, numEntries);
+		    ArrayView<scalar_type> valuesView = 
+		      values.view (0, numEntries);
+
+		    // Make sure there were no surprises with the
+		    // number of entries.
+		    size_t newNumEntries = 0;
+		    pMatrix->getGlobalRowCopy (curRow, indicesView,
+					       valuesView, newNumEntries);
+		    if (newNumEntries != numEntries)
+		      numPrintErrors++;
+		    else
+		      {
+			for (size_t j = 0; j < numEntries; ++j)
+			  out << curRow << " " 
+			      << indicesView[j] << " "
+			      << valuesView[j] << endl;
+		      }
+		  }
+		Teuchos::barrier (*pComm);
+
+		// If there were any errors on any processors, stop
+		// right away and throw an exception.
+		int totalNumPrintErrors = 0;
+		Teuchos::reduceAll (*pComm, Teuchos::REDUCE_SUM, numPrintErrors,
+				    Teuchos::Ptr<int> (&totalNumPrintErrors));
+		TEST_FOR_EXCEPTION(totalNumPrintErrors > 0, std::runtime_error,
+				   "Failed to print Tpetra::CrsMatrix.  Total "
+				   "number of print errors thus far: " 
+				   << numPrintErrors);
+	      } // If myRank == p
+	  } // For each proc p in 0, 1, ..., numProcs-1
+      }
+    }; // class Writer
     
   } // namespace MatrixMarket
 } // namespace Tpetra
