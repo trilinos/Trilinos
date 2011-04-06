@@ -104,24 +104,53 @@ namespace Tpetra {
       /// \brief Handy typedef for entries of arrays such as rowPtr.
       typedef typename ArrayRCP<global_ordinal_type>::size_type size_type;
 
+      /// \brief Compute initial range map.
+      ///
+      /// Range maps must always be one-to-one.  We will use this map
+      /// when we call fillComplete() on the CrsMatrix that the reader
+      /// constructs.
+      ///
+      /// \param pComm [in] Global communicator.
+      /// \param pNode [in] Kokkos Node object.
+      /// \param numRows [in] Global number of rows in the matrix.
+      ///
+      /// \return Range map to be used for constructing a CrsMatrix.
+      ///
+      static Teuchos::RCP<const map_type>
+      makeRangeMap (const Teuchos::RCP<const comm_type>& pComm,
+		    const Teuchos::RCP<node_type>& pNode,
+		    const global_ordinal_type numRows)
+      {
+	using Teuchos::rcp;
+
+	// A conventional, uniformly partitioned, contiguous map.
+	return rcp (new map_type (static_cast<global_size_t> (numRows), 
+				  static_cast<global_ordinal_type> (0),
+				  pComm, GloballyDistributed, pNode));
+      }
+
       /// \brief Compute initial row map, or verify an existing one.
       ///
-      /// The typical case when reading a sparse matrix from a file is to
-      /// create a new row map.  However, we also give the option to use an
-      /// existing row map, if you are already using a particular
-      /// distribution for (say) vector data and don't want to stop using
-      /// it.  In the latter case (pRowMap is not null), we validate the
-      /// dimension, communicator, and node of the existing row map that you
-      /// pass in.  In either case, you need to know the (global) number of
-      /// rows in the matrix.
+      /// The typical case when reading a sparse matrix from a file is
+      /// for the reader itself to create a new row map, in particular
+      /// a standard uniform contiguous one-to-one row map.  However,
+      /// we also give the option to use an existing row map, if you
+      /// are already using a particular distribution for (say) vector
+      /// data and don't want to stop using it.  In the latter case
+      /// (pRowMap is not null), we validate the communicator and node
+      /// of the existing row map that you pass in.  In either case,
+      /// you need to know the (global) number of rows in the matrix.
       ///
-      /// \param pRowMap [in] If non-null, test the row map for validity,
-      ///   and return it.  Otherwise, if null, initialize and return a
-      ///   reasonable row map.  "Validity" includes that the number of
-      ///   elements is numRows, and the map's communicator and node are the
-      ///   same as the corresponding arguments.  The typical case is to
-      ///   pass in null here, which is why we call this routine
-      ///   "makeRowMap".
+      /// \param pRowMap [in] If non-null, test pRowMap for validity,
+      ///   and return it if valid.  Otherwise, if pRowMap is null,
+      ///   initialize and return a (uniform contiguous one-to-one)
+      ///   row map.  "Validity" here means that the map's
+      ///   communicator and node are the same objects (pointerwise)
+      ///   as the corresponding arguments.  (Note that the global
+      ///   number of elements may not be the same as the number of
+      ///   rows; a row map is not required to be one-to-one.)  The
+      ///   typical case is to pass in null here, which is why we call
+      ///   this routine "makeRowMap".
       ///
       /// \param pComm [in] Global communicator.
       ///
@@ -148,12 +177,6 @@ namespace Tpetra {
 				    pComm, GloballyDistributed, pNode));
 	else 
 	  {
-	    const global_size_t globalNumElts = pRowMap->getGlobalNumElements();
-	    TEST_FOR_EXCEPTION(globalNumElts != static_cast<global_size_t> (numRows),
-			       std::invalid_argument,
-			       "The specified row map should have " << numRows 
-			       << " elements, but has " << globalNumElts 
-			       << " elements instead.");
 	    TEST_FOR_EXCEPTION(! pRowMap->isDistributed() && pComm->getSize() > 1, 
 			       std::invalid_argument,
 			       "The specified row map is not distributed, but the "
@@ -173,17 +196,21 @@ namespace Tpetra {
       }
 
       /// \brief Compute domain map.
+      ///
+      /// Domain maps must always be one-to-one.  We will use this map
+      /// when we call fillComplete() on the CrsMatrix that the reader
+      /// constructs.
       /// 
-      /// \param pRowMap [in] Valid row / range map of the matrix, 
-      ///   as returned by \c makeRowMap().
+      /// \param pRangeMap [in] Valid range map of the matrix, 
+      ///   as returned by \c makeRangeMap().
       /// \param numRows [in] Global number of rows in the matrix.
       /// \param numCols [in] Global number of columns in the matrix.
       ///
-      /// \return The domain map.  If numRows == numCols, this is 
-      ///   identical to the row / range map, otherwise we make a
-      ///   new map for the domain.
+      /// \return The domain map.  If numRows == numCols, this is
+      ///   identical to the range map, otherwise we make a new map
+      ///   for the domain.
       static map_ptr
-      makeDomainMap (const map_ptr& pRowMap,
+      makeDomainMap (const map_ptr& pRangeMap,
 		     const global_ordinal_type numRows,
 		     const global_ordinal_type numCols)
       {
@@ -192,11 +219,11 @@ namespace Tpetra {
 	typedef node_type Node;
 
 	if (numRows == numCols) 
-	  return pRowMap;
+	  return pRangeMap;
 	else
 	  {
-	    comm_ptr pComm = pRowMap->getComm();
-	    node_ptr pNode = pRowMap->getNode();
+	    comm_ptr pComm = pRangeMap->getComm();
+	    node_ptr pNode = pRangeMap->getNode();
 	    return createUniformContigMapWithNode<LO,GO,Node> (numCols, pComm, pNode);
 	  }
       }
@@ -234,7 +261,7 @@ namespace Tpetra {
       ///   myValues[start .. end-1] are the column indices for myRows[k].
       ///
       /// \param pRowMap [in] Map describing the distribution of rows among
-      ///   processors.  This must be a 1-1 map.
+      ///   processors.
       ///
       /// \param numEntriesPerRow [in/out] For all row indices, the number
       ///   of entries per row.  You can construct this from the usual CSR
@@ -294,8 +321,8 @@ namespace Tpetra {
 	 const int myRank = Teuchos::rank (*pComm);
 	 const int rootRank = 0;
 
-	 // List of the global indices of my rows.
-	 // They may or may not be contiguous.
+	 // List of the global indices of my rows.  They may or may
+	 // not be contiguous, and the row map need not be one-to-one.
 	 ArrayView<const global_ordinal_type> myRows = 
 	   pRowMap->getNodeElementList();
 	 const size_type myNumRows = myRows.size();
@@ -431,11 +458,6 @@ namespace Tpetra {
 				myValuesView.begin());
 		   }
 	       }
-
-	     // Proc 0 just finished with its own rows above, so we count
-	     // those as "done."  Now Proc 0 has to finish the rows belonging
-	     // to all the other procs.
-	     size_type numRowsDone = myNumRows;
 
 	     // Proc 0 processes each other proc p in turn.
 	     for (int p = 1; p < numProcs; ++p)
@@ -599,7 +621,6 @@ namespace Tpetra {
 			   theirColInd.getRawPtr(), p);
 		     send (*pComm, static_cast<int> (theirNumEntries), 
 			   theirValues.getRawPtr(), p);
-		     numRowsDone += theirNumRows;
 
 		     if (debug)
 		       cerr << "-- Proc 0: Finished with proc " << p << endl;
@@ -648,14 +669,19 @@ namespace Tpetra {
       /// Each proc inserts its data into the sparse matrix, and then,
       /// if callFillComplete is true, all procs call fillComplete().
       /// (For whatever reason, you might not be done with the matrix
-      /// yet, so you might want to call fillComplete() yourself.)
+      /// yet, so you might want to call fillComplete() yourself.
+      /// CrsMatrix::fillResume() doesn't currently work as you might
+      /// expect when storage optimization is enabled; it fixes the
+      /// graph of the matrix, so that you can't add new entries.)
+      /// 
       static sparse_matrix_ptr
       makeMatrix (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
 		  Teuchos::ArrayRCP<size_type>& myRowPtr,
 		  Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
 		  Teuchos::ArrayRCP<scalar_type>& myValues,
 		  const map_ptr& pRowMap,
-		  const map_ptr& pDomMap,
+		  const map_ptr& pRangeMap,
+		  const map_ptr& pDomainMap,
 		  const bool callFillComplete = true)
       {
 	using Teuchos::ArrayRCP;
@@ -674,15 +700,18 @@ namespace Tpetra {
 	TEST_FOR_EXCEPTION(myRowPtr.is_null(), std::logic_error,
 			   "makeMatrix: myRowPtr array is null.  "
 			   "Please report this bug to the Tpetra developers.");
+	TEST_FOR_EXCEPTION(pDomainMap.is_null(), std::logic_error,
+			   "makeMatrix: domain map is null.  "
+			   "Please report this bug to the Tpetra developers.");
+	TEST_FOR_EXCEPTION(pRangeMap.is_null(), std::logic_error,
+			   "makeMatrix: range map is null.  "
+			   "Please report this bug to the Tpetra developers.");
 	TEST_FOR_EXCEPTION(pRowMap.is_null(), std::logic_error,
 			   "makeMatrix: row map is null.  "
 			   "Please report this bug to the Tpetra developers.");
-	TEST_FOR_EXCEPTION(pDomMap.is_null(), std::logic_error,
-			   "makeMatrix: domain map is null.  "
-			   "Please report this bug to the Tpetra developers.");
 
 	// Handy for debugging output; not needed otherwise.
-	const int myRank = Teuchos::rank (*(pRowMap->getComm()));
+	const int myRank = Teuchos::rank (*(pRangeMap->getComm()));
 
 	if (false && debug)
 	  {
@@ -707,7 +736,7 @@ namespace Tpetra {
 	    typedef typename ArrayRCP<global_ordinal_type>::const_iterator iter_type;
 	    for (iter_type it = myColInd.begin(); it != myColInd.end(); ++it)
 	      {
-		if (! pDomMap->isNodeGlobalElement (*it))
+		if (! pDomainMap->isNodeGlobalElement (*it))
 		  {
 		    numRemote++;
 		    remoteGIDs.push_back (*it);
@@ -723,8 +752,11 @@ namespace Tpetra {
 	      }
 	  }
 
-	// Create with DynamicProfile, so that the
-	// fillComplete(DoOptimizeStorage) can do first-touch reallocation.
+	// Construct the CrsMatrix, using the row map, with the
+	// constructor specifying the number of nonzeros for each row.
+	// Create with DynamicProfile, so that the fillComplete() can
+	// do first-touch reallocation (a NUMA (Non-Uniform Memory
+	// Access) optimization on multicore CPUs).
 	sparse_matrix_ptr A = 
 	  rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow, 
 				       DynamicProfile));
@@ -767,7 +799,7 @@ namespace Tpetra {
 	myValues = null;
 
 	if (callFillComplete)
-	  A->fillComplete (pDomMap, pRowMap, DoOptimizeStorage);
+	  A->fillComplete (pDomainMap, pRangeMap, DoOptimizeStorage);
 	return A;
       }
 
@@ -1274,15 +1306,13 @@ namespace Tpetra {
 	pAdder = null;
 
 	if (debug && myRank == 0)
-	  cerr << "Making row/range and domain maps" << endl;
+	  cerr << "Making range, domain, and row maps" << endl;
 
-	// Make the maps that describe the distribution of the
-	// matrix's range and domain.
-	//
-	// Row map and range map are identical; they are both 1-1.
+	// Make the maps that describe the matrix'x range and domain,
+	// and the distribution of its rows.
+	map_ptr pRangeMap = makeRangeMap (pComm, pNode, dims[0]);
+	map_ptr pDomainMap = makeDomainMap (pRangeMap, dims[0], dims[1]);
 	map_ptr pRowMap = makeRowMap (null, pComm, pNode, dims[0]);
-	// Domain map.
-	map_ptr pDomMap = makeDomainMap (pRowMap, dims[0], dims[1]);
 
 	if (debug && myRank == 0)
 	  cerr << "Distributing the matrix data" << endl;
@@ -1322,31 +1352,35 @@ namespace Tpetra {
 	// promises.
 	sparse_matrix_ptr pMatrix = 
 	  makeMatrix (myNumEntriesPerRow, myRowPtr, myColInd, myValues,
-		      pRowMap, pDomMap, callFillComplete);
+		      pRowMap, pRangeMap, pDomainMap, callFillComplete);
 	TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
 			   "makeMatrix() returned a null pointer.  Please "
 			   "report this bug to the Tpetra developers.");
 
-	// We can't call getGlobalNum{Rows,Cols}() until after
+	// We can't get the dimensions of the matix until after
 	// fillComplete() is called.  Thus, we can't do the sanity
-	// check (dimentions read from the Matrix Market data,
-	// vs. dimensions reported by the CrsMatrix unless the user
+	// check (dimensions read from the Matrix Market data,
+	// vs. dimensions reported by the CrsMatrix) unless the user
 	// asked makeMatrix() to call fillComplete().
+	//
+	// Note that pMatrix->getGlobalNum{Rows,Cols}() does _not_ do
+	// what one might think it does, so you have to ask the range
+	// resp. domain map for the number of rows resp. columns.
 	if (callFillComplete)
 	  {
 	    if (extraDebug && debug)
 	      {
+		const global_size_t globalNumRows = 
+		  pRangeMap->getGlobalNumElements();
+		const global_size_t globalNumCols = 
+		  pDomainMap->getGlobalNumElements();
 		if (myRank == 0)
 		  {
-		    cerr << "-- Matrix is "
-			 << pMatrix->getGlobalNumRows() 
-			 << " x " 
-			 << pMatrix->getGlobalNumCols()
-			 << " with " 
-			 << pMatrix->getGlobalNumEntries()
+		    cerr << "-- Matrix is " 
+			 << globalNumRows << " x " << globalNumCols 
+			 << " with " << pMatrix->getGlobalNumEntries()
 			 << " entries, and index base " 
-			 << pMatrix->getIndexBase()
-			 << "." << endl;
+			 << pMatrix->getIndexBase() << "." << endl;
 		  }
 		Teuchos::barrier (*pComm);
 		for (int p = 0; p < Teuchos::size (*pComm); ++p)
@@ -1362,25 +1396,6 @@ namespace Tpetra {
 		    Teuchos::barrier (*pComm);
 		  }
 	      } // if (extraDebug && debug)
-
-#if 0
-	    const global_size_t globalNumRows = pMatrix->getGlobalNumRows();
-	    const global_size_t globalNumCols = pMatrix->getGlobalNumCols();
-
-	    // Casting a positive signed integer (global_ordinal_type)
-	    // to an unsigned integer of no fewer bits (global_size_t)
-	    // shouldn't overflow.
-	    TEST_FOR_EXCEPTION(globalNumRows != static_cast<global_size_t>(dims[0]) || 
-			       globalNumCols != static_cast<global_size_t>(dims[1]),
-			       std::logic_error, 
-			       "The newly created Tpetra::CrsMatrix claims it is " 
-			       << globalNumRows << " x " << globalNumCols << ", "
-			       "but the data in the Matrix Market input stream "
-			       "says the matrix is " << dims[0] << " x "
-			       << dims[1] << ".  We have already called "
-			       "fillComplete() on the CrsMatrix.  Please report "
-			       "this bug to the Tpetra developers.");
-#endif // 0
 	  } // if (callFillComplete)
 
 	if (debug && myRank == 0)
