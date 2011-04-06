@@ -11,6 +11,6 @@ ADD_SUBDIRECTORY(Graphviz)
 ADD_SUBDIRECTORY(Performance)
 ADD_SUBDIRECTORY(IntrepidInteroperability)
 
-IF(Phalanx_ENABLE_GPU)
+IF(Phalanx_ENABLE_Thrust)
   ADD_SUBDIRECTORY(GPU)
-ENDIF(Phalanx_ENABLE_GPU)
+ENDIF(Phalanx_ENABLE_Thrust)

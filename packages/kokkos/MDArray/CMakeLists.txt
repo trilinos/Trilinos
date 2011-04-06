@@ -12,11 +12,12 @@ ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_MDArray_Cuda
   HAVE_KOKKOS_MDARRAY_CUDA
   "Enable mdarrays using cuda."
-  ON
+  ${Kokkos_ENABLE_CUDA}
   )
 
-IF (Kokkos_ENABLE_MDArray_Cuda)
-  FIND_PACKAGE(CUDA)
-ENDIF()
+# No longer needed; Trilinos does this at the top level.
+# IF (Kokkos_ENABLE_MDArray_Cuda)
+#   FIND_PACKAGE(CUDA)
+# ENDIF()
 
 #PACKAGE_ADD_TEST_DIRECTORIES(unit_tests)

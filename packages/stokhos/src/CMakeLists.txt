@@ -255,8 +255,7 @@ ENDIF()
 # CUDA/Thrust
 IF (Stokhos_ENABLE_Thrust)
   CUDA_INCLUDE_DIRECTORIES( 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../teuchos/src
-    ${CMAKE_CURRENT_BINARY_DIR}/../../teuchos/src
+    ${Teuchos_INCLUDE_DIRS}
   )
   CUDA_COMPILE(CUDA_SOURCES
     Stokhos_CUDAStorage.cu 

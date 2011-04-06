@@ -1,6 +1,8 @@
+# This is not a Trilinos-standard CMakeLists.txt file. It should be updated.
 PROJECT(MDARRAY_UNIT_TESTS)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+# Trilinos sets this. Other packages should not.
+# CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_BINARY_DIR}
