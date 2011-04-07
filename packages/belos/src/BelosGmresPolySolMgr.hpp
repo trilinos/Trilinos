@@ -70,7 +70,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/BlockGmres/BlockGmresPolyEpetraExFile.cpp
+/** \example BlockGmres/BlockGmresPolyEpetraExFile.cpp
     This is an example of how to use the Belos::GmresPolySolMgr solver manager.
 */
 
