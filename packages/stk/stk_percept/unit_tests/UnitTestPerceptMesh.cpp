@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009 Sandia Corporation.                              */
+/*    Copyright 2009, 2011 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -102,7 +102,7 @@ namespace stk
                       {
                         stk::mesh::Entity& element = bucket[iElement];
 
-                        const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::Node );  
+                        const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );  
 
                         unsigned num_node = elem_nodes.size(); 
                         for (unsigned inode=0; inode < num_node; inode++)

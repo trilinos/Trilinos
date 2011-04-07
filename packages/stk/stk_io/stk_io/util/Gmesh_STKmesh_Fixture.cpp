@@ -3,7 +3,6 @@
 #include <stk_mesh/base/Part.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <stk_io/IossBridge.hpp>
 

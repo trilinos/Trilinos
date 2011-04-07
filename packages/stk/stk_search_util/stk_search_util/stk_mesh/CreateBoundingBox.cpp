@@ -17,7 +17,6 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_mesh/base/Field.hpp>

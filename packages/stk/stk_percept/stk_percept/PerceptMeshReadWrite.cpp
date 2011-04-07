@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -15,7 +15,6 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <init/Ionit_Initializer.h>
@@ -234,14 +233,14 @@ namespace stk {
         stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
           meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
-        stk::mesh::put_field( coord_field, stk::mesh::Node, meta.universal_part(),
+        stk::mesh::put_field( coord_field, stk::mesh::fem::FEMMetaData::NODE_RANK, meta.universal_part(),
                               spatial_dim);
 
         /** \todo IMPLEMENT truly handle fields... For this case we are
          * just defining a field for each transient field that is present
          * in the mesh...
          */
-        stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::Node);
+        stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::fem::FEMMetaData::NODE_RANK);
       }
 
       // ========================================================================
@@ -295,7 +294,7 @@ namespace stk {
       void process_read_nodesets_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
       {
         const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-        local_default_part_processing(node_sets, meta, stk::mesh::Node);
+        local_default_part_processing(node_sets, meta, stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         //!std::cout << "PerceptMeshReadWrite::process_read_nodesets: node_sets size = " << node_sets.size() <<  std::endl;
 
@@ -324,7 +323,7 @@ namespace stk {
             assert(part != NULL);
             assert(entity->field_exists("distribution_factors"));
 
-            stk::mesh::put_field(distribution_factors_field, stk::mesh::Node, *part);
+            stk::mesh::put_field(distribution_factors_field, stk::mesh::fem::FEMMetaData::NODE_RANK, *part);
 
             /** \todo IMPLEMENT truly handle fields... For this case we
              * are just defining a field for each transient field that is
@@ -479,7 +478,7 @@ namespace stk {
         Ioss::NodeBlock *nb = node_blocks[0];
 
         std::vector<stk::mesh::Entity*> nodes;
-        stk::io::get_entity_list(nb, stk::mesh::Node, bulk, nodes);
+        stk::io::get_entity_list(nb, stk::mesh::fem::FEMMetaData::NODE_RANK, bulk, nodes);
 
         /** \todo REFACTOR Application would probably store this field
          * (and others) somewhere after the declaration instead of
@@ -581,9 +580,9 @@ namespace stk {
 
             std::vector<stk::mesh::Entity*> nodes(node_count);
             for(int i=0; i<node_count; ++i) {
-              nodes[i] = bulk.get_entity( stk::mesh::Node, node_ids[i] );
+              nodes[i] = bulk.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, node_ids[i] );
               if (nodes[i] != NULL)
-                bulk.declare_entity(stk::mesh::Node, node_ids[i], add_parts );
+                bulk.declare_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node_ids[i], add_parts );
             }
 
 
@@ -737,7 +736,7 @@ namespace stk {
         const stk::mesh::fem::FEMMetaData & meta = mesh::fem::FEMMetaData::get(bulk);
 
         // ??? Get field data from nodeblock...
-        get_field_data(bulk, meta.universal_part(), stk::mesh::Node,
+        get_field_data(bulk, meta.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
                        region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
         const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -813,7 +812,7 @@ namespace stk {
         // Special processing for nodeblock (all nodes in model)...
         const stk::mesh::fem::FEMMetaData & meta = mesh::fem::FEMMetaData::get(bulk);
 
-        put_field_data(bulk, meta.universal_part(), stk::mesh::Node,
+        put_field_data(bulk, meta.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
                        region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
         const stk::mesh::PartVector & all_parts = meta.get_parts();

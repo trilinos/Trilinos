@@ -9,7 +9,6 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <Shards_BasicTopologies.hpp>

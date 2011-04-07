@@ -22,7 +22,6 @@
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <stk_mesh/base/Part.hpp>

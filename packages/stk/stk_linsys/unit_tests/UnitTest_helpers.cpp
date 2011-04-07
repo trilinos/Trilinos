@@ -20,7 +20,6 @@
 #include <stk_linsys/LinearSystemInterface.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 
 static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;

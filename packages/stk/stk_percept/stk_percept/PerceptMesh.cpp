@@ -32,7 +32,7 @@ namespace stk {
     //std::string PerceptMesh::s_omit_part = "_urporig";
     std::string PerceptMesh::s_omit_part = "_uo";  // stk_io now lowercases everything
 
-    PerceptMesh::FieldCreateOrder::FieldCreateOrder() : m_name(), m_entity_rank(mesh::Node), m_dimensions(), m_part(0) {}
+    PerceptMesh::FieldCreateOrder::FieldCreateOrder() : m_name(), m_entity_rank(stk::mesh::fem::FEMMetaData::NODE_RANK), m_dimensions(), m_part(0) {}
     PerceptMesh::FieldCreateOrder::FieldCreateOrder(const std::string name, const unsigned entity_rank,
                                                    const std::vector<int> dimensions, const stk::mesh::Part* part)
       : m_name(name), m_entity_rank(entity_rank), m_dimensions(dimensions), m_part(part) {}
@@ -328,7 +328,7 @@ namespace stk {
               unsigned nfr = field->restrictions().size();
               if (printInfo) std::cout << "P[" << p_rank << "] info>    number of field restrictions= " << nfr << std::endl;
               unsigned stride = 0;
-              stk::mesh::EntityRank field_rank = stk::mesh::Node;
+              stk::mesh::EntityRank field_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
               for (unsigned ifr = 0; ifr < nfr; ifr++)
                 {
                   const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
@@ -476,7 +476,7 @@ namespace stk {
                 {
                   const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
                   //std::cout << fr.key.rank();
-                  if (fr.type() == stk::mesh::Node)
+                  if (fr.type() == stk::mesh::fem::FEMMetaData::NODE_RANK)
                     {
 
                       if (printInfo) std::cout << "P[" << p_rank << "] info>   stride = "<< fr.stride[0] << std::endl;
@@ -493,7 +493,7 @@ namespace stk {
     getSpatialDim()
     {
       // #ifndef NDEBUG
-      //       const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::Node, getFEM_meta_data()->universal_part());
+      //       const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, getFEM_meta_data()->universal_part());
       //       unsigned dataStride = r.stride[0] ;
       //       VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::getSpatialDim() bad spatial dim");
       // #endif
@@ -551,7 +551,7 @@ namespace stk {
       setCoordinatesField();
 
       if (m_coordinatesField) {
-          const stk::mesh::FieldBase::Restriction & r = m_coordinatesField->restriction(stk::mesh::Node, getFEM_meta_data()->universal_part());
+          const stk::mesh::FieldBase::Restriction & r = m_coordinatesField->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, getFEM_meta_data()->universal_part());
           unsigned dataStride = r.stride[0] ;
           m_spatialDim = dataStride;
           if (m_spatialDim != 2 && m_spatialDim != 3)
@@ -743,7 +743,7 @@ namespace stk {
         exit(1);
       }
 
-      stk::mesh::Entity * node = getBulkData()->get_entity( stk::mesh::Node, node_id );
+      stk::mesh::Entity * node = getBulkData()->get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, node_id );
       if (node)
         {
           double * const coord = stk::mesh::field_data( *getCoordinatesField() , *node );
@@ -763,7 +763,7 @@ namespace stk {
       else
         {
           stk::mesh::PartVector empty ;
-          stk::mesh::Entity & node_0 = getBulkData()->declare_entity( stk::mesh::Node, node_id, empty );
+          stk::mesh::Entity & node_0 = getBulkData()->declare_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, node_id, empty );
 
           double * const coord = stk::mesh::field_data( *getCoordinatesField() , node_0 );
 
@@ -813,7 +813,7 @@ namespace stk {
       double * fdata = 0;
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
+        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
         *stride = r.stride[0] ;
       }
 
@@ -851,7 +851,7 @@ namespace stk {
 
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
+        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
         *stride = r.stride[0] ;
       }
 
@@ -883,8 +883,8 @@ namespace stk {
     {
       EXCEPTWATCH;
       checkState("node_field_data");
-      //field_data( const_cast<std::mesh::FieldBase *>(field),  getBulkData()->get_entity(stk::mesh::Node, node_id);
-      return field_data( field, *(getBulkData()->get_entity(stk::mesh::Node, node_id) ) );
+      //field_data( const_cast<std::mesh::FieldBase *>(field),  getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node_id);
+      return field_data( field, *(getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node_id) ) );
     }
 
 #if 0
@@ -937,7 +937,7 @@ namespace stk {
       double * fdata = 0;
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
+        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
         *stride = r.stride[0] ;
       }
 
@@ -1358,7 +1358,7 @@ namespace stk {
       out_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
       // Special processing for nodeblock (all nodes in model)...
-      stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::Node,
+      stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
                                out_region.get_node_blocks()[0],
                                Ioss::Field::TRANSIENT);
 
@@ -1598,7 +1598,7 @@ namespace stk {
 
       // for each node in the codomain, evaluate the function_to_interpolate's function, assign to the codomain field
 
-      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::Node );
+      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
       int num_nodes = 0;
 
@@ -1756,7 +1756,7 @@ namespace stk {
         {
           stk::mesh::Entity & elem = bucket[iElemInBucketOrd] ;
           if (0) std::cout << "elemOfBucket= " << elem << std::endl;
-          const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::Node );
+          const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
           //int shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(cell_topo->name);
 
           double min_edge_length = -1.0;
@@ -1867,8 +1867,8 @@ namespace stk {
       const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(element);
 
       CellTopology cell_topo(cell_topo_data);
-      const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
-      const stk::mesh::PairIterRelation side_nodes = side.relations(stk::mesh::Node);
+      const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+      const stk::mesh::PairIterRelation side_nodes = side.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
       CellTopology cell_topo_side(PerceptMesh::get_cell_topology(side));
 
@@ -2016,7 +2016,7 @@ namespace stk {
                 {
                   stk::mesh::Entity& element = bucket[iElement];
 
-                  const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::Node );  
+                  const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );  
 
                   bool isCandidate = false;
                   unsigned num_node = elem_nodes.size(); 
@@ -2065,7 +2065,7 @@ namespace stk {
                                     {
                                       stk::mesh::Entity& element_2 = bucket_2[iElement_2];
 
-                                      const stk::mesh::PairIterRelation& elem_nodes_2 = element_2.relations( stk::mesh::Node );  
+                                      const stk::mesh::PairIterRelation& elem_nodes_2 = element_2.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );  
                                       surface_node_ids.resize(elem_nodes_2.size());
                                       for (unsigned jnode = 0; jnode < elem_nodes_2.size(); jnode++)
                                         {

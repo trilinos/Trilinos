@@ -25,9 +25,7 @@
 #include <stk_mesh/base/Comm.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <stk_percept/TopologyVerifier.hpp>
@@ -454,7 +452,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    mesh::fem::FEMMetaData mesh_meta_data(3, mesh::fem_entity_rank_names() );
+    mesh::fem::FEMMetaData mesh_meta_data(3, mesh::fem::entity_rank_names(3) );
 
     //--------------------------------
     // Element-block declarations typically occur when reading the
@@ -475,7 +473,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
       mesh_meta_data.declare_field< VectorFieldType >( "coordinates" );
 
     stk::mesh::put_field(
-      coordinates_field , mesh::Node , universal , SpatialDim );
+      coordinates_field , mesh::fem::FEMMetaData::NODE_RANK , universal , SpatialDim );
 
     //--------------------------------
 
@@ -495,7 +493,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
 
     mesh_meta_data.declare_field_relation(
       elem_node_coord ,
-      & mesh::element_node_stencil<void> ,
+      stk::mesh::fem::get_element_node_stencil(3) ,
       coordinates_field );
 
     // Declare the size of the aggressive "gather" field
@@ -704,7 +702,7 @@ void use_encr_case_1_generate_mesh(
     for ( unsigned i = 0 ; i < node_map.size() ; ++i ) {
       const unsigned i3 = i * 3 ;
 
-      mesh::Entity * const node = mesh.get_entity( mesh::Node , node_map[i] );
+      mesh::Entity * const node = mesh.get_entity( mesh::fem::FEMMetaData::NODE_RANK , node_map[i] );
 
       if ( NULL == node ) {
         std::ostringstream msg ;

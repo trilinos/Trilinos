@@ -132,7 +132,7 @@ namespace stk {
         vector<tet_tuple_type> new_elements(6);
 
         CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         // for cases that have a single center node, we just compute the new node's quantities here instead of globally
         //stk::mesh::Entity * node = getBulkData()->get_entity( Node, node_id );
@@ -153,7 +153,7 @@ namespace stk {
 
           static unsigned element_globalIds[8] = {0,0,0,0, 0,0,0,0};
           //static std::vector<unsigned> element_globalIds(8);
-          const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::Node );
+          const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
           //std::cout << "tmp hex elem= " << element << std::endl;
           for (int inode=0; inode < 8; inode++)
@@ -354,7 +354,7 @@ namespace stk {
                 ++element_pool;
               }
             //nodes_to_destroy.push_back(CENTROID_N)
-            stk::mesh::Entity * node = eMesh.getBulkData()->get_entity( stk::mesh::Node, CENTROID_N);
+            stk::mesh::Entity * node = eMesh.getBulkData()->get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, CENTROID_N);
             if (!node)
               {
                 throw std::logic_error("UniformRefinerPattern_Hex8_Tet4_6_12:: node is null");

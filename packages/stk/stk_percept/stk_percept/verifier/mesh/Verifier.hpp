@@ -23,9 +23,7 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <stk_percept/TopologyVerifier.hpp>

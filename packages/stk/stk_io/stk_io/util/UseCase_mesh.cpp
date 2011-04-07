@@ -16,7 +16,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -137,19 +136,7 @@ namespace {
 	    // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
 	    int side_ordinal = elem_side[is*2+1] - 1;
 
-	    const stk::mesh::fem::FEMMetaData * fem_meta = meta.get_attribute<stk::mesh::fem::FEMMetaData>();
-	    stk::mesh::Entity* side_ptr = NULL;
-	    if (fem_meta)
-	      {
-		side_ptr =
-		  &stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-	      }
-	    else
-	      {
-		side_ptr =
-		  &stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-	      }
-	    stk::mesh::Entity& side = *side_ptr;
+            stk::mesh::Entity &side = stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
 
 	    bulk.change_entity_parts( side, add_parts );
 	    sides[is] = &side;
@@ -576,7 +563,6 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
 
   const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
-  const stk::mesh::fem::FEMMetaData * fem_meta = meta.get_attribute<stk::mesh::fem::FEMMetaData>();
 
   for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
       it != elem_blocks.end(); ++it) {
@@ -608,15 +594,11 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
         /// \todo REFACTOR cast from int to unsigned is unsafe and ugly.
         /// change function to take int[] argument.
         int *conn = &connectivity[i*nodes_per_elem];
-        if( fem_meta )
-        {
-          std::vector<stk::mesh::EntityId> id_vec;
-          for( int k = 0; k < nodes_per_elem; ++k )
-            id_vec.push_back(conn[k]);
-          elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
-        }
-        else
-          elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
+        std::vector<stk::mesh::EntityId> id_vec;
+
+        for( int k = 0; k < nodes_per_elem; ++k )
+          id_vec.push_back(conn[k]);
+        elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
       }
 
       Ioss::NameList names;
@@ -878,15 +860,9 @@ void populate_bulk_data(stk::mesh::BulkData &bulk_data,
 
   // NOTE: DO NOT USE THIS SKINNING
   if (mesh_data.m_generateSkinFaces) {
-    const stk::mesh::MetaData & meta_data = stk::mesh::MetaData::get(bulk_data);
-    const stk::mesh::fem::FEMMetaData * fem_meta = meta_data.get_attribute<stk::mesh::fem::FEMMetaData>();
-    if (fem_meta) {
-      stk::mesh::Part* const skin_part = fem_meta->get_part("skin");
-      stk::io::util::generate_sides(bulk_data, *skin_part, true);
-    } else {
-      stk::mesh::Part* const skin_part = meta_data.get_part("skin");
-      stk::io::util::generate_sides(bulk_data, *skin_part, true);
-    }
+    stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
+    stk::mesh::Part* const skin_part = fem_meta.get_part("skin");
+    stk::io::util::generate_sides(bulk_data, *skin_part, true);
   }
 }
 } // namespace util

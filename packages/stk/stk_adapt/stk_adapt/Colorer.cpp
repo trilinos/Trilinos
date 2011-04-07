@@ -114,7 +114,7 @@ namespace stk {
                             if (contains(all_elements, elem_id))
                               continue;
 
-                            const stk::mesh::PairIterRelation elem_nodes = element.relations( mesh::Node );  //! check for reference
+                            const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );  //! check for reference
                             unsigned num_node = elem_nodes.size(); 
                             bool none_in_this_color = true;
                             static std::vector<stk::mesh::EntityId> node_ids(100);

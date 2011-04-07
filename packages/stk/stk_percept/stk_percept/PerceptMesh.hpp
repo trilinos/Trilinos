@@ -20,9 +20,7 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-//#include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 
@@ -416,7 +414,7 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, mesh::fem::FEMMetaData::get(*field).universal_part());
+          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
           dataStride = r.stride[0] ;
         }
       //std::cout << "bucket dataStride= " << dataStride << std::endl;
@@ -426,7 +424,7 @@ namespace stk {
           mesh::Entity & elem = bucket[iElemInBucketOrd] ;
 
           if (0) std::cout << "elemOfBucket= " << elem << std::endl;
-          const mesh::PairIterRelation elem_nodes = elem.relations( mesh::Node );
+          const mesh::PairIterRelation elem_nodes = elem.relations( mesh::fem::FEMMetaData::NODE_RANK );
 
           // FIXME: fill field data (node coordinates)
           for (unsigned iNodeOrd = 0; iNodeOrd < numNodes; iNodeOrd++)
@@ -457,11 +455,11 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::Node, mesh::fem::FEMMetaData::get(*field).universal_part());
+          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
           dataStride = r.stride[0] ;
         }
       //std::cout << "element dataStride= " << dataStride << std::endl;
-      const mesh::PairIterRelation element_nodes = element.relations( mesh::Node );
+      const mesh::PairIterRelation element_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
       unsigned numNodes = element_nodes.size();
 
       unsigned iCell = 0;

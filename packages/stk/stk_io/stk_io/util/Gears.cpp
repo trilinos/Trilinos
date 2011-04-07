@@ -22,8 +22,6 @@
 
 #include <stk_mesh/fem/Stencils.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-
 #include <Shards_BasicTopologies.hpp>
 
 
@@ -78,8 +76,8 @@ namespace stk {
         : m_mesh_fem_meta_data( &S ),
 	  m_mesh_meta_data( S.get_meta_data(S) ),
           m_mesh( NULL ),
-          m_gear( S.declare_part(std::string("Gear_").append(name), stk::mesh::Element) ),
-          m_surf( S.declare_part(std::string("Surf_").append(name), stk::mesh::Face) ),
+          m_gear( S.declare_part(std::string("Gear_").append(name), m_mesh_fem_meta_data->element_rank()) ),
+          m_surf( S.declare_part(std::string("Surf_").append(name), m_mesh_fem_meta_data->side_rank()) ),
           m_gear_coord( gear_fields.gear_coord ),
           m_model_coord(gear_fields.model_coord )
       {   

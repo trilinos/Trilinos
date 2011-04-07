@@ -143,7 +143,7 @@ namespace stk {
         {
           out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: ";
 
-          const mesh::PairIterRelation elem_nodes = entity.relations( mesh::Node );
+          const mesh::PairIterRelation elem_nodes = entity.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           for (unsigned inode=0; inode < num_node; inode++)
             {
@@ -155,7 +155,7 @@ namespace stk {
 
         }
 
-      else if (entity.entity_rank() == mesh::Node)
+      else if (entity.entity_rank() == stk::mesh::fem::FEMMetaData::NODE_RANK)
         {
           out << "Node: " << entity.identifier();
 
@@ -442,7 +442,7 @@ get_heap_info(
 
           out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: \n";
 
-          const mesh::PairIterRelation elem_nodes = entity.relations( mesh::Node );
+          const mesh::PairIterRelation elem_nodes = entity.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           std::vector<double> min(fieldStride, 1e+30);
           std::vector<double> max(fieldStride, -1e+30);

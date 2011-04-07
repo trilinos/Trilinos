@@ -17,7 +17,6 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
