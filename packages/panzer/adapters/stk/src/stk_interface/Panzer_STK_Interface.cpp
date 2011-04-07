@@ -140,8 +140,9 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
                stk::io::put_io_part_attribute(*itr->second); // this can only be called once per part
       }
    
-      // add nodes
-      stk::io::put_io_part_attribute(*nodesPart_);
+      // add nodes 
+      if(!stk::io::is_part_io_part(*nodesPart_))
+	stk::io::put_io_part_attribute(*nodesPart_);
 
       stk::io::set_field_role(*coordinatesField_, Ioss::Field::ATTRIBUTE);
       stk::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
