@@ -68,9 +68,9 @@ void STK_Interface::addSideset(const std::string & name,const CellTopologyData *
 
    stk::mesh::Part * sideset = metaData_->get_part(name);
    if(sideset==NULL)
-      sideset = &metaData_->declare_part(name,getSideRank()); 
+      sideset = &metaData_->declare_part(name,stk::mesh::fem::CellTopology(ctData)); 
    sidesets_.insert(std::make_pair(name,sideset));
-   stk::mesh::fem::set_cell_topology(*sideset,stk::mesh::fem::CellTopology(ctData));
+   // stk::mesh::fem::set_cell_topology(*sideset,stk::mesh::fem::CellTopology(ctData));
 }
 
 void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId) 
@@ -94,7 +94,8 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_ASSERT(dimension_!=0); // no zero dimensional meshes!
 
-   metaData_->FEM_initialize(dimension_);
+   if(!metaData_->is_FEM_initialized())
+      metaData_->FEM_initialize(dimension_);
 
    stk::mesh::EntityRank elementRank = getElementRank();
    stk::mesh::EntityRank nodeRank = getNodeRank();
@@ -610,9 +611,9 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
    stk::mesh::Part * block = metaData_->get_part(name);
    if(block==0) {
       stk::mesh::EntityRank elementRank = getElementRank();
-      block = &metaData_->declare_part(name,elementRank);
+      block = &metaData_->declare_part(name,stk::mesh::fem::CellTopology(ctData));
 
-      stk::mesh::fem::set_cell_topology(*block,stk::mesh::fem::CellTopology(ctData));
+      // stk::mesh::fem::set_cell_topology(*block,stk::mesh::fem::CellTopology(ctData));
    }
 
    // construct cell topology object for this block
