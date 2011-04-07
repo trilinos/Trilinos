@@ -49,6 +49,7 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <typeinfo>
 
@@ -60,7 +61,11 @@ namespace stk {
     namespace unit_tests {
 
 
-      //the following defines where to put the input and output files created by this set of functions
+      /// CONFIGURATIONS
+      /// 1. you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
+      /// 2. you can choose to use regression testing or not (see always_do_regression_tests)
+
+      /// The following defines where to put the input and output files created by this set of functions
 #if 0
       static const std::string input_files_loc="./input_files/";
       static const std::string output_files_loc="./output_files/";
@@ -72,9 +77,74 @@ namespace stk {
 
 #define EXTRA_PRINT 0
 
+      /// This function either writes the given mesh to a file in Exodus format (option 0)
+      ///   or, under option 1, checks if the file already exists, and if so, treats that
+      ///   file as the "gold" copy and does a regression difference check.
+
+      static bool always_do_regression_tests = true;
+      
+      static void save_or_diff(PerceptMesh& eMesh, std::string filename, int option = 0)
+      {
+        if (always_do_regression_tests || option == 1)
+          {
+            unsigned p_size = eMesh.getParallelSize();
+            unsigned p_rank = eMesh.getParallelRank();
+            std::string par_filename = filename;
+            if (p_size > 1)
+              {
+                par_filename = filename+"."+toString(p_size)+"."+toString(p_rank);
+              }
+            if (Util::file_exists(par_filename))
+              {
+                int spatialDim = eMesh.getSpatialDim();
+
+                PerceptMesh eMesh1(spatialDim);
+                eMesh.saveAs("./tmp.e");
+                eMesh1.openReadOnly("./tmp.e");
+
+                PerceptMesh eMesh_gold(spatialDim);
+                eMesh_gold.openReadOnly(filename);
+                //eMesh_gold.printInfo("gold copy: "+filename, 2);
+                //eMesh1.printInfo("compare to: "+filename, 2);
+                {
+                  std::string diff_msg = "gold file diff report: "+filename+" \n";
+                  bool print_during_diff = false;
+                  bool diff = PerceptMesh::mesh_difference(eMesh1, eMesh_gold, diff_msg, print_during_diff);
+                  if (diff)
+                    {
+                      //std::cout << "tmp writing and reading to cleanup parts" << std::endl;
+
+                      // write out and read back in to cleanup old parts
+                      eMesh1.saveAs("./tmp.e");
+                      PerceptMesh eMesh2(spatialDim);
+                      eMesh2.openReadOnly("./tmp.e");
+                      //std::cout << "tmp done writing and reading to cleanup parts" << std::endl;
+                      bool diff_2 = PerceptMesh::mesh_difference(eMesh2, eMesh_gold, diff_msg, print_during_diff);
+                      //std::cout << "tmp diff_2= " << diff_2 << std::endl;
+                      diff = diff_2;
+                    }
+
+                  STKUNIT_EXPECT_TRUE(!diff);
+                }
+              }
+            else
+              {
+                eMesh.saveAs(filename);
+              }
+          }
+        else
+          {
+            eMesh.saveAs(filename);
+          }
+      }
+
       //=============================================================================
       //=============================================================================
       //=============================================================================
+
+      /// Creates meshes for use in later tests
+      /// 1. Create hex mesh from a fixture and write it in Exodus format for use later.
+      /// 2. Read the hex mesh and convert it to tet elements using stk_adapt/UniformRefiner, write it in Exodus format
 
       STKUNIT_UNIT_TEST(unit_uniformRefiner, build_meshes)
       {
@@ -91,12 +161,12 @@ namespace stk {
           std::string gmesh_spec = std::string("4x4x")+toString(4*p_size)+std::string("|bbox:0,0,0,1,1,1");
           eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
           eMesh.commit();
-          eMesh.saveAs(input_files_loc+"hex_fixture.e");
+          save_or_diff(eMesh, input_files_loc+"hex_fixture.e");
 
           // end_demo
         }
 
-        // start_demo_uniformRefiner_hex8_build
+        // start_demo_uniformRefiner_hex8_build_1
         {
           percept::PerceptMesh eMesh(3u);
 
@@ -112,8 +182,8 @@ namespace stk {
 
           UniformRefiner breaker(eMesh, break_hex_to_tet, proc_rank_field);
           breaker.doBreak();
-          eMesh.saveAs(input_files_loc+"tet_fixture.e");
-          eMesh.saveAs(input_files_loc+"tet_from_hex_fixture.e");
+          save_or_diff(eMesh, input_files_loc+"tet_fixture.e");
+          save_or_diff(eMesh, input_files_loc+"tet_from_hex_fixture.e");
           // end_demo
         }
       }
@@ -121,6 +191,8 @@ namespace stk {
       //=============================================================================
       //=============================================================================
       //=============================================================================
+
+      /// Creates meshes for use in later tests - quad meshes with and without sidesets
 
       STKUNIT_UNIT_TEST(unit_uniformRefiner, quad4_quad4_4_test_1)
       {
@@ -145,7 +217,7 @@ namespace stk {
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
             eMesh.printInfo("quad fixture", 2);
-            eMesh.saveAs(input_files_loc+"quad_fixture.e");
+            save_or_diff(eMesh, input_files_loc+"quad_fixture.e");
           }
 
         if (p_size <= 3)
@@ -163,16 +235,17 @@ namespace stk {
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
             eMesh.printInfo("quad fixture no sidesets", 2);
-            eMesh.saveAs(input_files_loc+"quad_fixture_no_sidesets.e");
+            save_or_diff(eMesh, input_files_loc+"quad_fixture_no_sidesets.e");
           }
       }
 
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      /// Refine quad elements
       /// uses the Sierra-ported tables from framework/{element,mesh_modification}
-
-      //=============================================================================
-      //=============================================================================
-      //=============================================================================
-
       STKUNIT_UNIT_TEST(unit_uniformRefiner, break_quad_to_quad_sierra)
       {
         EXCEPTWATCH;
@@ -210,11 +283,18 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            //!!eMesh.saveAs("./square_quad4_ref_sierra_out.e");
+            //!!eMesh, "./square_quad4_ref_sierra_out.e");
             // end_demo
           }
 
       }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      /// Create a triangle mesh using the QuadFixture with the option of breaking the quads into triangles
+      /// Refine the triangle mesh, write the results.
 
       STKUNIT_UNIT_TEST(unit_uniformRefiner, break_tri_to_tri_sierra)
       {
@@ -248,7 +328,7 @@ namespace stk {
             //             UniformRefiner breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
             //             breaker.doBreak();
 
-            eMesh.saveAs("./quad_fixture_tri3.e");
+            save_or_diff(eMesh, input_files_loc+"quad_fixture_tri3.e");
             // end_demo
           }
 
@@ -258,6 +338,7 @@ namespace stk {
       //=============================================================================
       //=============================================================================
 
+      /// Refine a hex8 mesh
       STKUNIT_UNIT_TEST(unit_uniformRefiner, hex8_hex8_8_1)
       {
         EXCEPTWATCH;
@@ -289,6 +370,8 @@ namespace stk {
       //=============================================================================
       //=============================================================================
 
+      /// Create and write a wedge mesh using the WedgeFixture
+
       STKUNIT_UNIT_TEST(unit_uniformRefiner, wedge6_1)
       {
         EXCEPTWATCH;
@@ -299,24 +382,15 @@ namespace stk {
         percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.getParallelSize();
-        if (p_size == 1)
+        if (p_size == 1)  // this fixture only works in serial mode
           {
-
-            //         void createMesh(stk::ParallelMachine parallel_machine,
-            //                         unsigned n_nodes_x, unsigned n_nodes_y, unsigned n_nodes_z,
-            //                         double xmin, double xmax,
-            //                         double ymin, double ymax,
-            //                         double zmin, double zmax,
-            //                         std::string output_filename
-            //                         )
-
             percept::WedgeFixture wedgeFixture;
             wedgeFixture.createMesh(MPI_COMM_WORLD,
                                     4, 3, 2,
                                     0, 1,
                                     0, 1,
                                     0, 1,
-                                    std::string("swept-wedge_0.e") );
+                                    std::string(input_files_loc+"swept-wedge_0.e") );
           }
       }
 
@@ -324,7 +398,9 @@ namespace stk {
       //=============================================================================================================================================================
       //=============================================================================================================================================================
       //=============================================================================================================================================================
-      //start
+
+      /// Create a Beam mesh and enrich it
+
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, beam_enrich)
       {
         EXCEPTWATCH;
@@ -346,7 +422,7 @@ namespace stk {
 
               bool isCommitted = true;
               percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              em1.saveAs(input_files_loc+"beam_enrich_0.e");
+              save_or_diff(em1, input_files_loc+"beam_enrich_0.e");
 
             }
 
@@ -360,7 +436,7 @@ namespace stk {
               stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
               eMesh.commit();
 
-              eMesh.saveAs(output_files_loc+"beam_enrich_0.e");
+              save_or_diff(eMesh, output_files_loc+"beam_enrich_0.e");
 
               eMesh.printInfo("beam", 2);
 
@@ -369,11 +445,16 @@ namespace stk {
               breaker.setIgnoreSideSets(true);
               breaker.doBreak();
 
-              eMesh.saveAs(output_files_loc+"beam_enrich_1.e");
+              save_or_diff(eMesh, output_files_loc+"beam_enrich_1.e");
 
             }
           }
       }
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      /// Create a beam mesh and refine it
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, beam_refine)
       {
@@ -396,7 +477,7 @@ namespace stk {
 
               bool isCommitted = true;
               percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              em1.saveAs(input_files_loc+"beam_0.e");
+              save_or_diff(em1, input_files_loc+"beam_0.e");
 
             }
 
@@ -410,7 +491,7 @@ namespace stk {
               stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
               eMesh.commit();
 
-              eMesh.saveAs(output_files_loc+"beam_0.e");
+              save_or_diff(eMesh, output_files_loc+"beam_0.e");
 
               eMesh.printInfo("beam", 2);
 
@@ -419,7 +500,7 @@ namespace stk {
               breaker.setIgnoreSideSets(true);
               breaker.doBreak();
 
-              eMesh.saveAs(output_files_loc+"beam_1.e");
+              save_or_diff(eMesh, output_files_loc+"beam_1.e");
 
             }
           }
@@ -430,6 +511,18 @@ namespace stk {
       //======================================================================================================================
       //===================== Table generation
       //======================================================================================================================
+
+      /// This code generates C++ tables used by stk_adapt - tables contain node numbering, parametric coordinates consistent
+      ///    with Intrepid, and related information needed by UniformRefiner.  The generated code should be compared with
+      ///    and merged into <stk_adapt/sierra_element/GeneratedRefinementTable.hpp> as appropriate if there is a change
+      ///    in the tables in that package, or an additional element type is added. 
+      /** This comment is from the generated code and tells how to bootstrap this process.
+       * Bootstrapping this file: to create this file, run the regression test RegressionTestUniformRefiner.cpp :: generate_tables after putting in
+       *   a dummy entry in ./sierra_element/GeneratedRefinementTable.hpp.  The run will produce a local file, generated_refinement_tables.hpp 
+       *   which can be checked against the gold copy of GeneratedRefinementTable.hpp, then copied over it.  Add a call below to generate the 
+       *   actual new table data. 
+       */
+
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, generate_tables)
       {
@@ -513,6 +606,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
 
+      /// Code to generate Dot/Graphviz files representing the topology of element refinement based on the internal tables
+      
       static void output_draw(std::string filename, std::string toFile)
       {
         std::ofstream file(filename.c_str());
@@ -551,24 +646,14 @@ namespace stk {
         std::cout << Tet4_Tet4_8::draw() << std::endl;
         std::cout << Hex8_Hex8_8::draw() << std::endl;
 #endif
-        // enrich
-        //     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<9>, 1, SierraPort >            Quad4_Quad9_1;
-        //     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<8>, 1, SierraPort >            Quad4_Quad8_1;
-        //     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<6>,      1, SierraPort >            Tri3_Tri6_1;
-        //     typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<10>,  1, SierraPort >            Tet4_Tet10_1;
-        //     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<27>,   1, SierraPort >            Hex8_Hex27_1;
-        //     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<20>,   1, SierraPort >            Hex8_Hex20_1;
-
-        //     // convert
-        //     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>,      6 >                        Quad4_Tri3_6;
-        //     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>,      4, Specialization >        Quad4_Tri3_4;
-        //     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Tetrahedron<4>,  24 >                        Hex8_Tet4_24;
 
       }
 
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Convert a quad mesh to triangles with 6 triangles per quad
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad_to_tri_6)
       {
@@ -580,7 +665,7 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            // start_demo_uniformRefiner_break_quad_to_tri
+            // start_demo_uniformRefiner_break_quad_to_tri_6
             percept::PerceptMesh eMesh(2u);
             eMesh.open(input_files_loc+"quad_fixture.e");
 
@@ -602,8 +687,7 @@ namespace stk {
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            //eMesh.saveAs(output_files_loc+"break_test/quad/square/square_quad4_out.e");
-            eMesh.saveAs(output_files_loc+"square_quad4_out.e");
+            save_or_diff(eMesh, output_files_loc+"square_quad4_out.e");
             // end_demo
           }
       }
@@ -611,6 +695,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Convert a quad mesh to triangles with 4 triangles per quad
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad_to_tri_4)
       {
@@ -623,7 +709,7 @@ namespace stk {
         if (p_size == 1 || p_size == 3)
           {
 
-            // start_demo_uniformRefiner_break_quad_to_tri
+            // start_demo_uniformRefiner_break_quad_to_tri_4
             percept::PerceptMesh eMesh(2u);
             eMesh.open(input_files_loc+"quad_fixture.e");
 
@@ -643,8 +729,7 @@ namespace stk {
 
             breaker.doBreak();
 
-            //eMesh.saveAs(input_files_loc+"break_test/quad/square/square_quad4_out.e");
-            eMesh.saveAs(output_files_loc+"square_quad4_tri3_4_out.e");
+            save_or_diff(eMesh, output_files_loc+"square_quad4_tri3_4_out.e");
             // end_demo
           }
       }
@@ -653,6 +738,11 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a quad mesh using the "standalone" refinement pattern:
+      ///      UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4 >
+      /// This pattern is an example (like the convert-type patterns) showing how to write a new pattern with no dependencies
+      //     on other (say tabular) data/info.
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad_to_quad)
       {
@@ -680,7 +770,7 @@ namespace stk {
             breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
-            eMesh.saveAs(output_files_loc+"square_quad4_ref_out.e");
+            save_or_diff(eMesh, output_files_loc+"square_quad4_ref_out.e");
             // end_demo
           }
       }
@@ -689,6 +779,7 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
 
+      /// Refine a quad mesh
       /// uses the Sierra-ported tables from framework/{element,mesh_modification}
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad_to_quad_sierra)
@@ -700,7 +791,7 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            // start_demo_uniformRefiner_break_quad_to_quad
+            // start_demo_uniformRefiner_break_quad_to_quad_sierra
             percept::PerceptMesh eMesh(2u);
             eMesh.open(input_files_loc+"quad_fixture.e");
 
@@ -715,7 +806,7 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.saveAs(output_files_loc+"square_quad4_ref_sierra_out.e");
+            save_or_diff(eMesh, output_files_loc+"square_quad4_ref_sierra_out.e");
             // end_demo
           }
       }
@@ -724,6 +815,7 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
 
+      /// Refine a quad mesh with sidesets
       /// uses the Sierra-ported tables from framework/{element,mesh_modification}
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad_to_quad_sierra_sidesets)
@@ -737,7 +829,7 @@ namespace stk {
 
         if (p_size == 1 || p_size == 2)
           {
-            // start_demo_uniformRefiner_break_quad_to_quad
+            // start_demo_uniformRefiner_break_quad_to_quad_sierra_sidesets
             percept::PerceptMesh eMesh(2u);
             eMesh.open(input_files_loc+"quad_fixture.e");
 
@@ -754,7 +846,7 @@ namespace stk {
 
             eMesh.printInfo("after refinement break_quad_to_quad_sierra_sidesets");
 
-            eMesh.saveAs(output_files_loc+"quad_sidesets_sierra_out.e");
+            save_or_diff(eMesh, output_files_loc+"quad_sidesets_sierra_out.e");
           }
         // end_demo
       }
@@ -762,7 +854,9 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
-      // FIXME - move and/or copy to unit tests
+
+      /// Convert a hex mesh to tets using 24 tets per hex
+
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex8_tet4_24_1)
       {
         EXCEPTWATCH;
@@ -790,15 +884,14 @@ namespace stk {
 
         eMesh.commit();
         eMesh.printInfo();
-        eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex_tet_24_cube1x1x")+toString(p_size)+std::string("-orig.e"));
+        save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex_tet_24_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
         UniformRefiner breaker(eMesh, break_hex_to_tet, proc_rank_field);
         breaker.setRemoveOldElements(true);
 
         breaker.doBreak();
 
-        //eMesh.saveAs(input_files_loc+"break_test/quad/square/square_quad4_out.e");
-        eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex_tet_24_cube1x1x")+toString(p_size)+std::string(".e"));
+        save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex_tet_24_cube1x1x")+toString(p_size)+std::string(".e"));
 
         // end_demo
 
@@ -807,6 +900,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Convert a hex mesh using 6 tets per hex
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex8_tet4_6_12_1)
       {
@@ -833,7 +928,7 @@ namespace stk {
 
         eMesh.commit();
         eMesh.printInfo();
-        eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex_tet_6_12_cube1x1x")+toString(p_size)+std::string("-orig.e"));
+        save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex_tet_6_12_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
         UniformRefiner breaker(eMesh, break_hex_to_tet, proc_rank_field);
         breaker.setRemoveOldElements(true);
@@ -841,7 +936,7 @@ namespace stk {
 
         breaker.doBreak();
 
-        eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex_tet_6_12_cube1x1x")+toString(p_size)+std::string(".e"));
+        save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex_tet_6_12_cube1x1x")+toString(p_size)+std::string(".e"));
 
         // end_demo
       }
@@ -849,6 +944,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Convert a hex mesh using 6 tets per hex
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex8_tet4_6_12_2)
       {
@@ -875,13 +972,13 @@ namespace stk {
             eMesh.commit();
             //eMesh.printInfo("test",2);
             eMesh.printInfo();
-            eMesh.saveAs(output_files_loc+"cylinder_hex8_tet4_6_12_0.e");
+            save_or_diff(eMesh, output_files_loc+"hex8_tet4_6_12_0.e");
 
             UniformRefiner breaker(eMesh, break_hex_to_tet, proc_rank_field);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
-            eMesh.saveAs(output_files_loc+"cylinder_hex8_tet4_6_12_1.e");
+            save_or_diff(eMesh, output_files_loc+"hex8_tet4_6_12_1.e");
 
             // end_demo
           }
@@ -891,6 +988,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a quad mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, quad4_quad4_4_test_1)
       {
@@ -915,13 +1014,15 @@ namespace stk {
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
             eMesh.printInfo("quad fixture");
-            eMesh.saveAs(output_files_loc+"quad_fixture.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_test_1.e");
           }
       }
 
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a quad mesh; test the multiple refinement feature
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad_to_quad_sierra_1)
       {
@@ -951,8 +1052,8 @@ namespace stk {
 
             //eMesh.printInfo("quad mesh");
 
-            eMesh.saveAs(output_files_loc+"quad_fixture_0.e");
-            eMesh.saveAs(input_files_loc+"quad_fixture_0.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_0.e");
+            save_or_diff(eMesh, input_files_loc+"quad_fixture_0.e");
             eMesh.close();
 
             for (int iBreak = 0; iBreak < 2; iBreak++)
@@ -976,11 +1077,11 @@ namespace stk {
                 breaker.doBreak();
                 std::string fileName1 = std::string(output_files_loc+"quad_fixture_")+toString(iBreak+1)+std::string(".e");
                 std::string fileName2 = std::string(input_files_loc+"quad_fixture_")+toString(iBreak+1)+std::string(".e");
-                //eMesh1.saveAs(fileName+"_ref.e");
+
                 //eMesh1.printInfo("quad_fixture_1.e");
 
-                eMesh1.saveAs(fileName2);
-                eMesh1.saveAs(fileName1);
+                save_or_diff(eMesh1, fileName2);
+                save_or_diff(eMesh1, fileName1);
                 eMesh1.close();
 
                 if (0 && iBreak==0)
@@ -1000,6 +1101,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a quad mesh; test the multiple refinement feature
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad_to_quad_sierra_2)
       {
@@ -1028,8 +1131,8 @@ namespace stk {
 
             //eMesh.printInfo("quad mesh");
 
-            eMesh.saveAs(output_files_loc+"quad_fixture_mbreak_0.e");
-            eMesh.saveAs(input_files_loc+"quad_fixture_mbreak_0.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_mbreak_0.e");
+            save_or_diff(eMesh, input_files_loc+"quad_fixture_mbreak_0.e");
             eMesh.close();
 
 
@@ -1049,7 +1152,7 @@ namespace stk {
 
                 breaker.doBreak();
                 std::string fileName1 = std::string(output_files_loc+"quad_fixture_mbreak_")+toString(iBreak+1)+std::string(".e");
-                eMesh1.saveAs(fileName1);
+                save_or_diff(eMesh1, fileName1);
               }
 
             // end_demo
@@ -1059,6 +1162,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a quad mesh (convert linear Quad4 elements to quadratic Quad9)
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad4_to_quad9)
       {
@@ -1091,12 +1196,12 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.saveAs(output_files_loc+"quad_fixture_quad9_0.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_quad9_0.e");
 
             UniformRefiner breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
 
             breaker.doBreak();
-            eMesh.saveAs(output_files_loc+"quad_fixture_quad9_1.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_quad9_1.e");
 
             // end_demo
           }
@@ -1106,6 +1211,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
 
+      /// Enrich a quad mesh (convert linear Quad4 elements to serendepity Quad8)
+
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad4_to_quad8)
       {
         EXCEPTWATCH;
@@ -1113,11 +1220,9 @@ namespace stk {
 
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
-        //if (p_size == 1 || p_size == 3)
         if (p_size <= 3)
           {
             const unsigned n = 12;
-            //const unsigned nx = n , ny = n , nz = p_size*n ;
             const unsigned nx = n , ny = n;
 
             bool doGenSideSets = true;
@@ -1135,13 +1240,13 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.saveAs(output_files_loc+"quad_fixture_quad8_0.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_quad8_0.e");
 
             UniformRefiner breaker(eMesh, break_quad4_to_quad8_1, proc_rank_field);
 
             breaker.doBreak();
-            eMesh.saveAs(output_files_loc+"quad_fixture_quad8_1.e");
-            eMesh.saveAs(input_files_loc+"quad_fixture_quad8_quad8_0.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_quad8_1.e");
+            save_or_diff(eMesh, input_files_loc+"quad_fixture_quad8_quad8_0.e");
 
             // end_demo
           }
@@ -1150,6 +1255,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a quad8/serendepity mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad8_to_quad8)
       {
@@ -1174,7 +1281,7 @@ namespace stk {
             breaker.setIgnoreSideSets(false);
 
             breaker.doBreak();
-            eMesh.saveAs(output_files_loc+"quad_fixture_quad8_quad8_1.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_quad8_quad8_1.e");
 
           }
       }
@@ -1183,6 +1290,9 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a quad4 mesh to quad9 then refine it
+
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad4_to_quad9_to_quad9_0)
       {
         EXCEPTWATCH;
@@ -1215,12 +1325,11 @@ namespace stk {
 
               fixture.generate_mesh();
 
-              //eMesh.saveAs(output_files_loc+"quad_fixture_quad9_0.e");
 
               UniformRefiner breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
 
               breaker.doBreak();
-              eMesh.saveAs(input_files_loc+"quad_1x1_quad9_quad9_0.e");
+              save_or_diff(eMesh, input_files_loc+"quad_1x1_quad9_quad9_0.e");
             }
 
             {
@@ -1232,13 +1341,12 @@ namespace stk {
 
               em1.commit();
 
-              //em1.saveAs(output_files_loc+"quad_1x1_quad9_0.e");
 
               UniformRefiner breaker(em1, break_q9_q9, proc_rank_field);
               breaker.setIgnoreSideSets(!doGenSideSets);
 
               breaker.doBreak();
-              em1.saveAs(output_files_loc+"quad_1x1_quad9_quad9_1.e");
+              save_or_diff(em1, output_files_loc+"quad_1x1_quad9_quad9_1.e");
 
             }
             // end_demo
@@ -1248,6 +1356,9 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a quad4 mesh to quad9 then refine it
+
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad4_to_quad9_to_quad9)
       {
         EXCEPTWATCH;
@@ -1281,14 +1392,13 @@ namespace stk {
 
               fixture.generate_mesh();
 
-              //eMesh.saveAs(output_files_loc+"quad_fixture_quad9_0.e");
 
               UniformRefiner breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
               std::cout << "break_quad4_to_quad9_1.fixSurfaceAndEdgeSetNamesMap().size()= "
                         << break_quad4_to_quad9_1.fixSurfaceAndEdgeSetNamesMap().size() << std::endl;
 
               breaker.doBreak();
-              eMesh.saveAs(input_files_loc+"quad_fixture_quad9_quad9_0.e");
+              save_or_diff(eMesh, input_files_loc+"quad_fixture_quad9_quad9_0.e");
               //eMesh.printInfo("quad_fixture_quad9_quad9_0.e", 2);
             }
 
@@ -1301,13 +1411,12 @@ namespace stk {
 
               em1.commit();
 
-              //em1.saveAs(output_files_loc+"quad_fixture_quad9_0.e");
 
               UniformRefiner breaker(em1, break_q9_q9, proc_rank_field);
               breaker.setIgnoreSideSets(!doGenSideSets);
 
               breaker.doBreak();
-              em1.saveAs(output_files_loc+"quad_fixture_quad9_quad9_1.e");
+              save_or_diff(em1, output_files_loc+"quad_fixture_quad9_quad9_1.e");
 
             }
             // end_demo
@@ -1317,6 +1426,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a triangle mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_sierra_0)
       {
@@ -1341,7 +1452,7 @@ namespace stk {
 
             eMesh.printInfo("tri mesh");
 
-            eMesh.saveAs(output_files_loc+"quad_fixture_tri3.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_tri3.e");
             // end_demo
           }
 
@@ -1350,6 +1461,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a triangle mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_sierra_1)
       {
@@ -1387,14 +1500,14 @@ namespace stk {
 
             //eMesh.printInfo("tri mesh", 5);
             eMesh.printInfo("tri mesh");
-            eMesh.saveAs(output_files_loc+"quad_fixture_tri3_0.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_tri3_0.e");
 
             UniformRefiner breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
             breaker.doBreak();
 
             //eMesh.printInfo("tri mesh refined", 5);
             eMesh.printInfo("tri mesh refined");
-            eMesh.saveAs(output_files_loc+"quad_fixture_tri3_1.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_tri3_1.e");
 
             if (0)
               {
@@ -1410,6 +1523,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a triangle mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri3_to_tri6_sierra)
       {
@@ -1447,15 +1562,15 @@ namespace stk {
 
             //eMesh.printInfo("tri mesh", 5);
             eMesh.printInfo("tri mesh tri6");
-            eMesh.saveAs(output_files_loc+"quad_fixture_tri3_tri6_0.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_tri3_tri6_0.e");
 
             UniformRefiner breaker(eMesh, break_tri3_to_tri6, proc_rank_field);
             breaker.doBreak();
 
             //eMesh.printInfo("tri mesh refined", 5);
             eMesh.printInfo("tri mesh enriched");
-            eMesh.saveAs(output_files_loc+"quad_fixture_tri3_tri6_1.e");
-            eMesh.saveAs(input_files_loc+"quad_fixture_tri6_tri6_0.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_tri3_tri6_1.e");
+            save_or_diff(eMesh, input_files_loc+"quad_fixture_tri6_tri6_0.e");
 
             if (0)
               {
@@ -1471,6 +1586,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a triangle mesh then refine it
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri3_to_tri6_to_tri6_sierra)
       {
@@ -1495,13 +1612,13 @@ namespace stk {
             eMesh.commit();
 
             eMesh.printInfo("tri mesh tri6");
-            eMesh.saveAs(output_files_loc+"quad_fixture_tri6_tri6_0.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_tri6_tri6_0.e");
 
             UniformRefiner breaker(eMesh, break_tri6_to_tri6, proc_rank_field);
             breaker.doBreak();
 
             eMesh.printInfo("tri mesh refined");
-            eMesh.saveAs(output_files_loc+"quad_fixture_tri6_tri6_1.e");
+            save_or_diff(eMesh, output_files_loc+"quad_fixture_tri6_tri6_1.e");
             // end_demo
           }
 
@@ -1510,6 +1627,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a linear tet mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tet4_tet4_0)
       {
@@ -1521,19 +1640,20 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            // start_demo_uniformRefiner_break_tet4_tet4
+            // start_demo_uniformRefiner_break_tet4_tet4_0
             percept::PerceptMesh eMesh(3u);
             eMesh.openReadOnly(input_files_loc+"tet_from_hex_fixture.e");
-            eMesh.saveAs(input_files_loc+"tet_from_hex_fixture_0.e");
+            save_or_diff(eMesh, input_files_loc+"tet_from_hex_fixture_0.e");
             // end_demo
 
           }
       }
 
-#if 1
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a linear tet mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tet4_tet4_1)
       {
@@ -1561,18 +1681,20 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
-            eMesh.saveAs(output_files_loc+"cylinder_tet4_1.e");
+            save_or_diff(eMesh, output_files_loc+"tet4_refined_1.e");
 
             breaker.doBreak();
-            eMesh.saveAs(output_files_loc+"cylinder_tet4_2.e");
+            save_or_diff(eMesh, output_files_loc+"tet4_refined_2.e");
             // end_demo
 
           }
       }
-#endif
+
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a linear tet mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tet4_tet10_1)
       {
@@ -1584,7 +1706,7 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            // start_demo_uniformRefiner_break_tet4_tet4_1
+            // start_demo_uniformRefiner_break_tet4_tet10_1
             percept::PerceptMesh eMesh(3u);
             eMesh.open(input_files_loc+"tet_from_hex_fixture_0.e");
 
@@ -1600,7 +1722,7 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
-            eMesh.saveAs(output_files_loc+"cylinder_tet10_1.e");
+            save_or_diff(eMesh, output_files_loc+"tet10_1.e");
             // end_demo
 
 
@@ -1610,6 +1732,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a linear tet mesh then refine it
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tet4_tet10_tet10_1)
       {
@@ -1622,7 +1746,7 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            // start_demo_uniformRefiner_break_tet4_tet4_1
+            // start_demo_uniformRefiner_break_tet4_tet10_tet10_1
             percept::PerceptMesh eMesh(3u);
             eMesh.open(input_files_loc+"tet_from_hex_fixture_0.e");
 
@@ -1638,17 +1762,17 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
-            eMesh.saveAs(input_files_loc+"cylinder_tet10_1.e");
-            eMesh.printInfo("cylinder_tet10_1");
+            save_or_diff(eMesh, input_files_loc+"tet10_1.e");
+            eMesh.printInfo("tet10_1");
             // end_demo
 
           }
 
         if (p_size == 1 || p_size == 3)
           {
-            // start_demo_uniformRefiner_break_tet4_tet4_1
+            // start_demo_uniformRefiner_break_tet4_tet10_tet10_2
             percept::PerceptMesh eMesh(3u);
-            eMesh.open(input_files_loc+"cylinder_tet10_1.e");
+            eMesh.open(input_files_loc+"tet10_1.e");
 
             Tet10_Tet10_8 break_tet_tet(eMesh);
 
@@ -1669,7 +1793,7 @@ namespace stk {
                 breaker.doBreak();
               }
             
-            eMesh.saveAs(output_files_loc+"cylinder_tet10_tet10_"+toString(numRefines)+".e");
+            save_or_diff(eMesh, output_files_loc+"tet10_tet10_"+toString(numRefines)+".e");
             // end_demo
 
 
@@ -1679,6 +1803,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a linear hex mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex8_hex8_8_1)
       {
@@ -1705,14 +1831,14 @@ namespace stk {
 
         eMesh.commit();
         eMesh.printInfo();
-        eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex_hex_cube1x1x")+toString(p_size)+std::string("-orig.e"));
+        save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex_hex_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
         UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
         breaker.setRemoveOldElements(true);
 
         breaker.doBreak();
 
-        eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex_hex_cube1x1x")+toString(p_size)+std::string(".e"));
+        save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex_hex_cube1x1x")+toString(p_size)+std::string(".e"));
 
         // end_demo
 
@@ -1721,6 +1847,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a linear hex mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex8_hex8_8_2)
       {
@@ -1745,15 +1873,15 @@ namespace stk {
 
             eMesh.commit();
             eMesh.printInfo();
-            eMesh.saveAs(output_files_loc+"cylinder_hex8_0.e");
+            save_or_diff(eMesh, output_files_loc+"hex8_0.e");
 
             UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
             breaker.doBreak();
 
-            eMesh.saveAs(output_files_loc+"cylinder_hex8_1.e");
+            save_or_diff(eMesh, output_files_loc+"hex8_1.e");
 
             breaker.doBreak();
-            eMesh.saveAs(output_files_loc+"cylinder_hex8_2.e");
+            save_or_diff(eMesh, output_files_loc+"hex8_2.e");
 
             // end_demo
           }
@@ -1763,6 +1891,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a linear hex mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex8_hex27_1_1)
       {
@@ -1785,14 +1915,14 @@ namespace stk {
 
         eMesh.commit();
         eMesh.printInfo();
-        eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex8_hex27_cube1x1x")+toString(p_size)+std::string("-orig.e"));
+        save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex8_hex27_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
         UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
         breaker.setRemoveOldElements(true);
 
         breaker.doBreak();
 
-        eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex8_hex27_cube1x1x")+toString(p_size)+std::string(".e"));
+        save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex8_hex27_cube1x1x")+toString(p_size)+std::string(".e"));
 
         // end_demo
 
@@ -1801,6 +1931,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a linear hex mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex8_hex27_1_2)
       {
@@ -1825,12 +1957,12 @@ namespace stk {
 
             eMesh.commit();
             eMesh.printInfo();
-            eMesh.saveAs(output_files_loc+"cylinder_hex27_0.e");
+            save_or_diff(eMesh, output_files_loc+"hex27_0.e");
 
             UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
             breaker.doBreak();
 
-            eMesh.saveAs(output_files_loc+"cylinder_hex27_1.e");
+            save_or_diff(eMesh, output_files_loc+"hex27_1.e");
 
 
             // end_demo
@@ -1841,6 +1973,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a linear hex mesh to serendepity hex20 elements
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex8_hex20_1_1)
       {
@@ -1863,15 +1997,15 @@ namespace stk {
 
         eMesh.commit();
         eMesh.printInfo();
-        eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex8_hex20_cube1x1x")+toString(p_size)+std::string("-orig.e"));
+        save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex8_hex20_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
         UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
         breaker.setRemoveOldElements(true);
 
         breaker.doBreak();
 
-        eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex8_hex20_cube1x1x")+toString(p_size)+std::string(".e"));
-        eMesh.saveAs(std::string(input_files_loc+"")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
+        save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex8_hex20_cube1x1x")+toString(p_size)+std::string(".e"));
+        save_or_diff(eMesh, std::string(input_files_loc+"")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
 
 
         // end_demo
@@ -1881,6 +2015,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a linear hex mesh to serendepity hex20 elements
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex8_hex20_1_2)
       {
@@ -1905,13 +2041,13 @@ namespace stk {
 
             eMesh.commit();
             eMesh.printInfo();
-            eMesh.saveAs(output_files_loc+"cylinder_hex20_0.e");
+            save_or_diff(eMesh, output_files_loc+"hex20_0.e");
 
             UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
             breaker.doBreak();
 
-            eMesh.saveAs(output_files_loc+"cylinder_hex20_1.e");
-            eMesh.saveAs(input_files_loc+"cylinder_hex20_hex20_0.e");
+            save_or_diff(eMesh, output_files_loc+"hex20_1.e");
+            save_or_diff(eMesh, input_files_loc+"hex20_hex20_0.e");
 
 
             // end_demo
@@ -1922,6 +2058,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a serendepity hex20 mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex20_hex20_1)
       {
@@ -1944,14 +2082,14 @@ namespace stk {
             stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
-            eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
+            save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
 
             UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
             breaker.setRemoveOldElements(true);
 
             breaker.doBreak();
 
-            eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_1.e"));
+            save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_1.e"));
           }
 
         // end_demo
@@ -1961,6 +2099,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a serendepity hex20 mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex20_hex20_1_2)
       {
@@ -1976,7 +2116,7 @@ namespace stk {
           {
             percept::PerceptMesh eMesh(3u);
 
-            eMesh.open(input_files_loc+"cylinder_hex20_hex20_0.e");
+            eMesh.open(input_files_loc+"hex20_hex20_0.e");
 
             Hex20_Hex20_8 break_hex_to_hex(eMesh);
 
@@ -1984,13 +2124,13 @@ namespace stk {
             stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
-            eMesh.saveAs(output_files_loc+"cylinder_hex20_hex20_0.e");
+            save_or_diff(eMesh, output_files_loc+"hex20_hex20_0.e");
 
             UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
-            eMesh.saveAs(output_files_loc+"cylinder_hex20_hex20_1.e");
+            save_or_diff(eMesh, output_files_loc+"hex20_hex20_1.e");
 
 
             // end_demo
@@ -2000,6 +2140,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine a quadratic hex27 mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex27_hex27_0)
       {
@@ -2023,14 +2165,14 @@ namespace stk {
 
           eMesh.commit();
           eMesh.printInfo();
-          eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("-orig.e"));
+          save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
           UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
           breaker.setRemoveOldElements(true);
 
           breaker.doBreak();
 
-          eMesh.saveAs(std::string(input_files_loc+"")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("_0.e"));
+          save_or_diff(eMesh, std::string(input_files_loc+"")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("_0.e"));
         }
 
 
@@ -2047,7 +2189,6 @@ namespace stk {
 
           eMesh.commit();
           //eMesh.printInfo();
-          //eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
           UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
           // FIXME
@@ -2056,7 +2197,7 @@ namespace stk {
 
           breaker.doBreak();
 
-          eMesh.saveAs(std::string(output_files_loc+"")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("_1.e"));
+          save_or_diff(eMesh, std::string(output_files_loc+"")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("_1.e"));
         }
 
         // end_demo
@@ -2067,11 +2208,13 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
 
+      /// Refine a quadratic hex27 mesh
+
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex8_hex27_hex27_1)
       {
         EXCEPTWATCH;
 
-        // start_demo_uniformRefiner_hex8_hex27_1_2
+        // start_demo_uniformRefiner_hex8_hex27_hex27_1
         MPI_Barrier( MPI_COMM_WORLD );
 
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -2091,18 +2234,18 @@ namespace stk {
 
               eMesh.commit();
               eMesh.printInfo();
-              eMesh.saveAs(output_files_loc+"cylinder_hex8_hex27_0.e");
+              save_or_diff(eMesh, output_files_loc+"hex8_hex27_0.e");
 
               UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
               breaker.doBreak();
 
-              eMesh.saveAs(input_files_loc+"cylinder_hex8_hex27_1.e");
+              save_or_diff(eMesh, input_files_loc+"hex8_hex27_1.e");
             }
 
             {
               percept::PerceptMesh eMesh(3u);
 
-              eMesh.open(input_files_loc+"cylinder_hex8_hex27_1.e");
+              eMesh.open(input_files_loc+"hex8_hex27_1.e");
 
               Hex27_Hex27_8 break_hex_to_hex(eMesh);
 
@@ -2118,7 +2261,7 @@ namespace stk {
 
               breaker.doBreak();
 
-              eMesh.saveAs(output_files_loc+"cylinder_hex8_hex27_hex27_1.e");
+              save_or_diff(eMesh, output_files_loc+"hex8_hex27_hex27_1.e");
 
             }
 
@@ -2131,12 +2274,14 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
 
+      /// Refine a linear wedge mesh
+
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, wedge6_2)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        // start_demo_unit1_uniformRefiner_wedge6_1
+        // start_demo_unit1_uniformRefiner_wedge6_2
 
         percept::PerceptMesh eMesh(3u);
 
@@ -2158,9 +2303,9 @@ namespace stk {
                                     0, 1,
                                     0, 1,
                                     0, 1,
-                                    std::string("swept-wedge_0.e") );
+                                    std::string(input_files_loc+"swept-wedge_0.e") );
 
-            eMesh.open("swept-wedge_0.e");
+            eMesh.open(input_files_loc+"swept-wedge_0.e");
 
             Wedge6_Wedge6_8 break_wedge(eMesh);
 
@@ -2172,7 +2317,7 @@ namespace stk {
             UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
 
-            eMesh.saveAs(output_files_loc+"swept-wedge_1.e");
+            save_or_diff(eMesh, output_files_loc+"swept-wedge_1.e");
 
           }
         // end_demo
@@ -2182,6 +2327,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a linear wedge mesh to serendepity Wedge15
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, wedge6_enrich_1)
       {
@@ -2209,9 +2356,9 @@ namespace stk {
                                     0, 1,
                                     0, 1,
                                     0, 1,
-                                    std::string("swept-wedge_enrich_0.e") );
+                                    std::string(input_files_loc+"swept-wedge_enrich_0.e") );
 
-            eMesh.open("swept-wedge_enrich_0.e");
+            eMesh.open(input_files_loc+"swept-wedge_enrich_0.e");
 
             Wedge6_Wedge15_1 break_wedge(eMesh);
 
@@ -2223,8 +2370,8 @@ namespace stk {
             UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
 
-            eMesh.saveAs(output_files_loc+"swept-wedge_enrich_1.e");
-            eMesh.saveAs(input_files_loc+"swept-wedge_enrich_refine_0.e");
+            save_or_diff(eMesh, output_files_loc+"swept-wedge_enrich_1.e");
+            save_or_diff(eMesh, input_files_loc+"swept-wedge_enrich_refine_0.e");
 
           }
         // end_demo
@@ -2233,6 +2380,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a linear wedge mesh to serendepity Wedge15 then refine it
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, wedge6_enrich_refine)
       {
@@ -2253,9 +2402,9 @@ namespace stk {
                                     0, 1,
                                     0, 1,
                                     0, 1,
-                                    std::string("tmp-swept-wedge_enrich_0.e") );
+                                    std::string(input_files_loc+"tmp-swept-wedge_enrich_0.e") );
 
-            eMesh.open("tmp-swept-wedge_enrich_0.e");
+            eMesh.open(input_files_loc+"tmp-swept-wedge_enrich_0.e");
 
             Wedge6_Wedge15_1 break_wedge(eMesh);
 
@@ -2264,14 +2413,14 @@ namespace stk {
             eMesh.commit();
             UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
-            eMesh.saveAs(input_files_loc+"swept-wedge_enrich_refine_0.e");
+            save_or_diff(eMesh, input_files_loc+"swept-wedge_2_enrich_refine_0.e");
           }
 
         percept::PerceptMesh eMesh(3u);
 
         if (p_size == 1)
           {
-            eMesh.open(input_files_loc+"swept-wedge_enrich_refine_0.e");
+            eMesh.open(input_files_loc+"swept-wedge_2_enrich_refine_0.e");
 
             Wedge15_Wedge15_8 break_wedge(eMesh);
 
@@ -2284,7 +2433,7 @@ namespace stk {
             breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
-            eMesh.saveAs(output_files_loc+"swept-wedge_enrich_refine_1.e");
+            save_or_diff(eMesh, output_files_loc+"swept-wedge_2_enrich_refine_1.e");
 
           }
         // end_demo
@@ -2294,6 +2443,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Generate a heterogeneous mesh (tet, hex, wedge elements) then refine it
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, heterogeneous_mesh)
       {
@@ -2330,7 +2481,7 @@ namespace stk {
 
               //em1.printInfo("heterogeneous", 4);
 
-              em1.saveAs(input_files_loc+"heterogeneous_0.e");
+              save_or_diff(em1, input_files_loc+"heterogeneous_0.e");
               em1.close();
             }
 
@@ -2358,7 +2509,7 @@ namespace stk {
                 breaker.setIgnoreSideSets(true);
                 breaker.doBreak();
 
-                eMesh1.saveAs(output_files_loc+"heterogeneous_1.e");
+                save_or_diff(eMesh1, output_files_loc+"heterogeneous_1.e");
                 eMesh1.close();
               }
           }
@@ -2369,62 +2520,7 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
 
-
-#if 0
-      STKUNIT_UNIT_TEST(unit1_uniformRefiner, beam_refine)
-      {
-        EXCEPTWATCH;
-        MPI_Barrier( MPI_COMM_WORLD );
-
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-        const unsigned p_size = stk::parallel_machine_size(pm);
-
-        if (p_size <= 1)
-          {
-            // create the mesh
-            {
-
-              stk::percept::BeamFixture mesh(pm, false);
-              stk::io::put_io_part_attribute(  mesh.m_block_beam );
-              mesh.m_metaData.commit();
-              mesh.populate();
-
-              bool isCommitted = true;
-              percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              em1.saveAs(input_files_loc+"beam_0.e");
-
-            }
-
-            // refine
-            {
-              stk::percept::PerceptMesh eMesh(3u);
-              eMesh.open(input_files_loc+"beam_0.e");
-              //URP_Heterogeneous_3D break_pattern(eMesh);
-              Beam2_Beam2_2 break_pattern(eMesh);
-              int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-              eMesh.commit();
-
-              eMesh.saveAs(output_files_loc+"beam_0.e");
-
-              eMesh.printInfo("beam", 2);
-
-              UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
-              //breaker.setRemoveOldElements(false);
-              breaker.setIgnoreSideSets(true);
-              breaker.doBreak();
-
-              eMesh.saveAs(output_files_loc+"beam_1.e");
-
-            }
-          }
-      }
-
-#endif
-      //======================================================================================================================
-      //======================================================================================================================
-      //======================================================================================================================
+      /// Enrich a heterogeneous mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, heterogeneous_mesh_enrich)
       {
@@ -2462,7 +2558,7 @@ namespace stk {
               //em1.printInfo("hetero_enrich", 4);
 
 
-              em1.saveAs(input_files_loc+"heterogeneous_enrich_0.e");
+              save_or_diff(em1, input_files_loc+"heterogeneous_enrich_0.e");
               em1.close();
             }
 
@@ -2492,8 +2588,8 @@ namespace stk {
                 breaker.setIgnoreSideSets(true);
                 breaker.doBreak();
 
-                eMesh1.saveAs(output_files_loc+"heterogeneous_enrich_1.e");
-                eMesh1.saveAs(input_files_loc+"heterogeneous_quadratic_refine_0.e");
+                save_or_diff(eMesh1, output_files_loc+"heterogeneous_enrich_1.e");
+                save_or_diff(eMesh1, input_files_loc+"heterogeneous_quadratic_refine_0.e");
                 eMesh1.close();
               }
           }
@@ -2503,6 +2599,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Refine the enriched heterogeneous mesh
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, heterogeneous_quadratic_refine)
       {
@@ -2536,7 +2634,7 @@ namespace stk {
                 breaker.setIgnoreSideSets(true);
                 breaker.doBreak();
 
-                eMesh1.saveAs(output_files_loc+"heterogeneous_quadratic_refine_1.e");
+                save_or_diff(eMesh1, output_files_loc+"heterogeneous_quadratic_refine_1.e");
                 eMesh1.close();
               }
           }
@@ -2548,6 +2646,8 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      /// Enrich a wedge6 mesh to wedge18
 
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, wedge6_wedge18_enrich)
       {
@@ -2600,8 +2700,6 @@ namespace stk {
             UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
 
-            //eMesh.saveAs(output_files_loc+"swept-wedge6_18_enrich_0.e");
-            //eMesh.saveAs(input_files_loc+"swept-wedge6_18_enrich_refine_0.e");
           }
         // end_demo
       }

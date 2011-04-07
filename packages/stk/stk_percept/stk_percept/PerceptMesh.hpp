@@ -142,7 +142,11 @@ namespace stk {
 
       /// print number of parts and fields, and info on each
       void
-      printInfo(std::string header="", int print_level = 0);
+      printInfo(std::ostream& stream, std::string header="", int print_level=0, bool do_endl=true);
+
+      /// print number of parts and fields, and info on each
+      void
+      printInfo(std::string header="", int print_level = 0, bool do_endl=true);
 
       void
       printFields(std::string header="");
@@ -172,6 +176,7 @@ namespace stk {
       void dumpElements(const std::string& partName = "");
 
       unsigned getRank() { return getBulkData()->parallel_rank(); }
+      unsigned getParallelRank() { return getBulkData()->parallel_rank(); }
       unsigned getParallelSize() { return getBulkData()->parallel_size(); }
       bool isGhostElement(const stk::mesh::Entity& element)
       {
@@ -312,6 +317,17 @@ namespace stk {
       }
 
 
+      static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2, 
+                                  std::string& msg,
+                                  bool print=true);
+
+      static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,
+                                  stk::mesh::fem::FEMMetaData& metaData_2,
+                                  stk::mesh::BulkData& bulkData_1,
+                                  stk::mesh::BulkData& bulkData_2,
+                                  std::string& msg,
+                                  bool print=true);
+
 
     private:
 
@@ -348,6 +364,7 @@ namespace stk {
                                          const stk::mesh::Part* arg_part=0);
 
       //static void transformMesh(GenericFunction& coordinate_transform);
+
 
     private:
       //stk::mesh::fem::FEMMetaData *         m_fem_meta_data;
