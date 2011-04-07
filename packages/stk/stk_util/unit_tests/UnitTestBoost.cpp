@@ -8,6 +8,7 @@
 
 #include <utility>
 #include <iostream>
+#include <iomanip>
 #include <cstring>
 #include <string>
 
@@ -19,8 +20,6 @@
 #include <boost/shared_array.hpp>
 
 #include <stk_util/util/ci_string.hpp>
-
-#include <boost/program_options.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
@@ -96,28 +95,5 @@ STKUNIT_UNIT_TEST(UnitTestBoost, testUnit)
   
   std::cout << s << std::endl;
   
-  namespace po = boost::program_options;
-
-  // Declare the supported options.
-  po::options_description desc("Allowed options");
-  desc.add_options()
-    ("help", "produce help message")
-    ("compression", po::value<int>(), "set compression level")
-    ;
-
-  char * test_argv[2];
-  test_argv[0] = my_strdup("UnitTestBoost");
-  test_argv[1] = my_strdup("--compression=1");
-
-  int argc = sizeof(test_argv)/sizeof(test_argv[0]);
-  
-  po::variables_map vm;
-  po::store(po::parse_command_line(argc, test_argv, desc), vm);
-  po::notify(vm);    
-
-  STKUNIT_ASSERT_EQUAL(vm["compression"].as<int>(), 1);
-
-  delete [] test_argv[0];
-  delete [] test_argv[1];
 }
 
