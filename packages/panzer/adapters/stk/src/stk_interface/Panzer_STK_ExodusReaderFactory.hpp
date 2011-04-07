@@ -60,6 +60,7 @@ protected:
    void registerSidesets(STK_Interface & mesh,stk::io::util::MeshData & meshData) const;
 
    std::string fileName_;
+   int restartIndex_;
 };
 
 }

@@ -95,7 +95,7 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 
    RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
    mesh.beginModification();
-   stk::io::util::populate_bulk_data(*bulkData, *meshData, "exodusii");
+   stk::io::util::populate_bulk_data(*bulkData, *meshData, "exodusii", restartIndex_);
    mesh.endModification();
 
    mesh.buildSubcells();
@@ -122,6 +122,8 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
 
    fileName_ = paramList->get<std::string>("File Name");
 
+   restartIndex_ = paramList->get<int>("Restart Index");
+
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
 }
@@ -135,6 +137,9 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
       validParams = Teuchos::rcp(new Teuchos::ParameterList);
       validParams->set<std::string>("File Name","<file name not set>","Name of exodus file to be read", 
                                     Teuchos::rcp(new Teuchos::FileNameValidator));
+      
+      validParams->set<int>("Restart Index",-1,"Index of solution to read in", 
+			    Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_INT,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));
 
       Teuchos::ParameterList & bcs = validParams->sublist("Periodic BCs");
       bcs.set<int>("Count",0); // no default periodic boundary conditions
