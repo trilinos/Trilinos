@@ -4,7 +4,7 @@
 namespace panzer_stk {
 
 /** This class provides a user with the opportunity
-  * to inject there own (likely) mesh dependent evaluators
+  * to inject their own (likely) mesh dependent evaluators
   * into the field manager.
   */
 template <typename EvalT>
