@@ -29,10 +29,6 @@
 #ifndef TEUCHOS_COMMAND_LINE_PROCESSOR_HPP
 #define TEUCHOS_COMMAND_LINE_PROCESSOR_HPP
 
-/** \example CommandLineProcessor/cxx_main.cpp
-    This is an example of how to use the Teuchos::CommandLineProcessor class.
-*/
-
 /*! \file Teuchos_CommandLineProcessor.hpp
   \brief Basic command line parser for input from <tt>(argc,argv[])</tt> 
 */
@@ -60,6 +56,11 @@ namespace Teuchos {
  * <tt>this->addOutputSetupOptions()==true</tt>
  *
  */
+/** \example CommandLineProcessor/cxx_main.cpp
+    This is an example of how to use the Teuchos::CommandLineProcessor class.
+*/
+
+
 class TEUCHOS_LIB_DLL_EXPORT CommandLineProcessor {
 public:
 
