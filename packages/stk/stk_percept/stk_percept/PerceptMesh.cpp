@@ -2392,7 +2392,7 @@ namespace stk {
                 //if (printInfo) std::cout << "P[" << p_rank << "] info>    number of field restrictions= " << nfr << std::endl;
                 unsigned stride_1 = 0;
                 unsigned stride_2 = 0;
-                stk::mesh::EntityRank field_rank = stk::mesh::Node;
+                stk::mesh::EntityRank field_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
                 bool local_diff = false;
                 for (unsigned ifr = 0; ifr < nfr_1; ifr++)
                   {
