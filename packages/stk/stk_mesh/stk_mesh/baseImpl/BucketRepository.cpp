@@ -305,6 +305,8 @@ BucketRepository::declare_bucket(
   ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
                   "Entity rank " << arg_entity_rank << " is invalid");
 
+  ThrowRequireMsg( !m_buckets.empty(),
+    "m_buckets is empty! Did you forget to initialize MetaData before creating BulkData?");
   std::vector<Bucket *> & bucket_set = m_buckets[ arg_entity_rank ];
 
   //----------------------------------

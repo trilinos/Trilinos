@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -27,7 +27,7 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
-//using stk::mesh::fem::NODE_RANK;
+//using stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 //----------------------------------------------------------------------
 
@@ -51,9 +51,9 @@ namespace stk{
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
 
-      put_field( m_coordinates_field , stk::mesh::fem::NODE_RANK , universal );
+      put_field( m_coordinates_field , stk::mesh::fem::FEMMetaData::NODE_RANK , universal );
       put_field( m_centroid_field , m_elem_rank , universal );
-      put_field( m_temperature_field, stk::mesh::fem::NODE_RANK, universal );
+      put_field( m_temperature_field, stk::mesh::fem::FEMMetaData::NODE_RANK, universal );
       put_field( m_volume_field, m_elem_rank, m_block_beam );
 
       // Define the field-relation such that the values of the
@@ -123,7 +123,7 @@ namespace stk{
 
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < node_count ; ++i ) {
-            stk::mesh::Entity * const node = m_bulkData.get_entity( stk::mesh::fem::NODE_RANK , i + 1 );
+            stk::mesh::Entity * const node = m_bulkData.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , i + 1 );
             double * const coord = field_data( m_coordinates_field , *node );
             coord[0] = node_coord_data[i][0] ;
             coord[1] = node_coord_data[i][1] ;

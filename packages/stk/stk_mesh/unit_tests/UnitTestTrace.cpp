@@ -30,8 +30,8 @@ STKUNIT_UNIT_TEST(UnitTestTrace, testTrace)
   EntityKey not_watch_key(0, 2);
   
   // Set up a dummy trace configuration. Here, we're telling the tracing
-  // system that we to trace BulkData calls related to entities, specifically
-  // Node[1].
+  // system that we want to trace BulkData calls related to entities,
+  // specifically Node[1].
   meshlog.setPrintMask(stk::mesh::LOG_ENTITY | stk::mesh::LOG_TRACE);
   stk::mesh::watch(watch_key);
   stk::diag::Trace::addTraceFunction("stk::mesh::BulkData");

@@ -15,6 +15,7 @@
 #include <stk_mesh/fixtures/HexFixture.hpp>
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <stk_mesh/base/EntityComm.hpp>
@@ -929,6 +930,25 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   }//end of CommAll section
 
   bulk.modification_end ();
+}
+
+STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testUninitializedMetaData )
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  stk::mesh::MetaData meta; // Construct, but do not initialize
+  stk::mesh::BulkData bulk(meta, pm);
+
+  meta.set_entity_rank_names(stk::mesh::fem::entity_rank_names(2 /*spatial-dim*/));
+
+  meta.commit();
+
+  bulk.modification_begin();
+
+  STKUNIT_ASSERT_THROW( bulk.declare_entity(0, /*rank*/
+                                            1, /*id*/
+                                            stk::mesh::PartVector() ),
+                        std::logic_error);
 }
 
 namespace {

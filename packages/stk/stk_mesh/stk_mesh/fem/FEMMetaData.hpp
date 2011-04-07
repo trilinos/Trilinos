@@ -169,6 +169,8 @@ class FEMMetaData {
    */
   fem::CellTopology get_cell_topology( const Part & part) const;
 
+  fem::CellTopology get_cell_topology( const std::string & topology_name) const;
+
   /** \brief Return the EntityRank that is associated with the given cell
    * topology.  In several cases, this rank is dependent on spatial
    * dimension.

@@ -123,7 +123,7 @@ namespace stk {
       UniformRefinerPatternBase() : m_appendConvertString("_urpconv"),
                                     m_appendOriginalString(percept::PerceptMesh::s_omit_part+"_1000"),  // _100000
                                     m_oldElementsPartName("urp_oldElements"),
-                                    m_primaryEntityRank(stk::mesh::fem::INVALID_RANK)  
+                                    m_primaryEntityRank(stk::mesh::fem::FEMMetaData::INVALID_RANK)  
       {
         Elem::StdMeshObjTopologies::bootstrap();
 

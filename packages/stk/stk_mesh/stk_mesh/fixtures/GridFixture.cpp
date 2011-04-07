@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -103,7 +103,7 @@ void GridFixture::generate_grid()
 
       for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
-        Entity& node = m_bulk_data.declare_entity(fem::NODE_RANK, node_id, no_parts);
+        Entity& node = m_bulk_data.declare_entity(fem::FEMMetaData::NODE_RANK, node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }

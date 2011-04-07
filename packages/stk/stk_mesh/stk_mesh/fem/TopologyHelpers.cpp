@@ -102,7 +102,7 @@ Entity & declare_element_side(
 
   mesh.declare_relation( elem , side , local_side_id );
 
-  PairIterRelation rel = elem.relations( fem::NODE_RANK );
+  PairIterRelation rel = elem.relations( fem::FEMMetaData::NODE_RANK );
 
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
     Entity & node = * rel[ side_node_map[i] ].entity();
@@ -183,8 +183,8 @@ bool element_side_polarity( const Entity & elem ,
     is_side ? elem_top->side[ local_side_id ].node
             : elem_top->edge[ local_side_id ].node ;
 
-  const PairIterRelation elem_nodes = elem.relations( fem::NODE_RANK );
-  const PairIterRelation side_nodes = side.relations( fem::NODE_RANK );
+  const PairIterRelation elem_nodes = elem.relations( fem::FEMMetaData::NODE_RANK );
+  const PairIterRelation side_nodes = side.relations( fem::FEMMetaData::NODE_RANK );
 
   bool good = true ;
   for ( unsigned j = 0 ; good && j < side_top->node_count ; ++j ) {
@@ -220,7 +220,7 @@ int get_entity_subcell_id( const Entity & entity ,
   }
 
   // get nodal relations for entity
-  PairIterRelation relations = entity.relations(fem::NODE_RANK);
+  PairIterRelation relations = entity.relations(fem::FEMMetaData::NODE_RANK);
 
   const int num_permutations = subcell_topology->permutation_count;
 
@@ -309,7 +309,7 @@ const CellTopologyData * get_subcell_nodes(const Entity & entity ,
   const unsigned* subcell_node_local_ids =
     celltopology->subcell[subcell_rank][subcell_identifier].node;
 
-  PairIterRelation node_relations = entity.relations(fem::NODE_RANK);
+  PairIterRelation node_relations = entity.relations(fem::FEMMetaData::NODE_RANK);
 
   subcell_nodes.reserve(num_nodes_in_subcell);
 

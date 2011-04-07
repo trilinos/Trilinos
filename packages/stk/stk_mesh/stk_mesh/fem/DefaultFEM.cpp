@@ -86,7 +86,7 @@ DefaultFEM::initialize(
   size_t                spatial_dimension)
 {
   // Load up appropriate standard cell topologies.
-  register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Node >()), fem::NODE_RANK);
+  register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Node >()), fem::FEMMetaData::NODE_RANK);
 
   if (spatial_dimension == 1) {
     const EntityRank element_rank = fem::element_rank(spatial_dimension);

@@ -23,7 +23,7 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 
-using stk::mesh::fem::NODE_RANK;
+static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 typedef stk::mesh::Field<double>                          ScalarField ;
 typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;

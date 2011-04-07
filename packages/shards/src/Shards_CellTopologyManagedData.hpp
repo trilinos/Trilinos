@@ -58,6 +58,9 @@ typedef CellTopologyData_Subcell Subcell ;
 class CellTopologyManagedData : public CellTopologyData
 {
 public:
+  /** \brief  Empty topology */
+  CellTopologyManagedData( const std::string & name );
+
   /** \brief  1D topology */
   CellTopologyManagedData( const std::string & name , const unsigned nodeCount );
 
@@ -91,6 +94,10 @@ private:
   std::vector< Subcell >        m_subcell ;
   std::vector< unsigned >       m_node_map ;
 };
+
+CellTopologyManagedData *
+createCellTopology(
+  const std::string & name );
 
 CellTopologyManagedData *
 createCellTopology(

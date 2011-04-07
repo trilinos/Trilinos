@@ -12,7 +12,6 @@
 #include <stk_io/util/Gears.hpp>
 #include <stk_io/util/Skinning.hpp>
 
-#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -20,8 +19,6 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-
-#include <stk_util/environment/WallTime.hpp>
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -39,11 +36,9 @@
 #include <limits>
 
 namespace {
-  using stk::mesh::fem::NODE_RANK;
-
   void generate_gears(stk::ParallelMachine comm,
 		      const std::string &parameters,
-		      stk::mesh::fem::FEMMetaData &meta,
+		      stk::mesh::fem::FEMMetaData &fem_meta,
 		      std::vector<stk::io::util::Gear*> &gears);
 
   void generate_gears(stk::mesh::BulkData &mesh,
@@ -142,18 +137,18 @@ namespace {
 	    // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
 	    int side_ordinal = elem_side[is*2+1] - 1;
 
-      stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(stk::mesh::MetaData::get(bulk).get_attribute<stk::mesh::fem::FEMMetaData>());
+	    const stk::mesh::fem::FEMMetaData * fem_meta = meta.get_attribute<stk::mesh::fem::FEMMetaData>();
 	    stk::mesh::Entity* side_ptr = NULL;
-      if (fem_meta)
-        {
-          side_ptr =
-            &stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-        }
-      else
-        {
-          side_ptr =
-            &stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-        }
+	    if (fem_meta)
+	      {
+		side_ptr =
+		  &stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+	      }
+	    else
+	      {
+		side_ptr =
+		  &stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+	      }
 	    stk::mesh::Entity& side = *side_ptr;
 
 	    bulk.change_entity_parts( side, add_parts );
@@ -310,7 +305,6 @@ void create_input_mesh(const std::string &mesh_type,
 {
   Ioss::Region *in_region = NULL;
   stk::mesh::MetaData &meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-//        stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta_data.get_attribute<stk::mesh::fem::FEMMetaData>());
   if (mesh_type == "exodusii" || mesh_type == "generated" || mesh_type == "pamgen" ) {
 
     // Prepend the working directory onto the mesh filename iff the
@@ -360,21 +354,15 @@ void create_input_mesh(const std::string &mesh_type,
   }
   mesh_data.m_region = in_region;
 
+  // NOTE: THIS SHOULD NOT BE USED; USE STK_MESH SKINNING INSTEAD
   // See if caller requested that the model be "skinned".  If
   // so, all exposed faces are generated and put in a part named
   // "skin"
   if (mesh_data.m_generateSkinFaces) {
-//          if( fem_meta ) {
     stk::mesh::Part &skin_part = fem_meta.declare_part("skin", fem_meta.side_rank());
     stk::io::put_io_part_attribute(skin_part);
     /** \todo REFACTOR Query all parts to determine topology of the skin. */
     stk::mesh::fem::set_cell_topology(fem_meta, skin_part, shards::getCellTopologyData<shards::Quadrilateral<4> >());
-    // } else {
-    //   stk::mesh::Part &skin_part = stk::mesh::declare_part(meta_data, "skin", side_rank(meta_data));
-    //   stk::io::put_io_part_attribute(skin_part);
-    //   /** \todo REFACTOR Query all parts to determine topology of the skin. */
-    //   stk::io::set_cell_topology(skin_part, shards::getCellTopologyData<shards::Quadrilateral<4> >());
-    // }
   }
 }
 
@@ -385,7 +373,7 @@ Ioss::Region *create_output_mesh(const std::string &mesh_filename,
                                  MPI_Comm comm,
                                  stk::mesh::BulkData &bulk_data,
                                  const Ioss::Region *in_region,
-                                 stk::mesh::fem::FEMMetaData &meta_data,
+                                 stk::mesh::fem::FEMMetaData &fem_meta,
                                  bool add_transient ,
                                  bool add_all_fields ) {
   return create_output_mesh(mesh_filename,
@@ -394,7 +382,7 @@ Ioss::Region *create_output_mesh(const std::string &mesh_filename,
                             comm,
                             bulk_data,
                             in_region,
-                            meta_data.get_meta_data(meta_data),
+                            stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta),
                             add_transient,
                             add_all_fields);
 }
@@ -407,7 +395,7 @@ void create_output_mesh(const std::string &mesh_filename,
                         const std::string &working_directory,
                         stk::ParallelMachine comm,
                         stk::mesh::BulkData &bulk_data,
-                        stk::mesh::MetaData &meta_data,
+                        stk::mesh::fem::FEMMetaData &fem_meta,
                         MeshData &mesh_data,
                         bool add_transient,
                         bool add_all_fields)
@@ -416,7 +404,7 @@ void create_output_mesh(const std::string &mesh_filename,
                                           mesh_extension, working_directory,
                                           comm, bulk_data,
                                           NULL, //mesh_data.m_region,
-                                          meta_data, add_transient, add_all_fields);
+                                          fem_meta, add_transient, add_all_fields);
 }
 // ========================================================================
 
@@ -501,28 +489,21 @@ Ioss::Region *create_output_mesh(const std::string &mesh_filename,
 
 // ========================================================================
 
-void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) {
-  process_nodeblocks(region,  meta.get_meta_data(meta));
+void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta) {
+  process_nodeblocks(region,  stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta));
 }
-void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) {
-  process_elementblocks(region, meta.get_meta_data(meta));
+void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta) {
+  process_elementblocks(region, stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta));
 }
-void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) {
-  process_edgesets(region, meta.get_meta_data(meta));
+void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta) {
+  process_edgesets(region, stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta));
 }
-void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) {
-  process_facesets(region, meta.get_meta_data(meta));
+void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta) {
+  process_facesets(region, stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta));
 }
-void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) {
-  process_nodesets(region,meta.get_meta_data(meta));
+void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta) {
+  process_nodesets(region, stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta));
 }
-
-
-
-
-
-
-
 
 void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
@@ -583,7 +564,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
+  const stk::mesh::fem::FEMMetaData * fem_meta = meta.get_attribute<stk::mesh::fem::FEMMetaData>();
   if( fem_meta )
     stk::io::default_part_processing(elem_blocks, meta, fem_meta->element_rank());
   else
@@ -594,15 +575,15 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
 
+  const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+  const stk::mesh::fem::FEMMetaData * fem_meta = meta.get_attribute<stk::mesh::fem::FEMMetaData>();
+
   for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
       it != elem_blocks.end(); ++it) {
     Ioss::ElementBlock *entity = *it;
 
-    stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(bulk.mesh_meta_data().get_attribute<stk::mesh::fem::FEMMetaData>());
-
     if (stk::io::include_entity(entity)) {
       const std::string &name = entity->name();
-      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
       stk::mesh::Part* const part = meta.get_part(name);
       assert(part != NULL);
 
@@ -895,9 +876,10 @@ void populate_bulk_data(stk::mesh::BulkData &bulk_data,
     generate_gears(bulk_data, mesh_data.m_gears);
   }
 
+  // NOTE: DO NOT USE THIS SKINNING
   if (mesh_data.m_generateSkinFaces) {
     const stk::mesh::MetaData & meta_data = stk::mesh::MetaData::get(bulk_data);
-    stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta_data.get_attribute<stk::mesh::fem::FEMMetaData>());
+    const stk::mesh::fem::FEMMetaData * fem_meta = meta_data.get_attribute<stk::mesh::fem::FEMMetaData>();
     if (fem_meta) {
       stk::mesh::Part* const skin_part = fem_meta->get_part("skin");
       stk::io::util::generate_sides(bulk_data, *skin_part, true);
@@ -912,11 +894,13 @@ void populate_bulk_data(stk::mesh::BulkData &bulk_data,
 } // namespace stk
 
 namespace {
-void generate_gears(stk::ParallelMachine comm, const std::string &parameters, stk::mesh::fem::FEMMetaData &meta,
+void generate_gears(stk::ParallelMachine comm, const std::string &parameters, stk::mesh::fem::FEMMetaData &fem_meta,
 		      std::vector<stk::io::util::Gear*> &gears)
   {
     const size_t spatial_dimension = 3;
-    stk::io::initialize_spatial_dimension(stk::mesh::fem::FEMMetaData::get_meta_data(meta), spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
+    stk::io::initialize_spatial_dimension(stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta),
+					  spatial_dimension,
+					  stk::mesh::fem::entity_rank_names(spatial_dimension));
     const double TWO_PI = 2.0 * std::acos( static_cast<double>(-1.0) );
 
     int p_size = stk::parallel_machine_size( comm );
@@ -994,7 +978,7 @@ void generate_gears(stk::ParallelMachine comm, const std::string &parameters, st
       }
     }
 
-    stk::io::util::GearFields gear_fields( meta );
+    stk::io::util::GearFields gear_fields( fem_meta );
 
     const size_t angle_num = static_cast<size_t>( TWO_PI / elem_h );
     const size_t rad_num   = static_cast<size_t>( 1 + ( rad_max - rad_min ) / elem_h );
@@ -1041,7 +1025,7 @@ void generate_gears(stk::ParallelMachine comm, const std::string &parameters, st
 
 	  std::ostringstream name ; name << "G_" << i << "_" << j << "_" << k ;
 
-	  stk::io::util::Gear * g = new stk::io::util::Gear( meta , name.str() , gear_fields ,
+	  stk::io::util::Gear * g = new stk::io::util::Gear( fem_meta , name.str() , gear_fields ,
 							     center ,
 							     rad_min , rad_max , rad_num ,
 							     z_min , z_max , z_num ,

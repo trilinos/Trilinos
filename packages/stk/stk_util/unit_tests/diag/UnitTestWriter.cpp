@@ -73,14 +73,14 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
 {
   dw() << "This is a test" << dendl << dflush;
 
-  STKUNIT_ASSERT_EQUAL(std::string("This is a test\n"), oss().str());
+  STKUNIT_ASSERT_EQUAL((std::string("This is a test\n") == oss().str()), true);
   
   oss().str("");
   dw() << "Level 0" << push << dendl
        << "This is a test" << dendl
        << pop << dendl;
 
-  STKUNIT_ASSERT_EQUAL(std::string("Level 0 {\n  This is a test\n}\n"), oss().str());
+  STKUNIT_ASSERT_EQUAL((std::string("Level 0 {\n  This is a test\n}\n") == oss().str()), true);
 
   oss().str("");
   {
@@ -94,7 +94,7 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
          << pop << dendl;  
   }
   dw() << dendl;
-  STKUNIT_ASSERT_EQUAL(std::string("Level 0 {\n  Level 1 {\n    Level 2 {\n      Level 3 {\n        This is a test\n      }\n    }\n  }\n}\n"), oss().str());
+  STKUNIT_ASSERT_EQUAL((std::string("Level 0 {\n  Level 1 {\n    Level 2 {\n      Level 3 {\n        This is a test\n      }\n    }\n  }\n}\n") == oss().str()), true);
 
   oss().str("");
   {
@@ -127,7 +127,7 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
     dw() << "This is a test" << dendl;
     dw() << std::string("This is a test") << dendl;    
   }
-  STKUNIT_ASSERT_EQUAL(std::string("7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\nThis is a test\nThis is a test\n"), oss().str());
+  STKUNIT_ASSERT_EQUAL((std::string("7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\nThis is a test\nThis is a test\n") == oss().str()), true);
   
   oss().str("");
   dw() << std::hex << 16 << dendl;
@@ -145,7 +145,7 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
   dw() << stk::diag::setiosflags(std::ios::fixed) << 3.14159265 << dendl;
   dw() << stk::diag::resetiosflags(std::ios::fixed) << 3.14159265 << dendl;
   dw() << stk::diag::setfill('#') << stk::diag::setw(10) << "x" << dendl;
-  STKUNIT_ASSERT_EQUAL(std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n"), oss().str());
+  STKUNIT_ASSERT_EQUAL((std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n") == oss().str()), true);
 
   oss().str("");
   {
@@ -234,6 +234,9 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
     dw() << ms << dendl;
     dw() << msp << dendl;
     dw() << b << dendl;
+
+    for(std::vector<int*>::iterator it=vp.begin(); it!=vp.end(); ++it)
+      delete *it;
 
     for ( std::multimap<int , int *>::iterator curmmp = mmp.begin() ; curmmp != mmp.end() ; curmmp++ )
       delete curmmp->second;

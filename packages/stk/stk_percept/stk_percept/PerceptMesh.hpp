@@ -99,8 +99,8 @@ namespace stk {
 
       // ctor constructor
       /// Create a Mesh object that owns its constituent FEMMetaData and BulkData (which are created by this object)
-      PerceptMesh( stk::ParallelMachine comm =  MPI_COMM_WORLD );
-      PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm =  MPI_COMM_WORLD );
+      //PerceptMesh( stk::ParallelMachine comm =  MPI_COMM_WORLD );
+      PerceptMesh(size_t spatialDimension = 3u, stk::ParallelMachine comm =  MPI_COMM_WORLD );
 
       /// reads and commits mesh, editing disabled
       void
@@ -307,9 +307,9 @@ namespace stk {
       /// here @param thing is a Part, Bucket, Entity
       template<class T>
       static
-      const CellTopologyData * const get_cell_topology(const T& thing) 
+      const CellTopologyData * get_cell_topology(const T& thing) 
       { 
-        const CellTopologyData * const cell_topo_data = mesh::fem::get_cell_topology_new(thing).getCellTopologyData();
+        const CellTopologyData * cell_topo_data = mesh::fem::get_cell_topology_new(thing).getCellTopologyData();
         return cell_topo_data;
       }
 
@@ -383,7 +383,7 @@ namespace stk {
 
 
     template<>
-    const CellTopologyData * const 
+    const CellTopologyData *
     PerceptMesh::get_cell_topology(const mesh::Part& part) ;
 
 

@@ -204,6 +204,6 @@ STKUNIT_UNIT_TEST(UnitTestLogControl, UnitTest)
     "    Running nonlinear 9\n"
     "      Work count 899\n";
   
-  STKUNIT_ASSERT_EQUAL(result, os.str());
+  STKUNIT_ASSERT_EQUAL((result == os.str()), true);
 }
 

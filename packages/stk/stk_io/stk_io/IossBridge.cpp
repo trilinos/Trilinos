@@ -353,7 +353,7 @@ namespace stk {
       if (mesh::MetaData::get(part).universal_part() == part) {
         if( fem_meta )
           {
-            return stk::mesh::fem::NODE_RANK;
+            return stk::mesh::fem::FEMMetaData::NODE_RANK;
           }
         else
           {
@@ -361,7 +361,7 @@ namespace stk {
 #  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
             return stk::mesh::Node;
 #  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-            return stk::mesh::fem::NODE_RANK;
+            return stk::mesh::fem::FEMMetaData::NODE_RANK;
 #  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
           }
@@ -472,7 +472,7 @@ namespace stk {
 #  ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
           return stk::mesh::Node;
 #  else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-          return stk::mesh::fem::NODE_RANK;
+          return stk::mesh::fem::FEMMetaData::NODE_RANK;
 #  endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
         }
     }
@@ -515,12 +515,10 @@ namespace stk {
 
     void initialize_spatial_dimension(stk::mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names)
     {
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
-
-      meta.set_entity_rank_names(entity_rank_names);
-      fem.set_spatial_dimension(spatial_dimension);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
+      if (!fem_meta.is_FEM_initialized() ) {
+        fem_meta.FEM_initialize(spatial_dimension, entity_rank_names);
+      }
     }
 
     void get_io_field_type(const stk::mesh::FieldBase *field, int num_comp, std::pair<std::string, Ioss::Field::BasicType> *result)
@@ -709,9 +707,12 @@ namespace stk {
 	return extype;
 
       if(strcmp(cell_top->name, "super") == 0) {
-          std::stringstream oss;
-          oss << "super" << cell_top->node_count;
-          return oss.str();
+        std::stringstream oss;
+        oss << "super" << cell_top->node_count;
+        return oss.str();
+      }
+      else if(strncasecmp(cell_top->name, "super", 5) == 0) {
+        return cell_top->name;
       }
 
       switch( cell_top->key ) {
@@ -834,6 +835,29 @@ namespace stk {
 	stk::io::put_io_part_attribute(*part, entity);
 
 	const Ioss::ElementTopology *topology = entity->topology();
+	// Check spatial dimension of the element topology here so we
+	// can issue a more meaningful error message.  If the
+	// dimension is bad and we continue to the following calls,
+	// there is an exception and we get unintelligible (to the
+	// user) error messages.  Could also do a catch...
+
+	if (entity->type() == Ioss::ELEMENTBLOCK) {
+	  assert(topology != NULL);
+	  if (topology->spatial_dimension() < (int)fem_meta->spatial_dimension()) {
+	    // NOTE: The comparison is '<' and not '!=' since a 2D mesh
+	    // can contain a "3d" element -- a Beam is both a 2D and
+	    // 3D element...
+
+	    std::ostringstream msg ;
+	    msg << "\n\nERROR: Element Block " << entity->name()
+		<< " contains " << topology->name() << " elements with spatial dimension "
+		<< topology->spatial_dimension()
+		<< "\n       which does not match the spatial dimension of the model which is "
+		<< fem_meta->spatial_dimension() << "\n\n";
+	    throw std::runtime_error( msg.str() );
+	  }
+	}
+
 	const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
 	/// \todo IMPLEMENT Determine whether application can work
 	/// with this topology type... Perhaps map_topology_ioss_to_cell only
@@ -906,7 +930,7 @@ namespace stk {
       bool use_cartesian_for_scalar = false;
       if (role == Ioss::Field::ATTRIBUTE)
 	use_cartesian_for_scalar = true;
-      
+
       Ioss::NameList names;
       entity->field_describe(role, &names);
 
@@ -918,7 +942,7 @@ namespace stk {
 	/// Skip the attribute field that is named "attribute"
 	if (*I == "attribute" && names.size() > 1)
 	  continue;
-	
+
 	/// \todo IMPLEMENT Need to determine whether these are
 	/// multi-state fields or constant, or interpolated, or ...
 	Ioss::Field io_field = entity->get_field(*I);
@@ -1112,7 +1136,7 @@ namespace stk {
 	  meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
 	assert(coord_field != NULL);
 	const mesh::FieldBase::Restriction &res = coord_field->restriction(node_rank(meta), part);
-	
+
 	/** \todo REFACTOR  Need a clear way to query dimensions
 	 *                  from the field restriction.
 	 */
@@ -1142,7 +1166,7 @@ namespace stk {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
         const stk::mesh::EntityRank elem_rank = element_rank(meta);
 
-        const CellTopologyData * const cell_top = 
+        const CellTopologyData * const cell_top =
         stk::io::get_cell_topology(part) ?
         stk::io::get_cell_topology(part) :
         stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
@@ -1426,7 +1450,7 @@ namespace stk {
 	std::vector<mesh::Entity *> elements;
 	size_t num_elems = get_entities(*part, bulk, elements);
 
-	const CellTopologyData * cell_topo = 
+	const CellTopologyData * cell_topo =
               stk::io::get_cell_topology(*part) ?
               stk::io::get_cell_topology(*part) :
               stk::mesh::fem::FEMMetaData::get(*part).get_cell_topology(*part).getCellTopologyData();

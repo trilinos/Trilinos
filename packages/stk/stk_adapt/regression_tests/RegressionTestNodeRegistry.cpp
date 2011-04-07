@@ -59,7 +59,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
 
-            percept::PerceptMesh eMesh(2);
+            percept::PerceptMesh eMesh(2u);
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
             eMesh.commit();
 
@@ -228,7 +228,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
 
-            percept::PerceptMesh eMesh(2);
+            percept::PerceptMesh eMesh(2u);
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
 
             eMesh.commit();
