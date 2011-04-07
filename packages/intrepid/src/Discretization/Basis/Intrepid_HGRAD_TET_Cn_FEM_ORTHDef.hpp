@@ -61,7 +61,7 @@ namespace Intrepid {
       \f]
   */
   template<typename Scalar>
-  static void jrc( const Scalar &alpha , const Scalar &beta , 
+  void jrc( const Scalar &alpha , const Scalar &beta , 
                   const int &n ,
                   Scalar &an , Scalar &bn, Scalar &cn );
   
@@ -315,20 +315,20 @@ namespace Intrepid {
     return (p+q+r)*(p+q+r+1)*(p+q+r+2)/6+(q+r)*(q+r+1)/2+r;
   }
 
-
-  template<class Scalar>
-  void jrc( const Scalar &alpha , const Scalar &beta , 
-            const int &n ,
-            Scalar &an , Scalar &bn, Scalar &cn )
-  {
-    an = (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) 
-      / ( 2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) );
-    bn = (alpha*alpha-beta*beta)*(2.0*n+1.0+alpha+beta) 
-      / ( 2.0*(n+1.0)*(2.0*n+alpha+beta)*(n+1.0+alpha+beta) );
-    cn = (n+alpha)*(n+beta)*(2.0*n+2.0+alpha+beta) 
-      / ( (n+1.0)*(n+1.0+alpha+beta)*(2.0*n+alpha+beta) );
-  
-    return;
-  }
-
 }// namespace Intrepid
+
+
+template<class Scalar>
+void Intrepid::jrc( const Scalar &alpha , const Scalar &beta , 
+  const int &n ,
+  Scalar &an , Scalar &bn, Scalar &cn )
+{
+  an = (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) 
+    / ( 2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) );
+  bn = (alpha*alpha-beta*beta)*(2.0*n+1.0+alpha+beta) 
+    / ( 2.0*(n+1.0)*(2.0*n+alpha+beta)*(n+1.0+alpha+beta) );
+  cn = (n+alpha)*(n+beta)*(2.0*n+2.0+alpha+beta) 
+    / ( (n+1.0)*(n+1.0+alpha+beta)*(2.0*n+alpha+beta) );
+  
+  return;
+}
