@@ -17,6 +17,8 @@
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_mesh/base/Trace.hpp>
 
+#include <algorithm>
+
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -37,6 +39,17 @@ public:
   const EntityKey & key() const { return m_key ; }
   PairIterRelation relations() const { return PairIterRelation(m_relation); }
   PairIterRelation relations( unsigned rank ) const ;
+  PairIterRelation node_relations( ) const
+  {
+    std::vector<Relation>::const_iterator i = m_relation.begin();
+    std::vector<Relation>::const_iterator e = m_relation.end();
+  
+    const Relation::raw_relation_id_type hi = Relation::raw_relation_id(1, 0);
+    e = std::lower_bound( i , e , hi , LessRelation() );
+  
+    return PairIterRelation( i , e );
+  }
+
   PairIterEntityComm comm() const { return PairIterEntityComm( m_comm ); }
   PairIterEntityComm sharing() const ;
   PairIterEntityComm comm( const Ghosting & sub ) const ;
