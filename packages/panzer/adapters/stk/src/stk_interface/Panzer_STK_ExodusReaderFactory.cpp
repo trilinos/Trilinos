@@ -159,7 +159,8 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io
       const std::string & name = entity->name(); 
 
       const stk::mesh::Part * part = femMetaData->get_part(name);
-      const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
+      // const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
+      const CellTopologyData * ct = femMetaData->get_cell_topology(*part).getCellTopologyData();
 
       TEUCHOS_ASSERT(ct!=0);
       mesh.addElementBlock(part->name(),ct);
@@ -188,7 +189,8 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::uti
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
       const stk::mesh::Part * part = *partItr;
       const stk::mesh::PartVector & subsets = part->subsets();
-      const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
+      // const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
+      const CellTopologyData * ct = metaData->get_cell_topology(*part).getCellTopologyData();
 
       /*
       if(part->primary_entity_rank()==mesh.getSideRank() && ct==0) {
@@ -208,7 +210,8 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::uti
 
          // grab cell topology and name of subset part
          const stk::mesh::Part * ss_part = subsets[0];
-         const CellTopologyData * ss_ct = stk::mesh::fem::get_cell_topology(*ss_part).getCellTopologyData();
+         // const CellTopologyData * ss_ct = stk::mesh::fem::get_cell_topology(*ss_part).getCellTopologyData();
+         const CellTopologyData * ss_ct = metaData->get_cell_topology(*ss_part).getCellTopologyData();
  
          // only add subset parts that have no topology
          if(ss_ct!=0) 
