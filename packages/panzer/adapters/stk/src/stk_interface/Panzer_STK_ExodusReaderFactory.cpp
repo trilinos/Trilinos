@@ -148,7 +148,6 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io
    using Teuchos::RCP;
 
    RCP<stk::mesh::fem::FEMMetaData> femMetaData = mesh.getMetaData();
-   stk::mesh::MetaData & metaData = stk::mesh::fem::FEMMetaData::get_meta_data(*femMetaData);
 
    // here we use the Ioss interface because they don't add
    // "bonus" element blocks and its easier to determine

@@ -610,10 +610,7 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
 
    stk::mesh::Part * block = metaData_->get_part(name);
    if(block==0) {
-      stk::mesh::EntityRank elementRank = getElementRank();
       block = &metaData_->declare_part(name,stk::mesh::fem::CellTopology(ctData));
-
-      // stk::mesh::fem::set_cell_topology(*block,stk::mesh::fem::CellTopology(ctData));
    }
 
    // construct cell topology object for this block

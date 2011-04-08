@@ -7,11 +7,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-// #include <stk_mesh/fem/DefaultFEM.hpp>
-// #include <stk_mesh/fem/FEMInterface.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
@@ -346,6 +342,7 @@ public:
 
    const stk::mesh::EntityRank getElementRank() const { return metaData_->element_rank(); }
    const stk::mesh::EntityRank getSideRank() const { return metaData_->side_rank(); }
+   const stk::mesh::EntityRank getFaceRank() const { return metaData_->face_rank(); }
    const stk::mesh::EntityRank getEdgeRank() const { return metaData_->edge_rank(); }
    const stk::mesh::EntityRank getNodeRank() const { return metaData_->node_rank(); }
 
@@ -550,7 +547,7 @@ void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementId
                          "must have the same vertex count!");
 
       // loop over all element nodes
-      stk::mesh::PairIterRelation nodes = element->relations(stk::mesh::Node);
+      stk::mesh::PairIterRelation nodes = element->relations(getNodeRank());
       TEST_FOR_EXCEPTION(nodes.size()!=masterVertexCount,std::runtime_error,
                          "In call to STK_Interface::getElementVertices cardinality of "
                          "element node relations must be the vertex count!");

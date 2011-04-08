@@ -99,9 +99,9 @@ void STKConnManager::buildOffsetsAndIdCounts(const panzer::FieldPattern & fp,
                                 GlobalOrdinal & faceOffset, GlobalOrdinal & cellOffset) const
 {
    // get the global counts for all the nodes, faces, edges and cells
-   GlobalOrdinal maxNodeId = stkMeshDB_->getMaxEntityId(stk::mesh::Node);
-   GlobalOrdinal maxEdgeId = stkMeshDB_->getMaxEntityId(stk::mesh::Edge);
-   GlobalOrdinal maxFaceId = stkMeshDB_->getMaxEntityId(stk::mesh::Face);
+   GlobalOrdinal maxNodeId = stkMeshDB_->getMaxEntityId(stkMeshDB_->getNodeRank());
+   GlobalOrdinal maxEdgeId = stkMeshDB_->getMaxEntityId(stkMeshDB_->getEdgeRank());
+   GlobalOrdinal maxFaceId = stkMeshDB_->getMaxEntityId(stkMeshDB_->getFaceRank());
 
    // compute ID counts for each sub cell type
    int patternDim = fp.getDimension();
@@ -196,9 +196,9 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
       elmtLidToConn_[elmtLid] = connectivity_.size();
 
       // add connecviities for sub cells
-      numIds += addSubcellConnectivities(element,stk::mesh::Node,nodeIdCnt,nodeOffset);
-      numIds += addSubcellConnectivities(element,stk::mesh::Edge,edgeIdCnt,edgeOffset);
-      numIds += addSubcellConnectivities(element,stk::mesh::Face,faceIdCnt,faceOffset);
+      numIds += addSubcellConnectivities(element,stkMeshDB_->getNodeRank(),nodeIdCnt,nodeOffset);
+      numIds += addSubcellConnectivities(element,stkMeshDB_->getEdgeRank(),edgeIdCnt,edgeOffset);
+      numIds += addSubcellConnectivities(element,stkMeshDB_->getFaceRank(),faceIdCnt,faceOffset);
 
       // add connectivity for parent cells
       if(cellIdCnt>0) {

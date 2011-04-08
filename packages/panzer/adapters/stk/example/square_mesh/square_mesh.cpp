@@ -11,7 +11,7 @@
 
 typedef Intrepid::FieldContainer<double> FieldContainer;
 
-void getNodeIds(const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds);
+void getNodeIds(const stk::mesh::Entity * element,stk::mesh::EntityRank nodeRank,std::vector<stk::mesh::EntityId> & nodeIds);
 
 /** This example whows how to get vertex IDs for all the elements
   */
@@ -57,7 +57,7 @@ int main( int argc, char **argv )
         stk::mesh::Entity * element = elements[elm];
 
         localIds.push_back(mesh->elementLocalId(element));
-        getNodeIds(element,nodes);
+        getNodeIds(element,mesh->getNodeRank(),nodes);
 
         TEUCHOS_ASSERT(nodes.size()==4);
 
@@ -73,9 +73,9 @@ int main( int argc, char **argv )
   return 0;
 }
 
-void getNodeIds(const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds)
+void getNodeIds(const stk::mesh::Entity * element,stk::mesh::EntityRank nodeRank,std::vector<stk::mesh::EntityId> & nodeIds)
 {
-   stk::mesh::PairIterRelation nodeRel = element->relations(stk::mesh::Node);
+   stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
 
    stk::mesh::PairIterRelation::iterator itr;
    for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 

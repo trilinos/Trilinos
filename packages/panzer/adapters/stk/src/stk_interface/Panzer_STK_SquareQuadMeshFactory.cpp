@@ -54,7 +54,6 @@ void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::P
    buildElements(parallelMach,mesh);
 
    // finish up the edges
-   // mesh.buildSubcells(stk::mesh::Edge);
    mesh.buildSubcells();
 
    // now that edges are built, sidets can be added
@@ -270,7 +269,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
       stk::mesh::Entity * element = (*itr);
       stk::mesh::EntityId gid = element->identifier();      
-      stk::mesh::PairIterRelation relations = element->relations(stk::mesh::Edge);
+      stk::mesh::PairIterRelation relations = element->relations(mesh.getEdgeRank());
 
       std::size_t nx,ny;
       ny = (gid-1) / totalXElems;

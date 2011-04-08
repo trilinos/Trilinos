@@ -91,8 +91,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
          TEST_EQUALITY(connMngr.getConnectivitySize(elementBlock[elmt]),9); 
    }
 
-   STKConnManager::GlobalOrdinal maxEdgeId = mesh->getMaxEntityId(stk::mesh::Edge);
-   STKConnManager::GlobalOrdinal nodeCount = mesh->getEntityCounts(stk::mesh::Node);
+   STKConnManager::GlobalOrdinal maxEdgeId = mesh->getMaxEntityId(mesh->getEdgeRank());
+   STKConnManager::GlobalOrdinal nodeCount = mesh->getEntityCounts(mesh->getNodeRank());
 
    if(numProcs==1) {
       const int * conn1 = connMngr.getConnectivity(1);
