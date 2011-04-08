@@ -57,6 +57,8 @@ APPEND_SET(HEADERS
   Panzer_ExplicitTemplateInstantiation.hpp
   Panzer_FieldManagerBuilder.hpp
   Panzer_FieldManagerBuilderT.hpp
+  Panzer_InitialCondition_Builder.hpp
+  Panzer_InitialCondition_BuilderT.hpp
   Panzer_InputEquationSet.hpp
   Panzer_InputPhysicsBlock.hpp
   Panzer_IntegrationRule.hpp
