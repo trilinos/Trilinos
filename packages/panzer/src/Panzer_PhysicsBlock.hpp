@@ -50,6 +50,11 @@ namespace panzer {
 						const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 						const Teuchos::ParameterList& models) const;
 
+    void buildAndRegisterInitialconditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+						    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+						    const Teuchos::ParameterList& models,
+						    const Teuchos::ParameterList& user_data) const;
+
     template<typename EvalT>
     void buildAndRegisterEquationSetEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm) const;
 
@@ -61,6 +66,12 @@ namespace panzer {
     void buildAndRegisterClosureModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
 						       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 						       const Teuchos::ParameterList& models) const;
+
+    template<typename EvalT>
+    void buildAndRegisterInitialConditionEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+							   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+							   const Teuchos::ParameterList& models,
+							   const Teuchos::ParameterList& user_data) const;
 
     const std::vector<std::string>& getDOFNames() const;
     const std::vector<StrBasisPair>& getProvidedDOFs() const;
@@ -156,6 +167,27 @@ void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::Fi
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
     eqstm.getAsObject<EvalT>()->buildAndRegisterClosureModelEvaluators(fm, m_provided_dofs, factory, models);
+
+  }
+}
+
+template<typename EvalT>
+void panzer::PhysicsBlock::buildAndRegisterInitialConditionEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+									     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+									     const Teuchos::ParameterList& models,
+									     const Teuchos::ParameterList& user_data) const
+{
+  using std::vector;
+  using Teuchos::RCP;
+  using panzer::EquationSet_TemplateManager;
+
+  // Loop over equation set template managers
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+    eq_set = m_equation_sets.begin();
+  for (;eq_set != m_equation_sets.end(); ++eq_set) {
+
+    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterInitialConditionEvaluators(fm, m_provided_dofs, factory, models, user_data);
 
   }
 }
