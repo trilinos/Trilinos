@@ -60,7 +60,7 @@ public:
       // Fill matrix
       A.putScalar(0.0);
       A(0,0) = -2.0/(h*h);
-      A(0,1) = s2[qp]/(2.*h);
+      A(0,1) = s2[qp]/(2.*h) + 1.0/(h*h);
       for (int i=1; i<n-1; i++) {
 	A(i,i) = -2.0/(h*h);
 	A(i,i-1) = -s2[qp]/(2.*h) + 1.0/(h*h);
@@ -229,8 +229,8 @@ public:
     Teuchos::Array<double> s1(1), s2(1), r(1), g(1);
     s1[0] = xi1;
     s2[0] = xi2;
-    r[0] = 0.0;
-    g[0] = 0.0;
+    r[0] = 1.0;
+    g[0] = 1.0;
     while( (rho_error > tol || gamma_error > tol) && it < max_it) {
 	
       // Compute rho
@@ -414,7 +414,7 @@ public:
     int p = basis->order();
     bool use_pce_quad_points = false;
     bool normalize = false;
-    bool project_integrals = true;
+    bool project_integrals = false;
     
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
@@ -451,6 +451,7 @@ public:
       xi2_rho.term(0, 0) = xi2.term(1,0); // this assumes linear expansion
       xi2_rho.term(0, 1) = xi2.term(1,1);
       gamma_rho.term(1, 0) = gamma.mean();
+      //gamma_rho.term(1, 1) = gamma.standard_deviation();
       gamma_rho.term(1, 1) = 1.0;
 	
       // Compute rho pce in transformed basis
@@ -495,6 +496,7 @@ public:
       xi1_gamma.term(0, 0) = xi1.term(0,0); // this assumes linear expansion
       xi1_gamma.term(0, 1) = xi1.term(0,1);
       rho_gamma.term(1, 0) = rho.mean();
+      //rho_gamma.term(1, 1) = rho.standard_deviation();
       rho_gamma.term(1, 1) = 1.0;
 
       // Compute gamma pce in transformed basis
@@ -557,9 +559,9 @@ int main(int argc, char **argv)
     const double h = 1.0/(n+1);
     RhoModel rhoModel(n,h);
     GammaModel gammaModel(n,h);
-    const double tol = 1.0e-8;
+    const double tol = 1.0e-7;
     const int max_it = 20;
-    CoupledSolver coupledSolver(tol, max_it, rhoModel, gammaModel);
+    CoupledSolver coupledSolver(1e-12, max_it, rhoModel, gammaModel);
     
     // Create product basis
     const int d = 2;
@@ -587,14 +589,15 @@ int main(int argc, char **argv)
 
     // Evaluate coupled model at a point
     Teuchos::Array<double> point(2);
-    point[0] = 0.0;
-    point[1] = 0.0;
+    point[0] = 0.1234;
+    point[1] = -0.23465;
     double s1 = x1.evaluate(point);
     double s2 = x2.evaluate(point);
     double rho0, gamma0;
     coupledSolver.solve(s1, s2, rho0, gamma0);
+    std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
 
-    NISPCoupledSolver nispSolver(tol, max_it, rhoModel, gammaModel,
+    NISPCoupledSolver nispSolver(1e-12, max_it, rhoModel, gammaModel,
 				 basis, quad);
     Stokhos::OrthogPolyApprox<int,double> rho_nisp(basis), gamma_nisp(basis);
     nispSolver.solve(x1, x2, rho_nisp, gamma_nisp);
@@ -645,6 +648,42 @@ int main(int argc, char **argv)
     std::cout << "gamma_st = " << gamma3
 	      << " gamma0 = " << gamma0 << " error = "
 	      << std::abs(gamma3-gamma0)/std::abs(gamma0) << std::endl;
+
+    int num_samples = 100;
+    double h_grid = 2.0/(num_samples - 1);
+    std::ofstream coupled("coupled.txt");
+    std::ofstream nisp("nisp.txt");
+    std::ofstream si("si.txt");
+    std::ofstream st("st.txt");
+    for (int i=0; i<num_samples; i++) {
+      point[0] = -1.0 + h_grid*i;
+      for (int j=0; j<num_samples; j++) {
+	point[1] = -1.0 + h_grid*j;
+
+	std::cout << "i = " << i << "j = " << j << std::endl;
+
+	double s1 = x1.evaluate(point);
+	double s2 = x2.evaluate(point);
+	coupledSolver.solve(s1, s2, rho0, gamma0);
+	coupled << s1 << " " << s2 << " " << rho0 << " " << gamma0 << std::endl;
+
+	rho1 = rho_nisp.evaluate(point);
+	gamma1 = gamma_nisp.evaluate(point);
+	nisp << s1 << " " << s2 << " " << rho1 << " " << gamma1 << std::endl;
+	
+	rho2 = rho_si.evaluate(point);
+	gamma2 = gamma_si.evaluate(point);
+	si << s1 << " " << s2 << " " << rho2 << " " << gamma2 << std::endl;
+
+	rho3 = rho_st.evaluate(point);
+	gamma3 = gamma_st.evaluate(point);
+	st << s1 << " " << s2 << " " << rho3 << " " << gamma3 << std::endl;
+      }
+    }
+    coupled.close();
+    nisp.close();
+    si.close();
+    st.close();
       
   }
   catch (std::string& s) {

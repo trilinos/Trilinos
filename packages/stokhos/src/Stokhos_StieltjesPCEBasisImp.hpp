@@ -62,8 +62,14 @@ StieltjesPCEBasis(
   ordinal_type nqp = pce_weights.size();
   pce_vals.resize(nqp);
   phi_vals.resize(nqp);
+  double mean = pce->mean();
+  double std_dev = pce->standard_deviation();
+  std::cout << "mean = " << mean << " std_dev = " << std_dev << std::endl;
   for (ordinal_type i=0; i<nqp; i++) {
-    pce_vals[i] = pce->evaluate(quad_points[i], basis_values[i]);
+    // pce_vals[i] = 
+    //   (pce->evaluate(quad_points[i], basis_values[i])-mean)/std_dev;
+    pce_vals[i] = 
+      (pce->evaluate(quad_points[i], basis_values[i]));
     phi_vals[i].resize(p+1);
   }
 
@@ -135,8 +141,8 @@ getQuadPoints(ordinal_type quad_order,
 
   // We can't reliably generate quadrature points of order > 2*p
   //std::cout << "quad_order = " << quad_order << ", 2*p = " << 2*this->p << std::endl;
-  if (quad_order > 2*this->p)
-    quad_order = 2*this->p;
+  // if (quad_order > 2*this->p)
+  //   quad_order = 2*this->p;
   Stokhos::RecurrenceBasis<ordinal_type,value_type>::getQuadPoints(quad_order, 
 								   quad_points, 
 								   quad_weights,
