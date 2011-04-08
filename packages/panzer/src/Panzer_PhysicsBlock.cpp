@@ -153,7 +153,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
 // *******************************************************************
 void panzer::PhysicsBlock::
-buildAndRegisterInitialconditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 					   const Teuchos::ParameterList& models,
 					   const Teuchos::ParameterList& user_data) const

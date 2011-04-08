@@ -26,16 +26,20 @@ void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuch
     
     // use the physics block to register evaluators
     //pb->buildAndRegisterInitialConditionEvaluators(*fm);
-    pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models);
+    pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_models, user_data);
 
 //     pb->buildAndRegisterEquationSetEvaluators(*fm);
 //     pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory);
 //     pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models);
 
+    // build the setup data using passed in information
+    Traits::SetupData setupData;
+    setupData.worksets_ = volume_worksets.find(blockId)->second;
+
+    fm->postRegistrationSetup(setupData);
+    phx_ic_field_managers.push_back(fm);
   }
   
-
-  TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet!");
 }
 
 #endif

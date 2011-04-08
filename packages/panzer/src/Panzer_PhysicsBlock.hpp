@@ -50,7 +50,7 @@ namespace panzer {
 						const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 						const Teuchos::ParameterList& models) const;
 
-    void buildAndRegisterInitialconditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+    void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 						    const Teuchos::ParameterList& models,
 						    const Teuchos::ParameterList& user_data) const;
