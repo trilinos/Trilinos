@@ -20,7 +20,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_mesh/fem/FEMHelpers.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
 
 #include <stk_io/IossBridge.hpp>
@@ -477,11 +476,11 @@ namespace stk
       // Field restrictions:
       stk::mesh::Part & universal = m_metaData->universal_part();
 
-      put_field( *m_coordinates_field , stk::mesh::Node , universal );
+      put_field( *m_coordinates_field , stk::mesh::fem::FEMMetaData::NODE_RANK , universal );
   
       m_metaData->declare_field_relation(
                                          *m_element_node_coordinates_field ,
-                                         & stk::mesh::element_node_stencil<void> ,
+                                         stk::mesh::fem::get_element_node_stencil(3) ,
                                          *m_coordinates_field 
                                          );
 
@@ -535,7 +534,7 @@ namespace stk
 
       unsigned node_count_1 = m_node_coords.size();
       for ( unsigned i = 0 ; i < node_count_1 ; ++i ) {
-        stk::mesh::Entity * const node = m_bulkData->get_entity( stk::mesh::Node , i + 1 );
+        stk::mesh::Entity * const node = m_bulkData->get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , i + 1 );
         double * const coord = field_data( *m_coordinates_field , *node );
 
         coord[0] = m_node_coords[i][0];
@@ -577,7 +576,7 @@ namespace stk
                 
 
               if (
-                  //(entity_counts[stk::mesh::Node] != expected_num_nodes) ||  
+                  //(entity_counts[stk::mesh::fem::FEMMetaData::NODE_RANK] != expected_num_nodes) ||  
                   //(entity_counts[Edge] != expected_num_edges) ||
                   //(entity_counts[Face] != expected_num_faces) ||
                   (entity_counts[m_metaData->element_rank()] != expected_num_elems)

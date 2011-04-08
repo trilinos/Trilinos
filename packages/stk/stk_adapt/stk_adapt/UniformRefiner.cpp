@@ -1511,7 +1511,7 @@ namespace stk {
 
       NodeRegistry& nodeRegistry = *m_nodeRegistry;
 
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
+      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
       // CHECK - cache this
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
@@ -1556,7 +1556,7 @@ namespace stk {
 
               if (!nodeIds_onSE[0]) {
                 
-                stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE.m_entity_id_vector[0]);
+                stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
                 
                 if (!node1)
                   {
@@ -1604,7 +1604,7 @@ namespace stk {
                 {
                   if (!nodeIds_onSE[i_new_node]) 
                     {
-                      stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE.m_entity_id_vector[0]);
+                      stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
                       //stk::mesh::Entity *node1 = m_nodeRegistry->get_entity(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE.m_entity_id_vector[i_new_node])
 
                         if (!node1)

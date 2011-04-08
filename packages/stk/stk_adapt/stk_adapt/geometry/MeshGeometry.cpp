@@ -25,7 +25,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* mesh_data)
     BulkData& bulkData = *mesh_data->getBulkData();
     VectorFieldType* coordField = mesh_data->getCoordinatesField();
 
-    const std::vector<Bucket*> & buckets = bulkData.buckets( mesh::Node );
+    const std::vector<Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
     for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
       {

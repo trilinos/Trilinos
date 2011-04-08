@@ -56,7 +56,7 @@ namespace stk {
         static vector<quadratic_type> elems(1);
 
         CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         std::vector<stk::mesh::Part*> add_parts;
         std::vector<stk::mesh::Part*> remove_parts;

@@ -112,8 +112,8 @@ void FEMMetaData::internal_set_spatial_dimension_and_ranks(size_t spatial_dimens
   // node = 0, edge = 1, face = 2, side = 2, element = 3
   // spatial_dimension = 4
   // node = 0, edge = 1, face = 2, side = 3, element = 4
-  m_edge_rank = m_spatial_dimension > 1 ? 1 : NODE_RANK;
-  m_face_rank = m_spatial_dimension > 2 ? 2 : m_edge_rank;
+  m_edge_rank = 1;
+  m_face_rank = 2;
   m_side_rank = m_spatial_dimension - 1;
   m_element_rank = m_spatial_dimension;
 

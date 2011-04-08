@@ -21,7 +21,6 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
 

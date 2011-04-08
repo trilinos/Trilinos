@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009 Sandia Corporation.                              */
+/*    Copyright 2009, 2011 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -194,7 +194,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_2)
   // add a new field
   // NOTE: we have to create the fields here before committing the mesh
   int vectorDimension = 0;  // signifies a scalar field
-  eMesh.addField("coords_mag_field", mesh::Node, vectorDimension);
+  eMesh.addField("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
   eMesh.commit();
 
   // the coordinates field is always created by the PerceptMesh read operation, here we just get the field
@@ -251,7 +251,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
   PerceptMesh eMesh(3u);
   eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
   int vectorDimension = 0;  // signifies a scalar field
-  eMesh.addField("coords_mag_field", mesh::Node, vectorDimension);
+  eMesh.addField("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
   eMesh.commit();
 
   unsigned p_rank = eMesh.getBulkData()->parallel_rank();
@@ -362,7 +362,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_multiplePoints)
   PerceptMesh eMesh(3u);
   eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
   int vectorDimension = 0;  // signifies a scalar field
-  eMesh.addField("coords_mag_field", mesh::Node, vectorDimension);
+  eMesh.addField("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
   eMesh.commit();
 
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field

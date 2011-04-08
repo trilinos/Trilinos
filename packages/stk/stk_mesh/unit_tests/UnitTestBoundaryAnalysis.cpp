@@ -19,7 +19,6 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_mesh/fixtures/GridFixture.hpp>

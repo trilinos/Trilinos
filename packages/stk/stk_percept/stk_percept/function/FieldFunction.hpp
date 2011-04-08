@@ -17,7 +17,6 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <stk_percept/function/Function.hpp>
 #include <stk_percept/function/internal/Searcher.hpp>

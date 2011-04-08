@@ -79,7 +79,7 @@ namespace stk
         // ([C],[F])
         MDArray field_data_values(numCells, numBases);
 
-        const mesh::PairIterRelation elem_nodes = element.relations( mesh::Node );
+        const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
         // ([P],[D])  [P] points in [D] dimensions
 

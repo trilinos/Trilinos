@@ -62,7 +62,7 @@ namespace stk
     {
       const CellTopologyData * const top = stk::percept::PerceptMesh::get_cell_topology(elem);
 
-      const mesh::PairIterRelation elem_nodes = elem.relations( mesh::Node );
+      const mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
 #if 0
       std::cout << "top->node_count = " << top->node_count << "\n";
@@ -140,7 +140,7 @@ namespace stk
                   return true;
                 }
               if (0) std::cout << "elemOfBucket= " << elem << std::endl;
-              const mesh::PairIterRelation elem_nodes = elem.relations( mesh::Node );
+              const mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
               //const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
               const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
@@ -184,7 +184,7 @@ namespace stk
                       for (unsigned iele = 0; iele < num_elems_on_node; iele++)
                         {
                           mesh::Entity & elemOnNode = *node_elems[iele].entity();
-                          const mesh::PairIterRelation elemOnNode_nodes = elemOnNode.relations( mesh::Node );
+                          const mesh::PairIterRelation elemOnNode_nodes = elemOnNode.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
                           const CellTopologyData * const local_cell_topo = stk::percept::PerceptMesh::get_cell_topology(elemOnNode);
                           int local_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(local_cell_topo->name);

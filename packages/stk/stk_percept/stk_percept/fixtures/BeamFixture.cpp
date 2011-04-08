@@ -24,10 +24,7 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-
-//using stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 //----------------------------------------------------------------------
 

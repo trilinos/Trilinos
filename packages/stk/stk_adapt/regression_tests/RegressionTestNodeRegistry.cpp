@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009 Sandia Corporation.                              */
+/*    Copyright 2009, 2011 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -187,7 +187,7 @@ namespace stk
                       //if (!nodeIds_onSE[0])
                       //  throw std::logic_error("nodeRegistry_regr.parallel_2 logic err3");
 
-                      stk::mesh::Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE.m_entity_id_vector[0]);
+                      stk::mesh::Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
 
                       EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 42u);
                       // should be the same node on each proc
@@ -360,7 +360,7 @@ namespace stk
                       NodeIdsOnSubDimEntityType nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd);
                       if (!nodeIds_onSE[0])
                         throw std::logic_error("nodeRegistry_regr.parallel_2 logic err1");
-                      stk::mesh::Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE[0]->identifier());
+                      stk::mesh::Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE[0]->identifier());
 
                       //EXPECT_EQ(nodeId, 42u);
                       // should be the same node on each proc
@@ -375,7 +375,7 @@ namespace stk
                           if (!nodeIds_onSE_1[0])
                             throw std::logic_error("nodeRegistry_regr.parallel_2 logic err2");
 
-                          stk::mesh::Entity*  node_1   = eMesh.getBulkData()->get_entity(stk::mesh::Node, nodeIds_onSE_1[0]->identifier());
+                          stk::mesh::Entity*  node_1   = eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE_1[0]->identifier());
 
                           std::cout << "P[" << p_rank << "] nodeId_1 = " << nodeIds_onSE_1 << " node_1= " << node_1 << std::endl;
 

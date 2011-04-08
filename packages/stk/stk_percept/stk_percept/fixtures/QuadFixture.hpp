@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -22,7 +22,6 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
@@ -32,7 +31,6 @@
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_io/IossBridge.hpp>
 
@@ -64,7 +62,7 @@ namespace stk {
 
         QuadFixture( stk::ParallelMachine pm ,
                      unsigned nx , unsigned ny, bool generate_sidesets_in )
-          : meta_data(2, stk::mesh::fem_entity_rank_names() ),
+          : meta_data(2, stk::mesh::fem::entity_rank_names(2) ),
             bulk_data(  stk::mesh::fem::FEMMetaData::get_meta_data(meta_data) , pm ),
             quad_part( meta_data.declare_part("block_1", meta_data.element_rank() ) ),
             coord_field( meta_data.declare_field<CoordFieldType>("coordinates") ),
@@ -83,7 +81,7 @@ namespace stk {
           //put coord-field on all nodes:
           put_field(
                     coord_field,
-                    mesh::Node,
+                    stk::mesh::fem::FEMMetaData::NODE_RANK,
                     meta_data.universal_part(),
                     SpatialDim
                     );
@@ -189,7 +187,7 @@ namespace stk {
 
               for (unsigned i = 0; i<4; ++i) {
                 stk::mesh::Entity * const node =
-                  bulk_data.get_entity( stk::mesh::Node , elem_node[i] );
+                  bulk_data.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , elem_node[i] );
 
                 if ( node != NULL) {
 
@@ -232,7 +230,7 @@ namespace stk {
         { return 1 + ix + NX * iy ; }
 
         stk::mesh::Entity * node( unsigned ix , unsigned iy ) const
-        { return bulk_data.get_entity( stk::mesh::Node , node_id(ix,iy) ); }
+        { return bulk_data.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , node_id(ix,iy) ); }
 
         void node_ix_iy( stk::mesh::EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
           entity_id -= 1;

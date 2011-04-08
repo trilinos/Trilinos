@@ -126,7 +126,7 @@ namespace stk {
         static vector<tet_tuple_type> elems(24);
 
         CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
 
         // FIXME - maybe the computation of node coorinates should go in the calling code?

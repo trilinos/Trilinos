@@ -18,13 +18,8 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <Shards_CellTopology.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
-
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/TopologyHelpersDeprecated.hpp>
-#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
 namespace use_case {
 #if 0
@@ -274,29 +269,21 @@ namespace stk {
 	// Generate one layer of ghost mesh
         mesh.modification_begin();
 
-	const stk::mesh::MetaData& meta_data = mesh::MetaData::get(mesh);
+	const stk::mesh::fem::FEMMetaData& meta_data = stk::mesh::fem::FEMMetaData::get(mesh);
 	const stk::mesh::PartVector & all_parts = meta_data.get_parts();
 	for (stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip) {
 	  stk::mesh::Part *part = *ip;
 
 	  // Filter out parts with "non-solid" (hexes and tets) topology...
 	  const CellTopologyData * cell_topo = NULL;
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-	  cell_topo = stk::mesh::get_cell_topology(*part);
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-	  cell_topo = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+	  cell_topo = meta_data.get_cell_topology(*part).getCellTopologyData();
           stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(stk::mesh::MetaData::get(mesh).get_attribute<stk::mesh::fem::FEMMetaData>());
           if (fem_meta && !cell_topo) cell_topo = fem_meta->get_cell_topology(*part).getCellTopologyData();
 	  if (cell_topo == NULL || cell_topo->dimension != 3)
 	    continue;
 
           stk::mesh::Selector selector = *part & meta_data.locally_owned_part();
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-          const std::vector<stk::mesh::Bucket*>& all_element_buckets = mesh.buckets(stk::mesh::Element);
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-          const std::vector<stk::mesh::Bucket*>& all_element_buckets = mesh.buckets(stk::mesh::fem::element_rank(fem));
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+          const std::vector<stk::mesh::Bucket*>& all_element_buckets = mesh.buckets(fem_meta->element_rank());
 	  std::vector<stk::mesh::Bucket *> elem_buckets;
 	  stk::mesh::get_buckets(selector, all_element_buckets, elem_buckets);
 

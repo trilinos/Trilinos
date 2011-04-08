@@ -817,7 +817,7 @@ namespace stk {
         //EXCEPTWATCH;
 
         int spatialDim = m_eMesh.getSpatialDim();
-        stk::mesh::EntityRank field_rank = mesh::Node;
+        stk::mesh::EntityRank field_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
         {
           unsigned nfr = field->restrictions().size();
           //if (printInfo) std::cout << "P[" << p_rank << "] info>    number of field restrictions= " << nfr << std::endl;
@@ -830,7 +830,7 @@ namespace stk {
             }
         }
 
-        if (field_rank != mesh::Node)
+        if (field_rank != stk::mesh::fem::FEMMetaData::NODE_RANK)
           {
             return;
           }
@@ -973,7 +973,7 @@ namespace stk {
         //unsigned *null_u = 0;
 
         int spatialDim = m_eMesh.getSpatialDim();
-        stk::mesh::EntityRank field_rank = mesh::Node;
+        stk::mesh::EntityRank field_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
         {
           EXCEPTWATCH;
           unsigned nfr = field->restrictions().size();
@@ -986,7 +986,7 @@ namespace stk {
               spatialDim = fr.stride[0] ;
             }
         }
-        if (field_rank != mesh::Node)
+        if (field_rank != stk::mesh::fem::FEMMetaData::NODE_RANK)
           {
             return;
           }
@@ -1013,7 +1013,7 @@ namespace stk {
                 continue;
               }
 
-            stk::mesh::EntityRank needed_entity_rank = mesh::Node;
+            stk::mesh::EntityRank needed_entity_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
             // SPECIAL CASE
             // SPECIAL CASE
             // SPECIAL CASE
@@ -1026,9 +1026,7 @@ namespace stk {
               {
                 continue; 
               }
-
-            //stk::mesh::Entity * c_node = get_entity_node(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE[0]);
-            //stk::mesh::Entity * c_node = get_entity_node_Ia(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE, 0u);
+            
             stk::mesh::Entity * c_node = nodeIds_onSE[0];
 
             if (!c_node)
@@ -1337,7 +1335,7 @@ namespace stk {
                     //              << std::endl;
 
                     bool found = true;
-                    stk::mesh::EntityRank needed_entity_rank = mesh::Node;
+                    stk::mesh::EntityRank needed_entity_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
                     //
                     // SPECIAL CASE
                     // SPECIAL CASE

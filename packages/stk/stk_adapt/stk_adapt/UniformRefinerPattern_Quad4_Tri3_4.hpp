@@ -54,7 +54,7 @@ namespace stk {
         static vector<tri_tuple_type> elems(4);
 
         CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         //stk::mesh::Part & active = mesh->ActivePart();
         //stk::mesh::Part & quad4  = mesh->QuadPart();

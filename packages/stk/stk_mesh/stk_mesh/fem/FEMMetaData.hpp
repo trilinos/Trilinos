@@ -519,7 +519,19 @@ std::vector<std::string> entity_rank_names(size_t spatial_dimension);
 
 CellTopology get_cell_topology(const Bucket &bucket);
 
+inline CellTopology get_cell_topology(const Entity &entity) {
+  return get_cell_topology(entity.bucket());
+}
+
 } // namespace fem
+
+static const unsigned EntityRankEnd = 6;
+
+inline
+EntityRank fem_entity_rank( unsigned int t ) {
+  return 0 <= t && t < EntityRankEnd ? EntityRank(t) : InvalidEntityRank ;
+}
+
 } // namespace mesh
 } // namespace stk
 
