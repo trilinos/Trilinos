@@ -561,6 +561,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     delete[] SNumEntriesPerRow;
     delete[] CNumEntriesPerRow;
     delete[] RNumEntriesPerRow;
+    delete[] SBarNumEntriesPerRow;
     delete[] DColElems;
     delete[] SColElems;
     //delete[] CColMax;
