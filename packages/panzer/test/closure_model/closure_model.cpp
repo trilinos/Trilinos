@@ -36,6 +36,9 @@ namespace panzer {
       Teuchos::RCP<panzer::IntegrationRule> ir = 
 	Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
       default_params.set("IR",ir);
+      Teuchos::RCP<panzer::Basis> basis = 
+	Teuchos::rcp(new panzer::Basis("Q1", *ir));
+      default_params.set("Basis",basis);
       
     }
 
@@ -53,14 +56,14 @@ namespace panzer {
 
     evaluators = mf.buildClosureModels(ies.model_id, ies, p, default_params);
 
-    TEST_EQUALITY(evaluators->size(), 4);
+    TEST_EQUALITY(evaluators->size(), 8);
 
     user_app::MyModelFactory_TemplateBuilder builder;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> model_factory;
     model_factory.buildObjects(builder);
     evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params);
 
-    TEST_EQUALITY(evaluators->size(), 4);
+    TEST_EQUALITY(evaluators->size(), 8);
 
     // Add an unsupported type
     p.sublist("fluid model").sublist("garbage").set<std::string>("Value","help!");

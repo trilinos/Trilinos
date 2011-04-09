@@ -66,7 +66,7 @@ buildClosureModels(const std::string& model_id,
 	input.set("Value", plist.get<double>("Value"));
 	input.set("Data Layout", default_params.get<RCP<panzer::Basis> >("Basis")->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
-	  rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
+	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
       found = true;
