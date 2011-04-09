@@ -130,7 +130,7 @@ void findLocalColumns(Epetra_CrsMatrix *A, int *gvals, int &SNumGlobalCols)
     //cout << endl;
     //cout << "Snum Global cols=" << SNumGlobalCols << endl;
 
-    delete vals;
+    delete[] vals;
     return;
 }
 
@@ -245,8 +245,8 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
         }
         //cout << endl;
     }
-    delete vals;
-    delete allGIDs;
+    delete[] vals;
+    delete[] allGIDs;
 
 }
 
