@@ -56,6 +56,16 @@ class ParameterCondition : public Condition{
 
 public:
 
+  /** \name Public constants */
+  //@{
+
+  /** \brief The default value for the whenParamEqualsValue
+   * parameter in the Constructor.
+   */
+  static const bool WHEN_PARAM_EQUALS_VALUE_DEFAULT = true;
+
+  //@}
+
   /** \name Constructors/Destructor */
   //@{
 
@@ -73,7 +83,7 @@ public:
    */
   ParameterCondition(
     RCP<ParameterEntry> parameter, 
-    bool whenParamEqualsValue=true);
+    bool whenParamEqualsValue=WHEN_PARAM_EQUALS_VALUE_DEFAULT);
 
   virtual ~ParameterCondition(){}
   
