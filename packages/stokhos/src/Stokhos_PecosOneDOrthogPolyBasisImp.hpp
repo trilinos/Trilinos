@@ -250,7 +250,7 @@ getQuadPoints(ordinal_type quad_order,
   }
 }
 
-template <typename ordinal_type, typename value_type, typename func_type>
+template <typename ordinal_type, typename value_type>
 Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
 Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>::
 cloneWithOrder(ordinal_type p) const
