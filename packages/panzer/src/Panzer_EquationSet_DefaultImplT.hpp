@@ -102,8 +102,6 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   
   // Require variables
   {
-    std::string reqField = m_eqset_prefix+"Scatter_EnergyRawEvaluators";
-
     PHX::Tag<typename EvalT::ScalarT> tag(this->m_scatter_name, 
 					  Teuchos::rcp(new PHX::MDALayout<Dummy>(0)));
     fm.template requireField<EvalT>(tag);
@@ -186,7 +184,8 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				       const Teuchos::ParameterList& models) const
 {
   Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
-    factory.getAsObject<EvalT>()->buildClosureModels(this->m_input_eq_set, models, *(this->m_eval_plist));
+    factory.getAsObject<EvalT>()->buildClosureModels(this->m_input_eq_set.model_id, this->m_input_eq_set, models,
+						     *(this->m_eval_plist));
   
   for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
     fm.template registerEvaluator<EvalT>((*evaluators)[i]);
@@ -199,13 +198,44 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
 					   const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
 					   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 					   const Teuchos::ParameterList& models,
+					   const LinearObjFactory<panzer::Traits> & lof,
 					   const Teuchos::ParameterList& user_data) const
 {
-  Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
-    factory.getAsObject<EvalT>()->buildClosureModels(this->m_input_eq_set, models, *(this->m_eval_plist));
-  
-  for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
-    fm.template registerEvaluator<EvalT>((*evaluators)[i]);
+  Teuchos::RCP<std::map<std::string,std::string> > names_map =
+    Teuchos::rcp(new std::map<std::string,std::string>);
+
+  for (std::size_t i = 0; i < m_dof_names->size(); ++i)
+    names_map->insert(std::make_pair((*m_dof_names)[i],(*m_dof_names)[i]));
+
+  {
+    Teuchos::ParameterList p("Scatter");
+    p.set("Scatter Name", this->m_scatter_name);
+    p.set("Basis", this->m_basis);
+    p.set("Dependent Names", this->m_dof_names);
+    p.set("Dependent Map", names_map);
+
+    Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterInitialCondition<EvalT>(p);
+      // rcp(new panzer::ScatterResidual_Epetra<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
+  }
+
+  // Require variables
+  {
+    PHX::Tag<typename EvalT::ScalarT> tag(this->m_scatter_name, 
+					  Teuchos::rcp(new PHX::MDALayout<Dummy>(0)));
+    fm.template requireField<EvalT>(tag);
+  }  
+
+  // Add in closure models
+  {
+    Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
+      factory.getAsObject<EvalT>()->buildClosureModels("Initial Conditions", this->m_input_eq_set, models, *(this->m_eval_plist));
+    
+    for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
+      fm.template registerEvaluator<EvalT>((*evaluators)[i]);
+  }
+
 }
 
 // ***********************************************************************

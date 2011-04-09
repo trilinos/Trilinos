@@ -7,6 +7,8 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_Base.hpp"
 #include "Panzer_InputEquationSet.hpp"
+#include <string>
+#include <vector>
 
 namespace panzer {
 
@@ -20,9 +22,10 @@ namespace panzer {
     virtual ~ClosureModelFactory() {}
     
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
-      virtual  buildClosureModels(const panzer::InputEquationSet& set,
-				  const Teuchos::ParameterList& models,
-				  const Teuchos::ParameterList& default_params) const = 0;
+    virtual  buildClosureModels(const std::string& model_id,
+				const panzer::InputEquationSet& set,
+				const Teuchos::ParameterList& models,
+				const Teuchos::ParameterList& default_params) const = 0;
 
   };
   

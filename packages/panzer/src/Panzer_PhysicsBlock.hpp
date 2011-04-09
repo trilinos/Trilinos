@@ -53,6 +53,7 @@ namespace panzer {
     void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 						    const Teuchos::ParameterList& models,
+						    const LinearObjFactory<panzer::Traits> & lof,
 						    const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>

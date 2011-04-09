@@ -25,12 +25,8 @@ void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuch
           = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
     
     // use the physics block to register evaluators
-    //pb->buildAndRegisterInitialConditionEvaluators(*fm);
-    pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_models, user_data);
-
-//     pb->buildAndRegisterEquationSetEvaluators(*fm);
-//     pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory);
-//     pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models);
+    pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_models, lo_factory, user_data);
+    //pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models);
 
     // build the setup data using passed in information
     Traits::SetupData setupData;

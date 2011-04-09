@@ -156,6 +156,7 @@ void panzer::PhysicsBlock::
 buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 					   const Teuchos::ParameterList& models,
+					   const LinearObjFactory<panzer::Traits> & lof,
 					   const Teuchos::ParameterList& user_data) const
 {
   using namespace std;
@@ -172,7 +173,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
     EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
       eqstm.begin();
     for (; eval_type != eqstm.end(); ++eval_type) {
-      eval_type->buildAndRegisterInitialConditionEvaluators(fm, m_provided_dofs, factory, models, user_data);
+      eval_type->buildAndRegisterInitialConditionEvaluators(fm, m_provided_dofs, factory, models, lof, user_data);
     }
   }
 }

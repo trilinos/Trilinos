@@ -17,7 +17,8 @@
 template<typename EvalT>
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
 user_app::MyModelFactory<EvalT>::
-buildClosureModels(const panzer::InputEquationSet& set,
+buildClosureModels(const std::string& model_id,
+		   const panzer::InputEquationSet& set,
 		   const Teuchos::ParameterList& models, 
 		   const Teuchos::ParameterList& default_params) const
 {
@@ -32,39 +33,49 @@ buildClosureModels(const panzer::InputEquationSet& set,
   RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 
     rcp(new vector< RCP<Evaluator<panzer::Traits> > > );
 
-  if (!models.isSublist(set.model_id)) {
+  if (!models.isSublist(model_id)) {
     std::stringstream msg;
-    msg << "Falied to find requested model, \"" << set.model_id 
-	<< "\" for equation set:\n" << std::endl;
-    TEST_FOR_EXCEPTION(!models.isSublist(set.model_id), std::logic_error, msg.str());
+    msg << "Falied to find requested model, \"" << model_id 
+	<< "\", for equation set:\n" << std::endl;
+    TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
 
-  const ParameterList& my_models = models.sublist(set.model_id);
+  const ParameterList& my_models = models.sublist(model_id);
 
   for (ParameterList::ConstIterator model_it = my_models.begin(); 
        model_it != my_models.end(); ++model_it) {
     
     bool found = false;
     
-    const std::string name = model_it->first;
+    const std::string key = model_it->first;
     ParameterList input;
     const Teuchos::ParameterEntry& entry = model_it->second;
     const ParameterList& plist = Teuchos::getValue<Teuchos::ParameterList>(entry);
     
     if (plist.isType<double>("Value")) {
-      input.set("Name", name);
-      input.set("Value", plist.get<double>("Value"));
-      input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
-      RCP< Evaluator<panzer::Traits> > e = 
-	rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
-      evaluators->push_back(e);
+      { // at IP
+	input.set("Name", key);
+	input.set("Value", plist.get<double>("Value"));
+	input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+	RCP< Evaluator<panzer::Traits> > e = 
+	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+	evaluators->push_back(e);
+      }
+      { // at BASIS
+	input.set("Name", key);
+	input.set("Value", plist.get<double>("Value"));
+	input.set("Data Layout", default_params.get<RCP<panzer::Basis> >("Basis")->functional);
+	RCP< Evaluator<panzer::Traits> > e = 
+	  rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
+	evaluators->push_back(e);
+      }
       found = true;
     }
 
     if (!found) {
       std::stringstream msg;
-      msg << "ClosureModelFactory failed to build evaluator for key \"" << name 
-	  << "\"\nin model \"" << set.model_id 
+      msg << "ClosureModelFactory failed to build evaluator for key \"" << key 
+	  << "\"\nin model \"" << model_id 
 	  << "\".  Please correct the type or add support to the \nfactory." <<std::endl;
       TEST_FOR_EXCEPTION(!found, std::logic_error, msg.str());
     }

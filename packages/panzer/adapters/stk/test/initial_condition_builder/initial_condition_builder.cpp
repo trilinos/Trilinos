@@ -129,42 +129,56 @@ namespace panzer {
     user_data.sublist("STK Mesh").set("Mesh", mesh);
     user_data.sublist("STK Mesh").set("UniqueIndexer", dofManager);
 
+    Teuchos::ParameterList ic_closure_models("IC Closure Models");
+    ic_closure_models.sublist("Initial Conditions").sublist("TEMPERATURE").set<double>("Value",3.0);
+    ic_closure_models.sublist("Initial Conditions").sublist("ION_TEMPERATURE").set<double>("Value",3.0);    
+
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
     panzer::setupInitialConditionFieldManagers(volume_worksets,
 					       physics_blocks,
 					       *cm_factory,
-					       closure_models,
+					       ic_closure_models,
 					       dofManager,
 					       elof,
 					       user_data,
 					       phx_ic_field_managers);
 
-
-
-
-    // run tests
-    /////////////////////////////////
-    fmb.writeVolumeGraphvizDependencyFiles("FMB_Test_", physics_blocks);
-
-    const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm = 
-      fmb.getVolumeFieldManagers();
     
-    const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& fmb_vol_worksets = 
-      fmb.getWorksets();
-    
-    TEST_EQUALITY(fmb_vol_fm.size(), 2);
-    TEST_EQUALITY(fmb_vol_fm.size(), fmb_vol_worksets.size());
+    Teuchos::RCP<panzer::LinearObjContainer> loc = elof.buildLinearObjContainer();
+    Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+    eloc->x->PutScalar(0.0);
 
-    const std::map<panzer::BC, 
-      std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
-      panzer::LessBC>& fmb_bc_fm = fmb.getBCFieldManagers();
+    // Evaluate Initial Condition 
+    { 
+      const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& 
+	worksets = fmb.getWorksets();
       
-    const std::map<panzer::BC,
-		   Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-		   panzer::LessBC>& fmb_bc_worksets = fmb.getBCWorksets();
+      for (std::size_t block = 0; block < worksets.size(); ++block) {
+	
+	std::vector<panzer::Workset>& w = *worksets[block]; 
+	
+	Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = 
+	  phx_ic_field_managers[block];
 
-    TEST_EQUALITY(fmb_bc_fm.size(), 3);
-    TEST_EQUALITY(fmb_bc_fm.size(), fmb_bc_worksets.size());
+	fm->writeGraphvizFile(std::string("IC_"+block));
+	
+	// Loop over worksets in this element block
+	for (std::size_t i = 0; i < w.size(); ++i) {
+	  panzer::Workset& workset = w[i];
+	  
+	  workset.linContainer = loc;
+	  // Need to figure out how to get restart time from Rythmos.
+	  workset.time = 0.0;
+	  
+	  fm->evaluateFields<panzer::Traits::Residual>(workset);
+	}
+      }
+    }
+    
+    Teuchos::RCP<Epetra_Vector> x = eloc->x;
+    for (int i=0; i < x->MyLength(); ++i)
+      TEST_FLOATING_EQUALITY((*x)[i], 3.0, 1.0e-10);
+
   }
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,

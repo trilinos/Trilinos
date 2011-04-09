@@ -118,6 +118,8 @@ APPEND_SET(HEADERS
   evaluators/Panzer_ScatterResidual_EpetraT.hpp
   evaluators/Panzer_ScatterDirichletResidual_Epetra.hpp
   evaluators/Panzer_ScatterDirichletResidual_EpetraT.hpp
+  evaluators/Panzer_ScatterInitialCondition_Epetra.hpp
+  evaluators/Panzer_ScatterInitialCondition_EpetraT.hpp
   evaluators/Panzer_TestScatter.hpp
   evaluators/Panzer_TestScatterT.hpp
   evaluators/Panzer_Sum.hpp
