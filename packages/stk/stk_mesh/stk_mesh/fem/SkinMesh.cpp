@@ -12,7 +12,7 @@
 #include <stk_mesh/base/Relation.hpp>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
 
@@ -171,7 +171,7 @@ void add_owned_sides_to_map(
         //                                            the node with the smallest identifier
         SideKey side_key;
 
-        side_key.first = get_subcell_nodes(
+        side_key.first = fem::get_subcell_nodes(
             inside_entity,
             element_rank - 1, // subcell rank
             side_ordinal,     // subcell identifier
@@ -219,7 +219,7 @@ void add_non_owned_sides_to_map(
         // Get the nodes for the inside entity
         SideKey side_key;
 
-        side_key.first = get_subcell_nodes(
+        side_key.first = fem::get_subcell_nodes(
             inside_entity,
             element_rank - 1, // subcell rank
             side_ordinal,     // subcell identifier

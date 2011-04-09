@@ -99,6 +99,8 @@ class InvertMassMatrixDecorator
   /** \brief . */
   Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   /** \brief . */
+  Teuchos::RCP<const Epetra_Vector> get_x_dot_init() const;
+  /** \brief . */
   Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
 
   //@}

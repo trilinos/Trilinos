@@ -54,7 +54,7 @@ Piro::Epetra::InvertMassMatrixDecorator::InvertMassMatrixDecorator(
 
   // Create x_dot vector, fill with 0.0 so implicit fill gives
   // correct results for explicit fill
-  x_dot = Teuchos::rcp(new Epetra_Vector(*(model->get_x_dot_init())));
+  x_dot = Teuchos::rcp(new Epetra_Vector(*(model->get_x_map())));
   x_dot->PutScalar(0.0);
 
   // get allocated space for Mass Matrix
@@ -104,6 +104,11 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::InvertMassMatrixDecorator::get_g_ma
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::InvertMassMatrixDecorator::get_x_init() const
 {
   return model->get_x_init();
+}
+
+Teuchos::RCP<const Epetra_Vector> Piro::Epetra::InvertMassMatrixDecorator::get_x_dot_init() const
+{
+  return model->get_x_dot_init();
 }
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::InvertMassMatrixDecorator::get_p_init(int l) const

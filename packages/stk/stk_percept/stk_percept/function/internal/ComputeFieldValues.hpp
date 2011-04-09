@@ -32,7 +32,7 @@ namespace stk
 
       // transformed_basis_values: ([C],[F],[P]), or ([C],[F],[P],[D]) for GRAD
       // output_field_values: ([C],[P],[DOF])
-      void getFieldValues(const stk::mesh::Entity& element, MDArray& transformed_basis_values, FieldBase* field, MDArray& output_field_values)
+      void getFieldValues(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
       {
         VERIFY_OP(output_field_values.rank(), ==, 3, "FieldValuesComputer::getFieldValues output_field_values bad rank");
         VERIFY_OP(transformed_basis_values.rank(), ==, 3, "FieldValuesComputer::getFieldValues transformed_basis_values bad rank");
@@ -79,7 +79,7 @@ namespace stk
         // ([C],[F])
         MDArray field_data_values(numCells, numBases);
 
-        const mesh::PairIterRelation elem_nodes = element.relations( mesh::Node );
+        const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
         // ([P],[D])  [P] points in [D] dimensions
 

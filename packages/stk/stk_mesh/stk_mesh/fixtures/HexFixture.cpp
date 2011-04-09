@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -18,7 +18,6 @@
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
@@ -43,7 +42,7 @@ HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsign
   //put coord-field on all nodes:
   put_field(
     m_coord_field,
-    fem::NODE_RANK,
+    fem::FEMMetaData::NODE_RANK,
     m_fem_meta.universal_part(),
     m_spatial_dimension);
 
@@ -143,7 +142,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
       stk::mesh::fem::declare_element( m_bulk_data, m_hex_part, elem_id( ix , iy , iz ) , elem_node);
 
       for (unsigned i = 0; i<8; ++i) {
-        stk::mesh::Entity * const node = m_bulk_data.get_entity( fem::NODE_RANK , elem_node[i] );
+        stk::mesh::Entity * const node = m_bulk_data.get_entity( fem::FEMMetaData::NODE_RANK , elem_node[i] );
 
         ThrowRequireMsg( node != NULL,
           "This process should know about the nodes that make up its element");

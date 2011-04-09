@@ -46,7 +46,7 @@
 
 #include "BelosEpetraOperator.h"
 
-using namespace Belos;
+namespace Belos {
 
 //--------------------------------------------------------------
 //
@@ -139,4 +139,4 @@ int EpetraOperator::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVecto
   return(0);
 }
 
-
+} // end namespace Belos

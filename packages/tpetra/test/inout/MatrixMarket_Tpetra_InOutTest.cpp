@@ -37,6 +37,7 @@
 #endif // defined(HAVE_KOKKOS_TBB)
 
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <algorithm>
@@ -74,38 +75,29 @@ namespace Tpetra {
       }
 #endif // defined(HAVE_KOKKOS_TBB)
 
-      /// Test Tpetra::MatrixMarket::Reader::readFile()
+      /// Test Tpetra::MatrixMarket::Reader::readSparseFile()
       ///
       /// \param filename [in] Name of the Matrix Market format sparse
-      ///   matrix file to read (on MPI Rank 0 only)
+      ///   matrix file to read (on MPI Rank 0 only).
       /// \param pComm [in] Communicator, over whose MPI ranks to
       ///   distribute the returned Tpetra::CrsMatrix.
+      /// \param echo [in] Whether or not to echo the resulting 
+      ///   matrix to cout in Matrix Market format.
       /// \param tolerant [in] Whether or not to parse the file 
-      ///   tolerantly
+      ///   tolerantly.
+      /// \param verbose [in] Whether to print verbose output.
+      /// \param debug [in] Whether to print debugging output.
       ///
-      /// \return Tpetra::CrsMatrix read in from the file 
-      template<class SparseMatrixType>
-      Teuchos::RCP<SparseMatrixType>
-      readFile (const std::string& filename,
-		const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
-		const bool tolerant,
-		const bool debug)
-      {
-	typedef typename SparseMatrixType::node_type node_type;
-	Teuchos::RCP<node_type> pNode = getNode<node_type>();
-      
-	typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
-	return reader_type::readFile (filename, pComm, pNode, tolerant, debug);
-      }
-
       void
-      testReadFile (const std::string& filename, 
-		    const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-		    const bool tolerant, 
-		    const bool verbose,
-		    const bool debug)
+      testReadSparseFile (const std::string& filename, 
+			  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+			  const bool echo,
+			  const bool tolerant, 
+			  const bool verbose,
+			  const bool debug)
       {
 	using Teuchos::RCP;
+	using std::cerr;
 	using std::cout;
 	using std::endl;
 
@@ -119,24 +111,42 @@ namespace Tpetra {
 	typedef Kokkos::SerialNode node_type;
 	// #endif // defined(HAVE_KOKKOS_TBB)
 
-	typedef CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
+	typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+	// Get a Kokkos Node instance for the particular Node type.
+	RCP<node_type> pNode = getNode<node_type>();
 	const int myRank = Teuchos::rank (*pComm);
+
 	if (verbose && myRank == 0)
-	  cout << "About to read Matrix Market file \"" << filename << "\":" << endl;
+	  cout << "About to read Matrix Market file \"" << filename 
+	       << "\":" << endl;
 
 	// Read the sparse matrix from the given Matrix Market file.
 	// This routine acts like an MPI barrier.
-	RCP<sparse_matrix_type> pMatrix = 
-	  readFile<sparse_matrix_type> (filename, pComm, tolerant, debug);
+	const bool callFillComplete = true;
+	typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
+	  global_ordinal_type, node_type> sparse_matrix_type;
+	typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+	RCP<sparse_matrix_type> pMatrix =
+	  reader_type::readSparseFile (filename, pComm, pNode, 
+				       callFillComplete, tolerant, debug);
 	if (! pMatrix.is_null())
 	  {
 	    if (verbose && myRank == 0)
-	      cout << "Successfully read Matrix Market file \"" << filename << "\"." << endl;
+	      cout << "Successfully read Matrix Market file \"" << filename 
+		   << "\"." << endl;
 	  }
 	else 
 	  {
 	    if (verbose && myRank == 0)
-	      cout << "Failed to read Matrix Market file \"" << filename << "\"." << endl;
+	      cout << "Failed to read Matrix Market file \"" << filename 
+		   << "\"." << endl;
+	  }
+	if (echo)
+	  {
+	    using Tpetra::MatrixMarket::Writer;
+	    typedef Writer<sparse_matrix_type> writer_type;
+	    writer_type::writeSparse (cout, pMatrix);
 	  }
       }
     } // namespace Test
@@ -153,13 +163,16 @@ main (int argc, char *argv[])
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using std::cout;
+  using std::endl;
 
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
   RCP<const Comm<int> > pComm = 
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   std::string filename;  // Matrix Market file to read
   bool tolerant = false; // Parse the file tolerantly?
+  bool echo = false;     // Echo the read-in matrix back?
   bool verbose = false;  // Verbosity of output
   bool debug = false;    // Print debugging info?
 
@@ -172,6 +185,12 @@ main (int argc, char *argv[])
 		  "Name of the Matrix Market sparse matrix file to read.");
   cmdp.setOption ("tolerant", "strict", &tolerant, 
 		  "Whether to parse the Matrix Market file tolerantly.");
+  cmdp.setOption ("echo", "noecho", &echo,
+		  "Whether to echo the read-in matrix back to stdout on Rank 0 "
+		  "in Matrix Market format.  Symmetric storage will have been "
+		  "expanded, so the result will not be identical to the input "
+		  "file, though the matrix represented will be the same.");
+
   // Parse the command-line arguments.
   {
     const CommandLineProcessor::EParseCommandLineReturn parseResult = 
@@ -182,7 +201,7 @@ main (int argc, char *argv[])
     if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED)
       {
 	if (Teuchos::rank(*pComm) == 0)
-	  std::cout << "End Result: TEST PASSED" << endl;
+	  cout << "End Result: TEST PASSED" << endl;
 	return EXIT_SUCCESS;
       }
     TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
@@ -195,8 +214,8 @@ main (int argc, char *argv[])
   // "TEST PASSED" message.
   if (filename != "")
     {
-      using Tpetra::MatrixMarket::Test::testReadFile;
-      testReadFile (filename, pComm, tolerant, verbose, debug);
+      using Tpetra::MatrixMarket::Test::testReadSparseFile;
+      testReadSparseFile (filename, pComm, echo, tolerant, verbose, debug);
     }
 
   // Only Rank 0 gets to write to cout.

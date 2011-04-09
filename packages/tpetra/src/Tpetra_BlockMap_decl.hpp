@@ -43,6 +43,16 @@ namespace Tpetra {
 
   BlockMap doesn't inherit Tpetra::Map, but always holds a Tpetra::Map as
   a class-member attribute.
+
+  Tpetra::BlockMap essentially holds information about how the point-entries
+  in Tpetra::Map are grouped together in blocks. A block-entry consists of
+  1 or more point-entries.
+
+  Example usage: If a solution-space consists of multiple degrees-of-freedom
+  at each finite-element node in a mesh, such as a displacement vector, it
+  might be described as having a block of size 3 (in 3D) at each mesh node.
+  Thus for a mesh with N nodes, the point-entry map will have N*3 entries, 
+  whereas the block-map will have N blocks, each of size 3.
 */
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class BlockMap : public Teuchos::Describable {
@@ -81,7 +91,7 @@ class BlockMap : public Teuchos::Describable {
       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
       const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
-  /*! \brief BlockMap constructor which takes a "regular" Map.
+  /*! \brief BlockMap constructor which takes a "regular" (point-entry) Map.
    * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
    * sum(myBlockSizes) must equal pointMap->getNodeNumElements().
    * If these arrays are different lengths or sum(myBlockSizes) is incorrect,
@@ -100,16 +110,20 @@ class BlockMap : public Teuchos::Describable {
   //! @name Attribute Accessor Methods
   //@{
 
+  //! Return this block-map's point-entry map attribute.
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getPointMap() const
     { return pointMap_; }
 
+  //! Return global number of blocks.
   global_size_t getGlobalNumBlocks() const;
 
   //! Return number of blocks on the local processor.
   size_t getNodeNumBlocks() const;
 
+  //! Return array-view of block-ids for this local processor.
   Teuchos::ArrayView<const GlobalOrdinal> getNodeBlockIDs() const;
 
+  //! Return true if all blocks have the same size.
   bool isBlockSizeConstant() const;
 
   //! Return ArrayRCP of first-local-point in local blocks.

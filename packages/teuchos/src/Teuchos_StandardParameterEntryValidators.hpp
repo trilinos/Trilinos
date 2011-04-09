@@ -1200,7 +1200,7 @@ public:
 
   /** \brief . */
   const std::string getXMLTypeName() const{
-    return  "EnhancedNumberValidator<" + TypeNameTraits<T>::name()+ ">"; 
+    return  "EnhancedNumberValidator(" + TypeNameTraits<T>::name()+ ")"; 
   }
 
   /** \brief . */
@@ -1576,9 +1576,9 @@ public:
 
   /** \brief . */
   const std::string getXMLTypeName() const{
-    return "ArrayValidator<" + 
+    return "ArrayValidator(" + 
       prototypeValidator_->getXMLTypeName() + ", " +
-      TypeNameTraits<EntryType>::name() + ">";
+      TypeNameTraits<EntryType>::name() + ")";
   }
 
   /** \brief . */
@@ -1966,9 +1966,9 @@ StringToIntegralParameterEntryValidator<IntegralType>::validateString(
 template<class IntegralType>
 const std::string 
 StringToIntegralParameterEntryValidator<IntegralType>::getXMLTypeName() const{
-  return "StringIntegralValidator<" +
+  return "StringIntegralValidator(" +
     TypeNameTraits<IntegralType>::name() +
-    ">";
+    ")";
 }
 
 template<class IntegralType>

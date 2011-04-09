@@ -194,3 +194,12 @@ evaluateRecurrence(const value_type& x,
 
   return v2;
 }
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
+Stokhos::DiscretizedStieltjesBasis<ordinal_type, value_type>::
+cloneWithOrder(ordinal_type p) const
+{
+   return Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>(this->name,p,this->weightFn_,
+                        this->leftEndPt_,this->rightEndPt_,this->normalize));
+}

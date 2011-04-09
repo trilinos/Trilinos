@@ -70,13 +70,13 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/BlockGmres/BlockGmresEpetraExFile.cpp
+/** \example BlockGmres/BlockGmresEpetraExFile.cpp
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager.
 */
-/** \example epetra/example/BlockGmres/BlockPrecGmresEpetraExFile.cpp
+/** \example BlockGmres/BlockPrecGmresEpetraExFile.cpp
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager with an Ifpack preconditioner.
 */
-/** \example epetra/example/BlockGmres/BlockFlexGmresEpetraExFile.cpp
+/** \example BlockGmres/BlockFlexGmresEpetraExFile.cpp
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager with flexible Gmres.
 */
 
@@ -1030,7 +1030,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
       // Get a matrix to hold the orthonormalization coefficients.
       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 = 
-        rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
+        Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
  
       // Orthonormalize the new V_0
       int rank = ortho_->normalize( *V_0, z_0 );
@@ -1110,7 +1110,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
               problem_->computeCurrPrecResVec( &*V_0 );
 
             // Get a view of the first block of the Krylov basis.
-            z_0 = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
+            z_0 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
 	    
             // Orthonormalize the new V_0
             rank = ortho_->normalize( *V_0, z_0 );

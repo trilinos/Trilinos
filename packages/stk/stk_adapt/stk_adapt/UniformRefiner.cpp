@@ -8,6 +8,9 @@
 #endif
 
 #include <stk_adapt/UniformRefiner.hpp>
+#include <stk_adapt/geometry/GeometryKernelStupid.hpp>
+#include <stk_adapt/geometry/MeshGeometry.hpp>
+#include <stk_adapt/geometry/GeometryFactory.hpp>
 
 // FIXME
 // #include <stk_mesh/baseImpl/EntityImpl.hpp>
@@ -18,13 +21,13 @@ namespace stk {
   namespace adapt {
 
     using namespace std;
-    using namespace mesh;
     using namespace percept;
 
-    UniformRefiner::UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, FieldBase *proc_rank_field) : 
+    UniformRefiner::UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
       m_eMesh(eMesh), m_breakPattern(), 
       m_nodeRegistry(0), 
-      m_proc_rank_field(proc_rank_field), m_doRemove(true), m_ranks(), m_ignoreSideSets(false)
+      m_proc_rank_field(proc_rank_field), m_doRemove(true), m_ranks(), m_ignoreSideSets(false),
+      m_geomFile(""), m_geomSnap(false)
     {
       bp.setSubPatterns(m_breakPattern, eMesh);
     }
@@ -32,9 +35,9 @@ namespace stk {
 #define EXTRA_PRINT_UR_GETBLOCKS 0
  
     // FIXME move this to a utils class
-    BlockNamesType UniformRefiner::getBlockNames(std::string& block_name, unsigned proc_rank)
+    BlockNamesType UniformRefiner::getBlockNames(std::string& block_name, unsigned proc_rank, percept::PerceptMesh& eMesh)
     {
-      BlockNamesType blocks(mesh::EntityRankEnd+1u);
+      BlockNamesType blocks(stk::mesh::EntityRankEnd+1u);
       if (block_name.length() == 0)
         return blocks;
 
@@ -50,9 +53,9 @@ namespace stk {
               if (block[0] != '#')
                 {
                   if (block.substr(0,6) == "block_")
-                    blocks[mesh::Element].push_back(block);
+                    blocks[eMesh.element_rank()].push_back(block);
                   else if (block.substr(0,8) == "surface_")
-                    blocks[mesh::Face].push_back(block);
+                    blocks[eMesh.face_rank()].push_back(block);
                 }
                   
             }
@@ -274,13 +277,13 @@ namespace stk {
                 
                 //std::cout << "n1= " << n1 << " n2= " << n2 << std::endl;
                 if (n1.length() > 6 && n1.substr(1,6) == "block_")
-                  blocks[mesh::Element].push_back(n1);
+                  blocks[eMesh.element_rank()].push_back(n1);
                 else if (n1.length() > 8 && n1.substr(1,8) == "surface_")
-                  blocks[mesh::Face].push_back(n1);
+                  blocks[eMesh.face_rank()].push_back(n1);
                 else
                   {
                     std::string pm = (inc?"+":"-");
-                    blocks[mesh::Element].push_back(pm+"block_"+n2);
+                    blocks[eMesh.element_rank()].push_back(pm+"block_"+n2);
                   }
                 if (last_one) 
                   {
@@ -308,12 +311,12 @@ namespace stk {
 
     BlockNamesType UniformRefiner::correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks)
     {
-      if (blocks[mesh::Element].size() == 0)
+      if (blocks[eMesh.element_rank()].size() == 0)
         return blocks;
 
-      EntityRank subDimRank = (eMesh.getSpatialDim() == 3 ? mesh::Face : mesh::Edge);
+      stk::mesh::EntityRank subDimRank = (eMesh.getSpatialDim() == 3 ? eMesh.face_rank() : eMesh.edge_rank());
 
-      mesh::PartVector all_parts = eMesh.getMetaData()->get_parts();
+      mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
       for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
         {
           mesh::Part *  part = *i_part ;
@@ -321,14 +324,14 @@ namespace stk {
           for (mesh::PartVector::iterator i_surfacePart = all_parts.begin(); i_surfacePart != all_parts.end(); ++i_surfacePart)
             {
               mesh::Part *  surfacePart = *i_surfacePart ;
-              const CellTopologyData * part_cell_topo_data = stk::mesh::get_cell_topology(*surfacePart);
+              const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*surfacePart);
 
-              if (part_cell_topo_data && part->primary_entity_rank() == mesh::Element && surfacePart->primary_entity_rank() == subDimRank)
+              if (part_cell_topo_data && part->primary_entity_rank() == eMesh.element_rank() && surfacePart->primary_entity_rank() == subDimRank)
                 {
                   std::string partNamePlus = "+" + part->name();
-                  std::vector<std::string>::iterator partInBlocks = std::find(blocks[mesh::Element].begin(), blocks[mesh::Element].end(), partNamePlus);
+                  std::vector<std::string>::iterator partInBlocks = std::find(blocks[eMesh.element_rank()].begin(), blocks[eMesh.element_rank()].end(), partNamePlus);
                   // if this part is not in the blocks list, skip it
-                  if (partInBlocks == blocks[mesh::Element].end())
+                  if (partInBlocks == blocks[eMesh.element_rank()].end())
                     {
                       continue;
                     }
@@ -358,6 +361,10 @@ namespace stk {
     void UniformRefiner::
     setRemoveOldElements(bool do_remove) { m_doRemove = do_remove; }
 
+    void UniformRefiner::
+    setGeometryFile(std::string file_name) { m_geomFile = file_name;
+      m_geomSnap = true; }
+
     bool UniformRefiner::
     getRemoveOldElements() { return m_doRemove; }
       
@@ -374,12 +381,12 @@ namespace stk {
     }
 
     void UniformRefiner::
-    addOldElementsToPart(EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType)
+    addOldElementsToPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType)
     {
       EXCEPTWATCH;
       //m_eMesh.getBulkData()->modification_begin();
       std::string oldPartName = breakPattern->getOldElementsPartName()+toString(rank);
-      mesh::Part *oldPart = m_eMesh.getMetaData()->get_part(oldPartName);
+      mesh::Part *oldPart = m_eMesh.getFEM_meta_data()->get_part(oldPartName);
       if (!oldPart)
         {
           std::cout << "oldPartName= " << oldPartName << std::endl;
@@ -388,21 +395,21 @@ namespace stk {
 
       mesh::PartVector add_parts(1, oldPart);
       mesh::PartVector remove_parts;
-      mesh::Selector on_locally_owned_part =  ( m_eMesh.getMetaData()->locally_owned_part() );
+      mesh::Selector on_locally_owned_part =  ( m_eMesh.getFEM_meta_data()->locally_owned_part() );
 
       // The list of Parts that this break pattern will refine.  Only remove elements belonging to these parts.
       mesh::Selector fromPartsSelector = mesh::selectUnion( breakPattern->getFromParts() );
 
-      std::vector<Entity*> elems;
-      const vector<Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
+      std::vector<stk::mesh::Entity*> elems;
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
 
-      for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
           if (on_locally_owned_part(**k) && fromPartsSelector(**k) ) 
             //if ( on_locally_owned_part(**k) )
             {
-              Bucket & bucket = **k ;
-              const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+              stk::mesh::Bucket & bucket = **k ;
+              const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
               shards::CellTopology topo(bucket_cell_topo_data);
 
               const unsigned num_elements_in_bucket = bucket.size();
@@ -410,7 +417,7 @@ namespace stk {
               for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                 {
                   EXCEPTWATCH;
-                  Entity& element = bucket[i_element];
+                  stk::mesh::Entity& element = bucket[i_element];
                   if (&element == 0)
                     {
                       std::cout << "element = 0" << std::endl;
@@ -487,21 +494,21 @@ namespace stk {
             << "\nsizeof(Bucket *) = " << sizeof(stk::mesh::Bucket *) << " "
             << "\nsizeof(unsigned) = " << sizeof(unsigned) << " "
             << "\nsizeof(size_t) = " << sizeof(size_t) << " "
-            << "\nsizeof(EntityModificationLog) = " << sizeof(EntityModificationLog) << std::endl;
+            << "\nsizeof(EntityModificationLog) = " << sizeof(stk::mesh::EntityModificationLog) << std::endl;
 
         }
     }
 
     void UniformRefiner::
-    checkBreakPatternValidityAndBuildRanks(std::vector<EntityRank>& ranks)
+    checkBreakPatternValidityAndBuildRanks(std::vector<stk::mesh::EntityRank>& ranks)
     {
       m_eMesh.getBulkData()->modification_begin();
       for (unsigned ibp = 0; ibp < m_breakPattern.size(); ibp++)
         {
           if (m_breakPattern[ibp])
             {
-              EntityRank irank = m_breakPattern[ibp]->getPrimaryEntityRank();
-              EntityRank irank_prev = EntityRankEnd;
+              stk::mesh::EntityRank irank = m_breakPattern[ibp]->getPrimaryEntityRank();
+              stk::mesh::EntityRank irank_prev = stk::mesh::EntityRankEnd;
               if (ibp > 0) irank_prev = m_breakPattern[ibp-1]->getPrimaryEntityRank();
               if (irank > irank_prev)
                 {
@@ -538,18 +545,18 @@ namespace stk {
 
       CommDataType buffer_entry;
 
-      BulkData& bulkData = *m_eMesh.getBulkData();
+      stk::mesh::BulkData& bulkData = *m_eMesh.getBulkData();
       static SubDimCellData empty_SubDimCellData;
 
       // color elements
 #if 0
       struct EntityExcluder
       {
-        virtual bool exclude(Entity& element) = 0;
+        virtual bool exclude(stk::mesh::Entity& element) = 0;
       };
 #endif
 
-      std::vector<EntityRank> ranks;
+      std::vector<stk::mesh::EntityRank> ranks;
 
       // check logic of break pattern setup and also build ranks used vector
       checkBreakPatternValidityAndBuildRanks(ranks);
@@ -578,10 +585,10 @@ namespace stk {
                                            << " cell_topo= " << cell_topo.getName()
                                            << std::endl;
 
-          std::vector<EntityRank> ranks_one(1, ranks[irank]);
+          std::vector<stk::mesh::EntityRank> ranks_one(1, ranks[irank]);
 
           // this gives a list of colored elements for this element type only
-          PartVector * fromParts = 0;
+          stk::mesh::PartVector * fromParts = 0;
           fromParts = &(m_breakPattern[irank]->getFromParts());
           
           //!FIXME add part info
@@ -619,7 +626,7 @@ namespace stk {
       
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
-              //if (ranks[irank] >= mesh::Face)
+              //if (ranks[irank] >= m_eMesh.face_rank())
               {
                 EXCEPTWATCH;
 
@@ -650,7 +657,7 @@ namespace stk {
           unsigned num_elem = 0;
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
-              //if (ranks[irank] >= mesh::Face)
+              //if (ranks[irank] >= m_eMesh.face_rank())
               {
                 EXCEPTWATCH;
 
@@ -693,7 +700,7 @@ namespace stk {
           unsigned num_elem = 0;
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
-              //if (ranks[irank] >= mesh::Face)
+              //if (ranks[irank] >= m_eMesh.face_rank())
               {
                 EXCEPTWATCH;
 
@@ -737,7 +744,7 @@ namespace stk {
             std::cout << "tmp UniformRefiner:: irank = " << irank 
                       << " ranks[irank] = " << ranks[irank] << " elementType= " << elementType << std::endl;
 
-          std::vector<EntityRank> ranks_one(1, ranks[irank]);
+          std::vector<stk::mesh::EntityRank> ranks_one(1, ranks[irank]);
 
           vector< ColorerSetType >& elementColors = elementColorsByType[irank];
 
@@ -746,7 +753,7 @@ namespace stk {
           vector<NeededEntityType> needed_entity_ranks;
           m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
-          vector<Entity *> new_elements;
+          vector<stk::mesh::Entity *> new_elements;
 
           //bulkData.modification_begin(); 
 
@@ -874,6 +881,15 @@ namespace stk {
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
         }
 
+      if (m_geomSnap)
+      {
+          GeometryKernelStupid gk;
+          MeshGeometry mesh_geometry(&gk);
+          GeometryFactory factory(&gk, &mesh_geometry);
+          factory.read_file(m_geomFile, &m_eMesh);
+          mesh_geometry.snap_points_to_geometry(&m_eMesh);
+      }
+
       /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start... ");
       bulkData.modification_end();
       /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
@@ -886,7 +902,7 @@ namespace stk {
     } // doBreak
 
     unsigned UniformRefiner::
-    doForAllElements(EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
+    doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
                      vector< ColorerSetType >& elementColors, vector<NeededEntityType>& needed_entity_ranks,
                      bool only_count, bool doAllElements)
     //bool only_count=false, bool doAllElements=true)
@@ -901,17 +917,17 @@ namespace stk {
               continue;
             }
 
-          //Entity* first_element_p = *(elementColors[icolor].begin());
-          //const CellTopologyData * const cell_topo_data = get_cell_topology(*first_element_p);
+          //stk::mesh::Entity* first_element_p = *(elementColors[icolor].begin());
+          //const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*first_element_p);
 
           // do in threaded mode FIXME
           for (ColorerSetType::iterator iele = elementColors[icolor].begin();
                iele !=  elementColors[icolor].end(); 
                iele++)
             {
-              const Entity * element_p =  *iele;
+              const stk::mesh::Entity * element_p =  *iele;
 
-              const Entity& element = * element_p;
+              const stk::mesh::Entity& element = * element_p;
 
               bool elementIsGhost = m_eMesh.isGhostElement(element);
               if (!elementIsGhost) 
@@ -929,16 +945,16 @@ namespace stk {
     }
 
     void UniformRefiner::
-    createElementsAndNodesAndConnectLocal(EntityRank rank, UniformRefinerPatternBase *breakPattern,
+    createElementsAndNodesAndConnectLocal(stk::mesh::EntityRank rank, UniformRefinerPatternBase *breakPattern,
                                           vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,  
-                                          vector<Entity *>& new_elements_pool)
+                                          vector<stk::mesh::Entity *>& new_elements_pool)
     {
       EXCEPTWATCH;
-      static NewSubEntityNodesType s_new_sub_entity_nodes(mesh::EntityRankEnd);
+      static NewSubEntityNodesType s_new_sub_entity_nodes(stk::mesh::EntityRankEnd);
 
       NewSubEntityNodesType& new_sub_entity_nodes = s_new_sub_entity_nodes;
 
-      vector<Entity *>::iterator element_pool_it = new_elements_pool.begin();
+      vector<stk::mesh::Entity *>::iterator element_pool_it = new_elements_pool.begin();
 
       int jele = 0;
       int numPrints = 20;
@@ -975,16 +991,16 @@ namespace stk {
               continue;
             }
 
-          Entity* first_element_p = *(elementColors[icolor].begin());
+          stk::mesh::Entity* first_element_p = *(elementColors[icolor].begin());
 
-          const CellTopologyData * const cell_topo_data = get_cell_topology(*first_element_p);
+          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*first_element_p);
           CellTopology cell_topo(cell_topo_data);
           
           // do in threaded mode FIXME
           for (ColorerSetType::iterator iele = elementColors[icolor].begin();  iele !=  elementColors[icolor].end();  iele++)
             {
 
-              Entity* element_p = *iele;
+              stk::mesh::Entity* element_p = *iele;
               if (!element_p) 
                 {
                   throw std::runtime_error("UniformRefiner::createElementsAndNodesAndConnectLocal");
@@ -996,9 +1012,9 @@ namespace stk {
                             << (((double)jele)/((double)nele)*100.0) << " %]" << std::endl;
                 }
 
-              Entity& element = * element_p;
+              stk::mesh::Entity& element = * element_p;
 
-              if (m_proc_rank_field && rank == mesh::Element)
+              if (m_proc_rank_field && rank == m_eMesh.element_rank())
                 {
                   //exit(1);  // FIXME FIXME FIXME
                   double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
@@ -1055,18 +1071,18 @@ namespace stk {
 
       if (m_eMesh.getSpatialDim() == 3)
         {
-          fixElementSides1(mesh::Face);
+          fixElementSides1(m_eMesh.face_rank());
         }
       // FIXME
       else if (m_eMesh.getSpatialDim() == 2)
         {
-          fixElementSides1(mesh::Edge);
+          fixElementSides1(m_eMesh.edge_rank());
         }
     }
 
 
 #if 0
-    static const SameRankRelationValue& getChildVector(  SameRankRelation& repo , Entity *parent)
+    static const SameRankRelationValue& getChildVector(  SameRankRelation& repo , stk::mesh::Entity *parent)
     {
        SameRankRelation::const_iterator i = repo.find( parent );
       if (i != repo.end()) 
@@ -1076,7 +1092,7 @@ namespace stk {
     }
 #endif
 
-    static const SameRankRelationValue * getChildVectorPtr(  SameRankRelation& repo , Entity *parent)
+    static const SameRankRelationValue * getChildVectorPtr(  SameRankRelation& repo , stk::mesh::Entity *parent)
     {
        SameRankRelation::const_iterator i = repo.find( parent );
       if (i != repo.end()) 
@@ -1090,7 +1106,7 @@ namespace stk {
 #define EXTRA_PRINT_UR_FES 0
 
     void UniformRefiner::
-    fixElementSides1(EntityRank side_rank)
+    fixElementSides1(stk::mesh::EntityRank side_rank)
     {
       EXCEPTWATCH;
 
@@ -1132,18 +1148,18 @@ namespace stk {
               throw std::logic_error("UniformRefiner::fixElementSides1 parent is null");
             }
 
-          const CellTopologyData *parent_topo_data = stk::mesh::get_cell_topology(*parent);
+          const CellTopologyData *parent_topo_data = stk::percept::PerceptMesh::get_cell_topology(*parent);
           if (0 == parent_topo_data)
             {
               throw std::logic_error("UniformRefiner::fixElementSides1 parent_topo_data is null");
             }
 
-          shards::CellTopology parent_topo(stk::mesh::get_cell_topology(*parent));
+          shards::CellTopology parent_topo(stk::percept::PerceptMesh::get_cell_topology(*parent));
           //unsigned parent_nsides = (unsigned)parent_topo.getSideCount();
 
           for (unsigned i_child = 0; i_child < child_vector.size(); i_child++)
             {
-              Entity *child = child_vector[i_child];
+              stk::mesh::Entity *child = child_vector[i_child];
               //mesh::PairIterRelation child_sides = child->relations(side_rank);
               if (!child)
                 {
@@ -1151,19 +1167,19 @@ namespace stk {
                   throw std::runtime_error("fixElementSides1: child == null");
                 }
 
-              shards::CellTopology child_topo(stk::mesh::get_cell_topology(*child));
+              shards::CellTopology child_topo(stk::percept::PerceptMesh::get_cell_topology(*child));
               unsigned child_nsides = (unsigned)child_topo.getSideCount();
 
               // if parent has any side relations, check if any of the sides' children match the parent's children's faces
               mesh::PairIterRelation parent_sides = parent->relations(side_rank);
-              mesh::PairIterRelation side_to_parent = parent->relations(mesh::Element);
+              mesh::PairIterRelation side_to_parent = parent->relations(m_eMesh.element_rank());
 
               //std::cout << "tmp here 1 child_nsides= " << child_nsides 
               //          << " parent_sides.size()=" << parent_sides.size() <<  " side_to_parent.size() = " << side_to_parent.size() << std::endl;
 
               for (unsigned i_parent_side = 0; i_parent_side < parent_sides.size(); i_parent_side++)
                 {
-                  Entity *parent_side = parent_sides[i_parent_side].entity();
+                  stk::mesh::Entity *parent_side = parent_sides[i_parent_side].entity();
                   //unsigned local_parent_side_id = parent_sides[i_parent_side].identifier();
 
                   if (!parent_side)
@@ -1184,7 +1200,7 @@ namespace stk {
 
                   for (unsigned i_parent_side_child = 0; i_parent_side_child < parent_side_children.size(); i_parent_side_child++)
                     {
-                      Entity *parent_side_child = parent_side_children[i_parent_side_child];
+                      stk::mesh::Entity *parent_side_child = parent_side_children[i_parent_side_child];
 
                       //std::cout << "tmp here 3 parent_side_child = " << *parent_side_child
                       //      << std::endl;
@@ -1249,7 +1265,7 @@ namespace stk {
     }
 
     void UniformRefiner::
-    fixElementSides(EntityRank side_rank)
+    fixElementSides(stk::mesh::EntityRank side_rank)
     {
 
     }
@@ -1259,12 +1275,12 @@ namespace stk {
     /** Sets orientations and associativity of elements to sub-dimensional faces/edges after refinement.
      */
     void UniformRefiner::
-    checkFixElementSides(EntityRank side_rank, EntityRank elem_rank)
+    checkFixElementSides(stk::mesh::EntityRank side_rank, stk::mesh::EntityRank elem_rank)
     {
     }
 
     void UniformRefiner::
-    removeOldElements(EntityRank rank, UniformRefinerPatternBase* breakPattern)
+    removeOldElements(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
     {
       EXCEPTWATCH;
 
@@ -1272,7 +1288,7 @@ namespace stk {
 
       if (1 && oldPart)
         {
-          const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(*oldPart);
+          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*oldPart);
           std::string ct_name = (cell_topo_data ? cell_topo_data->name : "");
           //std::cout << "tmp removeOldElements::name= " << oldPart->name() << " for rank= " << rank << " topology= " << ct_name << std::endl;
         }
@@ -1285,17 +1301,17 @@ namespace stk {
 
       mesh::Selector removePartSelector (*oldPart);
 
-      const vector<Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
 
       elements_to_be_destroyed_type elements_to_be_destroyed;
 
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
       unsigned nel = 0u;
-      for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
           if (removePartSelector(**k)) 
             {
-              Bucket & bucket = **k ;
+              stk::mesh::Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
 
               nel += num_elements_in_bucket;
@@ -1304,17 +1320,17 @@ namespace stk {
       elements_to_be_destroyed.reserve(nel);
 #endif
       
-      for ( vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
           if (removePartSelector(**k)) 
             {
-              Bucket & bucket = **k ;
+              stk::mesh::Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
 
               if (0)
                 {
                   std::string str;
-                  PartVector pv;
+                  stk::mesh::PartVector pv;
                   bucket.supersets(pv);
                   for (unsigned ip = 0; ip < pv.size(); ip++)
                     {
@@ -1325,8 +1341,8 @@ namespace stk {
 
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
-                  Entity& element = bucket[iElement];
-                  Entity* element_p = &element;
+                  stk::mesh::Entity& element = bucket[iElement];
+                  stk::mesh::Entity* element_p = &element;
 
                   if (!m_eMesh.isGhostElement(element))
                     {
@@ -1350,7 +1366,7 @@ namespace stk {
 
       for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed.begin(); itbd != elements_to_be_destroyed.end();  ++itbd)
         {
-          Entity *element_p = *itbd;
+          stk::mesh::Entity *element_p = *itbd;
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
             {
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
@@ -1367,10 +1383,10 @@ namespace stk {
       for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed_pass2.begin(); 
            itbd != elements_to_be_destroyed_pass2.end();  ++itbd)
         {
-          Entity *element_p = *itbd;
+          stk::mesh::Entity *element_p = *itbd;
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
             {
-              CellTopology cell_topo(stk::mesh::get_cell_topology(*element_p));
+              CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(*element_p));
               std::cout << "tmp UniformRefiner::removeOldElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
               const mesh::PairIterRelation elem_relations = element_p->relations(element_p->entity_rank()+1);
               std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
@@ -1382,10 +1398,10 @@ namespace stk {
 
     /// fix names of surfaces (changing for example surface_hex8_quad4 to surface_tet4_tri3)
     void UniformRefiner::
-    fixSurfaceAndEdgeSetNames(EntityRank rank, UniformRefinerPatternBase* breakPattern)
+    fixSurfaceAndEdgeSetNames(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
     {
       EXCEPTWATCH;
-      PartVector toParts = breakPattern->getToParts();
+      stk::mesh::PartVector toParts = breakPattern->getToParts();
 
       //std::cout << "toParts.size()= " << toParts.size() << " typeid= " << typeid(*breakPattern).name()  << std::endl;
 
@@ -1438,11 +1454,11 @@ namespace stk {
     ///   in the part with the original name appended with _uo_1000.  These parts are ignored on subsequent input.
     ///
     void UniformRefiner::
-    renameNewParts(EntityRank rank, UniformRefinerPatternBase* breakPattern)
+    renameNewParts(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
     {
       EXCEPTWATCH;
-      PartVector toParts = breakPattern->getToParts();
-      PartVector fromParts = breakPattern->getFromParts();
+      stk::mesh::PartVector toParts = breakPattern->getToParts();
+      stk::mesh::PartVector fromParts = breakPattern->getFromParts();
 
       if (0)
         {
@@ -1489,13 +1505,13 @@ namespace stk {
     
     bool UniformRefiner::
     createNewNeededNodeIds(const CellTopologyData * const cell_topo_data, 
-                           const Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& new_sub_entity_nodes)
+                           const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& new_sub_entity_nodes)
     {
       EXCEPTWATCH;
 
       NodeRegistry& nodeRegistry = *m_nodeRegistry;
 
-      const mesh::PairIterRelation elem_nodes = element.relations(Node);
+      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
       // CHECK - cache this
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
@@ -1507,15 +1523,15 @@ namespace stk {
             {
               numSubDimNeededEntities = 1;
             }
-          else if (needed_entity_ranks[ineed_ent].first == Edge)
+          else if (needed_entity_ranks[ineed_ent].first == m_eMesh.edge_rank())
             {
               numSubDimNeededEntities = cell_topo_data->edge_count;
             }
-          else if (needed_entity_ranks[ineed_ent].first == Face)
+          else if (needed_entity_ranks[ineed_ent].first == m_eMesh.face_rank())
             {
               numSubDimNeededEntities = cell_topo_data->side_count;
             }
-          else if (needed_entity_ranks[ineed_ent].first == mesh::Element)
+          else if (needed_entity_ranks[ineed_ent].first == m_eMesh.element_rank())
             {
               numSubDimNeededEntities = 1;
             }
@@ -1540,7 +1556,7 @@ namespace stk {
 
               if (!nodeIds_onSE[0]) {
                 
-                Entity * node1 = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE.m_entity_id_vector[0]);
+                stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
                 
                 if (!node1)
                   {
@@ -1557,7 +1573,7 @@ namespace stk {
               unsigned num_new_nodes_needed = needed_entity_ranks[ineed_ent].second;
               if (0)
                 {
-                  const CellTopologyData * const cell_topo_data_0 = get_cell_topology(element);
+                  const CellTopologyData * const cell_topo_data_0 = stk::percept::PerceptMesh::get_cell_topology(element);
                   CellTopology cell_topo_0(cell_topo_data_0);
 
                   std::cout << "tmp 43 cell_topo= " << cell_topo_0.getName() << " ineed_ent= " << ineed_ent << " needed_entity_ranks[ineed_ent].first/second = " 
@@ -1588,8 +1604,8 @@ namespace stk {
                 {
                   if (!nodeIds_onSE[i_new_node]) 
                     {
-                      Entity * node1 = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE.m_entity_id_vector[0]);
-                      //Entity *node1 = m_nodeRegistry->get_entity(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE.m_entity_id_vector[i_new_node])
+                      stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
+                      //stk::mesh::Entity *node1 = m_nodeRegistry->get_entity(*m_eMesh.getBulkData(), mesh::Node, nodeIds_onSE.m_entity_id_vector[i_new_node])
 
                         if (!node1)
                         {

@@ -1198,7 +1198,7 @@ ArrayRCP<T2> arcp_reinterpret_cast(const ArrayRCP<T1>& p1);
  * The function will compile only if (<tt>reinterpret_cast<T2*>(p1.get());</tt>) compiles.
  *
  * This function is used to reinterpret cast an array of plain-old-data (POD)
- * (e.g. <tt>int>/tt> or <tt>char</tt>) into an array of real objects.  The
+ * (e.g. <tt>int</tt> or <tt>char</tt>) into an array of real objects.  The
  * constructors will be called on each of the memory locations with placement
  * new and the destructors will get called when the last RCP goes away.
  *

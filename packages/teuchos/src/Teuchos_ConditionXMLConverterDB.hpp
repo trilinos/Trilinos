@@ -102,13 +102,13 @@ public:
 
   /**
    * \brief Given an XMLObject and IDtoConditionMap, converts the XMLObject 
-   * to a ParameterEntryCondition and inserts the condition into the map.
+   * to a Condition.
    *
    * \param xmlObject The XMLObject to be converted.
    * \param entryIDsMap A map containing ParameterEntrys and their associated
    * IDs.
    *
-   * \return A ParameterEntryCondition that was represented by the XML.
+   * \return A Condition that was represented by the XML.
    */
   static RCP<Condition> convertXML(
     const XMLObject& xmlObject,

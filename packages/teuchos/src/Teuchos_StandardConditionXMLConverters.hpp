@@ -33,7 +33,7 @@
  * \brief A collection of standard ConditionXMLConverters.
 */
 
-
+#include "Teuchos_FunctionObjectXMLConverterDB.hpp"
 #include "Teuchos_ConditionXMLConverter.hpp"
 #include "Teuchos_StandardConditions.hpp"
 
@@ -50,8 +50,8 @@ public:
   /** \name Special Converter Functions */
   //@{
 
-  /** \brief 
-   * Gets the specific BinaryLogicalCondition to be returned 
+  /** 
+   * \brief Gets the specific BinaryLogicalCondition to be returned 
    * by this conveter when converting from XML.
    *
    * @param conditions The condition list for the BinaryLogical converter 
@@ -314,14 +314,33 @@ public:
     RCP<ParameterEntry> parameterEntry,
     bool whenParamEqualsValue) const
   {
-    return rcp(new NumberCondition<T>(
-      parameterEntry, null, whenParamEqualsValue));
+    int functionTag = xmlObj.findFirstChild(FunctionObject::getXMLTagName());
+    if(functionTag == -1){
+      return rcp(new NumberCondition<T>(parameterEntry, whenParamEqualsValue));
+    }
+    else{
+      RCP<FunctionObject> functionObj = 
+        FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionTag));
+      RCP<SimpleFunctionObject<T> > castedFunction = 
+        rcp_dynamic_cast<SimpleFunctionObject<T> >(functionObj);
+      return rcp(new NumberCondition<T>(parameterEntry, castedFunction));
+    }
   }
 
   /** \brief . */
   void addSpecificXMLTraits(
     RCP<const ParameterCondition> condition, XMLObject& xmlObj) const
-  {}
+  {
+    RCP<const NumberCondition<T> > castedCondition = 
+      rcp_dynamic_cast<const NumberCondition<T> >(condition);
+    RCP<const SimpleFunctionObject<T> > functionObject =
+      castedCondition->getFunctionObject();
+    if(!functionObject.is_null()){
+      XMLObject functionXML = 
+        FunctionObjectXMLConverterDB::convertFunctionObject(functionObject);
+      xmlObj.addChild(functionXML);
+    }
+  }
  
   //@}
 

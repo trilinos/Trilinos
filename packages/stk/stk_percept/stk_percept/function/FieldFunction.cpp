@@ -32,7 +32,7 @@ namespace stk
     void FieldFunction::interpolateFrom(Function& function)
     {
       EXCEPTWATCH;
-      mesh::MetaData& metaData = MetaData::get(*m_my_field);
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*m_my_field);
       mesh::BulkData& bulkData = *m_bulkData;
 
       PerceptMesh meshUtil(&metaData, &bulkData);

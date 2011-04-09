@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -20,7 +20,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
 
 namespace stk {
 namespace mesh {
@@ -85,11 +84,7 @@ declare_element_node_pointer_field(
     FieldState state = (FieldState) i;
     md.declare_field_relation(
       f.field_of_state( state ) ,
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      fem::get_element_node_stencil(fem::get_fem_interface(md).get_spatial_dimension()) ,
-#else
-      & element_node_stencil<void>,
-#endif
+      fem::get_element_node_stencil(fem::FEMMetaData::get(md).spatial_dimension()) ,
       node_field.field_of_state( state ) );
   }
   
@@ -115,11 +110,7 @@ declare_element_node_lock_field(
     FieldState state = (FieldState) i;
     md.declare_field_relation(
       f.field_of_state( state ) ,
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      fem::get_element_node_stencil(fem::get_fem_interface(md).get_spatial_dimension()) ,
-#else
-      & element_node_stencil<void>,
-#endif
+      fem::get_element_node_stencil(fem::FEMMetaData::get(md).spatial_dimension()) ,
       node_field.field_of_state( state ) );
   }
   

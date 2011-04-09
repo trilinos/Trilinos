@@ -34,11 +34,11 @@
     \brief Reference-counted pointer class and non-member templated function implementations.
 */
 
-/** \example example/RCP/cxx_main.cpp
+/** \example example/RefCountPtr/cxx_main.cpp
     This is an example of how to use the <tt>Teuchos::RCP</tt> class.
 */
 
-/** \example test/RCP/cxx_main.cpp
+/** \example test/MemoryManagement/RCP_test.cpp
     This is a more detailed testing program that uses all of the <tt>Teuchos::RCP</tt> class.
 */
 

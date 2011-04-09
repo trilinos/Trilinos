@@ -44,23 +44,32 @@ namespace TSQR {
   };
 
   /// \class NodeTsqr
-  /// \brief Common functionality and interface for intranode TSQR
+  /// \brief Common functionality and interface for intranode TSQR.
+  ///
+  /// NodeTsqr provides a generic interface for TSQR operations within
+  /// a node ("intranode"), as well as basic rank-revealing
+  /// functionality.
   ///
   /// NodeTsqrFactorOutput is the FactorOutput type for the specific
   /// TSQR implementation.  When you inherit from this base class,
   /// fill in the specific NodeTsqrFactorOutput type.  It's awkward,
   /// but it gives us some flexibility in the interface.
-  template< class LocalOrdinal, class Scalar >
-  class NodeTsqr : public NodeTsqrBase< LocalOrdinal, Scalar > {
+  template<class LocalOrdinal, class Scalar>
+  class NodeTsqr : public NodeTsqrBase<LocalOrdinal, Scalar> {
   public:
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
     typedef LocalOrdinal ordinal_type;
     typedef NodeTsqrFactorOutput factor_output_type;
 
+    //! Constructor
     NodeTsqr() {}
+
+    //! Virtual destructor ensures safe polymorphic destruction.
     virtual ~NodeTsqr() {}
 
+    /// \brief Reveal rank of TSQR's R factor.
+    ///
     /// Compute SVD \f$R = U \Sigma V^*\f$, not in place.  Use the
     /// resulting singular values to compute the numerical rank of R,
     /// with respect to the relative tolerance tol.  If R is full
@@ -216,7 +225,7 @@ namespace TSQR {
       return rank;
     }
 
-    /// \brief Rank-revealing decomposition
+    /// \brief Compute rank-revealing decomposition.
     ///
     /// Using the R factor from factor() and the explicit Q factor
     /// from explicit_Q(), compute the SVD of R (\f$R = U \Sigma

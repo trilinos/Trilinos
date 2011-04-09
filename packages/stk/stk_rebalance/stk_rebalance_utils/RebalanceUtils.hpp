@@ -7,7 +7,6 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/base/Selector.hpp>
 
 

@@ -2239,7 +2239,7 @@ namespace Tpetra {
       // then
       //   * LocalGIDs \subset DomainGIDs && size(LocalGIDs) == size(DomainGIDs) => DomainGIDs == LocalGIDs == ColGIDs
       // on this node.
-      // We will concern ourselves only with the special case of a serial DomainMap, obliviating the need for a communication.
+      // We will concern ourselves only with the special case of a serial DomainMap, obviating the need for a communication.
       // If
       //   * DomainMap has a serial comm
       // then we can set Column map as Domain map and return. Benefit: this graph won't need an Import object later.

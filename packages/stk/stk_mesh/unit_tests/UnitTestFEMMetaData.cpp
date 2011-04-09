@@ -72,8 +72,8 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, entity_ranks_1 )
   const size_t spatial_dimension = 1;
   fem_meta.FEM_initialize(spatial_dimension);
   STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), node_rank );
-  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), 0u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), 0u );
+  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), 1u );
+  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), 2u );
   STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), 0u );
   STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), 1u );
 
@@ -88,7 +88,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, entity_ranks_2 )
   fem_meta.FEM_initialize(spatial_dimension);
   STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), node_rank );
   STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), 1u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), 1u );
+  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), 2u );
   STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), 1u );
   STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), 2u );
 

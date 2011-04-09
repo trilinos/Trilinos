@@ -78,7 +78,7 @@ Piro::Epetra::VelocityVerletSolver::VelocityVerletSolver(Teuchos::RCP<Teuchos::P
 
   numTimeSteps = vvPL->get("Num Time Steps", 10);
   t_final = vvPL->get("Final Time", 0.1);
-  t_init  = vvPL->get("Initial Time", 0.1);
+  t_init  = vvPL->get("Initial Time", 0.0);
   delta_t = t_final / numTimeSteps;
   
   if (vvPL->get("Invert Mass Matrix", false)) {
@@ -189,15 +189,18 @@ void Piro::Epetra::VelocityVerletSolver::evalModel( const InArgs& inArgs,
   RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g); 
 
   RCP<Epetra_Vector> x = rcp(new Epetra_Vector(*model->get_x_init()));
-  RCP<Epetra_Vector> v = rcp(new Epetra_Vector(*model->get_x_map()));
+  RCP<Epetra_Vector> v = rcp(new Epetra_Vector(*model->get_x_dot_init()));
   RCP<Epetra_Vector> a = rcp(new Epetra_Vector(*model->get_f_map()));
   a->PutScalar(0.0); 
 
-  // Need v init here for real
-  cout << "V(0) = 1.0  hardwired in VVSolver" << endl;
-  v->PutScalar(1.0); 
+  TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null, 
+                     Teuchos::Exceptions::InvalidParameter,
+                     std::endl << "Error in Piro::Epetra::VelocityVerletSolver " <<
+                     "Requires initial x and x_dot: " << std::endl);
+  double vo; v->Norm2(&vo);
+  *out << "Initial Velocity = " << vo << endl;
 
-   if (Teuchos::VERB_MEDIUM <= solnVerbLevel) cout << std::endl;
+   if (Teuchos::VERB_MEDIUM <= solnVerbLevel) *out << std::endl;
 
    EpetraExt::ModelEvaluator::InArgs model_inargs = model->createInArgs();
    EpetraExt::ModelEvaluator::OutArgs model_outargs = model->createOutArgs();
@@ -241,7 +244,7 @@ Piro::Epetra::VelocityVerletSolver::getValidVelocityVerletParameters() const
      Teuchos::rcp(new Teuchos::ParameterList("ValidVelocityVerletParams"));;
   validPL->set<int>("Num Time Steps", 0, "");
   validPL->set<double>("Final Time", 1.0, "");
-  validPL->set<double>("Initial Time", 1.0, "");
+  validPL->set<double>("Initial Time", 0.0, "");
   validPL->set<std::string>("Verbosity Level", "", "");
   validPL->set<bool>("Invert Mass Matrix", false, "");
   validPL->sublist("Stratimikos", false, "");

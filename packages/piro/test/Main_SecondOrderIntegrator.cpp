@@ -41,6 +41,7 @@
 #include "Piro_ConfigDefs.hpp"
 
 #include "Piro_Epetra_VelocityVerletSolver.hpp"
+#include "Piro_Epetra_TrapezoidRuleSolver.hpp"
 #include "Piro_Epetra_NOXSolver.hpp"
 
 
@@ -61,7 +62,24 @@ int main(int argc, char *argv[]) {
 
   using Teuchos::RCP;
   using Teuchos::rcp;
-  std::string inputFile="input_Solve_VV.xml"; 
+  std::string inputFile;
+
+  bool doAll = (argc==1);
+  if (argc>1) doAll = !strcmp(argv[1],"-v");
+
+  for (int iTest=0; iTest<2; iTest++) {
+
+    if (doAll) {
+      switch (iTest) {
+       case 0: inputFile="input_Solve_VV.xml"; break;
+       case 1: inputFile="input_Solve_TR.xml"; break;
+       default : cout << "iTest logic error " << endl; exit(-1);
+      }
+    }
+     else {
+      inputFile=argv[1];
+      iTest = 999;
+    }
 
     if (Proc==0)
      cout << "===================================================\n"
@@ -89,6 +107,10 @@ int main(int argc, char *argv[]) {
       }
       else if (solver=="Velocity Verlet") {
         piro = rcp(new Piro::Epetra::VelocityVerletSolver(
+                       piroParams, Model, Teuchos::null));
+      }
+      else if (solver=="Trapezoid Rule") {
+        piro = rcp(new Piro::Epetra::TrapezoidRuleSolver(
                        piroParams, Model, Teuchos::null));
       }
       else
@@ -134,6 +156,7 @@ int main(int argc, char *argv[]) {
 
     overall_status += status;
 
+  }
 
   if (Proc==0) {
     if (overall_status==0) cout << "\nTEST PASSED\n" << endl;

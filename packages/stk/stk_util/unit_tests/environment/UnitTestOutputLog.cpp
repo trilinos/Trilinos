@@ -70,8 +70,8 @@ STKUNIT_UNIT_TEST(UnitTestOutputLog, UnitTest)
     log2_result << "stk::bind_output_streams(\"out>+log2\");" << std::endl
                 << "stk::bind_output_streams(\"out>-log1\");" << std::endl;
     
-    STKUNIT_ASSERT_EQUAL(log1_result.str(), log1.str());
-    STKUNIT_ASSERT_EQUAL(log2_result.str(), log2.str());
+    STKUNIT_ASSERT_EQUAL((log1_result.str() == log1.str()), true);
+    STKUNIT_ASSERT_EQUAL((log2_result.str() == log2.str()), true);
 
     stk::unregister_log_ostream(log1);
     stk::unregister_log_ostream(log2);
@@ -88,7 +88,7 @@ STKUNIT_UNIT_TEST(UnitTestOutputLog, UnitTest)
 
     stk::bind_output_streams("log=\"logfile\" out>log");
 
-    STKUNIT_ASSERT_EQUAL(std::string("logfile"), stk::get_log_path("log")); 
+    STKUNIT_ASSERT_EQUAL((std::string("logfile") == stk::get_log_path("log")), true); 
     
     out << "This is a test" << std::endl;
 
@@ -102,7 +102,7 @@ STKUNIT_UNIT_TEST(UnitTestOutputLog, UnitTest)
     std::ifstream log_stream("logfile");
     std::string log_string;
     getline(log_stream, log_string);
-    STKUNIT_ASSERT_EQUAL(log_result.str(), log_string);
+    STKUNIT_ASSERT_EQUAL((log_result.str() == log_string), true);
   }
 
   // Test results of unregistration of an output stream bound as a log stream
@@ -130,7 +130,7 @@ STKUNIT_UNIT_TEST(UnitTestOutputLog, UnitTest)
       log_result << "This is to out" << std::endl
                  << "This is to pout" << std::endl;
     
-      STKUNIT_ASSERT_EQUAL(log_result.str(), log.str());
+      STKUNIT_ASSERT_EQUAL((log_result.str() == log.str()), true);
 
       throw std::exception();
     }
@@ -145,7 +145,7 @@ STKUNIT_UNIT_TEST(UnitTestOutputLog, UnitTest)
 
     std::ostringstream log_result;
     log_result << "This is to out" << std::endl;
-    STKUNIT_ASSERT_EQUAL(log_result.str(), default_log.str());
+    STKUNIT_ASSERT_EQUAL((log_result.str() == default_log.str()), true);
   }
 
   // Test exception of registration with existing name

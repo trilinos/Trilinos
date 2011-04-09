@@ -2,6 +2,7 @@
 #define GEOMETRYKERNELSTUPID_HPP
 
 #include "GeometryKernel.hpp"
+#include <fstream>
 
 class GeometryKernelStupid : public GeometryKernel
 {
@@ -11,14 +12,29 @@ public:
 
     virtual bool read_file(const std::string& file_name,
                            std::vector<GeometryHandle>& geometry_entities)
-    {for (int i=1; i<=6; i++) geometry_entities.push_back(i);
-     return true;}
+    {
+        std::ifstream file (file_name.c_str());
+        if (!file.is_open())
+            return false;
+        int i=1;
+        while (!file.eof())
+        {
+            geometry_entities.push_back(i);
+            char string[256];
+            file.getline(string, 255);
+            geometryAttribute[i]=string;
+            i++;
+        }
+        return true;
+    }
 
-    virtual int get_attribute(const std::string name, GeometryHandle geom)
-    {return -1;}
+    virtual std::string get_attribute(GeometryHandle geom)
+    {return geometryAttribute[geom];}
 
-    virtual Point snap_to(KernelPoint point, GeometryHandle geom)
-    {return point;}
+    virtual void snap_to(KernelPoint& point, GeometryHandle geom)
+    { }
+private:
+    std::map<int, std::string> geometryAttribute;
 };
 
 #endif // GEOMETRYKERNELSTUPID_HPP

@@ -14,12 +14,12 @@
 #include <Shards_CellTopologyData.h>
 #include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
 
 #include <stk_io/IossBridge.hpp>
@@ -37,7 +37,6 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag1 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag3 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag4 )
 
-  using namespace stk::mesh;
 
 namespace stk
 {
@@ -65,31 +64,31 @@ namespace stk
       { 0 , 2 , -1 } , { 1 , 2 , -1 } ,
       { 1 , 1 , -2 } };
 
-    static const EntityId hex_node_ids[3][ shards::Hexahedron<> ::node_count ] = {
+    static const stk::mesh::EntityId hex_node_ids[3][ shards::Hexahedron<> ::node_count ] = {
       { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
       { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
       { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
 
-    static const EntityId wedge_node_ids[3][ shards::Wedge<> ::node_count ] = {
+    static const stk::mesh::EntityId wedge_node_ids[3][ shards::Wedge<> ::node_count ] = {
       { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
       { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
       { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
-    static const EntityId tetra_node_ids[3][ shards::Tetrahedron<> ::node_count ] = {
+    static const stk::mesh::EntityId tetra_node_ids[3][ shards::Tetrahedron<> ::node_count ] = {
       { 15 , 19 , 16 , 21 } ,
       { 19 , 20 , 16 , 21 } ,
       { 16 , 20 , 17 , 21 } };
 
-    static const EntityId pyramid_node_ids[2][ shards::Pyramid<> ::node_count ] = {
+    static const stk::mesh::EntityId pyramid_node_ids[2][ shards::Pyramid<> ::node_count ] = {
       { 11 , 15 , 16 , 12 , 21 } ,
       { 12 , 16 , 17 , 13 , 21 } };
 
-    static const EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<> ::node_count ]={
+    static const stk::mesh::EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<> ::node_count ]={
       { 9 , 6 , 16 , 19 } ,
       { 6 , 7 , 17 , 16 } ,
       { 7 , 8 , 18 , 17 } };
 
-    static const EntityId shell_tri_node_ids[3][ shards::ShellTriangle<> ::node_count ] ={
+    static const stk::mesh::EntityId shell_tri_node_ids[3][ shards::ShellTriangle<> ::node_count ] ={
       { 19 , 16 , 21 } ,
       { 16 , 17 , 21 } ,
       { 17 , 13 , 21 } };
@@ -438,70 +437,6 @@ namespace stk
         }
     }
 
-    /// this almost one-for-one replicant of UseCase_3 in stk_mesh/use_cases, just for learning/testing
-    void SweepMesher::stkMeshCreate_UseCase_3(stk::ParallelMachine& comm)
-    {
-      m_metaData = new MetaData( fem_entity_rank_names() );
-      m_bulkData = new BulkData( *m_metaData , comm );
-      m_block_hex = & m_metaData->declare_part( "block_1", Element );
-      m_block_wedge = & m_metaData->declare_part( "block_2", Element );
-      m_coordinates_field = & m_metaData->declare_field< VectorFieldType >( "coordinates" );
-      m_element_node_coordinates_field = & m_metaData->declare_field< ElementNodePointerFieldType >( "elem_node_coord" );
-
-      // Attache a element topology to the designated element block parts:
-      set_cell_topology< shards::Hexahedron<8>          >( *m_block_hex );
-      set_cell_topology< shards::Wedge<6>               >( *m_block_wedge );
-
-      stk::io::put_io_part_attribute(*m_block_hex);
-      stk::io::put_io_part_attribute(*m_block_wedge);
-
-      // Define where fields exist on the mesh:
-      Part & universal = m_metaData->universal_part();
-
-      put_field( *m_coordinates_field , stk::mesh::Node , universal );
-      //put_field( m_volume_field, Element, m_block_hex );
-      //put_field( m_volume_field, Element, m_block_wedge );
-
-      m_metaData->declare_field_relation(
-                                         *m_element_node_coordinates_field ,
-                                         & element_node_stencil<void> ,
-                                         *m_coordinates_field
-                                         );
-
-      put_field( *m_element_node_coordinates_field, Element, *m_block_hex, shards::Hexahedron<> ::node_count );
-      put_field( *m_element_node_coordinates_field, Element, *m_block_wedge, shards::Wedge<> ::node_count );
-
-      m_metaData->commit();
-
-      m_bulkData->modification_begin();
-
-      EntityId elem_id = 1;
-
-      for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id ) {
-        declare_element( *m_bulkData, *m_block_hex, elem_id, hex_node_ids[i] );
-      }
-
-      for ( unsigned i = 0 ; i < number_wedge ; ++i , ++elem_id ) {
-        declare_element( *m_bulkData, *m_block_wedge, elem_id, wedge_node_ids[i] );
-      }
-
-
-      for ( unsigned i = 0 ; i < node_count ; ++i ) {
-        Entity * const node = m_bulkData->get_entity( stk::mesh::Node , i + 1 );
-        if (node)
-          {
-            double * const coord = field_data( *m_coordinates_field , *node );
-            coord[0] = node_coord_data[i][0] ;
-            coord[1] = node_coord_data[i][1] ;
-            coord[2] = node_coord_data[i][2] ;
-          }
-      }
-
-
-      m_bulkData->modification_end();
-
-    }
-
     /// based on UseCase_3 in stk_mesh/use_cases - creates nodes and elements in stk::mesh database
     void SweepMesher::stkMeshCreate(stk::ParallelMachine& comm)
     {
@@ -512,15 +447,16 @@ namespace stk
 
     void SweepMesher::stkMeshCreateMetaNoCommit(stk::ParallelMachine& comm)
     {
-      m_metaData = new MetaData(fem_entity_rank_names());
-      m_bulkData = new BulkData( *m_metaData , comm );
+      m_metaData = new stk::mesh::fem::FEMMetaData(3); //  stk::mesh::fem::fem_entity_rank_names() );
+      //m_metaData = & stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData);
+      m_bulkData = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
       m_parts.resize(NUM_ELEM_TYPES);
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
         {
           if (m_elems[ieletype].size() > 0)
             {
-              m_parts[ieletype] = &(m_metaData->declare_part( std::string("block_").append(std::string(m_elemInfo[ieletype].name)) , Element ));
+              m_parts[ieletype] = &(m_metaData->declare_part( std::string("block_").append(std::string(m_elemInfo[ieletype].name)) , m_metaData->element_rank() ));
             }
         }
       m_coordinates_field = &m_metaData->declare_field< VectorFieldType >( "coordinates" );
@@ -538,13 +474,13 @@ namespace stk
         }
 
       // Field restrictions:
-      Part & universal = m_metaData->universal_part();
+      stk::mesh::Part & universal = m_metaData->universal_part();
 
-      put_field( *m_coordinates_field , stk::mesh::Node , universal );
+      put_field( *m_coordinates_field , stk::mesh::fem::FEMMetaData::NODE_RANK , universal );
   
       m_metaData->declare_field_relation(
                                          *m_element_node_coordinates_field ,
-                                         & element_node_stencil<void> ,
+                                         stk::mesh::fem::get_element_node_stencil(3) ,
                                          *m_coordinates_field 
                                          );
 
@@ -558,7 +494,7 @@ namespace stk
               std::cout << "shards::Wedge<> ::node_count = " << shards::Wedge<> ::node_count 
                         << " " << m_elemInfo[ieletype].node_count << std::endl;
 #endif
-              put_field( *m_element_node_coordinates_field, Element, *m_parts[ieletype], m_elemInfo[ieletype].node_count);
+              put_field( *m_element_node_coordinates_field, m_metaData->element_rank(), *m_parts[ieletype], m_elemInfo[ieletype].node_count);
             }
         }
     }
@@ -591,14 +527,14 @@ namespace stk
                     }
 
                   //std::cout << "elem_id = " << elem_id << std::endl;
-                  stk::mesh::declare_element( bulkData , part , elem_id , node_ids );
+                  stk::mesh::fem::declare_element( bulkData , part , elem_id , node_ids );
                 }
             }
         }
 
       unsigned node_count_1 = m_node_coords.size();
       for ( unsigned i = 0 ; i < node_count_1 ; ++i ) {
-        Entity * const node = m_bulkData->get_entity( stk::mesh::Node , i + 1 );
+        stk::mesh::Entity * const node = m_bulkData->get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , i + 1 );
         double * const coord = field_data( *m_coordinates_field , *node );
 
         coord[0] = m_node_coords[i][0];
@@ -635,15 +571,15 @@ namespace stk
               std::vector<unsigned> entity_counts;
               stk::mesh::Selector selector(part);
               stk::mesh::count_entities( selector, bulkData , entity_counts );
-              if (0) std::cout << "num_nodes = " << entity_counts[stk::mesh::Node] << " " << expected_num_nodes << std::endl;
-              if (0) std::cout << "num_elems = " << entity_counts[stk::mesh::Element] << " " << expected_num_elems << std::endl;
+              if (0) std::cout << "num_nodes = " << entity_counts[0] << " " << expected_num_nodes << std::endl;
+              if (0) std::cout << "num_elems = " << entity_counts[m_metaData->element_rank()] << " " << expected_num_elems << std::endl;
                 
 
               if (
-                  //(entity_counts[stk::mesh::Node] != expected_num_nodes) ||  
+                  //(entity_counts[stk::mesh::fem::FEMMetaData::NODE_RANK] != expected_num_nodes) ||  
                   //(entity_counts[Edge] != expected_num_edges) ||
                   //(entity_counts[Face] != expected_num_faces) ||
-                  (entity_counts[stk::mesh::Element] != expected_num_elems)
+                  (entity_counts[m_metaData->element_rank()] != expected_num_elems)
                   ) {
                 std::cerr<< "Error, the  entity counts are incorrect!" << std::endl;
                 result = false;
@@ -672,9 +608,9 @@ namespace stk
 
       Ioss::Init::Initializer init_db;
       Ioss::Region *out_region = stk::io::util::create_output_mesh(out_filename, "", "",
-								   comm,
-								   *m_bulkData, NULL, *m_metaData,
-								   true, false);
+                                                                   comm,
+                                                                   *m_bulkData, NULL, stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData),
+                                                                   true, false);
 
       // Clean up
       delete out_region; out_region = NULL;

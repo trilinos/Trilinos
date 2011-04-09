@@ -33,7 +33,7 @@ namespace stk {
 
       URP_Heterogeneous_QuadraticRefine_3D(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  m_eMesh(eMesh) 
       {
-        m_primaryEntityRank = mesh::Element;
+        m_primaryEntityRank = eMesh.element_rank();
 
         Elem::StdMeshObjTopologies::bootstrap();
 
@@ -101,8 +101,8 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
-                        FieldBase *proc_rank_field=0)
+                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::FieldBase *proc_rank_field=0)
       {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_QuadraticRefine_3D::createNewElements()");
       }      

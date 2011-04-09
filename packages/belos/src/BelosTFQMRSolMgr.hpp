@@ -62,7 +62,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/TFQMR/TFQMREpetraExFile.cpp
+/** \example TFQMR/TFQMREpetraExFile.cpp
     This is an example of how to use the Belos::TFQMRSolMgr solver manager.
 */
 

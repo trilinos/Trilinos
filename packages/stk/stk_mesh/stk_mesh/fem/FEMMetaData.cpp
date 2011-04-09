@@ -22,12 +22,20 @@ void assign_cell_topology(
     part_cell_topology_vector.resize(part_ordinal + 1);
 
   part_cell_topology_vector[part_ordinal] = cell_topology;
+
+  if (!cell_topology.getCellTopologyData())
+    { 
+      std::cout << "bad topology in FEMMetaData::assign_cell_topology" << std::endl;
+    }
+
+  ThrowRequireMsg(cell_topology.getCellTopologyData(), "bad topology in FEMMetaData::assign_cell_topology");
 }
 
 } // namespace
 
 FEMMetaData::FEMMetaData()
-  : m_fem_initialized(false),
+: 
+    m_fem_initialized(false),
     m_spatial_dimension(0),
     m_edge_rank(INVALID_RANK),
     m_face_rank(INVALID_RANK),
@@ -40,7 +48,8 @@ FEMMetaData::FEMMetaData()
 
 FEMMetaData::FEMMetaData(size_t spatial_dimension,
                          const std::vector<std::string>& in_entity_rank_names)
-  : m_fem_initialized(false),
+  : 
+    m_fem_initialized(false),
     m_spatial_dimension(0),
     m_edge_rank(INVALID_RANK),
     m_face_rank(INVALID_RANK),
@@ -52,6 +61,25 @@ FEMMetaData::FEMMetaData(size_t spatial_dimension,
 
   FEM_initialize(spatial_dimension, in_entity_rank_names);
 }
+
+#if FEMMETADATA_ADOPT
+FEMMetaData::FEMMetaData(mesh::MetaData& meta,
+                        size_t spatial_dimension,
+                        const std::vector<std::string>& in_entity_rank_names)
+  : m_meta_data(meta),
+    m_fem_initialized(false),
+    m_spatial_dimension(0),
+    m_edge_rank(INVALID_RANK),
+    m_face_rank(INVALID_RANK),
+    m_side_rank(INVALID_RANK),
+    m_element_rank(INVALID_RANK)
+{
+  // Attach FEMMetaData as attribute on MetaData to enable "get accessors" to FEMMetaData
+  m_meta_data.declare_attribute_no_delete<FEMMetaData>(this);
+
+  FEM_initialize(spatial_dimension, in_entity_rank_names);
+}
+#endif
 
 void FEMMetaData::FEM_initialize(size_t spatial_dimension, const std::vector<std::string>& rank_names)
 {
@@ -84,8 +112,8 @@ void FEMMetaData::internal_set_spatial_dimension_and_ranks(size_t spatial_dimens
   // node = 0, edge = 1, face = 2, side = 2, element = 3
   // spatial_dimension = 4
   // node = 0, edge = 1, face = 2, side = 3, element = 4
-  m_edge_rank = m_spatial_dimension > 1 ? 1 : NODE_RANK;
-  m_face_rank = m_spatial_dimension > 2 ? 2 : m_edge_rank;
+  m_edge_rank = 1;
+  m_face_rank = 2;
   m_side_rank = m_spatial_dimension - 1;
   m_element_rank = m_spatial_dimension;
 
@@ -189,12 +217,31 @@ void FEMMetaData::register_cell_topology(const fem::CellTopology cell_topology, 
 
   if (! duplicate) {
     std::string part_name = std::string("{FEM_ROOT_CELL_TOPOLOGY_PART_") + std::string(cell_topology.getName()) + std::string("}");
+
+    ThrowErrorMsgIf(get_part(part_name) != 0, "Cannot register topology with same name as existing part '" << cell_topology.getName() << "'" );
+  
     Part &part = declare_part(part_name, entity_rank);
     m_cellTopologyPartEntityRankMap[cell_topology] = CellTopologyPartEntityRankMap::mapped_type(&part, entity_rank);
 
     assign_cell_topology(m_partCellTopologyVector, part.mesh_meta_data_ordinal(), cell_topology);
   }
+  //check_topo_db();
 }
+
+
+fem::CellTopology
+FEMMetaData::get_cell_topology(
+  const std::string &   topology_name) const 
+{
+  std::string part_name = std::string("{FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name + std::string("}");
+
+  Part *part = get_part(part_name);
+  if (part)
+    return get_cell_topology(*part);
+  else
+    return fem::CellTopology();
+}
+
 
 Part &FEMMetaData::get_cell_topology_root_part(const fem::CellTopology cell_topology) const
 {
@@ -219,12 +266,34 @@ fem::CellTopology FEMMetaData::get_cell_topology( const Part & part) const
 
   PartOrdinal part_ordinal = part.mesh_meta_data_ordinal();
   if (part_ordinal < m_partCellTopologyVector.size())
-    cell_topology = m_partCellTopologyVector[part_ordinal];
+    {
+      cell_topology = m_partCellTopologyVector[part_ordinal];
+    }
 
   return cell_topology;
 }
 
+#if 0
+  void FEMMetaData::check_topo_db()
+  {
+    std::cout << "FEMMetaData::check_topo_db... m_partCellTopologyVector.size() = " << m_partCellTopologyVector.size() <<  std::endl;
 
+  fem::CellTopology cell_topology;
+
+  for (unsigned i = 0; i <  m_partCellTopologyVector.size(); i++)
+    {
+      cell_topology = m_partCellTopologyVector[i];
+  if (!cell_topology.getCellTopologyData())
+    { 
+      std::cout << "bad topology in FEMMetaData::check_topo_db" << std::endl;
+    }
+      ThrowRequireMsg(cell_topology.getCellTopologyData(), "bad topology in FEMMetaData::check_topo_db");
+
+    }
+    std::cout << "FEMMetaData::check_topo_db...done" << std::endl;
+
+  }
+#endif
 
 namespace {
 
@@ -361,6 +430,50 @@ entity_rank_names( size_t spatial_dimension )
   names.push_back( std::string("ELEMENT") );
 
   return names ;
+}
+
+
+CellTopology
+get_cell_topology(
+  const Bucket &                bucket)
+{
+  const BulkData   & bulk_data = BulkData::get(bucket);
+  const MetaData   & meta_data = MetaData::get(bulk_data);
+  const PartVector & all_parts = meta_data.get_parts();
+
+  FEMMetaData &fem = FEMMetaData::get(meta_data);
+
+  CellTopology cell_topology;
+
+  const std::pair< const unsigned *, const unsigned * > supersets = bucket.superset_part_ordinals();
+
+  if (supersets.first != supersets.second) {
+    const Part *first_found_part = 0;
+
+    for ( const unsigned * it = supersets.first ; it != supersets.second ; ++it ) {
+
+      const Part & part = * all_parts[*it] ;
+
+      if ( part.primary_entity_rank() == bucket.entity_rank() ) {
+
+        CellTopology top = fem.get_cell_topology( part );
+
+        if ( ! cell_topology.getCellTopologyData() ) {
+          cell_topology = top ;
+
+          if (!first_found_part)
+            first_found_part = &part;
+        }
+        else {
+          ThrowErrorMsgIf( top.getCellTopologyData() && top != cell_topology,
+            "Cell topology is ambiguously defined. It is defined as " << cell_topology.getName() <<
+            " on part " << first_found_part->name() << " and as " << top.getName() << " on its superset part " << part.name() );
+        }
+      }
+    }
+  }
+
+  return cell_topology ;
 }
 
 } // namespace fem

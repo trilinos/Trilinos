@@ -66,10 +66,10 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
-/** \example epetra/example/GCRODR/GCRODREpetraExFile.cpp
+/** \example GCRODR/GCRODREpetraExFile.cpp
     This is an example of how to use the Belos::GCRODRSolMgr solver manager.
 */
-/** \example epetra/example/GCRODR/PrecGCRODREpetraExFile.cpp
+/** \example GCRODR/PrecGCRODREpetraExFile.cpp
     This is an example of how to use the Belos::GCRODRSolMgr solver manager with an Ifpack preconditioner.
 */
 
@@ -866,7 +866,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     if (! gotOrthoParams) {
       try { // Could it be a sublist?
 	const ParameterList& _orthoParams = 
-//	  params->sublist("Orthogonalization Parameters");
 	  params_->sublist("Orthogonalization Parameters");
 	// A deep copy is the only safe way to ensure that
 	// orthoParams doesn't "go away," since params doesn't
@@ -1289,6 +1288,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
 template<class ScalarType, class MV, class OP>
 ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   using Teuchos::RCP;
+  using Teuchos::rcp;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and 
@@ -1338,7 +1338,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   // GCRODR solver
   
   RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter;
-  gcrodr_iter = Teuchos::rcp( new GCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+  gcrodr_iter = rcp( new GCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
   // Number of iterations required to generate initial recycle space (if needed)
   int prime_iterations = 0;
 
@@ -1377,7 +1377,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	// Orthogonalize this block
 	// Get a matrix to hold the orthonormalization coefficients.
         Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff, keff ); 
-	int rank = ortho_->normalize(*Ctmp, Teuchos::rcp(&Rtmp,false));
+	int rank = ortho_->normalize(*Ctmp, rcp(&Rtmp,false));
 	// Throw an error if we could not orthogonalize this block
 	TEST_FOR_EXCEPTION(rank != keff,GCRODRSolMgrOrthoFailure,"Belos::GCRODRSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
 	
@@ -1435,7 +1435,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	
 	//  Create GCRODR iterator object to perform one cycle of GMRES.
 	RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_prime_iter;
-	gcrodr_prime_iter = Teuchos::rcp( new GCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,primeList) );
+	gcrodr_prime_iter = rcp( new GCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,primeList) );
 	
 	// Create the first block in the current Krylov basis (residual).
 	problem_->computeCurrPrecResVec( &*r_ );
@@ -1450,7 +1450,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
         newstate.V  = MVT::CloneViewNonConst( *V_,  index );
 	newstate.U = Teuchos::null;
 	newstate.C = Teuchos::null;
-        newstate.H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, recycledBlocks_+1, recycledBlocks_+1 ) );
+        newstate.H = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, recycledBlocks_+1, recycledBlocks_+1 ) );
 	newstate.B = Teuchos::null;
 	newstate.curDim = 0;
 	gcrodr_prime_iter->initialize(newstate);
@@ -1623,8 +1623,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
       newstate.C  = MVT::CloneViewNonConst( *C_,  index );
       newstate.U  = MVT::CloneViewNonConst( *U_,  index );
-      newstate.B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_,         keff, numBlocks_,    0, keff ) );
-      newstate.H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, keff, keff ) );
+      newstate.B = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_,         keff, numBlocks_,    0, keff ) );
+      newstate.H = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, keff, keff ) );
       newstate.curDim = 0;
       gcrodr_iter->initialize(newstate);
 
@@ -1696,8 +1696,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
             for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
             restartState.U  = MVT::CloneViewNonConst( *U_,  index );
             restartState.C  = MVT::CloneViewNonConst( *C_,  index );
-            restartState.B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, keff,         numBlocks_,    0, keff ) );
-            restartState.H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, keff, keff ) );
+            restartState.B = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, keff, numBlocks_, 0, keff ) );
+            restartState.H = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, keff, keff ) );
             restartState.curDim = 0;
             gcrodr_iter->initialize(restartState);
 

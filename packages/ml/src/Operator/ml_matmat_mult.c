@@ -1,6 +1,6 @@
 /* ******************************************************************** */
-  int rows_that_fit, rows_length, *rows, NBrows, end, start = 0;
-  int subB_Nnz, Next_est, total_cols = 0;
+static int rows_that_fit, rows_length, *rows, NBrows, end, start = 0;
+static int subB_Nnz, Next_est, total_cols = 0;
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */

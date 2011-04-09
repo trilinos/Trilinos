@@ -1,7 +1,7 @@
 <ParameterList name="ANONYMOUS">
   <Parameter isDefault="false" isUsed="true" name="default" type="int" validatorId="0" value="6"/>
   <Validators>
-    <Validator  type="EnhancedNumberValidator&lt;int>" precision="0" step="1" validatorId="0"/>
-    <Validator  type="EnhancedNumberValidator&lt;double>" precision="0" step="1" validatorId="0"/>
+    <Validator  type="EnhancedNumberValidator(int)" precision="0" step="1" validatorId="0"/>
+    <Validator  type="EnhancedNumberValidator(double)" precision="0" step="1" validatorId="0"/>
   </Validators>
 </ParameterList>

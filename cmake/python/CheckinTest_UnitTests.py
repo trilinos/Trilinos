@@ -120,6 +120,7 @@ A	packages/nox/src/dummy.C
 P packages/stratimikos/dummy.blah
 M	packages/thyra/src/Thyra_ConfigDefs.hpp
 M	packages/thyra/CMakeLists.txt
+D	packages/moocho/src/MoochoUtils/src/FSeconds.f
 """
 
     options = MockOptions()
@@ -129,7 +130,7 @@ M	packages/thyra/CMakeLists.txt
       enablePackagesList, False)
 
     self.assertEqual( options.enableAllPackages, 'auto' )
-    self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'NOX', u'Thyra'] )
+    self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'NOX', u'Thyra', u'MOOCHO'] )
 
 
 

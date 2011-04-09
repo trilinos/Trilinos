@@ -5,9 +5,6 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/DefaultFEM.hpp>
-#endif
 #include <stk_io/util/UseCase_mesh.hpp>
 
 #include <vector>
@@ -110,25 +107,9 @@ class Gmesh_STKmesh_Fixture
   stk::mesh::BulkData & getBulkData()
   { return m_bulk_data; }
 
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  /**
-   * Get a reference to the topo data for the stk-mesh.
-   */
-  const stk::mesh::DefaultFEM & getFEM() const
-  { return m_fem; }
-
-  stk::mesh::DefaultFEM & getFEM()
-  { return m_fem; }
-#endif
-
  private:
   ///> The meta data for the stk-mesh
   stk::mesh::fem::FEMMetaData m_meta_data;
-
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  ///> The topological data for the stk-mesh
-  stk::mesh::DefaultFEM m_fem;
-#endif
 
   ///> The bulk data for the stk-mesh
   stk::mesh::BulkData m_bulk_data;

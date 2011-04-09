@@ -89,6 +89,11 @@
 #include <limits>
 #include <memory>
 
+/* Avoid duplicating instantiation provided by IBM XL C++ runtime library. */
+#if defined(__IBMCPP__)
+# pragma do_not_instantiate std::fpos<mbstate_t>
+#endif
+
 namespace Teuchos { class DummyDummyClass; }
 // Above, is used for a dumb reason (see
 // Teuchs_StandardMemberCompositionMacros.hpp).

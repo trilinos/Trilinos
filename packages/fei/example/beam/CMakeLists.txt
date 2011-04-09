@@ -16,6 +16,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ARGS "-i beam_crs_aztecoo.i"
   COMM serial mpi
   NUM_MPI_PROCS 1
+  DEPLIBS fei_test_utils
   )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(copyexamplebeamfeifiles

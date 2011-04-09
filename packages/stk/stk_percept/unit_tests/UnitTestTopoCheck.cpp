@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009, 2010 Sandia Corporation.                        */
+/*    Copyright 2009, 2010, 2011 Sandia Corporation.                        */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -12,7 +12,9 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -22,10 +24,8 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-#include <stk_mesh/fem/FieldTraits.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <stk_percept/TopologyVerifier.hpp>
@@ -452,7 +452,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    mesh::MetaData mesh_meta_data( mesh::fem_entity_rank_names() );
+    mesh::fem::FEMMetaData mesh_meta_data(3, mesh::fem::entity_rank_names(3) );
 
     //--------------------------------
     // Element-block declarations typically occur when reading the
@@ -461,10 +461,10 @@ void use_encr_case_1_driver( MPI_Comm comm )
     // with each element block.
 
     mesh::Part & universal = mesh_meta_data.universal_part();
-    mesh::Part & block_hex = mesh_meta_data.declare_part("block_1",mesh::Element);
+    mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", mesh_meta_data.element_rank());
 
     /// set cell topology for the part block_1
-    mesh::set_cell_topology< shards::Hexahedron<8>  >( block_hex );
+    stk::mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( mesh_meta_data, block_hex );
 
     //--------------------------------
     // Declare coordinates field on all nodes with 3D:
@@ -473,24 +473,9 @@ void use_encr_case_1_driver( MPI_Comm comm )
       mesh_meta_data.declare_field< VectorFieldType >( "coordinates" );
 
     stk::mesh::put_field(
-      coordinates_field , mesh::Node , universal , SpatialDim );
+      coordinates_field , mesh::fem::FEMMetaData::NODE_RANK , universal , SpatialDim );
 
     //--------------------------------
-
-#if 0
-    VectorFieldType & face_field =
-      mesh_meta_data.declare_field< VectorFieldType >( "face_flux" );
-
-    VectorFieldType & elem_field =
-      mesh_meta_data.declare_field< VectorFieldType >( "elem_flux" );
-
-    stk::mesh::put_field(
-      elem_field , mesh::Element , block_hex , SpatialDim );
-
-    stk::mesh::put_field(
-      face_field , mesh::Face , universal , SpatialDim );
-
-#endif
 
     //--------------------------------
     // Declare an aggressive "gather" field which is an
@@ -508,7 +493,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
 
     mesh_meta_data.declare_field_relation(
       elem_node_coord ,
-      & mesh::element_node_stencil<void> ,
+      stk::mesh::fem::get_element_node_stencil(3) ,
       coordinates_field );
 
     // Declare the size of the aggressive "gather" field
@@ -517,7 +502,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     // This size is different for each element block.
 
     stk::mesh::put_field(
-      elem_node_coord , mesh::Element , block_hex , shards::Hexahedron<8> ::node_count );
+                         elem_node_coord , mesh_meta_data.element_rank() , block_hex , shards::Hexahedron<8> ::node_count );
 
     //--------------------------------
     // Commit (finalize) the meta data.  Is now ready to be used
@@ -528,7 +513,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
     // mesh::BulkData bulk data conforming to the meta data.
 
-    mesh::BulkData mesh_bulk_data( mesh_meta_data , MPI_COMM_WORLD );
+    mesh::BulkData mesh_bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(mesh_meta_data) , MPI_COMM_WORLD );
 
     // In a typical app, the mesh would be read from file at this point.
     // But in this use-case, we generate the mesh and initialize
@@ -550,10 +535,10 @@ void use_encr_case_1_driver( MPI_Comm comm )
       count_entities( selector, mesh_bulk_data, count );
 
       std::cout << "  P" << p_rank << ": Uses {" ;
-      std::cout << " Node = " << count[ mesh::Node ] ;
-      std::cout << " Edge = " << count[ mesh::Edge ] ;
-      std::cout << " Face = " << count[ mesh::Face ] ;
-      std::cout << " Elem = " << count[ mesh::Element ] ;
+      std::cout << " Node = " << count[ 0 ] ;
+      std::cout << " Edge = " << count[ 1 ] ;
+      std::cout << " Face = " << count[ 2 ] ;
+      std::cout << " Elem = " << count[ 3 ] ;
       std::cout << " }" << std::endl ;
       std::cout.flush();
     }
@@ -574,8 +559,6 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
 
 
-    //use_encr_case_1_algorithm( mesh_bulk_data , mesh::Face ,
-    //                               face_field , elem_field );
 
     //------------------------------------------------------------------
 
@@ -680,9 +663,9 @@ void use_encr_case_1_generate_mesh(
 
             const stk::mesh::EntityId elem_id = elem_map[ j ];
 
-            mesh::declare_element( mesh , hex_block , elem_id , node_id );
+            stk::mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
 
-            mesh::Entity * const elem = mesh.get_entity( mesh::Element , elem_id );
+            mesh::Entity * const elem = mesh.get_entity( stk::mesh::fem::FEMMetaData::get(mesh).element_rank() , elem_id );
 
 
             if (!topoVerifier.isTopologyBad(*elem))
@@ -719,7 +702,7 @@ void use_encr_case_1_generate_mesh(
     for ( unsigned i = 0 ; i < node_map.size() ; ++i ) {
       const unsigned i3 = i * 3 ;
 
-      mesh::Entity * const node = mesh.get_entity( mesh::Node , node_map[i] );
+      mesh::Entity * const node = mesh.get_entity( mesh::fem::FEMMetaData::NODE_RANK , node_map[i] );
 
       if ( NULL == node ) {
         std::ostringstream msg ;

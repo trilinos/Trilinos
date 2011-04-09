@@ -28,8 +28,8 @@ namespace stk {
   namespace percept {
 
 
-    typedef std::vector<Entity *> PerceptEntityVector;
-    typedef Entity *SameRankRelationKey;
+    typedef std::vector<stk::mesh::Entity *> PerceptEntityVector;
+    typedef stk::mesh::Entity *SameRankRelationKey;
     typedef PerceptEntityVector SameRankRelationValue;
     typedef boost::unordered_map<SameRankRelationKey, SameRankRelationValue > SameRankRelation;
 

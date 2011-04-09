@@ -187,6 +187,14 @@ CellTopology get_cell_topology_new( const Entity & entity)
   return get_cell_topology_new(entity.bucket());
 }
 
+void set_cell_topology_new( Part &part, const CellTopologyData * const cell_topology)
+{
+  FEMMetaData& fem_meta = FEMMetaData::get(part);
+
+  set_cell_topology(fem_meta, part, fem::CellTopology(cell_topology));
+}
+
+
 void count_entities(
   const Selector & selector ,
   const BulkData & mesh ,

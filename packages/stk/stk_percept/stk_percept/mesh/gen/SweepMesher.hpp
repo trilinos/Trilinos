@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2010 Sandia Corporation.                              */
+/*    Copyright 2010, 2011 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -20,16 +20,15 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <stk_percept/ShardsInterfaceTable.hpp>
@@ -40,7 +39,6 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag3 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag4 )
 
-  using namespace stk::mesh;
 
 namespace stk
 {
@@ -162,7 +160,8 @@ namespace stk
       bool m_deleteAfterBreak;
 
       /// only a few sweep types allowed so far; later could add quadratic sweeping
-      SweepMesher() //: m_deleteAfterSweep(1), m_deleteAfterBreak(1), m_metaData(0), m_bulkData(0) 
+      SweepMesher(unsigned spatialDim=3) : m_spatial_dimension(spatialDim)
+      //: m_deleteAfterSweep(1), m_deleteAfterBreak(1), m_metaData(0), m_bulkData(0) 
       {
         //m_dump = false;
         //m_elemInfo = ShardsInterfaceTable::s_elemInfo;
@@ -192,11 +191,12 @@ namespace stk
       }
 
       stk::mesh::BulkData * getBulkData() { return m_bulkData;}
+      stk::mesh::fem::FEMMetaData * getMetaData() { return m_metaData; }
 
     private:
       bool m_dump;
-
-      stk::mesh::MetaData * m_metaData;
+      unsigned m_spatial_dimension;
+      stk::mesh::fem::FEMMetaData * m_metaData;
       stk::mesh::BulkData * m_bulkData;
       std::vector<stk::mesh::Part *> m_parts;
       stk::mesh::Part *m_block_hex;
@@ -573,40 +573,11 @@ namespace stk
       }
 
 
-      // stk::mesh related
-#if 0
-      const stk::mesh::MetaData & metaData() const
-      { return m_metaData; }
-
-      const stk::mesh::BulkData & bulkData() const
-      { return m_bulkData; }
-
-      stk::mesh::BulkData       & modifiableBulkData()
-      { return m_bulkData; }
-
-      stk::mesh::Part & block_hex() const
-      { return m_block_hex; }
-
-      VectorFieldType & coordinates_field()
-      { return *m_coordinates_field; }
-
-      const VectorFieldType & const_coordinates_field() const
-      { return *m_coordinates_field; }
-
-      ElementNodePointerFieldType & element_node_coordinates_field()
-      { return m_element_node_coordinates_field; }
-
-      const ElementNodePointerFieldType & const_element_node_coordinates_field() const
-      { return m_element_node_coordinates_field; }
-#endif
-
       /// create a std::mesh representation of this
       void stkMeshCreate(stk::ParallelMachine& );
 
       void stkMeshCreateMetaNoCommit(stk::ParallelMachine& );
       void stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine& );
-
-      void stkMeshCreate_UseCase_3(stk::ParallelMachine& );
 
       void writeSTKMesh(const char* filename);
 

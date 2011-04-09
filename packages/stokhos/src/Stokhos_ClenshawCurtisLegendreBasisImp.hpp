@@ -69,3 +69,11 @@ computeRecurrenceCoefficients(ordinal_type n,
     delta[i] = value_type(2*i+1) / value_type(i+1);
   }
 }
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
+Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>::
+cloneWithOrder(ordinal_type p) const
+{
+   return Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>(p,this->normalize,isotropic));
+}

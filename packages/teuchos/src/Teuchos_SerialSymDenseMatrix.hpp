@@ -43,9 +43,6 @@
 /*! \class Teuchos::SerialSymDenseMatrix
     \brief This class creates and provides basic support for symmetric, positive-definite dense matrices of templated type.
 
-    \example DenseMatrix/cxx_main_sym.cpp
-    This is an example of how to use the Teuchos::SerialSymDenseMatrix class.
-
     The Teuchos_SerialSymDenseMatrix class enables the construction and use of 
     symmetric, positive-definite, dense matrices of templated type.
 
@@ -99,6 +96,10 @@ the object.  Specifically:
   <li> Norms.
 </ul>
 
+*/
+
+/** \example DenseMatrix/cxx_main_sym.cpp
+    This is an example of how to use the Teuchos::SerialSymDenseMatrix class.
 */
 
 namespace Teuchos {

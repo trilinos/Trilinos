@@ -680,6 +680,21 @@ void extractDataFromISS( std::istringstream& iss, std::string& data )
   data = Utils::trimWhiteSpace(data);
 }
 
+/**
+ * \brief Get the format that is used for the specialization of the TypeName
+ * traits class for Array. 
+ *
+ * The string returned will contain only one
+ * "*" character. The "*" character should then be replaced with the actual 
+ * template type of the array. 
+ * \relates Array.
+ */
+inline
+std::string getArrayTypeNameTraitsFormat(){
+  return "Array(*)";
+}
+
+
 
 /** \brief TypeNameTraits specialization for Array.
  *
@@ -697,8 +712,13 @@ void extractDataFromISS( std::istringstream& iss, std::string& data )
 template<typename T>
 class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<Array<T> > {
 public:
-  static std::string name()
-    { return "Array("+TypeNameTraits<T>::name()+")"; }
+  static std::string name(){ 
+    std::string formatString = getArrayTypeNameTraitsFormat();
+    size_t starPos = formatString.find("*");
+    std::string prefix = formatString.substr(0,starPos);
+    std::string postFix = formatString.substr(starPos+1);
+    return prefix+TypeNameTraits<T>::name()+postFix;
+  }
   static std::string concreteName(const Array<T>&)
     { return name(); }
 };

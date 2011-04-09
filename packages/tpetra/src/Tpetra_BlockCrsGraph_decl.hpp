@@ -42,6 +42,11 @@ namespace Tpetra {
 
   BlockCrsGraph doesn't inherit Tpetra::CrsGraph, but always holds a
   Tpetra::CrsGraph as a class-member attribute.
+
+  The reason BlockCrsGraph exists is to create and hold the block-versions
+  (Tpetra::BlockMap) of the Tpetra::Map objects that CrsGraph holds.
+
+  BlockCrsGraph is used by Tpetra::VbrMatrix (variable block row matrix).
 */
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class BlockCrsGraph : public Teuchos::Describable {

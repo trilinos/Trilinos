@@ -373,7 +373,7 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout, assertNoIllegalEnabl
   return success
 
 
-reModifiedFiles = re.compile(r"^[MA]\t(.+)$")
+reModifiedFiles = re.compile(r"^[MAD]\t(.+)$")
 
 
 def getCurrentBranchName(inOptions, baseTestDir):

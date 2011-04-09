@@ -55,11 +55,11 @@ namespace stk
       found_it = 0;
 
       // FIXME consider caching the coords_field in FieldFunction
-      const mesh::MetaData& metaData = MetaData::get(bulkData);
+      const mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(bulkData);
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       const mesh::Bucket & bucket = element.bucket();
-      const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
 
       unsigned numCells = 1; // FIXME
 

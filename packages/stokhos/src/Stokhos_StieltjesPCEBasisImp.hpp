@@ -210,7 +210,7 @@ stieltjes(ordinal_type nstart,
       integrateBasisSquared(i, a, b, weights, points, phi_vals, val1, val2);
     // std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
     // 	      << std::endl;
-    TEST_FOR_EXCEPTION(val1 < 1.0e-14, std::logic_error,
+    TEST_FOR_EXCEPTION(val1 < 0, std::logic_error,
 		     "Stokhos::StieltjesPCEBasis::stieltjes():  "
 		       << " Polynomial " << i << " out of " << nfinish 
 		       << " has norm " << val1 
@@ -322,4 +322,12 @@ transformCoeffsFromStieltjes(const value_type *in, value_type *out) const
   blas.GEMV(Teuchos::TRANS, fromStieltjesMat.numRows(), 
 	    fromStieltjesMat.numCols(), 1.0, fromStieltjesMat.values(), 
 	    fromStieltjesMat.numRows(), in, 1, 0.0, out, 1);
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
+Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
+cloneWithOrder(ordinal_type p) const
+{
+   return Teuchos::rcp(new Stokhos::StieltjesPCEBasis<ordinal_type,value_type>(p,pce,quad,use_pce_quad_points,this->normalize,project_integrals,Cijk));
 }

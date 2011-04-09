@@ -39,13 +39,34 @@
 
 namespace Teuchos{
 
-template<class ReturnType>
+
+/**
+ * \brief A function object represents an arbitrary function.
+ */
 class FunctionObject: public Describable {
 
 public:
-  virtual ReturnType runFunction() const=0;
+  
+  /** \name XMLSerialiation Functions */
+  //@{
 
+  /** \brief Returns the string to be used for the value of the 
+   * type attribute when converting the function to XML.
+   */
+  virtual std::string getTypeAttributeValue() const=0;
+
+  /** \brief Returns the name of the XML tag used to indicate
+   * a funciton object.
+   */
+  static const std::string& getXMLTagName(){
+    static const std::string funcitonTagName = "Function";
+    return funcitonTagName;
+  }
+
+  //@}
+  
 };
+
 
 } // namespace Teuchos
 

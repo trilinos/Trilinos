@@ -148,18 +148,18 @@ namespace stk
         if (1 || typeid(integrand) == typeid(FieldFunction))
           {
             // FIXME - make all stk::percept code const-correct
-            PerceptMesh eMesh(&MetaData::get(m_bulkData), &m_bulkData);
+            PerceptMesh eMesh(&mesh::fem::FEMMetaData::get(m_bulkData), &m_bulkData);
             LN_NormOp<Power> LN_op(integrand);
             CompositeFunction LN_of_integrand("LN_of_integrand", integrand, LN_op);
             IntegratedOp integrated_LN_op(LN_of_integrand, m_turboOpt);
             eMesh.printInfo("Norm");
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)
               {
-                eMesh.elementOpLoop(integrated_LN_op, 0, &MetaData::get(m_bulkData).locally_owned_part());
+                eMesh.elementOpLoop(integrated_LN_op, 0, &mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part());
               }
             else if (m_turboOpt == TURBO_BUCKET)
               {
-                eMesh.bucketOpLoop(integrated_LN_op, 0, &MetaData::get(m_bulkData).locally_owned_part());
+                eMesh.bucketOpLoop(integrated_LN_op, 0, &mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part());
               }
 
             unsigned vec_sz = integrated_LN_op.getValue().size();

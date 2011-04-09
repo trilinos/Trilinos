@@ -121,7 +121,7 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
     STKUNIT_ASSERT_EQUAL(min.size(), mout.size());
     STKUNIT_ASSERT(mout);
     STKUNIT_ASSERT(min);
-    STKUNIT_ASSERT_EQUAL(s_in, s_out);
+    STKUNIT_ASSERT_EQUAL((s_in == s_out), true);
     STKUNIT_ASSERT_EQUAL(i_in, i_out);
   }
 
@@ -136,7 +136,7 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 
     min >> s_in;
 
-    STKUNIT_ASSERT_EQUAL(s_in.m_string, s_out.m_string);
+    STKUNIT_ASSERT_EQUAL((s_in.m_string == s_out.m_string), true);
     STKUNIT_ASSERT_EQUAL(s_in.m_int, s_out.m_int);
   }
 
@@ -154,7 +154,7 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
     
     min >> v_in;
 
-    STKUNIT_ASSERT_EQUAL(v_in[0].m_string, v_out[0].m_string);
+    STKUNIT_ASSERT_EQUAL((v_in[0].m_string == v_out[0].m_string), true);
   }
 
   // Marshal/Unmarshal error from type mismatch

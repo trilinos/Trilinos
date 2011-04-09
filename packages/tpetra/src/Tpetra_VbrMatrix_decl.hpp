@@ -180,6 +180,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
                     Teuchos::ETransp trans) const;
 
   //! Indicates whether this operator supports applying the adjoint operator.
+  /*!
+    VbrMatrix does support transpose-apply. (This method returns true.)
+  */
   bool hasTransposeApply() const;
 
   //@}

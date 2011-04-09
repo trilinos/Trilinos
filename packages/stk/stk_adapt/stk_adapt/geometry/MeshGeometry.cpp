@@ -20,16 +20,33 @@ void MeshGeometry::add_evaluators(std::vector<GeometryEvaluator*> evaluators)
     geomEvaluators.insert(geomEvaluators.end(), evaluators.begin(), evaluators.end());
 }
 
-void MeshGeometry::snap_points_to_geometry()
+void MeshGeometry::snap_points_to_geometry(PerceptMesh* mesh_data)
 {
-    size_t i;
-    for (i=0; i<geomEvaluators.size(); i++)
-    {
-        size_t j;
-        for (j=0; j<geomEvaluators[i]->mesh.size()/3; j++)
+    BulkData& bulkData = *mesh_data->getBulkData();
+    VectorFieldType* coordField = mesh_data->getCoordinatesField();
+
+    const std::vector<Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+    for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+      {
+        size_t s;
+        for (s=0; s<geomEvaluators.size(); s++)
         {
-            double *point = &(geomEvaluators[i]->mesh[j*3]);
-            double *new_point = geomKernel->snap_to(point, geomEvaluators[i]->geometry);
+            if (geomEvaluators[s]->mMesh(**k))
+                break;
         }
-    }
+        if (s < geomEvaluators.size())
+          {
+            Bucket & bucket = **k ;
+            const unsigned num_nodes_in_bucket = bucket.size();
+
+            for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+              {
+                Entity& node = bucket[iNode];
+
+                double * coord = stk::mesh::field_data( *coordField , node );
+                geomKernel->snap_to(coord, geomEvaluators[s]->mGeometry);
+              }
+          }
+      }
 }

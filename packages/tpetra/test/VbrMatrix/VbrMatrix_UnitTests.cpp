@@ -267,7 +267,7 @@ namespace {
     // create the matrix
     {
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      TEST_EQUALITY(vbr->hasTransposeApply(), false);
+      TEST_EQUALITY(vbr->hasTransposeApply(), true);
     }
   }
 

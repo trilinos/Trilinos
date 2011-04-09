@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009 Sandia Corporation.                              */
+/*    Copyright 2009, 2011 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -54,14 +54,14 @@ namespace stk
         EXCEPTWATCH;
 
         // start_demo_open_new_close_PerceptMesh
-        PerceptMesh eMesh;
+        PerceptMesh eMesh(3u);
         eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 
-        FieldBase* pressure_field = eMesh.addField("pressure", mesh::Node, scalarDimension);
-        eMesh.addField("velocity", mesh::Node, vectorDimension);
-        eMesh.addField("element_volume", mesh::Element, scalarDimension);
+        mesh::FieldBase* pressure_field = eMesh.addField("pressure", stk::mesh::fem::FEMMetaData::NODE_RANK, scalarDimension);
+        eMesh.addField("velocity", stk::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+        eMesh.addField("element_volume", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
 
@@ -140,14 +140,14 @@ namespace stk
         double x=0.123, y=0.234, z=0.345, time=0.0;
 
         // start_demo_open_new_close_PerceptMesh_2
-        PerceptMesh eMesh;
+        PerceptMesh eMesh(3u);
         // open the file we previously saved with the new fields
         eMesh.openReadOnly("./input_files/cube_with_pressure.e");
 
         eMesh.printInfo("Info after reading mesh");
 
         //eMesh.printFields();
-        FieldBase *f_coords = eMesh.getField("coordinates");
+        mesh::FieldBase *f_coords = eMesh.getField("coordinates");
 
         // create a field function from the existing coordinates field
         FieldFunction ff_coords("ff_coords", f_coords, eMesh, 3, 3);
@@ -156,7 +156,7 @@ namespace stk
         evalVec3Print(x, y, z, time, ff_coords);
 
         // get the pressure field
-        FieldBase* pressure_field = eMesh.getField("pressure");
+        mesh::FieldBase* pressure_field = eMesh.getField("pressure");
 
         // FIXME
         std::vector< const mesh::FieldBase * > sync_fields( 1 , pressure_field );
@@ -210,14 +210,14 @@ namespace stk
         EXCEPTWATCH;
 
         // start_demo_open_new_close_PerceptMesh_3
-        PerceptMesh eMesh;
+        PerceptMesh eMesh(3u);
         eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 
-        FieldBase* pressure_field = eMesh.addField("pressure", mesh::Node, scalarDimension);
-        eMesh.addField("velocity", mesh::Node, vectorDimension);
-        eMesh.addField("element_volume", mesh::Element, scalarDimension);
+        mesh::FieldBase* pressure_field = eMesh.addField("pressure", stk::mesh::fem::FEMMetaData::NODE_RANK, scalarDimension);
+        eMesh.addField("velocity", stk::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+        eMesh.addField("element_volume", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
 
@@ -249,24 +249,24 @@ namespace stk
         EXCEPTWATCH;
 
         // start_demo_open_new_reopen_PerceptMesh
-        PerceptMesh eMesh;
+        PerceptMesh eMesh(3u);
         eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 
-        eMesh.addField("pressure", mesh::Node, scalarDimension);
-        eMesh.addField("velocity", mesh::Node, vectorDimension);
-        eMesh.addField("element_volume", mesh::Element, scalarDimension);
+        eMesh.addField("pressure", stk::mesh::fem::FEMMetaData::NODE_RANK, scalarDimension);
+        eMesh.addField("velocity", stk::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+        eMesh.addField("element_volume", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
 
         /// reopen the mesh to allow for more fields to be added - note that this involves a db write/read operation
         eMesh.reopen("./output_files/optional_temp_filename.e");
-        FieldBase* momentum_field = eMesh.addField("momentum", mesh::Node, vectorDimension);
+        mesh::FieldBase* momentum_field = eMesh.addField("momentum", stk::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
         eMesh.commit();
 
         // create a field function from the new pressure field
-        FieldBase *pressure_field = eMesh.getField("pressure");
+        mesh::FieldBase *pressure_field = eMesh.getField("pressure");
         FieldFunction ff_pressure("ff_pressure", pressure_field, eMesh, 3, 1);
 
         // set the value of the pressure field to a constant everywhere
