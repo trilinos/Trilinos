@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 #ifdef SERIALIZATION_SUPPORTS_VECTORS
     std::vector<int> vecVals(10, 9);
 #endif
-    void *iptr = &i;
+
 
 
     check_traits(c);
@@ -58,7 +58,6 @@ int main(int argc, char *argv[])
 #ifdef SERIALIZATION_SUPPORTS_VECTORS
     check_traits(vecVals);
 #endif
-    check_traits(iptr);
 
     // TODO: When we can test that a source file fails to compile, we can
     //       do this test.

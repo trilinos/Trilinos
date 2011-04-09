@@ -17,48 +17,11 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Hashtable.hpp>
 
-/*! Z2
-    \brief A namespace for Zoltan2 internal objects and methods.
-   
-    Proposal: this namespace could be called SPOCK for Sandia
-     Partitioning Ordering and Coloring Kit.
-*/
-
 namespace Z2
 {
 
 /*! Z2::IdentifierMap
     \brief An IdentifierMap manages a global space of unique object identifiers.
-
-    The Zoltan2 caller may use arbitrary data types for global ID (AppGID) and 
-    local ID (AppLID).  For example, if the objects being partitioned are 
-    matrix non-zeros, the AppGID may be an (i,j) pair.  The AppLID is optional 
-    and exists for the convenience of the caller.  It may be for example an 
-    index into an array, or a pointer to memory.  The application may obtain 
-    a solution in terms of the AppLID (if it was provided) or the AppGID.
-
-    The Identifier map is templated on the AppGID, AppLID, GNO and LNO.  The 
-    GNO and LNO are the global identifier and local count types used internally
-    by Zoltan2.  
-
-    The GNO must be a signed or unsigned char, int or long.  Where long long is
-    available it can be a signed long long.  (It must be type valid for use 
-    as a Tpetra GlobalOrdinal.) The GNO type defaults to the AppGID type.  
-    If the AppGID is not a GlobalOrdinal type then the Caller must 
-    specify a valid GNO type that is large enough to enumerate all of 
-    the application's global IDs.  It is more efficient to use AppGIDs 
-    that are GlobalOrdinal types because if they are not, Zoltan2 must 
-    translate back and forth between the application global ID and its 
-    internal global identifier.
-
-    Before including this header file in a compilation, the macro 
-    APPGID_IS_NOT_GNO must be defined if the application's global ID type 
-    is not the same as the GNO type. 
-
-    The LNO defaults to a int.  It is used to index and count local objects.  
-    If there is some reason that Zoltan2 could save memory by using a smaller 
-    data type, or requires a larger data type to count local objects, 
-    then the caller should define a different LNO type.
 
     TODO - trim down comments and code once we get it all straight
            replace new/delete with memory wrappers
@@ -74,33 +37,32 @@ private:
 
   // Input communicator
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm;
+  Teuchos::RCP<const Teuchos::Comm<int> > _comm;
 
   // Application global and local IDs
 
-  Teuchos::RCP<std::vector<AppGID> > myGids; 
-  Teuchos::RCP<std::vector<AppLID> > myLids;
+  Teuchos::RCP<std::vector<AppGID> > _myGids; 
+  Teuchos::RCP<std::vector<AppLID> > _myLids;
 
   // In the case of consecutive ordinal application global IDs,
-  // gnoDist[p] is the first global number on process p.
+  // gnoDist[p] is the first global number on process p, and
+  // we don't need the _gidHash.
 
-  Teuchos::ArrayRCP<GNO> gnoDist;
+  Teuchos::ArrayRCP<GNO> _gnoDist;
 
   // A hash table from application global ID key to our local index.
 
-  Teuchos::RCP<Teuchos::Hashtable<int, LNO> >  gidHash;
+  Teuchos::RCP<Teuchos::Hashtable<std::string, LNO> >  _gidHash;
 
   // A hash table from application local ID key to our local index.
 
-  Teuchos::RCP<Teuchos::Hashtable<int, LNO> >  lidHash;
+  Teuchos::RCP<Teuchos::Hashtable<std::string, LNO> >  _lidHash;
 
-  bool consecutive;
-  GNO base;
-  GNO globalNumberOfIds;
-  LNO localNumberOfIds;
-  bool haveLocalIds;
-
-  void reset();
+  GNO _globalNumberOfIds;
+  LNO _localNumberOfIds;
+  bool _haveLocalIds;
+  int _myRank;
+  int _numProcs;
 
 public:
 
@@ -168,7 +130,8 @@ public:
       in the empty vector with the corresponding id, and will fill the
       proc vector with the owner of the global ID.
    */
-  void gidGlobalTranslate(std::vector<AppGID> &gid, std::vector<GNO> &gno, std::vector<int> &proc);
+  void gidGlobalTranslate(const std::vector<AppGID> &gid, 
+    std::vector<GNO> &gno, std::vector<int> &proc);
 };
 
 }   // end namespace Z2

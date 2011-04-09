@@ -8,47 +8,99 @@
 #ifndef _ZOLTAN2_IDENTIFIERTRAITS
 #define _ZOLTAN2_IDENTIFIERTRAITS
 
-#include <algorithm>
+#include <utility>
 #include <vector>
-#include <string>
 #include <iostream>
+#include <string>
 #include <sstream>
-#include <stdint.h>
 #include <Zoltan2_config.h>
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_SerializationTraits.hpp>
+#include <Teuchos_HashUtils.hpp>
 
 /*! \file Zoltan2_IdentifierTraits.hpp
   \brief Defines basic traits for application supplied local and global IDs.
+*/
 
+/*! \namespace Z2
+  \brief Internal Zoltan2 namespace.
+
+  This namespace contains the objects and functions that are not
+  part of the Zoltan2 user interface.
 */
 
 namespace Z2
 {
 
-/*! \struct Z2::IdentifierTraits
-  \brief This structure defines the basic traits needed for an identifier.
-
-    If an identifier type is not instantiated here, the caller will get a
-    compile time error message indicating that we need to add a new type.
-*/
-
-
-// Is the type a Teuchos global ordinal type
+/*! 
+    \brief Determine whether id type is a Teuchos OrdinalType.
+    \tparam T data type for identifier
+    \result true if the data type is a Teuchos Ordinal Type
+ */
 
 template <typename T>
-bool isGlobalOrdinalType<T> {
+bool isGlobalOrdinalType() {
   return Teuchos::OrdinalTraits<T>::hasMachineParameters;
 }
 
-// Make a compact string from an integer
+/*! 
+    \brief Determine whether id type is a Teuchos communication Packet type.
+    \tparam T data type for identifier
+    \result true if it is a Teuchos Packet type
+ */
+
+template <typename T>
+bool isPacketType() {
+  return Teuchos::SerializationTraits<int, T>::supportsDirectSerialization;
+}
+
+/*! 
+    \brief Convert a string to the numeric value it describes.
+    \tparam T the numeric data type to convert the string to
+    \result the number in the string (e.g. "12.5" -> float(12.5))
+ */
+
+template <typename T>
+T getTypeFromString(std::string s){
+  T val;
+  std::istringstream is(s);
+  is >> val;
+  return val;
+}
+
+/*! 
+    \brief Represent a numeric value as a hex string.
+
+    The goal was to come up with a way to uniquely represent identifiers
+    compactly in a string.  Some values would require fewer bytes when 
+    represented as a hex string.
+
+    \tparam T the numeric data type to convert to the hex string
+    \result the hex string (e.g. 17 -> "11")
+ */
 
 template <typename T>
 std::string hexString(const T &ival){ 
-  ostringstream os;
+  std::ostringstream os;
   os << std::hex << ival;
   return os.str();
 }
 
-// More compact.  Will this work even though characters are unprintable?
+/*! 
+    \brief Represent a numeric value as a byte string.
+
+    The goal was to come up with a way to represent identifiers
+    compactly in a string.  This scheme is more compact than
+    hexString, but includes unprintable characters in the string.
+    Each byte is the ascii equivalent of the numeric value of the
+    corresponding byte in the input.  Zero is an exception,
+    because when a std::string has one character only and it
+    is 0, it is considered a string of length 0.
+
+    \tparam T the numeric data type to convert to the string
+    \param ival the number to convert to a string
+    \result the string representation.
+ */
 
 template <typename T>
 std::string byteString(const T &ival)
@@ -57,7 +109,7 @@ std::string byteString(const T &ival)
 
   if (ival != 0){             // scheme that works if non-zero
     s.reserve(sizeof(T));
-    for (int i=sizeof(T)-1; i>=0; i--){
+    for (unsigned int i=sizeof(T)-1; i>=0; i--){
       int movebits = i*8;
       char c = static_cast<char>((ival & (0xff << movebits)) >> movebits);
       if ((s.size() > 0) || (static_cast<int>(c)  != 0)){
@@ -66,141 +118,219 @@ std::string byteString(const T &ival)
     }
   }
   else{
-    s.reserve(sizeof(T)+1);  // unique value for 0
-    for (int i=0; i <= sizeof(T); i++){
-      s.push_back('-');
+    s = std::string("zero");  // unique value for 0
+    for (unsigned int i=s.size(); i <= sizeof(T); i++){
+      s.push_back('!');
     }
   }
 
   return s;
 }
 
+/*! \struct UndefinedIdentifierTraits
+    \brief Resolves at compile time the use of invalid id types.
+*/
+
 template<typename T>
 struct UndefinedIdentifierTraits
-{
-  static inline T notDefined() { return T::Identifer_Type_Needs_To_Be_Added(); }
-};
-	
+{ 
+static inline T notDefined() { return T::Identifier_Type_Needs_To_Be_Added(); } };
+
+
+/*! \struct IdentifierTraits
+    \brief The functions to be defined for each valid id type.
+    \tparam  T the local or global identifier data type
+*/
+
 template<typename T>
 struct IdentifierTraits {
 
-  // An integer for each id, for hashing to a value between 1 and n 
-  static inline int hashCode(const T& ) { 
+  /*! \brief Compute an integer hash code for the id.
+      \param id an application's local or global identifier
+      \result the integer code, need not be unique for each id
+   */
+      
+  static int hashCode(const T& id) { 
    return UndefinedIdentifierTraits<T>::notDefined(); 
   }
 
-  // A unique key for each id, for hashtable use
-  static inline std::string key(const T&){
+  /*! \brief Compute a key which will be unique for each id.
+      \param id an application's local or global identifier
+      \result the key, as a std::string
+   */
+  
+  static std::string key(const T& id){
+   return UndefinedIdentifierTraits<T>::notDefined(); 
+  }
+
+  /*! \brief Convert a key back to the identifier that generated it.
+      \param key a string created with a call to IdentifierTraits::key()
+      \result the identifier that would have generated this key
+   */
+
+  static T keyToGid(const std::string key){
    return UndefinedIdentifierTraits<T>::notDefined(); 
   }
 		
-  // The name of this Identifier type
+  /*! \brief The name of the identifier data type.
+      \result The name as a std::string.
+   */
+
   static inline std::string name() { 
     return UndefinedIdentifierTraits<T>::notDefined(); 
   }
+
+  /*! \brief Inform caller if the data type can be used by Teuchos::hashCode.
+      \result true if the data type can be used with Teuchos::hashCode.
+   */
+
+  static inline bool isHashKeyType() {
+    return UndefinedIdentifierTraits<T>::notDefined(); 
+  }
+
+  /*! \brief Determine if two identifiers are the same.
+      \result true if they are the same.
+   */
+
+  static inline bool equal(const T &a, const T &b) {
+    return UndefinedIdentifierTraits<T>::notDefined(); 
+  }
+
+  
 };
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
+/*! \cond IndentifierTraits_definitions
+ */
 
 template<>
 struct IdentifierTraits<char> {
   static inline int hashCode(const char &c) { return static_cast<int>(c);}
-  static inline std::string key(const char&c){ return std:string(1, c); }
+  static inline std::string key(const char&c){ return std::string(1, c); }
+  static char keyToGid(const std::string s){ return s[0]; }
   static inline std::string name()     { return("char");}
+  static inline bool isHashKeyType() { return false; }
+  static inline bool equal(const char &a, const char &b) { return (a==b); }
 };
 
 template<>
 struct IdentifierTraits<short int> {
   static inline int hashCode(const short int &a) { return static_cast<int>(a);}
   static inline std::string key(const short int &a){ return byteString(a); }
+  static short int keyToGid(const std::string s){ 
+    return getTypeFromString<short int>(s);}
   static inline std::string name()          { return("short int");}
+  static inline bool isHashKeyType() { return false; }
+  static inline bool equal(const short int &a, const short int &b) { 
+    return (a==b) ; }
 };
 
 template<>
 struct IdentifierTraits<int> {
   static inline int hashCode(const int &a) { return a; }
   static inline std::string key(const int &a){ return byteString(a); }
+  static int keyToGid(const std::string s){ 
+    return getTypeFromString<int>(s);}
   static inline std::string name()    { return("int");}
+  static inline bool isHashKeyType() { return true; }
+  static inline bool equal(const  int &a, const  int &b) { 
+    return (a==b) ; }
 };
 
 template<>
 struct IdentifierTraits<unsigned int> {
   static inline int hashCode(const unsigned int &a) { 
-    return static_cast<int>(a);
-  }
+    return static_cast<int>(a); }
   static inline std::string key(const unsigned int &a){ return byteString(a); }
+  static unsigned int keyToGid(const std::string s){ 
+    return getTypeFromString<unsigned int>(s);}
   static inline std::string name()             { return("unsigned int");}
+  static inline bool isHashKeyType() { return false; }
+  static inline bool equal(const unsigned int &a, const unsigned int &b) { 
+    return (a==b) ; }
 };
 
 template<>
 struct IdentifierTraits<long int> {
   static inline int hashCode(const long int &a) { 
     unsigned int total=0;
-    for (int i=0, bits=0; i < sizeof(long int); i+=2, bits += 8){
+    for (unsigned int i=0, bits=0; i < sizeof(long int); i+=2, bits += 8){
       total += static_cast<unsigned int>((a & (0xff << bits) ) >> bits);
     }
     return static_cast<int>(total);
   }
   static inline std::string key(const long int &a){ return byteString(a); }
+  static long int keyToGid(const std::string s){ 
+    return getTypeFromString<long int>(s);}
   static inline std::string name()    { return("long int");}
+  static inline bool isHashKeyType() { return false; }
+  static inline bool equal(const long int &a, const long int &b) { 
+    return (a==b) ; }
 };
 
 template<>
 struct IdentifierTraits<unsigned long int> {
   static inline int hashCode(const unsigned long int &a) { 
-    return IdentiferTraits<long int>::hashCode(static_cast<const long int>(a));
-  }
+    return IdentifierTraits<long int>::hashCode(static_cast<const long int>(a)); }
   static inline std::string key(const unsigned long int &a){ 
-    return byteString(a); 
-  }
+    return byteString(a); }
+  static unsigned long int keyToGid(const std::string s){ 
+    return getTypeFromString<unsigned long int>(s);}
   static inline std::string name()   { return("long unsigned int");}
+  static inline bool isHashKeyType() { return false; }
+  static inline bool equal( const unsigned long int &a, 
+    const unsigned long int &b) { return (a==b) ; }
 };
 
 template<>
 struct IdentifierTraits<long long int> {
   static inline int hashCode(const long long int &a) { 
     unsigned int total=0;
-    for (int i=0, bits=0; i < sizeof(long long int); i+=2, bits += 8){
+    for (unsigned int i=0, bits=0; i < sizeof(long long int); i+=2, bits += 8){
       total += static_cast<unsigned int>((a & (0xff << bits) ) >> bits);
     }
     return static_cast<int>(total);
   }
   static inline std::string key(const long long int &a){ return byteString(a); }
+  static long long int keyToGid(const std::string s){ 
+    return getTypeFromString<long long int>(s);}
   static inline std::string name()    { return("long long int");}
+  static inline bool isHashKeyType() { return false; }
+  static inline bool equal( const long long int &a, const long long int &b) { 
+    return (a==b) ; }
 };
 
 template<>
 struct IdentifierTraits<unsigned long long int> {
   static inline int hashCode(const unsigned long long int &a) { 
-    return IdentiferTraits<long long int>::hashCode(
-      static_cast<const long long int>(a));
-  }
+    return IdentifierTraits<long long int>::hashCode(
+      static_cast<const long long int>(a)); }
   static inline std::string key(const unsigned long long int &a){ 
-    return byteString(a); 
-  }
+    return byteString(a); }
+  static unsigned long long int keyToGid(const std::string s){ 
+    return getTypeFromString<unsigned long long int>(s);}
   static inline std::string name()    { return("long long int");}
-};
-
-template<>
-struct IdentifierTraits<void *> {
-  static inline int hashCode(void * const p) {
-    return IdentiferTraits<intptr_t>::hashCode(static_cast<const intptr_t>(p));
-  }
-  static inline std::string key(void * const p){ 
-    return byteString(static_cast<const intptr_t>(p));
-  }
-  static inline std::string name()   { return "pointer"; } 
+  static inline bool isHashKeyType() { return false; }
+  static inline bool equal( const unsigned long long int &a, 
+    const unsigned long long int &b) { return (a==b) ; }
 };
 
 template<typename T1, typename T2>
 struct IdentifierTraits<std::pair<T1, T2> > {
   static inline int hashCode(const std::pair<T1, T2> &p)  {
-    return IdentiferTraits<T1>::hashCode(p.first) + 
-      IdentiferTraits<T2>::hashCode(p.second);
+    return IdentifierTraits<T1>::hashCode(p.first) + 
+      IdentifierTraits<T2>::hashCode(p.second);
   }
 
   static inline std::string key(const std::pair<T1, T2> &p)  {
     return byteString(p.first) + std::string(":") + hexString(p.second);
+  }
+
+  static std::pair<T1, T2> keyToGid(const std::string s){
+    std::string::size_type pos = s.find(":");
+    T1 first = getTypeFromString<T1>(s.substr(0,pos));
+    T2 second = getTypeFromString<T2>(s.substr(pos+1));
+    std::pair<T1, T2> p(first, second);
+    return p;
   }
     
   static inline std::string name() {
@@ -208,9 +338,12 @@ struct IdentifierTraits<std::pair<T1, T2> > {
        IdentifierTraits<T1>::name() + std::string(", ");
        IdentifierTraits<T2>::name() + std::string(">");
   }
+  static inline bool isHashKeyType() { return false; }
+  static inline bool equal( const std::pair<T1, T2> &a, 
+    const std::pair<T1, T2> &b) { 
+    return ((a.first==b.first) && (a.second==b.second)); }
 };
 
-#ifdef SERIALIZATION_SUPPORTS_VECTORS
 template<typename T>
 struct IdentifierTraits<std::vector<T > > {
   static inline int hashCode(const std::vector<T> &v){
@@ -228,18 +361,46 @@ struct IdentifierTraits<std::vector<T > > {
         s = s + std::string(":") + byteString(v[i]);
       }
     }
-    return std::string;
+    return s;
+  }
+
+  static std::vector<T> keyToGid(const std::string s){
+    std::string scopy(s);
+    int num=0;
+    std::string::size_type k = scopy.find(":");
+    while (k != std::string::npos){
+      num++;
+      scopy = scopy.substr(k+1);
+      k = scopy.find(":");
+    }
+    std::vector<T> v(num+1);
+    scopy = s;
+    k = scopy.find(":");
+    while (k != std::string::npos){
+      v.push_bask(getTypeFromString<T>(scopy.substr(0, k)));
+      scopy = scopy.substr(k+1);
+      k = scopy.find(":");
+    }
+    v.push_bask(scopy);
+    return v;
   }
   static inline std::string name(){
      return std::string("std::vector<") + 
        IdentifierTraits<T>::name() + std::string(">");
   }
+  static inline bool isHashKeyType() { return false; }
+
+  static inline bool equal(const std::vector<T> &a, const std::vector<T> &b){
+    if (a.size() != b.size()) return false;
+    bool answer=true;
+    for (unsigned int i=0; i < a.size(); i++)
+      if (a[i] != b[i]) return false;
+    return true;
+  }
 };
-#endif
 
-
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+/*! \endcond
+ */
 
 } // namespace Z2
 

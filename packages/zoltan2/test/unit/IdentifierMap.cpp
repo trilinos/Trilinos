@@ -43,6 +43,7 @@ template< typename T1, typename T2>
 
 int main(int argc, char *argv[])
 {
+
   Teuchos::GlobalMPISession session(&argc, &argv);
   int nprocs = session.getNProc();
   int rank = session.getRank();
@@ -66,6 +67,9 @@ int main(int argc, char *argv[])
     (*gids)[i] = base + i;
     (*lids)[i] = i;
   }
+  Z2::IdentifierMap<appLocalId, appGlobalId, lnoType, gnoType> idmap(
+    comm, gids, lids);
+#if 0
 
   // Test constructor
 
@@ -129,4 +133,5 @@ int main(int argc, char *argv[])
     //gnoQuery, lidsReturned);
 
   std::cout << "PASS" << std::endl;
+#endif
 }

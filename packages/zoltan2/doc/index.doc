@@ -10,41 +10,7 @@ This document is a work in progress.
 
 \section zoltan2_classes Zoltan 2 classes
 
-These diagrams were created with plantUML. 
-
-\subsection zoltan2_idmap The IdentifierMap class
-
-The IdentifierMap maps the application's global ID to and from the internal Zoltan global number.  It also associations one or more values, such as process owner or part number, with a global number.  This would replace the functionality of the Zoltan_DD_* utility.
-
-\image html IdentifierMapClass.png 
-
-\subsection zoltan2_adapter The InputAdapter class
-
-The InputAdapter serves to present a uniform interface for Zoltan2 to the user's graph, matrix, coordinates or abstract objects.  We will write many input adapters for common cases such as Tpetra_CrsMatrix, legacy Zoltan1 call back functions, and user data supplied as pointers to arrays in the application memory.  The goal is that user can write their own adapter if an existing one is not available, but that the existing adapters will cover many cases.
-
-\image html InputAdapterClass.png 
-
-\subsection zoltan2_objective The Objective class
-
-The Objective describes the problem to be solved.
-
-\image html ObjectiveClass.png 
-
-\subsection zoltan2_problem The Problem class
-
-The Problem is the central object in the system.  It has an input graph, matrix, or coordinates.  It has an Objective.  It may have parameters.  It can compute a solution, evaluate a solution, and return a mapping from the input objects to parts, colors, or an ordering. 
-
-\image html ProblemClass.png 
-
 \section zoltan2_evaluation Migrating user data
-
-Zoltan1 performs user data migration as a convenience to the application.  In Zoltan1 this is done by calling callback functions registered by the application to pack and unpack data.  Zoltan2 will perform migration as well.  The InputAdapter includes functions to move user data.  A Migrate() function in the Zoltan2 namespace will use these functions to perform data migration.
-
-\code
-Zoltan2::Migrate(InputAdapter &input, Problem &problem.get_mapping())
-\endcode
-
-The Migrate() function takes an InputAdapter object and a mapping from Zoltan's global numbers to parts.  When it returns the user's data has been migrated according to the mapping computed by the Problem object.
 
 \section zoltan2_examples Zoltan 2 examples
 

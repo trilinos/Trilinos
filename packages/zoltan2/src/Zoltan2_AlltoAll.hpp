@@ -72,9 +72,7 @@ char *align(char *buf, int nbytes, DeallocateAlignedBuffer *&dealloc)
 }
 #endif
 
-/*! \function Z2::AlltoAll
- *
- *  Interprocess communication for non-conforming data types.
+/*! \brief Interprocess communication for non-conforming data types.
  *
  *  Zoltan2 uses Teuchos for interprocess communication, which
  *  requires Scalars and GlobalOrdinals that support traits
@@ -143,9 +141,7 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
   recvBuf = inBuf;
 }
 
-/*! \function Z2::AlltoAllv
- *
- *  Interprocess communication for non-conforming data types.
+/*! \brief Interprocess communication for non-conforming data types.
  *
  *  Zoltan2 uses Teuchos for interprocess communication, which
  *  requires Scalars and GlobalOrdinals that support traits
