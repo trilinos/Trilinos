@@ -4,6 +4,7 @@
 #include <Epetra_LinearProblem.h>
 #include <Amesos_BaseSolver.h>
 #include <Epetra_MultiVector.h>
+#include <Teuchos_Time.hpp>
 #include "hyperlu_probing_operator.h"
 
 HyperLU_Probing_Operator::HyperLU_Probing_Operator(Epetra_CrsMatrix *G, 
@@ -32,8 +33,17 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     Epetra_MultiVector temp(C_->RowMap(), nvectors);
     Epetra_MultiVector temp2(G_->RowMap(), nvectors);
 
+#ifdef TIMING_OUTPUT_2
+    Teuchos::Time ftime("setup time");
+    ftime.start();
+#endif
     G_->Multiply(false, X, temp2);
     C_->Multiply(false, X, temp);
+#ifdef TIMING_OUTPUT_2
+    ftime.stop();
+    cout << "Time to Compute 2 matvecs" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+#endif
 
     Epetra_MultiVector ltemp(*localDRowMap_, nvectors);
     Epetra_MultiVector localX(*localDRowMap_, nvectors);
@@ -54,6 +64,9 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     //cout << "Map check done" << endl;
     // ]
 
+#ifdef TIMING_OUTPUT_2
+    ftime.start();
+#endif
     int lda;
     double *values;
     int err = temp.ExtractView(&values, &lda);
@@ -61,6 +74,8 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
 
     // copy to local vector //TODO: OMP parallel
     assert(lda == nrows);
+
+//#pragma omp parallel for shared(nvectors, nrows, values)
     for (int v = 0; v < nvectors; v++)
     {
        for (int i = 0; i < nrows; i++)
@@ -70,13 +85,28 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
        }
     }
 
+#ifdef TIMING_OUTPUT_2
+    ftime.stop();
+    cout << "Time to localize vector" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+#endif
     LP_->SetRHS(&ltemp);
     LP_->SetLHS(&localX);
+#ifdef TIMING_OUTPUT_2
+    ftime.start();
+#endif
     solver_->Solve();
+#ifdef TIMING_OUTPUT_2
+    ftime.stop();
+    cout << "Time to do triangular solve" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+    ftime.start();
+#endif
     err = localX.ExtractView(&values, &lda);
     assert (err == 0);
 
     //Copy back to dist vector //TODO: OMP parallel
+//#pragma omp parallel for
     for (int v = 0; v < nvectors; v++)
     {
        for (int i = 0; i < nrows; i++)
@@ -85,8 +115,19 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
            assert (err == 0);
        }
     }
+#ifdef TIMING_OUTPUT_2
+    ftime.stop();
+    cout << "Time to distribute vector" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+    ftime.start();
+#endif
 
     R_->Multiply(false, temp, Y);
+#ifdef TIMING_OUTPUT_2
+    ftime.stop();
+    cout << "Time to do 1 matvec" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+#endif
     err = Y.Update(1.0, temp2, -1.0);
     //cout << Y.MyLength() << " " << temp2.MyLength() << endl;
     assert(err == 0);

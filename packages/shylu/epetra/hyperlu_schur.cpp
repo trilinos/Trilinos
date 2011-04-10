@@ -27,6 +27,10 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
     //cout << myPID << " localElems" << localElems << endl;
 
     // **************** Two collectives here *********************
+#ifdef TIMING_OUTPUT
+    Teuchos::Time ftime("setup time");
+    ftime.start();
+#endif
     int prefixSum;
     G->Comm().ScanSum(&localElems, &prefixSum, 1);
     //cout << " prefixSum" << prefixSum << endl;
@@ -50,6 +54,11 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
 
     C->Comm().SumAll(mySGID, allSGID, totalElems);
 
+#ifdef TIMING_OUTPUT
+    ftime.stop();
+    cout << "Time to Compute RowIDS" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+#endif
     // Now everyone knows the GIDs in the Schur complement
 
     //cout << rMap << endl;
@@ -60,9 +69,64 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
     double *values = new double[localElems]; // Need to adjust this for more
     int *indices = new int[localElems];      // than one vector
     double *vecvalues;
-    double maxvalue;
     int dropped = 0;
-    for (i = 0 ; i < totalElems ; i++)
+    int nvectors = 16;
+    double *maxvalue = new double[nvectors];
+#ifdef TIMING_OUTPUT
+    ftime.start();
+#endif
+    int findex = totalElems / nvectors ;
+    for (i = 0 ; i < findex*nvectors ; i+=nvectors)
+    {
+        Epetra_MultiVector probevec(rMap, nvectors);
+        Epetra_MultiVector Scol(rMap, nvectors);
+
+        probevec.PutScalar(0.0);
+        int cindex;
+        for (int k = 0; k < nvectors; k++)
+        {
+            cindex = k+i;
+            if (cindex >= prefixSum - localElems && cindex < prefixSum)
+            {
+                probevec.ReplaceGlobalValue(allSGID[cindex], k, 1.0);
+            }
+        }
+
+        probeop.Apply(probevec, Scol);
+        //cout << Scol << endl;
+
+        Scol.MaxValue(maxvalue);
+        for (int k = 0; k < nvectors; k++) //TODO:Need to switch these loops
+        {
+            cindex = k+i;
+            vecvalues = Scol[k];
+            //cout << "MAX" << maxvalue << endl;
+            for (j = 0 ; j < localElems ; j++)
+            {
+                nentries = 0; // inserting one entry in each row for now
+                if (allSGID[cindex] == rows[j]) // diagonal entry
+                {
+                    values[nentries] = vecvalues[j];
+                    indices[nentries] = allSGID[cindex];
+                    nentries++;
+                    Sbar->InsertGlobalValues(rows[j], nentries, values, indices);
+                }
+                else if (abs(vecvalues[j]/maxvalue[k]) > relative_thres)
+                {
+                    values[nentries] = vecvalues[j];
+                    indices[nentries] = allSGID[cindex];
+                    nentries++;
+                    Sbar->InsertGlobalValues(rows[j], nentries, values, indices);
+                }
+                else
+                {
+                    if (vecvalues[j] != 0.0) dropped++;
+                }
+            }
+        }
+    }
+
+    for ( ; i < totalElems ; i++)
     {
         Epetra_MultiVector probevec(rMap, 1); // TODO: Try doing more than one
         Epetra_MultiVector Scol(rMap, 1);     // vector at a time
@@ -77,7 +141,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
         //cout << Scol << endl;
 
         vecvalues = Scol[0];
-        Scol.MaxValue(&maxvalue);
+        Scol.MaxValue(maxvalue);
         //cout << "MAX" << maxvalue << endl;
         for (j = 0 ; j < localElems ; j++)
         {
@@ -89,7 +153,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
                 nentries++;
                 Sbar->InsertGlobalValues(rows[j], nentries, values, indices);
             }
-            else if (abs(vecvalues[j]/maxvalue) > relative_thres)
+            else if (abs(vecvalues[j]/maxvalue[0]) > relative_thres)
             {
                 values[nentries] = vecvalues[j];
                 indices[nentries] = allSGID[i];
@@ -102,12 +166,18 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
             }
         }
     }
+#ifdef TIMING_OUTPUT
+    ftime.stop();
+    cout << "Time in finding and dropping entries" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+#endif
     Sbar->FillComplete();
     cout << "#dropped entries" << dropped << endl;
     delete[] allSGID;
     delete[] mySGID;
     delete[] values;
     delete[] indices;
+    delete[] maxvalue;
 
     return Sbar;
 }

@@ -87,7 +87,7 @@ int hyperlu_solve(hyperlu_data *data, hyperlu_config *config,
     assert (err == 0);
     int nrows = data->Cptr->RowMap().NumMyElements();
 
-    // copy to local vector
+    // copy to local vector //TODO: OMP ?
     assert(lda == nrows);
     for (int v = 0; v < nvectors; v++)
     {
@@ -105,7 +105,7 @@ int hyperlu_solve(hyperlu_data *data, hyperlu_config *config,
     err = locallhs.ExtractView(&values, &lda);
     assert (err == 0);
 
-    // copy to distributed vector
+    // copy to distributed vector //TODO: OMP ?
     assert(lda == nrows);
     for (int v = 0; v < nvectors; v++)
     {

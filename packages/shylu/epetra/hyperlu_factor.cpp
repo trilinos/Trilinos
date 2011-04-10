@@ -471,14 +471,21 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     Solver = Factory.Create(SolverType, *LP);
     cout << "Created the diagonal Solver" << endl;
 
-    Solver->SymbolicFactorization();
-    cout << "Symbolic Factorization done" << endl;
+#ifdef TIMING_OUTPUT
     Teuchos::Time ftime("setup time");
     ftime.start();
+#endif
+    Solver->SymbolicFactorization();
+    cout << "Symbolic Factorization done" << endl;
 
     cout << "In Numeric Factorization" << endl;
     Solver->NumericFactorization();
-    cout << "Numeric Factorization done" << Solver << endl;
+    cout << "Numeric Factorization done" << endl;
+#ifdef TIMING_OUTPUT
+    ftime.stop();
+    cout << "Time to factor" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+#endif
 
     //data->SComm = LComm;
     data->LP = LP;
@@ -491,9 +498,6 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     /*Solver->Solve();
     cout << "Solve done" << endl;
 
-    ftime.stop();
-    cout << "Time to factor" << ftime.totalElapsedTime() << endl;
-    ftime.reset();
 
     D.Multiply(false, *X, *residual);
     residual->Update(-1.0, *B, 1.0);
@@ -524,27 +528,41 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         Isorropia::Epetra::Prober prober(rSg, pList, false);
         //cout << Sg << endl;
         cout << "Doing coloring" << endl;
+#ifdef TIMING_OUTPUT
         ftime.start();
+#endif
         prober.color();
+#ifdef TIMING_OUTPUT
         ftime.stop();
         cout << "Time to color" << ftime.totalElapsedTime() << endl;
         ftime.reset();
-        cout << "Doing probing" << endl;
         ftime.start();
+#endif
+        cout << "Doing probing" << endl;
         Sbar = prober.probe(probeop);
         cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << endl;
+#ifdef TIMING_OUTPUT
         ftime.stop();
         cout << "Time to probe" << ftime.totalElapsedTime() << endl;
         ftime.reset();
+#endif
     }
     else if (config->schurApproxMethod == 2)
     {
         // Compute and drop the entries in the Schur complement
         // Ignore the structure of the Schur complement
         cout << "Computing the Approx Schur complement" << endl;
+#ifdef TIMING_OUTPUT
+        ftime.start();
+#endif
         Sbar = computeApproxSchur(config, &S, &R, LP, Solver, Cptr,
                                         &LocalDRowMap);
-        cout << "Approx Schur complement is done" << endl;
+#ifdef TIMING_OUTPUT
+        ftime.stop();
+        cout << "Time to Compute Approx Schur Complement" << ftime.totalElapsedTime() << endl;
+        ftime.reset();
+#endif
+        cout << "Computed Approx Schur complement" << endl;
     }
 
     data->Sbar  = Sbar;

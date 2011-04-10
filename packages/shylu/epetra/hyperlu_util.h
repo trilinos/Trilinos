@@ -16,6 +16,8 @@
 // To dump all the matrices into files.
 //#define DUMP_MATRICES
 
+//#define TIMING_OUTPUT
+
 #include "Isorropia_config.h" // Just for HAVE_MPI
 
 // Epetra includes
