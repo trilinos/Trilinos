@@ -62,7 +62,10 @@ public:
   /** \brief The default value for the whenParamEqualsValue
    * parameter in the Constructor.
    */
-  static const bool WHEN_PARAM_EQUALS_VALUE_DEFAULT = true;
+  static const bool& getWhenParamEqualsValueDefault(){
+    static const bool WHEN_PARAM_EQUALS_VALUE_DEFAULT = true;
+    return WHEN_PARAM_EQUALS_VALUE_DEFAULT;
+  }
 
   //@}
 
@@ -83,7 +86,7 @@ public:
    */
   ParameterCondition(
     RCP<ParameterEntry> parameter, 
-    bool whenParamEqualsValue=WHEN_PARAM_EQUALS_VALUE_DEFAULT);
+    bool whenParamEqualsValue=getWhenParamEqualsValueDefault());
 
   virtual ~ParameterCondition(){}
   
