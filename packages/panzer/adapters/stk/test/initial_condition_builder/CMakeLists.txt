@@ -14,7 +14,7 @@ SET(UNIT_TEST_DRIVER
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   initial_condition_builder
-  SOURCES initial_condition_builder.cpp ${UNIT_TEST_DRIVER}
+  SOURCES initial_condition_builder.cpp user_app_STKClosureModel_Factory.hpp user_app_STKClosureModel_FactoryT.hpp user_app_STKClosureModel_Factory_TemplateBuilder.hpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 1
   )

@@ -19,7 +19,7 @@ using Teuchos::rcp;
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "user_app_EquationSetFactory.hpp"
-#include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
+#include "user_app_STKClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
 #include "Panzer_InitialCondition_Builder.hpp"
@@ -115,7 +115,7 @@ namespace panzer {
     // Add in the application specific closure model factory
     Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
       Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
-    user_app::MyModelFactory_TemplateBuilder cm_builder;
+    user_app::STKModelFactory_TemplateBuilder cm_builder;
     (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
