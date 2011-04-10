@@ -116,25 +116,25 @@ std::string XMLObject::getRequired<std::string>(const std::string& name) const
 
 bool XMLObject::getRequiredBool(const std::string& name) const
 {
-  if (hasAttribute(name))
+  TEST_FOR_EXCEPTION(!hasAttribute(name), std::runtime_error,
+                     "XMLObject::getRequired: key " 
+                     << name << " not found");
+  std::string val = StrUtils::allCaps(getRequired(name));
+
+  TEST_FOR_EXCEPTION( val!="TRUE" && val!="YES" && val!="1"
+    && val!="FALSE" && val!="NO" && val!="0",
+    std::runtime_error,
+		"XMLObject::getRequiredBool value [" << val 
+		<< "] should have been {TRUE|FALSE|YES|NO|0|1}");
+    
+  if (val=="TRUE" || val=="YES" || val=="1")
   {
-    std::string val = StrUtils::allCaps(getRequired(name));
-    if (val=="TRUE" || val=="YES" || val=="1")
-    {
-      return true;
-    }
-    else if (val=="FALSE" || val=="NO" || val=="0")
-    {
-      return false;
-    }
-    else
-    {
-      TEST_FOR_EXCEPTION(true, std::runtime_error, 
-			 "XMLObject::getRequiredBool value [" << val 
-			 << "] should have been {TRUE|FALSE|YES|NO|0|1}");
-    }
+    return true;
   }
-  return false; // -Wall
+  else 
+  {
+    return false;
+  }
 }
 
 
