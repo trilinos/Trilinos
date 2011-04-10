@@ -37,11 +37,11 @@ void Ifpack_HyperLU::Destroy()
         delete hlu_data_.Solver;
         if (hlu_config_.libName == "Belos")
             delete hlu_data_.innersolver;
-        delete hlu_data_.D;
+        //delete hlu_data_.D;
         delete hlu_data_.Cptr;
-        delete hlu_data_.LDRowMap;
-        delete hlu_data_.LDColMap;
-        delete hlu_data_.SComm;
+        //delete hlu_data_.LDRowMap;
+        //delete hlu_data_.LDColMap;
+        //delete hlu_data_.SComm;
         delete[] hlu_data_.DRowElems;
         delete[] hlu_data_.SRowElems;
     }

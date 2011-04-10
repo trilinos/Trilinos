@@ -59,7 +59,7 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     int err = temp.ExtractView(&values, &lda);
     assert (err == 0);
 
-    // copy to local vector
+    // copy to local vector //TODO: OMP parallel
     assert(lda == nrows);
     for (int v = 0; v < nvectors; v++)
     {
@@ -76,7 +76,7 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     err = localX.ExtractView(&values, &lda);
     assert (err == 0);
 
-    //Copy back to dist vector
+    //Copy back to dist vector //TODO: OMP parallel
     for (int v = 0; v < nvectors; v++)
     {
        for (int i = 0; i < nrows; i++)

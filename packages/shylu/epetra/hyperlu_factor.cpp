@@ -131,13 +131,13 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     data->SRowElems = SRowElems;
 
     // Create the local row map 
-    Epetra_SerialComm *LComm = new Epetra_SerialComm; // TODO: Fix this
+    Epetra_SerialComm LComm; // TODO: Fix this
     // Somehow this Comm is not available in Amesos_Pardiso's solve
     //
 	// Use Serial Comm for the local blocks.
-    Epetra_Map *LocalDRowMap = new Epetra_Map(-1, Dnr, DRowElems, 0, *LComm);
+    Epetra_Map LocalDRowMap(-1, Dnr, DRowElems, 0, LComm);
     Epetra_Map DRowMap(-1, Dnr, DRowElems, 0, A->Comm());
-    //Epetra_Map LocalSRowMap(-1, Snr, SRowElems, 0, *LComm);
+    //Epetra_Map LocalSRowMap(-1, Snr, SRowElems, 0, LComm);
     Epetra_Map SRowMap(-1, Snr, SRowElems, 0, A->Comm());
     // ]
 
@@ -149,9 +149,9 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
                     "D Cols ", "S Cols") ;
 
     // Create the local column map 
-    Epetra_Map *LocalDColMap = new Epetra_Map(-1, Dnc, DColElems, 0, *LComm);
+    Epetra_Map LocalDColMap(-1, Dnc, DColElems, 0, LComm);
     Epetra_Map DColMap(-1, Dnc, DColElems, 0, A->Comm());
-    //Epetra_Map LocalSColMap(-1, Snc, SColElems, 0, *LComm);
+    //Epetra_Map LocalSColMap(-1, Snc, SColElems, 0, LComm);
     //Epetra_Map SColMap(SNumGlobalCols, Snc, SColElems, 0, A->Comm());
     for (int i = 0; i < Snr; i++)
     {
@@ -286,8 +286,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
 
     //cout << " I am here" << endl;
     //Create the local matrices
-    Epetra_CrsMatrix *D = new Epetra_CrsMatrix(Copy, *LocalDRowMap,
-				*LocalDColMap, DNumEntriesPerRow, true);
+    Epetra_CrsMatrix D(Copy, LocalDRowMap, LocalDColMap, DNumEntriesPerRow, true);
     //cout << " Created D matrix" << endl;
     //MPI_Barrier(MPI_COMM_WORLD);
     //Epetra_CrsMatrix S(Copy, SRowMap, SColMap, SNumEntriesPerRow, true);
@@ -344,7 +343,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
 
         if (gvals[gid] == 1)
         { // D or C row
-            err = D->InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
+            err = D.InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
             assert(err == 0);
             err = Cptr->InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
             assert(err == 0);
@@ -365,7 +364,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         }
     }
     //cout << "Done Inserting values in matrices" << endl;
-    D->FillComplete();
+    D.FillComplete();
     //cout << "Done D fill complete" << endl;
     S.FillComplete();
     //cout << "Done S fill complete" << endl;
@@ -442,9 +441,9 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     //cout << msg << "C rows=" << Cptr->NumGlobalRows() << " C cols=" <<
         //Cptr->NumGlobalCols() << "#cols in column map="<<
         //Cptr->ColMap().NumMyElements() << endl;
-    //cout << msg << "D rows=" << D->NumGlobalRows() << " D cols=" <<
-        //D->NumGlobalCols() << "#cols in column map="<<
-        //D->ColMap().NumMyElements() << endl;
+    //cout << msg << "D rows=" << D.NumGlobalRows() << " D cols=" <<
+        //D.NumGlobalCols() << "#cols in column map="<<
+        //D.ColMap().NumMyElements() << endl;
     //cout << msg << "R rows=" << R.NumGlobalRows() << " R cols=" <<
         //R.NumGlobalCols() << "#cols in column map="<<
         //R.ColMap().NumMyElements() << endl;
@@ -466,7 +465,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     double *resid = new double[Snr];*/
 
     LP = new Epetra_LinearProblem();
-    LP->SetOperator(D);
+    LP->SetOperator(&D);
     /*LP->SetLHS(X);
     LP->SetRHS(B);*/
     Solver = Factory.Create(SolverType, *LP);
@@ -481,13 +480,13 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     Solver->NumericFactorization();
     cout << "Numeric Factorization done" << Solver << endl;
 
-    data->SComm = LComm;
+    //data->SComm = LComm;
     data->LP = LP;
     data->Solver = Solver;
-    data->D = D;
+    //data->D = D;
     data->Cptr = Cptr;
-    data->LDRowMap = LocalDRowMap;
-    data->LDColMap = LocalDColMap;
+    //data->LDRowMap = LocalDRowMap;
+    //data->LDColMap = LocalDColMap;
 
     /*Solver->Solve();
     cout << "Solve done" << endl;
@@ -496,7 +495,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     cout << "Time to factor" << ftime.totalElapsedTime() << endl;
     ftime.reset();
 
-    D->Multiply(false, *X, *residual);
+    D.Multiply(false, *X, *residual);
     residual->Update(-1.0, *B, 1.0);
     residual->Norm2(resid);
     double max_resid = 0;
@@ -518,12 +517,12 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     {
         //Set up the probing operator
         HyperLU_Probing_Operator probeop(&S, &R, LP, Solver, Cptr,
-                                        LocalDRowMap);
+                                        &LocalDRowMap);
 
         Teuchos::ParameterList pList;
         Teuchos::RCP<const Epetra_CrsGraph> rSg = Teuchos::rcpFromRef(Sg);
         Isorropia::Epetra::Prober prober(rSg, pList, false);
-        cout << Sg << endl;
+        //cout << Sg << endl;
         cout << "Doing coloring" << endl;
         ftime.start();
         prober.color();
@@ -544,7 +543,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         // Ignore the structure of the Schur complement
         cout << "Computing the Approx Schur complement" << endl;
         Sbar = computeApproxSchur(config, &S, &R, LP, Solver, Cptr,
-                                        LocalDRowMap);
+                                        &LocalDRowMap);
         cout << "Approx Schur complement is done" << endl;
     }
 
