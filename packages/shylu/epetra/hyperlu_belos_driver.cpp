@@ -259,7 +259,16 @@ int main(int argc, char *argv[])
     //
     // Perform solve
     //
+#ifdef TIMING_OUTPUT
+    Teuchos::Time ftime("solve time");
+    ftime.start();
+#endif
     Belos::ReturnType ret = solver->solve();
+#ifdef TIMING_OUTPUT
+    ftime.stop();
+    cout << "Time to solve" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+#endif
     //
     // Get the number of iterations for this solve.
     //
