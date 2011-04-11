@@ -15,11 +15,11 @@
 namespace panzer_stk {
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
-   : fileName_("")
+   : fileName_(""), restartIndex_(0)
 { }
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName)
-   : fileName_(fileName)
+   : fileName_(fileName), restartIndex_(0)
 { }
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const

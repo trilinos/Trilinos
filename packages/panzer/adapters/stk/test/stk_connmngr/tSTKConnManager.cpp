@@ -175,6 +175,13 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, single_block_2d)
    /////////////////////////////////////////////////////////////
    TEST_EQUALITY(connMngr.getConnectivitySize(9),4); 
    TEST_EQUALITY(connMngr.getConnectivitySize(8),4); 
+
+  
+   std::size_t localId;
+   if(myRank==0)
+      localId = mesh->elementLocalId(17);
+   else
+      localId = mesh->elementLocalId(20);
    
    {
       int conn_true[4]; 
@@ -200,8 +207,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, single_block_2d)
          TEST_ASSERT(false); 
       }
 
-      const int * conn = connMngr.getConnectivity(8);
-      for(std::size_t i=0;(int) i<connMngr.getConnectivitySize(8);i++)
+      const int * conn = connMngr.getConnectivity(localId);
+      for(std::size_t i=0;(int) i<connMngr.getConnectivitySize(localId);i++)
          TEST_EQUALITY(conn[i],conn_true[i]-1);
    }
 }
@@ -239,13 +246,6 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
       if(numProcs==1)      { TEST_EQUALITY(elementBlock.size(),4); }
       else if(numProcs==2) { TEST_EQUALITY(elementBlock.size(),2); }
    
-      // check that the local elements are correctly numbered
-      std::sort(nc_elementBlock.begin(),nc_elementBlock.end());
-      bool check_local_blocks_passed = true;
-      for(std::size_t i=0;i<elementBlock.size();i++)
-         check_local_blocks_passed &= (nc_elementBlock[i]==(int) (i+blk*elementBlock.size()));
-      TEST_ASSERT(check_local_blocks_passed);
-
       bool check_blockid_lookup = true;
       for(std::size_t i=0;i<elementBlock.size();i++)
          check_blockid_lookup &= (connMngr.getBlockId(elementBlock[i])==blockId);
