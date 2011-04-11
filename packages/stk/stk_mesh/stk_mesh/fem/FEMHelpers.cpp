@@ -195,31 +195,6 @@ void set_cell_topology_new( Part &part, const CellTopologyData * const cell_topo
 }
 
 
-void count_entities(
-  const Selector & selector ,
-  const BulkData & mesh ,
-  std::vector< EntityRank > & count )
-{
-  const size_t ntype = FEMMetaData::get(mesh).entity_rank_count();
-
-  count.resize( ntype );
-
-  for ( size_t i = 0 ; i < ntype ; ++i ) {
-    count[i] = 0 ;
-
-    const std::vector<Bucket*> & ks = mesh.buckets( i );
-
-    std::vector<Bucket*>::const_iterator ik ;
-
-    for ( ik = ks.begin() ; ik != ks.end() ; ++ik ) {
-      if ( selector(**ik) ) {
-        count[i] += (*ik)->size();
-      }
-    }
-  }
-}
-
-
 const CellTopologyData * get_subcell_nodes(const Entity & entity ,
                                            EntityRank subcell_rank ,
                                            unsigned subcell_identifier ,

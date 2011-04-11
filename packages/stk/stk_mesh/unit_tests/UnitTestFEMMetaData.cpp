@@ -14,30 +14,38 @@
 
 using stk::mesh::fem::FEMMetaData;
 
+namespace {
+
+static const stk::mesh::EntityRank NODE_RANK =   FEMMetaData::NODE_RANK;
+static const stk::mesh::EntityRank EDGE_RANK =   FEMMetaData::EDGE_RANK;
+static const stk::mesh::EntityRank FACE_RANK =   FEMMetaData::FACE_RANK;
+static const stk::mesh::EntityRank VOLUME_RANK =   FEMMetaData::VOLUME_RANK;
+static const stk::mesh::EntityRank INVALID_RANK =   FEMMetaData::INVALID_RANK;
+
+}
+
 //----------------------------------------------------------------------------
 
 STKUNIT_UNIT_TEST ( UnitTestFEMMetaData, create )
 {
-  const stk::mesh::EntityRank node_rank = FEMMetaData::NODE_RANK;
-  const stk::mesh::EntityRank invalid_rank = FEMMetaData::INVALID_RANK;
   stk::mesh::fem::FEMMetaData fem_meta;
   STKUNIT_EXPECT_TRUE ( true );
   STKUNIT_EXPECT_FALSE( fem_meta.is_FEM_initialized() );
   STKUNIT_EXPECT_EQUAL( fem_meta.spatial_dimension(), 0u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), node_rank );
-  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), invalid_rank );
-  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), invalid_rank );
-  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), invalid_rank );
-  STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), invalid_rank );
+  STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), NODE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), EDGE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), FACE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), INVALID_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), INVALID_RANK );
 
   // Verify throws/etc for FEM calls prior to initialization:
   stk::mesh::fem::CellTopology invalid_cell_topology( NULL );
   stk::mesh::Part & universal_part = fem_meta.universal_part();
-  STKUNIT_ASSERT_THROW( fem_meta.register_cell_topology( invalid_cell_topology, invalid_rank ), std::logic_error );
+  STKUNIT_ASSERT_THROW( fem_meta.register_cell_topology( invalid_cell_topology, INVALID_RANK ), std::logic_error );
   STKUNIT_ASSERT_THROW( fem_meta.get_cell_topology_root_part( invalid_cell_topology), std::logic_error );
   STKUNIT_ASSERT_THROW( fem_meta.get_cell_topology( universal_part), std::logic_error );
   STKUNIT_ASSERT_THROW( set_cell_topology( fem_meta, universal_part, invalid_cell_topology), std::logic_error );
-  STKUNIT_EXPECT_EQUAL( fem_meta.get_entity_rank( invalid_cell_topology), invalid_rank );
+  STKUNIT_EXPECT_EQUAL( fem_meta.get_entity_rank( invalid_cell_topology), INVALID_RANK );
 
 }
 
@@ -67,52 +75,47 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, initialize_only_once )
 
 STKUNIT_UNIT_TEST( UnitTestFEMMetaData, entity_ranks_1 )
 {
-  const stk::mesh::EntityRank node_rank = FEMMetaData::NODE_RANK;
   stk::mesh::fem::FEMMetaData fem_meta;
   const size_t spatial_dimension = 1;
   fem_meta.FEM_initialize(spatial_dimension);
-  STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), node_rank );
-  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), 1u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), 2u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), 0u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), 1u );
+  STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), NODE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), EDGE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), FACE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), NODE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), EDGE_RANK );
 
 }
 
 
 STKUNIT_UNIT_TEST( UnitTestFEMMetaData, entity_ranks_2 )
 {
-  const stk::mesh::EntityRank node_rank = FEMMetaData::NODE_RANK;
   stk::mesh::fem::FEMMetaData fem_meta;
   const size_t spatial_dimension = 2;
   fem_meta.FEM_initialize(spatial_dimension);
-  STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), node_rank );
-  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), 1u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), 2u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), 1u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), 2u );
+  STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), NODE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), EDGE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), FACE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), EDGE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), FACE_RANK );
 
 }
 
 
 STKUNIT_UNIT_TEST( UnitTestFEMMetaData, entity_ranks_3 )
 {
-  const stk::mesh::EntityRank node_rank = FEMMetaData::NODE_RANK;
   stk::mesh::fem::FEMMetaData fem_meta;
   const size_t spatial_dimension = 3;
   fem_meta.FEM_initialize(spatial_dimension);
-  STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), node_rank );
-  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), 1u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), 2u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), 2u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), 3u );
-
+  STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), NODE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), EDGE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), FACE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), FACE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), VOLUME_RANK );
 }
 
 
 STKUNIT_UNIT_TEST( UnitTestFEMMetaData, entity_ranks_4 )
 {
-  const stk::mesh::EntityRank node_rank = FEMMetaData::NODE_RANK;
   stk::mesh::fem::FEMMetaData fem_meta;
   const size_t spatial_dimension = 4;
   std::vector<std::string> entity_rank_names(spatial_dimension+1);
@@ -124,10 +127,10 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, entity_ranks_4 )
   entity_rank_names[4] = "thing";
 
   fem_meta.FEM_initialize(spatial_dimension,entity_rank_names);
-  STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), node_rank );
-  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), 1u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), 2u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), 3u );
+  STKUNIT_EXPECT_EQUAL( fem_meta.node_rank(), NODE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.edge_rank(), EDGE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.face_rank(), FACE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), VOLUME_RANK );
   STKUNIT_EXPECT_EQUAL( fem_meta.element_rank(), 4u );
 }
 
@@ -572,7 +575,7 @@ STKUNIT_UNIT_TEST( FEMMetaData, get_entity_rank_invalid )
   stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::EntityRank rank = fem_meta.get_entity_rank(hex_top);
 
-  const stk::mesh::EntityRank invalid_rank = FEMMetaData::INVALID_RANK;
+  const stk::mesh::EntityRank invalid_rank = INVALID_RANK;
   STKUNIT_ASSERT_EQUAL( rank, invalid_rank );
 }
 
