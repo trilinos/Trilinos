@@ -33,19 +33,16 @@
   \brief Basic command line parser for input from <tt>(argc,argv[])</tt> 
 */
 
+/** \example CommandLineProcessor/cxx_main.cpp
+    This is an example of how to use the Teuchos::CommandLineProcessor class.
+*/
+
 #include "Teuchos_map.hpp"
 #include "Teuchos_any.hpp"
 #include "Teuchos_CompileTimeAssert.hpp"
 
-namespace Teuchos {
-
-/* ToDo: RAB: 2003/10/02: Add support for required options as per KRL's suggestion
- *
- * ToDo:  Finish documentation.
- */
-
-/** \brief Class that helps parse command line input arguments from
- * <tt>(argc,argv[])</tt> and set options.
+/*! \class Teuchos::CommandLineProcessor
+ * \brief Class that helps parse command line input arguments from <tt>(argc,argv[])</tt> and set options.
  *
  * This class will process command-line arguments in the form of <tt>(argc,argv[])</tt>
  * and set user-defined options.  This class can also work in a number of modes.
@@ -56,10 +53,8 @@ namespace Teuchos {
  * <tt>this->addOutputSetupOptions()==true</tt>
  *
  */
-/** \example CommandLineProcessor/cxx_main.cpp
-    This is an example of how to use the Teuchos::CommandLineProcessor class.
-*/
 
+namespace Teuchos {
 
 class TEUCHOS_LIB_DLL_EXPORT CommandLineProcessor {
 public:
