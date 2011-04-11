@@ -69,11 +69,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** 
-   \example
-   There are no examples.
-*/
-
 /*! \class Belos::LSQRSolMgr
  *
  *  \brief The LSQRSolMgr managers the LSQR linear least squares solver.
