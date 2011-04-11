@@ -197,7 +197,7 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
 
   EntityKey key( ent_rank , ent_id );
   TraceIfWatching("stk::mesh::BulkData::declare_entity", LOG_ENTITY, key);
-  DiagIfWatching(LOG_ENTITY, key, "declaring entity with parts " << parts << diag::dendl);
+  DiagIfWatching(LOG_ENTITY, key, "declaring entity with parts " << parts);
 
   std::pair< Entity * , bool > result = m_entity_repo.internal_create_entity( key );
 
@@ -207,12 +207,12 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
     // A new application-created entity
     m_entity_repo.set_entity_owner_rank( *declared_entity, m_parallel_rank);
     m_entity_repo.set_entity_sync_count( *declared_entity, m_sync_count);
-    DiagIfWatching(LOG_ENTITY, key, "new entity: " << *declared_entity << diag::dendl);
+    DiagIfWatching(LOG_ENTITY, key, "new entity: " << *declared_entity);
   }
   else {
     // An existing entity, the owner must match.
     require_entity_owner( *declared_entity , m_parallel_rank );
-    DiagIfWatching(LOG_ENTITY, key, "existing entity: " << *declared_entity << diag::dendl);
+    DiagIfWatching(LOG_ENTITY, key, "existing entity: " << *declared_entity);
   }
 
   //------------------------------
@@ -327,10 +327,9 @@ void BulkData::change_entity_parts(
   const PartVector & remove_parts )
 {
   TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity.key());
-  DiagIfWatching(LOG_ENTITY, entity.key(),
-                 "add_parts: " << add_parts << diag::dendl);
-  DiagIfWatching(LOG_ENTITY, entity.key(),
-                 "remove_parts: " << remove_parts << diag::dendl);
+  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
+  DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
 
   require_ok_to_modify();
 
@@ -477,6 +476,7 @@ void BulkData::internal_change_entity_parts(
   const PartVector & remove_parts )
 {
   TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
+  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
 
   Bucket * const k_old = m_entity_repo.get_entity_bucket( entity );
 
@@ -575,6 +575,7 @@ bool BulkData::destroy_entity( Entity * & entity_in )
   Entity & entity = *entity_in ;
 
   TraceIfWatching("stk::mesh::BulkData::destroy_entity", LOG_ENTITY, entity.key());
+  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
 
   require_ok_to_modify( );
 
