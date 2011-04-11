@@ -26,6 +26,8 @@
 
 #include "MueLu_UseShortNames.hpp"
 
+void dumpAggregates(Aggregates & aggregates);
+
 int main(int argc, char *argv[]) {
   
   Teuchos::oblackholestream blackhole;
@@ -112,5 +114,36 @@ int main(int argc, char *argv[]) {
 
   Final_->describe(*out, Teuchos::VERB_EXTREME);
 
+  dumpAggregates(*aggregates);
+
   return EXIT_SUCCESS;
+}
+
+
+#include <iostream>
+#include <fstream>
+
+void dumpAggregates(Aggregates & aggregates) {
+  int myPid = aggregates.GetMap()->getComm()->getRank();
+
+  Teuchos::ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+  Teuchos::ArrayRCP<const int> procWinner   = aggregates.GetProcWinner()->getData(0);
+  size_t n = aggregates.GetVertex2AggId()->getMap()->getNodeNumElements();
+  RCP<const Map> map = aggregates.GetVertex2AggId()->getMap();
+
+
+  char filename[200];
+  snprintf(filename, 200, "aggregates-%d.data", myPid);
+  std::ofstream out(filename);
+  if (!out.is_open())
+    cout << "Unable to open file";
+  else
+    {
+
+      for (size_t i = 0; i < n; i++) 
+        out << map->getGlobalElement(i) << " " << vertex2AggId[i] << " " << procWinner[i] << std::endl;;
+   
+      out.close();
+    }
+
 }
