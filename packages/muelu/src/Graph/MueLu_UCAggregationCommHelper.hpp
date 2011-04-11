@@ -219,17 +219,16 @@ namespace MueLu {
         //     JustWinners <-- companion[Winners];
    
         RCP<LOVector> justWinners = LOVectorFactory::Build(winnerMap);
-        RCP<const Import> winnerImport = ImportFactory::Build(winnerMap,weight_.getMap());
+        RCP<const Import> winnerImport = ImportFactory::Build(weight_.getMap(), winnerMap);
 
         justWinners->doImport(*companion, *winnerImport, Cthulhu::INSERT);
-   
+
         // Put the JustWinner values back into companion so that
         // all nonunique copies of the same Gid have the procWinner's
         // version of the companion.
    
-        RCP<Import> pushWinners = ImportFactory::Build(weight_.getMap(), winnerMap);
+        RCP<Import> pushWinners = ImportFactory::Build(winnerMap, weight_.getMap());
         companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);
-
       }
 
     }
