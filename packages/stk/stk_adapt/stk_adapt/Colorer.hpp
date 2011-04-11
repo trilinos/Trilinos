@@ -82,12 +82,13 @@ namespace stk {
     {
     public:
 
-
-      //Colorer(std::vector< ColorerSetType >& element_colors, std::vector<mesh::EntityRank> ranks = std::vector<mesh::EntityRank>());
-      //Colorer(std::vector<mesh::EntityRank> ranks = std::vector<mesh::EntityRank>());
       Colorer(std::vector< ColorerSetType >& element_colors, std::vector<mesh::EntityRank> ranks);
       Colorer(std::vector<mesh::EntityRank> ranks );
       void color(percept::PerceptMesh& eMesh, unsigned *elementType = 0,  mesh::PartVector* fromParts = 0, mesh::FieldBase *element_color_field=0);
+
+      /// Set to true to avoid the coloring step and just return elements in a single color
+      void setNoColoring(bool no_coloring);
+      bool getNoColoring();
 
       std::vector< ColorerSetType >& getElementColors();
 
@@ -95,6 +96,7 @@ namespace stk {
       std::vector< ColorerSetType >& m_element_colors;
       std::vector< ColorerSetType > m_element_colors_internal;
       std::vector<mesh::EntityRank> m_entityRanks;
+      bool m_noColoring;
     };
 
   }

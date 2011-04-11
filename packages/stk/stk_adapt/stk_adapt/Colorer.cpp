@@ -11,35 +11,33 @@ namespace stk {
 
     template<typename STD_Set, typename Key > bool contains(STD_Set& set, Key key) { return set.find(key) != set.end(); }
 
-    Colorer::Colorer(std::vector< ColorerSetType >& element_colors, std::vector<stk::mesh::EntityRank> ranks ) : m_element_colors(element_colors), m_entityRanks()
-      {
-        //stk::mesh::EntityRank ranks[2] = {Face, Element};
-        if (ranks.size())
-          {
-            m_entityRanks = ranks;
-          }
-        else
-          {
-            //             m_entityRanks.push_back(stk_mesh_Face);
-            //             m_entityRanks.push_back(stk_mesh_Element);
-            throw std::runtime_error("Colorer:: you must pass in non-zero length ranks");
-          }
-      }
-
-    Colorer::Colorer(std::vector<stk::mesh::EntityRank> ranks ) : m_element_colors(m_element_colors_internal), m_entityRanks()
+    Colorer::Colorer(std::vector< ColorerSetType >& element_colors, std::vector<stk::mesh::EntityRank> ranks ) : m_element_colors(element_colors), m_entityRanks(),
+                                                                                                                 m_noColoring(true)
     {
-      //stk::mesh::EntityRank ranks[2] = {Face, Element};
       if (ranks.size())
         {
           m_entityRanks = ranks;
         }
       else
         {
-//           m_entityRanks.push_back(stk_mesh_Face);
-//           m_entityRanks.push_back(stk_mesh_Element);
-            throw std::runtime_error("Colorer:: you must pass in non-zero length ranks");
+          throw std::runtime_error("Colorer:: you must pass in non-zero length ranks");
         }
     }
+
+    Colorer::Colorer(std::vector<stk::mesh::EntityRank> ranks ) : m_element_colors(m_element_colors_internal), m_entityRanks(), m_noColoring(true)
+    {
+      if (ranks.size())
+        {
+          m_entityRanks = ranks;
+        }
+      else
+        {
+          throw std::runtime_error("Colorer:: you must pass in non-zero length ranks");
+        }
+    }
+
+    void Colorer::setNoColoring(bool no_coloring) { m_noColoring = no_coloring; }
+    bool Colorer::getNoColoring() { return m_noColoring; }
 
     std::vector< ColorerSetType >& Colorer::
     getElementColors() { return m_element_colors; }
@@ -49,7 +47,6 @@ namespace stk {
     {
       const unsigned MAX_COLORS=1000;
       vector< ColorerNodeSetType > node_colors(MAX_COLORS+1); 
-      m_element_colors = vector< ColorerSetType > (MAX_COLORS+1);
       ColorerElementSetType all_elements; 
 
       mesh::Selector selector(eMesh.getFEM_meta_data()->universal_part());
@@ -69,9 +66,15 @@ namespace stk {
         }
 
       stk::mesh::BulkData& bulkData = *eMesh.getBulkData();
-      int ncolor = 0;
+      unsigned ncolor = 0;
       int nelem = 0;
-      for (unsigned icolor = 0; icolor < MAX_COLORS; icolor++)
+      unsigned num_max_colors = MAX_COLORS;
+      if (m_noColoring)
+        num_max_colors = 1;
+      
+      m_element_colors = vector< ColorerSetType > (num_max_colors+1);
+
+      for (unsigned icolor = 0; icolor < num_max_colors; icolor++)
         {
           int num_colored_this_pass = 0;
           for (unsigned irank = 0; irank < m_entityRanks.size(); irank++)
@@ -111,23 +114,29 @@ namespace stk {
                                         << " elementId = " << element.identifier() << " element = " << element << std::endl;
 
                             stk::mesh::EntityId elem_id = element.identifier();
-                            if (contains(all_elements, elem_id))
+                            
+                            if (!m_noColoring && contains(all_elements, elem_id))
                               continue;
 
-                            const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );  //! check for reference
-                            unsigned num_node = elem_nodes.size(); 
                             bool none_in_this_color = true;
                             static std::vector<stk::mesh::EntityId> node_ids(100);
-                            node_ids.reserve(num_node);
-                            for (unsigned inode=0; inode < num_node; inode++)
+                            unsigned num_node = 0;
+
+                            if (!m_noColoring)
                               {
-                                stk::mesh::Entity & node = *elem_nodes[ inode ].entity();
-                                stk::mesh::EntityId nid = node.identifier();
-                                node_ids[inode] = nid;
-                                if (contains(node_colors[icolor], nid))
+                                const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );  
+                                num_node = elem_nodes.size(); 
+                                node_ids.reserve(num_node);
+                                for (unsigned inode=0; inode < num_node; inode++)
                                   {
-                                    none_in_this_color = false;
-                                    break;
+                                    stk::mesh::Entity & node = *elem_nodes[ inode ].entity();
+                                    stk::mesh::EntityId nid = node.identifier();
+                                    node_ids[inode] = nid;
+                                    if (contains(node_colors[icolor], nid))
+                                      {
+                                        none_in_this_color = false;
+                                        break;
+                                      }
                                   }
                               }
                             if (none_in_this_color)
@@ -143,10 +152,13 @@ namespace stk {
 #else
                                 m_element_colors[icolor].insert(&element);
 #endif
-                                all_elements.insert(elem_id);
-                                for (unsigned inode=0; inode < num_node; inode++)
+                                if (!m_noColoring)
                                   {
-                                    node_colors[icolor].insert(node_ids[inode]);
+                                    all_elements.insert(elem_id);
+                                    for (unsigned inode=0; inode < num_node; inode++)
+                                      {
+                                        node_colors[icolor].insert(node_ids[inode]);
+                                      }
                                   }
                               }
                           }  // elements in bucket
@@ -159,13 +171,13 @@ namespace stk {
               break;
             }
           ++ncolor;
-          if (ncolor == MAX_COLORS-1)
+          if (ncolor == num_max_colors-1)
             {
               throw std::runtime_error("broken algorithm in mesh colorer");
             }
         } // icolor
 
-      //std::cout << "tmp ncolor = " << ncolor << " nelem= " << nelem << std::endl;
+      std::cout << "tmp ncolor = " << ncolor << " nelem= " << nelem << std::endl;
 
       m_element_colors.resize(ncolor);
     }
