@@ -50,8 +50,10 @@ int main(int argc, char *argv[]) {
   matrixParameters.check();
   cthulhuParameters.check();
 
-  matrixParameters.print();
-  cthulhuParameters.print();
+  if (comm->getRank() == 0) {
+    matrixParameters.print();
+    cthulhuParameters.print();
+  }
 
   /**********************************************************************************/
   /* CREATE INITAL MATRIX                                                           */
@@ -100,11 +102,14 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++) 
       Final[i] = vertex2AggId[i] + procWinner[i]*1000;
   }
-  
-  printf("finals\n");
+
+  if (comm->getRank() == 0)
+      printf("finals\n");
   //cout << *Final_ << endl; sleep(2);
 
-  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+  RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+
   Final_->describe(*out, Teuchos::VERB_EXTREME);
 
   return EXIT_SUCCESS;
