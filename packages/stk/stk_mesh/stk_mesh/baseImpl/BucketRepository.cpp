@@ -195,7 +195,7 @@ void BucketRepository::destroy_bucket( Bucket * bucket )
   TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket);
 
   bucket->~Bucket();
-  std::free( bucket );
+  delete [] reinterpret_cast<unsigned char*>( bucket );
 }
 
 //
@@ -235,9 +235,9 @@ BucketRepository::declare_nil_bucket()
 
     // All fields checked and sized, Ready to allocate
 
-    void * const alloc_ptr = local_malloc( alloc_size );
+    unsigned char * const alloc_ptr = new unsigned char[ alloc_size ];
 
-    unsigned char * ptr = reinterpret_cast<unsigned char *>( alloc_ptr );
+    unsigned char * ptr = alloc_ptr;
 
     ptr += align( sizeof( Bucket ) );
 
@@ -441,9 +441,9 @@ BucketRepository::declare_bucket(
 
     // All fields checked and sized, Ready to allocate
 
-    void * const alloc_ptr = local_malloc( alloc_size );
+    unsigned char * const alloc_ptr = new unsigned char[ alloc_size ];
 
-    unsigned char * ptr = reinterpret_cast<unsigned char *>( alloc_ptr );
+    unsigned char * ptr = alloc_ptr;
 
     ptr += align( sizeof( Bucket ) );
 
