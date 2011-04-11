@@ -53,17 +53,17 @@ namespace MueLu {
      Aggregates(const MueLu::Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & graph, const std::string & objectLabel = "");
      virtual ~Aggregates() {}
      
-     inline int GetNumAggregates()                      { return nAggregates_;            }
-     inline void SetNumAggregates(int nAggregates)      { nAggregates_ = nAggregates;     }
-     inline RCP<LOVector> & GetVertex2AggId() { return vertex2AggId_;           } // LocalOrdinal because it's an array of local id
-     inline RCP<LOVector> & GetProcWinner()   { return procWinner_;             }
-     inline bool IsRoot(int i)                          { return isRoot_[i];              }
-     inline void SetIsRoot(int vertex, bool value=true) { isRoot_[vertex] = value; }
+     inline LO GetNumAggregates()                 { return nAggregates_;         } // rename GetNumLocal ?
+     inline void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates;  }
+     inline RCP<LOVector> & GetVertex2AggId()     { return vertex2AggId_;        } // LocalOrdinal because it's an array of local id
+     inline RCP<LOVector> & GetProcWinner()       { return procWinner_;          }
+     inline bool IsRoot(LO i)                     { return isRoot_[i];           } // Local
+     inline void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;          } // Local
      
-     inline const RCP<const Cthulhu::Map<int,int> > GetMap() { return GetVertex2AggId()->getMap(); }
+     inline const RCP<const Cthulhu::Map<LO,GO> > GetMap() { return GetVertex2AggId()->getMap(); }
 
    private:
-    int   nAggregates_;             /* Number of aggregates on this processor  */
+    LO   nAggregates_;              /* Number of aggregates on this processor  */
     
     RCP<LOVector> vertex2AggId_;    /* vertex2AggId[k] gives a local id        */
                                     /* corresponding to the aggregate to which */
