@@ -1,5 +1,3 @@
-// $Id$
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -37,22 +35,23 @@ CompletePolynomialBasis(
 	bool use_old_cijk_alg_,
 	const Teuchos::RCP< Teuchos::Array<value_type> >& deriv_coeffs_) :
   p(0),
-  d(0),
+  d(bases_.size()),
   sz(0),
   bases(bases_),
+  basis_orders(d),
   sparse_tol(sparse_tol_),
   use_old_cijk_alg(use_old_cijk_alg_),
   deriv_coeffs(deriv_coeffs_),
   norms(),
   terms()
 {
-  // Compute total dimension -- we are assuming each basis is 1-D
-  d = bases.size();
 
   // Compute total order
-  for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size()); i++)
-    if (bases[i]->order() > p)
-      p = bases[i]->order();
+  for (ordinal_type i=0; i<d; i++) {
+    basis_orders[i] = bases[i]->order();
+    if (basis_orders[i] > p)
+      p = basis_orders[i];
+  }
 
   // Compute basis terms
   compute_terms();
@@ -62,26 +61,26 @@ CompletePolynomialBasis(
   value_type nrm;
   for (ordinal_type k=0; k<sz; k++) {
     nrm = value_type(1.0);
-    for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size()); i++)
+    for (ordinal_type i=0; i<d; i++)
       nrm = nrm * bases[i]->norm_squared(terms[k][i]);
     norms[k] = nrm;
   }
 
   // Create name
   name = "Complete polynomial basis (";
-  for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size())-1; i++)
+  for (ordinal_type i=0; i<d-1; i++)
     name += bases[i]->getName() + ", ";
-  name += bases[bases.size()-1]->getName() + ")";
+  name += bases[d-1]->getName() + ")";
 
   // Allocate array for basis evaluation
-  basis_eval_tmp.resize(bases.size());
-  for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
-    basis_eval_tmp[j].resize(bases[j]->order()+1);
+  basis_eval_tmp.resize(d);
+  for (ordinal_type j=0; j<d; j++)
+    basis_eval_tmp[j].resize(basis_orders[j]+1);
 
   // Set up deriv_coeffs
   if (deriv_coeffs == Teuchos::null) {
-    deriv_coeffs = Teuchos::rcp(new Teuchos::Array<value_type>(bases.size()));
-    for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
+    deriv_coeffs = Teuchos::rcp(new Teuchos::Array<value_type>(d));
+    for (ordinal_type j=0; j<d; j++)
       (*deriv_coeffs)[j] = value_type(1.0);
   }
 }
@@ -207,7 +206,10 @@ computeTripleProductTensorNew(ordinal_type order) const
   // Create 1-D triple products
   Teuchos::Array< Teuchos::RCP<Sparse3Tensor<ordinal_type,value_type> > > Cijk_1d(d);
   for (ordinal_type i=0; i<d; i++) {
-    Cijk_1d[i] = bases[i]->computeSparseTripleProductTensor(k_lim);
+    if (k_lim <= basis_orders[i]+1)
+      Cijk_1d[i] = bases[i]->computeSparseTripleProductTensor(k_lim);
+    else
+      Cijk_1d[i] = bases[i]->computeSparseTripleProductTensor(basis_orders[i]+1);
   }
 
   // Create i, j, k iterators for each dimension
@@ -424,7 +426,7 @@ evaluateZero(ordinal_type i) const
   // z = psi_{i_1}(0) * ... * psi_{i_d}(0) where i_1,...,i_d are the basis
   // terms for coefficient i
   value_type z = value_type(1.0);
-  for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
+  for (ordinal_type j=0; j<d; j++)
     z = z * bases[j]->evaluate(value_type(0.0), terms[i][j]);
 
   return z;
@@ -436,13 +438,13 @@ Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 evaluateBases(const Teuchos::Array<value_type>& point,
 	      Teuchos::Array<value_type>& basis_vals) const
 {
-  for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
+  for (ordinal_type j=0; j<d; j++)
     bases[j]->evaluateBases(point[j], basis_eval_tmp[j]);
 
   // Only evaluate basis upto number of terms included in basis_pts
   for (ordinal_type i=0; i<sz; i++) {
     value_type t = value_type(1.0);
-    for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
+    for (ordinal_type j=0; j<d; j++)
       t *= basis_eval_tmp[j][terms[i][j]];
     basis_vals[i] = t;
   }
@@ -455,7 +457,7 @@ print(std::ostream& os) const
 {
   os << "Complete basis of order " << p << ", dimension " << d 
      << ", and size " << sz << ".  Component bases:\n";
-  for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size()); i++)
+  for (ordinal_type i=0; i<d; i++)
     os << *bases[i];
   os << "Basis vector norms (squared):\n\t";
   for (ordinal_type i=0; i<static_cast<ordinal_type>(norms.size()); i++)
@@ -496,32 +498,6 @@ getCoordinateBases() const
 }
 
 template <typename ordinal_type, typename value_type>
-ordinal_type
-Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-compute_num_terms(ordinal_type dim, ordinal_type ord) const
-{
-  ordinal_type num = 1;
-  
-  // Use the formula (p+d)!/(p!d!) = (d+p)...(d+1)/p!
-  if (dim >= ord) {
-    for (ordinal_type i=1; i<=ord; i++) {
-      num *= dim+i;
-      num /= i;
-    }
-  }
-
-  // Use the formula (p+d)!/(p!d!) = (p+d)...(p+1)/d!
-  else {
-    for (ordinal_type i=1; i<=dim; i++) {
-      num *= ord+i;
-      num /= i;
-    }
-  }
-
-  return num;
-}
-
-template <typename ordinal_type, typename value_type>
 void
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 compute_terms()
@@ -559,68 +535,91 @@ compute_terms()
   //        0 1 2
   //        0 0 3
 
-  // First compute total size from (d+p)!/(d!p!)
-  sz = compute_num_terms(d,p);
+  // Temporary array of terms grouped in terms of same order
+  Teuchos::Array< Teuchos::Array< Teuchos::Array<ordinal_type> > > terms_order(p+1);
 
-  // Allocate storage and initialize
-  terms.resize(sz);
-  for (ordinal_type i=0; i<sz; i++) {
-    terms[i].resize(d);
-    for (ordinal_type j=0; j<d; j++)
-      terms[i][j] = 0;
-  }
+  // Store number of terms up to each order
+  num_terms.resize(p+2, ordinal_type(0));
 
-  if (p == 0)
-    return;
+  // Set order 0
+  terms_order[0].resize(1);
+  terms_order[0][0].resize(d, ordinal_type(0));
+  num_terms[0] = 1;
 
   // The array "cnt" stores the number of terms we need to increment for each
   // dimension.  
-  Teuchos::Array<ordinal_type> cnt(d);
-
-  // Set order 1 terms
+  Teuchos::Array<ordinal_type> cnt(d), cnt_next(d), term(d);
   for (ordinal_type j=0; j<d; j++) {
-    terms[j+1][j] = 1;
-    cnt[j] = d-j;
+    if (basis_orders[j] >= 1)
+      cnt[j] = 1;
+    else
+      cnt[j] = 0;
+    cnt_next[j] = 0;
   }
 
-  // Stores index of previous order block
-  ordinal_type prev = 1;
-
-  // Stores index of the term we are working on
-  ordinal_type cur = d+1;
-
+  sz = 1;
   // Loop over orders
-  for (ordinal_type k=2; k<=p; k++) {
+  for (ordinal_type k=1; k<=p; k++) {
+
+    num_terms[k] = num_terms[k-1];
+
+    // Stores the index of the term we copying
+    ordinal_type prev = 0;
 
     // Loop over dimensions
     for (ordinal_type j=0; j<d; j++) {
 
       // Increment orders of cnt[j] terms for dimension j
       for (ordinal_type i=0; i<cnt[j]; i++) {
-        terms[cur] = terms[prev+i];
-        ++terms[cur][j];
-        ++cur;
+	if (terms_order[k-1][prev+i][j] < basis_orders[j]) {
+	  term = terms_order[k-1][prev+i];
+	  ++term[j];
+	  terms_order[k].push_back(term);
+	  ++sz;
+	  num_terms[k]++;
+	  for (ordinal_type l=0; l<=j; l++)
+	    ++cnt_next[l];
+	}
       }
 
-      // Move forward the index of the previous order block.  If we aren't
-      // at the last dimension, the amount we move forward is
-      // cnt[j]-cnt[j+1].  If we are at the last dimension, we just increment
-      // by 1
+      // Move forward to where all orders for dimension j are 0
       if (j < d-1)
-        prev += cnt[j]-cnt[j+1];
-      else
-        ++prev;
+	prev += cnt[j] - cnt[j+1];
+
     }
 
-    // Compute the number of terms we must increment for the new order
-    // For each dimension j, this is just number plus the sum of the number 
-    // of terms for the remaining d-j dimensions
-    for (ordinal_type j=0; j<d; j++)
-      for (ordinal_type i=j+1; i<d; i++)
-        cnt[j] += cnt[i];
+    // Update the number of terms we must increment for the new order
+    for (ordinal_type j=0; j<d; j++) {
+      cnt[j] = cnt_next[j];
+      cnt_next[j] = 0;
+    }
 
   }
-  
+
+  num_terms[p+1] = sz;
+
+  // Copy into final terms array
+  terms.resize(sz);
+  ordinal_type i = 0;
+  for (ordinal_type k=0; k<=p; k++) {
+    ordinal_type num_k = terms_order[k].size();
+    for (ordinal_type j=0; j<num_k; j++)
+      terms[i++] = terms_order[k][j];
+  }
+
+  /*
+  std::cout << "sz = " << sz << std::endl;
+  for (ordinal_type i=0; i<sz; i++) {
+    std::cout << i << ":  ";
+    for (ordinal_type j=0; j<d; j++)
+      std::cout << terms[i][j] << " ";
+    std::cout << std::endl;
+  }
+  std::cout << "num_terms = ";
+  for (ordinal_type i=0; i<=p; i++)
+    std::cout << num_terms[i] << " ";
+  std::cout << std::endl;
+  */
 }
 
 template <typename ordinal_type, typename value_type>
@@ -628,30 +627,39 @@ ordinal_type
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 compute_index(const Teuchos::Array<ordinal_type>& term) const
 {
-  // The approach here for computing the index is essentially recursive
-  // on the number of dimensions.  Given the basis orders for each dimenion
-  // in "term", we add the orders to get the total order, and then compute
-  // the number of terms in an order-1 expansion.  That tells us which
-  // order block "term" lies in the global "terms" array.  We then compute
-  // the total order in the last d-1 dimensions and the number of terms in
-  // an order-1, d-1 expansion, adding this to the previous offset.  We
-  // repeat this until there are no dimensions left, which provides the index.
-  //
-  // For efficiency, we actually work from the last dimension to the first
-  // to reduce the number of operations to compute the total order.
+  // The approach here for computing the index is to find the order block
+  // corresponding to this term by adding up the component orders.  We then
+  // do a linear search through the terms_order array for this order
 
-  ordinal_type index = 0;
-  int dim = term.size();
+  // First compute order of term
   ordinal_type ord = 0;
-  for (int i=dim-1; i>=0; i--) {
-
-    // compute order
+  for (ordinal_type i=0; i<d; i++)
     ord += term[i];
+  TEST_FOR_EXCEPTION(ord < 0 || ord > p, std::logic_error,
+		     "Stokhos::CompletePolynomialBasis::compute_index(): " <<
+		     "Term has invalid order " << ord);
 
-    // compute number of terms for order-1
-    if (ord > 0)
-      index += compute_num_terms(dim-i, ord-1);
+  // Now search through terms of that order to find a match
+  ordinal_type k;
+  if (ord == 0)
+    k = 0;
+  else
+    k = num_terms[ord-1];
+  ordinal_type k_max=num_terms[ord];
+  bool found = false;
+  while (k < k_max && !found) {
+    bool found_term = true;
+    for (ordinal_type j=0; j<d; j++) {
+      found_term = found_term && (term[j] == terms[k][j]);
+      if (!found_term)
+	break;
+    }
+    found = found_term;
+    ++k;
   }
+  TEST_FOR_EXCEPTION(k >= k_max && !found, std::logic_error,
+		     "Stokhos::CompletePolynomialBasis::compute_index(): " <<
+		     "Could not find specified term.");
 
-  return index;
+  return k-1;
 }
