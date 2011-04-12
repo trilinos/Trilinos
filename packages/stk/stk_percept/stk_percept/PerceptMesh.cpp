@@ -2438,7 +2438,7 @@ namespace stk {
                             const unsigned num_entities_in_bucket_1 = bucket_1.size();
                             //const unsigned num_entities_in_bucket_2 = bucket_2.size();
 
-                            bool local_diff = false;
+                            bool local_local_diff = false;
                             for (unsigned iEntity = 0; iEntity < num_entities_in_bucket_1; iEntity++)
                               {
                                 stk::mesh::Entity& entity_1 = bucket_1[iEntity];
@@ -2465,12 +2465,12 @@ namespace stk {
                                             msg += std::string("| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+
                                               " coord_1= "+toString(fdata_1[istride])+" coord_2= "+toString(fdata_2[istride])+" |\n";
                                             diff = true;
-                                            local_diff = true;
+                                            local_local_diff = true;
                                           }
                                       }
                                   }
 
-                                if (local_diff) break;
+                                if (local_local_diff) break;
                               }
                           }
                       }
