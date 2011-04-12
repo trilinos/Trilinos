@@ -67,27 +67,11 @@ int main(int argc, char *argv[])
     (*gids)[i] = base + i;
     (*lids)[i] = i;
   }
+
   Z2::IdentifierMap<appLocalId, appGlobalId, lnoType, gnoType> idmap(
     comm, gids, lids);
+
 #if 0
-
-  // Test constructor
-
-  Z2::IdentifierMap<appGlobalId, appLocalId, gnoType, lnoType> idmap(
-    comm, gids, lids);
-
-  //  Test gnosAreGids() boolean
-
-#ifdef APPGID_IS_NOT_GNO
-  if (idmap.gnosAreGids()) {
-    std::cerr << "Rank " << rank << ": Z2 thinks gnos are gids" << std::endl;
-  }
-#else
-  if (!idmap.gnosAreGids()) {
-    std::cerr << "Rank " << rank << ": Z2 does not know gnos are gids" 
-              << std::endl;
-  }
-#endif
 
   // Test local gno look up.
 
@@ -131,7 +115,7 @@ int main(int argc, char *argv[])
   //show_result<gnoType, appGlobalId>(
    // std::string("Z2 GNOs -> Application local IDs"), 
     //gnoQuery, lidsReturned);
+#endif
 
   std::cout << "PASS" << std::endl;
-#endif
 }

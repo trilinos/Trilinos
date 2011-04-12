@@ -33,24 +33,13 @@ namespace Z2
 {
 
 /*! 
-    \brief Determine whether id type is a Teuchos OrdinalType.
-    \tparam T data type for identifier
-    \result true if the data type is a Teuchos Ordinal Type
- */
-
-template <typename T>
-bool isGlobalOrdinalType() {
-  return Teuchos::OrdinalTraits<T>::hasMachineParameters;
-}
-
-/*! 
     \brief Determine whether id type is a Teuchos communication Packet type.
     \tparam T data type for identifier
     \result true if it is a Teuchos Packet type
  */
 
 template <typename T>
-bool isPacketType() {
+bool isPacket() {
   return Teuchos::SerializationTraits<int, T>::supportsDirectSerialization;
 }
 
@@ -188,6 +177,22 @@ struct IdentifierTraits {
     return UndefinedIdentifierTraits<T>::notDefined(); 
   }
 
+  /*! \brief Inform caller if the data type is a Teuchos GlobalOrdinal
+      \result true if it is a Teuchos GlobalOrdinal
+   */
+
+  static inline bool isGlobalOrdinalType() {
+    return UndefinedIdentifierTraits<T>::notDefined(); 
+  }
+
+  /*! \brief Inform caller if the data type is a Teuchos Packet type 
+      \result true if it is a Teuchos Packet type
+   */
+
+  static inline bool isPacketType() {
+    return UndefinedIdentifierTraits<T>::notDefined(); 
+  }
+
   /*! \brief Determine if two identifiers are the same.
       \result true if they are the same.
    */
@@ -195,8 +200,6 @@ struct IdentifierTraits {
   static inline bool equal(const T &a, const T &b) {
     return UndefinedIdentifierTraits<T>::notDefined(); 
   }
-
-  
 };
 
 /*! \cond IndentifierTraits_definitions
@@ -209,17 +212,21 @@ struct IdentifierTraits<char> {
   static char keyToGid(const std::string s){ return s[0]; }
   static inline std::string name()     { return("char");}
   static inline bool isHashKeyType() { return false; }
+  static inline bool isGlobalOrdinalType() { return true; }
+  static inline bool isPacketType() { return isPacket< char >(); }
   static inline bool equal(const char &a, const char &b) { return (a==b); }
 };
 
 template<>
 struct IdentifierTraits<short int> {
   static inline int hashCode(const short int &a) { return static_cast<int>(a);}
-  static inline std::string key(const short int &a){ return byteString(a); }
+  static inline std::string key(const short int &a){ return hexString(a); }
   static short int keyToGid(const std::string s){ 
     return getTypeFromString<short int>(s);}
   static inline std::string name()          { return("short int");}
   static inline bool isHashKeyType() { return false; }
+  static inline bool isGlobalOrdinalType() { return true; }
+  static inline bool isPacketType() { return isPacket<short int>(); }
   static inline bool equal(const short int &a, const short int &b) { 
     return (a==b) ; }
 };
@@ -227,11 +234,13 @@ struct IdentifierTraits<short int> {
 template<>
 struct IdentifierTraits<int> {
   static inline int hashCode(const int &a) { return a; }
-  static inline std::string key(const int &a){ return byteString(a); }
+  static inline std::string key(const int &a){ return hexString(a); }
   static int keyToGid(const std::string s){ 
     return getTypeFromString<int>(s);}
   static inline std::string name()    { return("int");}
   static inline bool isHashKeyType() { return true; }
+  static inline bool isGlobalOrdinalType() { return true; }
+  static inline bool isPacketType() { return isPacket<int>(); }
   static inline bool equal(const  int &a, const  int &b) { 
     return (a==b) ; }
 };
@@ -240,11 +249,13 @@ template<>
 struct IdentifierTraits<unsigned int> {
   static inline int hashCode(const unsigned int &a) { 
     return static_cast<int>(a); }
-  static inline std::string key(const unsigned int &a){ return byteString(a); }
+  static inline std::string key(const unsigned int &a){ return hexString(a); }
   static unsigned int keyToGid(const std::string s){ 
     return getTypeFromString<unsigned int>(s);}
   static inline std::string name()             { return("unsigned int");}
   static inline bool isHashKeyType() { return false; }
+  static inline bool isGlobalOrdinalType() { return true; }
+  static inline bool isPacketType() { return isPacket<unsigned int>(); }
   static inline bool equal(const unsigned int &a, const unsigned int &b) { 
     return (a==b) ; }
 };
@@ -258,11 +269,13 @@ struct IdentifierTraits<long int> {
     }
     return static_cast<int>(total);
   }
-  static inline std::string key(const long int &a){ return byteString(a); }
+  static inline std::string key(const long int &a){ return hexString(a); }
   static long int keyToGid(const std::string s){ 
     return getTypeFromString<long int>(s);}
   static inline std::string name()    { return("long int");}
   static inline bool isHashKeyType() { return false; }
+  static inline bool isGlobalOrdinalType() { return true; }
+  static inline bool isPacketType() { return isPacket<long int>(); }
   static inline bool equal(const long int &a, const long int &b) { 
     return (a==b) ; }
 };
@@ -270,13 +283,16 @@ struct IdentifierTraits<long int> {
 template<>
 struct IdentifierTraits<unsigned long int> {
   static inline int hashCode(const unsigned long int &a) { 
-    return IdentifierTraits<long int>::hashCode(static_cast<const long int>(a)); }
+    return 
+      IdentifierTraits<long int>::hashCode(static_cast<const long int>(a)); }
   static inline std::string key(const unsigned long int &a){ 
-    return byteString(a); }
+    return hexString(a); }
   static unsigned long int keyToGid(const std::string s){ 
     return getTypeFromString<unsigned long int>(s);}
   static inline std::string name()   { return("long unsigned int");}
   static inline bool isHashKeyType() { return false; }
+  static inline bool isGlobalOrdinalType() { return true; }
+  static inline bool isPacketType() { return isPacket<unsigned long int>(); }
   static inline bool equal( const unsigned long int &a, 
     const unsigned long int &b) { return (a==b) ; }
 };
@@ -290,11 +306,13 @@ struct IdentifierTraits<long long int> {
     }
     return static_cast<int>(total);
   }
-  static inline std::string key(const long long int &a){ return byteString(a); }
+  static inline std::string key(const long long int &a){ return hexString(a); }
   static long long int keyToGid(const std::string s){ 
     return getTypeFromString<long long int>(s);}
   static inline std::string name()    { return("long long int");}
   static inline bool isHashKeyType() { return false; }
+  static inline bool isGlobalOrdinalType() { return true; }
+  static inline bool isPacketType() { return isPacket<long long int>(); }
   static inline bool equal( const long long int &a, const long long int &b) { 
     return (a==b) ; }
 };
@@ -305,11 +323,14 @@ struct IdentifierTraits<unsigned long long int> {
     return IdentifierTraits<long long int>::hashCode(
       static_cast<const long long int>(a)); }
   static inline std::string key(const unsigned long long int &a){ 
-    return byteString(a); }
+    return hexString(a); }
   static unsigned long long int keyToGid(const std::string s){ 
     return getTypeFromString<unsigned long long int>(s);}
   static inline std::string name()    { return("long long int");}
   static inline bool isHashKeyType() { return false; }
+  static inline bool isGlobalOrdinalType() { return false; }
+  static inline bool isPacketType() { 
+    return isPacket<unsigned long long int>(); }
   static inline bool equal( const unsigned long long int &a, 
     const unsigned long long int &b) { return (a==b) ; }
 };
@@ -322,7 +343,7 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   }
 
   static inline std::string key(const std::pair<T1, T2> &p)  {
-    return byteString(p.first) + std::string(":") + hexString(p.second);
+    return hexString(p.first) + std::string(":") + hexString(p.second);
   }
 
   static std::pair<T1, T2> keyToGid(const std::string s){
@@ -334,11 +355,16 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   }
     
   static inline std::string name() {
-     return std::string("std::pair<") + 
-       IdentifierTraits<T1>::name() + std::string(", ");
-       IdentifierTraits<T2>::name() + std::string(">");
+     std::string s("std::pair<");
+     s += IdentifierTraits<T1>::name();
+     s += std::string(", ");
+     s += IdentifierTraits<T2>::name();
+     s += std::string(">");
+     return s;
   }
   static inline bool isHashKeyType() { return false; }
+  static inline bool isGlobalOrdinalType() { return false; }
+  static inline bool isPacketType() { return isPacket<std::pair<T1, T2> >(); }
   static inline bool equal( const std::pair<T1, T2> &a, 
     const std::pair<T1, T2> &b) { 
     return ((a.first==b.first) && (a.second==b.second)); }
@@ -356,9 +382,9 @@ struct IdentifierTraits<std::vector<T > > {
   static inline std::string key(const std::vector<T> &v){
     std::string s;
     if (v.size()){
-      s = s + byteString(v[0]);
+      s = s + hexString(v[0]);
       for (size_t i=1; i < v.size(); i++){
-        s = s + std::string(":") + byteString(v[i]);
+        s = s + std::string(":") + hexString(v[i]);
       }
     }
     return s;
@@ -373,15 +399,16 @@ struct IdentifierTraits<std::vector<T > > {
       scopy = scopy.substr(k+1);
       k = scopy.find(":");
     }
-    std::vector<T> v(num+1);
+    std::vector<T> v;
+    v.reserve(num+1);
     scopy = s;
     k = scopy.find(":");
     while (k != std::string::npos){
-      v.push_bask(getTypeFromString<T>(scopy.substr(0, k)));
+      v.push_back(getTypeFromString<T>(scopy.substr(0, k)));
       scopy = scopy.substr(k+1);
       k = scopy.find(":");
     }
-    v.push_bask(scopy);
+    v.push_back(getTypeFromString<T>(scopy.substr(0, k)));
     return v;
   }
   static inline std::string name(){
@@ -389,10 +416,11 @@ struct IdentifierTraits<std::vector<T > > {
        IdentifierTraits<T>::name() + std::string(">");
   }
   static inline bool isHashKeyType() { return false; }
+  static inline bool isGlobalOrdinalType() { return false; }
+  static inline bool isPacketType() { return isPacket<std::vector<T> >(); }
 
   static inline bool equal(const std::vector<T> &a, const std::vector<T> &b){
     if (a.size() != b.size()) return false;
-    bool answer=true;
     for (unsigned int i=0; i < a.size(); i++)
       if (a[i] != b[i]) return false;
     return true;

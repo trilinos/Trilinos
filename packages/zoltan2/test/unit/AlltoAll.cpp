@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
     std::vector<float> *out = outBuf;
     for (int p=0; p < nprocs; p++){
       for (int i=0; i < outMsgSizes[p]; i++, out++){
-        (*out).resize(2);
+        (*out).reserve(2);
         (*out).push_back(p+rank);
         (*out).push_back(p+rank + 0.5);
       }

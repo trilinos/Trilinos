@@ -302,9 +302,9 @@ template <typename T, typename LNO>
 
   *info++ = count;
 
-  if (vLen > 0){
+  if (vLen == 0){
     for (LNO i=0; i < count; i++){
-      LNO nelements = v[i].size();
+      int nelements = v[i].size();
       *info++ = offset;
   
       for (LNO j=0; j < nelements; j++)

@@ -78,7 +78,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   // we will be able to use it as our internal global numbers (GNO).  
   // Otherwise we will have to map their global IDs to valid global numbers.
 
-  if (isGlobalOrdinalType<AppGID>()){
+  if (IdentifierTraits<AppGID>::isGlobalOrdinalType()){
 
     // Are the AppGIDs consecutive and increasing with process rank? 
     // If so GID/proc lookups are optimized.
@@ -212,7 +212,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   bool IdentifierMap<AppLID, AppGID, LNO, GNO>::gnosAreGids()
 {
-  return isGlobalOrdinalType<AppGID>();
+  return IdentifierTraits<AppGID>::isGlobalOrdinalType();
 }
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
@@ -240,8 +240,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     gno.reserve(len);
   }
 
-  if (isGlobalOrdinalType<AppGID>()){   // our gnos are the app gids
-
+  if (IdentifierTraits<AppGID>::isGlobalOrdinalType()){   
+    // our gnos are the app gids
     if (getGids)
       for (LNO i=0; i < len; i++)
         gid.push_back(static_cast<AppGID>(gno[i]));
@@ -337,7 +337,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   out_proc.clear();
   out_proc.reserve(numGids);
 
-  if (isGlobalOrdinalType<AppGID>() && !_gnoDist.is_null()){
+  if (IdentifierTraits<AppGID>::isGlobalOrdinalType() && !_gnoDist.is_null()){
 
     // Easy case - communication is not needed.
     // Global numbers are the application global IDs and
@@ -372,7 +372,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
   LNO *offsetBuf = NULL;
 
-  bool needGnoInfo = !isGlobalOrdinalType<AppGID>();
+  bool needGnoInfo = !IdentifierTraits<AppGID>::isGlobalOrdinalType();
 
   ///////////////////////////////////////////////////////////////////////
   // First: Hash each of my AppGIDs to a process that will answer
