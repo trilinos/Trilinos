@@ -226,9 +226,9 @@ void STK_Interface::addElement(Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::P
    int * procId = stk::mesh::field_data(*processorIdField_,element);
    procId[0] = Teuchos::as<int>(procRank_);
 
-   std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
-   localId[0] = currentLocalId_;
-   currentLocalId_++;
+   // std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
+   // localId[0] = currentLocalId_;
+   // currentLocalId_++;
 }
 
 void STK_Interface::writeToExodus(const std::string & filename)
@@ -577,6 +577,9 @@ Teuchos::RCP<const std::vector<stk::mesh::Entity*> > STK_Interface::getElementsO
    using Teuchos::rcp;
 
    if(orderedElementVector_==Teuchos::null) { 
+      // safe because essentially this is a call to modify a mutable object
+      const_cast<STK_Interface*>(this)->buildLocalElementIDs();
+/*
       RCP<std::vector<stk::mesh::Entity*> > elements
          = Teuchos::rcp(new std::vector<stk::mesh::Entity*>);
 
@@ -600,6 +603,7 @@ Teuchos::RCP<const std::vector<stk::mesh::Entity*> > STK_Interface::getElementsO
       std::sort(elements->begin(),elements->end(),LocalIdCompare(this));
 
       orderedElementVector_ = elements;
+*/
    }
 
    return orderedElementVector_.getConst();
@@ -643,11 +647,12 @@ void STK_Interface::buildLocalElementIDs()
    orderedElementVector_ = Teuchos::null; // forces rebuild of ordered lists
 
    // might be better (faster) to do this by buckets
-   std::vector<stk::mesh::Entity*> elements;
-   getMyElements(elements);
+   Teuchos::RCP<std::vector<stk::mesh::Entity*> > elements 
+      = Teuchos::rcp(new std::vector<stk::mesh::Entity*>);
+   getMyElements(*elements);
  
-   for(std::size_t index=0;index<elements.size();++index) {
-      stk::mesh::Entity & element = *elements[index];
+   for(std::size_t index=0;index<elements->size();++index) {
+      stk::mesh::Entity & element = *((*elements)[index]);
 
       // set processor rank
       int * procId = stk::mesh::field_data(*processorIdField_,element);
@@ -658,6 +663,8 @@ void STK_Interface::buildLocalElementIDs()
       localId[0] = currentLocalId_;
       currentLocalId_++;
    }
+
+   orderedElementVector_ = elements; 
 }
 
 Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 

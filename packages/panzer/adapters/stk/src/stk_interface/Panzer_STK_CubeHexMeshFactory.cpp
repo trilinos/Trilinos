@@ -55,6 +55,7 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
 
    // finish up the edges and faces
    mesh.buildSubcells();
+   mesh.buildLocalElementIDs();
 
    // now that edges are built, sidets can be added
    addSideSets(mesh);

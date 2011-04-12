@@ -86,7 +86,7 @@ namespace panzer {
     TEST_EQUALITY((*worksets[1])[0].block_id, element_blocks[1]);
     
   }
-  
+
   TEUCHOS_UNIT_TEST(workset_builder, sidesets)
   {
     using Teuchos::RCP;
@@ -108,12 +108,6 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    std::vector<std::string> sideSets; 
-    std::vector<std::string> elementBlocks; 
-    mesh->getSidesetNames(sideSets);
-    mesh->getElementBlockNames(elementBlocks);
-
-    
     std::vector<Teuchos::RCP<std::map<unsigned,panzer::Workset> > > 
       bc_worksets;
     
@@ -155,7 +149,6 @@ namespace panzer {
 	buildBCWorkset(*bc, local_cell_ids, local_side_ids,
 		       vertices, ipb, base_cell_dimension);
       
-
       bc_worksets.push_back(workset);
     }
     
@@ -174,15 +167,24 @@ namespace panzer {
     TEST_EQUALITY(workset_bc2[2].num_cells, 6);
     TEST_EQUALITY(workset_bc2[2].block_id, "eblock-1_0");
 
-    for (std::size_t i=0; i < 4; ++i )
+    // for debugging purposes
+    out << "\nWORKSEST_0 - Side 3: ";
+    for (std::size_t i=0; i < 4; i++ )
+       out << mesh->elementGlobalId(workset_bc0[3].cell_local_ids[i]) << " ";
+    out << std::endl;
+
+    // these two loops make sure all the global IDs on the boundary are included
+    // as local IDs in the workset
+
+    for (std::size_t i=1; i < 38; i+=12 )
       TEST_ASSERT(std::find(workset_bc0[3].cell_local_ids.begin(),
-			    workset_bc0[3].cell_local_ids.end(), i) != 
+			    workset_bc0[3].cell_local_ids.end(), mesh->elementLocalId(i)) != 
 		  workset_bc0[3].cell_local_ids.end());
 
-    for (std::size_t i=27; i < 48; i+=4)
+    for (std::size_t i=43; i < 49; i++)
       TEST_ASSERT(std::find(workset_bc2[2].cell_local_ids.begin(),
-			    workset_bc2[2].cell_local_ids.end(), i) != 
-		  workset_bc0[3].cell_local_ids.end());
+			    workset_bc2[2].cell_local_ids.end(), mesh->elementLocalId(i)) != 
+		  workset_bc0[2].cell_local_ids.end());
 
     std::size_t cell_index = 
       std::distance(workset_bc0[3].cell_local_ids.begin(), 

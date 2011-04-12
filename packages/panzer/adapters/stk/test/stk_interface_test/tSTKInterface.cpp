@@ -121,6 +121,7 @@ Teuchos::RCP<STK_Interface> build2DMesh()
       }
 
    mesh.endModification();
+   mesh.buildLocalElementIDs();
 
    return meshPtr;
 }

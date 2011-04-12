@@ -432,12 +432,12 @@ namespace panzer {
          = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
     connMngr->buildConnectivity(*fp);
 
-    const int * conn0 = connMngr->getConnectivity(0);
-    const int * conn1 = connMngr->getConnectivity(1);
-    const int * conn2 = connMngr->getConnectivity(2);
-    const int * conn3 = connMngr->getConnectivity(3);
-
     if(myRank==0) {
+       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(1));
+       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(5));
+       const int * conn2 = connMngr->getConnectivity(mesh->elementLocalId(3));
+       const int * conn3 = connMngr->getConnectivity(mesh->elementLocalId(7));
+
        TEST_EQUALITY(conn0[0],2);
        TEST_EQUALITY(conn0[1],1);
        TEST_EQUALITY(conn0[2],4);
@@ -475,6 +475,11 @@ namespace panzer {
        TEST_EQUALITY(conn3[7],2);
     }
     else {
+       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(2));
+       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(6));
+       const int * conn2 = connMngr->getConnectivity(mesh->elementLocalId(4));
+       const int * conn3 = connMngr->getConnectivity(mesh->elementLocalId(8));
+
        TEST_EQUALITY(conn0[0],1);
        TEST_EQUALITY(conn0[1],2);
        TEST_EQUALITY(conn0[2],5);

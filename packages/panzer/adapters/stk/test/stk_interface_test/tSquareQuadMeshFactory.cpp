@@ -78,6 +78,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, periodic_input)
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),1);
 }
 
+// This test was modified to its current lame state when the 
+// construction of the local element IDs was automated in the
+// STK_Interface. (Independent of order of addition in the mesh
+
 TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
 {
    using Teuchos::RCP;
@@ -114,10 +118,11 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
       TEST_EQUALITY(block1.size(),6);
 
       for(std::size_t i=0;i<block0.size();i++) {
-         TEST_EQUALITY(mesh->elementLocalId(block0[i]),i);
-         TEST_EQUALITY(mesh->elementLocalId(block1[i]),i+6);
+         TEST_ASSERT(mesh->elementLocalId(block0[i])>=0);
+         TEST_ASSERT(mesh->elementLocalId(block1[i])>=0);
       }
 
+/*
       {
          const double * coords = getNode(mesh,block0[0],0);
          TEST_FLOATING_EQUALITY(coords[0],0.0,1e-10);
@@ -129,16 +134,21 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
          TEST_FLOATING_EQUALITY(coords[0],0.25,1e-10);
          TEST_FLOATING_EQUALITY(coords[1],2.0/3.0,1e-10);
       }
+*/
    }
    else if(numprocs==2 && rank==0) {
       TEST_EQUALITY(block0.size(),3);
       TEST_EQUALITY(block1.size(),3);
 
       for(std::size_t i=0;i<block0.size();i++) {
-         TEST_EQUALITY(mesh->elementLocalId(block0[i]),i);
-         TEST_EQUALITY(mesh->elementLocalId(block1[i]),i+3);
+         // TEST_EQUALITY(mesh->elementLocalId(block0[i]),i);
+         // TEST_EQUALITY(mesh->elementLocalId(block1[i]),i+3);
+
+         TEST_ASSERT(mesh->elementLocalId(block0[i])>=0);
+         TEST_ASSERT(mesh->elementLocalId(block1[i])>=0);
       }
 
+/*
       {
          const double * coords = getNode(mesh,block0[0],0);
          TEST_FLOATING_EQUALITY(coords[0],0.0,1e-10);
@@ -150,16 +160,21 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
          TEST_FLOATING_EQUALITY(coords[0],0.25,1e-10);
          TEST_FLOATING_EQUALITY(coords[1],2.0/3.0,1e-10);
       }
+*/
    }
    else if(numprocs==2 && rank==1) {
       TEST_EQUALITY(block0.size(),3);
       TEST_EQUALITY(block1.size(),3);
 
       for(std::size_t i=0;i<block0.size();i++) {
-         TEST_EQUALITY(mesh->elementLocalId(block0[i]),i);
-         TEST_EQUALITY(mesh->elementLocalId(block1[i]),i+3);
+         // TEST_EQUALITY(mesh->elementLocalId(block0[i]),i);
+         // TEST_EQUALITY(mesh->elementLocalId(block1[i]),i+3);
+
+         TEST_ASSERT(mesh->elementLocalId(block0[i])>=0);
+         TEST_ASSERT(mesh->elementLocalId(block1[i])>=0);
       }
 
+/*
       {
          const double * coords = getNode(mesh,block0[0],0);
          TEST_FLOATING_EQUALITY(coords[0],0.25,1e-10);
@@ -171,6 +186,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
          TEST_FLOATING_EQUALITY(coords[0],0.5,1e-10);
          TEST_FLOATING_EQUALITY(coords[1],2.0/3.0,1e-10);
       }
+*/
    }
    else {
       // fail!

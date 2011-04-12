@@ -271,6 +271,16 @@ public:
      */
    std::size_t elementLocalId(stk::mesh::EntityId gid) const;
 
+   /** Get an elements global index
+     */
+   inline stk::mesh::EntityId elementGlobalId(std::size_t lid) const
+   { return (*orderedElementVector_)[lid]->identifier(); }
+
+   /** Get an elements global index
+     */
+   inline stk::mesh::EntityId elementGlobalId(stk::mesh::Entity * elmt) const
+   { return elmt->identifier(); }
+
    /**  Get the containing block ID of this element.
      */ 
    std::string containingBlockId(stk::mesh::Entity * elmt);
