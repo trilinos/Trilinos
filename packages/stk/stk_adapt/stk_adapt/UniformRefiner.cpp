@@ -27,7 +27,8 @@ namespace stk {
       m_eMesh(eMesh), m_breakPattern(), 
       m_nodeRegistry(0), 
       m_proc_rank_field(proc_rank_field), m_doRemove(true), m_ranks(), m_ignoreSideSets(false),
-      m_geomFile(""), m_geomSnap(false)
+      m_geomFile(""), m_geomSnap(false),
+      m_doQueryOnly(false)
     {
       bp.setSubPatterns(m_breakPattern, eMesh);
     }
@@ -403,6 +404,7 @@ namespace stk {
       std::vector<stk::mesh::Entity*> elems;
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
 
+      unsigned nele=0;
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
           if (on_locally_owned_part(**k) && fromPartsSelector(**k) ) 
@@ -432,11 +434,13 @@ namespace stk {
                   else
                     {
                       elems.push_back(&element);
+                      ++nele;
                       //std::cout << "tmp adding to oldParts = " << element << std::endl;
                     }
                 }
             }
         }
+
 
       for (unsigned ielem=0; ielem < elems.size(); ielem++)
         {
@@ -560,6 +564,85 @@ namespace stk {
 
       // check logic of break pattern setup and also build ranks used vector
       checkBreakPatternValidityAndBuildRanks(ranks);
+
+      ///////////////////////////////////////////////////////////
+      ///// Get info on refinements that will be done
+      ///////////////////////////////////////////////////////////
+      if (1)
+        {
+
+          m_refinementInfoByType.resize(ranks.size());
+
+          stk::mesh::PartVector fromPartsAll;
+
+          for (unsigned irank = 0; irank < ranks.size(); irank++)
+            {
+              stk::mesh::PartVector * fromParts = &(m_breakPattern[irank]->getFromParts());
+              if (fromParts)
+                {
+                  for (unsigned ipart = 0; ipart < fromParts->size(); ipart++)
+                    {
+                      fromPartsAll.push_back((*fromParts)[ipart]);
+                    }
+                }
+            }
+
+          for (unsigned irank = 0; irank < ranks.size(); irank++)
+            {
+              EXCEPTWATCH;
+              unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
+              shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
+
+              mesh::Selector selector(m_eMesh.getFEM_meta_data()->locally_owned_part());
+              if (fromPartsAll.size()) 
+                {
+                  selector = mesh::Selector();
+                  for (unsigned ipart = 0; ipart < fromPartsAll.size(); ipart++)
+                    {
+                      mesh::Part *part = fromPartsAll[ipart];
+                      const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*part);
+                      if (part_cell_topo_data)
+                        {
+                          CellTopology part_cell_topo(part_cell_topo_data);
+                          if (part_cell_topo.getKey() == elementType)
+                            {
+                              selector = selector | *part;
+                            }
+                        }
+                    }
+                  selector = selector & (mesh::Selector(m_eMesh.getFEM_meta_data()->locally_owned_part()));
+                }
+              std::vector<unsigned> count ;
+              stk::mesh::count_entities( selector, *m_eMesh.getBulkData(), count );
+              if (count.size() < 3) 
+                {
+                  throw std::logic_error("logic error in UniformRefiner m_refinementInfoByType");
+                }
+              unsigned n_ele = count[ ranks[irank] ];
+
+              m_refinementInfoByType[irank].m_numOrigElems = n_ele;
+
+              m_refinementInfoByType[irank].m_numNewElems = n_ele * m_breakPattern[irank]->getNumNewElemPerElem();
+              m_refinementInfoByType[irank].m_topology = cell_topo;
+            }
+
+          // sum info from all procs
+          {
+            stk::ParallelMachine pm = m_eMesh.getBulkData()->parallel();
+
+            for (unsigned irank = 0; irank < ranks.size(); irank++)
+              {
+                stk::all_reduce( pm, stk::ReduceSum<1>( &m_refinementInfoByType[irank].m_numOrigElems ) );
+                stk::all_reduce( pm, stk::ReduceSum<1>( &m_refinementInfoByType[irank].m_numNewElems ) );
+              }
+          }
+
+        }
+
+      if (m_doQueryOnly)
+        {
+          return;
+        }
 
       // do elements first, then any faces or edge elements
 
@@ -1620,6 +1703,20 @@ namespace stk {
       return false;
     }
 
+    std::vector< RefinementInfoByType >& 
+    UniformRefiner::
+    getRefinementInfoByType() 
+    { 
+      return m_refinementInfoByType; 
+    }
+
+    void 
+    UniformRefiner::
+    setQueryPassOnly(bool doQueryOnly)
+    {
+      m_doQueryOnly = doQueryOnly;
+    }
+      
 
   } // namespace adapt
 } // namespace stk

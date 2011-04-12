@@ -157,6 +157,9 @@ namespace stk {
       int
       getNumberElements();
 
+      int
+      getNumberElementsLocallyOwned();
+
       //========================================================================================================================
       /// low-level interfaces
       /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted

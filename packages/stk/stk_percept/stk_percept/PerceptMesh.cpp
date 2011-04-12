@@ -541,7 +541,27 @@ namespace stk {
       //         std::cout << " Elem = " << count[  3 ] ;
       //         std::cout << " }" << std::endl ;
       //         std::cout.flush();
-      }
+    }
+
+    int PerceptMesh::
+    getNumberElementsLocallyOwned()
+    {
+      std::vector<unsigned> count ;
+      stk::mesh::Selector selector(getFEM_meta_data()->locally_owned_part() );
+      stk::mesh::count_entities( selector, *getBulkData(), count );
+      if (count.size() < 3) 
+        {
+          throw std::logic_error("logic error in PerceptMesh::getNumberElements");
+        }
+
+      return count[ element_rank() ];
+      //         std::cout << " Node = " << count[  0 ] ;
+      //         std::cout << " Edge = " << count[  1 ] ;
+      //         std::cout << " Face = " << count[  2 ] ;
+      //         std::cout << " Elem = " << count[  3 ] ;
+      //         std::cout << " }" << std::endl ;
+      //         std::cout.flush();
+    }
 
     //========================================================================================================================
     /// low-level interfaces
@@ -1080,7 +1100,7 @@ namespace stk {
       //std::cout << "tmp1.0 m_fem_meta_data = " << m_fem_meta_data << std::endl;
 
       stk::mesh::fem::FEMMetaData& meta_data = *m_metaData;
-      std::cout << "tmp1 m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
+      //      std::cout << "tmp1 m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
 
 #if 0
        process_read_elementblocks_meta(in_region, meta_data);

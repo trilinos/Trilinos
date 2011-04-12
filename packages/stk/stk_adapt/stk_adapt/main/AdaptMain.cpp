@@ -269,6 +269,7 @@ namespace stk {
       int remove_original_elements = 1;
       int number_refines = 1;
       int proc_rank_field = 0;
+      int query_only = 0;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc = 
@@ -306,6 +307,9 @@ namespace stk {
       run_environment.clp.setOption("enrich"                   , &enrich                   , enrich_options.c_str());
       run_environment.clp.setOption("input_mesh"               , &input_mesh               , "input mesh name");
       run_environment.clp.setOption("output_mesh"              , &output_mesh              , "output mesh name");
+
+      run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
+
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
       run_environment.clp.setOption("block_name"               , &block_name_inc           , block_name_desc_inc.c_str());
       //run_environment.clp.setOption("exclude"                  , &block_name_exc           , block_name_desc_exc.c_str());
@@ -445,6 +449,7 @@ namespace stk {
             if (input_geometry != "")
                 breaker.setGeometryFile(input_geometry);
             breaker.setRemoveOldElements(remove_original_elements);
+            breaker.setQueryPassOnly(query_only == 1);
             //breaker.setIgnoreSideSets(true);
 
             for (int iBreak = 0; iBreak < number_refines; iBreak++)
@@ -456,8 +461,13 @@ namespace stk {
                 breaker.doBreak();
                 if (!eMesh.getRank())
                   {
-                    std::cout << "Refinement pass # " << (iBreak+1) << " ...done" << std::endl;
+                    std::cout << std::endl;
+                    int ib = iBreak;
+                    if (!query_only) ib = 0;
+                    RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), ib , true);
+                    std::cout << std::endl;
                   }
+                
               }
 
             eMesh.saveAs(output_mesh);
