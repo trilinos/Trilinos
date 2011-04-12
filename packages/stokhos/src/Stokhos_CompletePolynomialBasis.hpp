@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -213,15 +211,6 @@ namespace Stokhos {
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
     computeTripleProductTensorNew(ordinal_type order) const;
 
-    /*! 
-     * \brief Computes the number of terms in an expansion of dimension \c dim
-     * and order \c order.
-     */
-    /*!
-     * Returns (order+dim)!/(order!*dim!)
-     */
-    ordinal_type compute_num_terms(ordinal_type dim, ordinal_type order) const;
-
     /*!
      * \brief Compute the 2-D array of basis terms which maps a basis index
      * into the orders for each basis dimension
@@ -259,6 +248,9 @@ namespace Stokhos {
     //! Array of bases
     Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > > bases;
 
+    //! Array storing order of each basis
+    Teuchos::Array<ordinal_type> basis_orders;
+
     //! Tolerance for computing sparse Cijk
     value_type sparse_tol;
 
@@ -273,6 +265,9 @@ namespace Stokhos {
 
     //! 2-D array of basis terms
     Teuchos::Array< Teuchos::Array<ordinal_type> > terms;
+
+    //! Number of terms up to each order
+    Teuchos::Array<ordinal_type> num_terms;
 
     //! Temporary array used in basis evaluation
     mutable Teuchos::Array< Teuchos::Array<value_type> > basis_eval_tmp;

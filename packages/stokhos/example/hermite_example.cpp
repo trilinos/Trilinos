@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     const int p = 5;
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
     for (int i=0; i<d; i++) {
-      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
+      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p-i));
     }
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
@@ -73,9 +73,12 @@ int main(int argc, char **argv)
     Stokhos::OrthogPolyApprox<int,double> u(basis), v(basis), w(basis);
     u.term(0,0) = 1.0;
     for (int i=0; i<d; i++) {
-      u.term(i,1) = 0.4 / d;
-      u.term(i,2) = 0.06 / d;
-      u.term(i,3) = 0.002 / d;
+      if (bases[i]->order() >= 1)
+	u.term(i,1) = 0.4 / d;
+      if (bases[i]->order() >= 2)
+	u.term(i,2) = 0.06 / d;
+      if (bases[i]->order() >= 3)
+	u.term(i,3) = 0.002 / d;
     }
 
     // Compute expansion

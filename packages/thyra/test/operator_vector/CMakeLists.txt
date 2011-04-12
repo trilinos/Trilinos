@@ -117,3 +117,16 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   STANDARD_PASS_OUTPUT
   )
+
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#  DefaultSpmdVectorSpace_ParallelUnitTest
+#  SOURCES
+#    DefaultSpmdVectorSpace_Parallel_UnitTest.cpp
+#    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+#  STANDARD_PASS_OUTPUT
+#  )
+#PACKAGE_ADD_TEST(
+#  DefaultSpmdVectorSpace_ParallelUnitTests
+#  STANDARD_PASS_OUTPUT
+#  NUM_MPI_PROCS 2
+#  )
