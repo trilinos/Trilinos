@@ -1095,7 +1095,7 @@ namespace stk {
 
       //----------------------------------
       // Process Entity Types. Subsetting is possible.
-      //stk::mesh::fem::FEMMetaData meta_data( stk::mesh::fem_entity_rank_names() );
+      //stk::mesh::fem::FEMMetaData meta_data( stk::percept::PerceptMesh::fem_entity_rank_names() );
       //stk::mesh::fem::FEMMetaData& meta_data = *m_metaData;
       //std::cout << "tmp1.0 m_fem_meta_data = " << m_fem_meta_data << std::endl;
 
@@ -1426,12 +1426,12 @@ namespace stk {
               for (int i=0; i < block_count; i++) {
                 Ioss::EntityBlock *fb = entity->get_block(i);
                 stk::io::ioss_add_fields(*part,
-                                         stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                         stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                          fb, Ioss::Field::TRANSIENT);
               }
             } else {
               stk::io::ioss_add_fields(*part,
-                                       stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                       stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                        entity, Ioss::Field::TRANSIENT);
             }
           } else {
@@ -1517,7 +1517,9 @@ namespace stk {
           stk::mesh::Part& part = *parts[ipart];
           stk::mesh::Selector selector(part);
 
-          if (part.name()[0] == '{' || (part.name().find("oldElem") != std::string::npos) )
+          // is_auto_declared_part
+          //if (part.name()[0] == '{' || (part.name().find("oldElem") != std::string::npos) )
+          if (stk::mesh::is_auto_declared_part(part) || (part.name().find("oldElem") != std::string::npos) )
             continue;
 
           if (partName.size() > 0 && part.name() != partName)

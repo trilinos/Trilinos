@@ -404,12 +404,12 @@ void io_example( stk::ParallelMachine comm,
           for (int i=0; i < block_count; i++) {
             Ioss::EntityBlock *fb = entity->get_block(i);
             stk::io::ioss_add_fields(*part,
-                                     stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                     stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                      fb, Ioss::Field::TRANSIENT);
           }
         } else {
           stk::io::ioss_add_fields(*part,
-                                   stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                   stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                    entity, Ioss::Field::TRANSIENT);
         }
       } else {
@@ -489,7 +489,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &me
        */
       stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE,
                                 *part,
-                                stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
 
       /** \todo IMPLEMENT truly handle fields... For this case we
        * are just defining a field for each transient field that is
@@ -497,7 +497,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &me
        */
       stk::io::define_io_fields(entity, Ioss::Field::TRANSIENT,
                                 *part,
-                                stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
 
       const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(*part);
       std::string cell_topo_name = "UNKNOWN";
@@ -546,7 +546,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
        */
       stk::io::define_io_fields(entity, Ioss::Field::TRANSIENT,
                                 *part,
-                                stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
     }
   }
 }
@@ -595,7 +595,7 @@ void process_surface_entity(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMet
         stk::io::set_distribution_factor_field(*fb_part, *distribution_factors_field);
         int face_node_count = fb->topology()->number_nodes();
         stk::mesh::put_field(*distribution_factors_field,
-                             stk::mesh::fem_entity_rank( fb_part->primary_entity_rank() ),
+                             stk::percept::PerceptMesh::fem_entity_rank( fb_part->primary_entity_rank() ),
                              *fb_part, face_node_count);
       }
 
@@ -605,7 +605,7 @@ void process_surface_entity(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMet
        */
       stk::io::define_io_fields(fb, Ioss::Field::TRANSIENT,
                                 *fb_part,
-                                stk::mesh::fem_entity_rank( fb_part->primary_entity_rank() ) );
+                                stk::percept::PerceptMesh::fem_entity_rank( fb_part->primary_entity_rank() ) );
     }
   }
 }
@@ -917,12 +917,12 @@ void process_input_request(Ioss::Region &region,
             Ioss::EntityBlock *fb = entity->get_block(i);
             /// \todo REFACTOR Need filtering mechanism.
             get_field_data(bulk, *part,
-                           stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                           stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                            fb, Ioss::Field::TRANSIENT);
           }
         } else {
           get_field_data(bulk, *part,
-                         stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                         stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                          entity, Ioss::Field::TRANSIENT);
         }
       } else {
@@ -987,12 +987,12 @@ void process_output_request(Ioss::Region &region,
             Ioss::EntityBlock *fb = entity->get_block(i);
             /// \todo REFACTOR Need filtering mechanism.
             put_field_data(bulk, *part,
-                           stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                           stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                            fb, Ioss::Field::TRANSIENT);
           }
         } else {
           put_field_data(bulk, *part,
-                         stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                         stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                          entity, Ioss::Field::TRANSIENT);
         }
       } else {

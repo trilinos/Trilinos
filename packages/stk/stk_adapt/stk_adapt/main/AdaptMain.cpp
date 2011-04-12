@@ -381,7 +381,7 @@ namespace stk {
             //             block_names = UniformRefiner::correctBlockNamesForPartPartConsistency(eMesh, block_names);
 
             // FIXME move this next block of code to a method on UniformRefiner
-            BlockNamesType block_names(stk::mesh::EntityRankEnd+1u);
+            BlockNamesType block_names(stk::percept::EntityRankEnd+1u);
             if (block_name_inc.length())
               {
                 block_names = UniformRefiner::getBlockNames(block_name_inc, eMesh.getRank(), eMesh);

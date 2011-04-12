@@ -38,7 +38,7 @@ namespace stk {
     // FIXME move this to a utils class
     BlockNamesType UniformRefiner::getBlockNames(std::string& block_name, unsigned proc_rank, percept::PerceptMesh& eMesh)
     {
-      BlockNamesType blocks(stk::mesh::EntityRankEnd+1u);
+      BlockNamesType blocks(stk::percept::EntityRankEnd+1u);
       if (block_name.length() == 0)
         return blocks;
 
@@ -512,7 +512,7 @@ namespace stk {
           if (m_breakPattern[ibp])
             {
               stk::mesh::EntityRank irank = m_breakPattern[ibp]->getPrimaryEntityRank();
-              stk::mesh::EntityRank irank_prev = stk::mesh::EntityRankEnd;
+              stk::mesh::EntityRank irank_prev = stk::percept::EntityRankEnd;
               if (ibp > 0) irank_prev = m_breakPattern[ibp-1]->getPrimaryEntityRank();
               if (irank > irank_prev)
                 {
@@ -1033,7 +1033,7 @@ namespace stk {
                                           vector<stk::mesh::Entity *>& new_elements_pool)
     {
       EXCEPTWATCH;
-      static NewSubEntityNodesType s_new_sub_entity_nodes(stk::mesh::EntityRankEnd);
+      static NewSubEntityNodesType s_new_sub_entity_nodes(stk::percept::EntityRankEnd);
 
       NewSubEntityNodesType& new_sub_entity_nodes = s_new_sub_entity_nodes;
 

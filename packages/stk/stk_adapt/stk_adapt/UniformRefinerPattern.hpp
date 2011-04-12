@@ -2346,7 +2346,7 @@ namespace stk {
         EXCEPTWATCH;
         if (block_names_ranks.size() == 0)
           {
-            block_names_ranks.resize(stk::mesh::EntityRankEnd);
+            block_names_ranks.resize(stk::percept::EntityRankEnd);
           }
 
         m_fromParts.resize(0);
@@ -2362,7 +2362,7 @@ namespace stk {
               }
           }
 
-        for (unsigned irank = 0; irank < stk::mesh::EntityRankEnd; irank++)
+        for (unsigned irank = 0; irank < stk::percept::EntityRankEnd; irank++)
           {
             if (m_primaryEntityRank != irank)
               continue;
@@ -2404,7 +2404,8 @@ namespace stk {
                 stk::mesh::Part *  part = *i_part ;
 
                 // FIXME - is there a better way to determine if a part is one of the "standard" parts?
-                if (part->name()[0] == '{')
+                //if (part->name()[0] == '{')   // is_auto_declared_part
+                if ( stk::mesh::is_auto_declared_part(*part) )
                   continue;
 
                 //bool doThisPart = (block_names_include.size() == 0);
