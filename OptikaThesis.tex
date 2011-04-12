@@ -151,4 +151,31 @@ has support for the necessary special building tools required by Qt.
 
 \section{Using Optika}
 At the core of Optika is the ParameterList class from the Teuchos package~\cite{TeuchosPackage}, another part
-of the Trilinos project.
+of the Trilinos project. ParameterLists can be declared in source code or via an XML.
+\begin{figure}
+\centering
+\begin{lstlisting}
+#include ``Teuchos_ParameterList.hpp''
+
+int main(int argc, char* argv[]){
+  using Teuchos::ParameterList;
+  ParameterList myPL(``Name of ParameterList'');
+  ...Add Parameters...
+  return 0;
+}
+\end{lstlisting}
+
+\label{simplePLCode}
+\caption[Basic ParameterList]{basic declaration of a ParameterList object}
+\end{figure}
+\begin{figure}
+\centering
+\begin{lstlisting}
+<ParameterList name="Name Of ParameterList">
+...Parameters...
+</ParameterList>
+\end{lstlisting}
+
+\label{simplePLXML}
+\caption[Basic ParameterList]{basic declaration of a ParameterList object}
+\end{figure}
