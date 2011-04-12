@@ -16,9 +16,10 @@ namespace user_app {
 
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
     buildClosureModels(const std::string& model_id,
-			 const panzer::InputEquationSet& set,
-			 const Teuchos::ParameterList& models,
-			 const Teuchos::ParameterList& default_params) const;
+		       const panzer::InputEquationSet& set,
+		       const Teuchos::ParameterList& models,
+		       const Teuchos::ParameterList& default_params,
+		       const Teuchos::ParameterList& user_data) const;
 
   };
 

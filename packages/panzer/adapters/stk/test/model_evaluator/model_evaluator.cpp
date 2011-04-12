@@ -148,8 +148,10 @@ namespace panzer {
     closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("ION_HEAT_CAPACITY").set<double>("Value",1.0);
 
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,dofManager,*linObjFactory);
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory);
+    Teuchos::ParameterList user_data("User Data");
+
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,dofManager,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
     typedef double ScalarT;
     typedef std::size_t LO;

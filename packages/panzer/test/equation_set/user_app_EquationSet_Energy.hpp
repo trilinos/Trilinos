@@ -20,7 +20,8 @@ namespace user_app {
 		       const panzer::CellData& cell_data,
 		       const bool build_transient_support);
     
-    void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm, const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const;
+      void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm, const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+						 const Teuchos::ParameterList& user_data) const;
 
   protected:
 

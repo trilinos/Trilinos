@@ -41,37 +41,44 @@ namespace panzer {
                  const panzer::CellData cell_data,
                  const panzer::EquationSetFactory& factory);
 
-    void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm) const;
+    void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+					       const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                                 const LinearObjFactory<panzer::Traits> & lof) const;
+                                                 const panzer::LinearObjFactory<panzer::Traits> & lof,
+						 const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-						const Teuchos::ParameterList& models) const;
+						const Teuchos::ParameterList& models,
+						const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 						    const Teuchos::ParameterList& models,
-						    const LinearObjFactory<panzer::Traits> & lof,
+						    const panzer::LinearObjFactory<panzer::Traits> & lof,
 						    const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
-    void buildAndRegisterEquationSetEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm) const;
+    void buildAndRegisterEquationSetEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+						      const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
     void buildAndRegisterGatherScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-                                                        const LinearObjFactory<panzer::Traits> & lof) const;
+                                                        const LinearObjFactory<panzer::Traits> & lof,
+							const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
     void buildAndRegisterClosureModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
 						       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-						       const Teuchos::ParameterList& models) const;
+						       const Teuchos::ParameterList& models,
+						       const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
     void buildAndRegisterInitialConditionEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
 							   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 							   const Teuchos::ParameterList& models,
+							   const panzer::LinearObjFactory<panzer::Traits> & lof,
 							   const Teuchos::ParameterList& user_data) const;
 
     const std::vector<std::string>& getDOFNames() const;
@@ -116,7 +123,8 @@ namespace panzer {
 }
 
 template<typename EvalT>
-void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm) const
+void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+									const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
   using Teuchos::RCP;
@@ -128,14 +136,15 @@ void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::Fie
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    eqstm.getAsObject<EvalT>()->buildAndRegisterEquationSetEvaluators(fm, m_provided_dofs);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterEquationSetEvaluators(fm, m_provided_dofs, user_data);
 
   }
 }
 
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-                                                                          const LinearObjFactory<panzer::Traits> & lof) const
+                                                                          const LinearObjFactory<panzer::Traits> & lof,
+									  const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
   using Teuchos::RCP;
@@ -147,7 +156,7 @@ void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::F
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    eqstm.getAsObject<EvalT>()->buildAndRegisterGatherScatterEvaluators(fm, m_provided_dofs,lof);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterGatherScatterEvaluators(fm, m_provided_dofs,lof,user_data);
 
   }
 }
@@ -155,7 +164,8 @@ void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::F
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
 									 const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-									 const Teuchos::ParameterList& models) const
+									 const Teuchos::ParameterList& models,
+									 const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
   using Teuchos::RCP;
@@ -167,7 +177,7 @@ void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::Fi
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    eqstm.getAsObject<EvalT>()->buildAndRegisterClosureModelEvaluators(fm, m_provided_dofs, factory, models);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterClosureModelEvaluators(fm, m_provided_dofs, factory, models, user_data);
 
   }
 }
@@ -176,6 +186,7 @@ template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterInitialConditionEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
 									     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 									     const Teuchos::ParameterList& models,
+									     const panzer::LinearObjFactory<panzer::Traits> & lof,
 									     const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
@@ -188,7 +199,7 @@ void panzer::PhysicsBlock::buildAndRegisterInitialConditionEvaluatorsForType(PHX
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    eqstm.getAsObject<EvalT>()->buildAndRegisterInitialConditionEvaluators(fm, m_provided_dofs, factory, models, user_data);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterInitialConditionEvaluators(fm, m_provided_dofs, factory, models, lof, user_data);
 
   }
 }

@@ -120,8 +120,10 @@ namespace panzer {
     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
 
-    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,*cm_factory,closure_models,dofManager,elof);
-    fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,*cm_factory,bc_factory,closure_models,elof);
+    Teuchos::ParameterList user_data("User Data");
+
+    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,*cm_factory,closure_models,dofManager,elof,user_data);
+    fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,*cm_factory,bc_factory,closure_models,elof, user_data);
 
     // run tests
     /////////////////////////////////

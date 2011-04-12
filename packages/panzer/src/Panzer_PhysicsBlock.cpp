@@ -81,7 +81,8 @@ void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
 
 // *******************************************************************
 void panzer::PhysicsBlock::
-buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm) const
+buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+				      const Teuchos::ParameterList& user_data) const
 {
   using namespace std;
   using namespace panzer;
@@ -97,7 +98,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm) con
     EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
       eqstm.begin();
     for (; eval_type != eqstm.end(); ++eval_type) {
-      eval_type->buildAndRegisterEquationSetEvaluators(fm, m_provided_dofs);
+      eval_type->buildAndRegisterEquationSetEvaluators(fm, m_provided_dofs, user_data);
     }
   }
 }
@@ -105,7 +106,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm) con
 // *******************************************************************
 void panzer::PhysicsBlock::
 buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                        const LinearObjFactory<panzer::Traits> & lof) const
+                                        const LinearObjFactory<panzer::Traits> & lof,
+					const Teuchos::ParameterList& user_data) const
 {
   using namespace std;
   using namespace panzer;
@@ -121,7 +123,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
       eqstm.begin();
     for (; eval_type != eqstm.end(); ++eval_type) {
-      eval_type->buildAndRegisterGatherScatterEvaluators(fm, m_provided_dofs, lof);
+      eval_type->buildAndRegisterGatherScatterEvaluators(fm, m_provided_dofs, lof, user_data);
     }
   }
 }
@@ -130,7 +132,8 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 void panzer::PhysicsBlock::
 buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-				       const Teuchos::ParameterList& models) const
+				       const Teuchos::ParameterList& models,
+				       const Teuchos::ParameterList& user_data) const
 {
   using namespace std;
   using namespace panzer;
@@ -146,7 +149,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
       eqstm.begin();
     for (; eval_type != eqstm.end(); ++eval_type) {
-      eval_type->buildAndRegisterClosureModelEvaluators(fm, m_provided_dofs, factory, models);
+      eval_type->buildAndRegisterClosureModelEvaluators(fm, m_provided_dofs, factory, models, user_data);
     }
   }
 }
@@ -156,26 +159,16 @@ void panzer::PhysicsBlock::
 buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 					   const Teuchos::ParameterList& models,
-					   const LinearObjFactory<panzer::Traits> & lof,
+					   const panzer::LinearObjFactory<panzer::Traits> & lof,
 					   const Teuchos::ParameterList& user_data) const
 {
   using namespace std;
   using namespace panzer;
   using namespace Teuchos;
 
-  // Loop over equation set template managers
-  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
-    eq_set = m_equation_sets.begin();
-  for (;eq_set != m_equation_sets.end(); ++eq_set) {
+  // Only use the <Residual> evaluation type, so pass through to type specific call
+  this->buildAndRegisterInitialConditionEvaluatorsForType<panzer::Traits::Residual>(fm, factory, models, lof, user_data);
 
-    // Loop over evaluation types
-    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
-      eqstm.begin();
-    for (; eval_type != eqstm.end(); ++eval_type) {
-      eval_type->buildAndRegisterInitialConditionEvaluators(fm, m_provided_dofs, factory, models, lof, user_data);
-    }
-  }
 }
 
 // *******************************************************************

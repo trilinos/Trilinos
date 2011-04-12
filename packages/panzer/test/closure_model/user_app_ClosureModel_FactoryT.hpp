@@ -20,7 +20,8 @@ user_app::MyModelFactory<EvalT>::
 buildClosureModels(const std::string& model_id,
 		   const panzer::InputEquationSet& set,
 		   const Teuchos::ParameterList& models, 
-		   const Teuchos::ParameterList& default_params) const
+		   const Teuchos::ParameterList& default_params,
+		   const Teuchos::ParameterList& user_data) const
 {
 
   using std::string;

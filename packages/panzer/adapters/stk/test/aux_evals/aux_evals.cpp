@@ -176,9 +176,11 @@ namespace panzer {
     auxEval["eblock-0_0"] = Teuchos::rcp(new panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits>);
     auxEval["eblock-0_0"]->buildAndPushBackObjects(cb);
  
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,dofManager,*linObjFactory,auxEval);
+    Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory);
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,dofManager,*linObjFactory,auxEval, user_data);
+
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
     fmb->writeVolumeGraphvizDependencyFiles("field_manager",physicsBlocks);
 

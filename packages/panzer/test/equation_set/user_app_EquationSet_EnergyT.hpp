@@ -76,7 +76,8 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
 template <typename EvalT>
 void user_app::EquationSet_Energy<EvalT>::
 buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				      const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const
+				      const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+				      const Teuchos::ParameterList& user_data) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;

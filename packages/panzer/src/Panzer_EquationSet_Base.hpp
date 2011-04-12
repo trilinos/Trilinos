@@ -29,22 +29,25 @@ namespace panzer {
     virtual ~EquationSetBase() {}
     
     virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const = 0;
+						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+						       const Teuchos::ParameterList& user_data) const = 0;
     
     virtual void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 							 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
-                                                         const LinearObjFactory<panzer::Traits> & lof) const = 0;
+                                                         const LinearObjFactory<panzer::Traits> & lof,
+							 const Teuchos::ParameterList& user_data) const = 0;
     
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
 							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-							const Teuchos::ParameterList& models) const = 0;
+							const Teuchos::ParameterList& models,
+							const Teuchos::ParameterList& user_data) const = 0;
 
     virtual void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 							    const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
 							    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 							    const Teuchos::ParameterList& models,
-							    const LinearObjFactory<panzer::Traits> & lof,
+							    const panzer::LinearObjFactory<panzer::Traits> & lof,
 							    const Teuchos::ParameterList& user_data) const = 0;
     
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const = 0;

@@ -25,7 +25,8 @@ namespace panzer {
     virtual  buildClosureModels(const std::string& model_id,
 				const panzer::InputEquationSet& set,
 				const Teuchos::ParameterList& models,
-				const Teuchos::ParameterList& default_params) const = 0;
+				const Teuchos::ParameterList& default_params,
+				const Teuchos::ParameterList& user_data) const = 0;
 
   };
   

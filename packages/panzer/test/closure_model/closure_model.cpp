@@ -54,21 +54,23 @@ namespace panzer {
 
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators;
 
-    evaluators = mf.buildClosureModels(ies.model_id, ies, p, default_params);
+    Teuchos::ParameterList user_data("User Data");
+
+    evaluators = mf.buildClosureModels(ies.model_id, ies, p, default_params, user_data);
 
     TEST_EQUALITY(evaluators->size(), 8);
 
     user_app::MyModelFactory_TemplateBuilder builder;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> model_factory;
     model_factory.buildObjects(builder);
-    evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params);
+    evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params, user_data);
 
     TEST_EQUALITY(evaluators->size(), 8);
 
     // Add an unsupported type
     p.sublist("fluid model").sublist("garbage").set<std::string>("Value","help!");
     
-    TEST_THROW(model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params), std::logic_error);
+    TEST_THROW(model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params, user_data), std::logic_error);
 
   }
 

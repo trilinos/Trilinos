@@ -83,7 +83,8 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
                                             const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
                                             const Teuchos::RCP<const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > > 
-                                               & auxManager)
+					       & auxManager,
+					    const Teuchos::ParameterList& user_data)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -105,9 +106,9 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
           = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
     
     // use the physics block to register evaluators
-    pb->buildAndRegisterEquationSetEvaluators(*fm);
-    pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory);
-    pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models);
+    pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
+    pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory, user_data);
+    pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models, user_data);
 
     if(auxManager!=Teuchos::null) {
        // find the set of auxilary factories for this block
@@ -154,7 +155,8 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
 			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                            const panzer::BCStrategyFactory& bc_factory,
 			   const Teuchos::ParameterList& closure_models,
-                           const panzer::LinearObjFactory<panzer::Traits> & lo_factory)
+                           const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
+			   const Teuchos::ParameterList& user_data)
 {
 
   // for convenience build a map (element block id => physics block)

@@ -112,8 +112,9 @@ namespace panzer {
                                   const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
                                   const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > 
-                                     & auxManager)
-    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,closure_models,dofManager,lo_factory,Teuchos::rcpFromRef(auxManager)); }
+				  & auxManager,
+				  const Teuchos::ParameterList& user_data)
+    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,closure_models,dofManager,lo_factory,Teuchos::rcpFromRef(auxManager), user_data); }
 
     /** Setup the volume field managers. This uses the passed in <code>dofManager</code>
       * and sets it for permenant use.
@@ -124,8 +125,9 @@ namespace panzer {
 				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 				  const Teuchos::ParameterList& closure_models,
                                   const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
-                                  const LinearObjFactory<panzer::Traits> & lo_factory)
-    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,closure_models,dofManager,lo_factory,Teuchos::null); }
+                                  const LinearObjFactory<panzer::Traits> & lo_factory,
+				  const Teuchos::ParameterList& user_data)
+    { setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,closure_models,dofManager,lo_factory,Teuchos::null, user_data); }
 
     /** Build the BC field managers.
       */
@@ -136,7 +138,8 @@ namespace panzer {
 			      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                               const panzer::BCStrategyFactory& bc_factory,
 			      const Teuchos::ParameterList& closure_models,
-                              const LinearObjFactory<panzer::Traits> & lo_factory);
+                              const LinearObjFactory<panzer::Traits> & lo_factory,
+			      const Teuchos::ParameterList& user_data);
 
     void writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
 					    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const;
@@ -151,7 +154,8 @@ namespace panzer {
                                   const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
                                   const Teuchos::RCP<const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > >
-                                     & auxManger);
+				  & auxManger,
+				  const Teuchos::ParameterList& user_data);
 
     //! Phalanx volume field managers for each element block.
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >

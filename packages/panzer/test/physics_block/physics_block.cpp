@@ -172,15 +172,17 @@ namespace panzer {
 
     PHX::FieldManager<panzer::Traits> fm;
 
-    physics_block->buildAndRegisterEquationSetEvaluators(fm);
-    physics_block->buildAndRegisterGatherScatterEvaluators(fm,elof);
+    Teuchos::ParameterList user_data("User Data");
+
+    physics_block->buildAndRegisterEquationSetEvaluators(fm, user_data);
+    physics_block->buildAndRegisterGatherScatterEvaluators(fm, elof, user_data);
 
     Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
       panzer_test_utils::buildModelFactory(); 
 
     Teuchos::RCP<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
 
-    physics_block->buildAndRegisterClosureModelEvaluators(fm,*factory,*models);
+    physics_block->buildAndRegisterClosureModelEvaluators(fm,*factory,*models, user_data);
   }
 
   TEUCHOS_UNIT_TEST(physics_block, elementBlockID)
@@ -202,20 +204,22 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
 
+    Teuchos::ParameterList user_data("User Data");
+
     PHX::FieldManager<panzer::Traits> fm;
 
-    physics_block->buildAndRegisterEquationSetEvaluatorsForType<panzer::Traits::Residual>(fm);
-    physics_block->buildAndRegisterGatherScatterEvaluatorsForType<panzer::Traits::Residual>(fm,elof);
-    physics_block->buildAndRegisterEquationSetEvaluatorsForType<panzer::Traits::Jacobian>(fm);
-    physics_block->buildAndRegisterGatherScatterEvaluatorsForType<panzer::Traits::Jacobian>(fm,elof);
+    physics_block->buildAndRegisterEquationSetEvaluatorsForType<panzer::Traits::Residual>(fm, user_data);
+    physics_block->buildAndRegisterGatherScatterEvaluatorsForType<panzer::Traits::Residual>(fm, elof, user_data);
+    physics_block->buildAndRegisterEquationSetEvaluatorsForType<panzer::Traits::Jacobian>(fm, user_data);
+    physics_block->buildAndRegisterGatherScatterEvaluatorsForType<panzer::Traits::Jacobian>(fm, elof, user_data);
 
     Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
       panzer_test_utils::buildModelFactory(); 
 
     Teuchos::RCP<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
 
-    physics_block->buildAndRegisterClosureModelEvaluatorsForType<panzer::Traits::Residual>(fm, *factory, *models);
-    physics_block->buildAndRegisterClosureModelEvaluatorsForType<panzer::Traits::Jacobian>(fm, *factory, *models);
+    physics_block->buildAndRegisterClosureModelEvaluatorsForType<panzer::Traits::Residual>(fm, *factory, *models, user_data);
+    physics_block->buildAndRegisterClosureModelEvaluatorsForType<panzer::Traits::Jacobian>(fm, *factory, *models, user_data);
   }
 
 
