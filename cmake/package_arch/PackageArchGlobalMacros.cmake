@@ -20,6 +20,28 @@ INCLUDE(Split)
 INCLUDE(RemoveGlobalDuplicates)
 
 
+
+
+#
+# Define and option to include a file that reads in a bunch of options
+#
+#
+
+MACRO(PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE)
+
+
+  SET( ${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE "" CACHE FILEPATH
+    "Name of an optional file that is included first to define any cmake options with SET( ... CACHE ...) calls." )
+
+  IF (${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE)
+    #MESSAGE("Reading in configuration options first form ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE} ...")
+    INCLUDE(${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE})
+  ENDIF()
+
+
+ENDMACRO()
+
+
 #
 # Define all of the standard global package architecture options.
 #

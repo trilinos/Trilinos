@@ -115,6 +115,7 @@ C) Configuring (Makefile Generator)
   CMakeCache.txt file (and other generated files) and then directions
   on how to create a different build directory as shown above.
 
+
 (*) Basic configuration of Trilinos:
 
   a) [Recommended] Create a 'do-configure' script like:
@@ -123,23 +124,52 @@ C) Configuring (Makefile Generator)
         
         cmake \
           -D CMAKE_BUILD_TYPE:STRING=DEBUG \
-          -D Trilinos_ENABLE_<PACKAGE>:BOOL=ON \
           -D Trilinos_ENABLE_TESTS:BOOL=ON \
           $EXTRA_ARGS \
           ${TRILINOS_HOME}
 
+      and then run it with:
+
+        ./do-configure [OTHER OPTIONS] -DTrilinos_ENABLE_<PACKAGE>=ON
+
       where <PACKAGE> is Epetra, AztecOO, etc. and TRILINOS_HOME is set to the
       Trilinos source base directory (or your can just give it explicitly).
 
-      You can then run the script as:
-
-        $ ./do-configure [OTHER_OPTIONS]
-
       See Trilinos/sampleScripts/*cmake for real examples.
 
-  b) Using ccmake to configure:
+  b) [Recommended] Create a CMake file fragment and point to it.
+
+    Create a do-configure script like:
+
+        EXTRA_ARGS=$@
+        
+        cmake \
+          -D Trilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=MyConfigureOptions.cmake \
+          -D Trilinos_ENABLE_TESTS:BOOL=ON \
+          $EXTRA_ARGS \
+          ${TRILINOS_HOME}
+       
+   where MyConfigureOptions.cmake might look like:
+
+     SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "")
+     SET(Trilinos_ENABLE_CHECKED_STL ON CACHE BOOL "")
+     SET(BUILD_SHARED_LIBS ON CACHE BOOL "")
+     ...
+
+   Using a configuration fragement file allows for better reuse of configure
+   options across different configure scripts and better version control of
+   configure options.
+
+  c) Using ccmake to configure:
 
     $ ccmake $TRILINOS_HOME
+
+  d) Using the QT CMake configuration GUI
+
+    On systems whre the QT CMake GUI is installed (e.g. Windows) the CMake GUI
+    can be a nice way to configure Trilinos if you are a user.  To make your
+    configuration easily repeatable, you might want to create a fragement file
+    and just load it by setting Trilinos_CONFIGURE_OPTIONS_FILE in the GUI.
 
 
 (*) Selecting the list of packages to enable:
