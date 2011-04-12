@@ -18,7 +18,6 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/DiagWriter.hpp>
-#include <stk_mesh/base/Trace.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>

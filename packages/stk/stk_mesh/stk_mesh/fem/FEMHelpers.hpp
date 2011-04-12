@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -84,17 +84,6 @@ template< class Top >
 Part &declare_part(FEMMetaData& meta_data, const std::string &name) {
   return meta_data.declare_part(name, shards::getCellTopologyData<Top>());
 }
-
-/** \brief  Local count selected entities of each type.
- *
- * \param selector
- * \param mesh
- * \param count
- */
-void count_entities(
-                  const Selector & selector ,
-                  const BulkData & mesh ,
-                  std::vector<EntityRank> & count );
 
 /**
  * Given an entity, subcell_rank, and subcell_id, return the nodes

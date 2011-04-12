@@ -178,6 +178,7 @@ void EntityRepository::set_entity_sync_count( Entity & e, size_t count)
 void EntityRepository::set_entity_owner_rank( Entity & e, unsigned owner_rank)
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::set_entity_owner_rank", LOG_ENTITY, e.key());
+  DiagIfWatching(LOG_ENTITY, e.key(), "new owner: " << owner_rank);
 
   bool changed = e.m_entityImpl.set_owner_rank(owner_rank);
   if ( changed ) {

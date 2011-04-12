@@ -37,8 +37,6 @@ FEMMetaData::FEMMetaData()
 : 
     m_fem_initialized(false),
     m_spatial_dimension(0),
-    m_edge_rank(INVALID_RANK),
-    m_face_rank(INVALID_RANK),
     m_side_rank(INVALID_RANK),
     m_element_rank(INVALID_RANK)
 {
@@ -51,8 +49,6 @@ FEMMetaData::FEMMetaData(size_t spatial_dimension,
   : 
     m_fem_initialized(false),
     m_spatial_dimension(0),
-    m_edge_rank(INVALID_RANK),
-    m_face_rank(INVALID_RANK),
     m_side_rank(INVALID_RANK),
     m_element_rank(INVALID_RANK)
 {
@@ -69,8 +65,6 @@ FEMMetaData::FEMMetaData(mesh::MetaData& meta,
   : m_meta_data(meta),
     m_fem_initialized(false),
     m_spatial_dimension(0),
-    m_edge_rank(INVALID_RANK),
-    m_face_rank(INVALID_RANK),
     m_side_rank(INVALID_RANK),
     m_element_rank(INVALID_RANK)
 {
@@ -112,8 +106,6 @@ void FEMMetaData::internal_set_spatial_dimension_and_ranks(size_t spatial_dimens
   // node = 0, edge = 1, face = 2, side = 2, element = 3
   // spatial_dimension = 4
   // node = 0, edge = 1, face = 2, side = 3, element = 4
-  m_edge_rank = 1;
-  m_face_rank = 2;
   m_side_rank = m_spatial_dimension - 1;
   m_element_rank = m_spatial_dimension;
 
@@ -157,8 +149,8 @@ void FEMMetaData::internal_declare_known_cell_topology_parts()
 
   else if (m_spatial_dimension == 3) {
 
-    register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Line<2> >()), m_edge_rank);
-    register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Line<3> >()), m_edge_rank);
+    register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Line<2> >()), EDGE_RANK);
+    register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Line<3> >()), EDGE_RANK);
 
     register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()), m_side_rank);
     register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Triangle<6> >()), m_side_rank);
