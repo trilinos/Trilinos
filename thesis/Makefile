@@ -1,6 +1,6 @@
 all: KurtisNusbaum.pdf
 
-KurtisNusbaum.pdf: KurtisNusbaum.tex 
+KurtisNusbaum.pdf: KurtisNusbaum.tex ../OptikaThesis.tex
 	pdflatex KurtisNusbaum
 	bibtex KurtisNusbaum
 	pdflatex KurtisNusbaum

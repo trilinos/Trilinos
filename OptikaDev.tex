@@ -1,3 +1,5 @@
+\section{The Problem}
+
 \section{Initial Planning and Development}
 In Fall of 2008, Dr. Mike Heroux identified a need for
 the Trilinos Framework\footnote{Optika is part of the Trilinos Project~\cite{1089021}.} to include some sort of GUI package. Dr. Heroux wanted 
@@ -23,9 +25,9 @@ After some deliberation, the following initial solutions were decided upon:
 
 	\begin{itemize}
 		\item The GUI would be laid out in a hierarchical fashion as shown in
-		Figure \ref{paramlistFigure}. Parameters would be organized into lists and sublists. This
-		would allow for a clear organization of the parameters as well as
-		intrinsically demonstrate the relationships between them.
+		Figure \ref{paramlistFigure}. Parameters would be organized into lists and 
+    sublists. This would allow for a clear organization of the parameters as 
+    well as intrinsically demonstrate the relationships between them.
 		\begin{figure}
 			\centering
 			\begin{picture}(50,150)(0,0)
@@ -112,17 +114,20 @@ After some deliberation, the following initial solutions were decided upon:
 	\end{itemize}
 
 \section{Early Development}
-The first several months of development were spent on creating and implementing the XML
-specification. The name of the XML specification went through several revisions but was
-eventually called Dependent Parameter Markup Language (DPML).
+The first several months of development were spent on creating and implementing 
+the XML specification. The name of the XML specification went through several 
+revisions but was eventually called Dependent Parameter Markup Language (DPML).
 
-After several months of development we realized that creating an entirely new way of specifying 
-parameters might hinder adoption of Optika. We also realized that Trilinos actually had
-a ParameterList class in the Teuchos~\cite{TeuchosPackage} package. The ParameterList seemed to be better than DPML for
+After several months of development we realized that creating an entirely new 
+way of specifying parameters might hinder adoption of Optika. We also realized 
+that Trilinos actually had
+a ParameterList class in the Teuchos~\cite{TeuchosPackage} package. The 
+ParameterList seemed to be better than DPML for
 several reasons:
 	\begin{itemize}
 		\item It was already heavily adopted.
-		\item It had the necessary hierarchical nature (like described in figure~\ref{paramlistFigure}).
+		\item It had the necessary hierarchical nature (like described in 
+    figure~\ref{paramlistFigure}).
 		\item It was serializable to and from XML.
 	\end{itemize}
 
