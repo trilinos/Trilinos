@@ -128,7 +128,7 @@ void ModeLaplace1DQ1::preProcess() {
 void ModeLaplace1DQ1::makeMap() {
 
   int globalSize = nX - 1;
-  assert(globalSize > MyComm.NumProc());
+  TEST_FOR_EXCEPTION(globalSize <= MyComm.NumProc(),std::logic_error,"Parameter error in ModeLaplace1DQ1.");
 
   // Create a uniform distribution of the unknowns across processors
   Map = new Epetra_Map(globalSize, 0, MyComm);

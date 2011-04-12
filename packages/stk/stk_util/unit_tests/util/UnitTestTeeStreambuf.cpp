@@ -31,21 +31,21 @@ STKUNIT_UNIT_TEST(UnitTestTeeStreambuf, UnitTest)
   
   my_out << message1;
 
-  STKUNIT_ASSERT_EQUAL(dest1.str(), message1);
-  STKUNIT_ASSERT_EQUAL(dest2.str(), message1);
+  STKUNIT_ASSERT_EQUAL((dest1.str() == message1), true);
+  STKUNIT_ASSERT_EQUAL((dest2.str() == message1), true);
 
   out_tee_streambuf.remove(&dest2);
 
   my_out << message2;
   
-  STKUNIT_ASSERT_EQUAL(dest1.str(), message3);
-  STKUNIT_ASSERT_EQUAL(dest2.str(), message1);
+  STKUNIT_ASSERT_EQUAL((dest1.str() == message3), true);
+  STKUNIT_ASSERT_EQUAL((dest2.str() == message1), true);
 
   out_tee_streambuf.remove(&dest1);
 
   my_out << message2;
 
-  STKUNIT_ASSERT_EQUAL(dest1.str(), message3);
-  STKUNIT_ASSERT_EQUAL(dest2.str(), message1);
+  STKUNIT_ASSERT_EQUAL((dest1.str() == message3), true);
+  STKUNIT_ASSERT_EQUAL((dest2.str() == message1), true);
 }
 

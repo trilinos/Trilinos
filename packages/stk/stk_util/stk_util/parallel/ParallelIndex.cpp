@@ -6,4 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+//add a dummy symbol to keep certain linkers from warning about
+//this file having no symbols.
+int dummy_parallelindex_symbol(){return 0;}
 

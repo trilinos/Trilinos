@@ -211,9 +211,9 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_B
       NumRecv_ += targetMap.MaxElementSize(); // Count total number of entries to receive (currently need max)
     }
 
-    if (NumExportIDs_>0) delete [] ExportGIDs;
     if (LenCRemoteGIDs>0) delete [] cRemoteGIDs;
   }
+  if (NumExportIDs_>0) delete [] ExportGIDs;
   if (NumTargetIDs>0) delete [] TargetGIDs;
   if (NumSourceIDs>0) delete [] SourceGIDs;
   

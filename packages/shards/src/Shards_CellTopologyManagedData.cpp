@@ -49,6 +49,15 @@ namespace shards {
 
 CellTopologyManagedData *
 createCellTopology(
+  const std::string & name )
+{
+  return new CellTopologyManagedData( name );
+}
+
+
+
+CellTopologyManagedData *
+createCellTopology(
   const std::string & name,
   const unsigned      node_count )
 {
@@ -91,6 +100,42 @@ createCellTopology( const std::string                             & name,
 
 
 //----------------------------------------------------------------------
+
+CellTopologyManagedData::CellTopologyManagedData(
+  const std::string & name_)
+  : m_name(name_),
+    m_subcell(1),
+    m_node_map()
+{
+ 
+  // This 1-subcell is the cell itself, will be assigned to subcell[1]
+  m_subcell[0].topology = this;
+  m_subcell[0].node     = index_identity_array();
+
+  base = 0;
+  name = m_name.c_str();
+  key  = 0 ;
+  dimension              = 0;
+  vertex_count           = 0 ;
+  node_count             = 0 ;                                  // PBB 12-03-08
+  edge_count             = 0 ;
+  side_count             = 0 ;
+  subcell_homogeneity[0] = 0 ;
+  subcell_homogeneity[1] = 0 ;
+  subcell_homogeneity[2] = 0 ;
+  subcell_homogeneity[3] = 0 ;
+  subcell_count[0]       = 0 ;
+  subcell_count[1]       = 0 ;
+  subcell_count[2]       = 0 ;
+  subcell_count[3]       = 0 ;
+  subcell[0]             = 0 ;
+  subcell[1]             = 0 ;
+  subcell[2]             = NULL ;
+  subcell[3]             = NULL ;
+  side                   = NULL ;
+  edge                   = NULL ;
+}
+
 
 CellTopologyManagedData::CellTopologyManagedData(
   const std::string & name_,

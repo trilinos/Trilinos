@@ -11,7 +11,6 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <Shards_CellTopology.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>

@@ -174,6 +174,18 @@ namespace Stokhos {
       return Pecos::MODERATE_LINEAR; };
 #endif 
 
+    /*! 
+     * \brief Clone this object with the option of building a higher order
+     * basis.
+     */
+    /*!
+     * This method is following the Prototype pattern (see Design Pattern's textbook).
+     * The slight variation is that it allows the order of the polynomial to be modified,
+     * otherwise an exact copy is formed. The use case for this is creating basis functions
+     * for column indices in a spatially varying adaptive refinement context.
+     */
+    virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const;
+
     //@}
 
     //! Evaluate basis polynomials and their derivatives at given point \c point

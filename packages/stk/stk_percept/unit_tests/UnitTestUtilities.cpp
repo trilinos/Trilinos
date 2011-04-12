@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009 Sandia Corporation.                              */
+/*    Copyright 2009, 2011 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -16,7 +16,6 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <Shards_BasicTopologies.hpp>
@@ -267,7 +266,7 @@ void io_example( stk::ParallelMachine comm,
 
   //----------------------------------
   // Process Entity Types. Subsetting is possible.
-  stk::mesh::fem::FEMMetaData meta_data(3, stk::mesh::fem_entity_rank_names() );
+  stk::mesh::fem::FEMMetaData meta_data(3, stk::mesh::fem::entity_rank_names(3) );
   stk::mesh::Part & universal = meta_data.universal_part();
 #if IOTEST
   process_elementblocks(in_region, meta_data);
@@ -287,7 +286,7 @@ void io_example( stk::ParallelMachine comm,
   enum { SpatialDim = 3 };
 
   stk::mesh::put_field(
-    coordinates_field , mesh::Node , universal , SpatialDim );
+    coordinates_field , mesh::fem::FEMMetaData::NODE_RANK , universal , SpatialDim );
 
   //--------------------------------
 
@@ -321,7 +320,7 @@ void io_example( stk::ParallelMachine comm,
 
   meta_data.declare_field_relation(
     elem_node_coord ,
-    & mesh::element_node_stencil<void> ,
+    stk::mesh::fem::get_element_node_stencil(SpatialDim),
     coordinates_field );
 
   // Declare the size of the aggressive "gather" field
@@ -385,7 +384,7 @@ void io_example( stk::ParallelMachine comm,
   out_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
   // Special processing for nodeblock (all nodes in model)...
-  stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::Node,
+  stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
                            out_region.get_node_blocks()[0],
                            Ioss::Field::TRANSIENT);
 
@@ -405,12 +404,12 @@ void io_example( stk::ParallelMachine comm,
           for (int i=0; i < block_count; i++) {
             Ioss::EntityBlock *fb = entity->get_block(i);
             stk::io::ioss_add_fields(*part,
-                                     stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                     stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                      fb, Ioss::Field::TRANSIENT);
           }
         } else {
           stk::io::ioss_add_fields(*part,
-                                   stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                   stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                    entity, Ioss::Field::TRANSIENT);
         }
       } else {
@@ -456,14 +455,14 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
   stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
     meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
-  stk::mesh::put_field( coord_field, stk::mesh::Node, meta.universal_part(),
+  stk::mesh::put_field( coord_field, stk::mesh::fem::FEMMetaData::NODE_RANK, meta.universal_part(),
                         spatial_dim);
 
   /** \todo IMPLEMENT truly handle fields... For this case we are
    * just defining a field for each transient field that is present
    * in the mesh...
    */
-  stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::Node);
+  stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::fem::FEMMetaData::NODE_RANK);
 }
 
 // ========================================================================
@@ -490,7 +489,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &me
        */
       stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE,
                                 *part,
-                                stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
 
       /** \todo IMPLEMENT truly handle fields... For this case we
        * are just defining a field for each transient field that is
@@ -498,7 +497,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &me
        */
       stk::io::define_io_fields(entity, Ioss::Field::TRANSIENT,
                                 *part,
-                                stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
 
       const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(*part);
       std::string cell_topo_name = "UNKNOWN";
@@ -516,7 +515,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &me
 void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
 {
   const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-  stk::io::default_part_processing(node_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk::mesh::Node);
+  stk::io::default_part_processing(node_sets, stk::mesh::fem::FEMMetaData::get_meta_data(meta), stk::mesh::fem::FEMMetaData::NODE_RANK);
 
   /** \todo REFACTOR should "distribution_factor" be a default field
    * that is automatically declared on all objects that it exists
@@ -539,7 +538,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
       assert(part != NULL);
       assert(entity->field_exists("distribution_factors"));
 
-      stk::mesh::put_field(distribution_factors_field, stk::mesh::Node, *part);
+      stk::mesh::put_field(distribution_factors_field, stk::mesh::fem::FEMMetaData::NODE_RANK, *part);
 
       /** \todo IMPLEMENT truly handle fields... For this case we
        * are just defining a field for each transient field that is
@@ -547,7 +546,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
        */
       stk::io::define_io_fields(entity, Ioss::Field::TRANSIENT,
                                 *part,
-                                stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
     }
   }
 }
@@ -596,7 +595,7 @@ void process_surface_entity(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMet
         stk::io::set_distribution_factor_field(*fb_part, *distribution_factors_field);
         int face_node_count = fb->topology()->number_nodes();
         stk::mesh::put_field(*distribution_factors_field,
-                             stk::mesh::fem_entity_rank( fb_part->primary_entity_rank() ),
+                             stk::percept::PerceptMesh::fem_entity_rank( fb_part->primary_entity_rank() ),
                              *fb_part, face_node_count);
       }
 
@@ -606,7 +605,7 @@ void process_surface_entity(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMet
        */
       stk::io::define_io_fields(fb, Ioss::Field::TRANSIENT,
                                 *fb_part,
-                                stk::mesh::fem_entity_rank( fb_part->primary_entity_rank() ) );
+                                stk::percept::PerceptMesh::fem_entity_rank( fb_part->primary_entity_rank() ) );
     }
   }
 }
@@ -663,7 +662,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
   Ioss::NodeBlock *nb = node_blocks[0];
 
   std::vector<stk::mesh::Entity*> nodes;
-  stk::io::get_entity_list(nb, stk::mesh::Node, bulk, nodes);
+  stk::io::get_entity_list(nb, stk::mesh::fem::FEMMetaData::NODE_RANK, bulk, nodes);
 
   /** \todo REFACTOR Application would probably store this field
    * (and others) somewhere after the declaration instead of
@@ -759,9 +758,9 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
       std::vector<stk::mesh::Entity*> nodes(node_count);
       for(int i=0; i<node_count; ++i) {
-        nodes[i] = bulk.get_entity( stk::mesh::Node, node_ids[i] );
+        nodes[i] = bulk.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, node_ids[i] );
         if (nodes[i] != NULL)
-          bulk.declare_entity(stk::mesh::Node, node_ids[i], add_parts );
+          bulk.declare_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node_ids[i], add_parts );
       }
 
 
@@ -898,7 +897,7 @@ void process_input_request(Ioss::Region &region,
   const stk::mesh::fem::FEMMetaData & meta = stk::mesh::fem::FEMMetaData::get(bulk);
 
   // ??? Get field data from nodeblock...
-  get_field_data(bulk, meta.universal_part(), stk::mesh::Node,
+  get_field_data(bulk, meta.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
                  region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
   const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -918,12 +917,12 @@ void process_input_request(Ioss::Region &region,
             Ioss::EntityBlock *fb = entity->get_block(i);
             /// \todo REFACTOR Need filtering mechanism.
             get_field_data(bulk, *part,
-                           stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                           stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                            fb, Ioss::Field::TRANSIENT);
           }
         } else {
           get_field_data(bulk, *part,
-                         stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                         stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                          entity, Ioss::Field::TRANSIENT);
         }
       } else {
@@ -965,7 +964,7 @@ void process_output_request(Ioss::Region &region,
   // Special processing for nodeblock (all nodes in model)...
   const stk::mesh::fem::FEMMetaData & meta = stk::mesh::fem::FEMMetaData::get(bulk);
 
-  put_field_data(bulk, meta.universal_part(), stk::mesh::Node,
+  put_field_data(bulk, meta.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
                  region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
   const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -988,12 +987,12 @@ void process_output_request(Ioss::Region &region,
             Ioss::EntityBlock *fb = entity->get_block(i);
             /// \todo REFACTOR Need filtering mechanism.
             put_field_data(bulk, *part,
-                           stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                           stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                            fb, Ioss::Field::TRANSIENT);
           }
         } else {
           put_field_data(bulk, *part,
-                         stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                         stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                          entity, Ioss::Field::TRANSIENT);
         }
       } else {
@@ -1037,7 +1036,7 @@ void my_test(
 
         mesh::Entity & elem = bucket[i] ;
 
-        const mesh::PairIterRelation elem_nodes = elem.relations( mesh::Node );
+        const mesh::PairIterRelation elem_nodes = elem.relations( mesh::fem::FEMMetaData::NODE_RANK );
 
         if ( elem_nodes.size() == 8 ) {
 

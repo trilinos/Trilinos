@@ -46,7 +46,7 @@ namespace stk {
         static vector<quad_tuple_type> elems(4);
 
         CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         //stk::mesh::Part & active = mesh->ActivePart();
         //stk::mesh::Part & quad4  = mesh->QuadPart();
@@ -102,7 +102,7 @@ namespace stk {
                 fdata[0] = double(newElement.owner_rank());
               }
 
-            eMesh.get_bulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+            eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 
@@ -114,10 +114,10 @@ namespace stk {
                 }
 
             }
-            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
-            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
+            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
+            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
+            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
+            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
 
 
             element_pool++;

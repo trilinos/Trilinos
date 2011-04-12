@@ -45,7 +45,7 @@ namespace {
   [ save as animation with 60fps ]
 **/
 
-using stk::mesh::fem::NODE_RANK;
+static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 typedef stk::mesh::fixtures::GearsFixture::CartesianField CartesianField;
 typedef stk::mesh::Field<int> IntField;

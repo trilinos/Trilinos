@@ -67,10 +67,10 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/BlockGmres/PseudoBlockGmresEpetraExFile.cpp
+/** \example BlockGmres/PseudoBlockGmresEpetraExFile.cpp
     This is an example of how to use the Belos::PseudoBlockGmresSolMgr solver manager.
 */
-/** \example epetra/example/BlockGmres/PseudoBlockPrecGmresEpetraExFile.cpp
+/** \example BlockGmres/PseudoBlockPrecGmresEpetraExFile.cpp
     This is an example of how to use the Belos::PseudoBlockGmresSolMgr solver manager with an Ifpack preconditioner.
 */
 

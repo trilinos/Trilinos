@@ -71,13 +71,13 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
   {
     std::string linux_name("ThisIsJunk");
     std::string demangled_name = stk::demangle(linux_name.c_str());
-    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+    STKUNIT_ASSERT_EQUAL((linux_name == demangled_name), true);
   }
 
   {
     std::string linux_name("bool ()()");
     std::string demangled_name = stk::demangle(typeid(utest_demangle).name());
-    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+    STKUNIT_ASSERT_EQUAL((linux_name == demangled_name), true);
   }
 
   {
@@ -87,7 +87,7 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
 
     std::string linux_name("std::vector<double, std::allocator<double> >");
     std::string demangled_name = stk::demangle(typeid(double_vector).name());
-    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+    STKUNIT_ASSERT_EQUAL((linux_name == demangled_name), true);
   }
 #endif
 }

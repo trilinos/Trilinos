@@ -1,4 +1,4 @@
-# u233 driver
+# pu241 driver
 
 TRILINOS_DRIVER_SETUP()
 
@@ -27,14 +27,14 @@ if (RUN_REGULAR_TESTS)
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_DEBUG_ICPC
-    ctest_linux_nightly_serial_debug_icpc_u233_trilinos.cmake
+    ctest_linux_nightly_serial_debug_icpc_pu241_trilinos.cmake
     RUN_SERIAL
     TIMEOUT_MINUTES 240
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_RELEASE_ICPC
-    ctest_linux_nightly_serial_release_icpc_u233_trilinos.cmake
+    ctest_linux_nightly_serial_release_icpc_pu241_trilinos.cmake
     RUN_SERIAL
     TIMEOUT_MINUTES 240
     )

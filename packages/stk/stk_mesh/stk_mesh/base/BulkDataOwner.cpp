@@ -313,7 +313,7 @@ void generate_parallel_change( const BulkData & mesh ,
 void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 {
   Trace_("stk::mesh::BulkData::change_entity_owner");
-  DiagIf(LOG_ENTITY, "arg_change: " << arg_change << diag::dendl);
+  DiagIf(LOG_ENTITY, "arg_change: " << arg_change);
 
   const MetaData  & meta = m_mesh_meta_data ;
   const unsigned  p_rank = m_parallel_rank ;

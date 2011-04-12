@@ -73,8 +73,8 @@ struct LocalFixture
   StringFunction sfx;
   ConstantFunction sfx_res;
 
-  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0) : eMesh(3), bogus_init(init(num_xyz, num_y, num_z)),
-                                                                     metaData(*eMesh.getFEM_meta_data()), bulkData(*eMesh.get_bulkData()),
+  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0) : eMesh(3u), bogus_init(init(num_xyz, num_y, num_z)),
+                                                                     metaData(*eMesh.getFEM_meta_data()), bulkData(*eMesh.getBulkData()),
                                                                      coords_field( metaData.get_field<mesh::FieldBase>("coordinates") ),
                                                                      sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) ),
                                                                      sfx_res (0.0, "sfx_res")
@@ -566,7 +566,7 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
   /// create a meta data/bulk data empty pair
-  PerceptMesh eMesh(3);
+  PerceptMesh eMesh(3u);
 
   if (1)
   {
@@ -586,7 +586,7 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
   }
 
   mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
-  mesh::BulkData& bulkData = *eMesh.get_bulkData();
+  mesh::BulkData& bulkData = *eMesh.getBulkData();
 
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
   mesh::FieldBase *coords_field = metaData.get_field<mesh::FieldBase>("coordinates");

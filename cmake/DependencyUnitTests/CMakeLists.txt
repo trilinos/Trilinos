@@ -3,6 +3,81 @@ INCLUDE(PackageAddAdvancedTest)
 
 INCLUDE(ParseVariableArguments)
 
+#
+# Unit tests for just creating the depencency XML files
+#
+
+FUNCTION(CREATE_DEPENCENCY_XML_DUMP_TEST_CASE TEST_NAME)
+
+  PARSE_ARGUMENTS(
+     #prefix
+     PARSE
+     #lists
+     "ARGS;PASS_REGULAR_EXPRESSION_ALL;COMPARE_XML_FILE"
+     #options
+     ""
+     ${ARGN}
+     )
+
+  SET(TEST_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/DepXmlDumpTests_${TEST_NAME})
+
+  PACKAGE_ADD_ADVANCED_TEST( DepXmlDumpTests_${TEST_NAME}
+    OVERALL_WORKING_DIRECTORY TEST_NAME
+    TEST_0 CMND ${CMAKE_COMMAND}
+      ARGS
+        -DPROJECT_NAME=Trilinos
+        -DTrilinos_CMAKE_DIR=${TRILINOS_HOME_DIR}/cmake
+        -DTrilinos_DEPS_HOME_DIR:PATH=${TRILINOS_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos
+        -DTrilinos_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR=${TEST_OUTPUT_DIR}
+        ${PARSE_ARGS}
+        -P ${TRILINOS_HOME_DIR}/cmake/package_arch/PackageArchDumpDepsXmlScript.cmake
+      PASS_REGULAR_EXPRESSION_ALL ${PARSE_PASS_REGULAR_EXPRESSION_ALL}
+    TEST_1 CMND ${CMAKE_COMMAND}
+      ARGS
+        -E compare_files
+        ${TEST_OUTPUT_DIR}/TrilinosPackageDependencies.xml
+        ${TRILINOS_HOME_DIR}/cmake/python/UnitTests/${PARSE_COMPARE_XML_FILE}
+    )
+
+ENDFUNCTION()
+
+
+CREATE_DEPENCENCY_XML_DUMP_TEST_CASE(
+  BasePackagesTpls
+  PASS_REGULAR_EXPRESSION_ALL
+    "Trilinos_NUM_PACKAGES='22'"
+    "Trilinos_NUM_TPLS='19'"
+  COMPARE_XML_FILE
+    TrilinosPackageDependencies.gold.xml
+  )
+
+
+CREATE_DEPENCENCY_XML_DUMP_TEST_CASE(
+  WithPreCopyrightTrilinos
+  ARGS
+    -DTrilinos_EXTRA_REPOSITORIES=preCopyrightTrilinos
+  PASS_REGULAR_EXPRESSION_ALL
+    "Trilinos_NUM_PACKAGES='24'"
+    "Trilinos_NUM_TPLS='20'"
+  COMPARE_XML_FILE
+    TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml
+  )
+
+
+CREATE_DEPENCENCY_XML_DUMP_TEST_CASE(
+  WithPreCopyrightTrilinosExtraTrilinosRepo
+  ARGS
+    -DTrilinos_EXTRA_REPOSITORIES=preCopyrightTrilinos,extraTrilinosRepo
+  PASS_REGULAR_EXPRESSION_ALL
+    "Trilinos_NUM_PACKAGES='25'"
+    "Trilinos_NUM_TPLS='22'"
+  COMPARE_XML_FILE
+    TrilinosPackageDependencies.preCopyrightTrilinos.extraTrilinosRepo.gold.xml
+  )
+
+#
+# Unit tests for full dependency handling
+#
 
 FUNCTION(CREATE_DEPENCENCY_HANDLING_TEST_CASE TEST_NAME)
 

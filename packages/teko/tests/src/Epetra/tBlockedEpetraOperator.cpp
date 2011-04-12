@@ -78,7 +78,7 @@
 
 #include "tBlockedEpetraOperator.hpp"
 
-#include "Epetra/Teko_BlockedEpetraOperator.hpp"
+#include "Teko_BlockedEpetraOperator.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
 

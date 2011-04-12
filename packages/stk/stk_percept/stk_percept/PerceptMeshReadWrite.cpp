@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -15,7 +15,6 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <init/Ionit_Initializer.h>
@@ -47,6 +46,42 @@
 namespace stk {
   namespace percept {
     namespace io_util {
+
+      // same as FEMHelper::declare_element, except the rank is chosen from the part, not defaulted to element_rank()
+
+      stk::mesh::Entity & my_declare_element( stk::mesh::BulkData & mesh ,
+                                              stk::mesh::Part & part ,
+                                              const stk::mesh::EntityId elem_id ,
+                                              const stk::mesh::EntityId node_id[] )
+      {
+        stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(mesh);
+        const CellTopologyData * const top = fem_meta.get_cell_topology( part ).getCellTopologyData();
+
+        ThrowErrorMsgIf(top == NULL,
+                        "Part " << part.name() << " does not have a local topology");
+
+        stk::mesh::PartVector empty ;
+        stk::mesh::PartVector add( 1 ); add[0] = & part ;
+
+        //const stk::mesh::EntityRank entity_rank = fem_meta.element_rank();
+        const stk::mesh::EntityRank entity_rank = part.primary_entity_rank();
+
+        stk::mesh::Entity & elem = mesh.declare_entity( entity_rank, elem_id, add );
+
+        const stk::mesh::EntityRank node_rank = fem_meta.node_rank();
+
+        for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
+          //declare node if it doesn't already exist
+          stk::mesh::Entity * node = mesh.get_entity( node_rank , node_id[i]);
+          if ( NULL == node) {
+            node = & mesh.declare_entity( node_rank , node_id[i], empty );
+          }
+
+          mesh.declare_relation( elem , *node , i );
+        }
+        return elem ;
+      }
+
 
       //#define USE_LOCAL_PART_PROCESSING !defined(__IBMCPP__)
 #define USE_LOCAL_PART_PROCESSING 1
@@ -99,8 +134,9 @@ namespace stk {
 
         if (local_include_entity(entity)) {
           //std::cout << "tmp entity name= " << entity->name() << std::endl;
-          stk::mesh::Part & part = meta.declare_part(entity->name(), type);
-          stk::io::put_io_part_attribute(part);
+
+          //stk::mesh::Part & part = meta.declare_part(entity->name(), type);
+          //stk::io::put_io_part_attribute(part);
 
           const Ioss::ElementTopology *topology = entity->topology();
           const CellTopologyData * const cell_topology = stk::io::map_topology_ioss_to_cell(topology);
@@ -111,12 +147,36 @@ namespace stk {
 
           if (cell_topology != NULL) {
 
-            //stk::mesh::fem::set_cell_topology(part, cell_topology);
+#define PERCEPT_ALLOW_PART_RANK_SUBDIM 0
 
+#if PERCEPT_ALLOW_PART_RANK_SUBDIM
+            stk::mesh::Part & part = meta.declare_part(entity->name(),  mesh::fem::CellTopology(cell_topology) );
+#else
+            if (0 && cell_topology->dimension != type)
+              {
+                std::cout << "tmp type= " << type << " dimension= " << cell_topology->dimension << std::endl;
+              }
+            stk::mesh::Part & part = meta.declare_part(entity->name(), type);
+#endif
+            stk::io::put_io_part_attribute(part);
+
+#if PERCEPT_ALLOW_PART_RANK_SUBDIM
+#else
+
+            const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(part);
+            std::string ctname="null";
+            if (cell_topo)
+              {
+                ctname=cell_topo->name;
+              }
+            //std::cout << "tmp part = " << part.name() << " ctname= " << ctname << " cellTopo= " << mesh::fem::CellTopology(cell_topology).getName() << std::endl;
             stk::mesh::fem::set_cell_topology(meta, part,  mesh::fem::CellTopology(cell_topology) );
 
+#endif
           } else {
             /// \todo IMPLEMENT handle cell_topolgy mapping error...
+            stk::mesh::Part & part = meta.declare_part(entity->name(), type);
+            stk::io::put_io_part_attribute(part);
           }
         }
       }
@@ -173,14 +233,14 @@ namespace stk {
         stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
           meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
-        stk::mesh::put_field( coord_field, stk::mesh::Node, meta.universal_part(),
+        stk::mesh::put_field( coord_field, stk::mesh::fem::FEMMetaData::NODE_RANK, meta.universal_part(),
                               spatial_dim);
 
         /** \todo IMPLEMENT truly handle fields... For this case we are
          * just defining a field for each transient field that is present
          * in the mesh...
          */
-        stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::Node);
+        stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::fem::FEMMetaData::NODE_RANK);
       }
 
       // ========================================================================
@@ -206,7 +266,7 @@ namespace stk {
              */
             stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE,
                                       *part,
-                                      stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                      stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
 
             /** \todo IMPLEMENT truly handle fields... For this case we
              * are just defining a field for each transient field that is
@@ -214,7 +274,7 @@ namespace stk {
              */
             stk::io::define_io_fields(entity, Ioss::Field::TRANSIENT,
                                       *part,
-                                      stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                      stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
 
             const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(*part);
             std::string cell_topo_name = "UNKNOWN";
@@ -234,7 +294,7 @@ namespace stk {
       void process_read_nodesets_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
       {
         const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-        local_default_part_processing(node_sets, meta, stk::mesh::Node);
+        local_default_part_processing(node_sets, meta, stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         //!std::cout << "PerceptMeshReadWrite::process_read_nodesets: node_sets size = " << node_sets.size() <<  std::endl;
 
@@ -263,7 +323,7 @@ namespace stk {
             assert(part != NULL);
             assert(entity->field_exists("distribution_factors"));
 
-            stk::mesh::put_field(distribution_factors_field, stk::mesh::Node, *part);
+            stk::mesh::put_field(distribution_factors_field, stk::mesh::fem::FEMMetaData::NODE_RANK, *part);
 
             /** \todo IMPLEMENT truly handle fields... For this case we
              * are just defining a field for each transient field that is
@@ -271,7 +331,7 @@ namespace stk {
              */
             stk::io::define_io_fields(entity, Ioss::Field::TRANSIENT,
                                       *part,
-                                      stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                      stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
           }
         }
       }
@@ -320,7 +380,7 @@ namespace stk {
               stk::io::set_distribution_factor_field(*fb_part, *distribution_factors_field);
               int face_node_count = fb->topology()->number_nodes();
               stk::mesh::put_field(*distribution_factors_field,
-                                   stk::mesh::fem_entity_rank( fb_part->primary_entity_rank() ),
+                                   stk::percept::PerceptMesh::fem_entity_rank( fb_part->primary_entity_rank() ),
                                    *fb_part, face_node_count);
             }
 
@@ -330,7 +390,7 @@ namespace stk {
              */
             stk::io::define_io_fields(fb, Ioss::Field::TRANSIENT,
                                       *fb_part,
-                                      stk::mesh::fem_entity_rank( fb_part->primary_entity_rank() ) );
+                                      stk::percept::PerceptMesh::fem_entity_rank( fb_part->primary_entity_rank() ) );
           }
         }
       }
@@ -418,7 +478,7 @@ namespace stk {
         Ioss::NodeBlock *nb = node_blocks[0];
 
         std::vector<stk::mesh::Entity*> nodes;
-        stk::io::get_entity_list(nb, stk::mesh::Node, bulk, nodes);
+        stk::io::get_entity_list(nb, stk::mesh::fem::FEMMetaData::NODE_RANK, bulk, nodes);
 
         /** \todo REFACTOR Application would probably store this field
          * (and others) somewhere after the declaration instead of
@@ -475,6 +535,9 @@ namespace stk {
                 }
               mesh::EntityId* e_conn = &(e_connectivity[0]);
               elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], e_conn);
+#if PERCEPT_ALLOW_PART_RANK_SUBDIM
+              //elements[i] = &my_declare_element(bulk, *part, elem_ids[i], e_conn);
+#endif
             }
 
             // For this example, we are just taking all attribute fields
@@ -517,9 +580,9 @@ namespace stk {
 
             std::vector<stk::mesh::Entity*> nodes(node_count);
             for(int i=0; i<node_count; ++i) {
-              nodes[i] = bulk.get_entity( stk::mesh::Node, node_ids[i] );
+              nodes[i] = bulk.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, node_ids[i] );
               if (nodes[i] != NULL)
-                bulk.declare_entity(stk::mesh::Node, node_ids[i], add_parts );
+                bulk.declare_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node_ids[i], add_parts );
             }
 
 
@@ -565,7 +628,16 @@ namespace stk {
             for(size_t is=0; is<side_count; ++is) {
 
 
+#if PERCEPT_ALLOW_PART_RANK_SUBDIM
+              if (0 && fem_meta.element_rank() != fb_part->primary_entity_rank())
+                {
+                  std::cout << "tmp fem_meta.element_rank()= " << fem_meta.element_rank() <<
+                    " fb_part->primary_entity_rank() = " <<  fb_part->primary_entity_rank() << std::endl;
+                }
+              stk::mesh::Entity* const elem = bulk.get_entity(fb_part->primary_entity_rank(), elem_side[is*2]);
+#else
               stk::mesh::Entity* const elem = bulk.get_entity(fem_meta.element_rank(), elem_side[is*2]);
+#endif
               // If NULL, then the element was probably assigned to an
               // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
               // Hence the '-1' in the following line.
@@ -664,7 +736,7 @@ namespace stk {
         const stk::mesh::fem::FEMMetaData & meta = mesh::fem::FEMMetaData::get(bulk);
 
         // ??? Get field data from nodeblock...
-        get_field_data(bulk, meta.universal_part(), stk::mesh::Node,
+        get_field_data(bulk, meta.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
                        region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
         const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -684,12 +756,12 @@ namespace stk {
                   Ioss::EntityBlock *fb = entity->get_block(i);
                   /// \todo REFACTOR Need filtering mechanism.
                   get_field_data(bulk, *part,
-                                 stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                 stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                  fb, Ioss::Field::TRANSIENT);
                 }
               } else {
                 get_field_data(bulk, *part,
-                               stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                               stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                entity, Ioss::Field::TRANSIENT);
               }
             } else {
@@ -740,7 +812,7 @@ namespace stk {
         // Special processing for nodeblock (all nodes in model)...
         const stk::mesh::fem::FEMMetaData & meta = mesh::fem::FEMMetaData::get(bulk);
 
-        put_field_data(bulk, meta.universal_part(), stk::mesh::Node,
+        put_field_data(bulk, meta.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
                        region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
         const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -768,14 +840,14 @@ namespace stk {
                   Ioss::EntityBlock *fb = entity->get_block(i);
                   /// \todo REFACTOR Need filtering mechanism.
                   put_field_data(bulk, *part,
-                                 stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                 stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                  fb, Ioss::Field::TRANSIENT);
                 }
               }
               else
                 {
                   put_field_data(bulk, *part,
-                                 stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                 stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                  entity, Ioss::Field::TRANSIENT);
                 }
             }

@@ -60,7 +60,7 @@
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
-#include "Epetra/Teko_StridedEpetraOperator.hpp"
+#include "Teko_StridedEpetraOperator.hpp"
 
 #include "Thyra_EpetraLinearOp.hpp"
 

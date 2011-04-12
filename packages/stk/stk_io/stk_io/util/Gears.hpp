@@ -14,11 +14,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/FieldDeclarations.hpp>
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 #include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
@@ -64,27 +60,12 @@ namespace stk {
 	      const size_t   z_num ,
 	      const size_t   angle_num ,
 	      const int      turn_direction );
-	Gear( stk::mesh::MetaData & S ,
-	      const std::string & name ,
-	      const GearFields & gear_fields ,
-	      const double   center[] ,
-	      const double   rad_min ,
-	      const double   rad_max ,
-	      const size_t   rad_num ,
-	      const double   z_min ,
-	      const double   z_max ,
-	      const size_t   z_num ,
-	      const size_t   angle_num ,
-	      const int      turn_direction );
 
 	void mesh( stk::mesh::BulkData &M );
 	void turn( double turn_angle ) const ;
 
 	stk::mesh::fem::FEMMetaData *m_mesh_fem_meta_data ;
 	stk::mesh::MetaData & m_mesh_meta_data ;
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-        stk::mesh::DefaultFEM m_topo_data;
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 	stk::mesh::BulkData * m_mesh ;
 	stk::mesh::Part & m_gear ;
 	stk::mesh::Part & m_surf ;

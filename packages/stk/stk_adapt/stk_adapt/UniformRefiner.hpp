@@ -27,6 +27,8 @@
 
 #include <stk_adapt/SubDimCell.hpp>
 
+#include <stk_adapt/RefinementInfoByType.hpp>
+
 #define UNIFORM_REF_REMOVE_OLD_STD_SET 1
 #define UNIFORM_REF_REMOVE_OLD_STD_VECTOR 0
 #define UNIFORM_REF_REMOVE_OLD_BOOST_SET 0
@@ -89,6 +91,9 @@ namespace stk {
       void 
       setRemoveOldElements(bool do_remove);
 
+      void
+      setGeometryFile(std::string file_name);
+
       bool 
       getRemoveOldElements();
       
@@ -103,6 +108,12 @@ namespace stk {
 
       bool 
       getIgnoreSideSets();
+
+      std::vector< RefinementInfoByType >& 
+      getRefinementInfoByType();
+
+      void 
+      setQueryPassOnly(bool doQueryOnly);
 
     protected:
   
@@ -159,6 +170,8 @@ namespace stk {
       void 
       checkBreakPatternValidityAndBuildRanks(std::vector<stk::mesh::EntityRank>& ranks);
 
+
+
     private:
       percept::PerceptMesh& m_eMesh;
 
@@ -171,7 +184,15 @@ namespace stk {
 
       std::vector<stk::mesh::EntityRank> m_ranks;
       bool m_ignoreSideSets;
+      std::string m_geomFile;
+      bool m_geomSnap;
+
+      std::vector< RefinementInfoByType > m_refinementInfoByType;
+      bool m_doQueryOnly;
+
     };
+
+
 
   }
 }

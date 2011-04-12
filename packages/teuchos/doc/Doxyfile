@@ -57,10 +57,11 @@ EXAMPLE_PATH           =  ../example/BLAS/cxx_main.cpp \
                           ../example/CommandLineProcessor/cxx_main.cpp \
                           ../example/LAPACK/cxx_main.cpp \
                           ../example/ParameterList/cxx_main.cpp \
-                          ../test/RCP/cxx_main.cpp \
-                          ../example/RCP/cxx_main.cpp \
-                          ../example/RCP/ArrayRefCountPtr_test.cpp \
+                          ../test/MemoryManagement/ArrayRCP_test.cpp \
+                          ../test/MemoryManagement/RCP_test.cpp \
+                          ../example/RefCountPtr/cxx_main.cpp \
                           ../example/DenseMatrix/cxx_main.cpp \
+                          ../example/DenseMatrix/cxx_main_sym.cpp \
                           ../example/TimeMonitor/cxx_main.cpp \
                           ../test/FancyOutputting/FancyOutputting_test.cpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp

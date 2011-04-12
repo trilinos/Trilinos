@@ -3,10 +3,6 @@
 #include <stk_mesh/base/Part.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/EntityRanks.hpp>
-#endif
 
 #include <stk_io/IossBridge.hpp>
 
@@ -30,9 +26,6 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
 ///////////////////////////////////////////////////////////////////////////////
   : 
     m_meta_data(spatial_dimension),
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-    m_fem(m_meta_data, spatial_dimension),
-#endif
     m_bulk_data(m_meta_data.get_meta_data(m_meta_data), comm),
     m_num_x(0),
     m_num_y(0),

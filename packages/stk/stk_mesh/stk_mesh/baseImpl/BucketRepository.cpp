@@ -195,7 +195,7 @@ void BucketRepository::destroy_bucket( Bucket * bucket )
   TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket);
 
   bucket->~Bucket();
-  std::free( bucket );
+  delete [] reinterpret_cast<unsigned char*>( bucket );
 }
 
 //
@@ -235,9 +235,9 @@ BucketRepository::declare_nil_bucket()
 
     // All fields checked and sized, Ready to allocate
 
-    void * const alloc_ptr = local_malloc( alloc_size );
+    unsigned char * const alloc_ptr = new unsigned char[ alloc_size ];
 
-    unsigned char * ptr = reinterpret_cast<unsigned char *>( alloc_ptr );
+    unsigned char * ptr = alloc_ptr;
 
     ptr += align( sizeof( Bucket ) );
 
@@ -305,6 +305,8 @@ BucketRepository::declare_bucket(
   ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
                   "Entity rank " << arg_entity_rank << " is invalid");
 
+  ThrowRequireMsg( !m_buckets.empty(),
+    "m_buckets is empty! Did you forget to initialize MetaData before creating BulkData?");
   std::vector<Bucket *> & bucket_set = m_buckets[ arg_entity_rank ];
 
   //----------------------------------
@@ -392,7 +394,7 @@ BucketRepository::declare_bucket(
     for ( unsigned i = 0 ; i < num_fields ; ++i ) {
       const FieldBase  & field = * field_set[i] ;
 
-      unsigned value_size = 0 ;
+      unsigned num_bytes_per_entity = 0 ;
 
       const FieldBase::Restriction & dim =
         dimension( field, arg_entity_rank, part_count, part_ord, method);
@@ -402,15 +404,15 @@ BucketRepository::declare_bucket(
         const unsigned type_stride = field.data_traits().stride_of ;
         const unsigned field_rank  = field.rank();
 
-        value_size = type_stride *
+        num_bytes_per_entity = type_stride *
           ( field_rank ? dim.stride[ field_rank - 1 ] : 1 );
       }
 
       field_map[i].m_base = value_offset ;
-      field_map[i].m_size = value_size ;
+      field_map[i].m_size = num_bytes_per_entity ;
       field_map[i].m_stride = dim.stride ;
 
-      value_offset += align( value_size * m_bucket_capacity );
+      value_offset += align( num_bytes_per_entity * m_bucket_capacity );
     }
     field_map[ num_fields ].m_base  = value_offset ;
     field_map[ num_fields ].m_size = 0 ;
@@ -439,9 +441,9 @@ BucketRepository::declare_bucket(
 
     // All fields checked and sized, Ready to allocate
 
-    void * const alloc_ptr = local_malloc( alloc_size );
+    unsigned char * const alloc_ptr = new unsigned char[ alloc_size ];
 
-    unsigned char * ptr = reinterpret_cast<unsigned char *>( alloc_ptr );
+    unsigned char * ptr = alloc_ptr;
 
     ptr += align( sizeof( Bucket ) );
 

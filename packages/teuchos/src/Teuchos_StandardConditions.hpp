@@ -56,6 +56,19 @@ class ParameterCondition : public Condition{
 
 public:
 
+  /** \name Public constants */
+  //@{
+
+  /** \brief The default value for the whenParamEqualsValue
+   * parameter in the Constructor.
+   */
+  static const bool& getWhenParamEqualsValueDefault(){
+    static const bool WHEN_PARAM_EQUALS_VALUE_DEFAULT = true;
+    return WHEN_PARAM_EQUALS_VALUE_DEFAULT;
+  }
+
+  //@}
+
   /** \name Constructors/Destructor */
   //@{
 
@@ -71,7 +84,9 @@ public:
    * set to false if the parameter
    * evaluates to false, then the condition will evaluate to true.
    */
-  ParameterCondition(RCP<ParameterEntry> parameter, bool whenParamEqualsValue);
+  ParameterCondition(
+    RCP<ParameterEntry> parameter, 
+    bool whenParamEqualsValue=getWhenParamEqualsValueDefault());
 
   virtual ~ParameterCondition(){}
   
@@ -280,7 +295,8 @@ public:
 
 /**
  * \brief A Number Condition is a Parameter Condition that evaluates
- * whether or not a number parameter is greater than 0. 
+ * whether or not a number parameter is greater than 0 (or some other number
+ * based on a given function). 
  * If the parameter is  greater than 0 this is interperted as the condition 
  * being "true". Otherwise the oncidiont is interperted as false.
  */
@@ -296,11 +312,6 @@ public:
    * \brief Constructs a Number Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
-   * @param func A function to run the value of the parameter through. 
-   * If the function returns a value
-   * greater than 0, this will be interperted as the condition being "true". 
-   * If the function returns a value of 0 or less, this will be interperted 
-   * as the condition being false.
    * @param whenParamEqualsValue Indicates whether the condition should be 
    * true when the evaluation results in a true or when the evaluation results 
    * in a false. When set to true, if the parameter evaluates to true then 
@@ -309,9 +320,25 @@ public:
    */
   NumberCondition(
     RCP<ParameterEntry> parameter,
-    RCP<SingleArguementFunctionObject<T,T> > func=null,
     bool whenParamEqualsValue=true):
     ParameterCondition(parameter, whenParamEqualsValue), 
+    func_(null)
+  {}
+
+  /**
+   * \brief Constructs a Number Condition.
+   *
+   * @param parameterName The name of the parameter to be evaluated.
+   * @param func A function to run the value of the parameter through. 
+   * If the function returns a value
+   * greater than 0, this will be interperted as the condition being "true". 
+   * If the function returns a value of 0 or less, this will be interperted 
+   * as the condition being false.
+   */
+  NumberCondition(
+    RCP<ParameterEntry> parameter,
+    RCP<const SimpleFunctionObject<T> > func):
+    ParameterCondition(parameter), 
     func_(func)
   {}
 
@@ -323,7 +350,7 @@ public:
   //@{
 
   std::string getTypeAttributeValue() const{
-    return "NumberCondition<" + TypeNameTraits<T>::name() + ">";
+    return "NumberCondition(" + TypeNameTraits<T>::name() + ")";
   }
   
   //@}
@@ -331,16 +358,27 @@ public:
   /** \name Overridden from ParameterCondition */
   //@{
 
+  /** \brief. */
   bool evaluateParameter() const{
+    T value = getValue<T>(*getParameter());
     if(!func_.is_null()){
-      func_->setParameterValue(getValue<T>(*getParameter()));
-      return func_->runFunction() > 0;
+      value = func_->runFunction(value);
     }
-    else{
-      return getValue<T>(*getParameter()) > 0;
-    }
+    return value > 0;
   }
   
+  //@}
+  
+  /** \name Getters/Setters */
+  //@{
+
+  /** \brief Gets the funciton this NumberCondition is using.
+   * Returns null if the NumberCondition is not using one.
+   */
+  RCP<const SimpleFunctionObject<T> > getFunctionObject() const{
+    return func_.getConst();
+  }
+
   //@}
 
 private:
@@ -349,7 +387,7 @@ private:
   //@{
   
   /** \brief . */
-  RCP<SingleArguementFunctionObject<T,T> > func_;
+  RCP<const SimpleFunctionObject<T> > func_;
   
   //@}
 

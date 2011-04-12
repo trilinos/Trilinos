@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2010 Sandia Corporation.                              */
+/*    Copyright 2010, 2011 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -28,9 +28,7 @@
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <stk_percept/ShardsInterfaceTable.hpp>
@@ -192,8 +190,8 @@ namespace stk
           m_elems[i] = source.m_elems[i];
       }
 
-      stk::mesh::BulkData * get_bulkData() { return m_bulkData;}
-      stk::mesh::fem::FEMMetaData * get_metaData() { return m_metaData; }
+      stk::mesh::BulkData * getBulkData() { return m_bulkData;}
+      stk::mesh::fem::FEMMetaData * getMetaData() { return m_metaData; }
 
     private:
       bool m_dump;

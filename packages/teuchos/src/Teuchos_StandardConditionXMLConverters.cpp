@@ -110,8 +110,9 @@ RCP<Condition> ParameterConditionConverter::convertXML(
   ParameterEntry::ParameterEntryID paramID = 
     xmlObj.getRequired<ParameterEntry::ParameterEntryID>(
       getParameterEntryIDAttributeName());
-  bool whenParamEqualsValue = 
-    xmlObj.getRequiredBool(getWhenParamEqualsValueAttributeName());
+  bool whenParamEqualsValue = xmlObj.getWithDefault(
+    getWhenParamEqualsValueAttributeName(),
+    ParameterCondition::getWhenParamEqualsValueDefault());
   TEST_FOR_EXCEPTION(
     entryIDsMap.find(paramID) == entryIDsMap.end(),
     MissingParameterEntryDefinitionException,

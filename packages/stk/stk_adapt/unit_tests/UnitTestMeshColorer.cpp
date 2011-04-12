@@ -68,7 +68,7 @@ STKUNIT_UNIT_TEST(mesh_colorer, test1)
     Ioss::Utils::to_string(num_y) + "x" +
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 	
-  percept::PerceptMesh eMesh(3);
+  percept::PerceptMesh eMesh(3u);
   eMesh.newMesh(percept::PerceptMesh::GMeshSpec(config_mesh));
   int vectorDimension = 0;
   mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);

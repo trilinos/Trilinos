@@ -17,7 +17,6 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <stk_percept/function/Function.hpp>
 #include <stk_percept/function/internal/Searcher.hpp>
@@ -106,7 +105,7 @@ namespace stk
       void helper(MDArray& input_phy_points, MDArray& output_field_values,
                   const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional);
 
-      mesh::BulkData *get_bulkData();
+      mesh::BulkData *getBulkData();
 
       //void setBulkData(mesh::BulkData *bulk) { m_bulkData = bulk; }
       bool getFoundOnLocalOwnedPart() { return m_found_on_local_owned_part; }

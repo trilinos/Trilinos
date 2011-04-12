@@ -1,6 +1,6 @@
 
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -43,14 +43,14 @@ namespace stk {
       vector<stk::mesh::Entity *> new_elements;
       vector<stk::mesh::Entity *> new_nodes;
       
-      eMesh.get_bulkData()->modification_begin();
+      eMesh.getBulkData()->modification_begin();
 
       std::cout << "creating " << n_elements << " elements..." <<std::endl;
       eMesh.createEntities( eMesh.element_rank(), n_elements, new_elements);
       std::cout << "... done creating " << n_elements << " elements" << std::endl;
 
       std::cout << "creating " << n_nodes << " nodes..." <<std::endl;
-      eMesh.createEntities( stk::mesh::fem::NODE_RANK, n_nodes, new_nodes);
+      eMesh.createEntities( stk::mesh::fem::FEMMetaData::NODE_RANK, n_nodes, new_nodes);
       std::cout << "... done creating " << n_nodes << " nodes" << std::endl;
 
       int num_prints = 100;
@@ -70,7 +70,7 @@ namespace stk {
             {
               stk::mesh::Entity& node = *new_nodes[i_node];
 
-              eMesh.get_bulkData()->declare_relation(element, node, j_node);
+              eMesh.getBulkData()->declare_relation(element, node, j_node);
               
               i_node++;
               if (i_node >= n_nodes-1)
@@ -79,7 +79,7 @@ namespace stk {
         }
 
       std::cout << " doing modification_end ... " << std::endl;
-      eMesh.get_bulkData()->modification_end();
+      eMesh.getBulkData()->modification_end();
       std::cout << " done modification_end ... " << std::endl;
       
 
@@ -255,6 +255,7 @@ namespace stk {
     
       // NOTE: Options --directory --output-log --runtest are handled/defined in RunEnvironment
       std::string input_mesh="";
+      std::string input_geometry="";
       std::string output_mesh="";
       std::string block_name_inc = "";
       std::string block_name_exc = "";
@@ -268,6 +269,7 @@ namespace stk {
       int remove_original_elements = 1;
       int number_refines = 1;
       int proc_rank_field = 0;
+      int query_only = 0;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc = 
@@ -305,6 +307,9 @@ namespace stk {
       run_environment.clp.setOption("enrich"                   , &enrich                   , enrich_options.c_str());
       run_environment.clp.setOption("input_mesh"               , &input_mesh               , "input mesh name");
       run_environment.clp.setOption("output_mesh"              , &output_mesh              , "output mesh name");
+
+      run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
+
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
       run_environment.clp.setOption("block_name"               , &block_name_inc           , block_name_desc_inc.c_str());
       //run_environment.clp.setOption("exclude"                  , &block_name_exc           , block_name_desc_exc.c_str());
@@ -317,6 +322,7 @@ namespace stk {
 #endif
       run_environment.clp.setOption("proc_rank_field"          , &proc_rank_field          , " add an element field to show processor rank");
       run_environment.clp.setOption("remove_original_elements" , &remove_original_elements , " remove original (converted) elements (default=true)");
+      run_environment.clp.setOption("input_geometry"           , &input_geometry           , "input geometry name");
 
       run_environment.processCommandLine(&argc, &argv);
 
@@ -358,7 +364,8 @@ namespace stk {
             RunEnvironment::doLoadBalance(run_environment.m_comm, input_mesh);
           }
 
-        percept::PerceptMesh eMesh;  // FIXME
+        percept::PerceptMesh eMesh(0);  // FIXME
+        //percept::PerceptMesh eMesh;  // FIXME
 
         //unsigned p_size = eMesh.getParallelSize();
         
@@ -374,7 +381,7 @@ namespace stk {
             //             block_names = UniformRefiner::correctBlockNamesForPartPartConsistency(eMesh, block_names);
 
             // FIXME move this next block of code to a method on UniformRefiner
-            BlockNamesType block_names(stk::mesh::EntityRankEnd+1u);
+            BlockNamesType block_names(stk::percept::EntityRankEnd+1u);
             if (block_name_inc.length())
               {
                 block_names = UniformRefiner::getBlockNames(block_name_inc, eMesh.getRank(), eMesh);
@@ -439,7 +446,10 @@ namespace stk {
         if (doRefineMesh)
           {
             UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
+            if (input_geometry != "")
+                breaker.setGeometryFile(input_geometry);
             breaker.setRemoveOldElements(remove_original_elements);
+            breaker.setQueryPassOnly(query_only == 1);
             //breaker.setIgnoreSideSets(true);
 
             for (int iBreak = 0; iBreak < number_refines; iBreak++)
@@ -451,8 +461,13 @@ namespace stk {
                 breaker.doBreak();
                 if (!eMesh.getRank())
                   {
-                    std::cout << "Refinement pass # " << (iBreak+1) << " ...done" << std::endl;
+                    std::cout << std::endl;
+                    int ib = iBreak;
+                    if (!query_only) ib = 0;
+                    RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), ib , true);
+                    std::cout << std::endl;
                   }
+                
               }
 
             eMesh.saveAs(output_mesh);

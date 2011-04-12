@@ -37,6 +37,7 @@
 #include "Teuchos_DependencyXMLConverter.hpp"
 #include "Teuchos_StandardDependencies.hpp"
 #include "Teuchos_XMLDependencyExceptions.hpp"
+#include "Teuchos_FunctionObjectXMLConverterDB.hpp"
 
 
 namespace Teuchos {
@@ -298,7 +299,16 @@ void NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
   XMLObject& xmlObj,
   const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const
 {
-  
+  RCP<const NumberVisualDependency<T> > castedDependency = 
+    rcp_dynamic_cast<const NumberVisualDependency<T> >(dependency);
+  RCP<const SimpleFunctionObject<T> > functionObject = 
+    castedDependency->getFunctionObject();
+  if(functionObject != null){
+    XMLObject functionXML = 
+      FunctionObjectXMLConverterDB::convertFunctionObject(functionObject);
+    xmlObj.addChild(functionXML);
+  }
+    
 }
   
 template<class T>
@@ -314,8 +324,15 @@ NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
     TooManyDependeesException,
     "A NumberVisualDependency can only have 1 dependee!" <<
     std::endl << std::endl);
+  int functionIndex = xmlObj.findFirstChild(FunctionObject::getXMLTagName());
+  RCP<SimpleFunctionObject<T> > functionObject = null;
+  if(functionIndex != -1){
+    functionObject = rcp_dynamic_cast<SimpleFunctionObject<T> >(
+      FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionIndex)));
+  }
   return rcp(new NumberVisualDependency<T>(
-    *(dependees.begin()), dependents));
+    *(dependees.begin()), dependents, functionObject));
+      
 }
 
 /** \brief An xml converter for ConditionVisualDependencies
@@ -644,10 +661,15 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertXML
     TooManyDependeesException,
     "A NumberArrayLengthDependency can only have 1 dependee!" <<
     std::endl << std::endl);
-  
+  RCP<SimpleFunctionObject<DependeeType> > functionObject = null;
+  int functionIndex = xmlObj.findFirstChild(FunctionObject::getXMLTagName());
+  if(functionIndex != -1){
+    functionObject = rcp_dynamic_cast<SimpleFunctionObject<DependeeType> >(
+      FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionIndex)));
+  }
   return rcp(
     new NumberArrayLengthDependency<DependeeType, DependentType>(
-      *(dependees.begin()), dependents));
+      *(dependees.begin()), dependents, functionObject));
 }
 
 template<class DependeeType, class DependentType>
@@ -658,7 +680,16 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertDep
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const
 {
-  
+  RCP<const NumberArrayLengthDependency<DependeeType, DependentType> > castedDep =
+    rcp_dynamic_cast<const NumberArrayLengthDependency<DependeeType, DependentType> >(
+      dependency);
+  RCP<const SimpleFunctionObject<DependeeType> > functionObject = 
+    castedDep->getFunctionObject();
+  if(functionObject != null){
+    XMLObject functionXML = FunctionObjectXMLConverterDB::convertFunctionObject(
+      functionObject);
+    xmlObj.addChild(functionXML);
+  }
 }
 
 

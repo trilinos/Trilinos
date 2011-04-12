@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010 - 2011 Sandia Corporation.              */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -17,20 +17,13 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/FieldDeclarations.hpp>
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
-// #include <stk_search/CoarseSearch.hpp>
-
-using stk::mesh::fem::NODE_RANK;
+static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 #define ct_assert(e) extern char (*ct_assert(void)) [sizeof(char[1 - 2*!(e)])]
 
@@ -83,12 +76,8 @@ void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRa
   // the model.
 
   const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const stk::mesh::EntityRank side_rank = stk::mesh::Face;
-#else
-  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
-  const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  const stk::mesh::fem::FEMMetaData & fem = stk::mesh::fem::FEMMetaData::get(meta_data);
+  const stk::mesh::EntityRank side_rank = fem.side_rank();
 
   if (use_universal_part && type == NODE_RANK) {
     stk::mesh::Part &universal = meta_data.universal_part();
@@ -126,12 +115,8 @@ void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank 
   // The box for this case is the centroid of each entity in the mesh...
   const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const stk::mesh::EntityRank side_rank = stk::mesh::Face;
-#else
-  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
-  const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  const stk::mesh::fem::FEMMetaData & fem = stk::mesh::fem::FEMMetaData::get(meta_data);
+  const stk::mesh::EntityRank side_rank = fem.side_rank();
 
   if (use_universal_part && type == NODE_RANK) {
     stk::mesh::Part &universal = meta_data.universal_part();
@@ -243,11 +228,7 @@ void build_axis_bbox(stk::mesh::Part &part,
   stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta_data.get_attribute<stk::mesh::fem::FEMMetaData>());
 
   const CellTopologyData * cell_topo = NULL;
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  cell_topo = stk::mesh::get_cell_topology(part);
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-  cell_topo = stk::mesh::fem::get_cell_topology(part).getCellTopologyData();
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  cell_topo = fem_meta->get_cell_topology(part).getCellTopologyData();
   if (fem_meta && !cell_topo) cell_topo = fem_meta->get_cell_topology(part).getCellTopologyData();
   if (cell_topo == NULL)
     return;

@@ -39,7 +39,7 @@ namespace stk
         {
           const FieldFunction *field_function_const = dynamic_cast<const FieldFunction *>(&integrand);
           FieldFunction *field_function = const_cast<FieldFunction *>(field_function_const);
-          PerceptMesh meshUtil(const_cast<mesh::fem::FEMMetaData *>(&MetaData::get(field_function->get_bulkData())), field_function->get_bulkData());
+          PerceptMesh meshUtil(const_cast<mesh::fem::FEMMetaData *>(&MetaData::get(field_function->getBulkData())), field_function->getBulkData());
 #if 0
           NoOpScalar no_op(integrand, field_function->getField());
           meshUtil.elementOpLoop(no_op , field_function->getField());
@@ -53,7 +53,7 @@ namespace stk
     {
       const FieldFunction *field_function_const = dynamic_cast<const FieldFunction *>(&integrand);
       FieldFunction *field_function = const_cast<FieldFunction *>(field_function_const);
-      PerceptMesh meshUtil(const_cast<mesh::fem::FEMMetaData *>(&MetaData::get(field_function->get_bulkData())), field_function->get_bulkData());
+      PerceptMesh meshUtil(const_cast<mesh::fem::FEMMetaData *>(&MetaData::get(field_function->getBulkData())), field_function->getBulkData());
       IntegratedOp general_integrand(integrand, TURBO_NONE);
       meshUtil.elementOpLoop(general_integrand , field_function->getField());
     }

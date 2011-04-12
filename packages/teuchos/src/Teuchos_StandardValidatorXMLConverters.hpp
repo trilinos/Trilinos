@@ -341,10 +341,13 @@ EnhancedNumberValidatorXMLConverter<T>::convertXML(
 {
   RCP<EnhancedNumberValidator<T> > toReturn = 
     rcp(new EnhancedNumberValidator<T>);
-  xmlObj.getWithDefault(
-    getStepAttributeName(), EnhancedNumberTraits<T>::defaultStep()),
-  xmlObj.getWithDefault(getPrecisionAttributeName(),
-    EnhancedNumberTraits<T>::defaultPrecision());
+  T step = xmlObj.getWithDefault(
+    getStepAttributeName(), EnhancedNumberTraits<T>::defaultStep());
+  toReturn->setStep(step);
+  unsigned short int precision = xmlObj.getWithDefault(
+   getPrecisionAttributeName(),
+   EnhancedNumberTraits<T>::defaultPrecision());
+  toReturn->setPrecision(precision);
   if (xmlObj.hasAttribute(getMinAttributeName())) {
     toReturn->setMin(xmlObj.getRequired<T>(getMinAttributeName()));
   }
@@ -370,7 +373,7 @@ void EnhancedNumberValidatorXMLConverter<T>::convertValidator(
     xmlObj.addAttribute<T>(getMaxAttributeName(), castedValidator->getMax());
   }
   xmlObj.addAttribute<T>(getStepAttributeName(), castedValidator->getStep());
-  xmlObj.addAttribute<T>(
+  xmlObj.addAttribute<short unsigned int>(
     getPrecisionAttributeName(), castedValidator->getPrecision());
 }
 

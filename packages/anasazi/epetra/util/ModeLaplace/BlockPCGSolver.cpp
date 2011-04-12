@@ -27,8 +27,6 @@
 //**************************************************************************
 
 #include "BlockPCGSolver.h"
-#include <stdexcept>
-#include <Teuchos_TestForException.hpp>
 
 
 BlockPCGSolver::BlockPCGSolver(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
@@ -181,16 +179,8 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) co
     MyComm.SumAll(&tmp, &alpha, 1);
     alpha = newRZ/alpha;
 
-    if (alpha <= 0.0) {
-      if (MyComm.MyPID() == 0) {
-        std::cerr << std::endl << std::endl;
-        std::cerr.precision(4);
-        std::cerr.setf(std::ios::scientific, std::ios::floatfield);
-        std::cerr << " !!! Non-positive value for p^TKp (" << alpha << ") !!!";
-        std::cerr << std::endl << std::endl;
-      }
-      assert(alpha > 0.0);
-    }
+    TEST_FOR_EXCEPTION(alpha <= 0.0, std::runtime_error, 
+                         " !!! Non-positive value for p^TKp (" << alpha << ") !!!");
 
     callBLAS.AXPY(xr, alpha, p.Values(), 1, Y.Values(), 1);
 
@@ -410,9 +400,6 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 
       // Compute the pseudo-inverse of the eigenvalues
       for (ii = 0; ii < blkSize; ++ii) {
-	// FIXME (mfh 14 Jan 2011) Is this the right exception to
-	// throw?  I'm just replacing an exit(-1) with an exception,
-	// as per Trilinos coding standards.
 	TEST_FOR_EXCEPTION(da[ii] < 0.0, std::runtime_error, "Negative "
 			   "eigenvalue for P^T K P: da[" << ii << "] = " 
 			   << da[ii] << ".");

@@ -67,7 +67,7 @@ namespace stk
       AABoundingBox getBoundingBox(const stk::mesh::Entity& element, const mesh::BulkData& bulkData)
       {
         double bbox[2*SpatialDim];
-        const mesh::PairIterRelation elem_nodes = element.relations( mesh::Node );
+        const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
         unsigned numNodes = elem_nodes.size();
         for (unsigned iNode = 0; iNode < numNodes; iNode++)
           {

@@ -10,6 +10,7 @@ ADD_SUBDIRECTORIES(
   DenseMatrix
   Dependencies
   FancyOutputting
+  FunctionObjects
   LAPACK
   MemoryManagement
   ObjectBuilder

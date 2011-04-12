@@ -6,5 +6,3 @@
 #include <stk_mesh/base/Part.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-
-//!> #include <stk_mesh/fem/EntityRanks.hpp>

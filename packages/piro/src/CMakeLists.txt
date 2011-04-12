@@ -23,10 +23,12 @@ SET(HEADERS ${HEADERS}
 APPEND_SET(HEADERS Piro_ValidPiroParameters.hpp
                    Piro_Version.hpp
                    Piro_Epetra_VelocityVerletSolver.hpp
+                   Piro_Epetra_TrapezoidRuleSolver.hpp
                    Piro_Epetra_InvertMassMatrixDecorator.hpp
                    Piro_ConfigDefs.hpp)
 APPEND_SET(SOURCES Piro_ValidPiroParameters.cpp
                    Piro_Epetra_VelocityVerletSolver.cpp
+                   Piro_Epetra_TrapezoidRuleSolver.cpp
                    Piro_Epetra_InvertMassMatrixDecorator.cpp
                    Piro_Version.cpp)
 

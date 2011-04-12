@@ -70,6 +70,19 @@ namespace Stokhos {
       return std::exp(-x*x/2.0); 
     }
 
+    /*! 
+     * \brief Clone this object with the option of building a higher order
+     * basis.
+     */
+    /*!
+     * This method is following the Prototype pattern (see Design Pattern's textbook).
+     * The slight variation is that it allows the order of the polynomial to be modified,
+     * otherwise an exact copy is formed. The use case for this is creating basis functions
+     * for column indices in a spatially varying adaptive refinement context.
+     */
+    virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const
+    { return Teuchos::rcp(new RysBasis<ordinal_type,value_type>(p,this->rightEndPt_,this->normalize)); }
+
   private:
 
     // Prohibit copying

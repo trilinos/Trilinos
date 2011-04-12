@@ -123,7 +123,7 @@ namespace stk {
       UniformRefinerPatternBase() : m_appendConvertString("_urpconv"),
                                     m_appendOriginalString(percept::PerceptMesh::s_omit_part+"_1000"),  // _100000
                                     m_oldElementsPartName("urp_oldElements"),
-                                    m_primaryEntityRank(stk::mesh::fem::INVALID_RANK)  
+                                    m_primaryEntityRank(stk::mesh::fem::FEMMetaData::INVALID_RANK)  
       {
         Elem::StdMeshObjTopologies::bootstrap();
 
@@ -499,7 +499,7 @@ namespace stk {
         int fieldStride = output_pts.dimension(1);
         unsigned *null_u = 0;
 
-        stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
+        stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
         double xi = input_param_coords(0, 0);
 
         // FIXME assumes {-1,0,1} element parametric coords
@@ -528,7 +528,7 @@ namespace stk {
         int fieldStride = output_pts.dimension(1);
         unsigned *null_u = 0;
 
-        stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
+        stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
         MDArray basis_val(elem_nodes.size(), 1);
         //std::cout << "tmp fieldStride= " << fieldStride << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
 
@@ -592,7 +592,7 @@ namespace stk {
         getTopoDim(topoDim, cell_topo_key);
 
         int fieldStride = 0;
-        stk::mesh::EntityRank fr_type = stk::mesh::Node;
+        stk::mesh::EntityRank fr_type = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
         //std::cout << "tmp cell_topo= " << cell_topo.getName() << " topoDim= " << topoDim << std::endl;
 
@@ -620,7 +620,7 @@ namespace stk {
           }
         }
         // FIXME
-        if (!fieldStride || fr_type != stk::mesh::Node)
+        if (!fieldStride || fr_type != stk::mesh::fem::FEMMetaData::NODE_RANK)
           return;
 
         //FieldFunction field_func("tmp", field, eMesh, topoDim, fieldStride);
@@ -644,7 +644,7 @@ namespace stk {
                 std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
                 std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
                 std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_hex20      = " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
-                stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
+                stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
 
 
                 PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
@@ -679,7 +679,7 @@ namespace stk {
               }
           }
 
-        stk::mesh::PairIterRelation new_elem_nodes = newElement.relations(mesh::Node);
+        stk::mesh::PairIterRelation new_elem_nodes = newElement.relations(mesh::fem::FEMMetaData::NODE_RANK);
         for (unsigned i_new_node = 0; i_new_node < new_elem_nodes.size(); i_new_node++)
           {
             unsigned childNodeIdx = child_nodes[i_new_node];
@@ -768,7 +768,7 @@ namespace stk {
       stk::mesh::Entity& createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, stk::mesh::EntityId eid)
       {
 #if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
-        stk::mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.get_bulkData(), stk::mesh::Node, eid);
+        stk::mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.getBulkData(), stk::mesh::fem::FEMMetaData::NODE_RANK, eid);
         if (node_p)
           return *node_p;
         else
@@ -795,7 +795,7 @@ namespace stk {
         static vector<quadratic_type> elems(NumNewElements_Enrich);
 
         CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         std::vector<stk::mesh::Part*> add_parts;
         std::vector<stk::mesh::Part*> remove_parts;
@@ -924,7 +924,7 @@ namespace stk {
                   }
                 //stk::mesh::Entity& node = eMesh.createOrGetNode(eid);
                 stk::mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
-                eMesh.get_bulkData()->declare_relation(newElement, node, inode);
+                eMesh.getBulkData()->declare_relation(newElement, node, inode);
               }
 
             //set_parent_child_relations(eMesh, element, newElement, ielem);
@@ -969,7 +969,7 @@ namespace stk {
         static std::vector<unsigned> vector_sdcell_global_baseline(4);
         static std::vector<unsigned> subCell_from_element(4);
 
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
 
         const unsigned * inodes = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].node;
         int num_subcell_verts = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology->vertex_count;
@@ -1108,7 +1108,7 @@ namespace stk {
         //  isLinearElement = true;
         //std::cout << "tmp cell_topo= " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
         
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         int topoDim = cell_topo.getDimension();
         //unsigned cell_topo_key = fromTopoKey;
@@ -1403,7 +1403,7 @@ namespace stk {
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_createOrGetNode);
 
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_declare_relation);
-                eMesh.get_bulkData()->declare_relation(newElement, node, inode);
+                eMesh.getBulkData()->declare_relation(newElement, node, inode);
                 //register_relation(newElement, node, inode);
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_declare_relation);
               }
@@ -2346,7 +2346,7 @@ namespace stk {
         EXCEPTWATCH;
         if (block_names_ranks.size() == 0)
           {
-            block_names_ranks.resize(stk::mesh::EntityRankEnd);
+            block_names_ranks.resize(stk::percept::EntityRankEnd);
           }
 
         m_fromParts.resize(0);
@@ -2362,7 +2362,7 @@ namespace stk {
               }
           }
 
-        for (unsigned irank = 0; irank < stk::mesh::EntityRankEnd; irank++)
+        for (unsigned irank = 0; irank < stk::percept::EntityRankEnd; irank++)
           {
             if (m_primaryEntityRank != irank)
               continue;
@@ -2404,7 +2404,8 @@ namespace stk {
                 stk::mesh::Part *  part = *i_part ;
 
                 // FIXME - is there a better way to determine if a part is one of the "standard" parts?
-                if (part->name()[0] == '{')
+                //if (part->name()[0] == '{')   // is_auto_declared_part
+                if ( stk::mesh::is_auto_declared_part(*part) )
                   continue;
 
                 //bool doThisPart = (block_names_include.size() == 0);
@@ -2565,7 +2566,7 @@ namespace stk {
                               << " rank= " << old_owning_elem.entity_rank()
                               << std::endl;
                   }
-                eMesh.get_bulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+                eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
                 //return;
                 found = true;
               }

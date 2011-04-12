@@ -142,6 +142,27 @@ Parameters:
 what_arg:  The error message to be associated with this error. ";
 
 
+// File: classTeuchos_1_1CantFindFunctionObjectConverterException.xml
+%feature("docstring")
+Teuchos::CantFindFunctionObjectConverterException "
+
+Thrown when an appropriate FunctionObject Converter can't be found.
+
+C++ includes: Teuchos_XMLFunctionObjectExceptions.hpp ";
+
+%feature("docstring")
+Teuchos::CantFindFunctionObjectConverterException::CantFindFunctionObjectConverterException
+"Teuchos::CantFindFunctionObjectConverterException::CantFindFunctionObjectConverterException(const
+std::string &what_arg)
+
+Constructs an CantFindFunctionObjectConverterException.
+
+Parameters:
+-----------
+
+what_arg:  The error message to be associated with this error. ";
+
+
 // File: classTeuchos_1_1CantFindParameterEntryConverterException.xml
 %feature("docstring")
 Teuchos::CantFindParameterEntryConverterException "
@@ -1646,7 +1667,7 @@ Return the i-th child node. ";
 %feature("docstring")  Teuchos::XMLObject::findFirstChild "int
 Teuchos::XMLObject::findFirstChild(std::string tagName) const
 
-returns the index of the first child found with the given tag name
+Returns the index of the first child found with the given tag name.
 Returns -1 if no child is found. ";
 
 %feature("docstring")  Teuchos::XMLObject::numContentLines "int
@@ -2094,6 +2115,9 @@ The read in parameter list. ";
 
 
 // File: Teuchos__XMLDependencyExceptions_8hpp.xml
+
+
+// File: Teuchos__XMLFunctionObjectExceptions_8hpp.xml
 
 
 // File: Teuchos__XMLInputSource_8cpp.xml

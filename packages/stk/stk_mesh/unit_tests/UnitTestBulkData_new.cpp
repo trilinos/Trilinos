@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -15,7 +15,7 @@
 #include <stk_mesh/fixtures/HexFixture.hpp>
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -929,6 +929,25 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   }//end of CommAll section
 
   bulk.modification_end ();
+}
+
+STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testUninitializedMetaData )
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  stk::mesh::MetaData meta; // Construct, but do not initialize
+  stk::mesh::BulkData bulk(meta, pm);
+
+  meta.set_entity_rank_names(stk::mesh::fem::entity_rank_names(2 /*spatial-dim*/));
+
+  meta.commit();
+
+  bulk.modification_begin();
+
+  STKUNIT_ASSERT_THROW( bulk.declare_entity(0, /*rank*/
+                                            1, /*id*/
+                                            stk::mesh::PartVector() ),
+                        std::logic_error);
 }
 
 namespace {

@@ -560,7 +560,8 @@ namespace Belos {
     Vnext = MVT::CloneViewNonConst(*V_,curind);
     // Orthonormalize first column
     // First, get a monoelemental matrix to hold the orthonormalization coefficients
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z0 = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(1,1) );
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z0 =
+      Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(1,1) );
     int rank = ortho_->normalize( *Vnext, z0 );
     TEST_FOR_EXCEPTION(rank != 1,GCRODRIterOrthoFailure, "Belos::GCRODRIter::iterate(): couldn't generate basis of full rank.");
     // Copy the scalar coefficient back into the z_ vector

@@ -2,11 +2,13 @@
 #define stk_percept_Util_hpp
 
 #include <iostream>
+#include <fstream>
 #include <iterator>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
+#include <math.h>
 
 
 #include "Shards_Array.hpp"
@@ -30,7 +32,6 @@
 #include <stk_util/util/tokenize.hpp>
 
 #include <boost/lexical_cast.hpp>
-
 #include <stk_percept/stk_mesh.hpp>
 
 
@@ -155,6 +156,33 @@ namespace stk {
         return ret;
       }
       static void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field);
+      static bool approx_equal_relative(double a, double b, double tol) 
+      { 
+        if (fabs(a-b) <= tol*(fabs(a)+fabs(b))*0.5) 
+          return true; 
+        else 
+          return false; 
+      }
+      static bool approx_equal_absolute(double a, double b, double tol) 
+      { 
+        if (fabs(a-b) < tol)
+          return true; 
+        else 
+          return false; 
+      }
+
+      static bool file_exists(std::string filename)
+      {
+        std::fstream fin;
+        fin.open(filename.c_str(), std::ios::in);
+        if( fin.is_open() )
+          {
+            fin.close();
+            return true;
+          }
+        fin.close();
+        return false;
+      }
 
     };
 

@@ -305,14 +305,14 @@ namespace stk {
     public:
       //========================================================================================================================
       // high-level interface
-      //NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), m_comm_all(eMesh.get_bulkData()->parallel()), m_gee_cnt(0), m_gen_cnt(0),
-      //m_entity_repo(stk::mesh::stk::mesh::EntityRankEnd)
+      //NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), m_comm_all(eMesh.getBulkData()->parallel()), m_gee_cnt(0), m_gen_cnt(0),
+      //m_entity_repo(stk::mesh::stk::percept::EntityRankEnd)
 
-      NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), m_comm_all(eMesh.get_bulkData()->parallel()),
+      NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), m_comm_all(eMesh.getBulkData()->parallel()),
                                                   // why does this cause failures? 
                                                   //m_cell_2_data_map(eMesh.getNumberElements()*8u),
                                                   m_gee_cnt(0), m_gen_cnt(0),
-                                                  m_entity_repo(stk::mesh::EntityRankEnd),
+                                                  m_entity_repo(stk::percept::EntityRankEnd),
                                                   m_debug(false),
                                                   m_state(NRS_NONE)
       {
@@ -331,7 +331,7 @@ namespace stk {
       void initialize() 
       {
         m_cell_2_data_map.clear();
-        for (unsigned i = 0; i < stk::mesh::EntityRankEnd; i++) m_entity_repo[i].clear();
+        for (unsigned i = 0; i < stk::percept::EntityRankEnd; i++) m_entity_repo[i].clear();
       }
 
       void //NodeRegistry::
@@ -350,7 +350,7 @@ namespace stk {
 
         //putInESMap();
 
-        m_eMesh.get_bulkData()->modification_begin();  
+        m_eMesh.getBulkData()->modification_begin();  
         this->createNewNodesInParallel(); 
         m_nodes_to_ghost.resize(0);
 
@@ -387,7 +387,7 @@ namespace stk {
       {
         if (m_debug)
           std::cout << "P[" << m_eMesh.getRank() << "] tmp NodeRegistry::endCheckForRemote start " << std::endl;
-        stk::ParallelMachine pm = m_eMesh.get_bulkData()->parallel();
+        stk::ParallelMachine pm = m_eMesh.getBulkData()->parallel();
         int failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
@@ -417,7 +417,7 @@ namespace stk {
       {
         if (m_debug)
           std::cout << "P[" << m_eMesh.getRank() << "] tmp NodeRegistry::endGetFromRemote start " << std::endl;
-        stk::ParallelMachine pm = m_eMesh.get_bulkData()->parallel();
+        stk::ParallelMachine pm = m_eMesh.getBulkData()->parallel();
         int failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
@@ -427,20 +427,20 @@ namespace stk {
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
         {
-          stk::mesh::Ghosting & ghosting = m_eMesh.get_bulkData()->create_ghosting( std::string("new_nodes") );
+          stk::mesh::Ghosting & ghosting = m_eMesh.getBulkData()->create_ghosting( std::string("new_nodes") );
           
           vector<stk::mesh::Entity*> receive;
 
           ghosting.receive_list( receive );
 
-          m_eMesh.get_bulkData()->change_ghosting( ghosting, m_nodes_to_ghost, receive);
+          m_eMesh.getBulkData()->change_ghosting( ghosting, m_nodes_to_ghost, receive);
 
         }
 
         failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
-        m_eMesh.get_bulkData()->modification_end();  
+        m_eMesh.getBulkData()->modification_end();  
 
         setAllReceivedNodeData();
 
@@ -478,7 +478,7 @@ namespace stk {
                   }
                 else
                   {
-                    stk::mesh::Entity *node = get_entity_node_I(*m_eMesh.get_bulkData(), stk::mesh::fem::NODE_RANK, nodeIds_onSE.m_entity_id_vector[ii]);  // FIXME
+                    stk::mesh::Entity *node = get_entity_node_I(*m_eMesh.getBulkData(), stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[ii]);  // FIXME
                     if (!node)
                       {
                         throw std::logic_error("NodeRegistry:: setAllReceivedNodeData logic err #3");
@@ -594,7 +594,7 @@ namespace stk {
             unsigned erank = m_eMesh.element_rank();
             erank = owning_elementRank;
             //VERIFY_OP(erank, <=, owning_elementRank , "erank...");
-            stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.get_bulkData(), erank, owning_elementId);
+            stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.getBulkData(), erank, owning_elementId);
 
             if (!owning_element)
               throw std::logic_error("NodeRegistry::checkForRemote logic: owning_element is null");
@@ -628,12 +628,12 @@ namespace stk {
                         throw std::logic_error("NodeRegistry::checkForRemote logic err #0.2");
                       }
 
-                    //stk::mesh::Entity * new_node = get_entity_node_Ia(*m_eMesh.get_bulkData(), Node, nodeIds_onSE, iid);
+                    //stk::mesh::Entity * new_node = get_entity_node_Ia(*m_eMesh.getBulkData(), Node, nodeIds_onSE, iid);
                     stk::mesh::Entity * new_node = nodeIds_onSE[iid];
 
                     if (0)
                       {
-                        stk::mesh::Entity * new_node_1 = get_entity_node_I(*m_eMesh.get_bulkData(), stk::mesh::fem::NODE_RANK, nodeIds_onSE.m_entity_id_vector[iid]);
+                        stk::mesh::Entity * new_node_1 = get_entity_node_I(*m_eMesh.getBulkData(), stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[iid]);
                         if (new_node != new_node_1)
                           {
                             throw std::logic_error("NodeRegistry::checkForRemote logic err #0.3");
@@ -817,7 +817,7 @@ namespace stk {
         //EXCEPTWATCH;
 
         int spatialDim = m_eMesh.getSpatialDim();
-        stk::mesh::EntityRank field_rank = mesh::Node;
+        stk::mesh::EntityRank field_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
         {
           unsigned nfr = field->restrictions().size();
           //if (printInfo) std::cout << "P[" << p_rank << "] info>    number of field restrictions= " << nfr << std::endl;
@@ -830,7 +830,7 @@ namespace stk {
             }
         }
 
-        if (field_rank != mesh::Node)
+        if (field_rank != stk::mesh::fem::FEMMetaData::NODE_RANK)
           {
             return;
           }
@@ -861,9 +861,9 @@ namespace stk {
         NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
         if (nodeIds_onSE.size() != 1)
           throw std::runtime_error("makeCentroidField not ready for multiple nodes");
-        //stk::mesh::Entity * c_node = m_eMesh.get_bulkData()->get_entity(Node, nodeIds_onSE[0]);
-        //stk::mesh::Entity * c_node = get_entity_node(*m_eMesh.get_bulkData(), stk::mesh::fem::NODE_RANK, nodeIds_onSE[0]);
-        //stk::mesh::Entity * c_node = get_entity_node_Ia(*m_eMesh.get_bulkData(), stk::mesh::fem::NODE_RANK, nodeIds_onSE, 0u);
+        //stk::mesh::Entity * c_node = m_eMesh.getBulkData()->get_entity(Node, nodeIds_onSE[0]);
+        //stk::mesh::Entity * c_node = get_entity_node(*m_eMesh.getBulkData(), stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE[0]);
+        //stk::mesh::Entity * c_node = get_entity_node_Ia(*m_eMesh.getBulkData(), stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE, 0u);
         stk::mesh::Entity * c_node = nodeIds_onSE[0];
 
 
@@ -879,14 +879,14 @@ namespace stk {
 
         if (needed_entity_rank == m_eMesh.element_rank())
           {
-            const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::NODE_RANK);
+            const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
             unsigned npts = elem_nodes.size();
             //if (npts == 2) doPrint=true;
             double dnpts = elem_nodes.size();
             for (unsigned ipts = 0; ipts < npts; ipts++)
               {
                 //stk::mesh::EntityId nodeId = elem_nodes[ipts];
-                stk::mesh::Entity * node = elem_nodes[ipts].entity(); //m_eMesh.get_bulkData()->get_entity(Node, nodeId);
+                stk::mesh::Entity * node = elem_nodes[ipts].entity(); //m_eMesh.getBulkData()->get_entity(Node, nodeId);
                 if (!node)
                   {
                     throw std::runtime_error("makeCentroidField: bad node found 1");
@@ -920,8 +920,8 @@ namespace stk {
               {
                 SDSEntityType nodeId = *ids;
                 
-                //stk::mesh::Entity * node = m_eMesh.get_bulkData()->get_entity(Node, nodeId);
-                //!!stk::mesh::Entity * node = get_entity_node_II(*m_eMesh.get_bulkData(),Node, nodeId);
+                //stk::mesh::Entity * node = m_eMesh.getBulkData()->get_entity(Node, nodeId);
+                //!!stk::mesh::Entity * node = get_entity_node_II(*m_eMesh.getBulkData(),Node, nodeId);
                 stk::mesh::Entity * node = nodeId;
                 if (!node)
                   {
@@ -973,7 +973,7 @@ namespace stk {
         //unsigned *null_u = 0;
 
         int spatialDim = m_eMesh.getSpatialDim();
-        stk::mesh::EntityRank field_rank = mesh::Node;
+        stk::mesh::EntityRank field_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
         {
           EXCEPTWATCH;
           unsigned nfr = field->restrictions().size();
@@ -986,7 +986,7 @@ namespace stk {
               spatialDim = fr.stride[0] ;
             }
         }
-        if (field_rank != mesh::Node)
+        if (field_rank != stk::mesh::fem::FEMMetaData::NODE_RANK)
           {
             return;
           }
@@ -1013,7 +1013,7 @@ namespace stk {
                 continue;
               }
 
-            stk::mesh::EntityRank needed_entity_rank = mesh::Node;
+            stk::mesh::EntityRank needed_entity_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
             // SPECIAL CASE
             // SPECIAL CASE
             // SPECIAL CASE
@@ -1026,9 +1026,7 @@ namespace stk {
               {
                 continue; 
               }
-
-            //stk::mesh::Entity * c_node = get_entity_node(*m_eMesh.get_bulkData(), mesh::Node, nodeIds_onSE[0]);
-            //stk::mesh::Entity * c_node = get_entity_node_Ia(*m_eMesh.get_bulkData(), mesh::Node, nodeIds_onSE, 0u);
+            
             stk::mesh::Entity * c_node = nodeIds_onSE[0];
 
             if (!c_node)
@@ -1045,7 +1043,7 @@ namespace stk {
                 stk::mesh::Entity *element_p = 0; 
                 {
                   SDSEntityType elementId = *subDimEntity.begin();
-                  //!!element_p = get_entity_element(*m_eMesh.get_bulkData(), m_eMesh.element_rank(), elementId);
+                  //!!element_p = get_entity_element(*m_eMesh.getBulkData(), m_eMesh.element_rank(), elementId);
                   element_p = elementId;
                   if (!element_p)
                     {
@@ -1061,7 +1059,7 @@ namespace stk {
                   }
                 else
                   {
-                    const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::NODE_RANK);
+                    const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
                     unsigned npts = elem_nodes.size();
                     //if (npts == 2) doPrint=true;
                     double dnpts = elem_nodes.size();
@@ -1104,7 +1102,7 @@ namespace stk {
                   {
                     SDSEntityType nodeId = *ids;
 
-                    //!!stk::mesh::Entity * node = get_entity_node_II(*m_eMesh.get_bulkData(), mesh::Node, nodeId);
+                    //!!stk::mesh::Entity * node = get_entity_node_II(*m_eMesh.getBulkData(), mesh::Node, nodeId);
                     stk::mesh::Entity * node = nodeId;
                     if (!node)
                       {
@@ -1200,8 +1198,8 @@ namespace stk {
 
         for (unsigned i_nid = 0; i_nid < nidsz; i_nid++)
           {
-            //stk::mesh::Entity * c_node = get_entity_node(*m_eMesh.get_bulkData(), stk::mesh::fem::NODE_RANK, nodeIds_onSE[i_nid]);
-            //stk::mesh::Entity * c_node = get_entity_node_Ia(*m_eMesh.get_bulkData(), stk::mesh::fem::NODE_RANK, nodeIds_onSE, i_nid);
+            //stk::mesh::Entity * c_node = get_entity_node(*m_eMesh.getBulkData(), stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE[i_nid]);
+            //stk::mesh::Entity * c_node = get_entity_node_Ia(*m_eMesh.getBulkData(), stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE, i_nid);
             stk::mesh::Entity * c_node = nodeIds_onSE[i_nid];
 
             if (!c_node)
@@ -1217,10 +1215,10 @@ namespace stk {
                 stk::mesh::Selector selector(part);
 
                 //std::cout << "P[" << m_eMesh.getRank() << "] NodeRegistry::addToExistingParts Part[" << ipart << "]= " << part.name() << std::endl;
-                std::string part_name = part.name();
+                //std::string part_name = part.name();
 
                 // FIXME - is there a better way to determine if a part is one of the "standard" parts?
-                if (part_name[0] == '{')
+                if (stk::mesh::is_auto_declared_part(part))  //part_name[0] == '{')  //  is_auto_declared_part
                   continue;
 
                 //std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() 
@@ -1231,7 +1229,7 @@ namespace stk {
                 bool found = true;
                 if (needed_entity_rank == m_eMesh.element_rank())
                   {
-                    const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::NODE_RANK);
+                    const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
                     unsigned npts = elem_nodes.size();
                     for (unsigned ipts = 0; ipts < npts; ipts++)
                       {
@@ -1254,7 +1252,7 @@ namespace stk {
                     for (SubDimCell_SDSEntityType::iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                       {
                         SDSEntityType nodeId = *ids;
-                        //!!Entity * node = get_entity_node_II(*m_eMesh.get_bulkData(),Node, nodeId);
+                        //!!Entity * node = get_entity_node_II(*m_eMesh.getBulkData(),Node, nodeId);
                         stk::mesh::Entity * node = nodeId;
                         if (!node)
                           {
@@ -1276,9 +1274,9 @@ namespace stk {
                     const unsigned part_rank = part.primary_entity_rank();
 
                     //if (!topology)
-                    if (part_rank == stk::mesh::fem::NODE_RANK)
+                    if (part_rank == stk::mesh::fem::FEMMetaData::NODE_RANK)
                       {
-                        m_eMesh.get_bulkData()->change_entity_parts( *c_node, add_parts, remove_parts );
+                        m_eMesh.getBulkData()->change_entity_parts( *c_node, add_parts, remove_parts );
                         if (0)
                           {
                             std::cout << "P[" << m_eMesh.getRank() << "] adding node " << c_node->identifier() << " to   Part[" << ipart << "]= " << part.name() 
@@ -1308,16 +1306,16 @@ namespace stk {
             stk::mesh::Part& part = *parts[ipart];
 
             //std::cout << "P[" << m_eMesh.getRank() << "] NodeRegistry::addToExistingParts Part[" << ipart << "]= " << part.name() << std::endl;
-            std::string part_name = part.name();
+            //std::string part_name = part.name();
 
             // FIXME - is there a better way to determine if a part is one of the "standard" parts?
-            if (part_name[0] == '{')
+            if (stk::mesh::is_auto_declared_part(part)) //part_name[0] == '{')  // is_auto_declared_part
               continue;
 
             const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(part);
             const unsigned part_rank = part.primary_entity_rank();
 
-            if (part_rank == stk::mesh::fem::NODE_RANK)
+            if (part_rank == stk::mesh::fem::FEMMetaData::NODE_RANK)
               {
                 stk::mesh::Selector selector(part);
 
@@ -1337,7 +1335,7 @@ namespace stk {
                     //              << std::endl;
 
                     bool found = true;
-                    stk::mesh::EntityRank needed_entity_rank = mesh::Node;
+                    stk::mesh::EntityRank needed_entity_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
                     //
                     // SPECIAL CASE
                     // SPECIAL CASE
@@ -1362,7 +1360,7 @@ namespace stk {
 
                         stk::mesh::Entity& element = *element_p;
 
-                        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::NODE_RANK);
+                        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
                         unsigned npts = elem_nodes.size();
                         for (unsigned ipts = 0; ipts < npts; ipts++)
                           {
@@ -1404,7 +1402,7 @@ namespace stk {
                                 throw std::runtime_error("addToExistingParts: bad node found 0.3");
                               }
 
-                            m_eMesh.get_bulkData()->change_entity_parts( *c_node, add_parts, remove_parts );
+                            m_eMesh.getBulkData()->change_entity_parts( *c_node, add_parts, remove_parts );
 
                             if (0)
                               {
@@ -1470,7 +1468,7 @@ namespace stk {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 
         CellTopology cell_topo(cell_topo_data);
-        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::NODE_RANK);
+        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
           {
@@ -1523,7 +1521,7 @@ namespace stk {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 
         //CellTopology cell_topo(cell_topo_data);
-        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::NODE_RANK);
+        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         const unsigned *  inodes = 0;
         unsigned nSubDimNodes = 0;
@@ -1609,7 +1607,7 @@ namespace stk {
             //!
             unsigned erank = m_eMesh.element_rank();
             erank = stk::mesh::entity_rank(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
-            stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.get_bulkData(), erank, owning_elementId);
+            stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.getBulkData(), erank, owning_elementId);
             //!
 
             if (!owning_element)
@@ -1644,7 +1642,7 @@ namespace stk {
                 stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
                 NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<SDC_DATA_GLOBAL_NODE_IDS>();
 
-                stk::mesh::Entity * owning_element = m_eMesh.get_bulkData()->get_entity(m_eMesh.element_rank(), owning_elementId);
+                stk::mesh::Entity * owning_element = m_eMesh.getBulkData()->get_entity(m_eMesh.element_rank(), owning_elementId);
                 if (!owning_element)
                   throw std::logic_error("logic: hmmm #5.3");
                 bool isGhost = m_eMesh.isGhostElement(*owning_element);
@@ -1703,7 +1701,7 @@ namespace stk {
 #endif
         comm_all.communicate();
 
-        stk::ParallelMachine pm = m_eMesh.get_bulkData()->parallel();
+        stk::ParallelMachine pm = m_eMesh.getBulkData()->parallel();
         int failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
@@ -1719,8 +1717,8 @@ namespace stk {
         int failed = 0;
         std::string msg;
 
-        stk::ParallelMachine pm = m_eMesh.get_bulkData()->parallel();
-        unsigned proc_size = m_eMesh.get_bulkData()->parallel_size();
+        stk::ParallelMachine pm = m_eMesh.getBulkData()->parallel();
+        unsigned proc_size = m_eMesh.getBulkData()->parallel_size();
         unsigned proc_rank = comm_all.parallel_rank();
 
         vector<stk::mesh::EntityProc> nodes_to_ghost;
@@ -1773,11 +1771,11 @@ namespace stk {
 
         if (nodes_to_ghost.size())
           {
-            stk::mesh::Ghosting & ghosting = m_eMesh.get_bulkData()->create_ghosting( std::string("new_nodes") );
+            stk::mesh::Ghosting & ghosting = m_eMesh.getBulkData()->create_ghosting( std::string("new_nodes") );
 
             vector<stk::mesh::Entity*> receive;
             ghosting.receive_list( receive );
-            m_eMesh.get_bulkData()->change_ghosting( ghosting, nodes_to_ghost, receive);
+            m_eMesh.getBulkData()->change_ghosting( ghosting, nodes_to_ghost, receive);
           }
 
       }// unpack
@@ -1792,7 +1790,7 @@ namespace stk {
         // assert( bulk data is in modifiable mode)
         // create new entities on this proc
         vector<stk::mesh::Entity *> new_nodes;
-        m_eMesh.createEntities( stk::mesh::fem::NODE_RANK, num_nodes_needed, new_nodes); 
+        m_eMesh.createEntities( stk::mesh::fem::FEMMetaData::NODE_RANK, num_nodes_needed, new_nodes); 
       
         // set map values to new node id's
         unsigned inode=0;
@@ -1805,7 +1803,7 @@ namespace stk {
             //!
             unsigned erank = m_eMesh.element_rank();
             erank = stk::mesh::entity_rank(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
-            stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.get_bulkData(), erank, owning_elementId);
+            stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.getBulkData(), erank, owning_elementId);
             //!
 
             if (!owning_element)
@@ -1850,19 +1848,19 @@ namespace stk {
         stk::mesh::EntityRank  non_owning_elementRank                = stk::mesh::entity_rank(non_owning_elementKey);
 
         // create a new relation here?  no, we are going to delete this element, so we just register that the new node is attached to 
-        //stk::mesh::Entity * element = m_eMesh.get_bulkData()->get_entity(m_eMesh.element_rank(), non_owning_elementId);
+        //stk::mesh::Entity * element = m_eMesh.getBulkData()->get_entity(m_eMesh.element_rank(), non_owning_elementId);
 
         //!
         unsigned erank = m_eMesh.element_rank();
         erank = non_owning_elementRank;
-        stk::mesh::Entity * element = get_entity_element(*m_eMesh.get_bulkData(), erank, non_owning_elementId);
+        stk::mesh::Entity * element = get_entity_element(*m_eMesh.getBulkData(), erank, non_owning_elementId);
         //!
 
         for (unsigned iid = 0; iid < nodeIds_onSE.size(); iid++)
           {
-            //stk::mesh::Entity * node = get_entity_node_I(*m_eMesh.get_bulkData(),stk::mesh::fem::NODE_RANK, nodeIds_onSE[iid]);
+            //stk::mesh::Entity * node = get_entity_node_I(*m_eMesh.getBulkData(),stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE[iid]);
             //nodeIds_onSE.m_entity_vector[iid] = node;
-            //stk::mesh::Entity * node = get_entity_node_Ia(*m_eMesh.get_bulkData(),stk::mesh::fem::NODE_RANK, nodeIds_onSE, iid);
+            //stk::mesh::Entity * node = get_entity_node_Ia(*m_eMesh.getBulkData(),stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE, iid);
             stk::mesh::Entity * node = nodeIds_onSE[iid];
 
             // has to be null, right?

@@ -218,15 +218,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Validator, EnhancedNumberValidatorConv
   std::string xmlFileName = TypeNameTraits<T>::name() + "EnhancedValidatorList.xml";
   std::string defaultParameterName = "default";
   std::string minmaxParameterName = "min max";
+  std::string stepPrecParameterName = "step and prec";
   ParameterList myList;
   RCP<EnhancedNumberValidator< T > > defaultValidator =
     rcp( new EnhancedNumberValidator< T >());
   RCP<EnhancedNumberValidator< T > > minMaxValidator =
     rcp( new EnhancedNumberValidator< T >(0,10));
+  RCP<EnhancedNumberValidator< T > > stepAndPrecValidator =
+    rcp( new EnhancedNumberValidator< T >(0,10,4,4));
   myList.set(defaultParameterName, ( T )6, "parameter with default validator",
     defaultValidator);
   myList.set(minmaxParameterName, ( T )10, "parameter with min and max validator",
     minMaxValidator);
+  myList.set(stepPrecParameterName, ( T )10, "parameter with min, max, "
+    "step, and prec validator",
+    stepAndPrecValidator);
 
   RCP<ParameterList> readInPL = writeThenReadPL(myList);
 
@@ -308,6 +314,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Validator, EnhancedNumberValidatorConv
     rcp_dynamic_cast<const EnhancedNumberValidator< T > >(
       myList.getEntry(minmaxParameterName).validator(), true)->hasMax()
   );
+
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator< T > >(
+      readInPL->getEntry(stepPrecParameterName).validator(), true)->getMin(),
+    rcp_dynamic_cast<const EnhancedNumberValidator< T > >(
+      myList.getEntry(stepPrecParameterName).validator(), true)->getMin()
+  );
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator< T > >(
+      readInPL->getEntry(stepPrecParameterName).validator(), true)->getMax(),
+    rcp_dynamic_cast<const EnhancedNumberValidator< T > >(
+      myList.getEntry(stepPrecParameterName).validator(), true)->getMax()
+  );
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator< T > >(
+      readInPL->getEntry(stepPrecParameterName).validator(), true)->getStep()
+    ,
+    rcp_dynamic_cast<const EnhancedNumberValidator< T > >(
+      myList.getEntry(stepPrecParameterName).validator(), true)->getStep()
+  );
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator< T > >(
+      readInPL->getEntry(
+        stepPrecParameterName).validator(), true)->getPrecision(),
+    rcp_dynamic_cast<const EnhancedNumberValidator< T > >(
+      myList.getEntry(
+        stepPrecParameterName).validator(), true)->getPrecision());
 
 }
 

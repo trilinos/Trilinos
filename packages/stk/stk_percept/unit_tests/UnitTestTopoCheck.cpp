@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009, 2010 Sandia Corporation.                        */
+/*    Copyright 2009, 2010, 2011 Sandia Corporation.                        */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -25,9 +25,7 @@
 #include <stk_mesh/base/Comm.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <stk_percept/TopologyVerifier.hpp>
@@ -163,7 +161,7 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
   // verify valid topology
   bool isBad = false;
   if(verbose) std::cout << "verify this is a good topology " << std::endl;
-  isBad = topoVerifier.isTopologyBad( *tp2.get_bulkData() );
+  isBad = topoVerifier.isTopologyBad( *tp2.getBulkData() );
   STKUNIT_EXPECT_FALSE(isBad);
 
   //------- a bad topology with a duplicated node
@@ -188,7 +186,7 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
   tp2.writeSTKMesh("topo-badQuadDupl.e");
 
   // verify bad topology
-  isBad = topoVerifier.isTopologyBad( *tp2.get_bulkData() );
+  isBad = topoVerifier.isTopologyBad( *tp2.getBulkData() );
   STKUNIT_EXPECT_TRUE(isBad);
 
   //------ create a bad topology with crossed elements
@@ -213,7 +211,7 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
   tp2.writeSTKMesh("topo-badQuadCrossed.e");
 
   // verify bad topology
-  isBad = topoVerifier.isTopologyBad( *tp2.get_bulkData() );
+  isBad = topoVerifier.isTopologyBad( *tp2.getBulkData() );
   STKUNIT_EXPECT_TRUE(isBad);
 }
 
@@ -287,7 +285,7 @@ STKUNIT_UNIT_TEST(geom, geomPrints)
   // verify valid geometry
   bool isBad = false;
   if(verbose) std::cout << "verify this is a good geometry " << std::endl;
-  isBad = geomVerifier.isGeometryBad( *tp2.get_bulkData() );
+  isBad = geomVerifier.isGeometryBad( *tp2.getBulkData() );
   STKUNIT_EXPECT_FALSE(isBad);
 
   /////////////// path test 3
@@ -320,13 +318,13 @@ STKUNIT_UNIT_TEST(geom, geomPrints)
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("geom-all-hex-path3.e");
   geomVerifier = GeometryVerifier(false);
-  geomVerifier.isGeometryBad(*tp2.get_bulkData() );
+  geomVerifier.isGeometryBad(*tp2.getBulkData() );
 
   // break path3 of the hexes into tets
   tp2.breakAllElements<shards_Hexahedron_8, shards_Tetrahedron_4>();
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("geom-all-hex-tet-path3.e");
-  geomVerifier.isGeometryBad(*tp2.get_bulkData() );
+  geomVerifier.isGeometryBad(*tp2.getBulkData() );
 
 }
 
@@ -368,7 +366,7 @@ STKUNIT_UNIT_TEST(geom, geomEqui)
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("equi-tet.e");
   geomVerifier = GeometryVerifier(false);
-  geomVerifier.isGeometryBad(*tp2.get_bulkData(), true );
+  geomVerifier.isGeometryBad(*tp2.getBulkData(), true );
 
   //------ scale the mesh
   double sf= 4.0;
@@ -385,7 +383,7 @@ STKUNIT_UNIT_TEST(geom, geomEqui)
   tp2.stkMeshCreate(parallel_machine);
   tp2.writeSTKMesh("equi-tet-scaled.e");
   geomVerifier = GeometryVerifier(false);
-  geomVerifier.isGeometryBad(*tp2.get_bulkData(), true );
+  geomVerifier.isGeometryBad(*tp2.getBulkData(), true );
 
 }
 #endif
@@ -454,7 +452,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    mesh::fem::FEMMetaData mesh_meta_data(3, mesh::fem_entity_rank_names() );
+    mesh::fem::FEMMetaData mesh_meta_data(3, mesh::fem::entity_rank_names(3) );
 
     //--------------------------------
     // Element-block declarations typically occur when reading the
@@ -466,7 +464,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", mesh_meta_data.element_rank());
 
     /// set cell topology for the part block_1
-    mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( block_hex );
+    stk::mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( mesh_meta_data, block_hex );
 
     //--------------------------------
     // Declare coordinates field on all nodes with 3D:
@@ -475,7 +473,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
       mesh_meta_data.declare_field< VectorFieldType >( "coordinates" );
 
     stk::mesh::put_field(
-      coordinates_field , mesh::Node , universal , SpatialDim );
+      coordinates_field , mesh::fem::FEMMetaData::NODE_RANK , universal , SpatialDim );
 
     //--------------------------------
 
@@ -495,7 +493,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
 
     mesh_meta_data.declare_field_relation(
       elem_node_coord ,
-      & mesh::element_node_stencil<void> ,
+      stk::mesh::fem::get_element_node_stencil(3) ,
       coordinates_field );
 
     // Declare the size of the aggressive "gather" field
@@ -704,7 +702,7 @@ void use_encr_case_1_generate_mesh(
     for ( unsigned i = 0 ; i < node_map.size() ; ++i ) {
       const unsigned i3 = i * 3 ;
 
-      mesh::Entity * const node = mesh.get_entity( mesh::Node , node_map[i] );
+      mesh::Entity * const node = mesh.get_entity( mesh::fem::FEMMetaData::NODE_RANK , node_map[i] );
 
       if ( NULL == node ) {
         std::ostringstream msg ;

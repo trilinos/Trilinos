@@ -9,9 +9,7 @@
 
 /** \example FancyOutputting_test.cpp */
 
-/** \example ArrayRefCountPtr_test.cpp */
-
-/** \example ArrayRefCountPtr_test.cpp */
+/** \example ArrayRCP_test.cpp */
 
 /** \namespace Teuchos
     \brief The Teuchos namespace contains all of the classes, structs and enums used by Teuchos, 

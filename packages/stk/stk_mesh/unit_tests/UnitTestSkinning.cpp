@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -20,7 +20,6 @@
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
@@ -32,7 +31,7 @@
 #include <iomanip>
 #include <algorithm>
 
-using stk::mesh::fem::NODE_RANK;
+static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 class UnitTestStkMeshSkinning {
 public:
@@ -190,8 +189,7 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   // Grab the skin entities
   stk::mesh::Selector skin_selector(skin_part);
-  const std::vector<stk::mesh::Bucket*>& edge_buckets =
-    bulk_data.buckets(stk::mesh::fem::edge_rank(grid_mesh.m_spatial_dimension));
+  const std::vector<stk::mesh::Bucket*>& edge_buckets = bulk_data.buckets(fem_meta.edge_rank());
   std::vector<stk::mesh::Entity*> skin_entities;
   stk::mesh::get_selected_entities(skin_selector, edge_buckets, skin_entities);
 

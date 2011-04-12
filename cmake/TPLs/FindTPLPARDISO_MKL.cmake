@@ -1,0 +1,6 @@
+INCLUDE(TPLDeclareLibraries)
+
+TPL_DECLARE_LIBRARIES( PARDISO_MKL
+  REQUIRED_HEADERS mkl_pardiso.h
+  REQUIRED_LIBS_NAMES mkl_intel_lp64
+  )

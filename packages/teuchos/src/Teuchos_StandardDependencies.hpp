@@ -616,6 +616,15 @@ public:
  * The dependee of a NumberVisualDependency must 
  * be a number type and can't be an array. The dependent may be 
  * any type of parameter or parameter list.
+ *
+ * If no function is provided, then the value of the Dependee
+ * is simply compared to 0. If it is greater than 0, the
+ * dependency evaluates to true. Otherwise it evaluates to false.
+ *
+ * If a function is provided, then the value of the Dependee
+ * is first ran through that function. The result of that
+ * function is then compared to 0 using the same
+ * criteria as above.
  */
 template <class T>
 class NumberVisualDependency : public VisualDependency{
@@ -642,7 +651,7 @@ public:
   NumberVisualDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RCP<SingleArguementFunctionObject<T,T> > func=null);
+    RCP<SimpleFunctionObject<T> > func=null);
 
   /**
    * \brief Constructs a NumberVisualDependency.
@@ -661,7 +670,7 @@ public:
   NumberVisualDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependents,
-    RCP<SingleArguementFunctionObject<T,T> > func=null);
+    RCP<SimpleFunctionObject<T> > func=null);
 
   //@}
 
@@ -683,11 +692,8 @@ public:
   /** \name Getter Functions */
   //@{
   
-  /** \brief Gets the function associated with this dependency. */
-  RCP<SingleArguementFunctionObject<T,T> > getFunctionObject();
-
   /** \brief Const version of function getter. */
-  RCP<const SingleArguementFunctionObject<T,T> > getFunctionObject() const;
+  RCP<const SimpleFunctionObject<T> > getFunctionObject() const;
 
   //@}
 
@@ -710,7 +716,7 @@ private:
    * \brief the function used to determine the
    * visibility of the dependent.
    */
-    RCP<SingleArguementFunctionObject<T,T> > func_;
+    RCP<SimpleFunctionObject<T> > func_;
   
   //@}
   //
@@ -720,7 +726,7 @@ template<class T>
 NumberVisualDependency<T>::NumberVisualDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  RCP<SingleArguementFunctionObject<T,T> > func)
+  RCP<SimpleFunctionObject<T> > func)
   :VisualDependency(dependee, dependent),
   func_(func)
 {
@@ -731,7 +737,7 @@ template<class T>
 NumberVisualDependency<T>::NumberVisualDependency(
   RCP<const ParameterEntry> dependee,
   ParameterEntryList dependents,
-  RCP<SingleArguementFunctionObject<T,T> > func)
+  RCP<SimpleFunctionObject<T> > func)
   :VisualDependency(dependee, dependents),
   func_(func)
 {
@@ -740,27 +746,20 @@ NumberVisualDependency<T>::NumberVisualDependency(
 
 template<class T>
 bool NumberVisualDependency<T>::getDependeeState() const{
+  T value = getFirstDependeeValue<T>();
   if(!func_.is_null()){
-    func_->setParameterValue(getFirstDependeeValue<T>());
-    return func_->runFunction() > ScalarTraits<T>::zero() ? true : false;
+    value = func_->runFunction(value);
   }
-  return getFirstDependeeValue<T>();
+  return value > ScalarTraits<T>::zero() ? true : false;
 }
 
 template<class T>
 std::string NumberVisualDependency<T>::getTypeAttributeValue() const{
-  return "NumberVisualDependency<" + TypeNameTraits<T>::name() + ">";
+  return "NumberVisualDependency(" + TypeNameTraits<T>::name() + ")";
 }
 
 template<class T>
-RCP<SingleArguementFunctionObject<T,T> > 
-  NumberVisualDependency<T>::getFunctionObject()
-{
-  return func_;
-}
-
-template<class T>
-RCP<const SingleArguementFunctionObject<T,T> > 
+RCP<const SimpleFunctionObject<T> > 
   NumberVisualDependency<T>::getFunctionObject() const
 {
   return func_.getConst();
@@ -850,7 +849,7 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func=null);
+    RCP<SimpleFunctionObject<DependeeType> > func=null);
 
 
   /**
@@ -864,7 +863,7 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependent,
-    RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func=null);
+    RCP<SimpleFunctionObject<DependeeType> > func=null);
 
   //@}
 
@@ -882,12 +881,8 @@ public:
   /** \name Getters */
   //@{
 
-  /** \brief Gets the function associated with this dependency. */
-  RCP<SingleArguementFunctionObject<DependeeType, DependeeType> >
-    getFunctionObject();
-
   /** \brief Const version of function getter. */
-  RCP<const SingleArguementFunctionObject<DependeeType, DependeeType> > 
+  RCP<const SimpleFunctionObject<DependeeType> > 
     getFunctionObject() const;
 
   //@}
@@ -910,7 +905,7 @@ private:
    * \brief The function used to calculate the new value of the
    * arrays length.
    */
-    RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func_;
+    RCP<SimpleFunctionObject<DependeeType> > func_;
   
   /**
    * \brief Modifies the length of an array.
@@ -929,7 +924,7 @@ template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func):
+  RCP<SimpleFunctionObject<DependeeType> > func):
   Dependency(dependee, dependent),
   func_(func)
 {
@@ -940,7 +935,7 @@ template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
   ParameterEntryList dependents,
-  RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func):
+  RCP<SimpleFunctionObject<DependeeType> > func):
   Dependency(dependee, dependents),
   func_(func)
 {
@@ -953,19 +948,13 @@ std::string
 NumberArrayLengthDependency<DependeeType, DependentType>::getTypeAttributeValue()
 const
 {
-  return "NumberArrayLengthDependency<" +
+  return "NumberArrayLengthDependency(" +
     TypeNameTraits<DependeeType>::name() + ", " +
-    TypeNameTraits<DependentType>::name() +">";
+    TypeNameTraits<DependentType>::name() +")";
 }
 
 template<class DependeeType, class DependentType>
-RCP<SingleArguementFunctionObject<DependeeType, DependeeType> >
-NumberArrayLengthDependency<DependeeType, DependentType>::getFunctionObject(){
-  return func_;
-}
-
-template<class DependeeType, class DependentType>
-RCP<const SingleArguementFunctionObject<DependeeType, DependeeType> >
+RCP<const SimpleFunctionObject<DependeeType> >
 NumberArrayLengthDependency<DependeeType, DependentType>::getFunctionObject()
 const
 {
@@ -996,13 +985,9 @@ NumberArrayLengthDependency<DependeeType, DependentType>::modifyArrayLength(
 template<class DependeeType, class DependentType>
 void 
 NumberArrayLengthDependency<DependeeType, DependentType>::evaluate(){
-  DependeeType newLength;
+  DependeeType newLength = getFirstDependeeValue<DependeeType>();
   if(!func_.is_null()){
-    func_->setParameterValue(getFirstDependeeValue<DependeeType>());
-    newLength = func_->runFunction();
-  }
-  else{
-    newLength = getFirstDependeeValue<DependeeType>();
+    newLength = func_->runFunction(newLength);
   }
 
   TEST_FOR_EXCEPTION(newLength < OrdinalTraits<DependeeType>::zero(),
@@ -1533,7 +1518,7 @@ RangeValidatorDependency<T>::RangeValidatorDependency(
 template<class T>
 std::string RangeValidatorDependency<T>::getTypeAttributeValue() const
 {
-  return "RangeValidatorDependency<" + TypeNameTraits<T>::name() + ">";
+  return "RangeValidatorDependency(" + TypeNameTraits<T>::name() + ")";
 }
   
 

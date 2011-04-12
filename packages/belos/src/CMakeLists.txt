@@ -52,6 +52,10 @@ APPEND_SET(HEADERS
   BelosInnerSolver.hpp
   BelosIteration.hpp
   BelosLinearProblem.hpp
+  BelosLSQRIter.hpp
+  BelosLSQRIteration.hpp
+  BelosLSQRSolMgr.hpp
+  BelosLSQRStatusTest.hpp
   BelosMatOrthoManager.hpp
   BelosMinresIteration.hpp
   BelosMinresIter.hpp

@@ -45,7 +45,7 @@ namespace stk {
         static vector<line_tuple_type> elems(2);
 
         CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         std::vector<stk::mesh::Part*> add_parts;
         std::vector<stk::mesh::Part*> remove_parts;
@@ -150,7 +150,7 @@ namespace stk {
                           << std::endl;
               }
 
-            //eMesh.get_bulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+            //eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
 
             change_entity_parts(eMesh, element, newElement);
 
@@ -165,8 +165,8 @@ namespace stk {
 
             }
 
-            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.get_bulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
+            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
+            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
 
             element_pool++;
 
