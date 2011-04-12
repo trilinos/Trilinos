@@ -135,7 +135,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testSymmetricTensor)
     stk::mesh::SymmetricTensor::tag();
 
   std::string to_str = symmetrictensor_tag.to_string(9 /*size*/, 1 /*idx*/);
-  std::string expected_str("yx");
+  std::string expected_str("yy");
   STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true);
 
   //should throw if we supply a size < 9:
