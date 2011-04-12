@@ -107,7 +107,9 @@ namespace panzer {
           = indexerFactory->buildUniqueGlobalIndexer(MPI_COMM_WORLD,physics_blocks,conn_manager);
 
     // and linear object factory
-    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD)),dofManager);
+    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > elof = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD)),dofManager));
+
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 
     // setup field manager builder
     /////////////////////////////////////////////
@@ -123,15 +125,18 @@ namespace panzer {
     closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
 
     Teuchos::ParameterList user_data("User Data");
-    user_data.sublist("STK Mesh").set("Mesh", mesh);
-    user_data.sublist("STK Mesh").set("DOF Manager", dofManager);
+    user_data.sublist("Panzer Data").set("Mesh", mesh);
+    user_data.sublist("Panzer Data").set("DOF Manager", dofManager);
+    user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
 
-    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,*cm_factory,closure_models,dofManager,elof,user_data);
-    fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,*cm_factory,bc_factory,closure_models,elof,user_data);
+    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,*cm_factory,closure_models,dofManager,*elof,user_data);
+    fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,*cm_factory,bc_factory,closure_models,*elof,user_data);
 
-    Teuchos::ParameterList ic_closure_models("IC Closure Models");
-    ic_closure_models.sublist("Initial Conditions").sublist("TEMPERATURE").set<double>("Value",3.0);
-    ic_closure_models.sublist("Initial Conditions").sublist("ION_TEMPERATURE").set<double>("Value",3.0);    
+    Teuchos::ParameterList ic_closure_models("Initial Conditions");
+    ic_closure_models.sublist("eblock-0_0").sublist("TEMPERATURE").set<double>("Value",3.0);
+    ic_closure_models.sublist("eblock-0_0").sublist("ION_TEMPERATURE").set<double>("Value",3.0);
+    ic_closure_models.sublist("eblock-1_0").sublist("TEMPERATURE").set<double>("Value",3.0);
+    ic_closure_models.sublist("eblock-1_0").sublist("ION_TEMPERATURE").set<double>("Value",3.0);    
 
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
     panzer::setupInitialConditionFieldManagers(volume_worksets,
@@ -139,41 +144,16 @@ namespace panzer {
 					       *cm_factory,
 					       ic_closure_models,
 					       dofManager,
-					       elof,
+					       *elof,
 					       user_data,
 					       phx_ic_field_managers);
 
     
-    Teuchos::RCP<panzer::LinearObjContainer> loc = elof.buildLinearObjContainer();
+    Teuchos::RCP<panzer::LinearObjContainer> loc = elof->buildLinearObjContainer();
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     eloc->x->PutScalar(0.0);
 
-    // Evaluate Initial Condition 
-    { 
-      const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& 
-	worksets = fmb.getWorksets();
-      
-      for (std::size_t block = 0; block < worksets.size(); ++block) {
-	
-	std::vector<panzer::Workset>& w = *worksets[block]; 
-	
-	Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = 
-	  phx_ic_field_managers[block];
-
-	fm->writeGraphvizFile(std::string("IC_"+block));
-	
-	// Loop over worksets in this element block
-	for (std::size_t i = 0; i < w.size(); ++i) {
-	  panzer::Workset& workset = w[i];
-	  
-	  workset.linContainer = loc;
-	  // Need to figure out how to get restart time from Rythmos.
-	  workset.time = 0.0;
-	  
-	  fm->evaluateFields<panzer::Traits::Residual>(workset);
-	}
-      }
-    }
+    panzer::evaluateInitialCondition(fmb.getWorksets(), phx_ic_field_managers, loc, 0.0, true);
     
     Teuchos::RCP<Epetra_Vector> x = eloc->x;
     for (int i=0; i < x->MyLength(); ++i)

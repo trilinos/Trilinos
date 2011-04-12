@@ -199,6 +199,7 @@ void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					   const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
 					   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+					   const std::string& model_name,
 					   const Teuchos::ParameterList& models,
 					   const LinearObjFactory<panzer::Traits> & lof,
 					   const Teuchos::ParameterList& user_data) const
@@ -226,7 +227,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
   // Add in closure models
   {
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
-      factory.getAsObject<EvalT>()->buildClosureModels("Initial Conditions", this->m_input_eq_set, models, *(this->m_eval_plist), user_data);
+      factory.getAsObject<EvalT>()->buildClosureModels(model_name, this->m_input_eq_set, models, *(this->m_eval_plist), user_data);
     
     for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
       fm.template registerEvaluator<EvalT>((*evaluators)[i]);

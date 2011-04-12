@@ -17,7 +17,10 @@
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ClosureModel_Factory.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_EpetraLinearObjContainer.hpp"
+#include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_STK_NOXObserverFactory_Epetra.hpp"
 #include "Panzer_STK_RythmosObserverFactory_Epetra.hpp"
@@ -52,13 +55,14 @@ namespace panzer_stk {
       pl->sublist("Solution Control");
       pl->sublist("Solver Factories");
       pl->sublist("Mesh");
-      pl->sublist("Initial Guess");
+      pl->sublist("Initial Conditions");
       pl->sublist("Output");
       pl->sublist("Output").set("File Name","panzer.exo");     
       pl->sublist("Assembly");
       pl->sublist("Block ID to Physics ID Mapping");
       pl->sublist("Options");
       pl->sublist("User Data");
+      pl->sublist("User Data").sublist("Panzer Data");
      
       validPL = pl;
     }
@@ -201,6 +205,12 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
       = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(ep_comm,dofManager));
 
+    // Add mesh objects to user data to make available to user ctors
+    /////////////////////////////////////////////////////////////
+    p.sublist("User Data").sublist("Panzer Data").set("STK Mesh", mesh);
+    p.sublist("User Data").sublist("Panzer Data").set("DOF Manager", dofManager);
+    p.sublist("User Data").sublist("Panzer Data").set("Linear Object Factory", linObjFactory);
+
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
@@ -213,6 +223,9 @@ namespace panzer_stk {
     // Print Phalanx DAGs
     fmb->writeVolumeGraphvizDependencyFiles("Panzer_Steady-State_", physicsBlocks);
 
+    // build solvers
+    /////////////////////////////////////////////////////////////
+
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
@@ -224,6 +237,30 @@ namespace panzer_stk {
     }
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
       Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names, is_transient));
+
+    // Setup initial conditions
+    /////////////////////////////////////////////////////////////
+    {
+      std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
+      panzer::setupInitialConditionFieldManagers(volume_worksets,
+						 physicsBlocks,
+						 *cm_factory,
+						 p.sublist("Initial Conditions"),
+						 dofManager,
+						 *linObjFactory,
+						 p.sublist("User Data"),
+						 phx_ic_field_managers);
+
+      Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
+      Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(loc);
+      eloc->x = Teuchos::rcp_const_cast<Epetra_Vector>(ep_me->get_x_init());
+
+      panzer::evaluateInitialCondition(fmb->getWorksets(), phx_ic_field_managers, loc, 0.0, true);
+
+      if (is_transient)
+	mesh->writeToExodus(0.0);
+
+    }
    
     // Build stratimikos solver
     RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);

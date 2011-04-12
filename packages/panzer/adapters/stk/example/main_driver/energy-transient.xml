@@ -24,6 +24,14 @@
 
     </ParameterList>
 
+    <ParameterList name="Initial Conditions">
+        <ParameterList name="eblock-0_0">
+            <ParameterList name="TEMPERATURE">
+                <Parameter name="Value" type="double" value="0.0"/>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+
     <ParameterList name="Block ID to Physics ID Mapping">
         <Parameter name="eblock-0_0" type="string" value="solid"/>
     </ParameterList>
@@ -113,10 +121,6 @@
             </ParameterList>
         </ParameterList>
     
-    </ParameterList>
-
-    <ParameterList name="Initial Guess">
-      
     </ParameterList>
 
     <ParameterList name="Output">

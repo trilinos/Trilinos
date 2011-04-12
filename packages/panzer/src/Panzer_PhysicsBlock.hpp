@@ -55,6 +55,7 @@ namespace panzer {
 
     void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+						    const std::string& model_name,
 						    const Teuchos::ParameterList& models,
 						    const panzer::LinearObjFactory<panzer::Traits> & lof,
 						    const Teuchos::ParameterList& user_data) const;
@@ -77,6 +78,7 @@ namespace panzer {
     template<typename EvalT>
     void buildAndRegisterInitialConditionEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
 							   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+							   const std::string& model_name,
 							   const Teuchos::ParameterList& models,
 							   const panzer::LinearObjFactory<panzer::Traits> & lof,
 							   const Teuchos::ParameterList& user_data) const;
@@ -185,6 +187,7 @@ void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::Fi
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterInitialConditionEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
 									     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+									     const std::string& model_name,
 									     const Teuchos::ParameterList& models,
 									     const panzer::LinearObjFactory<panzer::Traits> & lof,
 									     const Teuchos::ParameterList& user_data) const
@@ -199,7 +202,7 @@ void panzer::PhysicsBlock::buildAndRegisterInitialConditionEvaluatorsForType(PHX
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    eqstm.getAsObject<EvalT>()->buildAndRegisterInitialConditionEvaluators(fm, m_provided_dofs, factory, models, lof, user_data);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterInitialConditionEvaluators(fm, m_provided_dofs, factory, model_name, models, lof, user_data);
 
   }
 }
