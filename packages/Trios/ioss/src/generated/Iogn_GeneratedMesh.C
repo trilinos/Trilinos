@@ -63,8 +63,14 @@ namespace Iogn {
     sclX(1), sclY(1), sclZ(1),
     doRotation(false)
   {
+    // Possible that the 'parameters' has the working directory path
+    // prepended to the parameter list.  Strip off everything in front
+    // of the last '/' (if any)...
+    std::vector<std::string> params;
+    Ioss::tokenize(parameters, "/", params);
+    
     std::vector<std::string> groups;
-    Ioss::tokenize(parameters, "|+", groups);
+    Ioss::tokenize(params[params.size()-1], "|+", groups);
 
     // First 'group' is the interval specification -- IxJxK
     std::vector<std::string> tokens;
