@@ -172,7 +172,7 @@ Once in the main function we import several classes and functions into the names
 ParameterList RCPs\footnote{For more information on RCPs see~\cite{RCP}}. Using the sublist function, the second 
 ParameterList is defined as a sublist of the first. The next several lines are calls to the set function. Each call
 adds a Parameter to the ParameterList along with assigning it a default value and a documentation string. The end result
-is Figure~\ref{BasicTramontoScreenShot}.
+is Figure~\ref{BasicTramontoScreenshot}.
 
 \begin{figure}
 \centering
@@ -189,4 +189,16 @@ Using XML to declare your input parameters has a number of advantages over decla
   \item As an extension of being cleaner, using XML makes maintaining a user interface much simpler.
   \item When using XML, there is no need to recompile the entire program everytime a small change is made to the GUI.
 \end{itemize}
-
+If we redo the example we made in the previous section, but using XML, we end up with the C++ code and XML code found in
+Figure~\ref{basicTramontoXML}.
+	\begin{figure}
+		\centering
+		\subfigure[C++ Code]{
+			\label{basicXMLC++}
+		}
+		\subfigure[XML Code]{
+			\label{basicXMLXML}
+		}
+		\caption{XML and C++ source code that can alternatively be used to create the GUI in ~\ref{BasicTramontoScreenshot}}
+		\label{basicTramontoXML}
+	\end{figure}
