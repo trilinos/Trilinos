@@ -795,7 +795,7 @@ namespace stk {
           const stk::mesh::FieldBase *f = *I; ++I;
           //std::cout << "PerceptMeshReadWrite::put_field_data: f->name()= " << f->name() <<  " part.name()= " << part.name() << std::endl;
           if (stk::io::is_valid_part_field(f, part_type, part, universal, filter_role)) {
-            stk::io::field_data_to_ioss(f, entities, io_entity, f->name());
+            stk::io::field_data_to_ioss(f, entities, io_entity, f->name(), filter_role);
           }
         }
       }
