@@ -9,6 +9,7 @@
 
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
+#include "Panzer_STK_Interface.hpp"
 
 namespace panzer_stk {
 
@@ -41,7 +42,7 @@ class GatherFields<panzer::Traits::Residual,Traits>
   
 public:
   
-  GatherFields(const Teuchos::RCP<const STK_Interface> & mesh,const Teuchos::ParameterList & p);
+  GatherFields(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh,const Teuchos::ParameterList & p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);

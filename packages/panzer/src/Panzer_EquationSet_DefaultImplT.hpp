@@ -40,15 +40,16 @@ setupDOFs(int equation_dimension)
   this->m_basis = Teuchos::rcp(new panzer::Basis(m_input_eq_set.basis,
 						 *(this->m_int_rule)));
   
-  this->m_eval_plist->set("IR", this->m_int_rule);
-  this->m_eval_plist->set("Basis", this->m_basis);
-  this->m_eval_plist->set("Equation Dimension", equation_dimension);
-  
   this->m_provided_dofs.clear();
   int index = 0;
   for (std::vector<std::string>::const_iterator i = this->m_dof_names->begin();
        i != this->m_dof_names->end(); ++i, ++index)
     this->m_provided_dofs.push_back(std::make_pair((*(this->m_dof_names))[index], this->m_basis));
+
+  this->m_eval_plist->set("IR", this->m_int_rule);
+  this->m_eval_plist->set("Basis", this->m_basis);
+  this->m_eval_plist->set("Equation Dimension", equation_dimension);
+  this->m_eval_plist->set("DOF Names", this->m_dof_names);  
 }
 
 // ***********************************************************************
