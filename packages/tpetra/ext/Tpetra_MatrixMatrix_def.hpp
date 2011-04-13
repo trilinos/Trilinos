@@ -52,13 +52,6 @@
 
 namespace Tpetra {
 
-// CGB: If it isn't for public consumption, then hide it in a different namespace.
-namespace MMdebug {
-
-    RCP<Teuchos::FancyOStream> debug_stream;
-    Teuchos::EVerbosityLevel   debug_level;
-
-}
 
 namespace MatrixMatrix{
 
@@ -183,25 +176,13 @@ void Multiply(
     //local processor.
     if (transposeB) {
       RCP<const Map_t > mapunion1 = MMdetails::form_map_union(colmap_op_A, B.getDomainMap());
-      if (MMdebug::debug_level != Teuchos::VERB_NONE) {
-        *MMdebug::debug_stream << "mapunion1" << std::endl;
-        mapunion1->describe(*MMdebug::debug_stream, MMdebug::debug_level);
-      }
       targetMap_B = MMdetails::find_rows_containing_cols(B, mapunion1);
     }
-  }
-  if (MMdebug::debug_level != Teuchos::VERB_NONE) {
-    *MMdebug::debug_stream << "targetMap_B" << std::endl;
-    targetMap_B->describe(*MMdebug::debug_stream, MMdebug::debug_level);
   }
 
   //Now import any needed remote rows and populate the Bview struct.
   MMdetails::import_and_extract_views(B, targetMap_B, Bview);
 
-  if (MMdebug::debug_level != Teuchos::VERB_NONE) {
-    *MMdebug::debug_stream << "C.getRowMap()" << std::endl;
-    C.getRowMap()->describe(*MMdebug::debug_stream, MMdebug::debug_level);
-  }
 
   //If the result matrix C is not already FillComplete'd, we will do a
   //preprocessing step to create the nonzero structure, then call FillComplete,
