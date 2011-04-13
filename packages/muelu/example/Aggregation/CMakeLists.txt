@@ -13,3 +13,10 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
       )
 #  ENDIF()
 ENDIF()
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  ImportExportTest
+  SOURCES ImportExportTest.cpp
+  COMM serial mpi
+  DEPLIBS muelu muelu-cthulhu
+  )

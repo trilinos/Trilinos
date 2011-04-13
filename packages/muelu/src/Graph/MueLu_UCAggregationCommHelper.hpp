@@ -1,6 +1,8 @@
 #ifndef MUELU_UCAGGREGATIONCOMMHELPER_HPP
 #define MUELU_UCAGGREGATIONCOMMHELPER_HPP
 
+#include <exception>
+
 #include <Cthulhu_VectorFactory.hpp>
 #include <Cthulhu_ImportFactory.hpp>
 #include <Cthulhu_MapFactory.hpp>
@@ -145,14 +147,12 @@ namespace MueLu {
 
       RCP<Vector> postComm_ = VectorFactory::Build(weight_.getMap());
 
-      ArrayRCP<SC> postComm = postComm_->getDataNonConst(0);
       postComm_->putScalar(0.0);
 
       NonUnique2NonUnique(weight_, *postComm_, Cthulhu::ABSMAX);
-
    
       // Let every processor know who is the procWinner. For nonunique
-      // copies of the same Gid, this corresponds to the procesosr with
+      // copies of the same Gid, this corresponds to the processor with
       // the highest Wt[]. When several processors have the same positive value
       // for weight[] (which is also the maximum value), the highest proc id
       // is declared the procWinner.
@@ -166,17 +166,19 @@ namespace MueLu {
       //      are left untouched.
 
       RCP<Vector> candidateWinners_ = VectorFactory::Build(weight_.getMap());
-
-      ArrayRCP<SC> candidateWinners = candidateWinners_->getDataNonConst(0);
       candidateWinners_->putScalar(0.0);
 
       ArrayRCP<SC> weight = weight_.getDataNonConst(0);
-      for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) {
-        if (postComm[i] == weight[i]) candidateWinners[i] = (SC) MyPid+1;
+
+      {
+        ArrayRCP<SC> candidateWinners = candidateWinners_->getDataNonConst(0);
+        ArrayRCP<SC> postComm = postComm_->getDataNonConst(0);
+        for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) {
+          if (postComm[i] == weight[i]) candidateWinners[i] = (SC) MyPid+1;
+        }
+        
+        for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) weight[i]=postComm[i]; 
       }
-
-      for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) weight[i]=postComm[i]; 
-
       NonUnique2NonUnique(*candidateWinners_, *postComm_, Cthulhu::ABSMAX);
 
       // Note: 
@@ -185,9 +187,14 @@ namespace MueLu {
       //                      MyPid+1.
       //          
       ArrayRCP<LO> procWinner = procWinner_.getDataNonConst(0);
-      for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++)  {
-        if ( weight[i] != 0.) procWinner[i] = ((int) (postComm[i])) - 1;
+      {
+        ArrayRCP<SC> postComm = postComm_->getDataNonConst(0);
+        for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++)  {
+          if ( weight[i] != 0.) procWinner[i] = ((int) (postComm[i])) - 1;
+        }
       }
+
+      weight = Teuchos::null;
 
       if (companion != NULL) {
         // Now build a new Map, WinnerMap which just consists of procWinners. 
@@ -205,12 +212,28 @@ namespace MueLu {
         ArrayView<const LO> myGids = weight_.getMap()->getNodeElementList(); //== weight_.getMap()->MyGlobalElements(myGids);
         ArrayRCP<LO> myWinners(numMyWinners);
 
+#ifdef JG_DEBUG
+        procWinner = Teuchos::null;
+        std::cout << MyPid << ": weight_.getMap()->getNodeNumElements()=" << weight_.getMap()->getNodeNumElements() << std::endl;
+        std::cout << MyPid << ": procWinner=" << procWinner_ << std::endl;
+        procWinner = procWinner_.getDataNonConst(0);
+#endif
+
         numMyWinners = 0;
         for (size_t i = 0; i < weight_.getMap()->getNodeNumElements(); i++) {
           if (procWinner[i] == MyPid)
             myWinners[numMyWinners++] = myGids[i];
         }
-    
+        procWinner = Teuchos::null;
+
+#ifdef JG_DEBUG
+        std::cout << MyPid << ": numMyWinners=" << numMyWinners << std::endl;
+        std::cout << MyPid << ": myWinners" << myWinners << std::endl;
+        for(int i=0;i<numMyWinners; i++)
+          std::cout << MyPid << ": myWinners[locId=" << i << "] = " << myWinners[i] << std::endl;
+
+#endif
+
         // Cthulhu::EpetraMap winnerMap(-1, numMyWinners, myWinners, 0, weight_.getMap()->getComm());    
         Cthulhu::global_size_t g = -1; //TODO for Tpetra -1 == ??
         RCP<Map> winnerMap = MapFactory::Build(weight_.getMap()->lib(), g, myWinners(), 0, weight_.getMap()->getComm());
@@ -219,16 +242,62 @@ namespace MueLu {
         //     JustWinners <-- companion[Winners];
    
         RCP<LOVector> justWinners = LOVectorFactory::Build(winnerMap);
-        RCP<const Import> winnerImport = ImportFactory::Build(weight_.getMap(), winnerMap);
 
-        justWinners->doImport(*companion, *winnerImport, Cthulhu::INSERT);
+#ifdef JG_DEBUG
+        RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+        std::cout << MyPid << ": justWinners(Vector in)=" << *justWinners << std::endl;
+        justWinners->describe(*out, Teuchos::VERB_EXTREME);
+#endif
+
+        RCP<const Import> winnerImport = ImportFactory::Build(weight_.getMap(), winnerMap);
+        try
+          {
+            justWinners->doImport(*companion, *winnerImport, Cthulhu::INSERT);
+          }
+        catch(std::exception& e)
+          {
+            std::cout << MyPid << ": ERR2: An exception occurred." << std::endl;
+            throw e;
+          }
 
         // Put the JustWinner values back into companion so that
         // all nonunique copies of the same Gid have the procWinner's
         // version of the companion.
-   
+#ifdef JG_DEBUG
+        std::cout << *winnerMap << std::endl;
+        std::cout << *weight_.getMap() << std::endl;
+#endif
+
         RCP<Import> pushWinners = ImportFactory::Build(winnerMap, weight_.getMap());
-        companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);
+        try
+          {
+            companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);
+          }
+        catch(std::exception& e)
+          {
+          }
+#define JG_DEBUG
+#ifdef JG_DEBUG
+            RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+            //->describe(*out, Teuchos::VERB_EXTREME);
+
+            // std::cout << MyPid << ": ERR3: An exception occurred." << std::endl;
+
+            std::cout << MyPid << ": numMyWinners=" << numMyWinners << std::endl;
+            
+            std::cout << MyPid << ": justWinners(Vector in)=" << *justWinners << std::endl;
+            justWinners->describe(*out, Teuchos::VERB_EXTREME);
+
+            std::cout << MyPid << ": companion(Vector out)=" << *companion << std::endl;
+            companion->describe(*out, Teuchos::VERB_EXTREME);
+
+            // std::cout << MyPid << ": pushWinners(Import(winnerMap, weight_.Map))=" << *pushWinners << std::endl;
+            std::cout << MyPid << ": winnerMap=" << *winnerMap << std::endl;
+            std::cout << MyPid << ": weight_.Map=" << *weight_.getMap() << std::endl;
+#endif
+            //  throw e;
+            //}
+        throw 1;
       }
 
     }
@@ -260,8 +329,17 @@ namespace MueLu {
     {
       RCP<Vector> temp = VectorFactory::Build(import_->getSourceMap());
      
-      temp->doExport(source, *import_, what);
-      dest.doImport(*temp,   *import_, Cthulhu::INSERT);
+      try
+        {
+          temp->doExport(source, *import_, what);
+          dest.doImport(*temp,   *import_, Cthulhu::INSERT);
+        }
+      catch(std::exception& e)
+        {
+          int MyPid = temp->getMap()->getComm()->getRank();
+          std::cout << MyPid << ": ERR1: An exception occurred." << std::endl;
+          throw e;
+        }
     }
    
   };
