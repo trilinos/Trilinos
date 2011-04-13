@@ -534,14 +534,6 @@ inline CellTopology get_cell_topology(const Entity &entity) {
 }
 
 } // namespace fem
-
-static const unsigned EntityRankEnd = 6;
-
-inline
-EntityRank fem_entity_rank( unsigned int t ) {
-  return 0 <= t && t < EntityRankEnd ? EntityRank(t) : InvalidEntityRank ;
-}
-
 } // namespace mesh
 } // namespace stk
 

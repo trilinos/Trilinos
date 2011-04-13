@@ -59,6 +59,8 @@ namespace stk {
     typedef mesh::Field<double>                          ScalarFieldType ;
     typedef mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
 
+    static const unsigned EntityRankEnd = 6;
+
 
     using namespace interface_table;
 
@@ -157,6 +159,9 @@ namespace stk {
       int
       getNumberElements();
 
+      int
+      getNumberElementsLocallyOwned();
+
       //========================================================================================================================
       /// low-level interfaces
       /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted
@@ -183,6 +188,11 @@ namespace stk {
         //throw std::runtime_error("not impl"); // FIXME
         bool isGhost = element.owner_rank() != getRank();
         return isGhost;
+      }
+
+      static inline
+      stk::mesh::EntityRank fem_entity_rank( unsigned int t ) {
+        return 0 <= t && t < EntityRankEnd ? stk::mesh::EntityRank(t) : stk::mesh::InvalidEntityRank ;
       }
 
       stk::mesh::EntityRank node_rank() const

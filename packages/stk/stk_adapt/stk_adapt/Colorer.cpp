@@ -177,7 +177,7 @@ namespace stk {
             }
         } // icolor
 
-      std::cout << "tmp ncolor = " << ncolor << " nelem= " << nelem << std::endl;
+      //std::cout << "tmp ncolor = " << ncolor << " nelem= " << nelem << std::endl;
 
       m_element_colors.resize(ncolor);
     }

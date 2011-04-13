@@ -2509,6 +2509,9 @@ namespace stk {
                 breaker.setIgnoreSideSets(true);
                 breaker.doBreak();
 
+                RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), 0, true );
+                RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), 0, false );
+
                 save_or_diff(eMesh1, output_files_loc+"heterogeneous_1.e");
                 eMesh1.close();
               }
