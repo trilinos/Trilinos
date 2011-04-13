@@ -20,6 +20,10 @@
 
 /*! \file Zoltan2_IdentifierTraits.hpp
   \brief Defines basic traits for application supplied local and global IDs.
+
+    Note: Do not try to write an Identifier value to an ostream.  
+    Instead write the string IdentifierMap<>::key().  Some Identifier
+    data types can not be written to an ostream.
 */
 
 /*! \namespace Z2

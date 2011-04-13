@@ -17,12 +17,8 @@
 #include <stdexcept>
 #include <vector>
 #include <map>
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_Map.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_TestForException.hpp>
-#include <Teuchos_ArrayView.hpp>
 #include <Zoltan2_IdentifierTraits.hpp>
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_AlltoAll.hpp>
@@ -33,8 +29,8 @@ namespace Z2
 template<typename AppLID, typename AppGID, typename LNO, typename GNO> 
   IdentifierMap<AppLID,AppGID,LNO,GNO>::IdentifierMap(
     Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
-    Teuchos::RCP<std::vector<AppGID> > &gids, 
-    Teuchos::RCP<std::vector<AppLID> > &lids) 
+    Teuchos::ArrayRCP<AppGID> &gids, 
+    Teuchos::ArrayRCP<AppLID> &lids) 
          : _comm(in_comm), _myGids(gids), _myLids(lids),
            _globalNumberOfIds(0), _localNumberOfIds(0), _haveLocalIds(false),
            _myRank(0), _numProcs(0)
@@ -42,36 +38,38 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   _numProcs = _comm->getSize(); 
   _myRank = _comm->getRank(); 
 
-  std::vector<AppGID> &ids = *_myGids;
+  _localNumberOfIds = _myGids.size();
 
-  _localNumberOfIds = ids.size();
+  typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
+  typedef typename Teuchos::Hashtable<std::string, LNO> id2index_hash_t;
 
-  GNO *val = new GNO [4];
-  val[0] = (*lids).size();
-  val[1] = _localNumberOfIds;
-  val[2] = val[3] = 0;
+  Teuchos::Tuple<teuchos_size_t, 4> counts;
 
-  Teuchos::reduceAll(*_comm, Teuchos::REDUCE_SUM, 2, val+0, val+2);
+  counts[0] = _myLids.size();
+  counts[1] = _localNumberOfIds;
+  counts[2] = counts[3] = 0;
 
-  _haveLocalIds = (val[2] > 0);
-  _globalNumberOfIds = val[3];
+  Teuchos::reduceAll<int, teuchos_size_t>(*_comm, Teuchos::REDUCE_SUM, 
+    2, counts.getRawPtr(), counts.getRawPtr()+2);
 
-  TEST_FOR_EXCEPTION(_haveLocalIds && (val[0] != _localNumberOfIds),
+  _haveLocalIds = (counts[2] > 0);
+  _globalNumberOfIds = counts[3];
+
+  TEST_FOR_EXCEPTION(_haveLocalIds && (counts[0] != _localNumberOfIds),
              std::runtime_error,
           "local IDs are provided but number of global IDs"
           " does not equal number of local IDs");
 
-  _gnoDist=Teuchos::null;
-  _gidHash=Teuchos::null;
-  _lidHash=Teuchos::null;
-
   if (_haveLocalIds){   // hash LID to index in LID vector
-    _lidHash = Teuchos::rcp(
-      new Teuchos::Hashtable<std::string, LNO> (_localNumberOfIds));
+    id2index_hash_t *p = new id2index_hash_t(_localNumberOfIds);
 
-    for (LNO i=0; i < _localNumberOfIds; i++){
-      _lidHash->put(Z2::IdentifierTraits<AppLID>::key((*lids)[i]), i);
+    AppLID *lidPtr = _myLids.get();  // for performance
+
+    for (teuchos_size_t i=0; i < _localNumberOfIds; i++){
+      p->put(IdentifierTraits<AppLID>::key(lidPtr[i]), i);
     }
+
+    _lidHash = Teuchos::RCP<id2index_hash_t>(p);
   }
 
   // If the application's global ID data type (AppGID) is a Teuchos Ordinal,
@@ -81,47 +79,53 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   if (IdentifierTraits<AppGID>::isGlobalOrdinalType()){
 
     // Are the AppGIDs consecutive and increasing with process rank? 
-    // If so GID/proc lookups are optimized.
+    // If so GID/proc lookups can be optimized.
 
-    GNO *startGID = NULL;
-    GNO min(0), max(0), globalMin(0), globalMax(0);
-  
-    min = max = static_cast<GNO>(ids[0]);
-    GNO checkVal = min;
+    AppGID min(0), max(0), globalMin(0), globalMax(0);
+    AppGID *gidPtr = _myGids.get();  // for performance
+    min = max = gidPtr[0];
+    AppGID checkVal = min;
     bool consecutive = true;
   
-    for (LNO i=1; i < _localNumberOfIds; i++){
-      if (consecutive && (ids[i] != ++checkVal)){
+    for (teuchos_size_t i=1; i < _localNumberOfIds; i++){
+      if (consecutive && (gidPtr[i] != ++checkVal)){
         consecutive=false;
         break;
       }
-      if (ids[i] < min)
-        min = static_cast<GNO>(ids[i]);
-      else if (ids[i] > max)
-        max = static_cast<GNO>(ids[i]);
+      if (gidPtr[i] < min)
+        min = gidPtr[i];
+      else if (gidPtr[i] > max)
+        max = gidPtr[i];
     }
-  
-    val[0] = (consecutive ? 1 : 0);
-    val[1] = min;
-    val[2] = val[3] = 0;
 
-    Teuchos::reduceAll<int, GNO>(*_comm, Teuchos::REDUCE_MIN, 2, val+0, val+2);
+    Teuchos::Tuple<AppGID, 4> results;
 
-    if (val[2] != 1)       // min of consecutive flags
+    results[0] = static_cast<AppGID>(consecutive ? 1 : 0);
+    results[1] = min;
+    results[2] = results[3] = 0;
+
+    Teuchos::reduceAll<int, AppGID>(*_comm, Teuchos::REDUCE_MIN, 2, 
+      results.getRawPtr(), results.getRawPtr()+2);
+
+    if (results[2] != 1)       // min of consecutive flags
       consecutive=false;
 
     if (consecutive){
-      globalMin = val[3];
-      Teuchos::reduceAll<int, GNO>(*_comm, Teuchos::REDUCE_MAX, 1, &max, 
+      globalMin = results[3];
+      Teuchos::reduceAll<int, AppGID>(*_comm, Teuchos::REDUCE_MAX, 1, &max, 
         &globalMax);
-      if (globalMax - globalMin + 1 != _globalNumberOfIds)
+      if (globalMax - globalMin + 1 != static_cast<AppGID>(_globalNumberOfIds))
         consecutive = false;   // there are gaps in the gids
   
       if (consecutive){
-        GNO myStart = ids[0];
-        startGID = new GNO [_numProcs+1];
+        AppGID myStart = _myGids[0];
+
+        _gnoDist = Teuchos::ArrayRCP<GNO>(_numProcs + 1);
+
+        AppGID *startGID = static_cast<AppGID *>(_gnoDist.getRawPtr());
       
-        Teuchos::gatherAll<int, GNO>(*_comm, 1, &myStart, _numProcs, startGID);
+        Teuchos::gatherAll<int, AppGID>(*_comm, 1, &myStart, _numProcs, 
+          startGID);
       
         for (int p=1; p < _numProcs; p++){
           if (startGID[p] < startGID[p-1]){
@@ -131,11 +135,6 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         }
         if (consecutive){
           startGID[_numProcs] = globalMax + 1;
-          _gnoDist = Teuchos::ArrayRCP<GNO>(startGID, 0, _numProcs+1, true);
-        }
-        else{
-          delete [] startGID;
-          startGID = NULL;
         }
       }
     }
@@ -145,27 +144,27 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     // AppGIDs are not Ordinals.  We map them to consecutive 
     // global numbers starting with 0. 
 
-    GNO *numScan = new GNO [_numProcs+1];
-    GNO myNum = _localNumberOfIds;
+    _gnoDist = Teuchos::ArrayRCP<GNO>(_numProcs + 1, 0);
+    GNO myNum = static_cast<GNO>(_localNumberOfIds);
 
     Teuchos::scan<int, GNO>(*_comm, Teuchos::REDUCE_SUM, 1, &myNum, 
-      numScan + 1);
-
-    numScan[0] = 0;
-    _gnoDist = Teuchos::ArrayRCP<GNO>(numScan, 0, _numProcs + 1, true);
+      _gnoDist.getRawPtr() + 1);
   }
 
-  if (_gnoDist.is_null()){
+  if (_gnoDist.size() == 0){
 
     // We need a hash table mapping the application global ID
     // to its index in _myGids.
 
-    _gidHash = Teuchos::rcp(new Teuchos::Hashtable<std::string, LNO>
-              (_localNumberOfIds));
+    id2index_hash_t *p =  new id2index_hash_t(_localNumberOfIds);
 
-    for (LNO i=0; i < _localNumberOfIds; i++){
-      _gidHash->put(IdentifierTraits<AppGID>::key(ids[i]), i);
+    AppGID *gidPtr = _myGids.get();  // for performance
+
+    for (teuchos_size_t i=0; i < _localNumberOfIds; i++){
+      p->put(IdentifierTraits<AppGID>::key(gidPtr[i]), i);
     }
+
+    _gidHash = Teuchos::RCP<id2index_hash_t>(p);
   }
 }
 
@@ -203,10 +202,14 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID,AppGID,LNO,GNO>::initialize(
     Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
-    Teuchos::RCP<std::vector<AppGID> > &gids, 
-    Teuchos::RCP<std::vector<AppLID> > &lids) 
+    Teuchos::ArrayRCP<AppGID> &gids, 
+    Teuchos::ArrayRCP<AppLID> &lids) 
 {
-    this->IdentifierMap(in_comm, gids, lids);
+  _gnoDist.relese();
+  _gidHash.release();
+  _lidHash.release();
+
+  this->IdentifierMap(in_comm, gids, lids);
 }
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
@@ -217,49 +220,48 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID, AppGID, LNO, GNO>::gidTranslate(
-    std::vector<AppGID> &gid,          // input or output, take your pick
-    std::vector<GNO> &gno)             // output or input
+    Teuchos::ArrayView<AppGID> &gid, 
+    Teuchos::ArrayView<GNO > &gno,
+    TranslationType tt)
 {
-  if ((gid.size() == 0) && (gno.size() == 0)){
+  typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
+  teuchos_size_t len=gid.size();
+
+  if (len == 0){
     return;
   }
 
-  bool getGids;
-  int len=0;
+  TEST_FOR_EXCEPTION((tt!=TRANSLATE_GNO_TO_GID) && (tt!=TRANSLATE_GID_TO_GNO),
+                  std::runtime_error,
+                 "TranslationType is invalid");
 
-  if (gno.size() > 0){
-    getGids = true;
-    len = gno.size();
-    gid.erase();
-    gid.reserve(len);
-  }
-  else{
-    getGids = false;
-    len = gid.size();
-    gno.erase();
-    gno.reserve(len);
-  }
+  TEST_FOR_EXCEPTION(
+    ((tt==TRANSLATE_GNO_TO_GID) && (gid.size() < gno.size())) ||
+    ((tt==TRANSLATE_GID_TO_GNO) && (gno.size() < gid.size())),
+                  std::runtime_error,
+                 "Destination array is too small");
+
 
   if (IdentifierTraits<AppGID>::isGlobalOrdinalType()){   
-    // our gnos are the app gids
-    if (getGids)
-      for (LNO i=0; i < len; i++)
-        gid.push_back(static_cast<AppGID>(gno[i]));
+                              // our gnos are the app gids
+    if (tt == TRANSLATE_GNO_TO_GID)
+      for (teuchos_size_t i=0; i < len; i++)
+        gid[i] = static_cast<AppGID>(gno[i]);
     else
-      for (LNO i=0; i < len; i++)
-        gno.push_back(static_cast<GNO>(gid[i]));
+      for (teuchos_size_t i=0; i < len; i++)
+        gno[i] = static_cast<GNO>(gid[i]);
   }
   else{              // we mapped gids to consecutive gnos
   
     GNO firstGNO = _gnoDist[_myRank];
-    if (getGids)
-      for (LNO i=0; i < len; i++)
-        gid.push_back((*_myGids)[gno[i] - firstGNO]);
+    if (tt == TRANSLATE_GNO_TO_GID)
+      for (teuchos_size_t i=0; i < len; i++)
+        gid[i] = _myGids[gno[i] - firstGNO];
     else
-      for (LNO i=0; i < len; i++){
+      for (teuchos_size_t i=0; i < len; i++){
         const LNO &idx = _gidHash->get(
           Z2::IdentifierTraits<AppGID>::key(gid[i]));
-        gno.push_back(firstGNO + idx);
+        gno[i] = firstGNO + idx;
       }
   }
   return;
@@ -267,77 +269,82 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID, AppGID, LNO, GNO>::lidTranslate(
-    std::vector<AppLID> &lid,          // input or output, take your pick
-    std::vector<GNO> &gno)             // output or input
+    Teuchos::ArrayView<AppLID> &lid, 
+    Teuchos::ArrayView<GNO> &gno, 
+    TranslationType tt)
 {
+  typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
+  teuchos_size_t len=lid.size();
+
+  if (len == 0){
+    return;
+  }
+
+  TEST_FOR_EXCEPTION((tt!=TRANSLATE_GNO_TO_LID) && (tt!=TRANSLATE_LID_TO_GNO),
+                  std::runtime_error,
+                 "TranslationType is invalid");
+
+  TEST_FOR_EXCEPTION(
+    ((tt==TRANSLATE_GNO_TO_LID) && (lid.size() < gno.size())) ||
+    ((tt==TRANSLATE_LID_TO_GNO) && (gno.size() < lid.size())),
+                  std::runtime_error,
+                 "Destination array is too small");
+
   TEST_FOR_EXCEPTION(!_haveLocalIds,
                   std::runtime_error,
                  "local ID translation is requested but none were provided");
 
-  if ((lid.size() == 0) && (gno.size() == 0)){
-    return;
-  }
-
-  bool getLids;
-  int len=0;
-
-  if (gno.size() > 0){
-    getLids = true;
-    len = gno.size();
-    lid.erase();
-    lid.reserve(len);
-  }
-  else{
-    getLids = false;
-    len = lid.size();
-    gno.erase();
-    gno.reserve(len);
-  }
-
-  GNO firstGNO = - 1;
-  if (!_gnoDist.is_null())
+  GNO firstGNO;
+  if (_gnoDist.size() > 0)
     firstGNO = _gnoDist[_myRank];
   
-
-  if (getLids){
-    for (LNO i=0; i < len; i++){
-      int idx = 0;
-      if (firstGNO >= 0)       // gnos are consecutive
+  if (TRANSLATE_GNO_TO_LID){
+    for (teuchos_size_t i=0; i < len; i++){
+      LNO idx = 0;
+      if (_gnoDist.size() > 0)  // gnos are consecutive
         idx = gno[i] - firstGNO;
-      else                     // gnos must be the app gids
-        const LNO &idx = _gidHash->get(
-          Z2::IdentifierTraits<AppGID>::key(static_cast<AppGID>(gno[i])));
+      else                      // gnos must be the app gids
+        idx = _gidHash->get(
+          IdentifierTraits<AppGID>::key(static_cast<AppGID>(gno[i])));
       
-      lid.push_back((*_myLids)[idx]);
+      lid[i] = _myLids[idx];
     }
   }
   else{
-    for (LNO i=0; i < len; i++){
-      const LNO &idx = _lidHash->get(
-        Z2::IdentifierTraits<AppLID>::key(lid[i]));
+    for (teuchos_size_t i=0; i < len; i++){
+      LNO idx = _lidHash->get(IdentifierTraits<AppLID>::key(lid[i]));
 
-      if (firstGNO >= 0)       // gnos are consecutive
-        gno.push_back(static_cast<GNO>(idx + firstGNO));
+      if (_gnoDist.size() > 0)  // gnos are consecutive
+        gno[i] = firstGNO + idx;
       else                     // gnos must be the app gids
-        gno.push_back(static_cast<GNO>((*_myGids)[idx]));
+        gno[i] = static_cast<GNO>(_myGids[idx]);
     }
   }
 }
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID, AppGID, LNO, GNO>::gidGlobalTranslate(
-    const std::vector<AppGID> &in_gid,
-    std::vector<GNO> &out_gno,
-    std::vector<int> &out_proc)
+    Teuchos::ArrayView<const AppGID> &in_gid,
+    Teuchos::ArrayView<GNO> &out_gno,
+    Teuchos::ArrayView<int> &out_proc)
 {
-  LNO numGids = in_gid.size();
+  typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
+  typedef typename Teuchos::Hashtable<std::string, LNO> id2index_hash_t;
+  typedef typename Teuchos::Hashtable<std::string, Teuchos::Array<LNO> > 
+    id2index_array_hash_t;
 
-  out_gno.clear();
-  out_gno.reserve(numGids);
-  out_proc.clear();
-  out_proc.reserve(numGids);
+  teuchos_size_t len=in_gid.size();
 
-  if (IdentifierTraits<AppGID>::isGlobalOrdinalType() && !_gnoDist.is_null()){
+  if (len == 0){
+    return;
+  }
+
+  TEST_FOR_EXCEPTION( (out_gno.size() < len) || (out_proc.size() < len),
+                  std::runtime_error,
+                 "Destination array is too small");
+
+
+  if (IdentifierTraits<AppGID>::isGlobalOrdinalType() && (_gnoDist.size() > 0)){
 
     // Easy case - communication is not needed.
     // Global numbers are the application global IDs and
@@ -350,7 +357,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       firstGnoToProc[_gnoDist[p]] = p;
     }
 
-    for (LNO i=0; i < numGids; i++){
+    for (teuchos_size_t i=0; i < len; i++){
       GNO globalNumber = static_cast<GNO>(in_gid[i]);
       out_gno[i] = globalNumber;
       pos = firstGnoToProc.upper_bound(globalNumber);
@@ -359,18 +366,6 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
     return;
   }
-
-  AppGID *gidOutBuf = NULL;
-  GNO *gnoOutBuf = NULL;
-  int *procOutBuf = NULL;
-  LNO *countOutBuf = NULL;
-
-  Teuchos::ArrayRCP<AppGID> gidInBuf();
-  Teuchos::ArrayRCP<GNO> gnoInBuf();
-  Teuchos::ArrayRCP<int> procInBuf();
-  Teuchos::ArrayRCP<LNO> countInBuf();
-
-  LNO *offsetBuf = NULL;
 
   bool needGnoInfo = !IdentifierTraits<AppGID>::isGlobalOrdinalType();
 
@@ -382,76 +377,62 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   // with the process owning them (and their Gnos if they are different).
   ///////////////////////////////////////////////////////////////////////
 
-  int *hashProc = NULL;
-  countOutBuf = new LNO [_numProcs];
-  offsetBuf = new int [_numProcs+1];
+  Teuchos::Array<int> hashProc(0);
+  Teuchos::Array<AppGID> gidOutBuf(0);
+  Teuchos::Array<GNO> gnoOutBuf(0);
+  Teuchos::Array<LNO> countOutBuf(_numProcs, 0);
+  Teuchos::Array<LNO> offsetBuf(_numProcs + 1, 0);
+
+  Teuchos::ArrayRCP<AppGID> gidInBuf();
+  Teuchos::ArrayRCP<GNO> gnoInBuf();
+  Teuchos::ArrayRCP<LNO> countInBuf();
 
   if (_localNumberOfIds > 0){
 
-    hashProc = new int [_localNumberOfIds];
-  
-    for (int p=0; p < _numProcs; p++)
-      countOutBuf[p] = 0;
-  
-    for (LNO i=0; i < _localNumberOfIds; i++){
-      hashProc[i] = 
-        IdentifierTraits<AppGID>::hashCode((*_myGids)[i]) % _numProcs;
+    hashProc.reserve(_localNumberOfIds);
+    gidOutBuf.reserve(_localNumberOfIds);
+
+    for (teuchos_size_t i=0; i < _localNumberOfIds; i++){
+      hashProc[i] = IdentifierTraits<AppGID>::hashCode(_myGids[i]) % _numProcs;
       countOutBuf[hashProc[i]]++;
     }
-  
-    offsetBuf[0] = 0;
   
     for (int p=1; p <= _numProcs; p++){
       offsetBuf[p] = offsetBuf[p-1] + countOutBuf[p-1];
     }
   
-    gidOutBuf = new AppGID [_localNumberOfIds];
-  
-    if (needGnoInfo){            // the gnos are not the gids
-      gnoOutBuf = new GNO [_localNumberOfIds];
+    if (needGnoInfo){   
+      // The gnos are not the gids, which also implies that
+      // gnos are consecutive numbers given by _gnoDist.
+      gnoOutBuf.resize(_localNumberOfIds);
     }
   
-    for (LNO i=0; i < _localNumberOfIds; i++){
+    for (teuchos_size_t i=0; i < _localNumberOfIds; i++){
       LNO offset = offsetBuf[hashProc[i]];
-      gidOutBuf[offset] = (*_myGids)[i];
+      gidOutBuf[offset] = _myGids[i];
       if (needGnoInfo)
         gnoOutBuf[offset] = _gnoDist[_myRank] + i;
       offsetBuf[hashProc[i]] = offset + 1;
     }
+    hashProc.clear();
+  }
+
+  // Teuchos comment #1: An Array can be passed for an ArrayView parameter.
+  // Teuchos comment #2: AppGID need not be a Teuchos Packet type,
+  //                     so we wrote our own AlltoAllv.
+  // Z2::AlltoAllv comment: Buffers are in process rank order.
+
+  AlltoAllv(*_comm, gidOutBuf, countOutBuf, gidInBuf, countInBuf);
+
+  gidOutBuf.clear();
   
-    delete [] hashProc;
-    hashProc = NULL;
-  }
-  else{
-    for (int p=0; p < _numProcs; p++)
-      countOutBuf[p] = 0;
-  }
-
-  Teuchos::ArrayView<LNO> countOutView(countOutBuf, _numProcs);
-  Teuchos::ArrayView<AppGID> gidOutView(Teuchos::null);
-  Teuchos::ArrayView<GNO> gnoOutView(Teuchos::null);
-
-  if (_localNumberOfIds){
-    gidOutView = Teuchos::ArrayView<AppGID>(gidOutBuf, _localNumberOfIds);
-    if (needGnoInfo)
-      gnoOutView = Teuchos::ArrayView<GNO>(gnoOutBuf, _localNumberOfIds);
-  }
-
-  AlltoAllv(*_comm, gidOutView, countOutView, gidInBuf, countInBuf);
-
-  if (gidOutBuf != NULL){
-    delete [] gidOutBuf;
-    gidOutBuf = NULL;
-  }
-
   if (needGnoInfo){
     countInBuf.release();
-    AlltoAllv(*_comm, gnoOutView, countOutView, gnoInBuf, countInBuf);
-    if (gnoOutBuf){
-      delete [] gnoOutBuf;
-      gnoOutBuf = NULL;
-    }
+    AlltoAllv(*_comm, gnoOutBuf, countOutBuf, gnoInBuf, countInBuf);
   }
+
+  gnoOutBuf.clear();
+  countOutBuf.clear();
 
   //
   // Save the information that was hashed to me so I can do lookups.
@@ -467,18 +448,17 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
   firstIndexToProc[total] = _numProcs;
 
-  Teuchos::Hashtable<std::string, LNO> *gidToAnswerIndex = 
-    new Teuchos::Hashtable<std::string, LNO>(total);
+  id2index_hash_t gidToIndex(total);
 
   total = 0;
   for (int p=0; p < _numProcs; p++){
     for (LNO i=countInBuf[p]; i < countInBuf[p+1]; i++, total++){
-      gidToAnswerIndex->put( 
-        IdentifierTraits<AppGID>::key(gidInBuf[total]), total);
+      gidToIndex.put(IdentifierTraits<AppGID>::key(gidInBuf[total]), total);
     }
   }
 
   // Keep gnoInBuf.  We're done with the others.
+
   gidInBuf.release();
   countInBuf.release();
 
@@ -486,53 +466,57 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   // Send a request for information to the "answer process" for each 
   // of the GIDs in in_gid.  First remove duplicate GIDs from the list.
   ///////////////////////////////////////////////////////////////////////
-  
-  Teuchos::Array<std::string> uniqueGidQueries;
-  Teuchos::Array<std::vector<int> > uniqueGidQueryIndices;
-  LNO numberOfUniqueGids = 0;
-  LNO *gidLocation = NULL;
 
-  if (numGids > 0){
-    LNO tableSize = numGids / 2;
-    if (!tableSize) tableSize = 1;
   
-    // In an input adapter, how many objects will have the same neighbor?
-    LNO sizeChunk = 4;
+  Teuchos::Array<std::string> uniqueGidQueries(0);
+  Teuchos::Array<Teuchos::Array<LNO> > uniqueGidQueryIndices(0);
+  teuchos_size_t numberOfUniqueGids = 0;
+  Teuchos::Array<LNO> gidLocation(0);
+
+  countOutBuf.resize(_numProcs, 0);
+
+  if (len > 0){
   
-    Teuchos::Hashtable<std::string, std::vector<LNO> > *gidIndices = 
-      new Teuchos::Hashtable<std::string, std::vector<LNO> >(tableSize);
+    // For efficiency, guess a reasonable size for the array.
+    // (In an input adapter, how many objects will have the same neighbor?)
+
+    teuchos_size_t sizeChunk = 4;
+
+    teuchos_size_t tableSize = len / sizeChunk;
+
+    tableSize =  (tableSize < 1) ? 1 : tableSize;
+
+    id2index_array_hash_t *gidIndices = new id2index_array_hash_t(tableSize);
   
-    for (LNO i=0; i < numGids; i++){
+    for (LNO i=0; i < len; i++){
+
       std::string uniqueKey(IdentifierTraits<AppGID>::key(in_gid[i]));
+
       if (gidIndices->containsKey(uniqueKey)){
-        std::vector<LNO> &v = gidIndices->get(uniqueKey);
-        if (v.size() % sizeChunk == 0){
-          v.reserve(v.size() + sizeChunk);
+        Teuchos::Array<LNO> &v = gidIndices->get(uniqueKey);
+        teuchos_size_t n = v.size();
+        if (n % sizeChunk == 0){
+          v.reserve(n + sizeChunk);
         }
         v.push_back(i);
       }
       else{
-        std::vector<LNO> v;
-        v.reserve(sizeChunk);
-        v.push_back(i);
+        Teuchos::Array<LNO> v(sizeChunk);
+        v[0] = i;
         gidIndices->put(uniqueKey, v);
       }
     }
   
     numberOfUniqueGids = gidIndices->size();
-  
+
     gidIndices->arrayify(uniqueGidQueries, uniqueGidQueryIndices);
   
     delete gidIndices;
   
-    gidOutBuf = new AppGID [numberOfUniqueGids];
-    for (int p=0; p < _numProcs; p++){
-      countOutBuf[p] = 0;
-    }
+    gidOutBuf.reserve(numberOfUniqueGids);
+    hashProc.reserve(numberOfUniqueGids);
   
-    hashProc = new int [numberOfUniqueGids];
-  
-    for (LNO i=0; i < numberOfUniqueGids; i++){
+    for (teuchos_size_t i=0; i < numberOfUniqueGids; i++){
       hashProc[i] = Teuchos::hashCode(uniqueGidQueries[i]) % _numProcs;
       countOutBuf[hashProc[i]]++;
     }
@@ -543,66 +527,48 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       offsetBuf[p+1] = offsetBuf[p] + countOutBuf[p];
     }
   
-    gidLocation = new LNO [numberOfUniqueGids];
+    gidLocation.reserve(numberOfUniqueGids);
   
-    for (LNO i=0; i < numberOfUniqueGids; i++){
+    for (teuchos_size_t i=0; i < numberOfUniqueGids; i++){
       AppGID gid = IdentifierTraits<AppGID>::keyToGid(uniqueGidQueries[i]);
-      LNO offset = offsetBuf[hashProc[i]];
-      gidLocation[i] = offset;
-      gidOutBuf[offset] = gid;
-      offsetBuf[hashProc[i]] = offset + 1;
+      gidLocation[i] = offsetBuf[hashProc[i]];
+      gidOutBuf[gidLocation[i]] = gid;
+      offsetBuf[hashProc[i]] = gidLocation[i] + 1;
     }
 
-    delete [] hashProc;
-    hashProc = NULL;
-
-    gidOutView = Teuchos::ArrayView<AppGID>(gidOutBuf, numberOfUniqueGids);
-  }
-  else{
-    for (int p=0; p < _numProcs; p++)
-      countOutBuf[p] = 0;
-
-    gidOutView = Teuchos::ArrayView<AppGID>(Teuchos::null);
+    hashProc.clear();
   }
 
-  if (offsetBuf){
-    delete [] offsetBuf;
-    offsetBuf = NULL;
-  }
+  AlltoAllv(*_comm, gidOutBuf, countOutBuf, gidInBuf, countInBuf);
 
-  AlltoAllv(*_comm, gidOutView, countOutView, gidInBuf, countInBuf);
-
-  if (gidOutBuf){
-    delete [] gidOutBuf;
-    gidOutBuf = NULL;
-  }
+  gidOutBuf.clear();
 
   ///////////////////////////////////////////////////////////////////////
   // Create and send answers to the processes that made requests of me.
   ///////////////////////////////////////////////////////////////////////
 
   total = 0;
+
   for (int p=0; p < _numProcs; p++){
-    countOutBuf[p] = (*countInBuf)[p];
+    countOutBuf[p] = countInBuf[p];
     total += countOutBuf[p];
   }
-  gnoOutBuf = NULL;
-  procOutBuf = NULL;
-  Teuchos::ArrayView<int> procOutView;
+
+  Teuchos::Array<int> procOutBuf(total);
+  Teuchos::ArrayRCP<int> procInBuf();
+
+  if (needGnoInfo){
+    gnoOutBuf.reserve(total);
+  }
 
   if (total > 0){
-    procOutBuf = new int [total];
-  
-    if (needGnoInfo){
-      gnoOutBuf = new GNO [total];
-    }
   
     total=0;
   
     for (int p=0; p < _numProcs; p++){
       for (LNO i=0; i < countInBuf[p]; i++, total++){
         std::string s(IdentifierTraits<AppGID>::key(gidInBuf[total]));
-        LNO index = gidToAnswerIndex->get(s);
+        LNO index = gidToIndex.get(s);
         int proc = firstIndexToProc.upper_bound(index);
         procOutBuf[total] = proc-1;
   
@@ -611,60 +577,44 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         }
       }
     }
-  
-    gidInBuf.release();
-    delete gidToAnswerIndex;
-  
-    if (needGnoInfo){
-      gnoInBuf.release();
-    }
-
-    procOutView = Teuchos::ArrayView<int>(procOutBuf, total);
-  }
-  else{
-    procOutView = Teuchos::ArrayView<int>(Teuchos::null);
   }
 
-  AlltoAllv(*_comm, procOutView, countOutView, procInBuf, countInBuf);
-
-  if (procOutBuf){
-    delete [] procOutBuf;
-    procOutBuf = NULL;
+  gidInBuf.release();
+  if (needGnoInfo){
+    gnoInBuf.release();
   }
+
+  AlltoAllv(*_comm, procOutBuf, countOutBuf, procInBuf, countInBuf);
+
+  procOutBuf.clear();
 
   if (needGnoInfo){
-    if (total > 0)
-      gnoOutView = Teuchos::ArrayView<GNO>(gnoOutBuf, total);
-    else
-      gnoOutView = Teuchos::ArrayView<GNO>(Teuchos::null);
-
-    AlltoAllv(*_comm, gnoOutView, countOutView, gnoInBuf, countInBuf);
-
-    delete [] gnoOutBuf;
+    AlltoAllv(*_comm, gnoOutBuf, countOutBuf, gnoInBuf, countInBuf);
+    gnoOutBuf.clear();
   }
 
-  delete [] countOutBuf;
+  countOutBuf.clear();
 
   ///////////////////////////////////////////////////////////////////////
   // Done.  Process the replies to my queries
   ///////////////////////////////////////////////////////////////////////
 
-  for (LNO i=0; i < numberOfUniqueGids; i++){
+  for (teuchos_size_t i=0; i < numberOfUniqueGids; i++){
 
     std::string s(uniqueGidQueries[i]);
-    std::vector<LNO> v(uniqueGidQueryIndices[i]);
+    Teuchos::Array<LNO> v(uniqueGidQueryIndices[i]);
 
-    int gidProc = (*procInBuf)[gidLocation[i]];
+    int gidProc = procInBuf[gidLocation[i]];
 
     LNO gno;
     if (needGnoInfo){
-      gno = (*gnoInBuf)[gidLocation[i]];
+      gno = gnoInBuf[gidLocation[i]];
     }
     else{
       gno = static_cast<GNO>(IdentifierTraits<AppGID>::keyToGid(s));
     }
 
-    for (LNO j=0; j < v.size(); j++){
+    for (teuchos_size_t j=0; j < v.size(); j++){
       out_gno[v[j]] = gno;
       out_proc[v[j]] = gidProc;
     }

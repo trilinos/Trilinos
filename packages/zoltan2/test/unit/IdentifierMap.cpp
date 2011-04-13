@@ -9,11 +9,21 @@
 //
 // ***********************************************************************
 // @HEADER
-
+//
 // TODO: doxygen comments
 //    TODO Z2 could should throw errors and we should catch them
-
-#define APPGID_IS_NOT_GNO
+//
+// 3 cases:
+//   Application GID is a Teuchos Global Ordinal type
+//      GIDs are consecutive and increase with rank
+//      GIDs are mixed up
+//
+//   Application GIDs can not be used as Teuchos Global Ordinals
+//
+// 2 cases:
+//   Application supplies local IDs
+//   Application does not supply local IDs
+//
 
 #include <vector>
 #include <string>
@@ -27,11 +37,6 @@
 
 #define nobjects 10000
 
-typedef long appGlobalId;
-typedef int  appLocalId;
-typedef long gnoType;
-typedef int  lnoType;
-
 template< typename T1, typename T2>
  void show_result(std::string msg, std::vector<T1> &v1, std::vector<T2> &v2)
 {
@@ -43,33 +48,38 @@ template< typename T1, typename T2>
 
 int main(int argc, char *argv[])
 {
-
   Teuchos::GlobalMPISession session(&argc, &argv);
   int nprocs = session.getNProc();
   int rank = session.getRank();
+  bool pass = true;
 
-  appLocalId numLocalObjects = nobjects /  nprocs;
-  appLocalId leftOver = nobjects % nprocs;
+  long numLocalObjects = nobjects /  nprocs;
+  long leftOver = nobjects % nprocs;
 
   if (rank < leftOver) numLocalObjects++;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = 
     Teuchos::DefaultComm<int>::getComm();
 
-  Teuchos::RCP< std::vector<appGlobalId> > gids = 
-    Teuchos::rcp(new std::vector<appGlobalId>(numLocalObjects));
-  Teuchos::RCP< std::vector<appLocalId> > lids = 
-    Teuchos::rcp(new std::vector<appLocalId>(numLocalObjects));
+  if (pass) {
 
-  appGlobalId base = nobjects * rank;   // nonconsecutive gids
+    // AppGID is long (a Teuchos Global Ordinal type).
+    // AppLID is an int.
 
-  for (int i=0; i < numLocalObjects; i++){
-    (*gids)[i] = base + i;
-    (*lids)[i] = i;
+    Teuchos::ArrayRCP<long> gids(new long [numLocalObjects], 
+      0, numLocalObjects, true);
+    Teuchos::ArrayRCP<int> lids(new int [numLocalObjects], 
+      0, numLocalObjects, true);
+
+    long base = nobjects * rank;   // nonconsecutive gids
+
+    for (int i=0; i < numLocalObjects; i++){
+      gids[i] = base + i;
+      lids[i] = i;
+    }
+
+    Z2::IdentifierMap<int, long> idmap(comm, gids, lids);
   }
-
-  Z2::IdentifierMap<appLocalId, appGlobalId, lnoType, gnoType> idmap(
-    comm, gids, lids);
 
 #if 0
 

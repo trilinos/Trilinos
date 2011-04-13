@@ -14,11 +14,21 @@
 
 #include <vector>
 #include <Teuchos_Comm.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_Hashtable.hpp>
+#include <Teuchos_Array.hpp>
+#include <Teuchos_ArrayView.hpp>
+#include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_RCP.hpp>
 
 namespace Z2
 {
+
+enum TranslationType {
+  TRANSLATE_GNO_TO_GID,
+  TRANSLATE_GID_TO_GNO,
+  TRANSLATE_GNO_TO_LID,
+  TRANSLATE_LID_TO_GNO
+};
 
 /*! Z2::IdentifierMap
     \brief An IdentifierMap manages a global space of unique object identifiers.
@@ -41,8 +51,8 @@ private:
 
   // Application global and local IDs
 
-  Teuchos::RCP<std::vector<AppGID> > _myGids; 
-  Teuchos::RCP<std::vector<AppLID> > _myLids;
+  Teuchos::ArrayRCP<AppGID> _myGids; 
+  Teuchos::ArrayRCP<AppLID> _myLids;
 
   // In the case of consecutive ordinal application global IDs,
   // gnoDist[p] is the first global number on process p, and
@@ -58,8 +68,9 @@ private:
 
   Teuchos::RCP<Teuchos::Hashtable<std::string, LNO> >  _lidHash;
 
-  GNO _globalNumberOfIds;
-  LNO _localNumberOfIds;
+
+  typename Teuchos::Array<GNO>::size_type _globalNumberOfIds;
+  typename Teuchos::Array<GNO>::size_type _localNumberOfIds;
   bool _haveLocalIds;
   int _myRank;
   int _numProcs;
@@ -75,9 +86,8 @@ public:
    */
 
   explicit IdentifierMap(Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
-                         Teuchos::RCP<std::vector<AppGID> > &gids, 
-                         Teuchos::RCP<std::vector<AppLID> > &lids);
-
+                         Teuchos::ArrayRCP<AppGID> &gids, 
+                         Teuchos::ArrayRCP<AppLID> &lids);
 
   /*! Constructor 
       This constructor does not need to be called by all processes.
@@ -95,8 +105,8 @@ public:
 
   /*! Initialize object if not done in the constructor */
   void initialize(Teuchos::RCP<const Teuchos::Comm<int> > &in_comm,
-                  Teuchos::RCP<std::vector<AppGID> > &gids,
-                  Teuchos::RCP<std::vector<AppLID> > &lids);
+                  Teuchos::ArrayRCP<AppGID> &gids,
+                  Teuchos::ArrayRCP<AppLID> &lids);
 
   /*! Return true if we are using the application global IDs 
    *  for our internal global numbers 
@@ -111,7 +121,9 @@ public:
       to application global IDs.  The application global IDs must be from
       those supplied by this process.
    */
-  void gidTranslate(std::vector<AppGID> &gid, std::vector<GNO> &gno);
+  void gidTranslate(Teuchos::ArrayView<AppGID> &gid, 
+                    Teuchos::ArrayView<GNO> &gno,
+                    TranslationType tt);
 
   /*! Map application local IDs to internal global numbers or vice versa.
 
@@ -121,7 +133,9 @@ public:
       to application local IDs.  The application local IDs must be from
       those supplied by this process.
    */
-  void lidTranslate(std::vector<AppLID> &lid, std::vector<GNO> &gno);
+  void lidTranslate(Teuchos::ArrayView<AppLID> &lid, 
+                    Teuchos::ArrayView<GNO> &gno,
+                    TranslationType tt);
 
   /*! Map application global IDs to internal global numbers or vice versa.
 
@@ -130,8 +144,10 @@ public:
       in the empty vector with the corresponding id, and will fill the
       proc vector with the owner of the global ID.
    */
-  void gidGlobalTranslate(const std::vector<AppGID> &gid, 
-    std::vector<GNO> &gno, std::vector<int> &proc);
+  void gidGlobalTranslate( Teuchos::ArrayView<const AppGID> &in_gid,
+                           Teuchos::ArrayView<GNO> &out_gno,
+                           Teuchos::ArrayView<int> &out_proc);
+
 };
 
 }   // end namespace Z2
