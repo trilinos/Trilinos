@@ -2,7 +2,7 @@
 \subsection{A Closer Look At The Problem}
 To get a better understanding of the problem Optika is trying to solve, it is
 best to look at an example of said problem. Currently, the program Tramonto has
-a massive input file filled with complex, non-intuitive inputs. Below
+a massive input file filled with complex, non-intuitive inputs. Figure
 \ref{tramontoInputFigure} is just small section of this input file.
 \begin{figure}
   \centering
@@ -119,13 +119,14 @@ array type (e.g. for numerical types a series of spinboxes would be used, for st
   \begin{figure}
   \centering
   \includegraphics[scale=0.5]{graphics/basic_example}
-  \label{basicexample}
   \caption[Basic GUI]{A basic Optika GUI}
+  \label{basicexample}
   \end{figure} 
 When all put together a basic Optika GUI looks something like Figure~\ref{basicexample}.
 When the user clicks on a particular value, one of the above widgets pops up allowing them to edit the value.
 Once the user is finished entering input, they click the action button (labled ``Submit'' in Figure~\ref{basicexample}).
 The GUI then closes and the ParameterList used to help create the GUI now contains the input specified by the user.
+
 \subsection{Underlying Technologies}
 Optika is one of many packages in the Trilinos project~\cite{trilinos}, which is developed by Sandia National Labs. At it's core, 
 the Trilinos project is a collection of various
@@ -162,29 +163,26 @@ Since Tramonto is so sorely lacking in a quality user interface, we'll use it as
 Let's look at the Dimenstion Control Parameters. These are just a few parameters used to define what kind of
 dimensions are going to be used in the rest of the input file. Figure~\ref{basicTramonto} shows how we would create
 such a GUI.
-
 \begin{figure}
 \centering
-\lstinputlisting[language=C++, basicstyle=\scriptsize]{basicTramonto/main.cpp}
-\label{basicTramonto}
+\lstinputlisting[language=C++]{basicTramonto/main.cpp}
 \caption{Basic Tramonto Example}
+\label{basicTramonto}
 \end{figure}
-
 We start by including the Optika\_GUI.hpp file. This include file allows us to use most of Optika's basic functionality.
 Once in the main function we import several classes and functions into the namespace. We then create two
-ParameterList RCPs\footnote{For more information on RCPs see~\cite{RCP}}. Using the sublist function, the second 
+ParameterList RCPs~\cite{RCP}. Using the sublist function, the second 
 ParameterList is defined as a sublist of the first. We provide them with the names ``Tramonto'' and
 ``Dimension Control Parameters''. The next several lines are calls to the set function. Each call
 adds a Parameter to the ParameterList along with assigning it a default value and a documentation string (the 
 documentation string is optional but highly encouraged). We then make
 the all important call to the getInput function. This takes the list of parameters we have created and dynamically
 generates a GUI which is then used to obtain input from the user. The end result is Figure~\ref{BasicTramontoScreenshot}.
-
 \begin{figure}
 \centering
 \includegraphics[scale=0.5]{graphics/BasicTramontoScreenshot}
+\caption{The final product of the code in Figure~\ref{basicTramonto}}
 \label{BasicTramontoScreenshot}
-\caption{The find product of the code in Figure~\ref{basicTramonto}}
 \end{figure}
 
 \subsection{Utilizing XML to Create a GUI}
@@ -197,7 +195,7 @@ Using XML to declare your input parameters has a number of advantages over decla
 \end{itemize}
 If we redo the example we made in the previous section, but using XML, we end up with the C++ code and XML code found in
 Figure~\ref{basicTramontoXML}. The XML code is rather strait forward. As in the C++ code we specify the name of the
-parameter, it's default value, and a documentation string (the documentation attribute is optional, just like when using 
+parameter, it's default value, and a documentation string (the documentation xml attribute is optional, just like when using 
 C++). When using XML we need to explicitly specify the type
 of the parameter since this can't always be infered. Creating a ParameterList hierachy in XML is also arguable easier
 in XML. ParameterLists just simply needed to be nested in one another.
@@ -206,42 +204,54 @@ Once the XML file describing the input parameters has been created, the GUI is c
 call to the getInput function. In this case the getInput function is pased the name of the XML file and an RCP pointing
 to the ParameterList into which user input should be stored.
 	\begin{figure}
-		\centering
 		\subfigure[C++ Code]{
-      \lstinputlisting[language=C++, basicstyl=\scriptsize]{basicXMLTramonto/main}
-			\label{basicXMLC++}
+    \lstinputlisting[language=C++]{basicXMLTramonto/main.cpp}
+		\label{basicXMLC++}
 		}
 		\subfigure[XML Code]{
-      \lstinputlisting[language=XML, basicstyl=\scriptsize]{basicXMLTramonto/inputs}
-			\label{basicXMLXML}
+     \lstinputlisting[language=XML]{basicXMLTramonto/inputs.xml}
+		\label{basicXMLXML}
 		}
-		\caption{XML and C++ source code that can alternatively be used to create the GUI in ~\ref{BasicTramontoScreenshot}}
+		\caption{XML and C++ source code that can alternatively be used to create the GUI in Figure~\ref{BasicTramontoScreenshot}}
 		\label{basicTramontoXML}
 	\end{figure}
-\section{Advanced Optika Usage}
-In this section we discuss some of the advanced features of Optika. All off the examples provided here will be done using
-the XML style of input parameter specification in order to avoid messy C++ code.
-\subsection{Validators}
+
+\section{Validators}
 Often input parameters only have a certain set of valid values. Through the use of validators Optika allows application
 developers to express these parameter constraints. When a validator is placed on a parameter, the generated GUI will
-not allow the user to input invalid values for a parameter. 
+not allow the user to input invalid values for a parameter. Validators were also already part of the Teuchos package
+before Optika was built, however the existing set of validators was sparse. Optika took the validator constructs that
+were already in place and built on them, resulting in the construction of several new types of validators detailed below.
+These new validators were then placed in the Teuchos package.
 
-Validators are declared in a special section of the XML file. A special <Validators> tag is declared as a direct child
-of the root <ParameterList> tag. In this <Validators> tag all validators are declared. Each validator must specify at
-least it's type and an ID. This ID can then be used anywhere in the rest of the XML file. To apply the validator to
-a parameter, simply add the validatorID attribute to the <Parameter> tag. The same validator can be used on multiple
-parameters.
+Validators are declared in a special section of the XML file. A special $<$Validators$>$ tag is declared as a direct child
+of the root $<$ParameterList$>$ tag. In this $<$Validators$>$ tag all validators are declared. Each validator must specify at
+least it's type and an ID using the $<$Validator$>$ tag. This ID can then be used anywhere in the rest of the XML file. 
+To apply the validator to a parameter, simply add the validatorID xml attribute to the $<$Parameter$>$ tag. The same validator 
+can be used on multiple parameters.
 
-Optika supports several different validators which can be found in the Teuchos package. Below we will discuss each
-in detail.
-
-\subsubsection{Enhanced Number Validators}
+\subsection{Enhanced Number Validators}
 Perhaps one of the most important validators is the Enhanced Number Validator. It allows the application developer
 to specify minimum and maximum values for a numerical parameter. It also allows the developer to specify the
 ``step'' of a numerical parameter. The step of a numerical parameter is the amount by which the parameter's value
 will be increased or decreased when the user clicks the up and down arrows on the spinbox being used to edit
 the parameter's value. For non-integer numerical parameter's the Enhanced Number Validator also allows the
 developer to declar with what precision the parameter's value should be displayed.
+
+The XML Code in Figure~\ref{EnhancedNumberValidatorXML} shows an example of using an Enhanced Number Validator
+to validate a parameter of type double. In the example we set the minimum acceptable value to be 0 and the 
+maximum to be 10. The step is set to .5 so that the parameters value will change by .5 when the user clicks
+up or down in the spinbox being used to edit the parameter. We also set the precision to two decimal places.
+The validator is given the ID of 1 and applied thusly to the ``Double Parameter'' parameter using the validatorId
+xml attribute. Notice how the type xml attribute of the validator is set to ``EnhancedNumberValidator(double)''. If we 
+were validating a parameter of type into this xml attribute would be set to ``EnhancedNumberValidator(int)'', 
+for a float it would be ``EnhancedNumberValidator(float)'', etc. These types must match up or an error will
+occur.
+
+With the exception of the validatorId xml attribute, all validator xml attribute demonstrated in Figure~\ref{EnhancedNumberValidatorXML}
+are optional for an EnhancedNumberValidator. For example, you could only specify a minimum value of 0 to restrict all 
+values of a parameter to positive values since no maximum was specified.
+Appropriate defaults will be selected for step and precision if the developer chooses not to specify them.
 \begin{figure}
   \centering
   \begin{lstlisting}
@@ -250,12 +260,167 @@ developer to declar with what precision the parameter's value should be displaye
       validatorId="1" />
       ...Other Parameters ....
     <Validators>
-      <Validator type="EnhancedNumberValidator(int)" min="0" max="10" step=".5" precision="2"/
+      <Validator type="EnhancedNumberValidator(double)" min="0" max="10" step=".5" precision="2"
         validatorId="1"/>
     </Validators>
- </ParameterList>
- \end{lstlisting}
- \label{EnhancedNumberValidatorXML}
- \caption{Example Usage of an Enhanced Number Validator}
+  </ParameterList>
+  \end{lstlisting}
+  \caption{Example Usage of an Enhanced Number Validator}
+  \label{EnhancedNumberValidatorXML}
 \end{figure}
 
+\subsection{String Validators}
+String Validators are a simple yet powerful tool to restrict string input. String input can be a nice alternative to
+using some standard set of integer values to represent various settings for a parameter. The problem is a simple wrong 
+keystroke can cause big problems. By using a String Validator an application developer can ensure that a user 
+only selects a string value that is appropriate for a given parameter. 
+String Validators may only be used on parameters of stype std::string, otherwise an error will occur.
+\begin{figure}
+  \centering
+  \begin{lstlisting}
+  <ParameterList>
+    <Parameter name="String Parameter" type="string" docString="A string parameter"
+      validatorId="1" />
+      ...Other Parameters ....
+    <Validators>
+      <Validator type="StringValidator" validatorId="1">
+        <String value="Option 1"/> 
+        <String value="Option 2"/> 
+        <String value="Option 3"/> 
+      </Validator>
+    </Validators>
+  </ParameterList>
+  \end{lstlisting}
+  \caption{Example Usage of an String Validator}
+  \label{StringValidatorXML}
+\end{figure}
+Figure~\ref{StringValidatorXML} shows how to use a String Validator. Children $<$String$>$ tags with a manditory ``value'' xml attribute specify which values are valid.
+In this example ``Option 1'', ``Option 2'', and ``Option 3'' will be the only values the user can select from the GUI.
+
+\subsection{Filename Validators}
+Filename Validators allow application developers to designate a string parameter as a filename. When applied to a parameter,
+any attempt to edit that parameter will result in the user being presented with a special file selector widget (Figure~\ref{fileSelectorWidget}). If the 
+``fileMustExist'' xml attribute is set to true, the the user will only be able select files that already exist. Otherwise, the user will be able
+to select any file he/she wants. Filename Validators can only be applied to parameters of type string. \begin{figure}
+\centering
+\includegraphics[scale=0.5]{graphics/fileWidget}
+\caption{The file selector widget presented to the user when a Filename Validator is applied to a parameter}
+\label{fileSelectorWidget}
+\end{figure}
+\begin{figure}
+  \centering
+  \begin{lstlisting}
+  <ParameterList>
+    <Parameter name="Output File Name" type="string" docString="Name of the output file."
+      validatorId="1" />
+      ...Other Parameters ....
+    <Validators>
+      <Validator type="FilenameValidator" fileMustExist="false" validatorId="1">
+    </Validators>
+  </ParameterList>
+  \end{lstlisting}
+  \caption{Example Usage of an Filename Validator}
+  \label{filenamevalidatorXML}
+\end{figure}
+Figure~\ref{filenamevalidatorXML} shows an example of how to use a Filename Validator. Here we use it to select a file to output the results
+of our program. We set the ``fileMustExist'' xml attribute to false so that the user can select a file that doesn't already exist.
+
+\subsection{Array Validators}
+Array Validators allow any of the above described Validators to be used on a array parameter. For example, we might want to use a
+String Validator on an array of strings. To do with we'd create and Array Validator with a ``prototype'' String Validator. The 
+``prototype'' validator is just a term used to describe the validator the developer would like to be applied to each entry of an
+array. Prototype validators can be specified in one of two ways. First, the developer can code the validator as child of the array validator
+tag as in Figure~\ref{actualArrayValidatorXML}. In this case, the prototype validator does not need an ID. 
+Second, the developer can simply specify another validator as array validator's  prototype by using the
+``prototypeId'' xml attribute as in Figure~\ref{protoAttributeArrayXML}. This second option allows you to reuse the prototype validator in other instances.
+
+When creating an ArrayValidator, the type xml attribute will include both the type of the prototype validator and the type of the array
+parameter. For instance, if we were using a prototype Filename Validator on a string parameter, the value of our type xml attribute would
+be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of these types match up otherwise errors will occur.
+
+\begin{figure}
+  \centering
+  \begin{lstlisting}
+  <ParameterList>
+    <Parameter name="Output File Name" type="Array(string)" docString="Name of the output file."
+      validatorId="1" />
+      ...Other Parameters ....
+    <Validators>
+      <Validator type="ArrayValidator(StringValidator, string)" validatorId="1">
+        <Validator type="stringValidator">
+          <String stringValue="Option1"/>
+          <String stringValue="Option2"/>
+          <String stringValue="Option3"/>
+          <String stringValue="Option4"/>
+        </Validator>
+      </Validator>
+    </Validators>
+  </ParameterList>
+  \end{lstlisting}
+  \caption{Example Usage of an Array Validator in which the prototype is declared as a child of the array validator.}
+  \label{actualArrayValidatorXML}
+\end{figure}
+\begin{figure}
+  \centering
+  \begin{lstlisting}
+  <ParameterList>
+    <Parameter name="Output File Name" type="Array(string)" docString="Name of the output file."
+      validatorId="1" />
+      ...Other Parameters ....
+    <Validators>
+      <Validator type="ArrayValidator(StringValidator, string)" validatorId="1" prototypeId="2"/>
+      <Validator type="stringValidator" validatorId="2">
+        <String stringValue="Option1"/>
+        <String stringValue="Option2"/>
+        <String stringValue="Option3"/>
+        <String stringValue="Option4"/>
+      </Validator>
+    </Validators>
+  </ParameterList>
+  \end{lstlisting}
+  \caption{Example Usage of an Array Validator in which the prototype is specified using the prototypeId xml attribute.}
+  \label{protoAttributeArrayXML}
+\end{figure}
+
+\section{Dependencies}
+
+\subsection{Visual Dependencies}
+
+\subsubsection{String Visual Dependencies}
+
+\subsubsection{Bool Visual Dependencies}
+
+\subsubsection{Number Visual Dependencies}
+
+\subsection{Validator Dependencies}
+
+\subsubsection{String Validator Dependency}
+
+\subsubsection{Bool Validator Dependency}
+
+\subsubsection{Range Validator Dependency}
+
+\subsection{Number Array Length Dependencies}
+
+
+
+
+
+\section{Advanced Dependency Functionality}
+
+\subsection{Condition Visual Dependencies}
+
+\subsection{Using Dependencies in Tandem}
+
+
+
+\section{Other Features of Optika}
+
+\subsection{Custom Functions}
+
+\subsection{Customizing Look And Feel}
+
+
+\section{Future Developement}
+
+\section{Contributions}
