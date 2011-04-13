@@ -438,7 +438,11 @@ void Zoltan_Print_Configuration(char *indent)
 
   #endif
   #if __metis__ > 0
-    printf("%sThird party library: %s\n",indent, METISTITLE);
+    #ifdef METISTITLE
+      printf("%sThird party library: %s\n",indent, METISTITLE);
+    #else
+      printf("%sThird party library: METIS\n",indent);
+    #endif
   #endif
 
 #endif
