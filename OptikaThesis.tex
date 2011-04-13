@@ -56,7 +56,8 @@ with the Trilinos framework to take advantage of the capabilities Optika has to 
 An Optika based GUI is laid out in a hirerachical fashinon as shown in Figure \ref{paramlistFigure}.
 This hierachy is made up of Parameters and ParameterLists. Parameters can simply be thought of as single input for
 a program. A ParameterList is simply a collection of Parametes and other ParameterLists. When a ParameterList
-is part of another ParameterList we call it a sublist.
+is part of another ParameterList we call it a sublist. Optika then uses these ParameterLists to dynamically
+generate a GUI which is used to obtain input from the user.
 		\begin{figure}
 			\centering
 			\begin{picture}(50,150)(0,0)
@@ -79,7 +80,6 @@ is part of another ParameterList we call it a sublist.
 			\caption[GUI Layout]{The hierarchical layout of the GUI}
 			\label{paramlistFigure}
 		\end{figure}
-
 Parameters in Optika are typed. Parameters can be any one of the following types:
   \begin{multicols}{2}
 		\begin{itemize}
@@ -92,6 +92,7 @@ Parameters in Optika are typed. Parameters can be any one of the following types
 			\item arrays of int, short, double, and string
 		\end{itemize}
 	\end{multicols}
+
 When editing a parameter in Optika different ``widgets'' are used to change the parameters value. A widget is simply
 a graphical construct used for obtaining input from the user. For number types, a spin box (Figure~\ref{spinboxfig}) is used to obtain input. 
 If the valid values for a string type were specified (something that will be discussed later), a combo box (Figure~\ref{comboboxfig}) is used.
@@ -115,14 +116,16 @@ array type (e.g. for numerical types a series of spinboxes would be used, for st
 		\caption{Some of the various widgets used for editing data~\cite{QtGallery}}
 		\label{editingWidgets}
 	\end{figure}
-When you put it all together a basic Optika GUI looks something like Figure~\ref{basicexample}.
-When the user clicks on a particular value, one of the above widgets pops up allowing them to edit the value.
   \begin{figure}
   \centering
   \includegraphics[scale=0.5]{graphics/basic_example}
   \label{basicexample}
   \caption[Basic GUI]{A basic Optika GUI}
   \end{figure} 
+When all put together a basic Optika GUI looks something like Figure~\ref{basicexample}.
+When the user clicks on a particular value, one of the above widgets pops up allowing them to edit the value.
+Once the user is finished entering input, they click the action button (labled ``Submit'' in Figure~\ref{basicexample}).
+The GUI then closes and the ParameterList used to help create the GUI now contains the input specified by the user.
 \subsection{Underlying Technologies}
 Optika is one of many packages in the Trilinos project~\cite{trilinos}, which is developed by Sandia National Labs. At it's core, 
 the Trilinos project is a collection of various
@@ -145,16 +148,16 @@ Because Trilinos is itself a library, relying on an additional third-party libra
 the qualities outlined above made using Qt a very easy choice. When choosing to use Qt we felt very confident that we 
 would be able to rely on it to be stable, and to provide us with the tools we needed.
 
-In order to configure and build Optika, the CMake~\cite{cmake} build system is used. This is actually the build system
+In order to configure and build Optika, the CMake~\cite{cmake} build system is used. This is the build system
 used by Trilinos as a whole, so it makes perfect sense for Optika to use it as well. In addition, CMake
 has support for the necessary special building tools required by Qt.
 
-\section{Using Optika}
+\section{Basic Optika Usage}
 At the core of Optika is the ParameterList class from the Teuchos package~\cite{TeuchosPackage}, another part
 of the Trilinos project. ParameterLists can be constructed either from within C++ source code or using XML.
 In this paper, we will first start off with basic examples using C++ source code. However, once we start
 talking about the more complex features we'll switch over to XML.
-\subsection{Basic Usage}
+\subsection{Utilizing C++ to Create A GUI}
 Since Tramonto is so sorely lacking in a quality user interface, we'll use it as an example of how to use Optika.
 Let's look at the Dimenstion Control Parameters. These are just a few parameters used to define what kind of
 dimensions are going to be used in the rest of the input file. Figure~\ref{basicTramonto} shows how we would create
@@ -170,9 +173,12 @@ such a GUI.
 We start by including the Optika\_GUI.hpp file. This include file allows us to use most of Optika's basic functionality.
 Once in the main function we import several classes and functions into the namespace. We then create two
 ParameterList RCPs\footnote{For more information on RCPs see~\cite{RCP}}. Using the sublist function, the second 
-ParameterList is defined as a sublist of the first. The next several lines are calls to the set function. Each call
-adds a Parameter to the ParameterList along with assigning it a default value and a documentation string. The end result
-is Figure~\ref{BasicTramontoScreenshot}.
+ParameterList is defined as a sublist of the first. We provide them with the names ``Tramonto'' and
+``Dimension Control Parameters''. The next several lines are calls to the set function. Each call
+adds a Parameter to the ParameterList along with assigning it a default value and a documentation string (the 
+documentation string is optional but highly encouraged). We then make
+the all important call to the getInput function. This takes the list of parameters we have created and dynamically
+generates a GUI which is then used to obtain input from the user. The end result is Figure~\ref{BasicTramontoScreenshot}.
 
 \begin{figure}
 \centering
@@ -181,7 +187,7 @@ is Figure~\ref{BasicTramontoScreenshot}.
 \caption{The find product of the code in Figure~\ref{basicTramonto}}
 \end{figure}
 
-\subsection{Utilizing XML}
+\subsection{Utilizing XML to Create a GUI}
 Using XML to declare your input parameters has a number of advantages over declaring you input in C++ source code.
 \begin{itemize}
   \item XML is a lot cleaner than the corresponding C++. The source code approach can get pretty unruly, especially
@@ -190,15 +196,66 @@ Using XML to declare your input parameters has a number of advantages over decla
   \item When using XML, there is no need to recompile the entire program everytime a small change is made to the GUI.
 \end{itemize}
 If we redo the example we made in the previous section, but using XML, we end up with the C++ code and XML code found in
-Figure~\ref{basicTramontoXML}.
+Figure~\ref{basicTramontoXML}. The XML code is rather strait forward. As in the C++ code we specify the name of the
+parameter, it's default value, and a documentation string (the documentation attribute is optional, just like when using 
+C++). When using XML we need to explicitly specify the type
+of the parameter since this can't always be infered. Creating a ParameterList hierachy in XML is also arguable easier
+in XML. ParameterLists just simply needed to be nested in one another.
+
+Once the XML file describing the input parameters has been created, the GUI is created by using a slightly different
+call to the getInput function. In this case the getInput function is pased the name of the XML file and an RCP pointing
+to the ParameterList into which user input should be stored.
 	\begin{figure}
 		\centering
 		\subfigure[C++ Code]{
+      \lstinputlisting[language=C++, basicstyl=\scriptsize]{basicXMLTramonto/main}
 			\label{basicXMLC++}
 		}
 		\subfigure[XML Code]{
+      \lstinputlisting[language=XML, basicstyl=\scriptsize]{basicXMLTramonto/inputs}
 			\label{basicXMLXML}
 		}
 		\caption{XML and C++ source code that can alternatively be used to create the GUI in ~\ref{BasicTramontoScreenshot}}
 		\label{basicTramontoXML}
 	\end{figure}
+\section{Advanced Optika Usage}
+In this section we discuss some of the advanced features of Optika. All off the examples provided here will be done using
+the XML style of input parameter specification in order to avoid messy C++ code.
+\subsection{Validators}
+Often input parameters only have a certain set of valid values. Through the use of validators Optika allows application
+developers to express these parameter constraints. When a validator is placed on a parameter, the generated GUI will
+not allow the user to input invalid values for a parameter. 
+
+Validators are declared in a special section of the XML file. A special <Validators> tag is declared as a direct child
+of the root <ParameterList> tag. In this <Validators> tag all validators are declared. Each validator must specify at
+least it's type and an ID. This ID can then be used anywhere in the rest of the XML file. To apply the validator to
+a parameter, simply add the validatorID attribute to the <Parameter> tag. The same validator can be used on multiple
+parameters.
+
+Optika supports several different validators which can be found in the Teuchos package. Below we will discuss each
+in detail.
+
+\subsubsection{Enhanced Number Validators}
+Perhaps one of the most important validators is the Enhanced Number Validator. It allows the application developer
+to specify minimum and maximum values for a numerical parameter. It also allows the developer to specify the
+``step'' of a numerical parameter. The step of a numerical parameter is the amount by which the parameter's value
+will be increased or decreased when the user clicks the up and down arrows on the spinbox being used to edit
+the parameter's value. For non-integer numerical parameter's the Enhanced Number Validator also allows the
+developer to declar with what precision the parameter's value should be displayed.
+\begin{figure}
+  \centering
+  \begin{lstlisting}
+  <ParameterList>
+    <Parameter name="Double Parameter" type="double" docString="A double parameter"
+      validatorId="1" />
+      ...Other Parameters ....
+    <Validators>
+      <Validator type="EnhancedNumberValidator(int)" min="0" max="10" step=".5" precision="2"/
+        validatorId="1"/>
+    </Validators>
+ </ParameterList>
+ \end{lstlisting}
+ \label{EnhancedNumberValidatorXML}
+ \caption{Example Usage of an Enhanced Number Validator}
+\end{figure}
+
