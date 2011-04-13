@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.11 (TeX Live 2010) (format=pdflatex 2010.7.21)  11 APR 2011 17:45
+This is pdfTeX, Version 3.1415926-1.40.11 (TeX Live 2010) (format=pdflatex 2010.7.21)  12 APR 2011 22:28
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -717,91 +717,88 @@ LaTeX Warning: Reference `tramontoInputFigure' on page 11 undefined on input li
 ne 6.
 
 
-Overfull \hbox (13.72342pt too wide) in paragraph at lines 10--10
-[]\OT1/pcr/m/n/12 ************* DIMENSION PARAMETERS **************************
-****************** 
- []
-
-
-Overfull \hbox (13.72342pt too wide) in paragraph at lines 12--12
-[]\OT1/pcr/m/n/12 ************* MESH PARAMETERS *******************************
-******************[] 
- []
-
-
-Overfull \hbox (99.40314pt too wide) in paragraph at lines 16--16
-[]\OT1/pcr/m/n/12 @ -1 2  Type_bc(x0,: left, right) (-1=IN_WALL, 0=IN_BULK, 1=P
+Overfull \hbox (4.54274pt too wide) in paragraph at lines 17--17
+[]\OT1/pcr/m/n/10 @ -1 2  Type_bc(x0,: left, right) (-1=IN_WALL, 0=IN_BULK, 1=P
 ERIODIC, 2=REFLECT, 3=LAST_NODE)[] 
  []
 
 
-Underfull \vbox (badness 3942) has occurred while \output is active []
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [11]
 
-LaTeX Warning: Reference `parameterListFigure' on page 12 undefined on input li
-ne 52.
+LaTeX Warning: Reference `paramlistFigure' on page 12 undefined on input line 5
+6.
 
-) [12] [13]
-No file OptikaSANDReport.bbl.
-\openout2 = `SANDdistribution.aux'.
-
-(./SANDdistribution.tex
-Option "NM": Using the SNL NM default distribution list.
-) [14
+[12]
+LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <12> not available
+(Font)              Font shape `OMS/pzccm/m/n' tried instead on input line 86.
 
 
-
-] [15
-
-] [16
-
-] [17]
-File: snllineblk.pdf Graphic file (type pdf)
- <use snllineblk.pdf>
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 224.
- [18]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 224.
- (./OptikaSANDReport.aux
-(./SANDdistribution.aux))
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 224.
+LaTeX Warning: Reference `spinboxfig' on page 13 undefined on input line 96.
 
 
-Package rerunfilecheck Warning: File `OptikaSANDReport.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `OptikaSANDReport.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  FAF3383F08B6C959AC4195F7273789A6;720.
-
-LaTeX Warning: There were undefined references.
+LaTeX Warning: Reference `comboboxfig' on page 13 undefined on input line 97.
 
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+LaTeX Warning: Reference `lineeditfig' on page 13 undefined on input line 98.
 
- ) 
+
+LaTeX Warning: Reference `comboboxfig' on page 13 undefined on input line 98.
+
+<graphics/spinbox.png, id=94, 216.81pt x 41.15375pt>
+File: graphics/spinbox.png Graphic file (type png)
+
+<use graphics/spinbox.png>
+<graphics/combobox.png, id=96, 216.81pt x 39.14626pt>
+File: graphics/combobox.png Graphic file (type png)
+
+<use graphics/combobox.png>
+<graphics/lineedit.png, id=97, 216.81pt x 41.15375pt>
+File: graphics/lineedit.png Graphic file (type png)
+
+<use graphics/lineedit.png>
+
+LaTeX Warning: Citation `QtGallery' on page 13 undefined on input line 115.
+
+
+LaTeX Warning: Citation `QtGallery' on page 13 undefined on input line 115.
+
+
+LaTeX Warning: Reference `basicexample' on page 13 undefined on input line 118.
+
+
+
+! LaTeX Error: File `graphics/basic_example' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.122 ...aphics[scale=0.5]{graphics/basic_example}
+                                                  
+? X
+ 
 Here is how much of TeX's memory you used:
- 6583 strings out of 493747
- 98391 string characters out of 3143546
+ 6586 strings out of 493747
+ 98646 string characters out of 3143546
  187033 words of memory out of 3000000
- 9657 multiletter control sequences out of 15000+200000
- 67341 words of font info for 124 fonts, out of 3000000 for 9000
+ 9663 multiletter control sequences out of 15000+200000
+ 62609 words of font info for 117 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191
- 32i,9n,45p,251b,327s stack positions out of 5000i,500n,10000p,200000b,50000s
-{/usr/local/texlive/2010/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/t
-exlive/2010/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2
-010/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/2010/tex
-mf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/local/texlive/2010/texmf-dist
-/fonts/type1/urw/ncntrsbk/uncb8a.pfb></usr/local/texlive/2010/texmf-dist/fonts/
-type1/urw/ncntrsbk/uncr8a.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/u
-rw/times/utmb8a.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/urw/times/u
-tmr8a.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/urw/times/utmri8a.pfb
->
-Output written on OptikaSANDReport.pdf (18 pages, 129498 bytes).
+ 32i,9n,45p,251b,337s stack positions out of 5000i,500n,10000p,200000b,50000s
+{/usr/local/texlive/2010/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/tex
+live/2010/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/201
+0/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/2010/texmf
+-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/local/texlive/2010/texmf-dist/f
+onts/type1/urw/ncntrsbk/uncb8a.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
+pe1/urw/ncntrsbk/uncr8a.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/urw
+/times/utmb8a.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/urw/times/utm
+r8a.pfb>
+Output written on OptikaSANDReport.pdf (12 pages, 120478 bytes).
 PDF statistics:
- 161 PDF objects out of 1000 (max. 8388607)
- 124 compressed objects within 2 object streams
- 38 named destinations out of 1000 (max. 500000)
- 11 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 131 PDF objects out of 1000 (max. 8388607)
+ 98 compressed objects within 1 object stream
+ 31 named destinations out of 1000 (max. 500000)
+ 26 words of extra memory for PDF output out of 10000 (max. 10000000)
 

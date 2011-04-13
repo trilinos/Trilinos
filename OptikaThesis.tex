@@ -151,31 +151,19 @@ has support for the necessary special building tools required by Qt.
 
 \section{Using Optika}
 At the core of Optika is the ParameterList class from the Teuchos package~\cite{TeuchosPackage}, another part
-of the Trilinos project. ParameterLists can be declared in source code or via an XML.
+of the Trilinos project. ParameterLists can be constructed either from within C++ source code or using XML.
+In this paper, we will first start off with basic examples using C++ source code. However, once we start
+talking about the more complex features we'll switch over to XML.
+\subsection{Basic Usage}
+Since Tramonto is so sorely lacking in a quality user interface, we'll use it as an example of how to use Optika.
+Let's look at the Dimenstion Control Parameters. These are just a few parameters used to define what kind of
+dimensions are going to be used in the rest of the input file. Figure ~\ref{basicTramonto} shows how we would create
+such a GUI.
+
 \begin{figure}
 \centering
-\begin{lstlisting}
-#include ``Teuchos_ParameterList.hpp''
-
-int main(int argc, char* argv[]){
-  using Teuchos::ParameterList;
-  ParameterList myPL(``Name of ParameterList'');
-  ...Add Parameters...
-  return 0;
-}
-\end{lstlisting}
-
-\label{simplePLCode}
-\caption[Basic ParameterList]{basic declaration of a ParameterList object}
+\lstinputlisting[language=C++, basicstyle=\scriptsize]{basicTramonto/main.cpp}
+\label{basicTramonto}
+\caption{Basic Tramonto Example}
 \end{figure}
-\begin{figure}
-\centering
-\begin{lstlisting}
-<ParameterList name="Name Of ParameterList">
-...Parameters...
-</ParameterList>
-\end{lstlisting}
 
-\label{simplePLXML}
-\caption[Basic ParameterList]{basic declaration of a ParameterList object}
-\end{figure}
