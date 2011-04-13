@@ -157,7 +157,7 @@ talking about the more complex features we'll switch over to XML.
 \subsection{Basic Usage}
 Since Tramonto is so sorely lacking in a quality user interface, we'll use it as an example of how to use Optika.
 Let's look at the Dimenstion Control Parameters. These are just a few parameters used to define what kind of
-dimensions are going to be used in the rest of the input file. Figure ~\ref{basicTramonto} shows how we would create
+dimensions are going to be used in the rest of the input file. Figure~\ref{basicTramonto} shows how we would create
 such a GUI.
 
 \begin{figure}
@@ -166,4 +166,27 @@ such a GUI.
 \label{basicTramonto}
 \caption{Basic Tramonto Example}
 \end{figure}
+
+We start by including the Optika\_GUI.hpp file. This include file allows us to use most of Optika's basic functionality.
+Once in the main function we import several classes and functions into the namespace. We then create two
+ParameterList RCPs\footnote{For more information on RCPs see~\cite{RCP}}. Using the sublist function, the second 
+ParameterList is defined as a sublist of the first. The next several lines are calls to the set function. Each call
+adds a Parameter to the ParameterList along with assigning it a default value and a documentation string. The end result
+is Figure~\ref{BasicTramontoScreenShot}.
+
+\begin{figure}
+\centering
+\includegraphics[scale=0.5]{graphics/BasicTramontoScreenshot}
+\label{BasicTramontoScreenshot}
+\caption{The find product of the code in Figure~\ref{basicTramonto}}
+\end{figure}
+
+\subsection{Utilizing XML}
+Using XML to declare your input parameters has a number of advantages over declaring you input in C++ source code.
+\begin{itemize}
+  \item XML is a lot cleaner than the corresponding C++. The source code approach can get pretty unruly, especially
+  when some of the more advanced features of Optika are used.
+  \item As an extension of being cleaner, using XML makes maintaining a user interface much simpler.
+  \item When using XML, there is no need to recompile the entire program everytime a small change is made to the GUI.
+\end{itemize}
 
