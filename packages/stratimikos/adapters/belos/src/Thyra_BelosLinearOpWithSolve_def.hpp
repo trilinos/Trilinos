@@ -416,45 +416,6 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   }
 
   //
-  // Reset the blocksize if we adding more vectors than half the number of equations,
-  // orthogonalization will fail on the first iteration!
-  //
-
-  RCP<const Teuchos::ParameterList> solverParams = iterativeSolver_->getCurrentParameters();
-  const int currBlockSize = Teuchos::getParameter<int>(*solverParams, "Block Size");
-  bool isNumBlocks = false;
-  int currNumBlocks = 0;
-  if (Teuchos::isParameterType<int>(*solverParams, "Num Blocks")) {
-    currNumBlocks = Teuchos::getParameter<int>(*solverParams, "Num Blocks");
-    isNumBlocks = true;
-  }
-  const int newBlockSize = TEUCHOS_MIN(currBlockSize,numEquations/2);
-  if (nonnull(out)
-    && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW)
-    && newBlockSize != currBlockSize)
-  {
-    *out << "\nAdjusted block size = " << newBlockSize << "\n";
-  }
-  //
-  tmpPL->set("Block Size",newBlockSize);
-
-  //
-  // Set the number of Krylov blocks if we are using a GMRES solver, or a solver
-  // that recognizes "Num Blocks". Otherwise the solver will throw an error!
-  //
-
-  if (isNumBlocks) {
-    const int Krylov_length = (currNumBlocks*currBlockSize)/newBlockSize;
-    tmpPL->set("Num Blocks",Krylov_length);
-  
-    if (newBlockSize != currBlockSize) {
-      if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
-        *out
-          << "\nAdjusted max number of Krylov basis blocks = " << Krylov_length << "\n";
-    }
-  }
-
-  //
   // Solve the linear system
   //
 
