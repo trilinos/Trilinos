@@ -612,7 +612,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     mytime = MPI_Wtime() - stime;
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
-      printf("DRIVER:  Zoltan_LB_Partition time = %g\n", maxtime);
+      printf("\nDRIVER:  Zoltan_LB_Partition time = %g\n", maxtime);
     Total_Partition_Time += maxtime;
 
 #ifdef TIMER_CALLBACKS

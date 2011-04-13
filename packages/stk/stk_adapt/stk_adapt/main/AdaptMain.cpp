@@ -24,6 +24,7 @@
 #include <stk_percept/RunEnvironment.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
+#include <stk_util/environment/CPUTime.hpp>
 
 #include <stk_adapt/UniformRefiner.hpp>
 #include <boost/shared_ptr.hpp>
@@ -248,8 +249,10 @@ namespace stk {
       bool debug_re = false;
       RunEnvironment run_environment(&argc, &argv, debug_re);
       unsigned p_rank = stk::parallel_machine_rank(run_environment.m_comm);
+      unsigned p_size = stk::parallel_machine_size(run_environment.m_comm);
 
       double t0 =  stk::wall_time(); 
+      double cpu0 = stk::cpu_time();
 
       std::string options_description_desc = "stk_adapt options";
     
@@ -502,8 +505,25 @@ namespace stk {
         }
 
       double t1 =  stk::wall_time(); 
-      stk::percept::pout() << "P[" << p_rank << "]  wall clock time on processor [" << p_rank << "]= " << (t1-t0) << " (sec)\n";
-      std::cout << "P[" << p_rank << "]  wall clock time on processor [" << p_rank << "]= " << (t1-t0) << " (sec)" << std::endl;
+      double cpu1 = stk::cpu_time();
+      stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
+                           << " cpu time= " << (cpu1 - cpu0) << " (sec)\n";
+      std::cout << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
+                << " cpu time= " << (cpu1 - cpu0) << " (sec) " << std::endl;
+
+      double cpuMax = (cpu1-cpu0);
+      double wallMax = (t1-t0);
+
+      stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &cpuMax ) );
+      stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &wallMax ) );
+
+      if (0 == p_rank)
+        {
+          stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)\n";
+          stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)\n";
+          std::cout << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)" << std::endl;
+          std::cout << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)" << std::endl;
+        }
 
       return result;
     }
@@ -515,6 +535,11 @@ namespace stk {
 //#if !PY_PERCEPT
 int main(int argc, char **argv) { 
 
+#if defined(__PGI)
+  std::cout << "Not supported on PGI" << std::endl;
+  return 0;
+#else
   return stk::adapt::adapt_main(argc, argv);
+#endif
 }
 //#endif

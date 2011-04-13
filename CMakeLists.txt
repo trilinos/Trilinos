@@ -73,6 +73,8 @@ INCLUDE(TrilinosGlobalMacros)
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
 
+PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE()
+
 OPTION(Trilinos_VERBOSE_CONFIGURE
   "Make the Trilinos configure process verbose." OFF)
 
