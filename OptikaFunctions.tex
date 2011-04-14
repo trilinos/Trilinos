@@ -1,0 +1,17 @@
+The basic layout of an function in xml is as so:
+\begin{lstlisting}[language=XML]
+<Function operand="value of operand" type="type of function"/>
+\end{lstlisting}
+The value for the operand attribute must be a number. The value for the type attribue must be
+one of the following:
+\begin{itemize}
+\item SubtractionFunction($number type$)
+\item AdditionFunction($number type$)
+\item MultiplicationFunction($number type$)
+\item DivisionFunction($number type$)
+\end{itemize}
+This list can be exapanded by creating your own custom function objects that subclass the 
+``SimpleFunctionObject'' class in the teuchos package and by creating your own custom
+xml converter that sublcasses the SimpleFunctionXMLConverter class.
+
+

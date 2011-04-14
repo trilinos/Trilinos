@@ -405,9 +405,9 @@ their associated parameter.
 Visual dependencies allow the application developer to show and hide parameters based on other paramters' values. This is useful in situations where
 when a parameter takes on a particular value, another parameter is no longer relevant. By hiding this now irrelevant parameter from the user the
 application developer can hopefully avoid some confusion. If we were to write these dependencies as a sentance they would say: ``Based on
-the value of the dependee parameter show or hide the dependent parameter''.
+the value of the dependee parameter show or hide the dependent parameter(s)''.
 
-Visual dependencies have an extra boolean xml attribute that can be put in the $<$Dependency$>$ called ``showIf''. What ever condition is being tested to 
+Visual dependencies have an extra boolean xml attribute that can be put in the $<$Dependency$>$ tag called ``showIf''. What ever dependee is being tested to 
 determine the dependents visibility, showIf can negate it by being set to false. So if a visual dependency is set to only show a dependent when the
 dependee has a parituclar value, setting showIf to false will cause the dependent to be visible only when the dependee \emph{does not} have a particular
 value. If the showIf attribute is not present, it is assumed to be true. All visual dependencies may have an aribitray number of dependents of any type.
@@ -474,13 +474,75 @@ Bool Visual Dependencies must have a single depenedee of type bool.
         
   </ParameterList>
   \end{lstlisting}
-  \caption{Example Usage of an Array Validator in which the prototype is declared as a child of the array validator.}
-  \label{actualArrayValidatorXML}
+  \caption{Example usage of a Bool Visual Dependency}
+  \label{BoolVisXML}
 \end{figure}
 
-
-
 \subsubsection{Number Visual Dependencies}
+Number Visual Dependencies allow the developer to base the visibility of a parmeter on the numerical value of another parameter. In their simpliest form
+Number Visual Dependencies simply check to see if the dependees value is greater then or equal to zero. If the value is greater than or equals to zero the
+dependent(s) will be shown. Otherwise, the dependents will be hidden. If the showIf xml attribute value is set to false, then the visibility results will
+be the opposite. Figure~\ref{NumberVisXML1} shows basic usage of a number visual dependency. Unless the ``Temperature'' parameter is below zero degrees
+celsius then we can't have any ice cubes in the room. We do this by setting the showIf xml attribute to false so that ``Number of ice cubes'' only shows
+when the ``Temperature'' parameter is below zero.
+\begin{figure}
+  \centering
+  \begin{lstlisting}[language=XML]
+  <ParameterList>
+    <Parameter name="Temperature" type="double" value="1"
+      id="1" docString="The temperature in the room in degrees celsius"/>
+    <Parameter name="Number of ice cubes" type="int" value="1"
+      id="2" docString="The number of ice cubes in the room"/>
+    <Dependencies>
+
+      <Dependency showIf="false" type="NumberVisualDependency(double)">
+        <Dependee parameterId="1"/>
+        <Dependent parameterId="2"/>
+      </Dependency>
+
+    </Dependencies>
+  </ParameterList>
+        
+  </ParameterList>
+  \end{lstlisting}
+  \caption{Example usage of a Number Visual Dependency.}
+  \label{NumberVisXML1}
+\end{figure}
+Notice in figure~\ref{NumberVisXML1} that like Enhanced Number Validators, the type value of a Number Visual Dependency has to include the type of the
+parameter it's evaluating (in this case a double). Number visual dependencies may have only one dependee. The type of that dependee must match up with the
+type specified in the type xml attribute used in the Number Visual Dependency tag.
+
+Sometimes it is necessary to test a number typed parameter using criteria other than whether or not it's current value is greater than or equal to zero.
+This can be accomplished by using a $<$Function$>$ tag. A $<$Function$>$ tag instructs the dependency to run the value of the dependee through a funciton
+first, and then test the result of that function to see if it is greater than or equal to zero. Consider the example in figure~\ref{NumberVisXML1}, only this
+time let's say our temperature is in degrees farenheit. In order to get the proper functionality, we'll add a ``subtraction function'' to the dependency that will
+subtract 32 from the value of the temperature parameter before it is tested against zero. Figure~\ref{NumberVisXML2} shows an example of this. We set the operand 
+xml attribute to 32 and the type of the function to ``SubtrationFunction(double)'' since we want to use a subtraction function on a parameter of type double. See
+\ref{sec:funcs} for the other available functions.
+\begin{figure}
+  \centering
+  \begin{lstlisting}[language=XML]
+  <ParameterList>
+    <Parameter name="Temperature" type="double" value="33"
+      id="1" docString="The temperature in the room in degrees farenheit"/>
+    <Parameter name="Number of ice cubes" type="int" value="1"
+      id="2" docString="The number of ice cubes in the room"/>
+    <Dependencies>
+
+      <Dependency showIf="false" type="NumberVisualDependency(double)">
+        <Dependee parameterId="1"/>
+        <Dependent parameterId="2"/>
+        <Function operand="32" type="SubtractionFunction(double)"/> 
+      </Dependency>
+
+    </Dependencies>
+  </ParameterList>
+        
+  </ParameterList>
+  \end{lstlisting}
+  \caption{Example usage of a Number Visual Dependency using a function.}
+  \label{NumberVisXML2}
+\end{figure}
 
 
 \subsection{Validator Dependencies}
