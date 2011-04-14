@@ -6,6 +6,7 @@ File Name		= simple
 Parallel Disk Info	= number=0
 Test Drops		= 1
 Test RCB Box		= 1
+Test DDirectory = 1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
 3	0	-1	-1
