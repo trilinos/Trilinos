@@ -35,9 +35,9 @@ const Tpetra::CombineMode Cthulhu2Tpetra_CombineMode(const Cthulhu::CombineMode&
     return Tpetra::INSERT;
   
   if (CM == Cthulhu::ABSMAX) {
-    std::cerr << "Cthulhu2Tpetra_CombineMode ERROR !!!" << std::endl;
-    return Tpetra::INSERT;
-    //return Tpetra::ABSMAX; //TODO
+    //std::cerr << "Cthulhu2Tpetra_CombineMode ERROR !!!" << std::endl;
+    //return Tpetra::INSERT;
+    return Tpetra::ABSMAX; //TODO
   }
   
   TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Tpetra::CombineMode: unsupported CombineMode."); 
