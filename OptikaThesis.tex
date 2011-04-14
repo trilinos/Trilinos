@@ -254,9 +254,9 @@ values of a parameter to positive values since no maximum was specified.
 Appropriate defaults will be selected for step and precision if the developer chooses not to specify them.
 \begin{figure}
   \centering
-  \begin{lstlisting}
+  \begin{lstlisting}[language=XML]
   <ParameterList>
-    <Parameter name="Double Parameter" type="double" docString="A double parameter"
+    <Parameter name="Double Parameter" value="1.0" type="double" docString="A double parameter"
       validatorId="1" />
       ...Other Parameters ....
     <Validators>
@@ -277,9 +277,9 @@ only selects a string value that is appropriate for a given parameter.
 String Validators may only be used on parameters of stype std::string, otherwise an error will occur.
 \begin{figure}
   \centering
-  \begin{lstlisting}
+  \begin{lstlisting}[language=XML]
   <ParameterList>
-    <Parameter name="String Parameter" type="string" docString="A string parameter"
+    <Parameter name="String Parameter" value="Option 1" type="string" docString="A string parameter"
       validatorId="1" />
       ...Other Parameters ....
     <Validators>
@@ -309,9 +309,9 @@ to select any file he/she wants. Filename Validators can only be applied to para
 \end{figure}
 \begin{figure}
   \centering
-  \begin{lstlisting}
+  \begin{lstlisting}[language=XML]
   <ParameterList>
-    <Parameter name="Output File Name" type="string" docString="Name of the output file."
+    <Parameter name="Output File Name" value="" type="string" docString="Name of the output file."
       validatorId="1" />
       ...Other Parameters ....
     <Validators>
@@ -340,18 +340,17 @@ be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of thes
 
 \begin{figure}
   \centering
-  \begin{lstlisting}
+  \begin{lstlisting}[language=XML]
   <ParameterList>
-    <Parameter name="Output File Name" type="Array(string)" docString="Name of the output file."
-      validatorId="1" />
+    <Parameter name="Options" value="{Option 1, Option 1, Option 1}" 
+      type="Array(string)" docString="An array of options" validatorId="1" />
       ...Other Parameters ....
     <Validators>
       <Validator type="ArrayValidator(StringValidator, string)" validatorId="1">
         <Validator type="stringValidator">
-          <String stringValue="Option1"/>
-          <String stringValue="Option2"/>
-          <String stringValue="Option3"/>
-          <String stringValue="Option4"/>
+          <String stringValue="Option 1"/>
+          <String stringValue="Option 2"/>
+          <String stringValue="Option 3"/>
         </Validator>
       </Validator>
     </Validators>
@@ -362,18 +361,17 @@ be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of thes
 \end{figure}
 \begin{figure}
   \centering
-  \begin{lstlisting}
+  \begin{lstlisting}[language=XML]
   <ParameterList>
-    <Parameter name="Output File Name" type="Array(string)" docString="Name of the output file."
-      validatorId="1" />
+    <Parameter name="Output File Name" value="{Option 1, Option 1, Option 1" 
+      type="Array(string)" docString="Name of the output file." validatorId="1" />
       ...Other Parameters ....
     <Validators>
       <Validator type="ArrayValidator(StringValidator, string)" validatorId="1" prototypeId="2"/>
       <Validator type="stringValidator" validatorId="2">
-        <String stringValue="Option1"/>
-        <String stringValue="Option2"/>
-        <String stringValue="Option3"/>
-        <String stringValue="Option4"/>
+        <String stringValue="Option 1"/>
+        <String stringValue="Option 2"/>
+        <String stringValue="Option 3"/>
       </Validator>
     </Validators>
   </ParameterList>
@@ -383,14 +381,70 @@ be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of thes
 \end{figure}
 
 \section{Dependencies}
+Dependencies are the crown jewel of Optika. They allow application developers to express common dependenices that occur between
+parameters in their program. At their core dependencies allow a developer to say ``based on the state of parameter A, parameter be should
+behave in a certain way.'' In this case, we would say parameter A is the ``dependee'' parameter and parameter B is the ``dependent'' parameter.
+All dependencies have at least one dependee and one dependent. When running the GUI, the algorithm for expressing dependencies is as follows:
+\begin{enumerate}
+	\item A parameter's value is changed by the end-user.
+	\item The GUI queries the associated defined dependencies to see whether or not the parameter that changed has any dependents.
+	\item If the parameter does have dependents, the GUI requests a list of all the dependencies in which the changed
+	parameter is a dependee.
+	\item For each dependency, the evaluate function is called. The dependency makes any necessary changes to the dependent parameter
+	and the GUI updates with the new data.
+	\item If any dependents now have invalid values, focus is given to them and the end-user is requested to change their value to
+	something more appropriate.
+\end{enumerate}
+Like validators, dependencies are declared in the XML using the $<$Dependencies$>$ tag that must be a direct child
+of the root $<$ParameterList$>$ tag. Inside the $<$Dependencies$>$ tag each dependency is declared using the $<$Dependency$>$ tag. Within the
+$<$Dependency$>$ tag the xml attribute ``type'' is required in order to define the type of the dependency. Each $<$Dependency$>$ must have at least
+one $<$Dependee$>$ child tag and one $<$Dependent$>$ child tag. Each of these tags must have an xml attribute called ``parameterId'' which identifies
+their associated parameter.
 
 \subsection{Visual Dependencies}
+Visual Dependencies allow the application developer to show and hide parameters based on other paramters' values. This is useful in situations where
+when a parameter takes on a particular value, another parameter is no longer relevant. By hiding this now irrelevant parameter from the user the
+application developer can hopefully avoid some confusion. If we were to write these dependencies as a sentance they would say: ``Based on
+the value of the dependee parameter show or hide the dependent parameter''.
 
 \subsubsection{String Visual Dependencies}
+String Visual Dependencies allow an application developer to base whether or not a parameter is visible on the particular string value of another
+parameter. For instance, we might say if parameter A is equal to the value ``Swiss Cheese'' or ``Cheedar Cheese''the show parameter B. Otherwise, do not show parameter B.
+Figure~\ref{StringVisXML} demonstrates how we would express this in XML. String Visual dependencies must have a single dependee of type string. A String Visual
+Dependency can have multiple dependees of any type.
+\begin{figure}
+  \centering
+  \begin{lstlisting}[language=XML]
+  <ParameterList>
+    <Parameter name="Favorite Food" type="string" value="pasta"
+      id="1" docString="Your favorite food."/>
+    <Parameter name="How much do you like that cheese?" type="int" value="5"
+      docString="A rating of cheese" id="2"
+      ...Other Parameters ....
+    <Dependencies>
+
+      <Dependency type="StringVisualDependency">
+        <Dependee parameterId="1"/>
+        <Dependent parameterId="2"/>
+        <StringValues>
+          <String value="Swiss"/>
+          <String value="Cheddar"/>
+        </StringValues>
+      </Dependency>
+
+    </Dependencies>
+  </ParameterList>
+        
+  </ParameterList>
+  \end{lstlisting}
+  \caption{Example Usage of an Array Validator in which the prototype is declared as a child of the array validator.}
+  \label{actualArrayValidatorXML}
+\end{figure}
 
 \subsubsection{Bool Visual Dependencies}
 
 \subsubsection{Number Visual Dependencies}
+
 
 \subsection{Validator Dependencies}
 
@@ -400,6 +454,7 @@ be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of thes
 
 \subsubsection{Range Validator Dependency}
 
+
 \subsection{Number Array Length Dependencies}
 
 
@@ -408,9 +463,10 @@ be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of thes
 
 \section{Advanced Dependency Functionality}
 
+\subsection{Multiple dependents}
+
 \subsection{Condition Visual Dependencies}
 
-\subsection{Using Dependencies in Tandem}
 
 
 
