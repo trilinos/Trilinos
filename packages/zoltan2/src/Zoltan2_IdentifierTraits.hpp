@@ -47,22 +47,8 @@ bool isPacket() {
   return Teuchos::SerializationTraits<int, T>::supportsDirectSerialization;
 }
 
-/*! 
-    \brief Convert a string to the numeric value it describes.
-    \tparam T the numeric data type to convert the string to
-    \result the number in the string (e.g. "12.5" -> float(12.5))
- */
 
-template <typename T>
-T getTypeFromString(std::string s){
-  T val;
-  std::istringstream is(s);
-  is >> val;
-  return val;
-}
-
-/*! 
-    \brief Represent a numeric value as a hex string.
+ /* \brief Represent a numeric value as a hex string.
 
     The goal was to come up with a way to uniquely represent identifiers
     compactly in a string.  Some values would require fewer bytes when 
@@ -73,10 +59,18 @@ T getTypeFromString(std::string s){
  */
 
 template <typename T>
-std::string hexString(const T &ival){ 
+std::string keyToHexString(const T &ival){ 
   std::ostringstream os;
   os << std::hex << ival;
   return os.str();
+}
+
+template <typename T>
+T hexStringToKey(const std::string s){
+  T val;
+  std::istringstream is(s);
+  is >> std::hex >> val;
+  return val;
 }
 
 /*! 
@@ -85,10 +79,9 @@ std::string hexString(const T &ival){
     The goal was to come up with a way to represent identifiers
     compactly in a string.  This scheme is more compact than
     hexString, but includes unprintable characters in the string.
-    Each byte is the ascii equivalent of the numeric value of the
-    corresponding byte in the input.  Zero is an exception,
-    because when a std::string has one character only and it
-    is 0, it is considered a string of length 0.
+ 
+    This is a problem when debugging, and Hashtable error messages
+    try to print out keys.
 
     \tparam T the numeric data type to convert to the string
     \param ival the number to convert to a string
@@ -96,14 +89,14 @@ std::string hexString(const T &ival){
  */
 
 template <typename T>
-std::string byteString(const T &ival)
+std::string keyToByteString(const T &ival)
 {
   std::string s;
 
   if (ival != 0){             // scheme that works if non-zero
     s.reserve(sizeof(T));
-    for (unsigned int i=sizeof(T)-1; i>=0; i--){
-      int movebits = i*8;
+    for (unsigned int i=sizeof(T); i>0; i--){
+      int movebits = (i-1)*8;
       char c = static_cast<char>((ival & (0xff << movebits)) >> movebits);
       if ((s.size() > 0) || (static_cast<int>(c)  != 0)){
         s.push_back(c);
@@ -118,6 +111,48 @@ std::string byteString(const T &ival)
   }
 
   return s;
+}
+
+template <typename T>
+T byteStringToKey(std::string s)
+{
+  // special case of zero
+
+  if (s.size() == (sizeof(T) + 1)){
+    return 0;
+  }
+
+  // everything else
+  
+  T val = 0;
+  int shift = 0;
+  std::string::iterator next = s.end();
+  std::string::iterator start = s.begin();
+
+  while (next != start){
+    int ic = static_cast<int>(*next);
+    val = val | (ic << shift);
+    shift += 8;
+    next --;
+  }
+  return val;
+}
+
+template <typename T>
+std::string keyToString(const T &ival){ 
+#ifdef Z2_PRINTABLE_HASH_TABLE_STRING
+  return keyToHexString<T>(ival);
+#else
+  return keyToByteString<T>(ival);
+#endif
+}
+template <typename T>
+T stringToKey(const std::string s){
+#ifdef Z2_PRINTABLE_HASH_TABLE_STRING
+  return hexStringToKey<T>(s);
+#else
+  return byteStringToKey<T>(s);
+#endif
 }
 
 /*! \struct UndefinedIdentifierTraits
@@ -212,8 +247,8 @@ struct IdentifierTraits {
 template<>
 struct IdentifierTraits<char> {
   static inline int hashCode(const char &c) { return static_cast<int>(c);}
-  static inline std::string key(const char&c){ return std::string(1, c); }
-  static char keyToGid(const std::string s){ return s[0]; }
+  static inline std::string key(const char&c){ return keyToString<char>(c); }
+  static char keyToGid(const std::string s){ return stringToKey<char>(s); }
   static inline std::string name()     { return("char");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
@@ -224,9 +259,9 @@ struct IdentifierTraits<char> {
 template<>
 struct IdentifierTraits<short int> {
   static inline int hashCode(const short int &a) { return static_cast<int>(a);}
-  static inline std::string key(const short int &a){ return hexString(a); }
+  static inline std::string key(const short int &a){ return keyToString(a); }
   static short int keyToGid(const std::string s){ 
-    return getTypeFromString<short int>(s);}
+    return stringToKey<short int>(s);}
   static inline std::string name()          { return("short int");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
@@ -238,9 +273,9 @@ struct IdentifierTraits<short int> {
 template<>
 struct IdentifierTraits<int> {
   static inline int hashCode(const int &a) { return a; }
-  static inline std::string key(const int &a){ return hexString(a); }
+  static inline std::string key(const int &a){ return keyToString(a); }
   static int keyToGid(const std::string s){ 
-    return getTypeFromString<int>(s);}
+    return stringToKey<int>(s);}
   static inline std::string name()    { return("int");}
   static inline bool isHashKeyType() { return true; }
   static inline bool isGlobalOrdinalType() { return true; }
@@ -253,9 +288,9 @@ template<>
 struct IdentifierTraits<unsigned int> {
   static inline int hashCode(const unsigned int &a) { 
     return static_cast<int>(a); }
-  static inline std::string key(const unsigned int &a){ return hexString(a); }
+  static inline std::string key(const unsigned int &a){ return keyToString(a); }
   static unsigned int keyToGid(const std::string s){ 
-    return getTypeFromString<unsigned int>(s);}
+    return stringToKey<unsigned int>(s);}
   static inline std::string name()             { return("unsigned int");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
@@ -273,9 +308,9 @@ struct IdentifierTraits<long int> {
     }
     return static_cast<int>(total);
   }
-  static inline std::string key(const long int &a){ return hexString(a); }
+  static inline std::string key(const long int &a){ return keyToString(a); }
   static long int keyToGid(const std::string s){ 
-    return getTypeFromString<long int>(s);}
+    return stringToKey<long int>(s);}
   static inline std::string name()    { return("long int");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
@@ -290,9 +325,9 @@ struct IdentifierTraits<unsigned long int> {
     return 
       IdentifierTraits<long int>::hashCode(static_cast<const long int>(a)); }
   static inline std::string key(const unsigned long int &a){ 
-    return hexString(a); }
+    return keyToString(a); }
   static unsigned long int keyToGid(const std::string s){ 
-    return getTypeFromString<unsigned long int>(s);}
+    return stringToKey<unsigned long int>(s);}
   static inline std::string name()   { return("long unsigned int");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
@@ -310,9 +345,9 @@ struct IdentifierTraits<long long int> {
     }
     return static_cast<int>(total);
   }
-  static inline std::string key(const long long int &a){ return hexString(a); }
+  static inline std::string key(const long long int &a){ return keyToString(a); }
   static long long int keyToGid(const std::string s){ 
-    return getTypeFromString<long long int>(s);}
+    return stringToKey<long long int>(s);}
   static inline std::string name()    { return("long long int");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
@@ -327,9 +362,9 @@ struct IdentifierTraits<unsigned long long int> {
     return IdentifierTraits<long long int>::hashCode(
       static_cast<const long long int>(a)); }
   static inline std::string key(const unsigned long long int &a){ 
-    return hexString(a); }
+    return keyToString(a); }
   static unsigned long long int keyToGid(const std::string s){ 
-    return getTypeFromString<unsigned long long int>(s);}
+    return stringToKey<unsigned long long int>(s);}
   static inline std::string name()    { return("long long int");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return false; }
@@ -347,13 +382,13 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   }
 
   static inline std::string key(const std::pair<T1, T2> &p)  {
-    return hexString(p.first) + std::string(":") + hexString(p.second);
+    return keyToString(p.first) + std::string(":") + keyToString(p.second);
   }
 
   static std::pair<T1, T2> keyToGid(const std::string s){
     std::string::size_type pos = s.find(":");
-    T1 first = getTypeFromString<T1>(s.substr(0,pos));
-    T2 second = getTypeFromString<T2>(s.substr(pos+1));
+    T1 first = stringToKey<T1>(s.substr(0,pos));
+    T2 second = stringToKey<T2>(s.substr(pos+1));
     std::pair<T1, T2> p(first, second);
     return p;
   }
@@ -386,9 +421,9 @@ struct IdentifierTraits<std::vector<T > > {
   static inline std::string key(const std::vector<T> &v){
     std::string s;
     if (v.size()){
-      s = s + hexString(v[0]);
+      s = s + keyToString(v[0]);
       for (size_t i=1; i < v.size(); i++){
-        s = s + std::string(":") + hexString(v[i]);
+        s = s + std::string(":") + keyToString(v[i]);
       }
     }
     return s;
@@ -408,11 +443,11 @@ struct IdentifierTraits<std::vector<T > > {
     scopy = s;
     k = scopy.find(":");
     while (k != std::string::npos){
-      v.push_back(getTypeFromString<T>(scopy.substr(0, k)));
+      v.push_back(stringToKey<T>(scopy.substr(0, k)));
       scopy = scopy.substr(k+1);
       k = scopy.find(":");
     }
-    v.push_back(getTypeFromString<T>(scopy.substr(0, k)));
+    v.push_back(stringToKey<T>(scopy.substr(0, k)));
     return v;
   }
   static inline std::string name(){

@@ -86,8 +86,8 @@ public:
    */
 
   explicit IdentifierMap(Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
-                         Teuchos::ArrayRCP<AppGID> &gids, 
-                         Teuchos::ArrayRCP<AppLID> &lids);
+                         typename Teuchos::ArrayRCP<AppGID> &gids, 
+                         typename Teuchos::ArrayRCP<AppLID> &lids);
 
   /*! Constructor 
       This constructor does not need to be called by all processes.
@@ -120,9 +120,11 @@ public:
       gno vector contains internal global numbers, they will be translated
       to application global IDs.  The application global IDs must be from
       those supplied by this process.
+
+      TODO: Why does code fail to compile if I pass gid and gno by reference?
    */
-  void gidTranslate(Teuchos::ArrayView<AppGID> &gid, 
-                    Teuchos::ArrayView<GNO> &gno,
+  void gidTranslate(Teuchos::ArrayView<AppGID> gid, 
+                    Teuchos::ArrayView<GNO> gno,
                     TranslationType tt);
 
   /*! Map application local IDs to internal global numbers or vice versa.
@@ -133,8 +135,8 @@ public:
       to application local IDs.  The application local IDs must be from
       those supplied by this process.
    */
-  void lidTranslate(Teuchos::ArrayView<AppLID> &lid, 
-                    Teuchos::ArrayView<GNO> &gno,
+  void lidTranslate(Teuchos::ArrayView<AppLID> lid, 
+                    Teuchos::ArrayView<GNO> gno,
                     TranslationType tt);
 
   /*! Map application global IDs to internal global numbers or vice versa.
@@ -144,9 +146,9 @@ public:
       in the empty vector with the corresponding id, and will fill the
       proc vector with the owner of the global ID.
    */
-  void gidGlobalTranslate( Teuchos::ArrayView<const AppGID> &in_gid,
-                           Teuchos::ArrayView<GNO> &out_gno,
-                           Teuchos::ArrayView<int> &out_proc);
+  void gidGlobalTranslate( Teuchos::ArrayView<const AppGID> in_gid,
+                           Teuchos::ArrayView<GNO> out_gno,
+                           Teuchos::ArrayView<int> out_proc);
 
 };
 

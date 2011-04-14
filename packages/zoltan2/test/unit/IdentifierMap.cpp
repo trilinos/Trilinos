@@ -11,7 +11,8 @@
 // @HEADER
 //
 // TODO: doxygen comments
-//    TODO Z2 could should throw errors and we should catch them
+// TODO Z2 could should throw errors and we should catch them
+// TODO rewrite using Teuchos Unittest
 //
 // 3 cases:
 //   Application GID is a Teuchos Global Ordinal type
@@ -64,6 +65,7 @@ int main(int argc, char *argv[])
   if (pass) {
 
     // AppGID is long (a Teuchos Global Ordinal type).
+    // AppGIDs are not consecutive
     // AppLID is an int.
 
     Teuchos::ArrayRCP<long> gids(new long [numLocalObjects], 
@@ -78,7 +80,35 @@ int main(int argc, char *argv[])
       lids[i] = i;
     }
 
-    Z2::IdentifierMap<int, long> idmap(comm, gids, lids);
+    // Template parameters: AppLID, AppGID, LNO, GNO
+
+    Z2::IdentifierMap<int, long, int, long> idmap(comm, gids, lids);
+
+    if (idmap.gnosAreGids() != true){
+      std::cout << "FAIL" << std::endl;
+      return 1;
+    }
+
+    Teuchos::Array<long> gnoArray1(numLocalObjects);
+    Teuchos::Array<long> gnoArray2(numLocalObjects);
+
+    Teuchos::ArrayView<long> gidArray = gids.view(0, numLocalObjects);
+
+    idmap.gidTranslate(gidArray, gnoArray1, Z2::TRANSLATE_GID_TO_GNO);
+
+    Teuchos::ArrayView<int> lidArray = lids.view(0, numLocalObjects);
+
+    idmap.lidTranslate(lidArray, gnoArray2, Z2::TRANSLATE_LID_TO_GNO);
+
+    for (int i=0; i < numLocalObjects; i++){
+      if (gnoArray1[i] != gnoArray2[i]){
+        pass = false;
+        break;
+      }
+    }
+
+    
+    
   }
 
 #if 0
@@ -100,7 +130,7 @@ int main(int argc, char *argv[])
 
   std::vector<appGlobalId> gidsReturned;
 
-  idmap.gidTranslate(gidsReturned, gnoQuery);// translate gnos to gids
+  idmap<int,long,int,long>.gidTranslate(gidsReturned, gnoQuery);// translate gnos to gids
 
   //show_result<gnoType, appGlobalId>(std::string("Z2 gnos -> App gids"), 
     //gnoQuery, gidsReturned);

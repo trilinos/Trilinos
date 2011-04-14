@@ -29,8 +29,8 @@ namespace Z2
 template<typename AppLID, typename AppGID, typename LNO, typename GNO> 
   IdentifierMap<AppLID,AppGID,LNO,GNO>::IdentifierMap(
     Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
-    Teuchos::ArrayRCP<AppGID> &gids, 
-    Teuchos::ArrayRCP<AppLID> &lids) 
+    typename Teuchos::ArrayRCP<AppGID> &gids, 
+    typename Teuchos::ArrayRCP<AppLID> &lids) 
          : _comm(in_comm), _myGids(gids), _myLids(lids),
            _globalNumberOfIds(0), _localNumberOfIds(0), _haveLocalIds(false),
            _myRank(0), _numProcs(0)
@@ -220,8 +220,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID, AppGID, LNO, GNO>::gidTranslate(
-    Teuchos::ArrayView<AppGID> &gid, 
-    Teuchos::ArrayView<GNO > &gno,
+    Teuchos::ArrayView<AppGID> gid, 
+    Teuchos::ArrayView<GNO> gno,
     TranslationType tt)
 {
   typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
@@ -257,20 +257,27 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     if (tt == TRANSLATE_GNO_TO_GID)
       for (teuchos_size_t i=0; i < len; i++)
         gid[i] = _myGids[gno[i] - firstGNO];
-    else
+    else{
+      LNO idx;
       for (teuchos_size_t i=0; i < len; i++){
-        const LNO &idx = _gidHash->get(
-          Z2::IdentifierTraits<AppGID>::key(gid[i]));
+        try{
+          idx = _gidHash->get(Z2::IdentifierTraits<AppGID>::key(gid[i]));
+        }
+        catch (std::runtime_error) {
+          std::cerr << "Error getting index for GID " ;
+          std::cerr <<  Z2::IdentifierTraits<AppGID>::key(gid[i]) << std::endl;
+        }
         gno[i] = firstGNO + idx;
       }
+    }
   }
   return;
 }
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID, AppGID, LNO, GNO>::lidTranslate(
-    Teuchos::ArrayView<AppLID> &lid, 
-    Teuchos::ArrayView<GNO> &gno, 
+    Teuchos::ArrayView<AppLID> lid, 
+    Teuchos::ArrayView<GNO> gno, 
     TranslationType tt)
 {
   typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
@@ -324,9 +331,9 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID, AppGID, LNO, GNO>::gidGlobalTranslate(
-    Teuchos::ArrayView<const AppGID> &in_gid,
-    Teuchos::ArrayView<GNO> &out_gno,
-    Teuchos::ArrayView<int> &out_proc)
+    Teuchos::ArrayView<const AppGID> in_gid,
+    Teuchos::ArrayView<GNO> out_gno,
+    Teuchos::ArrayView<int> out_proc)
 {
   typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
   typedef typename Teuchos::Hashtable<std::string, LNO> id2index_hash_t;

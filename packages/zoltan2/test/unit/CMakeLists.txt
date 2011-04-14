@@ -1,7 +1,7 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  Zoltan2_IdentifierMap
+  IdentifierMap
   SOURCES IdentifierMap.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
@@ -10,7 +10,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  Zoltan2_IdentifierTraits
+  IdentifierTraits
   SOURCES IdentifierTraits.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
@@ -19,7 +19,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  Zoltan2_AlltoAll
+  AlltoAll
   SOURCES AlltoAll.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
