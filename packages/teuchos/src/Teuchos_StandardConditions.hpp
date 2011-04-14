@@ -230,7 +230,7 @@ public:
   //@{
 
   std::string getTypeAttributeValue() const{
-    return "stringCondition";
+    return "StringCondition";
   }
   
   //@}
@@ -460,7 +460,7 @@ public:
   //@{
 
   std::string getTypeAttributeValue() const{
-    return "boolCondition";
+    return "BoolCondition";
   }
   
   //@}
@@ -626,7 +626,7 @@ public:
   //@{
 
   std::string getTypeAttributeValue() const{
-    return "orCondition";
+    return "OrCondition";
   }
   
   //@}
@@ -694,7 +694,7 @@ public:
   //@{
 
   std::string getTypeAttributeValue() const{
-    return "andCondition";
+    return "AndCondition";
   }
   
   //@}
@@ -763,7 +763,7 @@ public:
   //@{
 
   std::string getTypeAttributeValue() const{
-    return "equalsCondition";
+    return "EqualsCondition";
   }
   
   //@}
@@ -851,7 +851,7 @@ public:
   Dependency::ConstParameterEntryList getAllParameters() const;
 
   std::string getTypeAttributeValue() const{
-    return "notCondition";
+    return "NotCondition";
   }
   
   //@}

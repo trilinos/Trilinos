@@ -198,16 +198,10 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, test_find_rows){
 
 TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
-  /*RCP<Kokkos::DefaultNode::DefaultNodeType> node = 
-    Kokkos::DefaultNode::getDefaultNode();*/
   ParameterList defaultParameters;
   RCP<SerialNode> node = rcp(new SerialNode(defaultParameters));
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems = 
     Teuchos::getParametersFromXmlFile(matnamesFile);
-  /*if(verbose){
-    Tpetra::MMdebug::debug_stream = rcpFromRef(out);
-    Tpetra::MMdebug::debug_level = Teuchos::VERB_HIGH;
-  }*/
   for(
     Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
     it != matrixSystems->end();

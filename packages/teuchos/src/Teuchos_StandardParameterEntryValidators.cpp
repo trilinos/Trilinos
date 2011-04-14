@@ -413,7 +413,7 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
 
 const std::string FileNameValidator::getXMLTypeName() const
 {
-  return "filenameValidator";
+  return "FilenameValidator";
 }
 
 
@@ -498,7 +498,7 @@ void StringValidator::validate(
 
 const std::string StringValidator::getXMLTypeName() const
 {
-  return "stringValidator";
+  return "StringValidator";
 }
 
 
