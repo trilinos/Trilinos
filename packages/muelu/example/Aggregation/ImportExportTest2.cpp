@@ -95,14 +95,14 @@ int main(int argc, char *argv[]) {
 
   //   const RCP<const Map> winnerMap = uniqueMap; // 
 
-  int numMyWinners = 7;
+  int numMyWinners = 8;
   ArrayRCP<LO> myWinners(numMyWinners);
   if (MyPid == 0){
-    for(int i=0;i<numMyWinners; i++)  // proc0= 0 1 2 3 4 5 6
+    for(int i=0;i<numMyWinners; i++)  // proc0= 0 1 2 3 4 5 6 7
       myWinners[i] = i;
   } else {
-    for(int i=0;i<numMyWinners; i++)  // proc1= 9 10 11 12 13 14 15
-      myWinners[i] = i+9;
+    for(int i=0;i<numMyWinners; i++)  // proc1= 8 9 10 11 12 13 14 15
+      myWinners[i] = i+8;
   }
 
   Cthulhu::global_size_t g = -1; // TODO for Tpetra -1 == ??

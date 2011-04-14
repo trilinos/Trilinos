@@ -72,6 +72,7 @@ int main(int argc, char *argv[]) {
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
   
   // Mimic comm of ERR3
+  // must be run with --nx=2
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
@@ -85,44 +86,32 @@ int main(int argc, char *argv[]) {
   RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
       
   const RCP<const Map> nonUniqueMap = graph->GetImportMap();
-  //const RCP<const Map> uniqueMap = graph->GetDomainMap();
-
-  //std::cout << MyPid << ": nonUniqueMap=" << *nonUniqueMap << std::endl;
-  //std::cout << MyPid << ": uniqueMap=" << *uniqueMap << std::endl;
 
   RCP<LOVector> companion = LOVectorFactory::Build(nonUniqueMap);
   companion->putScalar(-1);
 
-  //   const RCP<const Map> winnerMap = uniqueMap; // 
-
-  int numMyWinners = 7;
+  int numMyWinners = 0;
   ArrayRCP<LO> myWinners(numMyWinners);
-  if (MyPid == 0){
-    for(int i=0;i<numMyWinners; i++)  // proc0= 0 1 2 3 4 5 6
-      myWinners[i] = i;
-  } else {
-    for(int i=0;i<numMyWinners; i++)  // proc1= 9 10 11 12 13 14 15
-      myWinners[i] = i+9;
-  }
 
   Cthulhu::global_size_t g = -1; // TODO for Tpetra -1 == ??
   RCP<Map> winnerMap = MapFactory::Build(map->lib(), g, myWinners(), 0, comm);
-  std::cout << MyPid << ": winnerMap=" << *winnerMap << std::endl;
+  std::cout << MyPid << ": winnerMap(source)" << *winnerMap << std::endl;
+
+  std::cout << MyPid << ": nonUniqueMap(dest)=" << *nonUniqueMap << std::endl;
 
   RCP<LOVector> justWinners = LOVectorFactory::Build(winnerMap);
-  justWinners->putScalar(-2);
-  {
-    ArrayRCP<LO> justWinners__ = justWinners->getDataNonConst(0);
-    for (size_t i = 0; i < justWinners->getMap()->getNodeNumElements(); i++) {
-      justWinners__[i] = MyPid*1000+i;
-    }
-  }
+  //justWinners->putScalar(-2);
   
   std::cout << MyPid << ": justWinners (input)=" << std::endl;
   justWinners->describe(*out, Teuchos::VERB_EXTREME);
   std::cout << std::endl << std::endl;
 
-  const RCP<Import> pushWinners = ImportFactory::Build(winnerMap, nonUniqueMap);
+  const RCP<Import> pushWinners = ImportFactory::Build(winnerMap, nonUniqueMap); // error here
+
+
+
+
+
   companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);
 
   std::cout << MyPid << ": nonUniqueMap=" << *nonUniqueMap << std::endl;
