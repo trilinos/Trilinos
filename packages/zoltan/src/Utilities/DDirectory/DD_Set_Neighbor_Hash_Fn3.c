@@ -33,7 +33,7 @@ struct dd_nh3_struct {
 
 
 static unsigned int dd_nh3 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc, struct dd_nh3_struct* hashdata);
+ unsigned int nproc, struct dd_nh3_struct* hashdata, ZOLTAN_HASH_FN *);
 
 
 
@@ -73,6 +73,7 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn3 (
 
   dd->hash    = (DD_Hash_fn*) &dd_nh3;
   dd->hashdata    = hashdata;
+  dd->hashfn  = NULL;
   dd->cleanup = (DD_Cleanup_fn*)&Zoltan_DD_default_cleanup;
 
   return ZOLTAN_OK;
@@ -80,7 +81,7 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn3 (
 
 
 static unsigned int dd_nh3 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc, struct dd_nh3_struct * hashdata)
+ unsigned int nproc, struct dd_nh3_struct * hashdata, ZOLTAN_HASH_FN *fn)
 {
   int id = (signed) *gid;
   if (id < hashdata->breakpt)

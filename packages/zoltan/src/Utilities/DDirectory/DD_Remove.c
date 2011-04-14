@@ -91,8 +91,7 @@ int Zoltan_DD_Remove (
 
    /* for each GID, fill in contact list and then message structure */
    for (i = 0; i < count; i++)  {
-      procs[i] = dd->hash(gid + i*dd->gid_length, dd->gid_length, dd->nproc, dd->hashdata);
-
+      procs[i] = dd->hash(gid + i*dd->gid_length, dd->gid_length, dd->nproc, dd->hashdata, dd->hashfn);
       ptr = (DD_Remove_Msg*) (sbuff + i * dd->remove_msg_size);
       ptr->owner = dd->my_proc;
       ZOLTAN_SET_ID (dd->gid_length, ptr->gid, gid + i * dd->gid_length);
@@ -188,7 +187,7 @@ static int DD_Remove_Local (Zoltan_DD_Directory *dd,
       ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL);
 
    /* compute offset into hash table to find head of linked list */
-   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashdata);
+   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashdata, NULL);
 
    /* walk linked list until end looking for matching gid (key) */
    for (ptr = dd->table + index; *ptr != NULL; ptr = &((*ptr)->next))

@@ -43,7 +43,7 @@ struct dd_nh2_struct {
 };
 
 static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc, struct dd_nh2_struct* hashdata);
+ unsigned int nproc, struct dd_nh2_struct* hashdata, ZOLTAN_HASH_FN *fn);
 
 static int compare_sort   (const void *a, const void *b);
 static int compare_search (const void *a, const void *b);
@@ -90,8 +90,9 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
 
    /* register functions for automatic invocation */
    dd->hash    = (DD_Hash_fn*) &dd_nh2;
-   dd->cleanup = (DD_Cleanup_fn*)&dd_nh2_cleanup;
    dd->hashdata = hashdata;
+   dd->hashfn    = NULL;
+   dd->cleanup = (DD_Cleanup_fn*)&dd_nh2_cleanup;
 
    /* malloc and initialize storage for range information structures */
    hashdata->ptr = (Range_Info*)  ZOLTAN_MALLOC (n * sizeof (Range_Info));
@@ -120,7 +121,7 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
 
 
 static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int junk, struct dd_nh2_struct* hashdata)
+ unsigned int junk, struct dd_nh2_struct* hashdata, ZOLTAN_HASH_FN *fn)
    {
    Range_Info *p;
    char *yo = "dd_ny2";
