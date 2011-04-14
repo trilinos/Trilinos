@@ -262,17 +262,13 @@ namespace panzer_stk {
 
     }
    
-    // Build stratimikos solver
+    // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
     RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);
     std::string solver = p.sublist("Solution Control").get<std::string>("Piro Solver");
-    if (solver=="NOX" || solver=="LOCA") {
+    {
       *strat_params = p.sublist("Solution Control").sublist("NOX").sublist("Direction").
 	sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos");
     }
-    else if (solver=="Rythmos") {
-      //      stratParams = Teuchos::rcp(&(p.sublist("Solution Control").sublist("Rythmos").sublist("Stratimikos")),false);
-      *strat_params = p.sublist("Solution Control").sublist("Rythmos").sublist("Stratimikos");
-    } 
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
     linearSolverBuilder.setParameterList(strat_params);
