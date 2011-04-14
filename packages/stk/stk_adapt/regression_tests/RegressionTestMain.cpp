@@ -18,6 +18,9 @@
 #include <stk_percept/RunEnvironment.hpp>
 
 #include <stk_percept/pyencore.h>
-#if !PY_PERCEPT
+
+#if !PY_PERCEPT && !defined(__PGI)
 STKUNIT_MAIN(argc, argv)
+#else
+  int main() {return 0;}
 #endif

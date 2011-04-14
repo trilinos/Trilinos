@@ -13,6 +13,11 @@
 #include <Ioss_SubSystem.h>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
+// *************************************************************************
+// NOTE: The functionality provided in this file is deprecated and
+// NOTE: will not be supported in the future.  You should instead
+// NOTE: be using the functionality provided by ../MeshReadWriteUtils
+// *************************************************************************
 namespace stk {
   namespace mesh {
     class MetaData;
