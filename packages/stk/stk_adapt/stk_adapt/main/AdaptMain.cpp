@@ -251,8 +251,6 @@ namespace stk {
       unsigned p_rank = stk::parallel_machine_rank(run_environment.m_comm);
       unsigned p_size = stk::parallel_machine_size(run_environment.m_comm);
 
-      double t0 =  stk::wall_time(); 
-      double cpu0 = stk::cpu_time();
 
       std::string options_description_desc = "stk_adapt options";
     
@@ -331,6 +329,11 @@ namespace stk {
 
       int result = 0;
       unsigned failed_proc_rank = 0u;
+
+      double t0   = 0.0;
+      double t1   = 0.0;
+      double cpu0 = 0.0;
+      double cpu1 = 0.0;
 
       try {
 
@@ -446,8 +449,12 @@ namespace stk {
             exit(1);
           }
 
+
         if (doRefineMesh)
           {
+            t0 =  stk::wall_time(); 
+            cpu0 = stk::cpu_time();
+
             UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
             if (input_geometry != "")
                 breaker.setGeometryFile(input_geometry);
@@ -472,6 +479,8 @@ namespace stk {
                   }
                 
               }
+            t1 =  stk::wall_time(); 
+            cpu1 = stk::cpu_time();
 
             eMesh.saveAs(output_mesh);
           }
@@ -504,8 +513,6 @@ namespace stk {
           exit(1);
         }
 
-      double t1 =  stk::wall_time(); 
-      double cpu1 = stk::cpu_time();
       stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
                            << " cpu time= " << (cpu1 - cpu0) << " (sec)\n";
       std::cout << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
