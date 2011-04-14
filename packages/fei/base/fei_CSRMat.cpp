@@ -215,10 +215,10 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
 
     fei::FillableVec* fc_row = NULL;
     if (storeResultZeros) {
-      fc_row = fc.getRow(row, true);
+      fc_row = fc.create_or_getRow(row);
     }
     else {
-      fc_row = fc.hasRow(row) ? fc.getRow(row) : NULL;
+      fc_row = fc.hasRow(row) ? fc.create_or_getRow(row) : NULL;
     }
 
     while(jbeg<jend) {
@@ -253,7 +253,7 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
         }
 
         if (fc_row == NULL) {
-          fc_row = fc.getRow(row, true);
+          fc_row = fc.create_or_getRow(row);
         }
 
         fc_row->addEntry(resultCol, resultCoef);

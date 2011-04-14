@@ -192,7 +192,7 @@ namespace stk {
 
       static inline
       stk::mesh::EntityRank fem_entity_rank( unsigned int t ) {
-        return 0 <= t && t < EntityRankEnd ? stk::mesh::EntityRank(t) : stk::mesh::InvalidEntityRank ;
+        return  t < EntityRankEnd ? stk::mesh::EntityRank(t) : stk::mesh::InvalidEntityRank ;
       }
 
       stk::mesh::EntityRank node_rank() const

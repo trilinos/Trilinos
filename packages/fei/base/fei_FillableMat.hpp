@@ -37,9 +37,8 @@ class FillableMat {
 
   bool hasRow(int row) const;
 
-  /** If row is not present and if 'create_if_not_already_present' is false,
-      then throw std::runtime_error. */
-  FillableVec* getRow(int row, bool create_if_not_already_present=false);
+  const FillableVec* getRow(int row) const;
+  FillableVec* create_or_getRow(int row);
 
   typedef std::map<int, FillableVec*, std::less<int>,
                 fei_Pool_alloc<std::pair<const int,FillableVec*> > > feipoolmat;

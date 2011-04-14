@@ -423,27 +423,37 @@ void Zoltan_Print_Configuration(char *indent)
   printf("%sMPI_Datatype for ZOLTAN_GNO_TYPE: %s\n", indent, 
     Zoltan_mpi_gno_name());
 
-  /* Metis and ParMetis have different version numbers */
+  /* Metis and ParMetis have different version numbers.  Some
+   * older versions do not define version numbers.
+   */
 
 #if __parmetis__ + __metis__ > 0
   #if __parmetis__ > 0
-    printf("%sThird party library: ParMetis version %d.%d", indent,
-      PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION);
+    printf("%sThird party library: ParMetis ", indent);
 
-    #ifdef PARMETIS_SUBMINOR_VERSION
-      printf(".%d", PARMETIS_SUBMINOR_VERSION);
+    #ifdef PARMETIS_MAJOR_VERSION
+      printf("version %d.%d", PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION);
+      #ifdef PARMETIS_SUBMINOR_VERSION
+        printf(".%d", PARMETIS_SUBMINOR_VERSION);
+      #endif
     #endif
 
     printf("\n");
 
   #endif
   #if __metis__ > 0
-    printf("%sThird party library: %s\n",indent, METISTITLE);
+    #ifdef METISTITLE
+      printf("%sThird party library: %s\n",indent, METISTITLE);
+    #else
+      printf("%sThird party library: METIS\n",indent);
+    #endif
   #endif
 
 #endif
 
-  /* Scotch and PTScotch have the same version number */
+  /* Scotch and PTScotch have the same version number.  Version
+   * numbers are not defined in older versions.
+   */
 
 #if __ptscotch__ + __scotch__ > 0
   printf("%sThird party library: ", indent);
@@ -452,7 +462,10 @@ void Zoltan_Print_Configuration(char *indent)
   #else
     printf("Scotch ");
   #endif
-  printf("version %d.%d.%d\n", SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+  #ifdef SCOTCH_VERSION
+    printf("version %d.%d.%d", SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+  #endif
+   printf("\n");
 #endif
 }
 
