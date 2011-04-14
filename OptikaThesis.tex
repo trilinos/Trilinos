@@ -402,16 +402,22 @@ one $<$Dependee$>$ child tag and one $<$Dependent$>$ child tag. Each of these ta
 their associated parameter.
 
 \subsection{Visual Dependencies}
-Visual Dependencies allow the application developer to show and hide parameters based on other paramters' values. This is useful in situations where
+Visual dependencies allow the application developer to show and hide parameters based on other paramters' values. This is useful in situations where
 when a parameter takes on a particular value, another parameter is no longer relevant. By hiding this now irrelevant parameter from the user the
 application developer can hopefully avoid some confusion. If we were to write these dependencies as a sentance they would say: ``Based on
 the value of the dependee parameter show or hide the dependent parameter''.
 
+Visual dependencies have an extra boolean xml attribute that can be put in the $<$Dependency$>$ called ``showIf''. What ever condition is being tested to 
+determine the dependents visibility, showIf can negate it by being set to false. So if a visual dependency is set to only show a dependent when the
+dependee has a parituclar value, setting showIf to false will cause the dependent to be visible only when the dependee \emph{does not} have a particular
+value. If the showIf attribute is not present, it is assumed to be true. All visual dependencies may have an aribitray number of dependents of any type.
+Dependents can also be parameter lists.
+
 \subsubsection{String Visual Dependencies}
 String Visual Dependencies allow an application developer to base whether or not a parameter is visible on the particular string value of another
-parameter. For instance, we might say if parameter A is equal to the value ``Swiss Cheese'' or ``Cheedar Cheese''the show parameter B. Otherwise, do not show parameter B.
-Figure~\ref{StringVisXML} demonstrates how we would express this in XML. String Visual dependencies must have a single dependee of type string. A String Visual
-Dependency can have multiple dependees of any type.
+parameter. For instance, we might say if parameter A is equal to the value ``Swiss Cheese'' or ``Cheedar Cheese''the show parameter B. Otherwise, do not 
+show parameter B. Figure~\ref{StringVisXML} demonstrates how we would express this in XML.  If in figure~\ref{StringVisXML} we set the showIf xml attribute to false then the ``How much do you like that cheese?'' parameter will only be showed when ``Favorite Food'' \emph{does not} equal ``Swiss'' or ``Cheddar''.
+String Visual dependencies must have a single dependee of type string. 
 \begin{figure}
   \centering
   \begin{lstlisting}[language=XML]
@@ -423,7 +429,7 @@ Dependency can have multiple dependees of any type.
       ...Other Parameters ....
     <Dependencies>
 
-      <Dependency type="StringVisualDependency">
+      <Dependency showIf="true" type="StringVisualDependency">
         <Dependee parameterId="1"/>
         <Dependent parameterId="2"/>
         <StringValues>
@@ -437,11 +443,42 @@ Dependency can have multiple dependees of any type.
         
   </ParameterList>
   \end{lstlisting}
+  \caption{Example Usage of a String Visual Dependency.}
+  \label{StringVisXML}
+\end{figure}
+
+\subsubsection{Bool Visual Dependencies}
+Bool Visual Dependencies allow the developer to base the visibility of a parameter on the boolean value of another parameter. For instance, we might say
+if parameter A is set to true then we want to show parameter list B. Figure~\ref{BoolVisXML} shows how a developer would implement this in XML. If the
+showIf xml attribute were set to false then the ``Special Parameters'' parameter list would only be shown when ``Use special parameters'' was set to false.
+Bool Visual Dependencies must have a single depenedee of type bool.
+\begin{figure}
+  \centering
+  \begin{lstlisting}[language=XML]
+  <ParameterList>
+    <Parameter name="Use special parameters" type="bool" value="true"
+      id="1" docString="Whether or not to use special parameters"/>
+    <ParameterList name="Special Parmeters" type="int" id="2"
+      docString="special parameters only to be used in certain instances" 
+      ...Special Parameters ....
+    </ParameterList>
+    <Dependencies>
+
+      <Dependency showIf="true" type="BoolVisualDependency">
+        <Dependee parameterId="1"/>
+        <Dependent parameterId="2"/>
+      </Dependency>
+
+    </Dependencies>
+  </ParameterList>
+        
+  </ParameterList>
+  \end{lstlisting}
   \caption{Example Usage of an Array Validator in which the prototype is declared as a child of the array validator.}
   \label{actualArrayValidatorXML}
 \end{figure}
 
-\subsubsection{Bool Visual Dependencies}
+
 
 \subsubsection{Number Visual Dependencies}
 
