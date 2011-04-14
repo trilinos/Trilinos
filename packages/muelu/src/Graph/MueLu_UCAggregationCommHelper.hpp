@@ -226,6 +226,7 @@ namespace MueLu {
         }
         procWinner = Teuchos::null;
 
+#define JG_DEBUG
 #ifdef JG_DEBUG
         std::cout << MyPid << ": numMyWinners=" << numMyWinners << std::endl;
         std::cout << MyPid << ": myWinners" << myWinners << std::endl;
@@ -263,6 +264,7 @@ namespace MueLu {
         // Put the JustWinner values back into companion so that
         // all nonunique copies of the same Gid have the procWinner's
         // version of the companion.
+#define JG_DEBUG
 #ifdef JG_DEBUG
         std::cout << *winnerMap << std::endl;
         std::cout << *weight_.getMap() << std::endl;
@@ -278,17 +280,17 @@ namespace MueLu {
           }
 #define JG_DEBUG
 #ifdef JG_DEBUG
-            RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+        //            RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
             //->describe(*out, Teuchos::VERB_EXTREME);
 
             // std::cout << MyPid << ": ERR3: An exception occurred." << std::endl;
 
             std::cout << MyPid << ": numMyWinners=" << numMyWinners << std::endl;
             
-            std::cout << MyPid << ": justWinners(Vector in)=" << *justWinners << std::endl;
+            std::cout << MyPid << ": justWinners(Vector in)=" << std::endl;
             justWinners->describe(*out, Teuchos::VERB_EXTREME);
 
-            std::cout << MyPid << ": companion(Vector out)=" << *companion << std::endl;
+            std::cout << MyPid << ": companion(Vector out)=" << std::endl;
             companion->describe(*out, Teuchos::VERB_EXTREME);
 
             // std::cout << MyPid << ": pushWinners(Import(winnerMap, weight_.Map))=" << *pushWinners << std::endl;
