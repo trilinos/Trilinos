@@ -6,3 +6,4 @@ File Name		= simple
 Parallel Disk Info	= number=0
 Test Drops		= 1
 Test RCB Box		= 1
+Test DDirectory = 1

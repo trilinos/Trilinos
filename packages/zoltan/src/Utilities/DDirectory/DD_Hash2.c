@@ -60,7 +60,7 @@ extern "C" {
 #define ZOLTAN_DD_HASH_CONSTANT 2654435761U   /* consider 516595003U */
 
 unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n, 
-                           void *hashdata)
+                           void *hashdata, ZOLTAN_HASH_FN *fn)
  {
   unsigned int h, rest, *p, bytes, num_bytes;
   char *byteptr;
