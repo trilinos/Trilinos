@@ -253,20 +253,20 @@ are optional for an EnhancedNumberValidator. For example, you could only specify
 values of a parameter to positive values since no maximum was specified.
 Appropriate defaults will be selected for step and precision if the developer chooses not to specify them.
 \begin{figure}
-  \centering
-  \begin{lstlisting}[language=XML]
-  <ParameterList>
-    <Parameter name="Double Parameter" value="1.0" type="double" docString="A double parameter"
-      validatorId="1" />
-      ...Other Parameters ....
-    <Validators>
-      <Validator type="EnhancedNumberValidator(double)" min="0" max="10" step=".5" precision="2"
-        validatorId="1"/>
-    </Validators>
-  </ParameterList>
-  \end{lstlisting}
-  \caption{Example Usage of an Enhanced Number Validator}
-  \label{EnhancedNumberValidatorXML}
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Double Parameter" value="1.0" type="double" 
+    docString="A double parameter" validatorId="1" />
+    ...Other Parameters ....
+  <Validators>
+    <Validator type="EnhancedNumberValidator(double)" 
+      min="0" max="10" step=".5" precision="2" validatorId="1"/>
+  </Validators>
+</ParameterList>
+\end{lstlisting}
+\caption{Example Usage of an Enhanced Number Validator}
+\label{EnhancedNumberValidatorXML}
 \end{figure}
 
 \subsection{String Validators}
@@ -276,23 +276,23 @@ keystroke can cause big problems. By using a String Validator an application dev
 only selects a string value that is appropriate for a given parameter. 
 String Validators may only be used on parameters of stype std::string, otherwise an error will occur.
 \begin{figure}
-  \centering
-  \begin{lstlisting}[language=XML]
-  <ParameterList>
-    <Parameter name="String Parameter" value="Option 1" type="string" docString="A string parameter"
-      validatorId="1" />
-      ...Other Parameters ....
-    <Validators>
-      <Validator type="StringValidator" validatorId="1">
-        <String value="Option 1"/> 
-        <String value="Option 2"/> 
-        <String value="Option 3"/> 
-      </Validator>
-    </Validators>
-  </ParameterList>
-  \end{lstlisting}
-  \caption{Example Usage of an String Validator}
-  \label{StringValidatorXML}
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="String Parameter" value="Option 1" type="string" 
+    docString="A string parameter" validatorId="1" />
+    ...Other Parameters ....
+  <Validators>
+    <Validator type="StringValidator" validatorId="1">
+      <String value="Option 1"/> 
+      <String value="Option 2"/> 
+      <String value="Option 3"/> 
+    </Validator>
+  </Validators>
+</ParameterList>
+\end{lstlisting}
+\caption{Example Usage of an String Validator}
+\label{StringValidatorXML}
 \end{figure}
 Figure~\ref{StringValidatorXML} shows how to use a String Validator. Children $<$String$>$ tags with a manditory ``value'' xml attribute specify which values are valid.
 In this example ``Option 1'', ``Option 2'', and ``Option 3'' will be the only values the user can select from the GUI.
@@ -308,19 +308,20 @@ to select any file he/she wants. Filename Validators can only be applied to para
 \label{fileSelectorWidget}
 \end{figure}
 \begin{figure}
-  \centering
-  \begin{lstlisting}[language=XML]
-  <ParameterList>
-    <Parameter name="Output File Name" value="" type="string" docString="Name of the output file."
-      validatorId="1" />
-      ...Other Parameters ....
-    <Validators>
-      <Validator type="FilenameValidator" fileMustExist="false" validatorId="1">
-    </Validators>
-  </ParameterList>
-  \end{lstlisting}
-  \caption{Example Usage of an Filename Validator}
-  \label{filenamevalidatorXML}
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Output File Name" value="" type="string" 
+    docString="Name of the output file." validatorId="1" />
+    ...Other Parameters ....
+  <Validators>
+    <Validator type="FilenameValidator" fileMustExist="false" 
+      validatorId="1">
+  </Validators>
+</ParameterList>
+\end{lstlisting}
+\caption{Example Usage of an Filename Validator}
+\label{filenamevalidatorXML}
 \end{figure}
 Figure~\ref{filenamevalidatorXML} shows an example of how to use a Filename Validator. Here we use it to select a file to output the results
 of our program. We set the ``fileMustExist'' xml attribute to false so that the user can select a file that doesn't already exist.
@@ -339,45 +340,49 @@ parameter. For instance, if we were using a prototype Filename Validator on a st
 be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of these types match up otherwise errors will occur.
 
 \begin{figure}
-  \centering
-  \begin{lstlisting}[language=XML]
-  <ParameterList>
-    <Parameter name="Options" value="{Option 1, Option 1, Option 1}" 
-      type="Array(string)" docString="An array of options" validatorId="1" />
-      ...Other Parameters ....
-    <Validators>
-      <Validator type="ArrayValidator(StringValidator, string)" validatorId="1">
-        <Validator type="stringValidator">
-          <String stringValue="Option 1"/>
-          <String stringValue="Option 2"/>
-          <String stringValue="Option 3"/>
-        </Validator>
-      </Validator>
-    </Validators>
-  </ParameterList>
-  \end{lstlisting}
-  \caption{Example Usage of an Array Validator in which the prototype is declared as a child of the array validator.}
-  \label{actualArrayValidatorXML}
-\end{figure}
-\begin{figure}
-  \centering
-  \begin{lstlisting}[language=XML]
-  <ParameterList>
-    <Parameter name="Output File Name" value="{Option 1, Option 1, Option 1" 
-      type="Array(string)" docString="Name of the output file." validatorId="1" />
-      ...Other Parameters ....
-    <Validators>
-      <Validator type="ArrayValidator(StringValidator, string)" validatorId="1" prototypeId="2"/>
-      <Validator type="stringValidator" validatorId="2">
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Options" value="{Option 1, Option 1, Option 1}" 
+    type="Array(string)" docString="An array of options" 
+    validatorId="1" />
+    ...Other Parameters ....
+  <Validators>
+    <Validator type="ArrayValidator(StringValidator, string)" 
+      validatorId="1">
+      <Validator type="stringValidator">
         <String stringValue="Option 1"/>
         <String stringValue="Option 2"/>
         <String stringValue="Option 3"/>
       </Validator>
-    </Validators>
-  </ParameterList>
-  \end{lstlisting}
-  \caption{Example Usage of an Array Validator in which the prototype is specified using the prototypeId xml attribute.}
-  \label{protoAttributeArrayXML}
+    </Validator>
+  </Validators>
+</ParameterList>
+\end{lstlisting}
+\caption{Example Usage of an Array Validator in which the prototype is declared as a child of the array validator.}
+\label{actualArrayValidatorXML}
+\end{figure}
+\begin{figure}
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Output File Name" value="{Option 1, Option 1}" 
+    type="Array(string)" 
+    docString="Name of output file." validatorId="1" />
+    ...Other Parameters ....
+  <Validators>
+    <Validator type="ArrayValidator(StringValidator, string)" 
+      validatorId="1" prototypeId="2"/>
+    <Validator type="stringValidator" validatorId="2">
+      <String stringValue="Option 1"/>
+      <String stringValue="Option 2"/>
+      <String stringValue="Option 3"/>
+    </Validator>
+  </Validators>
+</ParameterList>
+\end{lstlisting}
+\caption{Example Usage of an Array Validator in which the prototype is specified using the prototypeId xml attribute.}
+\label{protoAttributeArrayXML}
 \end{figure}
 
 \section{Dependencies}
@@ -419,32 +424,31 @@ parameter. For instance, we might say if parameter A is equal to the value ``Swi
 show parameter B. Figure~\ref{StringVisXML} demonstrates how we would express this in XML.  If in figure~\ref{StringVisXML} we set the showIf xml attribute to false then the ``How much do you like that cheese?'' parameter will only be showed when ``Favorite Food'' \emph{does not} equal ``Swiss'' or ``Cheddar''.
 String Visual dependencies must have a single dependee of type string. 
 \begin{figure}
-  \centering
-  \begin{lstlisting}[language=XML]
-  <ParameterList>
-    <Parameter name="Favorite Food" type="string" value="pasta"
-      id="1" docString="Your favorite food."/>
-    <Parameter name="How much do you like that cheese?" type="int" value="5"
-      docString="A rating of cheese" id="2"
-      ...Other Parameters ....
-    <Dependencies>
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Favorite Food" type="string" value="pasta"
+    id="1" docString="Your favorite food."/>
+  <Parameter name="Rate the cheese please" type="int" value="5"
+    docString="A rating of cheese" id="2"
+    ...Other Parameters ....
+  <Dependencies>
 
-      <Dependency showIf="true" type="StringVisualDependency">
-        <Dependee parameterId="1"/>
-        <Dependent parameterId="2"/>
-        <StringValues>
-          <String value="Swiss"/>
-          <String value="Cheddar"/>
-        </StringValues>
-      </Dependency>
+    <Dependency showIf="true" type="StringVisualDependency">
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+      <StringValues>
+        <String value="Swiss"/>
+        <String value="Cheddar"/>
+      </StringValues>
+    </Dependency>
 
-    </Dependencies>
-  </ParameterList>
+  </Dependencies>
+</ParameterList>
         
-  </ParameterList>
-  \end{lstlisting}
-  \caption{Example Usage of a String Visual Dependency.}
-  \label{StringVisXML}
+\end{lstlisting}
+\caption{Example Usage of a String Visual Dependency.}
+\label{StringVisXML}
 \end{figure}
 
 \subsubsection{Bool Visual Dependencies}
@@ -453,29 +457,27 @@ if parameter A is set to true then we want to show parameter list B. Figure~\ref
 showIf xml attribute were set to false then the ``Special Parameters'' parameter list would only be shown when ``Use special parameters'' was set to false.
 Bool Visual Dependencies must have a single depenedee of type bool.
 \begin{figure}
-  \centering
-  \begin{lstlisting}[language=XML]
-  <ParameterList>
-    <Parameter name="Use special parameters" type="bool" value="true"
-      id="1" docString="Whether or not to use special parameters"/>
-    <ParameterList name="Special Parmeters" type="int" id="2"
-      docString="special parameters only to be used in certain instances" 
-      ...Special Parameters ....
-    </ParameterList>
-    <Dependencies>
-
-      <Dependency showIf="true" type="BoolVisualDependency">
-        <Dependee parameterId="1"/>
-        <Dependent parameterId="2"/>
-      </Dependency>
-
-    </Dependencies>
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Use special parameters" type="bool" value="true"
+    id="1" docString="Whether or not to use special parameters"/>
+  <ParameterList name="Special Parmeters" type="int" id="2"
+    docString="special parameters only used in certain instances" 
+    ...Special Parameters ....
   </ParameterList>
-        
-  </ParameterList>
-  \end{lstlisting}
-  \caption{Example usage of a Bool Visual Dependency}
-  \label{BoolVisXML}
+  <Dependencies>
+
+    <Dependency showIf="true" type="BoolVisualDependency">
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+    </Dependency>
+
+  </Dependencies>
+</ParameterList>
+\end{lstlisting}
+\caption{Example usage of a Bool Visual Dependency}
+\label{BoolVisXML}
 \end{figure}
 
 \subsubsection{Number Visual Dependencies}
@@ -486,24 +488,25 @@ be the opposite. Figure~\ref{NumberVisXML1} shows basic usage of a number visual
 celsius then we can't have any ice cubes in the room. We do this by setting the showIf xml attribute to false so that ``Number of ice cubes'' only shows
 when the ``Temperature'' parameter is below zero.
 \begin{figure}
-  \centering
-  \begin{lstlisting}[language=XML]
-  <ParameterList>
-    <Parameter name="Temperature" type="double" value="1"
-      id="1" docString="The temperature in the room in degrees celsius"/>
-    <Parameter name="Number of ice cubes" type="int" value="1"
-      id="2" docString="The number of ice cubes in the room"/>
-    <Dependencies>
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Temperature" type="double" value="1" id="1" 
+    docString="The temperature in the room in degrees celsius"/>
+  <Parameter name="Number of ice cubes" type="int" value="1"
+    id="2" docString="The number of ice cubes in the room"/>
+  <Dependencies>
 
-      <Dependency showIf="false" type="NumberVisualDependency(double)">
-        <Dependee parameterId="1"/>
-        <Dependent parameterId="2"/>
-      </Dependency>
+    <Dependency 
+      showIf="false" 
+      type="NumberVisualDependency(double)"
+    >
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+    </Dependency>
 
-    </Dependencies>
-  </ParameterList>
-        
-  </ParameterList>
+  </Dependencies>
+</ParameterList>
   \end{lstlisting}
   \caption{Example usage of a Number Visual Dependency.}
   \label{NumberVisXML1}
@@ -520,36 +523,95 @@ subtract 32 from the value of the temperature parameter before it is tested agai
 xml attribute to 32 and the type of the function to ``SubtrationFunction(double)'' since we want to use a subtraction function on a parameter of type double. See
 \ref{sec:funcs} for the other available functions.
 \begin{figure}
-  \centering
-  \begin{lstlisting}[language=XML]
-  <ParameterList>
-    <Parameter name="Temperature" type="double" value="33"
-      id="1" docString="The temperature in the room in degrees farenheit"/>
-    <Parameter name="Number of ice cubes" type="int" value="1"
-      id="2" docString="The number of ice cubes in the room"/>
-    <Dependencies>
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Temperature" type="double" value="33" id="1" 
+    docString="The temperature in the room in degrees farenheit"/>
+  <Parameter name="Number of ice cubes" type="int" value="1"
+    id="2" docString="The number of ice cubes in the room"/>
+  <Dependencies>
 
-      <Dependency showIf="false" type="NumberVisualDependency(double)">
-        <Dependee parameterId="1"/>
-        <Dependent parameterId="2"/>
-        <Function operand="32" type="SubtractionFunction(double)"/> 
-      </Dependency>
+    <Dependency 
+      showIf="false" 
+      type="NumberVisualDependency(double)"
+    >
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+      <Function operand="32" type="SubtractionFunction(double)"/> 
+    </Dependency>
 
-    </Dependencies>
-  </ParameterList>
-        
-  </ParameterList>
-  \end{lstlisting}
-  \caption{Example usage of a Number Visual Dependency using a function.}
-  \label{NumberVisXML2}
+  </Dependencies>
+</ParameterList>
+\end{lstlisting}
+\caption{Example usage of a Number Visual Dependency using a function.}
+\label{NumberVisXML2}
 \end{figure}
 
-
 \subsection{Validator Dependencies}
+A Validator Dependency is a dependency in which the validator that is in use on the dependee is dependent upon the value of the dependee. Both the type of
+the dependee and the dependent will vary with each type of validator dependency and parameter type of the dependent. Validator Dependencies will always have
+one dependee. Also, dependent parameters in a Validator Dependency will never be a parameter list.
 
 \subsubsection{String Validator Dependency}
+A String Validator Dependency allows the application developer to change the validator used on a dependent based on the string value of the dependee
+parameter. This is accomplished by mapping values the dependee might take on to corresponding validators. Also, a default validator may be specified.
+This way, if the dependee takes on a value that has not been mapped to a validator the default validator can be used. 
+
+A String Validator Dependency must comply with the following rules:
+\begin{itemize}
+\item The dependee must be of type string
+\item All of the validators which have values mapped to them must be of the same type.
+\item If specified, the default validator must be of the same type of validator used in the map.
+\item The validators in the map and the default validator should be appropriate for the parameter type of the dependent(s).
+\end{itemize}
+
+Figure~\ref{StringValiDepXML} shows an example of how to use a String Validator Dependency. In this example we have two parameters, ``Temperature Scale''
+and ``Freezer Temperature''. If ``Temperature Scale'' is set to Farenheit we want to restrict the values on ``Freezer Temperature'' to 0 through 50. But
+if ``Temperature Scale'' is set to Celsius, we want to use a validator with the corresponding celsius values for 0 and 50. If the user enters something else
+for ``Temperature Scale'' we'll just default to using the Farenheit validator.  Note that we could improve this example by putting a string validator on 
+the temperature scale parameter, restricting it's values to Celsius and Farenheit.  This would effectively eliminate the need for us to specify a default 
+validator.
+\begin{figure}
+  \centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Temperature Scale" type="string" value="Celsius"
+    id="1" docString="The temperature scale being used"/>
+  <Parameter name="Freezer Temperature" type="double" value="0"
+    id="2" docString="The temperature in the freezer"/>
+  <Validators>
+    <Validator type="EnhancedNumberValidator(double) validatorId="1"
+      min="0" max="50"/>
+    <Validator type="EnhancedNumberValidator(double) validatorId="2"
+      min="-17.77" max="10"/>
+  <Validators>
+  <Dependencies>
+    <Dependency 
+      type="StringValidatorDependency" 
+      defaultValidatorId="2"
+    >
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+      <ValuesAndValidators>
+        <Pair value="Farenheit" validatorId="1"/>
+        <Pair value="Celsius" validatorId="2"/>
+      </ValuesAndValidators>
+    </Dependency>
+  </Dependencies>
+</ParameterList>
+  \end{lstlisting}
+  \caption{Example usage of a String Validator Dependency.}
+  \label{StringValiDepXML}
+\end{figure}
 
 \subsubsection{Bool Validator Dependency}
+A Bool Validator Dependency allows the developer to apply one validator to the dependent(s) when the dependee is true, and another validator
+to the dependent(s) when the dependee is false. You could also specify one validator to be applied when the dependee is true and no validator
+to be applied when the dependee is false (or vice versa). The dependee of a Bool Validator Dependency must be of type bool. If both a ``true'' and
+``false'' validator are specified, they must be of the same type. Also, the validator(s) specified must be appropriate for the dependent(s).
+
+Figure~\ref{BoolValidDepXML} shows an example of a Bool Validator Dependency. 
 
 \subsubsection{Range Validator Dependency}
 
@@ -564,7 +626,9 @@ xml attribute to 32 and the type of the function to ``SubtrationFunction(double)
 
 \subsection{Multiple dependents}
 
-\subsection{Condition Visual Dependencies}
+\subsection{Conditions}
+
+\subsubsection{Condition Visual Dependencies}
 
 
 
