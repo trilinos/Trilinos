@@ -432,17 +432,17 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     error = 1;
   }
 
-  ierr = Zoltan_DD_Find(dd, nbor_gids, nbor_lids,
-                        NULL, NULL, num_nbor, ownerlist);
-  if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Find of dd");
-    error = 1;
-  }
-
   ierr = Zoltan_DD_Find(ddCopy, nbor_gids, nbor_lids,
                         NULL, NULL, num_nbor, ownerlist);
   if (ierr) {
     Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Find of ddCopy");
+    error = 1;
+  }
+
+  ierr = Zoltan_DD_Find(dd, nbor_gids, nbor_lids,
+                        NULL, NULL, num_nbor, ownerlist);
+  if (ierr) {
+    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Find of dd");
     error = 1;
   }
  
