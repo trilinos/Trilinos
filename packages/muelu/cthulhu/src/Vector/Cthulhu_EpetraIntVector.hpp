@@ -498,7 +498,8 @@ namespace Cthulhu {
       CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
       const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
-      vec_->Import(v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
+      int err = vec_->Import(v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
     void doExport(const Vector<int, int, int> &dest,
@@ -509,7 +510,8 @@ namespace Cthulhu {
       CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
       const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
-      vec_->Import(v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
+      int err = vec_->Import(v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
   private:
