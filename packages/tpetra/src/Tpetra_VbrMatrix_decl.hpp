@@ -78,7 +78,7 @@ template <class Scalar,
           class GlobalOrdinal = LocalOrdinal, 
           class Node          = Kokkos::DefaultNode::DefaultNodeType, 
           class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
-class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>, public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
  public:
   typedef Scalar        scalar_type;
   typedef LocalOrdinal  local_ordinal_type;
@@ -149,12 +149,12 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //! @name Operator Methods
   //@{
 
-  //! Returns the Map associated with the domain of this operator.
+  //! Returns the (point-entry) Map associated with the domain of this operator.
   /*! Note that this is a point-entry map, not a block-map.
   */
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
 
-  //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
+  //! Returns the (point-entry) Map associated with the range of this operator, which must be compatible with Y.getMap().
   /*! Note that this is a point-entry map, not a block-map.
   */
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
@@ -330,6 +330,24 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //! @name Extraction Methods
   //@{
 
+  //! Returns a const read-only view of the block-entries in the specified row.
+  /*! Can only be called if isFillComplete()==false
+  */
+  void getGlobalBlockRowView(GlobalOrdinal globalBlockRow,
+                             LocalOrdinal& numPtRows,
+                             Teuchos::ArrayView<const GlobalOrdinal>& blockCols,
+                             Teuchos::Array<LocalOrdinal>& ptColsPerBlockCol,
+                             Teuchos::Array<Teuchos::ArrayRCP<const Scalar> >& blockEntries) const;
+
+  //! Returns a const read-only view of the block-entries in the specified row.
+  /*! Can only be called if isFillComplete()==true
+  */
+  void getLocalBlockRowView(LocalOrdinal localBlockRow,
+                            LocalOrdinal& numPtRows,
+                            Teuchos::ArrayView<const LocalOrdinal>& blockCols,
+                            Teuchos::Array<LocalOrdinal>& ptColsPerBlockCol,
+                            Teuchos::ArrayRCP<const Scalar>& blockEntries) const;
+
   //! Returns a const read-only view of a block-entry.
   /*!
     The arguments numPtRows and numPtCols are set to the dimensions of the block-
@@ -408,6 +426,20 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
     getBlockRowMap()->getPointMap().
   */
   void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const;
+
+  const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >& getBlockCrsGraph() {return constBlkGraph_;}
+  //@}
+
+  //! @name Overridden from Teuchos::DistObject
+  //@{
+
+  bool checkSizes(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source);
+
+  void copyAndPermute(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source, size_t numSameIDs, const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs, const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
+
+  void packAndPrepare(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source, const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs, Teuchos::Array<char>& exports, const Teuchos::ArrayView<size_t>& numPacketsPerLID, size_t& constantNumPackets, Distributor& distor);
+
+  void unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal>& importLIDs, const Teuchos::ArrayView<const char>& imports, const Teuchos::ArrayView<size_t>& numPacketsPerLID, size_t constantNumPackets, Distributor& distor, CombineMode CM);
 
   //@}
 

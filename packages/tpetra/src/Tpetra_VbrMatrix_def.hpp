@@ -56,7 +56,8 @@ void fill_device_ArrayRCP(Teuchos::RCP<Node>& node, Teuchos::ArrayRCP<Scalar>& p
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype)
- : blkGraph_(Teuchos::rcp(new BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(blkRowMap, maxNumEntriesPerRow, pftype))),
+ : DistObject<char, LocalOrdinal, GlobalOrdinal, Node>(convertBlockMapToPointMap(blkRowMap)),
+   blkGraph_(Teuchos::rcp(new BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(blkRowMap, maxNumEntriesPerRow, pftype))),
    constBlkGraph_(blkGraph_),
    lclMatrix_(blkRowMap->getNodeNumBlocks(), blkRowMap->getPointMap()->getNode()),
    pbuf_values1D_(),
@@ -80,7 +81,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &blkGraph)
- : blkGraph_(),
+ : DistObject<char, LocalOrdinal, GlobalOrdinal, Node>(convertBlockMapToPointMap(blkGraph->getBlockRowMap())),
+   blkGraph_(),
    constBlkGraph_(blkGraph),
    lclMatrix_(blkGraph->getBlockRowMap()->getNodeNumBlocks(),
               blkGraph->getBlockRowMap()->getPointMap()->getNode()),
@@ -178,7 +180,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const Multi
   Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
 
   Teuchos::EUplo triang = constBlkGraph_->isUpperTriangular() ? Teuchos::UPPER_TRI : Teuchos::LOWER_TRI;
-  Teuchos::EDiag diag = (constBlkGraph_->getNodeNumDiags() < constBlkGraph_->getNodeNumRows()) ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
+  Teuchos::EDiag diag = (constBlkGraph_->getNodeNumBlockDiags() < constBlkGraph_->getNodeNumBlockRows()) ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
 
   lclMatOps_.template solve<DomainScalar,RangeScalar>(trans,triang,diag, *lclY,*lclX);
 }
@@ -318,6 +320,66 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getPointColMap() 
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalBlockRowView(
+         GlobalOrdinal globalBlockRow,
+         LocalOrdinal& numPtRows,
+         Teuchos::ArrayView<const GlobalOrdinal>& blockCols,
+         Teuchos::Array<LocalOrdinal>& ptColsPerBlockCol,
+         Teuchos::Array<Teuchos::ArrayRCP<const Scalar> >& blockEntries) const
+{
+  TEST_FOR_EXCEPTION(isFillComplete(), std::runtime_error,
+      "Tpetra::VbrMatrix::getGlobalBlockRowView internal ERROR, isFillComplete() is required to be false.");
+
+  typedef typename Teuchos::ArrayView<const GlobalOrdinal>::size_type Tsize_t;
+
+  LocalOrdinal localRow = getBlockRowMap()->getLocalBlockID(globalBlockRow);
+  numPtRows = getBlockRowMap()->getLocalBlockSize(localRow);
+  constBlkGraph_->getGlobalBlockRowView(globalBlockRow, blockCols);
+  ptColsPerBlockCol.resize(blockCols.size());
+  blockEntries.resize(blockCols.size());
+  for(Tsize_t i=0; i<blockCols.size(); ++i) {
+    getGlobalBlockEntryView(globalBlockRow, blockCols[i],
+                           numPtRows, ptColsPerBlockCol[i], blockEntries[i]);
+  }
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockRowView(
+         LocalOrdinal localBlockRow,
+         LocalOrdinal& numPtRows,
+         Teuchos::ArrayView<const LocalOrdinal>& blockCols,
+         Teuchos::Array<LocalOrdinal>& ptColsPerBlockCol,
+         Teuchos::ArrayRCP<const Scalar>& blockEntries) const
+{
+  TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
+      "Tpetra::VbrMatrix::getGlobalBlockRowView internal ERROR, isFillComplete() is required to be true.");
+
+  typedef typename Teuchos::ArrayView<const GlobalOrdinal>::size_type Tsize_t;
+  typedef Teuchos::ArrayRCP<const size_t>       Host_View;
+  typedef Teuchos::ArrayRCP<const LocalOrdinal> Host_View_LO;
+
+  numPtRows = getBlockRowMap()->getLocalBlockSize(localBlockRow);
+  constBlkGraph_->getLocalBlockRowView(localBlockRow, blockCols);
+  ptColsPerBlockCol.resize(blockCols.size());
+  LocalOrdinal num_scalars_in_block_row = 0;
+  for(Tsize_t i=0; i<blockCols.size(); ++i) {
+    ptColsPerBlockCol[i] = getBlockColMap()->getLocalBlockSize(blockCols[i]);
+    num_scalars_in_block_row += numPtRows*ptColsPerBlockCol[i];
+  }
+
+  Teuchos::RCP<Node> node = getNode();
+  Host_View bpr = constBlkGraph_->getNodeRowOffsets();
+  const size_t bindx_offset = bpr[localBlockRow];
+  Host_View_LO indx = node->template viewBuffer<LocalOrdinal>(1, pbuf_indx_+bindx_offset);
+  const LocalOrdinal offset = indx[0];
+  blockEntries = node->template viewBuffer<Scalar>(num_scalars_in_block_row, pbuf_values1D_+offset);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalBlockEntryViewNonConst(
     GlobalOrdinal globalBlockRow,
     GlobalOrdinal globalBlockCol,
@@ -346,7 +408,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalBlockEnt
   //is stored in un-packed '2D' form.
 
   if (values2D_->size() == 0) {
-    LocalOrdinal numBlockRows = constBlkGraph_->getNodeNumRows();
+    LocalOrdinal numBlockRows = constBlkGraph_->getNodeNumBlockRows();
     values2D_->resize(numBlockRows);
     col_ind_2D_global_->resize(numBlockRows);
   }
@@ -503,6 +565,42 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalDiagCopy(
 
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+bool
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::checkSizes(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source)
+{
+  bool ok = this->getMap()->getGlobalNumElements() == source.getMap()->getGlobalNumElements();
+  ok = ok && this->getMap()->getMinAllGlobalIndex() == source.getMap()->getMinAllGlobalIndex();
+  ok = ok && this->getMap()->getMaxAllGlobalIndex() == source.getMap()->getMaxAllGlobalIndex();
+  return ok;
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::copyAndPermute(
+   const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source,
+   size_t numSameIDs,
+   const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+   const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
+{
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::packAndPrepare(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source, const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs, Teuchos::Array<char>& exports, const Teuchos::ArrayView<size_t>& numPacketsPerLID, size_t& constantNumPackets, Distributor& distor)
+{
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal>& importLIDs, const Teuchos::ArrayView<const char>& imports, const Teuchos::ArrayView<size_t>& numPacketsPerLID, size_t constantNumPackets, Distributor& distor, CombineMode CM)
+{
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntryView(
       LocalOrdinal localBlockRow,
@@ -566,7 +664,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::putScalar(Scalar 
   else {
     typedef typename Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >::size_type Tsize_t;
     Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >& vals2D = *values2D_;
-    LocalOrdinal numBlockRows = constBlkGraph_->getNodeNumRows();
+    LocalOrdinal numBlockRows = constBlkGraph_->getNodeNumBlockRows();
     for(LocalOrdinal r=0; r<numBlockRows; ++r) {
       for(Tsize_t c=0; c<vals2D[r].size(); ++c) {
         std::fill(vals2D[r][c].begin(), vals2D[r][c].end(), s);
@@ -746,7 +844,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
   TEST_FOR_EXCEPTION(constBlkGraph_->isFillComplete() != true, std::runtime_error,
     "Tpetra::VbrMatrix::optimizeStorage ERROR, isFillComplete() is false, required to be true before optimizeStorage is called.");
 
-  size_t num_block_nonzeros = constBlkGraph_->getNodeNumEntries();
+  size_t num_block_nonzeros = constBlkGraph_->getNodeNumBlockEntries();
 
   const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& rowmap = constBlkGraph_->getBlockRowMap();
   const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& colmap = constBlkGraph_->getBlockColMap();

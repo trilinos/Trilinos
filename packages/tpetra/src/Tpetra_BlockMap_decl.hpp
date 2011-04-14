@@ -91,7 +91,7 @@ class BlockMap : public Teuchos::Describable {
       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
       const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
-  /*! \brief BlockMap constructor which takes a "regular" (point-entry) Map.
+  /*! \brief BlockMap constructor which takes a point-entry Map.
    * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
    * sum(myBlockSizes) must equal pointMap->getNodeNumElements().
    * If these arrays are different lengths or sum(myBlockSizes) is incorrect,
