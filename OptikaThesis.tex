@@ -350,10 +350,10 @@ be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of thes
   <Validators>
     <Validator type="ArrayValidator(StringValidator, string)" 
       validatorId="1">
-      <Validator type="stringValidator">
-        <String stringValue="Option 1"/>
-        <String stringValue="Option 2"/>
-        <String stringValue="Option 3"/>
+      <Validator type="StringValidator">
+        <String value="Option 1"/>
+        <String value="Option 2"/>
+        <String value="Option 3"/>
       </Validator>
     </Validator>
   </Validators>
@@ -373,10 +373,10 @@ be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of thes
   <Validators>
     <Validator type="ArrayValidator(StringValidator, string)" 
       validatorId="1" prototypeId="2"/>
-    <Validator type="stringValidator" validatorId="2">
-      <String stringValue="Option 1"/>
-      <String stringValue="Option 2"/>
-      <String stringValue="Option 3"/>
+    <Validator type="StringValidator" validatorId="2">
+      <String value="Option 1"/>
+      <String value="Option 2"/>
+      <String value="Option 3"/>
     </Validator>
   </Validators>
 </ParameterList>
@@ -520,8 +520,8 @@ This can be accomplished by using a $<$Function$>$ tag. A $<$Function$>$ tag ins
 first, and then test the result of that function to see if it is greater than or equal to zero. Consider the example in figure~\ref{NumberVisXML1}, only this
 time let's say our temperature is in degrees farenheit. In order to get the proper functionality, we'll add a ``subtraction function'' to the dependency that will
 subtract 32 from the value of the temperature parameter before it is tested against zero. Figure~\ref{NumberVisXML2} shows an example of this. We set the operand 
-xml attribute to 32 and the type of the function to ``SubtrationFunction(double)'' since we want to use a subtraction function on a parameter of type double. See
-\ref{sec:funcs} for the other available functions.
+xml attribute to 32 and the type of the function to ``SubtrationFunction(double)''\footnote{For a complete list of available funcitons see Appendix~\ref{sec:funcs}}
+ since we want to use a subtraction function on a parameter of type double.
 \begin{figure}
 \centering
 \begin{lstlisting}[language=XML]
@@ -551,7 +551,8 @@ xml attribute to 32 and the type of the function to ``SubtrationFunction(double)
 \subsection{Validator Dependencies}
 A Validator Dependency is a dependency in which the validator that is in use on the dependee is dependent upon the value of the dependee. Both the type of
 the dependee and the dependent will vary with each type of validator dependency and parameter type of the dependent. Validator Dependencies will always have
-one dependee. Also, dependent parameters in a Validator Dependency will never be a parameter list.
+one dependee. Also, dependent parameters in a Validator Dependency will never be a parameter list. A validator dependency can have an arbitrary number of 
+dependents.
 
 \subsubsection{String Validator Dependency}
 A String Validator Dependency allows the application developer to change the validator used on a dependent based on the string value of the dependee
@@ -600,10 +601,65 @@ validator.
     </Dependency>
   </Dependencies>
 </ParameterList>
-  \end{lstlisting}
-  \caption{Example usage of a String Validator Dependency.}
-  \label{StringValiDepXML}
+\end{lstlisting}
+\caption{Example usage of a String Validator Dependency.}
+\label{StringValiDepXML}
 \end{figure}
+
+\subsubsection{Range Validator Dependency}
+Range Validator Dependencies work very similarliy to String Validator Dependencies in that they map validators to specific dependee values. However,
+instead of mapping string values to validators, Range Validator Dependencies map ranges of numbers to validators. If the dependee's value falls within one of the 
+mapped ranges, then that range's associated validator is applied to the dependent(s). A range is specified by defining it's minimum (inclusive) and it's maximum (exclusive).
+Also like String Validator Dependencies, a default validator can be specified. If the dependees value does not fall with in one of the mapped ranges the default validator is 
+then used. A Range Validator Dependency must conform to the following constraints:
+\begin{itemize}
+\item The dependee must be a number type.
+\item All of the validators used specified in the mapping must be of the same type.
+\item If specified, the default validator must be of the same type as the validators specified in the map.
+\item The validators specified in the map must be appropriate for the type of the dependent(s).
+\end{itemize}
+
+Figure~\ref{RangeValiDepXML} shows and example of a Range Validator Dependency. In it, we want to use different validators
+on the ``Fondue Food'' if the Fondue Pot Temperature is different. If the temperature is greater than or equal to 80 or less than 120,
+we only want the user to be able to select ``Cheese'' or ``Bread''. If it's greater than or equal to 120 but less than 180, we only want the
+user to be able to pick ``Chicken'' or ``Beef''. We associated these ranges with their appropriate values in the $<$RangesAndValidators$>$ by
+using $<$Pair$>$ tags for each range and validator. Notice that like Enhanced Number Validators and Number Visual Dependencies, the type of the dependee parameter is 
+included in the type xml attribute of the dependency. In Figure~\ref(RangeValiDepXML} the dependee's type is double so the type of the dependency is 
+``RangeValidatorDependency(double)''.
+\begin{figure}
+  \centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Fondue Pot Temperature" type="int" value="100"
+    id="1" docString="The number of dimensions being used"/>
+  <Parameter name="Fondue Food" type="string" value="Cheese"
+    id="2" docString="The surface type"/>
+  <Validators>
+    <Validator type="StringValidator" validatorId="1">
+      <String value="Cheese"/>
+      <String value="Bread"/>
+    </Validator>
+    <Validator type="StringValidator" validatorId="2">
+      <String value="Chicken"/>
+      <String value="Beef"/>
+    </Validator>
+  <Validators>
+  <Dependencies>
+    <Dependency type="RangeValidatorDependency(double)">
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+      <RangesAndValidators>
+        <Pair min="80" max="120" validatorId="1"/>
+        <Pair min="120" max="180" validatorId="2"/>
+      </ValuesAndValidators>
+    </Dependency>
+  </Dependencies>
+</ParameterList>
+\end{lstlisting}
+\caption{Example usage of a Range Validator Dependency.}
+\label{RangeValiDepXML}
+\end{figure}
+ 
 
 \subsubsection{Bool Validator Dependency}
 A Bool Validator Dependency allows the developer to apply one validator to the dependent(s) when the dependee is true, and another validator
@@ -611,24 +667,76 @@ to the dependent(s) when the dependee is false. You could also specify one valid
 to be applied when the dependee is false (or vice versa). The dependee of a Bool Validator Dependency must be of type bool. If both a ``true'' and
 ``false'' validator are specified, they must be of the same type. Also, the validator(s) specified must be appropriate for the dependent(s).
 
-Figure~\ref{BoolValidDepXML} shows an example of a Bool Validator Dependency. 
-
-\subsubsection{Range Validator Dependency}
-
+Figure~\ref{BoolValidDepXML} shows an example of a Bool Validator Dependency. In this example we only want a validator to be placed on the
+``Temperature'' parameter if ``Has Temperature Constraints'' is set to true. Therefore we set the trueValidatorId xml attribute to the id of the
+validator we want to use and don't specify a validator to be used if the dependee is false.
+\begin{figure}
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Has Temperature Constraints?" type="bool" 
+    value="true" id="1" 
+    docString="Whether or not temperature constratins should be used."/>
+  <Parameter name=" Temperature" type="double" value="0"
+    id="2" docString="The temperature"/>
+  <Validators>
+    <Validator type="EnhancedNumberValidator(double) validatorId="1"
+      min="0" max="50"/>
+  <Validators>
+  <Dependencies>
+    <Dependency 
+      type="BoolValidatorDependency" 
+      trueValidatorId="1"
+    >
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+    </Dependency>
+  </Dependencies>
+</ParameterList>
+\end{lstlisting}
+\caption{Example usage of a Bool Validator Dependency.}
+\label{BoolValidDepXML}
+\end{figure}
 
 \subsection{Number Array Length Dependencies}
+Number Array Length Dependencies allow the application developer to have the length of an array parameter determined by the value of another parameter. Number Array Length
+Dependencies must have a dependee with an integer type and the dependent(s) must be an array. Unless otherwise specified, the value of the dependee parameter is directly
+used for the length of the dependent array parameter(s). 
 
+Figure~\ref{ArrayLengthXML} shows an example of an Number Array Length Dependency. When the ``Number of buckets'' parameter changes, the array in the ``Amount
+in each bucket'' shrinks and expands accordingly. Note how in the type xml attribute for the dependency we had to specify both the type of the dependee and the
+dependent. Are you starting to notice a theme?
+\begin{figure}
+\centering
+\begin{lstlisting}[language=XML]
+<ParameterList>
+  <Parameter name="Number of buckets" type="int"
+    value="2" id="1" 
+    docString="The number of buckets we have."/>
+  <Parameter name="Amount in each bucket" 
+    type="array(double)" value="{0,0}"
+    id="2" docString="The amount of water in each bucket"/>
+  <Dependencies>
+    <Dependency type="NumberArrayLengthDependency(int, double)">
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+    </Dependency>
+  </Dependencies>
+</ParameterList>
+\end{lstlisting}
+\caption{Example usage of a Bool Validator Dependency.}
+\label{BoolValidDepXML}
+\end{figure}
 
-
-
+If we wanted the length of the array to be based on something other then the direct value of the dependee parameter, we could run it through a function. This would 
+be done by adding a $<$Function$>$ tag inside the $<$Dependency$>$ tag, just like we did in figure~\ref{NumberVisXML2} for the Number Visual Dependency.
 
 \section{Advanced Dependency Functionality}
-
+In this section we will explore some of the more advanced capabilities of Dependencies.
 \subsection{Multiple dependents}
 
-\subsection{Conditions}
 
-\subsubsection{Condition Visual Dependencies}
+\subsection{Condition Visual Dependencies}
 
 
 
