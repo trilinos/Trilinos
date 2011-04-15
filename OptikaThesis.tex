@@ -624,7 +624,7 @@ on the ``Fondue Food'' if the Fondue Pot Temperature is different. If the temper
 we only want the user to be able to select ``Cheese'' or ``Bread''. If it's greater than or equal to 120 but less than 180, we only want the
 user to be able to pick ``Chicken'' or ``Beef''. We associated these ranges with their appropriate values in the $<$RangesAndValidators$>$ by
 using $<$Pair$>$ tags for each range and validator. Notice that like Enhanced Number Validators and Number Visual Dependencies, the type of the dependee parameter is 
-included in the type xml attribute of the dependency. In Figure~\ref(RangeValiDepXML} the dependee's type is double so the type of the dependency is 
+included in the type xml attribute of the dependency. In Figure~\ref{RangeValiDepXML} the dependee's type is double so the type of the dependency is 
 ``RangeValidatorDependency(double)''.
 \begin{figure}
   \centering
@@ -731,21 +731,37 @@ dependent. Are you starting to notice a theme?
 If we wanted the length of the array to be based on something other then the direct value of the dependee parameter, we could run it through a function. This would 
 be done by adding a $<$Function$>$ tag inside the $<$Dependency$>$ tag, just like we did in figure~\ref{NumberVisXML2} for the Number Visual Dependency.
 
-\section{Advanced Dependency Functionality}
-In this section we will explore some of the more advanced capabilities of Dependencies.
-\subsection{Multiple dependents}
+\section{Condition Visual Dependency}
+Up until this point, all the dependency have had only a single dependee. A Condition Visual Dependency is a special Visual Dependency that allows you to base the visibility
+of the dependent parameter(s) upon the state of multiple dependees. This is accomplished via the use of Conditions.
+\subsection{Parameter Conditions}
 
+\subsubsection{String Condition}
 
-\subsection{Condition Visual Dependencies}
+\subsubsection{Number Condition}
 
+\subsubsection{Bool Condition}
+
+\subsection{Binary Logic Conditions}
+
+\subsubsection{And Condition}
+
+\subsubsection{Or Condition}
+
+\subsubsection{Equal Condition}
+
+\subsection{Not Condition}
+
+\subsection{Using A Condition Visual Dependency}
 
 
 
 \section{Other Features of Optika}
-
 \subsection{Custom Functions}
+In additition to the traditional work flow of just calling the getInput function, Optika also allows for the specification of ``custom functions.''
 
 \subsection{Customizing Look And Feel}
+There are a number ways
 
 
 \section{Future Developement}
