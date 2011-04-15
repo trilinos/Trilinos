@@ -237,7 +237,9 @@ namespace Belos {
       if (scaleType == "Norm of Initial Residual") {
         return Belos::NormOfInitRes;
       } else if (scaleType == "Norm of Preconditioned Initial Residual") {
-        return Belos::NormOfPrecInitRes;
+        // This algorithm only provides true residuals, not preconditioned residuals, 
+        // so the residuals should only be scaled by the unpreconditioned initial residual.
+        return Belos::NormOfInitRes;
       } else if (scaleType == "Norm of RHS") {
         return Belos::NormOfRHS;
       } else if (scaleType == "None") {

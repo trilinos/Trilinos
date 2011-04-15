@@ -195,10 +195,10 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
   //! Get a constant reference to the linear problem.
   const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
 
-  //! Get the blocksize to be used by the iterative solver in solving this linear problem.
+  //! Get the block size to be used by the iterative solver in solving this linear problem.
   int getBlockSize() const { return blockSize_; }
 
-  //! \brief Set the blocksize to be used by the iterative solver in solving this linear problem.
+  //! \brief Set the block size to be used by the iterative solver in solving this linear problem.
   void setBlockSize(int blockSize);
 
   //! States whether the solver has been initialized or not.
@@ -380,12 +380,20 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
       // Initially, they are set to the preconditioned residuals
       //
       if ( lp_->getLeftPrec() != Teuchos::null ) {
-	lp_->applyLeftPrec( *R_, *Z_ ); 
-	MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
-      } else {
-	Z_ = R_;
-	MVT::MvAddMv( one, *R_, zero, *R_, *P_ );
+        lp_->applyLeftPrec( *R_, *Z_ );
+        if ( lp_->getRightPrec() != Teuchos::null ) {
+          Teuchos::RCP<MV> tmp = MVT::Clone( *Z_, blockSize_ );
+          lp_->applyRightPrec( *Z_, *tmp );
+          Z_ = tmp;
+        }
       }
+      else if ( lp_->getRightPrec() != Teuchos::null ) {
+        lp_->applyRightPrec( *R_, *Z_ );
+      } 
+      else {
+        Z_ = R_;
+      }
+      MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
     }
     else {
 
@@ -476,9 +484,18 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
       //
       // Compute the new preconditioned residual, Z_.
       if ( lp_->getLeftPrec() != Teuchos::null ) {
-	lp_->applyLeftPrec( *R_, *Z_ );
-      } else {
-	Z_ = R_;
+        lp_->applyLeftPrec( *R_, *Z_ );
+        if ( lp_->getRightPrec() != Teuchos::null ) {
+          Teuchos::RCP<MV> tmp = MVT::Clone( *Z_, blockSize_ );
+          lp_->applyRightPrec( *Z_, *tmp );
+          Z_ = tmp;
+        }
+      }
+      else if ( lp_->getRightPrec() != Teuchos::null ) {
+        lp_->applyRightPrec( *R_, *Z_ );
+      } 
+      else {
+        Z_ = R_;
       }
       //
       // Compute beta := <AP_,Z_> / <P_,AP_> 
