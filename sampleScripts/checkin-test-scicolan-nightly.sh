@@ -56,6 +56,5 @@ echo "
 --make-options=-j8 \
 --ctest-options=-j4 \
 --ctest-timeout=180 \
---commit-msg-header-file=checkin_message \
 --no-rebase \
 $EXTRA_ARGS  
