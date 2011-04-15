@@ -45,16 +45,6 @@ operator << ( std::ostream & s , const Relation & rel )
 
 //----------------------------------------------------------------------
 
-Relation::raw_relation_id_type
-Relation::raw_relation_id( unsigned rank , unsigned id )
-{
-  ThrowErrorMsgIf( id_mask < id,
-                   "For args rank " << rank << ", id " << id << ": " <<
-                   "id=" << id << " > id_mask=" << id_mask );
-
-  return ( raw_relation_id_type(rank) << id_digits ) | id ;
-}
-
 Relation::Relation( Entity & entity , RelationIdentifier identifier )
   : m_raw_relation( Relation::raw_relation_id( entity.entity_rank() , identifier ) ),
     m_entity( & entity )

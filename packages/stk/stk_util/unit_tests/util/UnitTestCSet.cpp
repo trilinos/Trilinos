@@ -99,46 +99,40 @@ STKUNIT_UNIT_TEST( UnitTestCSet, UnitTest)
   const B * sb ;
   bool flag ;
 
-  U * u = new U();
-  V * v = new V();
-  W * w = new W();
-  X * x = new X();
-  Y * y = new Y();
+  U  u;
+  V  v;
+  W  w;
+  X  x;
+  Y  y;
 
   {
     CSet cs ;
 
-    sa = cs.insert_no_delete<A>(u);
+    sa = cs.insert_no_delete<A>(&u);
     STKUNIT_ASSERT(sa->id() == (int)U::ID);
 
-    sb = cs.insert_no_delete<B>(v);
+    sb = cs.insert_no_delete<B>(&v);
     STKUNIT_ASSERT(sb->id() == (int)V::ID);
 
     // Should not replace:
-    sb = cs.insert_no_delete<B>(w);
+    sb = cs.insert_no_delete<B>(&w);
     STKUNIT_ASSERT(sb->id() == (int)V::ID);
 
-    flag = cs.remove<A>( u );
+    flag = cs.remove<A>( &u );
     STKUNIT_ASSERT(flag);
 
-    flag = cs.remove<B>( v );
+    flag = cs.remove<B>( &v );
     STKUNIT_ASSERT(flag);
 
-    sa = cs.insert_no_delete<A>(x);
-    sb = cs.insert_no_delete<B>(x);
+    sa = cs.insert_no_delete<A>(&x);
+    sb = cs.insert_no_delete<B>(&x);
     STKUNIT_ASSERT(sa->id() == (int)X::ID);
     STKUNIT_ASSERT(sb->id() == (int)X::ID);
 
-    sa = cs.insert_no_delete<A>(y);
-    sb = cs.insert_no_delete<B>(y);
+    sa = cs.insert_no_delete<A>(&y);
+    sb = cs.insert_no_delete<B>(&y);
     STKUNIT_ASSERT(sa->id() == (int)X::ID);
     STKUNIT_ASSERT(sb->id() == (int)X::ID);
   }
-
-  delete x ; x = NULL ;
-  delete y ; y = NULL ;
-  delete w ; w = NULL ;
-  delete v ; v = NULL ;
-  delete u ; u = NULL ;
 }
 

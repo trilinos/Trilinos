@@ -22,6 +22,9 @@
 #include <fei_MatrixGraph.hpp>
 #include <snl_fei_Utils.hpp>
 
+#include <fei_MatrixTraits.hpp>
+#include <fei_MatrixTraits_FillableMat.hpp>
+
 #undef fei_file
 #define fei_file "fei_Matrix_core.cpp"
 #include <fei_ErrMacros.hpp>
@@ -42,6 +45,8 @@ fei::Matrix_core::Matrix_core(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     vecSpace_(),
     matrixGraph_(matrixGraph),
     remotelyOwned_(),
+    remotelyOwned_last_requested_(NULL),
+    proc_last_requested_(-1),
     haveBlockMatrix_(false),
     haveFEMatrix_(false),
     globalOffsets_(),
@@ -59,17 +64,29 @@ fei::Matrix_core::Matrix_core(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
 
   vecSpace_ = matrixGraph->getRowSpace();
 
-  remotelyOwned_.resize(numProcs_);
-  for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
-    remotelyOwned_[i] = new FillableMat;
-  }
-
   setName("dbg");
 
   globalOffsets_ = eqnComm_->getGlobalOffsets();
 
   firstLocalOffset_ = globalOffsets_[localProc_];
   lastLocalOffset_ = globalOffsets_[localProc_+1]-1;
+}
+
+std::map<int,fei::FillableMat*>&
+fei::Matrix_core::getRemotelyOwnedMatrices()
+{
+  return remotelyOwned_;
+}
+
+void
+fei::Matrix_core::putScalar_remotelyOwned(double scalar)
+{
+  std::map<int,FillableMat*>::iterator
+    it = remotelyOwned_.begin(),
+    it_end = remotelyOwned_.end();
+  for(; it!=it_end; ++it) {
+    fei::MatrixTraits<FillableMat>::setValues(it->second, scalar);
+  }
 }
 
 void
@@ -83,8 +100,11 @@ fei::Matrix_core::setEqnComm(fei::SharedPtr<fei::EqnComm> eqnComm)
 
 fei::Matrix_core::~Matrix_core()
 {
-  for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
-    delete remotelyOwned_[i];
+  std::map<int,FillableMat*>::iterator
+    it = remotelyOwned_.begin(),
+    it_end = remotelyOwned_.end();
+  for(; it!=it_end; ++it) {
+    delete it->second;
   }
 }
 
@@ -117,7 +137,7 @@ void fei::Matrix_core::setName(const char* name)
   name_ = name;
 }
 
-int fei::Matrix_core::getOwnerProc(int globalEqn)
+int fei::Matrix_core::getOwnerProc(int globalEqn) const
 {
   int len = globalOffsets_.size();
   if (globalEqn > globalOffsets_[len-1]) return(-1);
@@ -144,18 +164,21 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   //this function gathers shared-but-not-owned data onto the
   //owning processors.
 
-  //iterate the remotelyOwned_ array and create a list of processors
+  //iterate the remotelyOwned_ map and create a list of processors
   //that we will be sending data to. (processors which own matrix rows
   //that we share.)
   std::vector<int> sendProcs;
-  for(size_t i=0; i<remotelyOwned_.size(); ++i) {
-    if ((int)i == localProc_) continue;
-    if (remotelyOwned_[i] != NULL) {
-      if (remotelyOwned_[i]->getNumRows() == 0) {
+  std::map<int,FillableMat*>::iterator
+    it = remotelyOwned_.begin(),
+    it_end = remotelyOwned_.end();
+  for(; it!=it_end; ++it) {
+    if (it->first == localProc_) continue;
+    if (it->second != NULL) {
+      if (it->second->getNumRows() == 0) {
         continue;
       }
 
-      sendProcs.push_back((int)i);
+      sendProcs.push_back(it->first);
     }
   }
 

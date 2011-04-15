@@ -21,6 +21,8 @@
 #include <fei_MatrixTraits_LinSysCore.hpp>
 #include <fei_MatrixTraits_FEData.hpp>
 #include <fei_MatrixTraits_FillableMat.hpp>
+#include <fei_FillableVec.hpp>
+#include <fei_FillableMat.hpp>
 
 #include <snl_fei_FEMatrixTraits.hpp>
 #include <snl_fei_FEMatrixTraits_FED.hpp>
@@ -456,8 +458,16 @@ int fei::Matrix_Impl<T>::getRowLength(int row, int& length) const
     return( snl_fei::BlockMatrixTraits<T>::getPointRowLength(matrix_.get(), row, length) );
   }
   else {
-    return( fei::MatrixTraits<T>::getRowLength(matrix_.get(), row, length) );
+    int code = fei::MatrixTraits<T>::getRowLength(matrix_.get(), row, length);
+    if (code < 0) {
+      //matrix row probably not local. maybe it's shared.
+      int proc = getOwnerProc(row);
+      const FillableMat* remote_mat = getRemotelyOwnedMatrix(proc);
+      const FillableVec* row_entries = remote_mat->getRow(row);
+      length = row_entries->size();
+    }
   }
+  return 0;
 }
 
 //----------------------------------------------------------------------------
@@ -481,10 +491,8 @@ int fei::Matrix_Impl<T>::putScalar(double scalar)
   else {
     CHK_ERR( fei::MatrixTraits<T>::setValues(matrix_.get(), scalar) );
   }
-  std::vector<FillableMat*>& remote = getRemotelyOwnedMatrix();
-  for(unsigned p=0; p<remote.size(); ++p) {
-    CHK_ERR( fei::MatrixTraits<FillableMat>::setValues(remote[p], scalar) );
-  }
+
+  putScalar_remotelyOwned(scalar);
 
   changedSinceMark_ = true;
 
@@ -496,6 +504,10 @@ template<typename T>
 int fei::Matrix_Impl<T>::copyOutRow(int row, int len,
                                    double* coefs, int* indices) const
 {
+  if (len < 1) {
+    return 0;
+  }
+
   if (haveBlockMatrix()) {
     int dummy;
     return( snl_fei::BlockMatrixTraits<T>::copyOutPointRow(matrix_.get(), firstLocalOffset(),
@@ -503,9 +515,22 @@ int fei::Matrix_Impl<T>::copyOutRow(int row, int len,
                                                   coefs, indices, dummy));
   }
   else {
-    return( fei::MatrixTraits<T>::copyOutRow(matrix_.get(), row, len,
-                                        coefs, indices) );
+    int code = fei::MatrixTraits<T>::copyOutRow(matrix_.get(), row, len,
+                                        coefs, indices);
+    if (code < 0) {
+      int proc = getOwnerProc(row);
+      const FillableMat* remote_mat = getRemotelyOwnedMatrix(proc);
+      if (remote_mat->hasRow(row)) {
+        const FillableVec* row_entries = remote_mat->getRow(row);
+        FillableVec::const_iterator it=row_entries->begin(); 
+        for(int i=0; it!=row_entries->end(); ++it, ++i) {
+          indices[i] = it->first;
+          coefs[i] = it->second;
+        }
+      }
+    }
   }
+  return 0;
 }
 
 //----------------------------------------------------------------------------
@@ -630,8 +655,6 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
   fei::SharedPtr<fei::MatrixGraph> mgraph = getMatrixGraph();
 
   if (mgraph.get() == NULL) ERReturn(-1);
-
-  std::vector<FillableMat*>& remote = getRemotelyOwnedMatrix();
 
   const fei::ConnectivityBlock* cblock = mgraph->getConnectivityBlock(blockID);
   if (cblock==NULL) {
@@ -765,7 +788,8 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
 
           for(int ii=0; ii<numIndicesPerID[i]; ++ii) {
             int p=eqnComm_->getOwnerProc(ptIndices[ptRowOffset]+ii);
-            remote[p]->sumInRow(ptIndices[ptRowOffset]+ii,
+            FillableMat* remote_mat = getRemotelyOwnedMatrix(p);
+            remote_mat->sumInRow(ptIndices[ptRowOffset]+ii,
                                       ptIndices,
                                       values[ptRowOffset+ii],
                                       numPtIndices);
@@ -920,18 +944,17 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
     return(0);
   }
 
-  std::vector<FillableMat*>& remote = getRemotelyOwnedMatrix();
-
   for(i=0; i<numRows; ++i) {
     int row = rows[i];
     const double*const rowvalues = myvalues[i];
 
     if (workIntPtr[i] > 0) {
       int proc = eqnComm_->getOwnerProc(row);
+      FillableMat* remote_mat = getRemotelyOwnedMatrix(proc);
 
       if (output_level_ >= fei::FULL_LOGS && output_stream_ != NULL) {
         FEI_OSTREAM& os = *output_stream_;
-        os << dbgprefix_<<" remote[" << proc<<"]: ";
+        os << dbgprefix_<<" remote_mat["<<proc<<"]: ";
         for(int jj=0; jj<numCols; ++jj) {
           os << "("<<row<<","<<cols[jj]<<","<<rowvalues[jj]<<") ";
         }
@@ -939,11 +962,11 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
       }
 
       if (sumInto) {
-        remote[proc]->sumInRow(row, cols, rowvalues, numCols);
+        remote_mat->sumInRow(row, cols, rowvalues, numCols);
         changedSinceMark_ = true;
       }
       else {
-        remote[proc]->putRow(row, cols, rowvalues, numCols);
+        remote_mat->putRow(row, cols, rowvalues, numCols);
         changedSinceMark_ = true;
       }
 
@@ -1045,8 +1068,6 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     return(0);
   }
 
-  std::vector<FillableMat*>& remote = getRemotelyOwnedMatrix();
-
   int maxBlkEqnSize = pointBlockMap->getMaxBlkEqnSize();
   int coefBlkLen = maxBlkEqnSize*maxBlkEqnSize*2;
 
@@ -1055,12 +1076,13 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
 
     if (row < firstLocalOffset() || row > lastLocalOffset()) {
       int proc = eqnComm_->getOwnerProc(row);
+      FillableMat* remote_mat = getRemotelyOwnedMatrix(proc);
       if (sumInto) {
-        remote[proc]->sumInRow(row, cols, values[i], numCols);
+        remote_mat->sumInRow(row, cols, values[i], numCols);
         changedSinceMark_ = true;
       }
       else {
-        remote[proc]->putRow(row, cols, values[i], numCols);
+        remote_mat->putRow(row, cols, values[i], numCols);
         changedSinceMark_ = true;
       }
       continue;

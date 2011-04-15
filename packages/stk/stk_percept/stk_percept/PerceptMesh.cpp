@@ -541,7 +541,27 @@ namespace stk {
       //         std::cout << " Elem = " << count[  3 ] ;
       //         std::cout << " }" << std::endl ;
       //         std::cout.flush();
-      }
+    }
+
+    int PerceptMesh::
+    getNumberElementsLocallyOwned()
+    {
+      std::vector<unsigned> count ;
+      stk::mesh::Selector selector(getFEM_meta_data()->locally_owned_part() );
+      stk::mesh::count_entities( selector, *getBulkData(), count );
+      if (count.size() < 3) 
+        {
+          throw std::logic_error("logic error in PerceptMesh::getNumberElements");
+        }
+
+      return count[ element_rank() ];
+      //         std::cout << " Node = " << count[  0 ] ;
+      //         std::cout << " Edge = " << count[  1 ] ;
+      //         std::cout << " Face = " << count[  2 ] ;
+      //         std::cout << " Elem = " << count[  3 ] ;
+      //         std::cout << " }" << std::endl ;
+      //         std::cout.flush();
+    }
 
     //========================================================================================================================
     /// low-level interfaces
@@ -1075,12 +1095,12 @@ namespace stk {
 
       //----------------------------------
       // Process Entity Types. Subsetting is possible.
-      //stk::mesh::fem::FEMMetaData meta_data( stk::mesh::fem_entity_rank_names() );
+      //stk::mesh::fem::FEMMetaData meta_data( stk::percept::PerceptMesh::fem_entity_rank_names() );
       //stk::mesh::fem::FEMMetaData& meta_data = *m_metaData;
       //std::cout << "tmp1.0 m_fem_meta_data = " << m_fem_meta_data << std::endl;
 
       stk::mesh::fem::FEMMetaData& meta_data = *m_metaData;
-      std::cout << "tmp1 m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
+      //      std::cout << "tmp1 m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
 
 #if 0
        process_read_elementblocks_meta(in_region, meta_data);
@@ -1406,12 +1426,12 @@ namespace stk {
               for (int i=0; i < block_count; i++) {
                 Ioss::EntityBlock *fb = entity->get_block(i);
                 stk::io::ioss_add_fields(*part,
-                                         stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                         stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                          fb, Ioss::Field::TRANSIENT);
               }
             } else {
               stk::io::ioss_add_fields(*part,
-                                       stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                       stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                        entity, Ioss::Field::TRANSIENT);
             }
           } else {
@@ -1497,7 +1517,9 @@ namespace stk {
           stk::mesh::Part& part = *parts[ipart];
           stk::mesh::Selector selector(part);
 
-          if (part.name()[0] == '{' || (part.name().find("oldElem") != std::string::npos) )
+          // is_auto_declared_part
+          //if (part.name()[0] == '{' || (part.name().find("oldElem") != std::string::npos) )
+          if (stk::mesh::is_auto_declared_part(part) || (part.name().find("oldElem") != std::string::npos) )
             continue;
 
           if (partName.size() > 0 && part.name() != partName)
@@ -2438,7 +2460,7 @@ namespace stk {
                             const unsigned num_entities_in_bucket_1 = bucket_1.size();
                             //const unsigned num_entities_in_bucket_2 = bucket_2.size();
 
-                            bool local_diff = false;
+                            bool local_local_diff = false;
                             for (unsigned iEntity = 0; iEntity < num_entities_in_bucket_1; iEntity++)
                               {
                                 stk::mesh::Entity& entity_1 = bucket_1[iEntity];
@@ -2465,12 +2487,12 @@ namespace stk {
                                             msg += std::string("| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+
                                               " coord_1= "+toString(fdata_1[istride])+" coord_2= "+toString(fdata_2[istride])+" |\n";
                                             diff = true;
-                                            local_diff = true;
+                                            local_local_diff = true;
                                           }
                                       }
                                   }
 
-                                if (local_diff) break;
+                                if (local_local_diff) break;
                               }
                           }
                       }
