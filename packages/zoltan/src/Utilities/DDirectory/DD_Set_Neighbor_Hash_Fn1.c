@@ -31,7 +31,7 @@ struct dd_nh1_struct {
 };
 
 static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc, struct dd_nh1_struct* hashdata) ;
+ unsigned int nproc, struct dd_nh1_struct* hashdata, ZOLTAN_HASH_FN *fn) ;
 
 
 
@@ -69,8 +69,9 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
 
    hashdata->groupsize   = size;
    dd->hash    = (DD_Hash_fn*) &dd_nh1;
-   dd->cleanup = (DD_Cleanup_fn*) &Zoltan_DD_default_cleanup;
+   dd->hashfn  = NULL;
    dd->hashdata = hashdata;
+   dd->cleanup = (DD_Cleanup_fn*) &Zoltan_DD_default_cleanup;
    hashdata->max_gid = size * dd->nproc;     /* larger GIDs out of range */
 
    return ZOLTAN_OK;
@@ -79,7 +80,7 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
 
 
 static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc, struct dd_nh1_struct* hashdata)
+ unsigned int nproc, struct dd_nh1_struct* hashdata, ZOLTAN_HASH_FN *fn)
    {
    int id = (signed) *gid;
    return (id < hashdata->max_gid) ? (id / hashdata->groupsize) : (id % nproc);

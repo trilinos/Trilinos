@@ -342,12 +342,20 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       // Initially, they are set to the preconditioned residuals
       //
       if ( lp_->getLeftPrec() != Teuchos::null ) {
-	lp_->applyLeftPrec( *R_, *Z_ ); 
-	MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
-      } else {
-	Z_ = R_;
-	MVT::MvAddMv( one, *R_, zero, *R_, *P_ );
+        lp_->applyLeftPrec( *R_, *Z_ );
+        if ( lp_->getRightPrec() != Teuchos::null ) {
+          Teuchos::RCP<MV> tmp = MVT::Clone( *Z_, 1 );
+          lp_->applyRightPrec( *Z_, *tmp );
+          Z_ = tmp;
+        }
       }
+      else if ( lp_->getRightPrec() != Teuchos::null ) {
+        lp_->applyRightPrec( *R_, *Z_ );
+      } 
+      else {
+        Z_ = R_;
+      }
+      MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
     }
     else {
 
@@ -427,9 +435,18 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       // and the new direction vector p.
       //
       if ( lp_->getLeftPrec() != Teuchos::null ) {
-	lp_->applyLeftPrec( *R_, *Z_ );
-      } else {
-	Z_ = R_;
+        lp_->applyLeftPrec( *R_, *Z_ );
+        if ( lp_->getRightPrec() != Teuchos::null ) {
+          Teuchos::RCP<MV> tmp = MVT::Clone( *Z_, 1 );
+          lp_->applyRightPrec( *Z_, *tmp );
+          Z_ = tmp;
+        }
+      }
+      else if ( lp_->getRightPrec() != Teuchos::null ) {
+        lp_->applyRightPrec( *R_, *Z_ );
+      } 
+      else {
+        Z_ = R_;
       }
       //
       MVT::MvTransMv( one, *R_, *Z_, rHz );

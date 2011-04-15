@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
       switch (iTest) {
        case 0: inputFile="input_Solve_NOX_2.xml"; break;
        case 1: inputFile="input_Solve_LOCA_1.xml"; break;
-       case 2: inputFile="input_Solve_Rythmos_1.xml"; break;
+       case 2: inputFile="input_Solve_Rythmos_2.xml"; break;
        default : cout << "iTest logic error " << endl; exit(-1);
       }
     }

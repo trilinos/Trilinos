@@ -97,7 +97,7 @@ function(TRILINOS_DRIVER_ADD_DASHBOARD testname scriptname)
     # prefix
     PARSE
     # args
-    "CTEST_INSTALLER_TYPE;ENVIRONMENT;TIMEOUT_MINUTES"
+    "CTEST_INSTALLER_TYPE;ENVIRONMENT;TIMEOUT_MINUTES;DEPENDS"
     # options
     "RUN_SERIAL"
     # the stuff to parse:
@@ -143,6 +143,10 @@ function(TRILINOS_DRIVER_ADD_DASHBOARD testname scriptname)
   # driving ctest:
   #
   set_property(TEST ${testname} PROPERTY DEPENDS "install-cmake-${ctest_type}")
+  
+  if(PARSE_DEPENDS)
+    set_property(TEST ${testname} PROPERTY DEPENDS "${PARSE_DEPENDS}")
+  endif()
 
   if(PARSE_ENVIRONMENT)
     set_property(TEST ${testname} PROPERTY ENVIRONMENT

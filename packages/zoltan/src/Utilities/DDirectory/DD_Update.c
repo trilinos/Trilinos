@@ -97,7 +97,7 @@ int Zoltan_DD_Update (
 
    /* for each GID given, fill in contact list and then message structure */
    for (i = 0; i < count; i++)  {
-      procs[i] = dd->hash(gid + i*dd->gid_length, dd->gid_length, dd->nproc, dd->hashdata);
+      procs[i] = dd->hash(gid + i*dd->gid_length, dd->gid_length, dd->nproc, dd->hashdata, dd->hashfn);
       ptr      = (DD_Update_Msg*) (sbuff + i * dd->update_msg_size);
 
       ptr->lid_flag       = (lid)  ? 1 : 0;
@@ -230,7 +230,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
       ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL);
 
    /* compute offset into hash table to find head of linked list */
-   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashfn);
+   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashdata, NULL);
 
    /* walk linked list until end looking for matching gid */
    for (ptr = dd->table+index; *ptr != NULL; ptr = &((*ptr)->next))

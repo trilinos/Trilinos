@@ -56,7 +56,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #include "createEpetraProblem.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
   
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<double,MV,OP> > solver
-    = rcp( new Belos::BlockCGSolMgr<double,MV,OP>(problem, rcp(&belosList,false)) );
+    = rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>(problem, rcp(&belosList,false)) );
   
   //
   // *******************************************************************

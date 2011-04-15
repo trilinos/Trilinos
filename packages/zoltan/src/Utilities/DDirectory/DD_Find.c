@@ -121,7 +121,7 @@ int Zoltan_DD_Find (
 
    /* for each GID, fill DD_Find_Msg buffer and contact list */
    for (i = 0; i < count; i++)  {
-      procs[i] = dd->hash (gid + i*dd->gid_length, dd->gid_length, dd->nproc, dd->hashdata);
+      procs[i] = dd->hash (gid + i*dd->gid_length, dd->gid_length, dd->nproc, dd->hashdata, dd->hashfn);
       ptr      = (DD_Find_Msg*) (sbuff + i * dd->find_msg_size);
 
       ptr->index = i;
@@ -249,8 +249,7 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
       ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL);
 
    /* compute offset into hash table to find head of linked list */
-   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashdata);
-
+   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashdata, NULL);
    /* walk link list until end looking for matching global ID */
    for (ptr = dd->table[index]; ptr != NULL; ptr = ptr->next)
       if (ZOLTAN_EQ_ID (dd->gid_length, gid, ptr->gid) == TRUE)  { 

@@ -40,6 +40,9 @@
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
+#ifdef Piro_ENABLE_NOX
+#  include "Thyra_NonlinearSolver_NOX.hpp"
+#endif
 
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
@@ -99,12 +102,26 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
       //
 
-      fwdTimeStepSolver = Rythmos::timeStepNonlinearSolver<double>();
-
-      if (rythmosPL->getEntryPtr("NonLinear Solver")) {
-        RCP<Teuchos::ParameterList> nonlinePL =
-           sublist(rythmosPL, "NonLinear Solver", true);
-        fwdTimeStepSolver->setParameterList(nonlinePL);
+      if (rythmosPL->get<std::string>("Nonlinear Solver Type") == "Rythmos") {
+	Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > rythmosTimeStepSolver = 
+	  Rythmos::timeStepNonlinearSolver<double>();
+	if (rythmosPL->getEntryPtr("NonLinear Solver")) {
+	  RCP<Teuchos::ParameterList> nonlinePL =
+	    sublist(rythmosPL, "NonLinear Solver", true);
+	  rythmosTimeStepSolver->setParameterList(nonlinePL);
+	}
+	fwdTimeStepSolver = rythmosTimeStepSolver;
+      }
+      else if (rythmosPL->get<std::string>("Nonlinear Solver Type") == "NOX") {
+#ifdef Piro_ENABLE_NOX
+	Teuchos::RCP<Thyra::NOXNonlinearSolver> nox_solver =  Teuchos::rcp(new Thyra::NOXNonlinearSolver);
+	Teuchos::RCP<Teuchos::ParameterList> nox_params = Teuchos::rcp(new Teuchos::ParameterList);
+	*nox_params = appParams->sublist("NOX");
+	nox_solver->setParameterList(nox_params);
+	fwdTimeStepSolver = nox_solver;
+#else
+	TEST_FOR_EXCEPTION(true, std::logic_error,"Requested NOX solver for a Rythmos Transient solve, Trilinos was not built with NOX enabled.  Please rebuild Trilinos or use the native Rythmos nonlinear solver.");
+#endif
       }
 
       if (stepperType == "Backward Euler")
@@ -409,7 +426,18 @@ Teuchos::RCP<const Teuchos::ParameterList>
 Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
-     Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosParams"));;
+     Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosParams"));
+
+  validPL->set<std::string>("Nonlinear Solver Type", "");
+
+  Teuchos::setStringToIntegralParameter<int>(
+    "Nonlinear Solver Type",
+    "Rythmos",
+    "Determines which nonlinear solver to use.",
+    Teuchos::tuple<std::string>("Rythmos","NOX"),
+    validPL.get()
+    );
+
   validPL->sublist("NonLinear Solver", false, "");
   validPL->set<int>("Num Time Steps", 0, "");
   validPL->set<double>("Final Time", 1.0, "");

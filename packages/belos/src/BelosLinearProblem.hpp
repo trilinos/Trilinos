@@ -685,14 +685,14 @@ namespace Belos {
     solutionUpdated_ = false;
     
     // Compute the initial residuals.
-    if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
-      R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+    if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *B_ )) {
+      R0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
     }
     computeCurrResVec( &*R0_, &*X_, &*B_ );
 
     if (LP_!=Teuchos::null) {
-      if (PR0_==Teuchos::null || MVT::GetNumberVecs( *PR0_ )!=MVT::GetNumberVecs( *X_ )) {
-        PR0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+      if (PR0_==Teuchos::null || MVT::GetNumberVecs( *PR0_ )!=MVT::GetNumberVecs( *B_ )) {
+        PR0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
       }
       {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -861,7 +861,7 @@ namespace Belos {
 	{
 	  if (LP_!=Teuchos::null)
 	    {
-	      Teuchos::RCP<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
+	      Teuchos::RCP<MV> R_temp = MVT::Clone( *B, MVT::GetNumberVecs( *B ) );
               {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
                 Teuchos::TimeMonitor OpTimer(*timerOp_);
@@ -902,7 +902,7 @@ namespace Belos {
 	
 	if (LP_!=Teuchos::null)
 	  {
-	    Teuchos::RCP<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
+	    Teuchos::RCP<MV> R_temp = MVT::Clone( *localB, MVT::GetNumberVecs( *localB ) );
             {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor OpTimer(*timerOp_);
