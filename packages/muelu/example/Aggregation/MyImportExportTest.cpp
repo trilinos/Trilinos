@@ -157,8 +157,8 @@ void TestTpetra(ArrayRCP<GO> srcGID, ArrayRCP<GO> destGID) {
   Tpetra::Import<LO> importer(srcMap, destMap);
   destVector.doImport(srcVector, importer, Tpetra::INSERT);
 
-  RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
-  destVector.describe(*out, Teuchos::VERB_EXTREME);
+  Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
+  destVector.describe(out, Teuchos::VERB_EXTREME);
 }
 
 /**********************************************************************************/
