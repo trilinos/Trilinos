@@ -802,10 +802,35 @@ Optika GUI.
 see~\cite{QtStyle}} that will be used to style the Optika generated GUI.
 \end{description}
 
-Code listing~\ref{lookGui} shows an example of using some of these functions. An Optika GUI object is 
-\begin{lstlisting}[caption={Example usage
+Code listing~\ref{lookGui} shows an example of using some of these functions. We create an Optika GUI object, set the title of the window to ``My GUI'', and set the
+about info to ``This is a GUI I created using Optika.'' We then call the ``exec'' funciton. Once that function returns the usersInput parameter list will contain all the values
+the user specified.
+\begin{lstlisting}[language=C++, caption={Example of customizing the look and feel of an Optika GUI}, label=lookGui]
+#include "Optika_GUI.hpp"
+int main(int argc, char* argv[]){
+  using Optika::OptikaGUI;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
 
+  RCP<ParameterList> usersInput = rcp(new ParameterList);
+  OptikaGUI myGUI("inputs.xml", usersInput);
+  myGUI.setWindowTitle("My GUI");
+  myGUI.setAboutInfo("This is a GUI I created using Optika.");
+
+  myGUI.exec();
+  //usersInput now contains what ever the user entered.
+  //The developer can do what ever they wish with it.
+  return 0;
+}
+\end{lstlisting}
 
 \section{Future Developement}
+Developement is largely user driven. A small user base for Optika has developed at Sandia National Labratories. One of their requests is the ability to get user input in the 
+form of two-dimensional arrays. This will also include the need to develope any appropriate dependencies. Hopefully with future expansion of this current user base Optika will
+get other feature requests so we can continue to improve it.
 
 \section{Contributions}
+The initial task for creating a GUI solution for Trilinos was purposed by Dr. Michael Heroux of Sandia National Labratories. All code for Optika was written by Kurtis Nusbaum, 
+including the algorithm for evaluating dependencies. Roscoe Bartlett of Sandia National Labs helped design the mechanisms by which Optika interpurts XML. The Trilinos
+mailing lists were also great sources of information for questions involving integration with the Trilinos Framework and the Teuchos pacakges.
