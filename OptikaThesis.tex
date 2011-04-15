@@ -4,7 +4,7 @@ To get a better understanding of the problem Optika is trying to solve, it is
 best to look at an example of said problem. Currently, the program Tramonto has
 a massive input file filled with complex, non-intuitive inputs. Figure
 \ref{tramontoInputFigure} is just small section of this input file.
-\begin{figure}
+\begin{figure}[h]
   \centering
   {\footnotesize
   \begin{verbatim}
@@ -22,6 +22,7 @@ a massive input file filled with complex, non-intuitive inputs. Figure
   \caption[Tramonto Input]{An example of the complex input file used by Tramonto}
   \label{tramontoInputFigure}
 \end{figure}
+
 This input file is hard to read and non-intutive, not to mention it could 
 easily intimidate
 a new user. In fact, Tramonto's current input system is so complicated, 
@@ -48,8 +49,9 @@ platforms.
 Optika was developed as part of the Trilinos project. Trilinos is a set of C++ libraries
 used extensively throughout the scientific community. Since Optika is part of Trilinos,
 we wanted it to have tight integration with constucts that were already in place inside
-of Trilinos. By creating our own GUI solution, Optika allows users already familiar
-with the Trilinos framework to take advantage of the capabilities Optika has to offer.
+of Trilinos (namely the ParameterList class). By creating our own GUI solution, Optika allows 
+users already familiar with the Trilinos framework to take advantage of the capabilities 
+Optika has to offer.
 
 \section{Optika Overview}
 \subsection{GUI Fundamentals}
@@ -58,74 +60,75 @@ This hierachy is made up of Parameters and ParameterLists. Parameters can simply
 a program. A ParameterList is simply a collection of Parametes and other ParameterLists. When a ParameterList
 is part of another ParameterList we call it a sublist. Optika then uses these ParameterLists to dynamically
 generate a GUI which is used to obtain input from the user.
-		\begin{figure}
-			\centering
-			\begin{picture}(50,150)(0,0)
-				\put(10,0){\line(0,1){145}}
-				\put(0,150){${Parameter List}$}
-				\put(10,130){\line(1,0){15}}
-				\put(28,127){$Parameter$}
-				\put(10,110){\line(1,0){15}}
-				\put(28,107){$Parameter$}
-				\put(10,90){\line(1,0){15}}
-				\put(28,87){$Parameter$}
-				\put(10,70){\line(1,0){15}}
-				\put(28,67){$Parameter List$}
-				\put(38,0){\line(0,1){62}}
-				\put(38,47){\line(1,0){15}}
-				\put(56,44){$Parameter$}
-				\put(38,22){\line(1,0){15}}
-				\put(56,24){$Parameter$}
-			\end{picture}
-			\caption[GUI Layout]{The hierarchical layout of the GUI}
-			\label{paramlistFigure}
-		\end{figure}
-Parameters in Optika are typed. Parameters can be any one of the following types:
-  \begin{multicols}{2}
-		\begin{itemize}
-			\item int
-			\item short
-			\item float
-			\item double
-			\item string
-			\item boolean
-			\item arrays of int, short, double, and string
-		\end{itemize}
-	\end{multicols}
+\begin{figure}[h]
+  \centering
+  \begin{picture}(50,150)(0,0)
+    \put(10,0){\line(0,1){145}}
+    \put(0,150){${Parameter List}$}
+    \put(10,130){\line(1,0){15}}
+    \put(28,127){$Parameter$}
+    \put(10,110){\line(1,0){15}}
+    \put(28,107){$Parameter$}
+    \put(10,90){\line(1,0){15}}
+    \put(28,87){$Parameter$}
+    \put(10,70){\line(1,0){15}}
+    \put(28,67){$Parameter List$}
+    \put(38,0){\line(0,1){62}}
+    \put(38,47){\line(1,0){15}}
+    \put(56,44){$Parameter$}
+    \put(38,22){\line(1,0){15}}
+    \put(56,24){$Parameter$}
+  \end{picture}
+  \caption[GUI Layout]{The hierarchical layout of the GUI}
+  \label{paramlistFigure}
+\end{figure}
 
+\samepage{
+Parameters in Optika are typed. Parameters can be any one of the following types:
+	\begin{itemize}
+		\item int and short
+		\item float and double
+		\item string
+		\item boolean
+		\item arrays of int, short, double, and string
+	\end{itemize}
 When editing a parameter in Optika different ``widgets'' are used to change the parameters value. A widget is simply
 a graphical construct used for obtaining input from the user. For number types, a spin box (Figure~\ref{spinboxfig}) is used to obtain input. 
 If the valid values for a string type were specified (something that will be discussed later), a combo box (Figure~\ref{comboboxfig}) is used.
 Otherwise a line edit (Figure~\ref{lineeditfig}) is used to edit a string parameters. For booleans, a combo box (Figure~\ref{comboboxfig}) 
 is also be used. For arrays, a pop-up box containing numerous input widgets is used. The widget type is determined by the
 array type (e.g. for numerical types a series of spinboxes would be used, for string types comboxes or lineedits are used, etc.). 
-	\begin{figure}
-		\centering
-		\subfigure[A Spin Box]{
-			\label{spinboxfig}
-			\includegraphics[scale=0.5]{graphics/spinbox}
-		}
-		\subfigure[A Combo Box]{
-			\label{comboboxfig}
-			\includegraphics[scale=0.5]{graphics/combobox}
-		}
-		\subfigure[A Line Edit]{
-			\label{lineeditfig}
-			\includegraphics[scale=0.5]{graphics/lineedit}
-		}
-		\caption{Some of the various widgets used for editing data~\cite{QtGallery}}
-		\label{editingWidgets}
-	\end{figure}
-  \begin{figure}
-  \centering
-  \includegraphics[scale=0.5]{graphics/basic_example}
-  \caption[Basic GUI]{A basic Optika GUI}
-  \label{basicexample}
-  \end{figure} 
+}
+
+\begin{figure}[h]
+	\centering
+	\subfigure[A Spin Box]{
+		\label{spinboxfig}
+		\includegraphics[scale=0.5]{graphics/spinbox}
+	}
+	\subfigure[A Combo Box]{
+		\label{comboboxfig}
+		\includegraphics[scale=0.5]{graphics/combobox}
+	}
+	\subfigure[A Line Edit]{
+		\label{lineeditfig}
+		\includegraphics[scale=0.5]{graphics/lineedit}
+	}
+	\caption{Some of the various widgets used for editing data~\cite{QtGallery}}
+	\label{editingWidgets}
+\end{figure}
+
 When all put together a basic Optika GUI looks something like Figure~\ref{basicexample}.
 When the user clicks on a particular value, one of the above widgets pops up allowing them to edit the value.
 Once the user is finished entering input, they click the action button (labled ``Submit'' in Figure~\ref{basicexample}).
 The GUI then closes and the ParameterList used to help create the GUI now contains the input specified by the user.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{graphics/basic_example}
+\caption[Basic GUI]{A basic Optika GUI}
+\label{basicexample}
+\end{figure} 
 
 \subsection{Underlying Technologies}
 Optika is one of many packages in the Trilinos project~\cite{trilinos}, which is developed by Sandia National Labs. At it's core, 
@@ -304,7 +307,7 @@ to select any file he/she wants. Filename Validators can only be applied to para
   </Validators>
 </ParameterList>
 \end{lstlisting}
-Code listing~\ref{filenamevalidatorXML} shows an example of how to use a Filename Validator. Here we use it to select a file to output the results
+Code listing~\ref{filenameValidatorXML} shows an example of how to use a Filename Validator. Here we use it to select a file to output the results
 of our program. We set the ``fileMustExist'' xml attribute to false so that the user can select a file that doesn't already exist.
 
 \subsection{Array Validators}
@@ -663,49 +666,144 @@ If we wanted the length of the array to be based on something other then the dir
 be done by adding a $<$Function$>$ tag inside the $<$Dependency$>$ tag, just like we did in code listing~\ref{NumberVisXML2} for the Number Visual Dependency.
 
 \section{Coniditon Visual Dependencies}
-Up until this point, all Dependencies have had a single dependee. Condition Visual Dependencies are a special type of visual dependencies that allow the application developer to create visual dependencies 
-that have more than one dependee. This is accomplished by using ``Conditions''. Conditions allow you to test the state of multiple parameters and generate boolean value. If a condition evaluates to true
-then the dependent(s) of a Condition Visual Dependency will be shown. If the conditions evaluates to false, the dependent(s) will be hidden. Like the other Visual Dependencies, these evaluation consquences can
-be reversed using the ``showIf'' xml attribute.  Before discussing Condidional Visual Dependencies, well first look at the various types of conditions that are available in 
-Optika~\footnote{Conditions are actually found in the Teuchos Package but were developed with the intention of being used in Optika}.
+Up until this point, all Dependencies have had a single dependee. Condition Visual Dependencies are a special type of visual dependencies that allow the application developer to
+create visual dependencies that have more than one dependee. This is accomplished by using ``Conditions''. Conditions allow you to test the state of multiple parameters and 
+generate boolean value. If a condition evaluates to true then the dependent(s) of a Condition Visual Dependency will be shown. If the conditions evaluates to false, the 
+dependent(s) will be hidden. Like the other Visual Dependencies, these evaluation consquences can be reversed using the ``showIf'' xml attribute.  Before discussing Condidional 
+Visual Dependencies, well first look at the various types of conditions that are available in Optika~\footnote{Conditions are actually found in the Teuchos Package but were 
+developed with the intention of being used in Optika}.
 
 \subsection{Parameter Conditions}
-Parameter Conditions are the most basic types of conditions. They evaluate the state of a parameter and return either true or false. Similar to the ``showIf'' xml attribute in Number Visual Dependencies, 
-Parameter Conditions have an xml attribute called ``ifTrue''. If this value is set to false, the result of the condition's evaluation is switched (true becomes false and vice versa). If set to true, the 
-condition evaluates normally. If no ``ifTrue'' xml attribute is present, it is assumed to be set to true.
+Parameter Conditions are the most basic types of conditions. They return true or false based on the evaluation of a single parameter's state.
+
 \subsubsection{Number Parameter Conditions}
-Number Parameter Conditions evaluate the state of a number parameter. If the parameter's value is greater than or equal to zero, the condition evaluates to true. Otherwise, the conditions evaluates to false.
+Number Parameter Conditions evaluate the state of a number parameter. If the parameter's value is greater than or equal to zero, the condition evaluates to true. Otherwise, the 
+condition evaluates to false.  As with other number based entities in Optika, a function can be added to Number Conditions. The parameter's value will be run through the 
+function and then the return value of the function will be compared to zero.
+
+Code listing~\ref{simpleNumberCon} shows an example of a number condition to evaluate a parmeter with an id of 3. Like the other number based entities in Optika the number 
+type of the parameter to evaluate is specified as part of the type name for the condition, in this case int. We've added a $<$Function$>$ tag to this condition. The result is 
+that if the parameters value is greater than or equal to -5 the condidtion evaluate to true. Otherwise the condition evaluates to false.
 \begin{lstlisting}[caption={Example of a Number Parameter Condition}, label=simpleNumberCon]
-<Condition type="NumberCondition(int)" pa
+<Condition type="NumberCondition(int)" parameterId="3">
+  <Function operand="5" type="AdditionFunction"/>
+</Condition>
+\end{lstlisting}
 
 \subsubsection{String Parameter Conditions}
+String Parameter Conditions work by comparing a parameter's string string value to a list of given values. If the parameter's value equals one of the listed values, then the
+condition evaluates true. Otherwise, the condition evaluates to false. The parameter being tested must be of type string. You may list an aribitrary amount of values to 
+compare the parameters value against, including listing only a single value.
+
+Code listing~\ref{stringCon} shows an example of a String Parameter Condition. In it, the value of the parameter with an id of 2 is compared to the specified values of
+``option 1'', ``option 2'', and ``option 3''. If the value of the parameter equals any of these values, the condition will evaluate to true. Otherwise, the condition will
+evaluate to false.
+\begin{lstlisting}[caption={Example of a String Parameter Condition}, label=stringCon]
+<Condition type="StringCondition" parameterId="2">
+  <Values>
+    <String value="option 1"/> 
+    <String value="option 2"/> 
+    <String value="option 3"/> 
+  </Values>
+</Condition>
+\end{lstlisting}
 
 \subsubsection{Bool Parameter Conditions}
+A Bool Parameter is the simplest of all parameter conditions. It simply looks at a parameter's boolean value and returns that as the evaluation result. The parameter to be
+evaluated for a Bool Parameter Condition must obviously be of type bool. Code list~\ref{boolCon} shows an example of the Bool Parameter Condition. If the parameter with and id
+of 5 is currently set to true then the condition will evaluate to true, otherwise the condition will evaluate to false.
+\begin{lstlisting}[caption={Example of a Bool Parameter Condition}, label=boolCon]
+<Condition type="BoolCondition" parameterId="5"/>
+\end{lstlisting}
 
-\subsection{Bool Logic Conditons}
+\subsection{Boolean Logic Conditons}
+Boolean logic conditions are really what enable the use of multiple parameters as dependees. Given a group of conditions, a Boolean Logic Condition will return an evalutation 
+result by applying a boolean operator to each condition's evaluation result. The three types of Boolean Logic Conditions are:
+\begin{itemize}
+\item And Condition
+\item Or Condition
+\item Equals Condition
+\end{itemize}
+
+Code listing~\ref{andCon} shows an example of an And Condition. It works by evaluating the two other condition tags and ``anding'' their results together. The end result is a
+condition that only evaluates to true if both the Bool Condition and the Number Condition evaluate to true.
+\begin{lstlisting}[caption={Example of an And Condition}, label=andCon]
+<Condition type="AndCondition">
+  <Condition type="BoolCondition" parameterId="3"/>
+  <Condition type="NumberCondition(double)" parameterId="4"/>
+</Condition>
+\end{lstlisting}
 
 \subsection{Not Conditions}
+Not conditions allow the negation of single condition. If we modify the code in code listing~\ref{boolCon} to look like the code in code listing~\ref{notCon} we get a 
+condition that will only evaluate to true when both the Bool Condition that evaluates to true when the parameter is false and false when the parameter is true. 
+\begin{lstlisting}[caption={Example of a Not Condition}, label=notCon]
+<Condition type=NotCondition">
+  <Condition type="BoolCondition" parameterId="5"/>
+</Condition>
+\end{lstlisting}
 
 \subsection{Using Conditions With Dependencies}
+Code listing~\ref{conVisDep} shows an example of using conditions within the context of a Condition Visual Dependency.
+We use and Or Condition to ``or'' together the results of two Number Conditions. The end result is that ``Optional Parameter'' 
+will only be show if either of the Number Conditions evaluate to True. Notice that we still have to explicitly decalare
+the dependees.
+\begin{lstlisting}[caption{Example usage of a Condition Visual Dependency}, label=conVisDep]
+<ParameterList>
+  <Parameter name="Parameter A" type="int" value="3"
+    id="1"
+    docString="First parameter"/>
+  <Parameter name="Parameter B" type="int" value="8"
+    id="2"
+    docString="First parameter"/>
+  <Parameter name="Optional Parameter" type=string"
+    value="cheese"
+    id="3"
+    docString="optional parameter"/>
+  ...Other Parameters...
 
-\subsubsection{And Condition}
+  <Dependencies>
+    <Dependency type="ConditionVisualDependency">
+      <Dependee parameterId="1"/>
+      <Dependee parameterId="2"/>
+      <Dependent parameterId="3"/>
+      <Condition type="OrCondition">
+        <Condition type="NumberCondition(int)" 
+          parameterId="1"/>
+        <Condition type="NumberCondition(int)"
+          parameterId="1"/>
+      </Condition>
+    </Dependency>
+  </Dependencies>
 
-\subsubsection{Or Condition}
-
-\subsubsection{Equal Condition}
-
-\subsection{Not Condition}
-
-\subsection{Using A Condition Visual Dependency}
-
-
+</ParameterList>
+\end{lstlisting}
 
 \section{Other Features of Optika}
 \subsection{Custom Functions}
 In additition to the traditional work flow of just calling the getInput function, Optika also allows for the specification of ``custom functions.''
+When a custom function is specified, the GUI does not exit when the user clicks the action function. Instead, the specified function is run. This work flow allows developers 
+to create a program in which users can rapidly change parameters and see the results of those changes. The function specified must have the same signature as the function 
+in code listing~\ref{custSig}. The parameter list that is given in the arguement is the current values user has specified.
+\begin{lstlisting}[language=C++, caption={The signature all custom functions must have}, label=custSig]
+void customFunction(RCP<ParameterList> parmaeterList)
+\end{lstlisting}
 
 \subsection{Customizing Look And Feel}
-There are a number ways
+There are a number ways customize the look and feel of an Optika based GUI. All of them involve creating an Optika GUI object. Once the object is created a call to the
+exec function will start the GUI running. The following functions change the apperance of the GUI:
+\begin{description}
+\item[setWindowTitle(const std::string\& title)] This sets the title of the GUI window Optika generates.
+\item[setAboutInfo(const std::string\& aboutInfo)] When the user clicks on the about menu item, this information will be included.
+\item[setActionButtonText(const std::string\& text)] This sets the text that will be displayed in the action button.
+\item[setWindowIcon(const std::string\& filePath)] This function allows the developer to specify the file path of an image that will be used as the window icon for the 
+Optika GUI.
+\item[setStyleSheet(const std::string\& filePath)] This function allows the developer to specify a Qt Style Sheet\footnote{For more information on Qt Style Sheets, please 
+see~\cite{QtStyle}} that will be used to style the Optika generated GUI.
+\end{description}
+
+Code listing~\ref{lookGui} shows an example of using some of these functions. An Optika GUI object is 
+\begin{lstlisting}[caption={Example usage
 
 
 \section{Future Developement}
