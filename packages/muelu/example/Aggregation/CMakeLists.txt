@@ -41,3 +41,10 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   DEPLIBS muelu muelu-cthulhu
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  MyImportExportTest
+  SOURCES MyImportExportTest.cpp
+  COMM serial mpi
+  DEPLIBS muelu muelu-cthulhu
+  )

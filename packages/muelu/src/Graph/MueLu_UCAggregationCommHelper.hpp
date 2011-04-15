@@ -227,13 +227,13 @@ namespace MueLu {
         procWinner = Teuchos::null;
 
         //#define JG_DEBUG
-        //#ifdef JG_DEBUG
+#ifdef JG_DEBUG
         std::cout << MyPid << ": numMyWinners=" << numMyWinners << std::endl;
         std::cout << MyPid << ": myWinners" << myWinners << std::endl;
         for(int i=0;i<numMyWinners; i++)
           std::cout << MyPid << ": myWinners[locId=" << i << "] = " << myWinners[i] << std::endl;
 
-        //#endif
+#endif
 
         // Cthulhu::EpetraMap winnerMap(-1, numMyWinners, myWinners, 0, weight_.getMap()->getComm());    
         Cthulhu::global_size_t g = -1; //TODO for Tpetra -1 == ??
@@ -244,11 +244,11 @@ namespace MueLu {
    
         RCP<LOVector> justWinners = LOVectorFactory::Build(winnerMap);
 
-        //#ifdef JG_DEBUG
+#ifdef JG_DEBUG
         RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
         std::cout << MyPid << ": justWinners(Vector in)=" << *justWinners << std::endl;
         justWinners->describe(*out, Teuchos::VERB_EXTREME);
-        //#endif
+#endif
 
         RCP<const Import> winnerImport = ImportFactory::Build(weight_.getMap(), winnerMap);
         try
@@ -265,10 +265,10 @@ namespace MueLu {
         // all nonunique copies of the same Gid have the procWinner's
         // version of the companion.
         //#define JG_DEBUG
-        //#ifdef JG_DEBUG
+#ifdef JG_DEBUG
         std::cout << *winnerMap << std::endl;
         std::cout << *weight_.getMap() << std::endl;
-        //#endif
+#endif
 
         RCP<Import> pushWinners = ImportFactory::Build(winnerMap, weight_.getMap());
         try
