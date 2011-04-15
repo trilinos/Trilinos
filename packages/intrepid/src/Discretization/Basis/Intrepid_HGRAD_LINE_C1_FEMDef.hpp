@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_LINE_C1_FEMDEF_HPP
+#define INTREPID_HGRAD_LINE_C1_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -162,3 +164,4 @@ void Basis_HGRAD_LINE_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&       
 }
 
 }// namespace Intrepid
+#endif

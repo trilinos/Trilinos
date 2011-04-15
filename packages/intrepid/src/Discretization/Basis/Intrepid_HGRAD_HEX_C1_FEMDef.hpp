@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_HEX_C1_FEMDEF_HPP
+#define INTREPID_HGRAD_HEX_C1_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -31,8 +33,6 @@
     \brief  Definition file for bi-linear FEM basis functions for H(grad) functions on Hexahedron cells.
     \author Created by P. Bochev and D. Ridzal.
  */
-#ifndef INTREPID_HGRAD_HEX_C1_FEMDEF_HPP
-#define INTREPID_HGRAD_HEX_C1_FEMDEF_HPP
 
 namespace Intrepid {
 
@@ -309,3 +309,4 @@ void Basis_HGRAD_HEX_C1_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & Dof
 }// namespace Intrepid
 
 #endif
+

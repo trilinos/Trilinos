@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_TET_COMP12_FEMDEF_HPP
+#define INTREPID_HGRAD_TET_COMP12_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -657,3 +659,4 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetDetF() const
 
 
 }// namespace Intrepid
+#endif

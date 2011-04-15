@@ -1734,7 +1734,7 @@ namespace stk {
       */
 
       // FIXME
-#if !(defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
+      //#if !(defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
       m_basisTable[shards::getCellTopologyData<Line<2> >()-> key]          = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
       //m_basisTable[shards::getCellTopologyData<Line<3> >()-> key]          = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
 
@@ -1766,7 +1766,7 @@ namespace stk {
 
       m_basisTable[shards::getCellTopologyData<ShellQuadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
 
-#endif
+      //#endif
 
       // etc....
 
