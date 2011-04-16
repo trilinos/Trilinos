@@ -14,7 +14,6 @@
 // TODO: just testing that the test compiles and looks reasonable
 //   We need to test the validity of the values returned in check_traits.
 
-#include <vector>
 #include <ostream>
 #include <string>
 #include <algorithm>
@@ -28,10 +27,10 @@ void check_traits(T &val, T &compval)
 {
   typedef Z2::IdentifierTraits<T> id;
 
-  std::string s(id::key(val));
+  double k(id::key(val));
 
   std::cout << "ID type: " << id::name() << std::endl;
-  std::cout << "String hash key (unique): " << s << std::endl;
+  std::cout << "Hash key (unique): " << k << std::endl;
   std::cout << "Int hash code (non-unique): " << id::hashCode(val) << std::endl;
   std::cout << "Is Teuchos hash key type: " << id::isHashKeyType() << std::endl;
   std::cout << "Is Teuchos Global Ordinal: " << id::isGlobalOrdinalType() << std::endl;
@@ -39,7 +38,7 @@ void check_traits(T &val, T &compval)
   std::cout << "Equal to self: " << id::equal(val, val) << std::endl;
   std::cout << "Equal to other: " << id::equal(val, compval) << std::endl;
   std::cout << "Key to original ID produces original ID: ";
-    std::cout << id::equal(val, id::keyToGid(s)) << std::endl;
+    std::cout << id::equal(val, id::keyToGid(k)) << std::endl;
   std::cout << std::endl;
 }
 int main(int argc, char *argv[])
@@ -64,8 +63,6 @@ int main(int argc, char *argv[])
     long long int lli_other = 3102400000000;
     std::pair<int, int> pairVals(1024, 1024);
     std::pair<int, int> pairVals_other(1024, 11024);
-    std::vector<int> vecVals(10, 1024);
-    std::vector<int> vecVals_other(10, 11024);
 
     check_traits(c, c_other);
     check_traits(si, si_other);
@@ -75,7 +72,6 @@ int main(int argc, char *argv[])
     check_traits(lui, lui_other);
     check_traits(lli, lli_other);
     check_traits(pairVals, pairVals_other);
-    check_traits(vecVals, vecVals_other);
   }
 
   std::cout << "PASS" << std::endl;

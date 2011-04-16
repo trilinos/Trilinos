@@ -25,11 +25,12 @@
 //   Application supplies local IDs
 //   Application does not supply local IDs
 //
+// Returns 0 on success, 1 on failure.
 
-#include <vector>
 #include <string>
 #include <ostream>
 #include <iostream>
+#include <exception>
 #include <Teuchos_GlobalMPISession.hpp> // So we don't have to #ifdef HAVE_MPI
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -82,10 +83,16 @@ int main(int argc, char *argv[])
 
     // Template parameters: AppLID, AppGID, LNO, GNO
 
-    Z2::IdentifierMap<int, long, int, long> idmap(comm, gids, lids);
+    std::string problem("IdentifierMap<int, long, int, long>");
+    Z2::IdentifierMap<int, long, int, long> idmap;
+
+    try {
+      idmap.initialize(comm, gids, lids);
+    }
+    HANDLE_ZOLTAN2_LIBRARY_EXCEPTIONS(problem+":construction")
 
     if (idmap.gnosAreGids() != true){
-      std::cout << "FAIL" << std::endl;
+      std::cerr << problem << " gnosAreGids" << std::endl;
       return 1;
     }
 
@@ -94,11 +101,17 @@ int main(int argc, char *argv[])
 
     Teuchos::ArrayView<long> gidArray = gids.view(0, numLocalObjects);
 
-    idmap.gidTranslate(gidArray, gnoArray1, Z2::TRANSLATE_GID_TO_GNO);
+    try{
+      idmap.gidTranslate(gidArray, gnoArray1, Z2::TRANSLATE_GID_TO_GNO);
+    }
+    HANDLE_ZOLTAN2_LIBRARY_EXCEPTIONS(problem+":gidTranslate")
 
     Teuchos::ArrayView<int> lidArray = lids.view(0, numLocalObjects);
 
-    idmap.lidTranslate(lidArray, gnoArray2, Z2::TRANSLATE_LID_TO_GNO);
+    try{
+      idmap.lidTranslate(lidArray, gnoArray2, Z2::TRANSLATE_LID_TO_GNO);
+    }
+    HANDLE_ZOLTAN2_LIBRARY_EXCEPTIONS(problem+":lidTranslate")
 
     for (int i=0; i < numLocalObjects; i++){
       if (gnoArray1[i] != gnoArray2[i]){
@@ -111,51 +124,5 @@ int main(int argc, char *argv[])
     
   }
 
-#if 0
-
-  // Test local gno look up.
-
-  std::vector<gnoType> gnos(numLocalObjects);
-
-  idmap.gidTranslate(*gids, gnos);    // translate app gids to z2 gnos
-
-  show_result<appGlobalId, gnoType>(std::string("App GIDs -> Z2 GNOs"), 
-    *gids, gnos);
-
-  std::vector<gnoType> gnoQuery(10,0);
-
-  for (int i=0; i < 20; i+=2){
-    gnoQuery.push_back(gnos[i]);
-  }
-
-  std::vector<appGlobalId> gidsReturned;
-
-  idmap<int,long,int,long>.gidTranslate(gidsReturned, gnoQuery);// translate gnos to gids
-
-  //show_result<gnoType, appGlobalId>(std::string("Z2 gnos -> App gids"), 
-    //gnoQuery, gidsReturned);
-
-  // Test local gno/lid look up.
-
-  gnos.resize(0);
-
-  idmap.lidTranslate(*lids, gnos);    // translate app lids to z2 gnos
-
-  //show_result<appLocalId, gnoType>(std::string("App local IDs -> Z2 GNOs"), 
-    //*lids, gnos);
-
-  for (int i=0; i < 20; i+=2){
-    gnoQuery[i] = gnos[i];
-  }
-
-  std::vector<appLocalId> lidsReturned;
-  
-  idmap.lidTranslate(lidsReturned, gnoQuery);// translate gnos to app lids
-
-  //show_result<gnoType, appGlobalId>(
-   // std::string("Z2 GNOs -> Application local IDs"), 
-    //gnoQuery, lidsReturned);
-#endif
-
-  std::cout << "PASS" << std::endl;
+  return 0;
 }

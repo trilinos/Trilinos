@@ -62,11 +62,11 @@ private:
 
   // A hash table from application global ID key to our local index.
 
-  Teuchos::RCP<Teuchos::Hashtable<std::string, LNO> >  _gidHash;
+  Teuchos::RCP<Teuchos::Hashtable<double, LNO> >  _gidHash;
 
   // A hash table from application local ID key to our local index.
 
-  Teuchos::RCP<Teuchos::Hashtable<std::string, LNO> >  _lidHash;
+  Teuchos::RCP<Teuchos::Hashtable<double, LNO> >  _lidHash;
 
 
   typename Teuchos::Array<GNO>::size_type _globalNumberOfIds;
