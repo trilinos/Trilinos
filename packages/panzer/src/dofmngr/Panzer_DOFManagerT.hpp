@@ -245,50 +245,11 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
       patVector.push_back(f2p_itr->second);
    aggFieldPattern->buildPattern(patVector);
 
-   geomPattern_ = aggFieldPattern;
-
-   // get element blocks
-   std::vector<std::string> elementBlockIds;
-   connMngr_->getElementBlockIds(elementBlockIds);
-
    // setup connectivity mesh
    connMngr_->buildConnectivity(*aggFieldPattern);
-   patternNum_.resize(connMngr_->numElementBlocks()); 
-   std::vector<std::string>::const_iterator blockItr;
-   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
-      std::string blockId = *blockItr;
-      std::size_t blockIndex = blockIdToIndex(blockId);
 
-      // build the pattern
-      buildPattern(blockId,aggFieldPattern);
-
-      // figure out what IDs are active for this pattern
-      const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockId]->numFieldsPerId();
-      std::vector<int> activeIds;
-      for(std::size_t i=0;i<numFieldsPerID.size();i++)
-         if(numFieldsPerID[i]>0) 
-            activeIds.push_back(i);
-      std::vector<int> reduceConn(activeIds.size()); // which IDs to use
-   
-      // grab elements for this block
-      const std::vector<LocalOrdinal> & elements = connMngr_->getElementBlock(blockId);
-
-      // build graph for this block
-      matrixGraph_->initConnectivityBlock(blockIndex,elements.size(),patternNum_[blockIndex]);
-      for(std::size_t e=0;e<elements.size();e++) {
-         const GlobalOrdinal * conn = connMngr_->getConnectivity(elements[e]);
-         for(std::size_t i=0;i<activeIds.size();i++)
-            reduceConn[i] = conn[activeIds[i]];
- 
-         matrixGraph_->initConnectivity(blockIndex,elements[e],&reduceConn[0]);
-      }
-   }
-   matrixGraph_->initComplete();
-
-   // build owned map
-   std::vector<GlobalOrdinal> ownedIndices;
-   getOwnedIndices(ownedIndices);
-   ownedGIDHashTable_.insert(ownedIndices.begin(),ownedIndices.end());  
+   // using new geometric pattern, build global unknowns
+   buildGlobalUnknowns(aggFieldPattern);
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
