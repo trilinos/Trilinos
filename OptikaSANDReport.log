@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.11 (TeX Live 2010) (format=pdflatex 2010.7.21)  12 APR 2011 22:28
+This is pdfTeX, Version 3.1415926-1.40.11 (TeX Live 2010) (format=pdflatex 2010.7.21)  16 APR 2011 16:14
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -672,7 +672,7 @@ LaTeX Warning: Citation `Sand98-0730' on page 4 undefined on input line 7.
 
 ] (./OptikaNomenclature.tex
 
-LaTeX Warning: Citation `TeuchosPackage' on page 8 undefined on input line 19.
+LaTeX Warning: Citation `RCP' on page 8 undefined on input line 18.
 
 ) [8
 
@@ -691,15 +691,6 @@ LaTeX Warning: Citation `dakota' on page 9 undefined on input line 10.
 
 
 LaTeX Warning: Citation `tramonto' on page 9 undefined on input line 11.
-
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 14.
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.4> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 14.
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 14.
-
-LaTeX Warning: Citation `OptikaPackage' on page 9 undefined on input line 14.
 
 ) [9
 
@@ -723,49 +714,58 @@ ERIODIC, 2=REFLECT, 3=LAST_NODE)[]
  []
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Underfull \vbox (badness 7256) has occurred while \output is active []
 
  [11]
 
 LaTeX Warning: Reference `paramlistFigure' on page 12 undefined on input line 5
-6.
+7.
 
-[12]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
 LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <12> not available
-(Font)              Font shape `OMS/pzccm/m/n' tried instead on input line 86.
+(Font)              Font shape `OMS/pzccm/m/n' tried instead on input line 88.
+
+LaTeX Warning: Reference `spinboxfig' on page 12 undefined on input line 95.
 
 
-LaTeX Warning: Reference `spinboxfig' on page 13 undefined on input line 96.
+LaTeX Warning: Reference `comboboxfig' on page 12 undefined on input line 96.
 
 
-LaTeX Warning: Reference `comboboxfig' on page 13 undefined on input line 97.
+LaTeX Warning: Reference `lineeditfig' on page 12 undefined on input line 98.
 
 
-LaTeX Warning: Reference `lineeditfig' on page 13 undefined on input line 98.
+LaTeX Warning: Reference `comboboxfig' on page 12 undefined on input line 98.
 
-
-LaTeX Warning: Reference `comboboxfig' on page 13 undefined on input line 98.
-
-<graphics/spinbox.png, id=94, 216.81pt x 41.15375pt>
+<graphics/spinbox.png, id=82, 216.81pt x 41.15375pt>
 File: graphics/spinbox.png Graphic file (type png)
 
 <use graphics/spinbox.png>
-<graphics/combobox.png, id=96, 216.81pt x 39.14626pt>
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 108.
+
+<graphics/combobox.png, id=84, 216.81pt x 39.14626pt>
 File: graphics/combobox.png Graphic file (type png)
 
 <use graphics/combobox.png>
-<graphics/lineedit.png, id=97, 216.81pt x 41.15375pt>
+<graphics/lineedit.png, id=85, 216.81pt x 41.15375pt>
 File: graphics/lineedit.png Graphic file (type png)
 
 <use graphics/lineedit.png>
 
-LaTeX Warning: Citation `QtGallery' on page 13 undefined on input line 115.
+LaTeX Warning: Citation `QtGallery' on page 12 undefined on input line 117.
 
 
-LaTeX Warning: Citation `QtGallery' on page 13 undefined on input line 115.
+LaTeX Warning: Citation `QtGallery' on page 12 undefined on input line 117.
+
+[12]
+
+LaTeX Warning: Reference `basicexample' on page 13 undefined on input line 121.
 
 
-LaTeX Warning: Reference `basicexample' on page 13 undefined on input line 118.
+
+LaTeX Warning: Reference `basicexample' on page 13 undefined on input line 123.
 
 
 
@@ -775,18 +775,18 @@ See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.122 ...aphics[scale=0.5]{graphics/basic_example}
+l.128 ...aphics[scale=0.5]{graphics/basic_example}
                                                   
 ? X
  
 Here is how much of TeX's memory you used:
- 6586 strings out of 493747
- 98646 string characters out of 3143546
- 187033 words of memory out of 3000000
- 9663 multiletter control sequences out of 15000+200000
- 62609 words of font info for 117 fonts, out of 3000000 for 9000
+ 6559 strings out of 493747
+ 98259 string characters out of 3143546
+ 189033 words of memory out of 3000000
+ 9641 multiletter control sequences out of 15000+200000
+ 49643 words of font info for 94 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191
- 32i,9n,45p,251b,337s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 32i,9n,45p,251b,339s stack positions out of 5000i,500n,10000p,200000b,50000s
 {/usr/local/texlive/2010/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/tex
 live/2010/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/201
 0/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/2010/texmf
@@ -795,10 +795,10 @@ onts/type1/urw/ncntrsbk/uncb8a.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
 pe1/urw/ncntrsbk/uncr8a.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/urw
 /times/utmb8a.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/urw/times/utm
 r8a.pfb>
-Output written on OptikaSANDReport.pdf (12 pages, 120478 bytes).
+Output written on OptikaSANDReport.pdf (12 pages, 120221 bytes).
 PDF statistics:
- 131 PDF objects out of 1000 (max. 8388607)
- 98 compressed objects within 1 object stream
- 31 named destinations out of 1000 (max. 500000)
+ 128 PDF objects out of 1000 (max. 8388607)
+ 95 compressed objects within 1 object stream
+ 30 named destinations out of 1000 (max. 500000)
  26 words of extra memory for PDF output out of 10000 (max. 10000000)
 

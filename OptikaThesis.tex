@@ -4,7 +4,7 @@ To get a better understanding of the problem Optika is trying to solve, it is
 best to look at an example of said problem. Currently, the program Tramonto has
 a massive input file filled with complex, non-intuitive inputs. Figure
 \ref{tramontoInputFigure} is just small section of this input file.
-\begin{figure}[h]
+\begin{figure}
   \centering
   {\footnotesize
   \begin{verbatim}
@@ -19,13 +19,12 @@ a massive input file filled with complex, non-intuitive inputs. Figure
 @ 1 1 	Type_bc(x2,: back, front) 
   \end{verbatim}
   }
-  \caption[Tramonto Input]{An example of the complex input file used by Tramonto}
+  \caption[Tramonto Input]{A portion of the complex input file used by Tramonto}
   \label{tramontoInputFigure}
 \end{figure}
 
 This input file is hard to read and non-intutive, not to mention it could 
-easily intimidate
-a new user. In fact, Tramonto's current input system is so complicated, 
+easily intimidate a new user. In fact, Tramonto's current input system is so complicated, 
 that it is recommended most users simply take sample input files and just 
 modify them for their needs.
 
@@ -40,8 +39,8 @@ above, developers will be hesistent to use it.
 
 \subsubsection{Cross-Platform}
 Having a better user interface can lead to having a wider user base. When adding the functionality
-of a GUI to your application, you don't want to accidentally exclude some of your users by
-using a technology that won't work on their platform of choice. Cocao for example only works on
+of a GUI to your application, a developer doesn't want to accidentally exclude some of his/her users by
+using a technology that won't work on their user's platform of choice. Cocao for example only works on
 Mac OSX systems. By using Qt as it's underpinnings, Optika is able to work on a wide variety of
 platforms.
 
@@ -60,7 +59,7 @@ This hierachy is made up of Parameters and ParameterLists. Parameters can simply
 a program. A ParameterList is simply a collection of Parametes and other ParameterLists. When a ParameterList
 is part of another ParameterList we call it a sublist. Optika then uses these ParameterLists to dynamically
 generate a GUI which is used to obtain input from the user.
-\begin{figure}[h]
+\begin{figure}
   \centering
   \begin{picture}(50,150)(0,0)
     \put(10,0){\line(0,1){145}}
@@ -83,7 +82,6 @@ generate a GUI which is used to obtain input from the user.
   \label{paramlistFigure}
 \end{figure}
 
-\samepage{
 Parameters in Optika are typed. Parameters can be any one of the following types:
 	\begin{itemize}
 		\item int and short
@@ -94,13 +92,13 @@ Parameters in Optika are typed. Parameters can be any one of the following types
 	\end{itemize}
 When editing a parameter in Optika different ``widgets'' are used to change the parameters value. A widget is simply
 a graphical construct used for obtaining input from the user. For number types, a spin box (Figure~\ref{spinboxfig}) is used to obtain input. 
-If the valid values for a string type were specified (something that will be discussed later), a combo box (Figure~\ref{comboboxfig}) is used.
+If the valid values for a string type were specified (something that will be discussed later), a combo box (Figure~\ref{comboboxfig}) is used to obtain
+input for a string parameter.
 Otherwise a line edit (Figure~\ref{lineeditfig}) is used to edit a string parameters. For booleans, a combo box (Figure~\ref{comboboxfig}) 
 is also be used. For arrays, a pop-up box containing numerous input widgets is used. The widget type is determined by the
 array type (e.g. for numerical types a series of spinboxes would be used, for string types comboxes or lineedits are used, etc.). 
-}
 
-\begin{figure}[h]
+\begin{figure}
 	\centering
 	\subfigure[A Spin Box]{
 		\label{spinboxfig}
@@ -123,7 +121,7 @@ When the user clicks on a particular value, one of the above widgets pops up all
 Once the user is finished entering input, they click the action button (labled ``Submit'' in Figure~\ref{basicexample}).
 The GUI then closes and the ParameterList used to help create the GUI now contains the input specified by the user.
 
-\begin{figure}[h]
+\begin{figure}
 \centering
 \includegraphics[scale=0.5]{graphics/basic_example}
 \caption[Basic GUI]{A basic Optika GUI}
@@ -142,13 +140,13 @@ Qt was choosen as Optika's backing GUI framework for several
 reasons:
 	\begin{itemize}
 		\item It is cross-platform, allowing Optika to be used in many different computing environments.
-		\item It is mature and has a comprehensive set of development tools. So we don't have to worry about major bugs.
+		\item It is mature and has a comprehensive set of development tools. 
 		\item It has a rich feature-set, permiting Optika to grow in it's capbilities if necessary.
     \item It has a large user base.
 		\item It has been used by Sandia in the past.
 		\item The Optika lead developer was familiar with it.
 	\end{itemize}
-Because Trilinos is itself a library, relying on an additional third-party library can be a risky endevour. But
+Because Trilinos is itself a library, relying on an additional third-party library had the potential to be a risky endevour. But
 the qualities outlined above made using Qt a very easy choice. When choosing to use Qt we felt very confident that we 
 would be able to rely on it to be stable, and to provide us with the tools we needed.
 
@@ -163,18 +161,18 @@ In this paper, we will first start off with basic examples using C++ source code
 talking about the more complex features we'll switch over to XML.
 \subsection{Utilizing C++ to Create A GUI}
 Since Tramonto is so sorely lacking in a quality user interface, we'll use it as an example of how to use Optika.
-Let's look at the Dimenstion Control Parameters. These are just a few parameters used to define what kind of
-dimensions are going to be used in the rest of the input file. In code listing~\ref{basicTramonto} shows how we would create
+Let's look at the ``Dimenstion Control Parameters.'' These are just a few parameters used to define what kind of
+dimensions are going to be used in the rest of the input file. Code listing~\ref{basicTramonto} shows how we would create
 such a GUI.
 \lstinputlisting[language=C++, caption={Basic Tramonto Example}, label=basicTramonto]{basicTramonto/main.cpp}
 We start by including the Optika\_GUI.hpp file. This include file allows us to use most of Optika's basic functionality.
 Once in the main function we import several classes and functions into the namespace. We then create two
 ParameterList RCPs~\cite{RCP}. Using the sublist function, the second 
 ParameterList is defined as a sublist of the first. We provide them with the names ``Tramonto'' and
-``Dimension Control Parameters''. The next several lines are calls to the set function. Each call
+``Dimension Control Parameters''. The next several lines are calls to the ``set'' function. Each call
 adds a Parameter to the ParameterList along with assigning it a default value and a documentation string (the 
 documentation string is optional but highly encouraged). We then make
-the all important call to the getInput function. This takes the list of parameters we have created and dynamically
+the all important call to the ``getInput'' function. This takes the list of parameters we have created and dynamically
 generates a GUI which is then used to obtain input from the user. The end result is Figure~\ref{BasicTramontoScreenshot}.
 \begin{figure}
 \centering
@@ -184,7 +182,7 @@ generates a GUI which is then used to obtain input from the user. The end result
 \end{figure}
 
 \subsection{Utilizing XML to Create a GUI}
-Using XML to declare your input parameters has a number of advantages over declaring you input in C++ source code.
+Using XML to declare your input parameters has a number of advantages over declaring you inputs in C++ source code.
 \begin{itemize}
   \item XML is a lot cleaner than the corresponding C++. The source code approach can get pretty unruly, especially
   when some of the more advanced features of Optika are used.
@@ -195,7 +193,7 @@ If we redo the example we made in the previous section, but using XML, we end up
 Figure~\ref{basicTramontoXML}. The XML code is rather strait forward. As in the C++ code we specify the name of the
 parameter, it's default value, and a documentation string (the documentation xml attribute is optional, just like when using 
 C++). When using XML we need to explicitly specify the type
-of the parameter since this can't always be infered. Creating a ParameterList hierachy in XML is also arguable easier
+of the parameter since this can't always be infered from XML. Creating a ParameterList hierachy is also arguable easier
 in XML. ParameterLists just simply needed to be nested in one another.
 
 Once the XML file describing the input parameters has been created, the GUI is created by using a slightly different
@@ -225,7 +223,7 @@ These new validators were then placed in the Teuchos package.
 Validators are declared in a special section of the XML file. A special $<$Validators$>$ tag is declared as a direct child
 of the root $<$ParameterList$>$ tag. In this $<$Validators$>$ tag all validators are declared. Each validator must specify at
 least it's type and an ID using the $<$Validator$>$ tag. This ID can then be used anywhere in the rest of the XML file. 
-To apply the validator to a parameter, simply add the validatorID xml attribute to the $<$Parameter$>$ tag. The same validator 
+To apply the validator to a parameter, simply add the validatorId xml attribute to the $<$Parameter$>$ tag. The same validator 
 can be used on multiple parameters.
 
 \subsection{Enhanced Number Validators}
@@ -234,15 +232,15 @@ to specify minimum and maximum values for a numerical parameter. It also allows 
 ``step'' of a numerical parameter. The step of a numerical parameter is the amount by which the parameter's value
 will be increased or decreased when the user clicks the up and down arrows on the spinbox being used to edit
 the parameter's value. For non-integer numerical parameter's the Enhanced Number Validator also allows the
-developer to declar with what precision the parameter's value should be displayed.
+developer to declare with what precision the parameter's value should be displayed to the user.
 
-The XML Code in code listing~\ref{EnhancedNumberValidatorXML} shows an example of using an Enhanced Number Validator
+The XML in code listing~\ref{EnhancedNumberValidatorXML} shows an example of using an Enhanced Number Validator
 to validate a parameter of type double. In the example we set the minimum acceptable value to be 0 and the 
 maximum to be 10. The step is set to .5 so that the parameters value will change by .5 when the user clicks
 up or down in the spinbox being used to edit the parameter. We also set the precision to two decimal places.
 The validator is given the ID of 1 and applied thusly to the ``Double Parameter'' parameter using the validatorId
-xml attribute. Notice how the type xml attribute of the validator is set to ``EnhancedNumberValidator(double)''. If we 
-were validating a parameter of type into this xml attribute would be set to ``EnhancedNumberValidator(int)'', 
+xml attribute. Notice how the ``type'' xml attribute of the validator is set to ``EnhancedNumberValidator(double)''. If we 
+were validating a parameter of type int this xml attribute would be set to ``EnhancedNumberValidator(int)'', 
 for a float it would be ``EnhancedNumberValidator(float)'', etc. These types must match up or an error will
 occur.
 
@@ -267,7 +265,10 @@ String Validators are a simple yet powerful tool to restrict string input. Strin
 using some standard set of integer values to represent various settings for a parameter. The problem is a simple wrong 
 keystroke can cause big problems. By using a String Validator an application developer can ensure that a user 
 only selects a string value that is appropriate for a given parameter. 
-String Validators may only be used on parameters of stype std::string, otherwise an error will occur.
+String Validators may only be used on parameters of type std::string, otherwise an error will occur.
+
+Code listing~\ref{StringValidatorXML} shows how to use a String Validator. Children $<$String$>$ tags with a manditory ``value'' xml attribute specify which values are 
+valid.  In this example ``Option 1'', ``Option 2'', and ``Option 3'' will be the only values the user can select from the GUI.
 \begin{lstlisting}[caption={Example usage of a String Validator}, label=StringValidatorXML]
 <ParameterList>
   <Parameter name="String Parameter" value="Option 1" type="string" 
@@ -282,14 +283,15 @@ String Validators may only be used on parameters of stype std::string, otherwise
   </Validators>
 </ParameterList>
 \end{lstlisting}
-code listing~\ref{StringValidatorXML} shows how to use a String Validator. Children $<$String$>$ tags with a manditory ``value'' xml attribute specify which values are valid.
-In this example ``Option 1'', ``Option 2'', and ``Option 3'' will be the only values the user can select from the GUI.
 
 \subsection{Filename Validators}
 Filename Validators allow application developers to designate a string parameter as a filename. When applied to a parameter,
 any attempt to edit that parameter will result in the user being presented with a special file selector widget (Figure~\ref{fileSelectorWidget}). If the 
 ``fileMustExist'' xml attribute is set to true, the the user will only be able select files that already exist. Otherwise, the user will be able
 to select any file he/she wants. Filename Validators can only be applied to parameters of type string. 
+
+Code listing~\ref{filenameValidatorXML} shows an example of how to use a Filename Validator. Here we use it to select a file to output the results
+of our program. We set the ``fileMustExist'' xml attribute to false so that the user can select a file that doesn't already exist.
 \begin{figure}
 \centering
 \includegraphics[scale=0.5]{graphics/fileWidget}
@@ -307,20 +309,18 @@ to select any file he/she wants. Filename Validators can only be applied to para
   </Validators>
 </ParameterList>
 \end{lstlisting}
-Code listing~\ref{filenameValidatorXML} shows an example of how to use a Filename Validator. Here we use it to select a file to output the results
-of our program. We set the ``fileMustExist'' xml attribute to false so that the user can select a file that doesn't already exist.
 
 \subsection{Array Validators}
 Array Validators allow any of the above described Validators to be used on a array parameter. For example, we might want to use a
-String Validator on an array of strings. To do with we'd create and Array Validator with a ``prototype'' String Validator. The 
+String Validator on an array of strings. To do this we create and Array Validator with a ``prototype'' String Validator. The 
 ``prototype'' validator is just a term used to describe the validator the developer would like to be applied to each entry of an
 array. Prototype validators can be specified in one of two ways. First, the developer can code the validator as child of the array validator
 tag as in code listing~\ref{actualArrayValidatorXML}. In this case, the prototype validator does not need an ID. 
 Second, the developer can simply specify another validator as array validator's  prototype by using the
 ``prototypeId'' xml attribute as in code listing~\ref{protoAttributeArrayXML}. This second option allows you to reuse the prototype validator in other instances.
 
-When creating an ArrayValidator, the type xml attribute will include both the type of the prototype validator and the type of the array
-parameter. For instance, if we were using a prototype Filename Validator on a string parameter, the value of our type xml attribute would
+When creating an ArrayValidator, the ``type'' xml attribute will include both the type of the prototype validator and the type of the array
+parameter. For instance, if we were using a prototype Filename Validator on a string parameter, the value of our ``type'' xml attribute would
 be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of these types match up otherwise errors will occur.
 
 \begin{lstlisting}[caption={Example usage of an Array Validator in which the prototype validator is declared as a child of the array validator}, label=actualArrayValidatorXML]
@@ -363,7 +363,7 @@ be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of thes
 \section{Dependencies}
 Dependencies are the crown jewel of Optika~\footnote{Dependencies are actually found in the Teuchos package. However they were intentionally developed for use in Optika}.
 They allow application developers to express common dependenices that occur between
-parameters in their program. At their core dependencies allow a developer to say ``based on the state of parameter A, parameter be should
+parameters in their program. At their core, dependencies allow a developer to say ``based on the state of parameter A, parameter B should
 behave in a certain way.'' In this case, we would say parameter A is the ``dependee'' parameter and parameter B is the ``dependent'' parameter.
 All dependencies have at least one dependee and one dependent. When running the GUI, the algorithm for expressing dependencies is as follows:
 \begin{enumerate}
@@ -371,39 +371,41 @@ All dependencies have at least one dependee and one dependent. When running the 
 	\item The GUI queries the associated defined dependencies to see whether or not the parameter that changed has any dependents.
 	\item If the parameter does have dependents, the GUI requests a list of all the dependencies in which the changed
 	parameter is a dependee.
-	\item For each dependency, the evaluate function is called. The dependency makes any necessary changes to the dependent parameter
+	\item For each dependency, the evaluate function is called. The dependency makes any necessary changes to the dependent parameter(s)
 	and the GUI updates with the new data.
-	\item If any dependents now have invalid values, focus is given to them and the end-user is requested to change their value to
+	\item If any dependents now have invalid values, focus is given to them and the user is requested to change their value to
 	something more appropriate.
 \end{enumerate}
-Like validators, dependencies are declared in the XML using the $<$Dependencies$>$ tag that must be a direct child
+
+Like validators, dependencies are declared in XML using the $<$Dependencies$>$ tag. This tag must be a direct child
 of the root $<$ParameterList$>$ tag. Inside the $<$Dependencies$>$ tag each dependency is declared using the $<$Dependency$>$ tag. Within the
 $<$Dependency$>$ tag the xml attribute ``type'' is required in order to define the type of the dependency. Each $<$Dependency$>$ must have at least
 one $<$Dependee$>$ child tag and one $<$Dependent$>$ child tag. Each of these tags must have an xml attribute called ``parameterId'' which identifies
-their associated parameter.
+their associated parameter. A dependency must have an arbitrary number of dependents.
 
 \subsection{Visual Dependencies}
-Visual dependencies allow the application developer to show and hide parameters based on other paramters' values. This is useful in situations where
-when a parameter takes on a particular value, another parameter is no longer relevant. By hiding this now irrelevant parameter from the user the
-application developer can hopefully avoid some confusion. If we were to write these dependencies as a sentance they would say: ``Based on
+Visual Dependencies allow the application developer to show and hide parameters based on other paramters' values. This is useful in situations
+when a parameter takes on a particular value and as a result another parameter is no longer relevant. By hiding this now irrelevant parameter from the user the
+application developer can hopefully avoid some confusion on the user's part. If we were to write these dependencies as a sentance they would say: ``Based on
 the value of the dependee parameter show or hide the dependent parameter(s)''.
 
-Visual dependencies have an extra boolean xml attribute that can be put in the $<$Dependency$>$ tag called ``showIf''. What ever dependee is being tested to 
+Visual Dependencies have an extra boolean xml attribute that can be put in the $<$Dependency$>$ tag called ``showIf''. What ever dependee is being tested to 
 determine the dependents visibility, showIf can negate it by being set to false. So if a visual dependency is set to only show a dependent when the
 dependee has a parituclar value, setting showIf to false will cause the dependent to be visible only when the dependee \emph{does not} have a particular
-value. If the showIf attribute is not present, it is assumed to be true. All visual dependencies may have an aribitray number of dependents of any type.
+value. If the showIf attribute is not present, it is assumed to be true. All Visual Dependencies may have an aribitray number of dependents of any type.
 Dependents can also be parameter lists.
 
 \subsubsection{String Visual Dependencies}
 String Visual Dependencies allow an application developer to base whether or not a parameter is visible on the particular string value of another
-parameter. For instance, we might say if parameter A is equal to the value ``Swiss Cheese'' or ``Cheedar Cheese''the show parameter B. Otherwise, do not 
-show parameter B. Code listing~\ref{StringVisXML} demonstrates how we would express this in XML.  If in code listing~\ref{StringVisXML} we set the showIf xml attribute to false then the ``How much do you like that cheese?'' parameter will only be showed when ``Favorite Food'' \emph{does not} equal ``Swiss'' or ``Cheddar''.
-String Visual dependencies must have a single dependee of type string. 
+parameter. For instance, we might say if the ``Favorite Food'' parameter  is equal to the value ``Cheedar Cheese'' or ``Swiss Cheese'' then show parameter ``Cheese Rating''. 
+Otherwise, do not show parameter ``Cheese Rating''. Code listing~\ref{StringVisXML} demonstrates how we would express this in XML. The 
+``Cheese Rating'' parameter will only be shown when ''Favorite Food'' is set to ``Cheedar Cheese'' or ``Swiss Cheese''. String Visual dependencies must have a single 
+dependee of type string. 
 \begin{lstlisting}[caption={Example usage of a String Visual Dependency}, label=StringVisXML]
 <ParameterList>
   <Parameter name="Favorite Food" type="string" value="pasta"
     id="1" docString="Your favorite food."/>
-  <Parameter name="Rate the cheese please" type="int" value="5"
+  <Parameter name="Cheese rating" type="int" value="5"
     docString="A rating of cheese" id="2"
     ...Other Parameters ....
   <Dependencies>
@@ -412,8 +414,8 @@ String Visual dependencies must have a single dependee of type string.
       <Dependee parameterId="1"/>
       <Dependent parameterId="2"/>
       <StringValues>
-        <String value="Swiss"/>
-        <String value="Cheddar"/>
+        <String value="Swiss Cheese"/>
+        <String value="Cheddar Cheese"/>
       </StringValues>
     </Dependency>
 
@@ -423,9 +425,8 @@ String Visual dependencies must have a single dependee of type string.
 
 \subsubsection{Bool Visual Dependencies}
 Bool Visual Dependencies allow the developer to base the visibility of a parameter on the boolean value of another parameter. For instance, we might say
-if parameter A is set to true then we want to show parameter list B. Code listing~\ref{BoolVisXML} shows how a developer would implement this in XML. If the
-showIf xml attribute were set to false then the ``Special Parameters'' parameter list would only be shown when ``Use special parameters'' was set to false.
-Bool Visual Dependencies must have a single depenedee of type bool.
+if parameter A is set to true then we want to show parameter list B. Code listing~\ref{BoolVisXML} shows how a developer would implement this in XML. The
+``Special Parameter'' will only be shown when ``Use special parameters'' is set to true. Bool Visual Dependencies must have a single depenedee of type bool.
 \begin{lstlisting}[caption={Example usage of a Bool Visual Dependency}, label=BoolVisXML]
 <ParameterList>
   <Parameter name="Use special parameters" type="bool" value="true"
@@ -447,9 +448,9 @@ Bool Visual Dependencies must have a single depenedee of type bool.
 
 \subsubsection{Number Visual Dependencies}
 Number Visual Dependencies allow the developer to base the visibility of a parmeter on the numerical value of another parameter. In their simpliest form
-Number Visual Dependencies simply check to see if the dependees value is greater then or equal to zero. If the value is greater than or equals to zero the
-dependent(s) will be shown. Otherwise, the dependents will be hidden. If the showIf xml attribute value is set to false, then the visibility results will
-be the opposite. Code listing~\ref{NumberVisXML1} shows basic usage of a number visual dependency. Unless the ``Temperature'' parameter is below zero degrees
+Number Visual Dependencies simply check to see if the dependee's value is greater then or equal to zero. If the value is greater than or equal to zero the
+dependent(s) will be shown. Otherwise, the dependents will be hidden.
+Code listing~\ref{NumberVisXML1} shows basic usage of a Number Visual Dependency. Unless the ``Temperature'' parameter is below zero degrees
 celsius then we can't have any ice cubes in the room. We do this by setting the showIf xml attribute to false so that ``Number of ice cubes'' only shows
 when the ``Temperature'' parameter is below zero.
 \begin{lstlisting}[caption={Example usage of a Number Visual Dependency}, label=NumberVisXML1]
@@ -471,15 +472,16 @@ when the ``Temperature'' parameter is below zero.
   </Dependencies>
 </ParameterList>
 \end{lstlisting}
+
 Notice in code listing~\ref{NumberVisXML1} that like Enhanced Number Validators, the type value of a Number Visual Dependency has to include the type of the
-parameter it's evaluating (in this case a double). Number visual dependencies may have only one dependee. The type of that dependee must match up with the
+parameter it's evaluating (in this case a double). Number Visual Dependencies may have only one dependee. The type of that dependee must match up with the
 type specified in the type xml attribute used in the Number Visual Dependency tag.
 
 Sometimes it is necessary to test a number typed parameter using criteria other than whether or not it's current value is greater than or equal to zero.
 This can be accomplished by using a $<$Function$>$ tag. A $<$Function$>$ tag instructs the dependency to run the value of the dependee through a funciton
 first, and then test the result of that function to see if it is greater than or equal to zero. Consider the example in code listing~\ref{NumberVisXML1}, only this
 time let's say our temperature is in degrees farenheit. In order to get the proper functionality, we'll add a ``subtraction function'' to the dependency that will
-subtract 32 from the value of the temperature parameter before it is tested against zero. code listing~\ref{NumberVisXML2} shows an example of this. We set the operand 
+subtract 32 from the value of the temperature parameter before it is tested against zero. Code listing~\ref{NumberVisXML2} shows an example of this. We set the operand 
 xml attribute to 32 and the type of the function to ``SubtrationFunction(double)''\footnote{For a complete list of available funcitons see Appendix~\ref{sec:funcs}}
  since we want to use a subtraction function on a parameter of type double.
 \begin{lstlisting}[caption={Example usage of a Number Visual Dependency using a function}, label=NumberVisXML2]
@@ -526,7 +528,7 @@ Code listing~\ref{StringValiDepXML} shows an example of how to use a String Vali
 and ``Freezer Temperature''. If ``Temperature Scale'' is set to Farenheit we want to restrict the values on ``Freezer Temperature'' to 0 through 50. But
 if ``Temperature Scale'' is set to Celsius, we want to use a validator with the corresponding celsius values for 0 and 50. If the user enters something else
 for ``Temperature Scale'' we'll just default to using the Farenheit validator.  Note that we could improve this example by putting a string validator on 
-the temperature scale parameter, restricting it's values to Celsius and Farenheit.  This would effectively eliminate the need for us to specify a default 
+the ``Temperature Scale'' parameter, restricting it's values to Celsius and Farenheit.  This would effectively eliminate the need for us to specify a default 
 validator.
 \begin{lstlisting}[caption={Example usage of a String Validator Dependency}, label=StringValiDepXML]
 <ParameterList>
@@ -559,20 +561,21 @@ validator.
 \subsubsection{Range Validator Dependency}
 Range Validator Dependencies work very similarliy to String Validator Dependencies in that they map validators to specific dependee values. However,
 instead of mapping string values to validators, Range Validator Dependencies map ranges of numbers to validators. If the dependee's value falls within one of the 
-mapped ranges, then that range's associated validator is applied to the dependent(s). A range is specified by defining it's minimum (inclusive) and it's maximum (exclusive).
-Also like String Validator Dependencies, a default validator can be specified. If the dependees value does not fall with in one of the mapped ranges the default validator is 
-then used. A Range Validator Dependency must conform to the following constraints:
+mapped ranges, then that range's associated validator is applied to the dependent(s). A range is specified by defining it's minimum (inclusive) and it's maximum (exclusive) 
+values. Also like String Validator Dependencies, a default validator can be specified. If the dependees value does not fall with in one of the mapped ranges the default 
+validator is used. A Range Validator Dependency must conform to the following constraints:
 \begin{itemize}
-\item The dependee must be a number type.
-\item All of the validators used specified in the mapping must be of the same type.
-\item If specified, the default validator must be of the same type as the validators specified in the map.
-\item The validators specified in the map must be appropriate for the type of the dependent(s).
+\item The dependee must be a number type
+\item All of the validators used specified in the mapping must be of the same type
+\item If specified, the default validator must be of the same type as the validators specified in the map
+\item The validators specified in the map must be appropriate for the type of the dependent(s)
+\item Ranges can not intersect
 \end{itemize}
 
-Code listing~\ref{RangeValiDepXML} shows and example of a Range Validator Dependency. In it, we want to use different validators
+Code listing~\ref{RangeValiDepXML} shows an example of a Range Validator Dependency. In it, we want to use different validators
 on the ``Fondue Food'' if the Fondue Pot Temperature is different. If the temperature is greater than or equal to 80 or less than 120,
 we only want the user to be able to select ``Cheese'' or ``Bread''. If it's greater than or equal to 120 but less than 180, we only want the
-user to be able to pick ``Chicken'' or ``Beef''. We associated these ranges with their appropriate values in the $<$RangesAndValidators$>$ by
+user to be able to pick ``Chicken'' or ``Beef''. We associated these ranges with their appropriate values in the $<$RangesAndValidators$>$ tag by
 using $<$Pair$>$ tags for each range and validator. Notice that like Enhanced Number Validators and Number Visual Dependencies, the type of the dependee parameter is 
 included in the type xml attribute of the dependency. In code listing~\ref{RangeValiDepXML} the dependee's type is double so the type of the dependency is 
 ``RangeValidatorDependency(double)''.
@@ -643,8 +646,8 @@ Dependencies must have a dependee with an integer type and the dependent(s) must
 used for the length of the dependent array parameter(s). 
 
 Code listing~\ref{ArrayLengthXML} shows an example of an Number Array Length Dependency. When the ``Number of buckets'' parameter changes, the array in the ``Amount
-in each bucket'' shrinks and expands accordingly. Note how in the type xml attribute for the dependency we had to specify both the type of the dependee and the
-dependent. Are you starting to notice a theme?
+in each bucket'' shrinks and expands accordingly. Note how in the ``type'' xml attribute for the dependency we had to specify both the type of the dependee and the
+dependent. Are you starting to notice a pattern?
 \begin{lstlisting}[caption={Example usage of a Number Array Length Dependency}, label=ArrayLengthXML]
 <ParameterList>
   <Parameter name="Number of buckets" type="int"
@@ -667,21 +670,21 @@ be done by adding a $<$Function$>$ tag inside the $<$Dependency$>$ tag, just lik
 
 \section{Coniditon Visual Dependencies}
 Up until this point, all Dependencies have had a single dependee. Condition Visual Dependencies are a special type of visual dependencies that allow the application developer to
-create visual dependencies that have more than one dependee. This is accomplished by using ``Conditions''. Conditions allow you to test the state of multiple parameters and 
-generate boolean value. If a condition evaluates to true then the dependent(s) of a Condition Visual Dependency will be shown. If the conditions evaluates to false, the 
-dependent(s) will be hidden. Like the other Visual Dependencies, these evaluation consquences can be reversed using the ``showIf'' xml attribute.  Before discussing Condidional 
-Visual Dependencies, well first look at the various types of conditions that are available in Optika~\footnote{Conditions are actually found in the Teuchos Package but were 
-developed with the intention of being used in Optika}.
+create visual dependencies that have more than one dependee. This is accomplished by using ``Conditions''. Conditions allow the developer to test the state of multiple 
+parameters and generate a boolean value. If a condition evaluates to true then the dependent(s) of a Condition Visual Dependency will be shown. If the condition evaluates to 
+false, the dependent(s) will be hidden. Like the other Visual Dependencies, these evaluation consquences can be reversed using the ``showIf'' xml attribute.  Before discussing 
+Condidional Visual Dependencies, we'll first look at the various types of conditions that are available in Optika~\footnote{Conditions are actually found in the Teuchos Package 
+but were developed with the intention of being used in Optika}.
 
 \subsection{Parameter Conditions}
 Parameter Conditions are the most basic types of conditions. They return true or false based on the evaluation of a single parameter's state.
 
 \subsubsection{Number Parameter Conditions}
 Number Parameter Conditions evaluate the state of a number parameter. If the parameter's value is greater than or equal to zero, the condition evaluates to true. Otherwise, the 
-condition evaluates to false.  As with other number based entities in Optika, a function can be added to Number Conditions. The parameter's value will be run through the 
+condition evaluates to false. As with other number based entities in Optika, a function can be added to Number Conditions. The parameter's value will be run through the 
 function and then the return value of the function will be compared to zero.
 
-Code listing~\ref{simpleNumberCon} shows an example of a number condition to evaluate a parmeter with an id of 3. Like the other number based entities in Optika the number 
+Code listing~\ref{simpleNumberCon} shows an example of a number condition used to evaluate a parmeter with an id of 3. Like the other number based entities in Optika the number 
 type of the parameter to evaluate is specified as part of the type name for the condition, in this case int. We've added a $<$Function$>$ tag to this condition. The result is 
 that if the parameters value is greater than or equal to -5 the condidtion evaluate to true. Otherwise the condition evaluates to false.
 \begin{lstlisting}[caption={Example of a Number Parameter Condition}, label=simpleNumberCon]
@@ -693,7 +696,7 @@ that if the parameters value is greater than or equal to -5 the condidtion evalu
 \subsubsection{String Parameter Conditions}
 String Parameter Conditions work by comparing a parameter's string string value to a list of given values. If the parameter's value equals one of the listed values, then the
 condition evaluates true. Otherwise, the condition evaluates to false. The parameter being tested must be of type string. You may list an aribitrary amount of values to 
-compare the parameters value against, including listing only a single value.
+compare the parameter's value against, including listing only a single value.
 
 Code listing~\ref{stringCon} shows an example of a String Parameter Condition. In it, the value of the parameter with an id of 2 is compared to the specified values of
 ``option 1'', ``option 2'', and ``option 3''. If the value of the parameter equals any of these values, the condition will evaluate to true. Otherwise, the condition will
@@ -710,7 +713,7 @@ evaluate to false.
 
 \subsubsection{Bool Parameter Conditions}
 A Bool Parameter is the simplest of all parameter conditions. It simply looks at a parameter's boolean value and returns that as the evaluation result. The parameter to be
-evaluated for a Bool Parameter Condition must obviously be of type bool. Code list~\ref{boolCon} shows an example of the Bool Parameter Condition. If the parameter with and id
+evaluated for a Bool Parameter Condition must obviously be of type bool. Code list~\ref{boolCon} shows an example of the Bool Parameter Condition. If the parameter with an id
 of 5 is currently set to true then the condition will evaluate to true, otherwise the condition will evaluate to false.
 \begin{lstlisting}[caption={Example of a Bool Parameter Condition}, label=boolCon]
 <Condition type="BoolCondition" parameterId="5"/>
@@ -726,7 +729,8 @@ result by applying a boolean operator to each condition's evaluation result. The
 \end{itemize}
 
 Code listing~\ref{andCon} shows an example of an And Condition. It works by evaluating the two other condition tags and ``anding'' their results together. The end result is a
-condition that only evaluates to true if both the Bool Condition and the Number Condition evaluate to true.
+condition that only evaluates to true if both the Bool Condition and the Number Condition evaluate to true. In this example we only ``and'' together two conditions. That said,
+and arbirtrary amount of conditions can have a Boolean Logic Condition applied to them.
 \begin{lstlisting}[caption={Example of an And Condition}, label=andCon]
 <Condition type="AndCondition">
   <Condition type="BoolCondition" parameterId="3"/>
@@ -736,7 +740,7 @@ condition that only evaluates to true if both the Bool Condition and the Number 
 
 \subsection{Not Conditions}
 Not conditions allow the negation of single condition. If we modify the code in code listing~\ref{boolCon} to look like the code in code listing~\ref{notCon} we get a 
-condition that will only evaluate to true when both the Bool Condition that evaluates to true when the parameter is false and false when the parameter is true. 
+condition that will only evaluate to true when the boolean parameter with an id of 5 is false and vice versa. 
 \begin{lstlisting}[caption={Example of a Not Condition}, label=notCon]
 <Condition type=NotCondition">
   <Condition type="BoolCondition" parameterId="5"/>
@@ -745,9 +749,9 @@ condition that will only evaluate to true when both the Bool Condition that eval
 
 \subsection{Using Conditions With Dependencies}
 Code listing~\ref{conVisDep} shows an example of using conditions within the context of a Condition Visual Dependency.
-We use and Or Condition to ``or'' together the results of two Number Conditions. The end result is that ``Optional Parameter'' 
-will only be show if either of the Number Conditions evaluate to True. Notice that we still have to explicitly decalare
-the dependees.
+We use an Or Condition to ``or'' together the results of two Number Conditions. The end result is that ``Optional Parameter'' 
+will only be show if either of the Number Conditions evaluate to true. Notice that we still have to explicitly decalare
+the dependees of the Dependency.
 \begin{lstlisting}[caption={Example usage of a Condition Visual Dependency}, label=conVisDep]
 <ParameterList>
   <Parameter name="Parameter A" type="int" value="3"
@@ -784,7 +788,8 @@ the dependees.
 In additition to the traditional work flow of just calling the getInput function, Optika also allows for the specification of ``custom functions.''
 When a custom function is specified, the GUI does not exit when the user clicks the action function. Instead, the specified function is run. This work flow allows developers 
 to create a program in which users can rapidly change parameters and see the results of those changes. The function specified must have the same signature as the function 
-in code listing~\ref{custSig}. The parameter list that is given in the arguement is the current values user has specified.
+in code listing~\ref{custSig}. The parameter list that is given in the arguement is the current values user has specified. To use a custom function, pass a pointer to the
+function when calling the getInput Optika funciton.
 \begin{lstlisting}[language=C++, caption={The signature all custom functions must have}, label=custSig]
 void customFunction(RCP<ParameterList> parmaeterList)
 \end{lstlisting}
@@ -827,10 +832,11 @@ int main(int argc, char* argv[]){
 
 \section{Future Developement}
 Developement is largely user driven. A small user base for Optika has developed at Sandia National Labratories. One of their requests is the ability to get user input in the 
-form of two-dimensional arrays. This will also include the need to develope any appropriate dependencies. Hopefully with future expansion of this current user base Optika will
-get other feature requests so we can continue to improve it.
+form of two-dimensional arrays. This will also include the need to develope any appropriate dependencies. Also, some Sandia scientists have suggested that a stand-alone version 
+of Optika used to simply configure parameter lists would be very useful. 
 
 \section{Contributions}
 The initial task for creating a GUI solution for Trilinos was purposed by Dr. Michael Heroux of Sandia National Labratories. All code for Optika was written by Kurtis Nusbaum, 
-including the algorithm for evaluating dependencies. Roscoe Bartlett of Sandia National Labs helped design the mechanisms by which Optika interpurts XML. The Trilinos
-mailing lists were also great sources of information for questions involving integration with the Trilinos Framework and the Teuchos pacakges.
+including the algorithm for evaluating dependencies. Roscoe Bartlett of Sandia National Labs helped design the mechanisms by which Optika interpurts XML. Jim Willenbring
+provided assistence with integrating Optika into the Trilinos Framework. The Trilinos mailing lists were also great sources of information for questions involving integration 
+with the Trilinos Framework and the Teuchos pacakges.
