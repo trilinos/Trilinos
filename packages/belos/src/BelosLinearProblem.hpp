@@ -235,7 +235,7 @@ namespace Belos {
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */	
-    Teuchos::RCP<MV> getCurrRHSVec();
+    Teuchos::RCP<const MV> getCurrRHSVec();
     
     //! Get a pointer to the left preconditioning operator.
     Teuchos::RCP<const OP> getLeftPrec() const { return(LP_); };
@@ -368,7 +368,7 @@ namespace Belos {
     Teuchos::RCP<const MV> B_;
     
     //! Current right-hand side of the linear system.
-    Teuchos::RCP<MV> curB_;
+    Teuchos::RCP<const MV> curB_;
     
     //! Initial residual of the linear system.
     Teuchos::RCP<MV> R0_;
@@ -523,12 +523,13 @@ namespace Belos {
       // Fill the RHS with random vectors LHS with zero vectors.
       curX_ = MVT::Clone( *X_, blocksize_ );
       MVT::MvInit(*curX_);
-      curB_ = MVT::Clone( *B_, blocksize_ );
-      MVT::MvRandom(*curB_);
+      Teuchos::RCP<MV> tmpCurB = MVT::Clone( *B_, blocksize_ );
+      MVT::MvRandom(*tmpCurB);
       //
       // Now put in the part of B into curB 
       Teuchos::RCP<const MV> tptr = MVT::CloneView( *B_, vldIndex );
-      MVT::SetBlock( *tptr, newIndex, *curB_ );
+      MVT::SetBlock( *tptr, newIndex, *tmpCurB );
+      curB_ = tmpCurB;
       //
       // Now put in the part of X into curX
       tptr = MVT::CloneView( *X_, vldIndex );
@@ -538,16 +539,7 @@ namespace Belos {
     }
     else {
       curX_ = MVT::CloneViewNonConst( *X_, rhsIndex_ );
-      // FIXME (mfh 21 Feb 2011) This is absolutely NO reason curB_
-      // should be a nonconst MV.  I can see what the authors of this
-      // code meant -- they wanted to cover the case above, where
-      // curB_ is a freshly allocated multivector, some of whose
-      // columns get filled with random data.  However, the right
-      // thing to do would be to allocate a nonconst MV of a different
-      // name, copy the appropriate columns of B_ there and fill the
-      // rest with random data, then make curB_ a nonconst view of
-      // that nonconst MV.
-      curB_ = Teuchos::rcp_const_cast<MV>(MVT::CloneView( *B_, rhsIndex_ ));
+      curB_ = MVT::CloneView( *B_, rhsIndex_ );
     }
     //
     // Increment the number of linear systems that have been loaded into this object.
@@ -685,14 +677,14 @@ namespace Belos {
     solutionUpdated_ = false;
     
     // Compute the initial residuals.
-    if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
-      R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+    if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *B_ )) {
+      R0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
     }
     computeCurrResVec( &*R0_, &*X_, &*B_ );
 
     if (LP_!=Teuchos::null) {
-      if (PR0_==Teuchos::null || MVT::GetNumberVecs( *PR0_ )!=MVT::GetNumberVecs( *X_ )) {
-        PR0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+      if (PR0_==Teuchos::null || MVT::GetNumberVecs( *PR0_ )!=MVT::GetNumberVecs( *B_ )) {
+        PR0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
       }
       {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -724,7 +716,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  Teuchos::RCP<MV> LinearProblem<ScalarType,MV,OP>::getCurrRHSVec()
+  Teuchos::RCP<const MV> LinearProblem<ScalarType,MV,OP>::getCurrRHSVec()
   {
     if (isSet_) {
       return curB_;
@@ -861,7 +853,7 @@ namespace Belos {
 	{
 	  if (LP_!=Teuchos::null)
 	    {
-	      Teuchos::RCP<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
+	      Teuchos::RCP<MV> R_temp = MVT::Clone( *B, MVT::GetNumberVecs( *B ) );
               {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
                 Teuchos::TimeMonitor OpTimer(*timerOp_);
@@ -902,7 +894,7 @@ namespace Belos {
 	
 	if (LP_!=Teuchos::null)
 	  {
-	    Teuchos::RCP<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
+	    Teuchos::RCP<MV> R_temp = MVT::Clone( *localB, MVT::GetNumberVecs( *localB ) );
             {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor OpTimer(*timerOp_);

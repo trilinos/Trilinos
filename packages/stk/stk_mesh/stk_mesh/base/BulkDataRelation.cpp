@@ -130,8 +130,15 @@ void BulkData::declare_relation( Entity & e_from ,
                                  const RelationIdentifier local_id )
 {
   TraceIfWatching("stk::mesh::BulkData::declare_relation", LOG_ENTITY, e_from.key());
+  TraceIfWatchingDec("stk::mesh::BulkData::declare_relation", LOG_ENTITY, e_to.key(), 1);
   DiagIfWatching(LOG_ENTITY, e_from.key(),
-                 "to: " << print_entity_key(e_to) << ", " << local_id);
+                 "from: " << e_from << ";  " <<
+                 "to: " << e_to << ";  " <<
+                 "id: " << local_id);
+  DiagIfWatching(LOG_ENTITY, e_to.key(),
+                 "from: " << e_from << ";  " <<
+                 "to: " << e_to << ";  " <<
+                 "id: " << local_id);
 
   require_ok_to_modify();
 
@@ -185,8 +192,15 @@ void BulkData::destroy_relation( Entity & e_from ,
                                  const RelationIdentifier local_id )
 {
   TraceIfWatching("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, e_from.key());
+  TraceIfWatchingDec("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, e_to.key(), 1);
+  DiagIfWatching(LOG_ENTITY, e_from.key(),
+                 "from: " << e_from << ";  " <<
+                 "to: " << e_to << ";  " <<
+                 "id: " << local_id);
   DiagIfWatching(LOG_ENTITY, e_to.key(),
-                 "from: " << print_entity_key(e_from) << ", " << local_id);
+                 "from: " << e_from << ";  " <<
+                 "to: " << e_to << ";  " <<
+                 "id: " << local_id);
 
   require_ok_to_modify();
 
@@ -259,7 +273,11 @@ void BulkData::internal_propagate_part_changes(
   Entity           & entity ,
   const PartVector & removed )
 {
-  Trace_("stk::mesh::BulkData::internal_propagate_part_changes");
+  TraceIfWatching("stk::mesh::BulkData::internal_propagate_part_changes",
+                  LOG_ENTITY,
+                  entity.key());
+  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity.key(), "Removed: " << removed);
 
   const unsigned etype = entity.entity_rank();
 

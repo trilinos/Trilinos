@@ -58,8 +58,13 @@ class FEMMetaData {
   typedef std::map<fem::CellTopology, std::pair<Part *, EntityRank> > CellTopologyPartEntityRankMap;
   /// PartCellTopologyVector is a fast-lookup vector of size equal to the number of parts
   typedef std::vector<fem::CellTopology> PartCellTopologyVector;
-  static const EntityRank NODE_RANK = 0u;
+
   static const EntityRank INVALID_RANK = stk::mesh::InvalidEntityRank;
+
+  static const EntityRank NODE_RANK = 0u;
+  static const EntityRank EDGE_RANK = 1u;
+  static const EntityRank FACE_RANK = 2u;
+  static const EntityRank VOLUME_RANK = 3u;
 
   FEMMetaData();
   ~FEMMetaData() {}
@@ -124,14 +129,21 @@ class FEMMetaData {
    */
   EntityRank edge_rank() const
   {
-    return m_edge_rank;
+    return EDGE_RANK;
   }
 
   /** \brief Returns the face rank which changes depending on spatial dimension
    */
   EntityRank face_rank() const
   {
-  return m_face_rank;
+    return FACE_RANK;
+  }
+
+  /** \brief Returns the volume rank which changes depending on spatial dimension
+   */
+  EntityRank volume_rank() const
+  {
+    return VOLUME_RANK;
   }
 
   /** \brief Returns the side rank which changes depending on spatial dimension
@@ -490,8 +502,6 @@ class FEMMetaData {
 #endif
     bool                          m_fem_initialized;
     size_t                        m_spatial_dimension;
-    EntityRank                    m_edge_rank;
-    EntityRank                    m_face_rank;
     EntityRank                    m_side_rank;
     EntityRank                    m_element_rank;
     std::vector< std::string >    m_entity_rank_names;

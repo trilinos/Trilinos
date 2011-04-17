@@ -79,12 +79,12 @@ FUNCTION(CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE TEST_NAME)
   IF (NOT PARSE_SKIP_STANDARD_DEPS_CHECK)
     SET(TEST_BLOCKS ${TEST_BLOCKS}
       "Dumping the XML dependencies file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/TrilinosPackageDependencies.xml"
-      "Dumping the CDash XML dependencies file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/CDashSubprojectDependencies.xml"
       "CDASH_SUBPROJECT_XML_FILE='${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/CDashSubprojectDependencies.xml'"
       )
-    IF(PYTHON_EXECUTABLE)
+    IF (PYTHON_EXECUTABLE)
       SET(TEST_BLOCKS ${TEST_BLOCKS}
         "Dumping the HTML dependencies webpage file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/TrilinosPackageDependenciesTable.html"
+        "Dumping the CDash XML dependencies file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/CDashSubprojectDependencies.xml"
         )
     ENDIF()
   ENDIF()

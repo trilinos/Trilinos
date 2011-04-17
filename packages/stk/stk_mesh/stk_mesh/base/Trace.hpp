@@ -17,6 +17,13 @@
 // (Diag|Trace)IfWatching will produce diag/trace output if the given key is in
 // the watch list AND the given PrintMask is activated.
 //
+// A common idiom for code that wants tracing:
+//   meshlog.setPrintMask(stk::mesh::LOG_ENTITY | stk::mesh::LOG_TRACE | stk::mesh::LOG_TRACE_SUB_CALLS);
+//   stk::mesh::watch(stk::mesh::EntityKey(0, 11));
+//   stk::diag::Trace::addTraceFunction("stk::mesh::");
+//
+// Other common items to watch are Parts, Buckets, and Fields
+//
 // TODO
 // * Describe the tracing/diagnostic command-line interface
 // * Describe the PrintMask system.
@@ -104,21 +111,28 @@ void watch(const T& watch_item)
 stk::mesh::Trace trace__(location, mask, stk::mesh::internal_is_watching(item)); \
 DiagIfWatching(mask, item, "Watched item is: " << item << stk::diag::dendl)
 
+// Useful if you need two traces in the same scope, dec is used to modify the
+// name of the trace object to avoid conflicting.
+#define TraceIfWatchingDec(location, mask, item, dec) \
+stk::mesh::Trace trace##dec__(location, mask, stk::mesh::internal_is_watching(item)); \
+DiagIfWatching(mask, item, "Watched item is: " << item << stk::diag::dendl)
+
 #define DiagIfWatching(mask, item, message)                             \
-meshlog.w(stk::mesh::internal_is_watching(item), mask) << message
+meshlog.w(stk::mesh::internal_is_watching(item), mask) << message << stk::diag::dendl
 
 #define DiagIf(mask, message)                   \
-meshlog.m(mask) << message
+meshlog.m(mask) << message << stk::diag::dendl
 
 /////////////////////////////////////////////////
 
 #else
 
-#define Trace_(location)                         ((void) (0))
-#define TraceIf(location, mask)                  ((void) (0))
-#define TraceIfWatching(location, mask, item)    ((void) (0))
-#define DiagIf(mask, message)                    ((void) (0))
-#define DiagIfWatching(mask, item, message)      ((void) (0))
+#define Trace_(location)                              ((void) (0))
+#define TraceIf(location, mask)                       ((void) (0))
+#define TraceIfWatching(location, mask, item)         ((void) (0))
+#define TraceIfWatchingDec(location, mask, item, dec) ((void) (0))
+#define DiagIf(mask, message)                         ((void) (0))
+#define DiagIfWatching(mask, item, message)           ((void) (0))
 
 #endif
 

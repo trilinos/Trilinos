@@ -44,6 +44,11 @@ static void sort_and_compare_maps(int, int, MESH_INFO_PTR,
 /*****************************************************************************/
 /*****************************************************************************/
 
+unsigned int zdrive_hash(ZOLTAN_ID_TYPE *id, int ngid, unsigned int nprocs)
+{
+  return (id[0] % nprocs);
+}
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -344,19 +349,12 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
    */
 
   MPI_Allreduce(&num_elems, &max_nelems, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
   ierr = Zoltan_DD_Create(&dd, MPI_COMM_WORLD, 1, 1, 0, max_nelems, 0);
   if (ierr) {
     Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Create");
     error = 1;
   }
-
-  ierr = Zoltan_DD_Update(dd, gids, lids, NULL, NULL, num_elems);
-  if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Update");
-    error = 1;
-  }
-
-  free(gids);
 
   /*
    * Test DD copy functions
@@ -376,7 +374,25 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     error = 1;
   }
 
-  Zoltan_DD_Destroy(&ddCopy);
+  /*
+   * Test the use of a user provided hash function in one copy.
+   */
+
+  Zoltan_DD_Set_Hash_Fn(ddCopy, zdrive_hash);
+
+  ierr = Zoltan_DD_Update(dd, gids, lids, NULL, NULL, num_elems);
+  if (ierr) {
+    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Update of dd");
+    error = 1;
+  }
+
+  ierr = Zoltan_DD_Update(ddCopy, gids, lids, NULL, NULL, num_elems);
+  if (ierr) {
+    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Update ddCopy");
+    error = 1;
+  }
+
+  free(gids);
 
   /* 
    * Use the DDirectory to find owners of off-processor neighboring elements. 
@@ -416,14 +432,22 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     error = 1;
   }
 
+  ierr = Zoltan_DD_Find(ddCopy, nbor_gids, nbor_lids,
+                        NULL, NULL, num_nbor, ownerlist);
+  if (ierr) {
+    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Find of ddCopy");
+    error = 1;
+  }
+
   ierr = Zoltan_DD_Find(dd, nbor_gids, nbor_lids,
                         NULL, NULL, num_nbor, ownerlist);
   if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Find");
+    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Find of dd");
     error = 1;
   }
  
   Zoltan_DD_Destroy(&dd);
+  Zoltan_DD_Destroy(&ddCopy);
 
   /*
    * Check for errors 

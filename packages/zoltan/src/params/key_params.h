@@ -24,6 +24,7 @@ extern "C" {
 
 extern int Zoltan_Set_Key_Param(ZZ *, const char *, const char *, int);
 extern void Zoltan_Print_Key_Params(ZZ const *);
+extern void Zoltan_Print_Configuration(char *indent);
 extern int Zoltan_Filter_Params(ZZ *, ZZ *, PARAM_VARS *, int , int, int);
 
 

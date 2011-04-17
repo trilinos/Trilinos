@@ -2,7 +2,7 @@
 # Build all Secondary Stable Trilinos packages in core Trilinos with Intel compiler
 #
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.u233.icpc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.pu241.icpc.cmake")
 INCLUDE(SubmitToTrilinos)
 
 SET(COMM_TYPE SERIAL)

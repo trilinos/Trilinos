@@ -31,6 +31,7 @@ extern "C" {
 static unsigned int dd_hash_user (
   ZOLTAN_ID_PTR gid, int gid_length, 
   unsigned int nproc,
+  void *data,
   ZOLTAN_HASH_FN *fn)
 {
   return (*fn)(gid, gid_length, nproc);
@@ -52,8 +53,9 @@ int Zoltan_DD_Set_Hash_Fn (
    }
 
    dd->hash = (DD_Hash_fn*)dd_hash_user;
+   dd->hashdata = NULL;
    dd->hashfn = hash;
-   dd->cleanup = (DD_Cleanup_fn*) NULL; /* We don't have to free the function pointer */
+   dd->cleanup = (DD_Cleanup_fn*) NULL; 
 
    if (dd->debug_level > 0)
       ZOLTAN_PRINT_INFO (dd->my_proc, yo, "Successful");

@@ -21,8 +21,8 @@
 #include "zoltan_id.h"
 #include "zoltan_util.h"
 #include "zoltan_dd.h"
-
 #ifdef __cplusplus
+
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
@@ -64,7 +64,8 @@ typedef struct DD_Node  {
 
 /* Hash function */
 
-typedef unsigned int DD_Hash_fn (ZOLTAN_ID_PTR, int, unsigned int, void *);
+typedef unsigned int DD_Hash_fn (ZOLTAN_ID_PTR, int, unsigned int, void *,
+                                 ZOLTAN_HASH_FN *);
 typedef void DD_Cleanup_fn (void*);
 
 /* The directory structure, Zoltan_DD_Struct, is created by the call
@@ -91,10 +92,10 @@ struct Zoltan_DD_Struct {
   int remove_msg_size;    /* Total allocation for DD_REMOVE_MSG     */
   int debug_level;        /* Determines actions to multiple updates */
 
-  DD_Hash_fn *hash;       /* Hash function used by this DD */
-  void *hashdata;
-  ZOLTAN_HASH_FN *hashfn;  /* hash function */
-  DD_Cleanup_fn *cleanup;
+  DD_Hash_fn *hash;       /* Hash function used by this DD         */
+  void *hashdata;         /* Either our hash data ...              */
+  ZOLTAN_HASH_FN *hashfn; /* ... Or user's hash function, not both */
+  DD_Cleanup_fn *cleanup; /* Functioned to free our hash data      */
 
   MPI_Comm comm;          /* Dup of original MPI Comm (KDD)         */
   DD_Node *table[1];      /* Hash table, heads of the link lists    */
@@ -153,7 +154,7 @@ typedef struct  {          /* Only used by Zoltan_DD_Remove()      */
 /***********  Distributed Directory Function Prototypes ************/
 
 unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries,
- unsigned int n, void *hashdata);
+ unsigned int n, void *hashdata, ZOLTAN_HASH_FN *fn);
 
 void Zoltan_DD_default_cleanup(void *hashdata);
 

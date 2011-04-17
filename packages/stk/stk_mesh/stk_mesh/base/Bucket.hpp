@@ -159,7 +159,7 @@ public:
     return (m_current_entity < i.m_current_entity);
   }
 
-  /** \brief Less than equal too */
+  /** \brief Less than equal to */
   inline bool operator<=(const BucketIterator &i) const {
     ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
                     "operator <= given iterator from different bucket");
@@ -173,14 +173,14 @@ public:
     return (m_current_entity > i.m_current_entity);
   }
 
-  /** \brief Greater than equal too */
+  /** \brief Greater than equal to */
   inline bool operator>=(const BucketIterator &i) const {
     ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
                     "operator >= given iterator from different bucket");
     return (m_current_entity >= i.m_current_entity);
   }
 
-  /** \brief Equal too */
+  /** \brief Equal to */
   inline bool operator==(const BucketIterator &i) const {
     ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
                     "operator == given iterator from different bucket");

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -837,6 +837,15 @@ inline
 bool MetaData::check_rank(EntityRank rank) const
 {
   return rank < m_entity_rank_names.size();
+}
+
+inline
+bool
+is_auto_declared_part(const Part &part) 
+{
+  const std::string &part_name = part.name();
+  
+  return !part_name.empty() && part_name[0] == '{';
 }
 
 } // namespace mesh

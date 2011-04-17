@@ -87,23 +87,6 @@ namespace {
   double errorTolSlack = 1e+1;
   string filedir;
 
-#define STD_TESTS(graph) \
-  { \
-    using Teuchos::outArg; \
-    RCP<const Comm<int> > STCOMM = graph.getComm(); \
-    ArrayView<const GO> STMYGIDS = graph.getRowMap()->getNodeElementList(); \
-    size_t STMAX = 0; \
-    for (size_t STR=0; STR<graph.getNodeNumRows(); ++STR) { \
-      TEST_EQUALITY( graph.getNumEntriesInLocalRow(STR), graph.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
-      STMAX = std::max( STMAX, graph.getNumEntriesInLocalRow(STR) ); \
-    } \
-    TEST_EQUALITY( graph.getNodeMaxNumRowEntries(), STMAX ); \
-    global_size_t STGMAX; \
-    Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
-    TEST_EQUALITY( graph.getGlobalMaxNumRowEntries(), STGMAX ); \
-  }
-
-
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -251,6 +234,90 @@ namespace {
     TEST_COMPARE_ARRAYS(blk_cols, blockColIDs() );
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BlockCrsGraph, Queries, LO, GO)
+  {
+    //This test fills a (block-tri-diagonal) block-crs-graph such that
+    //in parallel the column-map should have an overlapping set of
+    //entries (i.e., different than the row-map), and verifies that
+    //some queries work for attributes such as row-lengths, etc.
+
+    RCP<Node> node = getNode<Node>();
+    typedef BlockCrsGraph<LO,GO,Node> BGRAPH;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    GO indexBase = 0;
+    // create a Map
+    const size_t numLocalBlocks = 2;
+    GO maxGlobalBlock = numLocalBlocks*comm->getSize();
+    const LO blockSize = 2;
+    const size_t maxEntriesPerRow = 3;
+    RCP<BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+    
+    //now set up the list of block-column-ids that we expect the
+    //column-map to contain after fillComplete:
+    size_t numLocalColBlocks = numLocalBlocks;
+    if (comm->getRank() != 0) ++numLocalColBlocks;
+    if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
+    Array<GO> blockColIDs(numLocalColBlocks);
+    typedef typename Array<GO>::size_type Tsize_t;
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
+    GO first_row = blk_rows[0];
+    Tsize_t offset = 0;
+    if (comm->getRank() != 0) {
+      blockColIDs[offset++] = first_row - 1;
+    }
+    GO last_row = 0;
+    for(LO i=0; i<blk_rows.size(); ++i) {
+      blockColIDs[offset++] = blk_rows[i];
+      last_row = blk_rows[i];
+    }
+    if (offset < blockColIDs.size()) blockColIDs[offset++] = last_row + 1;
+
+    // create the graph
+    RCP<BGRAPH> bgrph = rcp( new BGRAPH(rowmap,maxEntriesPerRow,DynamicProfile) );
+    for(int i=0; i<blk_rows.size(); ++i) {
+      GO row = blk_rows[i];
+      {
+        GO col = row;
+        bgrph->insertGlobalIndices(row, Teuchos::arrayView(&col, 1));
+      }
+      if (row > indexBase) {
+        GO col = row - 1;
+        bgrph->insertGlobalIndices(row, Teuchos::arrayView(&col, 1));
+      }
+      if (row < maxGlobalBlock-1) {
+        GO col = row + 1;
+        bgrph->insertGlobalIndices(row, Teuchos::arrayView(&col, 1));
+      }
+    }
+
+    bgrph->fillComplete();
+    RCP<const BlockMap<LO,GO,Node> > colmap = bgrph->getBlockColMap();
+    ArrayView<const GO> blk_cols = colmap->getNodeBlockIDs();
+    TEST_EQUALITY(blk_cols.size(), blockColIDs.size());
+    TEST_COMPARE_ARRAYS(blk_cols, blockColIDs() );
+
+    size_t map_blk_elems = blk_rows.size();
+    TEST_EQUALITY(bgrph->getNodeNumBlockRows(), map_blk_elems);
+    TEST_EQUALITY(bgrph->getGlobalNumBlockRows(), rowmap->getGlobalNumBlocks());
+
+    for(int i=0; i<blk_rows.size(); ++i) {
+      GO row = blk_rows[i];
+      if (row > indexBase && row < maxGlobalBlock-1) {
+        size_t row_len = bgrph->getGlobalBlockRowLength(row);
+        size_t expected_row_len = 3;
+        TEST_EQUALITY(row_len, expected_row_len);
+      }
+      else {
+        size_t row_len = bgrph->getGlobalBlockRowLength(row);
+        size_t expected_row_len = 2;
+        TEST_EQUALITY(row_len, expected_row_len);
+      }
+    }
+  }
+
   // 
   // INSTANTIATIONS
   //
@@ -260,7 +327,8 @@ namespace {
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_LO_GO( LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockCrsGraph, ColMap1  , LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockCrsGraph, ColMap1  , LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockCrsGraph, Queries  , LO, GO )
 
      UNIT_TEST_GROUP_LO_GO(int,int)
 // #ifndef FAST_DEVELOPMENT_UNIT_TEST_BUILD

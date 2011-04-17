@@ -121,6 +121,11 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
   //now create the point-map specifying both numGlobalPoints and numLocalPoints:
   pointMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalPoints, numLocalPoints, indexBase, comm, node));
 
+  if (numGlobalBlocks == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
+    Teuchos::reduceAll<int, global_size_t>(*comm, Teuchos::REDUCE_SUM,
+             1, &numLocalBlocks, &globalNumBlocks_);
+  }
+
   myGlobalBlockIDs_.resize(numLocalBlocks);
   pbuf_firstPointInBlock_ = node->template allocBuffer<LocalOrdinal>(numLocalBlocks+1);
   Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);

@@ -221,7 +221,7 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isLocallyIndexed() const
 //-------------------------------------------------------------------
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t
-BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumEntries() const
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumBlockEntries() const
 {
   return ptGraph_->getNodeNumEntries();
 }
@@ -229,7 +229,33 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumEntries() const
 //-------------------------------------------------------------------
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t
-BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumRows() const
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalBlockRowLength(GlobalOrdinal row) const
+{
+  return ptGraph_->getNumEntriesInGlobalRow(row);
+}
+
+//-------------------------------------------------------------------
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalBlockRowView(GlobalOrdinal row,
+                             Teuchos::ArrayView<const GlobalOrdinal>& blockCols) const
+{
+  ptGraph_->getGlobalRowView(row, blockCols);
+}
+
+//-------------------------------------------------------------------
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getLocalBlockRowView(LocalOrdinal row,
+                             Teuchos::ArrayView<const LocalOrdinal>& blockCols) const
+{
+  ptGraph_->getLocalRowView(row, blockCols);
+}
+
+//-------------------------------------------------------------------
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumBlockRows() const
 {
   return ptGraph_->getNodeNumRows();
 }
@@ -237,7 +263,15 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumRows() const
 //-------------------------------------------------------------------
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t
-BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumDiags() const
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumBlockRows() const
+{
+  return ptGraph_->getGlobalNumRows();
+}
+
+//-------------------------------------------------------------------
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumBlockDiags() const
 {
   return ptGraph_->getNodeNumDiags();
 }

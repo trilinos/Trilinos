@@ -1,4 +1,4 @@
-########################################
+#######################################
 # Unit testing code for CheckinTest.py #
 ########################################
 
@@ -78,6 +78,7 @@ class test_getTimeInMinFromTotalTimeLine(unittest.TestCase):
          "MPI_DEBUG", "Total time for MPI_DEBUG = 1.16723643541 min"),
       1.16723643541)
 
+
 #
 # Test extractPackageEnablesFromChangeStatus
 #
@@ -85,7 +86,7 @@ class test_getTimeInMinFromTotalTimeLine(unittest.TestCase):
 class test_extractPackageEnablesFromChangeStatus(unittest.TestCase):
 
 
-  def test_1(self):
+  def test_all_packages(self):
 
     updateOutputStr = """
 ? packages/tpetra/doc/html
@@ -103,14 +104,14 @@ A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
     options = MockOptions()
     enablePackagesList = []
 
-    extractPackageEnablesFromChangeStatus(updateOutputStr, options,
+    extractPackageEnablesFromChangeStatus(updateOutputStr, options, "",
       enablePackagesList, False)
 
     self.assertEqual( options.enableAllPackages, 'on' )
     self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'Teuchos'] )
 
 
-  def test_2(self):
+  def test_not_all_packages(self):
 
     updateOutputStr = """
 ? packages/triutils/doc/html
@@ -126,11 +127,31 @@ D	packages/moocho/src/MoochoUtils/src/FSeconds.f
     options = MockOptions()
     enablePackagesList = []
 
-    extractPackageEnablesFromChangeStatus(updateOutputStr, options,
+    extractPackageEnablesFromChangeStatus(updateOutputStr, options, "",
       enablePackagesList, False)
 
     self.assertEqual( options.enableAllPackages, 'auto' )
     self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'NOX', u'Thyra', u'MOOCHO'] )
+
+
+  def test_extra_repo(self):
+
+    updateOutputStr = """
+M	ExtraTrilinosPackages.cmake
+M	stalix/README
+"""
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    trilinosDependenciesLocal = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFileOverride)
+
+    options = MockOptions()
+    enablePackagesList = []
+
+    extractPackageEnablesFromChangeStatus(updateOutputStr, options, "preCopyrightTrilinos",
+      enablePackagesList, False, trilinosDependenciesLocal)
+
+    self.assertEqual( options.enableAllPackages, 'auto' )
+    self.assertEqual( enablePackagesList, [u'Stalix'] )
 
 
 
@@ -249,18 +270,27 @@ Some other message
 g_cmndinterceptsCurrentBranch = \
   "IT: eg branch; 0; '* currentbranch'\n"
 
-g_cmndinterceptsInitialCommitPasses = \
-  "IT: eg commit -a -F .*; 0; 'initial eg commit passed'\n"
+g_cmndinterceptsStatusPasses = \
+  "IT: eg status; 0; '(on master branch)'\n"
 
 g_cmndinterceptsPullOnlyPasses = \
-  "IT: eg status; 0; '(on master branch)'\n" \
   "IT: eg pull; 0; 'initial eg pull passed'\n"
+
+g_cmndinterceptsPullOnlyFails = \
+  "IT: eg pull; 1; 'pull failed'\n"
+
+g_cmndinterceptsStatusPullPasses = \
+  g_cmndinterceptsStatusPasses+ \
+  g_cmndinterceptsPullOnlyPasses
 
 g_cmndinterceptsDiffOnlyPasses = \
   "IT: eg diff --name-status origin/currentbranch; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
 
+g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos = \
+  "IT: eg diff --name-status origin/currentbranch; 0; 'M\tteko/CMakeLists.txt'\n"
+
 g_cmndinterceptsPullPasses = \
-  g_cmndinterceptsPullOnlyPasses \
+  g_cmndinterceptsStatusPullPasses \
   +g_cmndinterceptsDiffOnlyPasses
 
 g_cmndinterceptsConfigPasses = \
@@ -277,33 +307,91 @@ g_cmndinterceptsConfigBuildTestPasses = \
 g_cmnginterceptsEgLogCmnds = \
   "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
   "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '12345 Only one commit'\n" \
-  "IT: eg log --pretty=format:'%h' currentbranch\^ \^origin/currentbranch; 0; '12345'\n" \
+  "IT: eg log --pretty=format:'%h' currentbranch\^ \^origin/currentbranch; 0; '12345'\n"
+
+g_cmndinterceptsFinalPullRebasePasses = \
+  "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n"
+
+g_cmndinterceptsFinalPullRebaseFails = \
+  "IT: eg pull && eg rebase --against origin/currentbranch; 1; 'final eg pull and rebase failed'\n"
+
+g_cmndinterceptsAmendCommitPasses = \
+  "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n"
+
+g_cmndinterceptsAmendCommitFails = \
+  "IT: eg commit --amend -F .*; 1; 'Amending the last commit failed'\n"
+
+g_cmndinterceptsLogCommitsPasses = \
+  "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n"
+
+g_cmndinterceptsPushOnlyPasses = \
+  "IT: eg push; 0; 'push passes'\n"
+
+g_cmndinterceptsPushOnlyFails = \
+  "IT: eg push; 1; 'push failed'\n"
 
 g_cmndinterceptsFinalPushPasses = \
-  "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-  +g_cmnginterceptsEgLogCmnds+ \
-  "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
-  "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
+  g_cmndinterceptsFinalPullRebasePasses+\
+  g_cmnginterceptsEgLogCmnds+ \
+  g_cmndinterceptsAmendCommitPasses+ \
+  g_cmndinterceptsLogCommitsPasses+ \
+  "IT: cat modifiedFiles.out; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"\
   "IT: eg push; 0; 'push passes'\n"
+
+g_cmndinterceptsCatModifiedFilesPasses = \
+  "IT: cat modifiedFiles.out; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
+
+g_cmndinterceptsCatModifiedFilesNoChanges = \
+  "IT: cat modifiedFiles.out; 0; ''\n"
+
+g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosPasses = \
+  "IT: cat modifiedFiles.preCopyrightTrilinos.out; 0; 'M\tteko/CMakeLists.txt'\n"
+
+g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosNoChanges = \
+  "IT: cat modifiedFiles.preCopyrightTrilinos.out; 0; ''\n"
 
 g_cmndinterceptsFinalPushNoAppendTestResultsPasses = \
   "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-  +g_cmnginterceptsEgLogCmnds+ \
-  "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
-  "IT: eg push; 0; 'push passes'\n"
+  +g_cmndinterceptsLogCommitsPasses\
+  +g_cmndinterceptsCatModifiedFilesPasses\
+  +g_cmndinterceptsPushOnlyPasses
 
 g_cmndinterceptsFinalPushNoRebasePasses = \
   "IT: eg pull; 0; 'final eg pull only passed'\n" \
   +g_cmnginterceptsEgLogCmnds+ \
   "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
-  "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
-  "IT: eg push; 0; 'push passes'\n"
+  +g_cmndinterceptsLogCommitsPasses\
+  +g_cmndinterceptsCatModifiedFilesPasses\
+  +g_cmndinterceptsPushOnlyPasses
 
 g_cmndinterceptsSendBuildTestCaseEmail = \
   "IT: mailx -s .*; 0; 'Do not really sending build/test case email'\n"
 
 g_cmndinterceptsSendFinalEmail = \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
+
+g_cmndinterceptsExtraRepo1DoAllThroughTest = \
+  "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+  +g_cmndinterceptsCurrentBranch \
+  +g_cmndinterceptsStatusPasses \
+  +g_cmndinterceptsStatusPasses \
+  +g_cmndinterceptsPullOnlyPasses \
+  +g_cmndinterceptsPullOnlyPasses \
+  +g_cmndinterceptsDiffOnlyPasses \
+  +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+  +g_cmndinterceptsConfigBuildTestPasses \
+  +g_cmndinterceptsSendBuildTestCaseEmail
+
+g_cmndinterceptsExtraRepo1DoAllUpToPush = \
+  g_cmndinterceptsExtraRepo1DoAllThroughTest \
+  +g_cmndinterceptsFinalPullRebasePasses \
+  +g_cmndinterceptsFinalPullRebasePasses \
+  +g_cmnginterceptsEgLogCmnds \
+  +g_cmndinterceptsAmendCommitPasses \
+  +g_cmnginterceptsEgLogCmnds \
+  +g_cmndinterceptsAmendCommitPasses \
+  +g_cmndinterceptsLogCommitsPasses \
+  +g_cmndinterceptsLogCommitsPasses
 
 g_expectedRegexUpdatePasses = \
   "Update passed!\n" \
@@ -394,7 +482,7 @@ def assertNotGrepFileForRegexStrList(testObject, testName, fileName, regexStrLis
 # Main unit test driver
 def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
   expectPass, passRegexStrList, filePassRegexStrList=None, mustHaveCheckinTestOut=True, \
-  failRegexStrList=None, fileFailRegexStrList=None \
+  failRegexStrList=None, fileFailRegexStrList=None, envVars=[] \
   ):
 
   scriptsDir = getScriptBaseDir()
@@ -413,10 +501,15 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     # B) Create the command to run the checkin-test.py script
     
-    cmnd = scriptsDir + "/../../checkin-test.py --no-eg-git-version-check " + optionsStr
+    cmnd = scriptsDir + "/../../checkin-test.py" \
+     +" --no-eg-git-version-check" \
+     +" --trilinos-src-dir="+scriptsDir+"/../DependencyUnitTests/MockTrilinos" \
+     + " " + optionsStr
     # NOTE: Above, we want to turn off the eg/git version tests since we want
     # these unit tests to run on machines that do not have the official
     # versions (e.g. the SCICO LAN) but where the versions might be okay.
+    # Also, we have to point to the static mock Trilinos source directory
+    # also so that preCopyrighTrilinos will show up as an extra repo.
     
     # C) Set up the command intercept file
 
@@ -443,6 +536,12 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     
     # D) Run the checkin-test.py script with mock commands
 
+    for envVar in envVars:
+      (varName,varValue) = envVar.split("=")
+      #print "varName="+varName
+      #print "varValue="+varValue
+      os.environ[varName] = varValue
+      
     checkin_test_test_out = "checkin-test.test.out"
 
     rtnCode = echoRunSysCmnd(cmnd, timeCmnd=True, throwExcept=False,
@@ -513,7 +612,7 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     +"0) MPI_DEBUG: Will attempt to run!\n" \
     +"1) SERIAL_RELEASE: Will \*not\* attempt to run on request!\n" \
     +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
-    +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
+    +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect push readiness!\n" \
     +g_expectedCommonOptionsSummary \
     +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
     +"=> A PUSH IS READY TO BE PERFORMED!\n" \
@@ -539,7 +638,7 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
     \
     testName,
     \
-    " --allow-no-pull --configure --send-email-to= --skip-commit-readiness-check" \
+    " --allow-no-pull --configure --send-email-to= --skip-push-readiness-check" \
     +" " +optionsStr \
     ,
     \
@@ -623,20 +722,18 @@ class test_checkin_test(unittest.TestCase):
       False)
 
 
-  def test_do_all_commit_push_pass(self):
+  def test_do_all_push_pass(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_commit_push_pass",
+      "do_all_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
-      +" --do-all --commit --push" \
+      +" --do-all --push" \
       +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
       g_cmndinterceptsCurrentBranch \
-      +g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -663,11 +760,10 @@ class test_checkin_test(unittest.TestCase):
       +"Running: ssh -q godel /some/dir/some_command.sh &\n" \
       ,
       [
-      (getInitialCommitOutputFileName(), "initial eg commit passed\n"),
-      (getInitialPullOutputFileName(), "initial eg pull passed\n"),
-      (getModifiedFilesOutputFileName(), "M\tpackages/teuchos/CMakeLists.txt\n"),
-      (getFinalPullOutputFileName(), "final eg pull and rebase passed\n"),
-      (getFinalCommitEmailBodyFileName(),
+      (getInitialPullOutputFileName(""), "initial eg pull passed\n"),
+      (getModifiedFilesOutputFileName(""), "M\tpackages/teuchos/CMakeLists.txt\n"),
+      (getFinalPullOutputFileName(""), "final eg pull and rebase passed\n"),
+      (getFinalCommitBodyFileName(""),
          getAutomatedStatusSummaryHeaderKeyStr()+"\n"
          +"Enabled Packages: Teuchos\n" \
          +"Enabled all Forward Packages\n" \
@@ -732,7 +828,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses \
       +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
-      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
+      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
       +"A current successful pull does \*not\* exist => Not ready for final push!\n" \
@@ -743,19 +839,17 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_test_fail_force_commit_push_pass(self):
+  def test_do_all_without_serial_release_test_fail_force_push_pass(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_without_serial_release_test_fail_force_commit_push_pass",
+      "do_all_without_serial_release_test_fail_force_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
-      " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
-      " --do-all --commit --force-commit-push --push",
+      " --do-all --force-push --push",
       \
       g_cmndinterceptsCurrentBranch \
-      +g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildPasses \
       +"IT: ctest -j5; 1; '80% tests passed, 20 tests failed out of 100'\n" \
@@ -771,13 +865,13 @@ class test_checkin_test(unittest.TestCase):
       +"FAILED: ctest failed returning 1!\n" \
       +"testResultsLine = .80% tests passed, 20 tests failed out of 100.\n" \
       +"0) MPI_DEBUG => FAILED: passed=80,notpassed=20\n" \
-      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
+      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"Test: FAILED\n" \
       +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
-      +"\*\*\* WARNING: The acceptance criteria for doing a commit/push has \*not\*\n" \
-      +"\*\*\* been met, but a commit/push is being forced anyway by --force-commit-push!\n" \
+      +"\*\*\* WARNING: The acceptance criteria for doing a push has \*not\*\n" \
+      +"\*\*\* been met, but a push is being forced anyway by --force-push!\n" \
       +"DID FORCED PUSH: Trilinos:\n" \
       +"REQUESTED ACTIONS: PASSED\n"
       )
@@ -825,7 +919,6 @@ class test_checkin_test(unittest.TestCase):
       "do_all_no_append_test_results_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
       +" --do-all --no-append-test-results --push",
       \
       g_cmndinterceptsCurrentBranch \
@@ -886,8 +979,220 @@ class test_checkin_test(unittest.TestCase):
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"^DID PUSH: Trilinos:\n" \
       )
-  
-  
+
+
+  def test_extra_repo_1_explicit_enable_configure_pass(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_configure_pass",
+      \
+      "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-serial-release --enable-packages=Stalix --configure", \
+      \
+      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsConfigPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "-extra-repos=.preCopyrightTrilinos.\n" \
+      +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
+      +"trilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride+"\n" \
+      +"Enabling only the explicitly specified packages .Stalix. ...\n" \
+      +"Trilinos_ENABLE_Stalix:BOOL=ON\n" \
+      +"Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n" \
+      +"Enabled Packages: Stalix\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_implicit_enable_configure_pass(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_configure_pass",
+      \
+      "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-serial-release --configure", \
+      \
+      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsConfigPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "-extra-repos=.preCopyrightTrilinos.\n" \
+      +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
+      +"trilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride+"\n" \
+      +"Modified file: .packages/../preCopyrightTrilinos/teko/CMakeLists.txt.\n" \
+      +"  => Enabling .Teko.!\n" \
+      +"Trilinos_ENABLE_Teko:BOOL=ON\n" \
+      +"Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n" \
+      +"Enabled Packages: Teuchos, Teko\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_do_all_push_pass(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_do_all_push_pass",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      \
+      g_cmndinterceptsExtraRepo1DoAllUpToPush \
+      +g_cmndinterceptsCatModifiedFilesPasses \
+      +g_cmndinterceptsPushOnlyPasses \
+      +g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosPasses \
+      +g_cmndinterceptsPushOnlyPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "-extra-repos=.preCopyrightTrilinos.\n" \
+      +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
+      +"Trilinos_ENABLE_Teko:BOOL=ON\n" \
+      +"pullInitial.preCopyrightTrilinos.out\n" \
+      +"Update passed!\n"\
+      +"All of the tests ran passed!\n" \
+      +"pullFinal.preCopyrightTrilinos.out\n" \
+      +"Final update passed!\n" \
+      +"commitFinalBody.preCopyrightTrilinos.out\n" \
+      +"commitFinal.preCopyrightTrilinos.out\n" \
+      +"push.preCopyrightTrilinos.out\n" \
+      +"Push passed!\n" \
+      +"Enabled Packages: Teuchos, Teko\n" \
+      +"DID PUSH: Trilinos:\n" \
+      +"REQUESTED ACTIONS: PASSED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_pull_extra_pull_pass(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_pull_extra_pull_pass",
+      \
+      "--extra-repos=preCopyrightTrilinos --pull --extra-pull-from=somemachine:someotherbranch", \
+      \
+      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +"IT: eg pull somemachine someotherbranch; 0; 'eg extra pull passed'\n"
+      +"IT: eg pull somemachine someotherbranch; 0; 'eg extra pull passed'\n"
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "pullInitial.out\n" \
+      "pullInitial.preCopyrightTrilinos.out\n" \
+      "pullInitialExtra.out\n" \
+      "pullInitialExtra.preCopyrightTrilinos.out\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_trilinos_changes_do_all_push_pass(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_trilinos_changes_do_all_push_pass",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      \
+      g_cmndinterceptsExtraRepo1DoAllUpToPush \
+      +g_cmndinterceptsCatModifiedFilesPasses \
+      +g_cmndinterceptsPushOnlyPasses \
+      +g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosNoChanges \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Skipping push to .preCopyrightTrilinos. because there are no changes!\n" \
+      +"Push passed!\n" \
+      +"DID PUSH: Trilinos:\n" \
+      +"REQUESTED ACTIONS: PASSED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_extra_repo_changes_do_all_push_pass(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_extra_repo_changes_do_all_push_pass",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      \
+      g_cmndinterceptsExtraRepo1DoAllUpToPush \
+      +g_cmndinterceptsCatModifiedFilesNoChanges \
+      +g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosPasses \
+      +g_cmndinterceptsPushOnlyPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Skipping push to .. because there are no changes!\n" \
+      +"Push passed!\n" \
+      +"DID PUSH: Trilinos:\n" \
+      +"REQUESTED ACTIONS: PASSED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+    
   # B) Test package enable/disable logic
 
 
@@ -1088,13 +1393,13 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_without_serial_release_pull_skip_commit_readiness_check(self):
+  def test_without_serial_release_pull_skip_push_readiness_check(self):
     checkin_test_run_case(
       self,
       \
-      "without_serial_release_pull_only",
+      "without_serial_release_pull_skip_push_readiness_check",
       \
-      "--without-serial-release --pull --skip-commit-readiness-check",
+      "--without-serial-release --pull --skip-push-readiness-check",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -1103,8 +1408,8 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       g_expectedRegexUpdatePasses \
-      +"Skipping commit readiness check on request!\n" \
-      +"Not performing commit/push or sending out commit/push readiness status on request!\n" \
+      +"Skipping push readiness check on request!\n" \
+      +"Not performing push or sending out push readiness status on request!\n" \
       "^NOT READY TO PUSH$\n" \
       +"REQUESTED ACTIONS: PASSED\n"
       )
@@ -1119,7 +1424,7 @@ class test_checkin_test(unittest.TestCase):
       "--pull --extra-pull-from=machine:/repo/dir/repo:master",
       \
       g_cmndinterceptsCurrentBranch \
-      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsStatusPullPasses \
       +"IT: eg pull machine:/repo/dir/repo master; 0; 'eg extra pull passed'\n"
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsSendFinalEmail \
@@ -1315,9 +1620,9 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_then_commit_push_pass(self):
+  def test_do_all_without_serial_release_then_push_pass(self):
 
-    testName = "do_all_without_serial_release_then_commit_push_pass"
+    testName = "do_all_without_serial_release_then_push_pass"
 
     # Do the build/test only first (ready to push)
     g_test_do_all_without_serial_release_pass(self, testName)
@@ -1329,13 +1634,11 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --commit --push" \
+      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --push" \
       +" --extra-pull-from=dummy:master" \
-      +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
       ,
       \
       g_cmndinterceptsCurrentBranch \
-      +g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
@@ -1437,7 +1740,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_wrong_eg_vesion",
       \
-      "--no-eg-git-version-check --skip-commit-readiness-check" \
+      "--no-eg-git-version-check --skip-push-readiness-check" \
       ,
       \
       "IT: eg --version; 1; 'eg version wrong-version'\n" \
@@ -1529,55 +1832,6 @@ class test_checkin_test(unittest.TestCase):
       False,
       \
       "Error, you can not use --do-all and --allow-no-pull together!\n" \
-      )
-
-
-  def test_do_all_commit_no_commit_msg_header(self):
-    checkin_test_run_case(
-      \
-      self,
-      \
-      "do_all_commit_no_commit_msg_header",
-      \
-      "--do-all --commit" \
-      ,
-      \
-      "" \
-      ,
-      \
-      False,
-      \
-      "Error, if you use --commit you must also specify --commit-msg-header-file!\n" \
-      )
-
-
-  def test_do_all_without_serial_release_commit_initial_commit_fail(self):
-    checkin_test_run_case(
-      \
-      self,
-      \
-      "do_all_without_serial_release_commit_initial_commit_fail",
-      \
-      "--make-options=-j3 --ctest-options=-j5" \
-      " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
-      " --do-all --without-serial-release --commit" \
-      ,
-      \
-      g_cmndinterceptsCurrentBranch \
-      +"IT: eg commit -a -F .*; 1; 'initial commit failed'\n" \
-      +g_cmndinterceptsSendFinalEmail \
-      ,
-      \
-      False,
-      \
-      "FAILED: Commit failed!\n" \
-      "Commit failed, aborting pull!\n" \
-      "Skipping getting list of modified files because pull failed!\n" \
-      "The commit failed, skipping running the build/test cases!\n" \
-      "0) MPI_DEBUG => The directory MPI_DEBUG does not exist! => Not ready to push!\n" \
-      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
-      "Not doing the push on request (--no-push) but sending an email about the commit/push readiness status ...\n" \
-      "INITIAL COMMIT FAILED: Trilinos:\n"
       )
 
 
@@ -1785,7 +2039,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexTestNotRun \
       +g_expectedRegexBuildFailed \
       +"0) MPI_DEBUG => FAILED: build failed => Not ready to push!\n" \
-      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
+      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^FAILED CONFIGURE/BUILD/TEST: Trilinos:\n"
@@ -1817,7 +2071,7 @@ class test_checkin_test(unittest.TestCase):
       +"FAILED: ctest failed returning 1!\n" \
       +"testResultsLine = .80% tests passed, 20 tests failed out of 100.\n" \
       +"0) MPI_DEBUG => FAILED: passed=80,notpassed=20\n" \
-      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
+      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"Test: FAILED\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
@@ -1841,7 +2095,6 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull && eg rebase --against origin/currentbranch; 1; 'final eg pull FAILED'\n" \
-      +g_cmnginterceptsEgLogCmnds \
       +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,      \
@@ -1917,6 +2170,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmnginterceptsEgLogCmnds \
       +"IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
       +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
+      +"IT: cat modifiedFiles.out; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"\
       +"IT: eg push; 1; 'push FAILED'\n"
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -1956,7 +2210,7 @@ class test_checkin_test(unittest.TestCase):
       +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; ''\n" \
       +"IT: eg log --pretty=format:'%h' currentbranch\^ \^origin/currentbranch; 0; ''\n" \
       +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
-      +"IT: eg push; 1; 'push FAILED due to no local commits'\n"
+      +"IT: cat modifiedFiles.out; 0; ''\n"\
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
@@ -1972,7 +2226,8 @@ class test_checkin_test(unittest.TestCase):
       +"No local commits exit!\n" \
       +"Skipping amending last commit because there are no local commits!\n" \
       +"Attempting to do the push ...\n" \
-      +"Push failed!\n" \
+      +"Skipping push to .. because there are no changes!\n" \
+      +"Push failed because the push was never attempted!\n" \
       +"^PUSH FAILED: Trilinos:\n" \
       )
 
@@ -2036,6 +2291,394 @@ class test_checkin_test(unittest.TestCase):
       +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n"\
       +"^ABORTED COMMIT/PUSH: Trilinos:\n" \
       +"REQUESTED ACTIONS: FAILED\n" \
+      )
+
+
+  def test_extra_repo_1_no_changes_do_all_push_fail(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_no_changes_do_all_push_fail",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      \
+      g_cmndinterceptsExtraRepo1DoAllUpToPush \
+      +g_cmndinterceptsCatModifiedFilesNoChanges \
+      +g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosNoChanges \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "Skipping push to .. because there are no changes!\n" \
+      "Skipping push to .preCopyrightTrilinos. because there are no changes!\n" \
+      +"Push failed because the push was never attempted!\n" \
+      +"PUSH FAILED: Trilinos:\n" \
+      +"REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_mispell_repo_fail(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "test_extra_repo_1_mispell_repo_fail",
+      \
+      " --extra-repos=preCopyrightTrilinosMispell", \
+      \
+      g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "Error, the specified git repo .preCopyrightTrilinosMispell. directory .*preCopyrightTrilinosMispell. does not exist!\n"
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_initial_trilinos_pull_fail(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_initial_trilinos_pull_fail",
+      \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull", \
+      \
+      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyFails \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "pullInitial.out\n" \
+      +"Pull failed!\n" \
+      +"Skipping getting list of modified files because pull failed!\n" \
+      +"INITIAL PULL FAILED: Trilinos:\n" \
+      +"REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_initial_extra_repo_pull_fail(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_initial_extra_repo_pull_fail",
+      \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull", \
+      \
+      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyFails \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "pullInitial.out\n" \
+      "pullInitial.preCopyrightTrilinos.out\n" \
+      +"Pull failed!\n" \
+      +"Skipping getting list of modified files because pull failed!\n" \
+      +"INITIAL PULL FAILED: Trilinos:\n" \
+      +"REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_extra_pull_trilinos_fail(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_extra_pull_trilinos_fail",
+      \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull --extra-pull-from=ssg:master", \
+      \
+      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyFails \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "pullInitial.out\n" \
+      "pullInitial.preCopyrightTrilinos.out\n" \
+      "pullInitialExtra.out\n" \
+      +"Pull failed!\n" \
+      +"Skipping getting list of modified files because pull failed!\n" \
+      +"INITIAL PULL FAILED: Trilinos:\n" \
+      +"REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_extra_pull_extra_repo_fail(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_extra_pull_extra_repo_fail",
+      \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull --extra-pull-from=ssg:master", \
+      \
+      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyFails \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "pullInitial.out\n" \
+      "pullInitial.preCopyrightTrilinos.out\n" \
+      "pullInitialExtra.out\n" \
+      "pullInitialExtra.preCopyrightTrilinos.out\n" \
+      "Pull failed!\n" \
+      "Skipping getting list of modified files because pull failed!\n" \
+      "INITIAL PULL FAILED: Trilinos:\n" \
+      "REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_do_all_final_pull_trilinos_fails(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_do_all_final_pull_trilinos_fails",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      \
+      g_cmndinterceptsExtraRepo1DoAllThroughTest \
+      +g_cmndinterceptsFinalPullRebaseFails \
+      +g_cmndinterceptsLogCommitsPasses \
+      +g_cmndinterceptsLogCommitsPasses \
+      +g_cmndinterceptsSendFinalEmail
+      ,
+      \
+      False,
+      \
+      "pullFinal.out\n" \
+      "FINAL PULL FAILED: Trilinos:\n" \
+      "REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_do_all_final_pull_extra_repo_fails(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_do_all_final_pull_extra_repo_fails",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      \
+      g_cmndinterceptsExtraRepo1DoAllThroughTest \
+      +g_cmndinterceptsFinalPullRebasePasses \
+      +g_cmndinterceptsFinalPullRebaseFails \
+      +g_cmndinterceptsLogCommitsPasses \
+      +g_cmndinterceptsLogCommitsPasses \
+      +g_cmndinterceptsSendFinalEmail
+      ,
+      \
+      False,
+      \
+      "pullFinal.out\n" \
+      "pullFinal.preCopyrightTrilinos.out\n" \
+      "Final update failed!\n" \
+      "FINAL PULL FAILED: Trilinos:\n" \
+      "REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_do_all_final_amend_trilinos_fails(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_do_all_final_amend_trilinos_fails",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      \
+      g_cmndinterceptsExtraRepo1DoAllThroughTest \
+      +g_cmndinterceptsFinalPullRebasePasses \
+      +g_cmndinterceptsFinalPullRebasePasses \
+      +g_cmnginterceptsEgLogCmnds \
+      +g_cmndinterceptsAmendCommitFails \
+      +g_cmndinterceptsLogCommitsPasses \
+      +g_cmndinterceptsLogCommitsPasses \
+      +g_cmndinterceptsSendFinalEmail
+      ,
+      \
+      False,
+      \
+      "commitFinalBody.out\n" \
+      "Appending test results to last commit failed!\n" \
+      "AMEND COMMIT FAILED: Trilinos:\n" \
+      "REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_do_all_final_amend_extra_repo_fails(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_do_all_final_amend_extra_repo_fails",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      \
+      g_cmndinterceptsExtraRepo1DoAllThroughTest \
+      +g_cmndinterceptsFinalPullRebasePasses \
+      +g_cmndinterceptsFinalPullRebasePasses \
+      +g_cmnginterceptsEgLogCmnds \
+      +g_cmndinterceptsAmendCommitPasses \
+      +g_cmnginterceptsEgLogCmnds \
+      +g_cmndinterceptsAmendCommitFails \
+      +g_cmndinterceptsLogCommitsPasses \
+      +g_cmndinterceptsLogCommitsPasses \
+      +g_cmndinterceptsSendFinalEmail
+      ,
+      \
+      False,
+      \
+      "commitFinalBody.out\n" \
+      "commitFinalBody.preCopyrightTrilinos.out\n" \
+      "Appending test results to last commit failed!\n" \
+      "AMEND COMMIT FAILED: Trilinos:\n" \
+      "REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_do_all_final_push_trilinos_fails(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_do_all_final_push_trilinos_fails",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      \
+      g_cmndinterceptsExtraRepo1DoAllUpToPush \
+      +g_cmndinterceptsCatModifiedFilesPasses \
+      +g_cmndinterceptsPushOnlyFails \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "Push failed!\n" \
+      "PUSH FAILED: Trilinos:\n" \
+      "REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_do_all_final_push_extra_repo_fails(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_do_all_final_push_trilinos_fails",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      \
+      g_cmndinterceptsExtraRepo1DoAllUpToPush \
+      +g_cmndinterceptsCatModifiedFilesPasses \
+      +g_cmndinterceptsPushOnlyPasses \
+      +g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosPasses \
+      +g_cmndinterceptsPushOnlyFails \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "Push failed!\n" \
+      "PUSH FAILED: Trilinos:\n" \
+      "REQUESTED ACTIONS: FAILED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
       )
 
 

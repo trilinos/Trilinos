@@ -91,6 +91,7 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   BLACS           ""    SS
   SCALAPACK       ""    SS
   MUMPS           ""    SS
+  PARDISO_MKL     ""    EX
   Oski            ""    SS
   TAUCS           ""    SS
   ForUQTK         ""    EX

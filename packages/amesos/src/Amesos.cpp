@@ -50,7 +50,7 @@
 #ifdef HAVE_AMESOS_DSCPACK
 #include "Amesos_Dscpack.h"
 #endif
-#ifdef HAVE_AMESOS_PARDISO
+#if defined(HAVE_AMESOS_PARDISO) || defined(HAVE_AMESOS_PARDISO_MKL)
 #include "Amesos_Pardiso.h"
 #endif
 #ifdef HAVE_AMESOS_TAUCS
@@ -147,7 +147,7 @@ Amesos_BaseSolver* Amesos::Create(const std::string CT,
   } 
   
   if ((CT == "Amesos_Pardiso") || (CT == "Pardiso")) { 
-#ifdef HAVE_AMESOS_PARDISO
+#if defined(HAVE_AMESOS_PARDISO) || defined(HAVE_AMESOS_PARDISO_MKL)
     return new Amesos_Pardiso(LinearProblem); 
 #else
     if (verbose) std::cerr << "Amesos_Pardiso is not implemented" << std::endl ; 
@@ -253,7 +253,7 @@ bool Amesos::Query(const std::string CT)
   } 
   
   if ((CT == "Amesos_Pardiso") || (CT == "Pardiso")) { 
-#ifdef HAVE_AMESOS_PARDISO
+#if defined(HAVE_AMESOS_PARDISO) || defined(HAVE_AMESOS_PARDISO_MKL)
     return true;
 #else
     return false;

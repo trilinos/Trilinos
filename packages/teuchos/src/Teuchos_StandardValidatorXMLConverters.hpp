@@ -465,7 +465,7 @@ private:
 
   /** \brief . */
   static const std::string& getStringValueAttributeName() {
-    static const std::string stringValueAttributeName = "stringValue";
+    static const std::string stringValueAttributeName = "value";
     return stringValueAttributeName;
   }
   
