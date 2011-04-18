@@ -441,7 +441,7 @@ namespace Ioss {
     return time;
   }
 
-  std::pair<int, double> Region::get_max_time()
+  std::pair<int, double> Region::get_max_time() const
   {
     if (!get_database()->is_input() &&
 	get_database()->usage() != WRITE_RESULTS &&
@@ -465,6 +465,33 @@ namespace Ioss {
 	}
       }
       return std::make_pair(step+1, max_time);
+    }
+  }
+
+  std::pair<int, double> Region::get_min_time() const 
+  {
+    if (!get_database()->is_input() &&
+	get_database()->usage() != WRITE_RESULTS &&
+	get_database()->usage() != WRITE_RESTART ) {
+      return std::make_pair(currentState, stateTimes[0]);
+    } else {
+      // Cleanout the stateTimes vector and reload with current data in
+      // case the database is being read and written at the same time.
+      // This is rare, but is a supported use case.
+      stateCount = 0;
+      std::vector<double>().swap(stateTimes);
+      DatabaseIO *db = (DatabaseIO*)get_database();
+      db->get_step_times();
+
+      int step = 0;
+      double min_time = stateTimes[0];
+      for (int i=1; i < (int)stateTimes.size(); i++) {
+	if (stateTimes[i] < min_time) {
+	  step = i;
+	  min_time = stateTimes[i];
+	}
+      }
+      return std::make_pair(step+1, min_time);
     }
   }
 

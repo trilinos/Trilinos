@@ -106,7 +106,15 @@ namespace Ioss {
      * time value. Note that this may not necessarily be the last step
      * on the database if cycle and overlay are being used.
      */
-    std::pair<int, double> get_max_time();
+    std::pair<int, double> get_max_time() const;
+
+    /**
+     * Return a pair consisting of the step (1-based) corresponding to
+     * the minimum time on the database and the corresponding minimum
+     * time value. Note that this may not necessarily be the first step
+     * on the database if cycle and overlay are being used.
+     */
+    std::pair<int, double> get_min_time() const;
 
     // Functions for an output region...
     bool add(NodeBlock    *node_block);
@@ -196,9 +204,9 @@ namespace Ioss {
     EdgeSetContainer      edgeSets;
     NodeSetContainer      nodeSets;
     CommSetContainer      commSets;
-    StateTimeContainer    stateTimes;
+    mutable StateTimeContainer    stateTimes;
     int currentState;
-    int stateCount;
+    mutable int stateCount;
   };
 }
 inline int Ioss::Region::node_global_to_local(int global, bool must_exist) const
