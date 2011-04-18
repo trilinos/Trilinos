@@ -788,7 +788,7 @@ class UCAggregationFactory : public Teuchos::Describable {
       //     Epetra_Util util;
       //     util.SetSeed( (unsigned int) myPid*2 + (int) (11*rand()));
       //     k = (int)ceil( (10.*myPid)/graph.GetComm()->getSize());
-      //     for (i = 0; i < k+7; i++) util.SetSeed( (unsigned int) util.RandomInt() );
+      //     for (i = 0; i < k+7; i++) util.RandomInt();
       //    temp_->SetSeed( (unsigned int) util.RandomInt() );
           temp_->randomize(); 
 
