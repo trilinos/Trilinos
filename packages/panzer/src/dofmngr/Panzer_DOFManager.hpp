@@ -250,18 +250,6 @@ public:
 
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array. This version lets you specify the sub
-     *        cell you are interested in. 
-     *
-     * \param[in] blockId
-     * \param[in] fieldNum
-     * \param[in] subCellDim
-     * \param[in] subCellId
-     */
-   const std::vector<int> & getGIDFieldOffsets(const std::string & blockId,int fieldNum,int subCellDim,int subCellId) const
-   { TEUCHOS_ASSERT(false); } 
-
-   /** \brief Use the field pattern so that you can find a particular
-     *        field in the GIDs array. This version lets you specify the sub
      *        cell you are interested in and gets the closure. Meaning all the
      *        IDs of equal or lesser sub cell dimension that are contained within
      *        the specified sub cell. For instance for an edge, this function would

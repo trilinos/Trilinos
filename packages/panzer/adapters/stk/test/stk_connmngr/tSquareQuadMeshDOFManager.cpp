@@ -66,7 +66,111 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    int numProcs = stk::parallel_machine_size(Comm);
    int myRank = stk::parallel_machine_rank(Comm);
 
-   TEUCHOS_ASSERT(numProcs<=2);
+   TEUCHOS_ASSERT(numProcs==2);
+
+   // build a geometric pattern from a single basis
+   RCP<const panzer::FieldPattern> patternC1 
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+
+   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+
+   TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
+
+   dofManager->setConnManager(connManager,MPI_COMM_WORLD);
+   TEST_EQUALITY(dofManager->getConnManager(),connManager);
+
+   dofManager->addField("ux",patternC1);
+   dofManager->addField("uy",patternC1);
+   dofManager->addField("p",patternC1);
+
+   dofManager->buildGlobalUnknowns();
+   dofManager->printFieldInformation(out);
+
+   TEST_EQUALITY(dofManager->getFieldNum("p"),0);
+   TEST_EQUALITY(dofManager->getFieldNum("ux"),1);
+   TEST_EQUALITY(dofManager->getFieldNum("uy"),2);
+
+   const std::vector<int> & uy_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("uy"));
+   const std::vector<int> & p_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("p"));
+   const std::vector<int> & ux_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("ux"));
+
+   TEST_EQUALITY(uy_offsets.size(),p_offsets.size());
+   TEST_EQUALITY(uy_offsets.size(),ux_offsets.size());
+
+   if(myRank==0) {
+      std::vector<int> gids;
+
+      dofManager->getElementGIDs(0,gids);
+      TEST_EQUALITY(gids.size(),12);
+      TEST_EQUALITY(gids[0],0); TEST_EQUALITY(gids[1],1); TEST_EQUALITY(gids[2],2);
+      TEST_EQUALITY(gids[3],3); TEST_EQUALITY(gids[4],4); TEST_EQUALITY(gids[5],5);
+      TEST_EQUALITY(gids[6],9); TEST_EQUALITY(gids[7],10); TEST_EQUALITY(gids[8],11);
+      TEST_EQUALITY(gids[9],6); TEST_EQUALITY(gids[10],7); TEST_EQUALITY(gids[11],8);
+
+      for(std::size_t i=0;i<p_offsets.size();i++) {
+         TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
+         TEST_ASSERT(gids[p_offsets[i]]<gids[uy_offsets[i]]); 
+         TEST_ASSERT(gids[ux_offsets[i]]<gids[uy_offsets[i]]); 
+      }
+   
+      dofManager->getElementGIDs(1,gids);
+      TEST_EQUALITY(gids.size(),12);
+      TEST_EQUALITY(gids[0],6); TEST_EQUALITY(gids[1],7); TEST_EQUALITY(gids[2],8);
+      TEST_EQUALITY(gids[3],9); TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);
+      TEST_EQUALITY(gids[6],15); TEST_EQUALITY(gids[7],16); TEST_EQUALITY(gids[8],17);
+      TEST_EQUALITY(gids[9], 12); TEST_EQUALITY(gids[10],13); TEST_EQUALITY(gids[11],14);
+
+      for(std::size_t i=0;i<p_offsets.size();i++) {
+         TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
+         TEST_ASSERT(gids[p_offsets[i]]<gids[uy_offsets[i]]); 
+         TEST_ASSERT(gids[ux_offsets[i]]<gids[uy_offsets[i]]); 
+      }
+   }
+   else if(myRank==1) {
+      std::vector<int> gids;
+
+      dofManager->getElementGIDs(0,gids);
+      TEST_EQUALITY(gids.size(),12);
+      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],5);
+      TEST_EQUALITY(gids[3],18); TEST_EQUALITY(gids[4],19); TEST_EQUALITY(gids[5],20);
+      TEST_EQUALITY(gids[6],21); TEST_EQUALITY(gids[7],22); TEST_EQUALITY(gids[8],23);
+      TEST_EQUALITY(gids[9],9); TEST_EQUALITY(gids[10],10); TEST_EQUALITY(gids[11],11);
+
+      for(std::size_t i=0;i<p_offsets.size();i++) {
+         TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
+         TEST_ASSERT(gids[p_offsets[i]]<gids[uy_offsets[i]]); 
+         TEST_ASSERT(gids[ux_offsets[i]]<gids[uy_offsets[i]]); 
+      }
+   
+      dofManager->getElementGIDs(1,gids);
+      TEST_EQUALITY(gids.size(),12);
+      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
+      TEST_EQUALITY(gids[3],21); TEST_EQUALITY(gids[4],22); TEST_EQUALITY(gids[5],23);
+      TEST_EQUALITY(gids[6],24); TEST_EQUALITY(gids[7],25); TEST_EQUALITY(gids[8],26);
+      TEST_EQUALITY(gids[9],15); TEST_EQUALITY(gids[10],16); TEST_EQUALITY(gids[11],17);
+
+      for(std::size_t i=0;i<p_offsets.size();i++) {
+         TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
+         TEST_ASSERT(gids[p_offsets[i]]<gids[uy_offsets[i]]); 
+         TEST_ASSERT(gids[ux_offsets[i]]<gids[uy_offsets[i]]); 
+      }
+   }
+}
+
+TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+   #else
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+   #endif
+
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
+
+   TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
@@ -84,64 +188,63 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    dofManager->addField("uy",patternC1);
    dofManager->addField("p",patternC1);
    std::vector<std::string> fieldOrder;
-   fieldOrder.push_back("ux");
    fieldOrder.push_back("uy");
    fieldOrder.push_back("p");
+   fieldOrder.push_back("ux");
 
-   // dofManager->setFieldOrder(fieldOrder); // temporary until implemented properly
+   dofManager->setFieldOrder(fieldOrder);
+
    dofManager->buildGlobalUnknowns();
    dofManager->printFieldInformation(out);
 
-   if(numProcs==1) {
+   TEST_EQUALITY(dofManager->getFieldNum("uy"),0);
+   TEST_EQUALITY(dofManager->getFieldNum("p"),1);
+   TEST_EQUALITY(dofManager->getFieldNum("ux"),2);
+
+   const std::vector<int> & uy_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("uy"));
+   const std::vector<int> & p_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("p"));
+   const std::vector<int> & ux_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("ux"));
+
+   TEST_EQUALITY(uy_offsets.size(),p_offsets.size());
+   TEST_EQUALITY(uy_offsets.size(),ux_offsets.size());
+
+   if(myRank==0) {
       std::vector<int> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],0); TEST_EQUALITY(gids[1],1); TEST_EQUALITY(gids[2],2);
-      TEST_EQUALITY(gids[3],3); TEST_EQUALITY(gids[4],4); TEST_EQUALITY(gids[5],5);
-      TEST_EQUALITY(gids[6],12); TEST_EQUALITY(gids[7],13); TEST_EQUALITY(gids[8],14);
-      TEST_EQUALITY(gids[9], 9); TEST_EQUALITY(gids[10],10); TEST_EQUALITY(gids[11],11);
+      for(std::size_t i=0;i<uy_offsets.size();i++) {
+         TEST_ASSERT(gids[uy_offsets[i]]<gids[p_offsets[i]]); 
+         TEST_ASSERT(gids[uy_offsets[i]]<gids[ux_offsets[i]]); 
+         TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
+      }
    
       dofManager->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
-      TEST_EQUALITY(gids[3],12); TEST_EQUALITY(gids[4],13); TEST_EQUALITY(gids[5],14);
-      TEST_EQUALITY(gids[6],21); TEST_EQUALITY(gids[7],22); TEST_EQUALITY(gids[8],23);
-      TEST_EQUALITY(gids[9],18); TEST_EQUALITY(gids[10],19); TEST_EQUALITY(gids[11],20);
-   }
-   else if(myRank==0) {
-      std::vector<int> gids;
-
-      dofManager->getElementGIDs(0,gids);
-      TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],0); TEST_EQUALITY(gids[1],1); TEST_EQUALITY(gids[2],2);
-      TEST_EQUALITY(gids[3],3); TEST_EQUALITY(gids[4],4); TEST_EQUALITY(gids[5],5);
-      TEST_EQUALITY(gids[6],9); TEST_EQUALITY(gids[7],10); TEST_EQUALITY(gids[8],11);
-      TEST_EQUALITY(gids[9],6); TEST_EQUALITY(gids[10],7); TEST_EQUALITY(gids[11],8);
-   
-      dofManager->getElementGIDs(1,gids);
-      TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],6); TEST_EQUALITY(gids[1],7); TEST_EQUALITY(gids[2],8);
-      TEST_EQUALITY(gids[3],9); TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);
-      TEST_EQUALITY(gids[6],15); TEST_EQUALITY(gids[7],16); TEST_EQUALITY(gids[8],17);
-      TEST_EQUALITY(gids[9], 12); TEST_EQUALITY(gids[10],13); TEST_EQUALITY(gids[11],14);
+      for(std::size_t i=0;i<uy_offsets.size();i++) {
+         TEST_ASSERT(gids[uy_offsets[i]]<gids[p_offsets[i]]); 
+         TEST_ASSERT(gids[uy_offsets[i]]<gids[ux_offsets[i]]); 
+         TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
+      }
    }
    else if(myRank==1) {
       std::vector<int> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],5);
-      TEST_EQUALITY(gids[3],18); TEST_EQUALITY(gids[4],19); TEST_EQUALITY(gids[5],20);
-      TEST_EQUALITY(gids[6],21); TEST_EQUALITY(gids[7],22); TEST_EQUALITY(gids[8],23);
-      TEST_EQUALITY(gids[9],9); TEST_EQUALITY(gids[10],10); TEST_EQUALITY(gids[11],11);
+      for(std::size_t i=0;i<uy_offsets.size();i++) {
+         TEST_ASSERT(gids[uy_offsets[i]]<gids[p_offsets[i]]); 
+         TEST_ASSERT(gids[uy_offsets[i]]<gids[ux_offsets[i]]); 
+         TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
+      }
    
       dofManager->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
-      TEST_EQUALITY(gids[3],21); TEST_EQUALITY(gids[4],22); TEST_EQUALITY(gids[5],23);
-      TEST_EQUALITY(gids[6],24); TEST_EQUALITY(gids[7],25); TEST_EQUALITY(gids[8],26);
-      TEST_EQUALITY(gids[9],15); TEST_EQUALITY(gids[10],16); TEST_EQUALITY(gids[11],17);
+      for(std::size_t i=0;i<uy_offsets.size();i++) {
+         TEST_ASSERT(gids[uy_offsets[i]]<gids[p_offsets[i]]); 
+         TEST_ASSERT(gids[uy_offsets[i]]<gids[ux_offsets[i]]); 
+         TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
+      }
    }
 }
 
@@ -158,7 +261,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
    int numProcs = stk::parallel_machine_size(Comm);
    int myRank = stk::parallel_machine_rank(Comm);
 
-   TEUCHOS_ASSERT(numProcs<=2);
+   TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
@@ -178,22 +281,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
    glbNum->getOwnedIndices(owned);
    glbNum->getOwnedAndSharedIndices(ownedAndShared);
 
-   if(numProcs==1) {
-      TEST_EQUALITY(owned.size(),ownedAndShared.size());
-
-      bool ownedCorrect = true;
-      bool ownedAndSharedCorrect = true;
-      std::sort(owned.begin(),owned.end());
-      std::sort(ownedAndShared.begin(),ownedAndShared.end());
-      for(std::size_t i=0;i<owned.size();i++) {
-         ownedCorrect &= (owned[i] == (int) i);
-         ownedAndSharedCorrect &= (ownedAndShared[i] == (int) i);
-      }
-
-      TEST_ASSERT(ownedCorrect);
-      TEST_ASSERT(ownedAndSharedCorrect);
-   }
-   else if(myRank==0 && numProcs==2) {
+   if(myRank==0 && numProcs==2) {
       TEST_EQUALITY(owned.size(),6);
       TEST_EQUALITY(ownedAndShared.size(),6);
       bool ownedCorrect = true;
@@ -249,7 +337,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
    int numProcs = stk::parallel_machine_size(Comm);
    int myRank = stk::parallel_machine_rank(Comm);
 
-   TEUCHOS_ASSERT(numProcs<=2);
+   TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
@@ -271,21 +359,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
    dofManager_temp->addField("T",patternC1);
    dofManager_temp->buildGlobalUnknowns(dofManager_fluids->getGeometricFieldPattern());
 
-   // do some in depth testing
-   if(numProcs==1) {
-      std::vector<int> gids;
-
-      dofManager_temp->getElementGIDs(0,gids);
-      TEST_EQUALITY(gids.size(),4);
-      TEST_EQUALITY(gids[0],0); TEST_EQUALITY(gids[1],1); TEST_EQUALITY(gids[2],4);
-      TEST_EQUALITY(gids[3],3); 
-   
-      dofManager_temp->getElementGIDs(1,gids);
-      TEST_EQUALITY(gids.size(),4);
-      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],7);
-      TEST_EQUALITY(gids[3],6);
-   }
-   else if(myRank==0) {
+   if(myRank==0) {
       std::vector<int> gids;
 
       dofManager_temp->getElementGIDs(0,gids);

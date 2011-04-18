@@ -231,7 +231,7 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::string & st
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setFieldOrder(const std::vector<std::string> & fieldOrder)
 {
-   // fieldOrder_ = fieldOrder;
+   fieldOrder_ = fieldOrder;
 }
 
 /** Get the field order used. Return the field strings.
