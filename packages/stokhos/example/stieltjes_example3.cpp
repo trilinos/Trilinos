@@ -32,6 +32,7 @@
 
 #include "Stokhos.hpp"
 #include "Stokhos_StieltjesPCEBasis.hpp"
+#include "Stokhos_LanczosPCEBasis.hpp"
 #include "Stokhos_UserDefinedQuadrature.hpp"
 
 //typedef Stokhos::LegendreBasis<int,double> basis_type;
@@ -75,7 +76,7 @@ int main(int argc, char **argv)
     const unsigned int np = pmax-pmin+1;
     bool use_pce_quad_points = false;
     bool normalize = false;
-    bool sparse_grid = true;
+    bool sparse_grid = false;
     bool project_integrals = true;
 #ifndef HAVE_STOKHOS_DAKOTA
     sparse_grid = false;
@@ -107,7 +108,7 @@ int main(int argc, char **argv)
       }
 
       double x_pt = x.evaluate(eval_pt);
-      pt_true = std::exp(10.*std::sin(x_pt));
+      pt_true = std::exp(std::sin(x_pt));
       
       // Quadrature
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad;
@@ -129,15 +130,18 @@ int main(int argc, char **argv)
       
       // Compute PCE via quadrature expansion
       quad_exp.sin(u,x);
-      quad_exp.times(u,u,10.0);
+      //quad_exp.times(u,u,10.0);
       quad_exp.exp(w,u);
 	
       // Compute Stieltjes basis
       Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(1);
+      // st_bases[0] = 
+      // 	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
+      // 		       p, Teuchos::rcp(&u,false), quad, use_pce_quad_points, 
+      // 		       normalize, project_integrals, Cijk));
       st_bases[0] = 
-	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
-		       2*p, Teuchos::rcp(&u,false), quad, use_pce_quad_points, 
-		       normalize, project_integrals, Cijk));
+	Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
+		       p, u, *quad));
       Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > 
 	st_basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));

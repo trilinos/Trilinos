@@ -71,6 +71,18 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
+    /*! 
+     * \brief Clone this object with the option of building a higher order
+     * basis.
+     */
+    /*!
+     * This method is following the Prototype pattern (see Design Pattern's textbook).
+     * The slight variation is that it allows the order of the polynomial to be modified,
+     * otherwise an exact copy is formed. The use case for this is creating basis functions
+     * for column indices in a spatially varying adaptive refinement context.
+     */
+    virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const;
+
     //@}
 
   protected:
@@ -102,6 +114,9 @@ namespace Stokhos {
 
     // Prohibit Assignment
     LanczosPCEBasis& operator=(const LanczosPCEBasis& b);
+
+    //! Copy constructor with specified order
+    LanczosPCEBasis(ordinal_type p, const LanczosPCEBasis& basis);
 
   protected:
 

@@ -109,6 +109,15 @@ getQuadPoints(ordinal_type quad_order,
 }
 
 template <typename ordinal_type, typename value_type>
+Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
+Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
+cloneWithOrder(ordinal_type p) const
+{
+   return Teuchos::rcp(new Stokhos::LanczosPCEBasis<ordinal_type,value_type>(
+			 p,*this));
+}
+
+template <typename ordinal_type, typename value_type>
 void
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
@@ -116,6 +125,7 @@ computeRecurrenceCoefficients(ordinal_type n,
 			      Teuchos::Array<value_type>& beta,
 			      Teuchos::Array<value_type>& delta) const
 {
+  ordinal_type nqp = pce_weights.size();
   Teuchos::Array<value_type> g(n+1);
   lanczos(nqp, n, pce_vals, pce_weights, alpha, g);
   for (ordinal_type i=0; i<n; i++) {
@@ -153,13 +163,18 @@ lanczos(ordinal_type n,
     a[i] = alpha;
 
     // compute
-    for (ordinal_type j=0; j<n; j++)
-      h[i+1][j] = (A_diag[j] - alpha)*h[i][j] - gamma[i]*h[i-1][j];
+    if (i > 0)
+      for (ordinal_type j=0; j<n; j++)
+	h[i+1][j] = (A_diag[j] - alpha)*h[i][j] - g[i]*h[i-1][j];
+    else
+      for (ordinal_type j=0; j<n; j++)
+	h[i+1][j] = (A_diag[j] - alpha)*h[i][j];
 
     // compute gamma = ||h_{i+1}||
     value_type gamma = 0.0;
     for (ordinal_type j=0; j<n; j++)
       gamma += h[i+1][j]*h[i+1][j];
+    gamma = std::sqrt(gamma);
     g[i+1] = gamma;
 
     // compute h_{i+1}/gamma
@@ -174,4 +189,13 @@ lanczos(ordinal_type n,
 		       << " has norm " << gamma
 		       << "!  Try increasing number of quadrature points");
   }
+}
+
+template <typename ordinal_type, typename value_type> 
+Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
+LanczosPCEBasis(ordinal_type p, const LanczosPCEBasis& basis) :
+  RecurrenceBasis<ordinal_type, value_type>("Lanczos PCE", p, false),
+  pce_weights(basis.pce_weights),
+  pce_vals(basis.pce_vals)
+{
 }
