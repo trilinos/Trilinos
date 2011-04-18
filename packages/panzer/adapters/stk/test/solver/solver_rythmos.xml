@@ -111,6 +111,8 @@
     <ParameterList name="Stratimikos">
     </ParameterList>
     <ParameterList name="Rythmos Integration Control">
+      <Parameter name="Take Variable Steps" type="bool" value="false"/>
+      <Parameter name="Number of Time Steps" type="int" value="5"/>
     </ParameterList>
     <ParameterList name="Rythmos Integrator">
       <ParameterList name="VerboseObject">

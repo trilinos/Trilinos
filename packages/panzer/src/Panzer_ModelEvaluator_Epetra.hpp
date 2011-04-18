@@ -32,6 +32,7 @@ namespace panzer {
     Teuchos::RCP<const Epetra_Map> get_x_map() const;
     Teuchos::RCP<const Epetra_Map> get_f_map() const;
     Teuchos::RCP<const Epetra_Vector> get_x_init() const;
+    Teuchos::RCP<const Epetra_Vector> get_x_dot_init() const;
     Teuchos::RCP<Epetra_Operator> create_W() const;
     Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
     Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
@@ -51,6 +52,7 @@ namespace panzer {
     
     Teuchos::RCP<const Epetra_Map>   map_x_;
     Teuchos::RCP<Epetra_Vector> x0_;
+    Teuchos::RCP<Epetra_Vector> x_dot_init_;
     mutable Teuchos::RCP<Epetra_Vector> dummy_f_;    
     
     std::vector<Teuchos::RCP<Epetra_Map> > p_map_;

@@ -22,6 +22,9 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 
   map_x_ = lof->getMap();
   x0_ = rcp(new Epetra_Vector(*map_x_));
+  x_dot_init_ = rcp(new Epetra_Vector(*map_x_));
+  x_dot_init_->PutScalar(0.0);
+  
   
   for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::const_iterator p = p_names_.begin(); 
        p != p_names_.end(); ++p) {
@@ -64,6 +67,12 @@ panzer::ModelEvaluator_Epetra::get_f_map() const
 
 Teuchos::RCP<const Epetra_Vector>
 panzer::ModelEvaluator_Epetra::get_x_init() const
+{
+  return x0_;
+}
+
+Teuchos::RCP<const Epetra_Vector>
+panzer::ModelEvaluator_Epetra::get_x_dot_init() const
 {
   return x0_;
 }
