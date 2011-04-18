@@ -135,6 +135,8 @@ namespace panzer_stk {
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
 
     std::size_t workset_size = p.sublist("Assembly").get<std::size_t>("Workset Size");
+    std::string field_order = p.sublist("Assembly").get<std::string>("Field Order",""); // control nodal ordering of unknown
+                                                                                        // global IDs in linear system
 
     Teuchos::RCP<const panzer::EquationSetFactory> eqset_factory = 
       p.sublist("Assembly").get<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory");
@@ -198,7 +200,7 @@ namespace panzer_stk {
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
-      = globalIndexerFactory.buildUniqueGlobalIndexer(*(mpi_comm->getRawMpiComm()),physicsBlocks,conn_manager);
+      = globalIndexerFactory.buildUniqueGlobalIndexer(*(mpi_comm->getRawMpiComm()),physicsBlocks,conn_manager,field_order);
     
     Teuchos::RCP<const Epetra_Comm> ep_comm = Teuchos::rcp(new Epetra_MpiComm(*(mpi_comm->getRawMpiComm())));
 

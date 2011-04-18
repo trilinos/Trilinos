@@ -5,7 +5,8 @@ template <typename LO,typename GO>
 Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
 DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr) const
+                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
+                            const std::string & fieldOrder) const
 {
    Teuchos::RCP<Teuchos::FancyOStream> pout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
    pout->setShowProcRank(true);
@@ -37,6 +38,28 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
          fp->print(*pout);
       }
    } 
+
+   if(fieldOrder!="") {
+      std::vector<std::string> fieldOrderV;
+
+      // this basiclly tokenzies "fieldOrder" string 
+      // and dumps it into "fieldOrderV"
+      std::stringstream ss;
+      ss << fieldOrder;
+
+      // until all tokens are eaten
+      while(!ss.eof()) {
+         std::string token;
+         ss >> token;
+ 
+         // reorder tokens
+         if(token!="")
+            fieldOrderV.push_back(token);
+      }
+
+      // do some stuff columinating in 
+      dofManager->setFieldOrder(fieldOrderV);
+   }
 
    dofManager->buildGlobalUnknowns();
    dofManager->printFieldInformation(*pout);

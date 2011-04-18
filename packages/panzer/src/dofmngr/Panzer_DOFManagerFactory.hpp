@@ -23,7 +23,8 @@ public:
    virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
    buildUniqueGlobalIndexer(MPI_Comm mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr) const;
+                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
+                            const std::string & fieldOrder="") const;
 };
 
 }
