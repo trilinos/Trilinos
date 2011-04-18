@@ -15,6 +15,7 @@
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
+#include "MueLu_Utilities.hpp"
 
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
@@ -23,80 +24,69 @@
 #include <Cthulhu_CrsMatrix.hpp>
 #include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_CrsOperator.hpp>
-#include <Cthulhu.hpp>
+#include <Cthulhu_Example.hpp>
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 #include <Cthulhu_MultiVectorFactory.hpp>
+#include <Cthulhu_Parameters.hpp>
 
+// Gallery
+#define CTHULHU_ENABLED // == Gallery have to be build with the support of Cthulhu matrices.
+#include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
-
-#include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 /**********************************************************************************/
 
 int main(int argc, char *argv[]) {
-  
+ 
+  Teuchos::oblackholestream blackhole;
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 #ifdef HAVE_MUELU_IFPACK //TODO
+  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+  /**********************************************************************************/
+  /* SET TEST PARAMETERS                                                            */
+  /**********************************************************************************/
+  // Note: use --help to list available options.
+  Teuchos::CommandLineProcessor cmdp(false);
+  
+  // Default is Laplace1D with nx = 6561.
+  // It's a nice size for 1D and perfect aggregation. (6561=3^8)
+  MueLu::Gallery::Parameters matrixParameters(cmdp, 6561); // manage parameters of the test case
+  Cthulhu::Parameters cthulhuParameters(cmdp);             // manage parameters of cthulhu
+
+  // custom parameters
+  LO maxLevels = 3;
+  LO its=10;
+  cmdp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
+  cmdp.setOption("its",&its,"number of multigrid cycles");
+  
+  switch (cmdp.parse(argc,argv)) {
+  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
+  
+  matrixParameters.check();
+  cthulhuParameters.check();
+  // TODO: check custom parameters
+
+  if (comm->getRank() == 0) {
+    matrixParameters.print();
+    cthulhuParameters.print();
+    // TODO: print custom parameters
+  }
 
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
-  LO numThreads=1;
-  LO its=10;
-  GO nx=9;
-  GO ny=9;
-  GO nz=9;
-  LO maxLevels = 3;
-  Teuchos::CommandLineProcessor cmdp(false,true);
-  std::string matrixType("Laplace1D");
-  cmdp.setOption("nt",&numThreads,"number of threads.");
-  cmdp.setOption("nx",&nx,"mesh points in x-direction.");
-  cmdp.setOption("ny",&ny,"mesh points in y-direction.");
-  cmdp.setOption("nz",&nz,"mesh points in z-direction.");
-  cmdp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Star2D, Laplace3D, Identity");
-  cmdp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
-  cmdp.setOption("its",&its,"number of multigrid cycles");
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return EXIT_FAILURE;
-  }
-
-  Teuchos::ParameterList pl;
-  pl.set("Num Threads",numThreads);
-
-  GO numGlobalElements = nx;
-  if (matrixType == "Laplace2D" || matrixType == "Star2D")
-    numGlobalElements *= ny;
-  if (matrixType == "Laplace3D")
-    numGlobalElements *= nz;
-  if (numGlobalElements - (numGlobalElements/3)*3 != 0)
-    throw(MueLu::Exceptions::RuntimeError("problem size must be divisible by 3"));
-  LO indexBase = 0;
-
-  if (numGlobalElements == 9) {
-    //Nice size for 1D and perfect aggregation. (6561=3^8)
-    nx = 6561;
-    numGlobalElements = nx;
-  }
-
-  std::cout << "#threads = " << numThreads << std::endl;
-  std::cout << "problem size = " << numGlobalElements << std::endl;
-  std::cout << "matrix type = " << matrixType << std::endl;
-
-  RCP<const Map > map;
-  map = rcp( new MyMap(numGlobalElements, indexBase, comm) );
-
-  Teuchos::ParameterList matrixList;
-  matrixList.set("nx",nx);
-  matrixList.set("ny",ny);
-  matrixList.set("nz",nz);
-
-  RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>(matrixType,map,matrixList); //TODO: Operator vs. CrsOperator
+  const RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  /**********************************************************************************/
+  /*                                                                                */
+  /**********************************************************************************/
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
@@ -113,7 +103,7 @@ int main(int argc, char *argv[]) {
   Finest->SetA(Op);
   Finest->Save("Nullspace",nullSpace);
   Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
-                                          //FIXME is implemented
+                                //FIXME is implemented
 
   Finest->Save("NullSpace",nullSpace);
   H.SetLevel(Finest);

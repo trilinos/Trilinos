@@ -17,7 +17,7 @@
 #include <Cthulhu_MapFactory.hpp>
 #include <Cthulhu_CrsOperator.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu.hpp> //TODO
+#include <Cthulhu_Example.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>

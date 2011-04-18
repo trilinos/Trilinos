@@ -8,8 +8,8 @@
 
 //#include "Cthulhu_config.hpp"
 
-#include <Cthulhu.hpp>
 #include <Cthulhu_Map.hpp>
+#include <Cthulhu_Example.hpp>
 #include "test_helpers.hpp"
 #include "MueLu_Version.hpp"
 #include "MueLu_Utilities.hpp"

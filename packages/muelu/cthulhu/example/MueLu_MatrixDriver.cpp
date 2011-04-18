@@ -10,15 +10,16 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#if !defined(CTHULHU_USE_TPETRA) && !defined(CTHULHU_USE_EPETRA)
-#define CTHULHU_USE_TPETRA
-#endif
 #include <Cthulhu_Map.hpp>
+#include <Cthulhu_MapFactory.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
 #include <Cthulhu_Operator.hpp>
-#include <Cthulhu.hpp>
+#include <Cthulhu_Example.hpp>
+#include <Cthulhu_Parameters.hpp>
 
-#define CTHULHU_ENABLED //TODO
+// Gallery
+#define CTHULHU_ENABLED // == Gallery have to be build with the support of Cthulhu matrices.
+#include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
 using Teuchos::RCP;
@@ -31,55 +32,44 @@ using Teuchos::RCP;
 
 int main(int argc, char* argv[]) 
 {
-
-#ifdef CTHULHU_USE_TPETRA
-  std::cout << "CTHULHU_USE_TPETRA" << std::endl;
-#else
-  std::cout << "CTHULHU_USE_EPETRA" << std::endl;
-#endif
-
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  LO numThreads=1;
-  GO nx=4;
-  GO ny=4;
-  GO nz=4;
-  Teuchos::CommandLineProcessor cmdp(false,true);
-  std::string matrixType("Laplace1D");
-  cmdp.setOption("nt",&numThreads,"number of threads.");
-  cmdp.setOption("nx",&nx,"mesh points in x-direction.");
-  cmdp.setOption("ny",&ny,"mesh points in y-direction.");
-  cmdp.setOption("nz",&nz,"mesh points in z-direction.");
-  cmdp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Star2D, Laplace3D");
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return EXIT_FAILURE;
+  /**********************************************************************************/
+  /* SET TEST PARAMETERS                                                            */
+  /**********************************************************************************/
+  // Note: use --help to list available options.
+  Teuchos::CommandLineProcessor cmdp(false);
+  
+  MueLu::Gallery::Parameters matrixParameters(cmdp); // manage parameters of the test case
+  Cthulhu::Parameters cthulhuParameters(cmdp);       // manage parameters of cthulhu
+  
+  switch (cmdp.parse(argc,argv)) {
+  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
+  
+  matrixParameters.check();
+  cthulhuParameters.check();
+
+  if (comm->getRank() == 0) {
+    matrixParameters.print();
+    cthulhuParameters.print();
   }
 
-  std::cout << "#threads = " << numThreads << std::endl;
-  std::cout << "problem size = " << nx*ny << std::endl;
-  std::cout << "matrix type = " << matrixType << std::endl;
+//   std::cout << "#threads = " << numThreads << std::endl;
+//   std::cout << "problem size = " << nx*ny << std::endl;
+//   std::cout << "matrix type = " << matrixType << std::endl;
 
-  Teuchos::ParameterList pl;
-  pl.set("Num Threads",numThreads);
+//   Teuchos::ParameterList pl;
+//   pl.set("Num Threads",numThreads);
 
-  GO numGlobalElements = nx*ny;
-  if (matrixType == "Laplace3D")
-    numGlobalElements *= nz;
-  LO indexBase = 0;
-
-  RCP<const Map > map;
-  map = rcp( new MyMap(numGlobalElements, indexBase, comm) );
-
-  Teuchos::ParameterList matrixList;
-  matrixList.set("nx",nx);
-  matrixList.set("ny",ny);
-  matrixList.set("nz",nz);
+  const RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
 
   {
-    // RCP<CrsMatrix> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrix>(matrixType,map,matrixList);
-    RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, Operator>(matrixType,map,matrixList);
+    RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, Operator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
     
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     if (comm->getRank() == 0)

@@ -14,7 +14,7 @@
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_MapFactory.hpp>
 #include <Cthulhu_CrsOperator.hpp>
-#include <Cthulhu.hpp>
+#include <Cthulhu_Example.hpp>
 
 // Gallery
 #define CTHULHU_ENABLED // == Gallery have to be build with the support of Cthulhu matrices.

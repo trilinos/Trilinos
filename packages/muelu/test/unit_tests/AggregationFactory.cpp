@@ -1,6 +1,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "test_helpers.hpp"
-#include "Cthulhu.hpp"
+#include "Cthulhu_Example.hpp"
 #include "MueLu_Version.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 

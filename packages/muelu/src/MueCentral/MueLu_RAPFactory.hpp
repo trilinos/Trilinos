@@ -30,6 +30,7 @@ class RAPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
     //@{ Build methods.
     bool Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
       Teuchos::OSTab tab(this->getOStream());
+#undef CTHULHU_USE_EPETRA //FIXME
 #define CTHULHU_USE_EPETRA //FIXME
 #ifdef CTHULHU_USE_EPETRA //FIXME this check goes away once Tpetra has MM multiply
       //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;

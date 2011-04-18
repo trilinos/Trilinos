@@ -13,7 +13,7 @@ namespace MueLu {
 
     public:
     
-      Parameters(Teuchos::CommandLineProcessor& cmdp): nx_(16), ny_(nx_), nz_(nx_), matrixType_("Laplace1D") {
+      Parameters(Teuchos::CommandLineProcessor& cmdp, int nx=16, int ny=-1, int nz=-1, const std::string & matrixType="Laplace1D"): nx_(nx), ny_(ny), nz_(nz), matrixType_(matrixType) {
         cmdp.setOption("nx", &nx_, "mesh points in x-direction.");
         cmdp.setOption("ny", &ny_, "mesh points in y-direction.");
         cmdp.setOption("nz", &nz_, "mesh points in z-direction.");
