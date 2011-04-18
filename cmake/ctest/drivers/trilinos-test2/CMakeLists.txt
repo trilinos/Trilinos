@@ -49,6 +49,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   ctest_linux_nightly_mpi_development_opt_install_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE dev
   DEPENDS Install_Trilinos
+  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
 )
 
 TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()
