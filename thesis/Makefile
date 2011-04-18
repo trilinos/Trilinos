@@ -1,6 +1,6 @@
 all: KurtisNusbaum.pdf
 
-KurtisNusbaum.pdf: KurtisNusbaum.tex KurtisNusbaum.bib ../OptikaThesis.tex basicTramonto/main.cpp ../OptikaFunctions.tex
+KurtisNusbaum.pdf: KurtisNusbaum.tex KurtisNusbaum.bib ../OptikaThesis.tex basicTramonto/main.cpp ../OptikaFunctions.tex title.tex ../OptikaIntro.tex
 	pdflatex KurtisNusbaum
 	bibtex KurtisNusbaum
 	pdflatex KurtisNusbaum
