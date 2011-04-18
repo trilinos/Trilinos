@@ -46,7 +46,9 @@ MockModelEval_A::MockModelEval_A(const MPI_Comm appComm)
     const int vecLength = 4;
     x_map = rcp(new Epetra_Map(vecLength, 0, *Comm));
     x_vec = rcp(new Epetra_Vector(*x_map));
+    x_dot_vec = rcp(new Epetra_Vector(*x_map));
     x_vec->PutScalar(3.0);
+    x_dot_vec->PutScalar(1.0);
 
     //set up responses
     const int numResponses = 1;
@@ -130,6 +132,11 @@ RCP<const Epetra_Map> MockModelEval_A::get_g_map(int j) const
 RCP<const Epetra_Vector> MockModelEval_A::get_x_init() const
 {
   return x_vec;
+}
+
+RCP<const Epetra_Vector> MockModelEval_A::get_x_dot_init() const
+{
+  return x_dot_vec;
 }
 
 RCP<const Epetra_Vector> MockModelEval_A::get_p_init(int l) const
