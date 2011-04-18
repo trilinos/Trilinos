@@ -27,6 +27,9 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<Teuchos::RCP<const
    // must be at least one field to do something
    if(numPat<1) {
       std::cout << "No patterns!" << std::endl;
+      bool no_patterns_to_construct = true;
+      TEST_FOR_EXCEPTION(no_patterns_to_construct,std::logic_error,
+                         "GeometricAggFieldPattern::buildPattern requires at least one field pattern");
       return;
    }
 

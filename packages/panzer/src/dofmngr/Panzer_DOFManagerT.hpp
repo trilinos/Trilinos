@@ -15,12 +15,12 @@ namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager()
-   : numFields_(0)
+   : numFields_(0), fieldsRegistered_(false)
 { }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
-   : numFields_(0)
+   : numFields_(0), fieldsRegistered_(false)
 {
    setConnManager(connMngr,mpiComm);
 }
@@ -85,7 +85,8 @@ Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > DOFManager<LocalOrdinal
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern)
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & str,
+                                                        const Teuchos::RCP<const FieldPattern> & pattern)
 {
    std::vector<std::string> elementBlockIds;
    connMngr_->getElementBlockIds(elementBlockIds);
@@ -96,8 +97,16 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & str,
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & blockId,const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern)
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & blockId,const std::string & str,
+                                                        const Teuchos::RCP<const FieldPattern> & pattern)
 {
+   TEST_FOR_EXCEPTION(fieldsRegistered_,std::logic_error,
+                      "DOFManager::addField: addField cannot be called after registerFields or"
+                      "buildGlobalUnknowns has been called"); 
+
+   fieldStringToPattern_[std::make_pair(blockId,str)] = pattern;
+
+/*
    std::map<std::string,int>::const_iterator itr = fieldStrToInt_.find(str);
    if(itr!=fieldStrToInt_.end()) {
       // field already exists!
@@ -115,6 +124,40 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & bloc
       blockToField_[blockId].insert(fieldNum); 
       numFields_++;
    }
+*/
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields() 
+{
+   numFields_ = 0;
+
+   for(std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> >::const_iterator
+       fieldItr=fieldStringToPattern_.begin(); fieldItr!=fieldStringToPattern_.end();++fieldItr) {
+ 
+      std::string blockId = fieldItr->first.first;
+      std::string fieldName = fieldItr->first.second;
+
+      std::map<std::string,int>::const_iterator itr = fieldStrToInt_.find(fieldName);
+      if(itr!=fieldStrToInt_.end()) {
+         // field already exists!
+         blockToField_[blockId].insert(itr->second); 
+         fieldIntToPattern_[std::make_pair(blockId,itr->second)] = fieldItr->second;
+      }
+      else {
+         // field doesn't exist...add it
+         int fieldNum = numFields_;
+         int size = 1; // fields are always size 1
+         vectorSpace_->defineFields(1,&fieldNum,&size);
+         fieldStrToInt_[fieldName] = fieldNum;
+         intToFieldStr_[fieldNum] = fieldName;
+         fieldIntToPattern_[std::make_pair(blockId,fieldNum)] = fieldItr->second;
+         blockToField_[blockId].insert(fieldNum); 
+         numFields_++;
+      }
+   }
+
+   fieldsRegistered_ = true;
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -184,6 +227,9 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getNumFields() const
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
 {
+   if(!fieldsRegistered_)
+      registerFields();
+
    Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_.getConst();
    geomPattern_ = geomPattern;
 
@@ -237,6 +283,9 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 {
+   if(!fieldsRegistered_)
+      registerFields();
+
    // build the pattern for the ID layout on the mesh
    std::vector<RCP<const FieldPattern> > patVector;
    RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);;
@@ -362,17 +411,23 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostrea
 {
    os << "DOFManager Field Information: " << std::endl;
    
-   std::map<std::string,Teuchos::RCP<FieldAggPattern> >::const_iterator iter;
-   for(iter=fieldAggPattern_.begin();iter!=fieldAggPattern_.end();++iter) {
-      os << "Element Block = " << iter->first << std::endl; 
-      iter->second->print(os);
-
-      // output field information
-      std::set<int>::const_iterator itr_fieldIds = blockToField_.find(iter->first)->second.begin(); 
-      std::set<int>::const_iterator end_fieldIds = blockToField_.find(iter->first)->second.end(); 
-      os << "   Field String to Field Id:\n";
-      for( /*empty*/ ;itr_fieldIds!=end_fieldIds;++itr_fieldIds)
-         os << "      \"" << getFieldString(*itr_fieldIds) << "\" is field ID " << *itr_fieldIds << std::endl;
+   if(fieldsRegistered_) {
+      std::map<std::string,Teuchos::RCP<FieldAggPattern> >::const_iterator iter;
+      for(iter=fieldAggPattern_.begin();iter!=fieldAggPattern_.end();++iter) {
+         os << "Element Block = " << iter->first << std::endl; 
+         iter->second->print(os);
+   
+         // output field information
+         std::set<int>::const_iterator itr_fieldIds = blockToField_.find(iter->first)->second.begin(); 
+         std::set<int>::const_iterator end_fieldIds = blockToField_.find(iter->first)->second.end(); 
+         os << "   Field String to Field Id:\n";
+         for( /*empty*/ ;itr_fieldIds!=end_fieldIds;++itr_fieldIds)
+            os << "      \"" << getFieldString(*itr_fieldIds) << "\" is field ID " << *itr_fieldIds << std::endl;
+      }
+   }
+   else {
+      // fields are not registered
+      os << "Fields not yet registered! Unknowns not built (call buildGlobalUnknowns)" << std::endl;
    }
 }
 

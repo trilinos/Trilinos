@@ -78,6 +78,9 @@ public:
      *
      * \param[in] str Human readable name of the field
      * \param[in] pattern Pattern defining the basis function to be used
+     *
+     * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code> 
+     *       or <code>registerFields</code>.
      */
    void addField(const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern);
 
@@ -187,21 +190,21 @@ public:
 
    /** build the global unknown numberings
      *   1. this builds the pattens
-     *   2. initializes the connectivity
-     *   3. calls initComplete
+     *   2. Build a default geometric pattern to pass to the connection manager
+     *   3. initializes the connectivity
+     *   4. calls initComplete
      */
    virtual void buildGlobalUnknowns();
 
    /** build the global unknown numberings
      *   1. this builds the pattens
-     *   2. initializes the connectivity
-     *   3. calls initComplete
+     *   2. calls initComplete
      *
      * This method allows a different geometric
      * field pattern to used. It does not call the
      * ConnManger::buildConnectivity, and just
      * uses the provided field pattern as a the
-     * geometric pattern. Not this requires that
+     * geometric pattern. Note this requires that
      * ConnManager::buildConnectivity has already
      * been called.
      */
@@ -313,6 +316,9 @@ protected:
      */
    void buildDefaultFieldOrder();
    
+   /** Get ordered field IDs associated with a particular element
+     * block.
+     */
    std::vector<int> getOrderedBlock(const std::string & blockId);
 
    /** Using the natural ordering associated with the std::vector
@@ -323,6 +329,8 @@ protected:
    //! build the pattern associated with this manager
    void buildPattern(const std::string & blockId,const Teuchos::RCP<const FieldPattern> & geomPattern);
 
+   void registerFields();
+
    // computes connectivity
    Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_; 
    
@@ -331,6 +339,9 @@ protected:
    //! field string ==> field id
    std::map<std::string,int> fieldStrToInt_;
    std::map<int,std::string> intToFieldStr_;
+
+   //! (block ID x field string) ==> pattern
+   std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> > fieldStringToPattern_;
 
    //! (block ID x field id) ==> pattern
    std::map<std::pair<std::string,int>,Teuchos::RCP<const FieldPattern> > fieldIntToPattern_;
@@ -363,6 +374,8 @@ protected:
    int edgeType_;
    int numFields_;
    std::vector<int> patternNum_;
+
+   bool fieldsRegistered_;
 
    Teuchos::RCP<const FieldPattern> geomPattern_;
 };

@@ -94,7 +94,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    fieldOrder.push_back("ux");
    fieldOrder.push_back("uy");
    fieldOrder.push_back("p");
-   dofManager->setFieldOrder(fieldOrder);
+   // dofManager->setFieldOrder(fieldOrder); // temporary until implemented properly
    dofManager->printFieldInformation(out);
    dofManager->buildGlobalUnknowns();
 

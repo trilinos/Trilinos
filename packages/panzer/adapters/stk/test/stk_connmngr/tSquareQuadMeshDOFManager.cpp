@@ -88,9 +88,9 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    fieldOrder.push_back("uy");
    fieldOrder.push_back("p");
 
-   dofManager->setFieldOrder(fieldOrder);
-   dofManager->printFieldInformation(out);
+   // dofManager->setFieldOrder(fieldOrder); // temporary until implemented properly
    dofManager->buildGlobalUnknowns();
+   dofManager->printFieldInformation(out);
 
    if(numProcs==1) {
       std::vector<int> gids;
