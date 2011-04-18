@@ -37,12 +37,10 @@
 #include <Ioss_GroupingEntity.h>
 #include <Ioss_Region.h>
 #include <Ioss_NodeBlock.h>
-#include <Ioss_EdgeBlock.h>
-#include <Ioss_FaceBlock.h>
+#include <Ioss_SideBlock.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_NodeSet.h>
-#include <Ioss_EdgeSet.h>
-#include <Ioss_FaceSet.h>
+#include <Ioss_SideSet.h>
 #include <Ioss_CommSet.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_Property.h>

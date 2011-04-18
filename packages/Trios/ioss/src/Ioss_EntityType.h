@@ -37,14 +37,11 @@ namespace Ioss {
   enum EntityType {NODEBLOCK    =   1,
 		   ELEMENTBLOCK =   2,
 		   NODESET      =   4,
-		   EDGESET      =   8,
-		   FACESET      =  16,
-		   SURFACE      =  16, //: Same as faceset
+		   SIDESET      =  16,
+		   SURFACE      =  16, //: Same as sideset
 		   COMMSET      =  32,
-		   EDGEBLOCK    =  64,
-		   FACEBLOCK    = 128,
+		   SIDEBLOCK    = 128,
                    REGION       = 256,
-                   SUPERELEMENT = 512,
-                   INVALID_TYPE =   0};
+                   SUPERELEMENT = 512};
 }
 #endif
