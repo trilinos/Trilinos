@@ -216,6 +216,11 @@ bool test_element(const std::string& type)
     }
   }
 
+  if (nne > nn || nne < 0) {
+    OUTPUT << "\n\tInvalid edge node count";
+    result = false;
+  }
+
   int nnf = element->number_nodes_face(0);
   if (nnf > nn || nnf < -1) {
     OUTPUT << "\n\tInvalid face node count";

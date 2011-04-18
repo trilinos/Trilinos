@@ -49,11 +49,10 @@ namespace Ioss {
   class Region;
   class EntityBlock;
   class NodeBlock;
-  class FaceBlock;
+  class SideBlock;
   class ElementBlock;
   class NodeSet;
-  class EdgeSet;
-  class FaceSet;
+  class SideSet;
   class CommSet;
 }
 
@@ -83,8 +82,7 @@ namespace Iogn {
 
       // Check capabilities of input/output database...
       bool supports_nodal_fields()    const {return false;}
-      bool supports_edge_fields()     const {return false;}
-      bool supports_face_fields()     const {return false;}
+      bool supports_side_fields()     const {return false;}
       bool supports_element_fields()  const {return false;}
       bool supports_nodelist_fields() const {return false;}
 
@@ -99,13 +97,13 @@ namespace Iogn {
       const GeneratedMesh* get_generated_mesh() const
       { return m_generatedMesh; }
 
-      const std::vector<std::string>& get_faceset_names() const
-      { return m_faceset_names; }
+      const std::vector<std::string>& get_sideset_names() const
+      { return m_sideset_names; }
     private:
       void get_nodeblocks();
       void get_elemblocks();
       void get_nodesets();
-      void get_facesets();
+      void get_sidesets();
       void get_commsets();
 
       const Ioss::MapContainer& get_node_map() const;
@@ -116,18 +114,14 @@ namespace Iogn {
 
       int get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::FaceBlock* eb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::EdgeBlock* eb, const Ioss::Field& field,
+      int get_field_internal(const Ioss::SideBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
       int get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
 
       int get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::EdgeSet* es, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::FaceSet* fs, const Ioss::Field& field,
+      int get_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
       int get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
@@ -137,18 +131,14 @@ namespace Iogn {
 
       int put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::FaceBlock* fb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
+      int put_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
       int put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
 
       int put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::EdgeSet* es, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::FaceSet* fs, const Ioss::Field& field,
+      int put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
       int put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
@@ -158,7 +148,7 @@ namespace Iogn {
       DatabaseIO& operator=(const DatabaseIO& from); // do not implement
 
       GeneratedMesh *m_generatedMesh;
-      std::vector<std::string> m_faceset_names;
+      std::vector<std::string> m_sideset_names;
 
       int spatialDimension;
       int nodeCount;

@@ -122,7 +122,7 @@ namespace Ioss {
     static int field_warning(const Ioss::GroupingEntity *ge,
 			     const Ioss::Field &field, const std::string& inout);
 
-    static void calculate_faceblock_membership(IntVector &face_is_member,
+    static void calculate_sideblock_membership(IntVector &face_is_member,
 					       const EntityBlock *ef_blk,
 					       const int *element, const int *sides,
 					       int number_sides,

@@ -59,11 +59,10 @@ namespace Ioss {
    class Region;
    class EntityBlock;
    class NodeBlock;
-   class FaceBlock;
+   class SideBlock;
    class ElementBlock;
    class NodeSet;
-   class EdgeSet;
-   class FaceSet;
+   class SideSet;
    class CommSet;
 }
 
@@ -108,8 +107,7 @@ namespace Ioxf {
 
       // Check capabilities of input/output database...
       bool supports_nodal_fields()    const {return false;}
-      bool supports_edge_fields()     const {return false;}
-      bool supports_face_fields()     const {return false;}
+      bool supports_side_fields()     const {return false;}
       bool supports_element_fields()  const {return true;}
       bool supports_nodelist_fields() const {return false;}
 
@@ -134,13 +132,11 @@ namespace Ioxf {
       std::string title()               const     {return databaseTitle;}
       int    spatial_dimension()   const     {return spatialDimension;}
       int    node_count()          const     {return nodeCount;}
-      int    edge_count()          const     {return 0;}
-      int    face_count()          const     {return 0;}
+      int    side_count()          const     {return 0;}
       int    element_count()       const     {return elementCount;}
       int    node_block_count()    const     {return nodeBlockCount;}
       int    element_block_count() const     {return elementBlockCount;}
-      int    faceset_count()       const     {return sidesetCount;}
-      int    edgeset_count()       const     {return 0;}
+      int    sideset_count()       const     {return sidesetCount;}
       int    nodeset_count()       const     {return nodesetCount;}
       int    maximum_symbol_length() const {return 32;}
 
@@ -150,18 +146,14 @@ namespace Ioxf {
 
       int get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::FaceBlock* eb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::EdgeBlock* eb, const Ioss::Field& field,
+      int get_field_internal(const Ioss::SideBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
       int get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
 
       int get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::EdgeSet* es, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::FaceSet* fs, const Ioss::Field& field,
+      int get_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
       int get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
@@ -171,18 +163,14 @@ namespace Ioxf {
 
       int put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::FaceBlock* fb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::EdgeBlock* eb, const Ioss::Field& field,
+      int put_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
       int put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
 
       int put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::EdgeSet* es, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::FaceSet* fs, const Ioss::Field& field,
+      int put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
       int put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
@@ -234,9 +222,7 @@ namespace Ioxf {
       void get_step_times();
       void get_nodeblocks() const;
       void get_elemblocks() const;
-      void get_facesets()   const;
-      void get_edgesets()   const;
-      void get_edge_face_sets(int topology_dimension)   const;
+      void get_sidesets()   const;
       void get_nodesets()   const;
       void get_commsets()   const;
 
@@ -255,11 +241,11 @@ namespace Ioxf {
 			     int count, int id=0) const;
       Ioss::Field get_next_field(char** names, int *index, int num_names,
 				 int count, int* optional_truth_table) const;
-      int get_face_connectivity(const Ioss::EntityBlock* fb, int id, int face_count,
+      int get_side_connectivity(const Ioss::EntityBlock* fb, int id, int side_count,
 				int *fconnect,
 				size_t data_size) const;
-      int get_face_distributions(const Ioss::EntityBlock* fb, int id,
-				 int face_count, 
+      int get_side_distributions(const Ioss::EntityBlock* fb, int id,
+				 int side_count, 
 				 double *fconnect, size_t data_size) const;
 
       void add_region_fields() const;
@@ -275,12 +261,6 @@ namespace Ioxf {
       void write_reduction_fields() const;
       void read_reduction_fields() const;
 
-      int get_face_edge_field(const Ioss::EntityBlock* ef_blk,
-			      const Ioss::Field& field,
-			      void *data, size_t data_size) const;
-      int put_face_edge_field(const Ioss::EntityBlock* fb,
-			      const Ioss::Field& field,
-			      void *data, size_t data_size) const;
 
       // Handle special output time requests -- primarily restart (cycle, keep, overwrite)
       // Given the global region step, return the step on the database...

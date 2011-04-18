@@ -260,11 +260,11 @@ namespace {
     return omitted;
   }
 }
-void Ioss::Utils::calculate_faceblock_membership(IntVector &face_is_member,
-						const Ioss::EntityBlock *ef_blk,
-						const int *element, const int *sides,
-						int number_sides,
-						const Ioss::Region *region)
+void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
+						 const Ioss::EntityBlock *ef_blk,
+						 const int *element, const int *sides,
+						 int number_sides,
+						 const Ioss::Region *region)
 {
   // Topology of faces in this face block...
   const ElementTopology *ftopo = ef_blk->topology();

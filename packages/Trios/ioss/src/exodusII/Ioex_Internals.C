@@ -1368,7 +1368,7 @@ int Internals::put_non_define_data(const std::vector<Block> &blocks)
 	start[1] = 0;
 	count[1] = text.size()+1;
   
-	for (size_t i = 0; i < blocks[iblk].attributeCount; i++) {
+	for (int i = 0; i < blocks[iblk].attributeCount; i++) {
 	  start[0] = i;
 	  nc_put_vara_text(exodusFilePtr, varid, start, count, text.c_str());
 	}
