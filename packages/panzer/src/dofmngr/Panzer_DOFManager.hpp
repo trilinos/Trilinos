@@ -307,19 +307,29 @@ public:
      */
    virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
 
+   /** Get a set of field numbers associated with a particular element block.
+     */
    const std::set<int> & getFields(const std::string & blockId) const
    { return blockToField_.find(blockId)->second; }
 
-protected:
-   /** Build the default field ordering: simply uses ordering
-     * imposed by <code>fieldStrToInt_</code> (alphabetical on field name)
+   /** Check the validity of a field order. This is used internally
+     * as a sanity check. Checks for no repeats, bogus fields, and all fields
+     * being included.
+     *
+     * \param[in] fieldOrder_ut Field order vector under test (ut).
+     *
+     * \returns true if the vector is valid, false otherwise.
      */
-   void buildDefaultFieldOrder();
+   bool validFieldOrder(const std::vector<std::string> & fieldOrder_ut,const std::set<std::string> & fields) const;
+
+protected:
    
    /** Get ordered field IDs associated with a particular element
      * block.
      */
-   std::vector<int> getOrderedBlock(const std::string & blockId);
+   void getOrderedBlock(const std::vector<std::string> & fieldOrder,
+                        const std::string & blockId,
+                        std::vector<int> & orderedBlock) const;
 
    /** Using the natural ordering associated with the std::vector
      * retrieved from the connection manager
@@ -327,8 +337,13 @@ protected:
    std::size_t blockIdToIndex(const std::string & blockId) const;
 
    //! build the pattern associated with this manager
-   void buildPattern(const std::string & blockId,const Teuchos::RCP<const FieldPattern> & geomPattern);
+   void buildPattern(const std::vector<std::string> & fieldOrder,
+                     const std::string & blockId,
+                     const Teuchos::RCP<const FieldPattern> & geomPattern);
 
+   /** This builds all numbers for the fields as well as
+     * constructing a default field orderand validating the user specified field order.
+     */
    void registerFields();
 
    // computes connectivity
@@ -367,7 +382,7 @@ protected:
    // maps blockIds to indices
    mutable Teuchos::RCP<std::map<std::string,std::size_t> > blockIdToIndex_;
 
-   std::vector<int> fieldOrder_;
+   std::vector<std::string> fieldOrder_;
 
    // counters
    int nodeType_;

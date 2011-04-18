@@ -29,3 +29,9 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES tFieldAggPattern.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  tDOFManager_SimpleTests
+  SOURCES tDOFManager_SimpleTests.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  )

@@ -132,6 +132,62 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
 {
    numFields_ = 0;
 
+   // test validity of the field order
+   {
+      // build a unique set of fields, so we can compare validate the ordered list
+      std::set<std::string> fields;
+      for(std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> >::const_iterator
+          fieldItr=fieldStringToPattern_.begin(); fieldItr!=fieldStringToPattern_.end();++fieldItr) {
+         std::string fieldName = fieldItr->first.second;
+         fields.insert(fieldName);
+      }
+
+      // construct default field order if neccessary
+      if(fieldOrder_.size()==0) {
+         std::set<std::string>::const_iterator itr;
+         for(itr=fields.begin();itr!=fields.end();itr++)
+            fieldOrder_.push_back(*itr);
+      }
+
+      // check validity of field order: no repeats, and everything is accounted for
+      bool validOrder = validFieldOrder(fieldOrder_,fields);
+      if(!validOrder) {
+         // for outputing
+         std::stringstream ss;
+
+         ss << "DOFManager::registerFields - Field order is invalid!\n";
+
+         ss << "   fields = [ ";
+         for(std::set<std::string>::const_iterator itr=fields.begin();
+             itr!=fields.end();++itr)
+            ss << "\"" << *itr << "\" ";
+         ss << " ]\n";
+
+         ss << "   fieldOrder = [ ";
+         for(std::vector<std::string>::const_iterator itr=fieldOrder_.begin();
+             itr!=fieldOrder_.end();++itr)
+            ss << "\"" << *itr << "\" ";
+         ss << " ]\n";
+
+         TEST_FOR_EXCEPTION(!validOrder,std::logic_error,ss.str());
+      }
+   }
+
+   // build field IDs
+   for(std::size_t fo_index=0;fo_index<fieldOrder_.size();fo_index++) {
+      std::string fieldName = fieldOrder_[fo_index];
+
+      // field doesn't exist...add it
+      int fieldNum = fo_index;
+      int size = 1; // fields are always size 1
+      vectorSpace_->defineFields(1,&fieldNum,&size);
+
+      fieldStrToInt_[fieldName] = fieldNum;
+      intToFieldStr_[fieldNum] = fieldName;
+   }      
+   numFields_ = fieldOrder_.size();
+
+   // associate blocks with particular field ids
    for(std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> >::const_iterator
        fieldItr=fieldStringToPattern_.begin(); fieldItr!=fieldStringToPattern_.end();++fieldItr) {
  
@@ -145,15 +201,13 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
          fieldIntToPattern_[std::make_pair(blockId,itr->second)] = fieldItr->second;
       }
       else {
-         // field doesn't exist...add it
-         int fieldNum = numFields_;
-         int size = 1; // fields are always size 1
-         vectorSpace_->defineFields(1,&fieldNum,&size);
-         fieldStrToInt_[fieldName] = fieldNum;
-         intToFieldStr_[fieldNum] = fieldName;
-         fieldIntToPattern_[std::make_pair(blockId,fieldNum)] = fieldItr->second;
-         blockToField_[blockId].insert(fieldNum); 
-         numFields_++;
+         // this statement should _never_ be executed. The reason is that
+         // the fieldIntToPattern_ was filled before this function was run
+         // directly from the fieldStringToPattern_ map. Possibly check the
+         // order validator for letting something slip through!
+         
+         TEST_FOR_EXCEPTION(false,std::logic_error,
+                            "DOFManager::registerFields - Impossible case discoverved!");
       }
    }
 
@@ -175,31 +229,9 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::string & st
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setFieldOrder(const std::vector<int> & fieldOrder)
-{
-   fieldOrder_.clear();
-   fieldOrder_ = fieldOrder;
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setFieldOrder(const std::vector<std::string> & fieldOrder)
 {
-   // convert to vector of field IDs...call integer version of fieldOrder_
-   std::vector<int> fieldOrderInt;
-   std::vector<std::string>::const_iterator strItr; 
-   for(strItr=fieldOrder.begin();strItr!=fieldOrder.end();++strItr) {
-      fieldOrderInt.push_back(getFieldNum(*strItr));
-   }
-
-   setFieldOrder(fieldOrderInt);
-}
-
-/** Get the field order used. Return the field IDs.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldOrder(std::vector<int> & fieldOrder) const
-{
-   fieldOrder = fieldOrder_; // just assign the field order
+   // fieldOrder_ = fieldOrder;
 }
 
 /** Get the field order used. Return the field strings.
@@ -207,11 +239,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldOrder(std::vector<int> & 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldOrder(std::vector<std::string> & fieldOrder) const
 {
-   // converge fieldOrder_ into a vector of strings
-   std::vector<int>::const_iterator intItr;
-   for(intItr=fieldOrder_.begin();intItr!=fieldOrder_.end();++intItr) {
-      fieldOrder.push_back(getFieldString(*intItr));
-   }
+   fieldOrder = fieldOrder_;
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -230,6 +258,9 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos
    if(!fieldsRegistered_)
       registerFields();
 
+   std::vector<std::string> fieldOrder;
+   getFieldOrder(fieldOrder);
+
    Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_.getConst();
    geomPattern_ = geomPattern;
 
@@ -245,7 +276,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos
       std::size_t blockIndex = blockIdToIndex(blockId);
 
       // build the pattern
-      buildPattern(blockId,geomPattern);
+      buildPattern(fieldOrder,blockId,geomPattern);
 
       // figure out what IDs are active for this pattern
       const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockId]->numFieldsPerId();
@@ -302,52 +333,38 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildDefaultFieldOrder()
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOrderedBlock(const std::vector<std::string> & fieldOrder,
+                                                               const std::string & blockId,
+                                                               std::vector<int> & orderedBlock) const
 {
-   std::vector<int> fieldOrder;
+   const std::set<int> & fieldSet = this->getFields(blockId);
+   orderedBlock.clear();
 
-   // build field order int vector from the ordering of field names
-   std::map<std::string,int>::const_iterator s2iItr;
-   for(s2iItr=fieldStrToInt_.begin();s2iItr!=fieldStrToInt_.end();++s2iItr) {
-      fieldOrder.push_back(s2iItr->second);
-   }
+   std::vector<std::string>::const_iterator itr;
+   for(itr=fieldOrder.begin();itr!=fieldOrder.end();++itr) {
+      int fieldNum = this->getFieldNum(*itr);
 
-   // set the field order
-   setFieldOrder(fieldOrder);
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-std::vector<int> DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOrderedBlock(const std::string & blockId)
-{
-   const std::set<int> & fieldSet = blockToField_[blockId];
-   std::vector<int> orderedBlock;
-
-   std::vector<int>::const_iterator itr;
-   for(itr=fieldOrder_.begin();itr!=fieldOrder_.end();++itr) {
       // if field in in a particular block add it 
-      if(fieldSet.find(*itr)!=fieldSet.end())
-         orderedBlock.push_back(*itr);
+      if(fieldSet.find(fieldNum)!=fieldSet.end())
+         orderedBlock.push_back(fieldNum);
    }
-
-   return orderedBlock;
 }
 
 // build the pattern associated with this manager
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::string & blockId,const RCP<const FieldPattern> & geomPattern)
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::vector<std::string> & fieldOrder,
+                                                            const std::string & blockId,
+                                                            const RCP<const FieldPattern> & geomPattern)
 {
    using Teuchos::rcp;
    using Teuchos::RCP;
 
    // use some generic field ordering if the current one is empty
-   if(fieldOrder_.size()==0)
-      buildDefaultFieldOrder();
-
-   std::vector<int> orderedBlock = getOrderedBlock(blockId);
    std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > blockPatterns;
+   std::vector<int> orderedBlock;
+   getOrderedBlock(fieldOrder,blockId,orderedBlock);
 
    // get a map of field patterns
-   // std::set<int>::const_iterator itr;
    std::vector<int>::const_iterator itr;
    for(itr=orderedBlock.begin();itr!=orderedBlock.end();++itr) {
       Teuchos::RCP<const FieldPattern> fp = fieldIntToPattern_[std::make_pair(blockId,*itr)];
@@ -356,8 +373,6 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::string & 
 
    // smash together all fields...do interlacing
    fieldAggPattern_[blockId] = rcp(new FieldAggPattern(blockPatterns));
-   // TEUCHOS_ASSERT(geomPattern->equals(*fieldAggPattern_[blockId]->getGeometricAggFieldPattern()));
-   // this should not be true!  What if this only has Q1s and geometric is for Q2s
 
    // build FEI pattern
    const std::vector<int> & fields = fieldAggPattern_[blockId]->fieldIds();
@@ -368,11 +383,11 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::string & 
       if(numFieldsPerID[i]>0) 
          reduceNumFieldsPerID.push_back(numFieldsPerID[i]);
 
-   int idsPerSimplex  = reduceNumFieldsPerID.size();
+   int idsPerElement  = reduceNumFieldsPerID.size();
 
    std::size_t blockIndex = blockIdToIndex(blockId);
    patternNum_[blockIndex] 
-         = matrixGraph_->definePattern(idsPerSimplex,nodeType_,&reduceNumFieldsPerID[0],&fields[0]);
+         = matrixGraph_->definePattern(idsPerElement,nodeType_,&reduceNumFieldsPerID[0],&fields[0]);
 }
 
 // "Get" functions
@@ -501,6 +516,45 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<Globa
 {
    getOwnedIndices_T<GlobalOrdinalT>(vectorSpace_,indices);
 }
+
+/** Check the validity of a field order. This is used internally
+  * as a sanity check. Checks for no repeats, bogus fields, and all fields
+  * being included.
+  *
+  * \param[in] fieldOrder_ut Field order vector under test (ut).
+  *
+  * \returns true if the vector is valid, false otherwise.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+bool DOFManager<LocalOrdinalT,GlobalOrdinalT>::validFieldOrder(const std::vector<std::string> & fieldOrder_ut,const std::set<std::string> & fields) const
+{
+   if(fields.size()!=fieldOrder_ut.size()) // something is wrong!
+      return false;
+
+   std::set<std::string> fieldOrderSet;
+
+   // first check the size by shoving everything into a set
+   std::vector<std::string>::const_iterator itr;
+   for(itr=fieldOrder_ut.begin();itr!=fieldOrder_ut.end();++itr)
+      fieldOrderSet.insert(*itr);
+
+   if(fieldOrderSet.size()!=fieldOrder_ut.size()) // there are repeat fields!
+      return false;
+
+   // check to make sure each field is represented
+   std::set<std::string>::const_iterator itr_ut = fieldOrderSet.begin();
+   std::set<std::string>::const_iterator itr_src = fields.begin();
+   while(itr_ut!=fieldOrderSet.end()) {
+      if(*itr_ut!=*itr_src) 
+         return false;
+
+      itr_ut++;
+      itr_src++;
+   }
+
+   return true;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 
 // These two functions are "helpers" for DOFManager::getOwnedAndSharedIndices
