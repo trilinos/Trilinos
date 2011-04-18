@@ -147,10 +147,12 @@ namespace Ioss {
     // Put this fields data into the specified std::vector space.
     // Returns number of entities for which the field was read.
     // Resizes 'data' to size needed to hold all values.
+    int get_field_data(const std::string& field_name, std::vector<char>    &data) const;
     int get_field_data(const std::string& field_name, std::vector<double>  &data) const;
     int get_field_data(const std::string& field_name, std::vector<int>     &data) const;
     int get_field_data(const std::string& field_name, std::vector<Complex> &data) const;
 
+    int put_field_data(const std::string& field_name, std::vector<char>    &data) const;
     int put_field_data(const std::string& field_name, std::vector<double>  &data) const;
     int put_field_data(const std::string& field_name, std::vector<int>     &data) const;
     int put_field_data(const std::string& field_name, std::vector<Complex> &data) const;
