@@ -64,6 +64,10 @@ Ioss::NodeBlock::NodeBlock(const Ioss::DatabaseIO *io_database,
   fields.add(Ioss::Field("mesh_model_coordinates",
 			 Ioss::Field::REAL, vector_name,
 			 Ioss::Field::MESH, node_count));
+
+  fields.add(Ioss::Field("node_connectivity_status",
+			 Ioss::Field::CHARACTER, "scalar",
+			 Ioss::Field::MESH, node_count));
 }
 
 Ioss::NodeBlock::~NodeBlock() {}
