@@ -520,7 +520,9 @@ namespace stk {
 
       double cpuMax = (cpu1-cpu0);
       double wallMax = (t1-t0);
+      double cpuSum = (cpu1-cpu0);
 
+      stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &cpuSum ) );
       stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &cpuMax ) );
       stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &wallMax ) );
 
@@ -528,8 +530,10 @@ namespace stk {
         {
           stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)\n";
           stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)\n";
+          stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)\n";
           std::cout << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)" << std::endl;
           std::cout << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)" << std::endl;
+          std::cout << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)" << std::endl;
         }
 
       return result;
