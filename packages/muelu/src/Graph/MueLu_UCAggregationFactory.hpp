@@ -153,7 +153,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         {
           randomVector = Teuchos::arcp<int>(nRows);
           for (int i = 0; i < nRows; ++i) randomVector[i] = i;
-            RandomReorder(randomVector, *(graph.GetDomainMap()));
+          RandomReorder(randomVector);
         } 
         else if ( ordering == 2 )  /* graph ordering */
         {
@@ -1246,33 +1246,26 @@ class UCAggregationFactory : public Teuchos::Describable {
         return 0; //TODO
       } //RemoveSmallAggs
 
-      /*! @brief Utility to take a list of integers (which should be the same 
-         length as the number of local ids in Map) and reorder them randomly.
-
-         @param list      On input, a bunch of integers. On output, the same integers in a different order
-                          that is determined randomly.
-         @param map       ?????????????????????????
+      /*! @brief Utility to take a list of integers and reorder them randomly (by using a local permutation).
+         @param list On input, a bunch of integers. On output, the same integers in a different order
+                     that is determined randomly.
       */
-      int RandomReorder(Teuchos::ArrayRCP<int> list, const Map &map) const
+      void RandomReorder(Teuchos::ArrayRCP<int> list) const
       {
+        int n = list.size();
+        for(int i=0; i<n-1; i++) {
+          std::swap(list[i], list[RandomOrdinal(i,n-1)]);
+        }
+      } 
 
-        TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "RandomReorder: TODO");
-
-      //   Epetra_Vector     RandVec(map);
-      //   Epetra_IntVector iRandVec(map);
-
-      //   double *ptr;
-      //   int  *iptr;
-
-      //   RandVec.Random(); RandVec.ExtractView(&ptr); iRandVec.ExtractView(&iptr);
-      //   for (int i=0; i <  map.NumMyElements(); ++i) iptr[i] = (int) (10000.*ptr[i]);
-      //   Epetra_Util::Sort(true,RandVec.getMap().NumMyElements(), iptr, 0,NULL,1,&list);
-
-        return 0; 
-      } //RandomReorder
-
+      /*! @brief Generate a random number in the range [min, max] */
+      int RandomOrdinal(int min, int max) const
+      {
+        return min + static_cast<int>((max-min+1) * (static_cast<double>(std::rand()) / (RAND_MAX + 1.0)));
+      }
+  
       //@}
-
+  
 
       // JG TODO: rename variables:
       //  Adjacent-> adjacent
