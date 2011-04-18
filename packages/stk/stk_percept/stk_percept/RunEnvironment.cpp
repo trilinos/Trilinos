@@ -311,7 +311,7 @@ namespace stk {
 
       // Start stk_percept root timer
       timer().start();
-      std::cout << "RunEnvironment::initialize done, m_workingDirectory= " << m_workingDirectory << std::endl;
+      //std::cout << "RunEnvironment::initialize done, m_workingDirectory= " << m_workingDirectory << std::endl;
       m_processCommandLine_invoked = true;
 
     }

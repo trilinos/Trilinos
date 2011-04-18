@@ -23,14 +23,6 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-namespace {
-  
-char * my_strdup(const char *s) {
-  return std::strcpy(new char[std::strlen(s) + 1], s);
-}
-
-}
-
 namespace boost {
 
 template <>

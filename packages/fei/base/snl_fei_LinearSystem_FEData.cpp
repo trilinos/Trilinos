@@ -121,9 +121,12 @@ int snl_fei::LinearSystem_FEData::implementBCs(bool applyBCs)
 
   CHK_ERR( dbcManager_->finalizeBCEqns(bcEqns) );
 
-  std::vector<fei::FillableMat*>& remote = bcEqns.getRemotelyOwnedMatrix();
-  for(unsigned p=0; p<remote.size(); ++p) {
-    fei::impl_utils::separate_BC_eqns( *(remote[p]), essEqns, essGamma);
+  std::map<int,fei::FillableMat*>& remotes = bcEqns.getRemotelyOwnedMatrices();
+  std::map<int,fei::FillableMat*>::iterator
+    it = remotes.begin(),
+    it_end = remotes.end();
+  for(; it!=it_end; ++it) {
+    fei::impl_utils::separate_BC_eqns( *(it->second), essEqns, essGamma);
   }
 
   CHK_ERR( bcEqns.gatherFromOverlap() );
