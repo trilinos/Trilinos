@@ -175,7 +175,13 @@ namespace Cthulhu {
     inline void putScalar(const int &value) { CTHULHU_DEBUG_ME; vec_->PutValue(value); }
 
     //! Set multi-vector values to random numbers.
-    inline void randomize() { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
+    inline void randomize() { CTHULHU_DEBUG_ME;  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraIntVector::randomize(): Functionnality not available in Epetra"); }
+
+    //! Set seed for Random function.
+    /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
+    inline void setSeed(unsigned int seed) {
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraIntVector::setSeed(): Functionnality not available in Epetra");
+    }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Replace the underlying Map with a compatible one.

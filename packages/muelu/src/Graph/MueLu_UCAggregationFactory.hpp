@@ -784,12 +784,15 @@ class UCAggregationFactory : public Teuchos::Describable {
             (2.5*nAggregatesGlobal < nAggregatesTarget) &&
             (minNAggs ==0) && (maxNAggs <= 1)) {
 
-          //TODO TODO
-      //     Epetra_Util util;
-      //     util.SetSeed( (unsigned int) myPid*2 + (int) (11*rand()));
-      //     k = (int)ceil( (10.*myPid)/graph.GetComm()->getSize());
-      //     for (i = 0; i < k+8; i++) util.RandomInt();
-      //     temp_->SetSeed(util.Seed());
+          // Modify seed of the random algorithm used by temp_->randomize()
+          {
+            typedef Teuchos::ScalarTraits<double> ST; // temp_ is of type double.
+            ST::seedrandom(static_cast<unsigned int>(myPid*2 + (int) (11*ST::random())));
+            int k = (int)ceil( (10.*myPid)/graph.GetComm()->getSize());
+            for (int i = 0; i < k+7; i++) ST::random();
+            temp_->setSeed(static_cast<unsigned int>(ST::random()));
+          }
+
           temp_->randomize(); 
 
           ArrayRCP<double> temp = temp_->getDataNonConst(0);

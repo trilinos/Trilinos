@@ -80,6 +80,10 @@ namespace Cthulhu {
     //! Set multi-vector values to random numbers.
     virtual void randomize() =0;
 
+    //! Set seed for Random function.
+    /** Note: not a method of the Tpetra interface. Added for MueLu. */
+    virtual void setSeed(unsigned int seed) =0;
+
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Replace the underlying Map with a compatible one.
     virtual void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) =0;

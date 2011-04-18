@@ -103,6 +103,12 @@ namespace Cthulhu {
     //! Set multi-vector values to random numbers.
     inline void randomize() { CTHULHU_DEBUG_ME; vec_->Random(); }
 
+    //! Set seed for Random function.
+    /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
+    inline void setSeed(unsigned int seed) {
+      vec_->SetSeed(seed);
+    }
+
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Replace the underlying Map with a compatible one.
     inline void replaceMap(const Teuchos::RCP<const Map<int,int> > &map) { CTHULHU_DEBUG_ME; vec_->replaceMap(map); }

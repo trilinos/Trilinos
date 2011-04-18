@@ -121,12 +121,13 @@ namespace MueLu {
         //SC largestGlobalWeight = weight_.maxValue();
         SC largestGlobalWeight = weight_.normInf();
 
-        //TODO
-        //    Epetra_Util util;
-        //    util.SetSeed( (unsigned int) MyPid*2 + (int) (11*rand()));
-        //    for (int i = 0; i < 10; i++) util.SetSeed( (unsigned int) util.RandomInt() );
-
-        // perturbWt.SetSeed( (unsigned int) util.RandomInt() );
+        // Modify seed of the random algorithm used by perturbWt_->randomize()
+        {
+          typedef Teuchos::ScalarTraits<ScalarType> ST;
+          ST::seedrandom(static_cast<unsigned int>(MyPid*2 + (int) (11*ST::random())));
+          for (int i = 0; i < 10; i++) ST::random();
+          perturbWt_->setSeed(static_cast<unsigned int>(ST::random()));
+        }
         perturbWt_->randomize(); 
 
         ArrayRCP<SC> weight = weight_.getDataNonConst(0);
