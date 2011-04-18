@@ -274,7 +274,8 @@ void MockModelEval_A::evalModel( const InArgs& inArgs,
 
     if (f_out != Teuchos::null) {
       for (int i=0; i<myVecLength; i++) {
-         (*f_out)[i] = -alpha*(*x_dot)[i] + beta * (*f_out)[i];
+	//(*f_out)[i] = -alpha*(*x_dot)[i] + beta * (*f_out)[i];
+         (*f_out)[i] = -(*x_dot)[i] + (*f_out)[i];
       }
     }
     if (dfdp_out != Teuchos::null) {

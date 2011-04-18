@@ -35,10 +35,14 @@
 
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
+#include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+
+#include "Rythmos_IntegratorBuilder.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #ifdef Piro_ENABLE_NOX
 #  include "Thyra_NonlinearSolver_NOX.hpp"
@@ -52,6 +56,13 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
   model(model_)
 {
   //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
+
+  // For dumping default parameters from Rythmos
+  {
+    //Rythmos::IntegratorBuilder<double> b;
+    //std::cout << *(b.getValidParameters()) << std::endl;
+    //Teuchos::writeParameterListToXmlFile(*b.getValidParameters(), "sample.xml");
+  }
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -124,22 +135,35 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
 #endif
       }
 
-      if (stepperType == "Backward Euler")
+      if (stepperType == "Backward Euler") {
         fwdStateStepper = Rythmos::backwardEulerStepper<double> (model, fwdTimeStepSolver);
-      else if (stepperType == "Explicit RK")
+	fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
+      }
+      else if (stepperType == "Explicit RK") {
         fwdStateStepper = Rythmos::explicitRKStepper<double>(model);
+	fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
+      }
+      else if (stepperType == "BDF") {
+	Teuchos::RCP<Teuchos::ParameterList> BDFparams = 
+	  Teuchos::sublist(rythmosPL, "Rythmos Stepper", true);
+        Teuchos::RCP<Teuchos::ParameterList> BDFStepControlPL =
+          Teuchos::sublist(BDFparams,"Step Control Settings");
+
+        fwdStateStepper = Teuchos::rcp( new Rythmos::ImplicitBDFStepper<double>(model,fwdTimeStepSolver,BDFparams) );
+        fwdStateStepper->setInitialCondition(model->getNominalValues());
+
+      }
       else 
         TEST_FOR_EXCEPTION( true, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
                      << stepperType << std::endl);
 
-      fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
 
       {
         RCP<Teuchos::ParameterList>
           integrationControlPL = sublist(rythmosPL, "Rythmos Integration Control", true);
-        integrationControlPL->set( "Take Variable Steps", false );
-        integrationControlPL->set( "Fixed dt", Teuchos::as<double>(delta_t) );
+	//        integrationControlPL->set( "Take Variable Steps", false );
+        //integrationControlPL->set( "Fixed dt", Teuchos::as<double>(delta_t) );
 
        // RCP<Rythmos::IntegratorBase<Scalar> >
         RCP<Rythmos::DefaultIntegrator<Scalar> >
@@ -439,6 +463,9 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
     );
 
   validPL->sublist("NonLinear Solver", false, "");
+  validPL->sublist("Rythmos Builder", false, "");
+  
+
   validPL->set<int>("Num Time Steps", 0, "");
   validPL->set<double>("Final Time", 1.0, "");
   validPL->sublist("Rythmos Stepper", false, "");
