@@ -62,7 +62,8 @@ namespace stk
       //=============================================================================
 
       /// create a mesh of hex elements for use in other tests below
-      STKUNIT_UNIT_TEST(unit_perceptMesh, build_meshes)
+      //STKUNIT_UNIT_TEST(unit_perceptMesh, build_meshes)
+      static void fixture_setup_0()
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -89,8 +90,10 @@ namespace stk
       //=============================================================================
 
       /// using the QuadFixture, generate meshes with and without sidesets
-      STKUNIT_UNIT_TEST(unit_perceptMesh, quad4_quad4_4_test_1)
+      // STKUNIT_UNIT_TEST(unit_perceptMesh, quad4_quad4_4_test_1)
+      static void fixture_setup_1()
       {
+
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -134,6 +137,15 @@ namespace stk
             eMesh.saveAs(input_files_loc+"quad_fixture_no_sidesets.e");
           }
       }
+ 
+      static void fixture_setup()
+      {
+        static bool is_setup = false;
+        if (is_setup) return;
+        fixture_setup_0();
+        fixture_setup_1();
+        is_setup = true;
+      }
 
       //=============================================================================
       //=============================================================================
@@ -173,6 +185,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(perceptMesh, walk_nodes)
       {
+        fixture_setup();
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -261,6 +274,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(perceptMesh, test_mesh_diff)
       {
+        fixture_setup();
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 

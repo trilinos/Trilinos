@@ -66,8 +66,9 @@ INCLUDE(PackageAddTestHelpers)
 #   NAME_POSTFIX <testNamePostfix>
 #
 #     If specified, gives a postfix that will be added to the name of the
-#     executable in order build the name of the test.  If NAME argument is
-#     given it will be selected over the NAME_POSTFIX.
+#     executable in order build the name of the test (appended as
+#     '_<NAME_POSTFIX>').  If NAME argument is given it will be selected over
+#     the NAME_POSTFIX.
 #
 #   DIRECTORY <directory>
 #

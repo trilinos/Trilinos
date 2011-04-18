@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_WEDGE_C2_FEMDEF_HPP
+#define INTREPID_HGRAD_WEDGE_C2_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -680,3 +682,4 @@ void Basis_HGRAD_WEDGE_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&      
                       ">>> ERROR (Basis_HGRAD_WEDGE_C2_FEM): FEM Basis calling an FVD member function");
 }
 }// namespace Intrepid
+#endif

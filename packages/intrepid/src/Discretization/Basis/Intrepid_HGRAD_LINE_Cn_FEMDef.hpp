@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_LINE_CN_FEMDEF_HPP
+#define INTREPID_HGRAD_LINE_CN_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -317,3 +319,4 @@ namespace Intrepid {
 
 
 }// namespace Intrepid
+#endif

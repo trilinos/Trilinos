@@ -18,6 +18,7 @@
 #include <boost/tr1/memory.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/shared_array.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <stk_util/util/ci_string.hpp>
 
