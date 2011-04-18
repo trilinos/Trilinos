@@ -55,6 +55,7 @@ class Watch
   virtual ~Watch() {}
   virtual const std::type_info& type() const = 0;
   virtual bool match(const void* item) const = 0;
+  virtual void* item() = 0;
 };
 
 std::vector<Watch*>& watch_vector();
@@ -86,6 +87,8 @@ class WatchClass : public Watch
   virtual bool match(const void* item) const {
     return *(static_cast<const T*>(item)) == m_watch_item;
   }
+
+  virtual void* item() { return &m_watch_item; }
 
  private:
   T m_watch_item;
