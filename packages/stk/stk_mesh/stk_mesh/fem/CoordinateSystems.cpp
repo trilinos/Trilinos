@@ -64,24 +64,24 @@ const Cartesian2d & Cartesian2d::tag()
 const char * Cartesian2d::name() const
 { static const char n[] = "Cartesian2d" ; return n ; }
 
-std::string Cartesian2d::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
-{
+namespace {
+const char * const * Cartesian2d_label() {
   static const char x[] = "x" ;
   static const char y[] = "y" ;
   static const char * label[] = { x , y };
-
+  return label;
+}
+}
+std::string Cartesian2d::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+{
   return std::string( get_string( Cartesian2d::tag().name() ,
-                                  2 , label , size , index ) );
+                                  2 , Cartesian2d_label() , size , index ) );
 }
 
 shards::ArrayDimTag::size_type Cartesian2d::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char x[] = "x" ;
-  static const char y[] = "y" ;
-  static const char * label[] = { x , y };
-
   return get_index( Cartesian2d::tag().name() ,
-                    2 , label , size , arg.c_str() );
+                    2 , Cartesian2d_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -92,26 +92,25 @@ const Cartesian3d & Cartesian3d::tag()
 const char * Cartesian3d::name() const
 { static const char n[] = "Cartesian3d" ; return n ; }
 
+namespace {
+const char * const * Cartesian3d_label() {
+  static const char x[] = "x" ;
+  static const char y[] = "y" ;
+  static const char z[] = "z" ;
+  static const char * label[] = { x , y , z };
+  return label;
+}
+}
 std::string Cartesian3d::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  static const char x[] = "x" ;
-  static const char y[] = "y" ;
-  static const char z[] = "z" ;
-  static const char * label[] = { x , y , z };
-
   return std::string( get_string( Cartesian3d::tag().name() ,
-                                  3 , label , size , index ) );
+                                  3 , Cartesian3d_label() , size , index ) );
 }
 
-shards::ArrayDimTag::size_type Cartesian3d::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+shards::ArrayDimTag::size_type Cartesian::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char x[] = "x" ;
-  static const char y[] = "y" ;
-  static const char z[] = "z" ;
-  static const char * label[] = { x , y , z };
-
   return get_index( Cartesian3d::tag().name() ,
-                    3 , label , size , arg.c_str() );
+                    3 , Cartesian3d_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -122,68 +121,62 @@ const Cylindrical & Cylindrical::tag()
 const char * Cylindrical::name() const
 { static const char n[] = "Cylindrical" ; return n ; }
 
-std::string Cylindrical::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
-{
+namespace {
+const char * const * Cylindrical_label() {
   static const char r[] = "r" ;
   static const char a[] = "a" ;
   static const char z[] = "z" ;
   static const char * label[] = { r , a , z };
-
+  return label;
+}
+}
+std::string Cylindrical::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+{
   return std::string( get_string( Cylindrical::tag().name() ,
-                                  3 , label , size , index ) );
+                                  3 , Cylindrical_label() , size , index ) );
 }
 
 shards::ArrayDimTag::size_type Cylindrical::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char r[] = "r" ;
-  static const char a[] = "a" ;
-  static const char z[] = "z" ;
-  static const char * label[] = { r , a , z };
-
   return get_index( Cylindrical::tag().name() ,
-                    3 , label , size , arg.c_str() );
+                    3 , Cylindrical_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
 
-const FullTensor36 & FullTensor36::tag()
-{ static const FullTensor36 self ; return self ; }
+const FullTensor & FullTensor::tag()
+{ static const FullTensor self ; return self ; }
 
-const char * FullTensor36::name() const
-{ static const char n[] = "FullTensor36" ; return n ; }
+const char * FullTensor::name() const
+{ static const char n[] = "FullTensor" ; return n ; }
 
+namespace {
+const char * const * FullTensor36_label() {
+  static const char xx[] = "xx" ;
+  static const char yx[] = "yx" ;
+  static const char zx[] = "zx" ;
+  static const char xy[] = "xy" ;
+  static const char yy[] = "yy" ;
+  static const char zy[] = "zy" ;
+  static const char xz[] = "xz" ;
+  static const char yz[] = "yz" ;
+  static const char zz[] = "zz" ;
+  static const char * label[] = { xx , yy , zz , 
+                                  xy , yz , zx , 
+                                  yx , zy , xz };
+  return label;
+}
+}
 std::string FullTensor36::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  static const char xx[] = "xx" ;
-  static const char yx[] = "yx" ;
-  static const char zx[] = "zx" ;
-  static const char xy[] = "xy" ;
-  static const char yy[] = "yy" ;
-  static const char zy[] = "zy" ;
-  static const char xz[] = "xz" ;
-  static const char yz[] = "yz" ;
-  static const char zz[] = "zz" ;
-  static const char * label[] = { xx , yx , zx , xy , yy , zy , xz , yz , zz };
-
   return std::string( get_string( FullTensor36::tag().name() ,
-                                  9 , label , size , index ) );
+                                  9 , FullTensor36_label() , size , index ) );
 }
 
-shards::ArrayDimTag::size_type FullTensor36::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+shards::ArrayDimTag::size_type FullTensor::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char xx[] = "xx" ;
-  static const char yx[] = "yx" ;
-  static const char zx[] = "zx" ;
-  static const char xy[] = "xy" ;
-  static const char yy[] = "yy" ;
-  static const char zy[] = "zy" ;
-  static const char xz[] = "xz" ;
-  static const char yz[] = "yz" ;
-  static const char zz[] = "zz" ;
-  static const char * label[] = { xx , yx , zx , xy , yy , zy , xz , yz , zz };
-
   return get_index( FullTensor36::tag().name() ,
-                    9 , label , size , arg.c_str() );
+                    9 , FullTensor36_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -194,28 +187,26 @@ const FullTensor22 & FullTensor22::tag()
 const char * FullTensor22::name() const
 { static const char n[] = "FullTensor22" ; return n ; }
 
+namespace {
+const char * const * FullTensor22_label() {
+  static const char xx[] = "xx" ;
+  static const char yy[] = "yy" ;
+  static const char xy[] = "xy" ;
+  static const char yx[] = "yx" ;
+  static const char * label[] = { xx, yy, xy, yx };
+  return label;
+}
+}
 std::string FullTensor22::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  static const char todo0[] = "todo0" ;
-  static const char todo1[] = "todo1" ;
-  static const char todo2[] = "todo2" ;
-  static const char todo3[] = "todo3" ;
-  static const char * label[] = { todo0, todo1, todo2, todo3 };
-
   return std::string( get_string( FullTensor22::tag().name() ,
-                                  4 , label , size , index ) );
+                                  4 , FullTensor22_label() , size , index ) );
 }
 
 shards::ArrayDimTag::size_type FullTensor22::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char todo0[] = "todo0" ;
-  static const char todo1[] = "todo1" ;
-  static const char todo2[] = "todo2" ;
-  static const char todo3[] = "todo3" ;
-  static const char * label[] = { todo0, todo1, todo2, todo3 };
-
   return get_index( FullTensor22::tag().name() ,
-                    4 , label , size , arg.c_str() );
+                    4 , FullTensor22_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -223,11 +214,11 @@ shards::ArrayDimTag::size_type FullTensor22::to_index( shards::ArrayDimTag::size
 const SymmetricTensor33 & SymmetricTensor33::tag()
 { static const SymmetricTensor33 self ; return self ; }
 
-const char * SymmetricTensor33::name() const
-{ static const char n[] = "SymmetricTensor33" ; return n ; }
+const char * SymmetricTensor::name() const
+{ static const char n[] = "SymmetricTensor" ; return n ; }
 
-std::string SymmetricTensor33::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
-{
+namespace {
+const char * const * SymmetricTensor33_label() {
   static const char xx[] = "xx" ;
   static const char yy[] = "yy" ;
   static const char zz[] = "zz" ;
@@ -235,23 +226,19 @@ std::string SymmetricTensor33::to_string( shards::ArrayDimTag::size_type size , 
   static const char yz[] = "yz" ;
   static const char xz[] = "xz" ;
   static const char * label[] = { xx , yy , zz , xy , yz , xz };
-
+  return label;
+}
+}
+std::string SymmetricTensor33::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+{
   return std::string( get_string( SymmetricTensor33::tag().name() ,
-                                  6 , label , size , index ) );
+                                  6 , SymmetricTensor33_label() , size , index ) );
 }
 
 shards::ArrayDimTag::size_type SymmetricTensor33::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char xx[] = "xx" ;
-  static const char yy[] = "yy" ;
-  static const char zz[] = "zz" ;
-  static const char xy[] = "xy" ;
-  static const char yz[] = "yz" ;
-  static const char xz[] = "xz" ;
-  static const char * label[] = { xx , yy , zz , xy , yz , xz };
-
   return get_index( SymmetricTensor33::tag().name() ,
-                    6 , label , size , arg.c_str() );
+                    6 , SymmetricTensor33_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -262,28 +249,26 @@ const SymmetricTensor31 & SymmetricTensor31::tag()
 const char * SymmetricTensor31::name() const
 { static const char n[] = "SymmetricTensor31" ; return n ; }
 
+namespace {
+const char * const * SymmetricTensor31_label() {
+  static const char rr[] = "rr" ;
+  static const char zz[] = "zz" ;
+  static const char rz[] = "rz" ;
+  static const char zr[] = "zr" ;
+  static const char * label[] = { rr, zz, rz, zr };
+  return label;
+}
+}
 std::string SymmetricTensor31::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  static const char todo0[] = "todo0" ;
-  static const char todo1[] = "todo1" ;
-  static const char todo2[] = "todo2" ;
-  static const char todo3[] = "todo3" ;
-  static const char * label[] = { todo0, todo1, todo2, todo3 };
-
   return std::string( get_string( SymmetricTensor31::tag().name() ,
-                                  4 , label , size , index ) );
+                                  4 , SymmetricTensor31_label() , size , index ) );
 }
 
 shards::ArrayDimTag::size_type SymmetricTensor31::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char todo0[] = "todo0" ;
-  static const char todo1[] = "todo1" ;
-  static const char todo2[] = "todo2" ;
-  static const char todo3[] = "todo3" ;
-  static const char * label[] = { todo0, todo1, todo2, todo3 };
-
   return get_index( SymmetricTensor31::tag().name() ,
-                    4 , label , size , arg.c_str() );
+                    4 , SymmetricTensor31_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -294,26 +279,25 @@ const SymmetricTensor21 & SymmetricTensor21::tag()
 const char * SymmetricTensor21::name() const
 { static const char n[] = "SymmetricTensor21" ; return n ; }
 
+namespace {
+const char * const * SymmetricTensor21_label() {
+  static const char xx[] = "xx" ;
+  static const char yy[] = "yy" ;
+  static const char xy[] = "xy" ;
+  static const char * label[] = { xx, yy, xy };
+  return label;
+}
+}
 std::string SymmetricTensor21::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  static const char todo0[] = "todo0" ;
-  static const char todo1[] = "todo1" ;
-  static const char todo2[] = "todo2" ;
-  static const char * label[] = { todo0, todo1, todo2 };
-
   return std::string( get_string( SymmetricTensor21::tag().name() ,
-                                  3 , label , size , index ) );
+                                  3 , SymmetricTensor21_label() , size , index ) );
 }
 
 shards::ArrayDimTag::size_type SymmetricTensor21::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char todo0[] = "todo0" ;
-  static const char todo1[] = "todo1" ;
-  static const char todo2[] = "todo2" ;
-  static const char * label[] = { todo0, todo1, todo2 };
-
   return get_index( SymmetricTensor21::tag().name() ,
-                    3 , label , size , arg.c_str() );
+                    3 , SymmetricTensor21_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -324,26 +308,25 @@ const AsymmetricTensor03 & AsymmetricTensor03::tag()
 const char * AsymmetricTensor03::name() const
 { static const char n[] = "AsymmetricTensor03" ; return n ; }
 
+namespace {
+const char * const * AsymmetricTensor03_label() {
+  static const char yz[] = "yz" ;
+  static const char xz[] = "xz" ;
+  static const char xy[] = "xy" ;
+  static const char * label[] = { xy, yz, xz };
+  return label;
+}
+}
 std::string AsymmetricTensor03::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
-  static const char yz[] = "yz" ;
-  static const char zx[] = "zx" ;
-  static const char xy[] = "xy" ;
-  static const char * label[] = { yz, zx, xy };
-
   return std::string( get_string( AsymmetricTensor03::tag().name() ,
-                                  3 , label , size , index ) );
+                                  3 , AsymmetricTensor03_label() , size , index ) );
 }
 
 shards::ArrayDimTag::size_type AsymmetricTensor03::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char yz[] = "yz" ;
-  static const char zx[] = "zx" ;
-  static const char xy[] = "xy" ;
-  static const char * label[] = { yz, zx, xy };
-
   return get_index( AsymmetricTensor03::tag().name() ,
-                    3 , label , size , arg.c_str() );
+                    3 , AsymmetricTensor03_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -354,28 +337,26 @@ const Matrix22 & Matrix22::tag()
 const char * Matrix22::name() const
 { static const char n[] = "Matrix22" ; return n ; }
 
-std::string Matrix22::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
-{
+namespace {
+const char * const * Matrix22_label() {
   static const char xx[] = "xx" ;
   static const char yx[] = "yx" ;
   static const char xy[] = "xy" ;
   static const char yy[] = "yy" ;
   static const char * label[] = { xx , yx, xy, yy };
-
+  return label;
+}
+}
+std::string Matrix22::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+{
   return std::string( get_string( Matrix22::tag().name() ,
-                                  4 , label , size , index ) );
+                                  4 , Matrix22_label() , size , index ) );
 }
 
 shards::ArrayDimTag::size_type Matrix22::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char xx[] = "xx" ;
-  static const char yx[] = "yx" ;
-  static const char xy[] = "xy" ;
-  static const char yy[] = "yy" ;
-  static const char * label[] = { xx , yx, xy, yy };
-
   return get_index( Matrix22::tag().name() ,
-                    4 , label , size , arg.c_str() );
+                    4 , Matrix22_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
@@ -386,8 +367,8 @@ const Matrix33 & Matrix33::tag()
 const char * Matrix33::name() const
 { static const char n[] = "Matrix33" ; return n ; }
 
-std::string Matrix33::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
-{
+namespace {
+const char * const * Matrix33_label() {
   static const char xx[] = "xx" ;
   static const char yx[] = "yx" ;
   static const char zx[] = "zx" ;
@@ -398,29 +379,23 @@ std::string Matrix33::to_string( shards::ArrayDimTag::size_type size , shards::A
   static const char yz[] = "yz" ;
   static const char zz[] = "zz" ;
   static const char * label[] = { xx , yx , zx , xy , yy , zy , xz , yz , zz };
-
+  return label;
+}
+}
+std::string Matrix33::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+{
   return std::string( get_string( Matrix33::tag().name() ,
-                                  9 , label , size , index ) );
+                                  9 , Matrix33_label() , size , index ) );
 }
 
 shards::ArrayDimTag::size_type Matrix33::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
-  static const char xx[] = "xx" ;
-  static const char yx[] = "yx" ;
-  static const char zx[] = "zx" ;
-  static const char xy[] = "xy" ;
-  static const char yy[] = "yy" ;
-  static const char zy[] = "zy" ;
-  static const char xz[] = "xz" ;
-  static const char yz[] = "yz" ;
-  static const char zz[] = "zz" ;
-  static const char * label[] = { xx , yx , zx , xy , yy , zy , xz , yz , zz };
-
   return get_index( Matrix33::tag().name() ,
-                    9 , label , size , arg.c_str() );
+                    9 , Matrix33_label() , size , arg.c_str() );
 }
 
 //----------------------------------------------------------------------
 
 } // namespace mesh
 } // namespace stk
+
