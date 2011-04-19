@@ -40,16 +40,7 @@ namespace MueLu {
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
    class Aggregates : public Teuchos::Describable {
 
-// #include "MueLu_UseShortNames.hpp"
-
-     typedef LocalOrdinal  LO;
-     typedef GlobalOrdinal GO;
-
-     typedef Cthulhu::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVector;
-     typedef LocalOrdinalVector  LOVector;
-     typedef Cthulhu::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVectorFactory;
-     typedef LocalOrdinalVectorFactory  LOVectorFactory;
-
+#include "MueLu_UseShortNamesOrdinal.hpp"
 
    public:
      
