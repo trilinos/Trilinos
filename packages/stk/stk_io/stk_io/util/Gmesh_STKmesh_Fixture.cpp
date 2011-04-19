@@ -51,12 +51,12 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
   m_num_z = database->get_generated_mesh()->get_num_z();
 
   // get face parts names; need to convert these to strings
-  const std::vector<std::string> faceset_names = database->get_faceset_names();
+  const std::vector<std::string> sideset_names = database->get_sideset_names();
 
-  for (std::vector<std::string>::const_iterator itr = faceset_names.begin();
-       itr != faceset_names.end(); ++itr) {
-    m_faceset_names.push_back(*itr);
-    m_faceset_parts.push_back(m_meta_data.get_part(*itr));
+  for (std::vector<std::string>::const_iterator itr = sideset_names.begin();
+       itr != sideset_names.end(); ++itr) {
+    m_sideset_names.push_back(*itr);
+    m_sideset_parts.push_back(m_meta_data.get_part(*itr));
   }
 }
 
@@ -130,7 +130,7 @@ Gmesh_STKmesh_Fixture::getSurfCoordInfo(size_t surf_id) const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-size_t Gmesh_STKmesh_Fixture::getFaceCount() const
+size_t Gmesh_STKmesh_Fixture::getSideCount() const
 ///////////////////////////////////////////////////////////////////////////////
 {
   return 2 * (m_num_x*m_num_y + m_num_x*m_num_z + m_num_y*m_num_z);
