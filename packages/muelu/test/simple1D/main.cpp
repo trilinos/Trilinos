@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 // Teuchos
 #include <Teuchos_RCP.hpp>
@@ -21,10 +22,7 @@
 /* CREATE INITAL MATRIX                                                           */
 /**********************************************************************************/
 #include <Cthulhu_Map.hpp>
-#include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_CrsOperator.hpp>
-#include <Cthulhu_Example.hpp>
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 #include <Cthulhu_MultiVectorFactory.hpp>
@@ -37,6 +35,7 @@
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
+typedef Teuchos::ScalarTraits<SC> ST;
 /**********************************************************************************/
 
 int main(int argc, char *argv[]) {
@@ -90,10 +89,9 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
-  RCP<Epetra_MultiVector> foo = Utils::MV2NonConstEpetraMV(nullSpace);
-  double n;
-  foo->Norm1(&n);
-  std::cout << "||NS|| = " << n << std::endl;
+  std::vector<ST::magnitudeType> norms(1);
+  nullSpace->norm1(norms);
+  std::cout << "||NS|| = " << norms[0] << std::endl;
 
   MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
@@ -135,21 +133,20 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
 
-  RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
-  epX->SetSeed(846930886);
+  X->setSeed(846930886);
   X->randomize();
   Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-  epX->Norm2(&n);
-  std::cout << "||X_true|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
+  X->norm2(norms);
+  std::cout << "||X_true|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
   X->putScalar( (SC) 0.0);
 
   H.PrintResidualHistory(true);
   H.Iterate(*RHS,its,*X);
 
-  epX->Norm2(&n);
-  std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
+  X->norm2(norms);
+  std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
 
 #endif // HAVE_MUELU_IFPACK
