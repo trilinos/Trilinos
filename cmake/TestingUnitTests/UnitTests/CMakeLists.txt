@@ -829,11 +829,11 @@ ENDFUNCTION()
 
 FUNCTION(UNITEST_PACAKGE_ADD_EXECUTABLE_AND_TEST)
 
-  MESSAGE("\n***")
-  MESSAGE("*** Testing PACKAGE_ADD_EXECUTABLE_AND_TEST( ... )")
-  MESSAGE("***\n")
-
   SET(PACKAGE_ADD_EXECUTABLE_AND_TEST_TEST_MODE ON)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Test passing basic arguments to PACKAGE_ADD_EXECUTABLE_AND_TEST( ... )")
+  MESSAGE("***\n")
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST( 
     execName
@@ -866,6 +866,25 @@ FUNCTION(UNITEST_PACAKGE_ADD_EXECUTABLE_AND_TEST)
   UNITTEST_COMPARE_CONST(
     PACKAGE_ADD_TEST_CAPTURE_ARGS
     "execName;COMM;serial;mpi;CATEGORIES;category1;category2;HOST;host1;host2;XHOST;host1;host2;HOSTTYPE;hosttype1;hosttype2;XHOSTTYPE;hosttype1;hosttype2;NOEXEPREFIX;NAME;testName;NAME_POSTFIX;testNamePostfix;DIRECTORY;dir;KEYWORDS;keyword1;keyword2;NUM_MPI_PROCS;numProcs;PASS_REGULAR_EXPRESSION;regex1;regex2;FAIL_REGULAR_EXPRESSION;regex1;regex2;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME"
+    )
+
+  MESSAGE("\n***")
+  MESSAGE("*** Test passing in XHOST_TEST and XHOSTTYPE_TEST into PACKAGE_ADD_EXECUTABLE_AND_TEST(...)")
+  MESSAGE("***\n")
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST( 
+    execName
+    SOURCES src1 src2
+    XHOST_TEST host1 host2
+    XHOSTTYPE_TEST hosttype1 hosttype2
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_EXECUTABLE_CAPTURE_ARGS
+    "execName;SOURCES;src1;src2"
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_CAPTURE_ARGS
+    "execName;XHOST;host1;host2;XHOSTTYPE;hosttype1;hosttype2"
     )
 
 ENDFUNCTION()
@@ -923,4 +942,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(102)
+UNITTEST_FINAL_RESULT(104)
