@@ -26,7 +26,7 @@ Needs.cpp
 GenericPRFactory.cpp
 Amesos.cpp
 TentativePFactory.cpp
-AggregationFactory.cpp
+UCAggregationFactory.cpp
 )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
