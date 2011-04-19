@@ -17,7 +17,6 @@
 #include <Cthulhu_EpetraVector.hpp>
 #include <Cthulhu_EpetraMultiVector.hpp>
 #endif
-#include <Cthulhu_Example.hpp>
 
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -50,7 +49,6 @@ namespace MueLu {
   class Utils {
     
 #include "MueLu_UseShortNames.hpp"
-
 
   public:
 #ifdef HAVE_MUELU_EPETRAEXT

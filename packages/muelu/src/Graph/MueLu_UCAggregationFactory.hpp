@@ -78,6 +78,11 @@ enum NodeState {
 class UCAggregationFactory : public Teuchos::Describable {
 #include "MueLu_UseShortNames_Graph.hpp"
 
+typedef LocalOrdinal  LO;
+typedef GlobalOrdinal GO;
+typedef Node          NO;
+typedef LocalMatOps   LMO;
+
   public:
     //! @name Constructors/Destructors.
     //@{

@@ -1,9 +1,16 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "test_helpers.hpp"
 #include "MueLu_Version.hpp"
+
 #include "MueLu_TentativePFactory.hpp"
+
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
+
+typedef LocalOrdinal  LO;
+typedef GlobalOrdinal GO;
+typedef Node          NO;
+typedef LocalMatOps   LMO;
 
 namespace {
 

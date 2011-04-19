@@ -4,7 +4,6 @@
 #include <iostream>
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_MapFactory.hpp"
-#include "Cthulhu_Example.hpp"
 #include "MueLu_OperatorFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_PFactory.hpp"

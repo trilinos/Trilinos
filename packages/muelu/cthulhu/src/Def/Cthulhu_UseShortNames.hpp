@@ -1,7 +1,6 @@
 #include "Cthulhu_ConfigDefs.hpp"
 
 // Get rid of template parameters
-// You have to include Cthulhu_Classes.hpp before this file.
 
 // New definition of types using the types ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
 #ifdef CTHULHU_MAP_SHORT

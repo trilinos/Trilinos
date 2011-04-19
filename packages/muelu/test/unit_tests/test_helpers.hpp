@@ -27,7 +27,6 @@
 namespace MueLu {
 namespace UnitTest {
 
-
   using Cthulhu::global_size_t;
   using Teuchos::RCP;
 

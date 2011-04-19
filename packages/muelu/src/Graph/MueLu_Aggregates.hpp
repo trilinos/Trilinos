@@ -41,7 +41,10 @@ namespace MueLu {
    class Aggregates : public Teuchos::Describable {
 
 // #include "MueLu_UseShortNames.hpp"
-    
+
+     typedef LocalOrdinal  LO;
+     typedef GlobalOrdinal GO;
+
      typedef Cthulhu::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVector;
      typedef LocalOrdinalVector  LOVector;
      typedef Cthulhu::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVectorFactory;

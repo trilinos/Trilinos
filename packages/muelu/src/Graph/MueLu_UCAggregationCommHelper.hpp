@@ -15,7 +15,8 @@ namespace MueLu {
   template <class ScalarType    = double,
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType>
+            class Node          = Kokkos::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
   class UCAggregationCommHelper {
 
 #include "MueLu_UseShortNames.hpp"

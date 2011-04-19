@@ -1,11 +1,11 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "test_helpers.hpp"
-#include "Cthulhu_Example.hpp"
 #include "MueLu_Version.hpp"
+
 #include "MueLu_UCAggregationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames_Graph.hpp"
+#include "MueLu_UseShortNames.hpp"
 
 namespace {
 

@@ -2,6 +2,7 @@
 //#include "Teuchos_ParameterList.hpp"
 #include "test_helpers.hpp"
 #include "MueLu_Version.hpp"
+
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_PRFactory.hpp"
 #include "MueLu_PFactory.hpp"
@@ -11,6 +12,7 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
+
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
