@@ -1468,7 +1468,7 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
   double ave,rsum,rmin,rmax;
   double weight,wttot,wtmin,wtmax;
   struct rcb_box *rcbbox = (struct rcb_box *) rcbbox_arg;
-  int numParts, wdim;
+  int numParts, maxind, wdim;
   double move, gmove, bal, max_imbal, ib;
   double *lpartWgt = NULL;
   double *gpartWgt = NULL;
@@ -1690,10 +1690,10 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
    */
 
   if (stats) {
-    for (i = 0, max=0; i < dotnum; i++) 
-      if (dotpt->Part[i] > max) max = dotpt->Part[i];
+    for (i = 0, maxind=0; i < dotnum; i++) 
+      if (dotpt->Part[i] > maxind) maxind = dotpt->Part[i];
 
-    MPI_Allreduce(&max,&numParts,1,MPI_INT, MPI_MAX, zz->Communicator);
+    MPI_Allreduce(&maxind,&numParts,1,MPI_INT, MPI_MAX, zz->Communicator);
     numParts++;
 
     lpartWgt = (double *)ZOLTAN_CALLOC(numParts, sizeof(double));
