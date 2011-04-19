@@ -1,27 +1,16 @@
 #include "Teuchos_UnitTestHarness.hpp"
-
 #include "Cthulhu_DefaultPlatform.hpp"
-
 #include "MueLu_Version.hpp"
-
 #include "test_helpers.hpp"
+
+#include <Cthulhu_Map.hpp>
+#include <Cthulhu_CrsOperator.hpp>
+#include <Cthulhu_MultiVectorFactory.hpp>
 
 #include "MueLu_Level.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
-
-#include <Cthulhu_Map.hpp>
-#include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_EpetraCrsMatrix.hpp>
-#include <Cthulhu_CrsOperator.hpp>
-#include <Cthulhu_Example.hpp>
-#include <Cthulhu_Vector.hpp>
-#include <Cthulhu_VectorFactory.hpp>
-#include <Cthulhu_MultiVectorFactory.hpp>
-
-
-#include <MueLu_MatrixFactory.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"

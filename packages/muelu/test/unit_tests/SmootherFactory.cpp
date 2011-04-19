@@ -24,11 +24,10 @@ TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor_Exception)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<SmootherPrototype>  smoother = Teuchos::null;
-  RCP<SmootherFactory> SmooFactory;
+  RCP<SmootherPrototype> smoother = Teuchos::null;
+  RCP<SmootherFactory> smooFact;
 
-
-  TEST_THROW( SmooFactory = rcp(new SmootherFactory(smoother) ) , MueLu::Exceptions::RuntimeError );
+  TEST_THROW( smooFact = rcp(new SmootherFactory(smoother) ) , MueLu::Exceptions::RuntimeError );
 
 }
 
@@ -48,8 +47,8 @@ TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor_OneArg)
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-  RCP<SmootherFactory> SmooFactory = rcp(new SmootherFactory(smoother) );
-  TEUCHOS_TEST_EQUALITY(SmooFactory != Teuchos::null, true, out, success);
+  RCP<SmootherFactory> smooFact = rcp(new SmootherFactory(smoother) );
+  TEUCHOS_TEST_EQUALITY(smooFact != Teuchos::null, true, out, success);
 
 }
 
@@ -69,8 +68,8 @@ TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor_TwoArgs)
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-  RCP<SmootherFactory> SmooFactory = rcp(new SmootherFactory(smoother,smoother) );
-  TEUCHOS_TEST_EQUALITY(SmooFactory != Teuchos::null, true, out, success);
+  RCP<SmootherFactory> smooFact = rcp(new SmootherFactory(smoother,smoother) );
+  TEUCHOS_TEST_EQUALITY(smooFact != Teuchos::null, true, out, success);
 
 }
 
@@ -86,14 +85,14 @@ TEUCHOS_UNIT_TEST(SmootherFactory, SetSmootherPrototypes)
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-  RCP<SmootherFactory> SmooFactory = rcp(new SmootherFactory(smoother) );
+  RCP<SmootherFactory> smooFact = rcp(new SmootherFactory(smoother) );
 
   RCP<SmootherPrototype>  newSmoo1 = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
   RCP<SmootherPrototype>  newSmoo2 = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-  SmooFactory->SetSmootherPrototypes(newSmoo1,newSmoo2);
+  smooFact->SetSmootherPrototypes(newSmoo1,newSmoo2);
   RCP<SmootherPrototype>  checkSmoo1;
   RCP<SmootherPrototype>  checkSmoo2;
-  SmooFactory->GetSmootherPrototypes(checkSmoo1,checkSmoo2);
+  smooFact->GetSmootherPrototypes(checkSmoo1,checkSmoo2);
 
   TEUCHOS_TEST_EQUALITY(checkSmoo1 == newSmoo1, true, out, success);
   TEUCHOS_TEST_EQUALITY(checkSmoo2 == newSmoo2, true, out, success);

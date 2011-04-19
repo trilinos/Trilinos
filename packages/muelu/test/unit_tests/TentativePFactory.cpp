@@ -7,11 +7,6 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-typedef LocalOrdinal  LO;
-typedef GlobalOrdinal GO;
-typedef Node          NO;
-typedef LocalMatOps   LMO;
-
 namespace {
 
 //this macro declares the unit-test-class:

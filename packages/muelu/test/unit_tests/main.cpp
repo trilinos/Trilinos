@@ -12,10 +12,7 @@ specific unit test suites.
 
 #include <Teuchos_UnitTestRepository.hpp>
 #include "Teuchos_StaticSetupMacro.hpp"
-#include "Cthulhu_Parameters.hpp"
 //#include "Cthulhu_Parameters.hpp"
-
-//#include <Teuchos_GlobalMPISession.hpp>
 
 #ifdef THIS_DOESNT_WORK_RIGHT_NOW
 namespace {

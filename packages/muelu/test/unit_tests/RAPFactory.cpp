@@ -1,17 +1,13 @@
 #include "Teuchos_UnitTestHarness.hpp"
-
 #include "Cthulhu_DefaultPlatform.hpp"
 
 #define HAVE_CTHULHU_EPETRA
 #define CTHULHU_USE_EPETRA
 #include "MueLu_config.hpp"
 
-//#include "Cthulhu_config.hpp"
-
-#include <Cthulhu_Map.hpp>
-#include <Cthulhu_Example.hpp>
 #include "test_helpers.hpp"
 #include "MueLu_Version.hpp"
+
 #include "MueLu_Utilities.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -36,8 +32,6 @@ Teuchos::RCP<const Teuchos::Comm<int> > getDefaultComm()
   }
   return ret;
 }
-
-
 
 //this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST(RAPFactory, Constructor)
@@ -67,17 +61,17 @@ TEUCHOS_UNIT_TEST(RAPFactory, Correctness)
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
   RCP<CrsOperator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(27);
-  MueLu::Level<SC,LO,GO,NO,LMO> fineLevel;
+  Level fineLevel;
   fineLevel.SetA(Op);
-  MueLu::Level<SC,LO,GO,NO,LMO> coarseLevel;
+  Level coarseLevel;
 
-  MueLu::SaPFactory<SC,LO,GO,NO,LMO> sapFactory;
+  SaPFactory sapFactory;
   sapFactory.BuildP(fineLevel,coarseLevel);
 
   RCP<Operator> P = coarseLevel.GetP();
   RCP<Operator> A = fineLevel.GetA();
 
-  MueLu::TransPFactory<SC,LO,GO,NO,LMO> transPFactory;
+  TransPFactory transPFactory;
   transPFactory.BuildR(fineLevel,coarseLevel);
 
   RCP<Operator> R = coarseLevel.GetR();
@@ -93,7 +87,7 @@ TEUCHOS_UNIT_TEST(RAPFactory, Correctness)
   Op->multiply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
   R->multiply(*workVec2,*result1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-  MueLu::RAPFactory<SC,LO,GO,NO,LMO> rap;
+  RAPFactory rap;
   rap.Build(fineLevel,coarseLevel);
 
   RCP<Operator> coarseOp = coarseLevel.GetA();
