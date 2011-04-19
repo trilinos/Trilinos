@@ -852,6 +852,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
 	RCP<EnhancedNumberValidator<double> > double2Vali =
     rcp(new EnhancedNumberValidator<double>(0,30));
 
+	RCP<EnhancedNumberValidator<double> > defaultValidator =
+    rcp(new EnhancedNumberValidator<double>(0,50));
+
   typename RangeValidatorDependency<T>::Range range1(0,10);
   typename RangeValidatorDependency<T>::Range range2(11,50);
 
@@ -873,7 +876,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
     new RangeValidatorDependency<T> (
       myDepList.getEntryRCP(dependee2),
       dependentList,
-      rangeValiMap));
+      rangeValiMap,
+      defaultValidator));
 
   myDepSheet->addDependency(simpleRangeValiDep);
   myDepSheet->addDependency(complexRangeValiDep);
@@ -955,6 +959,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
     rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
       readinMap2.find(range2)->second, true)->getMax(),
     double2Vali->getMax());
+
+  RCP<const EnhancedNumberValidator<double> > defaultReadInVali =
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      castedDep2->getDefaultValidator());
+  TEST_EQUALITY( defaultReadInVali->getMax(), defaultValidator->getMax());
+  TEST_EQUALITY( defaultReadInVali->getMin(), defaultValidator->getMin());
 }
 
 

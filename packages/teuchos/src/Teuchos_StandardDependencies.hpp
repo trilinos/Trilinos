@@ -1387,15 +1387,20 @@ public:
  * If the dependees value falls within the one of the ranges, 
  * the validator associated with the range is
  * used on the dependent. If the value doesn't fall within
- * any of the ranges, the dependent's validator is set to null.
- * All ranges are inclusive.
+ * any of the ranges, the dependent's validator is set to the specified
+ * default validator. If no default validator was specified, then the
+ * dependents validator is set to null.
+ * 
+ * The minimum of ranges is inclusive and the maximum is exclusive.
  *
  * A RangeValidatorDependency must have the following characterisitics:
  *
  *   \li The dependee type must be the same as the template type.
  *
- *   \li All the validators in the rangesAndValidators_ map must be
+ *   \li All the validators in the rangesAndValidators map must be
  *   the same type.
+ *
+ *   \li Ranges must not intersect
  */
 template<class T>
 class RangeValidatorDependency : public ValidatorDependency{
@@ -1436,11 +1441,15 @@ public:
    * with ParameterEntryValidators. This will be used
    * to deteremine what type of validator should be applied 
    * to the dependent based on the dependees value.
+   * @param defaultValidator The default validator to be used if 
+   * the dependee's value does not fall within one of the specified
+   * ranges.
    */
   RangeValidatorDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RangeToValidatorMap rangesAndValidators);
+    RangeToValidatorMap rangesAndValidators,
+    RCP<const ParameterEntryValidator> defaultValidator=null);
 
   /**
    * \brief Constructs a RangeValidatorDependency.
@@ -1451,11 +1460,15 @@ public:
    * with ParameterEntryValidators. This will be used
    * to deteremine what type of validator should be applied 
    * to the dependent based on the dependees value.
+   * @param defaultValidator The default validator to be used if 
+   * the dependee's value does not fall within one of the specified
+   * ranges.
    */
   RangeValidatorDependency(
     RCP<const ParameterEntry> dependee,
     Dependency::ParameterEntryList dependents,
-    RangeToValidatorMap rangesAndValidators);
+    RangeToValidatorMap rangesAndValidators,
+    RCP<const ParameterEntryValidator> defaultValidator=null);
 
   //@}
 
@@ -1465,6 +1478,11 @@ public:
   /** \brief . */
   const RangeToValidatorMap& getRangeToValidatorMap() const{
     return rangesAndValidators_;
+  }
+
+  /** \brief . */
+  RCP<const ParameterEntryValidator> getDefaultValidator() const{
+    return defaultValidator_;
   }
   
   //@}
@@ -1508,6 +1526,8 @@ private:
   
   void setDependentsToValidator(RCP<const ParameterEntryValidator> toSet);
 
+  RCP<const ParameterEntryValidator> defaultValidator_;
+
   //@}
 
 };
@@ -1516,9 +1536,11 @@ template<class T>
 RangeValidatorDependency<T>::RangeValidatorDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  RangeToValidatorMap rangesAndValidators)
+  RangeToValidatorMap rangesAndValidators,
+  RCP<const ParameterEntryValidator> defaultValidator)
   :ValidatorDependency(dependee, dependent),
-  rangesAndValidators_(rangesAndValidators)
+  rangesAndValidators_(rangesAndValidators),
+  defaultValidator_(defaultValidator)
 {
   validateDep();
 }
@@ -1527,9 +1549,11 @@ template<class T>
 RangeValidatorDependency<T>::RangeValidatorDependency(
   RCP<const ParameterEntry> dependee,
   Dependency::ParameterEntryList dependents,
-  RangeToValidatorMap rangesAndValidators)
+  RangeToValidatorMap rangesAndValidators,
+  RCP<const ParameterEntryValidator> defaultValidator)
   :ValidatorDependency(dependee, dependents),
-  rangesAndValidators_(rangesAndValidators)
+  rangesAndValidators_(rangesAndValidators),
+  defaultValidator_(defaultValidator)
 {
   validateDep();
 }
@@ -1552,12 +1576,12 @@ void RangeValidatorDependency<T>::evaluate(){
   {
     T min = it->first.first;
     T max = it->first.second;
-    if(dependeeValue >= min && dependeeValue <=max){
+    if(dependeeValue >= min && dependeeValue <max){
        setDependentsToValidator(it->second);
       return;
     }
   }
-  setDependentsToValidator(null); 
+  setDependentsToValidator(defaultValidator_); 
 }
 
 template<class T>
@@ -1592,7 +1616,15 @@ void RangeValidatorDependency<T>::validateDep() const{
       " is invalid. The min can't be greater than the max, you silly goose!"
       );
   }
-
+  
+  TEST_FOR_EXCEPTION(
+    nonnull(defaultValidator_) 
+    && 
+    typeid(*firstValidator) != typeid(*defaultValidator_),
+    InvalidDependencyException,
+    "Ay no! The default validator of a RangeValidatorDependency "
+    "must have the same type as the validators in rangesAndValidators map."
+  );
     
 }
 

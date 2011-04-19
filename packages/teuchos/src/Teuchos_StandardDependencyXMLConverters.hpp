@@ -537,6 +537,13 @@ private:
     return validatorIdAttributeName;
   }
 
+  /** \brief . */
+  static const std::string& getDefaultValidatorIdAttributeName(){
+    static const std::string defaultValidatorIdAttributeName = 
+      "defaultValidatorId";
+    return defaultValidatorIdAttributeName;
+  }
+
   //@}
   
 };
@@ -574,6 +581,16 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
     rangesAndValidatorsTag.addChild(pairTag);
   }
   xmlObj.addChild(rangesAndValidatorsTag);
+  RCP<const ParameterEntryValidator> defaultValidator = 
+    castedDependency->getDefaultValidator();
+  if(nonnull(defaultValidator)){
+    if(validatorIDsMap.find(defaultValidator) == validatorIDsMap.end()){
+      validatorIDsMap.insert(defaultValidator);
+    }
+    xmlObj.addAttribute(
+      getDefaultValidatorIdAttributeName(),
+      validatorIDsMap.find(defaultValidator)->second);
+  }
 }
 
 template<class T>
@@ -616,8 +633,22 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
         typename RangeValidatorDependency<T>::Range(min, max), validator));
   }
 
+  RCP<ParameterEntryValidator> defaultValidator = null;
+  if(xmlObj.hasAttribute(getDefaultValidatorIdAttributeName())){
+    ParameterEntryValidator::ValidatorID defaultValiID = 
+      xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
+        getDefaultValidatorIdAttributeName());
+    TEST_FOR_EXCEPTION(
+      validatorIDsMap.find(defaultValiID) == validatorIDsMap.end(),
+      MissingValidatorException,
+      "Could not find a validator (for the default validator) " <<
+      "corresponding to the ID " << defaultValiID << 
+      " in the given validatorIDsMap!" << std::endl << std::endl);
+    defaultValidator = validatorIDsMap.find(defaultValiID)->second;
+  }
+
   return rcp(new RangeValidatorDependency<T>(
-    dependee, dependents, rangesAndValidators));
+    dependee, dependents, rangesAndValidators, defaultValidator));
 }
 
 /** \brief An xml converter for NumberArrayLengthDependencies.

@@ -259,6 +259,15 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
 		)
 	);
 
+	RCP<StringToIntegralParameterEntryValidator<int> >
+	defaultCheeseValidator = rcp(
+		new StringToIntegralParameterEntryValidator<int>(
+			tuple<std::string>( 
+        "Other cheese", "other cheese 1", "other cheese 3"),
+			"Cheese to Fondue"
+		)
+	);
+
 	ParameterList& 
 	rangeValidatorDepList = My_deplist->sublist(
 		"Range Validator Dependency List",
@@ -278,7 +287,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
 		new RangeValidatorDependency<double>(
 			rangeValidatorDepList.getEntryRCP("Temperature"),
 			rangeValidatorDepList.getEntryRCP("Cheese to Fondue"),
-			tempranges
+			tempranges,
+      defaultCheeseValidator
 		)
 	);
 	depSheet1->addDependency(cheeseTempDep);
@@ -301,6 +311,13 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
 	rangeValidatorDepList.set("Cheese to Fondue", "Provalone");
 	TEST_NOTHROW(
     rangeValidatorDepList.validateParameters(rangeValidatorDepList));
+  rangeValidatorDepList.set("Temperature", 50.0);
+  cheeseTempDep->evaluate();
+  TEST_ASSERT(
+    rangeValidatorDepList.getEntry("Cheese to Fondue").validator()
+    ==
+    defaultCheeseValidator
+  );
 
 }
   
