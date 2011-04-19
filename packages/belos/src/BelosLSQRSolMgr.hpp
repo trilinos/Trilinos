@@ -585,7 +585,7 @@ void LSQRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
 
     // Update parameter in our list.
     params_->set("Output Style", outputStyle_);
-    outputTest_ == Teuchos::null;
+    outputTest_ = Teuchos::null;
   }
 
   // output stream
