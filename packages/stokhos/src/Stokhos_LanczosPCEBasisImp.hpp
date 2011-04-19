@@ -35,30 +35,43 @@ Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
 LanczosPCEBasis(
    ordinal_type p,
    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
-   const Stokhos::Quadrature<ordinal_type, value_type>& quad) :
-  RecurrenceBasis<ordinal_type, value_type>("Lanczos PCE", p, false)
+   const Stokhos::Quadrature<ordinal_type, value_type>& quad,
+   bool normalize) :
+  RecurrenceBasis<ordinal_type, value_type>("Lanczos PCE", p, normalize)
 {
   // Evaluate PCE at quad points
   pce_weights = quad.getQuadWeights();
   ordinal_type nqp = pce_weights.size();
   pce_vals.resize(nqp);
+  h0.resize(nqp);
   const Teuchos::Array< Teuchos::Array<value_type> >& quad_points =
     quad.getQuadPoints();
   const Teuchos::Array< Teuchos::Array<value_type> >& basis_values =
     quad.getBasisAtQuadPoints();
-  for (ordinal_type i=0; i<nqp; i++)
+  for (ordinal_type i=0; i<nqp; i++) {
     pce_vals[i] = pce.evaluate(quad_points[i], basis_values[i]);
+    h0[i] = value_type(1);
+  }
   
   // Compute coefficients via Lanczos
-  for (ordinal_type i=0; i<nqp; i++)
-    pce_weights[i] = std::sqrt(pce_weights[i]);
-  Teuchos::Array<value_type> g(p+1);
-  lanczos(nqp, p, pce_vals, pce_weights, this->alpha, g);
-  for (ordinal_type i=0; i<p; i++) {
-    this->alpha[i] = this->alpha[i]/std::sqrt(g[i+1]);
-    this->beta[i] = std::sqrt(g[i])/std::sqrt(g[i+1]);
-    this->delta[i] = value_type(1.0)/std::sqrt(g[i+1]);
-    this->gamma[i] = value_type(1);
+  lanczos(nqp, p+1, pce_weights, pce_vals, h0, this->alpha, this->beta,
+	  this->norms);
+  for (ordinal_type i=0; i<=p; i++)
+    this->delta[i] = value_type(1.0);
+  
+  // Setup rest of recurrence basis
+  //this->setup();
+  this->gamma[0] = value_type(1);
+  for (ordinal_type k=1; k<=p; k++) {
+    this->gamma[k] = value_type(1);
+  } 
+
+  //If you want normalized polynomials, set gamma and reset the norms to 1.
+  if( normalize ) {
+    for (ordinal_type k=0; k<=p; k++) {
+      this->gamma[k] = value_type(1)/std::sqrt(this->norms[k]);
+      this->norms[k] = value_type(1);
+    }
   }
 }
 
@@ -126,12 +139,10 @@ computeRecurrenceCoefficients(ordinal_type n,
 			      Teuchos::Array<value_type>& delta) const
 {
   ordinal_type nqp = pce_weights.size();
-  Teuchos::Array<value_type> g(n+1);
-  lanczos(nqp, n, pce_vals, pce_weights, alpha, g);
+  Teuchos::Array<value_type> nrm(n);
+  lanczos(nqp, n, pce_weights, pce_vals, h0, alpha, beta, nrm);
   for (ordinal_type i=0; i<n; i++) {
-    alpha[i] = alpha[i]/std::sqrt(g[i+1]);
-    beta[i] = std::sqrt(g[i])/std::sqrt(g[i+1]);
-    delta[i] = value_type(1.0)/std::sqrt(g[i+1]);
+    delta[i] = value_type(1.0);
   }
 }
 
@@ -140,53 +151,61 @@ void
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
 lanczos(ordinal_type n,
 	ordinal_type nsteps,
-	const Teuchos::Array<value_type>& A_diag,
+	const Teuchos::Array<value_type>& w,
+	const Teuchos::Array<value_type>& A,
 	const Teuchos::Array<value_type>& h0,
 	Teuchos::Array<value_type>& a,
-	Teuchos::Array<value_type>& g) const
+	Teuchos::Array<value_type>& b,
+	Teuchos::Array<value_type>& nrm_sqrd) const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::LanczosPCEBasis -- Lanczos Procedure");
 #endif
 
-  Teuchos::Array< Teuchos::Array<value_type> > h(nsteps+1);
-  for (ordinal_type i=0; i<nsteps+1; i++)
-    h[i].resize(n);
-  h[0] = h0;
-  g[0] = 1.0;
+  Teuchos::Array<value_type> h(n), hm(n), y(n);
+  value_type dp, nrm;
+  for (ordinal_type j=0; j<n; j++) {
+    h[j] = h0[j];
+    hm[j] = value_type(0);
+  }
 
+  b[0] = 1.0;
   for (ordinal_type i=0; i<nsteps; i++) {
-    // compute alpha = h_i^T*A*h_i
-    value_type alpha = 0.0;
+
+    // compute h^T*h
+    nrm = value_type(0);
     for (ordinal_type j=0; j<n; j++)
-      alpha += h[i][j]*A_diag[j]*h[i][j];
-    a[i] = alpha;
+      nrm += w[j]*h[j]*h[j];
+    nrm_sqrd[i] = nrm;
+
+    // compute y = A*h
+    for (ordinal_type j=0; j<n; j++)
+      y[j] = A[j]*h[j];
+
+    // compute alpha = h^T*y / h^T*h
+    dp = value_type(0);
+    for (ordinal_type j=0; j<n; j++)
+      dp += w[j]*y[j]*h[j];
+    a[i] = dp/nrm_sqrd[i];
+
+    // compute beta = h^T*h / hm^T*hm
+    if (i > 0)
+      b[i] = nrm_sqrd[i] / nrm_sqrd[i-1];
 
     // compute
-    if (i > 0)
-      for (ordinal_type j=0; j<n; j++)
-	h[i+1][j] = (A_diag[j] - alpha)*h[i][j] - g[i]*h[i-1][j];
-    else
-      for (ordinal_type j=0; j<n; j++)
-	h[i+1][j] = (A_diag[j] - alpha)*h[i][j];
-
-    // compute gamma = ||h_{i+1}||
-    value_type gamma = 0.0;
     for (ordinal_type j=0; j<n; j++)
-      gamma += h[i+1][j]*h[i+1][j];
-    gamma = std::sqrt(gamma);
-    g[i+1] = gamma;
+      y[j] = y[j] - a[i]*h[j] - b[i]*hm[j];
 
-    // compute h_{i+1}/gamma
-    for (ordinal_type j=0; j<n; j++)
-      h[i+1][j] /= gamma;
+    // shift
+    hm = h;
+    h = y;
 
-    std::cout << "i = " << i << " alpha = " << alpha << " gamma = " << gamma
-    	      << std::endl;
-    TEST_FOR_EXCEPTION(gamma < 0, std::logic_error,
-		     "Stokhos::LanczosPCEBasis::lanczos():  "
+    std::cout << "i = " << i << " alpha = " << a[i] << " beta = " << b[i]
+	      << " nrm = " << nrm_sqrd[i] << std::endl;
+    TEST_FOR_EXCEPTION(nrm_sqrd[i] < 0, std::logic_error,
+		       "Stokhos::LanczosPCEBasis::lanczos():  "
 		       << " Polynomial " << i << " out of " << nsteps
-		       << " has norm " << gamma
+		       << " has norm " << nrm_sqrd[i]
 		       << "!  Try increasing number of quadrature points");
   }
 }
@@ -196,6 +215,7 @@ Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
 LanczosPCEBasis(ordinal_type p, const LanczosPCEBasis& basis) :
   RecurrenceBasis<ordinal_type, value_type>("Lanczos PCE", p, false),
   pce_weights(basis.pce_weights),
-  pce_vals(basis.pce_vals)
+  pce_vals(basis.pce_vals),
+  h0(basis.h0)
 {
 }

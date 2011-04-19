@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     bool use_pce_quad_points = false;
     bool normalize = false;
     bool sparse_grid = false;
-    bool project_integrals = true;
+    bool project_integrals = false;
 #ifndef HAVE_STOKHOS_DAKOTA
     sparse_grid = false;
 #endif
@@ -140,8 +140,8 @@ int main(int argc, char **argv)
       // 		       p, Teuchos::rcp(&u,false), quad, use_pce_quad_points, 
       // 		       normalize, project_integrals, Cijk));
       st_bases[0] = 
-	Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
-		       p, u, *quad));
+      	Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
+      		       p, u, *quad, normalize));
       Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > 
 	st_basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));

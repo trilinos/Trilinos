@@ -214,8 +214,8 @@ stieltjes(ordinal_type nstart,
       integrateBasisSquaredProj(i, a, b, weights, points, phi_vals, val1, val2);
     else
       integrateBasisSquared(i, a, b, weights, points, phi_vals, val1, val2);
-    std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
-    	      << std::endl;
+    // std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
+    // 	      << std::endl;
     TEST_FOR_EXCEPTION(val1 < 0, std::logic_error,
 		     "Stokhos::StieltjesPCEBasis::stieltjes():  "
 		       << " Polynomial " << i << " out of " << nfinish 
@@ -224,6 +224,9 @@ stieltjes(ordinal_type nstart,
     nrm[i] = val1;
     a[i] = val2/val1;
     b[i] = nrm[i]/nrm[i-1];
+
+    std::cout << "i = " << i << " alpha = " << a[i] << " beta = " << b[i]
+	      << " nrm = " << nrm[i] << std::endl;
   }
 }
 

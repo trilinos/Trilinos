@@ -56,7 +56,8 @@ namespace Stokhos {
     LanczosPCEBasis(
       ordinal_type p,
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
-      const Stokhos::Quadrature<ordinal_type, value_type>& quad);
+      const Stokhos::Quadrature<ordinal_type, value_type>& quad,
+      bool normalize);
 
     //! Destructor
     ~LanczosPCEBasis();
@@ -102,10 +103,12 @@ namespace Stokhos {
     //! Compute 3-term recurrence using Lanczos procedure
     void lanczos(ordinal_type n,
 		 ordinal_type nsteps,
-		 const Teuchos::Array<value_type>& A_diag,
+		 const Teuchos::Array<value_type>& w,
+		 const Teuchos::Array<value_type>& A,
 		 const Teuchos::Array<value_type>& h0,
 		 Teuchos::Array<value_type>& a,
-		 Teuchos::Array<value_type>& g) const;
+		 Teuchos::Array<value_type>& b,
+		 Teuchos::Array<value_type>& nrm_sqrd) const;
 
   private:
 
@@ -125,6 +128,9 @@ namespace Stokhos {
 
     //! Values of PCE at quadrature points
     Teuchos::Array<value_type> pce_vals;
+
+    //! Initial Lanczos vector
+    Teuchos::Array<value_type> h0;
 
   }; // class LanczosPCEBasis
 
