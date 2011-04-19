@@ -955,8 +955,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     else
       tmpNumBlocks = ( dim - blockSize_) / blockSize_;  // Allow for restarting.
     printer_->stream(Warnings) << 
-      "Warning! Requested Krylov subspace dimension is larger than operator dimension!" << std::endl <<
-      " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
+      "Belos::BlockGmresSolMgr::solve():  Warning! Requested Krylov subspace dimension is larger than operator dimension!" 
+      << std::endl << " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
     plist.set("Num Blocks",tmpNumBlocks);
   } 
   else 
@@ -1060,7 +1060,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
               // we don't have convergence
               loaDetected_ = true;
               printer_->stream(Warnings) << 
-                "Warning! Belos block GMRES solver has experienced a loss of accuracy!" << std::endl;
+                "Belos::BlockGmresSolMgr::solve(): Warning! Solver has experienced a loss of accuracy!" << std::endl;
               isConverged = false;
             }
             break;  // break from while(1){block_gmres_iter->iterate()}
