@@ -187,6 +187,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     SOURCES Rythmos_StepperBuilder_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
     NUM_MPI_PROCS 1
+    XHOSTTYPE_TEST AIX
     STANDARD_PASS_OUTPUT
     )
 
