@@ -2,7 +2,6 @@
 #define CTHULHU_CRSMATRIX_FACTORY_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Classes.hpp"
 #include "Cthulhu_CrsMatrix.hpp"
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_Exceptions.hpp"

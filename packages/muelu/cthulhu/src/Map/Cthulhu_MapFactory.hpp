@@ -4,7 +4,6 @@
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Classes.hpp"
 
 #include "Cthulhu_Map.hpp"
 

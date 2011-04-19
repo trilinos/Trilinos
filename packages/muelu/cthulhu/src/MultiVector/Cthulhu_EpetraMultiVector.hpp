@@ -7,8 +7,6 @@
 #error This file should be included only if HAVE_CTHULHU_EPETRA is defined.
 #endif
 
-#include "Cthulhu_Classes.hpp" //TMP
-
 #include "Cthulhu_MultiVector.hpp"
 
 #include "Cthulhu_EpetraMap.hpp" 

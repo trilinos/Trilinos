@@ -1,6 +1,3 @@
-//TODO: rename or rm this file (Cthulhu_Example)
-//      + get ride of Cthulhu_Classes.hpp
-
 #ifndef CTHULHU_EXAMPLES_HPP
 #define CTHULHU_EXAMPLES_HPP
 
@@ -25,9 +22,6 @@
 // RCP<const Map> map = rcp( new MyMap(nx*ny, 0, comm) ); // MyMap = TpetraMap or EpetraMap according to the macro CTHULHU_USE_EPETRA and CTHULHU_USE_TPETRA.
 //
 // The definition of template types can still be modified if needed.
-
-// Declaration of Cthulhu classes.
-#include "Cthulhu_Classes.hpp"
 
 // Cthulhu_DefaultTypes.hpp defines the types: ScalarType, LocalOrdinal, GlobalOrdinal and Node.
 // You can use your own definition of these types by defining them before including Cthulhu_Example.hpp. You just have to define also the macro CTHULHU_DEFAULTTYPES_HPP.
