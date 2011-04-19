@@ -137,7 +137,7 @@ namespace {
     }
   }
 
-  inline double dot8(const double __restrict *const x1, const double __restrict *const x2) {
+  inline double dot8(const double *const x1, const double *const x2) {
     double d1 = x1[0] * x2[0] + x1[1] * x2[1];
     double d2 = x1[2] * x2[2] + x1[3] * x2[3];
     double d4 = x1[4] * x2[4] + x1[5] * x2[5];

@@ -660,7 +660,7 @@ namespace Iopg {
       commset->property_add(Ioss::Property("id", 1));
       get_region()->add(commset);
 
-      commset = new Ioss::CommSet(this, "commset_face", "face",
+      commset = new Ioss::CommSet(this, "commset_side", "side",
 				  elem_count);
       commset->property_add(Ioss::Property("id", 1));
       get_region()->add(commset);
@@ -851,7 +851,7 @@ namespace Iopg {
 	      int side_count = (*I).second;
 
 	      std::string side_block_name = "surface_" + topo_or_block_name + "_" + side_topo->name();
-	      if (side_set_name == "universal_faceset") {
+	      if (side_set_name == "universal_sideset") {
 		side_block_name = side_set_name;
 	      } else {
 		if (sid == "")
@@ -932,7 +932,7 @@ namespace Iopg {
 
 	      if (split_type != Ioss::SPLIT_BY_DONT_SPLIT
 		  && (number_distribution_factors > 0 || isParallel)
-		  && side_set_name != "universal_faceset") {
+		  && side_set_name != "universal_sideset") {
 		std::string storage = "Real[";
 		storage += Ioss::Utils::to_string(side_topo->number_nodes());
 		storage += "]";
@@ -942,7 +942,7 @@ namespace Iopg {
 	      }
 
 	      if (side_set_name == "universal_sideset") {
-		side_block->field_add(Ioss::Field("face_ids",
+		side_block->field_add(Ioss::Field("side_ids",
 						Ioss::Field::INTEGER, "scalar",
 						Ioss::Field::MESH, side_count));
 	      }
@@ -1112,10 +1112,10 @@ namespace Iopg {
       if (num_to_get > 0) {
 	int entity_count = cs->get_property("entity_count").get_int();
 
-	// Return the <entity (node or face), processor> pair
+	// Return the <entity (node or side), processor> pair
 	if (field.get_name() == "entity_processor") {
 
-	  // Check type -- node or face
+	  // Check type -- node or side
 	  std::string type = cs->get_property("entity_type").get_string();
 
 	  // Allocate temporary storage space
@@ -1213,7 +1213,7 @@ namespace Iopg {
 	// sideset.  Because of this, the passed in 'data' may not be
 	// large enough to hold the data residing in the sideset and we
 	// may need to allocate a temporary array...  This can be checked
-	// by comparing the size of the sideset with the 'face_count' of
+	// by comparing the size of the sideset with the 'side_count' of
 	// the side block.
 
 	if (field.get_name() == "side_ids") {
@@ -1222,7 +1222,7 @@ namespace Iopg {
 	else if (field.get_name() == "ids") {
 	  // In exodusII, the 'side set' is stored as a sideset.  A
 	  // sideset has a list of elements and a corresponding local
-	  // element side (1-based) The side id is: face_id =
+	  // element side (1-based) The side id is: side_id =
 	  // 10*element_id + local_side_number This assumes that all
 	  // sides in a sideset are boundary sides.  Since we
 	  // only have a single array, we need to allocate an extra array
@@ -2013,7 +2013,7 @@ void separate_surface_element_sides(Ioss::IntVector &element,
 	assert(block != NULL);
 	my_side_count = block->topology()->number_boundaries();
 
-	// NULL if hetero edges/faces on element
+	// NULL if hetero sides on element
 	common_ftopo = block->topology()->boundary_type(0);
 	if (common_ftopo != NULL)
 	  topo = common_ftopo;
