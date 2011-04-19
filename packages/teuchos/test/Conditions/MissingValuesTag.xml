@@ -3,8 +3,8 @@
   <Parameter name="string param" value="vale" id="2" type="string"/>
   <Dependencies>
     <Dependency type="ConditionVisualDependency">
-      <Dependee parameterID="2"/>
-      <Dependent parameterID="1"/>
+      <Dependee parameterId="2"/>
+      <Dependent parameterId="1"/>
       <Condition parameterID="2" type="StringCondition">
       </Condition>
     </Dependency>

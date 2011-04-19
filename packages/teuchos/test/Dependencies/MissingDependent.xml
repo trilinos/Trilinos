@@ -4,8 +4,8 @@
   <Parameter name="bool param" value="true" id="3" type="bool"/>
   <Dependencies>
     <Dependency type="ConditionVisualDependency">
-      <Dependee parameterID="3"/>
-      <Dependent parameterID="10"/>
+      <Dependee parameterId="3"/>
+      <Dependent parameterId="10"/>
       <Condition parameterID="3" type="boolCondition"/>
     </Dependency>
   </Dependencies>

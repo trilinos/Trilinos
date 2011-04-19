@@ -57,7 +57,7 @@ DependencyXMLConverter::fromXMLtoDependency(
     if(child.getTag() == getDependeeTagName()){
       ParameterEntry::ParameterEntryID dependeeID = 
         child.getRequired<ParameterEntry::ParameterEntryID>(
-          getParameterIDAttributeName());
+          getParameterIdAttributeName());
 
       TEST_FOR_EXCEPTION(entryIDsMap.find(dependeeID) == entryIDsMap.end(),
         MissingDependeeException,
@@ -68,7 +68,7 @@ DependencyXMLConverter::fromXMLtoDependency(
     else if(child.getTag() == getDependentTagName()){
       ParameterEntry::ParameterEntryID dependentID = 
         child.getRequired<ParameterEntry::ParameterEntryID>(
-          getParameterIDAttributeName());
+          getParameterIdAttributeName());
 
       TEST_FOR_EXCEPTION(entryIDsMap.find(dependentID) == entryIDsMap.end(),
         MissingDependentException,
@@ -104,7 +104,7 @@ DependencyXMLConverter::fromDependencytoXML(
       "EntryIDsMap. Occured when converting " <<
       "to XML" << std::endl << std::endl);
     currentDependee.addAttribute<ParameterEntry::ParameterEntryID>(
-      getParameterIDAttributeName(), entryIDsMap.find(*it)->second);
+      getParameterIdAttributeName(), entryIDsMap.find(*it)->second);
     toReturn.addChild(currentDependee);
   }
 
@@ -117,7 +117,7 @@ DependencyXMLConverter::fromDependencytoXML(
       "ValidatordIDsMap.. Occured when converting " <<
       "to XML" << std::endl << std::endl);
     currentDependent.addAttribute<ParameterEntry::ParameterEntryID>(
-      getParameterIDAttributeName(), entryIDsMap.find(*it)->second);
+      getParameterIdAttributeName(), entryIDsMap.find(*it)->second);
     toReturn.addChild(currentDependent);
   }
 

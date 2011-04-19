@@ -1085,6 +1085,9 @@ RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
  *   \li The validators in the ValueToValidatorMap must all be the same
  *   type.
  *
+ *   \li If a default validator is specified, it must be of the same
+ *   type as the validators found in the ValueToValidatorMap.
+ *
  * If the dependee takes on a value not in the valuesAndValidators
  * map, then the default validator is assigned to the dependent.
  */

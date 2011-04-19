@@ -104,7 +104,7 @@ typedef unsigned long long int ullint;
 #define TOO_MANY_DEPENDEE_TEST(DEPENDENCY) \
   XMLObject extraDependee(DependencyXMLConverter::getDependeeTagName());  \
   extraDependee.addAttribute<ParameterEntry::ParameterEntryID>(  \
-    DependencyXMLConverter::getParameterIDAttributeName(), \
+    DependencyXMLConverter::getParameterIdAttributeName(), \
     writerEntryMap[dependeeParamExtra]);  \
   XMLObject tooManyTempXML = DEPENDENCY##XML.deepCopy(); \
   tooManyTempXML.addChild(extraDependee);  \

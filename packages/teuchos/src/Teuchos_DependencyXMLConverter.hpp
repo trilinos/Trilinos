@@ -144,9 +144,9 @@ public:
   /**
    * \brief Returns the string to be used for the ParameterID attribute.
    */
-  static const std::string& getParameterIDAttributeName(){
-    static const std::string parameterIDAtrributeName = "parameterID";
-    return parameterIDAtrributeName;
+  static const std::string& getParameterIdAttributeName(){
+    static const std::string parameterIdAtrributeName = "parameterId";
+    return parameterIdAtrributeName;
   }
  
   /**
