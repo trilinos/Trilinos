@@ -67,8 +67,7 @@ double stk::rebalance::check_balance(mesh::BulkData &    bulk_data,
 
 
 bool stk::rebalance::verify_dependent_ownership( const stk::mesh::EntityRank & parent_rank,
-                                                 stk::mesh::EntityVector & entities,
-                                                 stk::mesh::DefaultFEM & fem )
+                                                 stk::mesh::EntityVector & entities )
 {
   bool is_with_elem = true;
   for( size_t i = 0; i < entities.size(); ++i )

@@ -118,7 +118,11 @@ private: // data members
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
+#ifdef TEMPLATE_FRIENDS_NOT_SUPPORTED
+public: // member functions
+#else
 private: // member functions
+#endif
 
   Simple2DModelEvaluator();
 

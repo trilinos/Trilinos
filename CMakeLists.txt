@@ -73,6 +73,8 @@ INCLUDE(TrilinosGlobalMacros)
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
 
+PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE()
+
 OPTION(Trilinos_VERBOSE_CONFIGURE
   "Make the Trilinos configure process verbose." OFF)
 
@@ -237,16 +239,17 @@ TRILINOS_DEFINE_PACKAGING()
 #
 # L) Install-related commands
 #
+IF(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
+  PACKAGE_ARCH_WRITE_CONFIG_FILE()
 
-PACKAGE_ARCH_WRITE_CONFIG_FILE()
-
-# TEMPORARY: Install a compatibility copy of TrilinosConfig.cmake
-# where was previously installed to warn and load the new file.
-INSTALL(
-  FILES ${Trilinos_SOURCE_DIR}/cmake/TrilinosConfigInclude.cmake
-  DESTINATION "${Trilinos_INSTALL_INCLUDE_DIR}"
-  RENAME TrilinosConfig.cmake
-  )
+  # TEMPORARY: Install a compatibility copy of TrilinosConfig.cmake
+  # where was previously installed to warn and load the new file.
+  INSTALL(
+    FILES ${Trilinos_SOURCE_DIR}/cmake/TrilinosConfigInclude.cmake
+    DESTINATION "${Trilinos_INSTALL_INCLUDE_DIR}"
+    RENAME TrilinosConfig.cmake
+    )
+ENDIF()
 
 #
 # M) Export the library dependencies. This will let client projects

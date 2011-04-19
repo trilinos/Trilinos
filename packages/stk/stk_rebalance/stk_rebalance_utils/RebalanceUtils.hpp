@@ -7,7 +7,6 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/base/Selector.hpp>
 
 
@@ -50,8 +49,7 @@ namespace stk {
                       const mesh::Selector      * selector=NULL);
 
     bool verify_dependent_ownership(const stk::mesh::EntityRank & parent_rank,
-                                    stk::mesh::EntityVector & entities, 
-                                    stk::mesh::DefaultFEM & fem);
+                                    stk::mesh::EntityVector & entities );
 
   } // namepsace rebalance
 } // namepsace stk

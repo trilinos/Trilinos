@@ -62,7 +62,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/TFQMR/TFQMREpetraExFile.cpp
+/** \example TFQMR/TFQMREpetraExFile.cpp
     This is an example of how to use the Belos::TFQMRSolMgr solver manager.
 */
 
@@ -267,7 +267,7 @@ namespace Belos {
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
     
     // Current parameter list.
-    Teuchos::RCP<ParameterList> params_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
     
     // Default solver values.
     static const MagnitudeType convtol_default_;

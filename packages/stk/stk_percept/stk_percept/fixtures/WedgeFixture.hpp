@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -17,20 +17,18 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_io/IossBridge.hpp>
 
@@ -94,14 +92,14 @@ namespace stk {
 
           SweepMesher quadMeshCopy;
           quadMeshCopy.CopyFromBasicMesh(tp2);
-          tp2.stkMeshCreate(parallel_machine);
+          //tp2.stkMeshCreate(parallel_machine);
           //tp2.writeSTKMesh("wedge-quad-0.e");
 
           // break all of the quads into tris
           tp2.breakAllElements<shards_Quadrilateral_4, shards_Triangle_3>();
           if(verbose) std::cout << "after break quad to tri\n";
           tp2.dump(true);
-          tp2.stkMeshCreate(parallel_machine);
+          //tp2.stkMeshCreate(parallel_machine);
           //tp2.writeSTKMesh("tp2-quad-tri.e");
 
           // sweep again to make a  wedge mesh
@@ -122,9 +120,12 @@ namespace stk {
             {
               tp2.stkMeshCreateMetaNoCommit(parallel_machine);
             }
+
           return tp2.getBulkData();
 
         }
+
+        mesh::fem::FEMMetaData *getMetaData() { return m_sweepMesher.getMetaData() ; }
 
         //stk::mesh::BulkData* 
         void
@@ -183,7 +184,7 @@ namespace stk {
 
           SweepMesher quadMeshCopy;
           quadMeshCopy.CopyFromBasicMesh(tp2);
-          tp2.stkMeshCreate(parallel_machine);
+          //tp2.stkMeshCreate(parallel_machine);
           //tp2.writeSTKMesh("wedge-quad-0.e");
 
           // break all of the quads into tris
@@ -192,7 +193,7 @@ namespace stk {
           if(verbose) std::cout << "after break quad to tri\n";
           tp2.dump(verbose);
           tp2.dump();
-          tp2.stkMeshCreate(parallel_machine);
+          //tp2.stkMeshCreate(parallel_machine);
           //tp2.writeSTKMesh("tp2-quad-tri.e");
 
           // sweep again to make a  wedge mesh

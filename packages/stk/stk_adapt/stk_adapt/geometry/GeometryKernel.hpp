@@ -11,14 +11,14 @@ class GeometryKernel
 {
 public:
     GeometryKernel() {}
-    virtual ~GeometryKernel() = 0;
+    virtual ~GeometryKernel() {};
 
     virtual bool read_file(const std::string& file_name,
                            std::vector<GeometryHandle>& geometry_entities) = 0;
 
-    virtual int get_attribute(const std::string name, GeometryHandle geom) = 0;
+    virtual std::string get_attribute(GeometryHandle geom) = 0;
 
-    virtual KernelPoint snap_to(KernelPoint point, GeometryHandle geom) = 0;
+    virtual void snap_to(KernelPoint& point, GeometryHandle geom) = 0;
 };
 
 #endif // GEOMETRYKERNEL_HPP

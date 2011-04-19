@@ -146,6 +146,11 @@ XMLParameterListWriter::convertDependencies(
   ValidatortoIDMap& validatorIDsMap) const
 {
   XMLObject toReturn(getDependenciesTagName());
+  toReturn.addAttribute(
+    DependencySheet::getNameAttributeName(), 
+    depSheet->getName()
+  );
+
   for(
     DependencySheet::DepSet::const_iterator it = depSheet->depBegin();
     it != depSheet->depEnd();

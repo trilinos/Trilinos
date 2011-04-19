@@ -54,7 +54,7 @@ namespace stk
         int numInterpPoints = parametric_coordinates.dimension(0);
 
         //const mesh::Bucket & bucket = element->bucket();
-        const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+        const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
 
         //unsigned stride = 0;
         //double * fdata_bucket = PerceptMesh::field_data( m_my_field , bucket, &stride);

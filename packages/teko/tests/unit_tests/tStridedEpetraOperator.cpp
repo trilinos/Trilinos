@@ -80,7 +80,7 @@
 // TriUtils includes
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
-#include "Epetra/Teko_StridedEpetraOperator.hpp"
+#include "Teko_StridedEpetraOperator.hpp"
 #include "Teko_Utilities.hpp"
 
 #define SS_ECHO(ops) { std::stringstream ss; ss << ops; ECHO(ss.str()) };

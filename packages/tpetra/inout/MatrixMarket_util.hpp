@@ -83,6 +83,8 @@ namespace Tpetra {
 	conjugate_ (isConj (symmType)),
 	skew_ (isSkew (symmType))
       {}
+
+
     
       void operator() (const index_type i, const index_type j, const value_type& Aij) {
 	AdderType& theAdder = *adder_;
@@ -96,6 +98,14 @@ namespace Tpetra {
 	  theAdder (j, i, Aji);
 	}
       }
+
+      /// \brief Persisting non-const view of the underlying adder object.
+      ///
+      /// This violates encapsulation, so please be careful with this.
+      Teuchos::RCP<AdderType> getAdder() const {
+	return adder_;
+      }
+
     private:
       Teuchos::RCP<AdderType> adder_;
       bool symmetrize_, conjugate_, skew_;

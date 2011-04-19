@@ -23,11 +23,9 @@
 
 #include <stk_mesh/fixtures/Gear.hpp>
 
-#include <stk_mesh/fem/DefaultFEM.hpp>
-
 namespace {
 
-using stk::mesh::fem::NODE_RANK;
+const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 }
 
@@ -36,7 +34,7 @@ namespace mesh {
 namespace fixtures {
 
 Gear::Gear(
-    MetaData & meta,
+    fem::FEMMetaData & meta,
     BulkData & bulk,
     Part & gear,
     Part & arg_cylindrical_coord_part,
@@ -171,8 +169,7 @@ void Gear::populate_fields(stk::mesh::FieldState state) {
 
 void Gear::generate_gear()
 {
-  const stk::mesh::EntityRank element_rank =
-    stk::mesh::fem::element_rank(SpatialDimension);
+  const stk::mesh::EntityRank element_rank = meta_data.element_rank();
 
   std::vector<size_t> requests(meta_data.entity_rank_count(), 0);
   requests[NODE_RANK]     = num_nodes;

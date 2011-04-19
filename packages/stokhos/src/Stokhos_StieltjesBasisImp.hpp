@@ -233,3 +233,11 @@ evaluateRecurrence(ordinal_type k,
       values[i][k] = 
 	(points[i] - a[k-1])*values[i][k-1] - b[k-1]*values[i][k-2];
 }
+
+template <typename ordinal_type, typename value_type, typename func_type>
+Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
+Stokhos::StieltjesBasis<ordinal_type, value_type, func_type>::
+cloneWithOrder(ordinal_type p) const
+{
+   return Teuchos::rcp(new Stokhos::StieltjesBasis<ordinal_type,value_type,func_type>(p,func,quad,use_pce_quad_points,this->normalize));
+}

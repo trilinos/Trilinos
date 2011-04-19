@@ -70,13 +70,13 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/BlockGmres/BlockGmresEpetraExFile.cpp
+/** \example BlockGmres/BlockGmresEpetraExFile.cpp
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager.
 */
-/** \example epetra/example/BlockGmres/BlockPrecGmresEpetraExFile.cpp
+/** \example BlockGmres/BlockPrecGmresEpetraExFile.cpp
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager with an Ifpack preconditioner.
 */
-/** \example epetra/example/BlockGmres/BlockFlexGmresEpetraExFile.cpp
+/** \example BlockGmres/BlockFlexGmresEpetraExFile.cpp
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager with flexible Gmres.
 */
 
@@ -285,7 +285,7 @@ private:
   Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
     
   // Current parameter list.
-  Teuchos::RCP<ParameterList> params_;
+  Teuchos::RCP<Teuchos::ParameterList> params_;
 
   // Default solver values.
   static const MagnitudeType convtol_default_;
@@ -955,8 +955,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     else
       tmpNumBlocks = ( dim - blockSize_) / blockSize_;  // Allow for restarting.
     printer_->stream(Warnings) << 
-      "Warning! Requested Krylov subspace dimension is larger than operator dimension!" << std::endl <<
-      " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
+      "Belos::BlockGmresSolMgr::solve():  Warning! Requested Krylov subspace dimension is larger than operator dimension!" 
+      << std::endl << " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
     plist.set("Num Blocks",tmpNumBlocks);
   } 
   else 
@@ -1030,7 +1030,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
       // Get a matrix to hold the orthonormalization coefficients.
       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 = 
-        rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
+        Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
  
       // Orthonormalize the new V_0
       int rank = ortho_->normalize( *V_0, z_0 );
@@ -1059,6 +1059,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             if ( expConvTest_->getLOADetected() ) {
               // we don't have convergence
               loaDetected_ = true;
+              printer_->stream(Warnings) << 
+                "Belos::BlockGmresSolMgr::solve(): Warning! Solver has experienced a loss of accuracy!" << std::endl;
               isConverged = false;
             }
             break;  // break from while(1){block_gmres_iter->iterate()}
@@ -1110,7 +1112,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
               problem_->computeCurrPrecResVec( &*V_0 );
 
             // Get a view of the first block of the Krylov basis.
-            z_0 = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
+            z_0 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
 	    
             // Orthonormalize the new V_0
             rank = ortho_->normalize( *V_0, z_0 );

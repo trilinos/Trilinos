@@ -9,10 +9,9 @@
 #include <stdexcept>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 #include <stk_mesh/fixtures/HexFixture.hpp>
-
-using stk::mesh::fem::NODE_RANK;
 
 //----------------------------------------------------------------------------
 
@@ -29,7 +28,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy2D )
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
   for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
     stk::mesh::fixtures::QuadFixture fixture( pm , nx , ny );
-    fixture.m_meta_data.commit();
+    fixture.m_fem_meta.commit();
     fixture.generate_mesh();
 
     fixture.m_bulk_data.modification_begin();
@@ -64,7 +63,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy3D )
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
   for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
     stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-    fixture.m_meta_data.commit();
+    fixture.m_fem_meta.commit();
     fixture.generate_mesh();
 
     fixture.m_bulk_data.modification_begin();
@@ -96,7 +95,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   // Make the hex fixture
 
   stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2,2,2 );
-  fixture.m_meta_data.commit();
+  fixture.m_fem_meta.commit();
   fixture.generate_mesh();
 
   stk::mesh::BulkData & mesh = fixture.m_bulk_data;
@@ -135,7 +134,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
     const stk::mesh::PartVector no_parts;
 
     // create a new node
-    stk::mesh::Entity & new_node = mesh.declare_entity(NODE_RANK, new_node_id, no_parts);
+    stk::mesh::Entity & new_node = mesh.declare_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, new_node_id, no_parts);
 
     // destroy right_element's relation to old_node, replace with a
     // relation to new node

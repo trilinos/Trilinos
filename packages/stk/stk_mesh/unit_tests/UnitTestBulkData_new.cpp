@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -15,7 +15,7 @@
 #include <stk_mesh/fixtures/HexFixture.hpp>
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -51,33 +51,33 @@ class TestBoxFixture : public stk::mesh::fixtures::BoxFixture
   TestBoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
                  unsigned block_size = 1000) :
     BoxFixture(pm, block_size),
-    m_test_part ( m_meta_data.declare_part ( "Test Part" ) ),
-    m_cell_part ( m_meta_data.declare_part ( "Cell list" , 3 /*max rank*/ ) ),
-    m_part_A_0 ( m_meta_data.declare_part ( "Part A 0", 0 ) ),
-    m_part_A_1 ( m_meta_data.declare_part ( "Part A 1", 1 ) ),
-    m_part_A_2 ( m_meta_data.declare_part ( "Part A 2", 2 ) ),
-    m_part_A_3 ( m_meta_data.declare_part ( "Part A 3", 3 ) ),
-    m_part_A_superset ( m_meta_data.declare_part ( "Part A superset" ) ),
-    m_part_B_0 ( m_meta_data.declare_part ( "Part B 0", 0 ) ),
-    m_part_B_1 ( m_meta_data.declare_part ( "Part B 1", 1 ) ),
-    m_part_B_2 ( m_meta_data.declare_part ( "Part B 2", 2 ) ),
-    m_part_B_3 ( m_meta_data.declare_part ( "Part B 3", 3 ) ),
-    m_part_B_superset ( m_meta_data.declare_part ( "Part B superset" ) )
+    m_test_part ( m_fem_meta.declare_part ( "Test Part" ) ),
+    m_cell_part ( m_fem_meta.declare_part ( "Cell list" , 3 /*max rank*/ ) ),
+    m_part_A_0 ( m_fem_meta.declare_part ( "Part A 0", 0 ) ),
+    m_part_A_1 ( m_fem_meta.declare_part ( "Part A 1", 1 ) ),
+    m_part_A_2 ( m_fem_meta.declare_part ( "Part A 2", 2 ) ),
+    m_part_A_3 ( m_fem_meta.declare_part ( "Part A 3", 3 ) ),
+    m_part_A_superset ( m_fem_meta.declare_part ( "Part A superset" ) ),
+    m_part_B_0 ( m_fem_meta.declare_part ( "Part B 0", 0 ) ),
+    m_part_B_1 ( m_fem_meta.declare_part ( "Part B 1", 1 ) ),
+    m_part_B_2 ( m_fem_meta.declare_part ( "Part B 2", 2 ) ),
+    m_part_B_3 ( m_fem_meta.declare_part ( "Part B 3", 3 ) ),
+    m_part_B_superset ( m_fem_meta.declare_part ( "Part B superset" ) )
   {
-    m_meta_data.declare_part_subset ( m_part_A_superset , m_part_A_0 );
-    m_meta_data.declare_part_subset ( m_part_A_superset , m_part_A_1 );
-    m_meta_data.declare_part_subset ( m_part_A_superset , m_part_A_2 );
-    m_meta_data.declare_part_subset ( m_part_A_superset , m_part_A_3 );
+    m_fem_meta.declare_part_subset ( m_part_A_superset , m_part_A_0 );
+    m_fem_meta.declare_part_subset ( m_part_A_superset , m_part_A_1 );
+    m_fem_meta.declare_part_subset ( m_part_A_superset , m_part_A_2 );
+    m_fem_meta.declare_part_subset ( m_part_A_superset , m_part_A_3 );
 
-    m_meta_data.declare_part_subset ( m_part_B_superset , m_part_B_0 );
-    m_meta_data.declare_part_subset ( m_part_B_superset , m_part_B_1 );
-    m_meta_data.declare_part_subset ( m_part_B_superset , m_part_B_2 );
-    m_meta_data.declare_part_subset ( m_part_B_superset , m_part_B_3 );
+    m_fem_meta.declare_part_subset ( m_part_B_superset , m_part_B_0 );
+    m_fem_meta.declare_part_subset ( m_part_B_superset , m_part_B_1 );
+    m_fem_meta.declare_part_subset ( m_part_B_superset , m_part_B_2 );
+    m_fem_meta.declare_part_subset ( m_part_B_superset , m_part_B_3 );
 
     // None of the tests currently need to make any addtional changes
     // to MetaData; if this changes, the line below will have to be
     // removed.
-    m_meta_data.commit();
+    m_fem_meta.commit();
   }
 
   Part & get_test_part () { return m_test_part; }
@@ -196,7 +196,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
   unsigned p_rank = stk::parallel_machine_rank(pm);
 
   stk::mesh::fixtures::QuadFixture fixture(pm, 1 /*nx*/, p_size /*ny*/);
-  fixture.m_meta_data.commit();
+  fixture.m_fem_meta.commit();
   fixture.generate_mesh();
   stk::mesh::BulkData & bulk = fixture.m_bulk_data;
 
@@ -263,13 +263,13 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCannotRemoveFromSpecialParts )
   stk::mesh::PartVector         empty_vector;
 
   stk::mesh::Entity &new_cell = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , empty_vector );
-  test_parts.push_back ( &fixture.meta_data().universal_part() );
+  test_parts.push_back ( &fixture.fem_meta().universal_part() );
   STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
   test_parts.clear();
-  test_parts.push_back ( &fixture.meta_data().locally_owned_part() );
+  test_parts.push_back ( &fixture.fem_meta().locally_owned_part() );
   STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
   test_parts.clear();
-  test_parts.push_back ( &fixture.meta_data().globally_shared_part() );
+  test_parts.push_back ( &fixture.fem_meta().globally_shared_part() );
   STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
 }
  */
@@ -284,8 +284,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
   stk::mesh::Entity &new_cell = fixture.get_new_entity ( 3 , 1 );
   bulk.modification_end();
 
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.meta_data().universal_part() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.meta_data().locally_owned_part() ) );
+  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.fem_meta().universal_part() ) );
+  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.fem_meta().locally_owned_part() ) );
 }
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
@@ -329,8 +329,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
   STKUNIT_ASSERT ( !new_cell.bucket().member ( fixture.get_cell_part() ) );
 
   //Verify still a member of default parts
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.meta_data().universal_part() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.meta_data().locally_owned_part() ) );
+  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.fem_meta().universal_part() ) );
+  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.fem_meta().locally_owned_part() ) );
 }
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
@@ -677,7 +677,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   if ( 8 < p_size ) { return ; }
 
   stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 2, 2 );
-  fixture.m_meta_data.commit();
+  fixture.m_fem_meta.commit();
   fixture.generate_mesh();
 
   for ( size_t iz = 0 ; iz < 3 ; ++iz ) {
@@ -735,31 +735,34 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
   const int spatial_dimension = 3;
 
-  stk::mesh::MetaData meta ( stk::mesh::fem::entity_rank_names ( spatial_dimension ) );
-  stk::mesh::DefaultFEM fem( meta, spatial_dimension );
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dimension, stk::mesh::fem::entity_rank_names ( spatial_dimension ));
 
-  stk::mesh::Part & part_a = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_a" );
-  stk::mesh::Part & part_b = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_b" );
+  stk::mesh::fem::CellTopology tet_top(shards::getCellTopologyData<shards::Tetrahedron<4> >());
+  stk::mesh::Part & part_a = fem_meta.declare_part( "block_a", tet_top );
+  stk::mesh::Part & part_b = fem_meta.declare_part( "block_b", tet_top );
 
-  stk::mesh::Part & part_a_0 = stk::mesh::declare_part<shards::Node>( meta, "block_a_0" );
+  stk::mesh::fem::CellTopology node_top(shards::getCellTopologyData<shards::Node>());
+  stk::mesh::Part & part_a_0 = fem_meta.declare_part( "block_a_0", node_top );
 
   typedef stk::mesh::Field<double>  ScalarFieldType;
 
   ScalarFieldType & volume =
-     meta.declare_field < ScalarFieldType > ( "volume" , 4 );
+     fem_meta.declare_field < ScalarFieldType > ( "volume" , 4 );
   ScalarFieldType & temperature =
-     meta.declare_field < ScalarFieldType > ( "temperature" , 4 );
-  stk::mesh::Part  & universal     = meta.universal_part ();
+     fem_meta.declare_field < ScalarFieldType > ( "temperature" , 4 );
+  stk::mesh::Part  & universal     = fem_meta.universal_part ();
   put_field ( volume , 3 , universal );
   put_field ( temperature , 3 , universal );
 
-  meta.commit();
+  fem_meta.commit();
 
   stk::mesh::PartVector    create_vector;
   stk::mesh::PartVector    empty_vector;
   create_vector.push_back ( &part_a );
   create_vector.push_back ( &part_b );
 
+  stk::mesh::MetaData & meta = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
   stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD , 100 );
 
   bulk.modification_begin();
@@ -926,6 +929,25 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   }//end of CommAll section
 
   bulk.modification_end ();
+}
+
+STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testUninitializedMetaData )
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  stk::mesh::MetaData meta; // Construct, but do not initialize
+  stk::mesh::BulkData bulk(meta, pm);
+
+  meta.set_entity_rank_names(stk::mesh::fem::entity_rank_names(2 /*spatial-dim*/));
+
+  meta.commit();
+
+  bulk.modification_begin();
+
+  STKUNIT_ASSERT_THROW( bulk.declare_entity(0, /*rank*/
+                                            1, /*id*/
+                                            stk::mesh::PartVector() ),
+                        std::logic_error);
 }
 
 namespace {

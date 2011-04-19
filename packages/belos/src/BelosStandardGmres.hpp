@@ -112,6 +112,7 @@ namespace Belos {
     extendBasis (Teuchos::RCP<MV>& V_cur, 
 		 Teuchos::RCP<MV>& Z_cur)
     { 
+      using Teuchos::RCP;
       using Teuchos::Range1D;
       using std::endl;
       const bool verboseDebug = false;

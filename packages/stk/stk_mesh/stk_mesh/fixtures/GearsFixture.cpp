@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -28,17 +28,14 @@
 #include <stk_mesh/fixtures/Gear.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
 namespace {
 
-using stk::mesh::fem::NODE_RANK;
+const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 const unsigned ONE_STATE = 1;
 const unsigned TWO_STATE = 2;
@@ -54,13 +51,12 @@ namespace fixtures {
 
 GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears)
   : NUM_GEARS(num_gears)
-  , meta_data( fem::entity_rank_names(SpatialDimension) )
-  , fem_data( meta_data, SpatialDimension )
-  , bulk_data( meta_data , pm )
-  , element_rank( fem::element_rank(fem_data) )
+  , meta_data( SpatialDimension )
+  , bulk_data( fem::FEMMetaData::get_meta_data(meta_data) , pm )
+  , element_rank( meta_data.element_rank() )
   , cylindrical_coord_part( meta_data.declare_part("cylindrical_coord_part", element_rank))
-  , hex_part( declare_part<Hex8>(meta_data, "hex8_part"))
-  , wedge_part( declare_part<Wedge6>(meta_data, "wedge6_part"))
+  , hex_part( fem::declare_part<Hex8>(meta_data, "hex8_part"))
+  , wedge_part( fem::declare_part<Wedge6>(meta_data, "wedge6_part"))
   , cartesian_coord_field( meta_data.declare_field<CartesianField>("coordinates", ONE_STATE))
   , displacement_field( meta_data.declare_field<CartesianField>("displacement", TWO_STATE))
   , translation_field( meta_data.declare_field<CartesianField>("translation", ONE_STATE))
@@ -226,7 +222,7 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
   Selector locally_owned = gear.meta_data.locally_owned_part();
   if (p_rank == 0) {
     BucketVector all_elements;
-    stk::mesh::get_buckets(locally_owned,bulk_data.buckets(Element),all_elements);
+    stk::mesh::get_buckets(locally_owned,bulk_data.buckets(gear.meta_data.element_rank()),all_elements);
     std::set<Entity *> node_set; // First come first serve nodal movement.
     for (BucketVector::iterator it = all_elements.begin() ; it != all_elements.end() ; ++it) {
       Bucket & b = **it;
@@ -239,7 +235,7 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
         unsigned destination_processor_rank = destination_processor(gear,radius,angle,height,p_rank,p_size);
         elements_to_change_owner.push_back(EntityProc(element,destination_processor_rank));
         // Now add all related nodes to list to move to this processor:
-        PairIterRelation node_relations = element->relations(Node);
+        PairIterRelation node_relations = element->relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
         for ( ; node_relations.first != node_relations.second ; ++(node_relations.first) ) {
           Entity * node = node_relations.first->entity();
           if (node_set.count(node)==0) {

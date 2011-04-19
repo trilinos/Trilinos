@@ -33,12 +33,33 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
 
+namespace {
+
+
+void func_time_monitor1()
+{
+  TEUCHOS_FUNC_TIME_MONITOR("FUNC_TIME_MONITOR1");
+}
+
+
+void func_time_monitor2()
+{
+  TEUCHOS_FUNC_TIME_MONITOR("FUNC_TIME_MONITOR2");
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("FUNC_TIME_MONITOR2_inner", inner);
+  }
+}
+
+
+} // namespace
+
+
 namespace Teuchos {
 
 
 TEUCHOS_UNIT_TEST( TimeMonitor, FUNC_TIME_MONITOR  )
 {
-  TEUCHOS_FUNC_TIME_MONITOR("FUNC_TIME_MONITOR1");
+  func_time_monitor1();
   std::ostringstream oss;
   TimeMonitor::summarize(oss);
   out << oss.str() << "\n";
@@ -49,10 +70,7 @@ TEUCHOS_UNIT_TEST( TimeMonitor, FUNC_TIME_MONITOR  )
 
 TEUCHOS_UNIT_TEST( TimeMonitor, FUNC_TIME_MONITOR_tested  )
 {
-  TEUCHOS_FUNC_TIME_MONITOR("FUNC_TIME_MONITOR2");
-  {
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF("FUNC_TIME_MONITOR2_inner", inner);
-  }
+  func_time_monitor2();
   std::ostringstream oss;
   TimeMonitor::summarize(oss);
   out << oss.str() << "\n";

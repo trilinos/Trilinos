@@ -2,7 +2,8 @@ INCLUDE(PackageLibraryMacros)
 INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/src/Epetra)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -136,4 +137,13 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  DiagonalPreconditionerFactory 
+  SOURCES
+    unit_tests/tDiagonalPreconditionerFactory.cpp
+    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 2
   )

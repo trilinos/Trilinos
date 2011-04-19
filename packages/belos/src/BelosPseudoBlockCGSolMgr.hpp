@@ -63,10 +63,10 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/BlockCG/PseudoBlockCGEpetraExFile.cpp
+/** \example BlockCG/PseudoBlockCGEpetraExFile.cpp
     This is an example of how to use the Belos::PseudoBlockCGSolMgr solver manager.
 */
-/** \example epetra/example/BlockCG/PseudoBlockPrecCGEpetraExFile.cpp
+/** \example BlockCG/PseudoBlockPrecCGEpetraExFile.cpp
     This is an example of how to use the Belos::PseudoBlockCGSolMgr solver manager with an Ifpack preconditioner.
 */
 
@@ -237,7 +237,9 @@ namespace Belos {
       if (scaleType == "Norm of Initial Residual") {
         return Belos::NormOfInitRes;
       } else if (scaleType == "Norm of Preconditioned Initial Residual") {
-        return Belos::NormOfPrecInitRes;
+        // This algorithm only provides true residuals, not preconditioned residuals, 
+        // so the residuals should only be scaled by the unpreconditioned initial residual.
+        return Belos::NormOfInitRes;
       } else if (scaleType == "Norm of RHS") {
         return Belos::NormOfRHS;
       } else if (scaleType == "None") {
@@ -264,7 +266,7 @@ namespace Belos {
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
 
      // Current parameter list.
-    Teuchos::RCP<ParameterList> params_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
    
     // Default solver values.
     static const MagnitudeType convtol_default_;

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -17,7 +17,8 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -26,7 +27,7 @@
 
 namespace {
 
-using stk::mesh::fem::NODE_RANK;
+static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 void find_owned_nodes_with_relations_outside_closure(
     stk::mesh::EntityVector & closure,
@@ -195,7 +196,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 } // empty namespace
 
 void separate_and_skin_mesh(
-    stk::mesh::MetaData & meta,
+    stk::mesh::fem::FEMMetaData & fem_meta,
     stk::mesh::BulkData & mesh,
     stk::mesh::Part     & skin_part,
     std::vector< stk::mesh::EntityId > elements_to_separate,
@@ -219,13 +220,13 @@ void separate_and_skin_mesh(
       entities_to_separate,
       entities_closure);
 
-  stk::mesh::Selector select_owned = meta.locally_owned_part();
+  stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
 
   stk::mesh::EntityVector nodes;
   find_owned_nodes_with_relations_outside_closure( entities_closure, select_owned, nodes);
 
   //ask for new nodes to represent the copies
-  std::vector<size_t> requests(meta.entity_rank_count(), 0);
+  std::vector<size_t> requests(fem_meta.entity_rank_count(), 0);
   requests[NODE_RANK] = nodes.size();
 
   mesh.modification_begin();

@@ -160,6 +160,7 @@ typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
  */
 
 #define ZOLTAN_GNO_TYPE      ssize_t
+#define zoltan_gno_datatype_name "ssize_t"
 
 /*
 * 12/21/10: Trilinos compiles with warnings about c99 features (%zd).  

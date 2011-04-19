@@ -71,7 +71,7 @@
 
 #include "Thyra_EpetraThyraWrappers.hpp"
 
-#include "Epetra/Teko_EpetraThyraConverter.hpp"
+#include "Teko_EpetraThyraConverter.hpp"
 
 #include <iostream>
 #include "tEpetraThyraConverter.hpp"

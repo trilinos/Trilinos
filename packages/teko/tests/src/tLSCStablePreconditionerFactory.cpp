@@ -45,7 +45,7 @@
 */
 
 #include "tLSCStablePreconditionerFactory.hpp"
-#include "NS/Teko_LSCPreconditionerFactory.hpp"
+#include "Teko_LSCPreconditionerFactory.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"

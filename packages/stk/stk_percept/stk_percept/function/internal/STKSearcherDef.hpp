@@ -20,7 +20,7 @@ namespace stk
     void
     STKSearcher<SpatialDim>::setupSearch()
     {
-      mesh::MetaData& metaData = MetaData::get(*(m_fieldFunction->getField()));
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*(m_fieldFunction->getField()));
       mesh::BulkData& bulkData = *m_fieldFunction->getBulkData();
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
       PerceptMesh meshUtil(&metaData, &bulkData);
@@ -47,7 +47,7 @@ namespace stk
                                          unsigned& found_it, const mesh::Entity *hint_element )
     {
       //return 0;
-      mesh::MetaData& metaData = MetaData::get(*(m_fieldFunction->getField()));
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*(m_fieldFunction->getField()));
       mesh::BulkData& bulkData = *m_fieldFunction->getBulkData();
 
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
@@ -95,7 +95,7 @@ namespace stk
             {
               if (0 || EXTRA_PRINT)
                 std::cout << "relation[ " << i << "]= {" << relation[i].first << "} --> { " << relation[i].second << "}" << std::endl;
-              mesh::Entity *element = bulkData.get_entity(mesh::Element, relation[i].second.ident);
+              mesh::Entity *element = bulkData.get_entity(metaData.element_rank(), relation[i].second.ident);
               //bool loop_break = ... intentionally ignoring return value
               isIn(*element, m_fieldFunction->getField(), bulkData);
               if (0 || EXTRA_PRINT) std::cout << "STKSearcher::findElement: found it= " << isIn.m_found_it << std::endl;

@@ -60,9 +60,9 @@ namespace stk
     /// return true if topology is bad
     bool TopologyVerifier::isTopologyBad( mesh::Entity  &elem)
     {
-      const CellTopologyData * const top = mesh::get_cell_topology(elem);
+      const CellTopologyData * const top = stk::percept::PerceptMesh::get_cell_topology(elem);
 
-      const mesh::PairIterRelation elem_nodes = elem.relations( mesh::Node );
+      const mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
 #if 0
       std::cout << "top->node_count = " << top->node_count << "\n";
@@ -96,14 +96,14 @@ namespace stk
      */
     bool TopologyVerifier::isTopologyBad(stk::mesh::BulkData& bulk) //, stk::mesh::Part& mesh_part )
     {
-      const stk::mesh::MetaData& meta = MetaData::get(bulk);
+      const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(bulk);
 
       stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
         meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >("coordinates");
 
       //mesh::Selector select_owned( meta_data.locally_owned_part() );
 
-      const std::vector<mesh::Bucket*> & buckets = bulk.buckets( stk::mesh::Element );
+      const std::vector<mesh::Bucket*> & buckets = bulk.buckets(meta.element_rank() );
 
       for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
         {
@@ -121,7 +121,7 @@ namespace stk
           if (0) { elem_node_data[0]++;}
 
 #if 1
-          const CellTopologyData * const bucket_cell_topo = stk::mesh::get_cell_topology(bucket);
+          const CellTopologyData * const bucket_cell_topo = stk::percept::PerceptMesh::get_cell_topology(bucket);
           int bucket_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(bucket_cell_topo->name);
 #endif
 
@@ -140,12 +140,10 @@ namespace stk
                   return true;
                 }
               if (0) std::cout << "elemOfBucket= " << elem << std::endl;
-              const mesh::PairIterRelation elem_nodes = elem.relations( mesh::Node );
+              const mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
-              //const mesh::PairIterRelation node_elems = elem_nodes[0].entity()->relations( mesh::Element );
-
-              //const CellTopologyData * const cell_topo = stk::mesh::get_cell_topology(elem);
-              const CellTopologyData * const cell_topo = stk::mesh::get_cell_topology(elem);
+              //const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
+              const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
               int shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(cell_topo->name);
               if (0) { std::cout << "shardsId= " << shardsId << " name= " << cell_topo->name <<  std::endl; }
 
@@ -180,15 +178,15 @@ namespace stk
                     {
                       unsigned inodeOnPotBadEdgeInElem = cell_topo->edge[iedgeOrd].node[inodeOnPotBadEdge];
 
-                      const mesh::PairIterRelation node_elems = elem_nodes[inodeOnPotBadEdgeInElem].entity()->relations( mesh::Element );
+                      const mesh::PairIterRelation node_elems = elem_nodes[inodeOnPotBadEdgeInElem].entity()->relations( meta.element_rank() );
                       unsigned num_elems_on_node = node_elems.size();
 
                       for (unsigned iele = 0; iele < num_elems_on_node; iele++)
                         {
                           mesh::Entity & elemOnNode = *node_elems[iele].entity();
-                          const mesh::PairIterRelation elemOnNode_nodes = elemOnNode.relations( mesh::Node );
+                          const mesh::PairIterRelation elemOnNode_nodes = elemOnNode.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
-                          const CellTopologyData * const local_cell_topo = stk::mesh::get_cell_topology(elemOnNode);
+                          const CellTopologyData * const local_cell_topo = stk::percept::PerceptMesh::get_cell_topology(elemOnNode);
                           int local_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(local_cell_topo->name);
                           //if (1) { std::cout << "shardsId= " << shardsId << " name= " << cell_topo->name <<  std::endl; }
 

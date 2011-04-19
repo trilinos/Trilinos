@@ -143,6 +143,7 @@ void EntityRepository::change_entity_bucket( Bucket & b, Entity & e,
                                              unsigned ordinal)
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::change_entity_bucket", LOG_ENTITY, e.key());
+  DiagIfWatching(LOG_ENTITY, e.key(), "New bucket: " << b << ", ordinal: " << ordinal);
 
   const bool modified_parts = ! e.m_entityImpl.is_bucket_valid() ||
                               ! b.equivalent( e.bucket() );

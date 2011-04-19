@@ -110,7 +110,8 @@ class RythmosSolver
    Teuchos::RCP<Teuchos::FancyOStream> out;
    Teuchos::EVerbosityLevel solnVerbLevel;
    Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > fwdStateIntegrator;
-   Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > fwdTimeStepSolver;
+   Teuchos::RCP<Thyra::NonlinearSolverBase<double> > fwdTimeStepSolver;
+  //Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > fwdTimeStepSolver;
    Scalar t_final;
 
 };

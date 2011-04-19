@@ -477,7 +477,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     // If this is the first iteration of the Arnoldi factorization, 
     // there is no update, so return Teuchos::null. 
     //
-    RCP<MV> currentUpdate = Teuchos::null;
+    Teuchos::RCP<MV> currentUpdate = Teuchos::null;
     if (curDim_==0) { 
       return currentUpdate; 
     } else {
@@ -502,7 +502,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       for ( int i=0; i<curDim_; i++ ) {   
         index[i] = i;
       }
-      RCP<const MV> Zjp1 = MVT::CloneView( *Z_, index );
+      Teuchos::RCP<const MV> Zjp1 = MVT::CloneView( *Z_, index );
       MVT::MvTimesMatAddMv( one, *Zjp1, y, zero, *currentUpdate );
     }
     return currentUpdate;

@@ -16,7 +16,7 @@ element_node_stencil_2d(
 
   int ordinal = -1 ;
 
-  if ( spatial_dimension == from_type && NODE_RANK == to_type ) {
+  if ( spatial_dimension == from_type && FEMMetaData::NODE_RANK == to_type ) {
     ordinal = static_cast<int>(identifier);
   }
 
@@ -34,7 +34,7 @@ element_node_stencil_3d(
 
   int ordinal = -1 ;
 
-  if ( spatial_dimension == from_type && NODE_RANK == to_type ) {
+  if ( spatial_dimension == from_type && FEMMetaData::NODE_RANK == to_type ) {
     ordinal = static_cast<int>(identifier);
   }
 

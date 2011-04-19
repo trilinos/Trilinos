@@ -1,6 +1,6 @@
 
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -19,7 +19,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -36,9 +36,9 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
 
   const unsigned p_rank = fixture.m_bulk_data.parallel_rank();
 
-  stk::mesh::Part & shell_part = stk::mesh::declare_part<shards::ShellQuadrilateral<4> >( fixture.m_meta_data, "shell_part");
+  stk::mesh::Part & shell_part = stk::mesh::fem::declare_part<shards::ShellQuadrilateral<4> >( fixture.m_fem_meta, "shell_part");
 
-  fixture.m_meta_data.commit();
+  fixture.m_fem_meta.commit();
 
   fixture.generate_mesh();
 
@@ -60,7 +60,7 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
     stk::mesh::EntityId elem_id = 3;
 
     try {
-      stk::mesh::declare_element( fixture.m_bulk_data, shell_part, elem_id, elem_node);
+      stk::mesh::fem::declare_element( fixture.m_bulk_data, shell_part, elem_id, elem_node);
     }
     catch (...) {
       no_throw = false;

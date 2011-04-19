@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -25,7 +25,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/FEMInterface.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -331,104 +331,60 @@ namespace stk {
 
     bool invalid_rank(stk::mesh::EntityRank rank)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return rank == (unsigned)mesh::EntityRankUndefined;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       return rank == mesh::InvalidEntityRank;
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
     }
 
     stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
     {
       if (mesh::MetaData::get(part).universal_part() == part) {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-	return stk::mesh::Node;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-	return stk::mesh::fem::NODE_RANK;
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+        return stk::mesh::fem::FEMMetaData::NODE_RANK;
       }
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return mesh::fem_entity_rank( part.primary_entity_rank() );
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      return part.primary_entity_rank();
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      else {
+        return part.primary_entity_rank();
+      }
     }
 
     stk::mesh::EntityRank element_rank(const stk::mesh::MetaData &meta)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return stk::mesh::Element;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
-      return stk::mesh::fem::element_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      return stk::mesh::fem::FEMMetaData::get(meta).element_rank();
     }
 
     stk::mesh::EntityRank side_rank(const stk::mesh::MetaData &meta)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return stk::mesh::Face;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
-      return stk::mesh::fem::side_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      return stk::mesh::fem::FEMMetaData::get(meta).side_rank();
     }
 
     stk::mesh::EntityRank face_rank(const stk::mesh::MetaData &meta)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return stk::mesh::Face;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
-      return stk::mesh::fem::face_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      return stk::mesh::fem::FEMMetaData::get(meta).face_rank();
     }
 
     stk::mesh::EntityRank edge_rank(const stk::mesh::MetaData &meta)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return stk::mesh::Edge;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
-      return stk::mesh::fem::edge_rank(fem);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      return stk::mesh::fem::FEMMetaData::get(meta).edge_rank();
     }
 
-    stk::mesh::EntityRank node_rank(const stk::mesh::MetaData&)
+    stk::mesh::EntityRank node_rank(const stk::mesh::MetaData& meta)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return stk::mesh::Node;
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      return stk::mesh::fem::NODE_RANK;
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      return stk::mesh::fem::FEMMetaData::NODE_RANK;
     }
 
     void set_cell_topology(stk::mesh::Part &part, const CellTopologyData * const cell_topology)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      stk::mesh::set_cell_topology(part, cell_topology);
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      stk::mesh::fem::set_cell_topology(part, cell_topology);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      stk::mesh::fem::set_cell_topology_new(part, cell_topology);
     }
 
     const CellTopologyData *get_cell_topology(const stk::mesh::Part &part)
     {
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      return stk::mesh::get_cell_topology(part);
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      return stk::mesh::fem::get_cell_topology(part).getCellTopologyData();
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      return stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
     }
 
     void initialize_spatial_dimension(stk::mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names)
     {
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
-
-      meta.set_entity_rank_names(entity_rank_names);
-      fem.set_spatial_dimension(spatial_dimension);
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
+      if (!fem_meta.is_FEM_initialized() ) {
+        fem_meta.FEM_initialize(spatial_dimension, entity_rank_names);
+      }
     }
 
     void get_io_field_type(const stk::mesh::FieldBase *field, int num_comp, std::pair<std::string, Ioss::Field::BasicType> *result)
@@ -617,9 +573,12 @@ namespace stk {
 	return extype;
 
       if(strcmp(cell_top->name, "super") == 0) {
-          std::stringstream oss;
-          oss << "super" << cell_top->node_count;
-          return oss.str();
+        std::stringstream oss;
+        oss << "super" << cell_top->node_count;
+        return oss.str();
+      }
+      else if(strncasecmp(cell_top->name, "super", 5) == 0) {
+        return cell_top->name;
       }
 
       switch( cell_top->key ) {
@@ -702,12 +661,29 @@ namespace stk {
       return extype ;
     }
 
+    void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
+				  stk::mesh::EntityRank type)
+    {
+      internal_part_processing(entity, meta.get_meta_data(meta), type);
+    }
+    void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta,
+				  stk::mesh::EntityRank type)
+    {
+      internal_part_processing(entity, meta.get_meta_data(meta), type);
+    }
+
     void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
 				  stk::mesh::EntityRank type)
     {
       if (include_entity(entity)) {
-	stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
-	stk::io::put_io_part_attribute(part, entity);
+        stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
+        if (fem_meta) {
+	  stk::mesh::Part & part = fem_meta->declare_part(entity->name(), type);
+	  stk::io::put_io_part_attribute(part, entity);
+        } else {
+	  stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
+	  stk::io::put_io_part_attribute(part, entity);
+        }
       }
     }
 
@@ -715,22 +691,56 @@ namespace stk {
 				  stk::mesh::EntityRank type)
     {
       if (include_entity(entity)) {
-	stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
-	stk::io::put_io_part_attribute(part, entity);
+        stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
+        //const stk::mesh::fem::FEMMetaData * fem_meta = meta.get_attribute<stk::mesh::fem::FEMMetaData>();
+        stk::mesh::Part * part = NULL;
+        if( fem_meta )
+          part = &fem_meta->declare_part(entity->name(), type);
+        else
+          part = &stk::mesh::declare_part(meta, entity->name(), type);
+	stk::io::put_io_part_attribute(*part, entity);
 
 	const Ioss::ElementTopology *topology = entity->topology();
+	// Check spatial dimension of the element topology here so we
+	// can issue a more meaningful error message.  If the
+	// dimension is bad and we continue to the following calls,
+	// there is an exception and we get unintelligible (to the
+	// user) error messages.  Could also do a catch...
+
+	if (entity->type() == Ioss::ELEMENTBLOCK) {
+	  assert(topology != NULL);
+	  if (topology->spatial_dimension() < (int)fem_meta->spatial_dimension()) {
+	    // NOTE: The comparison is '<' and not '!=' since a 2D mesh
+	    // can contain a "3d" element -- a Beam is both a 2D and
+	    // 3D element...
+
+	    std::ostringstream msg ;
+	    msg << "\n\nERROR: Element Block " << entity->name()
+		<< " contains " << topology->name() << " elements with spatial dimension "
+		<< topology->spatial_dimension()
+		<< "\n       which does not match the spatial dimension of the model which is "
+		<< fem_meta->spatial_dimension() << "\n\n";
+	    throw std::runtime_error( msg.str() );
+	  }
+	}
+
 	const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
 	/// \todo IMPLEMENT Determine whether application can work
 	/// with this topology type... Perhaps map_topology_ioss_to_cell only
 	/// returns a valid topology if the application has registered
         /// that it can handle that specific topology.
 
-	if (cell_topology != NULL) {
-	  stk::io::set_cell_topology(part, cell_topology);
-	} else {
+        if (cell_topology != NULL) {
+          if( fem_meta )
+          {
+            const stk::mesh::fem::CellTopology cell_topo(cell_topology);
+            stk::mesh::fem::set_cell_topology(*fem_meta, *part, cell_topo);
+          }
+          stk::io::set_cell_topology(*part, cell_topology);
+        } else {
 	  /// \todo IMPLEMENT handle cell_topolgy mapping error...
 	}
-	stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE, part, type);
+	stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE, *part, type);
       }
     }
 
@@ -786,7 +796,7 @@ namespace stk {
       bool use_cartesian_for_scalar = false;
       if (role == Ioss::Field::ATTRIBUTE)
 	use_cartesian_for_scalar = true;
-      
+
       Ioss::NameList names;
       entity->field_describe(role, &names);
 
@@ -798,7 +808,7 @@ namespace stk {
 	/// Skip the attribute field that is named "attribute"
 	if (*I == "attribute" && names.size() > 1)
 	  continue;
-	
+
 	/// \todo IMPLEMENT Need to determine whether these are
 	/// multi-state fields or constant, or interpolated, or ...
 	Ioss::Field io_field = entity->get_field(*I);
@@ -892,7 +902,11 @@ namespace stk {
         const stk::mesh::EntityRank edgerank = edge_rank(mesh::MetaData::get(part));
 	ThrowRequire(type == siderank || type == edgerank);
 
-	const CellTopologyData *const ef_topology = stk::io::get_cell_topology(part);
+  const CellTopologyData *const ef_topology =   stk::io::get_cell_topology(part) ?
+                                                stk::io::get_cell_topology(part) :
+                                                stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
+
+
 	if (ef_topology == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part.name() << " returned NULL from get_cell_topology()";
@@ -988,7 +1002,7 @@ namespace stk {
 	  meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
 	assert(coord_field != NULL);
 	const mesh::FieldBase::Restriction &res = coord_field->restriction(node_rank(meta), part);
-	
+
 	/** \todo REFACTOR  Need a clear way to query dimensions
 	 *                  from the field restriction.
 	 */
@@ -1018,7 +1032,11 @@ namespace stk {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
         const stk::mesh::EntityRank elem_rank = element_rank(meta);
 
-	const CellTopologyData * const cell_top = stk::io::get_cell_topology( part );
+        const CellTopologyData * const cell_top =
+        stk::io::get_cell_topology(part) ?
+        stk::io::get_cell_topology(part) :
+        stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
+
 	if (cell_top == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part.name() << " returned NULL from get_cell_topology()";
@@ -1181,6 +1199,7 @@ namespace stk {
 				    mesh::Part * const part ,
 				    const mesh::BulkData & bulk_data )
       {
+        //std::cout << "tmp write_side_data_to_ioss part= " << part->name() << std::endl;
 	const mesh::MetaData & meta_data = mesh::MetaData::get(*part);
 
 	std::vector<mesh::Entity *> sides ;
@@ -1206,7 +1225,7 @@ namespace stk {
 	    const mesh::Entity & elem = *side_elem[j].entity();
 
 	    if ( elem.bucket().member( meta_data.locally_owned_part() ) &&
-		 (num_side_elem == 1 || element_side_polarity(elem, side, side_elem[j].identifier())) ) {
+		 (num_side_elem == 1 || stk::mesh::fem::element_side_polarity(elem, side, side_elem[j].identifier())) ) {
 	      rel = &side_elem[j];
 	    }
 	  }
@@ -1297,7 +1316,10 @@ namespace stk {
 	std::vector<mesh::Entity *> elements;
 	size_t num_elems = get_entities(*part, bulk, elements);
 
-	const CellTopologyData * cell_topo = stk::io::get_cell_topology(*part);
+	const CellTopologyData * cell_topo =
+              stk::io::get_cell_topology(*part) ?
+              stk::io::get_cell_topology(*part) :
+              stk::mesh::fem::FEMMetaData::get(*part).get_cell_topology(*part).getCellTopologyData();
 	if (cell_topo == NULL) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
@@ -1382,6 +1404,7 @@ namespace stk {
       void output_face_set(Ioss::FaceSet *fs,
 			   const stk::mesh::BulkData &bulk)
       {
+        //std::cout << "tmp output_face_set " << std::endl;
 	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	size_t block_count = fs->block_count();
 	for (size_t i=0; i < block_count; i++) {
@@ -1396,6 +1419,7 @@ namespace stk {
       void output_edge_set(Ioss::EdgeSet *es,
 			   const stk::mesh::BulkData &bulk)
       {
+        //std::cout << "tmp output_edge_set " << std::endl;
 	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	size_t block_count = es->block_count();
 	for (size_t i=0; i < block_count; i++) {

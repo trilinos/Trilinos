@@ -455,7 +455,7 @@ namespace Belos {
     // If this is the first iteration of the Arnoldi factorization, 
     // there is no update, so return Teuchos::null. 
     //
-    RCP<MV> currentUpdate = Teuchos::null;
+    Teuchos::RCP<MV> currentUpdate = Teuchos::null;
     if (curDim_==0) { 
       return currentUpdate; 
     } else {
@@ -478,7 +478,7 @@ namespace Belos {
       //
       std::vector<int> index(curDim_);
       for ( int i=0; i<curDim_; i++ ) index[i] = i;
-      RCP<const MV> Vjp1 = MVT::CloneView( *V_, index );
+      Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_, index );
       MVT::MvTimesMatAddMv( one, *Vjp1, y, zero, *currentUpdate );
       //
       //  Add in portion of update from recycled subspace U; U(:,1:recycledBlocks_)*B*y.
@@ -560,7 +560,8 @@ namespace Belos {
     Vnext = MVT::CloneViewNonConst(*V_,curind);
     // Orthonormalize first column
     // First, get a monoelemental matrix to hold the orthonormalization coefficients
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z0 = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(1,1) );
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z0 =
+      Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(1,1) );
     int rank = ortho_->normalize( *Vnext, z0 );
     TEST_FOR_EXCEPTION(rank != 1,GCRODRIterOrthoFailure, "Belos::GCRODRIter::iterate(): couldn't generate basis of full rank.");
     // Copy the scalar coefficient back into the z_ vector

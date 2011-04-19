@@ -76,7 +76,7 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
     log_stream << "indented 1\017" << std::endl;
     log_stream << "indented 0" << std::endl;
 
-    STKUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL((result == dest.str()), true);
   }
 
   {
@@ -111,7 +111,7 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
     log_stream << "indented 1\017" << std::endl;
     log_stream << "indented 0" << std::endl;
 
-    STKUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL((result == dest.str()), true);
   }
 
   {
@@ -133,7 +133,7 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
     log_stream << pop << std::endl;
     log_stream << pop << std::endl;
 
-    STKUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL((result == dest.str()), true);
   }
 
   {
@@ -158,7 +158,7 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
     log_stream << "pop push" << pop << push << std::endl;
     log_stream << "pop pop" << pop << pop << std::endl;
 
-    STKUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL((result == dest.str()), true);
   }
   
   {
@@ -200,7 +200,7 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
     log_stream << "indented 1\017" << std::endl << std::endl;
     log_stream << "indented 0" << std::endl << std::endl;
 
-    STKUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL((result == dest.str()), true);
   }
 
   {
@@ -245,7 +245,7 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
     log_stream << "indented 1\017" << std::endl << std::endl;
     log_stream << "indented 0" << std::endl << std::endl;
 
-    STKUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL((result == dest.str()), true);
   }
 
   {
@@ -460,6 +460,6 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
     log_stream << "Depth test" << std::endl;
     deep(log_stream, 0);
 
-    STKUNIT_ASSERT_EQUAL(result, dest.str());
+    STKUNIT_ASSERT_EQUAL((result == dest.str()), true);
   }
 }

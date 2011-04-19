@@ -31,6 +31,13 @@ PACKAGE_ADD_EXECUTABLE(
   )
 
 PACKAGE_ADD_EXECUTABLE(
+  stieltjes_coupled_example
+  SOURCES stieltjes_coupled.cpp
+  COMM serial mpi
+  DEPLIBS stokhos
+  )
+
+PACKAGE_ADD_EXECUTABLE(
   gram_schmidt_example
   SOURCES gram_schmidt_example.cpp
   COMM serial mpi

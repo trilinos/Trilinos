@@ -52,13 +52,6 @@
 
 namespace Tpetra {
 
-// CGB: If it isn't for public consumption, then hide it in a different namespace.
-namespace MMdebug {
-
-    RCP<Teuchos::FancyOStream> debug_stream;
-    Teuchos::EVerbosityLevel   debug_level;
-
-}
 
 namespace MatrixMatrix{
 
@@ -142,19 +135,6 @@ void Multiply(
   //if more than 1 processor is performing this run, depending on the scenario.
   int numProcs = A.getComm()->getSize();
 
-  //If we are to use the transpose of A and/or B, we'll need to be able to 
-  //access, on the local processor, all rows that contain column-indices in
-  //the domain-map.
-//  const Epetra_Map* domainMap_A = &(A.DomainMap());
-//  const Epetra_Map* domainMap_B = &(B.DomainMap());
-
-  //const Epetra_Map* rowmap_A = &(A.RowMap());
-  //const Epetra_Map* rowmap_B = &(B.RowMap());
-
-  //Declare some 'work-space' maps which may be created depending on
-  //the scenario, and which will be deleted before exiting this function.
-
-
   //Declare a couple of structs that will be used to hold views of the data
   //of A and B, to be used for fast access during the matrix-multiplication.
   CrsMatrixStruct_t Aview;
@@ -175,13 +155,11 @@ void Multiply(
     }
   }
   //Now import any needed remote rows and populate the Aview struct.
-  //EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A, Aview) );
   MMdetails::import_and_extract_views(A, targetMap_A, Aview);
 
   //We will also need local access to all rows of B that correspond to the
   //column-map of op(A).
   if (numProcs > 1) {
-    //const Epetra_Map* colmap_op_A = NULL;
     RCP<const Map_t > colmap_op_A = null;
     if (transposeA) {
       colmap_op_A = targetMap_A;
@@ -198,25 +176,13 @@ void Multiply(
     //local processor.
     if (transposeB) {
       RCP<const Map_t > mapunion1 = MMdetails::form_map_union(colmap_op_A, B.getDomainMap());
-      if (MMdebug::debug_level != Teuchos::VERB_NONE) {
-        *MMdebug::debug_stream << "mapunion1" << std::endl;
-        mapunion1->describe(*MMdebug::debug_stream, MMdebug::debug_level);
-      }
       targetMap_B = MMdetails::find_rows_containing_cols(B, mapunion1);
     }
-  }
-  if (MMdebug::debug_level != Teuchos::VERB_NONE) {
-    *MMdebug::debug_stream << "targetMap_B" << std::endl;
-    targetMap_B->describe(*MMdebug::debug_stream, MMdebug::debug_level);
   }
 
   //Now import any needed remote rows and populate the Bview struct.
   MMdetails::import_and_extract_views(B, targetMap_B, Bview);
 
-  if (MMdebug::debug_level != Teuchos::VERB_NONE) {
-    *MMdebug::debug_stream << "C.getRowMap()" << std::endl;
-    C.getRowMap()->describe(*MMdebug::debug_stream, MMdebug::debug_level);
-  }
 
   //If the result matrix C is not already FillComplete'd, we will do a
   //preprocessing step to create the nonzero structure, then call FillComplete,
@@ -288,7 +254,7 @@ void Multiply(
 }
 
 // CGB: check this...
-/*template <class Scalar, 
+template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -300,9 +266,12 @@ void Add(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
   Scalar scalarB )
 {
-  //
-  //This method forms the matrix-matrix sum B = scalarA * op(A) + scalarB * B, where
-
+  TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
+    "MatrixMatrix::Add ERROR, input matrix A.isFillComplete() is false; it is required to be true. (Result matrix B is not required to be isFillComplete()).");
+  TEST_FOR_EXCEPTION(B.isFillComplete() , std::runtime_error,
+    "MatrixMatrix::Add ERROR, input matrix B must not be fill complete!");
+  TEST_FOR_EXCEPTION(B.getProfileType()!=DynamicProfile, std::runtime_error,
+    "MatrixMatrix::Add ERROR, input matrix B must have a dynamic profile!");
   //Convience typedef
   typedef CrsMatrix<
     Scalar, 
@@ -310,76 +279,42 @@ void Add(
     GlobalOrdinal,
     Node,
     SpMatOps> CrsMatrix_t;
-
-  //A should already be Filled. It doesn't matter whether B is
-  //already Filled, but if it is, then its graph must already contain
-  //all nonzero locations that will be referenced in forming the
-  //sum.
-
-  TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix A.isFillComplete() is false; it is required to be true. (Result matrix B is not required to be isFillComplete()).");
-
-  //explicit tranpose A formed as necessary
   RCP<const CrsMatrix_t> Aprime = null;
-  if( transposeA )
-  {
-    RCP<CrsMatrix_t > transposeResult = null;
+  if( transposeA ){
+    RCP<CrsMatrix_t> transpose = null;
 	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
-      theTransposer.createTranspose(DoOptimizeStorage, transposeResult);
-    Aprime = transposeResult;
+    theTransposer.createTranspose(DoOptimizeStorage, transpose);
+    Aprime = transpose;
   }
   else{
     Aprime = rcpFromRef(A);
   }
+  size_t a_numEntries;
+  Array<GlobalOrdinal> a_inds(A.getNodeMaxNumRowEntries());
+  Array<Scalar> a_vals(A.getNodeMaxNumRowEntries());
+  GlobalOrdinal row;
 
-  size_t A_NumEntries;
-  Array<GlobalOrdinal> A_Indices(Aprime->getGlobalMaxNumRowEntries());
-  Array<Scalar> A_Values(Aprime->getGlobalMaxNumRowEntries());
-  ArrayView<const GlobalOrdinal> B_Indices;
-  ArrayView<const Scalar> B_Values;
-
-  size_t NumMyRows = B.getNodeNumRows();
-  GlobalOrdinal Row;
-
-  if( scalarB != ScalarTraits<Scalar>::zero() &&
-    scalarB != ScalarTraits<Scalar>::one())
-  {
+  if(scalarB != ScalarTraits<Scalar>::one()){
     B.scale(scalarB);
   }
-  
-  if( scalarA != ScalarTraits<Scalar>::zero()){
-    //Loop over B's rows and sum into
-    for( 
-      size_t i = OrdinalTraits<size_t>::zero(); 
-      i < NumMyRows;
-      ++i )
-    {
-	    Row = B.getRowMap()->getGlobalElement(i);
-      A_NumEntries = Aprime->getNumEntriesInGlobalRow(Row);
-      A_Indices.resize(A_NumEntries);
-      A_Values.resize(A_NumEntries);
-	    Aprime->getGlobalRowCopy(Row, A_Indices(), A_Values(), A_NumEntries);
-      if (scalarA != ScalarTraits<Scalar>::one()) {
-        for( 
-          size_t j = OrdinalTraits<size_t>::zero(); 
-          j < A_NumEntries; 
-          ++j ) 
-        {
-          A_Values[j] *= scalarA;
+
+  size_t numMyRows = B.getNodeNumRows();
+  if(scalarA != ScalarTraits<Scalar>::zero()){
+    for(LocalOrdinal i = 0; (size_t)i < numMyRows; ++i){
+      row = B.getRowMap()->getGlobalElement(i);
+      Aprime->getGlobalRowCopy(row, a_inds(), a_vals(), a_numEntries);
+      if(scalarA != ScalarTraits<Scalar>::one()){
+        for(size_t j =0; j<a_numEntries; ++j){
+          a_vals[j] *= scalarA;
         }
-      } 
-      if( B.isFillComplete() ) {//Sum In Values
-        B.sumIntoGlobalValues( Row, A_Indices, A_Values );
       }
-      else {
-        B.insertGlobalValues( Row, A_Indices, A_Values);
-      }
+      B.insertGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
     }
   }
-}*/
+}
 
 // CGB: check this...
-/*template <class Scalar, 
+template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -475,7 +410,7 @@ void Add(
         }
      }
   }
-}*/
+}
 
 } //End namespace MatrixMatrix
 
@@ -792,8 +727,11 @@ void mult_Atrans_B(
     C_lastCol_import = Bview.importColMap->getMaxLocalIndex();
   }
 
-  size_t C_numCols = C_lastCol - C_firstCol + OrdinalTraits<LocalOrdinal>::one();
-  size_t C_numCols_import = C_lastCol_import - C_firstCol_import + OrdinalTraits<LocalOrdinal>::one();
+  size_t C_numCols = 
+    C_lastCol - C_firstCol + OrdinalTraits<LocalOrdinal>::one();
+
+  size_t C_numCols_import = 
+    C_lastCol_import - C_firstCol_import + OrdinalTraits<LocalOrdinal>::one();
 
   if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
 
@@ -934,11 +872,13 @@ void mult_Atrans_Btrans(
     C_inds[j] = OrdinalTraits<GlobalOrdinal>::invalid();
   }
 
-  ArrayView<const GlobalOrdinal> A_col_inds = Aview.colMap->getNodeElementList();
-  ArrayView<const GlobalOrdinal> A_col_inds_import = Aview.importColMap == null ?
+  ArrayView<const GlobalOrdinal> A_col_inds = 
+    Aview.colMap->getNodeElementList();
+  ArrayView<const GlobalOrdinal> A_col_inds_import = 
+    (Aview.importColMap != null ?
     Aview.importColMap->getNodeElementList() 
-	:
-	null;
+	  :
+	  null);
 
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > Crowmap = C.getRowMap();
 
@@ -1451,24 +1391,23 @@ Scalar sparsedot(
   MMdetails::find_rows_containing_cols( \
     const CrsMatrix< SCALAR , LO , GO , NODE >& M, \
     RCP<const Map< LO , GO , NODE > > colmap); \
-
-  /*
+\
   template \
   void MatrixMatrix::Add( \
-    const CrsMatrix< SCALAR, LO , GO , NODE >& A, \
+    const CrsMatrix< SCALAR , LO , GO , NODE >& A, \
     bool transposeA, \
     SCALAR scalarA, \
-    const CrsMatrix< SCALAR, LO , GO , NODE >& B, \
+    const CrsMatrix< SCALAR , LO , GO , NODE >& B, \
     bool transposeB, \
     SCALAR scalarB, \
-    RCP<CrsMatrix< SCALAR, LO , GO , NODE > > C); \*/
+    RCP<CrsMatrix< SCALAR , LO , GO , NODE > > C); \
+  \
+  template  \
+  void MatrixMatrix::Add( \
+    const CrsMatrix<SCALAR, LO, GO, NODE>& A, \
+    bool transposeA, \
+    SCALAR scalarA, \
+    CrsMatrix<SCALAR, LO, GO, NODE>& B, \
+    SCALAR scalarB ); \
 
-/*  \
-  template <> \
-  int MatrixMatrix::Add( \
-  RCP<const CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > A, \
-  bool transposeA, \
-  double scalarA, \
-  RCP<CrsMatrix< SCALAR, LO , GO , NODE ,  SPMATOPS > > B, \
-  double scalarB ) \*/
 #endif // TPETRA_MATRIXMATRIX_DEF_HPP

@@ -12,7 +12,8 @@
 #include <stk_mesh/base/Relation.hpp>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
 
 #include <stk_util/parallel/ParallelComm.hpp>
@@ -170,7 +171,7 @@ void add_owned_sides_to_map(
         //                                            the node with the smallest identifier
         SideKey side_key;
 
-        side_key.first = get_subcell_nodes(
+        side_key.first = fem::get_subcell_nodes(
             inside_entity,
             element_rank - 1, // subcell rank
             side_ordinal,     // subcell identifier
@@ -218,7 +219,7 @@ void add_non_owned_sides_to_map(
         // Get the nodes for the inside entity
         SideKey side_key;
 
-        side_key.first = get_subcell_nodes(
+        side_key.first = fem::get_subcell_nodes(
             inside_entity,
             element_rank - 1, // subcell rank
             side_ordinal,     // subcell identifier
@@ -288,7 +289,7 @@ void skin_mesh( BulkData & mesh, EntityRank element_rank, Part * skin_part) {
   EntityVector owned_elements;
 
   // select owned
-  Selector owned = MetaData::get(mesh).locally_owned_part();
+  Selector owned = fem::FEMMetaData::get(mesh).locally_owned_part();
   get_selected_entities( owned,
                          mesh.buckets(element_rank),
                          owned_elements);
@@ -323,7 +324,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
   mesh.modification_begin();
 
   // formulate request ids for the new sides
-  std::vector<size_t> requests(MetaData::get(mesh).entity_rank_count(), 0);
+  std::vector<size_t> requests(fem::FEMMetaData::get(mesh).entity_rank_count(), 0);
   requests[element_rank -1] = num_sides_to_create;
 
   // create the new sides
@@ -360,7 +361,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
 
       PartVector add_parts ;
       {
-        Part * topo_part = & fem::get_part(MetaData::get(mesh), side_key.first);
+        Part * topo_part = &fem::FEMMetaData::get(mesh).get_cell_topology_root_part(side_key.first);
         add_parts.push_back( topo_part);
         if (skin_part) {
           add_parts.push_back(skin_part);
@@ -437,7 +438,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
 
       PartVector add_parts ;
       {
-        Part * topo_part = & fem::get_part(MetaData::get(mesh), side_key.first);
+        Part * topo_part = &fem::FEMMetaData::get(mesh).get_cell_topology_root_part(side_key.first);
         add_parts.push_back( topo_part);
         if (skin_part) {
           add_parts.push_back(skin_part);

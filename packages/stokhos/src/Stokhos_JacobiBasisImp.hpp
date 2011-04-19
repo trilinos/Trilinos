@@ -118,3 +118,11 @@ value_type Stokhos::JacobiBasis<ordinal_type, value_type>::poch3(value_type m) c
 {
   return (m+2)*(m+1)*m;
 }
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
+Stokhos::JacobiBasis<ordinal_type,value_type>::
+cloneWithOrder(ordinal_type p) const
+{
+   return Teuchos::rcp(new Stokhos::JacobiBasis<ordinal_type,value_type>(p,alphaIndex_,betaIndex_,this->normalize));
+}

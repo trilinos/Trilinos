@@ -46,7 +46,7 @@
 
 #include "BelosEpetraOperator.h"
 
-using namespace Belos;
+namespace Belos {
 
 //--------------------------------------------------------------
 //
@@ -54,8 +54,8 @@ using namespace Belos;
 //
 // Constructor.
 //
-EpetraOperator::EpetraOperator( const RCP<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp,
-				const RCP<Teuchos::ParameterList>& plist,
+EpetraOperator::EpetraOperator( const Teuchos::RCP<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp,
+				const Teuchos::RCP<Teuchos::ParameterList>& plist,
                                 bool initSolnVec )
   : lp_(lp), 
     plist_(plist),
@@ -107,10 +107,10 @@ const Epetra_Map& EpetraOperator::OperatorRangeMap() const
 
 int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
 {
-  RCP<const Epetra_MultiVector> vec_X;
-  RCP<Epetra_MultiVector> vec_Y;
-  vec_X = rcp( &X, false );
-  vec_Y = rcp( &Y, false );
+  Teuchos::RCP<const Epetra_MultiVector> vec_X;
+  Teuchos::RCP<Epetra_MultiVector> vec_Y;
+  vec_X = Teuchos::rcp( &X, false );
+  vec_Y = Teuchos::rcp( &Y, false );
   if (initSolnVec_)
     vec_Y->PutScalar( 0.0 );
   lp_->setProblem( vec_Y, vec_X );
@@ -124,10 +124,10 @@ int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) 
 
 int EpetraOperator::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
 {
-  RCP<const Epetra_MultiVector> vec_X;
-  RCP<Epetra_MultiVector> vec_Y;
-  vec_X = rcp( &X, false );
-  vec_Y = rcp( &Y, false );
+  Teuchos::RCP<const Epetra_MultiVector> vec_X;
+  Teuchos::RCP<Epetra_MultiVector> vec_Y;
+  vec_X = Teuchos::rcp( &X, false );
+  vec_Y = Teuchos::rcp( &Y, false );
   if (initSolnVec_)
     vec_Y->PutScalar( 0.0 );
   lp_->setProblem( vec_Y, vec_X );
@@ -139,4 +139,4 @@ int EpetraOperator::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVecto
   return(0);
 }
 
-
+} // end namespace Belos

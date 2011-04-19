@@ -31,7 +31,7 @@ public:
 
   ~BoxFixture () {}
 
-  fem::FEMMetaData & meta_data () { return m_meta_data; }
+  fem::FEMMetaData & fem_meta () { return m_fem_meta; }
   BulkData & bulk_data () { return m_bulk_data; }
 
   unsigned  comm_size() const { return m_comm_size; }
@@ -55,7 +55,7 @@ public:
   Entity  &get_new_entity ( EntityRank rank , EntityId parallel_dependent_id );
 
 protected:
-  fem::FEMMetaData m_meta_data;
+  fem::FEMMetaData m_fem_meta;
   BulkData         m_bulk_data;
 
   unsigned         m_comm_rank;

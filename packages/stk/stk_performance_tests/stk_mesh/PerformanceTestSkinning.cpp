@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -21,20 +21,20 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
 
 namespace {
 
 using stk::mesh::EntityRank;
-using stk::mesh::fem::NODE_RANK;
+
+static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, EntityRank skin_rank ) {
 
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
+  const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(mesh);
 
-  stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
+  stk::mesh::Selector select_skin = skin_part & fem_meta.locally_owned_part()  ;
 
   const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
 
@@ -43,9 +43,9 @@ size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_p
 
 void delete_skin( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, EntityRank skin_rank ) {
 
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
+  const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(mesh);
 
-  stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
+  stk::mesh::Selector select_skin = skin_part & fem_meta.locally_owned_part()  ;
 
   const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
 
@@ -69,8 +69,8 @@ void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part, Entity
   stk::mesh::EntityVector owned_elements, modified_elements;
 
   // select owned
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
-  stk::mesh::Selector owned = meta.locally_owned_part();
+  const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(mesh);
+  stk::mesh::Selector owned = fem_meta.locally_owned_part();
   stk::mesh::get_selected_entities( owned,
                          mesh.buckets(element_rank),
                          owned_elements);
@@ -257,7 +257,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 }
 
 void separate_and_skin_mesh(
-    stk::mesh::MetaData & meta,
+    stk::mesh::fem::FEMMetaData & fem_meta,
     stk::mesh::BulkData & mesh,
     stk::mesh::Part     & skin_part,
     stk::mesh::EntityVector & entities_to_separate
@@ -269,13 +269,13 @@ void separate_and_skin_mesh(
       entities_to_separate,
       entities_closure);
 
-  stk::mesh::Selector select_owned = meta.locally_owned_part();
+  stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
 
   stk::mesh::EntityVector nodes;
   find_owned_nodes_with_relations_outside_closure( entities_closure, select_owned, nodes);
 
   //ask for new nodes to represent the copies
-  std::vector<size_t> requests(meta.entity_rank_count(), 0);
+  std::vector<size_t> requests(fem_meta.entity_rank_count(), 0);
   requests[NODE_RANK] = nodes.size();
 
   mesh.modification_begin();
@@ -333,14 +333,14 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 
     start_time = stk::wall_time();
     stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
-    const EntityRank element_rank = stk::mesh::fem::element_rank(fixture.m_fem);
-    const EntityRank side_rank = stk::mesh::fem::side_rank(fixture.m_fem);
+    const EntityRank element_rank = fixture.m_fem_meta.element_rank();
+    const EntityRank side_rank = fixture.m_fem_meta.side_rank();
 
-    stk::mesh::MetaData & meta = fixture.m_meta_data;
+    stk::mesh::fem::FEMMetaData & fem_meta = fixture.m_fem_meta;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
 
-    stk::mesh::Part & skin_part = declare_part(meta, "skin_part");
-    meta.commit();
+    stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");
+    fem_meta.commit();
 
     fixture.generate_mesh();
     timings[0] = stk::wall_dtime(start_time);
@@ -383,7 +383,7 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 
     start_time = stk::wall_time();
     separate_and_skin_mesh(
-        meta,
+        fem_meta,
         mesh,
         skin_part,
         entities_to_separate

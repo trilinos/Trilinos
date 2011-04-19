@@ -20,6 +20,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
@@ -62,9 +63,9 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
                                    const stk::mesh::EntityRank rank)
 {
 
-  stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
+  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
   const stk::mesh::EntityRank element_rank = (rank != stk::mesh::InvalidEntityRank) ? rank :
-                                             stk::mesh::fem::element_rank(fem);
+                                             fem_meta.element_rank();
 
   if (dep_rank == element_rank) return;
   // Create a map of ids of migrating elements to their owner proc and a vector of the migrating elements.
@@ -127,12 +128,12 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
 
   if(rebalancingHasOccurred && partition->partition_dependents_needed() )
   {
-    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(stk::mesh::MetaData::get(bulk_data));
+    stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
 
-    const stk::mesh::EntityRank node_rank = stk::mesh::fem::node_rank(fem);
-    const stk::mesh::EntityRank edge_rank = stk::mesh::fem::edge_rank(fem);
-    const stk::mesh::EntityRank face_rank = stk::mesh::fem::face_rank(fem);
-    const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+    const stk::mesh::EntityRank node_rank = fem_meta.node_rank();
+    const stk::mesh::EntityRank edge_rank = fem_meta.edge_rank();
+    const stk::mesh::EntityRank face_rank = fem_meta.face_rank();
+    const stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
     const stk::mesh::EntityRank cons_rank = elem_rank+1;
 
     // Don't know the rank of the elements rebalanced, assume all are dependent.
@@ -167,9 +168,9 @@ bool stk::rebalance::rebalance(mesh::BulkData   & bulk_data  ,
                                Partition & partition,
                                const stk::mesh::EntityRank rank)
 {
-  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(bulk_data);
+  stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
   const stk::mesh::EntityRank element_rank = (rank != stk::mesh::InvalidEntityRank) ? rank :
-                                             stk::mesh::fem::element_rank(fem);
+                                             fem_meta.element_rank();
 
   mesh::EntityVector rebal_elem_ptrs;
   mesh::EntityVector entities;

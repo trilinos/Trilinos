@@ -33,8 +33,8 @@
 #define SACADO_ELRFAD_DFAD_HPP
 
 #include "Sacado_ELRFad_GeneralFadExpr.hpp"
-#include "Sacado_Fad_DynamicStorage.hpp"
 #include "Sacado_ELRFad_DFadTraits.hpp"
+#include "Sacado_Fad_DynamicStorage.hpp"
 #include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {

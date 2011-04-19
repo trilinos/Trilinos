@@ -18,12 +18,12 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 
 namespace {
 
-using stk::mesh::fem::NODE_RANK;
+const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 typedef shards::ArrayDimTag::size_type size_type;
 
@@ -66,7 +66,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testCartesian)
 
   std::string to_str = cartesian_tag.to_string(3 /*size*/, 1 /*idx*/);
   std::string expected_str("y");
-  STKUNIT_ASSERT_EQUAL( to_str, expected_str);
+  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true);
 
   //should throw if we supply a size < 3:
   STKUNIT_ASSERT_THROW( cartesian_tag.to_string(2 /*size*/, 1 /*idx*/),
@@ -89,7 +89,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testCylindrical)
 
   std::string to_str = cylindrical_tag.to_string(3 /*size*/, 1 /*idx*/);
   std::string expected_str("a");
-  STKUNIT_ASSERT_EQUAL( to_str, expected_str );
+  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true );
 
   //should throw if we supply a size < 3:
   STKUNIT_ASSERT_THROW( cylindrical_tag.to_string(2 /*size*/, 1 /*idx*/),
@@ -112,7 +112,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFullTensor)
 
   std::string to_str = fulltensor_tag.to_string(9 /*size*/, 1 /*idx*/);
   std::string expected_str("yx");
-  STKUNIT_ASSERT_EQUAL( to_str, expected_str );
+  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true );
 
   //should throw if we supply a size < 9:
   STKUNIT_ASSERT_THROW( fulltensor_tag.to_string(2 /*size*/, 1 /*idx*/),
@@ -136,7 +136,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testSymmetricTensor)
 
   std::string to_str = symmetrictensor_tag.to_string(9 /*size*/, 1 /*idx*/);
   std::string expected_str("yx");
-  STKUNIT_ASSERT_EQUAL( to_str, expected_str);
+  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true);
 
   //should throw if we supply a size < 9:
   STKUNIT_ASSERT_THROW( symmetrictensor_tag.to_string(2 /*size*/, 1 /*idx*/),
@@ -168,12 +168,9 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
   const std::string name3("test_field_3");
 
   const int spatial_dimension = 3;
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-  stk::mesh::BulkData bulk_data( meta_data , pm );
+  stk::mesh::fem::FEMMetaData meta_data( spatial_dimension );
+  stk::mesh::BulkData bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(meta_data) , pm );
 
-  // declare some test fields
-  stk::mesh::DefaultFEM topo_data( meta_data, spatial_dimension );
-  
   rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( name0 );
   rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(  name1 );
   rank_three_field & f3 = meta_data.declare_field< rank_three_field >( name3 );
@@ -184,10 +181,10 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
   STKUNIT_ASSERT_THROW(meta_data.declare_field< error_type >( name1 ),
                        std::runtime_error);
 
-  stk::mesh::Part & p0 = declare_part(meta_data, "P0", NODE_RANK );
-  stk::mesh::Part & p1 = declare_part(meta_data, "P1", NODE_RANK );
-  stk::mesh::Part & p2 = declare_part(meta_data, "P2", NODE_RANK );
-  stk::mesh::Part & p3 = declare_part(meta_data, "P3", NODE_RANK );
+  stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK );
+  stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK );
+  stk::mesh::Part & p2 = meta_data.declare_part("P2", NODE_RANK );
+  stk::mesh::Part & p3 = meta_data.declare_part("P3", NODE_RANK );
 
   stk::mesh::put_field( f0 , NODE_RANK , p0 );
   stk::mesh::put_field( f1 , NODE_RANK , p1 , 10 );

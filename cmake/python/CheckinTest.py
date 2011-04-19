@@ -2,6 +2,14 @@
 #
 # ToDo:
 #
+#  (*) Augment the --extra-pull-from argument to allow specifying extra pulls
+#  for specific repos (i.e. different commands for different repos or on extra
+#  pull for some repos).  The idea would be to use some special character to
+#  specify the exact repo with something like
+#  (preCopyrightTrilinos)ssg:master'.  You would specify the main Trilinos
+#  repo with '()ssg:master'.  Using '(...)' would hopefully avoid any
+#  conflicts with the shell interpreter.
+#
 #  (*) Create a TaskStatus class and use it to simplify the logic replacing
 #  the simple bools.
 #
@@ -18,43 +26,64 @@ from TrilinosDependencies import getTrilinosDependenciesFromXmlFile
 from TrilinosDependencies import defaultTrilinosDepsXmlInFile
 from TrilinosPackageFilePathUtils import *
 import time
+import pprint
 
+pp = pprint.PrettyPrinter(indent=4)
+
+# Load some default dependencies for some unit tests
+trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
 
 # Set the official eg/git versions!
 g_officialEgVersion = "1.7.0.4"
 g_officialGitVersion = "1.7.0.4"
 
 
-# Read the Trilinos dependencies that will be used else where
-trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
+def getGitRepoDir(trilinosSrcDir, gitRepoName):
+  if gitRepoName:
+    return trilinosSrcDir+"/"+gitRepoName
+  return trilinosSrcDir
+
+
+def getGitRepoFileExt(gitRepoName):
+  if gitRepoName:
+    return "."+gitRepoName
+  return ""
 
 
 def getCommonConfigFileName():
   return "COMMON.config"
 
 
+def getTrilinosDependenciesXmlFileName():
+  return "TrilinosPackageDependencies.xml"
+
+
+def getTrilinosDependenciesXmlGenerateOutputFileName():
+  return "TrilinosPackageDependencies.generate.out"
+
+
 def getBuildSpecificConfigFileName(buildTestCaseName):
   return buildTestCaseName+".config"
 
 
-def getInitialPullOutputFileName():
-  return "pullInitial.out"
+def getInitialPullOutputFileName(gitRepoName):
+  return "pullInitial"+getGitRepoFileExt(gitRepoName)+".out"
 
 
-def getInitialExtraPullOutputFileName():
-  return "pullInitialExtra.out"
+def getInitialExtraPullOutputFileName(gitRepoName):
+  return "pullInitialExtra"+getGitRepoFileExt(gitRepoName)+".out"
 
 
 def getInitialPullSuccessFileName():
   return "pullInitial.success"
 
 
-def getModifiedFilesOutputFileName():
-  return "modifiedFiles.out"
+def getModifiedFilesOutputFileName(gitRepoName):
+  return "modifiedFiles"+getGitRepoFileExt(gitRepoName)+".out"
 
 
-def getFinalPullOutputFileName():
-  return "pullFinal.out"
+def getFinalPullOutputFileName(gitRepoName):
+  return "pullFinal"+getGitRepoFileExt(gitRepoName)+".out"
 
 
 def getConfigureOutputFileName():
@@ -89,28 +118,20 @@ def getEmailSuccessFileName():
   return "email.success"
 
 
-def getInitialCommitEmailBodyFileName():
-  return "commitInitialEmailBody.out"
+def getFinalCommitBodyFileName(gitRepoName):
+  return "commitFinalBody"+getGitRepoFileExt(gitRepoName)+".out"
 
 
-def getInitialCommitOutputFileName():
-  return "commitInitial.out"
-
-
-def getFinalCommitEmailBodyFileName():
-  return "commitFinalEmailBody.out"
-
-
-def getFinalCommitOutputFileName():
-  return "commitFinal.out"
+def getFinalCommitOutputFileName(gitRepoName):
+  return "commitFinal"+getGitRepoFileExt(gitRepoName)+".out"
 
 
 def getCommitStatusEmailBodyFileName():
   return "commitStatusEmailBody.out"
 
 
-def getPushOutputFileName():
-  return "push.out"
+def getPushOutputFileName(gitRepoName):
+  return "push"+getGitRepoFileExt(gitRepoName)+".out"
 
 
 def getExtraCommandOutputFileName():
@@ -152,7 +173,7 @@ def assertEgGitVersionHelper(returnedVersion, expectedVersion):
   if returnedVersion != expectedVersion:
     raise Exception("Error, the installed "+returnedVersion+" does not equal the official "\
       +expectedVersion+"!  To turn this check off, pass in --no-eg-git-version-check.")
-  
+
 
 def assertEgGitVersions(inOptions):
 
@@ -166,6 +187,13 @@ def assertEgGitVersions(inOptions):
   if inOptions.enableEgGitVersionCheck:
     assertEgGitVersionHelper(egVersionsList[0], "eg version "+g_officialEgVersion)
     assertEgGitVersionHelper(egVersionsList[1], "git version "+g_officialGitVersion)
+
+
+def assertGitRepoExists(inOptions, gitRepoName):
+  gitRepoDir = getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
+  if not os.path.os.path.exists(gitRepoDir):
+    raise Exception("Error, the specified git repo '"+gitRepoName+"' directory"
+      " '"+gitRepoDir+"' does not exist!")
 
 
 def assertPackageNames(optionName, packagesListStr):
@@ -203,7 +231,9 @@ def getRepoSpaceBranchFromOptionStr(extraPullFrom):
   return repo + " " + branch
 
 
-def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None, doRebase=False):
+def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
+  doRebase=False)\
+  :
   cmnd = "eg pull"
   if pullFromRepo:
     repoSpaceBranch = getRepoSpaceBranchFromOptionStr(pullFromRepo)
@@ -217,7 +247,7 @@ def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None, doRebase=Fal
   if doRebase:
     cmnd += " && eg rebase --against origin/"+inOptions.currentBranch
   return echoRunSysCmnd( cmnd,
-    workingDir=inOptions.trilinosSrcDir,
+    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
     outFile=os.path.join(baseTestDir, outFile),
     timeCmnd=True, returnTimeCmnd=True, throwExcept=False
     )
@@ -243,6 +273,16 @@ class Timings:
     if self.build > 0: tt += self.build
     if self.test > 0: tt += self.test
     return tt
+
+
+class GitRepo:
+  def __init__(self, repoName):
+    self.repoName = repoName
+    self.hasChanges = False
+  def __str__(self):
+    return "GitRepo{repoName="+self.repoName+", hasChanges="+str(self.hasChanges)+"}"
+  def __rep__(self):
+    return str(self)
 
 
 class BuildTestCase:
@@ -373,7 +413,7 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout, assertNoIllegalEnabl
   return success
 
 
-reModifiedFiles = re.compile(r"^[MA]\t(.+)$")
+reModifiedFiles = re.compile(r"^[MAD]\t(.+)$")
 
 
 def getCurrentBranchName(inOptions, baseTestDir):
@@ -387,18 +427,22 @@ def getCurrentBranchName(inOptions, baseTestDir):
       break
 
 
-def getCurrentDiffOutput(inOptions, baseTestDir):
+def getCurrentDiffOutput(gitRepoName, inOptions, baseTestDir):
   echoRunSysCmnd(
     "eg diff --name-status origin/"+inOptions.currentBranch,
-    workingDir=inOptions.trilinosSrcDir,
-    outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName()),
+    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
+    outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName(gitRepoName)),
     timeCmnd=True
     )
 
 
 def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
-  enablePackagesList_inout, verbose=True ) \
+  gitRepoName, enablePackagesList_inout, verbose=True,
+  trilinosDependenciesLocal=None ) \
   :
+
+  if not trilinosDependenciesLocal:
+    trilinosDependenciesLocal = trilinosDependencies
 
   modifiedFilesList = extractFilesListMatchingPattern(
     updateOutputStr.split('\n'), reModifiedFiles )
@@ -412,7 +456,11 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
             "  => Enabling all Trilinos packages!"
         inOptions_inout.enableAllPackages = 'on'
 
-    packageName = getPackageNameFromPath(trilinosDependencies, modifiedFileFullPath)
+    if gitRepoName:
+      modifiedFileFullPath = "packages/../"+gitRepoName+"/"+modifiedFileFullPath
+    #print "\nmodifiedFileFullPath =", modifiedFileFullPath
+
+    packageName = getPackageNameFromPath(trilinosDependenciesLocal, modifiedFileFullPath)
     if packageName and findInSequence(enablePackagesList_inout, packageName) == -1:
       if verbose:
         print "\nModified file: '"+modifiedFileFullPath+"'\n" \
@@ -495,13 +543,12 @@ def analyzeResultsSendEmail(inOptions, buildTestName,
 
   # Determine if the update passed
 
-  commitPassed = None
   updatePassed = None
   updateOutputExists = False
 
   if inOptions.doPull:
 
-    if os.path.exists("../"+getInitialPullOutputFileName()):
+    if os.path.exists("../"+getInitialPullOutputFileName("")):
       updateOutputExists = True
 
     if os.path.exists("../"+getInitialPullSuccessFileName()):
@@ -811,7 +858,7 @@ def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
   return summaryEmailSectionStr
 
 
-def getEnablesLists(inOptions, baseTestDir, verbose):
+def getEnablesLists(inOptions, gitRepoList, baseTestDir, verbose):
 
   cmakePkgOptions = []
   enablePackagesList = []
@@ -821,16 +868,21 @@ def getEnablesLists(inOptions, baseTestDir, verbose):
       print "\nEnabling only the explicitly specified packages '"+inOptions.enablePackages+"' ...\n"
     enablePackagesList = inOptions.enablePackages.split(',')
   else:
-    diffOutFileName = baseTestDir+"/"+getModifiedFilesOutputFileName()
-    if verbose:
-      print "\nDetermining the set of packages to enable by examining "+diffOutFileName+" ...\n"
-    if os.path.exists(diffOutFileName):
-      updateOutputStr = open(diffOutFileName, 'r').read()
-      extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions,
-        enablePackagesList, verbose)
-    else:
+    for gitRepo in gitRepoList:
+      diffOutFileName = baseTestDir+"/"+getModifiedFilesOutputFileName(gitRepo.repoName)
       if verbose:
-        print "\nThe file "+diffOutFileName+" does not exist!\n"
+        print "\nDetermining the set of packages to enable by examining "+diffOutFileName+" ...\n"
+      if os.path.exists(diffOutFileName):
+        updateOutputStr = open(diffOutFileName, 'r').read()
+        #print "\nupdateOutputStr:\n", updateOutputStr
+        extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions, gitRepo.repoName,
+          enablePackagesList, verbose)
+      else:
+        if verbose:
+          print "\nThe file "+diffOutFileName+" does not exist!\n"
+
+  if inOptions.extraRepos:
+    cmakePkgOptions.append("-DTrilinos_EXTRA_REPOSITORIES:STRING="+inOptions.extraRepos)
 
   for pkg in enablePackagesList:
     cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
@@ -862,7 +914,7 @@ def getEnablesLists(inOptions, baseTestDir, verbose):
   return (cmakePkgOptions, enablePackagesList)
 
 
-def runBuildTestCase(inOptions, buildTestCase, timings):
+def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
 
   success = True
 
@@ -899,6 +951,8 @@ def runBuildTestCase(inOptions, buildTestCase, timings):
   
     cmakeBaseOptions.append("-DTrilinos_TEST_CATEGORIES:STRING=BASIC")
 
+    cmakeBaseOptions.append("-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF")
+
     if inOptions.ctestTimeOut:
       cmakeBaseOptions.append(("-DDART_TESTING_TIMEOUT:STRING="+str(inOptions.ctestTimeOut)))
   
@@ -924,7 +978,8 @@ def runBuildTestCase(inOptions, buildTestCase, timings):
     enablePackagesList = []
 
     if preConfigurePassed:
-      (cmakePkgOptions, enablePackagesList) = getEnablesLists(inOptions, baseTestDir, True)
+      (cmakePkgOptions, enablePackagesList) = \
+        getEnablesLists(inOptions, gitRepoList, baseTestDir, True)
   
     # A.3) Set the combined options
 
@@ -1107,7 +1162,7 @@ def cleanBuildTestCaseOutputFiles(runBuildTestCaseBool, inOptions, baseTestDir, 
       echoChDir("..")
 
 
-def runBuildTestCaseDriver(inOptions, baseTestDir, buildTestCase, timings):
+def runBuildTestCaseDriver(inOptions, gitRepoList, baseTestDir, buildTestCase, timings):
 
   success = True
 
@@ -1122,7 +1177,7 @@ def runBuildTestCaseDriver(inOptions, baseTestDir, buildTestCase, timings):
     try:
       echoChDir(baseTestDir)
       writeDefaultBuildSpecificConfigFile(buildTestCaseName)
-      result = runBuildTestCase(inOptions, buildTestCase, timings)
+      result = runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings)
       if not result: success = False
     except Exception, e:
       success = False
@@ -1144,7 +1199,7 @@ def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestName, inOptions):
     buildTestCaseActionsPass = True
     buildTestCaseOkayToCommit = True
     statusMsg = \
-      "Test case "+buildTestName+" was not run! => Does not affect commit/push readiness!"
+      "Test case "+buildTestName+" was not run! => Does not affect push readiness!"
     return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin)
 
   if not os.path.exists(buildTestName) and not performAnyBuildTestActions(inOptions):
@@ -1202,7 +1257,7 @@ def getAutomatedStatusSummaryHeaderKeyStr():
   return "Build/Test Cases Summary"
 
 
-def getAutomatedStatusSummaryHeaderStr(inOptions):
+def getAutomatedStatusSummaryHeaderStr():
   
   commitEmailBodyStr = "\n" \
     +getAutomatedStatusSummaryHeaderKeyStr()+"\n"
@@ -1270,59 +1325,64 @@ def getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput):
   return ('\n'.join(origLogStrList), lastNumBlankLines)
 
 
-def getLastCommitMessageStr(inOptions):
+def getLastCommitMessageStr(inOptions, gitRepoName):
 
   # Get the raw output from the last current commit log
   rawLogOutput = getCmndOutput(
     "eg cat-file -p HEAD",
-    workingDir=inOptions.trilinosSrcDir
+    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
     )
 
   return getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)[0]
 
 
-def getLocalCommitsSummariesStr(inOptions):
+def getLocalCommitsSummariesStr(inOptions, gitRepoName, appendRepoName):
 
   # Get the list of local commits other than this one
   rawLocalCommitsStr = getCmndOutput(
     "eg log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
     True,
-    workingDir=inOptions.trilinosSrcDir
+    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
     )
 
+  if gitRepoName and appendRepoName:
+    repoNameModifier = " ("+gitRepoName+")"
+  else:
+    repoNameModifier = ""
+
   print \
-    "\nLocal commits for this build/test group:" \
-    "\n----------------------------------------" \
-    "\n" \
-    + rawLocalCommitsStr
+    "\nLocal commits for this build/test group"+repoNameModifier+":" \
+    "\n----------------------------------------"
 
   if rawLocalCommitsStr == "\n" or rawLocalCommitsStr == "":
     localCommitsExist = False
   else:
     localCommitsExist = True
 
-  if not localCommitsExist:
-    print "\nNo local commits exit!\n"
+  if localCommitsExist:
+    print rawLocalCommitsStr
+  else:
+    print "No local commits exit!"
 
   localCommitsStr = \
-    "\n" \
-    "Local commits for this build/test group:\n" \
+    "Local commits for this build/test group"+repoNameModifier+":\n" \
     "----------------------------------------\n"
   if localCommitsExist:
     localCommitsStr += rawLocalCommitsStr
   else:
     localCommitsStr += "No local commits exist!"
-  localCommitsStr += "\n"
 
   return (localCommitsStr, localCommitsExist)
 
 
-def getLocalCommitsSHA1ListStr(inOptions):
+def getLocalCommitsSHA1ListStr(inOptions, gitRepoName):
 
   # Get the raw output from the last current commit log
   rawLocalCommitsStr = getCmndOutput(
     "eg log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
-    True, workingDir=inOptions.trilinosSrcDir)
+    True,
+    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
+    )
 
   if rawLocalCommitsStr:
     return ("Other local commits for this build/test group: "
@@ -1367,10 +1427,46 @@ def checkinTest(inOptions):
     inOptions.makeOptions = "-j"+inOptions.overallNumProcs+" "+inOptions.makeOptions
     inOptions.ctestOptions = "-j"+inOptions.overallNumProcs+" "+inOptions.ctestOptions
 
+  assertExtraBuildConfigFiles(inOptions.extraBuilds)
+
+  if not inOptions.skipDepsUpdate:
+    removeIfExists(getTrilinosDependenciesXmlFileName())
+    removeIfExists(getTrilinosDependenciesXmlGenerateOutputFileName())
+
+  if inOptions.extraRepos:
+    print "\nPulling in packages from extra repos: "+inOptions.extraRepos+" ..."
+    for gitRepoName in inOptions.extraRepos.split(","):
+      assertGitRepoExists(inOptions, gitRepoName)        
+    if not inOptions.skipDepsUpdate:
+      # There are extra repos so we need to build a new list of Trilinos packages
+      # to include the add-on packages.
+      cmnd = "cmake -DPROJECT_NAME=Trilinos" \
+       +" -DTrilinos_CMAKE_DIR="+inOptions.trilinosSrcDir+"/cmake" \
+       +" -DTrilinos_DEPS_HOME_DIR="+inOptions.trilinosSrcDir \
+       +" -DTrilinos_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR="+baseTestDir \
+       +" -DTrilinos_EXTRA_REPOSITORIES="+inOptions.extraRepos \
+       +" -P "+inOptions.trilinosSrcDir+"/cmake/package_arch/PackageArchDumpDepsXmlScript.cmake"
+      echoRunSysCmnd(cmnd,
+        workingDir=baseTestDir,
+        outFile=baseTestDir+"/"+getTrilinosDependenciesXmlGenerateOutputFileName(),
+        timeCmnd=True)
+    else:
+      print "\nSkipping update of dependencies XML file on request!"
+    trilinosDepsXmlFile = baseTestDir+"/"+getTrilinosDependenciesXmlFileName()
+    trilinosDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
+    if trilinosDepsXmlFileOverride:
+      print "\ntrilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride
+      trilinosDepsXmlFile = trilinosDepsXmlFileOverride
+  else:
+    # No extra repos so you can just use the default list of Trilinos
+    # packages
+    trilinosDepsXmlFile = defaultTrilinosDepsXmlInFile
+
+  global trilinosDependencies
+  trilinosDependencies = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFile)
+
   assertPackageNames("--enable-packages", inOptions.enablePackages)
   assertPackageNames("--disable-packages", inOptions.disablePackages)
-
-  assertExtraBuildConfigFiles(inOptions.extraBuilds)
 
   success = True
 
@@ -1378,12 +1474,31 @@ def checkinTest(inOptions):
 
   subjectLine = None
 
+  # Set up list of repos array
+
+  gitRepoList = []
+  gitRepoList.append(GitRepo("")) # The main Trilinos repo
+  if inOptions.extraRepos:
+    for extraRepo in inOptions.extraRepos.split(","):
+      gitRepoList.append(GitRepo(extraRepo))
+
+  #print "\ngitRepoList =", pp.pprint(gitRepoList)
+  #print "\ngitRepoList =", gitRepoList
+  
   # Set up build/test cases array
 
   buildTestCaseList = []
 
+  # Must hard turn off tentatively enabled TPLs in order to make all machines
+  # more uniform.
+  commonConfigOptions = [
+    "-DTPL_ENABLE_Pthread:BOOL=OFF",
+    "-DTPL_ENABLE_BinUtils:BOOL=OFF"
+    ]
+
   setBuildTestCaseInList( buildTestCaseList,
     "MPI_DEBUG", inOptions.withMpiDebug, True,
+    commonConfigOptions +
     [
       "-DTPL_ENABLE_MPI:BOOL=ON",
       "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
@@ -1397,6 +1512,7 @@ def checkinTest(inOptions):
 
   setBuildTestCaseInList( buildTestCaseList,
     "SERIAL_RELEASE", inOptions.withSerialRelease, True,
+    commonConfigOptions +
     [
       "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
       "-DTrilinos_ENABLE_DEBUG:BOOL=OFF",
@@ -1421,23 +1537,23 @@ def checkinTest(inOptions):
     print "\n***"
     print "*** 1) Clean old output files ..."
     print "***"
-  
-    if inOptions.doCommit:
-      removeIfExists(getInitialCommitEmailBodyFileName())
-      removeIfExists(getInitialCommitOutputFileName())
 
     if inOptions.doPull:
-      removeIfExists(getInitialPullOutputFileName())
-      removeIfExists(getInitialExtraPullOutputFileName())
+      for gitRepo in gitRepoList:
+        removeIfExists(getInitialPullOutputFileName(gitRepo.repoName))
+        removeIfExists(getInitialExtraPullOutputFileName(gitRepo.repoName))
       removeIfExists(getInitialPullSuccessFileName())
 
-    removeIfExists(getFinalCommitEmailBodyFileName())
-    removeIfExists(getFinalCommitOutputFileName())
+    for gitRepo in gitRepoList:
+      removeIfExists(getFinalCommitBodyFileName(gitRepo.repoName))
+      removeIfExists(getFinalCommitOutputFileName(gitRepo.repoName))
     removeIfExists(getCommitStatusEmailBodyFileName())
 
-    removeIfExists(getFinalPullOutputFileName())
-    removeIfExists(getModifiedFilesOutputFileName())
-    removeIfExists(getPushOutputFileName())
+    for gitRepo in gitRepoList:
+      removeIfExists(getModifiedFilesOutputFileName(gitRepo.repoName))
+      removeIfExists(getFinalPullOutputFileName(gitRepo.repoName))
+      removeIfExists(getPushOutputFileName(gitRepo.repoName))
+
     if inOptions.executeOnReadyToPush:
       removeIfExists(getExtraCommandOutputFileName())
 
@@ -1446,58 +1562,8 @@ def checkinTest(inOptions):
         buildTestCase.runBuildTestCase, inOptions, baseTestDir, buildTestCase.name)
 
     print "\n***"
-    print "*** 2) Commit changes before pulling updates to merge in ..."
+    print "*** 2) Commit changes before pulling updates to merge in (NO LONGER SUPPORTED)"
     print "***"
-
-    commitPassed = True # To allow logic below
-
-    if inOptions.doCommit:
-    
-      try:
-
-        print "\nNOTE: We must commit before doing an 'eg pull --rebase' ...\n"
-  
-        echoChDir(baseTestDir)
-
-        print "\n2.a) Creating the commit message file ...\n"
-
-        commitEmailBodyStr = getUserCommitMessageStr(inOptions)
-        writeStrToFile(getInitialCommitEmailBodyFileName(), commitEmailBodyStr)
-
-        print "\n2.b) Performing the initial local commit (staged and unstaged changes) ...\n"
-
-        print \
-          "\nNOTE: This is a trial commit done to allow for a safe pull.  If the  build/test\n"\
-          "fails and this commit does not get erased automatically for some reason (i.e.\n" \
-          "you killed the script before it was able to finish) then please remove this\n" \
-          "commit yourself manually with:\n" \
-          "\n" \
-          "  $ eg reset --soft HEAD^\n" \
-          "\n" \
-          "You can then run the checkin-test.py script again to try the test, commit and\n" \
-          "push again.\n"
-
-        commitRtn = echoRunSysCmnd(
-          "eg commit -a -F "+os.path.join(baseTestDir, getInitialCommitEmailBodyFileName()),
-          workingDir=inOptions.trilinosSrcDir,
-          outFile=os.path.join(baseTestDir, getInitialCommitOutputFileName()),
-          throwExcept=False, timeCmnd=True )
-
-        if commitRtn == 0:
-          print "\nCommit passed!\n"
-          commitPassed = True
-        else:
-          print "\nFAILED: Commit failed!\n"
-          commitPassed = False
-
-      except Exception, e:
-        success = False
-        commitPassed = False
-        printStackTrace()
-
-    else:
-
-      print "\nSkipping initial commit on request ...\n"
 
     print "\n***"
     print "*** 3) Update the Trilinos sources ..."
@@ -1511,50 +1577,56 @@ def checkinTest(inOptions):
 
       print "\nSkipping all updates on request!\n"
 
-    if inOptions.doCommit and not commitPassed:
-
-      print "\nCommit failed, aborting pull!\n"
-      pullPassed = False
-
     if doingAtLeastOnePull and pullPassed:
 
       #
       print "\n3.a) Check that there are no uncommited and no new unknown files before doing the pull(s) ...\n"
       #
 
-      egStatusOutput = getCmndOutput("eg status", True, throwOnError=False,
-        workingDir=inOptions.trilinosSrcDir)
+      repoIdx = 0
+      for gitRepo in gitRepoList:
 
-      print \
-        "\nOutput from 'eg status':\n" + \
-        "\n--------------------------------------------------------------\n" + \
-        egStatusOutput + \
-        "\n--------------------------------------------------------------\n"
+        print "\n3.a."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
-      repoIsClean = True
-
-      if isSubstrInMultiLineString(egStatusOutput, "Changed but not updated"):
-        print "\nERROR: There are changed unstaged uncommitted files => cannot continue!"
-        repoIsClean = False
-
-      if isSubstrInMultiLineString(egStatusOutput, "Changes ready to be committed"):
-        print "\nERROR: There are changed staged uncommitted files => cannot continue!"
-        repoIsClean = False
-
-      if isSubstrInMultiLineString(egStatusOutput, "Newly created unknown files"):
-        print "\nERROR: There are newly created uncommitted files => Cannot continue!"
-        repoIsClean = False
-
-      if not repoIsClean:
+        egStatusOutput = getCmndOutput("eg status", True, throwOnError=False,
+          workingDir=getGitRepoDir(inOptions.trilinosSrcDir,gitRepo.repoName))
+  
         print \
-           "\nExplanation: In order to do a meaningful test to allow a push, all files\n" \
-           "in the local repo must be committed.  Otherwise, if there are changed but not\n" \
-           "committed files or new unknown files that are used in the build or the test, then\n" \
-           "what you are testing is *not* what you will be pushing.  If you have changes that\n" \
-           "you don't want to push, then try using 'eg stash' before you run this script to\n" \
-           "stash away all of the changes you don't want to push.  That way, what you are testing\n" \
-           "will be consistent with what you will be pushing.\n"
-        pullPassed = False
+          "\nOutput from 'eg status':\n" + \
+          "\n--------------------------------------------------------------\n" + \
+          egStatusOutput + \
+          "\n--------------------------------------------------------------\n"
+
+        # See if the repo is clean
+  
+        repoIsClean = True
+  
+        if isSubstrInMultiLineString(egStatusOutput, "Changed but not updated"):
+          print "\nERROR: There are changed unstaged uncommitted files => cannot continue!"
+          repoIsClean = False
+  
+        if isSubstrInMultiLineString(egStatusOutput, "Changes ready to be committed"):
+          print "\nERROR: There are changed staged uncommitted files => cannot continue!"
+          repoIsClean = False
+  
+        if isSubstrInMultiLineString(egStatusOutput, "Newly created unknown files"):
+          print "\nERROR: There are newly created uncommitted files => Cannot continue!"
+          repoIsClean = False
+  
+        if not repoIsClean:
+          print \
+             "\nExplanation: In order to do a meaningful test to allow a push, all files\n" \
+             "in the local repo must be committed.  Otherwise, if there are changed but not\n" \
+             "committed files or new unknown files that are used in the build or the test, then\n" \
+             "what you are testing is *not* what you will be pushing.  If you have changes that\n" \
+             "you don't want to push, then try using 'eg stash' before you run this script to\n" \
+             "stash away all of the changes you don't want to push.  That way, what you are testing\n" \
+             "will be consistent with what you will be pushing.\n"
+          pullPassed = False
+
+        #print "gitRepo =", gitRepo
+        repoIdx += 1
+     
 
     if doingAtLeastOnePull and pullPassed:
 
@@ -1568,16 +1640,22 @@ def checkinTest(inOptions):
       #
     
       if inOptions.doPull and pullPassed:
-        echoChDir(baseTestDir)
-        (updateRtn, updateTimings) = \
-          executePull(inOptions, baseTestDir, getInitialPullOutputFileName())
-        timings.update += updateTimings
-        if updateRtn != 0:
-          print "\nPull failed!\n"
-          pullPassed = False
+        repoIdx = 0
+        for gitRepo in gitRepoList:
+          print "\n3.b."+str(repoIdx)+") Git Repo: "+gitRepo.repoName
+          echoChDir(baseTestDir)
+          (updateRtn, updateTimings) = executePull(gitRepo.repoName,
+            inOptions, baseTestDir,
+            getInitialPullOutputFileName(gitRepo.repoName))
+          timings.update += updateTimings
+          if updateRtn != 0:
+            print "\nPull failed!\n"
+            pullPassed = False
+            break
+          repoIdx += 1
       else:
         print "\nSkipping initial pull from 'origin'!\n"
-
+  
       #
       print "\n3.c) Pull updates from the extra repository '"+inOptions.extraPullFrom+"' ..."
       #
@@ -1585,14 +1663,20 @@ def checkinTest(inOptions):
       timings.update = 0
       
       if inOptions.extraPullFrom and pullPassed:
-        echoChDir(baseTestDir)
-        (updateRtn, updateTimings) = \
-          executePull(inOptions, baseTestDir, getInitialExtraPullOutputFileName(),
+        repoIdx = 0
+        for gitRepo in gitRepoList:
+          print "\n3.c."+str(repoIdx)+") Git Repo: "+gitRepo.repoName
+          echoChDir(baseTestDir)
+          (updateRtn, updateTimings) = executePull(gitRepo.repoName,
+            inOptions, baseTestDir,
+            getInitialExtraPullOutputFileName(gitRepo.repoName),
             inOptions.extraPullFrom )
-        timings.update += updateTimings
-        if updateRtn != 0:
-          print "\nPull failed!\n"
-          pullPassed = False
+          timings.update += updateTimings
+          if updateRtn != 0:
+            print "\nPull failed!\n"
+            pullPassed = False
+            break
+          repoIdx += 1
       else:
         print "\nSkipping extra pull from '"+inOptions.extraPullFrom+"'!\n"
 
@@ -1631,7 +1715,8 @@ def checkinTest(inOptions):
 
     if pullPassed:
 
-      getCurrentDiffOutput(inOptions, baseTestDir)
+      for gitRepo in gitRepoList:
+        getCurrentDiffOutput(gitRepo.repoName, inOptions, baseTestDir)
 
     else:
 
@@ -1648,9 +1733,6 @@ def checkinTest(inOptions):
     if not performAnyBuildTestActions(inOptions):
       print "\nNot performing any build cases because no --configure, --build or --test" \
         " was specified!\n"
-      runBuildCases = False
-    elif inOptions.doCommit and not commitPassed:
-      print "\nThe commit failed, skipping running the build/test cases!\n"
       runBuildCases = False
     elif doingAtLeastOnePull:
       if pullPassed:
@@ -1696,6 +1778,7 @@ def checkinTest(inOptions):
         buildTestCase.timings = timings.deepCopy()
         result = runBuildTestCaseDriver(
           inOptions,
+          gitRepoList,
           baseTestDir,
           buildTestCase,
           buildTestCase.timings
@@ -1706,7 +1789,7 @@ def checkinTest(inOptions):
 
 
     print "\n***"
-    print "*** 6) Determine overall success and commit/push readiness (and backout commit if failed) ..."
+    print "*** 6) Determine overall success and push readiness ..."
     print "***"
 
     okayToCommit = False
@@ -1714,7 +1797,7 @@ def checkinTest(inOptions):
     forcedCommitPush = False
     abortedCommitPush = False
 
-    if inOptions.doCommitReadinessCheck or inOptions.doCommit:
+    if inOptions.doPushReadinessCheck:
 
       echoChDir(baseTestDir)
   
@@ -1724,7 +1807,8 @@ def checkinTest(inOptions):
       commitEmailBodyExtra = ""
       shortCommitEmailBodyExtra = ""
 
-      (cmakePkgOptions, enabledPackagesList) = getEnablesLists(inOptions, baseTestDir, False)
+      (cmakePkgOptions, enabledPackagesList) = \
+        getEnablesLists(inOptions, gitRepoList, baseTestDir, False)
 
       enableStatsListStr = getEnableStatusList(inOptions, enabledPackagesList)
       commitEmailBodyExtra += enableStatsListStr
@@ -1761,29 +1845,16 @@ def checkinTest(inOptions):
         print "\nAt least one of the actions (update, configure, built, test)" \
           " failed or was not performed correctly!\n\n" \
           "  => A COMMIT IS *NOT* OKAY TO BE PERFORMED!\n"
-
-      # Back out commit if one was performed and buid/test failed
-      if not okayToCommit and inOptions.doCommit and commitPassed and not inOptions.forceCommitPush:
-        print "\nNOTICE: Backing out the commit that was just done ...\n"
-        try:
-          echoRunSysCmnd("eg reset --soft HEAD^",
-            workingDir=inOptions.trilinosSrcDir,
-            timeCmnd=True,
-            throwExcept=False )
-        except Exception, e:
-          success = False
-          printStackTrace()
       
-      # Determine if we should do a forced commit/push
-      if inOptions.doCommitReadinessCheck and not okayToCommit and commitPassed \
-        and inOptions.forceCommitPush \
+      # Determine if we should do a forced push
+      if inOptions.doPushReadinessCheck and not okayToCommit and inOptions.forcePush \
         :
-        forcedCommitPushMsg = \
+        forcedPushMsg = \
           "\n***" \
-          "\n*** WARNING: The acceptance criteria for doing a commit/push has *not*" \
-          "\n*** been met, but a commit/push is being forced anyway by --force-commit-push!" \
+          "\n*** WARNING: The acceptance criteria for doing a push has *not*" \
+          "\n*** been met, but a push is being forced anyway by --force-push!" \
           "\n***\n"
-        print forcedCommitPushMsg
+        print forcedPushMsg
         okayToCommit = True
         forcedCommitPush = True
 
@@ -1812,7 +1883,7 @@ def checkinTest(inOptions):
 
     else:
 
-      print "\nSkipping commit readiness check on request!"
+      print "\nSkipping push readiness check on request!"
       okayToCommit = False
       okayToPush = False
 
@@ -1827,7 +1898,7 @@ def checkinTest(inOptions):
     amendFinalCommitPassed = True
     pushPassed = True
     didPush = False
-    localCommitSummariesStr = ""
+    allLocalCommitSummariesStr = ""
     
     if not inOptions.doPush:
   
@@ -1867,28 +1938,34 @@ def checkinTest(inOptions):
         if not doFinalRebase:
           print "Skipping the final rebase on request! (see --no-rebase option)"
 
-        (update2Rtn, update2Time) = \
-          executePull(inOptions, baseTestDir, getFinalPullOutputFileName(), None,
-            doFinalRebase )
+        pullFinalPassed = True
 
-        if update2Rtn == 0:
+        repoIdx = 0
+        for gitRepo in gitRepoList:
+  
+          print "\n7.a."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
+  
+          (update2Rtn, update2Time) = \
+            executePull(gitRepo.repoName, inOptions, baseTestDir,
+              getFinalPullOutputFileName(gitRepo.repoName), None,
+              doFinalRebase )
+  
+          if update2Rtn != 0:
+            pullFinalPassed = False
+            break
+
+          repoIdx += 1
+
+        if pullFinalPassed:
           print "\nFinal update passed!\n"
-          pullFinalPassed = True
         else:
           print "\nFinal update failed!\n"
-          pullFinalPassed = False
 
         if not pullFinalPassed: okayToPush = False
 
       #
       print "\n7.b) Amending the final commit message by appending test results ...\n"
       #
-
-      lastCommitMessageStr = getLastCommitMessageStr(inOptions)
-      #print "\nlastCommitMessageStr:\n-------------\n"+lastCommitMessageStr+"-------------\n"
-      (localCommitSummariesStr, localCommitsExist) = getLocalCommitsSummariesStr(inOptions)
-      #print "\nlocalCommitsExist =", localCommitsExist, "\n"
-      localCommitSHA1ListStr = getLocalCommitsSHA1ListStr(inOptions)
 
       if not inOptions.appendTestResults:
 
@@ -1903,50 +1980,77 @@ def checkinTest(inOptions):
   
         print "\nAttempting to amend the final commmit message ...\n"
 
-        try:
+        repoIdx = 0
+        for gitRepo in gitRepoList:
+  
+          print "\n7.b."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
-          # Get then final commit message
-          finalCommitEmailBodyStr = lastCommitMessageStr
-          finalCommitEmailBodyStr += getAutomatedStatusSummaryHeaderStr(inOptions)
-          finalCommitEmailBodyStr += shortCommitEmailBodyExtra
-          finalCommitEmailBodyStr += localCommitSHA1ListStr
-          if forcedCommitPush:
-            finalCommitEmailBodyStr += "WARNING: Forced the push!\n"
-          writeStrToFile(getFinalCommitEmailBodyFileName(), finalCommitEmailBodyStr)
+          try:
 
-          # Amend the final commit message
-          if localCommitsExist:
-
-            commitAmendRtn = echoRunSysCmnd(
-              "eg commit --amend" \
-              " -F "+os.path.join(baseTestDir, getFinalCommitEmailBodyFileName()),
-              workingDir=inOptions.trilinosSrcDir,
-              outFile=os.path.join(baseTestDir, getFinalCommitOutputFileName()),
-              timeCmnd=True, throwExcept=False
-              )
-
-            if commitAmendRtn == 0:
-              print "\nAppending test results to last commit passed!\n"
-              amendFinalCommitPassed = True
+            lastCommitMessageStr = getLastCommitMessageStr(inOptions, gitRepo.repoName)
+            #print "\nlastCommitMessageStr:\n-------------\n"+lastCommitMessageStr+"-------------\n"
+            (localCommitSummariesStr, localCommitsExist) = \
+              getLocalCommitsSummariesStr(inOptions, gitRepo.repoName, False)
+            #print "\nlocalCommitsExist =", localCommitsExist, "\n"
+            localCommitSHA1ListStr = getLocalCommitsSHA1ListStr(inOptions, gitRepo.repoName)
+  
+            # Get then final commit message
+            finalCommitEmailBodyStr = lastCommitMessageStr
+            finalCommitEmailBodyStr += getAutomatedStatusSummaryHeaderStr()
+            finalCommitEmailBodyStr += shortCommitEmailBodyExtra
+            finalCommitEmailBodyStr += localCommitSHA1ListStr
+            if forcedCommitPush:
+              finalCommitEmailBodyStr += "WARNING: Forced the push!\n"
+            finalCommitEmailBodyFileName = getFinalCommitBodyFileName(gitRepo.repoName)
+            writeStrToFile(finalCommitEmailBodyFileName, finalCommitEmailBodyStr)
+  
+            # Amend the final commit message
+            if localCommitsExist:
+  
+              commitAmendRtn = echoRunSysCmnd(
+                "eg commit --amend" \
+                " -F "+os.path.join(baseTestDir, finalCommitEmailBodyFileName),
+                workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepo.repoName),
+                outFile=os.path.join(baseTestDir, getFinalCommitOutputFileName(gitRepo.repoName)),
+                timeCmnd=True, throwExcept=False
+                )
+  
+              if commitAmendRtn != 0:
+                amendFinalCommitPassed = False
+                break
+  
             else:
-              print "\nAppending test results to last commit failed!\n"
-              amendFinalCommitPassed = False
+  
+              print "\nSkipping amending last commit because there are no local commits!\n"
+              
+          except Exception, e:
+            success = False
+            amendFinalCommitPassed = False
+            printStackTrace()
 
-          else:
+          repoIdx += 1
 
-            print "\nSkipping amending last commit because there are no local commits!\n"
-            
-        except Exception, e:
-          success = False
-          amendFinalCommitPassed = False
-          printStackTrace()
+        # end for
+
+        if amendFinalCommitPassed:
+          print "\nAppending test results to last commit passed!\n"
+        else:
+          print "\nAppending test results to last commit failed!\n"
 
       if not amendFinalCommitPassed: okayToPush = False
 
-
-      # Get the updates SHA1 for the amended commit but before the push!
-      localCommitSummariesStr = getLocalCommitsSummariesStr(inOptions)[0]
-
+      # Get the updated SHA1 after the commit has been (or has not been)
+      # amended but before the push!  NOTE: We grab the list of commits even
+      # if we don't ammend the last commit message
+      repoIdx = 0
+      for gitRepo in gitRepoList:
+        localCommitSummariesStr = \
+          getLocalCommitsSummariesStr(inOptions, gitRepo.repoName, True)[0]
+        if allLocalCommitSummariesStr:
+          allLocalCommitSummariesStr += ("\n\n" + localCommitSummariesStr)
+        else:
+          allLocalCommitSummariesStr = localCommitSummariesStr
+        repoIdx += 1
 
       #
       print "\n7.c) Pushing the the local commits to the global repo ...\n"
@@ -1965,23 +2069,57 @@ def checkinTest(inOptions):
         #print "debugSkipPush =", debugSkipPush
         #debugSkipPush = True
 
-        if not debugSkipPush:
-          pushRtn = echoRunSysCmnd(
-            "eg push origin "+inOptions.currentBranch,
-            workingDir=inOptions.trilinosSrcDir,
-            outFile=os.path.join(baseTestDir, getPushOutputFileName()),
-            throwExcept=False, timeCmnd=True )
-          None
-        else:
-          pushRtn = 0
+        didAtLeastOnePush = False
+
+        repoIdx = 0
+        for gitRepo in gitRepoList:
   
-        if pushRtn == 0:
-          print "\nPush passed!\n"
-          pushPassed = True
-          didPush = True
+          print "\n7.c."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
+
+          # ToDo: Determine if there is anything to push by examining
+          # getModifiedFilesOutputFileName(gitRepoName) and only push if that
+          # file is not empty.
+
+          modifiedFilesStr = getCmndOutput(
+            "cat "+getModifiedFilesOutputFileName(gitRepo.repoName),
+            stripTrailingSpaces=True,
+            throwOnError=True,
+            workingDir=baseTestDir
+            );
+
+          if modifiedFilesStr:
+
+            if not debugSkipPush:
+              pushRtn = echoRunSysCmnd(
+                "eg push origin "+inOptions.currentBranch,
+                workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepo.repoName),
+                outFile=os.path.join(baseTestDir, getPushOutputFileName(gitRepo.repoName)),
+                throwExcept=False, timeCmnd=True )
+              didAtLeastOnePush = True
+            else:
+              print "\nSkipping push due to debug override ..."
+              pushRtn = 0
+    
+            if pushRtn != 0:
+              pushPassed = False
+              break
+
+          else:
+
+            print "\nSkipping push to '"+gitRepo.repoName+"' because there are no changes!"
+  
+          repoIdx += 1
+
+        # end for
+  
+        if pushPassed:
+          if didAtLeastOnePush:
+            print "\nPush passed!\n"
+            didPush = True
+          else:
+            print "\nPush failed because the push was never attempted!"
         else:
           print "\nPush failed!\n"
-          pushPassed = False
 
       if not pushPassed: okayToPush = False
 
@@ -2011,39 +2149,32 @@ def checkinTest(inOptions):
     print "*** 9) Create and send push (or readiness status) notification email  ..."
     print "***\n"
 
-    if inOptions.doCommitReadinessCheck:
+    if inOptions.doPushReadinessCheck:
 
       #
       print "\n9.a) Getting final status to send out in the summary email ...\n"
       #
 
-      if not commitPassed:
-        subjectLine = "INITIAL COMMIT FAILED"
-        commitEmailBodyExtra += "\n\nFailed because initial commit failed!" \
-          " See '"+getInitialCommitOutputFileName()+"'\n\n"
-        success = False
-      elif not pullPassed:
+      if not pullPassed:
         subjectLine = "INITIAL PULL FAILED"
         commitEmailBodyExtra += "\n\nFailed because initial pull failed!" \
-          " See '"+getInitialPullOutputFileName()+"'\n\n"
+          " See '"+getInitialPullOutputFileName("*")+"'\n\n"
         success = False
       elif not pullFinalPassed:
         subjectLine = "FINAL PULL FAILED"
         commitEmailBodyExtra += "\n\nFailed because the final pull failed!" \
-          " See '"+getFinalPullOutputFileName()+"'\n\n"
+          " See '"+getFinalPullOutputFileName("*")+"'\n\n"
         success = False
       elif not amendFinalCommitPassed:
         subjectLine = "AMEND COMMIT FAILED"
         commitEmailBodyExtra += "\n\nFailed because the final test commit amend failed!" \
-          " See '"+getFinalCommitOutputFileName()+"'\n\n"
+          " See '"+getFinalCommitOutputFileName("*")+"'\n\n"
         success = False
       elif inOptions.doPush and pushPassed and forcedCommitPush:
         subjectLine = "DID FORCED PUSH"
-        commitEmailBodyExtra += forcedCommitPushMsg
+        commitEmailBodyExtra += forcedPushMsg
         success = True
-      elif inOptions.doCommit and commitPassed and forcedCommitPush:
-        subjectLine = "DID FORCED COMMIT"
-        commitEmailBodyExtra += forcedCommitPushMsg
+        commitEmailBodyExtra += forcedPushMsg
       elif not buildTestCasesPassed:
         subjectLine = "FAILED CONFIGURE/BUILD/TEST"
         commitEmailBodyExtra += "\n\nFailed because one of the build/test cases failed!\n"
@@ -2059,7 +2190,7 @@ def checkinTest(inOptions):
         else:
           subjectLine = "PUSH FAILED"
           commitEmailBodyExtra += "\n\nFailed because push failed!" \
-            " See '"+getPushOutputFileName()+"'\n\n"
+            " See '"+getPushOutputFileName("*")+"'\n\n"
           success = False
       else:
         if okayToPush:
@@ -2077,8 +2208,8 @@ def checkinTest(inOptions):
     
         emailBodyStr = subjectLine + "\n\n"
         emailBodyStr += getCmndOutput("date", True) + "\n\n"
-        emailBodyStr += commitEmailBodyExtra
-        emailBodyStr += localCommitSummariesStr
+        emailBodyStr += commitEmailBodyExtra + "\n"
+        emailBodyStr += allLocalCommitSummariesStr + "\n"
         emailBodyStr += getSummaryEmailSectionStr(inOptions, buildTestCaseList)
     
         print "\nCommit status email being sent:\n" \
@@ -2096,11 +2227,11 @@ def checkinTest(inOptions):
   
       else:
   
-        print "\nNot sending commit status email because --send-email-to is empty!"
+        print "\nNot sending push readiness status email because --send-email-to is empty!"
 
     else:
 
-      print "\nNot performing commit/push or sending out commit/push readiness status on request!"
+      print "\nNot performing push or sending out push readiness status on request!"
 
   
     print "\n***"
@@ -2134,7 +2265,7 @@ def checkinTest(inOptions):
         "\n***\n" \
         "*** WARNING: No actions were performed!\n" \
         "***\n" \
-        "*** Hint: Specify [--commit] --do-all to perform full integration update/build/test\n" \
+        "*** Hint: Specify --do-all to perform full integration update/build/test\n" \
         "*** or --push to push the commits for a previously run test!\n" \
         "***\n\n"
   

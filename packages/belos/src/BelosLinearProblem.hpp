@@ -52,12 +52,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::null;
-using Teuchos::rcp_const_cast;
-using Teuchos::ParameterList;
-
 /*! \class Belos::LinearProblem  
   \brief The Belos::LinearProblem class is a wrapper that encapsulates the 
   general information needed for solving a linear system of equations.  
@@ -75,7 +69,6 @@ namespace Belos {
   
   //@}
   
-
   template <class ScalarType, class MV, class OP>
   class LinearProblem {
    
@@ -96,9 +89,9 @@ namespace Belos {
       Preconditioners can be set using the setLeftPrec() and setRightPrec() methods, and
       scaling can also be set using the setLeftScale() and setRightScale() methods.
     */
-    LinearProblem(const RCP<const OP> &A, 
-		  const RCP<MV> &X, 
-		  const RCP<const MV> &B
+    LinearProblem(const Teuchos::RCP<const OP> &A, 
+		  const Teuchos::RCP<MV> &X, 
+		  const Teuchos::RCP<const MV> &B
 		  );
     
     //! Copy Constructor.
@@ -118,27 +111,27 @@ namespace Belos {
     //! Set Operator A of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void setOperator(const RCP<const OP> &A) { A_ = A; isSet_=false; }
+    void setOperator(const Teuchos::RCP<const OP> &A) { A_ = A; isSet_=false; }
     
     //! Set left-hand-side X of linear problem AX = B.
     /*! Sets a pointer to a MultiVec.  No copy of the object is made.
      */
-    void setLHS(const RCP<MV> &X) { X_ = X; isSet_=false; }
+    void setLHS(const Teuchos::RCP<MV> &X) { X_ = X; isSet_=false; }
     
     //! Set right-hand-side B of linear problem AX = B.
     /*! Sets a pointer to a MultiVec.  No copy of the object is made.
      */
-    void setRHS(const RCP<const MV> &B) { B_ = B; isSet_=false; }
+    void setRHS(const Teuchos::RCP<const MV> &B) { B_ = B; isSet_=false; }
     
     //! Set left preconditioning operator (\c LP) of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void setLeftPrec(const RCP<const OP> &LP) {  LP_ = LP; }
+    void setLeftPrec(const Teuchos::RCP<const OP> &LP) {  LP_ = LP; }
     
     //! Set right preconditioning operator (\c RP) of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void setRightPrec(const RCP<const OP> &RP) { RP_ = RP; }
+    void setRightPrec(const Teuchos::RCP<const OP> &RP) { RP_ = RP; }
     
     //! Inform the linear problem that the solver is finished with the current linear system.
     /*! \note This method is <b> only </b> to be used by the solver to inform the linear problem that it is
@@ -178,12 +171,12 @@ namespace Belos {
       the solution hasn't been updated.  If \c updateLP is false, the new solution is computed without actually 
       updating the linear problem.
     */
-    RCP<MV> updateSolution( const RCP<MV>& update = null,
+    Teuchos::RCP<MV> updateSolution( const Teuchos::RCP<MV>& update = Teuchos::null,
 				    bool updateLP = false,
                                     ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );    
 
     //! Compute the new solution to the linear system given the /c update without updating the linear problem.
-    RCP<MV> updateSolution( const RCP<MV>& update = null,
+    Teuchos::RCP<MV> updateSolution( const Teuchos::RCP<MV>& update = Teuchos::null,
                                     ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() ) const
     { return const_cast<LinearProblem<ScalarType,MV,OP> *>(this)->updateSolution( update, false, scale ); }
 
@@ -198,7 +191,7 @@ namespace Belos {
       The internal flags will be set as if the linear system manager was just initialized 
       and the initial residual will be computed.
     */
-    bool setProblem( const RCP<MV> &newX = null, const RCP<const MV> &newB = null );
+    bool setProblem( const Teuchos::RCP<MV> &newX = Teuchos::null, const Teuchos::RCP<const MV> &newB = Teuchos::null );
 
     //@}
     
@@ -206,23 +199,23 @@ namespace Belos {
     //@{ 
     
     //! Get a pointer to the operator A.
-    RCP<const OP> getOperator() const { return(A_); }
+    Teuchos::RCP<const OP> getOperator() const { return(A_); }
     
     //! Get a pointer to the left-hand side X.
-    RCP<MV> getLHS() const { return(X_); }
+    Teuchos::RCP<MV> getLHS() const { return(X_); }
     
     //! Get a pointer to the right-hand side B.
-    RCP<const MV> getRHS() const { return(B_); }
+    Teuchos::RCP<const MV> getRHS() const { return(B_); }
     
     //! Get a pointer to the initial residual vector.
     /*! \note This is the unpreconditioned residual.
      */
-    RCP<const MV> getInitResVec() const { return(R0_); }
+    Teuchos::RCP<const MV> getInitResVec() const { return(R0_); }
     
     //! Get a pointer to the preconditioned initial residual vector.
     /*! \note This is the preconditioned residual if the linear system is preconditioned on the left.
      */
-    RCP<const MV> getInitPrecResVec() const { return(PR0_); }
+    Teuchos::RCP<const MV> getInitPrecResVec() const { return(PR0_); }
     
     //! Get a pointer to the current left-hand side (solution) of the linear system.
     /*! This method is called by the solver or any method that is interested in the current linear system
@@ -232,7 +225,7 @@ namespace Belos {
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */
-    RCP<MV> getCurrLHSVec();
+    Teuchos::RCP<MV> getCurrLHSVec();
     
     //! Get a pointer to the current right-hand side of the linear system.
     /*! This method is called by the solver of any method that is interested in the current linear system
@@ -242,13 +235,13 @@ namespace Belos {
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */	
-    RCP<MV> getCurrRHSVec();
+    Teuchos::RCP<const MV> getCurrRHSVec();
     
     //! Get a pointer to the left preconditioning operator.
-    RCP<const OP> getLeftPrec() const { return(LP_); };
+    Teuchos::RCP<const OP> getLeftPrec() const { return(LP_); };
     
     //! Get a pointer to the right preconditioning operator.
-    RCP<const OP> getRightPrec() const { return(RP_); };
+    Teuchos::RCP<const OP> getRightPrec() const { return(RP_); };
     
     //! Get the 0-based index vector indicating the current linear systems being solved for.
     /*! Since the block size is independent of the number of right-hand sides for
@@ -300,10 +293,10 @@ namespace Belos {
     bool isHermitian() const { return(isHermitian_); }
     
     //! Get information on whether the linear system is being preconditioned on the left.
-    bool isLeftPrec() const { return(LP_!=null); }
+    bool isLeftPrec() const { return(LP_!=Teuchos::null); }
 
     //! Get information on whether the linear system is being preconditioned on the right.
-    bool isRightPrec() const { return(RP_!=null); }
+    bool isRightPrec() const { return(RP_!=Teuchos::null); }
  
     //@}
     
@@ -363,31 +356,31 @@ namespace Belos {
   private:
     
     //! Operator of linear system. 
-    RCP<const OP> A_;
+    Teuchos::RCP<const OP> A_;
     
     //! Solution vector of linear system.
-    RCP<MV> X_;
+    Teuchos::RCP<MV> X_;
     
     //! Current solution vector of the linear system.
-    RCP<MV> curX_;
+    Teuchos::RCP<MV> curX_;
     
     //! Right-hand side of linear system.
-    RCP<const MV> B_;
+    Teuchos::RCP<const MV> B_;
     
     //! Current right-hand side of the linear system.
-    RCP<MV> curB_;
+    Teuchos::RCP<const MV> curB_;
     
     //! Initial residual of the linear system.
-    RCP<MV> R0_;
+    Teuchos::RCP<MV> R0_;
    
     //! Preconditioned initial residual of the linear system.
-    RCP<MV> PR0_;
+    Teuchos::RCP<MV> PR0_;
  
     //! Left preconditioning operator of linear system
-    RCP<const OP> LP_;  
+    Teuchos::RCP<const OP> LP_;  
     
     //! Right preconditioning operator of linear system
-    RCP<const OP> RP_;
+    Teuchos::RCP<const OP> RP_;
     
     //! Timers
     mutable Teuchos::RCP<Teuchos::Time> timerOp_, timerPrec_;
@@ -438,9 +431,9 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  LinearProblem<ScalarType,MV,OP>::LinearProblem(const RCP<const OP> &A, 
-						 const RCP<MV> &X, 
-						 const RCP<const MV> &B
+  LinearProblem<ScalarType,MV,OP>::LinearProblem(const Teuchos::RCP<const OP> &A, 
+						 const Teuchos::RCP<MV> &X, 
+						 const Teuchos::RCP<const MV> &B
 						 ) :
     A_(A),
     X_(X),
@@ -496,8 +489,8 @@ namespace Belos {
     
     // Compute the new block linear system.
     // ( first clean up old linear system )
-    curB_ = null;
-    curX_ = null;
+    curB_ = Teuchos::null;
+    curX_ = Teuchos::null;
    
     // Create indices for the new linear system.
     int validIdx = 0, ivalidIdx = 0;
@@ -530,12 +523,13 @@ namespace Belos {
       // Fill the RHS with random vectors LHS with zero vectors.
       curX_ = MVT::Clone( *X_, blocksize_ );
       MVT::MvInit(*curX_);
-      curB_ = MVT::Clone( *B_, blocksize_ );
-      MVT::MvRandom(*curB_);
+      Teuchos::RCP<MV> tmpCurB = MVT::Clone( *B_, blocksize_ );
+      MVT::MvRandom(*tmpCurB);
       //
       // Now put in the part of B into curB 
-      RCP<const MV> tptr = MVT::CloneView( *B_, vldIndex );
-      MVT::SetBlock( *tptr, newIndex, *curB_ );
+      Teuchos::RCP<const MV> tptr = MVT::CloneView( *B_, vldIndex );
+      MVT::SetBlock( *tptr, newIndex, *tmpCurB );
+      curB_ = tmpCurB;
       //
       // Now put in the part of X into curX
       tptr = MVT::CloneView( *X_, vldIndex );
@@ -545,16 +539,7 @@ namespace Belos {
     }
     else {
       curX_ = MVT::CloneViewNonConst( *X_, rhsIndex_ );
-      // FIXME (mfh 21 Feb 2011) This is absolutely NO reason curB_
-      // should be a nonconst MV.  I can see what the authors of this
-      // code meant -- they wanted to cover the case above, where
-      // curB_ is a freshly allocated multivector, some of whose
-      // columns get filled with random data.  However, the right
-      // thing to do would be to allocate a nonconst MV of a different
-      // name, copy the appropriate columns of B_ there and fill the
-      // rest with random data, then make curB_ a nonconst view of
-      // that nonconst MV.
-      curB_ = rcp_const_cast<MV>(MVT::CloneView( *B_, rhsIndex_ ));
+      curB_ = MVT::CloneView( *B_, rhsIndex_ );
     }
     //
     // Increment the number of linear systems that have been loaded into this object.
@@ -584,31 +569,31 @@ namespace Belos {
           validIdx++;
         }	
       }
-      RCP<MV> tptr = MVT::CloneViewNonConst( *curX_, newIndex );
+      Teuchos::RCP<MV> tptr = MVT::CloneViewNonConst( *curX_, newIndex );
       MVT::SetBlock( *tptr, vldIndex, *X_ );
     }
     //
     // Clear the current vectors of this linear system so that any future calls
     // to get the vectors for this system return null pointers.
     //
-    curX_ = null;
-    curB_ = null;
+    curX_ = Teuchos::null;
+    curB_ = Teuchos::null;
     rhsIndex_.resize(0);
   }
   
 
   template <class ScalarType, class MV, class OP>
-  RCP<MV> LinearProblem<ScalarType,MV,OP>::updateSolution( const RCP<MV>& update, 
+  Teuchos::RCP<MV> LinearProblem<ScalarType,MV,OP>::updateSolution( const Teuchos::RCP<MV>& update, 
 							   bool updateLP,
 							   ScalarType scale )
   { 
-    RCP<MV> newSoln;
-    if (update != null) {
+    Teuchos::RCP<MV> newSoln;
+    if (update != Teuchos::null) {
       if (updateLP == true) {
-	if (RP_!=null) {
+	if (RP_!=Teuchos::null) {
 	  //
 	  // Apply the right preconditioner before computing the current solution.
-	  RCP<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	  Teuchos::RCP<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
 	  {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 	    Teuchos::TimeMonitor PrecTimer(*timerPrec_);
@@ -625,10 +610,10 @@ namespace Belos {
       }
       else {
 	newSoln = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
-	if (RP_!=null) {
+	if (RP_!=Teuchos::null) {
 	  //
 	  // Apply the right preconditioner before computing the current solution.
-	  RCP<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	  Teuchos::RCP<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
 	  {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 	    Teuchos::TimeMonitor PrecTimer(*timerPrec_);
@@ -650,7 +635,7 @@ namespace Belos {
   
 
   template <class ScalarType, class MV, class OP>
-  bool LinearProblem<ScalarType,MV,OP>::setProblem( const RCP<MV> &newX, const RCP<const MV> &newB )
+  bool LinearProblem<ScalarType,MV,OP>::setProblem( const Teuchos::RCP<MV> &newX, const Teuchos::RCP<const MV> &newB )
   {
     // Create timers if the haven't been created yet.
     if (timerOp_ == Teuchos::null) {
@@ -667,15 +652,15 @@ namespace Belos {
     }
 
     // Set the linear system using the arguments newX and newB
-    if (newX != null)
+    if (newX != Teuchos::null)
       X_ = newX;
-    if (newB != null)
+    if (newB != Teuchos::null)
       B_ = newB;
 
     // Invalidate the current linear system indices and multivectors.
     rhsIndex_.resize(0);
-    curX_ = null;
-    curB_ = null;
+    curX_ = Teuchos::null;
+    curB_ = Teuchos::null;
 
     // Check the validity of the linear problem object.
     // If no operator A exists, then throw an std::exception.
@@ -683,7 +668,7 @@ namespace Belos {
     // FIXME (mfh 21 Feb 2011) The code below doesn't seem to be doing
     // what the comment above says it should do (that is, throw an
     // exception if the operator A has not been set).
-    if (A_ == null || X_ == null || B_ == null) {
+    if (A_ == Teuchos::null || X_ == Teuchos::null || B_ == Teuchos::null) {
       isSet_ = false;
       return isSet_;
     }
@@ -692,14 +677,14 @@ namespace Belos {
     solutionUpdated_ = false;
     
     // Compute the initial residuals.
-    if (R0_==null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
-      R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+    if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *B_ )) {
+      R0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
     }
     computeCurrResVec( &*R0_, &*X_, &*B_ );
 
-    if (LP_!=null) {
-      if (PR0_==null || MVT::GetNumberVecs( *PR0_ )!=MVT::GetNumberVecs( *X_ )) {
-        PR0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+    if (LP_!=Teuchos::null) {
+      if (PR0_==Teuchos::null || MVT::GetNumberVecs( *PR0_ )!=MVT::GetNumberVecs( *B_ )) {
+        PR0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
       }
       {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -720,7 +705,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  RCP<MV> LinearProblem<ScalarType,MV,OP>::getCurrLHSVec()
+  Teuchos::RCP<MV> LinearProblem<ScalarType,MV,OP>::getCurrLHSVec()
   {
     if (isSet_) {
       return curX_;
@@ -731,7 +716,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  RCP<MV> LinearProblem<ScalarType,MV,OP>::getCurrRHSVec()
+  Teuchos::RCP<const MV> LinearProblem<ScalarType,MV,OP>::getCurrRHSVec()
   {
     if (isSet_) {
       return curB_;
@@ -744,9 +729,9 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::apply( const MV& x, MV& y ) const
   {
-    RCP<MV> ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
-    bool leftPrec = LP_!=null;
-    bool rightPrec = RP_!=null;
+    Teuchos::RCP<MV> ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
+    bool leftPrec = LP_!=Teuchos::null;
+    bool rightPrec = RP_!=Teuchos::null;
     //
     // No preconditioning.
     // 
@@ -834,7 +819,7 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::applyLeftPrec( const MV& x, MV& y ) const {
-    if (LP_!=null) {
+    if (LP_!=Teuchos::null) {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
 #endif
@@ -848,7 +833,7 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::applyRightPrec( const MV& x, MV& y ) const {
-    if (RP_!=null) {
+    if (RP_!=Teuchos::null) {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
 #endif
@@ -866,9 +851,9 @@ namespace Belos {
     if (R) {
       if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
 	{
-	  if (LP_!=null)
+	  if (LP_!=Teuchos::null)
 	    {
-	      RCP<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
+	      Teuchos::RCP<MV> R_temp = MVT::Clone( *B, MVT::GetNumberVecs( *B ) );
               {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
                 Teuchos::TimeMonitor OpTimer(*timerOp_);
@@ -896,20 +881,20 @@ namespace Belos {
 	}
       else { 
 	// The solution and right-hand side may not be specified, check and use which ones exist.
-	RCP<const MV> localB, localX;
+	Teuchos::RCP<const MV> localB, localX;
 	if (B)
-	  localB = rcp( B, false );
+	  localB = Teuchos::rcp( B, false );
 	else
 	  localB = curB_;
 	
 	if (X)
-	  localX = rcp( X, false );
+	  localX = Teuchos::rcp( X, false );
 	else
 	  localX = curX_;
 	
-	if (LP_!=null)
+	if (LP_!=Teuchos::null)
 	  {
-	    RCP<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
+	    Teuchos::RCP<MV> R_temp = MVT::Clone( *localB, MVT::GetNumberVecs( *localB ) );
             {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor OpTimer(*timerOp_);
@@ -955,14 +940,14 @@ namespace Belos {
 	}
       else { 
 	// The solution and right-hand side may not be specified, check and use which ones exist.
-	RCP<const MV> localB, localX;
+	Teuchos::RCP<const MV> localB, localX;
 	if (B)
-	  localB = rcp( B, false );
+	  localB = Teuchos::rcp( B, false );
 	else
 	  localB = curB_;
 	
 	if (X)
-	  localX = rcp( X, false );
+	  localX = Teuchos::rcp( X, false );
 	else
 	  localX = curX_;
 	  

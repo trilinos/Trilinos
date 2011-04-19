@@ -4,7 +4,7 @@
 //#define HAVE_INTREPID_DEBUG 1
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Part.hpp>
 
@@ -30,7 +30,7 @@ namespace stk
       {
         if (!part)
           {
-            m_part = &stk::mesh::MetaData::get(bulkData).universal_part();
+            m_part = &stk::mesh::fem::FEMMetaData::get(bulkData).universal_part();
           }
       }
       virtual ~FunctionOperator() {}

@@ -13,8 +13,6 @@
 
 #include <stk_mesh/base/Types.hpp>
 
-#include <stk_mesh/fem/FEMInterface.hpp>
-
 #include <stk_util/util/NamedPair.hpp>
 
 struct CellTopologyData;

@@ -547,7 +547,7 @@ namespace Belos {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
-    innerProd(X,X,MX,xTx);
+    MatOrthoManager<ScalarType,MV,OP>::innerProd(X,X,MX,xTx);
     for (int i=0; i<rank; i++) {
       xTx(i,i) -= ONE;
     }
@@ -562,7 +562,7 @@ namespace Belos {
     int r1 = MVT::GetNumberVecs(X1);
     int r2  = MVT::GetNumberVecs(X2);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(r2,r1);
-    innerProd(X2,X1,MX1,xTx);
+    MatOrthoManager<ScalarType,MV,OP>::innerProd(X2,X1,MX1,xTx);
     return xTx.normFrobenius();
   }
 
@@ -946,7 +946,7 @@ namespace Belos {
 	// Apply the first step of Gram-Schmidt
 	
 	// product <- prevX^T MXj
-	innerProd(*prevX,*Xj,MXj,product);
+	MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*Xj,MXj,product);
 	
 	// Xj <- Xj - prevX prevX^T MXj   
 	//     = Xj - prevX product
@@ -969,7 +969,7 @@ namespace Belos {
 	  // This is the same as above
 	  Teuchos::SerialDenseMatrix<int,ScalarType> P2(numX,1);
 	  
-	  innerProd(*prevX,*Xj,MXj,P2);
+	  MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*Xj,MXj,P2);
 	  product += P2;
 	  MVT::MvTimesMatAddMv( -ONE, *prevX, P2, ONE, *Xj );
 	  if ((this->_hasOp)) {
@@ -1008,7 +1008,7 @@ namespace Belos {
 	  MVT::MvDot( *tempXj, *tempMXj, oldDot );
 	  //
 	  for (int num_orth=0; num_orth<max_blk_ortho_; num_orth++){
-	    innerProd(*prevX,*tempXj,tempMXj,product);
+	    MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*tempXj,tempMXj,product);
 	    MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *tempXj );
 	    if (this->_hasOp) {
 	      MVT::MvTimesMatAddMv( -ONE, *prevMX, product, ONE, *tempMXj );
@@ -1099,7 +1099,7 @@ namespace Belos {
     // Define the product Q^T * (Op*X)
     for (int i=0; i<nq; i++) {
       // Multiply Q' with MX
-      innerProd(*Q[i],X,MX,*C[i]);
+      MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,*C[i]);
       // Multiply by Q and subtract the result in X
       MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
 
@@ -1124,7 +1124,7 @@ namespace Belos {
 	Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
         
 	// Apply another step of classical Gram-Schmidt
-	innerProd(*Q[i],X,MX,C2);
+	MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,C2);
 	*C[i] += C2;
 	MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
         
@@ -1225,7 +1225,7 @@ namespace Belos {
 	Teuchos::SerialDenseMatrix<int,ScalarType> tempC( Teuchos::View, *C[i], qcs[i], 1, 0, j );
 
 	// Multiply Q' with MX
-	innerProd(*Q[i],*Xj,MXj,tempC);
+	MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*Xj,MXj,tempC);
 	// Multiply by Q and subtract the result in Xj
 	MVT::MvTimesMatAddMv( -ONE, *Q[i], tempC, ONE, *Xj );
 	
@@ -1256,7 +1256,7 @@ namespace Belos {
 	  Teuchos::SerialDenseMatrix<int,ScalarType> C2( qcs[i], 1 );
 	  
 	  // Apply another step of classical Gram-Schmidt
-	  innerProd(*Q[i],*Xj,MXj,C2);
+	  MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*Xj,MXj,C2);
 	  tempC += C2;
 	  MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, *Xj );
 	  
@@ -1316,7 +1316,7 @@ namespace Belos {
 	    Teuchos::SerialDenseMatrix<int,ScalarType> product( qcs[i], 1 );
 	    
 	    // Apply another step of classical Gram-Schmidt
-	    innerProd(*Q[i],*tempXj,tempMXj,product);
+	    MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*tempXj,tempMXj,product);
 	    MVT::MvTimesMatAddMv( -ONE, *Q[i], product, ONE, *tempXj );
 	    
 	    // Update MXj, with the least number of applications of Op as possible

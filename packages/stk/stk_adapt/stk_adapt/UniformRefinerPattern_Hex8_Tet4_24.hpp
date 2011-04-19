@@ -80,7 +80,7 @@ namespace stk {
        {
          EXCEPTWATCH;
 
-         m_primaryEntityRank = mesh::Element;
+         m_primaryEntityRank = eMesh.element_rank();
 
          setNeededParts(eMesh, block_names, false);
 
@@ -96,8 +96,8 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(2);
-        needed_entities[0].first = stk::mesh::Face;
-        needed_entities[1].first = stk::mesh::Element;  
+        needed_entities[0].first = m_eMesh.face_rank();
+        needed_entities[1].first = m_eMesh.element_rank();  
         setToOne(needed_entities);
 
       }
@@ -105,18 +105,11 @@ namespace stk {
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
       {
         EXCEPTWATCH;
-        //bp.resize(mesh::EntityRankEnd);
-        bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
-        //bp = std::vector<UniformRefinerPatternBase *>(mesh::Element+1u, 0);
+        bp = std::vector<UniformRefinerPatternBase *>(1u, 0);
         bp[0] = this;
 
 #if USE_FACE_BREAKER
-        if (1)
-          {
-            //             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 4, Specialization > *face_breaker = 
-            //               new UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 4, Specialization > (eMesh);
-            bp[1] = m_face_breaker;
-          }
+        bp.push_back( m_face_breaker);
 #endif
       }
 
@@ -124,16 +117,16 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                        Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
-                        FieldBase *proc_rank_field=0)
+                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::FieldBase *proc_rank_field=0)
       {
         EXCEPTWATCH;
-        const CellTopologyData * const cell_topo_data = get_cell_topology(element);
-        typedef boost::tuple<EntityId, EntityId, EntityId, EntityId> tet_tuple_type;
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tet_tuple_type;
         static vector<tet_tuple_type> elems(24);
 
         CellTopology cell_topo(cell_topo_data);
-        const mesh::PairIterRelation elem_nodes = element.relations(Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
 
         // FIXME - maybe the computation of node coorinates should go in the calling code?
@@ -155,23 +148,23 @@ namespace stk {
                       << mp[0] << " " << mp[1] << " " << mp[2] <<  std::endl;
 #endif
 
-            //Entity& new_node =eMesh.createOrGetNode(FACE_N(i_face), mp);
+            //stk::mesh::Entity& new_node =eMesh.createOrGetNode(FACE_N(i_face), mp);
 
             eMesh.createOrGetNode(FACE_N(i_face), mp);
-            nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), Face, i_face);
-            nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), Face, i_face);
+            nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.face_rank(), i_face);
+            nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.face_rank(), i_face);
 
           }
 
-        nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), Element, 0u);
-        nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), Element, 0u);
-        nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), Element, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
         
 
         //#define C 14
 
 // new_sub_entity_nodes[i][j]
-#define CENTROID_N NN(mesh::Element, 0)  
+#define CENTROID_N NN(m_eMesh.element_rank(), 0)  
 
         unsigned iele = 0;
         for (unsigned i_face = 0; i_face < 6; i_face++)
@@ -199,10 +192,10 @@ namespace stk {
         
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            //Entity& newElement = eMesh.getBulkData()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
-            //Entity& newElement = eMesh.getBulkData()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk::mesh::Entity& newElement = eMesh.getBulkData()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk::mesh::Entity& newElement = eMesh.getBulkData()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
 
-            Entity& newElement = *(*element_pool);
+            stk::mesh::Entity& newElement = *(*element_pool);
 
             if (proc_rank_field)
               {

@@ -42,6 +42,11 @@ namespace Tpetra {
 
   BlockCrsGraph doesn't inherit Tpetra::CrsGraph, but always holds a
   Tpetra::CrsGraph as a class-member attribute.
+
+  The reason BlockCrsGraph exists is to create and hold the block-versions
+  (Tpetra::BlockMap) of the Tpetra::Map objects that CrsGraph holds.
+
+  BlockCrsGraph is used by Tpetra::VbrMatrix (variable block row matrix).
 */
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class BlockCrsGraph : public Teuchos::Describable {
@@ -118,14 +123,28 @@ class BlockCrsGraph : public Teuchos::Describable {
   //! \brief true if graph is lower-triangular.
   bool isLowerTriangular() const;
 
-  //! Returns the number of rows owned on the calling node.
-  size_t getNodeNumRows() const;
+  //! Returns the number of block rows owned on the calling node.
+  size_t getNodeNumBlockRows() const;
+
+  //! Returns the global number of block rows.
+  size_t getGlobalNumBlockRows() const;
 
   //! Returns the number of diagonal entries on the calling node.
-  size_t getNodeNumDiags() const;
+  size_t getNodeNumBlockDiags() const;
 
   //! Returns the local number of entries in the graph.
-  size_t getNodeNumEntries() const;
+  size_t getNodeNumBlockEntries() const;
+
+  //! Returns the number of block-columns in the specified global block row.
+  size_t getGlobalBlockRowLength(GlobalOrdinal row) const;
+
+  //! Returns a read-only view of the block-column-indices for the specified global block row.
+  void getGlobalBlockRowView(GlobalOrdinal row,
+                             Teuchos::ArrayView<const GlobalOrdinal>& blockCols) const;
+
+  //! Returns a read-only view of the block-column-indices for the specified local block row.
+  void getLocalBlockRowView(LocalOrdinal row,
+                             Teuchos::ArrayView<const LocalOrdinal>& blockCols) const;
 
   //! Returns the block-row map.
   const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRowMap() const;

@@ -126,7 +126,7 @@ public:
   //! Return the i-th child node 
   const XMLObject& getChild(int i) const;
 
-  /** \brief returns the index of the first child found with the given tag name 
+  /** \brief Returns the index of the first child found with the given tag name.
    * Returns -1 if no child is found.
    */
   int findFirstChild(std::string tagName) const;

@@ -44,9 +44,9 @@ namespace stk {
   namespace adapt {
 
 #if STK_ADAPT_COLORER_STORED_ENTITYID
-    typedef EntityId ColorerStoredEntity;
+    typedef mesh::EntityId ColorerStoredEntity;
 #else
-    typedef Entity *ColorerStoredEntity;
+    typedef mesh::Entity *ColorerStoredEntity;
 #endif
 
 #if STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
@@ -57,24 +57,24 @@ namespace stk {
 #  if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
     typedef boost::unordered_set<ColorerStoredEntity> ColorerSetType;
 #  endif
-    typedef boost::unordered_set<EntityId> ColorerNodeSetType;
-    typedef boost::unordered_set<EntityId> ColorerElementSetType;
+    typedef boost::unordered_set<mesh::EntityId> ColorerNodeSetType;
+    typedef boost::unordered_set<mesh::EntityId> ColorerElementSetType;
 #endif
 
 #if STK_ADAPT_COLORER_SET_TYPE_TR1
 #  if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
     typedef tr1::unordered_set<ColorerStoredEntity> ColorerSetType;
 #  endif
-    typedef tr1::unordered_set<EntityId> ColorerNodeSetType;
-    typedef tr1::unordered_set<EntityId> ColorerElementSetType;
+    typedef tr1::unordered_set<mesh::EntityId> ColorerNodeSetType;
+    typedef tr1::unordered_set<mesh::EntityId> ColorerElementSetType;
 #endif
 
 #if STK_ADAPT_COLORER_SET_TYPE_STD
 #  if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
     typedef std::set<ColorerStoredEntity> ColorerSetType;
 #  endif
-    typedef std::set<EntityId> ColorerNodeSetType;
-    typedef std::set<EntityId> ColorerElementSetType;
+    typedef std::set<mesh::EntityId> ColorerNodeSetType;
+    typedef std::set<mesh::EntityId> ColorerElementSetType;
 #endif
 
 
@@ -82,17 +82,21 @@ namespace stk {
     {
     public:
 
+      Colorer(std::vector< ColorerSetType >& element_colors, std::vector<mesh::EntityRank> ranks);
+      Colorer(std::vector<mesh::EntityRank> ranks );
+      void color(percept::PerceptMesh& eMesh, unsigned *elementType = 0,  mesh::PartVector* fromParts = 0, mesh::FieldBase *element_color_field=0);
 
-      Colorer(std::vector< ColorerSetType >& element_colors, std::vector<EntityRank> ranks = std::vector<EntityRank>());
-      Colorer(std::vector<EntityRank> ranks = std::vector<EntityRank>());
-      void color(percept::PerceptMesh& eMesh, unsigned *elementType = 0,  PartVector* fromParts = 0, FieldBase *element_color_field=0);
+      /// Set to true to avoid the coloring step and just return elements in a single color
+      void setNoColoring(bool no_coloring);
+      bool getNoColoring();
 
       std::vector< ColorerSetType >& getElementColors();
 
     private:
       std::vector< ColorerSetType >& m_element_colors;
       std::vector< ColorerSetType > m_element_colors_internal;
-      std::vector<EntityRank> m_entityRanks;
+      std::vector<mesh::EntityRank> m_entityRanks;
+      bool m_noColoring;
     };
 
   }

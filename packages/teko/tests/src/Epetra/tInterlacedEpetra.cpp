@@ -78,7 +78,7 @@
 
 #include "tInterlacedEpetra.hpp"
 
-#include "Epetra/Teko_InterlacedEpetra.hpp"
+#include "Teko_InterlacedEpetra.hpp"
 
 using namespace Teko::Epetra;
 

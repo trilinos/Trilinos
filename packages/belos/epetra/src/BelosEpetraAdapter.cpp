@@ -46,7 +46,7 @@
 
 #include "BelosEpetraAdapter.hpp"
 
-using namespace Belos;
+namespace Belos {
 
   //-------------------------------------------------------------
   
@@ -386,3 +386,4 @@ int EpetraPrecOp::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector 
   return info;
 }
 
+}  // end namespace Belos

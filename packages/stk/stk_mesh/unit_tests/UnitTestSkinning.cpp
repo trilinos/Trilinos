@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -20,7 +20,7 @@
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
 
@@ -31,7 +31,7 @@
 #include <iomanip>
 #include <algorithm>
 
-using stk::mesh::fem::NODE_RANK;
+static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 class UnitTestStkMeshSkinning {
 public:
@@ -59,18 +59,20 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testUnit )
 STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testSingleShell )
 {
   const int spatial_dimension = 3;
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
+  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
   stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD );
-  stk::mesh::DefaultFEM topo_data( meta_data, spatial_dimension );
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(topo_data);
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   const unsigned p_rank = bulk_data.parallel_rank();
 
-  stk::mesh::Part & skin_part = declare_part(meta_data, "skin_part");
+  stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");
 
-  stk::mesh::Part & shell_part = stk::mesh::declare_part<shards::ShellQuadrilateral<4> >( meta_data, "shell_part");
+  stk::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
+  stk::mesh::Part & shell_part = fem_meta.declare_part("shell_part", shell_top);
 
-  meta_data.commit();
+  fem_meta.commit();
 
   bulk_data.modification_begin();
 
@@ -86,7 +88,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testSingleShell )
 
     stk::mesh::EntityId elem_id = 1;
 
-    stk::mesh::declare_element( bulk_data, shell_part, elem_id, elem_node);
+    stk::mesh::fem::declare_element( bulk_data, shell_part, elem_id, elem_node);
 
   }
   bulk_data.modification_end();
@@ -122,13 +124,14 @@ void UnitTestStkMeshSkinning::test_skinning()
   stk::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
-  stk::mesh::MetaData& meta_data = grid_mesh.meta_data();
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(grid_mesh.fem());
+  stk::mesh::fem::FEMMetaData& fem_meta = grid_mesh.fem_meta();
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   // Create a part for the skin and the shells
-  stk::mesh::Part & skin_part = declare_part(meta_data, "skin_part");
-  stk::mesh::Part & shell_part = stk::mesh::declare_part<shards::ShellLine<2> >(meta_data, "shell_part");
-  meta_data.commit();
+  stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");
+  stk::mesh::fem::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());
+  stk::mesh::Part & shell_part = fem_meta.declare_part("shell_part", line_top);
+  fem_meta.commit();
 
   // Begin modification cycle
   grid_mesh.bulk_data().modification_begin();
@@ -138,7 +141,7 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   // Add the shells
   std::vector<unsigned> count;
-  stk::mesh::Selector locally_owned(meta_data.locally_owned_part());
+  stk::mesh::Selector locally_owned(fem_meta.locally_owned_part());
   stk::mesh::count_entities(locally_owned, bulk_data, count);
   const unsigned num_shell_1_faces = 4;
   const unsigned num_shell_2_faces = 2;
@@ -186,8 +189,7 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   // Grab the skin entities
   stk::mesh::Selector skin_selector(skin_part);
-  const std::vector<stk::mesh::Bucket*>& edge_buckets =
-    bulk_data.buckets(stk::mesh::fem::edge_rank(grid_mesh.m_spatial_dimension));
+  const std::vector<stk::mesh::Bucket*>& edge_buckets = bulk_data.buckets(fem_meta.edge_rank());
   std::vector<stk::mesh::Entity*> skin_entities;
   stk::mesh::get_selected_entities(skin_selector, edge_buckets, skin_entities);
 

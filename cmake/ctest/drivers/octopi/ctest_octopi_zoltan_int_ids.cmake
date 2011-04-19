@@ -45,8 +45,8 @@ SET(KDD_GCC  "/usr/bin/gcc346")
 SET(KDD_GCXX "/usr/bin/g++346")
 
 # Output of "mpicc --showme:compile" and "mpiCC --showme:compile"
-SET(KDD_CFLAGS   "-std=c99 -DZOLTAN_ID_TYPE_UINT -m64 -g -I/opt/lam714-gcc346-pure/include -pthread")
-SET(KDD_CXXFLAGS "-DZOLTAN_ID_TYPE_UINT -m64 -g -I/opt/lam714-gcc346-pure/include -pthread")
+SET(KDD_CFLAGS   "-std=c99 -m64 -g -I/opt/lam714-gcc346-pure/include -pthread")
+SET(KDD_CXXFLAGS "-m64 -g -I/opt/lam714-gcc346-pure/include -pthread")
 
 # Output of "mpiCC --showme:link"
 SET(KDD_LINKFLAGS "-m64 -L/opt/lam714-gcc346-pure/lib -llammpio -llammpi++ -llamf77mpi -lmpi -llam -laio -laio -lutil -ldl")
@@ -74,6 +74,7 @@ SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DTrilinos_ENABLE_Zoltan:BOOL=ON "
     "-DZoltan_ENABLE_EXAMPLES:BOOL=OFF "
     "-DZoltan_ENABLE_TESTS:BOOL=ON "
+    "-DZoltan_ENABLE_UINT_IDS:Bool=ON"
     "-DZoltan_ENABLE_ParMETIS:BOOL=ON "
     "-DParMETIS_LIBRARY_DIRS:FILEPATH=/Net/local/proj/zoltan/arch/linux64/lib/lam/ParMETIS3" 
     "-DParMETIS_INCLUDE_DIRS:FILEPATH=/Net/local/proj/zoltan/arch/all/src/ParMETIS3" 

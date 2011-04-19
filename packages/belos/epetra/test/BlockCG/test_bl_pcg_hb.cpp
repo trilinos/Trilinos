@@ -75,12 +75,14 @@ int main(int argc, char *argv[]) {
   (void)mpiFinalize;
 #endif
   //
+  using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
   //
   // Get test parameters from command-line processor
   //  
   bool verbose = false, proc_verbose = false;
+  bool leftprec = true;      // left preconditioning or right.
   int frequency = -1; // how often residuals are printed by solver 
   int numrhs = 15;  // total number of right-hand sides to solve for
   int blocksize = 10;  // blocksize used by solver
@@ -90,12 +92,14 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("left-prec","right-prec",&leftprec,"Left preconditioning or right.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("block-size",&blocksize,"Block size to be used by CG solver.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
+
 
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
@@ -194,7 +198,12 @@ int main(int argc, char *argv[]) {
   //
   RCP<Belos::LinearProblem<double,MV,OP> > problem
     = rcp( new Belos::LinearProblem<double,MV,OP>( A, X, B ) );
-  problem->setLeftPrec( belosPrec );
+  if (leftprec) {
+    problem->setLeftPrec( belosPrec );
+  }
+  else {
+    problem->setRightPrec( belosPrec );
+  }    
 
   bool set = problem->setProblem();
   if (set == false) {

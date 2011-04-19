@@ -75,6 +75,52 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+#if 0
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, biplane_refine)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced?
+
+        if (p_size <= 1)
+          {
+            // start_demo_biplane_refine
+            std::string input_mesh = "./input_files/salinas/biplane.e";
+
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh(3u);
+            eMesh.open(input_mesh);
+
+            URP_Heterogeneous_3D break_pattern(eMesh);
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.commit();
+
+            eMesh.printInfo("biplane", 2);
+            eMesh.saveAs("./output_files/biplane_0.e");
+
+            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            //breaker.setRemoveOldElements(false);
+            breaker.setIgnoreSideSets(false);
+            breaker.doBreak();
+
+            //eMesh.printInfo("biplane", 2);
+            eMesh.saveAs("./output_files/biplane_1.e");
+
+          }
+      }
+#endif
+
       STKUNIT_UNIT_TEST(regr_uniformRefiner, beam_enrich)
       {
         EXCEPTWATCH;
@@ -102,12 +148,12 @@ namespace stk
 
             // enrich
             {
-              stk::percept::PerceptMesh eMesh;
+              stk::percept::PerceptMesh eMesh(3u);
               eMesh.open("./input_files/beam_enrich_0.e");
               //URP_Heterogeneous_3D break_pattern(eMesh);
               Beam2_Beam3_1 break_pattern(eMesh);
               int scalarDimension = 0; // a scalar
-              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
               eMesh.commit();
 
               eMesh.saveAs("./output_files/beam_enrich_0.e");
@@ -152,12 +198,12 @@ namespace stk
 
             // refine
             {
-              stk::percept::PerceptMesh eMesh;
+              stk::percept::PerceptMesh eMesh(3u);
               eMesh.open("./input_files/beam_0.e");
               //URP_Heterogeneous_3D break_pattern(eMesh);
               Beam2_Beam2_2 break_pattern(eMesh);
               int scalarDimension = 0; // a scalar
-              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
               eMesh.commit();
 
               eMesh.saveAs("./output_files/beam_0.e");
@@ -289,7 +335,7 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open(input_mesh);
 
             ShellQuad4_ShellQuad8_1 break_quad4_to_quad8_1(eMesh);
@@ -297,7 +343,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
 
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -318,13 +364,13 @@ namespace stk
         if (1 && p_size <= 1)
           {
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open("./input_files/freshell_quad8_quad8_0.g");
 
             ShellQuad8_ShellQuad8_4 break_quad8_to_quad_8(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -368,7 +414,7 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open(input_mesh);
 
             ShellQuad4_ShellQuad4_4 break_quad_to_quad_4(eMesh);
@@ -376,7 +422,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
 
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -415,7 +461,7 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open(input_mesh);
 
 
@@ -424,7 +470,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
 
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -450,7 +496,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      STKUNIT_UNIT_TEST(unit_uniformRefiner, draw1)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, draw1)
       {
         //std::cout << Quad4_Quad4_4::draw() << std::endl;
         std::string dir = "./";
@@ -464,7 +510,7 @@ namespace stk
         output_draw(dir+"quad9.dot", Quad9_Quad9_4::draw(true, true));
       }
 
-      STKUNIT_UNIT_TEST(unit_uniformRefiner, draw)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, draw)
       {
         //std::cout << Quad4_Quad4_4::draw() << std::endl;
         std::string dir = "./";
@@ -512,7 +558,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_quad_to_tri
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2u);
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
 
             typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 6 > Quad4_Tri3_6;
@@ -522,7 +568,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
 
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -555,14 +601,14 @@ namespace stk
           {
 
             // start_demo_uniformRefiner_break_quad_to_tri
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2u);
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 4, Specialization > break_quad_to_tri_4(eMesh);
 
             int scalarDimension = 0; // a scalar
 
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -596,12 +642,12 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_quad_to_quad
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2u);
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4 > break_quad_to_quad_4(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             eMesh.printInfo("quad mesh");
@@ -632,12 +678,12 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_quad_to_quad
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2u);
             eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             eMesh.printInfo("quad mesh");
@@ -669,7 +715,7 @@ namespace stk
         //FIXME
         if (0)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2u);
             eMesh.open("./input_files/break_test/quad/sidesets/quad_sidesets.e");
             eMesh.commit();
             eMesh.printInfo("quad mesh");
@@ -678,12 +724,12 @@ namespace stk
         if (p_size == 1 || p_size == 2)
           {
             // start_demo_uniformRefiner_break_quad_to_quad
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2u);
             eMesh.open("./input_files/break_test/quad/sidesets/quad_sidesets.e");
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             eMesh.printInfo("quad mesh");
@@ -710,7 +756,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex8_tet4_24_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.getParallelSize();
         //unsigned p_rank = eMesh.getRank();
@@ -724,9 +770,9 @@ namespace stk
         int scalarDimension = 0; // a scalar
         //         int vectorDimension = 3;
 
-        FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+        stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
         //         eMesh.addField("velocity", mesh::Node, vectorDimension);
-        //         eMesh.addField("element_volume", mesh::Element, scalarDimension);
+        //         eMesh.addField("element_volume", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
         eMesh.printInfo();
@@ -755,7 +801,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex8_tet4_6_12_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.getParallelSize();
 
@@ -767,9 +813,9 @@ namespace stk
         int scalarDimension = 0; // a scalar
         //         int vectorDimension = 3;
 
-        FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+        stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
         //         eMesh.addField("velocity", mesh::Node, vectorDimension);
-        //         eMesh.addField("element_volume", mesh::Element, scalarDimension);
+        //         eMesh.addField("element_volume", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
         eMesh.printInfo();
@@ -803,14 +849,14 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
 
             eMesh.open("./input_files/break_test/hex/cylinder/cylinder_hex8.e");
 
             Hex8_Tet4_6_12 break_hex_to_tet(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             //eMesh.printInfo("test",2);
@@ -898,12 +944,12 @@ namespace stk
               {
                 std::cout << "\n\n\n ================ tmp Refine Pass = " << iBreak << std::endl;
 
-                percept::PerceptMesh eMesh1;
+                percept::PerceptMesh eMesh1(2);
                 std::string fileName = std::string("./input_files/quad_fixture_")+toString(iBreak)+std::string(".e");
                 eMesh1.open(fileName);
                 UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh1);
                 int scalarDimension = 0; // a scalar
-                FieldBase* proc_rank_field = eMesh1.addField("proc_rank", mesh::Element, scalarDimension);
+                stk::mesh::FieldBase* proc_rank_field = eMesh1.addField("proc_rank", eMesh.element_rank(), scalarDimension);
                 eMesh1.commit();
 
                 //                 if (iBreak != 0)
@@ -922,7 +968,7 @@ namespace stk
 
                 if (0 && iBreak==0)
                   {
-                    percept::PerceptMesh e1;
+                    percept::PerceptMesh e1(2);
                     std::cout << "\n\n\n ================ tmp eMesh1.openReadOnly(quad_fixture_1.e) \n\n\n " << std::endl;
                     e1.openReadOnly("./input_files/quad_fixture_1.e");
                     e1.printInfo("quad_fixture_1_read.e");
@@ -969,12 +1015,12 @@ namespace stk
             eMesh.close();
 
 
-            percept::PerceptMesh eMesh1;
+            percept::PerceptMesh eMesh1(2);
             std::string fileName = std::string("./input_files/quad_fixture_mbreak_0.e");
             eMesh1.open(fileName);
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh1);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh1.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh1.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh1.commit();
 
             UniformRefiner breaker(eMesh1, break_quad_to_quad_4, proc_rank_field);
@@ -1021,7 +1067,7 @@ namespace stk
 
             Quad4_Quad9_1 break_quad4_to_quad9_1(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -1065,7 +1111,7 @@ namespace stk
 
             Quad4_Quad8_1 break_quad4_to_quad8_1(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -1097,12 +1143,12 @@ namespace stk
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2u);
             eMesh.open("./input_files/quad_fixture_quad8_quad8_0.e");
 
             Quad8_Quad8_4 break_quad8_to_quad8_4(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -1145,7 +1191,7 @@ namespace stk
 
               Quad4_Quad9_1 break_quad4_to_quad9_1(eMesh);
               int scalarDimension = 0; // a scalar
-              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
               eMesh.commit();
 
@@ -1160,11 +1206,11 @@ namespace stk
             }
 
             {
-              percept::PerceptMesh em1;
+              percept::PerceptMesh em1(2);
               em1.open("./input_files/quad_1x1_quad9_quad9_0.e");
               Quad9_Quad9_4 break_q9_q9(em1);
               int scalarDimension = 0; // a scalar
-              FieldBase* proc_rank_field = em1.addField("proc_rank", mesh::Element, scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = em1.addField("proc_rank", em1.element_rank(), scalarDimension);
 
               em1.commit();
 
@@ -1211,7 +1257,7 @@ namespace stk
 
               Quad4_Quad9_1 break_quad4_to_quad9_1(eMesh);
               int scalarDimension = 0; // a scalar
-              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
               eMesh.commit();
 
@@ -1229,11 +1275,11 @@ namespace stk
             }
 
             {
-              percept::PerceptMesh em1;
+              percept::PerceptMesh em1(2);
               em1.open("./input_files/quad_fixture_quad9_quad9_0.e");
               Quad9_Quad9_4 break_q9_q9(em1);
               int scalarDimension = 0; // a scalar
-              FieldBase* proc_rank_field = em1.addField("proc_rank", mesh::Element, scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = em1.addField("proc_rank", em1.element_rank(), scalarDimension);
 
               em1.commit();
 
@@ -1308,10 +1354,10 @@ namespace stk
 
             Tri3_Tri3_4 break_tri_to_tri_4(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
-            //FieldBase* proc_rank_field_edge =
-            eMesh.addField("proc_rank_edge", mesh::Edge, scalarDimension);
+            //stk::mesh::FieldBase* proc_rank_field_edge =
+            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
 
             //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
             //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
@@ -1334,7 +1380,7 @@ namespace stk
 
             if (0)
               {
-                percept::PerceptMesh e1;
+                percept::PerceptMesh e1(2);
                 e1.openReadOnly("./input_files/quad_fixture_tri3_1.e");
                 e1.printInfo("after read", 3);
               }
@@ -1368,10 +1414,10 @@ namespace stk
 
             Tri3_Tri6_1 break_tri3_to_tri6(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
-            //FieldBase* proc_rank_field_edge =
-            eMesh.addField("proc_rank_edge", mesh::Edge, scalarDimension);
+            //stk::mesh::FieldBase* proc_rank_field_edge =
+            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
 
             //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
             //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
@@ -1395,7 +1441,7 @@ namespace stk
 
             if (0)
               {
-                percept::PerceptMesh e1;
+                percept::PerceptMesh e1(2);
                 e1.openReadOnly("./input_files/quad_fixture_tri3_1.e");
                 e1.printInfo("after read", 3);
               }
@@ -1419,15 +1465,15 @@ namespace stk
           {
             // start_demo_break_tri3_to_tri6_to_tri6_sierra
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(2u);
             eMesh.open("./input_files/quad_fixture_tri6_tri6_0.e");
 
             Tri6_Tri6_4 break_tri6_to_tri6(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
-            //FieldBase* proc_rank_field_edge =
-            eMesh.addField("proc_rank_edge", mesh::Edge, scalarDimension);
+            //stk::mesh::FieldBase* proc_rank_field_edge =
+            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
             eMesh.printInfo("tri mesh tri6");
@@ -1458,7 +1504,7 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.openReadOnly("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4.e");
 
             eMesh.saveAs("./output_files/cylinder_tet4_0.e");
@@ -1483,13 +1529,13 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4_0.e");
 
             Tet4_Tet4_8 break_tet_tet(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.printInfo("tet mesh");
@@ -1522,13 +1568,13 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4_0.e");
 
             Tet4_Tet10_1 break_tet_tet(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.printInfo("tet mesh");
@@ -1560,13 +1606,13 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open("./input_files/break_test/tet/cylinder-from-hex/cylinder_tet4_0.e");
 
             Tet4_Tet10_1 break_tet_tet(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.printInfo("tet mesh");
@@ -1584,13 +1630,13 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open("./input_files/cylinder_tet10_1.e");
 
             Tet10_Tet10_8 break_tet_tet(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             //eMesh.printInfo("tet mesh");
@@ -1624,7 +1670,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex8_hex8_8_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.getParallelSize();
 
@@ -1636,9 +1682,9 @@ namespace stk
         int scalarDimension = 0; // a scalar
         //         int vectorDimension = 3;
 
-        FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+        stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
         //         eMesh.addField("velocity", mesh::Node, vectorDimension);
-        //         eMesh.addField("element_volume", mesh::Element, scalarDimension);
+        //         eMesh.addField("element_volume", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
         eMesh.printInfo();
@@ -1671,14 +1717,14 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
 
             eMesh.open("./input_files/break_test/hex/cylinder/cylinder_hex8.e");
 
             Hex8_Hex8_8 break_hex_to_hex(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.printInfo();
@@ -1708,7 +1754,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex8_hex27_1_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.getParallelSize();
 
@@ -1718,7 +1764,7 @@ namespace stk
         Hex8_Hex27_1 break_hex_to_hex(eMesh);
 
         int scalarDimension = 0; // a scalar
-        FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+        stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
         eMesh.printInfo();
@@ -1751,14 +1797,14 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
 
             eMesh.open("./input_files/break_test/hex/cylinder/cylinder_hex8.e");
 
             Hex8_Hex27_1 break_hex_to_hex(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.printInfo();
@@ -1786,7 +1832,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex8_hex20_1_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.getParallelSize();
 
@@ -1796,7 +1842,7 @@ namespace stk
         Hex8_Hex20_1 break_hex_to_hex(eMesh);
 
         int scalarDimension = 0; // a scalar
-        FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+        stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
         eMesh.printInfo();
@@ -1831,14 +1877,14 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
 
             eMesh.open("./input_files/break_test/hex/cylinder/cylinder_hex8.e");
 
             Hex8_Hex20_1 break_hex_to_hex(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.printInfo();
@@ -1867,7 +1913,7 @@ namespace stk
 
         // start_demo_uniformRefiner_hex20_hex20_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.getParallelSize();
 
@@ -1878,7 +1924,7 @@ namespace stk
             Hex20_Hex20_8 break_hex_to_hex(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.saveAs(std::string("./output_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
@@ -1911,14 +1957,14 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
 
             eMesh.open("./input_files/cylinder_hex20_hex20_0.e");
 
             Hex20_Hex20_8 break_hex_to_hex(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.saveAs("./output_files/cylinder_hex20_hex20_0.e");
@@ -1947,7 +1993,7 @@ namespace stk
 
         int scalarDimension = 0; // a scalar
         {
-          percept::PerceptMesh eMesh;
+          percept::PerceptMesh eMesh(3u);
 
           unsigned p_size = eMesh.getParallelSize();
 
@@ -1956,7 +2002,7 @@ namespace stk
 
           Hex8_Hex27_1 break_hex_to_hex(eMesh);
 
-          FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+          stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
           eMesh.commit();
           eMesh.printInfo();
@@ -1972,15 +2018,15 @@ namespace stk
 
 
         {
-          percept::PerceptMesh eMesh;
+          percept::PerceptMesh eMesh(3u);
 
           unsigned p_size = eMesh.getParallelSize();
           eMesh.open(std::string("./input_files/")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("_0.e"));
 
           Hex27_Hex27_8 break_hex_to_hex(eMesh);
 
-          //FieldBase* proc_rank_field = eMesh.getField("proc_rank");
-          FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+          //stk::mesh::FieldBase* proc_rank_field = eMesh.getField("proc_rank");
+          stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
           eMesh.commit();
           //eMesh.printInfo();
@@ -2017,14 +2063,14 @@ namespace stk
         if (p_size == 1 || p_size == 3)
           {
             {
-              percept::PerceptMesh eMesh;
+              percept::PerceptMesh eMesh(3u);
 
               eMesh.open("./input_files/break_test/hex/cylinder/cylinder_hex8.e");
 
               Hex8_Hex27_1 break_hex_to_hex(eMesh);
 
               int scalarDimension = 0; // a scalar
-              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
               eMesh.commit();
               eMesh.printInfo();
@@ -2037,15 +2083,15 @@ namespace stk
             }
 
             {
-              percept::PerceptMesh eMesh;
+              percept::PerceptMesh eMesh(3u);
 
               eMesh.open("./input_files/cylinder_hex8_hex27_1.e");
 
               Hex27_Hex27_8 break_hex_to_hex(eMesh);
 
-              //FieldBase* proc_rank_field = eMesh.getField("proc_rank");
+              //stk::mesh::FieldBase* proc_rank_field = eMesh.getField("proc_rank");
               int scalarDimension = 0;
-              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
               eMesh.commit();
 
@@ -2075,7 +2121,7 @@ namespace stk
 
         // start_demo_regr_uniformRefiner_wedge6_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.getParallelSize();
         if (p_size == 1)
@@ -2102,7 +2148,7 @@ namespace stk
             Wedge6_Wedge6_8 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -2127,7 +2173,7 @@ namespace stk
 
         // start_demo_regr_uniformRefiner_wedge6_enrich_1
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.getParallelSize();
         if (p_size == 1)
@@ -2153,7 +2199,7 @@ namespace stk
             Wedge6_Wedge15_1 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -2182,7 +2228,7 @@ namespace stk
 
         if (p_size == 1)
           {
-            PerceptMesh eMesh;
+            PerceptMesh eMesh(3u);
             percept::WedgeFixture wedgeFixture;
 
             wedgeFixture.createMesh(MPI_COMM_WORLD,
@@ -2197,14 +2243,14 @@ namespace stk
             Wedge6_Wedge15_1 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
             UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
             eMesh.saveAs("./input_files/swept-wedge_enrich_refine_0.e");
           }
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3u);
 
         if (p_size == 1)
           {
@@ -2213,7 +2259,7 @@ namespace stk
             Wedge15_Wedge15_8 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -2280,13 +2326,13 @@ namespace stk
             // refine the mesh
             if (1)
               {
-                percept::PerceptMesh eMesh1;
+                percept::PerceptMesh eMesh1(3);
 
                 eMesh1.open("./input_files/heterogeneous_0.e");
 
                 URP_Heterogeneous_3D break_pattern(eMesh1);
                 int scalarDimension = 0; // a scalar
-                FieldBase* proc_rank_field = eMesh1.addField("proc_rank", mesh::Element, scalarDimension);
+                stk::mesh::FieldBase* proc_rank_field = eMesh1.addField("proc_rank", eMesh1.element_rank(), scalarDimension);
                 eMesh1.commit();
 
                 UniformRefiner breaker(eMesh1, break_pattern, proc_rank_field);
@@ -2335,12 +2381,12 @@ namespace stk
 
             // refine
             {
-              stk::percept::PerceptMesh eMesh;
+              stk::percept::PerceptMesh eMesh(3u);
               eMesh.open("./input_files/beam_0.e");
               //URP_Heterogeneous_3D break_pattern(eMesh);
               Beam2_Beam2_2 break_pattern(eMesh);
               int scalarDimension = 0; // a scalar
-              FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
               eMesh.commit();
 
               eMesh.saveAs("./output_files/beam_0.e");
@@ -2362,6 +2408,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+#if 0
 
       STKUNIT_UNIT_TEST(regr_uniformRefiner, biplane_refine)
       {
@@ -2384,12 +2431,12 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open(input_mesh);
 
             URP_Heterogeneous_3D break_pattern(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             eMesh.printInfo("biplane", 2);
@@ -2406,6 +2453,7 @@ namespace stk
           }
       }
 
+#endif
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
@@ -2430,12 +2478,12 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open(input_mesh);
 
             URP_Heterogeneous_3D break_pattern(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
@@ -2479,12 +2527,12 @@ namespace stk
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            percept::PerceptMesh eMesh;
+            percept::PerceptMesh eMesh(3u);
             eMesh.open(input_mesh);
 
             URP_Heterogeneous_3D break_pattern(eMesh);
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
@@ -2553,14 +2601,14 @@ namespace stk
             // enrich the mesh
             if (1)
               {
-                percept::PerceptMesh eMesh1;
+                percept::PerceptMesh eMesh1(3);
 
                 eMesh1.open("./input_files/heterogeneous_enrich_0.e");
                 //eMesh1.printInfo("hetero_enrich_2", 4);
 
                 URP_Heterogeneous_Enrich_3D break_pattern(eMesh1);
                 //int scalarDimension = 0; // a scalar
-                FieldBase* proc_rank_field = 0;      //eMesh1.addField("proc_rank", mesh::Element, scalarDimension);
+                stk::mesh::FieldBase* proc_rank_field = 0;      //eMesh1.addField("proc_rank", eMesh.element_rank(), scalarDimension);
                 eMesh1.commit();
                 //eMesh1.printInfo("hetero_enrich_2", 4);
 
@@ -2599,13 +2647,13 @@ namespace stk
             // refine the mesh
             if (1)
               {
-                percept::PerceptMesh eMesh1;
+                percept::PerceptMesh eMesh1(3);
 
                 eMesh1.open("./input_files/heterogeneous_quadratic_refine_0.e");
 
                 URP_Heterogeneous_QuadraticRefine_3D break_pattern(eMesh1);
                 int scalarDimension = 0; // a scalar
-                FieldBase* proc_rank_field = eMesh1.addField("proc_rank", mesh::Element, scalarDimension);
+                stk::mesh::FieldBase* proc_rank_field = eMesh1.addField("proc_rank", eMesh1.element_rank(), scalarDimension);
                 eMesh1.commit();
 
                 UniformRefiner breaker(eMesh1, break_pattern, proc_rank_field);
@@ -2660,14 +2708,15 @@ namespace stk
                                       0, 1,
                                       std::string(""));
             //std::string("swept-wedge6_18_enrich_0.e") );
-            percept::PerceptMesh eMesh(&bulk->mesh_meta_data(), bulk, false);
+
+            percept::PerceptMesh eMesh(wedgeFixture.getMetaData(), bulk, false);
             //percept::PerceptMesh eMesh;
             //eMesh.open("swept-wedge6_18_enrich_0.e");
 
             Wedge6_Wedge18_1 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             //eMesh.printInfo();
@@ -2696,7 +2745,7 @@ namespace stk
 
         // start_demo_regr_uniformRefiner_wedge6_18_enrich_refine
 
-        percept::PerceptMesh eMesh;
+        percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.getParallelSize();
         if (p_size == 1)
@@ -2706,7 +2755,7 @@ namespace stk
             Wedge15_Wedge15_8 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            FieldBase* proc_rank_field = eMesh.addField("proc_rank", mesh::Element, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 

@@ -27,16 +27,19 @@ import time
 # global rebuild of all Trilinos packaes.  There are a few special files
 # that we don't do a global rebuild for:
 #
-
 # cmake/TrilinosPackages.cmake: This file gets modified frequently to add new
 # packages and rearrange packages.  We don't need to do a global rebuild
 # because this list of pakages is validated if we do even a single rebuild.
 # If a package line gets removed, the code that reads the Dependencies.cmake
 # files will fail and stop.
 #
-# cmake/TrilinosPackages.cmake: This file also gets modified frequently.  We
+# cmake/TrilinosTPLs.cmake: This file also gets modified frequently.  We
 # don't need to enable all Trilinos packages either for the same reason as for
 # the TrilinosPackages.cmake file.
+#
+# EXTRA_REPO/ExtraTrilinosPackages.cmake, EXTRA_REPO/ExtraTrilinosTPLs.cmake
+# For external repositories, for the same argument as above, we don't want to
+# enable all packages just because these files get modified.
 #
 # cmake/TPLs/*.cmake: Any FileTPLSOMETHING.cmake file that is not for BLAS,
 # LAPACK, or MPI is not needed for Primary Stable code and therefore does not

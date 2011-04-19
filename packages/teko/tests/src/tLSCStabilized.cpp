@@ -45,8 +45,8 @@
 */
 
 #include "tLSCStabilized.hpp"
-#include "NS/Teko_LSCPreconditionerFactory.hpp"
-#include "NS/Teko_InvLSCStrategy.hpp"
+#include "Teko_LSCPreconditionerFactory.hpp"
+#include "Teko_InvLSCStrategy.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_InverseFactory.hpp"
 

@@ -67,3 +67,11 @@ computeRecurrenceCoefficients(ordinal_type n,
     delta[i] = 1.0;
   }
 }
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
+Stokhos::HermiteBasis<ordinal_type,value_type>::
+cloneWithOrder(ordinal_type p) const
+{
+   return Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(p,this->normalize));
+}

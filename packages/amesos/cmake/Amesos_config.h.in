@@ -45,6 +45,9 @@
 /* Define if want to build amesos-pardiso */
 #cmakedefine HAVE_AMESOS_PARDISO
 
+/* Define if want to build amesos-pardiso */
+#cmakedefine HAVE_AMESOS_PARDISO_MKL
+
 /* Define if want to build amesos-scalapack */
 #cmakedefine HAVE_AMESOS_SCALAPACK
 

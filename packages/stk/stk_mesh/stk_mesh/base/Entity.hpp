@@ -96,6 +96,7 @@ public:
    *          entity is a member, the other entity is of a given type.
    */
   PairIterRelation relations( EntityRank type ) const { return m_entityImpl.relations(type); }
+  PairIterRelation node_relations() const { return m_entityImpl.node_relations(); }
 
   //------------------------------------
   /** \brief  Parallel processor rank of the processor which owns this entity */

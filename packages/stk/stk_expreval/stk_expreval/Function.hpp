@@ -122,6 +122,11 @@ CFunctionMap &getCFunctionMap();
  */
 inline
 void addFunction(const std::string &name, CFunctionBase *function) {
+  CFunctionMap& cfmap = getCFunctionMap();
+  CFunctionMap::iterator iter = cfmap.find(name);
+  if (iter != cfmap.end()) {
+    delete iter->second;
+  }
   getCFunctionMap()[name] = function;
 }
 

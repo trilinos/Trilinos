@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -17,7 +17,8 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 /*
 The following fixture creates the mesh below
@@ -42,11 +43,10 @@ namespace fixtures {
 
 GridFixture::GridFixture(stk::ParallelMachine pm)
   : m_spatial_dimension(2)
-  , m_meta_data( fem::entity_rank_names(m_spatial_dimension) )
-  , m_bulk_data( m_meta_data , pm )
-  , m_fem(  m_meta_data, m_spatial_dimension )
-  , m_quad_part( declare_part<shards::Quadrilateral<4> >(m_meta_data, "quad_part") )
-  , m_dead_part( declare_part(m_meta_data, "dead_part"))
+  , m_fem_meta( m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) )
+  , m_bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(m_fem_meta) , pm )
+  , m_quad_part( fem::declare_part<shards::Quadrilateral<4> >(m_fem_meta, "quad_part") )
+  , m_dead_part( m_fem_meta.declare_part("dead_part"))
 {}
 
 GridFixture::~GridFixture()
@@ -58,7 +58,7 @@ void GridFixture::generate_grid()
   const unsigned num_quad_faces = 16;
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned p_size = m_bulk_data.parallel_size();
-  const EntityRank element_rank = fem::element_rank(m_fem);
+  const EntityRank element_rank = m_fem_meta.element_rank();
   std::vector<Entity*> all_entities;
 
   // assign ids, quads, nodes, then shells
@@ -102,7 +102,7 @@ void GridFixture::generate_grid()
 
       for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
-        Entity& node = m_bulk_data.declare_entity(fem::NODE_RANK, node_id, no_parts);
+        Entity& node = m_bulk_data.declare_entity(fem::FEMMetaData::NODE_RANK, node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }

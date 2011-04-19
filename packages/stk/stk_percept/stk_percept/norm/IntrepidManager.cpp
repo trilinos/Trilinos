@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2009 Sandia Corporation.                              */
+/*    Copyright 2009, 2011 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -30,10 +30,9 @@
 #include "IntrepidManager.hpp"
 
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 #include <Shards_CellTopology.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -374,12 +373,12 @@ namespace stk
     IntrepidManager::FieldValues::
     FieldValues(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag)) {}
 
-    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, FieldBase* field)
+    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field)
     {
       ComputeFieldValues cfv;
       cfv.getFieldValues(element, transformed_basis_values, field, *this);
     }
-    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, FieldBase* field, MDArray& output_field_values)
+    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
     {
       ComputeFieldValues cfv;
       cfv.getFieldValues(element, transformed_basis_values, field, output_field_values);
@@ -493,11 +492,17 @@ namespace stk
       found_it = 0;
 
       // FIXME consider caching the coords_field in FieldFunction
-      const mesh::MetaData& metaData = MetaData::get(bulkData);
+      const mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(bulkData);
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       const mesh::Bucket & bucket = element.bucket();
-      const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
+      if (!bucket_cell_topo_data)
+        {
+          mesh::EntityRank bucket_rank = bucket.entity_rank();
+          std::cout << "bucket_rank = " << bucket_rank << std::endl;
+          throw std::runtime_error("IntrepidManager::bogus topology");
+        }
 
       unsigned numCells = 1; // FIXME
 
@@ -507,7 +512,7 @@ namespace stk
       MDArray cellWorkset(numCells, numNodes, cellDim);
 
       /// FIXME -- fill cellWorkset
-      const mesh::PairIterRelation elem_nodes = element.relations( mesh::Node );
+      const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
       for (unsigned iCell = 0; iCell < numCells; iCell++)
         {

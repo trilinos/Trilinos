@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -9,13 +9,11 @@
 #ifndef stk_mesh_Stencils_hpp
 #define stk_mesh_Stencils_hpp
 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-#include <stk_mesh/fem/Stencils_deprecated.hpp>
-#endif
-
 #include <stk_util/util/StaticAssert.hpp>
+
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
+
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -35,7 +33,7 @@ int element_node_stencil( EntityRank from_type , EntityRank to_type , unsigned i
   int ordinal = -1 ;
 
   if ( element_rank == from_type &&
-       NODE_RANK    == to_type &&
+       FEMMetaData::NODE_RANK == to_type &&
        identifier < number_node ) {
     ordinal = static_cast<int>(identifier);
   }

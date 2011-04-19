@@ -18,9 +18,9 @@ namespace stk {
 //       }
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : URP<shards::Quadrilateral<4>, shards::Quadrilateral<4>  >(eMesh)
       {
-        m_primaryEntityRank = mesh::Face;
+        m_primaryEntityRank = eMesh.face_rank(); 
         if (m_eMesh.getSpatialDim() == 2)
-          m_primaryEntityRank = mesh::Element;
+          m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, true);
       }
@@ -29,8 +29,8 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(2);
-        needed_entities[0].first = stk::mesh::Edge;    // edges have 2 nodes
-        needed_entities[1].first = stk::mesh::Element; 
+        needed_entities[0].first = m_eMesh.edge_rank();    // edges have 2 nodes
+        needed_entities[1].first = m_eMesh.element_rank(); 
         setToOne(needed_entities);
       }
 
@@ -38,15 +38,15 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
-                        FieldBase *proc_rank_field=0)
+                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::FieldBase *proc_rank_field=0)
       {
-        const CellTopologyData * const cell_topo_data = get_cell_topology(element);
-        typedef boost::tuple<EntityId, EntityId, EntityId, EntityId> quad_tuple_type;
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> quad_tuple_type;
         static vector<quad_tuple_type> elems(4);
 
         CellTopology cell_topo(cell_topo_data);
-        const mesh::PairIterRelation elem_nodes = element.relations(Node);
+        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         //stk::mesh::Part & active = mesh->ActivePart();
         //stk::mesh::Part & quad4  = mesh->QuadPart();
@@ -72,7 +72,7 @@ namespace stk {
 
           }
 
-        nodeRegistry.makeCentroidCoords(*const_cast<Entity *>(&element), Element, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
 
 
 // new_sub_entity_nodes[i][j]
@@ -93,7 +93,7 @@ namespace stk {
         
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            Entity& newElement = *(*element_pool);
+            stk::mesh::Entity& newElement = *(*element_pool);
 
             if (proc_rank_field)
               {

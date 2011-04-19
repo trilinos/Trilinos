@@ -67,10 +67,10 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/BlockGmres/PseudoBlockGmresEpetraExFile.cpp
+/** \example BlockGmres/PseudoBlockGmresEpetraExFile.cpp
     This is an example of how to use the Belos::PseudoBlockGmresSolMgr solver manager.
 */
-/** \example epetra/example/BlockGmres/PseudoBlockPrecGmresEpetraExFile.cpp
+/** \example BlockGmres/PseudoBlockPrecGmresEpetraExFile.cpp
     This is an example of how to use the Belos::PseudoBlockGmresSolMgr solver manager with an Ifpack preconditioner.
 */
 
@@ -281,7 +281,7 @@ namespace Belos {
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
 
      // Current parameter list.
-    Teuchos::RCP<ParameterList> params_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
    
     // Default solver values.
     static const MagnitudeType convtol_default_;
@@ -980,6 +980,8 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             if ( expConvTest_->getLOADetected() ) {
               // we don't have convergence but we will deflate out the linear systems and move on.
               loaDetected_ = true;
+              printer_->stream(Warnings) <<
+                "Belos::PseudoBlockGmresSolMgr::solve(): Warning! Solver has experienced a loss of accuracy!" << std::endl;
               isConverged = false;
             }
         

@@ -29,6 +29,7 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <string>
 
 #ifdef HAVE_MPI
 #  include <mpi.h>

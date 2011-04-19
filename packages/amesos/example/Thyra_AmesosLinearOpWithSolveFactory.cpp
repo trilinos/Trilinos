@@ -62,7 +62,7 @@
 #ifdef HAVE_AMESOS_DSCPACK
 #include "Amesos_Dscpack.h"
 #endif
-#ifdef HAVE_AMESOS_PARDISO
+#if defined(HAVE_AMESOS_PARDISO) || defined(HAVE_AMESOS_PARDISO_MKL)
 #include "Amesos_Pardiso.h"
 #endif
 #ifdef HAVE_AMESOS_TAUCS

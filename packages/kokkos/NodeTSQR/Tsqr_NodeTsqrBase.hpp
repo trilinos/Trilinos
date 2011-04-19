@@ -33,6 +33,7 @@
 #include <Tsqr_Lapack.hpp>
 #include <Tsqr_Matrix.hpp>
 
+#include <Teuchos_Describable.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <cstring> // size_t
@@ -45,21 +46,48 @@
 namespace TSQR {
 
   /// \class NodeTsqrBase
-  /// \brief Common interface for intranode TSQR
-  template< class LocalOrdinal, class Scalar >
-  class NodeTsqrBase {
+  /// \brief Common interface for intranode TSQR.
+  ///
+  /// NodeTsqrBase provides a generic interface for TSQR operations
+  /// within a node ("intranode").
+  template<class LocalOrdinal, class Scalar>
+  class NodeTsqrBase : public Teuchos::Describable {
     typedef Scalar scalar_type;
-    typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
     typedef LocalOrdinal ordinal_type;
 
+    //! Constructor
     NodeTsqrBase() {}
+
+    //! Virtual destructor ensures safe polymorphic destruction.
     virtual ~NodeTsqrBase() {}
 
-    /// Whether or not the R factor from the QR factorization has a
-    /// nonnegative diagonal.
+    /// \brief One-line description of this object.
+    ///
+    /// This implements Teuchos::Describable::description().
+    /// Subclasses should override this to provide a more specific
+    /// description of their implementation.  Subclasses may also
+    /// implement Teuchos::Describable::describe(), which for this
+    /// class has a simple default implementation that calls
+    /// description() with appropriate indenting.
+    virtual std::string description () const {
+      return std::string("Intranode Tall Skinny QR (TSQR) interface");
+    }
+
+    //! Does the factorization make an R factor with nonnegative diagonal?
     virtual bool 
     QR_produces_R_factor_with_nonnegative_diagonal () const = 0;
 
+    /// \brief Cache block A_in into A_out.
+    ///
+    /// \param nrows [in] Number of rows in A_in and A_out.
+    /// \param ncols [in] Number of columns in A_in and A_out.
+    /// \param A_out [out] Result of cache-blocking A_in.
+    /// \param A_in [in] Matrix to cache block, stored in column-major
+    ///   order with leading dimension lda_in.
+    /// \param lda_in [in] Leading dimension of A_in.  (See the LAPACK
+    ///   documentation for a definition of "leading dimension.")
+    ///   lda_in >= nrows.
     virtual void
     cache_block (const LocalOrdinal nrows,
 		 const LocalOrdinal ncols, 
@@ -67,6 +95,22 @@ namespace TSQR {
 		 const Scalar A_in[],
 		 const LocalOrdinal lda_in) const = 0;
 
+    /// \brief Un - cache block A_in into A_out.
+    ///
+    /// A_in is a matrix produced by \c cache_block().  It is
+    /// organized as contiguously stored cache blocks.  This method
+    /// reorganizes A_in into A_out as an ordinary matrix stored in
+    /// column-major order with leading dimension lda_out.
+    ///
+    /// \param nrows [in] Number of rows in A_in and A_out.
+    /// \param ncols [in] Number of columns in A_in and A_out.
+    /// \param A_out [out] Result of un-cache-blocking A_in.
+    ///   Matrix stored in column-major order with leading
+    ///   dimension lda_out.
+    /// \param lda_out [in] Leading dimension of A_out.  (See the
+    ///   LAPACK documentation for a definition of "leading
+    ///   dimension.")  lda_out >= nrows.
+    /// \param A_in [in] Matrix to un-cache-block.
     virtual void
     un_cache_block (const LocalOrdinal nrows,
 		    const LocalOrdinal ncols,
@@ -74,6 +118,7 @@ namespace TSQR {
 		    const LocalOrdinal lda_out,		    
 		    const Scalar A_in[]) const = 0;
 
+    //! Compute QR factorization (implicitly stored Q factor) of A.
     virtual factor_output_type
     factor (const LocalOrdinal nrows,
 	    const LocalOrdinal ncols, 
@@ -83,6 +128,7 @@ namespace TSQR {
 	    const LocalOrdinal ldr,
 	    const bool contiguousCacheBlocks) = 0;
 
+    //! Apply implicit Q factor stored in Q and factorOutput to C.
     virtual void
     apply (const ApplyType& applyType,
 	   const LocalOrdinal nrows,
@@ -95,6 +141,7 @@ namespace TSQR {
 	   const LocalOrdinal ldc,
 	   const bool contiguousCacheBlocks) = 0;
 
+    //! Compute explicit Q factor from result of factor().
     virtual void
     explicit_Q (const LocalOrdinal nrows,
 		const LocalOrdinal ncols_Q,

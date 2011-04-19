@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010 - 2011 Sandia Corporation.              */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -10,7 +10,9 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+
+#  include <stk_mesh/fem/FEMHelpers.hpp>
+
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
 #include <Shards_BasicTopologies.hpp>
@@ -30,9 +32,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
                             Ioss::Utils::to_string(num_y) + "x" +
                             Ioss::Utils::to_string(num_z) + "|sideset:xXyYzZ";
   stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
-#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  stk::mesh::fem::FEMInterface &fem = fixture.getFEM();
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get( fixture.getMetaData() );
 
   fixture.commit();
 
@@ -70,12 +70,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
   STKUNIT_ASSERT( coord_field );
 
   // All face buckets
-  const std::vector<stk::mesh::Bucket*> & all_face_buckets =
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-    fixture.getBulkData().buckets( stk::mesh::Face );
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-    fixture.getBulkData().buckets( stk::mesh::fem::side_rank(fem));
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  const std::vector<stk::mesh::Bucket*> & all_face_buckets = fixture.getBulkData().buckets( fem_meta.side_rank() );
 
   std::vector<stk::mesh::Entity *> entities;
 
@@ -94,18 +89,11 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
     for ( size_t i = 0 ; i < entities.size() ; ++i ) {
       stk::mesh::Entity & face = *entities[i] ;
 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      const CellTopologyData * cell_topology = stk::mesh::get_cell_topology(face);
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      const CellTopologyData * cell_topology = stk::mesh::fem::get_cell_topology(face).getCellTopologyData();
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      const CellTopologyData * cell_topology = stk::mesh::fem::get_cell_topology_new(face).getCellTopologyData();
+
       STKUNIT_ASSERT( cell_topology );
 
-#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-      stk::mesh::PairIterRelation rel = face.relations( stk::mesh::Node );
-#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      stk::mesh::PairIterRelation rel = face.relations( stk::mesh::fem::NODE_RANK );
-#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      stk::mesh::PairIterRelation rel = face.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
       STKUNIT_ASSERT_EQUAL( cell_topology->node_count, rel.size() );
 

@@ -46,7 +46,18 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       SOURCES test_bl_pcg_hb.cpp createEpetraProblem.cpp
       COMM serial mpi
       ARGS
-        "--verbose --filename=bcsstk14.hb"
+        "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"
+        "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"
+      STANDARD_PASS_OUTPUT 
+      )
+
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      pseudo_pcg_hb
+      SOURCES test_pseudo_pcg_hb.cpp createEpetraProblem.cpp
+      COMM serial mpi
+      ARGS
+        "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
+        "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
       STANDARD_PASS_OUTPUT 
       )
 

@@ -252,16 +252,20 @@ Actually, the script will not allow you to change TPL enables in these
 standard *.config files because to do so deviates from a consistent build
 configuration for Primary Stable Code.
 
+NOTE: All tentatively-enabled TPLs (e.g. Pthreads and BinUtils) are hard
+disabled in order to avoid different behaviors between machines where they
+would be enabled and machines where they would be disabled.
+
 NOTE: If you want to add extra build/test cases that do not conform to the
 standard build/test configurations described above, then you need to create
 extra builds with the --extra-builds option (see below).
 
 NOTE: Before running this script, you should first do an 'eg status' and 'eg
 diff --name-status origin..' and examine what files are changed to make sure
-you want to commit what you have in your local working directory.  Also,
-please look out for unknown files that you may need to add to the git
-repository with 'eg add' or add to your ignores list.  There cannot be any
-uncommitted changes in the local repo before running this script.
+you want to push what you have in your local working directory.  Also, please
+look out for unknown files that you may need to add to the git repository with
+'eg add' or add to your ignores list.  There cannot be any uncommitted changes
+in the local repo before running this script.
 
 NOTE: You don't need to run this script if you have not changed any files that
 affect the build or the tests.  For example, if all you have changed are
@@ -306,7 +310,7 @@ Common Use Cases (examples):
 
   NOTE: This is a common use case when some tests are failing which aborted
   the initial push but you determine it is okay to push anyway and do so with
-  --force-commit-and-push (or just --force for short).
+  --force-push (or just --force for short).
 
 (*) Test only the packages modified and not the forward dependent packages:
 
@@ -358,12 +362,12 @@ Common Use Cases (examples):
   without updating or changing the status of the local git repo in any way and
   without any communication with the global repo.  Hence, you can have
   uncommitted changes and still run configure, build, test without having to
-  have a commit ready to go or having to stash changes.
+  commit or having to stash changes.
 
-  NOTE: This is not a sufficient level of testing in order to commit and push
-  the changes to the global repo because you have not fully integrated your
-  changes yet with other developers.  However, this would be a sufficient
-  level of testing in order to do a local commit and then pull to a remote
+  NOTE: This is not a sufficient level of testing in order to push the changes
+  to the global repo because you have not fully integrated your changes yet
+  with other developers.  However, this would be a sufficient level of testing
+  in order to do a commit on the local machine and then pull to a remote
   machine for further testing and a push (see below).
 
 (*) Adding extra build/test cases:
@@ -395,6 +399,22 @@ Common Use Cases (examples):
   --without-default-builds.  However, please only do this when you are not
   going to push because we need at least one default build/test case to be
   safe to push.
+
+(*) Including extra repos:
+
+  You can also use the checkin-test.py script to continuously integrate with
+  other external extra git repos containing add-on Trilinos packages (such as
+  preCopyrightTrilinos).  To do so, just run:
+    
+    ../checkin-test.py --extra-builds=REPO1,REPO2,... [options]
+
+  where REPOI = preCopyrightTrilinos, LIMEExt, etc.
+
+  NOTE: You have to create local commits in all of the extra repos where there
+  are changes or the script will abort.
+
+  NOTE: Each of the last local commits in each of the changed repos will get
+  amended with the appended summary of what was enabled in the build/test.
 
 (*) Performing a remote test/push:
 
@@ -434,7 +454,7 @@ Common Use Cases (examples):
   pushed from the remote machine.  Git knows that the commits are the same and
   will do the right thing.
   
-(*) Check commit readiness status:
+(*) Check push readiness status:
 
   ../checkin-test.py
 
@@ -508,6 +528,18 @@ clp.add_option(
   help="The Trilinos source base directory for code to be tested." )
 
 clp.add_option(
+  "--extra-repos", dest="extraRepos", type="string", default="",
+  help="List of comma separated extra Trilinos repos " \
+  +"(e.g. 'preCopyrightTrilinos,LIMEExt') containing extra " \
+  +"trilinos packages that can be enabled.  The order these repos is "
+  +"listed in not important.")
+
+clp.add_option(
+  "--skip-deps-update", dest="skipDepsUpdate", action="store_true",
+  help="If set, skip the update of the dependency XML file (debug only).",
+  default=False )
+
+clp.add_option(
   "--enable-packages", dest="enablePackages", type="string", default="",
   help="List of comma separated Trilinos packages to test changes for" \
   +" (example, 'Teuchos,Epetra').  If this list of packages is empty, then" \
@@ -576,13 +608,6 @@ clp.add_option(
   default=False )
 
 clp.add_option(
-  "--commit-msg-header-file", dest="commitMsgHeaderFile", type="string", default="",
-  help="Custom commit message file if committing with --commit." \
-  + "  If an relative path is given, this is expected to be with respect to the" \
-  +" base source directory for Trilinos.  The very first line of this file should" \
-  +" be the summary line that will be used for the commit." )
-
-clp.add_option(
   "--without-mpi-debug", dest="withMpiDebug", action="store_false",
   help="Skip the mpi debug build.", default=True )
 
@@ -624,31 +649,28 @@ clp.add_option(
   +" to these email lists." )
 
 clp.add_option(
-  "--force-commit-push", dest="forceCommitPush", action="store_true",
-  help="Force the local commit and/or push even if there are build/test errors." \
+  "--force-push", dest="forcePush", action="store_true",
+  help="Force the local push even if there are build/test errors." \
   +" WARNING: Only do this when you are 100% certain that the errors are not" \
-  +" caused by your code changes.  This only applies when --commit or push are specified" \
-  +" and this script.  When you commit yourself and don't" \
-  +" specify --commit (i.e. --no-commit), then the commit will not be backed out" \
-  +" and it is up to you to back-out the commit or deal with it in some other way." \
-  +"  When doing a --push, the push will be allowed even if the build/tests failed." )
+  +" caused by your code changes.  This only applies when --push is specified" \
+  +" and this script.")
 clp.add_option(
-  "--no-force-commit-push", dest="forceCommitPush", action="store_false", default=False,
-  help="Do not force a local commit. [default]" )
+  "--no-force-push", dest="forcePush", action="store_false", default=False,
+  help="Do not force a push if there are failures. [default]" )
 
 clp.add_option(
-  "--do-commit-readiness-check", dest="doCommitReadinessCheck", action="store_true",
-  help="Check the commit status at the end and send email if not actually" \
-  +" committing. [default]" )
+  "--do-push-readiness-check", dest="doPushReadinessCheck", action="store_true",
+  help="Check the push readiness status at the end and send email if not actually" \
+  +" pushing. [default]" )
 clp.add_option(
-  "--skip-commit-readiness-check", dest="doCommitReadinessCheck", action="store_false",
+  "--skip-push-readiness-check", dest="doPushReadinessCheck", action="store_false",
   default=True,
-  help="Skip commit status check." )
+  help="Skip push status check." )
 
 clp.add_option(
   "--rebase", dest="rebase", action="store_true",
   help="Rebase the local commits on top of origin/master before amending" \
-  +" the final commit and pushing.  Rebasing keeps a nice linear commit" \
+  +" the last commit and pushing.  Rebasing keeps a nice linear commit" \
   +" history like with CVS or SVN and will work perfectly for the basic" \
   +" workflow of adding commits to the 'master' branch and then syncing" \
   +" up with origin/master before the final push. [default]" )
@@ -683,10 +705,12 @@ clp.add_option(
 clp.add_option(
   "--extra-pull-from", dest="extraPullFrom", type="string", default="",
   help="Optional extra git pull '<repository>:<branch>' to merge in changes from after" \
-  +" pulling in changes from 'origin'.  This option uses a colon with  no spaces in between" \
+  +" pulling in changes from 'origin'.  This option uses a colon with no spaces in between" \
   +" <repository>:<branch>' to avoid issues with passing arguments with spaces." \
   +"  For example --extra-pull-from=machine:/base/dir/repo:master." \
-  +"  This pull is only done if --pull is also specified" )
+  +"  This extra pull is only done if --pull is also specified.  NOTE: when using" \
+  +" --extra-repo=REPO1,REPO2,... the <repository> must be a named repository that is" \
+  +" present in all of the git repos or it will be an error." )
 
 clp.add_option(
   "--allow-no-pull", dest="allowNoPull", action="store_true", default=False,
@@ -703,25 +727,6 @@ clp.add_option(
   +" performed before any other actions. NOTE: This will only wipe clean the builds" \
   +" that are specified and will not touch those being ignored (e.g. SERIAL_RELEASE" \
   +" will not be removed if --without-serial-release is specified)." )
-
-clp.add_option(
-  "--commit", dest="doCommit", action="store_true", default=False,
-  help="[ACTION] Do the local commit of all the staged changes using:\n" \
-  +" \n" \
-  + "  eg commit -a -F <COMMITMSGHEADERFILE>\n" \
-  +" \n" \
-  +"before the initial pull." \
-  +" The commit message used in specified by the --commit-msg-header-file argument." \
-  +"  If you have not already committed your changes, then you will want to" \
-  +" use this option.  The commit is performed before the initial pull and" \
-  +" before any testing is performed in order to allow for rebasing and for" \
-  +" allowing the pull to be backed out.  If the build/test fails and --no-force-commit" \
-  +" is specified, then the commit will be backed out." \
-  +"  Note: By default, unknown files will result in the commit to fail." \
-  +"  In this case, you will need to deal with the unknown files in some way" \
-  +" or just commit manually and then not pass in this option when running" \
-  +" the script again.  WARNING: Committing alone does *not* push changes to" \
-  +" the global repo 'origin', you have to use a --push for that!" )
 
 clp.add_option(
   "--pull", dest="doPull", action="store_true", default=False,
@@ -756,8 +761,7 @@ clp.add_option(
   "--push", dest="doPush", action="store_true", default=False,
   help="[ACTION] Push the committed changes in the local repo into to global repo" \
     +" 'origin' for the current branch.  Note: If you have uncommitted changes this" \
-    +" command will fail.  You would usually use the --commit option as well to do" \
-    +" these together.  Note: You must have SSH public/private keys set up with" \
+    +" command will fail.  Note: You must have SSH public/private keys set up with" \
     +" the origin machine (e.g. software.sandia.gov) for the push to happen without" \
     +" having to type your password." )
 
@@ -786,6 +790,9 @@ if options.enableEgGitVersionCheck:
 else:
   print "  --no-eg-git-version-check \\"
 print "  --trilinos-src-dir='"+options.trilinosSrcDir+"' \\"
+print "  --extra-repos='"+options.extraRepos+"' \\"
+if options.skipDepsUpdate:
+  print "  --skip-deps-update \\"
 print "  --enable-packages='"+options.enablePackages+"' \\"
 print "  --disable-packages='"+options.disablePackages+"' \\"
 print "  --enable-all-packages='"+options.enableAllPackages+"'\\"
@@ -803,7 +810,6 @@ if options.showAllTests:
   print "  --show-all-tests \\"
 else:
   print "  --no-show-all-tests \\"
-print "  --commit-msg-header-file='"+options.commitMsgHeaderFile+"' \\"
 if not options.withMpiDebug:
   print "  --without-mpi-debug \\" 
 if not options.withSerialRelease:
@@ -812,14 +818,14 @@ if options.withoutDefaultBuilds:
   print "  --without-default-builds \\" 
 print "  --send-email-to='"+options.sendEmailTo+"' \\"
 print "  --send-email-to-on-push='"+options.sendEmailToOnPush+"' \\"
-if options.forceCommitPush:
-  print "  --force-commit-push \\"
+if options.forcePush:
+  print "  --force-push \\"
 else:
-  print "  --no-force-commit-push \\"
-if options.doCommitReadinessCheck:
-  print "  --do-commit-readiness-check \\"
+  print "  --no-force-push \\"
+if options.doPushReadinessCheck:
+  print "  --do-push-readiness-check \\"
 else:
-  print "  --skip-commit-readiness-check \\"
+  print "  --skip-push-readiness-check \\"
 if options.appendTestResults:
   print "  --append-test-results \\"
 else:
@@ -830,8 +836,6 @@ if options.allowNoPull:
   print "  --allow-no-pull \\"
 if options.wipeClean:
   print "  --wipe-clean \\"
-if options.doCommit:
-  print "  --commit \\"
 if options.doPull:
   print "  --pull \\"
 if options.doConfigure:
@@ -862,10 +866,6 @@ if options.doAll and options.allowNoPull:
   print "\nError, you can not use --do-all and --allow-no-pull together! (see the" \
     " documentation for the --do-all, --local-do-all, and --allow-no-pull arguments.)"
   sys.exit(2)
-
-if options.doCommit and not options.commitMsgHeaderFile:
-  print "\nError, if you use --commit you must also specify --commit-msg-header-file!"
-  sys.exit(3)
 
 if options.extraPullFrom:
   getRepoSpaceBranchFromOptionStr(options.extraPullFrom) # Will validate form

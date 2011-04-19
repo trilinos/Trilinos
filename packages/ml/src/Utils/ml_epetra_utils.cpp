@@ -1610,7 +1610,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
     }
     // insert row into final result matrix
     err = Result_epet->InsertGlobalValues(grid,numindices,values,&(gcid[0]));
-    if (err != 0 && err != 1) cout << "Result_epet->InsertGlobalValues returned " << err << endl;
+    if (err < 0) cout << "Result_epet->InsertGlobalValues returned " << err << endl;
   }
   int ierr=Result_epet->FillComplete(Mat2_epet->OperatorDomainMap(),
                                      Mat1_epet->OperatorRangeMap());

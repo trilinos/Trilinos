@@ -24,6 +24,7 @@ extern "C" {
 #include "params_const.h"
 #include "timer_const.h"
 #include "zz_rand.h"
+#include "third_library_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -401,10 +402,71 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
          Zoltan_Seed(), Zoltan_Seed());
   printf("ZOLTAN Parameter %s = %s\n", Key_params[21].name, 
          zz->LB.Approach);
-  printf("Size of ZOLTAN_ID_TYPE: %ld, sizeof ZOLTAN_GNO_TYPE: %ld\n",
-         sizeof(ZOLTAN_ID_TYPE),sizeof(ZOLTAN_GNO_TYPE));
-  printf("MPI_Datatype for ZOLTAN_ID_TYPE: %s\n", zoltan_mpi_id_datatype_name);
-  printf("MPI_Datatype for ZOLTAN_GNO_TYPE: %s\n", Zoltan_mpi_gno_name());
+}
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*
+ *  Print some compile time configuration information.
+ */
+void Zoltan_Print_Configuration(char *indent)
+{
+  if (indent == NULL){
+    indent = "";
+  }
+  printf("\n%sZOLTAN_ID_TYPE: %s (%ld bytes)\n",
+    indent, zoltan_id_datatype_name, sizeof(ZOLTAN_ID_TYPE));
+  printf("%sZOLTAN_GNO_TYPE: %s, (%ld bytes)\n",
+    indent, zoltan_gno_datatype_name, sizeof(ZOLTAN_GNO_TYPE));
+  printf("%sMPI_Datatype for ZOLTAN_ID_TYPE: %s\n", indent,
+    zoltan_mpi_id_datatype_name);
+  printf("%sMPI_Datatype for ZOLTAN_GNO_TYPE: %s\n", indent, 
+    Zoltan_mpi_gno_name());
+
+  /* Metis and ParMetis have different version numbers.  Some
+   * older versions do not define version numbers.
+   */
+
+#if __parmetis__ + __metis__ > 0
+  #if __parmetis__ > 0
+    printf("%sThird party library: ParMetis ", indent);
+
+    #ifdef PARMETIS_MAJOR_VERSION
+      printf("version %d.%d", PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION);
+      #ifdef PARMETIS_SUBMINOR_VERSION
+        printf(".%d", PARMETIS_SUBMINOR_VERSION);
+      #endif
+    #endif
+
+    printf("\n");
+
+  #endif
+  #if __metis__ > 0
+    #ifdef METISTITLE
+      printf("%sThird party library: %s\n",indent, METISTITLE);
+    #else
+      printf("%sThird party library: METIS\n",indent);
+    #endif
+  #endif
+
+#endif
+
+  /* Scotch and PTScotch have the same version number.  Version
+   * numbers are not defined in older versions.
+   */
+
+#if __ptscotch__ + __scotch__ > 0
+  printf("%sThird party library: ", indent);
+  #if __ptscotch__ > 0
+    printf("PTScotch ");
+  #else
+    printf("Scotch ");
+  #endif
+  #ifdef SCOTCH_VERSION
+    printf("version %d.%d.%d", SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+  #endif
+   printf("\n");
+#endif
 }
 
 #ifdef __cplusplus

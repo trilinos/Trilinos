@@ -32,8 +32,8 @@
 #ifndef SACADO_FAD_SIMPLEFAD_HPP
 #define SACADO_FAD_SIMPLEFAD_HPP
 
-#include "Sacado_Fad_DynamicStorage.hpp"
 #include "Sacado_Fad_SimpleFadTraits.hpp"
+#include "Sacado_Fad_DynamicStorage.hpp"
 #include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {

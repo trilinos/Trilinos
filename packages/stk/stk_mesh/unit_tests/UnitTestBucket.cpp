@@ -82,7 +82,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
   // Create MetaData, BulkData
   unsigned max_bucket_size = 4;
   stk::mesh::fixtures::BoxFixture fixture(pm, max_bucket_size, entity_names);
-  FEMMetaData& meta = fixture.meta_data();
+  FEMMetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
   const EntityRank element_rank = meta.element_rank();
   // Create two scalar fields, temperature and volume. Put temperature
@@ -118,7 +118,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
     Bucket *b1 = bulk.buckets(0)[0];
     std::stringstream  out1_str;
     out1_str << (*b1);
-    STKUNIT_ASSERT_EQUAL ( gold1, out1_str.str() );
+    bool equal = (gold1 == out1_str.str());
+    STKUNIT_ASSERT_EQUAL ( equal, true );
   }
 
   // Second, update state of bucket until circular cue is filled

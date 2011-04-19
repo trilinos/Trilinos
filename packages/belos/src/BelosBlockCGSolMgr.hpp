@@ -68,10 +68,10 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/BlockCG/BlockCGEpetraExFile.cpp
+/** \example BlockCG/BlockCGEpetraExFile.cpp
     This is an example of how to use the Belos::BlockCGSolMgr solver manager.
 */
-/** \example epetra/example/BlockCG/BlockPrecCGEpetraExFile.cpp
+/** \example BlockCG/BlockPrecCGEpetraExFile.cpp
     This is an example of how to use the Belos::BlockCGSolMgr solver manager with an Ifpack preconditioner.
 */
 
@@ -272,7 +272,7 @@ namespace Belos {
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
     
     // Current parameter list.
-    Teuchos::RCP<ParameterList> params_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
     
     // Default solver values.
     static const MagnitudeType convtol_default_;
@@ -507,7 +507,7 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
 
     // Update parameter in our list.
     params_->set("Output Style", outputStyle_);
-    outputTest_ == Teuchos::null;
+    outputTest_ = Teuchos::null;
   }
 
   // output stream

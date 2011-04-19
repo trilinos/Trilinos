@@ -24,7 +24,6 @@
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/fem/SkinMesh.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <stk_io/IossBridge.hpp>
 
@@ -46,7 +45,7 @@ namespace {
   [ save as animation with 60fps ]
 **/
 
-using stk::mesh::fem::NODE_RANK;
+static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 typedef stk::mesh::fixtures::GearsFixture::CartesianField CartesianField;
 typedef stk::mesh::Field<int> IntField;
@@ -73,7 +72,7 @@ void separate_wedge(
 
   // Request new nodes
   const size_t num_nodes_per_wedge = 6;
-  const size_t spatial_dim = fixture.fem_data.get_spatial_dimension();
+  const size_t spatial_dim = fixture.meta_data.spatial_dimension();
   stk::mesh::EntityVector new_nodes;
 
   std::vector<size_t> requests(fixture.meta_data.entity_rank_count(), 0);
@@ -229,7 +228,7 @@ void move_detached_wedges(
     stk::mesh::BucketArray<CartesianField>  new_displacement_data( fixture.displacement_field.field_of_state(stk::mesh::StateNew), b);
 
     for (size_t i = 0; i < b.size(); ++i) {
-      for (size_t j = 0; j < fixture.fem_data.get_spatial_dimension(); ++j) {
+      for (size_t j = 0; j < fixture.meta_data.spatial_dimension(); ++j) {
         new_displacement_data(j,i) = old_displacement_data(j,i) + velocity_data(j,i);
       }
     }
@@ -364,7 +363,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
       velocity_field,
       NODE_RANK,
       fixture.meta_data.universal_part(),
-      fixture.fem_data.get_spatial_dimension()
+      fixture.meta_data.spatial_dimension()
       );
 
   stk::mesh::put_field(
@@ -386,7 +385,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
 
   populate_processor_id_field_data(fixture,processor_field);
 
-  const size_t spatial_dim = fixture.fem_data.get_spatial_dimension();
+  const size_t spatial_dim = fixture.meta_data.spatial_dimension();
   stk::mesh::skin_mesh( fixture.bulk_data, spatial_dim, &skin_part);
 
   //count the types of node, edges, faces, and elements

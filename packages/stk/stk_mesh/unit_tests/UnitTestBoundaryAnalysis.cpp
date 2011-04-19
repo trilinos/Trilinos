@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -19,14 +19,14 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
 
 #include <iomanip>
 #include <algorithm>
 
-using stk::mesh::fem::NODE_RANK;
+static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
 
 class UnitTestStkMeshBoundaryAnalysis {
 public:
@@ -90,16 +90,16 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   // set up grid_mesh
   stk::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
 
+  stk::mesh::fem::FEMMetaData& fem_meta = grid_mesh.fem_meta();
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
-  stk::mesh::MetaData& meta_data = grid_mesh.meta_data();
-  stk::mesh::DefaultFEM& fem     = grid_mesh.fem();
 
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   // make shell part
-  stk::mesh::Part& shell_part = stk::mesh::declare_part<shards::ShellLine<2> >(meta_data, "shell_part");
+  stk::mesh::fem::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());
+  stk::mesh::Part& shell_part = fem_meta.declare_part("shell_part", line_top);
 
-  meta_data.commit();
+  fem_meta.commit();
 
   bulk_data.modification_begin();
   grid_mesh.generate_grid();
@@ -109,7 +109,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
 
   // get a count of entities that have already been created
   std::vector<unsigned> count;
-  stk::mesh::Selector locally_owned(meta_data.locally_owned_part());
+  stk::mesh::Selector locally_owned(fem_meta.locally_owned_part());
   stk::mesh::count_entities(locally_owned, bulk_data, count);
   const unsigned num_entities = count[NODE_RANK] + count[element_rank];
 
@@ -235,18 +235,19 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis_null_topology()
 {
   //test on boundary_analysis for closure with a NULL topology - coverage of lines 39-40 of BoundaryAnalysis.cpp
 
-  //create new meta, bulk and boundary for this test
+  //create new fem_meta, bulk and boundary for this test
   const int spatial_dimension = 3;
-  stk::mesh::MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-  stk::mesh::DefaultFEM fem(meta, spatial_dimension);
+  stk::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
 
-  const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
+  const stk::mesh::EntityRank side_rank = fem_meta.side_rank();
 
   //declare part with topology = NULL
-  stk::mesh::Part & quad_part = declare_part(meta, "quad_part", side_rank);
-  meta.commit();
+  stk::mesh::Part & quad_part = fem_meta.declare_part("quad_part", side_rank);
+  fem_meta.commit();
 
   stk::ParallelMachine comm(MPI_COMM_WORLD);
+  stk::mesh::MetaData & meta = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
   stk::mesh::BulkData bulk ( meta , comm , 100 );
 
   stk::mesh::EntitySideVector boundary;
