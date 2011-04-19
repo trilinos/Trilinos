@@ -458,17 +458,17 @@ private:
   //@{
     
     /** \brief . */
-    static const std::string& getFalseValidatorIDAttributeName(){
-      static const std::string falseValidatorIDAttributeName = 
-        "falseValidatorID";
-      return falseValidatorIDAttributeName;
+    static const std::string& getFalseValidatorIdAttributeName(){
+      static const std::string falseValidatorIdAttributeName = 
+        "falseValidatorId";
+      return falseValidatorIdAttributeName;
     }
 
     /** \brief . */
-    static const std::string& getTrueValidatorIDAttributeName(){
-      static const std::string trueValidatorIDAttributeName = 
-        "trueValidatorID";
-      return trueValidatorIDAttributeName;
+    static const std::string& getTrueValidatorIdAttributeName(){
+      static const std::string trueValidatorIdAttributeName = 
+        "trueValidatorId";
+      return trueValidatorIdAttributeName;
     }
   
   //@}

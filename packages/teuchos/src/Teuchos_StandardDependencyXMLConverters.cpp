@@ -309,7 +309,7 @@ BoolValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
       validatorIDsMap.insert(castedDependency->getTrueValidator());
     }
     xmlObj.addAttribute(
-      getTrueValidatorIDAttributeName(),
+      getTrueValidatorIdAttributeName(),
       validatorIDsMap.find(castedDependency->getTrueValidator())->second);
   }
 
@@ -319,7 +319,7 @@ BoolValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
       validatorIDsMap.insert(falseVali);
     }
     xmlObj.addAttribute(
-      getFalseValidatorIDAttributeName(),
+      getFalseValidatorIdAttributeName(),
       validatorIDsMap.find(falseVali)->second);
   }
 
@@ -336,11 +336,11 @@ BoolValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
   RCP<ParameterEntryValidator> trueValidator = null;
   RCP<ParameterEntryValidator> falseValidator = null;
 
-  if(xmlObj.hasAttribute(getTrueValidatorIDAttributeName())){
+  if(xmlObj.hasAttribute(getTrueValidatorIdAttributeName())){
 
     ParameterEntryValidator::ValidatorID trueID = 
       xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
-        getTrueValidatorIDAttributeName());
+        getTrueValidatorIdAttributeName());
   
     TEST_FOR_EXCEPTION(
       validatorIDsMap.find(trueID)
@@ -356,10 +356,10 @@ BoolValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
   }
 
 
-  if(xmlObj.hasAttribute(getFalseValidatorIDAttributeName())){
+  if(xmlObj.hasAttribute(getFalseValidatorIdAttributeName())){
     ParameterEntryValidator::ValidatorID falseID = 
       xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
-        getFalseValidatorIDAttributeName());
+        getFalseValidatorIdAttributeName());
   
     TEST_FOR_EXCEPTION(
       validatorIDsMap.find(falseID)
