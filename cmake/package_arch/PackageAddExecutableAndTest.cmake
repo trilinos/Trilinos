@@ -17,6 +17,23 @@ MACRO(FWD_PARSE_OPT  VAR_TO_SET_OUT  OPTNAME)
 ENDMACRO()
 
 
+FUNCTION(PACKAGE_ADD_EXECUTABLE_WRAPPER)
+  IF (PACKAGE_ADD_EXECUTABLE_AND_TEST_TEST_MODE)
+    SET(PACKAGE_ADD_EXECUTABLE_CAPTURE_ARGS ${ARGN} CACHE INTERNAL "")
+  ELSE()
+    PACKAGE_ADD_EXECUTABLE(${ARGN})
+  ENDIF()
+ENDFUNCTION()
+
+
+FUNCTION(PACKAGE_ADD_TEST_WRAPPER)
+  IF (PACKAGE_ADD_EXECUTABLE_AND_TEST_TEST_MODE)
+    SET(PACKAGE_ADD_TEST_CAPTURE_ARGS ${ARGN} CACHE INTERNAL "")
+  ELSE()
+    PACKAGE_ADD_TEST(${ARGN})
+  ENDIF()
+ENDFUNCTION()
+
 #
 # Add an executable and a test at the same time.
 #
@@ -49,6 +66,23 @@ ENDMACRO()
 # passed to PACAKGE_ADD_TEST(...).  See the documentation for
 # PACKAGE_ADD_EXECUTABLE(...) and PACKAGE_ADD_TEST(...) to see which arguments
 # are accpeted by which functions.
+#
+
+# Arguments that are specific to this function and not contained in
+# PACKAGE_ADD_EXECUTABLE(...) or PACAKGE_ADD_TEST(...):
+#
+#   XHOST_TEST <host1> <host2> ...
+#
+#     When specified, this disables just running the tests for the named hosts
+#     <host1>, <host2> etc. but still builds the executables for the test.
+#
+#   XHOSTTYPE_TEST <hosttype1> <hosttype2> ...
+#
+#     When specified, this disables just running the tests for the named host
+#     types <hosttype1>, <hosttype2> etc. but still builds the executables for
+#     the test.
+#
+#
 #
 
 FUNCTION(PACKAGE_ADD_EXECUTABLE_AND_TEST EXE_NAME)
@@ -96,7 +130,7 @@ FUNCTION(PACKAGE_ADD_EXECUTABLE_AND_TEST EXE_NAME)
   FWD_PARSE_ARG(CALL_ARGS LINKER_LANGUAGE)
   FWD_PARSE_ARG(CALL_ARGS DEFINES)
 
-  PACKAGE_ADD_EXECUTABLE(${EXE_NAME} ${COMMON_CALL_ARGS} ${CALL_ARGS})
+  PACKAGE_ADD_EXECUTABLE_WRAPPER(${EXE_NAME} ${COMMON_CALL_ARGS} ${CALL_ARGS})
 
   #
   # D) PackageAddTest(...)
@@ -115,6 +149,6 @@ FUNCTION(PACKAGE_ADD_EXECUTABLE_AND_TEST EXE_NAME)
   FWD_PARSE_OPT(CALL_ARGS WILL_FAIL)
   FWD_PARSE_OPT(CALL_ARGS ADD_DIR_TO_NAME)
 
-  PACKAGE_ADD_TEST(${EXE_NAME} ${COMMON_CALL_ARGS} ${CALL_ARGS})
+  PACKAGE_ADD_TEST_WRAPPER(${EXE_NAME} ${COMMON_CALL_ARGS} ${CALL_ARGS})
 
 ENDFUNCTION()

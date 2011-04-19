@@ -5,6 +5,7 @@ INCLUDE(MessageWrapper)
 INCLUDE(PackageArchCategories)
 INCLUDE(PackageAddTest)
 INCLUDE(PackageAddAdvancedTest)
+INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(UnitTestHelpers)
 INCLUDE(GlobalSet)
 
@@ -826,6 +827,50 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_COMM)
 ENDFUNCTION()
 
 
+FUNCTION(UNITEST_PACAKGE_ADD_EXECUTABLE_AND_TEST)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing PACKAGE_ADD_EXECUTABLE_AND_TEST( ... )")
+  MESSAGE("***\n")
+
+  SET(PACKAGE_ADD_EXECUTABLE_AND_TEST_TEST_MODE ON)
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST( 
+    execName
+    SOURCES src1 src2
+    NAME testName
+    NAME_POSTFIX testNamePostfix
+    CATEGORIES category1 category2
+    HOST host1 host2
+    XHOST host1 host2
+    HOSTTYPE hosttype1 hosttype2
+    XHOSTTYPE hosttype1 hosttype2
+    NOEXEPREFIX
+    DIRECTORY dir
+    DEPLIBS lib1 lib2
+    COMM serial mpi
+    NUM_MPI_PROCS numProcs
+    LINKER_LANGUAGE C
+    ADD_DIR_TO_NAME
+    DEFINES -DSOMEDEFINE
+    KEYWORDS keyword1 keyword2
+    STANDARD_PASS_OUTPUT
+    PASS_REGULAR_EXPRESSION "regex1;regex2"
+    FAIL_REGULAR_EXPRESSION "regex1;regex2"
+    WILL_FAIL
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_EXECUTABLE_CAPTURE_ARGS
+    "execName;COMM;serial;mpi;CATEGORIES;category1;category2;HOST;host1;host2;XHOST;host1;host2;HOSTTYPE;hosttype1;hosttype2;XHOSTTYPE;hosttype1;hosttype2;NOEXEPREFIX;SOURCES;src1;src2;DEPLIBS;lib1;lib2;DIRECTORY;dir;ADD_DIR_TO_NAME;LINKER_LANGUAGE;C;DEFINES;-DSOMEDEFINE"
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_CAPTURE_ARGS
+    "execName;COMM;serial;mpi;CATEGORIES;category1;category2;HOST;host1;host2;XHOST;host1;host2;HOSTTYPE;hosttype1;hosttype2;XHOSTTYPE;hosttype1;hosttype2;NOEXEPREFIX;NAME;testName;NAME_POSTFIX;testNamePostfix;DIRECTORY;dir;KEYWORDS;keyword1;keyword2;NUM_MPI_PROCS;numProcs;PASS_REGULAR_EXPRESSION;regex1;regex2;FAIL_REGULAR_EXPRESSION;regex1;regex2;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME"
+    )
+
+ENDFUNCTION()
+
+
 #
 # Execute the unit tests
 #
@@ -868,8 +913,14 @@ UNITEST_PACKAGE_ADD_ADVANCED_TEST_CATEGORIES()
 UNITEST_PACKAGE_ADD_ADVANCED_TEST_COMM()
 
 MESSAGE("\n***")
+MESSAGE("*** Testing PACAKGE_ADD_EXECUTABLE_AND_TEST(...)")
+MESSAGE("***\n")
+
+UNITEST_PACAKGE_ADD_EXECUTABLE_AND_TEST()
+
+MESSAGE("\n***")
 MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(100)
+UNITTEST_FINAL_RESULT(102)
