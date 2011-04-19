@@ -311,9 +311,52 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	RCP<ParameterList> My_deplist = RCP<ParameterList>(new ParameterList);
 	RCP<DependencySheet> depSheet1 = 
     RCP<DependencySheet>(new DependencySheet);
+  /*
+   * Two Simple NumberVisualDependency test
+   */
+
+	ParameterList
+	simpleNumDepTestList = My_deplist->sublist(
+		"NumberVisual Dependency List (double)", 
+		false, 
+		"Number visual Dependency testing list"
+	);
+		
+	simpleNumDepTestList.set("Temperature",101.0);
+	simpleNumDepTestList.set("Cheese to Fondue", "Swiss", "The cheese to fondue");
+	simpleNumDepTestList.set("reverse param", "hello");
+
+	RCP<NumberVisualDependency<double> > simpleNumDep = 
+	RCP<NumberVisualDependency<double> >(
+		new NumberVisualDependency<double>(
+			simpleNumDepTestList.getEntryRCP("Temperature"),
+			simpleNumDepTestList.getEntryRCP("Cheese to Fondue"),
+      true
+		)
+	);
+	RCP<NumberVisualDependency<double> > reverseNumDep = 
+	RCP<NumberVisualDependency<double> >(
+		new NumberVisualDependency<double>(
+			simpleNumDepTestList.getEntryRCP("Temperature"),
+			simpleNumDepTestList.getEntryRCP("reverse param"),
+      false
+		)
+	);
+  depSheet1->addDependency(simpleNumDep);
+  depSheet1->addDependency(reverseNumDep);
+	simpleNumDep->evaluate();
+	reverseNumDep->evaluate();
+	TEST_ASSERT(simpleNumDep->isDependentVisible());
+	TEST_ASSERT(!reverseNumDep->isDependentVisible());
+	simpleNumDepTestList.set("Temperature",-1.0);
+	simpleNumDep->evaluate();
+	reverseNumDep->evaluate();
+	TEST_ASSERT(!simpleNumDep->isDependentVisible());
+	TEST_ASSERT(reverseNumDep->isDependentVisible());
+
 
 	/*
-	 * Testing the NumberVisualDependency
+	 * complex Testing the NumberVisualDependency
 	 */
 	ParameterList
 	doubleVisualDepList = My_deplist->sublist(
@@ -326,6 +369,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
     "Temperature",101.0, "The temperature of the fondue");
 	doubleVisualDepList.set(
     "Cheese to Fondue", "Swiss", "The cheese to fondue");
+  doubleVisualDepList.set("reverse param", "hello");
   RCP<SubtractionFunction<double> > fondueFunc = rcp(new
     SubtractionFunction<double>(100));
 
@@ -334,15 +378,30 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 		new NumberVisualDependency<double>(
 			doubleVisualDepList.getEntryRCP("Temperature"),
 			doubleVisualDepList.getEntryRCP("Cheese to Fondue"),
+      true,
+			fondueFunc
+		)
+	);
+	RCP<NumberVisualDependency<double> > reverseFondueDep = 
+	RCP<NumberVisualDependency<double> >(
+		new NumberVisualDependency<double>(
+			doubleVisualDepList.getEntryRCP("Temperature"),
+			doubleVisualDepList.getEntryRCP("reverse param"),
+      false,
 			fondueFunc
 		)
 	);
 	depSheet1->addDependency(fondueDep);
+	depSheet1->addDependency(reverseFondueDep);
 	fondueDep->evaluate();
+  reverseFondueDep->evaluate();
 	TEST_ASSERT(fondueDep->isDependentVisible());
+	TEST_ASSERT(!reverseFondueDep->isDependentVisible());
 	doubleVisualDepList.set("Temperature",99.0);
 	fondueDep->evaluate();
+  reverseFondueDep->evaluate();
 	TEST_ASSERT(!fondueDep->isDependentVisible());
+	TEST_ASSERT(reverseFondueDep->isDependentVisible());
 
 	/*
 	 * Testing the BoolVisualDependency
@@ -475,6 +534,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 		new NumberVisualDependency<int>(
 			numberVisDepList.getEntryRCP("Room Temp"),
 			numberVisDepList.getEntryRCP("Ice"), 
+      true,
 			visFunc
 		)
 	);
@@ -579,6 +639,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
       new NumberVisualDependency<int>(
         list1->getEntryRCP("bool parameter"),
         list1->getEntryRCP("double parameter"), 
+        true,
         intFuncTester)), 
     InvalidDependencyException);
 

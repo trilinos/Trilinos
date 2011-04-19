@@ -639,10 +639,16 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
+   * @param showIf When true, the depndent will be be shown 
+   * if the dependee 
+   * is set to the same value as specified by the value parameter.
+   * If false, the dependent will be shown only when the dependee is 
+   * set to a value other than the one specified by the value parameter.
    * @param func A function that takes the dependees value, does some 
    * calculations on it, and then returns a value. If this value is 
    * greater than 0, the dependent is show. If the value returned is
-   * less than or equal to zero, the dependent is not shown. If no 
+   * less than or equal to zero, the dependent is not shown. If showIf is set
+   * to valse then these visibility results will be reversed. If no 
    * fuction is specified, the direct value of the dependee will be used 
    * to determine the dependents visibility in a similar fashion (postive
    * numbers causing the dependent to be displayed and 0 or 
@@ -651,6 +657,7 @@ public:
   NumberVisualDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
+    bool showIf=true,
     RCP<SimpleFunctionObject<T> > func=null);
 
   /**
@@ -658,10 +665,16 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents.
+   * @param showIf When true, the depndent will be be shown 
+   * if the dependee 
+   * is set to the same value as specified by the value parameter.
+   * If false, the dependent will be shown only when the dependee is 
+   * set to a value other than the one specified by the value parameter.
    * @param func A function that takes the dependees value, does some 
    * calculations on it, and then returns a value. If this value is 
    * greater than 0, the dependent is show. If the value returned is
-   * less than or equal to zero, the dependent is not shown. If no 
+   * less than or equal to zero, the dependent is not shown. If showIf is set
+   * to false, then these visibility results will be reversed. If no 
    * fuction is specified, the direct value of the dependee will be used 
    * to determine the dependents visibility in a similar fashion (postive
    * numbers causing the dependent to be displayed and 0 or 
@@ -670,6 +683,7 @@ public:
   NumberVisualDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependents,
+    bool showIf=true,
     RCP<SimpleFunctionObject<T> > func=null);
 
   //@}
@@ -726,8 +740,9 @@ template<class T>
 NumberVisualDependency<T>::NumberVisualDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
+  bool showIf,
   RCP<SimpleFunctionObject<T> > func)
-  :VisualDependency(dependee, dependent),
+  :VisualDependency(dependee, dependent, showIf),
   func_(func)
 {
   validateDep();
@@ -737,8 +752,9 @@ template<class T>
 NumberVisualDependency<T>::NumberVisualDependency(
   RCP<const ParameterEntry> dependee,
   ParameterEntryList dependents,
+  bool showIf,
   RCP<SimpleFunctionObject<T> > func)
-  :VisualDependency(dependee, dependents),
+  :VisualDependency(dependee, dependents, showIf),
   func_(func)
 {
   validateDep();

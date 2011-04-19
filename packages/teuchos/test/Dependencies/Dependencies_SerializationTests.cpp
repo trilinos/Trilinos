@@ -341,6 +341,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
     new NumberVisualDependency<T>(
       myDepList.getEntryRCP(dependee2),
       dependentList,
+      true,
       subFunction));
 
   myDepSheet->addDependency(simpleNumVisDep);

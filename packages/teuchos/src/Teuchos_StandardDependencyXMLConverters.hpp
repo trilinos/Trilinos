@@ -303,6 +303,7 @@ void NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
     rcp_dynamic_cast<const NumberVisualDependency<T> >(dependency);
   RCP<const SimpleFunctionObject<T> > functionObject = 
     castedDependency->getFunctionObject();
+
   if(functionObject != null){
     XMLObject functionXML = 
       FunctionObjectXMLConverterDB::convertFunctionObject(functionObject);
@@ -331,7 +332,7 @@ NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
       FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionIndex)));
   }
   return rcp(new NumberVisualDependency<T>(
-    *(dependees.begin()), dependents, functionObject));
+    *(dependees.begin()), dependents, showIf, functionObject));
       
 }
 
