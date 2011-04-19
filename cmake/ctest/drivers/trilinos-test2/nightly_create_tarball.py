@@ -107,6 +107,18 @@ baseConfigureCmd = """rm -rf CMakeCache.txt CMakefiles;cmake """ \
 -D Netcdf_INCLUDE_DIRS=""" + options.netcdfDir + """/include \
 -D CMAKE_INSTALL_PREFIX:PATH=""" + options.installDir + " "
 
+
+#removing install directory first so that subsequent installs aren't polluted by old installs
+print "attempting to remove the old install dir"
+try:
+  shutil.rmtree(options.installDir, True)
+except:
+  print "execption while removing " + options.installDir
+  print sys.exc_info()[1]
+
+print "done trying to remove old install dir"
+
+
 #clone repo
 if os.path.exists("Trilinos"):
   print "Repository already exists so updating instead of cloning."
@@ -187,16 +199,6 @@ tarballConfigureError = os.system(tarballConfigureCmd)
 if tarballConfigureError != 0:
   print "Configuring from tarball failed, see tarball_configure.out for details."
   sys.exit(1)
-
-#removing install directory first so that subsequent installs aren't polluted by old installs
-print "attempting to remove the old dir"
-try:
-  shutil.rmtree(options.installDir, True)
-except:
-  print "execption while removing " + options.installDir
-  print sys.exc_info()[1]
-
-print "done trying to remove old install dir"
 
 
 tarballMakeInstallCmd = "make install &> tarball_make_install.out"

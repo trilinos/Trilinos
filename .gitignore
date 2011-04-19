@@ -6,6 +6,8 @@
 doxygen_entrydb_*.tmp
 doxygen_objdb_*.tmp
 /checkin_message
+/checkin-test-local.sh
+/CHECKIN
 /flat_headers/
 /TAGS
 /preCopyrightTrilinos/

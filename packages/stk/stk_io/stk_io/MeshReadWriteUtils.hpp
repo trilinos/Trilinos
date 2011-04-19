@@ -9,7 +9,7 @@
 #ifndef STK_IO_MESHREADWRITEUTILS_HPP
 #define STK_IO_MESHREADWRITEUTILS_HPP
 #include <string>
-#include <mpi.h>
+#include <stk_util/parallel/Parallel.hpp>
 
 namespace Ioss {
   class Region;

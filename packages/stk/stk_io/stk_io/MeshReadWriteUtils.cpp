@@ -6,8 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/parallel/Parallel.hpp>
-
 #include <stk_io/MeshReadWriteUtils.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
