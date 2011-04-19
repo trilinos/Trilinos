@@ -417,9 +417,12 @@ int extractDirichletBCs(fei::DirichletBCManager* bcManager,
   std::vector<int> essEqns;
   std::vector<double> values;
 
-  std::vector<fei::FillableMat*>& remote = bcEqns->getRemotelyOwnedMatrix();
-  for(unsigned p=0; p<remote.size(); ++p) {
-    fei::impl_utils::separate_BC_eqns( *(remote[p]), essEqns, values);
+  std::map<int,fei::FillableMat*>& remotes = bcEqns->getRemotelyOwnedMatrices();
+  std::map<int,fei::FillableMat*>::iterator
+    it = remotes.begin(),
+    it_end = remotes.end();
+  for(; it!=it_end; ++it) {
+    fei::impl_utils::separate_BC_eqns( *(it->second), essEqns, values);
   }
 
   CHK_ERR( bcEqns->gatherFromOverlap(false) );

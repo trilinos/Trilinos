@@ -24,6 +24,7 @@
 #include <stk_percept/RunEnvironment.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
+#include <stk_util/environment/CPUTime.hpp>
 
 #include <stk_adapt/UniformRefiner.hpp>
 #include <boost/shared_ptr.hpp>
@@ -248,8 +249,8 @@ namespace stk {
       bool debug_re = false;
       RunEnvironment run_environment(&argc, &argv, debug_re);
       unsigned p_rank = stk::parallel_machine_rank(run_environment.m_comm);
+      unsigned p_size = stk::parallel_machine_size(run_environment.m_comm);
 
-      double t0 =  stk::wall_time(); 
 
       std::string options_description_desc = "stk_adapt options";
     
@@ -269,6 +270,7 @@ namespace stk {
       int remove_original_elements = 1;
       int number_refines = 1;
       int proc_rank_field = 0;
+      int query_only = 0;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc = 
@@ -306,6 +308,9 @@ namespace stk {
       run_environment.clp.setOption("enrich"                   , &enrich                   , enrich_options.c_str());
       run_environment.clp.setOption("input_mesh"               , &input_mesh               , "input mesh name");
       run_environment.clp.setOption("output_mesh"              , &output_mesh              , "output mesh name");
+
+      run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
+
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
       run_environment.clp.setOption("block_name"               , &block_name_inc           , block_name_desc_inc.c_str());
       //run_environment.clp.setOption("exclude"                  , &block_name_exc           , block_name_desc_exc.c_str());
@@ -324,6 +329,11 @@ namespace stk {
 
       int result = 0;
       unsigned failed_proc_rank = 0u;
+
+      double t0   = 0.0;
+      double t1   = 0.0;
+      double cpu0 = 0.0;
+      double cpu1 = 0.0;
 
       try {
 
@@ -377,7 +387,7 @@ namespace stk {
             //             block_names = UniformRefiner::correctBlockNamesForPartPartConsistency(eMesh, block_names);
 
             // FIXME move this next block of code to a method on UniformRefiner
-            BlockNamesType block_names(stk::mesh::EntityRankEnd+1u);
+            BlockNamesType block_names(stk::percept::EntityRankEnd+1u);
             if (block_name_inc.length())
               {
                 block_names = UniformRefiner::getBlockNames(block_name_inc, eMesh.getRank(), eMesh);
@@ -439,12 +449,17 @@ namespace stk {
             exit(1);
           }
 
+
         if (doRefineMesh)
           {
+            t0 =  stk::wall_time(); 
+            cpu0 = stk::cpu_time();
+
             UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
             if (input_geometry != "")
                 breaker.setGeometryFile(input_geometry);
             breaker.setRemoveOldElements(remove_original_elements);
+            breaker.setQueryPassOnly(query_only == 1);
             //breaker.setIgnoreSideSets(true);
 
             for (int iBreak = 0; iBreak < number_refines; iBreak++)
@@ -456,9 +471,16 @@ namespace stk {
                 breaker.doBreak();
                 if (!eMesh.getRank())
                   {
-                    std::cout << "Refinement pass # " << (iBreak+1) << " ...done" << std::endl;
+                    std::cout << std::endl;
+                    int ib = iBreak;
+                    if (!query_only) ib = 0;
+                    RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), ib , true);
+                    std::cout << std::endl;
                   }
+                
               }
+            t1 =  stk::wall_time(); 
+            cpu1 = stk::cpu_time();
 
             eMesh.saveAs(output_mesh);
           }
@@ -491,9 +513,28 @@ namespace stk {
           exit(1);
         }
 
-      double t1 =  stk::wall_time(); 
-      stk::percept::pout() << "P[" << p_rank << "]  wall clock time on processor [" << p_rank << "]= " << (t1-t0) << " (sec)\n";
-      std::cout << "P[" << p_rank << "]  wall clock time on processor [" << p_rank << "]= " << (t1-t0) << " (sec)" << std::endl;
+      stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
+                           << " cpu time= " << (cpu1 - cpu0) << " (sec)\n";
+      std::cout << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
+                << " cpu time= " << (cpu1 - cpu0) << " (sec) " << std::endl;
+
+      double cpuMax = (cpu1-cpu0);
+      double wallMax = (t1-t0);
+      double cpuSum = (cpu1-cpu0);
+
+      stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &cpuSum ) );
+      stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &cpuMax ) );
+      stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &wallMax ) );
+
+      if (0 == p_rank)
+        {
+          stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)\n";
+          stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)\n";
+          stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)\n";
+          std::cout << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)" << std::endl;
+          std::cout << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)" << std::endl;
+          std::cout << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)" << std::endl;
+        }
 
       return result;
     }
@@ -505,6 +546,11 @@ namespace stk {
 //#if !PY_PERCEPT
 int main(int argc, char **argv) { 
 
+#if defined(__PGI)
+  std::cout << "Not supported on PGI" << std::endl;
+  return 0;
+#else
   return stk::adapt::adapt_main(argc, argv);
+#endif
 }
 //#endif

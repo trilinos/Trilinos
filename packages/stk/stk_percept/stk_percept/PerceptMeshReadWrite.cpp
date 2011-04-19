@@ -266,7 +266,7 @@ namespace stk {
              */
             stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE,
                                       *part,
-                                      stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                      stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
 
             /** \todo IMPLEMENT truly handle fields... For this case we
              * are just defining a field for each transient field that is
@@ -274,7 +274,7 @@ namespace stk {
              */
             stk::io::define_io_fields(entity, Ioss::Field::TRANSIENT,
                                       *part,
-                                      stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                      stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
 
             const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(*part);
             std::string cell_topo_name = "UNKNOWN";
@@ -331,7 +331,7 @@ namespace stk {
              */
             stk::io::define_io_fields(entity, Ioss::Field::TRANSIENT,
                                       *part,
-                                      stk::mesh::fem_entity_rank( part->primary_entity_rank() ) );
+                                      stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
           }
         }
       }
@@ -380,7 +380,7 @@ namespace stk {
               stk::io::set_distribution_factor_field(*fb_part, *distribution_factors_field);
               int face_node_count = fb->topology()->number_nodes();
               stk::mesh::put_field(*distribution_factors_field,
-                                   stk::mesh::fem_entity_rank( fb_part->primary_entity_rank() ),
+                                   stk::percept::PerceptMesh::fem_entity_rank( fb_part->primary_entity_rank() ),
                                    *fb_part, face_node_count);
             }
 
@@ -390,7 +390,7 @@ namespace stk {
              */
             stk::io::define_io_fields(fb, Ioss::Field::TRANSIENT,
                                       *fb_part,
-                                      stk::mesh::fem_entity_rank( fb_part->primary_entity_rank() ) );
+                                      stk::percept::PerceptMesh::fem_entity_rank( fb_part->primary_entity_rank() ) );
           }
         }
       }
@@ -756,12 +756,12 @@ namespace stk {
                   Ioss::EntityBlock *fb = entity->get_block(i);
                   /// \todo REFACTOR Need filtering mechanism.
                   get_field_data(bulk, *part,
-                                 stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                 stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                  fb, Ioss::Field::TRANSIENT);
                 }
               } else {
                 get_field_data(bulk, *part,
-                               stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                               stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                entity, Ioss::Field::TRANSIENT);
               }
             } else {
@@ -795,7 +795,7 @@ namespace stk {
           const stk::mesh::FieldBase *f = *I; ++I;
           //std::cout << "PerceptMeshReadWrite::put_field_data: f->name()= " << f->name() <<  " part.name()= " << part.name() << std::endl;
           if (stk::io::is_valid_part_field(f, part_type, part, universal, filter_role)) {
-            stk::io::field_data_to_ioss(f, entities, io_entity, f->name());
+            stk::io::field_data_to_ioss(f, entities, io_entity, f->name(), filter_role);
           }
         }
       }
@@ -840,14 +840,14 @@ namespace stk {
                   Ioss::EntityBlock *fb = entity->get_block(i);
                   /// \todo REFACTOR Need filtering mechanism.
                   put_field_data(bulk, *part,
-                                 stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                 stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                  fb, Ioss::Field::TRANSIENT);
                 }
               }
               else
                 {
                   put_field_data(bulk, *part,
-                                 stk::mesh::fem_entity_rank( part->primary_entity_rank() ),
+                                 stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                  entity, Ioss::Field::TRANSIENT);
                 }
             }

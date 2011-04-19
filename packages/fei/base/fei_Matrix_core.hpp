@@ -80,7 +80,43 @@ class Matrix_core : protected fei::Logger {
 
   fei::SharedPtr<fei::MatrixGraph> getMatrixGraph() const { return( matrixGraph_ ); }
 
-  std::vector<FillableMat*>& getRemotelyOwnedMatrix() { return( remotelyOwned_ ); }
+  const FillableMat* getRemotelyOwnedMatrix(int proc) const
+  {
+    if (proc_last_requested_ == proc) {
+      return remotelyOwned_last_requested_;
+    }
+    FillableMat* remote_mat = NULL;
+    std::map<int,FillableMat*>::const_iterator it = remotelyOwned_.find(proc);
+    if (it != remotelyOwned_.end()) {
+      remote_mat = it->second;
+      remotelyOwned_last_requested_ = remote_mat;
+      proc_last_requested_ = proc;
+    }
+    return( remote_mat );
+  }
+
+  FillableMat* getRemotelyOwnedMatrix(int proc)
+  {
+    if (proc_last_requested_ == proc) {
+      return remotelyOwned_last_requested_;
+    }
+    proc_last_requested_ = proc;
+    FillableMat* remote_mat = NULL;
+    std::map<int,FillableMat*>::iterator it = remotelyOwned_.find(proc);
+    if (it == remotelyOwned_.end()) {
+      remote_mat = new FillableMat;
+      remotelyOwned_.insert(std::make_pair(proc, remote_mat));
+    }
+    else {
+      remote_mat = it->second;
+    }
+    remotelyOwned_last_requested_ = remote_mat;
+    return( remote_mat );
+  }
+
+  std::map<int,FillableMat*>& getRemotelyOwnedMatrices();
+
+  void putScalar_remotelyOwned(double scalar);
 
   void setEqnComm(fei::SharedPtr<fei::EqnComm> eqnComm);
 
@@ -158,7 +194,7 @@ class Matrix_core : protected fei::Logger {
   bool haveFEMatrix() const { return( haveFEMatrix_ ); }
   void setFEMatrix(bool flag) {haveFEMatrix_ = flag; }
 
-  int getOwnerProc(int globalEqn);
+  int getOwnerProc(int globalEqn) const;
 
   std::string name_;
 
@@ -183,7 +219,9 @@ class Matrix_core : protected fei::Logger {
   fei::SharedPtr<fei::VectorSpace> vecSpace_;
   fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
 
-  std::vector<FillableMat*> remotelyOwned_;
+  std::map<int,FillableMat*> remotelyOwned_;
+  mutable FillableMat* remotelyOwned_last_requested_;
+  mutable int proc_last_requested_;
 
   bool haveBlockMatrix_;
   bool haveFEMatrix_;

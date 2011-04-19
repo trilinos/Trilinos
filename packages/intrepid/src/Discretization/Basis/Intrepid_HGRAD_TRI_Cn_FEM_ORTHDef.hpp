@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_TRI_CN_FEM_ORTHDEF_HPP
+#define INTREPID_HGRAD_TRI_CN_FEM_ORTHDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -354,3 +356,4 @@ void jrc( const Scalar &alpha , const Scalar &beta ,
 
 
 }// namespace Intrepid
+#endif

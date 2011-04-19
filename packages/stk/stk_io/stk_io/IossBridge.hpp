@@ -77,21 +77,24 @@ bool include_entity(Ioss::GroupingEntity *entity);
  *	stk::io::define_output_db()) which will cause the part to be output to a
  *	results or restart file.
  */
-
 template <typename T>
-void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta,
+void default_part_processing(const std::vector<T*> &entities,
+			     stk::mesh::fem::FEMMetaData &fem_meta,
                              stk::mesh::EntityRank type)
 {
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];
-    internal_part_processing(entity, meta, type);
+    internal_part_processing(entity, fem_meta, type);
   }
 }
+
+//! \deprecated
 template <typename T>
-void default_part_processing(const std::vector<T*> &entities, stk::mesh::fem::FEMMetaData &meta,
+void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta,
                              stk::mesh::EntityRank type)
 {
-  default_part_processing (entities, meta.get_meta_data(meta), type);
+  stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
+  default_part_processing (entities, fem_meta, type);
 }
 
 /** Given the newly created Ioss::Region 'io_region', define the
@@ -227,7 +230,8 @@ void field_data_from_ioss(const stk::mesh::FieldBase *field,
 void field_data_to_ioss(const stk::mesh::FieldBase *field,
                         std::vector<stk::mesh::Entity*> &entities,
                         Ioss::GroupingEntity *io_entity,
-                        const std::string &io_fld_name);
+                        const std::string &io_fld_name,
+			Ioss::Field::RoleType filter_role);
 
 
 /** Returns the stk::mesh::Field which contains the distribution
@@ -277,9 +281,11 @@ void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMM
 void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta,
                               stk::mesh::EntityRank type);
 
+//! \deprecated
 void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
                               stk::mesh::EntityRank type);
 
+//! \deprecated
 void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta,
                               stk::mesh::EntityRank type);
 
@@ -294,6 +300,10 @@ mesh::EntityRank edge_rank(const mesh::MetaData &meta);
 mesh::EntityRank node_rank(const mesh::MetaData &meta);
 void set_cell_topology(mesh::Part &part, const CellTopologyData * const cell_topology);
 const CellTopologyData *get_cell_topology(const mesh::Part &part);
+
+void initialize_spatial_dimension(mesh::fem::FEMMetaData &fem_meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
+
+//! \deprecated
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
 
 void get_io_field_type(const stk::mesh::FieldBase *field,

@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_LINE_CN_FEM_JACOBIDEF_HPP
+#define INTREPID_HGRAD_LINE_CN_FEM_JACOBIDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -218,3 +220,4 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::initializeTags() {
 }
 
 }// namespace Intrepid
+#endif

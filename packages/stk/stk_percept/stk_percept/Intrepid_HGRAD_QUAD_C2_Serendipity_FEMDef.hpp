@@ -1,3 +1,6 @@
+#ifndef INTREPID_HGRAD_QUAD_C2_SERENDIPITY_FEMDEF_HPP
+#define INTREPID_HGRAD_QUAD_C2_SERENDIPITY_FEMDEF_HPP
+
 // @HEADER
 // ************************************************************************
 //
@@ -29,7 +32,7 @@
 
 /** \file   Intrepid_HGRAD_QUAD_C2_Serendipity_FEMDef.hpp
     \brief  Definition file for bi-linear FEM basis functions for H(grad) functions on QUAD cells.
-    \author Created by P. Bochev and D. Ridzal.
+    \author Created by P. Bochev and D. Ridzal. (serendipity version by S. R. Kennon, srkenno@sandia.gov)
 */
 
 namespace Intrepid {
@@ -384,3 +387,4 @@ namespace Intrepid {
   }
 
 }// namespace Intrepid
+#endif
