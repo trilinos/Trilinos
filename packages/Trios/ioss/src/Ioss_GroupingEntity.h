@@ -95,9 +95,6 @@ namespace Ioss {
     //: Returns true if 'name' is an alias for this entity.
     bool is_alias(const std::string &name) const;
 
-    virtual size_t block_count() const {return 0;}
-    virtual EntityBlock* get_block(size_t which) const {return NULL;}
-
     //: Return list of blocks that the entities in this GroupingEntity "touch"
     //: For a FaceSet or EdgeSet, returns a list of the element blocks that the
     //: elements in the set belong to.  For a nodeset, returns "nodeblock_1".

@@ -34,14 +34,15 @@
 #define IOSS_Ioss_EntityType_H
 
 namespace Ioss {
-  enum EntityType {NODEBLOCK    =   1,
-		   ELEMENTBLOCK =   2,
-		   NODESET      =   4,
-		   SIDESET      =  16,
-		   SURFACE      =  16, //: Same as sideset
-		   COMMSET      =  32,
-		   SIDEBLOCK    = 128,
-                   REGION       = 256,
-                   SUPERELEMENT = 512};
+  enum EntityType {NODEBLOCK    =    1,
+		   ELEMENTBLOCK =    2,
+		   NODESET      =    4,
+		   SIDESET      =   16,
+		   SURFACE      =   16, //: Same as sideset
+		   COMMSET      =   32,
+		   SIDEBLOCK    =  128,
+                   REGION       =  256,
+                   SUPERELEMENT =  512,
+                   INVALID_TYPE = 1024};
 }
 #endif

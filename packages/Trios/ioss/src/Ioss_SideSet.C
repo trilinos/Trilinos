@@ -65,7 +65,7 @@ Ioss::SideSet::~SideSet()
 const Ioss::SideBlockContainer& Ioss::SideSet::get_side_blocks() const
 { return sideBlocks; }
 
-Ioss::EntityBlock* Ioss::SideSet::get_block(size_t which) const
+Ioss::SideBlock* Ioss::SideSet::get_block(size_t which) const
 {
   if (which < sideBlocks.size())
     return sideBlocks[which];

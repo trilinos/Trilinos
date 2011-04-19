@@ -43,7 +43,6 @@
 namespace Ioss {
   class DatabaseIO;
   class SideBlock;
-  class EntityBlock;
 
   typedef std::vector<SideBlock*> SideBlockContainer;
 
@@ -61,7 +60,7 @@ namespace Ioss {
     size_t side_block_count() const {return sideBlocks.size();}
     
     size_t block_count() const {return sideBlocks.size();}
-    EntityBlock* get_block(size_t which) const;
+    SideBlock* get_block(size_t which) const;
 
     void block_membership(std::vector<std::string> &block_members);
 
