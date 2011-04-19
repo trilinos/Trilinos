@@ -48,7 +48,6 @@ namespace {
 			      stk::mesh::EntityRank entity_rank)
   {
     assert(entity->type() == Ioss::SIDESET);
-    assert(fs != NULL);
     const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
     stk::io::default_part_processing(blocks, meta, entity_rank);
 
