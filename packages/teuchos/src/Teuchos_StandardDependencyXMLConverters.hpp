@@ -224,7 +224,7 @@ private:
   
   /** \brief Gets the String Tag */
   static const std::string& getStringTagName(){
-    static const std::string stringTagName = "string";
+    static const std::string stringTagName = "String";
     return stringTagName;
   }
 
