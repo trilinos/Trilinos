@@ -214,9 +214,9 @@ private:
   //@{
  
   /** \brief gets the ParameterEntryID attribute name. */
-  static const std::string& getParameterEntryIDAttributeName(){
-    static const std::string parameterEntryIDAttributeName = "parameterID";
-    return parameterEntryIDAttributeName;
+  static const std::string& getParameterEntryIdAttributeName(){
+    static const std::string parameterEntryIdAttributeName = "parameterId";
+    return parameterEntryIdAttributeName;
   }
 
   /** \brief gets the WhenParamEqualsValue attribute name. */

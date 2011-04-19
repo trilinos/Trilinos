@@ -6,7 +6,7 @@
     <Dependency type="ConditionVisualDependency">
       <Dependee parameterId="3"/>
       <Dependent parameterId="10"/>
-      <Condition parameterID="3" type="boolCondition"/>
+      <Condition parameterId="3" type="BoolCondition"/>
     </Dependency>
   </Dependencies>
 </ParameterList>

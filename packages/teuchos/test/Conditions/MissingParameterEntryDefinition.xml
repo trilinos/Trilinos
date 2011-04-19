@@ -5,7 +5,7 @@
     <Dependency type="ConditionVisualDependency">
       <Dependee parameterId="2"/>
       <Dependent parameterId="1"/>
-      <Condition parameterID="10" type="StringCondition">
+      <Condition parameterId="10" type="StringCondition">
         <Values>
           <String value="steve"/>
         </Values>

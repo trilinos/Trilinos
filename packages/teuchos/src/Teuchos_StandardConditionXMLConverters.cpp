@@ -109,7 +109,7 @@ RCP<Condition> ParameterConditionConverter::convertXML(
 {
   ParameterEntry::ParameterEntryID paramID = 
     xmlObj.getRequired<ParameterEntry::ParameterEntryID>(
-      getParameterEntryIDAttributeName());
+      getParameterEntryIdAttributeName());
   bool whenParamEqualsValue = xmlObj.getWithDefault(
     getWhenParamEqualsValueAttributeName(),
     ParameterCondition::getWhenParamEqualsValueDefault());
@@ -137,7 +137,7 @@ void ParameterConditionConverter::convertCondition(
     std::endl << std::endl);
 
   xmlObj.addAttribute(
-    getParameterEntryIDAttributeName(),
+    getParameterEntryIdAttributeName(),
     entryIDsMap.find(castedCondition->getParameter())->second);
 
   xmlObj.addBool(
