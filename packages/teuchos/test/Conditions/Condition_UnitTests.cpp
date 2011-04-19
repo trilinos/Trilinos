@@ -55,13 +55,6 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, testConditions){
 	TEST_ASSERT(!stringCon1->isConditionTrue());
 	testingList->set("string param", "coke");
 	TEST_ASSERT(stringCon1->isConditionTrue());
-	RCP<StringCondition> stringCon2 = rcp( 
-    new StringCondition(
-      testingList->getEntryRCP("string param"), conValues1, false));
-	testingList->set("string param", "fanta");
-	TEST_ASSERT(stringCon2->isConditionTrue());
-	testingList->set("string param", "coke");
-	TEST_ASSERT(!stringCon2->isConditionTrue());
 
 	/*
 	 * Testing for number condition
@@ -90,11 +83,6 @@ RCP<SubtractionFunction<double> > doubleTesterFunc = rcp( new SubtractionFunctio
 	testingList->set("bool param", false);
 	TEST_ASSERT(!boolCon1->isConditionTrue());
 
-	RCP<BoolCondition> boolCon2 = rcp( new BoolCondition(testingList->getEntryRCP("bool param"), false));
-	TEST_ASSERT(boolCon2->isConditionTrue());
-	testingList->set("bool param", true);
-	TEST_ASSERT(!boolCon2->isConditionTrue());
-
 	/*
 	 * Test Not condition
 	 */
@@ -108,33 +96,25 @@ RCP<SubtractionFunction<double> > doubleTesterFunc = rcp( new SubtractionFunctio
 	 */
 	Condition::ConstConditionList conList1(tuple<RCP<const Condition> >(stringCon1, boolCon1));
 	RCP<AndCondition> andCon1 = rcp(new AndCondition(conList1));
+	TEST_ASSERT(!andCon1->isConditionTrue());
+	testingList->set("bool param", true);
 	TEST_ASSERT(andCon1->isConditionTrue());
-	Condition::ConstConditionList conList2(tuple<RCP<const Condition> >(stringCon1, boolCon2));
-	RCP<AndCondition> andCon2 = rcp(new AndCondition(conList2));
-	TEST_ASSERT(!andCon2->isConditionTrue());
-	Condition::ConstConditionList conList3(tuple<RCP<const Condition> >(stringCon2, boolCon2));
-	RCP<AndCondition> andCon3 = rcp(new AndCondition(conList3));
-	TEST_ASSERT(!andCon3->isConditionTrue());
 
 	/*
 	 * Testing or condition
 	 */
+	testingList->set("bool param", false);
 	RCP<OrCondition> orCon1 = rcp(new OrCondition(conList1));
 	TEST_ASSERT(orCon1->isConditionTrue());
-	RCP<OrCondition> orCon2 = rcp(new OrCondition(conList2));
-	TEST_ASSERT(orCon2->isConditionTrue());
-	RCP<OrCondition> orCon3 = rcp(new OrCondition(conList3));
-	TEST_ASSERT(!orCon3->isConditionTrue());
+	testingList->set("string param", "fanta");
 
 	/*
 	 * Testing equal condition
 	 */
 	RCP<EqualsCondition> equalsCon1 = rcp(new EqualsCondition(conList1));
 	TEST_ASSERT(equalsCon1->isConditionTrue());
-	RCP<EqualsCondition> equalsCon2 = rcp(new EqualsCondition(conList2));
-	TEST_ASSERT(!equalsCon2->isConditionTrue());
-	RCP<EqualsCondition> equalsCon3 = rcp(new EqualsCondition(conList3));
-	TEST_ASSERT(equalsCon3->isConditionTrue());
+	testingList->set("bool param", true);
+	TEST_ASSERT(!equalsCon1->isConditionTrue());
 }
 
 //Test getters and setters

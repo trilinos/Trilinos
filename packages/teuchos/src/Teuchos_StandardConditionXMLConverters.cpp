@@ -110,16 +110,13 @@ RCP<Condition> ParameterConditionConverter::convertXML(
   ParameterEntry::ParameterEntryID paramID = 
     xmlObj.getRequired<ParameterEntry::ParameterEntryID>(
       getParameterEntryIdAttributeName());
-  bool whenParamEqualsValue = xmlObj.getWithDefault(
-    getWhenParamEqualsValueAttributeName(),
-    ParameterCondition::getWhenParamEqualsValueDefault());
   TEST_FOR_EXCEPTION(
     entryIDsMap.find(paramID) == entryIDsMap.end(),
     MissingParameterEntryDefinitionException,
     "Can't find a parameter entry with id " << paramID << " in the "
     "given entryIDsMap!" << std::endl << std::endl);
   return getSpecificParameterCondition(
-    xmlObj, entryIDsMap.find(paramID)->second, whenParamEqualsValue);
+    xmlObj, entryIDsMap.find(paramID)->second);
 }
 
 void ParameterConditionConverter::convertCondition(
@@ -139,10 +136,6 @@ void ParameterConditionConverter::convertCondition(
   xmlObj.addAttribute(
     getParameterEntryIdAttributeName(),
     entryIDsMap.find(castedCondition->getParameter())->second);
-
-  xmlObj.addBool(
-    getWhenParamEqualsValueAttributeName(), 
-    castedCondition->getWhenParamEqualsValue());
   
   addSpecificXMLTraits(castedCondition, xmlObj);
 }
@@ -150,8 +143,7 @@ void ParameterConditionConverter::convertCondition(
 RCP<ParameterCondition> 
 StringConditionConverter::getSpecificParameterCondition(
   const XMLObject& xmlObj,
-  RCP<ParameterEntry> parameterEntry,
-  bool whenParamEqualsValue) const
+  RCP<ParameterEntry> parameterEntry) const
 {
   StringCondition::ValueList values;
   int result = xmlObj.findFirstChild(getValuesTagName());
@@ -167,7 +159,7 @@ StringConditionConverter::getSpecificParameterCondition(
       values.append(child.getRequired(getStringValueAttributeName()));
     }
   }
-  return rcp(new StringCondition(parameterEntry, values, whenParamEqualsValue));
+  return rcp(new StringCondition(parameterEntry, values));
 }
 
 void StringConditionConverter::addSpecificXMLTraits(
@@ -192,11 +184,9 @@ void StringConditionConverter::addSpecificXMLTraits(
 RCP<ParameterCondition> 
 BoolConditionConverter::getSpecificParameterCondition(
   const XMLObject& xmlObj,
-  RCP<ParameterEntry> parameterEntry,
-  bool whenParamEqualsValue) const
+  RCP<ParameterEntry> parameterEntry) const
 {
-  return rcp(new BoolCondition(
-    parameterEntry, whenParamEqualsValue));
+  return rcp(new BoolCondition(parameterEntry));
 }
 
 void BoolConditionConverter::addSpecificXMLTraits(

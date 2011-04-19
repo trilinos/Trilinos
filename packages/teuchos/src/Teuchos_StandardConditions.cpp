@@ -32,11 +32,8 @@
 
 namespace Teuchos{
 
-ParameterCondition::ParameterCondition(
-  RCP<ParameterEntry> parameter, 
-  bool whenParamEqualsValue):
-  parameterEntry_(parameter),
-  whenParamEqualsValue_(whenParamEqualsValue)
+ParameterCondition::ParameterCondition(RCP<const ParameterEntry> parameter):
+  parameterEntry_(parameter)
 {
   TEST_FOR_EXCEPTION(is_null(parameter),
     InvalidConditionException,
@@ -184,20 +181,18 @@ RCP<NotCondition> DummyObjectGetter<NotCondition>::getDummyObject(){
 }
 
 StringCondition::StringCondition(
-  RCP<ParameterEntry> parameter,
-  std::string value, 
-  bool whenParamEqualsValue):
-  ParameterCondition(parameter, whenParamEqualsValue), 
+  RCP<const ParameterEntry> parameter,
+  std::string value):
+  ParameterCondition(parameter), 
   values_(ValueList(1,value))
 {
   checkParameterType();
 }
 
 StringCondition::StringCondition(
-  RCP<ParameterEntry> parameter,
-  ValueList values,
-  bool whenParamEqualsValue):
-  ParameterCondition(parameter, whenParamEqualsValue), 
+  RCP<const ParameterEntry> parameter,
+  ValueList values):
+  ParameterCondition(parameter), 
   values_(values)
 {
   checkParameterType();
@@ -225,10 +220,8 @@ RCP<StringCondition> DummyObjectGetter<StringCondition>::getDummyObject(){
   return rcp(new StringCondition(rcp(new ParameterEntry(empty)), empty));
 }
 
-BoolCondition::BoolCondition(
-  RCP<ParameterEntry> parameter,
-  bool whenParamEqualsValue):
-  ParameterCondition(parameter, whenParamEqualsValue)
+BoolCondition::BoolCondition(RCP<const ParameterEntry> parameter):
+  ParameterCondition(parameter)
 {
   TEST_FOR_EXCEPTION(!getParameter()->isType<bool>(),
     InvalidConditionException,

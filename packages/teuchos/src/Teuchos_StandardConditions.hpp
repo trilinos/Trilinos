@@ -56,19 +56,6 @@ class ParameterCondition : public Condition{
 
 public:
 
-  /** \name Public constants */
-  //@{
-
-  /** \brief The default value for the whenParamEqualsValue
-   * parameter in the Constructor.
-   */
-  static const bool& getWhenParamEqualsValueDefault(){
-    static const bool WHEN_PARAM_EQUALS_VALUE_DEFAULT = true;
-    return WHEN_PARAM_EQUALS_VALUE_DEFAULT;
-  }
-
-  //@}
-
   /** \name Constructors/Destructor */
   //@{
 
@@ -76,17 +63,8 @@ public:
    * \brief Constructs a Parameter Condition.
    *
    * @param Parameter The parameter to be evaluated.
-   * @param whenParamEqualsValue Indicates whether the condition 
-   * should be true when the evaluation
-   * results in a true or when the evaluation results in a false. 
-   * When set to true, if the parameter
-   * evaluates to true then the condition will evaluate to true. If 
-   * set to false if the parameter
-   * evaluates to false, then the condition will evaluate to true.
    */
-  ParameterCondition(
-    RCP<ParameterEntry> parameter, 
-    bool whenParamEqualsValue=getWhenParamEqualsValueDefault());
+  ParameterCondition(RCP<const ParameterEntry> parameter);
 
   virtual ~ParameterCondition(){}
   
@@ -110,12 +88,6 @@ public:
   inline RCP<const ParameterEntry> getParameter() const{
     return parameterEntry_.getConst();
   }
-
-  /** \brief Gets the WhenParamEqualsValue */
-  inline
-  bool getWhenParamEqualsValue() const{
-    return whenParamEqualsValue_;
-  }
   
   //@}
 
@@ -123,15 +95,7 @@ public:
   //@{
 
   bool isConditionTrue() const{
-    if((whenParamEqualsValue_ && evaluateParameter()) || 
-      (!whenParamEqualsValue_ && !evaluateParameter()))
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return evaluateParameter();
   }
 
   bool containsAtLeasteOneParameter() const{
@@ -150,14 +114,7 @@ private:
   /**
    * Parameter to be evaluated.
    */
-  RCP<ParameterEntry> parameterEntry_;
-
-
-  /**
-   * Whether or not the condition should evaluate to 
-   * true if the parameter evaluated to true.
-   */
-  bool whenParamEqualsValue_;
+  RCP<const ParameterEntry> parameterEntry_;
 
   //@}
 
@@ -191,36 +148,16 @@ public:
    * @param parameter The parameter to be evaluated.
    * be evaluated.
    * @param value The value to compare the parameter's value against.
-   * @param whenParamEqualsValue Indicates whether the condition 
-   * should be true when the evaluation
-   * results in a true or when the evaluation results in a false. 
-   * When set to true, if the parameter
-   * evaluates to true then the condition will evaluate to true.
-   * If set to false if the parameter
-   * evaluates to false, then the condition will evaluate to true.
    */
-  StringCondition(
-   RCP<ParameterEntry> parameter,
-   std::string value, 
-   bool whenParamEqualsValue=true);
+  StringCondition(RCP<const ParameterEntry> parameter, std::string value);
 
   /**
    * \brief Constructs a String Condition.
    *
    * @param parameter The parameter to be evaluated.
    * @param values The list values to compare the parameter's value against.
-   * @param whenParamEqualsValue Indicates 
-   * whether the condition should be true when the evaluation
-   * results in a true or when the evaluation results in a false.
-   * When set to true, if the parameter
-   * evaluates to true then the condition will evaluate to true. If set
-   * to false if the parameter
-   * evaluates to false, then the condition will evaluate to true.
    */
-  StringCondition(
-    RCP<ParameterEntry> parameter, 
-    ValueList values, 
-    bool whenParamEqualsValue=true);
+  StringCondition(RCP<const ParameterEntry> parameter, ValueList values);
 
   virtual ~StringCondition(){}
   
@@ -312,23 +249,6 @@ public:
    * \brief Constructs a Number Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
-   * @param whenParamEqualsValue Indicates whether the condition should be 
-   * true when the evaluation results in a true or when the evaluation results 
-   * in a false. When set to true, if the parameter evaluates to true then 
-   * the condition will evaluate to true. If seet to false if the parameter
-   * evaluates to false, then the condition will evaluate to true.
-   */
-  NumberCondition(
-    RCP<ParameterEntry> parameter,
-    bool whenParamEqualsValue=true):
-    ParameterCondition(parameter, whenParamEqualsValue), 
-    func_(null)
-  {}
-
-  /**
-   * \brief Constructs a Number Condition.
-   *
-   * @param parameterName The name of the parameter to be evaluated.
    * @param func A function to run the value of the parameter through. 
    * If the function returns a value
    * greater than 0, this will be interperted as the condition being "true". 
@@ -336,8 +256,8 @@ public:
    * as the condition being false.
    */
   NumberCondition(
-    RCP<ParameterEntry> parameter,
-    RCP<const SimpleFunctionObject<T> > func):
+    RCP<const ParameterEntry> parameter,
+    RCP<const SimpleFunctionObject<T> > func=null):
     ParameterCondition(parameter), 
     func_(func)
   {}
@@ -440,17 +360,8 @@ public:
    * \brief Constructs a Bool Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
-   * @param whenParamEqualsValue Indicates whether the condition 
-   * should be true when the evaluation
-   * results in a true or when the evaluation results in a false. 
-   * When set to true, if the parameter
-   * evaluates to true then the condition will evaluate to true. 
-   * If set to false if the parameter
-   * evaluates to false, then the condition will evaluate to true.
    */
-  BoolCondition(
-    RCP<ParameterEntry>,
-    bool whenParamEqualsValue=true);
+  BoolCondition(RCP<const ParameterEntry> parameter);
 
   virtual ~BoolCondition(){}
   

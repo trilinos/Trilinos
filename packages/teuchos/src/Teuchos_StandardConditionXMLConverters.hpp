@@ -172,13 +172,10 @@ public:
    * @param xmlObj The xml object from which the ParameterCondition 
    * is being derived.
    * @param parameterEntry The ParameterEntry the ParameterCondition evaluates.
-   * @param whenParamEqualsValue The whenParamEqualsValue for the 
-   * ParameterCondition to be created
    */
   virtual RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
-    RCP<ParameterEntry> parameterEntry,
-    bool whenParamEqualsValue) const = 0;
+    RCP<ParameterEntry> parameterEntry) const = 0;
   
   /** \brief Adds specific xml traits to the xmlObj for a particular
    * ParmaterCondtion
@@ -218,14 +215,6 @@ private:
     static const std::string parameterEntryIdAttributeName = "parameterId";
     return parameterEntryIdAttributeName;
   }
-
-  /** \brief gets the WhenParamEqualsValue attribute name. */
-  static const std::string& getWhenParamEqualsValueAttributeName(){
-    static const std::string whenParamEqualsValueAttributeName = 
-      "whenParamEqualsValue";
-    return whenParamEqualsValueAttributeName;
-  }
-
   
   //@}
   
@@ -243,8 +232,7 @@ public:
   /** \brief . */
   RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
-    RCP<ParameterEntry> parameterEntry,
-    bool whenParamEqualsValue) const;
+    RCP<ParameterEntry> parameterEntry) const;
  
   /** \brief . */
   void addSpecificXMLTraits(
@@ -287,8 +275,7 @@ public:
   /** \brief . */
   RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
-    RCP<ParameterEntry> parameterEntry,
-    bool whenParamEqualsValue) const;
+    RCP<ParameterEntry> parameterEntry) const;
  
   /** \brief . */
   void addSpecificXMLTraits(
@@ -311,41 +298,49 @@ public:
   /** \brief . */
   RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
-    RCP<ParameterEntry> parameterEntry,
-    bool whenParamEqualsValue) const
-  {
-    int functionTag = xmlObj.findFirstChild(FunctionObject::getXMLTagName());
-    if(functionTag == -1){
-      return rcp(new NumberCondition<T>(parameterEntry, whenParamEqualsValue));
-    }
-    else{
-      RCP<FunctionObject> functionObj = 
-        FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionTag));
-      RCP<SimpleFunctionObject<T> > castedFunction = 
-        rcp_dynamic_cast<SimpleFunctionObject<T> >(functionObj);
-      return rcp(new NumberCondition<T>(parameterEntry, castedFunction));
-    }
-  }
+    RCP<ParameterEntry> parameterEntry) const;
 
   /** \brief . */
   void addSpecificXMLTraits(
-    RCP<const ParameterCondition> condition, XMLObject& xmlObj) const
-  {
-    RCP<const NumberCondition<T> > castedCondition = 
-      rcp_dynamic_cast<const NumberCondition<T> >(condition);
-    RCP<const SimpleFunctionObject<T> > functionObject =
-      castedCondition->getFunctionObject();
-    if(!functionObject.is_null()){
-      XMLObject functionXML = 
-        FunctionObjectXMLConverterDB::convertFunctionObject(functionObject);
-      xmlObj.addChild(functionXML);
-    }
-  }
+    RCP<const ParameterCondition> condition, XMLObject& xmlObj) const;
  
   //@}
 
 };
 
+template<class T>
+RCP<ParameterCondition> 
+NumberConditionConverter<T>::getSpecificParameterCondition(
+  const XMLObject& xmlObj,
+  RCP<ParameterEntry> parameterEntry) const
+{
+  int functionTag = xmlObj.findFirstChild(FunctionObject::getXMLTagName());
+  if(functionTag == -1){
+    return rcp(new NumberCondition<T>(parameterEntry));
+  }
+  else{
+    RCP<FunctionObject> functionObj = 
+      FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionTag));
+    RCP<SimpleFunctionObject<T> > castedFunction = 
+      rcp_dynamic_cast<SimpleFunctionObject<T> >(functionObj);
+    return rcp(new NumberCondition<T>(parameterEntry, castedFunction));
+  }
+}
+
+template<class T>
+void NumberConditionConverter<T>::addSpecificXMLTraits(
+  RCP<const ParameterCondition> condition, XMLObject& xmlObj) const
+{
+  RCP<const NumberCondition<T> > castedCondition = 
+    rcp_dynamic_cast<const NumberCondition<T> >(condition);
+  RCP<const SimpleFunctionObject<T> > functionObject =
+    castedCondition->getFunctionObject();
+  if(!functionObject.is_null()){
+    XMLObject functionXML = 
+      FunctionObjectXMLConverterDB::convertFunctionObject(functionObject);
+    xmlObj.addChild(functionXML);
+  }
+}
 
 
 

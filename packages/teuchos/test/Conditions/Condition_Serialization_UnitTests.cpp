@@ -63,7 +63,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, StringConditionSerialization){
     rcp(new StringCondition(testList.getEntryRCP(paramName1), conditionVal1));
   RCP<StringCondition> complexStringCon = 
     rcp(new StringCondition(
-      testList.getEntryRCP(paramName2), conditionVal2, false));
+      testList.getEntryRCP(paramName2), conditionVal2));
   
   RCP<ConditionVisualDependency> simpleConDep = 
     rcp(new ConditionVisualDependency(
@@ -115,12 +115,6 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, StringConditionSerialization){
   TEST_COMPARE_ARRAYS(
     complexReadInCon->getValueList(), complexStringCon->getValueList());
 
-  TEST_EQUALITY(
-    simpleReadInCon->getWhenParamEqualsValue(), 
-    simpleStringCon->getWhenParamEqualsValue());
-  TEST_EQUALITY(
-    complexReadInCon->getWhenParamEqualsValue(), 
-    complexStringCon->getWhenParamEqualsValue());
 }
 
 TEUCHOS_UNIT_TEST(Teuchos_Conditions, BoolConditionSerialization){
@@ -159,9 +153,6 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, BoolConditionSerialization){
     rcp_dynamic_cast<const BoolCondition>(simpleReadInDep->getCondition(), true);
   TEST_ASSERT(nonnull(simpleReadInCon));
 
-  TEST_EQUALITY(
-    simpleReadInCon->getWhenParamEqualsValue(), 
-    boolCon->getWhenParamEqualsValue());
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Conditions, NumberConditionSerialization, T){
@@ -221,10 +212,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Conditions, NumberConditionSerializati
   RCP<const NumberCondition< T > > simpleReadInCon = 
     rcp_dynamic_cast<const NumberCondition< T > >(simpleReadInDep->getCondition(), true);
   TEST_ASSERT(nonnull(simpleReadInCon));
-
-  TEST_EQUALITY(
-    simpleReadInCon->getWhenParamEqualsValue(), 
-    numberCon->getWhenParamEqualsValue());
 
 
   RCP<ConditionVisualDependency> funcReadInDep = 

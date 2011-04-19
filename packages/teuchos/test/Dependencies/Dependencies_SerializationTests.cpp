@@ -427,7 +427,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, ConditionVisualDepSerialization){
     tuple<std::string>("steve", "blah", "your face");
   RCP<StringCondition> stringCon = 
     rcp(new StringCondition(
-      myDepList.getEntryRCP(dependee1), conditionVal1, false));
+      myDepList.getEntryRCP(dependee1), conditionVal1));
 
   RCP<BoolCondition> boolCon = 
     rcp(new BoolCondition(myDepList.getEntryRCP(dependee2)));
