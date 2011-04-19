@@ -33,8 +33,8 @@
 #define SACADO_CACHEFAD_DFAD_HPP
 
 #include "Sacado_CacheFad_GeneralFadExpr.hpp"
-#include "Sacado_Fad_DynamicStorage.hpp"
 #include "Sacado_CacheFad_DFadTraits.hpp"
+#include "Sacado_Fad_DynamicStorage.hpp"
 #include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {

@@ -33,8 +33,8 @@
 #define SACADO_ELRCACHEFAD_SLFAD_HPP
 
 #include "Sacado_ELRCacheFad_GeneralFadExpr.hpp"
-#include "Sacado_Fad_StaticStorage.hpp"
 #include "Sacado_ELRCacheFad_SLFadTraits.hpp"
+#include "Sacado_Fad_StaticStorage.hpp"
 #include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {

@@ -29,7 +29,7 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_LFAD_LOGICALSPARSERAITS_HPP
+#ifndef SACADO_LFAD_LOGICALSPARSETRAITS_HPP
 #define SACADO_LFAD_LOGICALSPARSETRAITS_HPP
 
 #include "Sacado_Traits.hpp"
@@ -124,4 +124,4 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#endif // SACADO_FAD_DFADTRAITS_HPP
+#endif // SACADO_LFAD_LOGICALSPARSETRAITS_HPP
