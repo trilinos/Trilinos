@@ -25,6 +25,7 @@ namespace panzer {
     double alpha;
     double beta;
     double time;
+    bool evaluate_transient_terms;
 
   };
 

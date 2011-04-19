@@ -164,11 +164,13 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
   RCP<const Epetra_Vector> x_dot;
   ae_inargs_->alpha = 0.0;
   ae_inargs_->beta = 1.0;
+  ae_inargs_->evaluate_transient_terms = false;
   if (is_transient) {
     x_dot = inArgs.get_x_dot();
     ae_inargs_->alpha = inArgs.get_alpha();
     ae_inargs_->beta = inArgs.get_beta();
     ae_inargs_->time = inArgs.get_t();
+    ae_inargs_->evaluate_transient_terms = true;
   }
   
 //   cout << "ME: alpha = " << ae_inargs_->alpha << endl;
