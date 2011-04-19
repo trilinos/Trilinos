@@ -1690,10 +1690,11 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
    */
 
   if (stats) {
-    for (i = 0, max=0; i < dotnum; i++) 
-      if (dotpt->Part[i] > max) max = dotpt->Part[i];
+    int tmpmax;
+    for (i = 0, tmpmax=0; i < dotnum; i++) 
+      if (dotpt->Part[i] > tmpmax) tmpmax = dotpt->Part[i];
 
-    MPI_Allreduce(&max,&numParts,1,MPI_INT, MPI_MAX, zz->Communicator);
+    MPI_Allreduce(&tmpmax,&numParts,1,MPI_INT, MPI_MAX, zz->Communicator);
     numParts++;
 
     lpartWgt = (double *)ZOLTAN_CALLOC(numParts, sizeof(double));
