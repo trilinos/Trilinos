@@ -221,7 +221,7 @@ StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
     if(validatorIDsMap.find(it->second) == validatorIDsMap.end()){
       validatorIDsMap.insert(it->second);
     }
-    pairTag.addAttribute(getValidatorIDAttributeName(), 
+    pairTag.addAttribute(getValidatorIdAttributeName(), 
       validatorIDsMap.find(it->second)->second);
     valueMapTag.addChild(pairTag);
   }  
@@ -260,7 +260,7 @@ StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
     std::string value = child.getRequired(getValueAttributeName());
     ParameterEntryValidator::ValidatorID valiID = 
       child.getRequired<ParameterEntryValidator::ValidatorID>(
-        getValidatorIDAttributeName());
+        getValidatorIdAttributeName());
     TEST_FOR_EXCEPTION(validatorIDsMap.find(valiID) == validatorIDsMap.end(),
       MissingValidatorException,
       "Could not find a validator corresponding to the ID " << valiID <<

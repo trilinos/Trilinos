@@ -411,8 +411,8 @@ private:
   }
 
   /** \brief . */
-  static const std::string& getValidatorIDAttributeName(){
-    static const std::string validatorIDAttributeName = "validatorID";
+  static const std::string& getValidatorIdAttributeName(){
+    static const std::string validatorIDAttributeName = "validatorId";
     return validatorIDAttributeName;
   }
 
