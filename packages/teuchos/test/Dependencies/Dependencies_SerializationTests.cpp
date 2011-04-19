@@ -1168,19 +1168,37 @@ TEUCHOS_UNIT_TEST(
 
   RCP<FileNameValidator> scrapVali = 
     DummyObjectGetter<FileNameValidator>::getDummyObject();
+  RCP<FileNameValidator> otherScrapVali =
+    DummyObjectGetter<FileNameValidator>::getDummyObject();
+  RCP<FileNameValidator> defaultScrapVali =
+    DummyObjectGetter<FileNameValidator>::getDummyObject();
   RangeValidatorDependency<int>::RangeToValidatorMap valiMap;
+  RangeValidatorDependency<int>::RangeToValidatorMap secondvaliMap;
   RangeValidatorDependency<int>::Range scrapRange(2,5);
   valiMap[scrapRange] = scrapVali;
+  secondvaliMap[scrapRange] = otherScrapVali;
   writerValiMap.insert(scrapVali);
+  writerValiMap.insert(otherScrapVali);
   readerValiMap.insert(
     IDtoValidatorMap::IDValidatorPair(
       writerValiMap.find(scrapVali)->second,scrapVali));
+  readerValiMap.insert(
+    IDtoValidatorMap::IDValidatorPair(
+      writerValiMap.find(otherScrapVali)->second,otherScrapVali));
+  readerValiMap.insert(
+    IDtoValidatorMap::IDValidatorPair(
+      writerValiMap.find(defaultScrapVali)->second,defaultScrapVali));
 
   RCP<Dependency> rangeDep = 
    rcp(new RangeValidatorDependency<int>(
     dependeeParam1, dependentParam1, valiMap));
 
+  RCP<Dependency> rangeDefaultDep = 
+   rcp(new RangeValidatorDependency<int>(
+    dependeeParam1, dependentParam1, secondvaliMap, defaultScrapVali));
+
   CONVERT_DEP_TO_XML(rangeDep);
+  CONVERT_DEP_TO_XML(rangeDefaultDep);
 
   TOO_MANY_DEPENDEE_TEST(rangeDep);
 
@@ -1201,6 +1219,13 @@ TEUCHOS_UNIT_TEST(
     DependencyXMLConverterDB::convertXML(
      rangeDepXML, readerEntryMap, readerValiMap),
     MissingValidatorException);
+
+  readerValiMap.erase(writerValiMap.find(defaultScrapVali)->second);
+  TEST_THROW(
+    DependencyXMLConverterDB::convertXML(
+     rangeDefaultDepXML, readerEntryMap, readerValiMap),
+    MissingValidatorException);
+
 }
 
 TEUCHOS_UNIT_TEST(
