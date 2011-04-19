@@ -233,7 +233,7 @@ StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
       validatorIDsMap.insert(defaultVali);
     }
     xmlObj.addAttribute(
-      getDefaultValidatorIDAttributeName(),
+      getDefaultValidatorIdAttributeName(),
       validatorIDsMap.find(defaultVali)->second);
   }
 }
@@ -272,10 +272,10 @@ StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
   }
 
   RCP<ParameterEntryValidator> defaultValidator = null;
-  if(xmlObj.hasAttribute(getDefaultValidatorIDAttributeName())){
+  if(xmlObj.hasAttribute(getDefaultValidatorIdAttributeName())){
     ParameterEntryValidator::ValidatorID defaultValiID = 
       xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
-        getDefaultValidatorIDAttributeName());
+        getDefaultValidatorIdAttributeName());
     TEST_FOR_EXCEPTION(
       validatorIDsMap.find(defaultValiID) == validatorIDsMap.end(),
       MissingValidatorException,

@@ -418,10 +418,10 @@ private:
   }
 
   /** \brief . */
-  static const std::string& getDefaultValidatorIDAttributeName(){
-    static const std::string defaultValidatorIDAttributeName = 
-      "defaultValidatorID";
-    return defaultValidatorIDAttributeName;
+  static const std::string& getDefaultValidatorIdAttributeName(){
+    static const std::string defaultValidatorIdAttributeName = 
+      "defaultValidatorId";
+    return defaultValidatorIdAttributeName;
   }
   
   //@}
