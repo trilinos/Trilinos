@@ -40,7 +40,8 @@ RCP<Dependency> VisualDependencyXMLConverter::convertXML(
   const XMLParameterListReader::EntryIDsMap& entryIDsMap,
   const IDtoValidatorMap& /*validatorIDsMap*/) const
 {
-  bool showIf = xmlObj.getWithDefault(getShowIfAttributeName(), true);
+  bool showIf = xmlObj.getWithDefault(
+    getShowIfAttributeName(), VisualDependency::getShowIfDefaultValue());
   return convertSpecialVisualAttributes(
     xmlObj,
     dependees,

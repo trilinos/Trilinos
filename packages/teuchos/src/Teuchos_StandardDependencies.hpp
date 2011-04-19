@@ -60,6 +60,13 @@ class VisualDependency : public Dependency{
 
 public:
 
+  /** \name Public Constant Accessors */
+  static const bool& getShowIfDefaultValue(){
+    static const bool SHOW_IF_DEFAULT_VALUE = true;
+    return SHOW_IF_DEFAULT_VALUE;
+  }
+    
+
   /** \name Constructors/Destructor */
   //@{
 
@@ -74,7 +81,7 @@ public:
   VisualDependency(
     RCP<const ParameterEntry> dependee, 
     RCP<ParameterEntry> dependent,
-    bool showIf=true);
+    bool showIf=getShowIfDefaultValue());
 
   /**
    * \brief Constructs a VisualDependency.
@@ -87,7 +94,7 @@ public:
   VisualDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependents,
-    bool showIf=true);
+    bool showIf=getShowIfDefaultValue());
 
   /**
    * \brief Constructs a VisualDependency.
@@ -100,7 +107,7 @@ public:
   VisualDependency(
     ConstParameterEntryList dependees, 
     RCP<ParameterEntry> dependent,
-    bool showIf=true);
+    bool showIf=getShowIfDefaultValue());
 
   /**
    * \brief Constructs a VisualDependency.
@@ -113,7 +120,7 @@ public:
   VisualDependency(
     ConstParameterEntryList dependees,
     ParameterEntryList dependents,
-    bool showIf=true);
+    bool showIf=getShowIfDefaultValue());
 
   //@}
 
