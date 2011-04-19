@@ -52,29 +52,29 @@ ParameterCondition::getAllParameters() const
   return toReturn;
 }
 
-BinaryLogicalCondition::BinaryLogicalCondition(ConstConditionList& conditions):
+BoolLogicCondition::BoolLogicCondition(ConstConditionList& conditions):
   conditions_(conditions)
 {
   TEST_FOR_EXCEPTION(conditions_.size() ==0,
     InvalidConditionException,
     "Sorry bud, but you gotta at least give "
     "me one condition "
-    "when you're constructing a BinaryLogicalCondition. Looks like you didn't. "
+    "when you're constructing a BoolLogicCondition. Looks like you didn't. "
     "I'm just gonna "
     "chalk it up a silly little mistake though. Take a look over your "
     "conditions again and make sure "
-    "you don't ever give any of your BinaryLogicConditions and empty "
+    "you don't ever give any of your BoolLogicConditions and empty "
     "condition list." << std::endl << std::endl <<
-    "Error: Empty condition list given to a BinaryLogicalCondition "
+    "Error: Empty condition list given to a BoolLogicCondition "
     "constructor.");
 }
 
 
-void BinaryLogicalCondition::addCondition(RCP<const Condition> toAdd){
+void BoolLogicCondition::addCondition(RCP<const Condition> toAdd){
   conditions_.append(toAdd);
 }
 
-bool BinaryLogicalCondition::isConditionTrue() const{
+bool BoolLogicCondition::isConditionTrue() const{
   ConstConditionList::const_iterator it = conditions_.begin();
   bool toReturn = (*it)->isConditionTrue();
   ++it;
@@ -84,7 +84,7 @@ bool BinaryLogicalCondition::isConditionTrue() const{
   return toReturn;
 }
 
-bool BinaryLogicalCondition::containsAtLeasteOneParameter() const{
+bool BoolLogicCondition::containsAtLeasteOneParameter() const{
   for(
     ConstConditionList::const_iterator it=conditions_.begin();
     it!=conditions_.end();
@@ -98,7 +98,7 @@ bool BinaryLogicalCondition::containsAtLeasteOneParameter() const{
 }
 
 Dependency::ConstParameterEntryList 
-BinaryLogicalCondition::getAllParameters() const{
+BoolLogicCondition::getAllParameters() const{
   Dependency::ConstParameterEntryList toReturn;
   Dependency::ConstParameterEntryList currentList;
   for(
@@ -113,7 +113,7 @@ BinaryLogicalCondition::getAllParameters() const{
 }
 
 OrCondition::OrCondition(ConstConditionList& conditions):
-  BinaryLogicalCondition(conditions){}
+  BoolLogicCondition(conditions){}
 
 bool OrCondition::applyOperator(bool op1, bool op2) const{
   return op1 || op2;
@@ -126,7 +126,7 @@ RCP<OrCondition> DummyObjectGetter<OrCondition>::getDummyObject(){
 }
 
 AndCondition::AndCondition(ConstConditionList& conditions):
-  BinaryLogicalCondition(conditions){}
+  BoolLogicCondition(conditions){}
 
 bool AndCondition::applyOperator(bool op1, bool op2) const{
   return op1 && op2;
@@ -139,7 +139,7 @@ RCP<AndCondition> DummyObjectGetter<AndCondition>::getDummyObject(){
 }
 
 EqualsCondition::EqualsCondition(ConstConditionList& conditions):
-  BinaryLogicalCondition(conditions){}
+  BoolLogicCondition(conditions){}
 
 bool EqualsCondition::applyOperator(bool op1, bool op2) const{
   return op1 == op2;

@@ -41,9 +41,9 @@
 namespace Teuchos {
 
 
-/** \brief An xml converter for BinaryLogicalConditions
+/** \brief An xml converter for BoolLogicConditions
  */
-class BinaryLogicalConditionConverter : public ConditionXMLConverter{
+class BoolLogicConditionConverter : public ConditionXMLConverter{
 
 public:
 
@@ -51,13 +51,13 @@ public:
   //@{
 
   /** 
-   * \brief Gets the specific BinaryLogicalCondition to be returned 
+   * \brief Gets the specific BoolLogicCondition to be returned 
    * by this conveter when converting from XML.
    *
-   * @param conditions The condition list for the BinaryLogical converter 
+   * @param conditions The condition list for the BoolLogic converter 
    * that is being converted.
    */
-  virtual RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
+  virtual RCP<BoolLogicCondition> getSpecificBoolLogicCondition(
     Condition::ConstConditionList& conditions) const = 0;
  
   //@}
@@ -82,15 +82,15 @@ public:
 
 /** \brief An xml converter for OrConditions
  */
-class OrConditionConverter : public BinaryLogicalConditionConverter{
+class OrConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
-  /** \name Overridden from BinaryLogicalConditionConverter */
+  /** \name Overridden from BoolLogicConditionConverter */
   //@{
 
   /** \brief . */
-  RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
+  RCP<BoolLogicCondition> getSpecificBoolLogicCondition(
     Condition::ConstConditionList& conditions) const;
  
   //@}
@@ -99,15 +99,15 @@ public:
 
 /** \brief An xml converter for AndConditions
  */
-class AndConditionConverter : public BinaryLogicalConditionConverter{
+class AndConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
-  /** \name Overridden from BinaryLogicalConditionConverter */
+  /** \name Overridden from BoolLogicConditionConverter */
   //@{
 
   /** \brief . */
-  RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
+  RCP<BoolLogicCondition> getSpecificBoolLogicCondition(
     Condition::ConstConditionList& conditions) const;
  
   //@}
@@ -117,15 +117,15 @@ public:
 
 /** \brief An xml converter for EqualsConditions
  */
-class EqualsConditionConverter : public BinaryLogicalConditionConverter{
+class EqualsConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
-  /** \name Overridden from BinaryLogicalConditionConverter */
+  /** \name Overridden from BoolLogicConditionConverter */
   //@{
 
   /** \brief . */
-  RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
+  RCP<BoolLogicCondition> getSpecificBoolLogicCondition(
     Condition::ConstConditionList& conditions) const;
  
   //@}

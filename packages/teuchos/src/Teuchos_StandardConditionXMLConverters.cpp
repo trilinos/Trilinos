@@ -33,7 +33,7 @@
 
 namespace Teuchos{
 
-RCP<Condition> BinaryLogicalConditionConverter::convertXML(
+RCP<Condition> BoolLogicConditionConverter::convertXML(
     const XMLObject& xmlObj,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap) const
 {
@@ -42,16 +42,16 @@ RCP<Condition> BinaryLogicalConditionConverter::convertXML(
     conditions.push_back(
       ConditionXMLConverterDB::convertXML(xmlObj.getChild(i), entryIDsMap));
   }
-  return getSpecificBinaryLogicalCondition(conditions); 
+  return getSpecificBoolLogicCondition(conditions); 
 }
 
-void BinaryLogicalConditionConverter::convertCondition(
+void BoolLogicConditionConverter::convertCondition(
   const RCP<const Condition> condition,
   XMLObject& xmlObj,
   const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const
 {
-  RCP<const BinaryLogicalCondition> castedCon = 
-    rcp_dynamic_cast<const BinaryLogicalCondition>(condition, true);
+  RCP<const BoolLogicCondition> castedCon = 
+    rcp_dynamic_cast<const BoolLogicCondition>(condition, true);
 
   const Condition::ConstConditionList conditions = castedCon->getConditions();
   for(
@@ -63,22 +63,22 @@ void BinaryLogicalConditionConverter::convertCondition(
   }
 }
 
-RCP<BinaryLogicalCondition> 
-OrConditionConverter::getSpecificBinaryLogicalCondition(
+RCP<BoolLogicCondition> 
+OrConditionConverter::getSpecificBoolLogicCondition(
   Condition::ConstConditionList& conditions) const
 {
   return rcp( new OrCondition(conditions));    
 }
 
-RCP<BinaryLogicalCondition> 
-AndConditionConverter::getSpecificBinaryLogicalCondition(
+RCP<BoolLogicCondition> 
+AndConditionConverter::getSpecificBoolLogicCondition(
   Condition::ConstConditionList& conditions) const
 {
   return rcp( new AndCondition(conditions));    
 }
 
-RCP<BinaryLogicalCondition> 
-EqualsConditionConverter::getSpecificBinaryLogicalCondition(
+RCP<BoolLogicCondition> 
+EqualsConditionConverter::getSpecificBoolLogicCondition(
   Condition::ConstConditionList& conditions) const
 {
   return rcp( new EqualsCondition(conditions));    

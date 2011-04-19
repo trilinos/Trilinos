@@ -499,14 +499,13 @@ public:
 
 
 /**
- * \brief An abstract parent class for all Binary Logic Conditions.
+ * \brief An abstract parent class for all Bool Logic Conditions.
  *
- * Binary Logic Conditions return the result of performing some
- * Logical operation on a set of conditions. Note that although the
- * name implies the evaluation of two conditions, Binary Logic Conditions
- * can actually evaluate an arbiturary number of conditions.
+ * Bool Logic Conditions return the result of performing some
+ * Logical operation on a set of conditions. The set of conditions
+ * may be an aribtrary size as long as it is two or greater.
  */
-class BinaryLogicalCondition : public Condition{
+class BoolLogicCondition : public Condition{
 
 public:
 
@@ -514,18 +513,18 @@ public:
   //@{
 
   /**
-   * \brief Constructs a BinaryLogicCondition
+   * \brief Constructs a BoolLogicCondition
    *
    * \param conditions The conditions to be evaluated.
    */
-  BinaryLogicalCondition(ConstConditionList& conditions);
+  BoolLogicCondition(ConstConditionList& conditions);
 
   //@}
 
   /**
-   * \brief Deconstructor for a BinaryLogicCondition
+   * \brief Deconstructor for a BoolLogicCondition
    */
-  virtual ~BinaryLogicalCondition(){}
+  virtual ~BoolLogicCondition(){}
 
   //@}
   
@@ -535,10 +534,10 @@ public:
 
   /**
    * \brief Adds a Condition to the list of conditions that will
-   * be evaluated by this Binary Logical Condition.
+   * be evaluated by this Bool Logic Condition.
    *
    * \param toAdd The condition to be added to the list of
-   * conditions this Binary Logic Condition will evaluate.
+   * conditions this Bool Logic Condition will evaluate.
    */
   void addCondition(RCP<const Condition> toAdd);
 
@@ -548,7 +547,7 @@ public:
   //@{
 
   /**
-   * \brief Applies a Binary Logic operator to two operands and returns the
+   * \brief Applies a Bool Logic operator to two operands and returns the
    * result.
    *
    * \param op1 The first operand.
@@ -560,7 +559,7 @@ public:
 
   /**
    * \brief Gets a list of all conditions that are a part of this 
-   * BinaryLogicalCondition/
+   * BoolLogicCondition/
    */
   inline
   const ConstConditionList& getConditions() const{
@@ -598,10 +597,10 @@ private:
 };
 
 /**
- * \brief A Binary Logic Condition that returns the result
+ * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical OR on the conditions.
  */
-class OrCondition : public BinaryLogicalCondition{
+class OrCondition : public BoolLogicCondition{
 
 public:
 
@@ -631,7 +630,7 @@ public:
   
   //@}
 
-  /** \name Overridden from BinaryLogicalCondition */
+  /** \name Overridden from BoolLogicCondition */
   //@{
 
   /** \brief . */
@@ -666,10 +665,10 @@ public:
 
 
 /**
- * \brief A Binary Logic Condition that returns the result
+ * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical AND on the conditions.
  */
-class AndCondition : public BinaryLogicalCondition{
+class AndCondition : public BoolLogicCondition{
 
 public:
 
@@ -700,7 +699,7 @@ public:
   //@}
 
 
-  /** \name Overridden from BinaryLogicalCondition */
+  /** \name Overridden from BoolLogicCondition */
   //@{
 
   /** \brief . */
@@ -735,10 +734,10 @@ public:
 
 
 /**
- * \brief A Binary Logic Condition that returns the result
+ * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical EQUALS on the conditions.
  */
-class EqualsCondition : public BinaryLogicalCondition{
+class EqualsCondition : public BoolLogicCondition{
 
 public:
 
@@ -768,7 +767,7 @@ public:
   
   //@}
 
-  /** \name Overridden from BinaryLogicalCondition */
+  /** \name Overridden from BoolLogicCondition */
   //@{
 
   /** \brief . */

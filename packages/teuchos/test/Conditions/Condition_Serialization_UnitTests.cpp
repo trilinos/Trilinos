@@ -270,7 +270,7 @@ NUMBER_PARAM_TYPE_TEST(llint)
 NUMBER_PARAM_TYPE_TEST(ullint)
 #endif
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Conditions, BinaryConditionSerialization, BinCondition){
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Conditions, BoolLogicConditionSerialization, BinCondition){
   ConditionXMLConverterDB::printKnownConverters(out);
   std::string paramName1 = "bool param1";
   std::string paramName2 = "bool param2";
@@ -327,7 +327,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Conditions, BinaryConditionSerializati
 }
 
 #define BIN_CON_TEST( BinCondition ) \
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Conditions, BinaryConditionSerialization, BinCondition)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Conditions, BoolLogicConditionSerialization, BinCondition)
 
 BIN_CON_TEST(AndCondition)
 BIN_CON_TEST(OrCondition)

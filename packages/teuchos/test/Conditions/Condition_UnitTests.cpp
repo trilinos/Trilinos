@@ -211,7 +211,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, testConditionGetterAndSetters){
 	TEST_ASSERT(equalsParameters.find(testingList->getEntryRCP("bool param")) != equalsParameters.end());
 
 	/*
-	 * Testing BinaryLogicCondition add
+	 * Testing BoolLogicCondition add
 	 */
 	equalsCon1->addCondition(orCon1);
 	Dependency::ConstParameterEntryList equalsParameters2 = equalsCon1->getAllParameters();
