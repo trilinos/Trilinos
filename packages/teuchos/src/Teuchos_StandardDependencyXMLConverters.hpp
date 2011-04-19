@@ -532,9 +532,9 @@ private:
 
 
   /** \brief . */
-  static const std::string& getValidatorIDAttributeName(){
-    static const std::string validatorIDAttributeName = "validatorID";
-    return validatorIDAttributeName;
+  static const std::string& getValidatorIdAttributeName(){
+    static const std::string validatorIdAttributeName = "validatorId";
+    return validatorIdAttributeName;
   }
 
   //@}
@@ -556,7 +556,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
   castedDependency->getRangeToValidatorMap();
   for(
     typename RangeValidatorDependency<T>::RangeToValidatorMap::const_iterator 
-    it = castedDependency->getRangeToValidatorMap().begin();
+      it = castedDependency->getRangeToValidatorMap().begin();
     it != castedDependency->getRangeToValidatorMap().end();
     ++it)
   {
@@ -570,7 +570,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
     XMLObject pairTag(getPairTag());
     pairTag.addAttribute(getMinAttributeName(), min);
     pairTag.addAttribute(getMaxAttributeName(), max);
-    pairTag.addAttribute(getValidatorIDAttributeName(), validatorID);
+    pairTag.addAttribute(getValidatorIdAttributeName(), validatorID);
     rangesAndValidatorsTag.addChild(pairTag);
   }
   xmlObj.addChild(rangesAndValidatorsTag);
@@ -601,7 +601,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
     T max = child.getRequired<T>(getMaxAttributeName());
     ParameterEntryValidator::ValidatorID currentID =
       child.getRequired<ParameterEntryValidator::ValidatorID>(
-          getValidatorIDAttributeName());
+          getValidatorIdAttributeName());
       
     TEST_FOR_EXCEPTION(
       validatorIDsMap.find(currentID) == validatorIDsMap.end(),
