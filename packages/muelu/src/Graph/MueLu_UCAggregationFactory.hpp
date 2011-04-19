@@ -895,7 +895,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         //     a) count the number of nonzeros per row in the transpose
         std::vector<int> RowPtr(exp_nRows+1-nVertices);
         //{
-        ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+        ArrayRCP<const int> vertex2AggIdCst = aggregates.GetVertex2AggId()->getData(0);
 
         for (int i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
         for (int i = 0; i < nVertices;  i++) {
@@ -905,7 +905,7 @@ class UCAggregationFactory : public Teuchos::Describable {
 
           for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
             int j = *it;
-            if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
+            if ( (j >= nVertices) && (vertex2AggIdCst[j] == MUELU_UNAGGREGATED)){
               RowPtr[j-nVertices]++;
             }
           }
@@ -930,7 +930,7 @@ class UCAggregationFactory : public Teuchos::Describable {
           
           for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
             int j = *it;
-            if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
+            if ( (j >= nVertices) && (vertex2AggIdCst[j] == MUELU_UNAGGREGATED)){
               cols[RowPtr[j-nVertices]++] = i;
             }
           }
@@ -942,7 +942,7 @@ class UCAggregationFactory : public Teuchos::Describable {
         RowPtr[0] = 0;
           
         // views on distributed vectors are freed here.
-        vertex2AggId = Teuchos::null;
+        vertex2AggIdCst = Teuchos::null;
         //}
 
         int bestScoreCutoff;
