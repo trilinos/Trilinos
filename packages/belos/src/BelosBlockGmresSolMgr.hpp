@@ -1059,6 +1059,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             if ( expConvTest_->getLOADetected() ) {
               // we don't have convergence
               loaDetected_ = true;
+              printer_->stream(Warnings) << 
+                "Warning! Belos block GMRES solver has experienced a loss of accuracy!" << std::endl;
               isConverged = false;
             }
             break;  // break from while(1){block_gmres_iter->iterate()}
