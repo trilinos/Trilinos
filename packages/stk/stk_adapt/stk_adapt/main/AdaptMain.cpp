@@ -546,11 +546,6 @@ namespace stk {
 //#if !PY_PERCEPT
 int main(int argc, char **argv) { 
 
-#if defined(__PGI)
-  std::cout << "Not supported on PGI" << std::endl;
-  return 0;
-#else
   return stk::adapt::adapt_main(argc, argv);
-#endif
 }
 //#endif
