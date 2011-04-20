@@ -52,8 +52,8 @@ namespace UnitTest {
 #endif
 
   //create a matrix as specified by parameter list options
-  template <class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Cthulhu::CrsOperator<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > create_test_matrix(Teuchos::ParameterList &matrixList)
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<Cthulhu::CrsOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > create_test_matrix(Teuchos::ParameterList &matrixList)
   {
 #include "MueLu_UseShortNames.hpp"
 
@@ -85,8 +85,8 @@ namespace UnitTest {
   } //create_test_matrix
 
   //create a 1D Poisson matrix with the specified number of rows
-  template <class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Cthulhu::CrsOperator<ScalarType,LocalOrdinal,GlobalOrdinal,Node> > create_1d_poisson_matrix(GlobalOrdinal numRows)
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<Cthulhu::CrsOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_1d_poisson_matrix(GlobalOrdinal numRows)
   {
 #include "MueLu_UseShortNames.hpp"
 

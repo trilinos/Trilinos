@@ -28,20 +28,20 @@ namespace Cthulhu {
 
   typedef std::string viewLabel_t;
 
-template <class ScalarType, 
+template <class Scalar, 
           class LocalOrdinal  = int, 
           class GlobalOrdinal = LocalOrdinal, 
           class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-          class LocalMatOps   = typename Kokkos::DefaultKernels<ScalarType,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
-class CrsOperator : public Operator<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+          class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+class CrsOperator : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
   typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+  typedef Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
   typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
 #ifdef HAVE_CTHULHU_TPETRA
-  typedef Cthulhu::TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
+  typedef Cthulhu::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
-  typedef Cthulhu::CrsMatrixFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
+  typedef Cthulhu::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
   typedef Cthulhu::OperatorView<LocalOrdinal, GlobalOrdinal, Node> OperatorView;
 
 public:
@@ -85,7 +85,7 @@ public:
       \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
       \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
   */
-  inline void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const ScalarType> &vals) { 
+  inline void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) { 
     matrixData_->insertGlobalValues(globalRow, cols, vals);
   }
 
@@ -222,7 +222,7 @@ public:
   */
     virtual void getLocalRowCopy(LocalOrdinal LocalRow, 
                                  const ArrayView<LocalOrdinal> &Indices, 
-                                 const ArrayView<ScalarType> &Values,
+                                 const ArrayView<Scalar> &Values,
                                  size_t &NumEntries
                                  ) const {
       matrixData_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
@@ -238,7 +238,7 @@ public:
 
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
-  inline void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const ScalarType> &values) const {
+  inline void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const {
      matrixData_->getGlobalRowView(GlobalRow, indices, values);
   }
 
@@ -252,14 +252,14 @@ public:
 
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
-  inline void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const ScalarType> &values) const {
+  inline void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const {
      matrixData_->getLocalRowView(LocalRow, indices, values);
   }
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
     the zero and non-zero diagonals owned by this node. */
-  inline void getLocalDiagCopy(Vector<ScalarType,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
+  inline void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
     matrixData_->getLocalDiagCopy(diag);
   }
 
@@ -279,7 +279,7 @@ public:
   will be accumulated into \c Y.
   */
   //TODO virtual=0 // TODO: Add default parameters ?
-  inline void multiply(const MultiVector<ScalarType,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<ScalarType,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, ScalarType alpha, ScalarType beta) const {
+  inline void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
      matrixData_->multiply(X, Y, trans, alpha, beta);
   }
 

@@ -8,7 +8,7 @@
 
 namespace MueLu {
 
-template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
 class Level;
 
 /*!
@@ -25,8 +25,8 @@ class Level;
  capabilities are used by the SmootherFactory.
 */
 
-template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
-class SmootherPrototype : public SmootherBase<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+class SmootherPrototype : public SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -46,7 +46,7 @@ class SmootherPrototype : public SmootherBase<ScalarType,LocalOrdinal,GlobalOrdi
 
     virtual void CopyParameters(RCP<SmootherPrototype>) = 0;
 
-    virtual void Setup(Level<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> &) = 0;
+    virtual void Setup(Level<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> &) = 0;
 
     virtual RCP<SmootherPrototype> Copy() = 0;
 

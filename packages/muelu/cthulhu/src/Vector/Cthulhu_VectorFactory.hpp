@@ -23,7 +23,7 @@
 
 namespace Cthulhu {
   
-  template <class ScalarType, 
+  template <class Scalar, 
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType>
@@ -31,10 +31,10 @@ namespace Cthulhu {
   class VectorFactory {
     
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-    typedef Vector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> Vector;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Vector;
 #ifdef HAVE_CTHULHU_TPETRA
     typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
-    typedef TpetraVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> TpetraVector;
+    typedef TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraVector;
 #endif
 
   private:

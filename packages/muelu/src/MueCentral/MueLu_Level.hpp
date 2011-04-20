@@ -14,7 +14,7 @@
 
 namespace MueLu {
 
-  template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+  template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
   class SmootherPrototype;
 
   /*!
@@ -27,12 +27,12 @@ namespace MueLu {
   */
   //template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   //class Level : public Teuchos::VerboseObject<Level<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > {
-  template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class Level : public Needs {
 
 #include "MueLu_UseShortNames.hpp"
 
-    //friend inline std::ostream& operator<<(std::ostream& os, Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &level);
+    //friend inline std::ostream& operator<<(std::ostream& os, Level<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &level);
 
   private: 
 
@@ -184,8 +184,8 @@ namespace MueLu {
   }; //class Level
 
   //Print function.  Not a friend b/c it uses only public interfaces for data access.
-  template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::ostream& operator<<(std::ostream& os, Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> const &level) {
+  template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  std::ostream& operator<<(std::ostream& os, Level<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> const &level) {
     os << "Printing Level object " << level.GetLevelID() << std::endl;
     if (level.GetA() != Teuchos::null) os << *level.GetA() << std::endl;
     if (level.GetR() != Teuchos::null) os << *level.GetR() << std::endl;

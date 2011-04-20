@@ -18,8 +18,8 @@ namespace MueLu {
     @brief Factory for building tentative prolongator.
   */
 
-template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 #include "MueLu_UseShortNames.hpp"
 
   private:

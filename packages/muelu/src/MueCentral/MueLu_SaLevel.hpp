@@ -13,8 +13,8 @@ namespace MueLu {
     In addition to standard AMG operators, SaLevel also provides
     a near null space associated with the discretization operator.
   */
-  template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class SaLevel : public Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+  template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class SaLevel : public Level<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -77,8 +77,8 @@ namespace MueLu {
 
   }; //class SaLevel
 
-  template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::ostream& operator<<(std::ostream &os, SaLevel<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> const & level)
+  template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  std::ostream& operator<<(std::ostream &os, SaLevel<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> const & level)
   {
     os << level.nullSpace_;
     os << level.Ptent_;

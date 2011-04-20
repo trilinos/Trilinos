@@ -11,17 +11,17 @@
 
 namespace Cthulhu {
   
-  template <class ScalarType, 
+  template <class Scalar, 
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<ScalarType,LocalOrdinal,Node>::SparseOps>
+            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
 
   class OperatorFactory {
     
     typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-    typedef Cthulhu::Operator<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
-    typedef Cthulhu::CrsOperator<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperator;
+    typedef Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
+    typedef Cthulhu::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperator;
 
   private:
     //! Private constructor. This is a static class.

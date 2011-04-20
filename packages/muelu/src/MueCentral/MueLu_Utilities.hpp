@@ -41,11 +41,11 @@ namespace MueLu {
   This class provides a number of static helper methods.  Some are temporary and will eventually
   go away, while others should be moved to Cthulhu.
 */
-  template <class ScalarType, 
+  template <class Scalar, 
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<ScalarType,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
   class Utils {
     
 #include "MueLu_UseShortNames.hpp"

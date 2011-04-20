@@ -3,7 +3,7 @@
 // This file can be use for two purpose:
 // 1) As an header of a user program.
 //    In this case, this file must be include *after* other headers
-//    and type ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps must be defined.
+//    and type Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps must be defined.
 //    Note also that there is no #ifndef/#endif to protect again the multiple inclusion of this file.
 //    User should create is own header file including this one:
 //

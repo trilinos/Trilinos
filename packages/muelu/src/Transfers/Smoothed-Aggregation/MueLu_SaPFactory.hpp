@@ -30,8 +30,8 @@ namespace MueLu {
   the # fine dofs by 3.
 */
 
-template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 #include "MueLu_UseShortNames.hpp"
 
   template<class AA, class BB, class CC, class DD, class EE>
@@ -46,7 +46,7 @@ class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, L
 */
      std::string diagonalView_;
      bool doQR_;
-     ScalarType dampingFactor_;
+     Scalar dampingFactor_;
      bool useAFiltered_;
      bool reUseP_;
      bool reUsePtent_;
@@ -153,7 +153,7 @@ class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, L
 
     //! @name Set methods.
     //@{
-    void SetDampingFactor(ScalarType dampingFactor) {
+    void SetDampingFactor(Scalar dampingFactor) {
       dampingFactor_ = dampingFactor;
     }
 
@@ -184,7 +184,7 @@ class SaPFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, L
     //! @name Get methods.
     //@{
 
-    ScalarType GetDampingFactor() {
+    Scalar GetDampingFactor() {
       return dampingFactor_;
     }
 
@@ -214,8 +214,8 @@ function SetDiagonalView(this, diagonalView)
 }; //class SaPFactory
 
 //! Friend print function.
-template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-std::ostream& operator<<(std::ostream& os, SaPFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &factory) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+std::ostream& operator<<(std::ostream& os, SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &factory) {
   os << "Printing an SaPFactory object" << std::endl;
   return os;
 }

@@ -18,7 +18,7 @@ namespace MueLu {
   whether a smoother should be built on the coarsest level.
 */
 
-template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
 class SmootherFactoryBase : public Needs {
 
 #include "MueLu_UseShortNames.hpp"

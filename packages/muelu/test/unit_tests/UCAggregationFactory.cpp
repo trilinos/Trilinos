@@ -22,7 +22,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UCAggregationFactory, Build, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
   {
-    typedef double ScalarType;
+    typedef double Scalar;
 #include "MueLu_UseShortNames.hpp"
     
     out << "version: " << MueLu::Version() << std::endl;
@@ -60,7 +60,7 @@ namespace {
   // INSTANTIATIONS
   //
 
-  typedef double ScalarType;                         // ScalarType is not revelant for this test
+  typedef double Scalar;                         // Scalar is not revelant for this test
   typedef Kokkos::DefaultNode::DefaultNodeType Node; // Kokkos is not revelant for this test   
   
 #define UNIT_TEST_GROUP_4(LO, GO, NO, LMO)                              \
@@ -68,7 +68,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UCAggregationFactory, Build,       LO, GO, NO, LMO)
 
 #define UNIT_TEST_GROUP_2(LO, GO)                                       \
-  typedef Kokkos::DefaultKernels<ScalarType,LO,Node>::SparseOps LMO ## LO; \
+  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO ## LO; \
   UNIT_TEST_GROUP_4(LO, GO, Node, LMO ## LO)
 
   ///  UNIT_TEST_GROUP_2(int, int)
@@ -76,7 +76,7 @@ namespace {
   //UNIT_TEST_GROUP_2(long, long)
 
   typedef long int lint;
-  typedef Kokkos::DefaultKernels<ScalarType,int,Node>::SparseOps LMOlongint;
+  typedef Kokkos::DefaultKernels<Scalar,int,Node>::SparseOps LMOlongint;
   UNIT_TEST_GROUP_4(int, lint, Node, LMOlongint)
 
 

@@ -18,8 +18,8 @@ namespace MueLu {
   For a concrete implementation the user has to overwrite the virtual Build method.
 */
 
-template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class RFactory : public Teuchos::VerboseObject<RFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+class RFactory : public Teuchos::VerboseObject<RFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
 #include "MueLu_UseShortNames.hpp"
 
   private:

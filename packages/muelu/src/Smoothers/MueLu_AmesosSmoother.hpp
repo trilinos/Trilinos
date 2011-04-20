@@ -12,7 +12,7 @@
 
 namespace MueLu {
 
-template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
 class Level;
 
 /*!
@@ -23,8 +23,8 @@ class Level;
   based on the type and ParameterList passed into the constructor.  See the constructor for more information.
 */
 
-  template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class AmesosSmoother : public SmootherPrototype<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class AmesosSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
 
 #include "MueLu_UseShortNames.hpp"

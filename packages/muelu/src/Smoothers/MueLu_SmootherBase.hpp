@@ -18,7 +18,7 @@ namespace MueLu {
   smoothers.
 */
 
-template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
 class SmootherBase : public Needs {
 
 #include "MueLu_UseShortNames.hpp"

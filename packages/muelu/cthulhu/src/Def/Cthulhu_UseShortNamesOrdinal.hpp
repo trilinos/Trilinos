@@ -63,7 +63,7 @@ typedef Cthulhu::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> 
 
 #endif
 
-// Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by ScalarType, LocalOrdinal, GlobalOrdinal, Node).
+// Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by Scalar, LocalOrdinal, GlobalOrdinal, Node).
 
 // TODO: add namespace {} for shortcut types
 

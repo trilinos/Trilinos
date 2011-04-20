@@ -19,9 +19,9 @@ namespace MueLu {
   For a concrete implementation the user has to overwrite the virtual Build method.
 */
 
-template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-//class PFactory public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
-class PFactory : public Teuchos::VerboseObject<PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+//class PFactory public OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+class PFactory : public Teuchos::VerboseObject<PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
 #include "MueLu_UseShortNames.hpp"
 
   protected:

@@ -34,8 +34,8 @@ TEUCHOS_UNIT_TEST(SaPFactory, GetSetMethods)
   out << "version: " << MueLu::Version() << std::endl;
 
   RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
-  sapFactory->SetDampingFactor( (ScalarType)4/3 );
-  TEUCHOS_TEST_EQUALITY(((ScalarType)4/3) == sapFactory->GetDampingFactor(), true, out, success);
+  sapFactory->SetDampingFactor( (Scalar)4/3 );
+  TEUCHOS_TEST_EQUALITY(((Scalar)4/3) == sapFactory->GetDampingFactor(), true, out, success);
   sapFactory->TentativeWithQR(true);
   TEUCHOS_TEST_EQUALITY( sapFactory->TentativeWithQR(), true, out, success);
   sapFactory->ReUseP(true);

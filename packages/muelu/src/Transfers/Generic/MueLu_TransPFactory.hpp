@@ -17,8 +17,8 @@ namespace MueLu {
     matrix to do the transpose.  This should probably be fixed at some point.
   */
 
-  template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class TransPFactory : public RFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class TransPFactory : public RFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -69,8 +69,8 @@ namespace MueLu {
   }; //class TransPFactory
 
   //! Friend print function.
-  template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::ostream& operator<<(std::ostream& os, TransPFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &factory) {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  std::ostream& operator<<(std::ostream& os, TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &factory) {
     os << "Printing a TransPFactory object" << std::endl;
     return os;
   }

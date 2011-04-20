@@ -24,19 +24,19 @@
 
 namespace Cthulhu {
   
-  template <class ScalarType, 
+  template <class Scalar, 
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<ScalarType,LocalOrdinal,Node>::SparseOps>
+            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
 
   class CrsMatrixFactory {
     
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-    typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+    typedef Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
 #ifdef HAVE_CTHULHU_TPETRA
     typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
-    typedef TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
+    typedef TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
 
   private:

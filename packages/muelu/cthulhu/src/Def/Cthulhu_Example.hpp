@@ -23,7 +23,7 @@
 //
 // The definition of template types can still be modified if needed.
 
-// Cthulhu_DefaultTypes.hpp defines the types: ScalarType, LocalOrdinal, GlobalOrdinal and Node.
+// Cthulhu_DefaultTypes.hpp defines the types: Scalar, LocalOrdinal, GlobalOrdinal and Node.
 // You can use your own definition of these types by defining them before including Cthulhu_Example.hpp. You just have to define also the macro CTHULHU_DEFAULTTYPES_HPP.
 #include "Cthulhu_UseDefaultTypes.hpp"
 

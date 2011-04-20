@@ -22,8 +22,8 @@ namespace MueLu {
   restrictor.
 */
 
-template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class GenericPRFactory : public PRFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+class GenericPRFactory : public PRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 #include "MueLu_UseShortNames.hpp"
 
   private:

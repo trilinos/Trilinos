@@ -34,9 +34,9 @@ using Teuchos::RCP;
 //      6) tCRS <-- mat*v via matrix-matrix multiply
 //
 //      7) print if  abs(y[i] - tCRS[i])/z[i] > 1.e-8
-template <typename ScalarType,typename LocalOrdinal,typename GlobalOrdinal,typename Node, typename LocalMatOps>
-//int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
-int MatrixVectorChecker(const RCP<const Cthulhu::Operator<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
+template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node, typename LocalMatOps>
+//int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
+int MatrixVectorChecker(const RCP<const Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
 
 #include "MueLu_UseShortNames.hpp"
 

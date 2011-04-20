@@ -10,8 +10,8 @@ namespace MueLu {
   @class RAPFactory class.
   @brief Factory for building coarse matrices.
 */
-template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class RAPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+class RAPFactory : public OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 

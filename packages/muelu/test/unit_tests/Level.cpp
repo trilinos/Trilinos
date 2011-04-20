@@ -39,9 +39,9 @@ TEUCHOS_UNIT_TEST(Level, SetCoreData)
   TEUCHOS_TEST_EQUALITY(firstLevel.GetLevelID(), 42, out, success);
 
 /*
-  RCP<Smoother> preSmoo = Smoother<ScalarType, LO, GO, Node, LMO>();
+  RCP<Smoother> preSmoo = Smoother<Scalar, LO, GO, Node, LMO>();
   TEUCHOS_TEST_EQUALITY(firstLevel.GetPreSmoother(), preSmoo, out, success);
-  //RCP<Smoother> postSmoo = Smoother<ScalarType, LO, GO, Map, Operator>();
+  //RCP<Smoother> postSmoo = Smoother<Scalar, LO, GO, Map, Operator>();
 */
 
 

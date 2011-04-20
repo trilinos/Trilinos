@@ -34,8 +34,8 @@ namespace MueLu {
   factory doesn't have any knowledge about that.
 */
 
-template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
-class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+class SmootherFactory : public SmootherFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 

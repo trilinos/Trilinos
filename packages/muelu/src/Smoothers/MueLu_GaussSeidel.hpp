@@ -4,8 +4,8 @@
 namespace MueLu {
 
 template
-<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class GaussSeidel : public SmootherPrototype<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 

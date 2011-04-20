@@ -15,8 +15,8 @@ namespace MueLu {
   The user has to implement the Build function. The default implementation is GenericPRFactory.
 */
 
-template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class PRFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+class PRFactory : public OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 #include "MueLu_UseShortNames.hpp"
 
   protected:

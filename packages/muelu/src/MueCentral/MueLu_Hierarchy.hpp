@@ -24,8 +24,8 @@ namespace MueLu {
   restrictors, and coarse level discretizations.  Additionally, this class contains 
   an apply method that supports V and W cycles.
 */
-template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class Hierarchy : public Teuchos::VerboseObject<Hierarchy<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
+template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -388,10 +388,10 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<ScalarType,LocalOrdina
     
 }; //class Hierarchy
 
-template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-std::ostream& operator<<(std::ostream& os, Hierarchy<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &hierarchy) {
+template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+std::ostream& operator<<(std::ostream& os, Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &hierarchy) {
   os << "Printing Hierarchy object" << std::endl;
-  typename std::vector< Teuchos::RCP<Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > >::const_iterator i;
+  typename std::vector< Teuchos::RCP<Level<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > >::const_iterator i;
   for (i=hierarchy.Levels_.begin(); i != hierarchy.Levels_.end(); ++i)
     os << *(*i) << std::endl;
   return os;

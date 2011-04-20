@@ -16,7 +16,7 @@ namespace MueLu {
     Derives from Needs, but with an additional virtual Build method.
   */
 
-  template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class OperatorFactory : public Needs {
 
 #include "MueLu_UseShortNames.hpp"

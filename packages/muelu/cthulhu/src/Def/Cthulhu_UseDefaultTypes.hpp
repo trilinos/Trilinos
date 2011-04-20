@@ -9,11 +9,11 @@
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 // Define default data types
-typedef double ScalarType;
+typedef double Scalar;
 typedef int    LocalOrdinal;
 typedef int    GlobalOrdinal;
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<ScalarType,LocalOrdinal,Node>::SparseOps LocalMatOps;
+typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
