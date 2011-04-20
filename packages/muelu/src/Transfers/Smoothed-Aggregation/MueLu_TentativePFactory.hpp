@@ -27,7 +27,7 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     /*
     TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
     coalesceFact_;
-    aggregationFact_;
+    UCAggregationFactory aggregationFact_;
     TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
     */
     //! use QR decomposition for improving nullspace information per default
@@ -115,7 +115,6 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
     /*! @brief Make tentative prolongator with QR.
-        FIXME once completed, this should replace MakeTentative
         FIXME I make no attempt to detect if the aggregate is too small to support the NS
         FIXME This needs to use Jeremie's Aggregate class.
         FIXME Aggregates of size 3 are hard-wired in. (AFAIK, no assumptions of size 3, however.)
@@ -129,9 +128,13 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       //TODO checkout aggregates from Level hash table
 
       Teuchos::RCP< Operator > fineA = fineLevel.GetA();
-      GO nFineDofs = fineA->getGlobalNumRows();
-      if ((nFineDofs/3)*3 != nFineDofs)
-        throw(Exceptions::NotImplemented("MakeTentative: currently #fine DOFS must be a multiple of 3"));
+      GO nFineDofs = fineA->getNodeNumRows();
+      if ((nFineDofs/3)*3 != nFineDofs) {
+        std::ostringstream buf;
+        buf << nFineDofs;
+        std::string msg = "MakeTentative: currently #fine DOFS (=" + buf.str() + ") must be a multiple of 3";
+        throw(Exceptions::NotImplemented(msg));
+      }
 
       GO numAggs = nFineDofs / 3;  //FIXME  should come from aggregate class:
                                    //FIXME  numAggs = aggregates->GetNumAggregates();
@@ -214,7 +217,8 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       RCP<Operator> Ptentative = rcp(new CrsOperator(fineA->getDomainMap(), NSDim));
 
       //used in the case of just one nullspace vector
-      Teuchos::Array<Magnitude> norms(1);
+      Teuchos::Array<Magnitude> norms(NSDim);
+      fineNullspace->norm2(norms);
 
       Teuchos::LAPACK<LO,SC> lapack;
 
@@ -241,9 +245,11 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
         if (NSDim == 1) {
           //only one nullspace vector, so normalize by hand
-          fineNullspace->norm2(norms);
+          Magnitude dtemp=0;
+          for (LO k=0; k<myAggSize; ++k) {dtemp += localQR[k]*localQR[k];}
+          dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
           tau[0] = localQR[0];
-          localQR[0] = norms[0];
+          localQR[0] = dtemp;
         } else {
           //Perform the QR.  Upon return, R is stored explicitly, Q is stored implicitly as product
           //of reflection matrices.
@@ -279,11 +285,11 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
         if (NSDim == 1) {
           //again, only one nullspace vector, so calculate Q by hand
-          norms[0] = localQR[0];
+          Magnitude dtemp = localQR[0];
           localQR[0] = tau[0];
-          norms[0] = 1. / norms[0];
+          dtemp = 1 / dtemp;
           for (LO i=0; i<myAggSize; ++i)
-            localQR[i] *= norms[0];
+            localQR[i] *= dtemp;
         } else {
           lapack.ORGQR( myAggSize, intFineNSDim, intFineNSDim, localQR.getRawPtr(),
                         myAggSize, tau.getRawPtr(), work.getRawPtr(), workSize, &info );
