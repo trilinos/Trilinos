@@ -33,7 +33,7 @@
  * Example code showing a basic, but complete, mesh to results output
  * coding including subsetting and periodic field input and output.
  * Includes handling of nodeblocks, element blocks, nodesets,
- * edgesets, and facesets.  Attribute fields and distribution factor
+ * and sidesets.  Attribute fields and distribution factor
  * fields are also supported.
  *
  * This example can serve as the basis for adding binary IO support to
@@ -65,35 +65,20 @@ namespace stk {
       /// part.
       void process_read_nodesets_meta      (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
-      /// Declare a part for each Ioss::FaceSet on the Ioss::Region
-      /// 'region' unless the faceset has the "omitted" property set
-      /// to the value 1. The example then iterates each faceset and
+      /// Declare a part for each Ioss::SideSet on the Ioss::Region
+      /// 'region' unless the sideset has the "omitted" property set
+      /// to the value 1. The example then iterates each sideset and
       /// defines any "distribution factor" and Ioss::Field::TRANSIENT fields that
-      /// exist on the Ioss::FaceSet as fields on the corresponding
+      /// exist on the Ioss::SideSet as fields on the corresponding
       /// part.
       ///
-      /// Each faceblock in the active facesets is then processed by
-      /// defining a part for each Ioss::FaceBlock on the Ioss::FaceSet
-      /// unless the faceblock has the "omitted" property set to the value
-      /// 1. The example then iterates each faceblock and defines any
+      /// Each sideblock in the active sidesets is then processed by
+      /// defining a part for each Ioss::SideBlock on the Ioss::SideSet
+      /// unless the sideblock has the "omitted" property set to the value
+      /// 1. The example then iterates each sideblock and defines any
       /// "distribution factor" and Ioss::Field::TRANSIENT fields that exist on the
-      /// Ioss::FaceBlock as fields on the corresponding part.
-      void process_read_facesets_meta      (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
-
-      /// Declare a part for each Ioss::EdgeSet on the Ioss::Region
-      /// 'region' unless the edgeset has the "omitted" property set
-      /// to the value 1. The example then iterates each edgeset and
-      /// defines any "distribution factor" and Ioss::Field::TRANSIENT fields that
-      /// exist on the Ioss::EdgeSet as fields on the corresponding
-      /// part.
-      ///
-      /// Each edgeblock in the active edgesets is then processed by
-      /// defining a part for each Ioss::EdgeBlock on the Ioss::EdgeSet
-      /// unless the edgeblock has the "omitted" property set to the value
-      /// 1. The example then iterates each edgeblock and defines any
-      /// "distribution factor" and Ioss::Field::TRANSIENT fields that exist on the
-      /// Ioss::EdgeBlock as fields on the corresponding part.
-      void process_read_edgesets_meta      (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
+      /// Ioss::SideBlock as fields on the corresponding part.
+      void process_read_sidesets_meta      (Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta);
 
       /// NOTE: This must be called after the process_read_elementblocks() call
       /// since there may be nodes that exist in the database that are
@@ -124,19 +109,12 @@ namespace stk {
       /// that data is also associated with the field.
       void process_read_nodesets_bulk      (Ioss::Region &region, stk::mesh::BulkData &bulk);
 
-      /// Process each non-omitted Ioss::FaceSet and the contained
-      /// non-omitted Ioss::FaceBlock and associate each element-face pair with
+      /// Process each non-omitted Ioss::SideSet and the contained
+      /// non-omitted Ioss::SideBlock and associate each element-side pair with
       /// the corresponding part if the underlying element is active.  If
       /// the "distribution_factor" field exists, then that data is also
       /// associated with the corresponding field.
-      void process_read_facesets_bulk      (Ioss::Region &region, stk::mesh::BulkData &bulk);
-
-      /// Process each non-omitted Ioss::EdgeSet and the contained
-      /// non-omitted Ioss::EdgeBlock and associate each element-edge pair with
-      /// the corresponding part if the underlying element is active.  If
-      /// the "distribution_factor" field exists, then that data is also
-      /// associated with the corresponding field.
-      void process_read_edgesets_bulk      (Ioss::Region &region, stk::mesh::BulkData &bulk);
+      void process_read_sidesets_bulk      (Ioss::Region &region, stk::mesh::BulkData &bulk);
 
       /// A minimal example function showing how field data on the
       /// Ioss::Region entities can be periodically transferred to the
