@@ -26,7 +26,8 @@ namespace mesh {
  *
  * \param mesh A consisent mesh with Element and node relations
  * \param add_parts Newly created entities will be added to the add_parts and
- *                  the root part for the given subcell topology
+ *                  the root part for the given subcell topology.  Note, no part in the
+ *                  'add_parts' vector can have a primary_entity_rank
  */
 void create_adjacent_entities(
     BulkData & mesh,

@@ -196,6 +196,18 @@ DistributedIndex::DistributedIndex (
 
 namespace {
 
+bool is_sorted_and_unique( const std::vector<DistributedIndex::KeyProc> & key_usage )
+{
+  std::vector<DistributedIndex::KeyProc>::const_iterator itr = key_usage.begin();
+  std::vector<DistributedIndex::KeyProc>::const_iterator end = key_usage.end();
+  for ( ; itr != end; ++itr ) {
+    if ( itr + 1 != end && *itr >= *(itr + 1) ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void query_pack_to_usage(
   const std::vector<DistributedIndex::KeyProc> & key_usage ,
   const std::vector<DistributedIndex::KeyType> & request ,
@@ -392,7 +404,14 @@ struct RemoveKeyProc {
   {
     std::vector<DistributedIndex::KeyProc>::iterator
       i = std::lower_bound( key_usage.begin(),
-                            key_usage.end(), kp );
+                            key_usage.end(), kp.first, KeyProcLess() );
+
+    // Iterate over the span of KeyProcs with matching key until an exact match
+    // is found. We have to do it this way because marking a KeyProc unsorts it
+    // in the key_usage vector, so we cannot look up KeyProcs directly once marking
+    // has begun.
+    while ( i != key_usage.end() && kp.first == i->first && kp.second != i->second) { ++i ; }
+
     if ( i != key_usage.end() && kp == *i ) {
       i->second = -1 ;
     }
@@ -522,8 +541,7 @@ void DistributedIndex::update_keys(
         i != remove_existing_keys.end(); ++i ) {
     const ProcType p = to_which_proc( *i );
     if ( p == m_comm_rank ) {
-      KeyProc kp( *i , p );
-      RemoveKeyProc::mark( m_key_usage , kp );
+      RemoveKeyProc::mark( m_key_usage , KeyProc( *i , p ) );
     }
   }
 
@@ -563,8 +581,7 @@ void DistributedIndex::update_keys(
 
     const ProcType p = to_which_proc( *i );
     if ( p == m_comm_rank ) {
-      KeyProc kp( *i , p );
-      local_key_usage.push_back( kp );
+      local_key_usage.push_back( KeyProc( *i , p ) );
     }
   }
 
@@ -600,6 +617,9 @@ void DistributedIndex::update_keys(
   m_key_usage.erase(std::unique( m_key_usage.begin(),
                                  m_key_usage.end()),
                     m_key_usage.end() );
+
+  // Check invariant that m_key_usage is sorted
+  ThrowAssertMsg( is_sorted_and_unique(m_key_usage), "Sorted&unique invariant violated!" );
 }
 
 //----------------------------------------------------------------------
@@ -982,8 +1002,6 @@ void DistributedIndex::generate_new_keys(
       i_beg = i_end ;
     }
   }
-
-  return ;
 }
 
 //----------------------------------------------------------------------

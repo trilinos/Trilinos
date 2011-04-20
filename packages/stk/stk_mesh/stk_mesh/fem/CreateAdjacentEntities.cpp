@@ -389,6 +389,9 @@ void complete_connectivity( BulkData & mesh ) {
         Bucket & b = **bitr;
         const fem::CellTopology topo = fem::get_cell_topology_new(b);
 
+        ThrowErrorMsgIf( is_degenerate(topo),
+          "stk::mesh::create_adjacent_entities(...) does not yet support degenerate topologies (i.e. shells and beams)");
+
         {
           for (size_t i = 0; i<b.size(); ++i) {
             Entity & entity = b[i];
@@ -410,6 +413,10 @@ void complete_connectivity( BulkData & mesh ) {
                       );
 
                 std::vector<EntitySubcellComponent> adjacent_entities;
+
+                // add polarity information to newly created relations
+                // polarity information is required to correctly attached
+                // degenerate elements to the correct faces and edges
 
                 get_entities_with_given_subcell(
                     subcell_topology,
@@ -451,6 +458,19 @@ void create_adjacent_entities( BulkData & mesh, PartVector & arg_add_parts)
 {
   ThrowErrorMsgIf(mesh.synchronized_state() == BulkData::MODIFIABLE,
                   "stk::mesh::skin_mesh is not SYNCHRONIZED");
+
+  // to handle degenerate topologies we anticipate the following order of operations
+  //
+  // complete_connectivity
+  // count degenerate entities to create
+  // create degenerate entities
+  // complete_connectivity
+  // count non degenerate entities to create
+  // create non degenerate entities
+  // complete_connectivity
+  //
+  // to complete the connectivity (with degenerate elements) we require that
+  // polarity information to be stored on each relation
 
 
   complete_connectivity(mesh);

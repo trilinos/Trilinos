@@ -16,11 +16,14 @@
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_CellTools.hpp"
-
-
 #include "Intrepid_ArrayTools.hpp"
 
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid_Basis.hpp"
+#include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
+#include <stk_percept/Intrepid_HGRAD_QUAD_C2_Serendipity_FEM.hpp>
+#include <stk_percept/Intrepid_HGRAD_HEX_C2_Serendipity_FEM.hpp>
 
 
 #include "Intrepid_RealSpaceTools.hpp"
@@ -56,6 +59,42 @@ namespace stk
     IM_SHARDS_ARRAY_DIM_TAG_IMPLEMENTATION( Spatial_Dim_Tag )
     IM_SHARDS_ARRAY_DIM_TAG_IMPLEMENTATION( DOFs_Tag )   // [F]  FIXME
     IM_SHARDS_ARRAY_DIM_TAG_IMPLEMENTATION( BasisFields_Tag )   // [B]  FIXME
+
+#if (defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
+      // workaround for PGI compiler bug
+    void IntrepidManager::bootstrap()
+    {
+      static BasisTypeRCP a1 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, MDArray >() );
+
+      // FIXME
+      static BasisTypeRCP a2 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
+      static BasisTypeRCP a3 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, MDArray >() );
+      static BasisTypeRCP a4 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
+
+      static BasisTypeRCP a5 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
+      static BasisTypeRCP a6 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
+      static BasisTypeRCP a7 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_FEM<double, MDArray >() );
+
+      static BasisTypeRCP a8 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, MDArray >() );
+      static BasisTypeRCP a9 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM<double, MDArray >() );
+      static BasisTypeRCP a10 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_FEM<double, MDArray >() );
+
+      static BasisTypeRCP a11 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C1_FEM<double, MDArray >() );
+      static BasisTypeRCP a12 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C2_FEM<double, MDArray >() );
+
+      static BasisTypeRCP a13 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C1_FEM<double, MDArray >() );
+
+      // Intrepid doesn't support wedge 15
+      static BasisTypeRCP a14 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C2_Serendipity_FEM<double, MDArray >() );
+
+
+      // Shells
+      static BasisTypeRCP a15 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, MDArray >() );
+      static BasisTypeRCP a16 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
+      static BasisTypeRCP a17 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
+      static BasisTypeRCP a18 = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
+    }
+#endif
 
     void tni(void)
     {

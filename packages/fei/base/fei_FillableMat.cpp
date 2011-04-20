@@ -119,7 +119,7 @@ insert_row(FillableMat::feipoolmat& matdata,
 void
 FillableMat::sumInCoef(int row, int col, double coef)
 {
-  FillableVec* rowvec = getRow(row, true);
+  FillableVec* rowvec = create_or_getRow(row);
 
   rowvec->addEntry(col, coef);
 }
@@ -128,7 +128,7 @@ FillableMat::sumInCoef(int row, int col, double coef)
 void
 FillableMat::putCoef(int row, int col, double coef)
 {
-  FillableVec* rowvec = getRow(row, true);
+  FillableVec* rowvec = create_or_getRow(row);
 
   rowvec->putEntry(col, coef);
 }
@@ -138,7 +138,7 @@ void
 FillableMat::sumInRow(int row, const int* cols, const double* coefs,
                       unsigned len)
 {
-  FillableVec* rowvec = getRow(row, true);
+  FillableVec* rowvec = create_or_getRow(row);
 
   for(unsigned i=0; i<len; ++i) {
     rowvec->addEntry(cols[i], coefs[i]);
@@ -150,7 +150,7 @@ void
 FillableMat::putRow(int row, const int* cols, const double* coefs,
                     unsigned len)
 {
-  FillableVec* rowvec = getRow(row, true);
+  FillableVec* rowvec = create_or_getRow(row);
 
   for(unsigned i=0; i<len; ++i) {
     rowvec->putEntry(cols[i], coefs[i]);
@@ -173,18 +173,26 @@ FillableMat::hasRow(int row) const
 }
 
 //-----------------------------------------------------------------
+const FillableVec*
+FillableMat::getRow(int row) const
+{
+  feipoolmat::const_iterator iter = matdata_.lower_bound(row);
+
+  if (iter == matdata_.end() || iter->first != row) {
+    throw std::runtime_error("fei::FillableMat: row not found.");
+  }
+
+  return iter->second;
+}
+
+//-----------------------------------------------------------------
 FillableVec*
-FillableMat::getRow(int row, bool create_if_not_already_present)
+FillableMat::create_or_getRow(int row)
 {
   feipoolmat::iterator iter = matdata_.lower_bound(row);
 
   if (iter == matdata_.end() || iter->first != row) {
-    if (create_if_not_already_present == false) {
-      throw std::runtime_error("fei::FillableMat: row not found.");
-    }
-    else {
-      iter = insert_row(matdata_, iter, row, vecpool_);
-    }
+    iter = insert_row(matdata_, iter, row, vecpool_);
   }
 
   return iter->second;

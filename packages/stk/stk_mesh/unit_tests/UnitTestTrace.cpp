@@ -6,7 +6,9 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#ifndef STK_MESH_TRACE_ENABLED
 #define STK_MESH_TRACE_ENABLED
+#endif
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 

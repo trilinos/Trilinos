@@ -143,7 +143,7 @@ public:
       std::cout << "CheckCoordMag:: " << m_name <<
         " v= " << v << " x= " << x << " y= " << y << " z= "<< z << " cmag_field_node= " << cmag_field_node << std::endl;
       Util::pause(true, "cmag_field_node");
-      STKUNIT_EXPECT_DOUBLE_EQ(v, cmag_field_node);
+      STKUNIT_ASSERT_NEAR(v, cmag_field_node, 1.e-9);
       m_error = true;
     }
   }
@@ -212,7 +212,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_2)
   double x=0.123, y=0.234, z=0.345;
   double vv = std::sqrt(x*x + y*y + z*z);            // evaluate the expression in C++
   double v1 = eval(x, y, z, 0, coords_mag_sf);       // evaluate the analytic expression
-  STKUNIT_EXPECT_DOUBLE_EQ(vv, v1);                          // the two results should be the same
+  STKUNIT_ASSERT_NEAR(vv, v1, 1.e-9);                          // the two results should be the same
 
   // Interpolate the analytic field defined by "coords_mag_sf" to the field we created to hold the coordinate magnitude field
   // 1. create a field function to represent the new coordinate magnitude field, and interpolate the string function to its nodes
@@ -298,20 +298,20 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
     ff_coords.addAlias("mc");
     StringFunction sfcm("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", Name("sfcm"), Dimensions(3), Dimensions(1));
 
+    double tol1 = 1.e-12;
+
     {
       MDArray vv = evalVec3(0.1, 0.2, 0.3, 0.0, ff_coords);
 
-#define STKUNIT_EXPECT_DOUBLE_EQ_1(a,b)    if (fabs(a-b) > 1.e-12) exit(123);
-
-      STKUNIT_EXPECT_DOUBLE_EQ(vv(0), 0.1);
-      STKUNIT_EXPECT_DOUBLE_EQ(vv(1), 0.2);
-      STKUNIT_EXPECT_DOUBLE_EQ(vv(2), 0.3);
+      STKUNIT_ASSERT_NEAR(vv(0), 0.1, tol1);
+      STKUNIT_ASSERT_NEAR(vv(1), 0.2, tol1);
+      STKUNIT_ASSERT_NEAR(vv(2), 0.3, tol1);
     }
 
     {
       double vv = eval(0.1, 0.2, 0.3, 0.0, sfcm);
       double v_expect = std::sqrt(0.1*0.1 + 0.2*0.2 + 0.3*0.3);
-      STKUNIT_EXPECT_DOUBLE_EQ(vv, v_expect);
+      STKUNIT_ASSERT_NEAR(vv, v_expect, tol1);
     }
 
     coords_mag_field_function.interpolateFrom(sfcm);
@@ -471,9 +471,9 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_verify)
   MDArray output_pts(3);
   pts(0) = 0.2; pts(1) = 0.3; pts(2) = 0.4; //pts(3) = 0.0;
   ff_coords(pts, output_pts);
-  STKUNIT_EXPECT_DOUBLE_EQ(pts(0), output_pts(0));
-  STKUNIT_EXPECT_DOUBLE_EQ(pts(1), output_pts(1));
-  STKUNIT_EXPECT_DOUBLE_EQ(pts(2), output_pts(2));
+  STKUNIT_ASSERT_NEAR(pts(0), output_pts(0), 1.e-9);
+  STKUNIT_ASSERT_NEAR(pts(1), output_pts(1), 1.e-9);
+  STKUNIT_ASSERT_NEAR(pts(2), output_pts(2), 1.e-9);
 }
 
 //=============================================================================

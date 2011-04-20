@@ -1468,7 +1468,7 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
   double ave,rsum,rmin,rmax;
   double weight,wttot,wtmin,wtmax;
   struct rcb_box *rcbbox = (struct rcb_box *) rcbbox_arg;
-  int numParts, wdim;
+  int numParts, maxind, wdim;
   double move, gmove, bal, max_imbal, ib;
   double *lpartWgt = NULL;
   double *gpartWgt = NULL;

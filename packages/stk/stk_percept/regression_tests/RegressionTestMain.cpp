@@ -18,7 +18,9 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_percept/pyencore.h>
-#if !PY_PERCEPT
-STKUNIT_MAIN(argc, argv)
-#endif
 
+#if !PY_PERCEPT 
+STKUNIT_MAIN(argc, argv)
+#else
+  int main() {return 0;}
+#endif

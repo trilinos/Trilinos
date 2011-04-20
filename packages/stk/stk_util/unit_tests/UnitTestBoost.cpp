@@ -18,18 +18,11 @@
 #include <boost/tr1/memory.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/shared_array.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <stk_util/util/ci_string.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
-namespace {
-  
-char * my_strdup(const char *s) {
-  return std::strcpy(new char[std::strlen(s) + 1], s);
-}
-
-}
 
 namespace boost {
 

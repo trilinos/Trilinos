@@ -306,13 +306,13 @@ namespace stk {
       //========================================================================================================================
       // high-level interface
       //NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), m_comm_all(eMesh.getBulkData()->parallel()), m_gee_cnt(0), m_gen_cnt(0),
-      //m_entity_repo(stk::mesh::stk::mesh::EntityRankEnd)
+      //m_entity_repo(stk::mesh::stk::percept::EntityRankEnd)
 
       NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), m_comm_all(eMesh.getBulkData()->parallel()),
                                                   // why does this cause failures? 
                                                   //m_cell_2_data_map(eMesh.getNumberElements()*8u),
                                                   m_gee_cnt(0), m_gen_cnt(0),
-                                                  m_entity_repo(stk::mesh::EntityRankEnd),
+                                                  m_entity_repo(stk::percept::EntityRankEnd),
                                                   m_debug(false),
                                                   m_state(NRS_NONE)
       {
@@ -331,7 +331,7 @@ namespace stk {
       void initialize() 
       {
         m_cell_2_data_map.clear();
-        for (unsigned i = 0; i < stk::mesh::EntityRankEnd; i++) m_entity_repo[i].clear();
+        for (unsigned i = 0; i < stk::percept::EntityRankEnd; i++) m_entity_repo[i].clear();
       }
 
       void //NodeRegistry::
@@ -1215,10 +1215,10 @@ namespace stk {
                 stk::mesh::Selector selector(part);
 
                 //std::cout << "P[" << m_eMesh.getRank() << "] NodeRegistry::addToExistingParts Part[" << ipart << "]= " << part.name() << std::endl;
-                std::string part_name = part.name();
+                //std::string part_name = part.name();
 
                 // FIXME - is there a better way to determine if a part is one of the "standard" parts?
-                if (part_name[0] == '{')
+                if (stk::mesh::is_auto_declared_part(part))  //part_name[0] == '{')  //  is_auto_declared_part
                   continue;
 
                 //std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name() 
@@ -1306,10 +1306,10 @@ namespace stk {
             stk::mesh::Part& part = *parts[ipart];
 
             //std::cout << "P[" << m_eMesh.getRank() << "] NodeRegistry::addToExistingParts Part[" << ipart << "]= " << part.name() << std::endl;
-            std::string part_name = part.name();
+            //std::string part_name = part.name();
 
             // FIXME - is there a better way to determine if a part is one of the "standard" parts?
-            if (part_name[0] == '{')
+            if (stk::mesh::is_auto_declared_part(part)) //part_name[0] == '{')  // is_auto_declared_part
               continue;
 
             const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(part);

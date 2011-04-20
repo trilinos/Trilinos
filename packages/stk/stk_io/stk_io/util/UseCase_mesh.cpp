@@ -779,7 +779,7 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
     const stk::mesh::FieldBase *f = *I; ++I;
     if (stk::io::is_valid_part_field(f, part_type, part, meta.universal_part(),
                                      filter_role, add_all)) {
-      stk::io::field_data_to_ioss(f, entities, io_entity, f->name());
+      stk::io::field_data_to_ioss(f, entities, io_entity, f->name(), filter_role);
     }
   }
 }

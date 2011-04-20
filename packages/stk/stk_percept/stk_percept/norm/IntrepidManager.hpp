@@ -29,6 +29,7 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
+#include "Teuchos_RCP.hpp"
 
 
 // Shards includes
@@ -132,6 +133,17 @@ namespace stk
 
     class IntrepidManager
     {
+    private:
+
+#if (defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
+      // workaround for PGI compiler bug
+
+      typedef Intrepid::Basis<double, MDArray > BasisType;
+      typedef Teuchos::RCP<BasisType>           BasisTypeRCP;
+
+      static void bootstrap();
+#endif
+
     public:
       typedef IntrepidManager IM;
   

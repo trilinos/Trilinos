@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_TET_CN_FEM_ORTHDEF_HPP
+#define INTREPID_HGRAD_TET_CN_FEM_ORTHDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -332,3 +334,4 @@ void Intrepid::jrc( const Scalar &alpha , const Scalar &beta ,
   
   return;
 }
+#endif

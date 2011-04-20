@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_HEX_C2_FEMDEF_HPP
+#define INTREPID_HGRAD_HEX_C2_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -1090,3 +1092,4 @@ void Basis_HGRAD_HEX_C2_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & Dof
 }
 
 }// namespace Intrepid
+#endif

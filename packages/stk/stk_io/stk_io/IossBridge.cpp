@@ -379,12 +379,19 @@ namespace stk {
       return stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
     }
 
-    void initialize_spatial_dimension(stk::mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names)
+    void initialize_spatial_dimension(stk::mesh::fem::FEMMetaData & fem_meta, size_t spatial_dimension,
+				      const std::vector<std::string> &entity_rank_names)
     {
-      stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
       if (!fem_meta.is_FEM_initialized() ) {
         fem_meta.FEM_initialize(spatial_dimension, entity_rank_names);
       }
+    }
+
+    void initialize_spatial_dimension(stk::mesh::MetaData &meta, size_t spatial_dimension,
+				      const std::vector<std::string> &entity_rank_names)
+    {
+      stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
+      initialize_spatial_dimension(fem_meta, spatial_dimension, entity_rank_names);
     }
 
     void get_io_field_type(const stk::mesh::FieldBase *field, int num_comp, std::pair<std::string, Ioss::Field::BasicType> *result)
@@ -666,6 +673,7 @@ namespace stk {
     {
       internal_part_processing(entity, meta.get_meta_data(meta), type);
     }
+
     void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta,
 				  stk::mesh::EntityRank type)
     {
@@ -855,19 +863,22 @@ namespace stk {
     void field_data_to_ioss(const stk::mesh::FieldBase *field,
 			    std::vector<stk::mesh::Entity*> &entities,
 			    Ioss::GroupingEntity *io_entity,
-			    const std::string &io_fld_name)
+			    const std::string &io_fld_name,
+			    Ioss::Field::RoleType filter_role)
     {
       /// \todo REFACTOR Need some additional compatability checks between
       /// Ioss field and stk::mesh::Field; better error messages...
 
       if (field != NULL && io_entity->field_exists(io_fld_name)) {
 	Ioss::Field io_field = io_entity->get_field(io_fld_name);
-	if (field->type_is<double>()) {
-	  internal_field_data_to_ioss(io_field, field, entities, io_entity,
-				      static_cast<double>(1.0));
-	} else if (field->type_is<int>()) {
-	  internal_field_data_to_ioss(io_field, field, entities, io_entity,
-				      static_cast<int>(1));
+	if (io_field.get_role() == filter_role) {
+	  if (field->type_is<double>()) {
+	    internal_field_data_to_ioss(io_field, field, entities, io_entity,
+					static_cast<double>(1.0));
+	  } else if (field->type_is<int>()) {
+	    internal_field_data_to_ioss(io_field, field, entities, io_entity,
+					static_cast<int>(1));
+	  }
 	}
       }
     }
@@ -1259,7 +1270,7 @@ namespace stk {
 
 	const mesh::Field<double, mesh::ElementNode> *df = get_distribution_factor_field(*part);
 	if (df != NULL) {
-	  field_data_to_ioss(df, sides, &io, "distribution_factors");
+	  field_data_to_ioss(df, sides, &io, "distribution_factors", Ioss::Field::MESH);
 	}
       }
 
@@ -1302,7 +1313,7 @@ namespace stk {
 	  mesh::Field<double, mesh::Cartesian> *coord_field =
 	    meta_data.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
 	  assert(coord_field != NULL);
-	  field_data_to_ioss(coord_field, nodes, &nb, "mesh_model_coordinates");
+	  field_data_to_ioss(coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
       }
 
       void output_element_block(Ioss::ElementBlock *block,
@@ -1363,7 +1374,7 @@ namespace stk {
 	  if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
 	    const mesh::FieldBase::Restriction &res = f->restriction(elem_rank, *part);
 	    if (res.stride[0] > 0) {
-	      stk::io::field_data_to_ioss(f, elements, block, f->name());
+	      stk::io::field_data_to_ioss(f, elements, block, f->name(), Ioss::Field::ATTRIBUTE);
 	    }
 	  }
 	}
@@ -1397,7 +1408,7 @@ namespace stk {
 	stk::mesh::Field<double> *df_field =
 	  meta_data.get_field<stk::mesh::Field<double> >("distribution_factors");
 	if (df_field != NULL) {
-	  stk::io::field_data_to_ioss(df_field, nodes, ns, "distribution_factors");
+	  stk::io::field_data_to_ioss(df_field, nodes, ns, "distribution_factors", Ioss::Field::MESH);
 	}
       }
 

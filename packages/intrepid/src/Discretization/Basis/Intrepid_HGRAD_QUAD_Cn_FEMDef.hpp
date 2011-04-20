@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_QUAD_CN_FEMDEF_HPP
+#define INTREPID_HGRAD_QUAD_CN_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -316,3 +318,4 @@ void Basis_HGRAD_QUAD_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&       
   
 }// namespace Intrepid
 
+#endif

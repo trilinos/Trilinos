@@ -218,7 +218,7 @@ int remove_couplings(fei::FillableMat& mat)
       for(MM_Iter cri = mmi.first; cri != mmi.second; ++cri) {
         int cri_row = cri->second;
 
-        fei::FillableVec* frow = mat.getRow(cri_row);
+        fei::FillableVec* frow = mat.create_or_getRow(cri_row);
 
         double coef = frow->getEntry(rownum);
 
