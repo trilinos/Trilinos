@@ -44,6 +44,7 @@ def setup_parser():
            enrich    Add more nodes to blocks of elements to increase polynomial order
         
         See "%(prog)s COMMAND --help" for more information on a specific command.
+         
         ''')
     
     parser = argparse.ArgumentParser(prog='percept', formatter_class=argparse.RawDescriptionHelpFormatter,
