@@ -22,6 +22,7 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/RunEnvironment.hpp>
+#include <stk_percept/ProgressMeter.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
@@ -457,15 +458,23 @@ namespace stk {
 
         if (doRefineMesh)
           {
+            
             t0 =  stk::wall_time(); 
             cpu0 = stk::cpu_time();
 
+
             UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
+
+            ProgressMeter pm(breaker);
+            //pm.setActive(true);
+
             if (input_geometry != "")
                 breaker.setGeometryFile(input_geometry);
             breaker.setRemoveOldElements(remove_original_elements);
             breaker.setQueryPassOnly(query_only == 1);
             //breaker.setIgnoreSideSets(true);
+            double val=0.0;
+            breaker.notifyObservers(&val);
 
             for (int iBreak = 0; iBreak < number_refines; iBreak++)
               {
@@ -473,6 +482,7 @@ namespace stk {
                   {
                     std::cout << "Refinement pass # " << (iBreak+1) << " start..." << std::endl;
                   }
+                //breaker.setPassNumber(iBreak);
                 breaker.doBreak();
                 if (!eMesh.getRank())
                   {
