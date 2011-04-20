@@ -22,7 +22,8 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UCAggregationFactory, Build, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
   {
-#include "MueLu_UseShortNamesOrdinal.hpp"
+    typedef double ScalarType;
+#include "MueLu_UseShortNames.hpp"
     
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -36,7 +37,7 @@ namespace {
     aggOptions.SetOrdering(2);
     aggOptions.SetPhase3AggCreation(0.5);
 
-    RCP<CrsOperator> Op = MueLu::UnitTest::create_1d_poisson_matrix<double,LO,GO>(16);
+    RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(16);
 
     RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
     RCP<Aggregates> aggregates = aggFact.Build(*graph,aggOptions);
@@ -59,18 +60,24 @@ namespace {
   // INSTANTIATIONS
   //
 
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<ScalarType,LocalOrdinal,Node>::SparseOps LocalMatOps;
+  typedef double ScalarType;                         // ScalarType is not revelant for this test
+  typedef Kokkos::DefaultNode::DefaultNodeType Node; // Kokkos is not revelant for this test   
   
-#define UNIT_TEST_GROUP_4(LOCALORDINAL, GLOBALORDINAL, NODE, LOCALMATOPS) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UCAggregationFactory, Constructor, LOCALORDINAL, GLOBALORDINAL, NODE, LOCALMATOPS) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UCAggregationFactory, Build,       LOCALORDINAL, GLOBALORDINAL, NODE, LOCALMATOPS)
-    
-#define UNIT_TEST_GROUP_2(LOCALORDINAL, GLOBALORDINAL) \
-  UNIT_TEST_GROUP_4(LOCALORDINAL, GLOBALORDINAL,  Node, LocalMatOps)
+#define UNIT_TEST_GROUP_4(LO, GO, NO, LMO)                              \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UCAggregationFactory, Constructor, LO, GO, NO, LMO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UCAggregationFactory, Build,       LO, GO, NO, LMO)
 
-  UNIT_TEST_GROUP_2(int, int)
-  //UNIT_TEST_GROUP_2(long, int)
+#define UNIT_TEST_GROUP_2(LO, GO)                                       \
+  typedef Kokkos::DefaultKernels<ScalarType,LO,Node>::SparseOps LMO ## LO; \
+  UNIT_TEST_GROUP_4(LO, GO, Node, LMO ## LO)
+
+  ///  UNIT_TEST_GROUP_2(int, int)
+  //UNIT_TEST_GROUP_2(long int, int)
   //UNIT_TEST_GROUP_2(long, long)
+
+  typedef long int lint;
+  typedef Kokkos::DefaultKernels<ScalarType,int,Node>::SparseOps LMOlongint;
+  UNIT_TEST_GROUP_4(int, lint, Node, LMOlongint)
+
 
 } // namespace <anonymous>

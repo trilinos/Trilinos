@@ -73,7 +73,7 @@ TEUCHOS_UNIT_TEST(Amesos, KLUSolve)
 
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-  RCP<CrsOperator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(125);
+  RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(125);
 
   Teuchos::ParameterList  amesosList;
   amesosList.set("PrintTiming",false);

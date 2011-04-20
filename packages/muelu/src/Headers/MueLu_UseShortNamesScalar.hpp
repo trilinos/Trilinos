@@ -85,3 +85,7 @@ typedef MueLu::IfpackSmoother<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMa
 #ifdef MUELU_AMESOS_SMOOTHER_SHORT
 typedef MueLu::AmesosSmoother<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       AmesosSmoother;
 #endif
+
+#ifdef MUELU_UCAGGREGATIONCOMMHELPER_SHORT
+typedef MueLu::UCAggregationCommHelper<ScalarType, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       UCAggregationCommHelper;
+#endif

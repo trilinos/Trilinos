@@ -35,16 +35,16 @@
 namespace MueLu {
 
    template <class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+             class GlobalOrdinal = LocalOrdinal, 
+             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
    class Aggregates : public Teuchos::Describable {
 
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
    public:
      
-     Aggregates(const MueLu::Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & graph, const std::string & objectLabel = "");
+     Aggregates(const Graph & graph, const std::string & objectLabel = "");
      virtual ~Aggregates() {}
      
      inline LO GetNumAggregates()                 { return nAggregates_;         } // rename GetNumLocal ?
@@ -77,7 +77,7 @@ namespace MueLu {
    template <class LocalOrdinal ,
              class GlobalOrdinal,
              class Node         ,
-            class LocalMatOps  >
+            class LocalMatOps>
    Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const MueLu::Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & graph, const std::string & objectLabel)
   {
     

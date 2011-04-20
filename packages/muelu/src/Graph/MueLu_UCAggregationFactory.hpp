@@ -111,13 +111,13 @@ class UCAggregationFactory : public Teuchos::Describable {
 
       /*! @brief Local aggregation.
       */
-      RCP<MueLu::Aggregates<LO,GO> >
-      CoarsenUncoupled(MueLu::AggregationOptions const & aggOptions, MueLu::Graph<LO,GO> const & graph) const
+      RCP<Aggregates>
+      CoarsenUncoupled(MueLu::AggregationOptions const & aggOptions, Graph const & graph) const
       {
         /* Create Aggregation object */
         const std::string name = "Uncoupled";
         int nAggregates = 0;
-        RCP<MueLu::Aggregates<LO,GO> > aggregates = Teuchos::rcp(new MueLu::Aggregates<LO,GO>(graph, name));
+        RCP<Aggregates> aggregates = Teuchos::rcp(new Aggregates(graph, name));
 
         /* ============================================================= */
         /* aggStat indicates whether this node has been aggreated, and   */
@@ -169,7 +169,7 @@ class UCAggregationFactory : public Teuchos::Describable {
           int iNode  = 0;
           int iNode2 = 0;
           
-          Teuchos::ArrayRCP<int> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0); // output only: contents ignored
+          Teuchos::ArrayRCP<LO> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0); // output only: contents ignored
           
           while (iNode2 < nRows)
             {
@@ -210,15 +210,15 @@ class UCAggregationFactory : public Teuchos::Describable {
               if ( aggStat[iNode] == READY ) 
                 {
                   // neighOfINode is the neighbor node list of node 'iNode'.
-                  Teuchos::ArrayView<const int> neighOfINode = graph.getNeighborVertices(iNode);
-                  int length = neighOfINode.size();
+                  Teuchos::ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode);
+                  Teuchos::ArrayView<const int>::size_type length = neighOfINode.size(); //TODO: int/LO ?
                 
                   supernode = new MueLu_SuperNode;
                   try {
                     supernode->list = Teuchos::arcp<int>(length+1);
                   } catch (std::bad_alloc&) {
-                    printf("Error:couldn't allocate memory for supernode! %d\n", length);
-                    exit(1);
+                    std::cout << "Error: couldn't allocate memory for supernode! " << length << std::endl;
+                    exit(1); //TODO: exception instead
                   }
 
                   supernode->maxLength = length;
@@ -608,12 +608,12 @@ class UCAggregationFactory : public Teuchos::Describable {
 
         int minNodesPerAggregate = aggOptions.GetMinNodesPerAggregate();
 
-        const RCP<const Cthulhu::Map<LO,GO> > nonUniqueMap = aggregates.GetMap();
-        const RCP<const Cthulhu::Map<LO,GO> > uniqueMap = graph.GetDomainMap();
+        const RCP<const Map> nonUniqueMap = aggregates.GetMap();
+        const RCP<const Map> uniqueMap = graph.GetDomainMap();
 
-        UCAggregationCommHelper<> myWidget(uniqueMap, nonUniqueMap);
+        UCAggregationCommHelper<double,LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
 
-        RCP<Cthulhu::Vector<double> > distWeights = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
+        RCP<Cthulhu::Vector<double,LO,GO,NO> > distWeights = Cthulhu::VectorFactory<double,LO,GO,NO>::Build(nonUniqueMap);
 
         // Aggregated vertices not "definitively" assigned to processors are
         // arbitrated by ArbitrateAndCommunicate(). There is some
@@ -756,9 +756,9 @@ class UCAggregationFactory : public Teuchos::Describable {
         // and doing NonUnique2NonUnique(..., ADD). This sums values of all
         // local copies associated with each Gid. Thus, sums > 1 are shared.
 
-        RCP<Cthulhu::Vector<double> > temp_ = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
+        RCP<Cthulhu::Vector<double,LO,GO,NO> > temp_ = Cthulhu::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
 
-        RCP<Cthulhu::Vector<double> > tempOutput_ = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
+        RCP<Cthulhu::Vector<double,LO,GO,NO> > tempOutput_ = Cthulhu::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
         ArrayRCP<double> tempOutput = tempOutput_->getDataNonConst(0);
 
         temp_->putScalar(1.);  
@@ -1196,7 +1196,7 @@ class UCAggregationFactory : public Teuchos::Describable {
 
       //! @brief Attempt to clean up aggregates that are too small.
       int RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                                RCP<Cthulhu::Vector<double> > & distWeights, const UCAggregationCommHelper<> & myWidget) const
+                          RCP<Cthulhu::Vector<double,LO,GO,NO> > & distWeights, const UCAggregationCommHelper<double,LO,GO,NO,LMO> & myWidget) const
       {
         int myPid = aggregates.GetMap()->getComm()->getRank();
         
@@ -1283,5 +1283,4 @@ class UCAggregationFactory : public Teuchos::Describable {
 } //namespace MueLu
 
 #define MUELU_UCAGGREGATIONFACTORY_SHORT
-
 #endif //ifndef MUELU_UCAGGREGATIONFACTORY_HPP

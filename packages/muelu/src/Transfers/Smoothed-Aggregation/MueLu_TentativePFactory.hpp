@@ -195,7 +195,7 @@ class TentativePFactory : public PFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       //Allocate storage for the coarse nullspace.
       LO indexBase=fineA->getRowMap()->getIndexBase();
 
-      RCP<const Map > coarseMap = MapFactory::Build(fineA->getRowMap()->lib(), Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(), nCoarseDofs, indexBase, fineA->getRowMap()->getComm());
+      RCP<const Map > coarseMap = MapFactory::Build(fineA->getRowMap()->lib(), Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(), nCoarseDofs, indexBase, fineA->getRowMap()->getComm()); //JG:Cthulhu::global_size_t>?
 
       RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
       ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);

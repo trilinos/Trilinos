@@ -142,10 +142,10 @@ namespace MueLu {
 
       GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
 
-      LocalOrdinal NumEntries;
+      GlobalOrdinal NumEntries;
       LocalOrdinal nnz=2;
       std::vector<Scalar> Values(nnz);
-      std::vector<LocalOrdinal> Indices(nnz);
+      std::vector<GlobalOrdinal> Indices(nnz);
 
       for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
         {
@@ -205,17 +205,17 @@ namespace MueLu {
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
 
-      LocalOrdinal left, right, lower, upper;
+      GlobalOrdinal left, right, lower, upper;
       LocalOrdinal nnz=4;
       std::vector<Scalar> Values(nnz);
-      std::vector<LocalOrdinal> Indices(nnz);
+      std::vector<GlobalOrdinal> Indices(nnz);
 
       //    e
       //  b a c
       //    d
       for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i) 
         {
-          LocalOrdinal NumEntries = 0;
+          GlobalOrdinal NumEntries = 0;
           GetNeighboursCartesian2d(MyGlobalElements[i], nx, ny, 
                                    left, right, lower, upper);
 
@@ -382,7 +382,7 @@ namespace MueLu {
       GlobalOrdinal left, right, lower, upper;
       GlobalOrdinal left2, right2, lower2, upper2;
       Scalar Values[13];
-      LocalOrdinal Indices[13];
+      GlobalOrdinal Indices[13];
 
       //        ee
       //    z3  e  z4

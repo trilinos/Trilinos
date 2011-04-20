@@ -60,7 +60,7 @@ TEUCHOS_UNIT_TEST(RAPFactory, Correctness)
 
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-  RCP<CrsOperator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(27);
+  RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(27);
   Level fineLevel;
   fineLevel.SetA(Op);
   Level coarseLevel;

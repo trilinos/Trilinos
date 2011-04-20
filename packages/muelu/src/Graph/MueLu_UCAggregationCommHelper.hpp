@@ -204,6 +204,7 @@ namespace MueLu {
         // the subset that correspond to procWinners in MyWinners.
         // WinnerMap is then constructed using MyWinners.
    
+        //Teuchos::ArrayRCP<GO>::size_type numMyWinners = 0;
         int numMyWinners = 0;
         for (size_t i = 0; i < weight_.getMap()->getNodeNumElements(); i++) {
           if (procWinner[i] == MyPid) numMyWinners++;
@@ -211,8 +212,8 @@ namespace MueLu {
    
         //    int *myGids    = new int[weight_.getMap()->getNodeNumElements()+1];
         //    int *myWinners = new int[numMyWinners+1];
-        ArrayView<const LO> myGids = weight_.getMap()->getNodeElementList(); //== weight_.getMap()->MyGlobalElements(myGids);
-        ArrayRCP<LO> myWinners(numMyWinners);
+        ArrayView<const GO> myGids = weight_.getMap()->getNodeElementList(); //== weight_.getMap()->MyGlobalElements(myGids);
+        ArrayRCP<GO> myWinners(numMyWinners);
 
 #ifdef JG_DEBUG
         procWinner = Teuchos::null;
@@ -352,6 +353,7 @@ namespace MueLu {
 
 }
 
+#define MUELU_UCAGGREGATIONCOMMHELPER_SHORT
 #endif //ifndef MUELU_UCAGGREGATIONCOMMHELPER_HPP
 
 //JG: 

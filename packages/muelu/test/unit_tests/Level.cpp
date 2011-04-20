@@ -5,7 +5,7 @@
 #include "MueLu_Level.hpp"
 
 //TODO: some headers are missing
-#include <Cthulhu_CrsOperator.hpp>
+#include <Cthulhu_Operator.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -26,7 +26,7 @@ TEUCHOS_UNIT_TEST(Level, SetCoreData)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<ScalarType, LO, GO>(10);
+  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC, LO, GO, NO, LMO>(10);
 
   Level firstLevel;
   firstLevel.SetA(A);
@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(Level, SetCoreData)
 /*
   RCP<Smoother> preSmoo = Smoother<ScalarType, LO, GO, Node, LMO>();
   TEUCHOS_TEST_EQUALITY(firstLevel.GetPreSmoother(), preSmoo, out, success);
-  //RCP<Smoother> postSmoo = Smoother<ScalarType, LO, GO, Map, CrsOperator>();
+  //RCP<Smoother> postSmoo = Smoother<ScalarType, LO, GO, Map, Operator>();
 */
 
 

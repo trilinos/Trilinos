@@ -54,7 +54,7 @@ TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentative)
 
   Level fineLevel;
   fineLevel.SetLevelID(1);
-  RCP<CrsOperator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO>(36);
+  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(36);
   fineLevel.SetA(A);
 
   Level coarseLevel;
