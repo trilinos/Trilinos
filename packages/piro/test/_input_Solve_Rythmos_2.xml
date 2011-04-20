@@ -61,7 +61,7 @@
       <ParameterList name="Full Step">
         <Parameter name="Full Step" type="double" value="1"/>
       </ParameterList>
-      <Parameter name="Method" type="string" value="Full Step"/>
+      <Parameter name="Method" type="string" value="Polynomial"/>
     </ParameterList>
     <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
     <ParameterList name="Printing">
@@ -70,6 +70,7 @@
       <ParameterList name="Output Information">
         <Parameter name="Error" type="bool" value="1"/>
         <Parameter name="Warning" type="bool" value="1"/>
+        <Parameter name="Outer Iteration StatusTest" type="bool" value="1"/>
         <Parameter name="Outer Iteration" type="bool" value="1"/>
         <Parameter name="Inner Iteration" type="bool" value="1"/>
         <Parameter name="Parameters" type="bool" value="1"/>
@@ -98,11 +99,20 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Rythmos">
-    <Parameter name="Nonlinear Solver Type" type="string" value="Rythmos"/>
+    <Parameter name="Nonlinear Solver Type" type="string" value="NOX"/>
     <Parameter name="Num Time Steps" type="int" value="10"/>
     <Parameter name="Final Time" type="double" value="0.1"/>
-    <Parameter name="Stepper Type" type="string" value="Explicit RK"/>
+    <Parameter name="Stepper Type" type="string" value="BDF"/>
     <ParameterList name="Rythmos Stepper">
+      <ParameterList name="Step Control Settings">
+        <Parameter name="stopTime" type="double" value="0.1"/>
+        <Parameter name="absErrTol" type="double" value="1.0e-6"/>
+        <Parameter name="relErrTol" type="double" value="1.0e-3"/>
+        <ParameterList name="magicNumbers">
+          <Parameter name="maxTimeStep" type="double" value="0.1"/>
+          <Parameter name=" minTimeStep" type="double" value="0.1e-6"/>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="medium"/>
       </ParameterList>

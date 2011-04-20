@@ -1092,7 +1092,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Fad:           " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 
     if (num_eqns*2 == 4) {
-      t = fad_jac_fill< Sacado::Fad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      t = fad_jac_fill< Sacado::Fad::SFad<double,4> >(num_nodes, num_eqns, mesh_spacing);
       std::cout << "SFad:          " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
     else if (num_eqns*2 == 16) {
@@ -1115,7 +1115,7 @@ int main(int argc, char* argv[]) {
     std::cout << "DMFad:         " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl; 
 
     if (num_eqns*2 == 4) {
-      t = fad_jac_fill< Sacado::ELRFad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      t = fad_jac_fill< Sacado::ELRFad::SFad<double,4> >(num_nodes, num_eqns, mesh_spacing);
       std::cout << "ELRSFad:       " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
     else if (num_eqns*2 == 16) {
@@ -1132,7 +1132,7 @@ int main(int argc, char* argv[]) {
     std::cout << "ELRDFad:       " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 
     if (num_eqns*2 == 4) {
-      t = fad_jac_fill< Sacado::CacheFad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      t = fad_jac_fill< Sacado::CacheFad::SFad<double,4> >(num_nodes, num_eqns, mesh_spacing);
       std::cout << "CacheSFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
     else if (num_eqns*2 == 16) {
@@ -1149,7 +1149,7 @@ int main(int argc, char* argv[]) {
     std::cout << "CacheFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 
     if (num_eqns*2 == 4) {
-      t = fad_jac_fill< Sacado::ELRCacheFad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      t = fad_jac_fill< Sacado::ELRCacheFad::SFad<double,4> >(num_nodes, num_eqns, mesh_spacing);
       std::cout << "ELRCacheSFad:  " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
     else if (num_eqns*2 == 16) {

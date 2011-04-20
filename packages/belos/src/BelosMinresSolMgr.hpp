@@ -569,8 +569,6 @@ namespace Belos {
 
     // Set output style
     outputStyle_ = params->get<int> ("Output Style");
-    // FIXME what does this do???
-    //outputTest_ == Teuchos::null;
 
     // Set output stream
     outputStream_ = params->get< RCP< std::ostream > > ("Output Stream");

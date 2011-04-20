@@ -980,6 +980,8 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             if ( expConvTest_->getLOADetected() ) {
               // we don't have convergence but we will deflate out the linear systems and move on.
               loaDetected_ = true;
+              printer_->stream(Warnings) <<
+                "Belos::PseudoBlockGmresSolMgr::solve(): Warning! Solver has experienced a loss of accuracy!" << std::endl;
               isConverged = false;
             }
         
