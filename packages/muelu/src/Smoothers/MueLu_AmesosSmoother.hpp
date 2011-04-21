@@ -113,7 +113,7 @@ class Level;
       A_ = level.GetA();
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       AmesosLinearProblem_ = rcp(new Epetra_LinearProblem());
-      AmesosLinearProblem_->SetOperator(&*epA); //FIXME RCP probably has a safer way to do this
+      AmesosLinearProblem_->SetOperator(epA.get());
       Amesos factory;
       prec_ = rcp(factory.Create(amesosType_, *AmesosLinearProblem_));
       if (prec_ == Teuchos::null) {
@@ -121,11 +121,12 @@ class Level;
         throw(Exceptions::RuntimeError(msg));
       }
       prec_->SetParameters(list_);
+
       int rv = prec_->NumericFactorization();
       if (rv != 0) {
         std::ostringstream buf;
         buf << rv;
-        std::string msg = "Amesos_BaseSolver::NumericFactorization return value of " + buf.str(); 
+        std::string msg = "Amesos_BaseSolver::NumericFactorization return value of " + buf.str(); //TODO: BaseSolver or ... ?
         throw(Exceptions::RuntimeError(msg));
       }
     }
