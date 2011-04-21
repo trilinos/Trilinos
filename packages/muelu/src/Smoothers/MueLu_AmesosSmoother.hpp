@@ -77,6 +77,7 @@ class Level;
       : amesosType_(type), list_(list), out_(this->getOStream())
     {
       SmootherBase::SetType(type);
+      SmootherPrototype::IsSetup(false);
     }
 
     //! Destructor
