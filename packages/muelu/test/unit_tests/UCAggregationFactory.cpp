@@ -40,6 +40,7 @@ namespace {
     RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(16);
 
     RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
+
     RCP<Aggregates> aggregates = aggFact.Build(*graph,aggOptions);
 
     RCP<LOVector> Final_;
@@ -60,24 +61,28 @@ namespace {
   // INSTANTIATIONS
   //
 
-  typedef double Scalar;                         // Scalar is not revelant for this test
-  typedef Kokkos::DefaultNode::DefaultNodeType Node; // Kokkos is not revelant for this test   
+  typedef double Scalar;                             // Scalar is not relevant for this test
+  typedef Kokkos::DefaultNode::DefaultNodeType Node; // Kokkos Node is not relevant for this test   
+
+  typedef long int LongInt;                          // macros dislike parameters with space...
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  typedef long long int LongLongInt;  
+#endif
   
-#define UNIT_TEST_GROUP_4(LO, GO, NO, LMO)                              \
+#define UNIT_TEST_GROUP_4(LO, GO, NO, LMO)                             \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UCAggregationFactory, Constructor, LO, GO, NO, LMO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UCAggregationFactory, Build,       LO, GO, NO, LMO)
 
-#define UNIT_TEST_GROUP_2(LO, GO)                                       \
+#define UNIT_TEST_GROUP_2(LO, GO)                                      \
   typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO ## LO; \
   UNIT_TEST_GROUP_4(LO, GO, Node, LMO ## LO)
 
-  ///  UNIT_TEST_GROUP_2(int, int)
-  //UNIT_TEST_GROUP_2(long int, int)
-  //UNIT_TEST_GROUP_2(long, long)
+  UNIT_TEST_GROUP_2(int, int)
+  UNIT_TEST_GROUP_2(int, LongInt)
+  UNIT_TEST_GROUP_2(LongInt, LongInt)
 
-  typedef long int lint;
-  typedef Kokkos::DefaultKernels<Scalar,int,Node>::SparseOps LMOlongint;
-  UNIT_TEST_GROUP_4(int, lint, Node, LMOlongint)
-
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  UNIT_TEST_GROUP_2(LongInt, LongLongInt)
+#endif
 
 } // namespace <anonymous>

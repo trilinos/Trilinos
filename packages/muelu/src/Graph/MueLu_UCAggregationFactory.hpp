@@ -78,6 +78,9 @@ enum NodeState {
 class UCAggregationFactory : public Teuchos::Describable {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
+typedef int global_size_t; //TODO
+typedef int my_size_t; //TODO
+
   public:
     //! @name Constructors/Destructors.
     //@{
@@ -232,7 +235,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                     /*--------------------------------------------------- */
                   
                     int count = 0;
-                    for (Teuchos::ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+                    for (typename Teuchos::ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                       {
                         int index = *it;
                         if ( index < nRows ) 
@@ -267,7 +270,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                       delete supernode;
                       if ( ordering == 2 ) /* if graph ordering */
                         {
-                          for (Teuchos::ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+                          for (typename Teuchos::ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                             {
                               int index = *it;
                               if  ( index < nRows && aggStat[index] == READY )
@@ -298,9 +301,9 @@ class UCAggregationFactory : public Teuchos::Describable {
                           if ( ordering == 2 ) /* if graph ordering */
                             {
 
-                              Teuchos::ArrayView<const int> neighOfJNode = graph.getNeighborVertices(jNode);
+                              Teuchos::ArrayView<const LO> neighOfJNode = graph.getNeighborVertices(jNode);
 
-                              for (Teuchos::ArrayView<const int>::const_iterator it = neighOfJNode.begin(); it != neighOfJNode.end(); ++it)
+                              for (typename Teuchos::ArrayView<const LO>::const_iterator it = neighOfJNode.begin(); it != neighOfJNode.end(); ++it)
                                 {
                                   int index = *it;
                                   if ( index < nRows && aggStat[index] == READY )
@@ -600,7 +603,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                              std::string const & label,
                              Graph const &graph) const
       {
-        int nVertices    = graph.GetNodeNumVertices();
+        my_size_t nVertices = graph.GetNodeNumVertices();
         int exp_nRows    = nVertices + graph.GetNodeNumGhost();
         int myPid        = graph.GetComm()->getRank();
         double printFlag = aggOptions.GetPrintFlag();
@@ -619,8 +622,8 @@ class UCAggregationFactory : public Teuchos::Describable {
         // arbitrated by ArbitrateAndCommunicate(). There is some
         // additional logic to prevent losing root nodes in arbitration.
         {
-          ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
-          ArrayRCP<const int> procWinner   = aggregates.GetProcWinner()->getData(0);
+          ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+          ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
           ArrayRCP<double>    weights      = distWeights->getDataNonConst(0);
           
           distWeights->putScalar(0.);
@@ -642,17 +645,17 @@ class UCAggregationFactory : public Teuchos::Describable {
         // Tentatively assign any vertex (ghost or local) which neighbors a root
         // to the aggregate associated with the root.
         {
-          ArrayRCP<int>       vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-          ArrayRCP<const int> procWinner   = aggregates.GetProcWinner()->getData(0);
-          ArrayRCP<double>    weights      = distWeights->getDataNonConst(0);
+          ArrayRCP<LO>       vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+          ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
+          ArrayRCP<double>   weights      = distWeights->getDataNonConst(0);
 
-          for (int i = 0; i < nVertices; i++) { 
+          for (my_size_t i = 0; i < nVertices; i++) { 
             if ( aggregates.IsRoot(i) && (procWinner[i] == myPid) ) {
               
               // neighOfINode is the neighbor node list of node 'i'.
-              ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+              ArrayView<const LO> neighOfINode = graph.getNeighborVertices(i);
               
-              for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+              for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                 int colj = *it;
                 if (vertex2AggId[colj] == MUELU_UNAGGREGATED) {
                   weights[colj]= 1.;
@@ -671,17 +674,17 @@ class UCAggregationFactory : public Teuchos::Describable {
         // Record the number of aggregated vertices
         int total_phase_one_aggregated = 0;
         {
-          ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+          ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
             
           int phase_one_aggregated = 0;
-          for (int i = 0; i < nVertices; i++) {
+          for (my_size_t i = 0; i < nVertices; i++) {
             if (vertex2AggId[i] != MUELU_UNAGGREGATED)
               phase_one_aggregated++;
           }
           
           sumAll(graph.GetComm(), phase_one_aggregated, total_phase_one_aggregated);
 
-          int total_nVertices = 0;
+          global_size_t total_nVertices = 0;
           sumAll(graph.GetComm(), nVertices, total_nVertices);
           
           /* Among unaggregated points, see if we can make a reasonable size    */
@@ -696,16 +699,16 @@ class UCAggregationFactory : public Teuchos::Describable {
           factor = ((double) total_phase_one_aggregated)/((double)(total_nVertices + 1));
           factor = pow(factor, aggOptions.GetPhase3AggCreation());
           
-          for (int i = 0; i < nVertices; i++) {
+          for (my_size_t i = 0; i < nVertices; i++) {
             if (vertex2AggId[i] == MUELU_UNAGGREGATED) 
               {
                 
                 // neighOfINode is the neighbor node list of node 'iNode'.
-                ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+                ArrayView<const LO> neighOfINode = graph.getNeighborVertices(i);
                 int rowi_N = neighOfINode.size();
                 
                 int nonaggd_neighbors = 0;
-                for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+                for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                   int colj = *it;
                   if (vertex2AggId[colj] == MUELU_UNAGGREGATED && colj < nVertices)
                     nonaggd_neighbors++;
@@ -714,7 +717,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                       (((double) nonaggd_neighbors)/((double) rowi_N) > factor))
                   {
                     vertex2AggId[i] = (nAggregates)++;
-                    for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+                    for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                       int colj = *it;
                       if (vertex2AggId[colj]==MUELU_UNAGGREGATED) {
                         vertex2AggId[colj] = vertex2AggId[i];
@@ -800,18 +803,18 @@ class UCAggregationFactory : public Teuchos::Describable {
           // build a list of candidate root nodes (vertices not adjacent
           // to aggregated vertices)
 
-          int nCandidates = 0, nCandidatesGlobal;
+          my_size_t nCandidates = 0;
+          global_size_t nCandidatesGlobal;
 
-          ArrayRCP<int> candidates = Teuchos::arcp<int>(nVertices+1);
+          ArrayRCP<LO> candidates = Teuchos::arcp<LO>(nVertices+1);
 
           double priorThreshold = 0.;
           for (int kkk = 0 ; kkk < MUELU_PHASE4BUCKETS; kkk++) {
 
             {
-              ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
-              ArrayView<const int> vertex2AggIdView = vertex2AggId();
-              RootCandidates(nVertices, vertex2AggIdView, graph,
-                                   candidates, nCandidates, nCandidatesGlobal);
+              ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+              ArrayView<const LO> vertex2AggIdView = vertex2AggId();
+              RootCandidates(nVertices, vertex2AggIdView, graph, candidates, nCandidates, nCandidatesGlobal);
               // views on distributed vectors are freed here.
             }
 
@@ -822,7 +825,7 @@ class UCAggregationFactory : public Teuchos::Describable {
             priorThreshold = threshold;
 
             {
-              ArrayRCP<int>    vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+              ArrayRCP<LO>     vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
               ArrayRCP<double> weights      = distWeights->getDataNonConst(0);
 
               for (int k = 0; k < nCandidates ; k++ ) { 
@@ -831,11 +834,11 @@ class UCAggregationFactory : public Teuchos::Describable {
                   // Note: priorThreshold <= fabs(temp[i]) <= 1
 
                   // neighOfINode is the neighbor node list of node 'iNode'.
-                  ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+                  ArrayView<const LO> neighOfINode = graph.getNeighborVertices(i);
 
                   if (neighOfINode.size() > minNodesPerAggregate) { //TODO: check if this test is exactly was we want to do
                     int count = 0;
-                    for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+                    for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                       int Adjacent    = *it;
                       // This might not be true if someone close to i
                       // is chosen as a root via fabs(temp[]) < Threshold
@@ -851,7 +854,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                       aggregates.SetIsRoot(i);
                     }
                     else { // undo things
-                      for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+                      for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                         int Adjacent    = *it;
                         if (vertex2AggId[Adjacent] == nAggregates){
                           vertex2AggId[Adjacent] = MUELU_UNAGGREGATED;
@@ -895,15 +898,15 @@ class UCAggregationFactory : public Teuchos::Describable {
         //     a) count the number of nonzeros per row in the transpose
         std::vector<int> RowPtr(exp_nRows+1-nVertices);
         //{
-        ArrayRCP<const int> vertex2AggIdCst = aggregates.GetVertex2AggId()->getData(0);
+        ArrayRCP<const LO> vertex2AggIdCst = aggregates.GetVertex2AggId()->getData(0);
 
         for (int i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
         for (int i = 0; i < nVertices;  i++) {
 
           // neighOfINode is the neighbor node list of node 'iNode'.
-          ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+          ArrayView<const LO> neighOfINode = graph.getNeighborVertices(i);
 
-          for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
             int j = *it;
             if ( (j >= nVertices) && (vertex2AggIdCst[j] == MUELU_UNAGGREGATED)){
               RowPtr[j-nVertices]++;
@@ -920,15 +923,15 @@ class UCAggregationFactory : public Teuchos::Describable {
           iSum += iTemp;
         }
         RowPtr[exp_nRows-nVertices] = iSum;
-        std::vector<int> cols(iSum+1);
+        std::vector<LO> cols(iSum+1);
          
         //     c) Traverse matrix and insert entries in proper location.
         for (int i = 0; i < nVertices;  i++) {
 
           // neighOfINode is the neighbor node list of node 'iNode'.
-          ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+          ArrayView<const LO> neighOfINode = graph.getNeighborVertices(i);
           
-          for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
             int j = *it;
             if ( (j >= nVertices) && (vertex2AggIdCst[j] == MUELU_UNAGGREGATED)){
               cols[RowPtr[j-nVertices]++] = i;
@@ -955,14 +958,14 @@ class UCAggregationFactory : public Teuchos::Describable {
           bestScoreCutoff = thresholds[kk];
           for (int i = 0; i < exp_nRows; i++) {
 
-            ArrayRCP<int> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
-            ArrayRCP<const int> procWinner = aggregates.GetProcWinner()->getData(0);
+            ArrayRCP<LO> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
+            ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
             ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
 
             if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
 
               // neighOfINode is the neighbor node list of node 'iNode'.
-              ArrayView<const int> neighOfINode;
+              ArrayView<const LO> neighOfINode;
 
               // Grab neighboring vertices which is either in graph for local ids
               // or sits in transposed fragment just constructed above for ghosts.
@@ -970,13 +973,13 @@ class UCAggregationFactory : public Teuchos::Describable {
                 neighOfINode = graph.getNeighborVertices(i);
               }
               else {
-                int *rowi_col = NULL, rowi_N;
+                LO *rowi_col = NULL, rowi_N;
                 rowi_col = &(cols[RowPtr[i-nVertices]]);
                 rowi_N   = RowPtr[i+1-nVertices] - RowPtr[i-nVertices];
                 
-                neighOfINode = ArrayView<const int>(rowi_col, rowi_N);
+                neighOfINode = ArrayView<const LO>(rowi_col, rowi_N);
               }
-              for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+              for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                 int Adjacent    = *it;
                 int AdjacentAgg = vertex2AggId[Adjacent];
 
@@ -991,7 +994,7 @@ class UCAggregationFactory : public Teuchos::Describable {
               int best_score = MUELU_NOSCORE;
               int best_agg; // TODO: init ?
               int BestMark;
-              for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+              for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                 int Adjacent    = *it;
                 int AdjacentAgg = vertex2AggId[Adjacent];
                 //Adjacent is unaggregated, has some value and no
@@ -1035,7 +1038,7 @@ class UCAggregationFactory : public Teuchos::Describable {
                 }
               }
               // Clean up
-               for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+               for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                 int Adjacent    = *it;
                 int AdjacentAgg = vertex2AggId[Adjacent];
                 if (AdjacentAgg >= 0) SumOfMarks[AdjacentAgg] = 0;
@@ -1067,17 +1070,17 @@ class UCAggregationFactory : public Teuchos::Describable {
         int Nleftover = 0, Nsingle = 0;
         {
 
-          ArrayRCP<int> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
+          ArrayRCP<LO> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
           ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
-          ArrayRCP<const int> procWinner = aggregates.GetProcWinner()->getData(0);
+          ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
 
           int count = 0;
-          for (int i = 0; i < nVertices; i++) { 
+          for (my_size_t i = 0; i < nVertices; i++) { 
             if ((vertex2AggId[i] == MUELU_UNAGGREGATED) ) {
               Nleftover++;
 
               // neighOfINode is the neighbor node list of node 'iNode'.
-              ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+              ArrayView<const LO> neighOfINode = graph.getNeighborVertices(i);
 
               // We don't want too small of an aggregate. So lets see if there is an
               // unaggregated neighbor that we can also put with this vertex
@@ -1086,7 +1089,7 @@ class UCAggregationFactory : public Teuchos::Describable {
               weights[i] = 1.;
               if (count == 0) aggregates.SetIsRoot(i);
               count++;
-              for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+              for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                 int j = *it;
                 if ((j != i)&&(vertex2AggId[j] == MUELU_UNAGGREGATED)&&
                     (j < nVertices)) {
@@ -1106,7 +1109,7 @@ class UCAggregationFactory : public Teuchos::Describable {
           if (count != 0) {
             // Can stick small aggregate with 0th aggregate?
             if (nAggregates > 0) {
-              for (int i = 0; i < nVertices; i++) {
+              for (my_size_t i = 0; i < nVertices; i++) {
                 if ((vertex2AggId[i] == nAggregates) && (procWinner[i] == myPid)){
                   vertex2AggId[i] = 0;
                   aggregates.SetIsRoot(i,false);
@@ -1149,19 +1152,19 @@ class UCAggregationFactory : public Teuchos::Describable {
 
          Candidates are vertices not adjacent to already aggregated vertices.
       */
-      int RootCandidates(int nVertices, ArrayView<const int> & vertex2AggId, const Graph graph,
-                               ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal) const
+      void RootCandidates(my_size_t nVertices, ArrayView<const LO> & vertex2AggId, const Graph graph,
+                         ArrayRCP<LO> &candidates, my_size_t &nCandidates, global_size_t &nCandidatesGlobal) const
       {
         nCandidates = 0;
        
-        for (int i = 0; i < nVertices; i++ ) {
+        for (my_size_t i = 0; i < nVertices; i++ ) {
           if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
             bool noAggdNeighbors = true;
 
             // neighOfINode is the neighbor node list of node 'iNode'.
-            ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
+            ArrayView<const LO> neighOfINode = graph.getNeighborVertices(i);
 
-            for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+            for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
               int adjacent    = *it;
               if (vertex2AggId[adjacent] != MUELU_UNAGGREGATED) 
                 noAggdNeighbors = false;
@@ -1172,7 +1175,6 @@ class UCAggregationFactory : public Teuchos::Describable {
 
         sumAll(graph.GetComm(), nCandidates, nCandidatesGlobal);
 
-        return 0;
       } //RootCandidates
 
       //! @brief Compute sizes of all the aggregates.
@@ -1182,8 +1184,8 @@ class UCAggregationFactory : public Teuchos::Describable {
 
         int nAggregates = aggregates.GetNumAggregates();
 
-        ArrayRCP<int> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-        ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+        ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+        ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
         int size = procWinner.size();
 
         for (int i = 0; i < nAggregates; i++) aggSizes[i] = 0;
@@ -1202,8 +1204,8 @@ class UCAggregationFactory : public Teuchos::Describable {
         
         int nAggregates = aggregates.GetNumAggregates();
 
-        ArrayRCP<int> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-        ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+        ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+        ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
         int size = procWinner.size();
 
         ArrayRCP<int> AggInfo = Teuchos::arcp<int>(nAggregates+1);
