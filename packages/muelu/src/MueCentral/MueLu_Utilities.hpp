@@ -288,6 +288,10 @@ namespace MueLu {
 
    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
+    // TODO: should NOT return an Array. Definition must be changed to:
+    // - ArrayRCP<> ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
+    // or
+    // - void ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
    static Teuchos::Array<Magnitude>
    ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
    {

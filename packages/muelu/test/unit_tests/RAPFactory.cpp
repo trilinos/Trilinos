@@ -96,7 +96,7 @@ TEUCHOS_UNIT_TEST(RAPFactory, Correctness)
   RCP<MultiVector> result2 = MultiVectorFactory::Build(Op->getRangeMap(),1);
   coarseOp->multiply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
   
-  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> normX(1), normResult1(1),normResult2(1);
+  Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
   X->norm2(normX);
   out << "This test checks the correctness of the Galerkin triple "
       << "matrix product by comparing (RAP)*X to R(A(P*X))." << std::endl;

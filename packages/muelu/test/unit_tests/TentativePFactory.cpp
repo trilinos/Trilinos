@@ -93,7 +93,7 @@ TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentative)
 
     //out << *diff << std::endl;
 
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
+    Teuchos::Array<ST::magnitudeType> norms(NSdim);
     diff->norm2(norms);
     for (LO i=0; i<NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;

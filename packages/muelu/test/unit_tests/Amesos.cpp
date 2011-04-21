@@ -87,13 +87,12 @@ TEUCHOS_UNIT_TEST(Amesos, KLUSolve)
 
   smoother->Setup(aLevel);
 
-  RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
-  epX->SetSeed(846930886);
+  X->setSeed(846930886);
   X->randomize();
   Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-  X->putScalar( (SC) 0.0);
-  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> res;
+  X->putScalar((SC) 0.0);
+  Teuchos::Array<ST::magnitudeType> res;
   res = Utils::ResidualNorm(*Op,*X,*RHS);
   out << "||initial residual|| = " << res[0] << std::endl;
 

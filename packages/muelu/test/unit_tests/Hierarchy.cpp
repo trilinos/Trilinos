@@ -329,15 +329,15 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
 
-  RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
-  epX->SetSeed(846930886);
+  X->setSeed(846930886);
   X->randomize();
   //Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-  epX->Norm2(&n);
-  X->scale(1/n);
-  epX->Norm2(&n);
-  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
+  Teuchos::Array<ST::magnitudeType> norms(1);
+  X->norm2(norms);
+  X->scale(1/norms[0]);
+  X->norm2(norms);
+  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
   RHS->putScalar( (SC) 0.0);
 
@@ -345,11 +345,10 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   int iterations=10;
   H.Iterate(*RHS,iterations,*X);
 
-  epX->Norm2(&n);
+  X->norm2(norms);
   out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(ios::fixed) <<
-std::setprecision(10) << n << std::endl;
+    std::setprecision(10) << norms[0] << std::endl;
 
-  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms;
   norms = Utils::ResidualNorm(*Op,*X,*RHS);
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
   TEUCHOS_TEST_EQUALITY(norms[0]<1e-10, true, out, success);

@@ -1,5 +1,4 @@
 #include <iostream>
-#include <vector>
 
 // Teuchos
 #include <Teuchos_RCP.hpp>
@@ -36,7 +35,6 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 #include <unistd.h>
-typedef Teuchos::ScalarTraits<SC> ST;
 /**********************************************************************************/
 
 int main(int argc, char *argv[]) {
@@ -120,7 +118,7 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
-  std::vector<ST::magnitudeType> norms(1);
+  Teuchos::Array<ST::magnitudeType> norms(1);
   nullSpace->norm1(norms);
   std::cout << "||NS|| = " << norms[0] << std::endl;
 

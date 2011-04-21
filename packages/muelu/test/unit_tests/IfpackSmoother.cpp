@@ -96,8 +96,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidel)
 
   smoother->Setup(aLevel);
 
-  RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
-  epX->SetSeed(846930886);
+  X->setSeed(846930886);
   X->randomize();
   Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
@@ -105,7 +104,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidel)
 
   out << "Applying one GS sweep" << std::endl;
   smoother->Apply(*X,*RHS);
-  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms;
+  Teuchos::Array<ST::magnitudeType> norms(1);
   norms = Utils::ResidualNorm(*Op,*X,*RHS);
   TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],6.04555396884098,1e-12,out,success)
 
@@ -148,14 +147,13 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, Chebyshev)
 
   smoother->Setup(aLevel);
 
-  RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
-  epX->SetSeed(846930886);
+  X->setSeed(846930886);
   X->randomize();
-  double n;
-  epX->Norm2(&n);
-  X->scale(1/n);
-  epX->Norm2(&n);
-  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
+  Teuchos::Array<ST::magnitudeType> norms(1);
+  X->norm2(norms);
+  X->scale(1/norms[0]);
+  X->norm2(norms);
+  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   //Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
 
@@ -163,25 +161,25 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, Chebyshev)
   out << "Applying degree " << numIts << " Chebyshev smoother" << std::endl;
   smoother->SetNIts(numIts);
   smoother->Apply(*X,*RHS);
-  epX->Norm2(&n);
-  out << "||X_1|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << n << std::endl;
-  TEUCHOS_TEST_EQUALITY(n<0.7,true,out,success);  //FIXME should calculate reduction analytically
+  X->norm2(norms);
+  out << "||X_1|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << norms[0] << std::endl;
+  TEUCHOS_TEST_EQUALITY(norms[0]<0.7,true,out,success);  //FIXME should calculate reduction analytically
 
   numIts = 10;
   smoother->SetNIts(numIts);
   TEUCHOS_TEST_EQUALITY(smoother->GetNIts(),10,out,success);
   out << "Applying degree " << numIts << " Chebyshev smoother" << std::endl;
-  epX->SetSeed(846930886);
+  X->setSeed(846930886);
   X->randomize();
-  epX->Norm2(&n);
-  X->scale(1/n);
-  epX->Norm2(&n);
-  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << n << std::endl;
+  X->norm2(norms);
+  X->scale(1/norms[0]);
+  X->norm2(norms);
+  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << norms[0] << std::endl;
   smoother->Apply(*X,*RHS);
-  epX->Norm2(&n);
+  X->norm2(norms);
   out << "||X_" << std::setprecision(2) << numIts << "|| = " << std::setiosflags(ios::fixed) <<
-std::setprecision(20) << n << std::endl;
-  TEUCHOS_TEST_EQUALITY(n<0.25,true,out,success);  //FIXME should calculate reduction analytically
+std::setprecision(20) << norms[0] << std::endl;
+  TEUCHOS_TEST_EQUALITY(norms[0]<0.25,true,out,success);  //FIXME should calculate reduction analytically
 
 } //Chebyshev
 
@@ -210,25 +208,21 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, ILU)
   RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getDomainMap(),1);
 
   smoother->Setup(aLevel);
-
-  RCP<Epetra_MultiVector> epXtrue = Utils::MV2NonConstEpetraMV(Xtrue);
-  epXtrue->SetSeed(846930886);
+  Xtrue->setSeed(846930886);
   Xtrue->randomize();
-  double n;
-  epXtrue->Norm2(&n);
-  Xtrue->scale(1/n);
+  Teuchos::Array<ST::magnitudeType> norms(1);
+  Xtrue->norm2(norms);
+  Xtrue->scale(1/norms[0]);
   Op->multiply(*Xtrue,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
   RCP<Epetra_MultiVector> epRHS = Utils::MV2NonConstEpetraMV(RHS);
-  epRHS->Norm2(&n);
-  out << "||RHS|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << n << std::endl;
+  RHS->norm2(norms);
+  out << "||RHS|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   X->putScalar( (SC) 0.0);
 
 
   smoother->Apply(*X,*RHS);
-  RCP<Epetra_MultiVector> epX = Utils::MV2NonConstEpetraMV(X);
-  epX->Norm2(&n);
-  out << "||X_final|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << n << std::endl;
-  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms;
+  X->norm2(norms);
+  out << "||X_final|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << norms[0] << std::endl;
   norms = Utils::ResidualNorm(*Op,*X,*RHS);
   out << "||residual|| = " << norms[0] << std::endl;
   TEUCHOS_TEST_EQUALITY(norms[0]<1e-10,true,out,success)

@@ -58,5 +58,6 @@ typedef Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tp
 
 // Define convenient shortcut for data types
 typedef Scalar    SC;
+typedef Teuchos::ScalarTraits<SC> ST;
 
 // TODO: do the same for Epetra object (problem of namespace)
