@@ -348,40 +348,6 @@ namespace {
     }
   }
 
-  Ioss::Region *internal_create_output_mesh(const std::string &filename,
-					    stk::ParallelMachine comm,
-					    stk::mesh::BulkData &bulk_data,
-					    const Ioss::Region *in_region)
-  {
-    std::string out_filename = filename;
-    if (filename.empty()) {
-      out_filename = "default_output_mesh";
-    } else {
-      // These filenames may be coming from the generated options which
-      // may have forms similar to: "2x2x1|size:.05|height:-0.1,1"
-      // Strip the name at the first "+:|," character:
-      std::vector<std::string> tokens;
-      stk::util::tokenize(out_filename, "+|:,", tokens);
-      out_filename = tokens[0];
-    }
-
-    Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,
-						    Ioss::WRITE_RESULTS,
-						    comm);
-    if (dbo == NULL || !dbo->ok()) {
-      std::cerr << "ERROR: Could not open results database '" << out_filename
-		<< "' of type 'exodusII'\n";
-      std::exit(EXIT_FAILURE);
-    }
-
-    // NOTE: 'out_region' owns 'dbo' pointer at this time...
-    Ioss::Region *out_region = new Ioss::Region(dbo, "results_output");
-
-    stk::io::define_output_db(*out_region, bulk_data, in_region);
-    stk::io::write_output_db(*out_region,  bulk_data);
-    return out_region;
-  }
-
   void internal_process_output_request(Ioss::Region &region,
 				       stk::mesh::BulkData &bulk,
 				       int step)
@@ -532,46 +498,75 @@ namespace stk {
 			   stk::mesh::fem::FEMMetaData &fem_meta,
 			   stk::io::MeshData &mesh_data)
     {
-      Ioss::Region *in_region = NULL;
-      if (mesh_type == "exodusii" || mesh_type == "generated" || mesh_type == "pamgen" ) {
+      Ioss::Region *in_region = mesh_data.m_input_region;
+      if (in_region == NULL) {
+	// If in_region is NULL, then open the file;
+	// If in_region is non-NULL, then user has given us a valid Ioss::Region that
+	// should be used.
+	if (mesh_type == "exodusii" || mesh_type == "generated" || mesh_type == "pamgen" ) {
 
-	Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
-							Ioss::READ_MODEL, comm);
-	if (dbi == NULL || !dbi->ok()) {
-	  std::cerr  << "ERROR: Could not open database '" << mesh_filename
-		     << "' of type '" << mesh_type << "'\n";
+	  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
+							  Ioss::READ_MODEL, comm);
+	  if (dbi == NULL || !dbi->ok()) {
+	    std::cerr  << "ERROR: Could not open database '" << mesh_filename
+		       << "' of type '" << mesh_type << "'\n";
+	    std::exit(EXIT_FAILURE);
+	  }
+
+	  // NOTE: 'in_region' owns 'dbi' pointer at this time...
+	  in_region = new Ioss::Region(dbi, "input_model");
+	  mesh_data.m_input_region = in_region;
+	} else {
+	  std::cerr << "ERROR: Unrecognized or unsupported mesh type '" << mesh_type
+		    << "'. \n";
 	  std::exit(EXIT_FAILURE);
 	}
-
-	// NOTE: 'in_region' owns 'dbi' pointer at this time...
-	in_region = new Ioss::Region(dbi, "input_model");
-
-	size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
-	initialize_spatial_dimension(fem_meta, spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
-
-	process_elementblocks(*in_region, fem_meta);
-	process_nodeblocks(*in_region,    fem_meta);
-	process_sidesets(*in_region,      fem_meta);
-	process_nodesets(*in_region,      fem_meta);
-
-      } else {
-	std::cerr << "ERROR: Unrecognized or unsupported mesh type '" << mesh_type
-		  << "'. \n";
-	std::exit(EXIT_FAILURE);
       }
 
-      mesh_data.m_input_region = in_region;
+      size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
+      initialize_spatial_dimension(fem_meta, spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
+
+      process_elementblocks(*in_region, fem_meta);
+      process_nodeblocks(*in_region,    fem_meta);
+      process_sidesets(*in_region,      fem_meta);
+      process_nodesets(*in_region,      fem_meta);
     }
 
 
-    void create_output_mesh(const std::string &mesh_filename,
+    void create_output_mesh(const std::string &filename,
 			    stk::ParallelMachine comm,
 			    stk::mesh::BulkData &bulk_data,
 			    MeshData &mesh_data)
     {
-      mesh_data.m_output_region = internal_create_output_mesh(mesh_filename,
-							      comm, bulk_data,
-							      mesh_data.m_input_region);
+      Ioss::Region *out_region = NULL;
+    
+      std::string out_filename = filename;
+      if (filename.empty()) {
+	out_filename = "default_output_mesh";
+      } else {
+	// These filenames may be coming from the generated options which
+	// may have forms similar to: "2x2x1|size:.05|height:-0.1,1"
+	// Strip the name at the first "+:|," character:
+	std::vector<std::string> tokens;
+	stk::util::tokenize(out_filename, "+|:,", tokens);
+	out_filename = tokens[0];
+      }
+
+      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,
+						      Ioss::WRITE_RESULTS,
+						      comm);
+      if (dbo == NULL || !dbo->ok()) {
+	std::cerr << "ERROR: Could not open results database '" << out_filename
+		  << "' of type 'exodusII'\n";
+	std::exit(EXIT_FAILURE);
+      }
+
+      // NOTE: 'out_region' owns 'dbo' pointer at this time...
+      out_region = new Ioss::Region(dbo, "results_output");
+
+      stk::io::define_output_db(*out_region, bulk_data, mesh_data.m_input_region);
+      stk::io::write_output_db(*out_region,  bulk_data);
+      mesh_data.m_output_region = out_region;
     }
 
     // ========================================================================
