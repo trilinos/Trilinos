@@ -37,6 +37,7 @@
 #include "Rythmos_ExplicitRKStepper.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
+#include "Rythmos_RampingIntegrationControlStrategy.hpp"
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
@@ -165,15 +166,18 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
 	//        integrationControlPL->set( "Take Variable Steps", false );
         //integrationControlPL->set( "Fixed dt", Teuchos::as<double>(delta_t) );
 
-       // RCP<Rythmos::IntegratorBase<Scalar> >
-        RCP<Rythmos::DefaultIntegrator<Scalar> >
-          defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(
-            Rythmos::simpleIntegrationControlStrategy<Scalar>(integrationControlPL)
-            );
+	RCP<Rythmos::DefaultIntegrator<Scalar> > defaultIntegrator;
+
+	if (rythmosPL->get("Rythmos Integration Control Strategy", "Simple") == "Simple") {
+	  defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(Rythmos::simpleIntegrationControlStrategy<Scalar>(integrationControlPL));
+	}
+	else if(rythmosPL->get<std::string>("Rythmos Integration Control Strategy") == "Ramping") {
+	  defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(Rythmos::rampingIntegrationControlStrategy<Scalar>(integrationControlPL));  
+	}
         fwdStateIntegrator = defaultIntegrator;
       }
       fwdStateIntegrator->setParameterList(sublist(rythmosPL, "Rythmos Integrator", true));
-
+      
    if (observer != Teuchos::null) 
      fwdStateIntegrator->setIntegrationObserver(observer);
 
@@ -470,6 +474,7 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
   validPL->set<double>("Final Time", 1.0, "");
   validPL->sublist("Rythmos Stepper", false, "");
   validPL->sublist("Rythmos Integrator", false, "");
+  validPL->set<std::string>("Rythmos Integration Control Strategy", "Simple", "");
   validPL->sublist("Rythmos Integration Control", false, "");
   validPL->sublist("Stratimikos", false, "");
   validPL->set<std::string>("Verbosity Level", "", "");
