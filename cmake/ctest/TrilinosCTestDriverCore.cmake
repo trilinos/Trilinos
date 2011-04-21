@@ -29,8 +29,6 @@ MESSAGE("")
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 
-FIND_PACKAGE(PythonInterp) # Defines PYTHON_EXECUTABLE
-
 # Must set this *before* reading the following file!
 SET(PROJECT_NAME Trilinos)
 
@@ -49,8 +47,8 @@ SET(TRILINOS_HOME_DIR "${TRILINOS_CMAKE_DIR}/..")
 MESSAGE("TRILINOS_HOME_DIR = ${TRILINOS_HOME_DIR}")
 
 SET( CMAKE_MODULE_PATH
-   "${TRILINOS_CMAKE_DIR}/.."
    "${TRILINOS_CMAKE_DIR}"
+   "${TRILINOS_CMAKE_DIR}/.."
    "${TRILINOS_CMAKE_DIR}/utils"
    "${TRILINOS_CMAKE_DIR}/package_arch"
    )
@@ -64,6 +62,9 @@ INCLUDE(AppendSet)
 INCLUDE(AppendStringVar)
 INCLUDE(PackageArchGlobalMacros)
 
+INCLUDE(TrilinosFindPythonInterp)
+TRILINOS_FIND_PYTHON()
+MESSAGE("PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
 
 #############################
 ### Do some initial setup ###

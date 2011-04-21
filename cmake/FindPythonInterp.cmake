@@ -18,6 +18,8 @@
 #    must be found or the CMake configure will stop immediately.
 #
 
+#MESSAGE("Calling Trilinos version of FindPythonInterp.cmake")
+
 FIND_PROGRAM(PYTHON_EXECUTABLE
   NAMES python2.7 python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5 python
   PATHS
@@ -44,7 +46,8 @@ MARK_AS_ADVANCED(PYTHON_EXECUTABLE)
 # Version checking: If a version check is requested, set
 # PythonInterp_VERSION, convert it to a list, extract the last element
 # of the list, and compare it to the requested version
-#MESSAGE("PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+#MESSAGE("Initial: PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+#MESSAGE("PythonInterp_FIND_VERSION = ${PythonInterp_FIND_VERSION}")
 #MESSAGE("PythonInterp_MUST_BE_FOUND = ${PythonInterp_MUST_BE_FOUND}")
 IF (PYTHON_EXECUTABLE OR PythonInterp_MUST_BE_FOUND)
   IF (NOT PYTHON_EXECUTABLE)
@@ -70,3 +73,4 @@ IF (PYTHON_EXECUTABLE OR PythonInterp_MUST_BE_FOUND)
     ENDIF()
   ENDIF()
 ENDIF()
+#MESSAGE("Final: PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
