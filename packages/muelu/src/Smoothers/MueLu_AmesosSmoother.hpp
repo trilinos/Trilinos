@@ -40,7 +40,7 @@ class Level;
     //! parameter list that is used by Amesos internally
     Teuchos::ParameterList list_;
     //! Problem that Amesos uses internally.
-    RCP<Epetra_LinearProblem> AmesosLinearProblem;
+    RCP<Epetra_LinearProblem> AmesosLinearProblem_;
 
   protected:
     Teuchos::RCP<Teuchos::FancyOStream> out_;
@@ -112,10 +112,10 @@ class Level;
       SmootherPrototype::IsSetup(true);
       A_ = level.GetA();
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
-      AmesosLinearProblem = rcp(new Epetra_LinearProblem());
-      AmesosLinearProblem->SetOperator(&*epA); //FIXME RCP probably has a safer way to do this
+      AmesosLinearProblem_ = rcp(new Epetra_LinearProblem());
+      AmesosLinearProblem_->SetOperator(&*epA); //FIXME RCP probably has a safer way to do this
       Amesos factory;
-      prec_ = rcp(factory.Create(amesosType_, *AmesosLinearProblem));
+      prec_ = rcp(factory.Create(amesosType_, *AmesosLinearProblem_));
       if (prec_ == Teuchos::null) {
         std::string msg = "Amesos::Create: factorization type '" + amesosType_ + "' is not supported";
         throw(Exceptions::RuntimeError(msg));
@@ -148,14 +148,14 @@ class Level;
       //Epetra_LinearProblem takes the right-hand side as a non-const pointer.
       //I think this const_cast is safe because Amesos won't modify the rhs.
       Epetra_MultiVector &nonconstB = const_cast<Epetra_MultiVector&>(epB);
-      AmesosLinearProblem->SetLHS(&epX);
-      AmesosLinearProblem->SetRHS(&nonconstB);
+      AmesosLinearProblem_->SetLHS(&epX);
+      AmesosLinearProblem_->SetRHS(&nonconstB);
 
       prec_->Solve();
 
       // Don't keep pointers to our vectors in the Epetra_LinearProblem.
-      AmesosLinearProblem->SetLHS(0);
-      AmesosLinearProblem->SetRHS(0);
+      AmesosLinearProblem_->SetLHS(0);
+      AmesosLinearProblem_->SetRHS(0);
     }
     //@}
 
