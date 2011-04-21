@@ -171,7 +171,7 @@ namespace {
   void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
   {
     const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-    stk::io::default_part_processing(elem_blocks, fem_meta, fem_meta.element_rank());
+    stk::io::default_part_processing(elem_blocks, fem_meta);
   }
 
   void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
@@ -234,7 +234,7 @@ namespace {
   void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
   {
     const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-    stk::io::default_part_processing(node_sets, fem_meta, fem_meta.node_rank());
+    stk::io::default_part_processing(node_sets, fem_meta);
 
     stk::mesh::Field<double> & distribution_factors_field =
       fem_meta.declare_field<stk::mesh::Field<double> >("distribution_factors");
@@ -263,7 +263,7 @@ namespace {
   void process_sidesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
   {
     const Ioss::SideSetContainer& side_sets = region.get_sidesets();
-    stk::io::default_part_processing(side_sets, fem_meta, fem_meta.side_rank());
+    stk::io::default_part_processing(side_sets, fem_meta);
 
     for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
 	it != side_sets.end(); ++it) {

@@ -81,26 +81,22 @@ bool include_entity(Ioss::GroupingEntity *entity);
  */
 template <typename T>
 void default_part_processing(const std::vector<T*> &entities,
-			     stk::mesh::fem::FEMMetaData &fem_meta,
-                             stk::mesh::EntityRank type)
+			     stk::mesh::fem::FEMMetaData &fem_meta)
 {
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];
-    internal_part_processing(entity, fem_meta, type);
+    internal_part_processing(entity, fem_meta);
   }
 }
 
 //! \deprecated
 template <typename T>
 void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta,
-                             stk::mesh::EntityRank type)
+                             stk::mesh::EntityRank)
 {
   stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
-  default_part_processing (entities, fem_meta, type);
+  default_part_processing (entities, fem_meta);
 }
-
-void default_part_processing(const std::vector<Ioss::SideBlock*> &entities,
-			     stk::mesh::fem::FEMMetaData &fem_meta);
 
 /** Given the newly created Ioss::Region 'io_region', define the
  * model corresponding to the stk::mesh 'bulk_data'.  If the
@@ -280,26 +276,15 @@ void put_io_part_attribute( mesh::Part &part, Ioss::GroupingEntity *entity = NUL
 
 const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part);
 
-void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
-                              stk::mesh::EntityRank type);
+void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta);
 
-void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta,
-                              stk::mesh::EntityRank type);
-
-void internal_part_processing(Ioss::SideSet *entity, stk::mesh::fem::FEMMetaData &meta,
-			      stk::mesh::EntityRank type);
-
-void internal_part_processing(Ioss::SideBlock *entity, stk::mesh::fem::FEMMetaData &meta,
-                              stk::mesh::EntityRank type);
+void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta);
 
 //! \deprecated
-void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
-                              stk::mesh::EntityRank type);
+void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta);
 
 //! \deprecated
-void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta,
-                              stk::mesh::EntityRank type);
-
+void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta);
 
 // To minimize ifdefs for the deprecated code:
 bool invalid_rank(mesh::EntityRank rank);

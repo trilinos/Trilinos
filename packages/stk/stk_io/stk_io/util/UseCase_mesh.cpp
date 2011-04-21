@@ -45,11 +45,11 @@ namespace {
 
   void process_surface_entity(Ioss::SideSet *entity,
 			      stk::mesh::MetaData &meta,
-			      stk::mesh::EntityRank entity_rank)
+			      stk::mesh::EntityRank)
   {
     assert(entity->type() == Ioss::SIDESET);
     const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
-    stk::io::default_part_processing(blocks, meta, entity_rank);
+    stk::io::default_part_processing(blocks, meta, 0);
 
     stk::mesh::Part* const fs_part = meta.get_part(entity->name());
     assert(fs_part != NULL);
@@ -538,11 +538,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  const stk::mesh::fem::FEMMetaData * fem_meta = meta.get_attribute<stk::mesh::fem::FEMMetaData>();
-  if( fem_meta )
-    stk::io::default_part_processing(elem_blocks, meta, fem_meta->element_rank());
-  else
-    stk::io::default_part_processing(elem_blocks, meta, element_rank(meta));
+  stk::io::default_part_processing(elem_blocks, meta, 0);
 }
 
 void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
@@ -606,7 +602,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
   const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-  stk::io::default_part_processing(node_sets, meta, node_rank(meta));
+  stk::io::default_part_processing(node_sets, meta, 0);
 
   /** \todo REFACTOR should "distribution_factor" be a default field
    * that is automatically declared on all objects that it exists
@@ -646,7 +642,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
   const Ioss::SideSetContainer& side_sets = region.get_sidesets();
-  stk::io::default_part_processing(side_sets, meta, side_rank(meta));
+  stk::io::default_part_processing(side_sets, meta, 0);
 
   for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
       it != side_sets.end(); ++it) {

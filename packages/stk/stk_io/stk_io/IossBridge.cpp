@@ -31,8 +31,58 @@
 
 namespace {
 
+  stk::mesh::EntityRank get_entity_rank(Ioss::GroupingEntity *entity,
+					const stk::mesh::MetaData &meta)
+  {
+    switch (entity->type()) {
+    case Ioss::NODEBLOCK:
+      return stk::io::node_rank(meta);
+
+    case Ioss::NODESET:
+      return stk::io::node_rank(meta);
+
+    case Ioss::ELEMENTBLOCK:
+      return stk::io::element_rank(meta);
+
+    case Ioss::SUPERELEMENT:
+      return stk::io::element_rank(meta);
+
+    case Ioss::SIDESET:
+      {
+	Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+	assert(sset != NULL);
+	int my_rank = sset->max_parametric_dimension();
+	if (my_rank == 2)
+	  return stk::io::face_rank(meta);
+	if (my_rank == 1)
+	  return stk::io::edge_rank(meta);
+	if (my_rank == 0)
+	  return stk::io::node_rank(meta);
+	else
+	  return stk::mesh::InvalidEntityRank;
+      }
+      
+    case Ioss::SIDEBLOCK:
+      {
+	Ioss::SideBlock *sblk = dynamic_cast<Ioss::SideBlock*>(entity);
+	assert(sblk != NULL);
+	int rank = sblk->topology()->parametric_dimension();
+	if (rank == 2)
+	  return stk::io::face_rank(meta);
+	if (rank == 1)
+	  return stk::io::edge_rank(meta);
+	if (rank == 0)
+	  return stk::io::node_rank(meta);
+	else
+	  return stk::mesh::InvalidEntityRank;
+      }
+    default:
+      return stk::mesh::InvalidEntityRank;
+    }
+  }
+
   const CellTopologyData *map_ioss_to_topology( const std::string &element_type ,
-							const int node_count)
+						const int node_count)
   {
     /// \todo REFACTOR Is there a good type to return for an "unknown"
     /// topology type other than NULL?
@@ -187,142 +237,142 @@ namespace {
 						 stk::mesh::Part &part,
 						 const Ioss::Field &io_field,
 						 bool use_cartesian_for_scalar)
-    {
-      stk::mesh::FieldBase *field_ptr = NULL;
-      std::string field_type = io_field.transformed_storage()->name();
-      std::string name = io_field.get_name();
-      int num_components = io_field.transformed_storage()->component_count();
+  {
+    stk::mesh::FieldBase *field_ptr = NULL;
+    std::string field_type = io_field.transformed_storage()->name();
+    std::string name = io_field.get_name();
+    int num_components = io_field.transformed_storage()->component_count();
 
-      if (field_type == "scalar" || num_components == 1) {
-	if (!use_cartesian_for_scalar) {
-	  stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double> >(name);
-	  stk::mesh::put_field(field, type, part);
-	  field_ptr = &field;
-	} else {
-	  stk::mesh::Field<double, stk::mesh::Cartesian> & field =
-	    meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(name);
-	  stk::mesh::put_field(field, type, part, 1);
-	  field_ptr = &field;
-	}
-      }
-      else if (field_type == "vector_2d") {
+    if (field_type == "scalar" || num_components == 1) {
+      if (!use_cartesian_for_scalar) {
+	stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double> >(name);
+	stk::mesh::put_field(field, type, part);
+	field_ptr = &field;
+      } else {
 	stk::mesh::Field<double, stk::mesh::Cartesian> & field =
 	  meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(name);
-	stk::mesh::put_field(field, type, part, 2);
+	stk::mesh::put_field(field, type, part, 1);
 	field_ptr = &field;
-      }
-      else if (field_type == "vector_3d") {
-	stk::mesh::Field<double, stk::mesh::Cartesian> & field =
-	  meta.declare_field<stk::mesh::Field<double,
-	  stk::mesh::Cartesian> >(name);
-	stk::mesh::put_field(field, type, part, 3);
-	field_ptr = &field;
-      }
-      else if (field_type == "sym_tensor_33") {
-	stk::mesh::Field<double, stk::mesh::SymmetricTensor> & field =
-	  meta.declare_field<stk::mesh::Field<double,
-	  stk::mesh::SymmetricTensor> >(name);
-	stk::mesh::put_field(field, type, part, 6);
-	field_ptr = &field;
-      }
-      else if (field_type == "full_tensor_36") {
-	stk::mesh::Field<double, stk::mesh::FullTensor> & field =
-	  meta.declare_field<stk::mesh::Field<double,
-	  stk::mesh::FullTensor> >(name);
-	stk::mesh::put_field(field, type, part, 9);
-	field_ptr = &field;
-      }
-      else {
-	// Just create a field with the correct number of components...
-	stk::mesh::Field<double,shards::ArrayDimension> & field =
-	  meta.declare_field<stk::mesh::Field<double,shards::ArrayDimension> >(name);
-	stk::mesh::put_field(field, type, part, num_components);
-	field_ptr = &field;
-      }
-
-      if (field_ptr != NULL) {
-	stk::io::set_field_role(*field_ptr, io_field.get_role());
-      }
-      return field_ptr;
-    }
-
-    template <typename T>
-    void internal_field_data_from_ioss(const Ioss::Field &io_field,
-				       const stk::mesh::FieldBase *field,
-				       std::vector<stk::mesh::Entity*> &entities,
-				       Ioss::GroupingEntity *io_entity,
-				       T /*dummy */)
-    {
-      int field_component_count = io_field.transformed_storage()->component_count();
-
-      std::vector<T> io_field_data;
-      size_t io_entity_count = io_entity->get_field_data(io_field.get_name(), io_field_data);
-      assert(io_field_data.size() == entities.size() * field_component_count);
-
-      size_t entity_count = entities.size();
-
-      if (io_entity_count != entity_count) {
-	std::ostringstream errmsg;
-	errmsg << "ERROR: Field count mismatch for IO field '"
-	       << io_field.get_name() << "'. The IO system has " << io_entity_count
-	       << " entries, but the stk:mesh system has " << entity_count
-	       << " entries. The two counts must match.";
-	throw std::runtime_error(errmsg.str());
-      }
-
-      for (size_t i=0; i < entity_count; ++i) {
-	/// \todo REFACTOR Is there a way to get the data from a
-	/// "FieldBase*" field as a T* without the cast?
-	if (entities[i] != NULL) {
-	  T *fld_data = (T*)stk::mesh::field_data(*field, *entities[i]);
-	  assert(fld_data != NULL);
-	  for(int j=0; j<field_component_count; ++j) {
-	    fld_data[j] = io_field_data[i*field_component_count+j];
-	  }
-	}
       }
     }
+    else if (field_type == "vector_2d") {
+      stk::mesh::Field<double, stk::mesh::Cartesian> & field =
+	meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(name);
+      stk::mesh::put_field(field, type, part, 2);
+      field_ptr = &field;
+    }
+    else if (field_type == "vector_3d") {
+      stk::mesh::Field<double, stk::mesh::Cartesian> & field =
+	meta.declare_field<stk::mesh::Field<double,
+	stk::mesh::Cartesian> >(name);
+      stk::mesh::put_field(field, type, part, 3);
+      field_ptr = &field;
+    }
+    else if (field_type == "sym_tensor_33") {
+      stk::mesh::Field<double, stk::mesh::SymmetricTensor> & field =
+	meta.declare_field<stk::mesh::Field<double,
+	stk::mesh::SymmetricTensor> >(name);
+      stk::mesh::put_field(field, type, part, 6);
+      field_ptr = &field;
+    }
+    else if (field_type == "full_tensor_36") {
+      stk::mesh::Field<double, stk::mesh::FullTensor> & field =
+	meta.declare_field<stk::mesh::Field<double,
+	stk::mesh::FullTensor> >(name);
+      stk::mesh::put_field(field, type, part, 9);
+      field_ptr = &field;
+    }
+    else {
+      // Just create a field with the correct number of components...
+      stk::mesh::Field<double,shards::ArrayDimension> & field =
+	meta.declare_field<stk::mesh::Field<double,shards::ArrayDimension> >(name);
+      stk::mesh::put_field(field, type, part, num_components);
+      field_ptr = &field;
+    }
 
-    template <typename T>
-    void internal_field_data_to_ioss(const Ioss::Field &io_field,
+    if (field_ptr != NULL) {
+      stk::io::set_field_role(*field_ptr, io_field.get_role());
+    }
+    return field_ptr;
+  }
+
+  template <typename T>
+  void internal_field_data_from_ioss(const Ioss::Field &io_field,
 				     const stk::mesh::FieldBase *field,
 				     std::vector<stk::mesh::Entity*> &entities,
 				     Ioss::GroupingEntity *io_entity,
 				     T /*dummy */)
-    {
-      int field_component_count = io_field.transformed_storage()->component_count();
-      size_t entity_count = entities.size();
+  {
+    int field_component_count = io_field.transformed_storage()->component_count();
 
-      std::vector<T> io_field_data(entity_count*field_component_count);
+    std::vector<T> io_field_data;
+    size_t io_entity_count = io_entity->get_field_data(io_field.get_name(), io_field_data);
+    assert(io_field_data.size() == entities.size() * field_component_count);
 
-      for (size_t i=0; i < entity_count; ++i) {
-	/// \todo REFACTOR Is there a way to get the data from a
-	/// "FieldBase*" field as a T* without the cast?
-	if (entities[i] != NULL) {
-	  T *fld_data = (T*)stk::mesh::field_data(*field, *entities[i]);
-	  assert(fld_data != NULL);
-	  for(int j=0; j<field_component_count; ++j) {
-	    io_field_data[i*field_component_count+j] = fld_data[j];
-	  }
-	} else {
-	  for(int j=0; j<field_component_count; ++j) {
-	    io_field_data[i*field_component_count+j] = 0;
-	  }
+    size_t entity_count = entities.size();
+
+    if (io_entity_count != entity_count) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Field count mismatch for IO field '"
+	     << io_field.get_name() << "'. The IO system has " << io_entity_count
+	     << " entries, but the stk:mesh system has " << entity_count
+	     << " entries. The two counts must match.";
+      throw std::runtime_error(errmsg.str());
+    }
+
+    for (size_t i=0; i < entity_count; ++i) {
+      /// \todo REFACTOR Is there a way to get the data from a
+      /// "FieldBase*" field as a T* without the cast?
+      if (entities[i] != NULL) {
+	T *fld_data = (T*)stk::mesh::field_data(*field, *entities[i]);
+	assert(fld_data != NULL);
+	for(int j=0; j<field_component_count; ++j) {
+	  fld_data[j] = io_field_data[i*field_component_count+j];
 	}
       }
+    }
+  }
 
-      size_t io_entity_count = io_entity->put_field_data(io_field.get_name(), io_field_data);
-      assert(io_field_data.size() == entities.size() * field_component_count);
+  template <typename T>
+  void internal_field_data_to_ioss(const Ioss::Field &io_field,
+				   const stk::mesh::FieldBase *field,
+				   std::vector<stk::mesh::Entity*> &entities,
+				   Ioss::GroupingEntity *io_entity,
+				   T /*dummy */)
+  {
+    int field_component_count = io_field.transformed_storage()->component_count();
+    size_t entity_count = entities.size();
 
-      if (io_entity_count != entity_count) {
-	std::ostringstream errmsg;
-	errmsg << "ERROR: Field count mismatch for IO field '"
-	       << io_field.get_name() << "'. The IO system has " << io_entity_count
-	       << " entries, but the stk:mesh system has " << entity_count
-	       << " entries. The two counts must match.";
-	throw std::runtime_error(errmsg.str());
+    std::vector<T> io_field_data(entity_count*field_component_count);
+
+    for (size_t i=0; i < entity_count; ++i) {
+      /// \todo REFACTOR Is there a way to get the data from a
+      /// "FieldBase*" field as a T* without the cast?
+      if (entities[i] != NULL) {
+	T *fld_data = (T*)stk::mesh::field_data(*field, *entities[i]);
+	assert(fld_data != NULL);
+	for(int j=0; j<field_component_count; ++j) {
+	  io_field_data[i*field_component_count+j] = fld_data[j];
+	}
+      } else {
+	for(int j=0; j<field_component_count; ++j) {
+	  io_field_data[i*field_component_count+j] = 0;
+	}
       }
     }
+
+    size_t io_entity_count = io_entity->put_field_data(io_field.get_name(), io_field_data);
+    assert(io_field_data.size() == entities.size() * field_component_count);
+
+    if (io_entity_count != entity_count) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Field count mismatch for IO field '"
+	     << io_field.get_name() << "'. The IO system has " << io_entity_count
+	     << " entries, but the stk:mesh system has " << entity_count
+	     << " entries. The two counts must match.";
+      throw std::runtime_error(errmsg.str());
+    }
+  }
 
 }//namespace <empty>
 
@@ -668,45 +718,21 @@ namespace stk {
       return extype ;
     }
 
-    void default_part_processing(const std::vector<Ioss::SideBlock*> &entities,
-				 stk::mesh::fem::FEMMetaData &fem_meta)
+    void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta)
     {
-      for(size_t i=0; i < entities.size(); i++) {
-	Ioss::SideBlock* entity = entities[i];
-	int my_type = entity->topology()->parametric_dimension();
-	internal_part_processing(entity, fem_meta, (stk::mesh::EntityRank)my_type);
-      }
-    }
-    
-    void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
-				  stk::mesh::EntityRank type)
-    {
-      internal_part_processing(entity, meta.get_meta_data(meta), type);
+      internal_part_processing(entity, meta.get_meta_data(meta));
     }
 
-    void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta,
-				  stk::mesh::EntityRank type)
+    void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta)
     {
-      internal_part_processing(entity, meta.get_meta_data(meta), type);
+      internal_part_processing(entity, meta.get_meta_data(meta));
     }
 
-    void internal_part_processing(Ioss::SideBlock *entity, stk::mesh::fem::FEMMetaData &meta,
-				  stk::mesh::EntityRank type)
-    {
-      internal_part_processing(entity, meta.get_meta_data(meta), type);
-    }
-
-    void internal_part_processing(Ioss::SideSet *entity, stk::mesh::fem::FEMMetaData &meta,
-				  stk::mesh::EntityRank type)
-    {
-      internal_part_processing(entity, meta.get_meta_data(meta), type);
-    }
-
-    void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta,
-				  stk::mesh::EntityRank type)
+    void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta)
     {
       if (include_entity(entity)) {
         stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
+	mesh::EntityRank type = get_entity_rank(entity, meta);
         if (fem_meta) {
 	  stk::mesh::Part & part = fem_meta->declare_part(entity->name(), type);
 	  stk::io::put_io_part_attribute(part, entity);
@@ -717,24 +743,10 @@ namespace stk {
       }
     }
 
-    void internal_part_processing(Ioss::SideBlock *entity, stk::mesh::MetaData &meta,
-				  stk::mesh::EntityRank type)
-    {
-      int parametric_dimension = entity->topology()->parametric_dimension();
-      internal_part_processing((Ioss::EntityBlock*)entity, meta, (stk::mesh::EntityRank)parametric_dimension);
-    }
-
-    void internal_part_processing(Ioss::SideSet *entity, stk::mesh::MetaData &meta,
-				  stk::mesh::EntityRank type)
-    {
-      int parametric_dimension = entity->max_parametric_dimension();
-      internal_part_processing((Ioss::GroupingEntity*)entity, meta, (stk::mesh::EntityRank)parametric_dimension);
-    }
-
-    void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta,
-				  stk::mesh::EntityRank type)
+    void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta)
     {
       if (include_entity(entity)) {
+	mesh::EntityRank type = get_entity_rank(entity, meta);
         stk::mesh::fem::FEMMetaData * fem_meta = const_cast<stk::mesh::fem::FEMMetaData *>(meta.get_attribute<stk::mesh::fem::FEMMetaData>());
         //const stk::mesh::fem::FEMMetaData * fem_meta = meta.get_attribute<stk::mesh::fem::FEMMetaData>();
         stk::mesh::Part * part = NULL;
