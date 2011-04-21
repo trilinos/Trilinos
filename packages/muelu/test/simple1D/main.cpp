@@ -35,6 +35,7 @@
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
+#include <unistd.h>
 typedef Teuchos::ScalarTraits<SC> ST;
 /**********************************************************************************/
 
@@ -51,9 +52,10 @@ int main(int argc, char *argv[]) {
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor cmdp(false);
   
-  // Default is Laplace1D with nx = 6561.
+  // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
-  MueLu::Gallery::Parameters matrixParameters(cmdp, 6561); // manage parameters of the test case
+    //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
+  MueLu::Gallery::Parameters matrixParameters(cmdp, 8748); // manage parameters of the test case
   Cthulhu::Parameters cthulhuParameters(cmdp);             // manage parameters of cthulhu
 
   // custom parameters
@@ -77,6 +79,35 @@ int main(int argc, char *argv[]) {
     cthulhuParameters.print();
     // TODO: print custom parameters
   }
+
+
+#ifdef FOR_PARALLEL_DEBUGGING
+  //Utils::BreakForDebugger(*comm);
+
+  LO mypid = comm->getRank();
+
+  if (mypid  == 0) std::cout << "Host and Process Ids for tasks" << std::endl;
+  for (LO i = 0; i <comm->getSize() ; i++) {
+    if (i == mypid ) {
+      char buf[80];
+      char hostname[80];
+      gethostname(hostname, sizeof(hostname));
+      LO pid = getpid();
+      sprintf(buf, "Host: %s\tMPI rank: %d,\tPID: %d\n\tattach %d\n\tcontinue\n",
+          hostname, mypid, pid, pid);
+      printf("%s\n",buf);
+      fflush(stdout);
+      sleep(1);
+    }
+  }
+
+  if (mypid == 0) {
+    printf( "** Enter a character to continue > "); fflush(stdout);
+    char go = ' ';
+    scanf("%c",&go);
+  }
+  comm->barrier();
+#endif
 
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */

@@ -5,6 +5,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_TypeTraits.hpp>
+#include <Teuchos_Comm.hpp>
 
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
@@ -232,6 +233,7 @@ namespace MueLu {
 
     /*! @brief Get reciprocal of Operator diagonal
      */
+
    static RCP<Operator> BuildMatrixInverseDiagonal(RCP<Operator> const &A)
     {
       const RCP<const Map> rowmap = A->getRowMap();
@@ -256,10 +258,11 @@ namespace MueLu {
       std::vector<LO> diagInd(1);
       Teuchos::ArrayView<GO> iv(&diagInd[0],1);
       //for (size_t i=0; i< A->getNodeNumRows(); ++i) {
+
       for (size_t i=0; i< rowmap->getNodeNumElements(); ++i) {
         Teuchos::ArrayView<SC> av(&diag[i],1);
         diagInd[0] = rowmap->getGlobalElement(i);
-        D->insertGlobalValues(i,iv,av);
+        D->insertGlobalValues(rowmap->getGlobalElement(i),iv,av); //TODO is this expensive?
       }
       D->fillComplete();
 
@@ -311,6 +314,80 @@ namespace MueLu {
      RES->update(one,RHS,negone);
      return RES;
    }
+
+#include <unistd.h>
+   /*@brief Utility for pausing execution to attach debugger.
+   
+     WARNING -- This utility checks for the existence of a file.  This could be *very* expensive
+                if there are many simultaneous processes doing this.
+   */
+   static void BreakForDebugger(const Teuchos::Comm<GO> &Comm)
+   {
+     // Pulled directly from ML.
+     // print out some junk for debugging
+     // LAM/MPI has some difficulties related to environmental variables.
+     // The problem is that LAM/MPI uses ssh to log in, and on some
+     // machine "export ML_BREAK_FOR_DEBUGGER" does not work. So, we
+     // allow two options:
+     // 1.) export MUELU_BREAK_FOR_DEBUGGER=1
+     // 2.) create a file in the executable directory, called MueLu_debug_now
+   
+     char * str = (char *) getenv("MUELU_BREAK_FOR_DEBUGGER");
+     GO i = 0, j = 0;
+     char buf[80];
+     char go = ' ';
+     char hostname[80];
+     if (str != NULL) i++;
+   
+     FILE * MueLu_capture_flag;
+     MueLu_capture_flag = fopen("MueLu_debug_now","r");
+     if(MueLu_capture_flag) {
+       i++;
+       fclose(MueLu_capture_flag);
+     }
+   
+     GO mypid = Comm.getRank();
+
+     //Comm.SumAll(&i, &j, 1);
+     /*
+     Teuchos::Array recvBuffer(1);
+     Teuchos::Array<Packet> sendBuff(count),
+     gatherAll(comm,count,&sendBuff[0],Ordinal(allRecvBuff.size()),&allRecvBuff[0]);
+
+     //FIXME
+     Teuchos::Array<GO> recvBuffer(1);
+     Teuchos::Array<GO> sendBuffer(1);
+     Comm.gatherAll(1,sendBuffer,1,recvBuffer);
+     */
+   
+     if (j != 0)
+     {
+       if (mypid  == 0) std::cout << "Host and Process Ids for tasks" << std::endl;
+       for (i = 0; i <Comm.getSize() ; i++) {
+         if (i == mypid ) {
+       gethostname(hostname, sizeof(hostname));
+       LO pid = getpid();
+       sprintf(buf, "Host: %s\tMPI rank: %d\tPID: %d\n\tattach %d\n\tcontinue\n",
+           hostname, mypid, pid, pid);
+       printf("%s\n",buf);
+       fflush(stdout);
+       sleep(1);
+         }
+       }
+        if(mypid == 0) {
+          printf("\n");
+          printf("** Pausing because environment variable MUELU_BREAK_FOR_DEBUGGER has been set,\n");
+          puts("** or file MueLu_debug_now has been created");
+          printf("**\n");
+          printf("** You may now attach debugger to the processes listed above.\n");
+          printf( "**\n");
+          printf( "** Enter a character to continue > "); fflush(stdout);
+          scanf("%c",&go);
+        }
+        Comm.barrier();
+      }
+   
+   } //BreakForDebugger()
 
   }; // class
 
