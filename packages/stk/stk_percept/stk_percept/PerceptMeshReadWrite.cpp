@@ -205,6 +205,37 @@ namespace stk {
 #endif
       }
 
+      void local_default_part_processing(const std::vector<Ioss::SideBlock*> &entities,
+					 stk::mesh::fem::FEMMetaData &meta)
+      {
+#if !USE_LOCAL_PART_PROCESSING
+        stk::io::default_part_processing(entities, meta, type);
+#else
+        for(size_t i=0; i < entities.size(); i++) {
+	  Ioss::SideBlock* entity = entities[i];
+	  int my_type = entity->topology()->parametric_dimension();
+          local_internal_part_processing(entity, meta, (stk::mesh::EntityRank)my_type);
+        }
+#endif
+      }
+
+      void local_default_part_processing(const std::vector<Ioss::SideSet*> &entities,
+					 stk::mesh::fem::FEMMetaData &meta)
+      {
+#if !USE_LOCAL_PART_PROCESSING
+        stk::io::default_part_processing(entities, meta, type);
+#else
+        for(size_t i=0; i < entities.size(); i++) {
+	  // A sideset can have entities with multiple parametric dimensions.
+	  // Look at all sideblocks in the sideset and get the maximum parametric
+	  // dimension...
+	  Ioss::SideSet* entity = entities[i];
+	  int my_type = entity->max_parametric_dimension();
+          local_internal_part_processing(entity, meta, (stk::mesh::EntityRank)my_type);
+        }
+#endif
+      }
+
 
       //static int s_spatial_dim = 3;
 
@@ -335,12 +366,11 @@ namespace stk {
       }
 
       // ========================================================================
-      void process_read_surface_entity_meta(Ioss::SideSet *entity, stk::mesh::fem::FEMMetaData &meta,
-                                            stk::mesh::EntityRank entity_rank)
+      void process_read_surface_entity_meta(Ioss::SideSet *entity, stk::mesh::fem::FEMMetaData &meta)
       {
         assert(entity->type() == Ioss::SIDESET);
 	const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
-	local_default_part_processing(blocks, meta, entity_rank);
+	local_default_part_processing(blocks, meta);
 
         stk::mesh::Part* const fs_part = meta.get_part(entity->name());
         assert(fs_part != NULL);
@@ -388,14 +418,14 @@ namespace stk {
       void process_read_sidesets_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
       {
         const Ioss::SideSetContainer& side_sets = region.get_sidesets();
-        local_default_part_processing(side_sets, meta, meta.face_rank());
+        local_default_part_processing(side_sets, meta);
 
         for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
             it != side_sets.end(); ++it) {
           Ioss::SideSet *entity = *it;
 
           if (stk::io::include_entity(entity)) {
-            process_read_surface_entity_meta(entity, meta, meta.face_rank());
+            process_read_surface_entity_meta(entity, meta);
           }
         }
       }

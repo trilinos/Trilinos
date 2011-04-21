@@ -25,11 +25,14 @@
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <Ioss_DBUsage.h>
 #include <Ioss_Field.h>
+#include <Ioss_SideBlock.h>
+#include <Ioss_ElementTopology.h>
 
 namespace Ioss {
   class Region;
   class GroupingEntity;
   class EntityBlock;
+  class SideSet;
   class Field;
   class ElementTopology;
 }
@@ -56,7 +59,6 @@ namespace io {
 /** \addtogroup stk_io_module
  * \{
  */
-
 /** Returns true if the Ioss 'entity' should be a 'part' in the
  * analysis mesh.  Returns false if the application is only using
  * a subset of the database entities and this entity is not to be
@@ -96,6 +98,9 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
   stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
   default_part_processing (entities, fem_meta, type);
 }
+
+void default_part_processing(const std::vector<Ioss::SideBlock*> &entities,
+			     stk::mesh::fem::FEMMetaData &fem_meta);
 
 /** Given the newly created Ioss::Region 'io_region', define the
  * model corresponding to the stk::mesh 'bulk_data'.  If the
@@ -279,6 +284,12 @@ void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMM
                               stk::mesh::EntityRank type);
 
 void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta,
+                              stk::mesh::EntityRank type);
+
+void internal_part_processing(Ioss::SideSet *entity, stk::mesh::fem::FEMMetaData &meta,
+			      stk::mesh::EntityRank type);
+
+void internal_part_processing(Ioss::SideBlock *entity, stk::mesh::fem::FEMMetaData &meta,
                               stk::mesh::EntityRank type);
 
 //! \deprecated

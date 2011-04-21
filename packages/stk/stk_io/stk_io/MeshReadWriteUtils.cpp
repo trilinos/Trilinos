@@ -32,13 +32,11 @@
 #include <assert.h>
 
 namespace {
-  void process_surface_entity(Ioss::SideSet *sset,
-			      stk::mesh::fem::FEMMetaData &fem_meta,
-			      stk::mesh::EntityRank entity_rank)
+  void process_surface_entity(Ioss::SideSet *sset, stk::mesh::fem::FEMMetaData &fem_meta)
   {
     assert(sset->type() == Ioss::SIDESET);
     const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
-    stk::io::default_part_processing(blocks, fem_meta, entity_rank);
+    stk::io::default_part_processing(blocks, fem_meta);
 
     stk::mesh::Part* const ss_part = fem_meta.get_part(sset->name());
     assert(ss_part != NULL);
@@ -73,16 +71,15 @@ namespace {
   }
 
   // ========================================================================
-  void process_surface_entity(const Ioss::SideSet* ss ,
-			      stk::mesh::BulkData & bulk)
+  void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
   {
-    assert(ss->type() == Ioss::SIDESET);
+    assert(sset->type() == Ioss::SIDESET);
 
     const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
 
-    size_t block_count = ss->block_count();
+    size_t block_count = sset->block_count();
     for (size_t i=0; i < block_count; i++) {
-      Ioss::SideBlock *block = ss->get_block(i);
+      Ioss::SideBlock *block = sset->get_block(i);
       if (stk::io::include_entity(block)) {
 	std::vector<int> side_ids ;
 	std::vector<int> elem_side ;
@@ -265,9 +262,6 @@ namespace {
   // ========================================================================
   void process_sidesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
   {
-    if (fem_meta.spatial_dimension() <= fem_meta.side_rank())
-      return;
-  
     const Ioss::SideSetContainer& side_sets = region.get_sidesets();
     stk::io::default_part_processing(side_sets, fem_meta, fem_meta.side_rank());
 
@@ -276,7 +270,7 @@ namespace {
       Ioss::SideSet *entity = *it;
 
       if (stk::io::include_entity(entity)) {
-	process_surface_entity(entity, fem_meta, fem_meta.side_rank());
+	process_surface_entity(entity, fem_meta);
       }
     }
   }

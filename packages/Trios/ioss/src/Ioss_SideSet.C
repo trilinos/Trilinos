@@ -34,8 +34,10 @@
 
 #include <Ioss_SideBlock.h>
 #include <Ioss_DatabaseIO.h>
+#include <Ioss_Region.h>
 #include <Ioss_Property.h>
 #include <Ioss_Field.h>
+#include <Ioss_ElementTopology.h>
 
 #include <string>
 #include <algorithm>
@@ -115,6 +117,27 @@ Ioss::SideSet::get_implicit_property(const std::string& my_name) const
     return Ioss::Property(my_name, (int)sideBlocks.size());
   else
     return Ioss::GroupingEntity::get_implicit_property(my_name);
+}
+
+int Ioss::SideSet::max_parametric_dimension() const
+{
+  int max_par_dim = 0;
+
+  Ioss::SideBlockContainer::const_iterator i = sideBlocks.begin();
+  while (i != sideBlocks.end()) {
+    Ioss::SideBlock * const sideblock = *i ;
+    int parametric_dim = sideblock->topology()->parametric_dimension();
+    if (parametric_dim > max_par_dim)
+      max_par_dim = parametric_dim;
+    ++i;
+  }
+  if (max_par_dim == 0) {
+    // If the sideset is empty, return the maximum that the parametric dimension could be...
+    // Faces for 3D model; Edges for 2D model
+    const Ioss::Region *reg = get_database()->get_region();
+    max_par_dim = reg->get_property("spatial_dimension").get_int()-1;
+  }
+  return max_par_dim;
 }
 
 void Ioss::SideSet::block_membership(std::vector<std::string> &block_members)

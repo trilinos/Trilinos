@@ -668,6 +668,16 @@ namespace stk {
       return extype ;
     }
 
+    void default_part_processing(const std::vector<Ioss::SideBlock*> &entities,
+				 stk::mesh::fem::FEMMetaData &fem_meta)
+    {
+      for(size_t i=0; i < entities.size(); i++) {
+	Ioss::SideBlock* entity = entities[i];
+	int my_type = entity->topology()->parametric_dimension();
+	internal_part_processing(entity, fem_meta, (stk::mesh::EntityRank)my_type);
+      }
+    }
+    
     void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
 				  stk::mesh::EntityRank type)
     {
@@ -675,6 +685,18 @@ namespace stk {
     }
 
     void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta,
+				  stk::mesh::EntityRank type)
+    {
+      internal_part_processing(entity, meta.get_meta_data(meta), type);
+    }
+
+    void internal_part_processing(Ioss::SideBlock *entity, stk::mesh::fem::FEMMetaData &meta,
+				  stk::mesh::EntityRank type)
+    {
+      internal_part_processing(entity, meta.get_meta_data(meta), type);
+    }
+
+    void internal_part_processing(Ioss::SideSet *entity, stk::mesh::fem::FEMMetaData &meta,
 				  stk::mesh::EntityRank type)
     {
       internal_part_processing(entity, meta.get_meta_data(meta), type);
@@ -693,6 +715,20 @@ namespace stk {
 	  stk::io::put_io_part_attribute(part, entity);
         }
       }
+    }
+
+    void internal_part_processing(Ioss::SideBlock *entity, stk::mesh::MetaData &meta,
+				  stk::mesh::EntityRank type)
+    {
+      int parametric_dimension = entity->topology()->parametric_dimension();
+      internal_part_processing((Ioss::EntityBlock*)entity, meta, (stk::mesh::EntityRank)parametric_dimension);
+    }
+
+    void internal_part_processing(Ioss::SideSet *entity, stk::mesh::MetaData &meta,
+				  stk::mesh::EntityRank type)
+    {
+      int parametric_dimension = entity->max_parametric_dimension();
+      internal_part_processing((Ioss::GroupingEntity*)entity, meta, (stk::mesh::EntityRank)parametric_dimension);
     }
 
     void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta,
