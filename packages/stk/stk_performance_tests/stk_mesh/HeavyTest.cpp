@@ -142,7 +142,7 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
 
   ThrowRequireMsg(timings.size() == NUM_PHASES+1, "Do not push back on to timings vector");
 
-  // Now process and print times
+  // Now process and print times, we print in XML to make parsing easier
   {
     stk::all_reduce(pm, stk::ReduceMax<NUM_PHASES+1>(&timings[0]));
 
@@ -151,16 +151,20 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
 
     if (p_rank == 0) {
       std::cout << "\n\n";
-      std::cout << "Num procs: " << p_size << "\n";
-      for (unsigned i = 0; i < NUM_PHASES; ++i) {
-        std::cout << "\t" << PHASE_NAMES[i] << ": " << timings[i] << std::endl;
-      }
-      std::cout << "\tTotal time: " << timings[NUM_PHASES] << std::endl;
-      std::cout << "\n\n";
-
+      std::cout << "<performance_test name=\"HeavyTest\" num_procs=\"" << p_size << "\">\n";
+      std::cout << "  <mesh_stats>\n";
       for (unsigned i = 0; i < counts.size(); ++i) {
-        std::cout << "Counts for rank: " << i << ": " << counts[i] << std::endl;
+        std::cout << "    <entity rank=\"" << i << "\" count=\"" << counts[i] << "\"/>\n";
       }
+      std::cout << "  </mesh_stats>\n";
+
+      std::cout << "  <timings time=\"" << timings[NUM_PHASES] << "\">\n";
+      for (unsigned i = 0; i < NUM_PHASES; ++i) {
+        std::cout << "    <section name=\"" << PHASE_NAMES[i] << "\" time=\"" << timings[i] <<"\"/>\n";
+      }
+      std::cout << "  </timings>\n";
+      std::cout << "</performance_test>\n";
+      std::cout << "\n\n";
     }
   }
 }
