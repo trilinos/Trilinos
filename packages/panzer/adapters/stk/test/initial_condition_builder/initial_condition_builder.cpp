@@ -146,14 +146,15 @@ namespace panzer {
 					       dofManager,
 					       *elof,
 					       user_data,
+					       true,
+					       "initial_condition_test",
 					       phx_ic_field_managers);
 
     
     Teuchos::RCP<panzer::LinearObjContainer> loc = elof->buildLinearObjContainer();
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     eloc->x->PutScalar(0.0);
-
-    panzer::evaluateInitialCondition(fmb.getWorksets(), phx_ic_field_managers, loc, 0.0, true);
+    panzer::evaluateInitialCondition(fmb.getWorksets(), phx_ic_field_managers, loc, 0.0);
     
     Teuchos::RCP<Epetra_Vector> x = eloc->x;
     for (int i=0; i < x->MyLength(); ++i)

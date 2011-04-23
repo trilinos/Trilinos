@@ -11,6 +11,8 @@ void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuch
 						const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> >& dofManager,
 						const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
 						const Teuchos::ParameterList& user_data,
+						const bool write_graphviz_file,
+						const std::string& graphviz_file_prefix,
 						std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers)
 
 {
@@ -43,14 +45,17 @@ void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuch
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers.push_back(fm);
+    
+    if (write_graphviz_file)
+      fm->writeGraphvizFile(graphviz_file_prefix+"IC_"+blockId);
+
   }
 }
 
 void panzer::evaluateInitialCondition(const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
 				      const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers,
 				      Teuchos::RCP<panzer::LinearObjContainer> loc,
-				      const double time_stamp,
-				      const bool write_graphviz_file)
+				      const double time_stamp)
 {   
   for (std::size_t block = 0; block < worksets.size(); ++block) {
     
@@ -58,9 +63,7 @@ void panzer::evaluateInitialCondition(const std::vector< Teuchos::RCP<std::vecto
     
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = 
       phx_ic_field_managers[block];
-    
-    fm->writeGraphvizFile(std::string("IC_"+block));
-    
+
     // Loop over worksets in this element block
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];

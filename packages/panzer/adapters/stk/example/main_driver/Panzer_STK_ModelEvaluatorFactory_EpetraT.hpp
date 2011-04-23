@@ -57,7 +57,7 @@ namespace panzer_stk {
       pl->sublist("Mesh");
       pl->sublist("Initial Conditions");
       pl->sublist("Output");
-      pl->sublist("Output").set("File Name","panzer.exo");     
+      pl->sublist("Output").set("File Name","panzer.exo");  
       pl->sublist("Assembly");
       pl->sublist("Block ID to Physics ID Mapping");
       pl->sublist("Options");
@@ -223,7 +223,15 @@ namespace panzer_stk {
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,*eqset_factory,*cm_factory,*bc_factory,p.sublist("Closure Models"),*linObjFactory, p.sublist("User Data"));
 
     // Print Phalanx DAGs
-    fmb->writeVolumeGraphvizDependencyFiles("Panzer_Steady-State_", physicsBlocks);
+    {
+      bool write_dot_files = false;
+      write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
+      if (write_dot_files) {
+	std::string prefix = "Panzer_AssemblyGraph_";
+	prefix = p.sublist("Options").get("Volume Assembly Graph Prefix",prefix);
+	fmb->writeVolumeGraphvizDependencyFiles(prefix, physicsBlocks);
+      }
+    }
 
     // build solvers
     /////////////////////////////////////////////////////////////
@@ -243,6 +251,11 @@ namespace panzer_stk {
     // Setup initial conditions
     /////////////////////////////////////////////////////////////
     {
+      bool write_dot_files = false;
+      std::string prefix = "Panzer_AssemblyGraph_";
+      write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
+      prefix = p.sublist("Options").get("Volume Assembly Graph Prefix",prefix);
+
       std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
       panzer::setupInitialConditionFieldManagers(volume_worksets,
 						 physicsBlocks,
@@ -251,13 +264,15 @@ namespace panzer_stk {
 						 dofManager,
 						 *linObjFactory,
 						 p.sublist("User Data"),
+						 write_dot_files,
+						 prefix,
 						 phx_ic_field_managers);
 
       Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
       Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(loc);
       eloc->x = Teuchos::rcp_const_cast<Epetra_Vector>(ep_me->get_x_init());
-
-      panzer::evaluateInitialCondition(fmb->getWorksets(), phx_ic_field_managers, loc, 0.0, true);
+      
+      panzer::evaluateInitialCondition(fmb->getWorksets(), phx_ic_field_managers, loc, 0.0);
 
       if (is_transient)
 	mesh->writeToExodus(0.0);
