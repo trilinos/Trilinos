@@ -188,22 +188,12 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::uti
    RCP<stk::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
    const stk::mesh::PartVector & parts = metaData->get_parts();
 
-   std::cout << std::endl;
    stk::mesh::PartVector::const_iterator partItr;
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
       const stk::mesh::Part * part = *partItr;
       const stk::mesh::PartVector & subsets = part->subsets();
       // const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
       const CellTopologyData * ct = metaData->get_cell_topology(*part).getCellTopologyData();
-
-      /*
-      if(part->primary_entity_rank()==mesh.getSideRank() && ct==0) {
-         std::cout << "found side: \"" << part->name() << "\": ct = " << ct << " subsets = ";
-         for(std::size_t i = 0;i<subsets.size();i++)
-            std::cout << "\"" << subsets[i]->name() << "\" ";
-         std::cout << std::endl;
-      }
-      */
 
       // if a side part ==> this is a sideset: now storage is recursive
       // on part contains all sub parts with consistent topology
