@@ -21,6 +21,8 @@ namespace Tpetra {
 
   // for default node
   template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
+  createNonContigMap<int,int>(const Teuchos::ArrayView<const int> &elementList, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
   createContigMap<int,int>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
   template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
   createLocalMap<int,int>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);

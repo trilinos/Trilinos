@@ -269,17 +269,6 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
 
-  /** \brief Non-member function to create a uniform, contiguous Map with a user-specified node.
-
-      The Map is configured to use zero-based indexing.
-
-      \relates Map
-   */
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createUniformContigMapWithNode(global_size_t numElements,
-                                 const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
-
   /** \brief Non-member function to create a uniform, contiguous Map with the default node.
 
       This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
@@ -291,6 +280,17 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
   createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+
+  /** \brief Non-member function to create a uniform, contiguous Map with a user-specified node.
+
+      The Map is configured to use zero-based indexing.
+
+      \relates Map
+   */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createUniformContigMapWithNode(global_size_t numElements,
+                                 const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
 
   /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
 
@@ -304,6 +304,30 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
   createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
+  /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
+
+      The Map is configured to use zero-based indexing.
+
+      \relates Map
+   */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
+                          const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+
+  /** \brief Non-member function to create a non-contiguous Map with the default node.
+
+      This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
+
+      The Map is configured to use zero-based indexing.
+
+      \relates Map
+   */
+  template <class LocalOrdinal, class GlobalOrdinal>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+  createNonContigMap(const ArrayView<const GlobalOrdinal> &elementList,
+                     const RCP<const Teuchos::Comm<int> > &comm);
+
   /** \brief Non-member function to create a non-contiguous Map with a user-specified node.
 
       The Map is configured to use zero-based indexing.
@@ -315,17 +339,6 @@ namespace Tpetra {
   createNonContigMapWithNode(const ArrayView<const GlobalOrdinal> &elementList,
                              const RCP<const Teuchos::Comm<int> > &comm, 
                              const RCP<Node> &node);
-
-  /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
-
-      The Map is configured to use zero-based indexing.
-
-      \relates Map
-   */
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
-                          const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
 
   /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
 
