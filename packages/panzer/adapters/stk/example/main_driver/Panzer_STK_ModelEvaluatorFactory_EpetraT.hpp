@@ -7,6 +7,7 @@
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
+#include "Panzer_STK_MultiBlockMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
@@ -106,6 +107,12 @@ namespace panzer_stk {
       }
       else if(dimension == 3) {
 	mesh_factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory);
+	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
+	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
+	mesh_factory->setParameterList(in_mesh);
+      }
+      else if(dimension==4) {
+	mesh_factory = Teuchos::rcp(new panzer_stk::MultiBlockMeshFactory);
 	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
 	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
 	mesh_factory->setParameterList(in_mesh);
