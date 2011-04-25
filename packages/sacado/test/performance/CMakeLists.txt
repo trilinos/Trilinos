@@ -9,18 +9,21 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     fad_expr_depth
     SOURCES fad_expr_depth.cpp
     COMM serial mpi
+    XHOSTTYPE AIX
     )
 
   PACKAGE_ADD_EXECUTABLE(
     fad_expr
     SOURCES fad_expr.cpp
     COMM serial mpi
+    XHOSTTYPE AIX
     )
 
   PACKAGE_ADD_EXECUTABLE(
     fad_lj_grad
     SOURCES fad_lj_grad.cpp
     COMM serial mpi
+    XHOSTTYPE AIX
     )
 
   PACKAGE_ADD_EXECUTABLE(
@@ -33,6 +36,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     fad_fe_jac_fill
     SOURCES fad_fe_jac_fill.cpp
     COMM serial mpi
+    XHOSTTYPE AIX
     )
 
   PACKAGE_ADD_EXECUTABLE(
@@ -54,6 +58,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
       SOURCES fad_expr_depth.cpp
       COMM serial mpi
       NUM_MPI_PROCS 1
+      XHOSTTYPE AIX
       )
   
     PACKAGE_ADD_TEST(
@@ -61,6 +66,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
       SOURCES fad_expr.cpp
       COMM serial mpi
       NUM_MPI_PROCS 1
+      XHOSTTYPE AIX
       )
   
     PACKAGE_ADD_TEST(
@@ -68,6 +74,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
       SOURCES fad_lj_grad.cpp
       COMM serial mpi
       NUM_MPI_PROCS 1
+      XHOSTTYPE AIX
       )
   
     PACKAGE_ADD_TEST(
@@ -82,6 +89,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
       SOURCES fad_fe_jac_fill.cpp
       COMM serial mpi
       NUM_MPI_PROCS 1
+      XHOSTTYPE AIX
       )
 
     PACKAGE_ADD_TEST(
