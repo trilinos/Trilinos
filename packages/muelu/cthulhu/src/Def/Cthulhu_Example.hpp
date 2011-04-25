@@ -11,7 +11,7 @@
 //
 // GlobalOrdinal nx = 4;
 // GlobalOrdinal ny = 4;
-// RCP<const Map<LocalOrdinal,GlobalOrdinal> > map = rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal>(nx*ny, 0, comm) );
+// RCP<const Map<LocalOrdinal,GlobalOrdinal> > map = MapFactory<LocalOrdinal,GlobalOrdinal>::Build(cthulhuParameters.GetLib(), nx*ny, 0, comm);
 //
 // by:
 //
@@ -19,7 +19,7 @@
 //
 // GO nx = 4;
 // GO ny = 4;
-// RCP<const Map> map = rcp( new MyMap(nx*ny, 0, comm) ); // MyMap = TpetraMap or EpetraMap according to the macro CTHULHU_USE_EPETRA and CTHULHU_USE_TPETRA.
+// RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), nx*ny, 0, comm);
 //
 // The definition of template types can still be modified if needed.
 
