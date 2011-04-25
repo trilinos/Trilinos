@@ -110,7 +110,7 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
       //MatrixPrint(Op);
       coarseLevel.Save("Ptent",Ptent);
-    } //MakeTentative()
+    } //MakeTentativeOldVersion()
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
@@ -199,7 +199,6 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       LO indexBase=fineA->getRowMap()->getIndexBase();
 
       RCP<const Map > coarseMap = MapFactory::Build(fineA->getRowMap()->lib(), Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(), nCoarseDofs, indexBase, fineA->getRowMap()->getComm()); //JG:Cthulhu::global_size_t>?
-
       RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
       ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);
       for (size_t i=0; i<NSDim; ++i)
@@ -235,7 +234,7 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
         // "localQR" (in column major format) for the QR routine.
            for (size_t j=0; j<NSDim; ++j) {
              for (LO k=0; k<myAggSize; ++k) {
-                //aggToRowMap[agg][k] is the kth DOF in the ith aggregate
+                //aggToRowMap[i][k] is the kth DOF in the ith aggregate
                 //fineNS[j][n] is the nth entry in the jth NS vector
                 localQR[j* myAggSize + k] = fineNS[j][ aggToRowMap[agg][k] ];
              } //for (LO k=0 ...
@@ -317,7 +316,8 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
         for (GO j=0; j<myAggSize; ++j) {
           for (size_t k=0; k<NSDim; ++k) {
             index = rowPtr[aggToRowMap[agg][j]]+k;
-            colPtr[index] = agg * NSDim + k;
+            //FIXME -- what happens if the map is blocked?
+            colPtr[index] = coarseMap->getGlobalElement(agg * NSDim + k);
             valPtr[index] = localQR[k*myAggSize+j];
           }
         }
