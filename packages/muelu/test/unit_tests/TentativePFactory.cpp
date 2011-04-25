@@ -55,6 +55,15 @@ TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentative)
   Level fineLevel;
   fineLevel.SetLevelID(1);
   RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(36);
+
+  out << "num MPI procs inside unit test: " << A->getRowMap()->getComm()->getSize() << std::endl;
+
+  std::cout << "A matrix" << std::endl;
+  sleep(1);
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  A->describe(*fos,Teuchos::VERB_EXTREME);
+  sleep(1);
+
   fineLevel.SetA(A);
 
   Level coarseLevel;
