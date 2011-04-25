@@ -117,6 +117,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 //FIXME #ifdef we're using tpetra
 //FIXME    throw(Exceptions::NotImplemented("No default smoother is defined"));
 //FIXME #else we're using epetra
+#ifdef HAVE_MUELU_IFPACK
          Teuchos::ParameterList  ifpackList;
          ifpackList.set("relaxation: type", "Gauss-Seidel");
          ifpackList.set("relaxation: sweeps", (int) 1);
@@ -124,6 +125,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          ifpackList.set("relaxation: zero starting solution", false);
          RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
          SmooFact = rcp( new SmootherFactory(smoother) );
+#endif
 //FIXME #endif
        }
 
@@ -249,6 +251,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      */
      void SetSmoothers()
      {
+#ifdef HAVE_MUELU_IFPACK
        Teuchos::ParameterList  ifpackList;
 //FIXME #ifdef we're using tpetra
 //FIXME    throw(Exceptions::NotImplemented("No default smoother is defined"));
@@ -261,6 +264,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        SmootherFactory smooFact(smoother);
 //FIXME #endif
        SetSmoothers(smooFact);
+#endif
      }
 
      /*! @brief Construct smoothers on all levels but the coarsest.
