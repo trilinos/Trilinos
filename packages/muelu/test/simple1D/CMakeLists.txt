@@ -1,8 +1,19 @@
-# disabling for right now because of no Tpetra matrix matrix multiply
-#IF (Cthulhu_ENABLE_Tpetra)
-#  ADD_SUBDIRECTORY(CMake/tpetra)
-#ENDIF()
+INCLUDE(PackageAddExecutableAndTest)
 
-IF (Cthulhu_ENABLE_Epetra)
-  ADD_SUBDIRECTORY(CMake/epetra)
-ENDIF()
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
+
+SET(SOURCES "")
+APPEND_SET(SOURCES main.cpp)
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    simple1D
+    SOURCES ${SOURCES}
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu muelu-cthulhu
+  )
+

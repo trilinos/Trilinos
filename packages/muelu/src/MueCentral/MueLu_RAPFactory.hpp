@@ -30,9 +30,6 @@ class RAPFactory : public OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     //@{ Build methods.
     bool Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
       Teuchos::OSTab tab(this->getOStream());
-#undef CTHULHU_USE_EPETRA //FIXME
-#define CTHULHU_USE_EPETRA //FIXME
-#ifdef CTHULHU_USE_EPETRA //FIXME this check goes away once Tpetra has MM multiply
       //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
       RCP<Operator> P = coarseLevel.GetP();
       RCP<Operator> A = fineLevel.GetA();
@@ -40,9 +37,6 @@ class RAPFactory : public OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       RCP<Operator> R = coarseLevel.GetR();
       RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,AP);
       coarseLevel.SetA(RAP);
-#else
-      throw(Exceptions::NotImplemented("Tpetra has no matrix-matrix multiply yet"));
-#endif
 
       return true;
     }

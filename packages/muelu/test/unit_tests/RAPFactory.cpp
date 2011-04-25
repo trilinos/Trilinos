@@ -1,8 +1,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Cthulhu_DefaultPlatform.hpp"
 
-#define HAVE_CTHULHU_EPETRA
-#define CTHULHU_USE_EPETRA
 #include "MueLu_config.hpp"
 
 #include "test_helpers.hpp"
