@@ -94,9 +94,9 @@ ENDIF()
 # A.2) Set up other stuff
 #
 
-# Find Python executable which is needed for dependency file building
-FIND_PACKAGE(PythonInterp)
-
+INCLUDE(TrilinosFindPythonInterp)
+TRILINOS_FIND_PYTHON()
+MESSAGE("PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
 
 #
 # B) Set up user options and global variables that will be used throughout

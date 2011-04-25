@@ -95,7 +95,7 @@ namespace {
 
   const char *complex_suffix[] = {".re", ".im"};
 
-  const char *Version() {return "Ioex_DatabaseIO.C 2009/08/24 gdsjaar";}
+  const char *Version() {return "Ioex_DatabaseIO.C 2011/04/15 gdsjaar";}
 
   bool type_match(const std::string& type, const char *substring);
   int extract_id(const std::string &name_id);
@@ -148,8 +148,8 @@ namespace {
   {
     if (ptr == NULL) {
       std::ostringstream errmsg;
-      std::cerr << "INTERNAL ERROR: Could not find " << type << " '" << name << "'."
-		<< " Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
+      errmsg << "INTERNAL ERROR: Could not find " << type << " '" << name << "'."
+	     << " Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
       IOSS_ERROR(errmsg);
     }
   }
@@ -1786,8 +1786,8 @@ namespace Ioex {
 		block = get_region()->get_element_block(topo_or_block_name);
 		if (block == NULL || block_is_omitted(block)) {
 		  std::ostringstream errmsg;
-		  std::cerr << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name 
-			    << "' Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
+		  errmsg << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name 
+			 << "' Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
 		  IOSS_ERROR(errmsg);
 		}
 		elem_topo = block->topology();
@@ -3026,8 +3026,8 @@ namespace Ioex {
 
       if (block == NULL) {
 	std::ostringstream errmsg;
-	std::cerr << "INTERNAL ERROR: Could not find element block containing element with id " << elem_id
-		  << "Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
+	errmsg << "INTERNAL ERROR: Could not find element block containing element with id " << elem_id
+	       << "Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
 	IOSS_ERROR(errmsg);
       }
 
@@ -3035,8 +3035,8 @@ namespace Ioex {
 
       if (topo == NULL) {
 	std::ostringstream errmsg;
-	std::cerr << "INTERNAL ERROR: Could not find topology of element block boundary. "
-		  << "Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
+	errmsg << "INTERNAL ERROR: Could not find topology of element block boundary. "
+	       << "Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
 	IOSS_ERROR(errmsg);
       }
 
@@ -5286,16 +5286,16 @@ namespace Ioex {
 	if ((*J).first.length() > 32) {
 	  if (dbUsage == Ioss::WRITE_RESTART) {
 	    std::ostringstream errmsg;
-	    std::cerr << "INTERNAL ERROR: The variable name for field '" << (*J).first
-		      << "' is longer than 32 characters which is not allowed and will cause errors.\n"
-		      << "Something is wrong in the Frio::WriteRestart class. Please report.\n";
+	    errmsg << "INTERNAL ERROR: The variable name for field '" << (*J).first
+		   << "' is longer than 32 characters which is not allowed and will cause errors.\n"
+		   << "Something is wrong in the Frio::WriteRestart class. Please report.\n";
 	    IOSS_ERROR(errmsg);
 	  } else {
 	    if (myProcessor == 0) {
-	      std::cerr << "WARNING: The variable name for field '" << (*J).first
-			<< "' is longer than 32 characters which is not allowed and may cause errors.\n"
-			<< "The name will be truncated to '" << var_names[index-1]
-			<< "' which may result in a non-unique name.\n";
+	      IOSS_WARNING << "WARNING: The variable name for field '" << (*J).first
+			   << "' is longer than 32 characters which is not allowed and may cause errors.\n"
+			   << "The name will be truncated to '" << var_names[index-1]
+			   << "' which may result in a non-unique name.\n";
 	    }
 	  }
 	}
@@ -5501,6 +5501,7 @@ namespace Ioex {
 	// Attributes are not named....
 	// Try to assign some meaningful names based on conventions...
 	std::string att_name = "attribute";  // Default
+	int unknown_attributes = 0;
 	
 	if (type_match(type, "shell") || type_match(type, "trishell")) {
 	  if (attribute_count == block->get_property("topology_node_count").get_int()) {
@@ -5516,6 +5517,7 @@ namespace Ioex {
 	    att_name = "thickness";
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
 					 Ioss::Field::ATTRIBUTE, my_element_count, 1));
+	    unknown_attributes = attribute_count - 1;
 	  }
 
 	}
@@ -5565,18 +5567,16 @@ namespace Ioex {
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
 					 Ioss::Field::ATTRIBUTE, my_element_count, offset++));
 	  }
+	  unknown_attributes = attribute_count - 2;
 	}
 
 	else if (type_match(type, "truss") ||
 		   type_match(type, "bar")   ||
+		   type_match(type, "beam")   ||
 		   type_match(type, "rod")) {
-	  size_t offset = 1;
-	  att_name = "area";
-	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-				       Ioss::Field::ATTRIBUTE, my_element_count, offset++));
-	}
-
-	else if (type_match(type, "beam")) {
+	  // Technically, truss, bar, rod should all only have 1 attribute; however,
+	  // there are some mesh generation codes that treat all of these types the
+	  // same and put "beam-type" attributes on bars...
 	  int index = 1;
 	  att_name = "area";
 	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
@@ -5605,6 +5605,30 @@ namespace Ioex {
 					   Ioss::Field::ATTRIBUTE, my_element_count, index));
 	      index += 3;
 	    }
+	  }
+	  unknown_attributes = attribute_count - index;
+	}
+
+	else {
+	  unknown_attributes = attribute_count;
+	}
+
+	if (unknown_attributes > 0) {
+	  att_name = "extra_attribute";
+	  std::string storage = "Real[";
+	  storage += Ioss::Utils::to_string(unknown_attributes);
+	  storage += "]";
+	  size_t index = attribute_count - unknown_attributes + 1;
+	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
+				       Ioss::Field::ATTRIBUTE, my_element_count, index));
+
+	  if (myProcessor == 0) {
+	    IOSS_WARNING << "For element block '" << block->name()
+			 << "' of type '" << type << "'\n\tthere were "
+			 << unknown_attributes << " attributes that are not known to the IO Subsystem\n\t"
+			 << "in addition to the " << attribute_count - unknown_attributes
+			 << " known. The extra attributes can be accessed\n\tas the field '"
+			 << att_name << "' with " << unknown_attributes << " components.\n\n";
 	  }
 	}
       }
@@ -5671,18 +5695,18 @@ namespace {
       
       if (field_offset + comp_count - 1 > attribute_count) {
 	std::ostringstream errmsg;
-	std::cerr << "INTERNAL ERROR: For block '" << block->name() << "', attribute '" << field_name
-		  << "', the indexing is incorrect.\n" 
-		  << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
+	errmsg << "INTERNAL ERROR: For block '" << block->name() << "', attribute '" << field_name
+	       << "', the indexing is incorrect.\n" 
+	       << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
 	IOSS_ERROR(errmsg);
       }
 
       for (int i=field_offset; i < field_offset+comp_count; i++) {
 	if (attributes[i] != 0) {
 	  std::ostringstream errmsg;
-	  std::cerr << "INTERNAL ERROR: For block '" << block->name() << "', attribute '" << field_name
-		    << "', indexes into the same location as a previous attribute.\n"
-		    << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
+	  errmsg << "INTERNAL ERROR: For block '" << block->name() << "', attribute '" << field_name
+		 << "', indexes into the same location as a previous attribute.\n"
+		 << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
 	  IOSS_ERROR(errmsg);
 	} else {
 	  attributes[i] = 1;
@@ -5690,11 +5714,11 @@ namespace {
       }
     }
     
-    if (component_sum != attribute_count) {
+    if (component_sum > attribute_count) {
       std::ostringstream errmsg;
-      std::cerr << "ERROR: Block '" << block->name() << "' is supposed to have " << attribute_count
-		<< " attributes, but" << component_sum << " attributes were defined.\n"
-		<< "Error detected in the Ioex::DatabaseIO function 'check_attribute_index_error'. Please report.\n";
+      errmsg << "INTERNAL ERROR: Block '" << block->name() << "' is supposed to have " << attribute_count
+	     << " attributes, but " << component_sum << " attributes were counted.\n"
+	     << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
       IOSS_ERROR(errmsg);
     }
 
@@ -5705,8 +5729,8 @@ namespace {
       for (int i=1; i <= attribute_count; i++) {
 	if (attributes[i] == 0) {
 	  std::ostringstream errmsg;
-	  std::cerr << "INTERNAL ERROR: Block '" << block->name() << "' has an incomplete set of attributes.\n"
-		    << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
+	  errmsg << "INTERNAL ERROR: Block '" << block->name() << "' has an incomplete set of attributes.\n"
+		 << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
 	  IOSS_ERROR(errmsg);
 	}
       }

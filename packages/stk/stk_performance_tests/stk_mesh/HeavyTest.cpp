@@ -34,25 +34,35 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
 
   stk::io::util::IO_Fixture fixture(pm);
 
-  const unsigned num_phases = 6;
-  const char* phase_names[num_phases] = {
-    "Init meta data",       // timings[0] = init meta data
-    "Init bulk data",       // timings[1] = init bulk data
-    "Rebalance mesh",       // timings[2] = rebalance mesh
-    "Skin mesh",            // timings[3] = skin mesh
-    "Exodus file creation", // timings[4] = exodus file creation
-    "Process output"        // timings[5] = process output
-  };
+  // Test constants:
+
+  const unsigned NUM_PHASES = 6;
+
+  const unsigned INIT_META_DATA_PHASE_ID = 0;
+  const unsigned INIT_BULK_DATA_PHASE_ID = 1;
+  const unsigned REBALANCE_PHASE_ID      = 2;
+  const unsigned SKIN_MESH_PHASE_ID      = 3;
+  const unsigned EXODUS_CREATE_PHASE_ID  = 4;
+  const unsigned PROCESS_OUTPUT_PHASE_ID = 5;
+
+  std::vector<std::string> PHASE_NAMES(NUM_PHASES);
+  PHASE_NAMES[INIT_META_DATA_PHASE_ID] = "Init meta data";
+  PHASE_NAMES[INIT_BULK_DATA_PHASE_ID] = "Init bulk data";
+  PHASE_NAMES[REBALANCE_PHASE_ID]      = "Rebalance mesh";
+  PHASE_NAMES[SKIN_MESH_PHASE_ID]      = "Skin mesh";
+  PHASE_NAMES[EXODUS_CREATE_PHASE_ID]  = "Exodus file creation";
+  PHASE_NAMES[PROCESS_OUTPUT_PHASE_ID] = "Process output";
+
   // timings[6] = sum(timings[0:5])
-  double timings[num_phases + 1]; // leave room for sum
-  unsigned phase = 0;
+  std::vector<double> timings(NUM_PHASES + 1, 0.0); // leave room for sum
+
   std::string input_base_filename = "heavy_performance_test.g";
 
   // time meta_data initialize
   {
     double start_time = stk::wall_time();
     fixture.initialize_meta_data( input_base_filename, "exodusii" );
-    timings[phase++] = stk::wall_dtime(start_time);
+    timings[INIT_META_DATA_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
   // Commit meta_data
@@ -63,7 +73,7 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
   {
     double start_time = stk::wall_time();
     fixture.initialize_bulk_data();
-    timings[phase++] = stk::wall_dtime(start_time);
+    timings[INIT_BULK_DATA_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
   stk::mesh::BulkData & bulk_data = fixture.bulk_data();
@@ -80,14 +90,14 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
                               &fixture.get_coordinate_field(),
                               NULL /*weight field*/,
                               zoltan_partition);
-    timings[phase++] = stk::wall_dtime(start_time);
+    timings[REBALANCE_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
   // time skin bulk_data
   {
     double start_time = stk::wall_time();
     stk::mesh::skin_mesh( bulk_data, meta_data.spatial_dimension());
-    timings[phase++] = stk::wall_dtime(start_time);
+    timings[SKIN_MESH_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
   // time exodus file creation
@@ -95,7 +105,7 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
     std::string output_base_filename = "heavy_performance_test.e";
     double start_time = stk::wall_time();
     fixture.create_output_mesh( output_base_filename, "exodusii" );
-    timings[phase++] = stk::wall_dtime(start_time);
+    timings[EXODUS_CREATE_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
   // time process output
@@ -103,20 +113,19 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
     double time_step = 0;
     double start_time = stk::wall_time();
     fixture.add_timestep_to_output_mesh( time_step );
-    timings[phase++] = stk::wall_dtime(start_time);
+    timings[PROCESS_OUTPUT_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
-  ThrowRequireMsg(phase == num_phases, phase << " != " << num_phases);
-
-  // Sum times;
-  timings[num_phases] = 0;
-  for (unsigned i = 0; i < num_phases; ++i) {
-    timings[num_phases] += timings[i];
+  // Sum times:
+  for (unsigned i = 0; i < NUM_PHASES; ++i) {
+    timings[NUM_PHASES] += timings[i];
   }
+
+  ThrowRequireMsg(timings.size() == NUM_PHASES+1, "Do not push back on to timings vector");
 
   // Now process and print times
   {
-    stk::all_reduce(pm, stk::ReduceMax<num_phases+1>(timings));
+    stk::all_reduce(pm, stk::ReduceMax<NUM_PHASES+1>(&timings[0]));
 
     std::vector<size_t> counts ;
     stk::mesh::fem::comm_mesh_counts( bulk_data , counts);
@@ -124,10 +133,10 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
     if (p_rank == 0) {
       std::cout << "\n\n";
       std::cout << "Num procs: " << p_size << "\n";
-      for (unsigned i = 0; i < num_phases; ++i) {
-        std::cout << "\t" << phase_names[i] << ": " << timings[i] << std::endl;
+      for (unsigned i = 0; i < NUM_PHASES; ++i) {
+        std::cout << "\t" << PHASE_NAMES[i] << ": " << timings[i] << std::endl;
       }
-      std::cout << "\tTotal time: " << timings[num_phases] << std::endl;
+      std::cout << "\tTotal time: " << timings[NUM_PHASES] << std::endl;
       std::cout << "\n\n";
 
       for (unsigned i = 0; i < counts.size(); ++i) {

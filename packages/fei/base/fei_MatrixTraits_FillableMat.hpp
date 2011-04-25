@@ -48,7 +48,7 @@ namespace fei {
     static int getRowLength(FillableMat* mat, int row, int& length)
       {
         try {
-          FillableVec* matrixrow = mat->getRow(row);
+          const FillableVec* matrixrow = mat->getRow(row);
           length = matrixrow->size();
         }
         catch(...) {
@@ -73,9 +73,9 @@ namespace fei {
                       int row, int len, double* coefs, int* indices)
       {
         try {
-          FillableVec* matrixrow = mat->getRow(row);
+          const FillableVec* matrixrow = mat->getRow(row);
 
-          FillableVec::iterator
+          FillableVec::const_iterator
             row_iter = matrixrow->begin(),
             row_end = matrixrow->end();
 

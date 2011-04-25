@@ -72,6 +72,7 @@ Aztec_LinSysCore::Aztec_LinSysCore(MPI_Comm comm)
    numEssBCs_(0),
    bcsLoaded_(false),
    explicitDirichletBCs_(false),
+   BCenforcement_no_column_mod_(false),
    b_ptr_(NULL),
    matrixAllocated_(false),
    vectorsAllocated_(false),
@@ -251,6 +252,14 @@ int Aztec_LinSysCore::parameters(int numParams, const char*const * params) {
    else {
      explicitDirichletBCs_ = false;
    }
+
+  param = snl_fei::getParam("BC_ENFORCEMENT_NO_COLUMN_MOD",numParams,params);
+  if (param != NULL){
+    BCenforcement_no_column_mod_ = true;
+  }
+  else {
+    BCenforcement_no_column_mod_ = false;
+  }
 
    param = snl_fei::getParamValue("numLevels", numParams, params);
    if (param != NULL){
@@ -1315,6 +1324,10 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
       tmp_b_[currentRHS_][globalEqn_i -localOffset_] = rhs_term;
       tmp_bc_[globalEqn_i -localOffset_] = bc_term;
     }
+  }
+
+  if (BCenforcement_no_column_mod_ == true) {
+    return(0);
   }
 
   for(int row=localOffset_; row<=localEnd; row++) {

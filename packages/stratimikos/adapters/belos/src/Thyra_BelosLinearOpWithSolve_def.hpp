@@ -342,9 +342,6 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   // 2010/08/22: rabartl: Bug 4915 ToDo: Move the above into the NIV function
   // solve(...).
 
-  const int numRhs = B.domain()->dim();
-  const int numEquations = B.range()->dim();
-
   const RCP<FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
@@ -353,7 +350,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     OSTab tab2(out);
     *out << "Using forward operator = " << describe(*fwdOpSrc_->getOp(),verbLevel);
     *out << "Using iterative solver = " << describe(*iterativeSolver_,verbLevel);
-    *out << "With #Eqns="<<numEquations<<", #RHSs="<<numRhs<<" ...\n";
+    *out << "With #Eqns="<<B.range()->dim()<<", #RHSs="<<B.domain()->dim()<<" ...\n";
   }
 
   //

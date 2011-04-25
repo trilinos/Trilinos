@@ -749,6 +749,10 @@ bool ImplicitBDFStepperStepControl<Scalar>::acceptStep(const StepperBase<Scalar>
   bool return_status = false;
   Scalar enorm = checkReduceOrder_(stepper);
   Scalar LET = ck_*enorm;
+
+  if (failStepIfNonlinearSolveFails_ && (newtonConvergenceStatus_ < 0) )
+    return false;
+
   if (LETValue) {
     *LETValue = LET;
   }
@@ -842,6 +846,9 @@ void ImplicitBDFStepperStepControl<Scalar>::setParameterList(
     stepSizeType_ = STEP_TYPE_VARIABLE;
   }
 
+  failStepIfNonlinearSolveFails_ = 
+    parameterList_->get( "failStepIfNonlinearSolveFails", false );
+
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"setParameterList");
@@ -856,6 +863,8 @@ void ImplicitBDFStepperStepControl<Scalar>::setParameterList(
     *out << "absErrTol  = " << absErrTol_  << std::endl;
     *out << "stepSizeType = " << stepSizeType_  << std::endl;
     *out << "stopTime_  = " << stopTime_  << std::endl;
+    *out << "failStepIfNonlinearSolveFails_ = " 
+	 << failStepIfNonlinearSolveFails_  << std::endl;
   }
 
 }
@@ -931,6 +940,8 @@ ImplicitBDFStepperStepControl<Scalar>::getValidParameters() const
     pl->set<Scalar>( "absErrTol",        Scalar(1.0e-6) );
     pl->set<bool>  ( "constantStepSize", false          );
     pl->set<Scalar>( "stopTime",         Scalar(10.0)   );
+    pl->set<bool>("failStepIfNonlinearSolveFails", false,
+		  "Power user command. Will force the function acceptStep() to return false ieven if the LET is acceptable.  Used to run with loose tolerances but enforce a correct nonlinear solution to the step.");
 
     Teuchos::ParameterList
       &magicNumberList = pl->sublist("magicNumbers", 

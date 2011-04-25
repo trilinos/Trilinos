@@ -477,6 +477,8 @@ void BulkData::internal_change_entity_parts(
 {
   TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
+  DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
 
   Bucket * const k_old = m_entity_repo.get_entity_bucket( entity );
 

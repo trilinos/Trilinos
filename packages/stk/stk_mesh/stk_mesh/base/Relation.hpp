@@ -142,6 +142,17 @@ private:
 //----------------------------------------------------------------------
 
 inline
+Relation::raw_relation_id_type
+Relation::raw_relation_id( unsigned rank , unsigned id )
+{
+  ThrowAssertMsg( id <= id_mask,
+                  "For args rank " << rank << ", id " << id << ": " <<
+                  "id " << " > id_mask=" << id_mask );
+
+  return ( raw_relation_id_type(rank) << id_digits ) | id ;
+}
+
+inline
 unsigned Relation::entity_rank() const
 { return m_raw_relation.value >> id_digits; }
 

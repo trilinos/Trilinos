@@ -235,6 +235,14 @@ void BulkData::internal_update_distributed_index(
         EntityKey key( & i->first );
         unsigned modifying_proc = i->second;
 
+        // key should not be in del_entities_keys
+        ThrowAssertMsg( !std::binary_search(del_entities_keys.begin(),
+                                            del_entities_keys.end(),
+                                            i->first),
+                        "Key: " << print_entity_key(mesh_meta_data(), key) <<
+                        " was locally deleted, but somehow was included in global_created_or_modified; " <<
+                        " this probably means there's problem in DistributedIndex." );
+
         if ( m_parallel_rank != modifying_proc ) {
           // Another process also created or updated this entity.
 

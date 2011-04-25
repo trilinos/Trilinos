@@ -313,8 +313,6 @@ Reducer::addGraphEntries(fei::SharedPtr<fei::SparseRowGraph> matrixGraph)
   //iterate through the incoming matrixGraph, putting its contents into
   //Kdd, Kdi, Kid and Kii as appropriate.
 
-  bool create_if_necessary = true;
-
   std::vector<int>& rowNumbers = matrixGraph->rowNumbers;
   std::vector<int>& rowOffsets = matrixGraph->rowOffsets;
   std::vector<int>& packedCols = matrixGraph->packedColumnIndices;
@@ -328,8 +326,8 @@ Reducer::addGraphEntries(fei::SharedPtr<fei::SparseRowGraph> matrixGraph)
     int* cols = &packedCols[rowOffsets[i]];
 
     if (slave_row) {
-      fei::FillableVec* Kdd_row = Kdd_.getRow(row, create_if_necessary);
-      fei::FillableVec* Kdi_row = Kdi_.getRow(row, create_if_necessary);
+      fei::FillableVec* Kdd_row = Kdd_.create_or_getRow(row);
+      fei::FillableVec* Kdi_row = Kdi_.create_or_getRow(row);
 
       for(int j=0; j<rowLength; ++j) {
         int col = cols[j];
@@ -346,8 +344,8 @@ Reducer::addGraphEntries(fei::SharedPtr<fei::SparseRowGraph> matrixGraph)
     else {
       //not a slave row, so add slave columns to Kid, and non-slave
       //columns to graph.
-      fei::FillableVec* Kid_row = Kid_.getRow(row, create_if_necessary);
-      fei::FillableVec* Kii_row = Kii_.getRow(row, create_if_necessary);
+      fei::FillableVec* Kid_row = Kid_.create_or_getRow(row);
+      fei::FillableVec* Kii_row = Kii_.create_or_getRow(row);
 
       for(int j=0; j<rowLength; ++j) {
         int col = cols[j];
@@ -383,8 +381,6 @@ Reducer::addGraphIndices(int numRows, const int* rows,
                          int numCols, const int* cols,
                          fei::Graph& graph)
 {
-  bool create_if_necessary = true;
-
   expand_work_arrays(numCols);
 
   bool no_slave_cols = true;
@@ -397,8 +393,8 @@ Reducer::addGraphIndices(int numRows, const int* rows,
     bool slave_row = isSlaveEqn(rows[i]);
 
     if (slave_row) {
-      fei::FillableVec* Kdd_row = Kdd_.getRow(rows[i], create_if_necessary);
-      fei::FillableVec* Kdi_row = Kdi_.getRow(rows[i], create_if_necessary);
+      fei::FillableVec* Kdd_row = Kdd_.create_or_getRow(rows[i]);
+      fei::FillableVec* Kdi_row = Kdi_.create_or_getRow(rows[i]);
 
       for(int j=0; j<numCols; ++j) {
         if (bool_array_[j]) {
@@ -414,7 +410,7 @@ Reducer::addGraphIndices(int numRows, const int* rows,
       //not a slave row, so add slave columns to Kid, and non-slave
       //columns to graph.
       fei::FillableVec* Kid_row = no_slave_cols ?
-        NULL : Kid_.getRow(rows[i], create_if_necessary);
+        NULL : Kid_.create_or_getRow(rows[i]);
   
       unsigned num_non_slave_cols = 0;
 
@@ -742,8 +738,8 @@ Reducer::addMatrixValues(int numRows, const int* rows,
     if (bool_array_[numCols+i]) {
       //slave row: slave columns go into Kdd, non-slave columns go
       //into Kdi.
-      fei::FillableVec* Kdd_row = Kdd_.getRow(rows[i], true);
-      fei::FillableVec* Kdi_row = Kdi_.getRow(rows[i], true);
+      fei::FillableVec* Kdd_row = Kdd_.create_or_getRow(rows[i]);
+      fei::FillableVec* Kdi_row = Kdi_.create_or_getRow(rows[i]);
 
       for(int j=0; j<numCols; ++j) {
         if (bool_array_[j]) {
@@ -772,7 +768,7 @@ Reducer::addMatrixValues(int numRows, const int* rows,
 
       //put non-slave columns into Kii,
       //and slave columns into Kid.
-      fei::FillableVec* Kid_row = Kid_.getRow(rows[i], true);
+      fei::FillableVec* Kid_row = Kid_.create_or_getRow(rows[i]);
 
       unsigned offset = 0;
       for(int j=0; j<numCols; ++j) {

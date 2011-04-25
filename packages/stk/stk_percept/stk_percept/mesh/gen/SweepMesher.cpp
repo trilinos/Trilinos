@@ -22,8 +22,8 @@
 #include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
 
+#include <stk_io/MeshReadWriteUtils.hpp>
 #include <stk_io/IossBridge.hpp>
-#include <stk_io/util/UseCase_mesh.hpp>
 #include <init/Ionit_Initializer.h>
 
 // template<typename Element>
@@ -607,13 +607,8 @@ namespace stk
       const stk::ParallelMachine& comm = m_bulkData->parallel();
 
       Ioss::Init::Initializer init_db;
-      Ioss::Region *out_region = stk::io::util::create_output_mesh(out_filename, "", "",
-                                                                   comm,
-                                                                   *m_bulkData, NULL, stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData),
-                                                                   true, false);
-
-      // Clean up
-      delete out_region; out_region = NULL;
+      stk::io::MeshData mesh;
+      stk::io::create_output_mesh(out_filename, comm, *m_bulkData, mesh);
     }
 
     void SweepMesher::sweep(const VectorOfCoord& path, const VectorOfCoord& dir)

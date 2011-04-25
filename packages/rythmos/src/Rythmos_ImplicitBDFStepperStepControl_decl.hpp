@@ -228,6 +228,7 @@ class ImplicitBDFStepperStepControl
     Scalar maxTimeStep_;
 
     int newtonConvergenceStatus_;
+    bool failStepIfNonlinearSolveFails_;
 
     // Private member functions
 

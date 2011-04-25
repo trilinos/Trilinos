@@ -347,6 +347,7 @@ class Aztec_LinSysCore: public LinearSystemCore {
    int numEssBCs_;
    bool bcsLoaded_;
    bool explicitDirichletBCs_;
+   bool BCenforcement_no_column_mod_;
    Aztec_LSVector *b_ptr_;
    bool matrixAllocated_;
    bool vectorsAllocated_;

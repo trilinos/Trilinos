@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_QUAD_C1_FEMDEF_HPP
+#define INTREPID_HGRAD_QUAD_C1_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -240,3 +242,4 @@ void Basis_HGRAD_QUAD_C1_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & Do
 }
 
 }// namespace Intrepid
+#endif

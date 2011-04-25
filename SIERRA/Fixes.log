@@ -33,7 +33,8 @@ Date     | Package      | File(s)                         |Platform    | @sandia
          |              | Intrepid_HGRAD_HEX_C1_FEMDef.hpp|            |             | file to actually instantiate the templates.
          |              |                                 |            |             | 
          |              |                                 |            |             |
-         |              |                                 |            |             |
+---------|--------------|---------------------------------|------------| ------------|------------------------------------------------------------------------------
+04/18/11 | Intrepid     | Intrepid_HGRAD_XXX_FEMDef.hpp   | PGI 10.1   | srkenno     | Finish protecting all XXXDef.hpp files to workaround PGI compiler bug.
          |              |                                 |            |             |
          |              |                                 |            |             |
          |              |                                 |            |             |

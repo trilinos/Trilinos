@@ -1,3 +1,5 @@
+#ifndef INTREPID_HGRAD_WEDGE_C2_SERENDIPITY_FEMDEF_HPP
+#define INTREPID_HGRAD_WEDGE_C2_SERENDIPITY_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -29,7 +31,7 @@
 
 /** \file   Intrepid_HGRAD_WEDGE_C2_Serendipity_FEMDef.hpp
     \brief  Definition file for incomplete bi-quadratic FEM basis functions for H(grad) functions on WEDGE cells.
-    \author Created by P. Bochev and D. Ridzal.
+    \author Created by P. Bochev and D. Ridzal. (serendipity version by S. R. Kennon, srkenno@sandia.gov)
 */
 
 namespace Intrepid {
@@ -1225,3 +1227,4 @@ namespace Intrepid {
                         ">>> ERROR (Basis_HGRAD_WEDGE_C2_Serendipity_FEM): FEM Basis calling an FVD member function");
   }
 }// namespace Intrepid
+#endif
