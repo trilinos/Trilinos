@@ -31,8 +31,6 @@ ADD_SUBDIRECTORY(stk_mesh)
 
 ADD_SUBDIRECTORY(stk_algsup)
 
-ADD_SUBDIRECTORY(stk_usecases)
-
 IF (STK_ENABLE_Sacado)
   ADD_SUBDIRECTORY(stk_expreval)
 ENDIF()
@@ -59,6 +57,10 @@ ENDIF()
 IF( STK_ENABLE_Intrepid AND STK_ENABLE_Trios AND TPL_ENABLE_BoostLib )
   ADD_SUBDIRECTORY(stk_percept)
   ADD_SUBDIRECTORY(stk_adapt)
+ENDIF()
+
+IF ( TPL_ENABLE_BoostLib )
+  ADD_SUBDIRECTORY(stk_usecases)
 ENDIF()
 
 #
