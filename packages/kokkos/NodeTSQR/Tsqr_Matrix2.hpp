@@ -26,9 +26,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_Tsqr_MatView_hpp
-#define __TSQR_Tsqr_MatView_hpp
+#ifndef __TSQR_Tsqr_Matrix2_hpp
+#define __TSQR_Tsqr_Matrix2_hpp
 
+#include <Teuchos_ConstTypeTraits.hpp>
 #include <cstring> // NULL
 
 // Define for bounds checking and other safety features, undefine for speed.
@@ -41,196 +42,124 @@
 #include <sstream>
 #include <stdexcept>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
 
-  template< class MatrixViewType1, class MatrixViewType2 >
-  void
-  matrixCopy (MatrixViewType1& A, const MatrixViewType2& B)
-  {
-    const typename MatrixViewType1::ordinal_type A_nrows = A.nrows();
-    const typename MatrixViewType1::ordinal_type A_ncols = A.ncols();
-    if (A_nrows != B.nrows() || A_ncols != B.ncols())
-      throw std::invalid_argument("Dimensions of A and B are not compatible");
-
-    for (typename MatrixViewType1::ordinal_type j = 0; j < A_ncols; ++j)
-      {
-	typename MatrixViewType1::scalar_type* const A_j = &A(0,j);
-	const typename MatrixViewType2::scalar_type* const B_j = &B(0,j);
-	for (typename MatrixViewType1::ordinal_type i = 0; i < A_nrows; ++i)
-	  A_j[i] = B_j[i];
-      }
-  }
-
-  template< class FirstMatrixViewType, class SecondMatrixViewType >
-  bool
-  matrix_equal (FirstMatrixViewType& A, SecondMatrixViewType& B)
-  {
-    if (A.nrows() != B.nrows() || A.ncols() != B.ncols())
-      return false;
-    
-    typedef typename FirstMatrixViewType::ordinal_type first_ordinal_type;
-    typedef typename SecondMatrixViewType::ordinal_type second_ordinal_type;
-    typedef typename FirstMatrixViewType::pointer_type first_pointer_type;
-    typedef typename SecondMatrixViewType::pointer_type second_pointer_type;
-
-    const first_ordinal_type nrows = A.nrows();
-    const first_ordinal_type A_lda = A.lda();
-    const first_ordinal_type ncols = A.ncols();
-    const second_ordinal_type B_lda = B.lda();
-
-    first_pointer_type A_j = A.get();
-    second_pointer_type B_j = B.get();
-
-    for (first_ordinal_type j = 0; j < ncols; ++j, A_j += A_lda, B_j += B_lda)
-      for (first_ordinal_type i = 0; i < nrows; ++i)
-	if (A_j[i] != B_j[i])
-	  return false;
-
-    return true;
-  }
-
-#ifdef TSQR_MATVIEW_DEBUG
-  template< class Ordinal, class Scalar >
-  class MatViewVerify {
-  public:
-    static void 
-    verify (const Ordinal num_rows, 
-	    const Ordinal num_cols, 
-	    const Scalar* const A, 
-	    const Ordinal leading_dim)
-    {
-      using std::endl;
-
-      bool good = true;
-      std::ostringstream os;
-      if (! std::numeric_limits<Ordinal>::is_integer)
-	{
-	  good = false;
-	  os << "Error: Ordinal type must be an integer." << endl;
-	}
-      if (std::numeric_limits<Ordinal>::is_signed)
-	{
-	  if (num_rows < 0)
-	    {
-	      good = false;
-	      os << "Error: num_rows (= " << num_rows << ") < 0." << endl;
-	    }
-	  if (num_cols < 0)
-	    {
-	      good = false;
-	      os << "Error: num_cols (= " << num_cols << ") < 0." << endl;
-	    }
-	  if (leading_dim < 0)
-	    {
-	      good = false;
-	      os << "Error: leading_dim (= " << leading_dim << ") < 0." << endl;
-	    }
-	}
-      if (leading_dim < num_rows)
-	{
-	  good = false;
-	  os << "Error: leading_dim (= " << leading_dim << ") < num_rows (= " << num_rows << ")." << endl;
-	}
-      if (! good)
-	throw std::invalid_argument (os.str());
-    }
-  };
-#endif // TSQR_MATVIEW_DEBUG
-
-
-  // Forward declaration
-  template< class Ordinal, class Scalar >
-  class ConstMatView;
-
-  // Forward declaration
-  template< class Ordinal, class Scalar >
-  class Matrix;
-
-  /// \class MatView
-  /// 
-  /// A read-and-write view of a column-oriented matrix.
-  template< class Ordinal, class Scalar >
-  class MatView {
+  /// \class Matrix
+  /// \brief A column-oriented matrix, or a view of one.
+  /// \author Mark Hoemmen
+  ///
+  template<class Ordinal, class Scalar>
+  class Matrix {
   public:
     typedef Scalar scalar_type;
     typedef Ordinal ordinal_type;
     typedef Scalar* pointer_type;
 
-    /// \note g++ with -Wall wants A_ to be initialized after lda_,
-    /// otherwise it emits a compiler warning.
-    MatView () : nrows_(0), ncols_(0), lda_(0), A_(NULL) {}
+    //! Default constructor (empty, nonowning).
+    Matrix () : nrows_(0), ncols_(0), lda_(0), A_(NULL), owns_ (false) {}
 
-    MatView (const Ordinal num_rows, 
-	     const Ordinal num_cols, 
-	     Scalar* const A, 
-	     const Ordinal leading_dim) :
-      nrows_(num_rows),
-      ncols_(num_cols),
-      lda_(leading_dim),
-      A_(A)
-    {
-#ifdef TSQR_MATVIEW_DEBUG
-      MatViewVerify< Ordinal, Scalar >::verify (num_rows, num_cols, A, leading_dim);
-#endif // TSQR_MATVIEW_DEBUG
-    }
-
-    MatView (const MatView& view) :
-      nrows_(view.nrows()),
-      ncols_(view.ncols()),
-      lda_(view.lda()),
-      A_(view.get())
+    //! Owning, allocating constructor.
+    Matrix (const Ordinal numRows, const Ordinal numCols) : 
+      nrows_(numRows), 
+      ncols_(numCols), 
+      lda_(numRows), 
+      A_ (new scalar_type [numRows * numCols]), 
+      owns_(true)
     {}
 
-    MatView& operator= (const MatView& view) {
+    //! Destructor.
+    ~Matrix () 
+    {
+      if (owns_ && A_ != NULL)
+	delete [] A_;
+      A_ = NULL;
+    }
+
+    // Nonallocating constructor (nonowning by default).
+    Matrix (const Ordinal numRows, 
+	    const Ordinal numCols, 
+	    Scalar* const A, 
+	    const Ordinal stride,
+	    const bool owns=false)
+      nrows_(numRows),
+      ncols_(numCols),
+      lda_(stride),
+      A_(A),
+      owns_(owns)
+    {}
+
+    //! A view of the matrix.  Const since the pointer address is.
+    Matrix 
+    view () const 
+    {
+      return Matrix (nrows(), ncols(), get(), lda(), false);
+    }
+
+    void
+    assign (const Matrix& rhs)
+    {
+      copy_matrix (nrows(), ncols(), get(), lda(), rhs.get(), rhs.ldb());
+    }
+
+    /// \brief Copy constructor.  
+    ///
+    /// Nonowning matrices are copied by view (shallowly).  Owning
+    /// matrices are copied deeply.
+    Matrix (const Matrix& rhs)
+    {
+      nrows_ = rhs.nrows();
+      ncols_ = rhs.ncols();
+      lda_ = rhs.lda();
+      owns_ = rhs.owns();
+      if (rhs.owns())
+	{
+	  A_ = new scalar_type [nrows_ * ncols_];
+	  assign (rhs);
+	}
+      else
+	A_ = rhs.get();
+    }
+
+    Matrix& operator= (const MatView& rhs) 
+    {
       if (this != &view)
 	{
-	  nrows_ = view.nrows();
-	  ncols_ = view.ncols();
-	  A_ = view.get();
-	  lda_ = view.lda();
+	  nrows_ = rhs.nrows();
+	  ncols_ = rhs.ncols();
+	  lda_ = rhs.lda();
+	  owns_ = rhs.owns();
+	  if (rhs.owns())
+	    {
+	      A_ = new scalar_type [nrows_ * ncols_];
+	      assign (rhs);
+	    }
+	  else
+	    A_ = rhs.get();
 	}
       return *this;
     }
 
+    /// \brief Return a reference to element (i,j) (zero-indexed).
+    ///
     /// \note The function is const, only because returning a
     /// reference to the matrix data doesn't change any members of
     /// *this.  Of course one may use the resulting reference to
-    /// change an entry in the matrix, but that doesn't affect the
-    /// MatView's properties.
+    /// change an entry in the matrix.
     Scalar& operator() (const Ordinal i, const Ordinal j) const 
     {
-#ifdef TSQR_MATVIEW_DEBUG
-      if (std::numeric_limits< Ordinal >::is_signed)
-	{
-	  if (i < 0 || i >= nrows())
-	    throw std::invalid_argument("Row range invalid");
-	  else if (j < 0 || j >= ncols())
-	    throw std::invalid_argument("Column range invalid");
-	}
-      else
-	{
-	  if (i >= nrows())
-	    throw std::invalid_argument("Row range invalid");
-	  else if (j >= ncols())
-	    throw std::invalid_argument("Column range invalid");
-	}
-      if (A_ == NULL)
-	throw std::logic_error("Attempt to reference NULL data");
-#endif // TSQR_MATVIEW_DEBUG
-      return A_[i + j*lda()];
+      return (get())[i + j*lda()];
     }
 
     Ordinal nrows() const { return nrows_; }
     Ordinal ncols() const { return ncols_; }
     Ordinal lda() const { return lda_; }
+    bool owns() const { return owns_; }
 
-    /// \note The function is const, only because returning A_ doesn't
-    /// change any members of *this.  Of course one may use the
-    /// resulting pointer to fiddle with entries in the matrix, but
-    /// that doesn't affect the MatView's properties.
+    /// \brief Return a pointer to the matrix data.
+    ///
+    /// \note The function is const because the pointer address is
+    ///   const.  Of course one may use the resulting pointer to
+    ///   change entries in the matrix.
     pointer_type get() const { return A_; }
     bool empty() const { return nrows() == 0 || ncols() == 0; }
 
@@ -587,5 +516,4 @@ namespace TSQR {
 
 } // namespace TSQR
 
-
-#endif // __TSQR_Tsqr_MatView_hpp
+#endif // __TSQR_Tsqr_Matrix2_hpp

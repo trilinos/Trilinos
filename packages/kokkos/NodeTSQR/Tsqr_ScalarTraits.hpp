@@ -1,30 +1,30 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Tsqr_ScalarTraits_hpp
 #define __TSQR_Tsqr_ScalarTraits_hpp
@@ -59,12 +59,14 @@ namespace TSQR {
   template< class Scalar >
   class ScalarTraits {
   public:
+    /// \brief Was this traits class specialized for Scalar?
+    ///
     /// Whether we've specialized this traits class for the particular
     /// Scalar type.  If you're writing your own specialization, you
     /// should set this to true.
     static const bool is_specialized = false;
-    ///
-    /// Whether Scalar represents a complex number.
+
+    //! Whether Scalar represents a complex number.
     static const bool is_complex = false;
     /// If Scalar is complex, this is the type of its magnitude, and
     /// the type of its real and complex parts.  (That means, if the
@@ -78,21 +80,15 @@ namespace TSQR {
     ///
     /// The multiplicative identity for the given Scalar data type.
     static Scalar one();
+
     /// The value of \f$\pi\f$ (ratio of a circle's circumference to
     /// its diameter) for magnitude_type.  
-    ///
-    /// \warning The default implementation below will work for
-    /// magnitude_type types with precision less than or equal to C's
-    /// "double".  Higher-precision data types should redefine pi()
-    /// with the amount of precision appropriate to the type.
-    static magnitude_type pi() {
-      return 6.2831853071795864769252867663e+0;
-    }
-    ///
-    /// Complex conjugate of z, in case is_complex == true, else just z
+    static magnitude_type pi();
+
+    //! Complex conjugate of z, in case is_complex == true, else just z
     inline static Scalar conj (const Scalar& z);
-    ///
-    /// Absolute value of z
+
+    //! Absolute value of z
     inline static magnitude_type abs (const Scalar& z);
   };
 
