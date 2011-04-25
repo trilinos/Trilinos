@@ -503,9 +503,11 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
             }
           }
 #ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
           TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
                               std::invalid_argument,
                               ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+#endif
 #endif
           if( rowID ){
             rowperm[0] = rowID;
@@ -529,9 +531,11 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
           }
           Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
 #ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
           TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
                               std::invalid_argument,
                               ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
+#endif
 #endif
 
           Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
@@ -596,9 +600,11 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
         for (int i1=0; i1<dim_i1; i1++) {
           offset  = offset_i0 + i1;;
 #ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
           TEST_FOR_EXCEPTION( ( inMats[offset] == (Scalar)0 ),
                               std::invalid_argument,
                               ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+#endif
 #endif
           inverseMats[offset] = (Scalar)1 / inMats[offset];
         } // for i1
