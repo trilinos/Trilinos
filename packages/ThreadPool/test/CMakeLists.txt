@@ -56,6 +56,7 @@ PACKAGE_ADD_TEST(
   NAME test_tpi_sum_serial
   COMM serial
   DIRECTORY .
+  XHOSTTYPE AIX
   )
 
 PACKAGE_ADD_TEST(
