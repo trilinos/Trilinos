@@ -1490,8 +1490,8 @@ namespace Ioex {
 	std::vector<int> conn(my_element_count * element_nodes);
 	ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, &conn[0], NULL, NULL);
 	
-	for (int i=0; i < my_element_count * element_nodes; i++) {
-	  nodeConnectivityStatus[conn[i]-1] |= status;
+	for (int j=0; j < my_element_count * element_nodes; j++) {
+	  nodeConnectivityStatus[conn[j]-1] |= status;
 	}
       }
     }

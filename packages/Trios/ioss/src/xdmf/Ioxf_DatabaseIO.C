@@ -1787,14 +1787,14 @@ namespace Ioxf {
     // Nodesets ...
     {
       Ioss::NodeSetContainer nodesets = region->get_nodesets();
-      Ioss::NodeSetContainer::const_iterator I;
-      for (I=nodesets.begin(); I != nodesets.end(); ++I) {
-	set_id(*I, "Nodeset", &ids_);
+      Ioss::NodeSetContainer::const_iterator IN;
+      for (IN=nodesets.begin(); IN != nodesets.end(); ++IN) {
+	set_id(*IN, "Nodeset", &ids_);
       }
 
-      for (I=nodesets.begin(); I != nodesets.end(); ++I) {
-	get_id(*I, 'N', &ids_);
-	const Ioxf::NodeSet T(*(*I));
+      for (IN=nodesets.begin(); IN != nodesets.end(); ++IN) {
+	get_id(*IN, 'N', &ids_);
+	const Ioxf::NodeSet T(*(*IN));
 	if (std::find(nsets.begin(), nsets.end(), T) == nsets.end()) {
 	  nsets.push_back(T);
 	}
