@@ -36,5 +36,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES ml_user_smoothing.cpp
   NUM_MPI_PROCS 1-4
   COMM serial mpi
+  XHOSTTYPE AIX
   )
 
