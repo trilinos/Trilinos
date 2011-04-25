@@ -124,7 +124,6 @@ namespace MueLu {
 
         // Modify seed of the random algorithm used by perturbWt_->randomize()
         {
-          typedef Teuchos::ScalarTraits<Scalar> ST;
           ST::seedrandom(static_cast<unsigned int>(MyPid*2 + (int) (11*ST::random())));
           for (int i = 0; i < 10; i++) ST::random();
           perturbWt_->setSeed(static_cast<unsigned int>(ST::random()));
