@@ -7,4 +7,5 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES simple.c
   ARGS -v
   COMM serial mpi
+  XHOSTTYPE AIX
   )
