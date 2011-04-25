@@ -152,7 +152,7 @@ namespace {
   }
 
 
-#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_ENABLE_SS_TESTING) && defined(HAVE_TPETRA_MPI)
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_ENABLE_SS_TESTING) && defined(HAVE_MPI)
   ////
   TEUCHOS_UNIT_TEST( Map, RogersUnsignedGOBugVerification )
   {

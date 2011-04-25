@@ -7,7 +7,7 @@ namespace Cthulhu {
 
   DefaultPlatform::DefaultPlatformType &DefaultPlatform::getDefaultPlatform() {
     if (!platform_.get()) {
-#ifdef HAVE_TPETRA_MPI
+#ifdef HAVE_MPI
       platform_ = Teuchos::rcp(new MpiPlatform<Kokkos::DefaultNode::DefaultNodeType>(Kokkos::DefaultNode::getDefaultNode()));
 #else
       platform_ = Teuchos::rcp(new SerialPlatform<Kokkos::DefaultNode::DefaultNodeType>(Kokkos::DefaultNode::getDefaultNode()));
