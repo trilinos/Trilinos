@@ -15,7 +15,7 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
   MueLu_UnitTests.cpp
-  MueLu_TestHelpers.hpp
+  MueLu_TestHelpers.cpp
   Level.cpp
   Hierarchy.cpp
   RAPFactory.cpp
