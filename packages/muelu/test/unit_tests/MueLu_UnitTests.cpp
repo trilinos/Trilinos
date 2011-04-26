@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // Note: the command line parameter --linAlgebra= is take into accounts. 
+  // Note: the command line parameter --linAlgebra= is take into account. 
   // Cthulhu parameters are added to the Teuchos::CommandLineProcessor of Teuchos::UnitTestRepository in MueLu_TestHelpers.cpp
 
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
