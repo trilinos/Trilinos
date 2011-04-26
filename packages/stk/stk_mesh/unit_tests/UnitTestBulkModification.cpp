@@ -25,6 +25,7 @@
 #include <stk_mesh/fixtures/RingFixture.hpp>
 
 #include <algorithm>
+#include <stdexcept>
 
 using stk::mesh::BulkData;
 using stk::mesh::Bucket;

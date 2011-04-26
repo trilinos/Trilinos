@@ -9,7 +9,7 @@
 #ifndef stk_mesh_unit_tests_stk_utest_macros_hpp
 #define stk_mesh_unit_tests_stk_utest_macros_hpp
 
-#include <stk_util/use_cases/UseCaseEnvironment.hpp>
+//#include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
 #ifndef STK_BUILT_IN_SIERRA
 #include <STK_config.h>
@@ -153,13 +153,17 @@ int main(int argc,char**argv) {\
 int* STKUNIT_ARGC;                                                 \
 char** STKUNIT_ARGV;                                               \
 int main(int argc, char **argv) {                                  \
-  use_case::UseCaseEnvironment use_case_environment(&argc, &argv); \
+  if ( MPI_SUCCESS != MPI_Init( & argc , & argv ) ) {              \
+    std::cerr << "MPI_Init FAILED" << std::endl ;                  \
+    std::abort();                                                  \
+  }                                                                \
   std::cout << "Running main() from gtest_main.cc\n";              \
   testing::InitGoogleTest(&argc, argv);                            \
   STKUNIT_ARGC = &argc;                                            \
   STKUNIT_ARGV = argv;                                             \
   int error = RUN_ALL_TESTS();                                     \
   RUN_TEST_REDUCE(error);                                          \
+  MPI_Finalize();                                                  \
   return error;                                                    \
 }
 

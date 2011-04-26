@@ -6,6 +6,10 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+// Don't want stk_mesh/base depending on stk_util/use_cases. Figure out
+// a way to sever this dependencies.
+#ifdef STK_MESH_TRACE_ENABLED
+
 #include <stk_util/util/Bootstrap.hpp>
 
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
@@ -140,4 +144,4 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entit
 } // namespace mesh
 } // namespace stk
 
-
+#endif
