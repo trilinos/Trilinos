@@ -36,11 +36,49 @@ panzer::buildWorksets(const std::string& block_id,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  std::size_t total_num_cells = vertex_coordinates.dimension(0);
+  // std::size_t total_num_cells = vertex_coordinates.dimension(0);
+  std::size_t total_num_cells = local_cell_ids.size();
 
   Teuchos::RCP< std::vector<panzer::Workset> > worksets_ptr = 
     Teuchos::rcp(new std::vector<panzer::Workset>);
   std::vector<panzer::Workset>& worksets = *worksets_ptr;
+   
+  // special case for 0 elements!
+  if(total_num_cells==0) {
+     // Setup integration rules and basis
+     RCP< vector<int> > rcp_ir_degrees = rcp(new vector<int>(0));
+     RCP< vector<string> > rcp_basis_names = rcp(new vector<string>(0));
+      
+     {
+        vector<int>& ir_degrees = *rcp_ir_degrees;
+        vector<string>& basis_names = *rcp_basis_names;
+      
+        std::map<std::string,int> basis_to_int_order;
+      
+        std::set<int> ir_degrees_set;
+        std::set<std::string> basis_names_set;
+        for (std::size_t eq = 0; eq < ipb.eq_sets.size(); ++eq) {
+      
+          basis_to_int_order[ipb.eq_sets[eq].basis] = 
+            ipb.eq_sets[eq].integration_order;
+      
+          ir_degrees_set.insert(ipb.eq_sets[eq].integration_order);
+          basis_names_set.insert(ipb.eq_sets[eq].basis);
+        }
+        ir_degrees.insert(ir_degrees.begin(),ir_degrees_set.begin(),ir_degrees_set.end());
+        basis_names.insert(basis_names.begin(),basis_names_set.begin(),basis_names_set.end());
+     }
+
+     worksets.resize(1);
+     std::vector<panzer::Workset>::iterator i = worksets.begin();
+     i->num_cells = 0;
+     i->block_id = block_id;
+     i->ir_degrees = rcp_ir_degrees;
+     i->basis_names = rcp_basis_names;
+     
+     return worksets_ptr;
+  } // end special case
+
   {
     std::size_t num_worksets = total_num_cells / workset_size;
     bool last_set_is_full = true;
@@ -88,7 +126,6 @@ panzer::buildWorksets(const std::string& block_id,
 
   TEUCHOS_ASSERT(offset == Teuchos::as<std::size_t>(vertex_coordinates.dimension(0)));
 
-
   // Setup integration rules and basis
   RCP< vector<int> > rcp_ir_degrees = rcp(new vector<int>(0));
   RCP< vector<string> > rcp_basis_names = rcp(new vector<string>(0));
@@ -98,16 +135,18 @@ panzer::buildWorksets(const std::string& block_id,
 
   std::map<std::string,int> basis_to_int_order;
 
+  std::set<int> ir_degrees_set;
+  std::set<std::string> basis_names_set;
   for (std::size_t eq = 0; eq < ipb.eq_sets.size(); ++eq) {
-    ir_degrees.push_back(ipb.eq_sets[eq].integration_order);
-    basis_names.push_back(ipb.eq_sets[eq].basis);
+
     basis_to_int_order[ipb.eq_sets[eq].basis] = 
       ipb.eq_sets[eq].integration_order;
+
+    ir_degrees_set.insert(ipb.eq_sets[eq].integration_order);
+    basis_names_set.insert(ipb.eq_sets[eq].basis);
   }
-  std::sort(ir_degrees.begin(), ir_degrees.end());
-  std::unique(ir_degrees.begin(), ir_degrees.end());
-  std::sort(basis_names.begin(), basis_names.end());
-  std::unique(basis_names.begin(),basis_names.end());
+  ir_degrees.insert(ir_degrees.begin(),ir_degrees_set.begin(),ir_degrees_set.end());
+  basis_names.insert(basis_names.begin(),basis_names_set.begin(),basis_names_set.end());
 
   for (std::size_t wkst = 0; wkst < worksets.size(); ++wkst)
     worksets[wkst].int_rules.resize(ir_degrees.size());
@@ -222,16 +261,18 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 
   map<string,int> basis_to_int_order;
 
+  std::set<int> ir_degrees_set;
+  std::set<std::string> basis_names_set;
   for (std::size_t eq = 0; eq < ipb.eq_sets.size(); ++eq) {
-    ir_degrees.push_back(ipb.eq_sets[eq].integration_order);
-    basis_names.push_back(ipb.eq_sets[eq].basis);
+
     basis_to_int_order[ipb.eq_sets[eq].basis] = 
       ipb.eq_sets[eq].integration_order;
-  } 
-  std::sort(ir_degrees.begin(), ir_degrees.end());
-  std::unique(ir_degrees.begin(), ir_degrees.end());
-  std::sort(basis_names.begin(), basis_names.end());
-  std::unique(basis_names.begin(),basis_names.end());
+
+    ir_degrees_set.insert(ipb.eq_sets[eq].integration_order);
+    basis_names_set.insert(ipb.eq_sets[eq].basis);
+  }
+  ir_degrees.insert(ir_degrees.begin(),ir_degrees_set.begin(),ir_degrees_set.end());
+  basis_names.insert(basis_names.begin(),basis_names_set.begin(),basis_names_set.end());
 
   std::map<unsigned,panzer::Workset>& worksets = *worksets_ptr;
 

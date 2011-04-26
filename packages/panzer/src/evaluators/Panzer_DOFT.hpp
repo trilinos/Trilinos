@@ -45,6 +45,7 @@ PHX_EVALUATE_FIELDS(DOF,workset)
   for (std::size_t i = 0; i < length; ++i)
     dof_ip[i] = 0.0;
 
+  if(workset.num_cells>0)
     Intrepid::FunctionSpaceTools::
       evaluate<ScalarT>(dof_ip,dof_basis,(workset.bases[basis_index])->basis);
 }

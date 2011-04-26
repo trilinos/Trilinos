@@ -82,9 +82,11 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
 	  tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
       }
     }
-    Intrepid::FunctionSpaceTools::
-      integrate<ScalarT>(residual, tmp, 
-			 (workset.bases[basis_index])->weighted_basis, 
+
+    if(workset.num_cells>0)
+      Intrepid::FunctionSpaceTools::
+        integrate<ScalarT>(residual, tmp, 
+  			 (workset.bases[basis_index])->weighted_basis, 
 			 Intrepid::COMP_BLAS);
   }
 }

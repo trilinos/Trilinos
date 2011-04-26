@@ -43,7 +43,8 @@ PHX_EVALUATE_FIELDS(DOFGradient,workset)
   for (std::size_t i = 0; i < length; ++i)
     dof_gradient[i] = 0.0;
 
-  Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_gradient,dof_value,(workset.bases[basis_index])->grad_basis);
+  if(workset.num_cells>0)
+     Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_gradient,dof_value,(workset.bases[basis_index])->grad_basis);
 }
 
 //**********************************************************************

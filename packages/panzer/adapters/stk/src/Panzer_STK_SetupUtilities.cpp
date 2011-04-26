@@ -59,6 +59,14 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 							                       workset_size,
 							                       base_cell_dimension)));
     }
+    else {
+       worksets.insert(std::make_pair(element_blocks[i],panzer::buildWorksets(element_blocks[i],
+      							                       local_cell_ids,
+							                       cell_vertex_coordinates,
+							                       ipb,
+							                       workset_size,
+							                       base_cell_dimension)));
+    }
   }
   
   return worksets;

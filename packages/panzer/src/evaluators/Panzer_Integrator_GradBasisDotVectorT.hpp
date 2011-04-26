@@ -56,9 +56,10 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
       for (std::size_t dim = 0; dim < num_dim; ++dim)
 	tmp(cell,qp,dim) = multiplier * flux(cell,qp,dim);
   
-  Intrepid::FunctionSpaceTools::
-    integrate<ScalarT>(residual, tmp, 
-		       (workset.bases[basis_index])->weighted_grad_basis, 
+  if(workset.num_cells>0)
+     Intrepid::FunctionSpaceTools::
+       integrate<ScalarT>(residual, tmp, 
+   		       (workset.bases[basis_index])->weighted_grad_basis, 
 		       Intrepid::COMP_BLAS);
 }
 
