@@ -8,7 +8,7 @@
 #endif
 
 #include <stk_adapt/UniformRefiner.hpp>
-#include <stk_adapt/geometry/GeometryKernelStupid.hpp>
+#include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
 #include <stk_adapt/geometry/MeshGeometry.hpp>
 #include <stk_adapt/geometry/GeometryFactory.hpp>
 
@@ -966,7 +966,7 @@ namespace stk {
 
       if (m_geomSnap)
       {
-          GeometryKernelStupid gk;
+          GeometryKernelOpenNURBS gk;
           MeshGeometry mesh_geometry(&gk);
           GeometryFactory factory(&gk, &mesh_geometry);
           factory.read_file(m_geomFile, &m_eMesh);

@@ -104,6 +104,7 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   QT              ""    SS
   gtest           ""    EX
   BoostLib        ""    SS
+  OpenNURBS       ""    EX
   )
 
 # NOTES:

@@ -27,7 +27,11 @@ bool GeometryFactory::read_file(const std::string& filename, PerceptMesh* mesh_d
         std::string str = geomKernel->get_attribute(geometry_entities[i]);
         Part* part = mesh_data->getNonConstPart(str);
         if (part)
-            geomDatabase->add_evaluator(new GeometryEvaluator(part));
+        {
+            GeometryEvaluator* eval = new GeometryEvaluator(part);
+            eval->mGeometry = i;
+            geomDatabase->add_evaluator(eval);
+        }
     }
     return true;
 }
