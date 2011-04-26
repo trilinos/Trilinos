@@ -254,12 +254,7 @@ namespace Iohb {
   {
     return -1;
   }
-  int DatabaseIO::get_field_internal(const Ioss::FaceBlock* /* eb */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* eb */, const Ioss::Field& /* field */,
+  int DatabaseIO::get_field_internal(const Ioss::SideBlock* /* eb */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
@@ -275,12 +270,7 @@ namespace Iohb {
   {
     return -1;
   }
-  int DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* es */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::get_field_internal(const Ioss::FaceSet* /* fs */, const Ioss::Field& /* field */,
+  int DatabaseIO::get_field_internal(const Ioss::SideSet* /* es */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
@@ -362,12 +352,7 @@ namespace Iohb {
   {
     return -1;
   }
-  int DatabaseIO::put_field_internal(const Ioss::FaceBlock* /* fb */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::put_field_internal(const Ioss::EdgeBlock* /* nb */, const Ioss::Field& /* field */,
+  int DatabaseIO::put_field_internal(const Ioss::SideBlock* /* nb */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
@@ -383,12 +368,7 @@ namespace Iohb {
   {
     return -1;
   }
-  int DatabaseIO::put_field_internal(const Ioss::EdgeSet* /* es */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::put_field_internal(const Ioss::FaceSet* /* fs */, const Ioss::Field& /* field */,
+  int DatabaseIO::put_field_internal(const Ioss::SideSet* /* es */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;

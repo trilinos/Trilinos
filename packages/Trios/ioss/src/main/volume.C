@@ -1,0 +1,209 @@
+#include <algorithm>
+#include <iostream>
+#include <iomanip>
+#include <Ioss_SubSystem.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <time.h>
+
+#define OUTPUT std::cerr
+
+namespace {
+  size_t timer()
+  {
+#if 0
+    timespec ts;
+    ts.tv_sec = 0;
+    ts.tv_nsec = 0;
+    clock_settime(CLOCK_REALTIME, &ts);
+    return (size_t)ts.tv_sec * 1000000LL + (size_t)ts.tv_nsec / 1000LL;
+#else
+    timeval ts;
+    gettimeofday(&ts, NULL);
+    return (size_t)ts.tv_sec * 1000000LL + (size_t)ts.tv_usec;
+#endif
+  }
+
+  void comp_grad12x(double *const grad_ptr, const double* const x, const double *const y, const double *const z) {
+    double R42=(z[3] - z[1]);
+    double R52=(z[4] - z[1]);
+    double R54=(z[4] - z[3]);
+
+    double R63=(z[5] - z[2]);
+    double R83=(z[7] - z[2]);
+    double R86=(z[7] - z[5]);
+
+    double R31=(z[2] - z[0]);
+    double R61=(z[5] - z[0]);
+    double R74=(z[6] - z[3]);
+
+    double R72=(z[6] - z[1]);
+    double R75=(z[6] - z[4]);
+    double R81=(z[7] - z[0]);
+
+    double t1=(R63 + R54);
+    double t2=(R61 + R74);
+    double t3=(R72 + R81);
+
+    double t4 =(R86 + R42);
+    double t5 =(R83 + R52);
+    double t6 =(R75 + R31);
+
+    grad_ptr[0] = (y[1] *  t1) - (y[2] * R42) - (y[3] *  t5)  + (y[4] *  t4) + (y[5] * R52) - (y[7] * R54);
+    grad_ptr[1] = (y[2] *  t2) + (y[3] * R31) - (y[0] *  t1)  - (y[5] *  t6) + (y[6] * R63) - (y[4] * R61);
+    grad_ptr[2] = (y[3] *  t3) + (y[0] * R42) - (y[1] *  t2)  - (y[6] *  t4) + (y[7] * R74) - (y[5] * R72);
+    grad_ptr[3] = (y[0] *  t5) - (y[1] * R31) - (y[2] *  t3)  + (y[7] *  t6) + (y[4] * R81) - (y[6] * R83);
+    grad_ptr[4] = (y[5] *  t3) + (y[6] * R86) - (y[7] *  t2)  - (y[0] *  t4) - (y[3] * R81) + (y[1] * R61);
+    grad_ptr[5] = (y[6] *  t5) - (y[4] *  t3)  - (y[7] * R75) + (y[1] *  t6) - (y[0] * R52) + (y[2] * R72);
+    grad_ptr[6] = (y[7] *  t1) - (y[5] *  t5)  - (y[4] * R86) + (y[2] *  t4) - (y[1] * R63) + (y[3] * R83);
+    grad_ptr[7] = (y[4] *  t2) - (y[6] *  t1)  + (y[5] * R75) - (y[3] *  t6) - (y[2] * R74) + (y[0] * R54);
+
+    R42=(x[3] - x[1]);
+    R52=(x[4] - x[1]);
+    R54=(x[4] - x[3]);
+
+    R63=(x[5] - x[2]);
+    R83=(x[7] - x[2]);
+    R86=(x[7] - x[5]);
+
+    R31=(x[2] - x[0]);
+    R61=(x[5] - x[0]);
+    R74=(x[6] - x[3]);
+
+    R72=(x[6] - x[1]);
+    R75=(x[6] - x[4]);
+    R81=(x[7] - x[0]);
+
+    t1=(R63 + R54);
+    t2=(R61 + R74);
+    t3=(R72 + R81);
+
+    t4 =(R86 + R42);
+    t5 =(R83 + R52);
+    t6 =(R75 + R31);
+
+    grad_ptr[8 ] = (z[1] *  t1) - (z[2] * R42) - (z[3] *  t5)  + (z[4] *  t4) + (z[5] * R52) - (z[7] * R54);
+    grad_ptr[9 ] = (z[2] *  t2) + (z[3] * R31) - (z[0] *  t1)  - (z[5] *  t6) + (z[6] * R63) - (z[4] * R61);
+    grad_ptr[10] = (z[3] *  t3) + (z[0] * R42) - (z[1] *  t2)  - (z[6] *  t4) + (z[7] * R74) - (z[5] * R72);
+    grad_ptr[11] = (z[0] *  t5) - (z[1] * R31) - (z[2] *  t3)  + (z[7] *  t6) + (z[4] * R81) - (z[6] * R83);
+    grad_ptr[12] = (z[5] *  t3) + (z[6] * R86) - (z[7] *  t2)  - (z[0] *  t4) - (z[3] * R81) + (z[1] * R61);
+    grad_ptr[13] = (z[6] *  t5) - (z[4] *  t3)  - (z[7] * R75) + (z[1] *  t6) - (z[0] * R52) + (z[2] * R72);
+    grad_ptr[14] = (z[7] *  t1) - (z[5] *  t5)  - (z[4] * R86) + (z[2] *  t4) - (z[1] * R63) + (z[3] * R83);
+    grad_ptr[15] = (z[4] *  t2) - (z[6] *  t1)  + (z[5] * R75) - (z[3] *  t6) - (z[2] * R74) + (z[0] * R54);
+
+    R42=(y[3] - y[1]);
+    R52=(y[4] - y[1]);
+    R54=(y[4] - y[3]);
+
+    R63=(y[5] - y[2]);
+    R83=(y[7] - y[2]);
+    R86=(y[7] - y[5]);
+
+    R31=(y[2] - y[0]);
+    R61=(y[5] - y[0]);
+    R74=(y[6] - y[3]);
+
+    R72=(y[6] - y[1]);
+    R75=(y[6] - y[4]);
+    R81=(y[7] - y[0]);
+
+    t1=(R63 + R54);
+    t2=(R61 + R74);
+    t3=(R72 + R81);
+
+    t4 =(R86 + R42);
+    t5 =(R83 + R52);
+    t6 =(R75 + R31);
+
+    grad_ptr[16] = (x[1] *  t1) - (x[2] * R42) - (x[3] *  t5)  + (x[4] *  t4) + (x[5] * R52) - (x[7] * R54);
+    grad_ptr[17] = (x[2] *  t2) + (x[3] * R31) - (x[0] *  t1)  - (x[5] *  t6) + (x[6] * R63) - (x[4] * R61);
+    grad_ptr[18] = (x[3] *  t3) + (x[0] * R42) - (x[1] *  t2)  - (x[6] *  t4) + (x[7] * R74) - (x[5] * R72);
+    grad_ptr[19] = (x[0] *  t5) - (x[1] * R31) - (x[2] *  t3)  + (x[7] *  t6) + (x[4] * R81) - (x[6] * R83);
+    grad_ptr[20] = (x[5] *  t3) + (x[6] * R86) - (x[7] *  t2)  - (x[0] *  t4) - (x[3] * R81) + (x[1] * R61);
+    grad_ptr[21] = (x[6] *  t5) - (x[4] *  t3)  - (x[7] * R75) + (x[1] *  t6) - (x[0] * R52) + (x[2] * R72);
+    grad_ptr[22] = (x[7] *  t1) - (x[5] *  t5)  - (x[4] * R86) + (x[2] *  t4) - (x[1] * R63) + (x[3] * R83);
+    grad_ptr[23] = (x[4] *  t2) - (x[6] *  t1)  + (x[5] * R75) - (x[3] *  t6) - (x[2] * R74) + (x[0] * R54);
+  }
+
+  void transform_38_matrix_to_83_matrix(const double *cordel_ptr, double *const cur_coords) {
+    double* const cur_coord_x = cur_coords;
+    double* const cur_coord_y = cur_coords+8;
+    double* const cur_coord_z = cur_coords+16;
+    for(int i = 0; i < 8; ++i) {
+      cur_coord_x[i] = cordel_ptr[0];
+      cur_coord_y[i] = cordel_ptr[1];
+      cur_coord_z[i] = cordel_ptr[2];
+      cordel_ptr += 3;
+    }
+  }
+
+  inline double dot8(const double *const x1, const double *const x2) {
+    double d1 = x1[0] * x2[0] + x1[1] * x2[1];
+    double d2 = x1[2] * x2[2] + x1[3] * x2[3];
+    double d4 = x1[4] * x2[4] + x1[5] * x2[5];
+    double d5 = x1[6] * x2[6] + x1[7] * x2[7];
+    return d1 + d2 + d4 + d5;
+  }
+}
+
+void hex_volume(Ioss::ElementBlock *block, std::vector<double> &coordinates)
+{
+  const double one12th = 1.0 / 12.0;
+  size_t nelem  = block->get_property("entity_count").get_int();
+  std::vector<int> connectivity;
+  block->get_field_data("connectivity_raw", connectivity);
+
+  // Build 'cordel' vector -- coordinates for each node of the hex in x1,y1,z1, x2,y2,z2, ..., x8,y8,z8,...
+  // for each hex.  This is done to match the interface used in Sierra...
+  std::vector<double> cordel(8*3*nelem);
+
+  for(size_t ielem=0; ielem < nelem; ++ielem) {
+    for (int j = 0; j < 8; j++) {
+      int node = connectivity[ielem*8 + j] - 1;
+      cordel[ielem*24 + 3*j + 0] = coordinates[node*3 + 0];
+      cordel[ielem*24 + 3*j + 1] = coordinates[node*3 + 1];
+      cordel[ielem*24 + 3*j + 2] = coordinates[node*3 + 2];
+    }
+  }
+    
+  std::vector<double> volume(nelem);
+
+  double gradop12x[24];
+  double cur_coords[8*3];
+    
+  size_t t1 = timer();
+    
+  for (size_t ielem=0; ielem < nelem; ++ielem) {
+    double *cordel_ptr = &cordel[24*ielem];
+
+    double *x_ptr = &cur_coords[0];
+    double *y_ptr = &cur_coords[8];
+    double *z_ptr = &cur_coords[16];
+
+    //
+    //  Store local coordintes, note this changes the way coordinates are stored from
+    //
+    //  (x1, y1, z1, x2, y2, z2 .......)
+    //    to
+    //  (x1, x2, x3, x4, x5, x6, x7, x8, y1, y2, y3, .....)
+    //
+    transform_38_matrix_to_83_matrix(cordel_ptr, &cur_coords[0]);
+    //
+    //  Compute 12 times the gradient operator in three seperate steps
+    //
+    comp_grad12x(&gradop12x[0], x_ptr, y_ptr, z_ptr);
+    //
+    // calculate 12 times the element volume, store the actual element volume
+    //
+    const double volume12x = dot8(x_ptr, &gradop12x[0]);
+    volume[ielem] = volume12x * one12th;
+  }
+  size_t t2 = timer();
+
+  OUTPUT << std::setw(12) << block->name()
+	 << "\tMin volume = " << std::setw(12) << *std::min_element(volume.begin(), volume.end()) 
+	 << "\tMax volume = " << std::setw(12) << *std::max_element(volume.begin(), volume.end()) 
+	 << "\tElement Count = " << nelem
+	 << "\tTime/Element = " << double(t2-t1)/nelem << "\n";
+}
+  

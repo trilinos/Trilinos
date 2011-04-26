@@ -30,7 +30,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_FaceBlock.h>
+#include <Ioss_SideBlock.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_Property.h>
@@ -39,43 +39,49 @@
 #include <Ioss_ElementTopology.h>
 #include <string>
 
-Ioss::FaceBlock::FaceBlock(const Ioss::DatabaseIO *io_database,
+Ioss::SideBlock::SideBlock(const Ioss::DatabaseIO *io_database,
 			   const std::string& my_name,
-			   const std::string& face_type,
+			   const std::string& side_type,
 			   const std::string& element_type,
-			   size_t face_count)
-  : Ioss::EntityBlock(io_database, my_name, face_type, element_type, face_count), owner_(NULL)
+			   size_t side_count)
+  : Ioss::EntityBlock(io_database, my_name, side_type, element_type, side_count), owner_(NULL)
 {
   properties.add(Ioss::Property(this, "distribution_factor_count",
 				Ioss::Property::INTEGER));
   
   fields.add(Ioss::Field("element_side",
 			 Ioss::Field::INTEGER, "pair",
-			 Ioss::Field::MESH, face_count));
+			 Ioss::Field::MESH, side_count));
+
+  // Same as element_side except that the element id are the local
+  // element position (1-based) and not the global element id.
+  fields.add(Ioss::Field("element_side_raw",
+			 Ioss::Field::INTEGER, "pair",
+			 Ioss::Field::MESH, side_count));
   
   // Distribution factors are optional...
 }
 
-int Ioss::FaceBlock::internal_get_field_data(const Ioss::Field& field,
+int Ioss::SideBlock::internal_get_field_data(const Ioss::Field& field,
 					     void *data, size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int Ioss::FaceBlock::internal_put_field_data(const Ioss::Field& field,
+int Ioss::SideBlock::internal_put_field_data(const Ioss::Field& field,
 					     void *data, size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);
 }
 
 Ioss::Property
-Ioss::FaceBlock::get_implicit_property(const std::string& my_name) const
+Ioss::SideBlock::get_implicit_property(const std::string& my_name) const
 {
   if (my_name == "distribution_factor_count") {
     if (field_exists("distribution_factors")) {
       int nnodes = topology()->number_nodes();
-      int nface  = get_property("entity_count").get_int();
-      return Ioss::Property(my_name, nnodes*nface);
+      int nside  = get_property("entity_count").get_int();
+      return Ioss::Property(my_name, nnodes*nside);
     } else {
       return Ioss::Property(my_name, 0);
     }
@@ -84,7 +90,7 @@ Ioss::FaceBlock::get_implicit_property(const std::string& my_name) const
     return Ioss::EntityBlock::get_implicit_property(my_name);
 }
 
-void Ioss::FaceBlock::block_membership(std::vector<std::string> &block_members)
+void Ioss::SideBlock::block_membership(std::vector<std::string> &block_members)
 {
   // Simplest case.  If the surfaces are split by element block, then this will return non-null
   // and we are done.

@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_EdgeSet_h
-#define IOSS_Ioss_EdgeSet_h
+#ifndef IOSS_Ioss_SideSet_h
+#define IOSS_Ioss_SideSet_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Property.h>
@@ -42,26 +42,25 @@
 
 namespace Ioss {
   class DatabaseIO;
-  class EdgeBlock;
-  class EntityBlock;
-  
-  typedef std::vector<EdgeBlock*> EdgeBlockContainer;
+  class SideBlock;
 
-  class EdgeSet : public GroupingEntity {
+  typedef std::vector<SideBlock*> SideBlockContainer;
+
+  class SideSet : public GroupingEntity {
   public:
-    EdgeSet(const DatabaseIO *io_database, const std::string& name);
-    ~EdgeSet();
+    SideSet(const DatabaseIO *io_database, const std::string& name);
+    ~SideSet();
 
-    std::string type_string() const {return "EdgeSet";}
-    EntityType type() const {return EDGESET;}
+    std::string type_string() const {return "SideSet";}
+    EntityType type() const {return SIDESET;}
 
-    bool add(EdgeBlock    *edge_block);
-    const EdgeBlockContainer&    get_edge_blocks() const;
-    EdgeBlock*    get_edge_block(const std::string& name) const;
-    size_t edge_block_count() const {return edgeBlocks.size();}
-
-    size_t block_count() const {return edgeBlocks.size();}
-    EntityBlock* get_block(size_t which) const;
+    bool add(SideBlock    *side_block);
+    const SideBlockContainer&    get_side_blocks() const;
+    SideBlock*    get_side_block(const std::string& name) const;
+    size_t side_block_count() const {return sideBlocks.size();}
+    
+    size_t block_count() const {return sideBlocks.size();}
+    SideBlock* get_block(size_t which) const;
 
     void block_membership(std::vector<std::string> &block_members);
 
@@ -70,16 +69,19 @@ namespace Ioss {
     // An example would be 'element_block_count' for a region.
     Property get_implicit_property(const std::string& name) const;
 
+    int max_parametric_dimension() const;
+
   protected:
     int internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
     int internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
+
   private:
-    EdgeBlockContainer      edgeBlocks;
+    SideBlockContainer      sideBlocks;
     std::vector<std::string> blockMembership; // What element blocks do the
-						 // elements in this edgeset belong to.
+                                             // elements in this sideset belong to.
   };
 }
 #endif

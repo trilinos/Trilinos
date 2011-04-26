@@ -30,54 +30,56 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_EdgeSet.h>
-#include <Ioss_EdgeBlock.h>
+#include <Ioss_SideSet.h>
+
+#include <Ioss_SideBlock.h>
 #include <Ioss_DatabaseIO.h>
+#include <Ioss_Region.h>
 #include <Ioss_Property.h>
 #include <Ioss_Field.h>
+#include <Ioss_ElementTopology.h>
 
 #include <string>
-#include <utility>
 #include <algorithm>
 
 static const std::string SCALAR("scalar");
 
-Ioss::EdgeSet::EdgeSet(const Ioss::DatabaseIO *io_database, const std::string& my_name)
+Ioss::SideSet::SideSet(const Ioss::DatabaseIO *io_database, const std::string& my_name)
   : Ioss::GroupingEntity(io_database, my_name)
 {
   properties.add(Ioss::Property(this,
-				"edge_block_count", Ioss::Property::INTEGER));
+			       "side_block_count", Ioss::Property::INTEGER));
   properties.add(Ioss::Property(this,
-				"block_count", Ioss::Property::INTEGER));
+			       "block_count", Ioss::Property::INTEGER));
 }
 
-Ioss::EdgeSet::~EdgeSet()
+Ioss::SideSet::~SideSet()
 {
   try {
-    Ioss::EdgeBlockContainer::const_iterator i = edgeBlocks.begin();
-    while (i != edgeBlocks.end()) {
+    Ioss::SideBlockContainer::const_iterator i = sideBlocks.begin();
+    while (i != sideBlocks.end()) {
       delete *i++;
     }
   } catch (...) {
   }
 }
 
-const Ioss::EdgeBlockContainer& Ioss::EdgeSet::get_edge_blocks() const
-{ return edgeBlocks; }
+const Ioss::SideBlockContainer& Ioss::SideSet::get_side_blocks() const
+{ return sideBlocks; }
 
-Ioss::EntityBlock* Ioss::EdgeSet::get_block(size_t which) const
+Ioss::SideBlock* Ioss::SideSet::get_block(size_t which) const
 {
-  if (which < edgeBlocks.size())
-    return edgeBlocks[which];
+  if (which < sideBlocks.size())
+    return sideBlocks[which];
   else
     return NULL;
 }
 
-Ioss::EdgeBlock* Ioss::EdgeSet::get_edge_block(const std::string& my_name) const
+Ioss::SideBlock* Ioss::SideSet::get_side_block(const std::string& my_name) const
 {
-  Ioss::EdgeBlock *ge = NULL;
-  Ioss::EdgeBlockContainer::const_iterator i = edgeBlocks.begin();
-  while (i != edgeBlocks.end()) {
+  Ioss::SideBlock *ge = NULL;
+  Ioss::SideBlockContainer::const_iterator i = sideBlocks.begin();
+  while (i != sideBlocks.end()) {
     if ((*i)->name() == my_name) {
       ge = *i;
       break;
@@ -87,41 +89,62 @@ Ioss::EdgeBlock* Ioss::EdgeSet::get_edge_block(const std::string& my_name) const
   return ge;
 }
 
-bool Ioss::EdgeSet::add(Ioss::EdgeBlock *edge_block)
+bool Ioss::SideSet::add(Ioss::SideBlock *side_block)
 {
-    edgeBlocks.push_back(edge_block);
-    edge_block->owner_ = this;
+    sideBlocks.push_back(side_block);
+    side_block->owner_ = this;
     return true;
 }
 
-int Ioss::EdgeSet::internal_get_field_data(const Ioss::Field& field,
+int Ioss::SideSet::internal_get_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int Ioss::EdgeSet::internal_put_field_data(const Ioss::Field& field,
+int Ioss::SideSet::internal_put_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);
 }
 
 Ioss::Property
-Ioss::EdgeSet::get_implicit_property(const std::string& my_name) const
+Ioss::SideSet::get_implicit_property(const std::string& my_name) const
 {
-  if (my_name == "edge_block_count")
-    return Ioss::Property(my_name, (int)edgeBlocks.size());
+  if (my_name == "side_block_count")
+    return Ioss::Property(my_name, (int)sideBlocks.size());
   else if (my_name == "block_count")
-    return Ioss::Property(my_name, (int)edgeBlocks.size());
+    return Ioss::Property(my_name, (int)sideBlocks.size());
   else
     return Ioss::GroupingEntity::get_implicit_property(my_name);
 }
 
-void Ioss::EdgeSet::block_membership(std::vector<std::string> &block_members)
+int Ioss::SideSet::max_parametric_dimension() const
+{
+  int max_par_dim = 0;
+
+  Ioss::SideBlockContainer::const_iterator i = sideBlocks.begin();
+  while (i != sideBlocks.end()) {
+    Ioss::SideBlock * const sideblock = *i ;
+    int parametric_dim = sideblock->topology()->parametric_dimension();
+    if (parametric_dim > max_par_dim)
+      max_par_dim = parametric_dim;
+    ++i;
+  }
+  if (max_par_dim == 0) {
+    // If the sideset is empty, return the maximum that the parametric dimension could be...
+    // Faces for 3D model; Edges for 2D model
+    const Ioss::Region *reg = get_database()->get_region();
+    max_par_dim = reg->get_property("spatial_dimension").get_int()-1;
+  }
+  return max_par_dim;
+}
+
+void Ioss::SideSet::block_membership(std::vector<std::string> &block_members)
 {
   if (blockMembership.empty()) {
-    Ioss::EdgeBlockContainer::iterator i = edgeBlocks.begin();
-    while (i != edgeBlocks.end()) {
+    Ioss::SideBlockContainer::iterator i = sideBlocks.begin();
+    while (i != sideBlocks.end()) {
       std::vector<std::string> blocks;
       (*i)->block_membership(blocks);
       blockMembership.insert(blockMembership.end(), blocks.begin(), blocks.end());

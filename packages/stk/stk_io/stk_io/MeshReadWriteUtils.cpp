@@ -32,78 +32,66 @@
 #include <assert.h>
 
 namespace {
-  void process_surface_entity(Ioss::GroupingEntity *entity,
-			      stk::mesh::fem::FEMMetaData &fem_meta,
-			      stk::mesh::EntityRank entity_rank)
+  void process_surface_entity(Ioss::SideSet *sset, stk::mesh::fem::FEMMetaData &fem_meta)
   {
-    assert(entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET);
-    if (entity->type() == Ioss::FACESET) {
-      Ioss::FaceSet *fs = dynamic_cast<Ioss::FaceSet *>(entity);
-      assert(fs != NULL);
-      const Ioss::FaceBlockContainer& blocks = fs->get_face_blocks();
-      stk::io::default_part_processing(blocks, fem_meta, entity_rank);
-    } else if (entity->type() == Ioss::EDGESET) {
-      Ioss::EdgeSet *es = dynamic_cast<Ioss::EdgeSet *>(entity);
-      assert(es != NULL);
-      const Ioss::EdgeBlockContainer& blocks = es->get_edge_blocks();
-      stk::io::default_part_processing(blocks, fem_meta, entity_rank);
-    }
+    assert(sset->type() == Ioss::SIDESET);
+    const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
+    stk::io::default_part_processing(blocks, fem_meta);
 
-    stk::mesh::Part* const fs_part = fem_meta.get_part(entity->name());
-    assert(fs_part != NULL);
+    stk::mesh::Part* const ss_part = fem_meta.get_part(sset->name());
+    assert(ss_part != NULL);
 
     stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = NULL;
     bool surface_df_defined = false; // Has the surface df field been defined yet?
 
-    size_t block_count = entity->block_count();
+    size_t block_count = sset->block_count();
     for (size_t i=0; i < block_count; i++) {
-      Ioss::EntityBlock *fb = entity->get_block(i);
-      if (stk::io::include_entity(fb)) {
-	stk::mesh::Part * const fb_part = fem_meta.get_part(fb->name());
-	assert(fb_part != NULL);
-	fem_meta.declare_part_subset(*fs_part, *fb_part);
+      Ioss::SideBlock *sb = sset->get_block(i);
+      if (stk::io::include_entity(sb)) {
+	stk::mesh::Part * const sb_part = fem_meta.get_part(sb->name());
+	assert(sb_part != NULL);
+	fem_meta.declare_part_subset(*ss_part, *sb_part);
 
-	if (fb->field_exists("distribution_factors")) {
+	if (sb->field_exists("distribution_factors")) {
 	  if (!surface_df_defined) {
-	    std::string field_name = entity->name() + "_df";
+	    std::string field_name = sset->name() + "_df";
 	    distribution_factors_field =
 	      &fem_meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
-	    stk::io::set_distribution_factor_field(*fs_part, *distribution_factors_field);
+	    stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);
 	    surface_df_defined = true;
 	  }
-	  stk::io::set_distribution_factor_field(*fb_part, *distribution_factors_field);
-	  int face_node_count = fb->topology()->number_nodes();
+	  stk::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
+	  int side_node_count = sb->topology()->number_nodes();
 	  stk::mesh::put_field(*distribution_factors_field,
-			       stk::io::part_primary_entity_rank(*fb_part),
-			       *fb_part, face_node_count);
+			       stk::io::part_primary_entity_rank(*sb_part),
+			       *sb_part, side_node_count);
 	}
       }
     }
   }
 
   // ========================================================================
-  void process_surface_entity(const Ioss::GroupingEntity* io ,
-			      stk::mesh::BulkData & bulk)
+  void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
   {
-    assert(io->type() == Ioss::FACESET || io->type() == Ioss::EDGESET);
+    assert(sset->type() == Ioss::SIDESET);
 
     const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
 
-    size_t block_count = io->block_count();
+    size_t block_count = sset->block_count();
     for (size_t i=0; i < block_count; i++) {
-      Ioss::EntityBlock *block = io->get_block(i);
+      Ioss::SideBlock *block = sset->get_block(i);
       if (stk::io::include_entity(block)) {
 	std::vector<int> side_ids ;
 	std::vector<int> elem_side ;
 
-	stk::mesh::Part * const fb_part = fem_meta.get_part(block->name());
+	stk::mesh::Part * const sb_part = fem_meta.get_part(block->name());
 	stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
 
 	block->get_field_data("ids", side_ids);
 	block->get_field_data("element_side", elem_side);
 
 	assert(side_ids.size() * 2 == elem_side.size());
-	stk::mesh::PartVector add_parts( 1 , fb_part );
+	stk::mesh::PartVector add_parts( 1 , sb_part );
 
 	size_t side_count = side_ids.size();
 	std::vector<stk::mesh::Entity*> sides(side_count);
@@ -130,13 +118,14 @@ namespace {
 	}
 
 	const stk::mesh::Field<double, stk::mesh::ElementNode> *df_field =
-	  stk::io::get_distribution_factor_field(*fb_part);
+	  stk::io::get_distribution_factor_field(*sb_part);
 	if (df_field != NULL) {
 	  stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
 	}
       }
     }
   }
+
   void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
   {
     const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
@@ -182,7 +171,7 @@ namespace {
   void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
   {
     const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-    stk::io::default_part_processing(elem_blocks, fem_meta, fem_meta.element_rank());
+    stk::io::default_part_processing(elem_blocks, fem_meta);
   }
 
   void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
@@ -245,7 +234,7 @@ namespace {
   void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
   {
     const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-    stk::io::default_part_processing(node_sets, fem_meta, fem_meta.node_rank());
+    stk::io::default_part_processing(node_sets, fem_meta);
 
     stk::mesh::Field<double> & distribution_factors_field =
       fem_meta.declare_field<stk::mesh::Field<double> >("distribution_factors");
@@ -271,39 +260,17 @@ namespace {
 
   // ========================================================================
   // ========================================================================
-  void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+  void process_sidesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
   {
-    if (fem_meta.spatial_dimension() <= fem_meta.face_rank())
-      return;
-  
-    const Ioss::FaceSetContainer& face_sets = region.get_facesets();
-    stk::io::default_part_processing(face_sets, fem_meta, fem_meta.face_rank());
+    const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+    stk::io::default_part_processing(side_sets, fem_meta);
 
-    for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-	it != face_sets.end(); ++it) {
-      Ioss::FaceSet *entity = *it;
+    for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+	it != side_sets.end(); ++it) {
+      Ioss::SideSet *entity = *it;
 
       if (stk::io::include_entity(entity)) {
-	process_surface_entity(entity, fem_meta, fem_meta.face_rank());
-      }
-    }
-  }
-
-  // ========================================================================
-  void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
-  {
-    if (fem_meta.spatial_dimension() <= fem_meta.edge_rank())
-      return;
-
-    const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-    stk::io::default_part_processing(edge_sets, fem_meta, fem_meta.edge_rank());
-
-    for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-	it != edge_sets.end(); ++it) {
-      Ioss::EdgeSet *entity = *it;
-
-      if (stk::io::include_entity(entity)) {
-	process_surface_entity(entity, fem_meta, fem_meta.edge_rank());
+	process_surface_entity(entity, fem_meta);
       }
     }
   }
@@ -348,28 +315,13 @@ namespace {
   }
 
   // ========================================================================
-  void process_facesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
+  void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
   {
-    const Ioss::FaceSetContainer& face_sets = region.get_facesets();
+    const Ioss::SideSetContainer& side_sets = region.get_sidesets();
 
-    for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-	it != face_sets.end(); ++it) {
-      Ioss::FaceSet *entity = *it;
-
-      if (stk::io::include_entity(entity)) {
-	process_surface_entity(entity, bulk);
-      }
-    }
-  }
-
-  // ========================================================================
-  void process_edgesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
-  {
-    const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-
-    for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-	it != edge_sets.end(); ++it) {
-      Ioss::EdgeSet *entity = *it;
+    for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+	it != side_sets.end(); ++it) {
+      Ioss::SideSet *entity = *it;
 
       if (stk::io::include_entity(entity)) {
 	process_surface_entity(entity, bulk);
@@ -396,40 +348,6 @@ namespace {
     }
   }
 
-  Ioss::Region *internal_create_output_mesh(const std::string &filename,
-					    stk::ParallelMachine comm,
-					    stk::mesh::BulkData &bulk_data,
-					    const Ioss::Region *in_region)
-  {
-    std::string out_filename = filename;
-    if (filename.empty()) {
-      out_filename = "default_output_mesh";
-    } else {
-      // These filenames may be coming from the generated options which
-      // may have forms similar to: "2x2x1|size:.05|height:-0.1,1"
-      // Strip the name at the first "+:|," character:
-      std::vector<std::string> tokens;
-      stk::util::tokenize(out_filename, "+|:,", tokens);
-      out_filename = tokens[0];
-    }
-
-    Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,
-						    Ioss::WRITE_RESULTS,
-						    comm);
-    if (dbo == NULL || !dbo->ok()) {
-      std::cerr << "ERROR: Could not open results database '" << out_filename
-		<< "' of type 'exodusII'\n";
-      std::exit(EXIT_FAILURE);
-    }
-
-    // NOTE: 'out_region' owns 'dbo' pointer at this time...
-    Ioss::Region *out_region = new Ioss::Region(dbo, "results_output");
-
-    stk::io::define_output_db(*out_region, bulk_data, in_region);
-    stk::io::write_output_db(*out_region,  bulk_data);
-    return out_region;
-  }
-
   void internal_process_output_request(Ioss::Region &region,
 				       stk::mesh::BulkData &bulk,
 				       int step)
@@ -452,7 +370,7 @@ namespace {
       if (stk::io::is_part_io_part(*part)) {
 	// Get Ioss::GroupingEntity corresponding to this part...
 	Ioss::GroupingEntity *entity = region.get_entity(part->name());
-	if (entity != NULL && entity->type() != Ioss::FACESET && entity->type() != Ioss::EDGESET) {
+	if (entity != NULL && entity->type() != Ioss::SIDESET) {
 	  put_field_data(bulk, *part, stk::io::part_primary_entity_rank(*part),
 			 entity, Ioss::Field::Field::TRANSIENT);
 	}
@@ -580,47 +498,75 @@ namespace stk {
 			   stk::mesh::fem::FEMMetaData &fem_meta,
 			   stk::io::MeshData &mesh_data)
     {
-      Ioss::Region *in_region = NULL;
-      if (mesh_type == "exodusii" || mesh_type == "generated" || mesh_type == "pamgen" ) {
+      Ioss::Region *in_region = mesh_data.m_input_region;
+      if (in_region == NULL) {
+	// If in_region is NULL, then open the file;
+	// If in_region is non-NULL, then user has given us a valid Ioss::Region that
+	// should be used.
+	if (mesh_type == "exodusii" || mesh_type == "generated" || mesh_type == "pamgen" ) {
 
-	Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
-							Ioss::READ_MODEL, comm);
-	if (dbi == NULL || !dbi->ok()) {
-	  std::cerr  << "ERROR: Could not open database '" << mesh_filename
-		     << "' of type '" << mesh_type << "'\n";
+	  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
+							  Ioss::READ_MODEL, comm);
+	  if (dbi == NULL || !dbi->ok()) {
+	    std::cerr  << "ERROR: Could not open database '" << mesh_filename
+		       << "' of type '" << mesh_type << "'\n";
+	    std::exit(EXIT_FAILURE);
+	  }
+
+	  // NOTE: 'in_region' owns 'dbi' pointer at this time...
+	  in_region = new Ioss::Region(dbi, "input_model");
+	  mesh_data.m_input_region = in_region;
+	} else {
+	  std::cerr << "ERROR: Unrecognized or unsupported mesh type '" << mesh_type
+		    << "'. \n";
 	  std::exit(EXIT_FAILURE);
 	}
-
-	// NOTE: 'in_region' owns 'dbi' pointer at this time...
-	in_region = new Ioss::Region(dbi, "input_model");
-
-	size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
-	initialize_spatial_dimension(fem_meta, spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
-
-	process_elementblocks(*in_region, fem_meta);
-	process_nodeblocks(*in_region,    fem_meta);
-	process_facesets(*in_region,      fem_meta);
-	process_edgesets(*in_region,      fem_meta);
-	process_nodesets(*in_region,      fem_meta);
-
-      } else {
-	std::cerr << "ERROR: Unrecognized or unsupported mesh type '" << mesh_type
-		  << "'. \n";
-	std::exit(EXIT_FAILURE);
       }
 
-      mesh_data.m_input_region = in_region;
+      size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
+      initialize_spatial_dimension(fem_meta, spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
+
+      process_elementblocks(*in_region, fem_meta);
+      process_nodeblocks(*in_region,    fem_meta);
+      process_sidesets(*in_region,      fem_meta);
+      process_nodesets(*in_region,      fem_meta);
     }
 
 
-    void create_output_mesh(const std::string &mesh_filename,
+    void create_output_mesh(const std::string &filename,
 			    stk::ParallelMachine comm,
 			    stk::mesh::BulkData &bulk_data,
 			    MeshData &mesh_data)
     {
-      mesh_data.m_output_region = internal_create_output_mesh(mesh_filename,
-							      comm, bulk_data,
-							      mesh_data.m_input_region);
+      Ioss::Region *out_region = NULL;
+    
+      std::string out_filename = filename;
+      if (filename.empty()) {
+	out_filename = "default_output_mesh";
+      } else {
+	// These filenames may be coming from the generated options which
+	// may have forms similar to: "2x2x1|size:.05|height:-0.1,1"
+	// Strip the name at the first "+:|," character:
+	std::vector<std::string> tokens;
+	stk::util::tokenize(out_filename, "+|:,", tokens);
+	out_filename = tokens[0];
+      }
+
+      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,
+						      Ioss::WRITE_RESULTS,
+						      comm);
+      if (dbo == NULL || !dbo->ok()) {
+	std::cerr << "ERROR: Could not open results database '" << out_filename
+		  << "' of type 'exodusII'\n";
+	std::exit(EXIT_FAILURE);
+      }
+
+      // NOTE: 'out_region' owns 'dbo' pointer at this time...
+      out_region = new Ioss::Region(dbo, "results_output");
+
+      stk::io::define_output_db(*out_region, bulk_data, mesh_data.m_input_region);
+      stk::io::write_output_db(*out_region,  bulk_data);
+      mesh_data.m_output_region = out_region;
     }
 
     // ========================================================================
@@ -650,8 +596,7 @@ namespace stk {
 	process_elementblocks(*region, bulk_data);
 	process_nodeblocks(*region, bulk_data);
 	process_nodesets(*region, bulk_data);
-	process_edgesets(*region, bulk_data);
-	process_facesets(*region, bulk_data);
+	process_sidesets(*region, bulk_data);
 
 	bulk_data.modification_end();
       } else {
@@ -718,48 +663,27 @@ namespace stk {
 	}
       }
       
-      void input_faceset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
+      void input_sideset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
       {
 	const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
-	if (fem_meta.spatial_dimension() <= fem_meta.face_rank())
+	if (fem_meta.spatial_dimension() <= fem_meta.side_rank())
 	  return;
   
-	const Ioss::FaceSetContainer& face_sets = region.get_facesets();
-	for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-	    it != face_sets.end(); ++it) {
-	  Ioss::FaceSet *entity = *it;
+	const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+	for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+	    it != side_sets.end(); ++it) {
+	  Ioss::SideSet *entity = *it;
 	  if (stk::io::include_entity(entity)) {
-	    const Ioss::FaceBlockContainer& blocks = entity->get_face_blocks();
+	    const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
 	    for(size_t i=0; i < blocks.size(); i++) {
 	      if (stk::io::include_entity(blocks[i])) {
-		internal_process_input_request(blocks[i], fem_meta.face_rank(), bulk);
+		internal_process_input_request(blocks[i], fem_meta.side_rank(), bulk);
 	      }
 	    }
 	  }
 	}
       }
 
-      void input_edgeset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
-      {
-	const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
-	if (fem_meta.spatial_dimension() <= fem_meta.edge_rank())
-	  return;
-  
-	const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-	for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-	    it != edge_sets.end(); ++it) {
-	  Ioss::EdgeSet *entity = *it;
-	  if (stk::io::include_entity(entity)) {
-	    const Ioss::EdgeBlockContainer& blocks = entity->get_edge_blocks();
-	    for(size_t i=0; i < blocks.size(); i++) {
-	      if (stk::io::include_entity(blocks[i])) {
-		internal_process_input_request(blocks[i], fem_meta.edge_rank(), bulk);
-	      }
-	    }
-	  }
-	}
-      }
-    
       void define_input_nodeblock_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
       {
 	const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
@@ -796,17 +720,17 @@ namespace stk {
 	}
       }
       
-      void define_input_faceset_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+      void define_input_sideset_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
       {
-	if (fem_meta.spatial_dimension() <= fem_meta.face_rank())
+	if (fem_meta.spatial_dimension() <= fem_meta.side_rank())
 	  return;
   
-	const Ioss::FaceSetContainer& face_sets = region.get_facesets();
-	for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-	    it != face_sets.end(); ++it) {
-	  Ioss::FaceSet *entity = *it;
+	const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+	for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+	    it != side_sets.end(); ++it) {
+	  Ioss::SideSet *entity = *it;
 	  if (stk::io::include_entity(entity)) {
-	    const Ioss::FaceBlockContainer& blocks = entity->get_face_blocks();
+	    const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
 	    for(size_t i=0; i < blocks.size(); i++) {
 	      if (stk::io::include_entity(blocks[i])) {
 		stk::mesh::Part* const part = fem_meta.get_part(blocks[i]->name());
@@ -819,28 +743,6 @@ namespace stk {
 	}
       }
 
-      void define_input_edgeset_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
-      {
-	if (fem_meta.spatial_dimension() <= fem_meta.edge_rank())
-	  return;
-  
-	const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-	for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-	    it != edge_sets.end(); ++it) {
-	  Ioss::EdgeSet *entity = *it;
-	  if (stk::io::include_entity(entity)) {
-	    const Ioss::EdgeBlockContainer& blocks = entity->get_edge_blocks();
-	    for(size_t i=0; i < blocks.size(); i++) {
-	      if (stk::io::include_entity(blocks[i])) {
-		stk::mesh::Part* const part = fem_meta.get_part(blocks[i]->name());
-		assert(part != NULL);
-		stk::io::define_io_fields(blocks[i], Ioss::Field::TRANSIENT,
-					  *part, part_primary_entity_rank(*part));
-	      }
-	    }
-	  }
-	}
-      }
     }
     
     // ========================================================================
@@ -862,8 +764,7 @@ namespace stk {
 	define_input_nodeblock_fields(*region, fem_meta);
 	define_input_elementblock_fields(*region, fem_meta);
 	define_input_nodeset_fields(*region, fem_meta);
-	define_input_edgeset_fields(*region, fem_meta);
-	define_input_faceset_fields(*region, fem_meta);
+	define_input_sideset_fields(*region, fem_meta);
       } else {
 	std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
 	std::exit(EXIT_FAILURE);
@@ -931,8 +832,7 @@ namespace stk {
 	input_nodeblock_fields(*region, bulk);
 	input_elementblock_fields(*region, bulk);
 	input_nodeset_fields(*region, bulk);
-	input_edgeset_fields(*region, bulk);
-	input_faceset_fields(*region, bulk);
+	input_sideset_fields(*region, bulk);
 
 	region->end_state(step);
 

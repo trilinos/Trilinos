@@ -33,8 +33,7 @@
 #include <xdmf/Ioxf_Internals.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_NodeSet.h>
-#include <Ioss_EdgeBlock.h>
-#include <Ioss_FaceBlock.h>
+#include <Ioss_SideBlock.h>
 #include <algorithm>
 
 #include <assert.h>
@@ -112,17 +111,7 @@ bool NodeSet::operator==(const NodeSet& other) const
     std::strcmp(name, other.name) == 0;
 }
 
-SideSet::SideSet(const Ioss::FaceBlock &other)
-{
-  id = other.get_property("id").get_int();
-  sideCount = other.get_property("entity_count").get_int();
-  dfCount = other.get_property("distribution_factor_count").get_int();
-  std::string io_name = other.name();
-  std::strncpy(name, io_name.c_str(), MAX_STR_LENGTH);
-  name[MAX_STR_LENGTH] = 0;
-}
-
-SideSet::SideSet(const Ioss::EdgeBlock &other)
+SideSet::SideSet(const Ioss::SideBlock &other)
 {
   id = other.get_property("id").get_int();
   sideCount = other.get_property("entity_count").get_int();

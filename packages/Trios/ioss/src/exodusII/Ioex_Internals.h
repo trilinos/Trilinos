@@ -42,10 +42,8 @@
 namespace Ioss {
   class ElementBlock;
   class NodeSet;
-  class FaceBlock;
-  class EdgeBlock;
-  class FaceSet;
-  class EdgeSet;
+  class SideBlock;
+  class SideSet;
 }
   /*!
    * This set of classes provides a thin wrapper around the exodusII
@@ -161,10 +159,8 @@ namespace Ioex {
     {
       std::strcpy(name, "");
     }
-    SideSet(const Ioss::FaceBlock &other); // 3D
-    SideSet(const Ioss::EdgeBlock &other); // 2D
-    SideSet(const Ioss::FaceSet   &other); // 3D
-    SideSet(const Ioss::EdgeSet   &other); // 2D
+    SideSet(const Ioss::SideBlock &other); // 3D
+    SideSet(const Ioss::SideSet   &other); // 3D
     bool operator==(const SideSet&) const;
     bool operator!=(const SideSet& other) const {return !(*this == other);}
 

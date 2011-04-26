@@ -49,8 +49,7 @@
 namespace Ioss {
   class ElementBlock;
   class NodeSet;
-  class FaceBlock;
-  class EdgeBlock;
+  class SideBlock;
 }
 namespace Ioxf {
   struct Block
@@ -111,8 +110,7 @@ namespace Ioxf {
     {
       std::strcpy(name, "");
     }
-    SideSet(const Ioss::FaceBlock &other); // 3D
-    SideSet(const Ioss::EdgeBlock &other); // 2D
+    SideSet(const Ioss::SideBlock &other);
     bool operator==(const SideSet&) const;
     bool operator!=(const SideSet& other) const {return !(*this == other);}
 

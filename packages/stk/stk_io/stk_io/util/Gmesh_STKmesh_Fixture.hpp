@@ -57,9 +57,9 @@ class Gmesh_STKmesh_Fixture
   std::pair<int, double> getSurfCoordInfo(size_t surf_id) const;
 
   /**
-   * Get the total number of face entities in this mesh.
+   * Get the total number of side entities in this mesh.
    */
-  size_t getFaceCount() const;
+  size_t getSideCount() const;
 
   /**
    * Get the total number of elements in this mesh.
@@ -72,16 +72,16 @@ class Gmesh_STKmesh_Fixture
   size_t getNodeCount() const;
 
   /**
-   * Get the names of all the faceset parts.
+   * Get the names of all the sideset parts.
    */
-  const std::vector<std::string> & getFacesetNames() const
-  { return m_faceset_names; }
+  const std::vector<std::string> & getSidesetNames() const
+  { return m_sideset_names; }
 
   /**
-   * Get all the faceset parts.
+   * Get all the sideset parts.
    */
-  const stk::mesh::PartVector & getFaceParts() const
-  { return m_faceset_parts; }
+  const stk::mesh::PartVector & getSideParts() const
+  { return m_sideset_parts; }
 
   /**
    * Get a reference to the meta data for the stk-mesh.
@@ -121,11 +121,11 @@ class Gmesh_STKmesh_Fixture
    */
   stk::io::util::MeshData m_mesh_data;
 
-  ///> The names of all the face parts
-  std::vector<std::string> m_faceset_names;
+  ///> The names of all the side parts
+  std::vector<std::string> m_sideset_names;
 
-  ///> Collection of all the face parts
-  stk::mesh::PartVector m_faceset_parts;
+  ///> Collection of all the side parts
+  stk::mesh::PartVector m_sideset_parts;
 
   ///> The number of elements in the X dimension for the mesh
   int m_num_x;

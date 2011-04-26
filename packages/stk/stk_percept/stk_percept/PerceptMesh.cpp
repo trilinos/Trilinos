@@ -1120,8 +1120,7 @@ namespace stk {
           m_bulkData   = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , m_comm );
         }
 #endif
-      process_read_facesets_meta(in_region,      meta_data);
-      process_read_edgesets_meta(in_region,      meta_data);
+      process_read_sidesets_meta(in_region,      meta_data);
       process_read_nodesets_meta(in_region,      meta_data);
 
     }
@@ -1161,8 +1160,7 @@ namespace stk {
       bulk_data.modification_begin();
       process_read_elementblocks_bulk(in_region, bulk_data);
       process_read_nodeblocks_bulk(in_region,    bulk_data);
-      process_read_facesets_bulk(in_region,      bulk_data);
-      process_read_edgesets_bulk(in_region,      bulk_data);
+      process_read_sidesets_bulk(in_region,      bulk_data);
       process_read_nodesets_bulk(in_region,      bulk_data);
       bulk_data.modification_end();
 
@@ -1322,29 +1320,11 @@ namespace stk {
 
       //----------------------------------
       {
-        const Ioss::FaceSetContainer& face_sets = out_region.get_facesets();
-        for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-            it != face_sets.end(); ++it) {
+        const Ioss::SideSetContainer& side_sets = out_region.get_sidesets();
+        for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+            it != side_sets.end(); ++it) {
 
-          Ioss::FaceSet* ef_set = *it;
-
-          size_t block_count = ef_set->block_count();
-          for (size_t i=0; i < block_count; i++) {
-            Ioss::EntityBlock *block = ef_set->get_block(i);
-            omit_entity(block);
-          }
-
-          omit_entity(*it);
-        }
-      }
-
-      //----------------------------------
-      {
-        const Ioss::EdgeSetContainer& edge_sets = out_region.get_edgesets();
-        for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-            it != edge_sets.end(); ++it) {
-
-          Ioss::EdgeSet* ef_set = *it;
+          Ioss::SideSet* ef_set = *it;
 
           size_t block_count = ef_set->block_count();
           for (size_t i=0; i < block_count; i++) {
@@ -1355,7 +1335,6 @@ namespace stk {
           omit_entity(*it);
         }
       }
-
 
     }
 
@@ -1427,10 +1406,11 @@ namespace stk {
           // Get Ioss::GroupingEntity corresponding to this part...
           Ioss::GroupingEntity *entity = out_region.get_entity(part->name());
           if (entity != NULL) {
-            if (entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET) {
-              int block_count = entity->block_count();
+            if (entity->type() == Ioss::SIDESET) {
+	      Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+              int block_count = sset->block_count();
               for (int i=0; i < block_count; i++) {
-                Ioss::EntityBlock *fb = entity->get_block(i);
+                Ioss::SideBlock *fb = sset->get_block(i);
                 stk::io::ioss_add_fields(*part,
                                          stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
                                          fb, Ioss::Field::TRANSIENT);

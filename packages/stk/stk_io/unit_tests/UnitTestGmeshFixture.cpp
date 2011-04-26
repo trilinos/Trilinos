@@ -36,12 +36,12 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
 
   fixture.commit();
 
-  const std::vector<std::string> & faceset_names = fixture.getFacesetNames();
-  STKUNIT_ASSERT_EQUAL( num_surf, faceset_names.size() );
+  const std::vector<std::string> & sideset_names = fixture.getSidesetNames();
+  STKUNIT_ASSERT_EQUAL( num_surf, sideset_names.size() );
 
   for( size_t i = 0; i < num_surf; ++i ) {
     std::string surf_name =  (std::string)"surface_" + Ioss::Utils::to_string(i+1);
-    STKUNIT_ASSERT(surf_name == faceset_names[i]);
+    STKUNIT_ASSERT(surf_name == sideset_names[i]);
   }
 
   std::vector<size_t> num_surf_elem(3);
@@ -55,8 +55,8 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
     STKUNIT_ASSERT_EQUAL( num_surf_elem[i], fixture.getSurfElemCount(2*i+1) );
   }
 
-  const size_t total_face_count = 2 * (num_surf_elem[0]+num_surf_elem[1]+num_surf_elem[2]);
-  STKUNIT_ASSERT_EQUAL( total_face_count, fixture.getFaceCount() );
+  const size_t total_side_count = 2 * (num_surf_elem[0]+num_surf_elem[1]+num_surf_elem[2]);
+  STKUNIT_ASSERT_EQUAL( total_side_count, fixture.getSideCount() );
 
   const size_t total_elem_count = num_x * num_y * num_z;
   STKUNIT_ASSERT_EQUAL( total_elem_count, fixture.getElemCount() );
@@ -69,31 +69,31 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
     fixture.getMetaData().get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
   STKUNIT_ASSERT( coord_field );
 
-  // All face buckets
-  const std::vector<stk::mesh::Bucket*> & all_face_buckets = fixture.getBulkData().buckets( fem_meta.side_rank() );
+  // All side buckets
+  const std::vector<stk::mesh::Bucket*> & all_side_buckets = fixture.getBulkData().buckets( fem_meta.side_rank() );
 
   std::vector<stk::mesh::Entity *> entities;
 
-  const stk::mesh::PartVector & face_parts = fixture.getFaceParts();
-  STKUNIT_ASSERT_EQUAL( faceset_names.size(), face_parts.size() );
+  const stk::mesh::PartVector & side_parts = fixture.getSideParts();
+  STKUNIT_ASSERT_EQUAL( sideset_names.size(), side_parts.size() );
 
-  for( size_t ifset = 0; ifset < face_parts.size(); ++ifset )
+  for( size_t ifset = 0; ifset < side_parts.size(); ++ifset )
   {
     std::pair<int, double> expected = fixture.getSurfCoordInfo(ifset);
 
-    stk::mesh::Selector selector = *face_parts[ifset];
+    stk::mesh::Selector selector = *side_parts[ifset];
     entities.clear();
-    stk::mesh::get_selected_entities(selector, all_face_buckets, entities);
+    stk::mesh::get_selected_entities(selector, all_side_buckets, entities);
     STKUNIT_ASSERT_EQUAL( fixture.getSurfElemCount(ifset), entities.size() );
 
     for ( size_t i = 0 ; i < entities.size() ; ++i ) {
-      stk::mesh::Entity & face = *entities[i] ;
+      stk::mesh::Entity & side = *entities[i] ;
 
-      const CellTopologyData * cell_topology = stk::mesh::fem::get_cell_topology_new(face).getCellTopologyData();
+      const CellTopologyData * cell_topology = stk::mesh::fem::get_cell_topology_new(side).getCellTopologyData();
 
       STKUNIT_ASSERT( cell_topology );
 
-      stk::mesh::PairIterRelation rel = face.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+      stk::mesh::PairIterRelation rel = side.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
       STKUNIT_ASSERT_EQUAL( cell_topology->node_count, rel.size() );
 

@@ -34,10 +34,8 @@
 #include <exodusII/Ioex_Internals.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_NodeSet.h>
-#include <Ioss_EdgeBlock.h>
-#include <Ioss_FaceBlock.h>
-#include <Ioss_EdgeSet.h>
-#include <Ioss_FaceSet.h>
+#include <Ioss_SideBlock.h>
+#include <Ioss_SideSet.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
 extern "C" {
@@ -148,8 +146,8 @@ bool Internals::check_processor_info(int processor_count, int processor_id)
     }
       if (proc_info[1] != processor_id) {
 	IOSS_WARNING << "This file was originally written on processor " << proc_info[1]
-		     << ", but is now being read on processor " << processor_id << ".\n"
-		     << "This may cause problems if there is any processor-dependent data on the file.\n";
+		     << ", but is now being read on processor " << processor_id
+		     << ". This may cause problems if there is any processor-dependent data on the file.\n";
 	matches = false;
       }
     } else {
@@ -276,19 +274,19 @@ bool NodeSet::operator==(const NodeSet& other) const
     std::strcmp(name, other.name) == 0;
 }
 
-SideSet::SideSet(const Ioss::FaceBlock &other)
+SideSet::SideSet(const Ioss::SideBlock &other)
 {
   id = other.get_property("id").get_int();
   sideCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
   std::string io_name = other.name();
 
-  // KLUGE: universal_faceset has face dfCount...
-  if (io_name == "universal_faceset")
+  // KLUGE: universal_sideset has side dfCount...
+  if (io_name == "universal_sideset")
     dfCount = sideCount;
 
   if (io_name.length() > max_string_length()) {
-    IOSS_WARNING << "Name for face block '" << io_name
+    IOSS_WARNING << "Name for side block '" << io_name
 		 << "'\nexceeds maximum exodusII allowed size of 32 characters."
 		 << " It will be truncated.\n";
   }
@@ -297,73 +295,23 @@ SideSet::SideSet(const Ioss::FaceBlock &other)
   name[max_string_length()] = 0;
 }
 
-SideSet::SideSet(const Ioss::FaceSet &other)
+SideSet::SideSet(const Ioss::SideSet &other)
 {
   id = other.get_property("id").get_int();
   sideCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
   std::string io_name = other.name();
 
-  // KLUGE: universal_faceset has face dfCount...
-  if (io_name == "universal_faceset")
+  // KLUGE: universal_sideset has side dfCount...
+  if (io_name == "universal_sideset")
     dfCount = sideCount;
 
   if (io_name.length() > max_string_length()) {
-    IOSS_WARNING << "Name for face set '" << io_name
+    IOSS_WARNING << "Name for side set '" << io_name
 		 << "'\nexceeds maximum exodusII allowed size of 32 characters."
 		 << " It will be truncated.\n";
   }
 
-  std::strncpy(name, io_name.c_str(), max_string_length());
-  name[max_string_length()] = 0;
-}
-
-SideSet::SideSet(const Ioss::EdgeSet &other)
-{
-  id = other.get_property("id").get_int();
-
-  Ioss::EdgeBlockContainer edge_blocks = other.get_edge_blocks();
-  Ioss::EdgeBlockContainer::const_iterator J;
-  
-  int entity_count = 0;
-  int df_count = 0;
-  for (J=edge_blocks.begin(); J != edge_blocks.end(); ++J) {
-    entity_count += (*J)->get_property("entity_count").get_int();
-    df_count     += (*J)->get_property("distribution_factor_count").get_int();
-  }
-  Ioss::EdgeSet &new_entity = const_cast<Ioss::EdgeSet&>(other);
-  new_entity.property_add(Ioss::Property("entity_count", entity_count));
-  new_entity.property_add(Ioss::Property("distribution_factor_count", df_count));
-  
-  sideCount = other.get_property("entity_count").get_int();
-  dfCount = other.get_property("distribution_factor_count").get_int();
-  std::string io_name = other.name();
-
-  // KLUGE: universal_edgeset has edge dfCount...
-  if (io_name == "universal_edgeset")
-    dfCount = sideCount;
-
-  if (io_name.length() > max_string_length()) {
-    IOSS_WARNING << "Name for edge set '" << io_name
-		 << "'\nexceeds maximum exodusII allowed size of 32 characters."
-		 << " It will be truncated.\n";
-  }
-
-  std::strncpy(name, io_name.c_str(), max_string_length());
-  name[max_string_length()] = 0;
-}
-
-SideSet::SideSet(const Ioss::EdgeBlock &other)
-{
-  id = other.get_property("id").get_int();
-  sideCount = other.get_property("entity_count").get_int();
-  dfCount = other.get_property("distribution_factor_count").get_int();
-  std::string io_name = other.name();
-  if (io_name.length() > max_string_length()) {
-    IOSS_WARNING << "Name for edge block '" << io_name
-		 << "'\nexceeds maximum exodusII allowed size of 32 characters."
-		 << " It will be truncated.\n";
-  }
   std::strncpy(name, io_name.c_str(), max_string_length());
   name[max_string_length()] = 0;
 }
@@ -1410,8 +1358,6 @@ int Internals::put_non_define_data(const std::vector<Block> &blocks)
 
     for (int iblk = 0; iblk < num_elem_blk; iblk++) {
       if (blocks[iblk].attributeCount > 0 && blocks[iblk].elementCount > 0) {
-	// If any attributes defined, then output a dummy attribute name for each
-	// to avoid corruption of name field if client doesn't output a name.
 	int varid;
 	nc_inq_varid(exodusFilePtr, VAR_NAME_ATTRIB(iblk+1), &varid);
 	size_t  start[2];
@@ -1421,7 +1367,7 @@ int Internals::put_non_define_data(const std::vector<Block> &blocks)
 	count[0] = 1;
 	start[1] = 0;
 	count[1] = text.size()+1;
-
+  
 	for (int i = 0; i < blocks[iblk].attributeCount; i++) {
 	  start[0] = i;
 	  nc_put_vara_text(exodusFilePtr, varid, start, count, text.c_str());
