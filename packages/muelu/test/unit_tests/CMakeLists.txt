@@ -27,6 +27,7 @@ GenericPRFactory.cpp
 Amesos.cpp
 TentativePFactory.cpp
 UCAggregationFactory.cpp
+CoalesceDropFactory.cpp
 )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
