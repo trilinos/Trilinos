@@ -76,7 +76,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99);
+  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
+  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -99,7 +100,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99);
+  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
+  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -128,7 +130,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99);
+  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
+  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -151,7 +154,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99);
+  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
+  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -183,7 +187,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99);
+  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
+  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -232,7 +237,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99);
+  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
+  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -251,7 +257,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99);
+  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
+  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -280,7 +287,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   out << "version: " << MueLu::Version() << std::endl;
 
   //matrix
-  RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(6561);
+  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
+  RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(6561*comm->getSize());  //=8*3^6
   RCP<const Map > map = Op->getRowMap();
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
