@@ -14,25 +14,41 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 SET(SOURCES "")
 
 APPEND_SET(SOURCES
-main.cpp
-Level.cpp
-Hierarchy.cpp
-RAPFactory.cpp
-SaPFactory.cpp
-TransPFactory.cpp
-SmootherFactory.cpp
-IfpackSmoother.cpp
-Needs.cpp
-GenericPRFactory.cpp
-Amesos.cpp
-TentativePFactory.cpp
-UCAggregationFactory.cpp
-)
+  MueLu_UnitTests.cpp
+  MueLu_TestHelpers.cpp
+  Level.cpp
+  Hierarchy.cpp
+  RAPFactory.cpp
+  SaPFactory.cpp
+  TransPFactory.cpp
+  SmootherFactory.cpp
+  IfpackSmoother.cpp
+  Needs.cpp
+  GenericPRFactory.cpp
+  Amesos.cpp
+  TentativePFactory.cpp
+  UCAggregationFactory.cpp
+  )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    unit_tests
-    SOURCES ${SOURCES}
-    ARGS ""
-    COMM serial  mpi
-    DEPLIBS muelu muelu-cthulhu
+PACKAGE_ADD_EXECUTABLE(
+  UnitTests
+  SOURCES ${SOURCES}
+  COMM serial mpi
+  DEPLIBS muelu muelu-cthulhu
+  )
+
+PACKAGE_ADD_TEST(
+  UnitTests
+  NAME "UnitTestsEpetra"
+  ARGS "--linAlgebra=0"
+  #    NUM_MPI_PROCS 4
+  COMM serial mpi
+  )
+
+PACKAGE_ADD_TEST(
+  UnitTests
+  NAME "UnitTestsTpetra"
+  ARGS "--linAlgebra=1"
+  #    NUM_MPI_PROCS 4
+  COMM serial mpi
   )

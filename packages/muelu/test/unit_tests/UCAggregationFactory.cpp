@@ -1,5 +1,5 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_UCAggregationFactory.hpp"
@@ -37,7 +37,7 @@ namespace {
     aggOptions.SetOrdering(2);
     aggOptions.SetPhase3AggCreation(0.5);
 
-    RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(16);
+    RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(16);
 
     RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
 

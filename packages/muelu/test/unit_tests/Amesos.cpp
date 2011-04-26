@@ -1,7 +1,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Cthulhu_DefaultPlatform.hpp"
 #include "MueLu_Version.hpp"
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsOperator.hpp>
@@ -73,9 +73,9 @@ TEUCHOS_UNIT_TEST(Amesos, KLUSolve)
 
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-  RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(125);
+  RCP<Operator> Op = MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(125);
 
-  Teuchos::ParameterList  amesosList;
+  Teuchos::ParameterList amesosList;
   amesosList.set("PrintTiming",false);
   amesosList.set("OutputLevel",0);
   RCP<AmesosSmoother>  smoother = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );

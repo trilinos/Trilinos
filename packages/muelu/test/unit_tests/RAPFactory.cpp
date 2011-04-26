@@ -3,7 +3,7 @@
 
 #include "MueLu_config.hpp"
 
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_Utilities.hpp"
@@ -58,7 +58,7 @@ TEUCHOS_UNIT_TEST(RAPFactory, Correctness)
 
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-  RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(27*comm->getSize());
+  RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
   Level fineLevel;
   fineLevel.SetA(Op);
   Level coarseLevel;

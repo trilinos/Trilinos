@@ -48,21 +48,21 @@ int main(int argc, char *argv[]) {
   /* SET TEST PARAMETERS                                                            */
   /**********************************************************************************/
   // Note: use --help to list available options.
-  Teuchos::CommandLineProcessor cmdp(false);
+  Teuchos::CommandLineProcessor clp(false);
   
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
     //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  MueLu::Gallery::Parameters matrixParameters(cmdp, 8748); // manage parameters of the test case
-  Cthulhu::Parameters cthulhuParameters(cmdp);             // manage parameters of cthulhu
+  MueLu::Gallery::Parameters matrixParameters(clp, 8748); // manage parameters of the test case
+  Cthulhu::Parameters cthulhuParameters(clp);             // manage parameters of cthulhu
 
   // custom parameters
   LO maxLevels = 3;
   LO its=10;
-  cmdp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
-  cmdp.setOption("its",&its,"number of multigrid cycles");
+  clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
+  clp.setOption("its",&its,"number of multigrid cycles");
   
-  switch (cmdp.parse(argc,argv)) {
+  switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;

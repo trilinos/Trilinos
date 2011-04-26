@@ -40,11 +40,11 @@ int main(int argc, char** argv)
   /* SET TEST PARAMETERS                                                            */
   /**********************************************************************************/
   // Note: use --help to list available options.
-  Teuchos::CommandLineProcessor cmdp(false);
+  Teuchos::CommandLineProcessor clp(false);
   
-  MueLu::Gallery::Parameters matrixParameters(cmdp);   // manage parameters of the test case
+  MueLu::Gallery::Parameters matrixParameters(clp);   // manage parameters of the test case
   
-  switch (cmdp.parse(argc,argv)) {
+  switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;

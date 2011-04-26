@@ -1,7 +1,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Cthulhu_DefaultPlatform.hpp"
 #include "MueLu_Version.hpp"
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_Operator.hpp>
@@ -80,7 +80,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidel)
 
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-  RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(125);
+  RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
 
   Teuchos::ParameterList  ifpackList;
   ifpackList.set("relaxation: type", "Gauss-Seidel");
@@ -130,7 +130,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, Chebyshev)
 
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-  RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(125);
+  RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
 
   Teuchos::ParameterList  ifpackList;
   ifpackList.set("chebyshev: degree", (int) 1);
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(IfpackSmoother, ILU)
 
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-  RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(125);
+  RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
 
   Teuchos::ParameterList  ifpackList;
   RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("ILU",ifpackList) );

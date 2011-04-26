@@ -1,5 +1,5 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_SaPFactory.hpp"

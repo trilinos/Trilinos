@@ -1,5 +1,5 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_TentativePFactory.hpp"
@@ -54,7 +54,7 @@ TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentative)
 
   Level fineLevel;
   fineLevel.SetLevelID(1);
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(36);
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(36);
   fineLevel.SetA(A);
 
   Level coarseLevel;

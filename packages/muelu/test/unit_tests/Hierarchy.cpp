@@ -1,6 +1,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 //#include "Teuchos_ParameterList.hpp"
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_Hierarchy.hpp"
@@ -76,8 +76,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
+  RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -100,8 +100,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
+  RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -130,8 +130,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
+  RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -154,15 +154,15 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
+  RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
   H.SetSmoothers();
 
-  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(),"Ifpack: Gauss-Seidel", out, success);
+  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(), "Ifpack: Gauss-Seidel", out, success);
   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPostSmoother()->GetType(),"Ifpack: Gauss-Seidel", out, success);
 
 
@@ -187,8 +187,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
+  RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
   ifpackList.set("relaxation: type", "Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherPrototype> smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
   SmootherFactory SmooFactory(smoother);
 
   H.SetCoarsestSolver(SmooFactory);
@@ -237,8 +237,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
+  RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -257,8 +257,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
-  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99*comm->getSize());
+  RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
   levelOne->SetA(A);
 
   Hierarchy H;
@@ -287,15 +287,15 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   out << "version: " << MueLu::Version() << std::endl;
 
   //matrix
-  RCP<const Teuchos::Comm<int> > comm = MueLu::UnitTest::getDefaultComm();
-  RCP<Operator> Op = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(6561*comm->getSize());  //=8*3^6
+  RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
   RCP<const Map > map = Op->getRowMap();
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
   RCP<Epetra_MultiVector> foo = Utils::MV2NonConstEpetraMV(nullSpace);
-  double n;
-  foo->Norm1(&n);
+  Teuchos::Array<ST::magnitudeType> norms(1);
+  nullSpace->norm1(norms);
 
   MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
@@ -341,7 +341,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   X->randomize();
   //Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-  Teuchos::Array<ST::magnitudeType> norms(1);
   X->norm2(norms);
   X->scale(1/norms[0]);
   X->norm2(norms);

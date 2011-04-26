@@ -1,5 +1,5 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_Level.hpp"
@@ -26,7 +26,7 @@ TEUCHOS_UNIT_TEST(Level, SetCoreData)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC, LO, GO, NO, LMO>(10);
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(10);
 
   Level firstLevel;
   firstLevel.SetA(A);

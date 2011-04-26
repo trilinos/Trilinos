@@ -1,5 +1,5 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_GenericPRFactory.hpp"
@@ -69,7 +69,7 @@ TEUCHOS_UNIT_TEST(GenericPRFactory, TooCoarse_DoNotBuild)
   out << "Test that Build returns early if the coarsest matrix is smaller than specified MaxCoarseSize" << std::endl;
 
   Level levelOne, levelTwo;
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO, GO, Node, LocalMatOps>(240);
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(240);
   levelOne.SetA(A);
 
   GenericPRFactory genericPR = GenericPRFactory();

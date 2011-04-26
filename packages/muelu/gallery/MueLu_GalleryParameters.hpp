@@ -13,11 +13,15 @@ namespace MueLu {
 
     public:
     
-      Parameters(Teuchos::CommandLineProcessor& cmdp, int nx=16, int ny=-1, int nz=-1, const std::string & matrixType="Laplace1D"): nx_(nx), ny_(ny), nz_(nz), matrixType_(matrixType) {
-        cmdp.setOption("nx", &nx_, "mesh points in x-direction.");
-        cmdp.setOption("ny", &ny_, "mesh points in y-direction.");
-        cmdp.setOption("nz", &nz_, "mesh points in z-direction.");
-        cmdp.setOption("matrixType", &matrixType_, "matrix type: Laplace1D, Laplace2D, Laplace3D"); //TODO: Star2D, numGlobalElements=...
+      Parameters(Teuchos::CommandLineProcessor& clp, int nx=16, int ny=-1, int nz=-1, const std::string & matrixType="Laplace1D"): nx_(nx), ny_(ny), nz_(nz), matrixType_(matrixType) {
+        setCLP(clp, nx, ny, nz, matrixType);
+      }
+      
+      void setCLP(Teuchos::CommandLineProcessor& clp, int nx=16, int ny=-1, int nz=-1, const std::string & matrixType="Laplace1D") {
+        clp.setOption("nx", &nx_, "mesh points in x-direction.");
+        clp.setOption("ny", &ny_, "mesh points in y-direction.");
+        clp.setOption("nz", &nz_, "mesh points in z-direction.");
+        clp.setOption("matrixType", &matrixType_, "matrix type: Laplace1D, Laplace2D, Laplace3D"); //TODO: Star2D, numGlobalElements=...
       }
       
       void check() {

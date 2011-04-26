@@ -11,8 +11,11 @@ namespace Cthulhu {
 
   public:
     
-    Parameters(Teuchos::CommandLineProcessor& cmdp) {
-
+    Parameters(Teuchos::CommandLineProcessor& clp) {
+      setCLP(clp);
+    }
+      
+    void setCLP(Teuchos::CommandLineProcessor& clp) {
       // default
 #if defined(HAVE_CTHULHU_TPETRA)
       lib_ = Cthulhu::UseTpetra;
@@ -26,10 +29,10 @@ namespace Cthulhu {
 #if defined(HAVE_CTHULHU_EPETRA) && defined (HAVE_CTHULHU_TPETRA)
       std::stringstream description;
       description << "use Tpetra (==" << Cthulhu::UseTpetra << ") or Epetra (==" << Cthulhu::UseEpetra << ")";
-      cmdp.setOption("linAlgebra",reinterpret_cast<int*>(&lib_),description.str().c_str()); //TODO: use templated method setOption<>
+      clp.setOption("linAlgebra",reinterpret_cast<int*>(&lib_),description.str().c_str()); //TODO: use templated method setOption<>
 #endif
     }
-      
+
     void check() {
       //TODO with ifdef...
     }

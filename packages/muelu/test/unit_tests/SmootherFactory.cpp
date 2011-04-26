@@ -2,7 +2,7 @@
 
 #include "MueLu_Version.hpp"
 
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -125,7 +125,7 @@ TEUCHOS_UNIT_TEST(SmootherFactory, Build)
 
   RCP<Level> aLevel = rcp(new Level() );
   aLevel->SetLevelID(1);
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(99);
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
 
   RCP<SmootherPrototype>  preSmoo, postSmoo;
   //Check for exception if matrix is not set in Level.
