@@ -1,6 +1,10 @@
+files = KurtisNusbaum.tex KurtisNusbaum.bib ../OptikaThesis.tex basicTramonto/main.cpp ../OptikaFunctions.tex title.tex ../OptikaIntro.tex \
+../OptikaAbstract.tex
+
+
 all: KurtisNusbaum.pdf
 
-KurtisNusbaum.pdf: KurtisNusbaum.tex KurtisNusbaum.bib ../OptikaThesis.tex basicTramonto/main.cpp ../OptikaFunctions.tex title.tex ../OptikaIntro.tex
+KurtisNusbaum.pdf: $(files)
 	pdflatex KurtisNusbaum
 	bibtex KurtisNusbaum
 	pdflatex KurtisNusbaum
