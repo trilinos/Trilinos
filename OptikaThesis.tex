@@ -230,7 +230,7 @@ These new validators were then placed in the Teuchos package.
 
 Validators are declared in a special section of the XML file. A special $<$Validators$>$ tag is declared as a direct child
 of the root $<$ParameterList$>$ tag. In this $<$Validators$>$ tag all validators are declared. Each validator must specify at
-least it's type and an ID using the $<$Validator$>$ tag. This ID can then be used anywhere in the rest of the XML file. 
+least it's type and an Id using the $<$Validator$>$ tag. This Id can then be used anywhere in the rest of the XML file. 
 To apply the validator to a parameter, simply add the validatorId XML attribute to the $<$Parameter$>$ tag. The same validator 
 can be used on multiple parameters.
 
@@ -246,7 +246,7 @@ The XML in Figure~\ref{EnhancedNumberValidatorXML} shows an example of using an 
 to validate a parameter of type double. In the example we set the minimum acceptable value to be 0 and the 
 maximum to be 10. The step is set to .5 so that the parameters value will change by .5 when the user clicks
 up or down in the spinbox being used to edit the parameter. We also set the precision to two decimal places.
-The validator is given the ID of 1 and applied thusly to the ``Double Parameter'' parameter using the validatorId
+The validator is given the Id of 1 and applied thusly to the ``Double Parameter'' parameter using the validatorId
 XML attribute. Notice how the ``type'' XML attribute of the validator is set to ``EnhancedNumberValidator(double)''. If we 
 were validating a parameter of type int this XML attribute would be set to ``EnhancedNumberValidator(int)'', 
 for a float it would be ``EnhancedNumberValidator(float)'', etc. These types must match up, otherwise an error will
@@ -345,7 +345,7 @@ Array Validators allow any of the above described validators to be used on a arr
 String Validator on an array of strings. To do this we create and Array Validator with a ``prototype'' String Validator. The 
 ``prototype'' validator is just a term used to describe the validator the developer would like to be applied to each entry of an
 array. Prototype validators can be specified in one of two ways. First, the developer can code the validator as child of the array validator
-tag as in Figure~\ref{actualArrayValidatorXML}. In this case, the prototype validator does not need an ID. 
+tag as in Figure~\ref{actualArrayValidatorXML}. In this case, the prototype validator does not need an Id. 
 Second, the developer can simply specify another validator as array validator's  prototype by using the
 ``prototypeId'' XML attribute as in Figure~\ref{protoAttributeArrayXML}. This second option allows the developer to reuse the prototype validator in 
 other instances.
@@ -797,9 +797,9 @@ Number Parameter Conditions evaluate the state of a number parameter. If the par
 condition evaluates to false. As with other number based entities in Optika, a function can be added to Number Conditions. The parameter's value will be run through the 
 function and then the return value of the function will be compared to zero.
 
-Figure~\ref{simpleNumberCon} shows an example of a number condition used to evaluate a parameter with an id of 3. Like the other number based entities in Optika the number 
+Figure~\ref{simpleNumberCon} shows an example of a number condition used to evaluate a parameter with an Id of 3. Like the other number based entities in Optika the number 
 type of the parameter to evaluate is specified as part of the type name for the condition, in this case int. We have added a $<$Function$>$ tag to this condition. The result is 
-that if the parameters value is greater than or equal to -5, the condition evaluate to true. Otherwise the condition evaluates to false.
+that if the parameter'ss value is greater than or equal to -5, the condition evaluates to true. Otherwise the condition evaluates to false.
 \begin{figure}
 \centering
 {\footnotesize
@@ -815,10 +815,10 @@ that if the parameters value is greater than or equal to -5, the condition evalu
 
 \subsubsection{String Parameter Conditions}
 String Parameter Conditions work by comparing a parameter's string value to a list of given values. If the parameter's value equals one of the listed values, then the
-condition evaluates true. Otherwise, the condition evaluates to false. The parameter being tested must be of type string. You may list an arbitrary amount of values to 
+condition evaluates to true. Otherwise, the condition evaluates to false. The parameter being tested must be of type string. You may list an arbitrary amount of values to 
 compare the parameter's value against, including listing only a single value.
 
-Figure~\ref{stringCon} shows an example of a String Parameter Condition. In it, the value of the parameter with an id of 2 is compared to the specified values of
+Figure~\ref{stringCon} shows an example of a String Parameter Condition. In it, the value of the parameter with an Id of 2 is compared to the specified values of
 ``option 1'', ``option 2'', and ``option 3''. If the value of the parameter equals any of these values, the condition will evaluate to true. Otherwise, the condition will
 evaluate to false.
 \begin{figure}
@@ -839,8 +839,8 @@ evaluate to false.
 \end{figure}
 
 \subsubsection{Bool Parameter Conditions}
-A Bool Parameter is the simplest of all parameter conditions. It simply looks at a parameter's boolean value and returns that as the evaluation result. The parameter to be
-evaluated for a Bool Parameter Condition must obviously be of type bool. Code list~\ref{boolCon} shows an example of the Bool Parameter Condition. If the parameter with an id
+A Bool Parameter Condition is the simplest of all parameter conditions. It simply looks at a parameter's boolean value and returns that as the evaluation result. The parameter 
+to be evaluated for a Bool Parameter Condition must obviously be of type bool. Figure~\ref{boolCon} shows an example of the Bool Parameter Condition. If the parameter with an Id
 of 5 is currently set to true then the condition will evaluate to true, otherwise the condition will evaluate to false.
 \begin{figure}
 \centering
@@ -864,7 +864,7 @@ result by applying a boolean operator to each condition's evaluation result. The
 
 Figure~\ref{andCon} shows an example of an And Condition. It works by evaluating the two other condition tags and ``anding'' their results together. The end result is a
 condition that only evaluates to true if both the Bool Condition and the Number Condition evaluate to true. In this example we only ``and'' together two conditions. That said,
-and arbitrary amount of conditions can have a Boolean Logic Condition applied to them.
+and arbitrary amount of conditions can have a Boolean Logic Condition applied to them (but there must be at least two conditions to evalute).
 \begin{figure}
 \centering
 {\footnotesize
@@ -880,8 +880,8 @@ and arbitrary amount of conditions can have a Boolean Logic Condition applied to
 \end{figure}
 
 \subsection{Not Conditions}
-Not conditions allow the negation of single condition. If we modify the code in Figure~\ref{boolCon} to look like the code in Figure~\ref{notCon} we get a 
-condition that will only evaluate to true when the boolean parameter with an id of 5 is false and vice versa. 
+Not Conditions allow the negation of single condition. If we modify the code in Figure~\ref{boolCon} to look like the code in Figure~\ref{notCon} we get a 
+condition that will only evaluate to true when the boolean parameter with an Id of 5 is false and vice versa. 
 \begin{figure}
 \centering
 {\footnotesize
@@ -940,10 +940,10 @@ the dependees of the Dependency.
 
 \section{Other Features of Optika}
 \subsection{Custom Functions}
-In addition to the traditional work flow of just calling the getInput function, Optika also allows for the specification of ``custom functions.''
-When a custom function is specified, the GUI does not exit when the user clicks the action function. Instead, the specified function is run. This work flow allows developers 
+In addition to the traditional work flow of just calling the getInput function, Optika also allows for the specification of a ``custom function.''
+When a custom function is specified, the GUI does not exit when the user clicks the action button. Instead, the specified function is run. This work flow allows developers 
 to create a program in which users can rapidly change parameters and see the results of those changes. The function specified must have the same signature as the function 
-in Figure~\ref{custSig}. The parameter list that is given in the argument is the current values user has specified. To use a custom function, pass a pointer to the
+in Figure~\ref{custSig}. The ParameterList RCP that is given in the argument is the current values user has specified. To use a custom function, pass a pointer to the
 function when calling the getInput Optika function.
 \begin{figure}
 \centering
@@ -957,12 +957,12 @@ void customFunction(RCP<ParameterList> parameterList)
 \end{figure}
 
 \subsection{Customizing Look And Feel}
-There are a number of ways customize the look and feel of an Optika based GUI. All of them involve creating an Optika GUI object. Once the object is created a call to the
+There are a number of ways customize the look and feel of an Optika based GUI. All of them involve creating an OptikaGUI object. Once the object is created a call to the
 exec function will start the GUI running. The following functions change the appearance of the GUI:
 \begin{description}
-\item[setWindowTitle(const std::string\& title)] This sets the title of the GUI window Optika generates.
+\item[setWindowTitle(const std::string\& title)] Sets the title of the GUI window Optika generates.
 \item[setAboutInfo(const std::string\& aboutInfo)] When the user clicks on the about menu item, this information will be included.
-\item[setActionButtonText(const std::string\& text)] This sets the text that will be displayed in the action button.
+\item[setActionButtonText(const std::string\& text)] Sets the text that will be displayed in the action button.
 \item[setWindowIcon(const std::string\& filePath)] This function allows the developer to specify the file path of an image that will be used as the window icon for the 
 Optika GUI.
 \item[setStyleSheet(const std::string\& filePath)] This function allows the developer to specify a Qt Style Sheet\footnote{For more information on Qt Style Sheets, please 
@@ -970,7 +970,7 @@ see~\cite{QtStyle}} that will be used to style the Optika generated GUI.
 \end{description}
 
 Figure~\ref{lookGui} shows an example of using some of these functions. We create an Optika GUI object, set the title of the window to ``My GUI'', and set the
-about info to ``This is a GUI I created using Optika.'' We then call the ``exec'' function. Once that function returns the ``usersInput'' parameter list will contain all 
+about info to ``This is a GUI I created using Optika.'' We then call the ``exec'' function. Once that function returns, the ``usersInput'' parameter list will contain all 
 the values the user specified.
 \begin{figure}
 \centering
@@ -1005,7 +1005,8 @@ form of two-dimensional arrays. This will also include the need to develop any a
 of Optika used to simply configure parameter lists would be very useful. 
 
 \section{Contributions}
-The initial task for creating a GUI solution for Trilinos was proposed by Dr. Michael Heroux of Sandia National Laboratories. All code for Optika was written by Kurtis Nusbaum, 
-including the algorithm for evaluating dependencies. Roscoe Bartlett of Sandia National Laboratories helped design the mechanisms by which Optika interprets XML. Jim Willenbring of Sandia National Laboratories
+The initial task for creating a GUI solution for Trilinos was proposed by Dr. Michael Heroux of Sandia National Laboratories. All code for Optika was written by Kurtis Nusbaum of
+St. John's University. The algorithm for evaluating dependencies was also developed by Kurtis Nusbaum. 
+Roscoe Bartlett of Sandia National Laboratories helped design the mechanisms by which Optika interprets XML. Jim Willenbring of Sandia National Laboratories
 provided assistance with integrating Optika into the Trilinos Framework. The Trilinos mailing lists were also great sources of information for questions involving integration 
 with the Trilinos Framework and the Teuchos packages.
