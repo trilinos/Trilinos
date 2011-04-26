@@ -28,7 +28,8 @@ APPEND_SET(SOURCES
   Amesos.cpp
   TentativePFactory.cpp
   UCAggregationFactory.cpp
-  )
+  CoalesceDropFactory.cpp
+)
 
 PACKAGE_ADD_EXECUTABLE(
   UnitTests
