@@ -32,7 +32,7 @@
 #include <iostream>
 #include <string>
 #include <typeinfo>
-#include <mpi.h>
+#include <Parallel.hpp>
 #include <math.h>
 #include <map>
 
