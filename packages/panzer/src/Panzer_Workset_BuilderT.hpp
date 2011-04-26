@@ -49,12 +49,10 @@ panzer::buildWorksets(const std::string& block_id,
      RCP< vector<int> > rcp_ir_degrees = rcp(new vector<int>(0));
      RCP< vector<string> > rcp_basis_names = rcp(new vector<string>(0));
       
+     vector<int>& ir_degrees = *rcp_ir_degrees;
+     vector<string>& basis_names = *rcp_basis_names;
+     std::map<std::string,int> basis_to_int_order;
      {
-        vector<int>& ir_degrees = *rcp_ir_degrees;
-        vector<string>& basis_names = *rcp_basis_names;
-      
-        std::map<std::string,int> basis_to_int_order;
-      
         std::set<int> ir_degrees_set;
         std::set<std::string> basis_names_set;
         for (std::size_t eq = 0; eq < ipb.eq_sets.size(); ++eq) {
@@ -75,6 +73,34 @@ panzer::buildWorksets(const std::string& block_id,
      i->block_id = block_id;
      i->ir_degrees = rcp_ir_degrees;
      i->basis_names = rcp_basis_names;
+     i->int_rules.resize(ir_degrees.size());
+
+     std::map<int,RCP<panzer::IntegrationRule> > degree_to_int_rule;
+     for (std::size_t j = 0; j < ir_degrees.size(); ++j) {
+       const panzer::CellData volume_cell_data(workset_size, base_cell_dimension);
+         
+       RCP<panzer::IntegrationRule> ir = 
+         rcp(new panzer::IntegrationRule(ir_degrees[j], volume_cell_data));
+
+       degree_to_int_rule[ir_degrees[j]] = ir;
+       
+       i->int_rules[j] = 
+   	  rcp(new panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >);
+       i->int_rules[j]->setupArrays(ir);
+     }
+
+     i->bases.resize(basis_names.size());
+
+     for (std::size_t j = 0; j < basis_names.size(); ++j) {
+    
+       RCP<panzer::Basis> cb = 
+          rcp(new panzer::Basis(basis_names[j], *(degree_to_int_rule[basis_to_int_order[basis_names[j]]])));
+    
+       i->bases[j] = 
+  	  rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >);
+      
+       i->bases[j]->setupArrays(cb);
+     }
      
      return worksets_ptr;
   } // end special case
