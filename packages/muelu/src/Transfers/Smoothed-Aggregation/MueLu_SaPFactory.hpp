@@ -153,6 +153,8 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
 
     //! @name Set methods.
     //@{
+
+    //! Set prolongator smoother damping factor.
     void SetDampingFactor(Scalar dampingFactor) {
       dampingFactor_ = dampingFactor;
     }
@@ -161,6 +163,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       doQR_ = value;
     }
 
+    //! Change view of diagonal.
     void SetDiagonalView(std::string const& diagView) {
       diagonalView_ = diagView;
     }
@@ -184,6 +187,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
     //! @name Get methods.
     //@{
 
+    //! Returns prolongator smoother damping factor.
     Scalar GetDampingFactor() {
       return dampingFactor_;
     }
@@ -200,6 +204,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       return reUsePtent_;
     }
 
+    //! Returns current view of diagonal.
     std::string GetDiagonalView() {
       return diagonalView_;
     }

@@ -16,6 +16,10 @@ namespace MueLu {
   /*!
     @class TentativePFactory class.
     @brief Factory for building tentative prolongator.
+
+    Factory for creating tentative prolongator.   Nullspace vectors are split across aggregates so that they
+    have local support.  The vectors with local support are factored via LAPACK QR.  The Q becomes the
+    tentative prolongator, and the R becomes the coarse nullspace. 
   */
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -115,12 +119,11 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
     /*! @brief Make tentative prolongator with QR.
-        FIXME I make no attempt to detect if the aggregate is too small to support the NS
-        FIXME This needs to use Jeremie's Aggregate class.
-        FIXME Aggregates of size 3 are hard-wired in. (AFAIK, no assumptions of size 3, however.)
+
+        - FIXME There is no attempt to detect if the aggregate is too small to support the NS.
+        - FIXME This needs to use Jeremie's Aggregate class.
+        - FIXME Aggregates of size 3 are hard-wired in. (AFAIK, no assumptions of size 3, however.)
     */
-    //FIXME return Operator instead of void
-    //static RCP<Operator> MakeTentativeWithQR(Level &fineLevel, Level &coarseLevel)
     static void MakeTentative(Level &fineLevel, Level &coarseLevel)
     {
       using Teuchos::ArrayRCP;
