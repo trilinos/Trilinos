@@ -33,6 +33,7 @@
 #include "Stokhos.hpp"
 #include "Stokhos_StieltjesPCEBasis.hpp"
 #include "Stokhos_LanczosPCEBasis.hpp"
+#include "Stokhos_LanczosProjPCEBasis.hpp"
 #include "Stokhos_UserDefinedQuadrature.hpp"
 
 //typedef Stokhos::LegendreBasis<int,double> basis_type;
@@ -76,7 +77,7 @@ int main(int argc, char **argv)
     const unsigned int np = pmax-pmin+1;
     bool use_pce_quad_points = false;
     bool normalize = false;
-    bool sparse_grid = false;
+    bool sparse_grid = true;
     bool project_integrals = false;
 #ifndef HAVE_STOKHOS_DAKOTA
     sparse_grid = false;
@@ -139,9 +140,12 @@ int main(int argc, char **argv)
       // 	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
       // 		       p, Teuchos::rcp(&u,false), quad, use_pce_quad_points, 
       // 		       normalize, project_integrals, Cijk));
+      // st_bases[0] = 
+      // 	Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
+      // 		       p, u, *quad, normalize));
       st_bases[0] = 
-      	Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
-      		       p, u, *quad, normalize));
+      	Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<int,double>(
+      		       p, u, *Cijk, normalize));
       Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > 
 	st_basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));

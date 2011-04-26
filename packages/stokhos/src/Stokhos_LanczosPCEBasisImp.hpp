@@ -29,6 +29,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Stokhos_Lanczos.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
@@ -54,8 +55,12 @@ LanczosPCEBasis(
   }
   
   // Compute coefficients via Lanczos
-  lanczos(nqp, p+1, pce_weights, pce_vals, h0, this->alpha, this->beta,
-	  this->norms);
+  Teuchos::Array< Teuchos::Array<value_type> > h;
+  Stokhos::Lanczos<ordinal_type,value_type>::computeDiag(
+    nqp, p+1, pce_vals, pce_weights, h0, h, this->alpha, this->beta,
+    this->norms);
+  // lanczos(nqp, p+1, pce_weights, pce_vals, h0, this->alpha, this->beta,
+  // 	  this->norms);
   for (ordinal_type i=0; i<=p; i++)
     this->delta[i] = value_type(1.0);
   
@@ -140,7 +145,10 @@ computeRecurrenceCoefficients(ordinal_type n,
 {
   ordinal_type nqp = pce_weights.size();
   Teuchos::Array<value_type> nrm(n);
-  lanczos(nqp, n, pce_weights, pce_vals, h0, alpha, beta, nrm);
+  Teuchos::Array< Teuchos::Array<value_type> > h;
+  Stokhos::Lanczos<ordinal_type,value_type>::computeDiag(
+    nqp, n, pce_vals, pce_weights, h0, h, alpha, beta, nrm);
+  //lanczos(nqp, n, pce_weights, pce_vals, h0, alpha, beta, nrm);
   for (ordinal_type i=0; i<n; i++) {
     delta[i] = value_type(1.0);
   }

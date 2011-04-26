@@ -34,6 +34,8 @@
 
 #include "Stokhos.hpp"
 #include "Stokhos_StieltjesPCEBasis.hpp"
+#include "Stokhos_LanczosProjPCEBasis.hpp"
+#include "Stokhos_LanczosPCEBasis.hpp"
 #include "Stokhos_UserDefinedQuadrature.hpp"
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
@@ -128,14 +130,26 @@ int main(int argc, char **argv)
 	
       // Compute Stieltjes basis
       Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(2);
+      // st_bases[0] = 
+      // 	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
+      // 		       p, Teuchos::rcp(&u,false), quad, use_pce_quad_points,
+      // 		       normalize, project_integrals, Cijk));
+      // st_bases[1] = 
+      // 	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
+      // 		       p, Teuchos::rcp(&v,false), quad, use_pce_quad_points,
+      		       // normalize, project_integrals, Cijk));
       st_bases[0] = 
-	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
-		       p, Teuchos::rcp(&u,false), quad, use_pce_quad_points,
-		       normalize, project_integrals, Cijk));
+      	Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
+      		       p, u, *quad, normalize));
       st_bases[1] = 
-	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
-		       p, Teuchos::rcp(&v,false), quad, use_pce_quad_points,
-		       normalize, project_integrals, Cijk));
+      	Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
+      		       p, v, *quad, normalize));
+      // st_bases[0] = 
+      // 	Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<int,double>(
+      // 		       p, u, *Cijk, normalize));
+      // st_bases[1] = 
+      // 	Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<int,double>(
+      // 		       p, v, *Cijk, normalize));
       Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > 
 	st_basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
