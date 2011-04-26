@@ -1,5 +1,5 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "test_helpers.hpp"
+#include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_CoalesceDropFactory.hpp"
@@ -34,10 +34,9 @@ TEUCHOS_UNIT_TEST(CoalesceDropFactory, Build)
   out << "version: " << MueLu::Version() << std::endl;
 
   CoalesceDropFactory cdFact;
-  RCP<Operator> A = MueLu::UnitTest::create_1d_poisson_matrix<SC,LO,GO,NO,LMO>(36);
+  RCP<Operator> A = MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(36);
   Level fineLevel;
   fineLevel.SetA(A);
-
 
   cdFact.Build(fineLevel);
 } //Build
