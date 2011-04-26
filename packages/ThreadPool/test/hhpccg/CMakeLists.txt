@@ -54,6 +54,7 @@ PACKAGE_ADD_TEST(
   COMM serial
   ARGS "threads=4"
   DIRECTORY .
+  XHOSTTYPE AIX
   )
 
 PACKAGE_ADD_TEST(

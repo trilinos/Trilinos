@@ -34,6 +34,7 @@ PACKAGE_ADD_TEST(
   NAME test_tpi_unit_serial
   COMM serial
   DIRECTORY .
+  XHOSTTYPE AIX
   )
 
 PACKAGE_ADD_TEST(
