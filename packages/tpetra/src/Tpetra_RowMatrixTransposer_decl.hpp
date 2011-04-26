@@ -29,24 +29,25 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 */
 //@HEADER
 
-#ifndef TPETRA_ROWMATRIXTRANSPOSER_HPP
-#define TPETRA_ROWMATRIXTRANSPOSER_HPP
+#ifndef TPETRA_ROWMATRIXTRANSPOSER_DECL_HPP
+#define TPETRA_ROWMATRIXTRANSPOSER_DECL_HPP
 #include <Teuchos_RCP.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 
-template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-class Map;
-
 //! Tpetra_CrsMatrixTransposer: A class for transposing an Tpetra_CrsMatrix object.
 
 namespace Tpetra {
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class Map;
+
+
 /*! This class provides capabilities to construct a transpose matrix of an existing Tpetra_CrsMatrix
 	  object and (optionally) redistribute it across a parallel distributed memory machine.
 */
-
 template <class Scalar, 
 	class LocalOrdinal=int, 
 	class GlobalOrdinal=LocalOrdinal, 

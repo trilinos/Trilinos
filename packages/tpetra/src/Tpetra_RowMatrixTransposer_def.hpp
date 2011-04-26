@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+#ifndef TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
+#define TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
+
 #include "Tpetra_Map.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef DOXYGEN_USE_ONLY
@@ -159,3 +162,4 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
 
 }
 
+#endif
