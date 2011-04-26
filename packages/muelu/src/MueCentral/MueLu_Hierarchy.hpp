@@ -104,7 +104,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        Note: Empty factories are simply skipped.
      */
      Teuchos::ParameterList FullPopulate(Teuchos::RCP<PRFactory> PRFact=Teuchos::null,
-                       Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
+                       Teuchos::RCP<TwoLevelFactoryBase> AcFact=Teuchos::null,
                        Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
                        int const &startLevel=0, int const &numDesiredLevels=10 )
      {
@@ -170,7 +170,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      }
 
      //TODO should there be another version of FillHierarchy:
-     //TODO   Teuchos::ParameterList FillHierarchy(OperatorFactory const &AcFact)
+     //TODO   Teuchos::ParameterList FillHierarchy(TwoLevelFactoryBase const &AcFact)
      //TODO where the PRFactory is automatically generated?
      
      /*! @brief Populate hierarchy with A's, R's, and P's.
@@ -184,8 +184,8 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          matrix, and the sum of nonzeros all matrices (including the fine).
      */
      Teuchos::ParameterList FillHierarchy(PRFactory const &PRFact,
-                        OperatorFactory const &AcFact,
-                        int startLevel=0, int numDesiredLevels=10 )
+                                          TwoLevelFactoryBase const &AcFact,
+                                          int startLevel=0, int numDesiredLevels=10 )
      {
 
        RCP<Operator> A = Levels_[startLevel]->GetA();

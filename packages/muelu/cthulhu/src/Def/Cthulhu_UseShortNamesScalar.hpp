@@ -4,6 +4,8 @@
 
 // New definition of types using the types Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
 
+// Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by Scalar, LocalOrdinal, GlobalOrdinal, Node).
+
 #ifdef CTHULHU_CRSMATRIX_SHORT
 typedef Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
 #endif
@@ -51,8 +53,6 @@ typedef Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tp
 #endif
 
 #endif //
-
-// Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by Scalar, LocalOrdinal, GlobalOrdinal, Node).
 
 // TODO: add namespace {} for shortcut types
 

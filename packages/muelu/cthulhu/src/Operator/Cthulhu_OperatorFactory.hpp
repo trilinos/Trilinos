@@ -1,5 +1,5 @@
-#ifndef CTHULHU_OPERATOR_FACTORY_HPP
-#define CTHULHU_OPERATOR_FACTORY_HPP
+#ifndef CTHULHU_OPERATORFACTORY_HPP
+#define CTHULHU_OPERATORFACTORY_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Operator.hpp"
@@ -18,10 +18,7 @@ namespace Cthulhu {
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
 
   class OperatorFactory {
-    
-    typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-    typedef Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
-    typedef Cthulhu::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperator;
+#include "Cthulhu_UseShortNames.hpp"
 
   private:
     //! Private constructor. This is a static class.
@@ -48,5 +45,5 @@ namespace Cthulhu {
 
 }
 
-#define CTHULHU_OPERATOR_FACTORY_SHORT
+#define CTHULHU_OPERATORFACTORY_SHORT
 #endif

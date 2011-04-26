@@ -1,5 +1,5 @@
-#ifndef MUELU_OPERATORFACTORY_HPP
-#define MUELU_OPERATORFACTORY_HPP
+#ifndef MUELU_TWOLEVELFACTORY_HPP
+#define MUELU_TWOLEVELFACTORY_HPP
 
 #include <iostream>
 
@@ -10,14 +10,14 @@
 namespace MueLu {
 
   /*!
-    @class Basic class for operator factories (e.g., R, P, and A_coarse).
-    @brief Basic class for factories that build operators.
+    @class Base class for factories (e.g., R, P, and A_coarse).
+    @brief Base class for factories that use two levels (fineLevel and coarseLevel).
 
     Derives from Needs, but with an additional virtual Build method.
   */
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class OperatorFactory : public Needs {
+  class TwoLevelFactoryBase : public Needs {
 
 #include "MueLu_UseShortNames.hpp"
     
@@ -27,24 +27,23 @@ namespace MueLu {
     //@{ Constructors/Destructors.
 
     //! Constructor.
-    OperatorFactory() {}
+    TwoLevelFactoryBase() {}
 
     //! Destructor.
-    virtual ~OperatorFactory() {}
+    virtual ~TwoLevelFactoryBase() {}
     //@}
 
     //@{
     //! @name Build methods.
 
     //! Build an object with this factory.
-    virtual bool Build(Level & i, Level & j) const = 0;
+    virtual bool Build(Level & fineLevel, Level & coarseLevel) const = 0;
 
     //@}
 
-  }; //class OperatorFactory
+  }; //class TwoLevelFactoryBase
 
 } //namespace MueLu
 
-#define MUELU_OPERATORFACTORY_SHORT
-
-#endif //ifndef MUELU_OPERATORFACTORY_HPP
+#define MUELU_TWOLEVELFACTORY_SHORT
+#endif //ifndef MUELU_TWOLEVELFACTORY_HPP

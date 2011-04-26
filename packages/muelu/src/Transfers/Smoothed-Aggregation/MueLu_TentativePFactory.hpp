@@ -4,7 +4,7 @@
 #include <iostream>
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_MapFactory.hpp"
-#include "MueLu_OperatorFactory.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp" // TODO: inheritence of TentativePFactory
 #include "MueLu_Level.hpp"
 #include "MueLu_PFactory.hpp"
 #include "Cthulhu_MultiVectorFactory.hpp"

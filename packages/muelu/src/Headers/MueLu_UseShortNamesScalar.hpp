@@ -58,8 +58,8 @@ typedef MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalM
 typedef MueLu::TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TentativePFactory;
 #endif
 
-#ifdef MUELU_OPERATORFACTORY_SHORT
-typedef MueLu::OperatorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorFactory;
+#ifdef MUELU_TWOLEVELFACTORY_SHORT
+typedef MueLu::TwoLevelFactoryBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TwoLevelFactoryBase;
 #endif
 
 #ifdef MUELU_SMOOTHER_SHORT

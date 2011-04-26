@@ -20,7 +20,7 @@ namespace MueLu {
 */
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-//class PFactory public OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+//class PFactory public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 class PFactory : public Teuchos::VerboseObject<PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
 #include "MueLu_UseShortNames.hpp"
 

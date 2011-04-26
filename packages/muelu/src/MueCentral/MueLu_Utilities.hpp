@@ -9,7 +9,7 @@
 
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_CrsOperator.hpp>
+#include <Cthulhu_OperatorFactory.hpp>
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 #include <Cthulhu_MultiVectorFactory.hpp>
@@ -128,26 +128,31 @@ namespace MueLu {
    static RCP<Operator> TwoMatrixMultiply(RCP<Operator> const &A, RCP<Operator> const &B,
                                           bool transposeA=false, bool transposeB=false)
     {
+      //FIXME 30 is likely a big overestimate
+      RCP<Operator> C = OperatorFactory::Build(A->getRowMap(), 30);
+
+      if (!A->isFillComplete())
+        throw(Exceptions::RuntimeError("A is not fill-completed"));
+      if (!B->isFillComplete())
+        throw(Exceptions::RuntimeError("B is not fill-completed"));
+
+#ifdef HAVE_MUELU_EPETRAEXT
       RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
       RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
-      //FIXME 30 is likely a big overestimate
-      RCP< Operator > C = rcp( new CrsOperator(A->getRowMap(), 30) );
-      RCP<Epetra_CrsMatrix> epC = Op2NonConstEpetraCrs(C);
-      if (!epA->Filled())
-        throw(Exceptions::RuntimeError("A is not fill-completed"));
-      if (!epB->Filled())
-        throw(Exceptions::RuntimeError("B is not fill-completed"));
-#ifdef HAVE_MUELU_EPETRAEXT
+      RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
+
       int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC);
 #else 
       int i = 42;
 #endif
+
       if (i != 0) {
         std::ostringstream buf;
         buf << i;
         std::string msg = "EpetraExt::MatrixMatrix::Multiply return value of " + buf.str();
         throw(Exceptions::RuntimeError(msg));
       }
+
       return C;
     } //TwoMatrixMultiply()
 

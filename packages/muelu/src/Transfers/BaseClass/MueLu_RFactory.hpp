@@ -1,7 +1,7 @@
 #ifndef MUELU_RFACTORY_HPP
 #define MUELU_RFACTORY_HPP
 
-#include "MueLu_OperatorFactory.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp" //TODO: inheritence of RFactory
 #include "MueLu_Exceptions.hpp"
 
 #define MueLu_cout(minimumVerbLevel) \

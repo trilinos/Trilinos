@@ -1,7 +1,7 @@
 #ifndef MUELU_PRFACTORY_HPP
 #define MUELU_PRFACTORY_HPP
 
-#include "MueLu_OperatorFactory.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Exceptions.hpp"
 
 #include <iostream>
@@ -16,7 +16,7 @@ namespace MueLu {
 */
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class PRFactory : public OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+class PRFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
 #include "MueLu_UseShortNames.hpp"
 
   protected:

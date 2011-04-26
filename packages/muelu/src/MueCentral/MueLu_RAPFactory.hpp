@@ -2,7 +2,7 @@
 #define MUELU_RAPFACTORY_HPP
 
 #include <iostream>
-#include "MueLu_OperatorFactory.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
@@ -11,7 +11,7 @@ namespace MueLu {
   @brief Factory for building coarse matrices.
 */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class RAPFactory : public OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+class RAPFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 
