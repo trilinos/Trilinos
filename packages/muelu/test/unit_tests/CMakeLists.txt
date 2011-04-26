@@ -42,7 +42,7 @@ PACKAGE_ADD_TEST(
   UnitTests
   NAME "UnitTestsEpetra"
   ARGS "--linAlgebra=0"
-  #    NUM_MPI_PROCS 4
+  NUM_MPI_PROCS 4
   COMM serial mpi
   )
 
@@ -50,6 +50,6 @@ PACKAGE_ADD_TEST(
   UnitTests
   NAME "UnitTestsTpetra"
   ARGS "--linAlgebra=1"
-  #    NUM_MPI_PROCS 4
+  NUM_MPI_PROCS 4
   COMM serial mpi
   )

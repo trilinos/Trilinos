@@ -10,7 +10,7 @@ namespace {
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UCAggregationFactory, Constructor, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
+  MUELU_UNIT_TEST_TEMPLATE_4_DECL(UCAggregationFactory, Constructor, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
   {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
@@ -19,8 +19,9 @@ namespace {
     RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
     TEUCHOS_TEST_EQUALITY(aggFact != Teuchos::null, true, out, success);
   } // Constructor
+  MUELU_UNIT_TEST_DECL_END()
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UCAggregationFactory, Build, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
+  MUELU_UNIT_TEST_TEMPLATE_4_DECL(UCAggregationFactory, Build, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
   {
     typedef double Scalar;
 #include "MueLu_UseShortNames.hpp"
@@ -56,6 +57,7 @@ namespace {
     cout << *Final_ << endl;
 
   } // Build
+  MUELU_UNIT_TEST_DECL_END()
 
   // 
   // INSTANTIATIONS
