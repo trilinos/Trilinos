@@ -6,9 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef STK_MESH_TRACE_ENABLED
-#define STK_MESH_TRACE_ENABLED
-#endif
+//#ifndef STK_MESH_TRACE_ENABLED
+//#define STK_MESH_TRACE_ENABLED
+//#endif
+
+// Replace #ifdef below with above 3 lines once the UseCase dependency
+// issue is sorted out
+#ifdef STK_MESH_TRACE_ENABLED
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
@@ -83,3 +87,5 @@ STKUNIT_UNIT_TEST(UnitTestTrace, testTrace)
 #undef STK_MESH_TRACE_ENABLED
 
 } // empty namespace
+
+#endif
