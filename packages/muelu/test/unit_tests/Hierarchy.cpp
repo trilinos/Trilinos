@@ -147,6 +147,9 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 {
+  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    {
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -176,10 +179,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(),"Ifpack: Jacobi", out, success);
   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPostSmoother()->GetType(),"Ifpack: Jacobi", out, success);
 
+    }
 } //SetSmoothers
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
 {
+  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -225,11 +231,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
   postSmoo = levelOne->GetPostSmoother();
   TEUCHOS_TEST_INEQUALITY(postSmoo, Teuchos::null, out, success);
   TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
-
+    }
 } //SetCoarsestSolver
 
 TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
 {
+  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -245,11 +253,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
   H.SetLevel(levelOne);
 
   H.FullPopulate();
-
+    }
 } //FullPopulate
 
 TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 {
+  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -276,11 +286,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
 
   H.FullPopulate(PRFact,AcFact,SmooFact,0,2);
-
+    }
 } //FullPopulate
 
 TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 {
+  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -359,7 +371,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   norms = Utils::ResidualNorm(*Op,*X,*RHS);
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
   TEUCHOS_TEST_EQUALITY(norms[0]<1e-10, true, out, success);
-
+    }
 } //Iterate
 
 }//namespace <anonymous>
+
+//Note from JG:
+// For UnitTest,  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(), "Ifpack: Gauss-Seidel", out, success);
+// should be replaced by
+// TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother(), preSmoother, out, success);
+// testing if preSmoother->GetType() == "Ifpack: Gauss-Seidel" should be a unit test of the class IfpackSmoother
