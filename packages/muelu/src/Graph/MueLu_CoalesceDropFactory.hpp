@@ -37,7 +37,7 @@ public:
   void Build(Level &currentLevel) {
     Teuchos::RCP<Operator> A = currentLevel.GetA();
     Teuchos::RCP<Graph> graph = Teuchos::rcp(new Graph(A->getCrsGraph(), "graph of A"));
-    currentLevel.Save("Graph for aggregation",graph);
+    currentLevel.Save("Graph",graph);
   } //Build
 
 }; //class CoalesceDropFactory

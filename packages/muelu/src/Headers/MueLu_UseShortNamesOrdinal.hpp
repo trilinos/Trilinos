@@ -9,7 +9,3 @@ typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               
 #ifdef MUELU_AGGREGATES_SHORT
 typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Aggregates;
 #endif
-
-#ifdef MUELU_UCAGGREGATIONFACTORY_SHORT
-typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       UCAggregationFactory;
-#endif

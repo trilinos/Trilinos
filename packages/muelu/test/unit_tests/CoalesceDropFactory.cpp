@@ -39,6 +39,7 @@ TEUCHOS_UNIT_TEST(CoalesceDropFactory, Build)
   fineLevel.SetA(A);
 
   cdFact.Build(fineLevel);
+  //FIXME how do we verify that this is correct?
 } //Build
 
 }//namespace <anonymous>

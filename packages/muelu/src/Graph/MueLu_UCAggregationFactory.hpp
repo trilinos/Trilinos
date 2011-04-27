@@ -1,11 +1,10 @@
 #ifndef MUELU_UCAGGREGATIONFACTORY_HPP
 #define MUELU_UCAGGREGATIONFACTORY_HPP
 
-#include "Cthulhu_VectorFactory.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AggregationOptions.hpp"
-#include "MueLu_Graph.hpp"
 #include "MueLu_UCAggregationCommHelper.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 
 #include <assert.h>
 #include <stdio.h>
@@ -71,12 +70,14 @@ enum NodeState {
   that can include unknowns from more than one process.
 */
 
-  template <class LocalOrdinal  = int, 
+  template <class Scalar        = double,
+            class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
 class UCAggregationFactory : public Teuchos::Describable {
-#include "MueLu_UseShortNamesOrdinal.hpp"
+  //#include "MueLu_UseShortNamesOrdinal.hpp"
+#include "MueLu_UseShortNames.hpp"
 
 typedef int global_size_t; //TODO
 typedef int my_size_t; //TODO
@@ -85,29 +86,80 @@ typedef int my_size_t; //TODO
     //! @name Constructors/Destructors.
     //@{
 
+    //! Default constructor.
+    UCAggregationFactory() :
+      Algorithm_("notSpecified"), coalesceDropFact_(Teuchos::null),
+      graphName_("unnamed"), reUseAggregates_("false")
+    {
+      coalesceDropFact_ = rcp(new CoalesceDropFactory());
+    }
+
     //! Constructor.
-    UCAggregationFactory() {}
+    UCAggregationFactory(RCP<CoalesceDropFactory> const &cdFact) :
+      Algorithm_("notSpecified"), coalesceDropFact_(cdFact), graphName_("unnamed"), reUseAggregates_("false")
+    {}
+
 
     //! Destructor.
     virtual ~UCAggregationFactory() {}
     //@}
 
+    //! @name Set/get methods.
+    //@{
+    void SetGraphName(std::string const &graphName) {
+      graphName_ = graphName;
+    }
+
+    std::string GetGraphName() {
+      return graphName_;
+    }
+
+    void ReuseAggregates(bool const &ToF) {
+      reUseAggregates_ = ToF;
+    }
+
+    bool ReuseAggregates() {
+      return reUseAggregates_;
+    }
+    //@}
+
     //! @name Build methods.
     //@{
 
-    //! Build aggregates.
-    Teuchos::RCP<Aggregates> Build(Graph const &graph, AggregationOptions const &options) const
+    /*! @brief Build aggregates.
+
+      - TODO reuse of aggregates
+    */
+    //Teuchos::RCP<Aggregates> Build(Graph const &graph, AggregationOptions const &options) const
+    void Build(Level &currentLevel, AggregationOptions const &options) const
     {
+      //TODO check for reuse of aggregates here
+      //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
+      //FIXME there ever be more than one graph?
+      currentLevel.Request("Graph");
+      if (coalesceDropFact_ != Teuchos::null)
+        coalesceDropFact_.Build(currentLevel);
+      Graph const& graph = currentLevel.CheckOut("Graph");
       Teuchos::RCP<Aggregates> aggregates = CoarsenUncoupled(options,graph);
       std::string name = "UC_CleanUp";
       AggregateLeftOvers(options, *aggregates, name, graph);
-      return aggregates;
+      currentLevel.Save("Aggregates",aggregates);
+      //return aggregates;
     }
     //@}
 
   private:
       //! aggregation algorithm type
       std::string Algorithm_;
+
+      //! coalesce and drop factory
+      RCP<CoalesceDropFactory> coalesceDropFact_;
+
+      //! user-defined graph label
+      std::string graphName_;
+
+      //! flag indicating whether previously generated aggregates should be reused
+      bool reUseAggregates_;
 
       //! @name Aggregation methods.
       //@{
@@ -614,7 +666,7 @@ typedef int my_size_t; //TODO
         const RCP<const Map> nonUniqueMap = aggregates.GetMap();
         const RCP<const Map> uniqueMap = graph.GetDomainMap();
 
-        UCAggregationCommHelper<double,LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
+        MueLu::UCAggregationCommHelper<double,LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
 
         RCP<Cthulhu::Vector<double,LO,GO,NO> > distWeights = Cthulhu::VectorFactory<double,LO,GO,NO>::Build(nonUniqueMap);
 
@@ -1198,7 +1250,7 @@ typedef int my_size_t; //TODO
 
       //! @brief Attempt to clean up aggregates that are too small.
       int RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                          RCP<Cthulhu::Vector<double,LO,GO,NO> > & distWeights, const UCAggregationCommHelper<double,LO,GO,NO,LMO> & myWidget) const
+                          RCP<Cthulhu::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<double,LO,GO,NO,LMO> & myWidget) const
       {
         int myPid = aggregates.GetMap()->getComm()->getRank();
         

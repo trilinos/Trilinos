@@ -93,3 +93,7 @@ typedef MueLu::UCAggregationCommHelper<Scalar, LocalOrdinal,GlobalOrdinal,Node,L
 #ifdef MUELU_COALESCEDROPFACTORY_SHORT
 typedef MueLu::CoalesceDropFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoalesceDropFactory;
 #endif
+
+#ifdef MUELU_UCAGGREGATIONFACTORY_SHORT
+typedef MueLu::UCAggregationFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       UCAggregationFactory;
+#endif
