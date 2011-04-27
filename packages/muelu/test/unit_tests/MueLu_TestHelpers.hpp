@@ -115,30 +115,28 @@ namespace MueLu {
 
 } // namespace MueLu
 
-// How to skip a test for Epetra when Ordinal != int
-#define TEST_WITH_EPETRA_ONLY_FOR_INT_PARAMETERS(LocalOrdinal, GlobalOrdinal) \
-  if (MueLu::TestHelpers::Parameters::getLib() == Cthulhu::UseEpetra && (Teuchos::OrdinalTraits<LocalOrdinal>::name() != string("int") || Teuchos::OrdinalTraits<GlobalOrdinal>::name() != string("int"))) return;
 
-// How to skip a test for Epetra when Scalar != double or Ordinal != int
-#define TEST_WITH_EPETRA_ONLY_FOR_DOUBLE_AND_INT_PARAMETERS(Scalar, LocalOrdinal, GlobalOrdinal) \
-  if (MueLu::TestHelpers::Parameters::getLib() == Cthulhu::UseEpetra && Teuchos::ScalarTraits<Scalar>::name() != string("double")) return; \
-  TEST_WITH_EPETRA_ONLY_FOR_INT_PARAMETERS(LocalOrdinal, GlobalOrdinal)
+// Macro to skip a test when UnderlyingLib==Epetra or Tpetra 
+#define MUELU_TEST_ONLY_FOR(UnderlyingLib) \
+  if (MueLu::TestHelpers::Parameters::getLib() == UnderlyingLib)
 
-// 
-#define MUELU_UNIT_TEST_TEMPLATE_4_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4) \
-  {                                                                     \
-    TEST_WITH_EPETRA_ONLY_FOR_INT_PARAMETERS(TYPE1, TYPE2)              
+// Macro to skip a test when Epetra is used with Ordinal != int
+#define MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal) \
+  if (!(MueLu::TestHelpers::Parameters::getLib() == Cthulhu::UseEpetra && (Teuchos::OrdinalTraits<LocalOrdinal>::name() != string("int") || Teuchos::OrdinalTraits<GlobalOrdinal>::name() != string("int"))))
+
+// Macro to skip a test when Epetra is used with Scalar != double or Ordinal != int
+#define MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) \
+  if (!(MueLu::TestHelpers::Parameters::getLib() == Cthulhu::UseEpetra && Teuchos::ScalarTraits<Scalar>::name() != string("double"))) \
+    MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal)
+
+
+
+
+
+
+//
 
 //TODO: add directly to Teuchos ?
 #include "../cthulhu/test/Cthulhu_UnitTestHelpers.hpp" // declaration of TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL
-
-#define MUELU_UNIT_TEST_TEMPLATE_5_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4, TYPE5) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4, TYPE5) \
-  {                                                                     \
-    TEST_WITH_EPETRA_ONLY_FOR_INT_PARAMETERS(TYPE2, TYPE3)              
-    
-#define MUELU_UNIT_TEST_DECL_END() }
-
 
 #endif // ifndef MUELU_TEST_HELPERS_H
