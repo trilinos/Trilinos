@@ -1179,6 +1179,7 @@ TEUCHOS_UNIT_TEST(
   secondvaliMap[scrapRange] = otherScrapVali;
   writerValiMap.insert(scrapVali);
   writerValiMap.insert(otherScrapVali);
+  writerValiMap.insert(defaultScrapVali);
   readerValiMap.insert(
     IDtoValidatorMap::IDValidatorPair(
       writerValiMap.find(scrapVali)->second,scrapVali));
