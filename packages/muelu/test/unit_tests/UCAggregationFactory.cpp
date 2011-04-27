@@ -6,8 +6,8 @@
 
 namespace {
 
-  using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::RCP;
   using Teuchos::ArrayRCP;
 
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(UCAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
