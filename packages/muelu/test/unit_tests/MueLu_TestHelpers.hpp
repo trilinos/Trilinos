@@ -129,6 +129,14 @@ namespace MueLu {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4) \
   {                                                                     \
     TEST_WITH_EPETRA_ONLY_FOR_INT_PARAMETERS(TYPE1, TYPE2)              
+
+//TODO: add directly to Teuchos ?
+#include "../cthulhu/test/Cthulhu_UnitTestHelpers.hpp" // declaration of TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL
+
+#define MUELU_UNIT_TEST_TEMPLATE_5_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4, TYPE5) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4, TYPE5) \
+  {                                                                     \
+    TEST_WITH_EPETRA_ONLY_FOR_INT_PARAMETERS(TYPE2, TYPE3)              
     
 #define MUELU_UNIT_TEST_DECL_END() }
 

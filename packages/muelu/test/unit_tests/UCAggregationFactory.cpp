@@ -4,45 +4,48 @@
 
 #include "MueLu_UCAggregationFactory.hpp"
 
-// namespace {
+namespace {
 
-//   using Teuchos::RCP;
-//   using Teuchos::rcp;
-//   using Teuchos::ArrayRCP;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayRCP;
 
-//   MUELU_UNIT_TEST_TEMPLATE_4_DECL(UCAggregationFactory, Constructor, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
-//   {
-// #include "MueLu_UseShortNames.hpp"
+  MUELU_UNIT_TEST_TEMPLATE_5_DECL(UCAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
+  {
+#include "MueLu_UseShortNames.hpp"
 
-//     out << "version: " << MueLu::Version() << std::endl;
+    out << "version: " << MueLu::Version() << std::endl;
     
-//     RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
-//     TEUCHOS_TEST_EQUALITY(aggFact != Teuchos::null, true, out, success);
-//   } // Constructor
-//   MUELU_UNIT_TEST_DECL_END()
+    RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
+    TEUCHOS_TEST_EQUALITY(aggFact != Teuchos::null, true, out, success);
+  } // Constructor
+  MUELU_UNIT_TEST_DECL_END()
 
-//   MUELU_UNIT_TEST_TEMPLATE_4_DECL(UCAggregationFactory, Build, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
-//   {
-//     typedef double Scalar;
-// #include "MueLu_UseShortNames.hpp"
+  MUELU_UNIT_TEST_TEMPLATE_5_DECL(UCAggregationFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
+  {
+    //    typedef double Scalar;
+#include "MueLu_UseShortNames.hpp"
     
-//     out << "version: " << MueLu::Version() << std::endl;
+    out << "version: " << MueLu::Version() << std::endl;
 
-//     UCAggregationFactory aggFact;
+    UCAggregationFactory aggFact;
 
-//     MueLu::AggregationOptions aggOptions;
+    MueLu::AggregationOptions aggOptions;
 
-//     aggOptions.SetPrintFlag(6);
-//     aggOptions.SetMinNodesPerAggregate(2);
-//     aggOptions.SetMaxNeighAlreadySelected(5);
-//     aggOptions.SetOrdering(2);
-//     aggOptions.SetPhase3AggCreation(0.5);
+    aggOptions.SetPrintFlag(6);
+    aggOptions.SetMinNodesPerAggregate(2);
+    aggOptions.SetMaxNeighAlreadySelected(5);
+    aggOptions.SetOrdering(2);
+    aggOptions.SetPhase3AggCreation(0.5);
 
-//     RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(16);
+    RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(16);
 
-//     RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
+    RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
 
-//     RCP<Aggregates> aggregates = aggFact.Build(*graph,aggOptions);
+    // This test must be fixed after Jonathan modifications
+    success=false;
+
+    //    RCP<Aggregates> aggregates = aggFact.Build(*graph,aggOptions);
 
 //     RCP<LOVector> Final_;
 //     Final_ = LOVectorFactory::Build( aggregates->GetVertex2AggId()->getMap() );
@@ -56,35 +59,35 @@
 
 //     cout << *Final_ << endl;
 
-//   } // Build
-//   MUELU_UNIT_TEST_DECL_END()
+  } // Build
+  MUELU_UNIT_TEST_DECL_END()
 
-//   // 
-//   // INSTANTIATIONS
-//   //
+  // 
+  // INSTANTIATIONS
+  //
 
-//   typedef double Scalar;                             // Scalar is not relevant for this test
-//   typedef Kokkos::DefaultNode::DefaultNodeType Node; // Kokkos Node is not relevant for this test   
+  typedef double Scalar;                             // Scalar is not relevant for this test
+  typedef Kokkos::DefaultNode::DefaultNodeType Node; // Kokkos Node is not relevant for this test   
 
-//   typedef long int LongInt;                          // macros dislike parameters with space...
-// #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//   typedef long long int LongLongInt;  
-// #endif
+  typedef long int LongInt;                          // macros dislike parameters with space...
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  typedef long long int LongLongInt;  
+#endif
   
-// #define UNIT_TEST_GROUP_4(LO, GO, NO, LMO)                             \
-//   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UCAggregationFactory, Constructor, LO, GO, NO, LMO) \
-//   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UCAggregationFactory, Build,       LO, GO, NO, LMO)
+#define UNIT_TEST_GROUP_5(SC, LO, GO, NO, LMO)                           \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(UCAggregationFactory, Constructor, SC, LO, GO, NO, LMO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(UCAggregationFactory, Build,       SC, LO, GO, NO, LMO)
 
-// #define UNIT_TEST_GROUP_2(LO, GO)                                      \
-//   typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO ## LO; \
-//   UNIT_TEST_GROUP_4(LO, GO, Node, LMO ## LO)
+#define UNIT_TEST_GROUP_2(LO, GO)                                      \
+  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO ## LO; \
+  UNIT_TEST_GROUP_5(Scalar, LO, GO, Node, LMO ## LO)
 
-//   UNIT_TEST_GROUP_2(int, int)
-//   UNIT_TEST_GROUP_2(int, LongInt)
-//   UNIT_TEST_GROUP_2(LongInt, LongInt)
+  UNIT_TEST_GROUP_2(int, int)
+  UNIT_TEST_GROUP_2(int, LongInt)
+  UNIT_TEST_GROUP_2(LongInt, LongInt)
 
-// #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//   UNIT_TEST_GROUP_2(LongInt, LongLongInt)
-// #endif
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  UNIT_TEST_GROUP_2(LongInt, LongLongInt)
+#endif
 
-// } // namespace <anonymous>
+} // namespace <anonymous>
