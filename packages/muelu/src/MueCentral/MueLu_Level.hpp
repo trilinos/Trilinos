@@ -10,7 +10,7 @@
 #include "MueLu_SmootherPrototype.hpp"
 #include <sstream>
 
-// JG TODO: add **default** template parameters
+// JG TODO: remove template parameters
 
 namespace MueLu {
 

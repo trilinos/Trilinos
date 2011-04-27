@@ -221,28 +221,42 @@ namespace MueLu {
 
       Note that the returned matrix is fill-complete'd.
     */
-   static RCP<Operator> TwoMatrixAdd(RCP<Operator> const &A, RCP<Operator> const &B,
-                   SC alpha=1.0, SC beta=1.0)
+   static RCP<Operator> TwoMatrixAdd(RCP<Operator> const &A, RCP<Operator> const &B, SC alpha=1.0, SC beta=1.0)
     {
-      RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
-      RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
       //FIXME 30 is a complete guess as to the #nonzeros per row
-      RCP< Operator > C = rcp( new CrsOperator(A->getRowMap(), 30) );
-      RCP<Epetra_CrsMatrix> epC = Op2NonConstEpetraCrs(C);
-      //int i = EpetraExt::MatrixMatrix::Add(*epA,false,(double)alpha,*epB,false,(double)beta,&(*epC));
-      Epetra_CrsMatrix* ref2epC = &*epC; //to avoid a compiler error...
+      RCP<Operator> C = rcp( new CrsOperator(A->getRowMap(), 30) );
+
+      if (C->getRowMap()->lib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRAEXT
-      int i = EpetraExt::MatrixMatrix::Add(*epA,false,(double)alpha,*epB,false,(double)beta,ref2epC);
+        RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
+        RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
+        RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
+        Epetra_CrsMatrix* ref2epC = &*epC; //to avoid a compiler error...
+        
+        int i = EpetraExt::MatrixMatrix::Add(*epA,false,(double)alpha,*epB,false,(double)beta,ref2epC);
+
+        if (i != 0) {
+          std::ostringstream buf;
+          buf << i;
+          std::string msg = "EpetraExt::MatrixMatrix::Add return value of " + buf.str();
+          throw(Exceptions::RuntimeError(msg));
+        }
 #else
-      int i = 42;
+      throw(Exceptions::RuntimeError("MueLu must be compile with EpetraExt."));
 #endif
-      if (i != 0) {
-        std::ostringstream buf;
-        buf << i;
-        std::string msg = "EpetraExt::MatrixMatrix::Add return value of " + buf.str();
-        throw(Exceptions::RuntimeError(msg));
+      } else if(C->getRowMap()->lib() == Cthulhu::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+        RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA = Op2TpetraCrs(A);
+        RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpB = Op2TpetraCrs(B);
+        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >       tpC = Op2NonConstTpetraCrs(C);
+        
+        Tpetra::MatrixMatrix::Add(*tpA, false, alpha, *tpB, false, beta, tpC);
+#else
+        throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
+#endif
       }
-      C->fillComplete(A->getDomainMap(),A->getRangeMap());
+
+      C->fillComplete(A->getDomainMap(),A->getRangeMap()); //TODO: should be done outside or well documented
       return C;
     } //TwoMatrixAdd()
 
