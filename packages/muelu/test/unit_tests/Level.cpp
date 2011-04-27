@@ -16,7 +16,7 @@ namespace {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(1);
+    RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
 
     Level firstLevel;
     firstLevel.SetA(A);
