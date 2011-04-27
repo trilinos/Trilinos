@@ -13,12 +13,14 @@ SET(SerializationFiles
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Validator_UnitTest
   SOURCES cxx_main.cpp Validator_UnitTest.cpp
+  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Validator_SerializationTest
   SOURCES cxx_main.cpp Validator_SerializationTest.cpp
+  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
