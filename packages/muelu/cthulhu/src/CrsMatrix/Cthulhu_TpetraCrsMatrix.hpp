@@ -582,6 +582,7 @@ namespace Cthulhu {
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_CrsMatrix() const { CTHULHU_DEBUG_ME; return mtx_; }
+    RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_CrsMatrixNonConst() const { CTHULHU_DEBUG_ME; return mtx_; }
 
     /** TODO : interface of Teuchos_LabeledObject.hpp **/
     void setObjectLabel (const std::string &objectLabel) { CTHULHU_DEBUG_ME; mtx_->setObjectLabel(objectLabel); }

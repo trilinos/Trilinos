@@ -860,7 +860,6 @@ namespace Cthulhu {
 
     RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { CTHULHU_DEBUG_ME; return mtx_; }
 
-    //FIXME should this be allowed on a const object?
     RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { CTHULHU_DEBUG_ME; return mtx_; }
 
     /** TODO : interface of Teuchos_LabeledObject.hpp **/

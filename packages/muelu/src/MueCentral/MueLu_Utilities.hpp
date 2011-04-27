@@ -26,12 +26,19 @@
 #include "EpetraExt_MatrixMatrix.h"
 #endif
 
+#ifdef HAVE_MUELU_TPETRA
+#include <Cthulhu_TpetraCrsMatrix.hpp>
+#include <Cthulhu_TpetraVector.hpp>
+#include <Cthulhu_TpetraMultiVector.hpp>
+#include "Tpetra_MatrixMatrix.hpp"
+#endif
+
 namespace MueLu {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 #ifdef HAVE_MUELU_EPETRA
-  using Cthulhu::EpetraCrsMatrix;
+  using Cthulhu::EpetraCrsMatrix;   // TODO: mv in Cthulhu_UseShortNamesScalar
   using Cthulhu::EpetraMultiVector;
 #endif
 
@@ -101,6 +108,7 @@ namespace MueLu {
       return A;
     } //Op2EpetraCrs
 
+
     //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Cthulhu::Operator.
    static RCP<Epetra_CrsMatrix> Op2NonConstEpetraCrs(RCP<Operator> Op) {
       RCP<Epetra_CrsMatrix> A;
@@ -115,6 +123,40 @@ namespace MueLu {
       A = tmp_ECrsMtx->getEpetra_CrsMatrixNonConst();
       return A;
     } //Op2NonConstEpetraCrs
+#endif
+
+#ifdef HAVE_MUELU_TPETRA
+    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Cthulhu::Operator.
+    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > Op2TpetraCrs(RCP<Operator> Op) {
+     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A;
+      // Get the underlying Tpetra Mtx
+      RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
+      if (crsOp == Teuchos::null)
+        throw(Exceptions::BadCast("Cast from Cthulhu::Operator to Cthulhu::CrsOperator failed"));
+      RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
+      const RCP<const TpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
+      if (tmp_ECrsMtx == Teuchos::null)
+        throw(Exceptions::BadCast("Cast from Cthulhu::CrsMatrix to Cthulhu::TpetraCrsMatrix failed"));
+      A = tmp_ECrsMtx->getTpetra_CrsMatrix();
+      return A;
+    } //Op2TpetraCrs
+
+    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Cthulhu::Operator.
+   static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > Op2NonConstTpetraCrs(RCP<Operator> Op) {
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A;
+      // Get the underlying Tpetra Mtx
+      RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
+      if (crsOp == Teuchos::null)
+        throw(Exceptions::BadCast("Cast from Cthulhu::Operator to Cthulhu::CrsOperator failed"));
+      RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
+      const RCP<const TpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
+      if (tmp_ECrsMtx == Teuchos::null)
+        throw(Exceptions::BadCast("Cast from Cthulhu::CrsMatrix to Cthulhu::TpetraCrsMatrix failed"));
+      A = tmp_ECrsMtx->getTpetra_CrsMatrixNonConst();
+      return A;
+    } //Op2NonConstTpetraCrs
+
+#endif
 
     /*! @brief Helper function to do matrix-matrix multiply "in-place"
 
@@ -126,7 +168,7 @@ namespace MueLu {
       @param transposeB if true, use the transpose of B
     */
    static RCP<Operator> TwoMatrixMultiply(RCP<Operator> const &A, RCP<Operator> const &B,
-                                          bool transposeA=false, bool transposeB=false)
+                                          bool transposeA=false, bool transposeB=false) //TODO: modify definition to respect definition of Epetra/Tpetra::MatrixMatrix::Multiply (order of input args)
     {
       //FIXME 30 is likely a big overestimate
       RCP<Operator> C = OperatorFactory::Build(A->getRowMap(), 30);
@@ -136,21 +178,33 @@ namespace MueLu {
       if (!B->isFillComplete())
         throw(Exceptions::RuntimeError("B is not fill-completed"));
 
+      if (C->getRowMap()->lib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRAEXT
-      RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
-      RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
-      RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
-
-      int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC);
-#else 
-      int i = 42;
-#endif
-
-      if (i != 0) {
-        std::ostringstream buf;
-        buf << i;
+        RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
+        RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
+        RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
+        
+        int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC);
+        
+        if (i != 0) {
+          std::ostringstream buf;
+          buf << i;
         std::string msg = "EpetraExt::MatrixMatrix::Multiply return value of " + buf.str();
         throw(Exceptions::RuntimeError(msg));
+        }
+#else
+        throw(Exceptions::RuntimeError("MueLu must be compile with EpetraExt."));
+#endif
+      } else if(C->getRowMap()->lib() == Cthulhu::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+        RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA = Op2TpetraCrs(A);
+        RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpB = Op2TpetraCrs(B);
+        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >       tpC = Op2NonConstTpetraCrs(C);
+        
+        Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC);
+#else
+        throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
+#endif
       }
 
       return C;
@@ -274,22 +328,6 @@ namespace MueLu {
       return D;
 
     } //BuildMatrixInverseDiagonal()
-
-#else
-
-    static RCP<Operator> TwoMatrixMultiply(RCP<Operator> const &A, RCP<Operator> const &B, bool transposeA=false) {
-      throw(Exceptions::NotImplemented("TwoMatrixMultiply for Tpetra"));
-    }
-
-    static RCP<Operator> BuildMatrixInverseDiagonal(RCP<Operator> const &A) {
-      throw(Exceptions::NotImplemented("BuildMatrixInverseDiagonal for Tpetra"));
-    }
-
-   static RCP<Operator> TwoMatrixAdd(RCP<Operator> const &A, RCP<Operator> const &B,
-                                     SC alpha=1.0, SC beta=1.0) {
-     throw(Exceptions::NotImplemented("TwoMatrixAdd for Tpetra"));
-   }
-#endif
 
    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
