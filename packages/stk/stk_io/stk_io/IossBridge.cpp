@@ -24,7 +24,6 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 
 #include <Shards_BasicTopologies.hpp>
@@ -737,7 +736,7 @@ namespace stk {
 	  stk::mesh::Part & part = fem_meta->declare_part(entity->name(), type);
 	  stk::io::put_io_part_attribute(part, entity);
         } else {
-	  stk::mesh::Part & part = stk::mesh::declare_part(meta, entity->name(), type);
+	  stk::mesh::Part & part = meta.declare_part(entity->name(), type);
 	  stk::io::put_io_part_attribute(part, entity);
         }
       }
@@ -753,7 +752,7 @@ namespace stk {
         if( fem_meta )
           part = &fem_meta->declare_part(entity->name(), type);
         else
-          part = &stk::mesh::declare_part(meta, entity->name(), type);
+          part = &meta.declare_part(entity->name(), type);
 	stk::io::put_io_part_attribute(*part, entity);
 
 	const Ioss::ElementTopology *topology = entity->topology();
