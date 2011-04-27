@@ -15,6 +15,9 @@ namespace MueLu {
   
   - TODO This factory is very incomplete.
   - TODO The Build method simply builds the matrix graph with no dropping.
+  - TODO Derive from TwoLevelFactoryBase so that UCAggregationFactory does not rely on Scalar template.
+         This entails removing Scalar dependence in Level class.
+  
 */
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

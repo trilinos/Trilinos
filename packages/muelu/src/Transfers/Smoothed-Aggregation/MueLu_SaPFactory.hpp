@@ -44,6 +44,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
      CoalesceFact_
      TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
 */
+     Teuchos::RCP<PFactory> initialPFact_;
      std::string diagonalView_;
      bool doQR_;
      Scalar dampingFactor_;
@@ -55,13 +56,17 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
     //! @name Constructors/Destructors.
     //@{
 
-    //! Constructor.
+    /*! @brief Constructor.
+
+        - FIXME should allow for user to supply initialPFactory (to make tentative prolongator)
+    */
     SaPFactory() : diagonalView_("current"),
                    //AggFact_(Teuchos::null),
                    doQR_(false), dampingFactor_(4./3), useAFiltered_(false), reUseP_(false),
                    reUsePtent_(false)
                    //, PFactory::reUseGraph_(false), PFactory::reUseAggregates_(false)
     {
+      initialPFact_ = Teuchos::rcp(new TentativePFactory()),
       PFactory::reUseGraph_=false;
       PFactory::reUseAggregates_=false;
       //Teuchos::OSTab tab(this->out_);
@@ -107,7 +112,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
 
       coarseLevel.Request("Ptent");
       coarseLevel.Request("Nullspace");
-      TentativePFactory::MakeTentative(fineLevel,coarseLevel);
+      initialPFact_->BuildP(fineLevel,coarseLevel);
       RCP<Operator> Ptent;
       coarseLevel.CheckOut("Ptent",Ptent);
       RCP<MultiVector> coarseNullspace;

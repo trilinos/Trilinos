@@ -60,6 +60,8 @@ enum NodeState {
 
   This method has two phases.  The first is a local clustering algorithm.  The second creates aggregates
   that can include unknowns from more than one process.
+
+  - TODO remove template dependence on Scalar
 */
 
   template <class Scalar        = double,
@@ -130,9 +132,7 @@ typedef int my_size_t; //TODO
       if (coalesceDropFact_ != Teuchos::null)
         coalesceDropFact_.Build(currentLevel);
       Graph const& graph = currentLevel.CheckOut("Graph");
-
       RCP<Aggregates> aggregates = Build(graph);
-
       currentLevel.Save("Aggregates",aggregates);
     }
 
@@ -812,11 +812,11 @@ typedef int my_size_t; //TODO
 
           // Modify seed of the random algorithm used by temp_->randomize()
           {
-            typedef Teuchos::ScalarTraits<double> ST; // temp_ is of type double.
-            ST::seedrandom(static_cast<unsigned int>(myPid*2 + (int) (11*ST::random())));
+            typedef Teuchos::ScalarTraits<double> scalarTrait; // temp_ is of type double.
+            scalarTrait::seedrandom(static_cast<unsigned int>(myPid*2 + (int) (11*scalarTrait::random())));
             int k = (int)ceil( (10.*myPid)/graph.GetComm()->getSize());
-            for (int i = 0; i < k+7; i++) ST::random();
-            temp_->setSeed(static_cast<unsigned int>(ST::random()));
+            for (int i = 0; i < k+7; i++) scalarTrait::random();
+            temp_->setSeed(static_cast<unsigned int>(scalarTrait::random()));
           }
 
           temp_->randomize(); 
@@ -1200,25 +1200,6 @@ typedef int my_size_t; //TODO
 
       } //RootCandidates
 
-      //! @brief Compute sizes of all the aggregates.
-      int ComputeAggSizes(Aggregates & aggregates, ArrayRCP<int> & aggSizes) const
-      {
-        int myPid = aggregates.GetMap()->getComm()->getRank();
-
-        int nAggregates = aggregates.GetNumAggregates();
-
-        ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-        ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-        int size = procWinner.size();
-
-        for (int i = 0; i < nAggregates; i++) aggSizes[i] = 0;
-        for (int k = 0; k < size; k++ ) {
-          if (procWinner[k] == myPid) aggSizes[vertex2AggId[k]]++;
-        }
-
-        return 0; //TODO
-      } //ComputeAggSizes
-
       //! @brief Attempt to clean up aggregates that are too small.
       int RemoveSmallAggs(Aggregates& aggregates, int min_size,
                           RCP<Cthulhu::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<double,LO,GO,NO,LMO> & myWidget) const
@@ -1231,11 +1212,11 @@ typedef int my_size_t; //TODO
         ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
         int size = procWinner.size();
 
-        ArrayRCP<int> AggInfo = Teuchos::arcp<int>(nAggregates+1);
+        //ArrayRCP<int> AggInfo = Teuchos::arcp<int>(nAggregates+1);
+        //aggregates.ComputeAggSizes(AggInfo);
+        ArrayRCP<int> AggInfo = aggregates.ComputeAggregateSizes();
 
         ArrayRCP<double> weights = distWeights->getDataNonConst(0);
-
-        ComputeAggSizes(aggregates, AggInfo);
 
         // Make a list of all aggregates indicating New AggId
         // Use AggInfo array for this.

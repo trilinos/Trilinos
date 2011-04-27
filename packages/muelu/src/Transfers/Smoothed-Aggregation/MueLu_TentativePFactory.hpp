@@ -10,6 +10,7 @@
 #include "Cthulhu_MultiVectorFactory.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
 
 namespace MueLu {
 
@@ -28,12 +29,10 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   private:
 
-    /*
-    TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-    coalesceFact_;
-    UCAggregationFactory aggregationFact_;
-    TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-    */
+    //! Factory that creates aggregates from matrix graph
+    Teuchos::RCP<UCAggregationFactory> aggregationFact_;
+    //! Factory for creating graph via amalgamation and strength-of-connection dropping
+    Teuchos::RCP<CoalesceDropFactory> coalesceFact_;
     //! use QR decomposition for improving nullspace information per default
     bool QR_;
 
@@ -41,16 +40,29 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     //! @name Constructors/Destructors.
     //@{
 
-    //! Constructor.
-    TentativePFactory(/*TODO*/ /*CoalesceFact, AggregationFact*/ /*TODO*/) : QR_(false) {
-      //Teuchos::OSTab tab(this->out_);
-      //MueLu_cout(Teuchos::VERB_HIGH) << "TentativePFactory: Instantiating a new factory" << std::endl;
-      /*
+    /*! @brief Default constructor.
+
+        Default coalesce/drop and aggregation factories are created.
+    */
+    TentativePFactory() : QR_(false) {
+        coalesceFact_ = rcp(new CoalesceDropFactory());
+        aggregationFact_ = rcp(new UCAggregationFactory(coalesceFact_));
+    }
+
+    /*! @brief Constructor.
+
+        \param CoalesceFact -- (optional) factory that controls amalgation and dropping of weak connections
+        \param AggregationFact -- (optional) factory that creates aggregates from a graph.
+
+        Note: If an aggregation factory is supplied, the coalesce factory will be ignored.
+    */
+    TentativePFactory(RCP<CoalesceDropFactory> &CoalesceFact,  RCP<UCAggregationFactory> &AggregationFact)
+       : QR_(false)
+    {
         if (CoalesceFact != Teuchos::null) coalesceFact_ = CoalesceFact;
         else                               coalesceFact_ = rcp(new CoalesceDropFactory());
         if (AggregationFact != Teuchos::null) aggregationFact_ = AggregationFact;
-        else                                  aggregationFact_ = rcp(new AggregationFactory());
-      */
+        else                                  aggregationFact_ = rcp(new UCAggregationFactory(coalesceFact_));
     }
 
     //! Destructor.
@@ -76,6 +88,16 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
       coarseLevel.Request("Ptent");
       fineLevel.Request("Nullspace");
+      //FIXME what to do about aggregation options?
+      MueLu::AggregationOptions aggOptions;
+      aggOptions.SetPrintFlag(6);
+      aggOptions.SetMinNodesPerAggregate(2);
+      aggOptions.SetMaxNeighAlreadySelected(5);
+      aggOptions.SetOrdering(1);
+      aggOptions.SetPhase3AggCreation(0.5);
+
+      fineLevel.Request("Aggregates"); //FIXME until Needs gets fixed
+      aggregationFact_->Build(fineLevel,aggOptions);
       MakeTentative(fineLevel,coarseLevel);
       //coarseLevel.Save("nullspace",cnull);
       RCP<Operator> Ptent;
@@ -132,15 +154,10 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
       Teuchos::RCP< Operator > fineA = fineLevel.GetA();
       GO nFineDofs = fineA->getNodeNumRows();
-      if ((nFineDofs/3)*3 != nFineDofs) {
-        std::ostringstream buf;
-        buf << nFineDofs;
-        std::string msg = "MakeTentative: currently #fine DOFS (=" + buf.str() + ") must be a multiple of 3";
-        throw(Exceptions::NotImplemented(msg));
-      }
 
-      GO numAggs = nFineDofs / 3;  //FIXME  should come from aggregate class:
-                                   //FIXME  numAggs = aggregates->GetNumAggregates();
+      RCP<Aggregates> aggregates;
+      fineLevel.CheckOut("Aggregates",aggregates);
+      GO numAggs = aggregates->GetNumAggregates();
 
       //get the fine grid nullspace
       RCP<MultiVector> fineNullspace;
@@ -155,34 +172,22 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       }
       const size_t NSDim = fineNullspace->getNumVectors();
       GO nCoarseDofs = numAggs*NSDim;
-      // Create array of aggregate sizes.
-      // TODO Should this come from aggregate class?
-      ArrayRCP<GO> aggSizes(numAggs);
-      // FIXME Right now, we hardwire in size of 3 for every aggregate.
-      for (typename Teuchos::ArrayRCP<GO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i)
-        *i = 3;
+      // Compute array of aggregate sizes.
+      ArrayRCP<GO> aggSizes  = aggregates->ComputeAggregateSizes();
 
       // Find the largest aggregate.
-      // TODO Should this come from aggregate class?
       LO maxAggSize=0;
       for (typename Teuchos::ArrayRCP<GO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i)
         if (*i > maxAggSize) maxAggSize = *i;
 
       // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
       // aggToRowMap[i][j] is the jth DOF in aggregate i
-      // TODO Question:  should the aggregate class provide this?
       ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
-      ArrayRCP< GO > numDofs(numAggs,0);  //Temporary counter that tracks how many DOFS have been recorded
-                                          //for each each aggregate in aggToRowMap.  This is only used
-                                          //while aggToRowMap is being populated.
-      GO t=0;
-      for (typename ArrayRCP<ArrayRCP<GO> >::iterator a2r=aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r)
-        *a2r = ArrayRCP<GO>(aggSizes[t++]);
-      for (GO i=0; i<nFineDofs; ++i) {
-        GO myAgg = i/3; //TODO use aggregate class
-        aggToRowMap[myAgg][ numDofs[myAgg] ] = i;
-        ++(numDofs[myAgg]);
-      }
+      //FIXME Ok, here's something that scares me:
+      //FIXME I don't know whether the remaining code will choke on DOFs that belong to
+      //FIXME another processor's aggregate. So far, this hasn't cropped up.
+      aggregates->ComputeAggregateToRowMap(aggToRowMap);
+
       // Allocate workspace for LAPACK QR routines.
       ArrayRCP<SC> localQR(maxAggSize*NSDim); // The submatrix of the nullspace to be orthogonalized.
       LO           workSize = NSDim;          // Length of work. Must be at least dimension of nullspace.

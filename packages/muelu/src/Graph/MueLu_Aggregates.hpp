@@ -56,6 +56,55 @@ namespace MueLu {
      
      inline const RCP<const Cthulhu::Map<LO,GO> > GetMap() { return GetVertex2AggId()->getMap(); }
 
+     /*! @brief Compute sizes of all the aggregates.
+
+        - FIXME Is this dangerous, i.e., could the user change this?
+     */
+     Teuchos::ArrayRCP<int> ComputeAggregateSizes() const
+     {
+       if (aggregateSizes_ == Teuchos::null)
+       {
+         aggregateSizes_ = Teuchos::ArrayRCP<int>(nAggregates_);
+         int myPid = vertex2AggId_->getMap()->getComm()->getRank();
+         Teuchos::ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
+         Teuchos::ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
+         int size = procWinner.size();
+
+         for (int i = 0; i < nAggregates_; ++i) aggregateSizes_[i] = 0;
+         for (int k = 0; k < size; ++k ) {
+           if (procWinner[k] == myPid) aggregateSizes_[vertex2AggId[k]]++;
+         }
+       }
+
+       return aggregateSizes_;
+     } //ComputeAggSizes
+
+     /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
+
+         @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
+     */
+     void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<GO> > &aggToRowMap) const {
+       using Teuchos::ArrayRCP;
+
+       int myPid = vertex2AggId_->getMap()->getComm()->getRank();
+       ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
+       ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
+
+       ArrayRCP<int> aggSizes = ComputeAggregateSizes();
+       LO t=0;
+       for (typename ArrayRCP<ArrayRCP<GO> >::iterator a2r=aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r)
+         *a2r = ArrayRCP<LO>(aggSizes[t++]);
+       ArrayRCP< LO > numDofs(nAggregates_,0);  //Track how many DOFS have been recorded so far
+                                           //for each each aggregate in aggToRowMap.
+       int size = procWinner.size();
+       for (int k = 0; k < size; ++k ) {
+         LO myAgg = vertex2AggId[k];
+         if (procWinner[k] == myPid) aggToRowMap[ myAgg ][ numDofs[myAgg] ] = k;
+         ++(numDofs[myAgg]);
+       }
+
+     } //AggregateToRowMap
+
    private:
     LO   nAggregates_;              /* Number of aggregates on this processor  */
     
@@ -70,6 +119,9 @@ namespace MueLu {
 
     Teuchos::ArrayRCP<bool> isRoot_;/* IsRoot[i] indicates whether vertex i  */
                                     /* is a root node.                       */
+
+    //! Array of sizes of each local aggregate.
+    mutable Teuchos::ArrayRCP<int> aggregateSizes_;
 
   }; //class Aggregates
 
