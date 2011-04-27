@@ -540,9 +540,9 @@ when the ``Temperature'' parameter is below zero.
 \label{NumberVisXML1}
 \end{figure}
 
-Notice in Figure~\ref{NumberVisXML1} that like Enhanced Number Validators, the type value of a Number Visual Dependency has to include the type of the
+Notice in Figure~\ref{NumberVisXML1} that like Enhanced Number Validators, the ``type'' XML attribute of a Number Visual Dependency has to include the type of the
 parameter it is evaluating (in this case a double). Number Visual Dependencies may have only one dependee. The type of that dependee must match up with the
-type specified in the type XML attribute used in the Number Visual Dependency tag.
+type specified in the ``type'' XML attribute used in the Number Visual Dependency tag.
 
 Sometimes it is necessary to test a number typed parameter using criteria other than whether or not it's current value is greater than or equal to zero.
 This can be accomplished by using a $<$Function$>$ tag. A $<$Function$>$ tag instructs the dependency to run the value of the dependee through a function
@@ -669,7 +669,7 @@ on the ``Fondue Food'' if the ``Fondue Pot Temperature'' is different. If the te
 we only want the user to be able to select ``Cheese'' or ``Bread''. If it is greater than or equal to 120 but less than 180, we only want the
 user to be able to pick ``Chicken'' or ``Beef''. We associated these ranges with their appropriate values in the $<$RangesAndValidators$>$ tag by
 using $<$Pair$>$ tags for each range and validator. Notice that like Enhanced Number Validators and Number Visual Dependencies, the type of the dependee parameter is 
-included in the type XML attribute of the dependency. In Figure~\ref{RangeValiDepXML} the dependee's type is double so the type of the dependency is 
+included in the ``type'' XML attribute of the dependency. In Figure~\ref{RangeValiDepXML} the dependee's type is double so the type of the dependency is 
 ``RangeValidatorDependency(double)''.
 \begin{figure}
 \centering
