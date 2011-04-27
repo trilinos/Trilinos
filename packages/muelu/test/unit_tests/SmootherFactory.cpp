@@ -11,6 +11,8 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
+//TODO from JG: should be tested using a fakeSmoother
+
 namespace {
 
 //this macro declares the unit-test-class:
@@ -36,7 +38,8 @@ TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor_OneArg)
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
-
+ MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    {
   using namespace Teuchos;
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -50,6 +53,7 @@ TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor_OneArg)
   RCP<SmootherFactory> smooFact = rcp(new SmootherFactory(smoother) );
   TEUCHOS_TEST_EQUALITY(smooFact != Teuchos::null, true, out, success);
 
+    }
 }
 
 TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor_TwoArgs)
@@ -57,7 +61,8 @@ TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor_TwoArgs)
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
-
+ MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    {
   using namespace Teuchos;
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -70,12 +75,13 @@ TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor_TwoArgs)
   RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
   RCP<SmootherFactory> smooFact = rcp(new SmootherFactory(smoother,smoother) );
   TEUCHOS_TEST_EQUALITY(smooFact != Teuchos::null, true, out, success);
-
+    }
 }
 
 TEUCHOS_UNIT_TEST(SmootherFactory, SetSmootherPrototypes)
 {
-
+ MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    {
   using namespace Teuchos;
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -96,11 +102,13 @@ TEUCHOS_UNIT_TEST(SmootherFactory, SetSmootherPrototypes)
 
   TEUCHOS_TEST_EQUALITY(checkSmoo1 == newSmoo1, true, out, success);
   TEUCHOS_TEST_EQUALITY(checkSmoo2 == newSmoo2, true, out, success);
-
+    }
 }
 
 TEUCHOS_UNIT_TEST(SmootherFactory, Build)
 {
+ MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -145,6 +153,7 @@ TEUCHOS_UNIT_TEST(SmootherFactory, Build)
   smooFactory->Build(aLevel,preSmoo,postSmoo);
   TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel",out,success);
   TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Jacobi",out,success);
+}
 }
 
 }//namespace <anonymous>
