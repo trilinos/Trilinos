@@ -20,8 +20,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_CUDA:BOOL=ON"
   "-DTPL_ENABLE_Thrust:BOOL=ON"
   "-DTPL_ENABLE_TBB:BOOL=ON"
-  "-DTBB_LIBRARY_DIRS=/usr/local/tbb30_018oss/lib/intel64/cc4.1.0_libc2.4_kernel2.6.16.21"
-  "-DTBB_INCLUDE_DIRS=/usr/local/tbb30_018oss/include"
+  "-DTBB_LIBRARY_DIRS=/usr/local/tbb30_174oss/lib/intel64/cc4.1.0_libc2.4_kernel2.6.16.21"
+  "-DTBB_INCLUDE_DIRS=/usr/local/tbb30_174oss/include"
   "-DThrust_INCLUDE_DIRS=/usr/local"
   "-DTrilinos_ENABLE_PERFORMANCE_TESTS:BOOL=ON"
   )
