@@ -9,12 +9,11 @@
 #ifndef stk_mesh_unit_tests_stk_utest_macros_hpp
 #define stk_mesh_unit_tests_stk_utest_macros_hpp
 
-//#include <stk_util/use_cases/UseCaseEnvironment.hpp>
-
 #ifndef STK_BUILT_IN_SIERRA
 #include <STK_config.h>
 #else
 #define HAVE_MPI
+#include <mpi.h>
 #endif
 
 //
