@@ -42,6 +42,7 @@ ADD_TEST(Install_Trilinos ${PYTHON_EXE}
   "--working-dir=${INSTALLATION_WORKING_DIR}"
   "--install-dir=${INSTALLATION_DIR}"
   "--boost-dir=/home/trilinos/include"
+  "--verbose-errors"
   )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
