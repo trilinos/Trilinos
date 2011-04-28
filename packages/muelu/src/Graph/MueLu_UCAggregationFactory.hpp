@@ -525,7 +525,7 @@ typedef int my_size_t; //TODO
            
            Phase 1b: Invoke ArbitrateAndCommunicate() to ensure that
                      all processors have the same view of aggregated vertices
-                     (e.g., to which aggregate they have been assigend and
+                     (e.g., to which aggregate they have been assigned and
                      which processor owns that aggregate).
            Phase 2:  Check for vertices (local or nonlocal) which are Adjacent
                      to root nodes. Tentatively assign these to the aggregate
@@ -686,7 +686,7 @@ typedef int my_size_t; //TODO
         {
           ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
           ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
-          ArrayRCP<double>    weights      = distWeights->getDataNonConst(0);
+          ArrayRCP<double>    weights     = distWeights->getDataNonConst(0);
           
           distWeights->putScalar(0.);
           for (size_t i=0;i<nonUniqueMap->getNodeNumElements();i++) {
