@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
   MueLu::AggregationOptions aggOptions;
   
   aggOptions.SetPrintFlag(printFlag);      
-  aggOptions.SetMinNodesPerAggregate(2);  
-  aggOptions.SetMaxNeighAlreadySelected(5);
+  aggOptions.SetMinNodesPerAggregate(5);  
+  aggOptions.SetMaxNeighAlreadySelected(2);
   // aggOptions.SetOrdering(1); //TODO: RandomReorder()
   aggOptions.SetOrdering(2);
   aggOptions.SetPhase3AggCreation(0.5);

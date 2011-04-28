@@ -13,6 +13,7 @@
 #include "MueLu_RAPFactory.hpp"
 //#include "MueLu_GaussSeidel.hpp"
 #include "MueLu_IfpackSmoother.hpp"
+#include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
@@ -41,7 +42,6 @@ int main(int argc, char *argv[]) {
  
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-#ifdef HAVE_MUELU_IFPACK //TODO
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   /**********************************************************************************/
@@ -135,16 +135,29 @@ int main(int argc, char *argv[]) {
   Finest->Save("NullSpace",nullSpace);
   H.SetLevel(Finest);
 
-  RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
-  RCP<GenericPRFactory>   PRfact = rcp( new GenericPRFactory(Pfact));
-  RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
-  Teuchos::ParameterList  ifpackList;
+  RCP<SaPFactory>       Pfact = rcp( new SaPFactory() );
+  RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact));
+  RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
+
+  RCP<SmootherPrototype> smooProto;
+  Teuchos::ParameterList ifpackList;
   ifpackList.set("relaxation: type", "Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype>  smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
+#ifdef HAVE_MUELU_IFPACK
+    smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+#endif
+  } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
+#ifdef HAVE_MUELU_IFPACK2
+    smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
+#endif
+  }
+  if (smooProto == Teuchos::null) {
+    throw(MueLu::Exceptions::RuntimeError("main: smoother error"));
+  }
 
-  RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
+  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
@@ -153,9 +166,29 @@ int main(int argc, char *argv[]) {
   status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
 
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
-  Teuchos::ParameterList amesosList;
-  amesosList.set("PrintTiming",true);
-  RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
+
+  RCP<SmootherPrototype> coarseProto;
+  if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
+#ifdef HAVE_MUELU_AMESOS
+    Teuchos::ParameterList amesosList;
+    amesosList.set("PrintTiming",true);
+    coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
+    //#elif HAVE_MUELU_IFPACK...
+#endif
+  } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
+#ifdef HAVE_MUELU_IFPACK2
+  Teuchos::ParameterList ifpackList;
+  ifpackList.set("fact: ilut level-of-fill",99); // TODO ??
+  ifpackList.set("fact: drop tolerance", 0);
+  ifpackList.set("fact: absolute threshold", 0);
+  ifpackList.set("fact: relative threshold", 0);
+  coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpackList) );
+#endif
+  }
+  if (coarseProto == Teuchos::null) {
+    throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
+  }
+
   SmootherFactory coarseSolveFact(coarseProto);
   H.SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
@@ -176,9 +209,6 @@ int main(int argc, char *argv[]) {
 
   X->norm2(norms);
   std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
-
-
-#endif // HAVE_MUELU_IFPACK
   
   return EXIT_SUCCESS;
 
