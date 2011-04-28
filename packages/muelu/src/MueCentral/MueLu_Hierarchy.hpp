@@ -4,14 +4,18 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
+#include "MueLu_Types.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_SaPFactory.hpp"
+
 #include "MueLu_GenericPRFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
+
+// used as default:
+#include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_Types.hpp"
 #include "MueLu_IfpackSmoother.hpp"
+#include "MueLu_Ifpack2Smoother.hpp"
 
 namespace MueLu {
 /*!
@@ -64,6 +68,9 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
    //@{
 
      //! Assign a level to hierarchy.
+     // TODO from JG: behavior should be explain or changed. 
+     //               Right now, we change the LevelID of the input level and push it at the end of hierarchy.
+     //               Certainly better to take the LevelID of the input level into account
      void SetLevel(Teuchos::RCP<Level> const& level) {
        Levels_.push_back(level);
        level->SetLevelID(Levels_.size());
@@ -113,7 +120,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          PRFact = rcp( new GenericPRFactory(SaPFact));
        }
        if (AcFact == Teuchos::null) AcFact = rcp( new RAPFactory());
-       if (SmooFact == Teuchos::null) {
+       if (SmooFact == Teuchos::null) { //FIXME from JG: how to do a run without any smoother ?
 //FIXME #ifdef we're using tpetra
 //FIXME    throw(Exceptions::NotImplemented("No default smoother is defined"));
 //FIXME #else we're using epetra
@@ -137,6 +144,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      } //FullPopulate()
 
 
+     //TODO JG to JHU: do we need this ??
      /*! @brief Populate hierarchy with A's, R's, and P's using default factories.
 
        The prolongator factory defaults to Smoothed Aggregation, and the coarse matrix factory defaults
@@ -246,28 +254,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      }
 
      /*! @brief Construct smoothers on all levels but the coarsest.
-
-       Defaults to using IfpackSmoother factory that generates Gauss-Seidel smoothers.
-     */
-     void SetSmoothers()
-     {
-#ifdef HAVE_MUELU_IFPACK
-       Teuchos::ParameterList  ifpackList;
-//FIXME #ifdef we're using tpetra
-//FIXME    throw(Exceptions::NotImplemented("No default smoother is defined"));
-//FIXME #else we're using epetra
-       ifpackList.set("relaxation: type", "Gauss-Seidel");
-       ifpackList.set("relaxation: sweeps", (int) 1);
-       ifpackList.set("relaxation: damping factor", (double) 1.0);
-       ifpackList.set("relaxation: zero starting solution", false);
-       RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-       SmootherFactory smooFact(smoother);
-//FIXME #endif
-       SetSmoothers(smooFact);
-#endif
-     }
-
-     /*! @brief Construct smoothers on all levels but the coarsest.
        TODO need to check whether using Tpetra or Epetra
 
         Invoke a set of factories to construct smoothers within 
@@ -302,6 +288,28 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        }
 
      } //SetSmoothers()
+
+// JG to JHU: Do we need this ??
+//      /*! @brief Construct smoothers on all levels but the coarsest.
+//        Defaults to using IfpackSmoother factory that generates Gauss-Seidel smoothers.
+//      */
+//      void SetSmoothers()
+//      {
+// #ifdef HAVE_MUELU_IFPACK
+//        Teuchos::ParameterList  ifpackList;
+// //FIXME #ifdef we're using tpetra
+// //FIXME    throw(Exceptions::NotImplemented("No default smoother is defined"));
+// //FIXME #else we're using epetra
+//        ifpackList.set("relaxation: type", "Gauss-Seidel");
+//        ifpackList.set("relaxation: sweeps", (int) 1);
+//        ifpackList.set("relaxation: damping factor", (double) 1.0);
+//        ifpackList.set("relaxation: zero starting solution", false);
+//        RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+//        SmootherFactory smooFact(smoother);
+// //FIXME #endif
+//        SetSmoothers(smooFact);
+// #endif
+//      }
 
 //         typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 //FIXME delete this macro

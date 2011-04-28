@@ -162,10 +162,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 
   Hierarchy H;
   H.SetLevel(levelOne);
-  H.SetSmoothers();
 
-  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(), "Ifpack: Gauss-Seidel", out, success);
-  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPostSmoother()->GetType(),"Ifpack: Gauss-Seidel", out, success);
+//   H.SetSmoothers();
+
+//   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(), "Ifpack: Gauss-Seidel", out, success);
+//   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPostSmoother()->GetType(),"Ifpack: Gauss-Seidel", out, success);
 
 
   Teuchos::ParameterList  ifpackList;
