@@ -35,6 +35,7 @@ IF (Stratimikos_ENABLE_Amesos)
     timeDiscretizedBackwardEuler
     NAME timeDiscretizedBackwardEuler_amesos
     ARGS ${ARGS}
+    XHOSTTYPE AIX
     ${STANDARD_TEST_CONFIG}
     )
 
