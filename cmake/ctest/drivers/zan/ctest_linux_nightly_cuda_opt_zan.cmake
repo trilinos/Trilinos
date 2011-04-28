@@ -22,7 +22,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_TBB:BOOL=ON"
   "-DTBB_LIBRARY_DIRS=/usr/local/tbb30_174oss/lib/intel64/cc4.1.0_libc2.4_kernel2.6.16.21"
   "-DTBB_INCLUDE_DIRS=/usr/local/tbb30_174oss/include"
-  "-DThrust_INCLUDE_DIRS=/usr/local"
+  "-DThrust_INCLUDE_DIRS=/usr/local/cuda/include"
   "-DTrilinos_ENABLE_PERFORMANCE_TESTS:BOOL=ON"
   )
 
