@@ -2,6 +2,12 @@ INCLUDE("../../../TrilinosVersion.cmake")
 
 TRILINOS_DRIVER_SETUP()
 
+set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
+set(workingdir "${TrilinosDriver_BINARY_DIR}")
+
+# Get the day of the week
+execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
+
 IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
   #TRILINOS_DRIVER_ADD_DASHBOARD(
   #  MPI_OPT_DEV
@@ -49,12 +55,23 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
   #)
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    MPI_DEBUG_DEV3
+    SERIAL_OPT_DEV1
+    ctest_linux_nightly_serial_development_opt_pgi_11.1_stable_trilinos-test.cmake
+    CTEST_INSTALLER_TYPE dev
+    RUN_SERIAL
+    TIMEOUT_MINUTES 300
+  )
+
+#Only run this build once a week
+if(${DAYOFWEEK} MATCHES "Saturday")
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_OPT_DEV3
     ctest_linux_nightly_serial_development_opt_pgi_11.1_trilinos-test.cmake
     CTEST_INSTALLER_TYPE dev
     RUN_SERIAL
     TIMEOUT_MINUTES 600
   )
+endif()
 
 ELSE()
   TRILINOS_DRIVER_ADD_DASHBOARD(
