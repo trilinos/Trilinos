@@ -16,8 +16,8 @@ namespace {
 #include "MueLu_UseShortNames.hpp"
       
       out << "version: " << MueLu::Version() << std::endl;
-      
-      RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
+      MueLu::AggregationOptions aggOptions; //TODO: this parameter should be optional
+      RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory(aggOptions));
       TEUCHOS_TEST_EQUALITY(aggFact != Teuchos::null, true, out, success);
     } 
   } // Constructor
@@ -30,8 +30,6 @@ namespace {
       
       out << "version: " << MueLu::Version() << std::endl;
 
-      UCAggregationFactory aggFact;
-
       MueLu::AggregationOptions aggOptions;
 
       aggOptions.SetPrintFlag(6);
@@ -40,26 +38,25 @@ namespace {
       aggOptions.SetOrdering(2);
       aggOptions.SetPhase3AggCreation(0.5);
 
+      UCAggregationFactory aggFact(aggOptions);
+
       RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(16);
 
       RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
 
-      // This test must be fixed after Jonathan modifications
-      success=false;
+      RCP<Aggregates> aggregates = aggFact.Build(*graph);
 
-      //    RCP<Aggregates> aggregates = aggFact.Build(*graph,aggOptions);
+      RCP<LOVector> Final_;
+      Final_ = LOVectorFactory::Build( aggregates->GetVertex2AggId()->getMap() );
 
-      //     RCP<LOVector> Final_;
-      //     Final_ = LOVectorFactory::Build( aggregates->GetVertex2AggId()->getMap() );
+      ArrayRCP<LO> Final = Final_->getDataNonConst(0);
+      ArrayRCP<const LO> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
+      ArrayRCP<const LO> procWinner   = aggregates->GetProcWinner()->getData(0);
 
-      //     ArrayRCP<LO> Final = Final_->getDataNonConst(0);
-      //     ArrayRCP<const LO> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
-      //     ArrayRCP<const LO> procWinner   = aggregates->GetProcWinner()->getData(0);
+      for (size_t i=0; i<aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
+        Final[i] = vertex2AggId[i] + procWinner[i]*1000;
 
-      //     for (size_t i=0; i<aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
-      //       Final[i] = vertex2AggId[i] + procWinner[i]*1000;
-
-      //     cout << *Final_ << endl;
+      cout << *Final_ << endl;
       
     }
   } // Build

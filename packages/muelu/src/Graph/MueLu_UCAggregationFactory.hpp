@@ -87,18 +87,17 @@ typedef int my_size_t; //TODO
     //@{
 
     //! Default constructor.
-    UCAggregationFactory() :
-      Algorithm_("notSpecified"), coalesceDropFact_(Teuchos::null),
+    UCAggregationFactory(AggregationOptions& options) :
+      options_(options), Algorithm_("notSpecified"), coalesceDropFact_(Teuchos::null),
       graphName_("unnamed"), reUseAggregates_("false")
     {
       coalesceDropFact_ = rcp(new CoalesceDropFactory());
     }
 
     //! Constructor.
-    UCAggregationFactory(RCP<CoalesceDropFactory> const &cdFact) :
-      Algorithm_("notSpecified"), coalesceDropFact_(cdFact), graphName_("unnamed"), reUseAggregates_("false")
+    UCAggregationFactory(AggregationOptions& options, RCP<CoalesceDropFactory> const &cdFact) :
+      options_(options), Algorithm_("notSpecified"), coalesceDropFact_(cdFact), graphName_("unnamed"), reUseAggregates_("false")
     {}
-
 
     //! Destructor.
     virtual ~UCAggregationFactory() {}
@@ -130,8 +129,7 @@ typedef int my_size_t; //TODO
 
       - TODO reuse of aggregates
     */
-    //Teuchos::RCP<Aggregates> Build(Graph const &graph, AggregationOptions const &options) const
-    void Build(Level &currentLevel, AggregationOptions const &options) const
+    void Build(Level &currentLevel) const
     {
       //TODO check for reuse of aggregates here
       //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
@@ -140,15 +138,27 @@ typedef int my_size_t; //TODO
       if (coalesceDropFact_ != Teuchos::null)
         coalesceDropFact_.Build(currentLevel);
       Graph const& graph = currentLevel.CheckOut("Graph");
-      Teuchos::RCP<Aggregates> aggregates = CoarsenUncoupled(options,graph);
-      std::string name = "UC_CleanUp";
-      AggregateLeftOvers(options, *aggregates, name, graph);
-      currentLevel.Save("Aggregates",aggregates);
-      //return aggregates;
-    }
-    //@}
 
+      RCP<Aggregates> aggregates = Build(graph);
+
+      currentLevel.Save("Aggregates",aggregates);
+    }
+
+  /*! @brief Build aggregates. */
+  RCP<Aggregates> Build(const Graph& graph) const
+  {
+    RCP<Aggregates> aggregates = CoarsenUncoupled(options_,graph); //TODO: remove options_ arg.
+    std::string name = "UC_CleanUp";
+    AggregateLeftOvers(options_, *aggregates, name, graph);
+    return aggregates;
+  }
+  //@}
+  
   private:
+      //! aggregation option
+      //TODO: should not be a separate structure
+      AggregationOptions options_;
+
       //! aggregation algorithm type
       std::string Algorithm_;
 

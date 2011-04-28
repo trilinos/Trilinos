@@ -66,55 +66,55 @@ int main(int argc, char *argv[]) {
   /*                                                                                */
   /**********************************************************************************/
 
-//   int currentPrintLevel=10;
-//   int printFlag=6;
+  int currentPrintLevel=10;
+  int printFlag=6;
   
-//   MueLu::AggregationOptions aggOptions;
+  MueLu::AggregationOptions aggOptions;
   
-//   aggOptions.SetPrintFlag(printFlag);      
-//   aggOptions.SetMinNodesPerAggregate(2);  
-//   aggOptions.SetMaxNeighAlreadySelected(5);
-//   // aggOptions.SetOrdering(1); //TODO: RandomReorder()
-//   aggOptions.SetOrdering(2);
-//   aggOptions.SetPhase3AggCreation(0.5);
+  aggOptions.SetPrintFlag(printFlag);      
+  aggOptions.SetMinNodesPerAggregate(2);  
+  aggOptions.SetMaxNeighAlreadySelected(5);
+  // aggOptions.SetOrdering(1); //TODO: RandomReorder()
+  aggOptions.SetOrdering(2);
+  aggOptions.SetPhase3AggCreation(0.5);
 
-//   /**********************************************************************************/
-//   /*                                                                                */
-//   /**********************************************************************************/
+  /**********************************************************************************/
+  /*                                                                                */
+  /**********************************************************************************/
   
-//   if (comm->getRank() == 0 && printFlag < currentPrintLevel)
-//     printf("main() Aggregate_CoarsenUncoupled : \n");
+  if (comm->getRank() == 0 && printFlag < currentPrintLevel)
+    printf("main() Aggregate_CoarsenUncoupled : \n");
  
-//   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
+  RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
   
-//   RCP<UCAggregationFactory> AggFact = rcp(new UCAggregationFactory());
-//   RCP<Aggregates> aggregates = AggFact->Build(*graph, aggOptions);
+  RCP<UCAggregationFactory> AggFact = rcp(new UCAggregationFactory(aggOptions));
+  RCP<Aggregates> aggregates = AggFact->Build(*graph);
   
-//   /**********************************************************************************/
-//   /*                                                                                */
-//   /**********************************************************************************/
+  /**********************************************************************************/
+  /*                                                                                */
+  /**********************************************************************************/
   
-//   RCP<Cthulhu::Vector<int> > Final_ = Cthulhu::VectorFactory<int>::Build( aggregates->GetVertex2AggId()->getMap() );
+  RCP<Cthulhu::Vector<int> > Final_ = Cthulhu::VectorFactory<int>::Build( aggregates->GetVertex2AggId()->getMap() );
 
-//   {
-//     Teuchos::ArrayRCP<int> Final = Final_->getDataNonConst(0);
-//     Teuchos::ArrayRCP<const int> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
-//     Teuchos::ArrayRCP<const int> procWinner   = aggregates->GetProcWinner()->getData(0);
+  {
+    Teuchos::ArrayRCP<int> Final = Final_->getDataNonConst(0);
+    Teuchos::ArrayRCP<const int> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
+    Teuchos::ArrayRCP<const int> procWinner   = aggregates->GetProcWinner()->getData(0);
 
-//     for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++) 
-//       Final[i] = vertex2AggId[i] + procWinner[i]*1000;
-//   }
+    for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++) 
+      Final[i] = vertex2AggId[i] + procWinner[i]*1000;
+  }
 
-//   if (comm->getRank() == 0)
-//       printf("finals\n");
-//   //cout << *Final_ << endl; sleep(2);
+  if (comm->getRank() == 0)
+      printf("finals\n");
+  //cout << *Final_ << endl; sleep(2);
 
 
-//   RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+  RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
 
-//   Final_->describe(*out, Teuchos::VERB_EXTREME);
+  Final_->describe(*out, Teuchos::VERB_EXTREME);
 
-//   dumpAggregates(*aggregates);
+  // dumpAggregates(*aggregates);
 
   return EXIT_SUCCESS;
 }
