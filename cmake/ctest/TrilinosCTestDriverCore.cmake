@@ -322,8 +322,13 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
 
   # A.3) Get the names of the modified packages
 
+  IF (NOT PYTHON_EXECUTABLE)
+    MESSAGE(FATAL_ERROR "Error, Python must be enabled to map from modified files to packages!")
+  ENDIF()
+
   EXECUTE_PROCESS(
-    COMMAND ${TRILINOS_CMAKE_DIR}/python/get-trilinos-packages-from-files-list.py
+    COMMAND ${PYTHON_EXECUTABLE}
+      ${TRILINOS_CMAKE_DIR}/python/get-trilinos-packages-from-files-list.py
       --files-list-file=${MODIFIED_FILES_FILE_NAME}
       --deps-xml-file=${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}
     OUTPUT_VARIABLE MODIFIED_PACKAGES_LIST
