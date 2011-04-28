@@ -47,7 +47,7 @@ typedef struct MueLu_SuperNode_Struct
   struct MueLu_SuperNode_Struct *next;
 } MueLu_SuperNode;
 
-/* In the algorithm, aggStat[]=READY/NOTSEL/SELECTED indicates whether a node has been aggreated. */
+/* In the algorithm, aggStat[]=READY/NOTSEL/SELECTED indicates whether a node has been aggregated. */
 enum NodeState {
   READY   = -11,   /* indicates that a node is available to be */
                    /* selected as a root node of an aggregate  */
@@ -216,7 +216,7 @@ typedef int my_size_t; //TODO
 
         if ( ordering == 1 )       /* random ordering */
         {
-          randomVector = Teuchos::arcp<int>(nRows);
+          randomVector = Teuchos::arcp<int>(nRows); //size_t or int ?-> to be propagated
           for (int i = 0; i < nRows; ++i) randomVector[i] = i;
           RandomReorder(randomVector);
         } 
@@ -276,7 +276,7 @@ typedef int my_size_t; //TODO
                 {
                   // neighOfINode is the neighbor node list of node 'iNode'.
                   Teuchos::ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode);
-                  Teuchos::ArrayView<const int>::size_type length = neighOfINode.size(); //TODO: int/LO ?
+                  typename Teuchos::ArrayView<const LO>::size_type length = neighOfINode.size();
                 
                   supernode = new MueLu_SuperNode;
                   try {
