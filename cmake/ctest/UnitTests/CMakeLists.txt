@@ -262,239 +262,248 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   )
 
 
-CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableOnlyModified_ModifiedNone
-  COPY_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
-  PASS_REGULAR_EXPRESSION_ALL
-    "Final set of enabled packages:  0"
-    "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
-  SKIP_STANDARD_DEPS_CHECK
-  )
+#
+# Test enable logic based on modified files/packages
+#
 
 
-CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableOnlyModified_ModifiedTeuchos
-  COPY_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teuchos.txt modifiedFiles.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
-    CTEST_UPDATE_RETURN_VAL=1
-  PASS_REGULAR_EXPRESSION_ALL
-    "Directly modified or failing non-disabled packages that need to be tested:  Teuchos 1"
-    "Explicitly enabled packages on input .*  Teuchos 1"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 22"
-    "Final set of non-enabled packages:  Stokhos Stalix 2"
-    "CTEST_UPDATE.+ returned '1'"
-    "Procesing current package Teuchos: libs='ON', tests='ON'"
-    "Procesing current package Teko: libs='ON', tests='ON'"
-    "Procesing current package Stalix: libs='OFF', tests=''"
-  )
+IF (PYTHON_EXECUTABLE)
+
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_EnableOnlyModified_ModifiedNone
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+    PASS_REGULAR_EXPRESSION_ALL
+      "Final set of enabled packages:  0"
+      "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
+    SKIP_STANDARD_DEPS_CHECK
+    )
 
 
-CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_Nightly_EnableOnlyModified_ModifiedTeuchos
-  COPY_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teuchos.txt modifiedFiles.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.extraTrilinosRepo.txt
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
-    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE
-    Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
-    CTEST_UPDATE_RETURN_VAL=1
-  PASS_REGULAR_EXPRESSION_ALL
-    "Directly modified or failing non-disabled packages that need to be tested:  Teuchos 1"
-    "Explicitly enabled packages on input .*  Teuchos 1"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko ExtraPack 23"
-    "Final set of non-enabled packages:  Stokhos Stalix 2"
-    "CTEST_UPDATE.+ returned '1'"
-    "Procesing current package Teuchos: libs='ON', tests='ON'"
-    "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
-    "Procesing current package Zoltan: libs='ON', tests=''"
-    "Procesing current package Teko: libs='ON', tests='ON'"
-    "Procesing current package Stalix: libs='OFF', tests=''"
-    "Procesing current package ExtraPack: libs='ON', tests='ON'"
-  )
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_EnableOnlyModified_ModifiedTeuchos
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teuchos.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      CTEST_UPDATE_RETURN_VAL=1
+    PASS_REGULAR_EXPRESSION_ALL
+      "Directly modified or failing non-disabled packages that need to be tested:  Teuchos 1"
+      "Explicitly enabled packages on input .*  Teuchos 1"
+      "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 22"
+      "Final set of non-enabled packages:  Stokhos Stalix 2"
+      "CTEST_UPDATE.+ returned '1'"
+      "Procesing current package Teuchos: libs='ON', tests='ON'"
+      "Procesing current package Teko: libs='ON', tests='ON'"
+      "Procesing current package Stalix: libs='OFF', tests=''"
+    )
 
 
-CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableOnlyModified_ModifiedThyra_NoEnableImplictlyEnabled
-  COPY_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Thyra.txt modifiedFiles.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.extraTrilinosRepo.txt
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
-    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
-    CTEST_UPDATE_RETURN_VAL=1
-  PASS_REGULAR_EXPRESSION_ALL
-    "Directly modified or failing non-disabled packages that need to be tested:  Thyra 1"
-    "Explicitly enabled packages on input .*  Thyra 1"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos Teko 17"
-    "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 7"
-    "CTEST_UPDATE.+ returned '1'"
-    "Procesing current package Teuchos: libs='ON', tests=''"
-    "Not enabling implicitly enabled package Teuchos on request"
-    "Procesing current package Zoltan: libs='ON', tests=''"
-    "Not enabling implicitly enabled package Zoltan on request"
-    "Procesing current package Thyra: libs='ON', tests='ON'"
-    "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Thyra:BOOL=ON"
-    "Procesing current package Teko: libs='ON', tests='ON'"
-  )
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_Nightly_EnableOnlyModified_ModifiedTeuchos
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teuchos.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.extraTrilinosRepo.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE
+      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
+      CTEST_UPDATE_RETURN_VAL=1
+    PASS_REGULAR_EXPRESSION_ALL
+      "Directly modified or failing non-disabled packages that need to be tested:  Teuchos 1"
+      "Explicitly enabled packages on input .*  Teuchos 1"
+      "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko ExtraPack 23"
+      "Final set of non-enabled packages:  Stokhos Stalix 2"
+      "CTEST_UPDATE.+ returned '1'"
+      "Procesing current package Teuchos: libs='ON', tests='ON'"
+      "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
+      "Procesing current package Zoltan: libs='ON', tests=''"
+      "Procesing current package Teko: libs='ON', tests='ON'"
+      "Procesing current package Stalix: libs='OFF', tests=''"
+      "Procesing current package ExtraPack: libs='ON', tests='ON'"
+    )
 
 
-CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableOnlyModified_ModifiedTeko
-  COPY_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teko.txt modifiedFiles.preCopyrightTrilinos.txt
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
-    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE
-    CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
-  PASS_REGULAR_EXPRESSION_ALL
-    "Directly modified or failing non-disabled packages that need to be tested:  Teko 1"
-    "Explicitly enabled packages on input .*  Teko 1"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos Teko 17"
-    "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 7"
-    "CTEST_UPDATE.+ returned '0'"
-    "Procesing current package Teuchos: libs='ON', tests=''"
-    "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
-    "Procesing current package Teko: libs='ON', tests='ON'"
-    "Procesing current package Stalix: libs='OFF', tests=''"
-  )
-# NOTE: The above unit test is critical because it shows that Teko will get
-# enabled and processed even though the main git update of the main Trilinos
-# repo returns no updated files.  This ensures that if only extra repo
-# packages get modified then they will get picked up in CI testing and
-# processed correctly.
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_EnableOnlyModified_ModifiedThyra_NoEnableImplictlyEnabled
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Thyra.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.extraTrilinosRepo.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
+      CTEST_UPDATE_RETURN_VAL=1
+    PASS_REGULAR_EXPRESSION_ALL
+      "Directly modified or failing non-disabled packages that need to be tested:  Thyra 1"
+      "Explicitly enabled packages on input .*  Thyra 1"
+      "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos Teko 17"
+      "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 7"
+      "CTEST_UPDATE.+ returned '1'"
+      "Procesing current package Teuchos: libs='ON', tests=''"
+      "Not enabling implicitly enabled package Teuchos on request"
+      "Procesing current package Zoltan: libs='ON', tests=''"
+      "Not enabling implicitly enabled package Zoltan on request"
+      "Procesing current package Thyra: libs='ON', tests='ON'"
+      "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Thyra:BOOL=ON"
+      "Procesing current package Teko: libs='ON', tests='ON'"
+    )
 
 
-CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableOnlyModified_ModifiedTeuchosTeko
-  COPY_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teuchos.txt modifiedFiles.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teko.txt modifiedFiles.preCopyrightTrilinos.txt
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
-    CTEST_UPDATE_RETURN_VAL=2
-  PASS_REGULAR_EXPRESSION_ALL
-    "MODIFIED_PACKAGES_LIST='Teuchos.Teko'"
-    "Enabling modified package: Teuchos"
-    "Enabling modified package: Teko"
-    "Directly modified or failing non-disabled packages that need to be tested:  Teuchos Teko 2"
-    "Explicitly enabled packages on input .*  Teuchos Teko 2"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 22"
-    "Final set of non-enabled packages:  Stokhos Stalix 2"
-    "CTEST_UPDATE.+ returned '2'"
-    "Procesing current package Teuchos: libs='ON', tests='ON'"
-    "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
-    "Procesing current package Teko: libs='ON', tests='ON'"
-    "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teko:BOOL=ON"
-    "Procesing current package Stalix: libs='OFF', tests=''"
-  )
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_EnableOnlyModified_ModifiedTeko
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teko.txt modifiedFiles.preCopyrightTrilinos.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE
+      CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
+    PASS_REGULAR_EXPRESSION_ALL
+      "Directly modified or failing non-disabled packages that need to be tested:  Teko 1"
+      "Explicitly enabled packages on input .*  Teko 1"
+      "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos Teko 17"
+      "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 7"
+      "CTEST_UPDATE.+ returned '0'"
+      "Procesing current package Teuchos: libs='ON', tests=''"
+      "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
+      "Procesing current package Teko: libs='ON', tests='ON'"
+      "Procesing current package Stalix: libs='OFF', tests=''"
+    )
+  # NOTE: The above unit test is critical because it shows that Teko will get
+  # enabled and processed even though the main git update of the main Trilinos
+  # repo returns no updated files.  This ensures that if only extra repo
+  # packages get modified then they will get picked up in CI testing and
+  # processed correctly.
 
 
-CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableOnlyModified_ModifiedStokhosStalix_FailedNone
-  COPY_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Stokhos.txt modifiedFiles.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Stalix.txt modifiedFiles.preCopyrightTrilinos.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.none.txt failedPackages.txt
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
-    CTEST_UPDATE_RETURN_VAL=1
-  PASS_REGULAR_EXPRESSION_ALL
-    "MODIFIED_PACKAGES_LIST='Stokhos.Stalix'"
-    "FAILING_PACKAGES_LIST=''"
-    "Not enabling explicitly disabled modified package: Stokhos"
-    "Not enabling explicitly disabled modified package: Stalix"
-    "Directly modified or failing non-disabled packages that need to be tested:  0"
-    "Explicitly enabled packages on input .*  0"
-    "Explicitly disabled packages on input .*  Stokhos Stalix 2"
-    "Final set of enabled packages:  0"
-    "Final set of non-enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 24"
-    "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
-  )
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_EnableOnlyModified_ModifiedTeuchosTeko
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teuchos.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teko.txt modifiedFiles.preCopyrightTrilinos.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      CTEST_UPDATE_RETURN_VAL=2
+    PASS_REGULAR_EXPRESSION_ALL
+      "MODIFIED_PACKAGES_LIST='Teuchos.Teko'"
+      "Enabling modified package: Teuchos"
+      "Enabling modified package: Teko"
+      "Directly modified or failing non-disabled packages that need to be tested:  Teuchos Teko 2"
+      "Explicitly enabled packages on input .*  Teuchos Teko 2"
+      "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 22"
+      "Final set of non-enabled packages:  Stokhos Stalix 2"
+      "CTEST_UPDATE.+ returned '2'"
+      "Procesing current package Teuchos: libs='ON', tests='ON'"
+      "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
+      "Procesing current package Teko: libs='ON', tests='ON'"
+      "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teko:BOOL=ON"
+      "Procesing current package Stalix: libs='OFF', tests=''"
+    )
 
 
-CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableOnlyModified_ModifiedTeko_FailedThyraRBGen
-  COPY_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teko.txt modifiedFiles.preCopyrightTrilinos.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Thyra.RBGen.txt failedPackages.txt
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
-    CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
-  PASS_REGULAR_EXPRESSION_ALL
-    "MODIFIED_PACKAGES_LIST='Teko'"
-    "FAILING_PACKAGES_LIST='Thyra.RBGen'"
-    "Enabling modified package: Teko"
-    "Enabling previously failing package: Thyra"
-    "Enabling previously failing package: RBGen"
-    "Directly modified or failing non-disabled packages that need to be tested:  Thyra RBGen Teko 3"
-    "Explicitly enabled packages on input .*  Thyra RBGen Teko 3"
-    "Explicitly disabled packages on input .*  Stokhos Stalix 2"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos RBGen Teko 18"
-    "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid Phalanx Stalix 6"
-    "CTEST_UPDATE.+ returned '0'"
-    "Procesing current package Teuchos: libs='ON', tests=''"
-    "Procesing current package Epetra: libs='ON', tests=''"
-    "Procesing current package Thyra: libs='ON', tests='ON'"
-    "Procesing current package RBGen: libs='ON', tests='ON'"
-    "Procesing current package Stokhos: libs='OFF', tests=''"
-    "Procesing current package Teko: libs='ON', tests='ON'"
-    "Procesing current package Stalix: libs='OFF', tests=''"
-  )
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_EnableOnlyModified_ModifiedStokhosStalix_FailedNone
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Stokhos.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Stalix.txt modifiedFiles.preCopyrightTrilinos.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.none.txt failedPackages.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      CTEST_UPDATE_RETURN_VAL=1
+    PASS_REGULAR_EXPRESSION_ALL
+      "MODIFIED_PACKAGES_LIST='Stokhos.Stalix'"
+      "FAILING_PACKAGES_LIST=''"
+      "Not enabling explicitly disabled modified package: Stokhos"
+      "Not enabling explicitly disabled modified package: Stalix"
+      "Directly modified or failing non-disabled packages that need to be tested:  0"
+      "Explicitly enabled packages on input .*  0"
+      "Explicitly disabled packages on input .*  Stokhos Stalix 2"
+      "Final set of enabled packages:  0"
+      "Final set of non-enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 24"
+      "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
+    )
 
 
-CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableOnlyModified_ModifiedNone_FailedThyraRBGen
-  COPY_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Thyra.RBGen.txt failedPackages.txt
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
-    CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
-  PASS_REGULAR_EXPRESSION_ALL
-    "CTEST_UPDATE.+ returned '0'"
-    "MODIFIED_PACKAGES_LIST=''"
-    "FAILING_PACKAGES_LIST='Thyra.RBGen'"
-    "Directly modified or failing non-disabled packages that need to be tested:  Thyra RBGen 2"
-    "Explicitly enabled packages on input .*  Thyra RBGen 2"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos RBGen Teko 18"
-    "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
-  )
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_EnableOnlyModified_ModifiedTeko_FailedThyraRBGen
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teko.txt modifiedFiles.preCopyrightTrilinos.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Thyra.RBGen.txt failedPackages.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
+    PASS_REGULAR_EXPRESSION_ALL
+      "MODIFIED_PACKAGES_LIST='Teko'"
+      "FAILING_PACKAGES_LIST='Thyra.RBGen'"
+      "Enabling modified package: Teko"
+      "Enabling previously failing package: Thyra"
+      "Enabling previously failing package: RBGen"
+      "Directly modified or failing non-disabled packages that need to be tested:  Thyra RBGen Teko 3"
+      "Explicitly enabled packages on input .*  Thyra RBGen Teko 3"
+      "Explicitly disabled packages on input .*  Stokhos Stalix 2"
+      "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos RBGen Teko 18"
+      "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid Phalanx Stalix 6"
+      "CTEST_UPDATE.+ returned '0'"
+      "Procesing current package Teuchos: libs='ON', tests=''"
+      "Procesing current package Epetra: libs='ON', tests=''"
+      "Procesing current package Thyra: libs='ON', tests='ON'"
+      "Procesing current package RBGen: libs='ON', tests='ON'"
+      "Procesing current package Stokhos: libs='OFF', tests=''"
+      "Procesing current package Teko: libs='ON', tests='ON'"
+      "Procesing current package Stalix: libs='OFF', tests=''"
+    )
 
 
-CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableOnlyModified_ModifiedNone_FailedStokhosStalix
-  COPY_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Stokhos.Stalix.txt failedPackages.txt
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
-    CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
-  PASS_REGULAR_EXPRESSION_ALL
-    "CTEST_UPDATE.+ returned '0'"
-    "MODIFIED_PACKAGES_LIST=''"
-    "FAILING_PACKAGES_LIST='Stokhos.Stalix'"
-    "Not enabling explicitly disabled previously failing package: Stokhos"
-    "Not enabling explicitly disabled previously failing package: Stalix"
-    "Directly modified or failing non-disabled packages that need to be tested:  0"
-    "Explicitly enabled packages on input .*  0"
-    "Explicitly disabled packages on input .*  Stokhos Stalix 2"
-    "Final set of enabled packages:  0"
-    "Final set of non-enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 24"
-    "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
-  )
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_EnableOnlyModified_ModifiedNone_FailedThyraRBGen
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Thyra.RBGen.txt failedPackages.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
+    PASS_REGULAR_EXPRESSION_ALL
+      "CTEST_UPDATE.+ returned '0'"
+      "MODIFIED_PACKAGES_LIST=''"
+      "FAILING_PACKAGES_LIST='Thyra.RBGen'"
+      "Directly modified or failing non-disabled packages that need to be tested:  Thyra RBGen 2"
+      "Explicitly enabled packages on input .*  Thyra RBGen 2"
+      "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos RBGen Teko 18"
+      "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
+    )
+
+
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_EnableOnlyModified_ModifiedNone_FailedStokhosStalix
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Stokhos.Stalix.txt failedPackages.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
+    PASS_REGULAR_EXPRESSION_ALL
+      "CTEST_UPDATE.+ returned '0'"
+      "MODIFIED_PACKAGES_LIST=''"
+      "FAILING_PACKAGES_LIST='Stokhos.Stalix'"
+      "Not enabling explicitly disabled previously failing package: Stokhos"
+      "Not enabling explicitly disabled previously failing package: Stalix"
+      "Directly modified or failing non-disabled packages that need to be tested:  0"
+      "Explicitly enabled packages on input .*  0"
+      "Explicitly disabled packages on input .*  Stokhos Stalix 2"
+      "Final set of enabled packages:  0"
+      "Final set of non-enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 24"
+      "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
+    )
+
+ENDIF(PYTHON_EXECUTABLE)
 
 # ToDo: Test ???
