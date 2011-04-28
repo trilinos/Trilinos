@@ -126,6 +126,38 @@ namespace MueLu {
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
+    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Cthulhu::MultiVector.
+    static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > MV2TpetraMV(RCP<MultiVector> const Vec) {
+      //rcp<const TpetraMultiVector> tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
+      RCP<const TpetraMultiVector > tmpVec;
+      tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
+      if (tmpVec == Teuchos::null)
+        throw(Exceptions::BadCast("Cast from Cthulhu::MultiVector to Cthulhu::TpetraMultiVector failed"));
+      RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec->getTpetra_MultiVector();
+      return tpVec;
+    } //MV2TpetraMV
+
+    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Cthulhu::MultiVector.
+    static RCP<Tpetra::MultiVector<SC,LO,GO,NO> > MV2NonConstTpetraMV(RCP<MultiVector> Vec) {
+      RCP<const TpetraMultiVector> tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
+      if (tmpVec == Teuchos::null)
+        throw(Exceptions::BadCast("Cast from Cthulhu::MultiVector to Cthulhu::TpetraMultiVector failed"));
+      RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec->getTpetra_MultiVector();
+      return tpVec;
+    } //MV2TpetraMV
+
+    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Cthulhu::MultiVector.
+    static Tpetra::MultiVector<SC,LO,GO,NO> & MV2NonConstTpetraMV(MultiVector &Vec) {
+      TpetraMultiVector const &tmpVec = dynamic_cast<TpetraMultiVector const&>(Vec);
+      RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec.getTpetra_MultiVector();
+      return *tpVec;
+    } //MV2TpetraMV
+
+    static Tpetra::MultiVector<SC,LO,GO,NO>  const& MV2TpetraMV(MultiVector const &Vec) {
+      TpetraMultiVector const &tmpVec = dynamic_cast<TpetraMultiVector const&>(Vec);
+      RCP<Tpetra::MultiVector<SC,LO,GO,NO>  const> tpVec = tmpVec.getTpetra_MultiVector();
+      return *tpVec;
+    } //MV2TpetraMV
     //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Cthulhu::Operator.
     static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > Op2TpetraCrs(RCP<Operator> Op) {
      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A;

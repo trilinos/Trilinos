@@ -1,11 +1,12 @@
 #ifndef MUELU_IFPACK_SMOOTHER_HPP
 #define MUELU_IFPACK_SMOOTHER_HPP
 
+#ifdef HAVE_MUELU_IFPACK
+
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities.hpp"
 
-#ifdef HAVE_MUELU_IFPACK
 #include "Ifpack.h"
 
 namespace MueLu {
@@ -34,7 +35,6 @@ class Level;
     //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;
     RCP<Ifpack_Preconditioner> prec_;
-    //Ifpack_Preconditioner* prec_;
     //! matrix operator 
     Teuchos::RCP<Operator> A_;
     //! parameter list that is used by Ifpack internally
@@ -115,6 +115,7 @@ class Level;
         throw(Exceptions::RuntimeError("Call Setup before setting sweeps"));
       if (ifpackType_ == "point relaxation stand-alone") list_.set("relaxation: sweeps", nIts);
       else if (ifpackType_ == "Chebyshev")               list_.set("chebyshev: degree", nIts);
+      else throw(Exceptions::RuntimeError("SetNIts: unknown smoother type"));
       prec_->SetParameters(list_);
     }
 

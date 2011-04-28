@@ -1,12 +1,13 @@
 #ifndef MUELU_IFPACK2_SMOOTHER_HPP
 #define MUELU_IFPACK2_SMOOTHER_HPP
 
+#ifdef HAVE_MUELU_IFPACK2
+
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities.hpp"
 
-#ifdef HAVE_MUELU_IFPACK2
-// #include "Ifpack2.hpp"
+#include "Ifpack2_Factory.hpp"
 
 namespace MueLu {
 
@@ -29,25 +30,24 @@ class Level;
 
   private:
 
-//     //! Ifpack2-specific key phrase that denote smoother type (not to be confused with SmootherBase::Type_)
-//     std::string ifpackType_;
-//     //! overlap when using the smoother in additive Schwarz mode
-//     LO overlap_;
-//     RCP<Ifpack2_Preconditioner> prec_;
-//     //Ifpack2_Preconditioner* prec_;
-//     //! matrix operator 
-//     Teuchos::RCP<Operator> A_;
-//     //! parameter list that is used by Ifpack2 internally
-//     Teuchos::ParameterList list_;
+    //! Ifpack2-specific key phrase that denote smoother type (not to be confused with SmootherBase::Type_)
+    std::string ifpack2Type_;
+    //! overlap when using the smoother in additive Schwarz mode
+    LO overlap_;
+    RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_;
+    //! matrix operator 
+    Teuchos::RCP<Operator> A_;
+    //! parameter list that is used by Ifpack2 internally
+    Teuchos::ParameterList list_;
 
   protected:
-//     Teuchos::RCP<Teuchos::FancyOStream> out_;
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
 
   public:
 
     //! @name Constructors / destructors
     //@{
-
+    //TODO: update doc for Ifpack2. Right now, it's a copy of the doc of IfpackSmoother
     /*! @brief Constructor
 
         The options passed into Ifpack2Smoother are those given in the Ifpack2 user's manual.
@@ -80,18 +80,18 @@ class Level;
             - parameter list options
                 - <tt>fact: level-of-fill</tt>
 
-        See also Ifpack2_PointRelaxation, Ifpack2_Chebyshev, Ifpack2_ILU.
+        See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT.
     */
     Ifpack2Smoother(std::string const & type, Teuchos::ParameterList & list)
-//       : ifpackType_(type), list_(list), out_(this->getOStream())
+      : ifpack2Type_(type), list_(list), out_(this->getOStream())
     {
-//       overlap_ = list.get("Overlap",(LO) 0);
-//       std::string label;
+      overlap_ = list.get("Overlap",(LO) 0);
+      std::string label;
 //       if (type == "point relaxation stand-alone")
 //         label = "Ifpack2: " + list.get("relaxation: type","unknown relaxation");
 //       else
-//         label = "Ifpack2: " + type;
-//       SmootherBase::SetType(label);
+      label = "Ifpack2: " + type;
+      SmootherBase::SetType(label);
     }
 
     //! Destructor
@@ -116,6 +116,7 @@ class Level;
 //       if (ifpackType_ == "point relaxation stand-alone") list_.set("relaxation: sweeps", nIts);
 //       else if (ifpackType_ == "Chebyshev")               list_.set("chebyshev: degree", nIts);
 //       prec_->SetParameters(list_);
+      throw(Exceptions::NotImplemented("Not Implemented"));
     }
 
     /*! @brief Get the number of smoothing sweeps.
@@ -135,6 +136,9 @@ class Level;
 //         return list_.get("chebyshev: degree",1);
 //       } else 
 //         throw(Exceptions::RuntimeError("GetNIts: unknown smoother type"));
+
+      throw(Exceptions::NotImplemented("Not Implemented"));
+      return -1;
     }
     //@}
 
@@ -147,16 +151,17 @@ class Level;
         supplied to the constructor to the Ifpack2 object, and computes the preconditioner.
     */
     void Setup(Level &level) {
-//       Teuchos::OSTab tab(out_);
-//       SmootherPrototype::IsSetup(true);
-//       A_ = level.GetA();
-//       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
-//       Ifpack2 factory;
-//       prec_ = rcp(factory.Create(ifpackType_, &(*epA), overlap_));
-//       prec_->SetParameters(list_);
-//       prec_->Compute();
-    }
+      Teuchos::OSTab tab(out_);
+      SmootherPrototype::IsSetup(true);
+      A_ = level.GetA();
 
+      //      Ifpack2::Factory factory;
+      RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A_);
+      prec_ = Ifpack2::Factory::create(ifpack2Type_, tpA, overlap_);
+      prec_->setParameters(list_);
+      prec_->initialize();
+      prec_->compute();
+    }
 
     /*! @brief Apply the preconditioner.
 
@@ -168,16 +173,16 @@ class Level;
     */
     void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false)
     {
-//       if (!SmootherPrototype::IsSetup())
-//         throw(Exceptions::RuntimeError("Setup has not been called"));
-//       Teuchos::ParameterList  ifpackList;
-//       ifpackList.set("relaxation: zero starting solution", InitialGuessIsZero);
-//       prec_->SetParameters(ifpackList);
+      if (!SmootherPrototype::IsSetup())
+        throw(Exceptions::RuntimeError("Setup has not been called"));
+      Teuchos::ParameterList  ifpack2List;
+      ifpack2List.set("relaxation: zero starting solution", InitialGuessIsZero);
+      prec_->setParameters(ifpack2List);
 
-//       Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
-//       Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
+      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(X);
+      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(B);
 
-//       prec_->ApplyInverse(epB,epX);
+      prec_->apply(tpB,tpX);
     }
 
     //@}
@@ -186,9 +191,9 @@ class Level;
     //@{
 
     void Print(std::string prefix) {
-//       Teuchos::OSTab tab(out_);
-//       //MueLu_cout(Teuchos::VERB_HIGH) << "Ifpack2Smoother::Print()" << std::endl;
-//       prec_->Print(*out_);
+      Teuchos::OSTab tab(out_);
+      //MueLu_cout(Teuchos::VERB_HIGH) << "Ifpack2Smoother::Print()" << std::endl;
+      //prec_->Print(*out_);
     }
 
     RCP<SmootherPrototype> Copy()
@@ -198,13 +203,13 @@ class Level;
 
     void CopyParameters(RCP<SmootherPrototype> source)
     {
-//       RCP<Ifpack2Smoother> ifpackSmoo = rcp_dynamic_cast<Ifpack2Smoother>(source);
-//       //TODO check if dynamic cast fails
-//       ifpackType_ = ifpackSmoo->ifpackType_;
-//       prec_ = ifpackSmoo->prec_;
-//       A_ = ifpackSmoo->A_;
-//       overlap_ = ifpackSmoo->overlap_;
-//       list_ = ifpackSmoo->list_;
+      RCP<Ifpack2Smoother> ifpack2Smoo = rcp_dynamic_cast<Ifpack2Smoother>(source);
+      //TODO check if dynamic cast fails
+      ifpack2Type_ = ifpack2Smoo->ifpack2Type_; //TODO: Get() methods
+      prec_ = ifpack2Smoo->prec_;
+      A_ = ifpack2Smoo->A_;
+      overlap_ = ifpack2Smoo->overlap_;
+      list_ = ifpack2Smoo->list_;
     }
 
     //@}
@@ -218,3 +223,4 @@ class Level;
 #endif //ifdef HAVE_MUELU_IFPACK2
 
 #endif //ifndef MUELU_IFPACK2_SMOOTHER_HPP
+// Note: Ifpack2 may be able to accept directly MueLu matrix

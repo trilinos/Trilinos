@@ -23,6 +23,7 @@ APPEND_SET(SOURCES
   TransPFactory.cpp
   SmootherFactory.cpp
   IfpackSmoother.cpp
+  Ifpack2Smoother.cpp
   Needs.cpp
   GenericPRFactory.cpp
   Amesos.cpp
