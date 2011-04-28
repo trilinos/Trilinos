@@ -16,6 +16,7 @@ typedef struct
     Epetra_LinearProblem *LP;   // Local problem to solve
     Amesos_BaseSolver *Solver;  // Local Subdomain solver
     Epetra_CrsMatrix *Cptr;     // Column separator
+    Epetra_CrsMatrix *Rptr;     // Row separator
     int Dnr;                    // #local rows
     int Snr;                    // #remote rows
     int *DRowElems;             // local rows

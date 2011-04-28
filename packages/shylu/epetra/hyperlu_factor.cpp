@@ -41,6 +41,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     Epetra_LinearProblem *LP;
     Amesos_BaseSolver *Solver;
     Epetra_CrsMatrix *Cptr;
+    Epetra_CrsMatrix *Rptr;
     int Dnr;
     int Snr;
     int *DRowElems;
@@ -296,7 +297,8 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
                                         //CNumEntriesPerRow, true);
     Cptr = new Epetra_CrsMatrix(Copy, DRowMap, CNumEntriesPerRow, true);
     //cout << " Created C matrix" << endl;
-    Epetra_CrsMatrix R(Copy, SRowMap, DColMap, RNumEntriesPerRow, true);
+    //Epetra_CrsMatrix R(Copy, SRowMap, DColMap, RNumEntriesPerRow, true);
+    Rptr = new Epetra_CrsMatrix(Copy, SRowMap, DColMap, RNumEntriesPerRow, true);
     //cout << " Created all the matrices" << endl;
     //Epetra_CrsGraph Sg(Copy, SRowMap, SColMap, SNumEntriesPerRow, true);
     // Leave the column map out, Let Epetra do the work.
@@ -352,7 +354,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         { // R or S row
             //assert(lcnt > 0); // TODO: Enable this once using narrow sep.
             assert(rcnt > 0);
-            err = R.InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
+            err = Rptr->InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
             assert(err == 0);
             err = S.InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
             assert(err == 0);
@@ -372,7 +374,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     Cptr->FillComplete(SRowMap, DRowMap); //TODO: Won't work if permutation is
                                             // unsymmetric SRowMap
     //cout << "Done C fill complete" << endl;
-    R.FillComplete(DColMap, SRowMap);
+    Rptr->FillComplete(DColMap, SRowMap);
     //cout << "Done R fill complete" << endl;
 
     // Add the diagonals to Sg
@@ -444,9 +446,9 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     //cout << msg << "D rows=" << D.NumGlobalRows() << " D cols=" <<
         //D.NumGlobalCols() << "#cols in column map="<<
         //D.ColMap().NumMyElements() << endl;
-    //cout << msg << "R rows=" << R.NumGlobalRows() << " R cols=" <<
-        //R.NumGlobalCols() << "#cols in column map="<<
-        //R.ColMap().NumMyElements() << endl;
+    //cout << msg << "R rows=" << Rptr->NumGlobalRows() << " R cols=" <<
+        //Rptr->NumGlobalCols() << "#cols in column map="<<
+        //Rptr->ColMap().NumMyElements() << endl;
     // ]
 
     // ======================= Numeric factorization =========================
@@ -492,6 +494,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     data->Solver = Solver;
     //data->D = D;
     data->Cptr = Cptr;
+    data->Rptr = Rptr;
     //data->LDRowMap = LocalDRowMap;
     //data->LDColMap = LocalDColMap;
 
@@ -520,7 +523,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     if (config->schurApproxMethod == 1)
     {
         //Set up the probing operator
-        HyperLU_Probing_Operator probeop(&S, &R, LP, Solver, Cptr,
+        HyperLU_Probing_Operator probeop(&S, Rptr, LP, Solver, Cptr,
                                         &LocalDRowMap);
 
         Teuchos::ParameterList pList;
@@ -555,7 +558,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
 #ifdef TIMING_OUTPUT
         ftime.start();
 #endif
-        Sbar = computeApproxSchur(config, &S, &R, LP, Solver, Cptr,
+        Sbar = computeApproxSchur(config, &S, Rptr, LP, Solver, Cptr,
                                         &LocalDRowMap);
 #ifdef TIMING_OUTPUT
         ftime.stop();

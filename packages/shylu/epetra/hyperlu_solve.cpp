@@ -34,6 +34,60 @@ int hyperlu_solve(hyperlu_data *data, hyperlu_config *config,
 
     Bs.Import(*newX, BsImporter, Insert);
     Epetra_MultiVector Xs(BsMap, nvectors);
+
+    Epetra_SerialComm LComm;        // Use Serial Comm for the local vectors.
+    Epetra_Map LocalBdMap(-1, data->Dnr, data->DRowElems, 0, LComm);
+    Epetra_MultiVector localrhs(LocalBdMap, nvectors);
+    Epetra_MultiVector locallhs(LocalBdMap, nvectors);
+
+    Epetra_MultiVector Z(BdMap, nvectors);
+
+    Epetra_MultiVector Bd(BdMap, nvectors);
+    Epetra_Import BdImporter(BdMap, newX->Map());
+    assert(BdImporter.SourceMap().SameAs(newX->Map()));
+    assert((newX->Map()).SameAs(BdImporter.SourceMap()));
+    Bd.Import(*newX, BdImporter, Insert);
+
+
+    int lda;
+    double *values;
+    err = Bd.ExtractView(&values, &lda);
+    assert (err == 0);
+    int nrows = data->Cptr->RowMap().NumMyElements();
+
+    // copy to local vector //TODO: OMP ?
+    assert(lda == nrows);
+    for (int v = 0; v < nvectors; v++)
+    {
+       for (int i = 0; i < nrows; i++)
+       {
+           err = localrhs.ReplaceMyValue(i, v, values[i+v*lda]);
+           assert (err == 0);
+       }
+    }
+
+    data->LP->SetRHS(&localrhs);
+    data->LP->SetLHS(&locallhs);
+    data->Solver->Solve();
+
+    err = locallhs.ExtractView(&values, &lda);
+    assert (err == 0);
+
+    // copy to distributed vector //TODO: OMP ?
+    assert(lda == nrows);
+    for (int v = 0; v < nvectors; v++)
+    {
+       for (int i = 0; i < nrows; i++)
+       {
+           err = Z.ReplaceMyValue(i, v, values[i+v*lda]);
+           assert (err == 0);
+       }
+    }
+
+    Epetra_MultiVector temp1(BsMap, nvectors);
+    data->Rptr->Multiply(false, Z, temp1);
+    Bs.Update(-1.0, temp1, 1.0);
+
     Xs.PutScalar(0.0);
 
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
@@ -66,26 +120,20 @@ int hyperlu_solve(hyperlu_data *data, hyperlu_config *config,
     // What should be a good inner_tolerance :-) ?
     solver->Iterate(config->inner_maxiters, config->inner_tolerance);
 
-    Epetra_MultiVector Bd(BdMap, nvectors);
-    Epetra_Import BdImporter(BdMap, newX->Map());
-    assert(BdImporter.SourceMap().SameAs(newX->Map()));
-    assert((newX->Map()).SameAs(BdImporter.SourceMap()));
-    Bd.Import(*newX, BdImporter, Insert);
-
     Epetra_MultiVector temp(BdMap, nvectors);
     data->Cptr->Multiply(false, Xs, temp);
     temp.Update(1.0, Bd, -1.0);
 
-    Epetra_SerialComm LComm;        // Use Serial Comm for the local vectors.
-    Epetra_Map LocalBdMap(-1, data->Dnr, data->DRowElems, 0, LComm);
-    Epetra_MultiVector localrhs(LocalBdMap, nvectors);
-    Epetra_MultiVector locallhs(LocalBdMap, nvectors);
+    //Epetra_SerialComm LComm;        // Use Serial Comm for the local vectors.
+    //Epetra_Map LocalBdMap(-1, data->Dnr, data->DRowElems, 0, LComm);
+    //Epetra_MultiVector localrhs(LocalBdMap, nvectors);
+    //Epetra_MultiVector locallhs(LocalBdMap, nvectors);
 
-    int lda;
-    double *values;
+    //int lda;
+    //double *values;
     err = temp.ExtractView(&values, &lda);
     assert (err == 0);
-    int nrows = data->Cptr->RowMap().NumMyElements();
+    //int nrows = data->Cptr->RowMap().NumMyElements();
 
     // copy to local vector //TODO: OMP ?
     assert(lda == nrows);

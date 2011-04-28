@@ -167,10 +167,12 @@ const Epetra_Comm& HyperLU_Probing_Operator::Comm() const
 
 const Epetra_Map& HyperLU_Probing_Operator::OperatorDomainMap() const
 {
-    return C_->ColMap();
+    //return C_->ColMap();
+    return C_->DomainMap();
 }
 
 const Epetra_Map& HyperLU_Probing_Operator::OperatorRangeMap() const
 {
-    return R_->RowMap();
+    //return R_->RowMap();
+    return R_->RangeMap();
 }

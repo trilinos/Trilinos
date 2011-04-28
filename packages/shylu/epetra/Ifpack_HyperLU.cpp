@@ -39,6 +39,7 @@ void Ifpack_HyperLU::Destroy()
             delete hlu_data_.innersolver;
         //delete hlu_data_.D;
         delete hlu_data_.Cptr;
+        delete hlu_data_.Rptr;
         //delete hlu_data_.LDRowMap;
         //delete hlu_data_.LDColMap;
         //delete hlu_data_.SComm;
@@ -127,6 +128,8 @@ int Ifpack_HyperLU::Compute()
         solver->SetAztecOption(AZ_solver, AZ_gmres);
         solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
         solver->SetAztecOption(AZ_keep_info, 1);
+        //solver->SetAztecOption(AZ_overlap, 3);
+        //solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
         solver->SetMatrixName(999);
 
         double condest;
