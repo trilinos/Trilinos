@@ -71,6 +71,7 @@ class Needs : public Teuchos::VerboseObject<Needs> {
     } //Request
 
 
+  // TODO from JG: see new version of MueMat Needs -> distinguish get data and decrement!
     //! Get data and decrement the storage counter associated with it.
     template <typename T>
     void CheckOut(const std::string ename, T &value) {
