@@ -35,6 +35,7 @@
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_CrsMatrixIn.h"
+#include "EpetraExt_MultiVectorIn.h"
 
 // Amesos includes
 #include "Amesos.h"
@@ -67,6 +68,7 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList pLUList ;        // ParaLU parameters
     Teuchos::ParameterList isoList ;        // Isorropia parameters
     Teuchos::ParameterList hyperLUList ;    // HyperLU parameters
+    Teuchos::ParameterList ifpackList ;    // HyperLU parameters
     string ipFileName = "HyperLU.xml";       // TODO : Accept as i/p
 
     nProcs = mpiSession.getNProc();
@@ -87,6 +89,7 @@ int main(int argc, char *argv[])
     string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
     int maxiters = Teuchos::getParameter<int>(pLUList, "Outer Solver MaxIters");
     double tol = Teuchos::getParameter<double>(pLUList, "Outer Solver Tolerance");
+    string rhsFileName = Teuchos::getParameter<string>(pLUList, "rhs_file");
 
     if (myPID == 0)
     {
@@ -98,17 +101,20 @@ int main(int argc, char *argv[])
 
     // ==================== Read input Matrix ==============================
     Epetra_CrsMatrix *A;
+    Epetra_MultiVector *b1;
 
-    int err = EpetraExt::MatrixMarketFileToCrsMatrix(MMFileName.c_str(), Comm, 
+    int err = EpetraExt::MatrixMarketFileToCrsMatrix(MMFileName.c_str(), Comm,
                                                         A);
     //EpetraExt::MatlabFileToCrsMatrix(MMFileName.c_str(), Comm, A);
     //assert(err != 0);
     //cout <<"Done reading the matrix"<< endl;
     int n = A->NumGlobalRows();
     //cout <<"n="<< n << endl;
+    Epetra_Map vecMap(n, 0, Comm);
+    err = EpetraExt::MatrixMarketFileToMultiVector(rhsFileName.c_str(),
+                                     vecMap, b1);
 
     // Create input vectors
-    Epetra_Map vecMap(n, 0, Comm);
     Epetra_MultiVector x(vecMap, 1);
     Epetra_MultiVector b(vecMap, 1, false);
     b.PutScalar(1.0); // TODO : Accept it as input
@@ -127,12 +133,14 @@ int main(int argc, char *argv[])
     A = newA;
 
     rd.redistribute(x, newX);
-    rd.redistribute(b, newB);
+    //rd.redistribute(b, newB);
+    rd.redistribute(*b1, newB);
 
     Epetra_LinearProblem problem(A, newX, newB);
 
     AztecOO solver(problem);
 
+    ifpackList ;
     Ifpack_Preconditioner *prec;
     ML_Epetra::MultiLevelPreconditioner *MLprec;
     if (prec_type.compare("HyperLU") == 0)
@@ -148,14 +156,19 @@ int main(int argc, char *argv[])
     }
     else if (prec_type.compare("ILU") == 0)
     {
+        ifpackList.set( "fact: level-of-fill", 1 );
         prec = new Ifpack_ILU(A);
+        prec->SetParameters(ifpackList);
         prec->Initialize();
         prec->Compute();
         solver.SetPrecOperator(prec);
     }
     else if (prec_type.compare("ILUT") == 0)
     {
+        ifpackList.set( "fact: ilut level-of-fill", 2 );
+        ifpackList.set( "fact: drop tolerance", 1e-8);
         prec = new Ifpack_ILUT(A);
+        prec->SetParameters(ifpackList);
         prec->Initialize();
         prec->Compute();
         solver.SetPrecOperator(prec);

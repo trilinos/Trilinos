@@ -36,6 +36,7 @@
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_CrsMatrixIn.h"
+#include "EpetraExt_MultiVectorIn.h"
 
 // Amesos includes
 #include "Amesos.h"
@@ -119,6 +120,7 @@ int main(int argc, char *argv[])
     string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
     int maxiters = Teuchos::getParameter<int>(pLUList, "Outer Solver MaxIters");
     MT tol = Teuchos::getParameter<double>(pLUList, "Outer Solver Tolerance");
+    string rhsFileName = Teuchos::getParameter<string>(pLUList, "rhs_file");
 
     if (myPID == 0)
     {
@@ -130,6 +132,7 @@ int main(int argc, char *argv[])
 
     // ==================== Read input Matrix ==============================
     Epetra_CrsMatrix *A;
+    Epetra_MultiVector *b1;
 
     int err = EpetraExt::MatrixMarketFileToCrsMatrix(MMFileName.c_str(), Comm, 
                                     A);
@@ -139,6 +142,9 @@ int main(int argc, char *argv[])
 
     // Create input vectors
     Epetra_Map vecMap(n, 0, Comm);
+    err = EpetraExt::MatrixMarketFileToMultiVector(rhsFileName.c_str(),
+                                     vecMap, b1);
+
     Epetra_MultiVector x(vecMap, 1);
     Epetra_MultiVector b(vecMap, 1, false);
 
@@ -158,7 +164,8 @@ int main(int argc, char *argv[])
     RCP<Epetra_CrsMatrix> rcpA(A, false);
 
     rd.redistribute(x, newX);
-    rd.redistribute(b, newB);
+    //rd.redistribute(b, newB);
+    rd.redistribute(*b1, newB);
     RCP<Epetra_MultiVector> rcpx (newX, false);
     RCP<Epetra_MultiVector> rcpb (newB, false);
     //OPT::Apply(*rcpA, *rcpx, *rcpb );
@@ -202,6 +209,7 @@ int main(int argc, char *argv[])
 
     const int NumGlobalElements = rcpb->GlobalLength();
     Teuchos::ParameterList belosList;
+     //belosList.set( "Flexible Gmres", true );
     belosList.set( "Num Blocks", maxsubspace );// Maximum number of blocks in Krylov factorization
     belosList.set( "Block Size", blocksize );  // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters ); // Maximum number of iterations allowed
