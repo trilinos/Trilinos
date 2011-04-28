@@ -191,6 +191,8 @@ namespace stk {
       std::vector< RefinementInfoByType > m_refinementInfoByType;
       bool m_doQueryOnly;
 
+      int m_progress_meter_frequency;
+      bool m_doProgress;
     };
 
 

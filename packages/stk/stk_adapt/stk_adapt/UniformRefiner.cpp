@@ -8,9 +8,12 @@
 #endif
 
 #include <stk_adapt/UniformRefiner.hpp>
-#include <stk_adapt/geometry/GeometryKernelStupid.hpp>
+
+#if defined( STK_ADAPT_HAS_GEOMETRY )
+#include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
 #include <stk_adapt/geometry/MeshGeometry.hpp>
 #include <stk_adapt/geometry/GeometryFactory.hpp>
+#endif
 
 // FIXME
 // #include <stk_mesh/baseImpl/EntityImpl.hpp>
@@ -28,7 +31,9 @@ namespace stk {
       m_nodeRegistry(0), 
       m_proc_rank_field(proc_rank_field), m_doRemove(true), m_ranks(), m_ignoreSideSets(false),
       m_geomFile(""), m_geomSnap(false),
-      m_doQueryOnly(false)
+      m_doQueryOnly(false),
+      m_progress_meter_frequency(20),
+      m_doProgress(true)
     {
       bp.setSubPatterns(m_breakPattern, eMesh);
     }
@@ -964,14 +969,16 @@ namespace stk {
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
         }
 
+#if defined( STK_ADAPT_HAS_GEOMETRY )
       if (m_geomSnap)
       {
-          GeometryKernelStupid gk;
+          GeometryKernelOpenNURBS gk;
           MeshGeometry mesh_geometry(&gk);
           GeometryFactory factory(&gk, &mesh_geometry);
           factory.read_file(m_geomFile, &m_eMesh);
           mesh_geometry.snap_points_to_geometry(&m_eMesh);
       }
+#endif
 
       /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start... ");
       bulkData.modification_end();
@@ -992,6 +999,19 @@ namespace stk {
     {
       EXCEPTWATCH;
       unsigned num_elem = 0;
+
+      int progress_meter_num_total = 0;
+      if (m_doProgress)
+        {
+          m_doProgress = false;
+          progress_meter_num_total = doForAllElements(rank, function, elementColors, needed_entity_ranks, true, doAllElements);
+          m_doProgress = true;
+        }
+      int progress_meter_when_to_post = progress_meter_num_total / m_progress_meter_frequency;
+      if (0 == progress_meter_when_to_post) 
+        progress_meter_when_to_post = 1;
+      double d_progress_meter_num_total = progress_meter_num_total;
+
       for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
         {
           if (elementColors[icolor].size() == 0)
@@ -1009,7 +1029,6 @@ namespace stk {
                iele++)
             {
               const stk::mesh::Entity * element_p =  *iele;
-
               const stk::mesh::Entity& element = * element_p;
 
               bool elementIsGhost = m_eMesh.isGhostElement(element);
@@ -1019,6 +1038,12 @@ namespace stk {
               if (!only_count && (doAllElements || elementIsGhost))
                 {
                   m_nodeRegistry->doForAllSubEntities(function, element, needed_entity_ranks);
+                }
+
+              if (m_doProgress && progress_meter_when_to_post && (num_elem % progress_meter_when_to_post == 0) )
+                {
+                  double progress_meter_percent = 100.0*((double)num_elem)/d_progress_meter_num_total;
+                  if (0) std::cout << "progress_meter_percent = " << progress_meter_percent << std::endl;
                 }
 
             } // elements in this color
