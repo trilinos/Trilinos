@@ -35,7 +35,7 @@ namespace {
       aggOptions.SetPrintFlag(6);
       aggOptions.SetMinNodesPerAggregate(2);
       aggOptions.SetMaxNeighAlreadySelected(5);
-      aggOptions.SetOrdering(2);
+      aggOptions.SetOrdering(MueLu::AggOptions::GRAPH);
       aggOptions.SetPhase3AggCreation(0.5);
 
       UCAggregationFactory aggFact(aggOptions);

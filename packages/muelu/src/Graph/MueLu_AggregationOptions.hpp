@@ -7,6 +7,20 @@
 
 namespace MueLu {
 
+
+  namespace AggOptions {
+
+    /* Options defining how to pick-up the next root node in the local aggregation procedure */
+    enum Ordering {
+      NATURAL = 0, /* node ordering   */
+      RANDOM  = 1, /* random ordering */
+      GRAPH   = 2  /* graph ordering  */
+    };
+
+  } // namespace AggOptions
+
+  using namespace AggOptions;
+
   class AggregationOptions : public Teuchos::Describable {
     
   public:
@@ -15,20 +29,20 @@ namespace MueLu {
     ~AggregationOptions() {}
 
     inline void SetPrintFlag(double printFlag) { printFlag_ = printFlag; } //TODO: to be removed
-    inline void SetOrdering(int ordering)      { ordering_ = ordering;   } //TODO: define enum
+    inline void SetOrdering(Ordering ordering)      { ordering_ = ordering;   }
     inline void SetMinNodesPerAggregate(int minNodesPerAggregate) { minNodesPerAggregate_ = minNodesPerAggregate; }
     inline void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
     inline void SetPhase3AggCreation(double phase3AggCreation) { phase3AggCreation_ = phase3AggCreation; }
     
     inline double GetPrintFlag() const { return printFlag_; } //TODO: to be removed
-    inline int GetOrdering() const     { return ordering_;   }
+    inline Ordering GetOrdering() const     { return ordering_;   }
     inline int GetMinNodesPerAggregate() const { return minNodesPerAggregate_; }
     inline int GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
     inline double GetPhase3AggCreation() const { return phase3AggCreation_; }
         
   private:
     double printFlag_;
-    int    ordering_;                  /**<  natural, random, graph           */
+    Ordering ordering_;  /**<  natural, random, graph           */
     int    minNodesPerAggregate_;      /**<  aggregate size control           */
     int    maxNeighAlreadySelected_;   /**<  complexity control               */
     double phase3AggCreation_;         /**<  Steers how the MIS  and Uncoupled 

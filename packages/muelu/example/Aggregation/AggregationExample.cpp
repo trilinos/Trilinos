@@ -74,8 +74,7 @@ int main(int argc, char *argv[]) {
   aggOptions.SetPrintFlag(printFlag);      
   aggOptions.SetMinNodesPerAggregate(2);  
   aggOptions.SetMaxNeighAlreadySelected(5);
-  // aggOptions.SetOrdering(1); //TODO: RandomReorder()
-  aggOptions.SetOrdering(2);
+  aggOptions.SetOrdering(MueLu::AggOptions::GRAPH);
   aggOptions.SetPhase3AggCreation(0.5);
 
   /**********************************************************************************/

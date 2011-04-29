@@ -208,19 +208,19 @@ typedef int my_size_t; //TODO
         /* ============================================================= */
 
         /* some general variable declarations */   
-        const int ordering = aggOptions.GetOrdering();
+        const MueLu::AggOptions::Ordering ordering = aggOptions.GetOrdering();
         Teuchos::ArrayRCP<int> randomVector;
         MueLu_Node       *nodeHead=NULL, *nodeTail=NULL, *newNode=NULL;
         MueLu_SuperNode  *aggHead=NULL, *aggCurrent=NULL, *supernode=NULL;
         /**/
 
-        if ( ordering == 1 )       /* random ordering */
+        if ( ordering == RANDOM )       /* random ordering */
         {
           randomVector = Teuchos::arcp<int>(nRows); //size_t or int ?-> to be propagated
           for (int i = 0; i < nRows; ++i) randomVector[i] = i;
           RandomReorder(randomVector);
         } 
-        else if ( ordering == 2 )  /* graph ordering */
+        else if ( ordering == GRAPH )  /* graph ordering */
         {
           newNode = new MueLu_Node;      
           newNode->nodeId = 0;
@@ -242,9 +242,9 @@ typedef int my_size_t; //TODO
               /* pick the next node to aggregate                       */
               /*------------------------------------------------------ */
 
-              if      ( ordering == 0 ) iNode = iNode2++;
-              else if ( ordering == 1 ) iNode = randomVector[iNode2++];
-              else if ( ordering == 2 ) 
+              if      ( ordering == NATURAL ) iNode = iNode2++;
+              else if ( ordering == RANDOM ) iNode = randomVector[iNode2++];
+              else if ( ordering == GRAPH ) 
                 {
                   if ( nodeHead == NULL ) 
                     {
@@ -330,7 +330,7 @@ typedef int my_size_t; //TODO
                     {
                       aggStat[iNode] = NOTSEL;
                       delete supernode;
-                      if ( ordering == 2 ) /* if graph ordering */
+                      if ( ordering == GRAPH ) /* if graph ordering */
                         {
                           for (typename Teuchos::ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                             {
@@ -360,7 +360,7 @@ typedef int my_size_t; //TODO
                           int jNode = supernode->list[j];
                           aggStat[jNode] = SELECTED;
                           vertex2AggId[jNode] = nAggregates;
-                          if ( ordering == 2 ) /* if graph ordering */
+                          if ( ordering == GRAPH ) /* if graph ordering */
                             {
 
                               Teuchos::ArrayView<const LO> neighOfJNode = graph.getNeighborVertices(jNode);
@@ -407,7 +407,7 @@ typedef int my_size_t; //TODO
 
         } // end of 'main loop'
 
-        if ( ordering == 2 ) 
+        if ( ordering == GRAPH ) 
           {
             while ( nodeHead != NULL )
               {
